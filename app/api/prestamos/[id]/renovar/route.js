@@ -5,7 +5,10 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularPrestamo, calcularSaldoPendiente, calcularCapitalRestante } from '@/lib/calculos'
+import {
+  calcularPrestamo, calcularSaldoPendiente, calcularCapitalRestante,
+  prestamoDevuelveMenosDeLoPrestado, mensajePrestamoConPerdida,
+} from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
@@ -123,6 +126,19 @@ export async function POST(request, { params }) {
     return Response.json({
       error: `Esa cuota no alcanza a cubrir el interés. El primer período genera $${calc.interesPrimerPeriodo.toLocaleString('es-CO')} de interés, así que con una cuota menor la deuda nunca baja. Cuota mínima: $${calc.cuotaMinima.toLocaleString('es-CO')}. Para terminar de pagar en el plazo elegido: $${calc.cuotaSugerida.toLocaleString('es-CO')}.`,
       cuotaInsuficiente: true,
+    }, { status: 400 })
+  }
+
+  if (prestamoDevuelveMenosDeLoPrestado({ totalAPagar: calc.totalAPagar, montoPrestado })) {
+    return Response.json({
+      error: mensajePrestamoConPerdida({
+        totalAPagar: calc.totalAPagar, montoPrestado,
+        numPeriodos: calc.numPeriodos, frecuencia,
+      }),
+      prestamoConPerdida: true,
+      totalAPagar: calc.totalAPagar,
+      montoPrestado,
+      numPeriodos: calc.numPeriodos,
     }, { status: 400 })
   }
 

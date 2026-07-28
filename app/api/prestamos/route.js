@@ -11,6 +11,8 @@ import {
   calcularCapitalRestante,
   calcularProximoCobro,
   pagoHoy,
+  prestamoDevuelveMenosDeLoPrestado,
+  mensajePrestamoConPerdida,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -385,6 +387,19 @@ export async function POST(request) {
       interesPrimerPeriodo: calc.interesPrimerPeriodo,
       cuotaMinima: calc.cuotaMinima,
       cuotaSugerida: calc.cuotaSugerida,
+    }, { status: 400 })
+  }
+
+  if (prestamoDevuelveMenosDeLoPrestado({ totalAPagar: calc.totalAPagar, montoPrestado })) {
+    return Response.json({
+      error: mensajePrestamoConPerdida({
+        totalAPagar: calc.totalAPagar, montoPrestado,
+        numPeriodos: calc.numPeriodos, frecuencia,
+      }),
+      prestamoConPerdida: true,
+      totalAPagar: calc.totalAPagar,
+      montoPrestado,
+      numPeriodos: calc.numPeriodos,
     }, { status: 400 })
   }
 

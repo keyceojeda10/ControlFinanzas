@@ -16,6 +16,8 @@ import {
   calcularPrestamo,
   calcularCapitalRestante,
   pagoHoy,
+  prestamoDevuelveMenosDeLoPrestado,
+  mensajePrestamoConPerdida,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
@@ -828,6 +830,22 @@ export async function PATCH(request, { params }) {
       return Response.json({
         error: `Esa cuota no alcanza a cubrir el interés. El primer período genera $${calc.interesPrimerPeriodo.toLocaleString('es-CO')} de interés, así que con una cuota menor la deuda nunca baja. Cuota mínima: $${calc.cuotaMinima.toLocaleString('es-CO')}. Para terminar de pagar en el plazo elegido: $${calc.cuotaSugerida.toLocaleString('es-CO')}.`,
         cuotaInsuficiente: true,
+      }, { status: 400 })
+    }
+
+    // Aca se compara contra `montoParaCalculo`, no contra el monto original:
+    // si el prestamo ya tiene pagos, el calculo se rehace sobre el saldo
+    // pendiente, y lo que queda por cobrar tiene que cubrir al menos ese saldo.
+    if (prestamoDevuelveMenosDeLoPrestado({ totalAPagar: calc.totalAPagar, montoPrestado: montoParaCalculo })) {
+      return Response.json({
+        error: mensajePrestamoConPerdida({
+          totalAPagar: calc.totalAPagar, montoPrestado: montoParaCalculo,
+          numPeriodos: calc.numPeriodos, frecuencia: frecuenciaUsar,
+        }),
+        prestamoConPerdida: true,
+        totalAPagar: calc.totalAPagar,
+        montoPrestado: montoParaCalculo,
+        numPeriodos: calc.numPeriodos,
       }, { status: 400 })
     }
 
