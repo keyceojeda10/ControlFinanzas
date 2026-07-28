@@ -21,7 +21,12 @@ export default function MisEstadisticasPage() {
 
   useEffect(() => {
     if (authLoading) return
-    if (session?.user?.rol !== 'cobrador') return
+    // Hay que apagar `loading` tambien cuando NO se va a pedir nada. Sin esto la
+    // pantalla se quedaba en el skeleton para siempre para cualquiera que no
+    // fuera cobrador: la guarda de abajo devuelve el skeleton mientras `loading`
+    // siga en true, asi que el mensaje "Esta pagina es solo para cobradores"
+    // era codigo inalcanzable justo para quienes estaba escrito.
+    if (session?.user?.rol !== 'cobrador') { setLoading(false); return }
 
     fetch('/api/mis-estadisticas')
       .then((r) => r.json())

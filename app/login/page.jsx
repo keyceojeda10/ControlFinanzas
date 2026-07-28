@@ -128,6 +128,40 @@ function ShowcasePanel() {
   )
 }
 
+// Codigos internos de NextAuth. Cuando `authorize` devuelve null (correo que no
+// existe, clave que no coincide) llega 'CredentialsSignin'; el resto son fallos
+// de configuracion o de flujos OAuth que no usamos. Para todos ellos el mensaje
+// correcto al usuario es el generico.
+const CODIGOS_NEXTAUTH = new Set([
+  'CredentialsSignin', 'Signin', 'Callback', 'Default', 'Configuration',
+  'AccessDenied', 'Verification', 'SessionRequired', 'EmailSignin',
+  'OAuthSignin', 'OAuthCallback', 'OAuthCreateAccount', 'OAuthAccountNotLinked',
+  'EmailCreateAccount',
+])
+
+// Antes esto era una lista blanca de dos palabras ('desactivada', 'suspendida'),
+// asi que cualquier mensaje nuevo de lib/auth.js nacia roto: se mostraba como
+// "Correo o contraseña incorrectos". Eso se tragaba dos avisos que el usuario
+// necesita para saber que hacer:
+//
+//   · "Demasiados intentos de inicio de sesion. Intenta en 15 minutos."
+//   · "Tu cuenta de cobrador excede el limite del plan actual."
+//
+// En ambos casos la clave estaba BIEN, y decirle lo contrario lo empuja a
+// resetear una contrasena correcta o a seguir intentando y extender el bloqueo.
+//
+// Ahora la regla es al reves: los codigos internos caen al generico y todo lo
+// demas -- que solo puede venir de un `throw` nuestro, escrito en espanol para
+// el usuario -- se muestra tal cual. Un mensaje nuevo en lib/auth.js ya no
+// necesita tocar esta pantalla.
+function esCodigoInterno(msg) {
+  if (!msg) return true
+  if (CODIGOS_NEXTAUTH.has(msg)) return true
+  // Red de seguridad: los codigos son un solo token sin espacios; nuestros
+  // mensajes son frases. Evita filtrar un codigo nuevo de NextAuth a la pantalla.
+  return !msg.includes(' ')
+}
+
 // ── Main login page ─────────────────────────────────────────────
 export default function LoginPage() {
   const [email,    setEmail]    = useState('')
@@ -154,11 +188,7 @@ export default function LoginPage() {
           router.push(`/verificar-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
           return
         }
-        if (msg.includes('desactivada') || msg.includes('suspendida')) {
-          setError(msg)
-        } else {
-          setError('Correo o contraseña incorrectos')
-        }
+        setError(esCodigoInterno(msg) ? 'Correo o contraseña incorrectos' : msg)
         return
       }
 
