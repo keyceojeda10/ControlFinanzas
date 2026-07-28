@@ -11,6 +11,23 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } fro
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
+// Cuota que de verdad toca cobrar en el periodo actual.
+//
+// En los modos con tabla de amortizacion (lineal, solo_interes, lineal_dinamico,
+// saldo) `cuotaDiaria` es la cuota pactada, que NO es lo que se cobra este
+// periodo: en el balloon, por ejemplo, casi todos los periodos son solo interes.
+// Por eso hay que leer la fila vigente de la tabla.
+//
+// Se usa en los dos calculos de "esperado" de este archivo: la meta global
+// (calcularEsperadoReal) y el esperado por cobrador. Estaba en uso en ambos sin
+// existir, lo que tumbaba /api/caja con "cuotaDelPeriodo is not defined" cada vez
+// que algun prestamo tenia cuota esperada hoy — que es justo cuando la pantalla
+// importa. Los cobradores sin cobros programados no lo notaban: el operador
+// ternario nunca llegaba a evaluarlo.
+const cuotaDelPeriodo = (p) => (
+  tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : (p.cuotaDiaria || 0)
+)
+
 const fmtFechaLocal = (d, country = 'co') => {
   const absOffset = Math.abs(getUtcOffset(country))
   const pad = (n) => String(n).padStart(2, '0')
