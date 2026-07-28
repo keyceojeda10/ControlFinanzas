@@ -35,8 +35,13 @@ export async function POST(req) {
       ],
     },
     include: {
-      cliente: { select: { id: true, nombre: true } },
-      ruta: { select: { cobradorId: true } },
+      // La ruta cuelga del CLIENTE, no del prestamo: Prestamo no tiene relacion
+      // `ruta` en el schema, asi que el include viejo (`ruta: {...}`) lanzaba
+      // PrismaClientValidationError y el cron reventaba entero. No se notaba
+      // porque no esta en el crontab; el dia que lo activen habria fallado.
+      cliente: {
+        select: { id: true, nombre: true, ruta: { select: { cobradorId: true } } },
+      },
     },
   })
 
@@ -71,10 +76,10 @@ export async function POST(req) {
     const cobradorIds = new Set()
     for (const p of prestamos) {
       if (pushCount >= MAX_PUSH_POR_ORG) break
-      const cobradorId = p.ruta?.cobradorId
+      const cobradorId = p.cliente?.ruta?.cobradorId
       if (cobradorId && !cobradorIds.has(cobradorId)) {
         cobradorIds.add(cobradorId)
-        const prestamosDelCobrador = prestamos.filter(x => x.ruta?.cobradorId === cobradorId)
+        const prestamosDelCobrador = prestamos.filter(x => x.cliente?.ruta?.cobradorId === cobradorId)
         await enviarPush(cobradorId, {
           title: `${prestamosDelCobrador.length} cliente${prestamosDelCobrador.length > 1 ? 's' : ''} en mora`,
           body: prestamosDelCobrador.slice(0, 3).map(x => x.cliente.nombre).join(', '),

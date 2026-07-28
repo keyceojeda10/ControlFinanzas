@@ -5,7 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
-import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, tieneTablaAmortizacion, obtenerCuotaPeriodoActual } from '@/lib/calculos'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -73,6 +73,15 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
             diaCobroSemana: true,
             diaCobroMes: true,
             diaCobroMes2: true,
+            // La cuota de un prestamo con tabla NO es cuotaDiaria: esa es la
+            // PRIMERA cuota. En Decreciente es la mas alta de todas y en Globo
+            // es solo el interes, asi que el mes del balloon quedaba enormemente
+            // subestimado. La ruta ya usaba la cuota real; la caja no.
+            modoInteres: true,
+            cuotasAmortizacion: {
+              orderBy: { numeroPeriodo: 'asc' },
+              select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true },
+            },
           },
         },
       },
@@ -98,7 +107,7 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
     const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
     const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
     return total + c.prestamos.reduce(
-      (b, p) => (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivos) ? b + p.cuotaDiaria : b),
+      (b, p) => (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivos) ? b + cuotaDelPeriodo(p) : b),
       0,
     )
   }, 0)
@@ -865,6 +874,13 @@ export async function GET(request) {
                   diaCobroSemana: true,
                   diaCobroMes: true,
                   diaCobroMes2: true,
+                  // Ver cuotaDelPeriodo: en los modos con tabla, cuotaDiaria es
+                  // solo la primera cuota, no la que toca cobrar hoy.
+                  modoInteres: true,
+                  cuotasAmortizacion: {
+                    orderBy: { numeroPeriodo: 'asc' },
+                    select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true },
+                  },
                 },
               },
             },
@@ -899,7 +915,7 @@ export async function GET(request) {
         const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivosOrg)
         return totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => {
           return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivosOrg)
-            ? totalPrestamo + p.cuotaDiaria
+            ? totalPrestamo + cuotaDelPeriodo(p)
             : totalPrestamo
         }, 0)
       }, 0)
