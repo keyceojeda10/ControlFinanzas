@@ -2,32 +2,11 @@
 
 import { useState } from 'react'
 
-export const CAMPOS_PREDEFINIDOS = [
-  { campo: 'totalPagado',      nombre: 'Total pagado',         porDefecto: true },
-  { campo: 'saldoPendiente',   nombre: 'Saldo pendiente',      porDefecto: true },
-  { campo: 'totalAPagar',      nombre: 'Total a pagar',        porDefecto: true },
-  { campo: 'cuota',            nombre: 'Cuota',                porDefecto: true },
-  { campo: 'progreso',         nombre: 'Progreso',             porDefecto: true },
-  { campo: 'montoPrestado',    nombre: 'Monto prestado',       porDefecto: false },
-  { campo: 'frecuencia',       nombre: 'Frecuencia de pago',   porDefecto: false },
-  { campo: 'fechaVencimiento', nombre: 'Fecha de vencimiento', porDefecto: false },
-  { campo: 'numeroCuota',      nombre: 'Cuota actual',         porDefecto: false },
-  { campo: 'diasMora',         nombre: 'Días en mora',         porDefecto: false },
-  { campo: 'clienteCedula',    nombre: 'Cédula',               porDefecto: false },
-  { campo: 'clienteTelefono',  nombre: 'Teléfono',             porDefecto: false },
-  { campo: 'ruta',             nombre: 'Ruta',                 porDefecto: false },
-  { campo: 'cobrador',         nombre: 'Cobrador',             porDefecto: false },
-]
-
-export function getDefaultCampos() {
-  return CAMPOS_PREDEFINIDOS
-    .filter(c => c.porDefecto)
-    .map(c => ({ tipo: 'dato', campo: c.campo, nombre: c.nombre }))
-}
-
-export const CAMPOS_DATO_LABELS = Object.fromEntries(
-  CAMPOS_PREDEFINIDOS.map(c => [c.campo, c.nombre])
-)
+// La lista de campos vive en lib/campos-recibo.js: es dato, no interfaz, y asi
+// se puede probar sin montar React. Se reexporta para no romper los imports que
+// ya apuntaban aca.
+import { CAMPOS_PREDEFINIDOS, getDefaultCampos, CAMPOS_DATO_LABELS } from '@/lib/campos-recibo'
+export { CAMPOS_PREDEFINIDOS, getDefaultCampos, CAMPOS_DATO_LABELS }
 
 export function ChecklistCamposRecibo({ campos, onChange }) {
   const [addTexto, setAddTexto] = useState(false)
