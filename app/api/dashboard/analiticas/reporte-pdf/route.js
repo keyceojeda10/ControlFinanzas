@@ -2,9 +2,14 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
-import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
+import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
+
 import PDFDocument from 'pdfkit'
 import { PassThrough } from 'stream'
+
+// Modos con tabla de amortizacion: su interes se lee de la tabla, no se
+// reparte plano. Misma regla que /api/dashboard/analiticas.
+const MODOS_CON_TABLA = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo']
 
 const INK = '#111111', TEXT = '#333333', MUTED = '#666666', FAINT = '#999999'
 const BORDER = '#dddddd', BORDER_L = '#eeeeee', HEAD_BG = '#f0f0f0', ROW_BG = '#f8f8f8'
@@ -32,6 +37,7 @@ export async function GET() {
   const [
     org,
     pagosMensuales,
+    prestamosConTabla,
     prestamosMensuales,
     gastosMensuales,
     cobradorRecaudo,
@@ -50,6 +56,10 @@ export async function GET() {
     // mismo criterio que /api/dashboard/analiticas, para que el PDF y la pantalla
     // muestren la misma ganancia. `total` solo, sin ese desglose, llevaba a
     // reportar como ganancia la devolucion del capital propio.
+    //
+    // El reparto proporcional solo es correcto para los modos SIN tabla de
+    // amortizacion. Los que la tienen se corrigen despues sumando la diferencia
+    // contra su tabla — igual que en la pantalla, o el PDF mostraria otra cifra.
     prisma.$queryRaw`
       SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
         SUM(p.montoPagado) as total,
@@ -64,6 +74,30 @@ export async function GET() {
         AND p.tipo NOT IN ('recargo', 'descuento')
       GROUP BY mes ORDER BY mes
     `,
+    // Prestamos CON tabla, para corregir su aporte. El `some: {}` deja fuera los
+    // que estan en un modo con tabla pero no la tienen: esos conservan su cifra
+    // proporcional en vez de quedarse sin ninguna.
+    prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        modoInteres: { in: MODOS_CON_TABLA },
+        totalAPagar: { gt: 0 },
+        cuotasAmortizacion: { some: {} },
+      },
+      select: {
+        montoPrestado: true,
+        totalAPagar: true,
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
+        },
+        pagos: {
+          where: { tipo: { notIn: ['recargo', 'descuento'] } },
+          orderBy: { fechaPago: 'asc' },
+          select: { montoPagado: true, fechaPago: true },
+        },
+      },
+    }),
     prisma.$queryRaw`
       SELECT DATE_FORMAT(createdAt, '%Y-%m') as mes, SUM(montoPrestado) as capitalPrestado,
         COUNT(*) as cantidad
@@ -138,7 +172,35 @@ export async function GET() {
   const porCobrar = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
 
-  const pagoMap = Object.fromEntries(pagosMensuales.map(p => [p.mes, p]))
+  // Correccion de los prestamos CON tabla: la DIFERENCIA entre lo que dice su
+  // tabla y lo que ya conto el reparto proporcional. Misma regla que la pantalla
+  // de analiticas, para que las dos muestren el mismo numero.
+  const correccionTablaPorMes = {}
+  for (const prestamo of prestamosConTabla) {
+    const cuotas = prestamo.cuotasAmortizacion
+    if (!cuotas.length) continue
+    const fraccionProporcional = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+    let acumulado = 0
+    for (const pago of prestamo.pagos) {
+      const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
+        - pago.montoPagado * fraccionProporcional
+      acumulado += pago.montoPagado
+      if (pago.fechaPago < fechaInicio) continue
+      const mes = pago.fechaPago.toISOString().slice(0, 7)
+      const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
+      acc.interes += delta
+      acc.capital -= delta
+    }
+  }
+
+  const pagoMap = Object.fromEntries(pagosMensuales.map(p => [
+    p.mes,
+    {
+      ...p,
+      interesGanado: Number(p.interesGanado || 0) + (correccionTablaPorMes[p.mes]?.interes || 0),
+      capitalRecuperado: Number(p.capitalRecuperado || 0) + (correccionTablaPorMes[p.mes]?.capital || 0),
+    },
+  ]))
   const gastoMap = Object.fromEntries(gastosMensuales.map(g => [g.mes, g]))
   const prestamoMap = Object.fromEntries(prestamosMensuales.map(p => [p.mes, p]))
   const mesActualKey = mesActual.toISOString().slice(0, 7)

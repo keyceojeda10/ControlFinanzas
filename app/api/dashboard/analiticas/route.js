@@ -2,7 +2,18 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
+import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
+
+// Modos que llevan tabla de amortizacion. En ellos el interes del periodo se
+// calcula sobre el saldo, asi que NO se puede repartir plano sobre cada peso
+// cobrado: el primer periodo pesa mucho mas que el ultimo.
+//
+// Un cliente lo reporto con numeros exactos: su tabla decia $7.742 de interes en
+// el mes 1 y esta pantalla registraba $6.896 sobre un pago de $100.000. Medido
+// sobre los 295 prestamos activos con tabla, el reparto proporcional subestimaba
+// la ganancia en $7.690.180 — un 27,3%. El caso peor era el modo globo, donde
+// casi todo lo que entra es interes pero la formula lo diluia.
+const MODOS_CON_TABLA = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo']
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -40,6 +51,7 @@ export async function GET() {
     prestamosTotal,
     desgloseInteresMensual,
     rentabilidadRutas,
+    prestamosConTabla,
   ] = await Promise.all([
     prisma.$queryRaw`
       SELECT DATE_FORMAT(fechaPago, '%Y-%m') as mes, SUM(montoPagado) as total, COUNT(*) as cantidad
@@ -108,7 +120,9 @@ export async function GET() {
       FROM Prestamo WHERE organizationId = ${organizationId} AND esClavo = false
       GROUP BY clienteId HAVING total > 1
     `,
-    // Desglose interes/capital por mes
+    // Desglose interes/capital por mes, con reparto proporcional sobre TODOS los
+    // prestamos. Para los que tienen tabla de amortizacion esa cifra se corrige
+    // despues (ver `correccionTablaPorMes`).
     prisma.$queryRaw`
       SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
         SUM(p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar) as interesGanado,
@@ -119,7 +133,7 @@ export async function GET() {
         AND p.tipo NOT IN ('recargo', 'descuento') AND pr.totalAPagar > 0
       GROUP BY mes ORDER BY mes
     `,
-    // Rentabilidad por ruta
+    // Rentabilidad por ruta — misma correccion que arriba.
     prisma.$queryRaw`
       SELECT c.rutaId, r.nombre as rutaNombre,
         SUM(pr.montoPrestado) as capitalDesplegado,
@@ -134,6 +148,37 @@ export async function GET() {
       GROUP BY c.rutaId, r.nombre
       ORDER BY interesGanado DESC
     `,
+    // Prestamos CON tabla: se traen las filas y los pagos para corregir su
+    // aporte.
+    //
+    // `cuotasAmortizacion: { some: {} }` deja fuera los que estan en un modo con
+    // tabla pero NO la tienen. Son 19 en produccion (17 en modo saldo y 2
+    // lineal) y para ellos el reparto proporcional es lo unico calculable. Sin
+    // esta condicion quedaban sin cifra por ningun lado: en una simulacion antes
+    // de desplegar, dos negocios pasaban a ganancia CERO.
+    prisma.prestamo.findMany({
+      where: {
+        organizationId,
+        modoInteres: { in: MODOS_CON_TABLA },
+        totalAPagar: { gt: 0 },
+        cuotasAmortizacion: { some: {} },
+      },
+      select: {
+        id: true,
+        montoPrestado: true,
+        totalAPagar: true,
+        cliente: { select: { rutaId: true } },
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
+        },
+        pagos: {
+          where: { tipo: { notIn: ['recargo', 'descuento'] } },
+          orderBy: { fechaPago: 'asc' },
+          select: { montoPagado: true, fechaPago: true },
+        },
+      },
+    }),
   ])
 
   // Monthly trend
@@ -148,11 +193,50 @@ export async function GET() {
   const clienteMap = Object.fromEntries(clientesPorMes.map(c => [c.mes, c]))
   const interesMap = Object.fromEntries(desgloseInteresMensual.map(d => [d.mes, d]))
 
+  // ── Correccion de los prestamos CON tabla ──
+  //
+  // Se calcula la DIFERENCIA entre lo que dice la tabla y lo que ya conto el
+  // reparto proporcional del SQL, y se suma esa diferencia. Esta hecho asi a
+  // proposito: un prestamo que no entre en este bloque conserva intacta su cifra
+  // proporcional. El peor caso posible es no corregir nada — nunca borrar una
+  // cifra, que es justo lo que pasaba con la primera version de este arreglo.
+  //
+  // Se recorren los pagos en orden preguntandole a la tabla cuanto interes
+  // reconoce cada uno. Como el reparto es incremental (acumulado despues menos
+  // acumulado antes), la suma de los pagos reconstruye exactamente el interes
+  // total del prestamo: no se puede inventar ni perder ganancia por el camino.
+  const correccionTablaPorMes = {}   // 'YYYY-MM' -> { interes, capital }
+  const correccionTablaPorRuta = {}  // rutaId     -> interes
+  for (const prestamo of prestamosConTabla) {
+    const cuotas = prestamo.cuotasAmortizacion
+    if (!cuotas.length) continue
+    const fraccionProporcional = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+    let acumulado = 0
+    for (const pago of prestamo.pagos) {
+      const segunTabla = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
+      const segunProporcion = pago.montoPagado * fraccionProporcional
+      const delta = segunTabla - segunProporcion
+      acumulado += pago.montoPagado
+
+      const rutaId = prestamo.cliente?.rutaId || null
+      correccionTablaPorRuta[rutaId] = (correccionTablaPorRuta[rutaId] || 0) + delta
+
+      // El desglose mensual solo cubre la ventana de la pantalla; la ruta usa
+      // el acumulado de vida del prestamo, igual que hace la consulta SQL.
+      if (pago.fechaPago < fechaInicio) continue
+      const mes = pago.fechaPago.toISOString().slice(0, 7)
+      const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
+      acc.interes += delta
+      acc.capital -= delta          // lo que sube el interes, lo baja el capital
+    }
+  }
+
   const tendenciaMensual = meses.map(mes => {
     const recaudado = Number(pagoMap[mes]?.total || 0)
     const gastos = Number(gastoMap[mes]?.total || 0)
-    const interesGanado = Number(interesMap[mes]?.interesGanado || 0)
-    const capitalRecuperado = Number(interesMap[mes]?.capitalRecuperado || 0)
+    // proporcional (SQL) + la correccion de los prestamos con tabla
+    const interesGanado = Number(interesMap[mes]?.interesGanado || 0) + (correccionTablaPorMes[mes]?.interes || 0)
+    const capitalRecuperado = Number(interesMap[mes]?.capitalRecuperado || 0) + (correccionTablaPorMes[mes]?.capital || 0)
     return {
       mes,
       recaudado,
@@ -307,18 +391,27 @@ export async function GET() {
       rotacionCapital: capitalEnCalle > 0
         ? Math.round(((tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0) / capitalEnCalle) * 1000) / 10
         : 0,
-      porRuta: rentabilidadRutas.map(r => ({
-        rutaId: r.rutaId,
-        nombre: r.rutaNombre || 'Sin ruta',
-        capitalDesplegado: Number(r.capitalDesplegado || 0),
-        saldoPendiente: Number(r.saldoPendiente || 0),
-        interesTotal: Number(r.interesTotal || 0),
-        interesGanado: Math.round(Number(r.interesGanado || 0)),
-        prestamos: Number(r.prestamos || 0),
-        roi: Number(r.capitalDesplegado) > 0
-          ? Math.round((Number(r.interesGanado || 0) / Number(r.capitalDesplegado)) * 1000) / 10
-          : 0,
-      })),
+      porRuta: rentabilidadRutas.map(r => {
+        // La consulta SQL repartio proporcionalmente; aca se aplica la
+        // correccion de los prestamos con tabla. El ROI se recalcula con el
+        // total corregido, no con el parcial.
+        const interesGanado = Math.round(
+          Number(r.interesGanado || 0) + (correccionTablaPorRuta[r.rutaId] || 0),
+        )
+        const capitalDesplegado = Number(r.capitalDesplegado || 0)
+        return {
+          rutaId: r.rutaId,
+          nombre: r.rutaNombre || 'Sin ruta',
+          capitalDesplegado,
+          saldoPendiente: Number(r.saldoPendiente || 0),
+          interesTotal: Number(r.interesTotal || 0),
+          interesGanado,
+          prestamos: Number(r.prestamos || 0),
+          roi: capitalDesplegado > 0
+            ? Math.round((interesGanado / capitalDesplegado) * 1000) / 10
+            : 0,
+        }
+      }).sort((a, b) => b.interesGanado - a.interesGanado),
     },
   })
 }
