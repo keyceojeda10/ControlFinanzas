@@ -81,6 +81,12 @@ for (const tam of TAMANOS) {
     pag.on('requestfailed', onFallo)
 
     try {
+      // DOS visitas. En la primera, Next compila la ruta y sus APIs: el ping de
+      // conectividad tarda mas de 4s, la app lo lee como "limbo" y pinta el
+      // esqueleto con el aviso de Offline. Auditar eso seria auditar el
+      // arranque en frio del servidor de desarrollo, no el diseño.
+      await pag.goto(`http://localhost:3000${p.ruta}`, { waitUntil: 'domcontentloaded', timeout: 60000 })
+      await pag.waitForTimeout(2500)
       await pag.goto(`http://localhost:3000${p.ruta}`, { waitUntil: 'domcontentloaded', timeout: 45000 })
       await pag.waitForTimeout(3500)
       // Sin esto el barrido dispara el limitador de peticiones y los 429 que

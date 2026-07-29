@@ -10,6 +10,8 @@ import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offl
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
+import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
+import { adaptarPrestamos }                   from '@/lib/adaptadores/prestamos'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Avatar                                 from '@/components/ui/Avatar'
@@ -759,38 +761,28 @@ export default function PrestamosPage() {
 
       {/* Lista plana: orden cronologico puro (default) */}
       {!loading && prestamosVisibles.length > 0 && !agrupar && (
-        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'}>
-          {prestamosVisibles.map((p) => {
-            if (vistaP === 'compacta') {
-              return (
+        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
+          {/* La MISMA tarjeta que un cliente: un prestamo en lista no estrena
+              tarjeta. Inventar una segunda obligaria a aprender dos objetos que
+              se leen igual y significan lo mismo — alguien que te debe.
+              Lo unico propio es la linea de contexto: la cuota y cada cuanto,
+              en vez de la direccion. */}
+          {(() => {
+            const adaptados = adaptarPrestamos(prestamosVisibles, country)
+            return prestamosVisibles.map((p, i) => (
+              vistaP === 'compacta' ? (
                 <BadgeNuevo key={p.id} fecha={p.createdAt}>
                   <PrestamoCardCompacto prestamo={p} esNuevo={isHoy(p.createdAt, country)} />
                 </BadgeNuevo>
+              ) : (
+                <TarjetaCliente
+                  key={p.id}
+                  {...adaptados[i]}
+                  onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                />
               )
-            }
-            const cardActions = []
-            if (p.cliente?.telefono) {
-              cardActions.push({
-                icon: IconWA,
-                label: 'WhatsApp',
-                color: '#25D366',
-                onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
-              })
-            }
-            if (p.estado === 'activo') {
-              cardActions.push({
-                icon: IconPagar,
-                label: 'Registrar pago',
-                color: 'var(--color-success)',
-                onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
-              })
-            }
-            return (
-              <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                <PrestamoCard prestamo={p} actions={cardActions} esNuevo={isHoy(p.createdAt, country)} />
-              </BadgeNuevo>
-            )
-          })}
+            ))
+          })()}
         </StaggeredList>
       )}
 
