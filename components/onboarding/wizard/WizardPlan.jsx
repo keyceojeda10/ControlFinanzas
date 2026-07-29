@@ -7,7 +7,7 @@
 // pantalla de cobro puesta justo antes del paso que decide si el negocio se
 // queda.
 //
-// Invertida, aquí no hay nada que elegir: el plan es gratis 30 días, sin
+// Invertida, aquí no hay nada que elegir: la prueba es gratis y sin
 // tarjeta, y los precios se enseñan solo como información de lo que viene. La
 // acción dorada NO es «continuar», es CARGAR MI CARTERA — y el rótulo de
 // progreso lo dice: «falta cargar tu cartera», porque el registro no termina
@@ -25,13 +25,13 @@
 // el producto siete veces peor de lo que es — y a quien tiene 68 clientes en un
 // cuaderno, un «hasta 20» le dice que no le van a caber.
 
-import { tramosDePlan, limiteInicial } from '@/lib/adaptadores/planes'
+import { tramosDePlan } from '@/lib/adaptadores/planes'
+import { DIAS_PRUEBA } from '@/lib/planes'
 import { useCountry } from '@/hooks/useCountry'
 
 export default function WizardPlan({ onCargar, onPagar, hasta }) {
   const { country, formatMoney } = useCountry()
   const tramos = tramosDePlan(country, (n) => formatMoney(n))
-  const limite = limiteInicial()
 
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 18 }}>
@@ -44,8 +44,15 @@ export default function WizardPlan({ onCargar, onPagar, hasta }) {
           Empieza sin pagar nada
         </h2>
         <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', marginTop: 6, lineHeight: 1.45 }}>
-          Usa la app completa 30 días. Cuando pases de {limite?.toLocaleString('es-CO')} clientes
-          te decimos qué plan te sirve.
+          {/* LA PRUEBA ES POR TIEMPO, NO POR CLIENTES. La frase anterior
+              —«cuando pases de N clientes te decimos qué plan te sirve»— con N
+              = 150 se leía como «tienes 150 clientes gratis», que NO es lo que
+              vendemos. En el handoff ese N era 20 y funcionaba como empujón;
+              al meterle el tope real del plan, la frase cambió de significado.
+              Sustituir un número dentro de una frase puede cambiar lo que la
+              frase promete. */}
+          Usa la app completa {DIAS_PRUEBA} días, con todo abierto. Al terminar
+          eliges plan según el tamaño de tu cartera.
         </p>
       </div>
 
@@ -59,7 +66,7 @@ export default function WizardPlan({ onCargar, onPagar, hasta }) {
           padding: '3px 8px', borderRadius: 999,
           background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
         }}>
-          GRATIS 30 DÍAS
+          GRATIS {DIAS_PRUEBA} DÍAS
         </span>
         <span className="cf-fig" style={{
           display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',

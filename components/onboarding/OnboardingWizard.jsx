@@ -8,6 +8,7 @@ import WizardCartulina  from './wizard/WizardCartulina'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
 import WizardPlan from './wizard/WizardPlan'
+import { DIAS_PRUEBA } from '@/lib/planes'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 
@@ -23,10 +24,10 @@ import WizardAyuda      from './wizard/WizardAyuda'
   desde el primer préstamo. Skipeable, pero con advertencia clara.
 */
 
-/** «hasta el 27 de agosto»: la fecha concreta, no «en 30 días». */
+/** «hasta el 27 de agosto»: la fecha concreta, no «en N días». */
 function finDePrueba() {
   const d = new Date()
-  d.setDate(d.getDate() + 30)
+  d.setDate(d.getDate() + DIAS_PRUEBA)
   return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
 }
 
