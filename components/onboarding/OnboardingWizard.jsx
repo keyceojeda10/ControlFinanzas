@@ -5,6 +5,7 @@ import WizardProgress   from './wizard/WizardProgress'
 import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
+import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 
@@ -43,6 +44,11 @@ export default function OnboardingWizard({
   const [capitalDone,   setCapitalDone]   = useState(false)
   const [capitalMonto,  setCapitalMonto]  = useState(0)
   const [showBounce,    setShowBounce]    = useState(false)
+
+  // El método de carga es un SUB-ESTADO del paso 2, no un paso nuevo. Meter un
+  // paso corre la numeración y deja a medias a quien tenga progreso guardado
+  // («step: 2» pasaría a significar otra pantalla de la que dejó).
+  const [metodo, setMetodo] = useState(null)
 
   const bounce = (cb) => {
     setShowBounce(true)
@@ -101,7 +107,10 @@ export default function OnboardingWizard({
   }, [step, flujo])
 
   // Progress: steps 1 y 2 muestran circles (capital + cartulina). Welcome y Éxito no.
-  const progressInfo = (step === 1 || step === 2) ? { current: step, total: 2 } : null
+  // «Paso 3 de 4» en el diseño: perfil, capital, cartera y listo. Antes decía
+  // «de 2» porque solo contaba capital y cartulina, así que el asistente
+  // prometía terminar dos pantallas antes de terminar.
+  const progressInfo = step <= 2 ? { current: step + 1, total: 4 } : null
 
   if (showBounce) {
     return (
@@ -125,9 +134,13 @@ export default function OnboardingWizard({
     )
   }
 
+  // En el paso 2 «Volver» deshace primero la elección de método; si no, salta
+  // al capital y se pierde la pantalla que se acaba de contestar.
+  const volver = () => { if (step === 2 && metodo) { setMetodo(null); return } handleBack() }
+
   const BackButton = (step === 1 || step === 2) ? (
     <button
-      onClick={handleBack}
+      onClick={volver}
       className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
       style={{ color: 'var(--color-text-muted)' }}>
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +175,22 @@ export default function OnboardingWizard({
         />
       )}
 
-      {step === 2 && flujo && (
+      {/* «Hoy el migrador pregunta manual o foto EN CADA CLIENTE. Aquí se
+          decide una vez.» Por eso va antes de la cartulina, no dentro. */}
+      {step === 2 && flujo && !metodo && (
+        <WizardMetodoCarga
+          onElegir={(via) => {
+            if (via === 'foto') { setMetodo('foto'); return }
+            // Excel y manual viven fuera del asistente. PENDIENTE: traerlos
+            // dentro, para no sacar a la persona del flujo a mitad de camino.
+            persistStep(2, flujo)
+            window.location.href = via === 'excel' ? '/carga-masiva' : '/clientes/nuevo'
+          }}
+          onSaltar={handleCartulinaSkip}
+        />
+      )}
+
+      {step === 2 && flujo && metodo === 'foto' && (
         <WizardCartulina
           onComplete={handleCartullinaDone}
           onSkip={handleCartulinaSkip}
