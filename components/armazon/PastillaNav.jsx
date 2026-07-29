@@ -66,6 +66,9 @@ export default function PastillaNav({ onCrear }) {
   return (
     <nav
       aria-label="Navegación principal"
+      // Solo movil: en escritorio navega la barra lateral, y las dos a la vez
+      // son dos barras de navegacion compitiendo en la misma pantalla.
+      className="lg:hidden"
       style={{
         position: 'fixed',
         left: 'var(--cf-nav-side)', right: 'var(--cf-nav-side)',

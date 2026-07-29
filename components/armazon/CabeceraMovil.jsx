@@ -25,20 +25,19 @@ const ALTO = 56
    se aplana cuando la fila se satura. */
 function Glifo() {
   return (
-    <span
-      aria-hidden
+    // El logo OFICIAL (/logo-icon.svg): tres barras ascendentes sobre el dorado.
+    // Antes iba un "$" dibujado a mano, que no es la marca de nadie.
+    <img
+      src="/logo-icon.svg"
+      alt="Control Finanzas"
+      width={32}
+      height={32}
       style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         flex: 'none',
         width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
         borderRadius: 10,
-        background: 'var(--cf-gold)',
-        border: '2px solid var(--cf-gold-light)',
-        fontFamily: 'var(--font-space-grotesk), system-ui',
-        fontSize: 16, fontWeight: 700, lineHeight: 1,
-        color: 'var(--cf-gold-ink)',
       }}
-    >$</span>
+    />
   )
 }
 
@@ -120,7 +119,7 @@ const base = {
 /* ── Variante de navegación ── */
 function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCuenta }) {
   return (
-    <header style={{ ...base, padding: '0 18px 0 20px' }}>
+    <header className="lg:hidden" style={{ ...base, padding: '0 18px 0 20px' }}>
       <Glifo />
       <span style={{ flex: 1 }} />
       <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
@@ -134,7 +133,7 @@ function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCue
    A la derecha van las acciones DE ESE OBJETO, no las de la app. */
 function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
   return (
-    <header style={{ ...base, padding: '0 12px 0 8px' }}>
+    <header className="lg:hidden" style={{ ...base, padding: '0 12px 0 8px' }}>
       <button type="button" onClick={onVolver} aria-label="Volver"
         style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -175,7 +174,7 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
     // hueco de la espina (9) mas la espina (3) — no van ADEMAS. Sumandolos
     // aparte el contenido pide 68px dentro de una caja de 56 y la cabecera se
     // ve apretada: es exactamente lo que pasaba.
-    <header style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
+    <header className="lg:hidden" style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="button" onClick={onCerrar} aria-label="Cerrar"
           style={{

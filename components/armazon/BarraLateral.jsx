@@ -156,22 +156,26 @@ export default function BarraLateral({
   const pathname = usePathname() || '/'
 
   return (
-    <aside style={{
+    // Solo escritorio. `display` NO puede ir en el estilo en linea: le ganaria
+    // a `hidden` y la barra saldria tambien en el telefono, encima de la
+    // pastilla.
+    <aside className="hidden lg:flex" style={{
       width: 'var(--cf-w-sidebar)', minWidth: 'var(--cf-w-sidebar)',
       height: '100dvh', position: 'sticky', top: 0,
       background: 'var(--cf-card)',
       borderRight: '1px solid var(--cf-border)',
-      display: 'flex', flexDirection: 'column',
+      flexDirection: 'column',
     }}>
       {/* ── Zona superior ── */}
       <div style={{ padding: '16px 15px 13px', borderBottom: '1px solid var(--cf-divider)', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1',
-            borderRadius: 10, background: 'var(--cf-gold)', border: '2px solid var(--cf-gold-light)',
-            fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 16, fontWeight: 700, color: 'var(--cf-gold-ink)',
-          }}>$</span>
+          <img
+            src="/logo-icon.svg"
+            alt="Control Finanzas"
+            width={32}
+            height={32}
+            style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 10 }}
+          />
           <span style={{ flex: 1, minWidth: 0, lineHeight: 1.1 }}>
             <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Control</span>
             <span style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--cf-ink-3)' }}>Finanzas</span>
