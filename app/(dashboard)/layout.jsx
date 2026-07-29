@@ -10,6 +10,7 @@ import Armazon        from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
+import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
@@ -65,17 +66,21 @@ export default async function DashboardLayout({ children }) {
       {/* desktop: overflow-y-auto + h-dvh → scroll interno con sidebar fija */}
       <div className="flex-1 flex flex-col min-w-0 lg:overflow-y-auto">
 
-        {/* Una linea, no un formulario. La tarea vive en su hoja. */}
-        <AvisoVerificarCorreo />
+        {/* ── UNA SOLA FRANJA ──
+            Los cuatro avisos siguen decidiendo por su cuenta si les toca; lo
+            que cambia es que ya no se apilan. La pila mira cuál de ellos pintó
+            algo, deja arriba al de más dinero en juego y cuenta el resto.
 
-        {/* Aviso vencimiento de suscripcion (solo <=7 dias o vencida) */}
-        <SuscripcionBanner />
-
-        {/* Aviso limites de plan excedidos */}
-        <LimitesPlanBanner />
-
-        {/* Aviso cobrador sin ruta */}
-        <SinRutaBanner />
+            El orden vive en lib/adaptadores/avisos.js con sus pruebas: primero
+            lo que impide cobrar, después lo que caduca, y al final lo cómodo.
+            Antes los cuatro se apilaban y lo primero que veía el dueño al abrir
+            era que le iban a cobrar la suscripción. */}
+        <PilaAvisos>
+          <Ranura id="sinRuta"><SinRutaBanner /></Ranura>
+          <Ranura id="suscripcion"><SuscripcionBanner /></Ranura>
+          <Ranura id="limitePlan"><LimitesPlanBanner /></Ranura>
+          <Ranura id="verificarCorreo"><AvisoVerificarCorreo /></Ranura>
+        </PilaAvisos>
 
         {/* El margen lateral lo pone el LAYOUT mientras conviven pantallas
             viejas y nuevas: las viejas dependian de el y al quitarlo se pegaron
