@@ -101,6 +101,58 @@ Esto corrige el defecto principal del diseño anterior: tarjetas teñidas de ros
 
 ---
 
+## Decisiones cerradas del diseñador (28 jul 2026)
+
+Del backlog del proyecto de Claude Design. **Estas cinco no estaban en el
+paquete de handoff** y una de ellas contradice lo que yo había escrito aquí.
+
+**1 · El modo ruta va en CLARO, no en oscuro.** La premisa de "el cobrador
+trabaja de 6 a 8 y de 6 a 9" era inventada y quedó desmentida con 15.141 pagos
+reales de 30 días: antes de las 8 a.m. solo el **1,9%**; 77% de los cobros son
+de día y la hora pico es las **17:00**. Bajo sol directo el fondo oscuro se lee
+peor. El oscuro pasa a ser la variante del interruptor, no el default.
+
+**2 · La tira de cifras eran CINCO y estaban mezcladas.** En la tarjeta de
+LISTA van solo las tres de hoy (recaudado, %, esperado); *prestado* y *con
+intereses* suben a la cabecera del detalle de ruta. **Afecta ~40 pantallas.**
+→ Ya aplicado en `ListaRutas`.
+
+**3 · La moneda SE QUEDA y sustituye a Capi en las 80 pantallas.**
+`components/ui/MonedaCF.jsx`, SVG puro, cinco poses: `feliz` (defecto), `vacia`
+(listas sin datos), `celebra` (pago exitoso), `busca` (sin resultados), `guia`
+(CTAs y onboarding). Cuerpo en `var(--color-accent)` — sigue el tema solo;
+rasgos en tinta fija `#1a1a2e`, **no** se invierten en oscuro.
+
+> ⚠️ Yo había anotado aquí que la moneda estaba "reemplazada por la moneda lisa
+> del handoff". **Es al revés.** En el código ya se renderiza 15 veces y es el
+> componente canónico de `EmptyState`. Quedan 3 usos de `Capi` por migrar.
+
+**4 · Los módulos secundarios entran, con los nombres del usuario** — no los
+técnicos: *Líneas de crédito*, *Reportes*, *¿Cómo va el negocio?* (no
+"analíticas"), *Mi plata* (no "capital"), *Simulador*.
+
+**5 · La moneda se va a rediseñar.** "Están bien, pero no me encantan." El
+diagnóstico del propio diseñador: son un emoji redondo con cara, y la forma no
+dice nada del negocio. Tres direcciones abiertas (moneda de verdad con canto
+estriado / sin cara / cara mínima). **No sustituir masivamente hasta que se
+elija dirección.**
+
+### Bugs de diseño abiertos en producción
+
+Del mismo backlog. Los que se pueden arreglar desde el código:
+
+| | Hallazgo |
+|---|---|
+| 1 | **Emojis**: 9 caritas tristes en caja, una por cobrador. El sistema los prohíbe y ya se reportó dos veces |
+| 2 | **Verde donde va dorado**: la acción principal de la ficha en PC es una banda verde "REGISTRAR PAGO MENSUAL". Verde significa *pagado* |
+| 3 | **Sin medio de pago**: todo entra a caja como efectivo, así que el conteo físico no cuadra |
+| 6 | **Doble barra de progreso** en crear préstamo: "Paso 2 de 3" y "Paso 1 de 5" a la vez |
+
+Los otros dos (5 cobradores sin ruta, 12 de 31 clientes sin teléfono) son datos,
+no código: el diseño ya los muestra como agujeros.
+
+---
+
 ## Cómo se verifica una pantalla
 
 **El banco de pruebas (`/estilo`) NO sirve para esto.** Ahí cada pieza se mira
@@ -203,8 +255,8 @@ dicen la acción **con su cifra**: "Aplicar $15.000". Los estados vacíos dicen
 | `--color-*` (tokens viejos) | ⚠️ vivos **solo** porque 42 archivos los referencian. Se borran cuando el último consumidor se reescriba. |
 | `components/cf/`, `components/armazon/`, `components/pantallas/` | ✅ nuevos |
 | `components/ui/` (40 componentes) | ⚠️ **ninguno sobrevive.** Se reemplazan uno a uno. |
-| `MonedaCF` con cara y 5 poses | ❌ reemplazada por la moneda lisa del handoff |
-| `Capi` (capibara) | ❌ eliminado del diseño |
+| `MonedaCF` con cara y 5 poses | ✅ **SE QUEDA.** Es la marca. Ver decisión 3 abajo — yo había anotado lo contrario |
+| `Capi` (capibara) | ❌ eliminado. Ya solo queda una clase en `globals.css` |
 
 **Que un componente viejo siga en el repo no significa que se conserve.**
 Significa que todavía tiene consumidores. Al reescribir una pantalla, sus
