@@ -13,6 +13,8 @@ import CabeceraMovil, { EspinaProgreso } from '@/components/armazon/CabeceraMovi
 import { CABECERA, resolverArmazon, DESTINOS } from '@/lib/armazon'
 import BarraLateral from '@/components/armazon/BarraLateral'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import HojaCuenta from '@/components/armazon/HojaCuenta'
+import HojaInferior from '@/components/cf/HojaInferior'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -96,6 +98,8 @@ function PastillaDemo({ activo = '/dashboard' }) {
 
 export default function Estilo() {
   const [paso] = useState(2)
+  const [hoja, setHoja] = useState(null)
+  const [tema, setTema] = useState('light')
   return (
     <div style={{ background: 'var(--cf-surface)', minHeight: '100vh', padding: 30, fontFamily: 'var(--font-manrope), system-ui' }}>
       <h1 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 26, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)', margin: '0 0 4px' }}>
@@ -234,6 +238,40 @@ export default function Estilo() {
           </Tarjeta>
         </div>
       </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Hojas
+      </h2>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', maxWidth: 700 }}>
+        <BotonSecundario style={{ width: 'auto', padding: '0 18px' }} onClick={() => setHoja('cuenta')}>Abrir hoja de cuenta</BotonSecundario>
+        <BotonSecundario style={{ width: 'auto', padding: '0 18px' }} onClick={() => setHoja('movil')}>Hoja inferior (móvil)</BotonSecundario>
+        <BotonSecundario style={{ width: 'auto', padding: '0 18px' }} onClick={() => setHoja('escritorio')}>Modal centrado (escritorio)</BotonSecundario>
+      </div>
+
+      <HojaCuenta
+        abierta={hoja === 'cuenta'} onCerrar={() => setHoja(null)}
+        nombre="Carlos Castro" negocio="Prestamos Castro" rol="dueño" iniciales="CC"
+        conectado tema={tema} onCambiarTema={setTema} diasRestantesPlan={5} />
+
+      <HojaInferior
+        abierta={hoja === 'movil'} onCerrar={() => setHoja(null)}
+        titulo="Aplicar recargo" subtitulo="Steven Olmos · debe $130.500"
+        accion={<><BotonPrimario style={{ flex: 2 }}>Aplicar $15.000</BotonPrimario><BotonSecundario style={{ flex: 1 }} cancelar onClick={() => setHoja(null)}>Cancelar</BotonSecundario></>}>
+        <AntesDespues concepto="Próxima cuota" antes="$14.500" despues="$29.500" tono="empeora"
+          resumen={{ etiqueta: 'Recargo aplicado', valor: '$15.000' }} />
+        <Aviso tono="ambar">El recargo sube la deuda pero no cambia el plazo ni la cuota pactada.</Aviso>
+      </HojaInferior>
+
+      <HojaInferior
+        escritorio abierta={hoja === 'escritorio'} onCerrar={() => setHoja(null)}
+        titulo="Meter plata al negocio" subtitulo="Se suma a lo que tienes para prestar"
+        accion={<><BotonPrimario style={{ flex: 2 }}>Meter $3.000.000</BotonPrimario><BotonSecundario style={{ flex: 1 }} cancelar onClick={() => setHoja(null)}>Cancelar</BotonSecundario></>}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <EtiquetaCampo>Cuánto vas a meter</EtiquetaCampo>
+          <Campo defaultValue="$3.000.000" foco />
+        </div>
+        <AntesDespues etiqueta="Antes → después" concepto="Lista para prestar" antes="$2.520.280" despues="$5.520.280" tono="mejora" />
+      </HojaInferior>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
         Barra lateral · escritorio
