@@ -55,3 +55,7 @@ next-env.d.ts
 /scripts/guias/output/
 /scripts/guias/.creds.json
 .auditoria/
+
+# Copia servible del handoff para poder MIRARLO con scripts/ver-diseno.mjs.
+# 1,8 MB de material de diseño, no código.
+public/diseno.html
