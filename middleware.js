@@ -5,6 +5,34 @@ import { NextResponse } from 'next/server'
 
 const PORTAL_COOKIE = 'portal-token'
 
+
+// Toda pantalla de app/(dashboard) va aqui. Si falta una, se abre sin sesion.
+// Cubierto por lib/__tests__/middleware-rutas.test.js
+const RUTAS_PRIVADAS = [
+  '/actividad',
+  '/asistente',
+  '/caja',
+  '/capital',
+  '/carga-masiva',
+  '/clavos',
+  '/clientes',
+  '/cobradores',
+  '/cobros-hoy',
+  '/configuracion',
+  '/dashboard',
+  '/gastos',
+  '/lineas-credito',
+  '/mas',
+  '/migrador',
+  '/mis-estadisticas',
+  '/prestamos',
+  '/reportes',
+  '/rutas',
+  '/socios',
+  '/soporte',
+  '/tutoriales',
+]
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
@@ -66,12 +94,8 @@ export async function middleware(request) {
     return NextResponse.next()
   }
 
-  // ─── /dashboard/* → owner y cobrador ───────────────────
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/clientes') ||
-      pathname.startsWith('/prestamos') || pathname.startsWith('/rutas') ||
-      pathname.startsWith('/cobradores') || pathname.startsWith('/caja') ||
-      pathname.startsWith('/reportes') || pathname.startsWith('/configuracion') ||
-      pathname.startsWith('/tutoriales') || pathname.startsWith('/soporte')) {
+  // ─── Rutas privadas → owner y cobrador ─────────────────
+  if (RUTAS_PRIVADAS.some((p) => pathname.startsWith(p))) {
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -121,21 +145,37 @@ export async function middleware(request) {
 }
 
 export const config = {
+  // ⚠️ Este matcher tiene que llevar TODAS las de RUTAS_PRIVADAS. Next exige que
+  // sea un literal estatico, asi que no se puede derivar de la constante — por
+  // eso hay un test que compara las dos listas y ademas comprueba que no falte
+  // ninguna pantalla de app/(dashboard). Asi se descubrio que 11 rutas se
+  // abrian sin sesion: se fueron añadiendo pantallas y nadie toco estas listas.
   matcher: [
     '/api/:path*',
     '/admin/:path*',
-    '/dashboard/:path*',
-    '/clientes/:path*',
-    '/prestamos/:path*',
-    '/rutas/:path*',
-    '/cobradores/:path*',
+    '/actividad/:path*',
+    '/asistente/:path*',
     '/caja/:path*',
-    '/reportes/:path*',
+    '/capital/:path*',
+    '/carga-masiva/:path*',
+    '/clavos/:path*',
+    '/clientes/:path*',
+    '/cobradores/:path*',
+    '/cobros-hoy/:path*',
     '/configuracion/:path*',
-    '/tutoriales/:path*',
+    '/dashboard/:path*',
+    '/gastos/:path*',
+    '/lineas-credito/:path*',
+    '/mas/:path*',
+    '/migrador/:path*',
+    '/mis-estadisticas/:path*',
+    '/prestamos/:path*',
+    '/reportes/:path*',
+    '/rutas/:path*',
+    '/socios/:path*',
     '/soporte/:path*',
+    '/tutoriales/:path*',
     '/suscripcion-vencida',
-    '/portal/:path*',
     '/login',
     '/registro',
   ],
