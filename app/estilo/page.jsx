@@ -16,6 +16,7 @@ import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
 import HojaInferior from '@/components/cf/HojaInferior'
 import Panel from '@/components/pantallas/Panel'
+import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -257,6 +258,35 @@ export default function Estilo() {
               { tono: 'mora',   texto: '13 con más de 30 días de mora', accion: 'Ver' },
               { tono: 'atraso', texto: '41 sin pagos hace 7 días',      accion: 'Ver' },
               { tono: 'atraso', texto: '1 cliente sin ruta asignada',   accion: 'Asignar' },
+            ]}
+          />
+          <div style={{ height: 96 }} />
+        </div>
+        <PastillaDemo activo="/dashboard" />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Cobrar hoy · pantalla completa
+      </h2>
+      <div id="cobrar-hoy" style={{
+        width: 390, height: 844, position: 'relative', overflow: 'hidden',
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+      }}>
+        <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+        <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+          <CobrarHoy
+            recaudado="$79.000" falta="$602.867" porcentaje={12}
+            totalCobrados="$79.000"
+            cobrados={[
+              { nombre: 'Julián Vélez', iniciales: 'JV', contexto: 'Ruta norte', monto: '$8.000', porcentaje: 97 },
+            ]}
+            pendientes={[
+              { nombre: 'Steven Olmos', iniciales: 'SO', estado: 'mora', etiquetaEstado: 'En mora',
+                diasAtraso: 36, contexto: 'Bolivariana · Cl 8 # 31-05', etiquetaMonto: 'Cuota de hoy', monto: '$14.500', porcentaje: 18 },
+              { nombre: 'Carlitos Chaparro', iniciales: 'CC', estado: 'atraso', etiquetaEstado: 'Atraso leve',
+                diasAtraso: 4, contexto: 'Ruta sur · Cra 9 # 12-40', etiquetaMonto: 'Cuota de hoy', monto: '$32.000', porcentaje: 61 },
+              { nombre: 'Elieser Ramos', iniciales: 'ER', estado: 'aldia', etiquetaEstado: 'Al día',
+                contexto: 'Ruta norte · Cl 22 # 5-11', etiquetaMonto: 'Cuota de hoy', monto: '$20.000', porcentaje: 80 },
             ]}
           />
           <div style={{ height: 96 }} />
