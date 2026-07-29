@@ -1604,7 +1604,15 @@ export default function DashboardPage() {
       {!authLoading && !esOwner && session?.user?.id && (
         <CobradorOnboarding userId={session.user.id} />
       )}
-      <InstallBanner />
+      {/* El promotor de la app SALE de la pila de arriba. Segun el orden del
+          diseño es «lo comodo» —no pierdes un peso por no instalarla hoy— y
+          estaba haciendo de tercera franja ambar seguida. Cuatro franjas ambar
+          no son cuatro avisos: son una pared, y cuando todo esta en ambar nada
+          lo esta.
+
+          PENDIENTE: su sitio es la campana, junto con los demas avisos que no
+          ganen la franja (ver lib/adaptadores/avisos.js). Mientras tanto la app
+          se sigue pudiendo instalar desde el navegador. */}
       <SpotlightOverlay
         spotlight={onboarding.spotlight}
         onClose={onboarding.hideSpotlight}
