@@ -15,6 +15,7 @@ import BarraLateral from '@/components/armazon/BarraLateral'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
 import HojaInferior from '@/components/cf/HojaInferior'
+import Panel from '@/components/pantallas/Panel'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -237,6 +238,30 @@ export default function Estilo() {
               secundaria={<BotonTexto>Crear uno a mano</BotonTexto>} />
           </Tarjeta>
         </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Panel del dueño · pantalla completa
+      </h2>
+      <div id="panel-completo" style={{
+        width: 390, height: 844, position: 'relative', overflow: 'hidden',
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+      }}>
+        <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+        <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+          <Panel
+            saludo="Buenos días" nombre="Carlos" fecha="martes 28 de julio"
+            patrimonio="$27.616.416" enCaja="$2.5M" porCobrar="$25.1M" clientesEnMora={13}
+            hoy={{ clientes: 5, esperado: '$79.000', recaudado: null, porcentaje: 0 }}
+            atencion={[
+              { tono: 'mora',   texto: '13 con más de 30 días de mora', accion: 'Ver' },
+              { tono: 'atraso', texto: '41 sin pagos hace 7 días',      accion: 'Ver' },
+              { tono: 'atraso', texto: '1 cliente sin ruta asignada',   accion: 'Asignar' },
+            ]}
+          />
+          <div style={{ height: 96 }} />
+        </div>
+        <PastillaDemo activo="/dashboard" />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
