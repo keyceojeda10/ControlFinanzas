@@ -126,7 +126,7 @@ function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCue
       <Glifo />
       <span style={{ flex: 1 }} />
       <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
-      <BotonIcono etiqueta="Avisos" onClick={onAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
+      <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
       <Avatar iniciales={iniciales} conectado={conectado} onClick={onCuenta} />
     </header>
   )
@@ -233,6 +233,11 @@ export function EspinaProgreso({ paso = 1, total = 0, style }) {
       })}
     </div>
   )
+}
+
+/** Mismo destino que la campana de escritorio: la hoja «Cosas por resolver». */
+function abrirAvisos() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-avisos'))
 }
 
 export default function CabeceraMovil({ variante = CABECERA.NAVEGACION, ...props }) {

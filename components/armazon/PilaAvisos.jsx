@@ -20,6 +20,38 @@
 
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ordenarAvisos } from '@/lib/adaptadores/avisos'
+import CosasPorResolver from '@/components/armazon/CosasPorResolver'
+
+// El contenido de cada aviso EN LA HOJA. La franja de arriba es una línea; aquí
+// cada uno se explica y trae su acción.
+//
+// ⚠ Los datos concretos —el correo, el precio, la fecha de vencimiento— viven
+// dentro de cada componente de aviso y todavía no llegan hasta aquí. El diseño
+// pide «Pagar $39.000» con el precio puesto; hasta que se plumbee, el botón
+// lleva al sitio donde sí está la cifra.
+const CONTENIDO = {
+  suscripcion: {
+    titulo: 'Tu plan está por vencerse',
+    nota: 'Si se vence sigues cobrando y registrando pagos normal. Lo que se bloquea es crear préstamos nuevos.',
+    accion: 'Ver mi plan', destino: '/configuracion/plan',
+    secundaria: 'Ver planes', destinoSecundario: '/configuracion/plan',
+  },
+  limitePlan: {
+    titulo: 'Pasaste el límite de tu plan',
+    nota: 'Puedes seguir cobrando y registrando pagos. Lo que se bloquea es crear cosas nuevas.',
+    accion: 'Ver planes', destino: '/configuracion/plan',
+  },
+  verificarCorreo: {
+    titulo: 'Falta confirmar tu correo',
+    nota: 'Sirve para recuperar la cuenta si pierdes el teléfono.',
+    accion: 'Confirmar', destino: '/configuracion',
+  },
+  sinRuta: {
+    titulo: 'No tienes una ruta asignada',
+    nota: 'Sin ruta no te aparecen clientes para cobrar hoy.',
+    accion: 'Ver rutas', destino: '/rutas',
+  },
+}
 
 const Ctx = createContext(null)
 
@@ -51,6 +83,18 @@ export function Ranura({ id, children }) {
 
 export default function PilaAvisos({ children, onVerTodos }) {
   const [vivos, setVivos] = useState({})
+  const [hoja, setHoja] = useState(false)
+
+  // La campana vive en otro punto del árbol —la cabecera y la barra lateral son
+  // hermanas de la pila, no hijas— y el layout es Server Component, así que no
+  // puede sostener el estado compartido. Un evento del navegador cruza el árbol
+  // sin montar un contexto por encima de todo. Es un canal global, con lo que
+  // eso tiene de flojo; a cambio, no obliga a envolver el layout entero.
+  useEffect(() => {
+    const abrir = () => setHoja(true)
+    window.addEventListener('cf:abrir-avisos', abrir)
+    return () => window.removeEventListener('cf:abrir-avisos', abrir)
+  }, [])
 
   const api = useMemo(() => ({
     registrar: (clave, id, aplica) => setVivos((p) => (
@@ -63,12 +107,12 @@ export default function PilaAvisos({ children, onVerTodos }) {
     }),
   }), [])
 
-  const { ganadorClave, textoResto } = useMemo(() => {
+  const { ganadorClave, textoResto, perdedores } = useMemo(() => {
     const lista = Object.entries(vivos)
       .filter(([, v]) => v.aplica)
       .map(([clave, v]) => ({ clave, id: v.id }))
-    const { principal, textoResto } = ordenarAvisos(lista)
-    return { ganadorClave: principal?.clave ?? null, textoResto }
+    const { principal, resto, textoResto } = ordenarAvisos(lista)
+    return { ganadorClave: principal?.clave ?? null, textoResto, perdedores: resto }
   }, [vivos])
 
   const valor = useMemo(() => ({ ...api, ganador: ganadorClave }), [api, ganadorClave])
@@ -81,7 +125,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
       {textoResto && (
         <button
           type="button"
-          onClick={onVerTodos}
+          onClick={() => { setHoja(true); onVerTodos?.() }}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 10, width: '100%', minHeight: 34, padding: '0 var(--cf-pad-screen)',
@@ -94,6 +138,21 @@ export default function PilaAvisos({ children, onVerTodos }) {
           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)' }}>Ver</span>
         </button>
       )}
+
+      <CosasPorResolver
+        abierta={hoja}
+        onCerrar={() => setHoja(false)}
+        items={perdedores.map((p) => {
+          const c = CONTENIDO[p.id]
+          if (!c) return null
+          return {
+            id: p.id, titulo: c.titulo, nota: c.nota, accion: c.accion,
+            onAccion: () => { window.location.href = c.destino },
+            secundaria: c.secundaria,
+            onSecundaria: c.destinoSecundario ? () => { window.location.href = c.destinoSecundario } : undefined,
+          }
+        }).filter(Boolean)}
+      />
     </Ctx.Provider>
   )
 }

@@ -65,6 +65,16 @@ const CUENTA = [
   { href: '/tutoriales',           nombre: 'Tutoriales' },
 ]
 
+/**
+ * La campana. Igual que el FAB, tenía su prop y nadie se la pasaba: era un
+ * <button> sin onClick, decorativo. Su destino es la hoja «Cosas por resolver»
+ * —lo que no ganó la franja de arriba—, que vive en PilaAvisos, hermana en el
+ * árbol y no antepasada. Por eso el aviso va por evento del navegador.
+ */
+function abrirAvisos() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-avisos'))
+}
+
 function Item({ href, nombre, icono, activo }) {
   return (
     <Link href={href} aria-current={activo ? 'page' : undefined}
@@ -186,7 +196,7 @@ export default function BarraLateral({
             <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Control</span>
             <span style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--cf-ink-3)' }}>Finanzas</span>
           </span>
-          <button type="button" onClick={onAvisos} aria-label="Avisos"
+          <button type="button" onClick={onAvisos ?? abrirAvisos} aria-label="Avisos"
             style={{
               position: 'relative', flex: 'none', width: 32, height: 32, borderRadius: 10,
               background: 'var(--cf-fill)', border: 0, cursor: 'pointer',
