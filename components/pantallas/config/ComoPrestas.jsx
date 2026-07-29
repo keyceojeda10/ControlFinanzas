@@ -2,20 +2,23 @@
 
 // components/pantallas/config/ComoPrestas.jsx — «Cómo prestas por defecto».
 //
-// Lo que PRELLENA el formulario de nuevo préstamo. Y la advertencia del diseño
-// no es letra pequeña, es la frase que evita un susto:
+// REHECHO MIRANDO LA LÁMINA (scripts/ver-diseno.mjs "01 · Configuración").
+// Mi primera versión la construí leyendo el texto del handoff y salió otra cosa:
+// los cuatro campos en rejilla en vez de en UNA FILA, los días sin cobro como
+// chips en vez de desplegable, la nota debajo del título en vez de a su derecha,
+// y un botón «Guardar» que en el diseño NO EXISTE.
 //
-//   «Estos valores llenan el formulario de nuevo préstamo. Cambiarlos aquí NO
-//    TOCA los préstamos que ya existen.»
+// Que no haya botón no es un descuido del diseño: son cuatro ajustes que no
+// crean nada ni tocan dinero. Pedir «Guardar» para elegir «Diario» es un paso de
+// más, y además deja la duda de si se guardó o no. Se guarda al cambiar.
 //
-// Sin ella, alguien que baja la tasa del 20% al 15% se queda pensando que le
-// acaba de rebajar la deuda a toda su cartera. Va en la pantalla, no en un
-// tooltip.
-//
-// Los cuatro campos pueden quedar VACÍOS, y vacío no es un error: significa
-// «no tengo una forma fija de prestar» y el formulario usa lo suyo de siempre.
+// La advertencia sí es literal y va en la pantalla, no en un tooltip:
+//   «Estos valores llenan el formulario de nuevo préstamo. Cambiarlos aquí no
+//    toca los préstamos que ya existen.»
+// Sin ella, quien baja la tasa del 20% al 15% cree que le acaba de rebajar la
+// deuda a toda su cartera.
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { soloDecimal } from '@/lib/i18n'
 
 const FRECUENCIAS = [
@@ -26,8 +29,8 @@ const FRECUENCIAS = [
   { valor: 'mensual', nombre: 'Mensual' },
 ]
 
-// Los nombres que ya usa la app en la lista de préstamos. Si aquí se llamaran
-// distinto, el mismo préstamo tendría dos nombres según dónde se mire.
+// Los mismos nombres que la lista de préstamos. Si aquí se llamaran distinto, el
+// mismo préstamo tendría dos nombres según dónde se mire.
 const MODOS = [
   { valor: '', nombre: 'Sin preferencia' },
   { valor: 'fijo', nombre: 'Cuota fija' },
@@ -39,7 +42,10 @@ const MODOS = [
   { valor: 'manual', nombre: 'Manual' },
 ]
 
+// Un solo día, como en el diseño («Domingos»). El domingo es el que usa
+// prácticamente todo el gota a gota; los demás están por si acaso.
 const DIAS = [
+  { valor: '', nombre: 'Ninguno' },
   { valor: 'domingo', nombre: 'Domingos' },
   { valor: 'sabado', nombre: 'Sábados' },
   { valor: 'lunes', nombre: 'Lunes' },
@@ -49,164 +55,138 @@ const DIAS = [
   { valor: 'viernes', nombre: 'Viernes' },
 ]
 
-function Campo({ etiqueta, children }) {
-  return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)' }}>{etiqueta}</span>
-      {children}
-    </label>
-  )
+const ROTULO = {
+  display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
+  textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 6,
 }
 
-const control = {
-  height: 'var(--cf-h-field)', padding: '0 13px', borderRadius: 'var(--cf-r-control)',
-  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
-  outline: 'none', fontSize: 16, color: 'var(--cf-ink)', width: '100%',
+const CONTROL = {
+  height: 46, padding: '0 13px', borderRadius: 'var(--cf-r-control)',
+  background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+  outline: 'none', fontSize: 15, color: 'var(--cf-ink)', width: '100%',
 }
 
-export default function ComoPrestas({ inicial = {}, onGuardado }) {
+export default function ComoPrestas({ inicial = {}, onGuardar }) {
   const [frecuencia, setFrecuencia] = useState(inicial.frecuenciaDefault ?? '')
   const [tasa, setTasa] = useState(inicial.tasaDefault == null ? '' : String(inicial.tasaDefault))
   const [modo, setModo] = useState(inicial.modoInteresDefault ?? '')
-  const [dias, setDias] = useState(() => {
-    try { return JSON.parse(inicial.diasSinCobro || '[]') } catch { return [] }
+  const [dia, setDia] = useState(() => {
+    try { return (JSON.parse(inicial.diasSinCobro || '[]')[0]) ?? '' } catch { return '' }
   })
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError] = useState('')
-  const [listo, setListo] = useState(false)
+  const [estado, setEstado] = useState(null)   // 'guardando' | 'guardado' | mensaje de error
+  const primera = useRef(true)
+  const temporizador = useRef(null)
 
-  // El «guardado» se retira solo. Un aviso de éxito que se queda para siempre
-  // deja de significar «acabas de guardar».
-  useEffect(() => {
-    if (!listo) return
-    const t = setTimeout(() => setListo(false), 2600)
-    return () => clearTimeout(t)
-  }, [listo])
-
-  const alternarDia = (d) => {
-    setDias((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]))
-    setListo(false)
-  }
-
-  const guardar = async () => {
-    setGuardando(true)
-    setError('')
+  const guardar = useCallback(async (campos) => {
+    setEstado('guardando')
     try {
       const res = await fetch('/api/configuracion/organizacion', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Vacío se manda como null: es «quítamelo», no «no lo cambies».
-          frecuenciaDefault: frecuencia || null,
-          modoInteresDefault: modo || null,
-          tasaDefault: tasa.trim() === '' ? null : Number(String(tasa).replace(',', '.')),
-          diasSinCobro: JSON.stringify(dias),
-        }),
+        body: JSON.stringify(campos),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) { setError(data.error ?? 'No se pudo guardar'); return }
-      setListo(true)
-      onGuardado?.(data.org)
+      if (!res.ok) { setEstado(data.error ?? 'No se pudo guardar'); return }
+      setEstado('guardado')
+      onGuardar?.(data.org)
     } catch {
-      setError('Error de conexión. Intenta de nuevo.')
-    } finally {
-      setGuardando(false)
+      setEstado('Error de conexión')
     }
-  }
+  }, [onGuardar])
+
+  // Se guarda al cambiar, con medio segundo de espera: sin él, escribir «20» en
+  // la tasa dispara dos guardados —uno por el «2»—, y el primero deja un valor
+  // que el usuario nunca quiso.
+  useEffect(() => {
+    if (primera.current) { primera.current = false; return }
+    clearTimeout(temporizador.current)
+    temporizador.current = setTimeout(() => {
+      guardar({
+        // Vacío se manda como null: es «quítamelo», no «no lo cambies».
+        frecuenciaDefault: frecuencia || null,
+        modoInteresDefault: modo || null,
+        tasaDefault: String(tasa).trim() === '' ? null : Number(String(tasa).replace(',', '.')),
+        diasSinCobro: JSON.stringify(dia ? [dia] : []),
+      })
+    }, 500)
+    return () => clearTimeout(temporizador.current)
+  }, [frecuencia, tasa, modo, dia, guardar])
+
+  // El «guardado» se retira solo: un aviso que se queda para siempre deja de
+  // significar «acabas de guardar».
+  useEffect(() => {
+    if (estado !== 'guardado') return
+    const t = setTimeout(() => setEstado(null), 2400)
+    return () => clearTimeout(t)
+  }, [estado])
+
+  const problema = estado && estado !== 'guardando' && estado !== 'guardado'
 
   return (
-    <div style={{
-      padding: '20px 21px', borderRadius: 'var(--cf-r-card)',
+    <section style={{
+      padding: '20px 22px', borderRadius: 'var(--cf-r-card)',
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-      display: 'flex', flexDirection: 'column', gap: 17,
     }}>
-      <div>
-        <h2 style={{
-          fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 18, fontWeight: 600, letterSpacing: '-.02em',
-          color: 'var(--cf-ink)', margin: 0,
-        }}>
-          Cómo prestas por defecto
-        </h2>
-        <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: '3px 0 0' }}>
-          Se puede cambiar en cada préstamo
-        </p>
+      {/* El título y la nota EN LA MISMA LÍNEA, como en la lámina. */}
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        gap: 14, flexWrap: 'wrap', marginBottom: 15,
+      }}>
+        <span style={{ ...ROTULO, marginBottom: 0 }}>Cómo prestas por defecto</span>
+        <span style={{ fontSize: 12.5, color: 'var(--cf-ink-3)' }}>
+          {estado === 'guardando' ? 'Guardando…'
+            : estado === 'guardado' ? <span style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Guardado</span>
+            : problema ? <span style={{ color: 'var(--cf-red-darker)', fontWeight: 700 }}>{estado}</span>
+            : 'Se puede cambiar en cada préstamo'}
+        </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 13 }}>
-        <Campo etiqueta="Frecuencia">
-          <select value={frecuencia} onChange={(e) => { setFrecuencia(e.target.value); setListo(false) }} style={control}>
+      {/* LOS CUATRO EN UNA FILA. En móvil bajan solos. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+        <label>
+          <span style={ROTULO}>Frecuencia</span>
+          <select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)} style={CONTROL}>
             {FRECUENCIAS.map((f) => <option key={f.valor} value={f.valor}>{f.nombre}</option>)}
           </select>
-        </Campo>
+        </label>
 
-        <Campo etiqueta="Tasa">
+        <label>
+          <span style={ROTULO}>Tasa</span>
           <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <input
-              // type=text con inputMode: <input type=number> rechaza el separador
-              // que no coincide con el idioma del teléfono y el campo se queda
-              // vacío sin decir por qué.
+              // type=text + inputMode, no type=number: type=number rechaza el
+              // separador que no coincide con el idioma del teléfono y el campo
+              // se queda vacío sin decir por qué.
               type="text"
               inputMode="decimal"
               value={tasa}
-              onChange={(e) => { setTasa(soloDecimal ? soloDecimal(e.target.value) : e.target.value); setListo(false) }}
+              onChange={(e) => setTasa(soloDecimal(e.target.value))}
               placeholder="—"
-              style={{ ...control, paddingRight: 34 }}
+              style={{ ...CONTROL, paddingRight: 32 }}
             />
             <span style={{ position: 'absolute', right: 13, fontSize: 14, color: 'var(--cf-ink-3)' }}>%</span>
           </span>
-        </Campo>
+        </label>
 
-        <Campo etiqueta="Modo de interés">
-          <select value={modo} onChange={(e) => { setModo(e.target.value); setListo(false) }} style={control}>
+        <label>
+          <span style={ROTULO}>Modo de interés</span>
+          <select value={modo} onChange={(e) => setModo(e.target.value)} style={CONTROL}>
             {MODOS.map((m) => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
           </select>
-        </Campo>
+        </label>
+
+        <label>
+          <span style={ROTULO}>Días sin cobro</span>
+          <select value={dia} onChange={(e) => setDia(e.target.value)} style={CONTROL}>
+            {DIAS.map((d) => <option key={d.valor} value={d.valor}>{d.nombre}</option>)}
+          </select>
+        </label>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)' }}>Días sin cobro</span>
-        <div style={{ display: 'flex', gap: 'var(--cf-gap-chips)', flexWrap: 'wrap' }}>
-          {DIAS.map((d) => {
-            const puesto = dias.includes(d.valor)
-            return (
-              <button key={d.valor} type="button" onClick={() => alternarDia(d.valor)} style={{
-                height: 38, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
-                fontSize: 13.5, fontWeight: puesto ? 700 : 600,
-                background: puesto ? 'var(--cf-ink)' : 'var(--cf-surface)',
-                color: puesto ? 'var(--cf-card)' : 'var(--cf-ink-2)',
-                border: `1px solid ${puesto ? 'var(--cf-ink)' : 'var(--cf-border)'}`,
-              }}>
-                {d.nombre}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* LA FRASE QUE EVITA EL SUSTO. Va en la pantalla, no en un tooltip: quien
-          baja la tasa del 20% al 15% necesita saber AHÍ que no le acaba de
-          rebajar la deuda a toda su cartera. */}
-      <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: '15px 0 0', lineHeight: 1.5 }}>
         Estos valores llenan el formulario de nuevo préstamo. Cambiarlos aquí{' '}
-        <strong style={{ color: 'var(--cf-ink-2)' }}>no toca los préstamos que ya existen</strong>.
+        <strong style={{ color: 'var(--cf-ink-2)', fontWeight: 700 }}>no toca los préstamos que ya existen</strong>.
       </p>
-
-      {error && <p style={{ fontSize: 13, color: 'var(--cf-red-darker)', margin: 0 }}>{error}</p>}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-        <button type="button" onClick={guardar} disabled={guardando} style={{
-          height: 'var(--cf-h-btn-2)', padding: '0 20px', border: 0,
-          borderRadius: 'var(--cf-r-control)', cursor: guardando ? 'default' : 'pointer',
-          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-          fontSize: 14.5, fontWeight: 700, opacity: guardando ? 0.6 : 1,
-        }}>
-          {guardando ? 'Guardando…' : 'Guardar'}
-        </button>
-        {listo && (
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-green-dark)' }}>Guardado</span>
-        )}
-      </div>
-    </div>
+    </section>
   )
 }
