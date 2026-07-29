@@ -15,6 +15,21 @@ node scripts/recorrer.mjs        # 14 pantallas × móvil y escritorio
 
 ## Hecho
 
+### Login — turno 4 · «08 · Entrar»
+Copy del handoff: «Entra a tu cartera / Tus clientes, tus rutas y tu caja, donde
+los dejaste». El anterior no decía a **qué** vuelves. Campos de 56px con etiqueta
+arriba y 16px (por debajo, iOS hace zoom al enfocar). «La olvidé» sube a la fila
+de la etiqueta: debajo del campo se lee *después* de escribir mal la clave.
+
+Y **la salida al portal del deudor**, que no existía: el cliente final llegaba
+al login y se quedaba sin entender qué hacer, porque la pantalla le pide un
+correo que él nunca tuvo.
+
+> ⚠️ **Pendiente:** la casilla «mantener la sesión» todavía no hace nada.
+> NextAuth v4 tiene el `maxAge` global, no por inicio de sesión, así que
+> respetarla es un cambio de backend. **Si no se va a hacer, hay que quitarla**:
+> un control que no hace nada enseña a desconfiar de los que sí hacen.
+
 ### Registro — de 6 pantallas a 4
 La portada de bienvenida **fuera**: «nadie se registra para leer una portada».
 Era un clic entero antes de poder escribir nada, y solo repetía el título de la
@@ -61,14 +76,10 @@ Títulos útiles: `08 · Entrar` (login) · `02 · Registro` · `01 · Panel del
 
 ## Lo que sigue, en orden
 
-1. **Login** — diseño ya localizado (`08 · Entrar`). Copy nuevo: «Entra a tu
-   cartera / Tus clientes, tus rutas y tu caja, donde los dejaste». Campos de
-   56px con etiqueta arriba. **Y falta una salida al portal del deudor**: hoy el
-   cliente final llega al login y no entiende qué hacer.
-2. **Onboarding** (`04 · Cartera vacía`) — sin rediseñar.
-3. **Cabeceras de préstamos y rutas** — siguen las viejas; préstamos tiene tres
+1. **Onboarding** (`04 · Cartera vacía`) — sin rediseñar.
+2. **Cabeceras de préstamos y rutas** — siguen las viejas; préstamos tiene tres
    filas de chips.
-4. **Panel, Cobrar hoy, Caja** — componente hecho, sin cablear.
+3. **Panel, Cobrar hoy, Caja** — componente hecho, sin cablear.
 
 ---
 
