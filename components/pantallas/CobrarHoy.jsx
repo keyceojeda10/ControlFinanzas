@@ -1,116 +1,326 @@
 'use client'
 
-// components/pantallas/CobrarHoy.jsx — Turno 2 del handoff.
+// components/pantallas/CobrarHoy.jsx — Lámina T02-02, «el arreglo del muro».
 //
-// LA GRAMÁTICA DE CIFRAS DEL DÍA (04-CRITERIOS § B). El orden NO es negociable:
+// LA FILA DE ACÁ NO ES LA TARJETA DE LISTA, y la diferencia es de propósito:
 //
-//   1 · Recaudado (lo que ya entró)      ← grande
-//   2 · Falta (lo que queda por cobrar)  ← al lado, mediano
-//   3 · Los cobrados, colapsados en una línea con su total
+//   TarjetaCliente (T02-05)      FilaCobro (T02-02)
+//   la pastilla en la 1ª línea   la pastilla en la 2ª, junto a la dirección
+//   el monto DEBAJO, con barra   el monto A LA DERECHA, sin barra
+//   nombre 16px                  nombre 17px
 //
-// Nunca al revés. Lo primero que quiere saber el cobrador es cuánto lleva, no
-// cuánto le falta: lleva toda la mañana juntándolo.
+// En la lista de clientes la pregunta es «¿cómo va este cliente?»; acá es
+// «¿cuánto le cobro y dónde está?». Por eso la cuota va a la derecha, grande y
+// EN NEGRO: el pie de la lámina lo dice —«el monto deja de ser un botón rojo:
+// rojo es mora, no cobrar»—. En la pantalla vieja el monto era un botón rojo en
+// cada fila, y con veinte filas eso era el muro.
 //
-// Y los que ya cobró NO ocupan sitio. Están hechos; lo que queda es la lista de
-// los que faltan. Se colapsan en una línea que se puede abrir.
+// EL COBRADO SE QUEDA, TACHADO. No se colapsa ni desaparece. Yo lo tenía
+// colapsado en una línea plegable argumentando que «los que ya cobró no ocupan
+// sitio»; la lámina decide lo contrario y tiene razón práctica: el cobrador
+// recorre la calle en orden, y si el cobrado desaparece pierde la referencia de
+// dónde iba. Tachado sigue siendo el mapa del recorrido.
 
-import { useState } from 'react'
-import TarjetaCliente from '@/components/cf/TarjetaCliente'
-import { BloqueOscuro, BarraProgreso, Pastilla, EstadoVacio, BotonPrimario } from '@/components/cf/primitivos'
+import { BotonPrimario, EstadoVacio } from '@/components/cf/primitivos'
 
-function LineaCobrados({ cantidad, total, abierto, onAbrir, children }) {
-  if (!cantidad) return null
+const COLOR_ESTADO = {
+  mora:   'var(--cf-red)',
+  atraso: 'var(--cf-gold)',
+  aldia:  'var(--cf-green)',
+}
+
+const PASTILLA = {
+  mora:   { bg: 'var(--cf-red-pill-bg)',   bd: 'var(--cf-red-pill-border)',   fg: 'var(--cf-red-dark)' },
+  atraso: { bg: 'var(--cf-gold-bg)',       bd: 'var(--cf-gold-border)',       fg: 'var(--cf-gold-text-2)' },
+  aldia:  { bg: 'var(--cf-green-pill-bg)', bd: 'var(--cf-green-pill-border)', fg: 'var(--cf-green-dark)' },
+}
+
+/* ══ La tarjeta de avance ══
+   Blanca, no un bloque oscuro: en esta pantalla el titular es la lista, y un
+   bloque negro arriba se la comería. La barra va A LA DERECHA del monto, no
+   debajo, para que la tarjeta quepa en 90px. */
+function Avance({ recaudado, meta, cobrados = 0, deCuantos = 0, porcentaje = 0 }) {
   return (
     <div style={{
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-      borderRadius: 'var(--cf-r-card)', overflow: 'hidden', flex: 'none',
+      borderRadius: 'var(--cf-r-card)', padding: '15px 18px',
+      display: 'flex', alignItems: 'center', gap: 16, flex: 'none',
     }}>
-      <button type="button" onClick={onAbrir} style={{
-        display: 'flex', alignItems: 'center', gap: 11, width: '100%',
-        padding: '14px 19px', background: 'none', border: 0, cursor: 'pointer',
-      }}>
-        <span style={{
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+        <span className="cf-fig" style={{ fontSize: 25, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+          {recaudado}
+        </span>
+        <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.35 }}>
+          {meta ? `de ${meta} · ` : ''}{cobrados} de {deCuantos} cobrados
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, width: 120, flex: 'none' }}>
+        <div style={{ width: '100%', height: 6, borderRadius: 999, background: 'var(--cf-fill)', overflow: 'hidden', flex: 'none' }}>
+          <span style={{
+            display: 'block', height: 6, borderRadius: 999,
+            width: `${Math.max(0, Math.min(100, porcentaje))}%`,
+            background: 'var(--cf-gold)',
+          }} />
+        </div>
+        <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-gold-dark)' }}>
+          {porcentaje}%
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ══ El encabezado de grupo ══
+   «RUTA #1 ──────── 2 · $79.000». El total suma solo lo PENDIENTE: dice cuánta
+   plata queda por levantar en esa ruta, así que baja al ir cobrando. */
+function CabezaGrupo({ nombre, pendientes, total }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 4px', flex: 'none' }}>
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+        color: 'var(--cf-ink-3)', flex: 'none',
+      }}>{nombre}</span>
+      <span aria-hidden style={{ flex: 1, height: 1, background: 'var(--cf-divider)' }} />
+      {pendientes > 0 && (
+        <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)', flex: 'none' }}>
+          {pendientes} · {total}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/* ══ La fila de cobro ══ */
+function FilaCobro({
+  nombre, iniciales, estado = 'aldia', etiquetaEstado, donde,
+  cuota, debe, cobrada = false, cobradoA, montoCobrado, onClick,
+}) {
+  const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
+  const p = PASTILLA[estado] || PASTILLA.aldia
+
+  return (
+    <div
+      onClick={cobrada ? undefined : onClick}
+      role={cobrada ? undefined : 'button'}
+      tabIndex={cobrada ? undefined : 0}
+      style={{
+        position: 'relative',
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)',
+        padding: '14px 16px 14px 19px',
+        display: 'flex', alignItems: 'center', gap: 13,
+        overflow: 'hidden', flex: 'none',
+        // El cobrado se atenúa, no se borra. .6 es de la lámina.
+        opacity: cobrada ? 0.6 : 1,
+        cursor: cobrada ? 'default' : 'pointer',
+      }}
+    >
+      <span aria-hidden style={{
+        position: 'absolute', left: 0, top: 12, bottom: 12,
+        width: 4, borderRadius: 999,
+        background: cobrada ? 'var(--cf-green)' : color,
+      }} />
+
+      {/* El avatar del cobrado es un CHECK, no sus iniciales: la fila ya está
+          tachada, y un avatar normal invita a volver a tocarla. */}
+      {cobrada ? (
+        <span aria-hidden style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 22, height: 22, borderRadius: 999, flex: 'none',
-          background: 'var(--cf-green-pill-bg)', border: '1px solid var(--cf-green-pill-border)',
+          width: 40, height: 40, minWidth: 40, borderRadius: 999, flex: 'none',
+          background: 'var(--cf-green-pill-bg)',
         }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cf-green-dark)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-green)"
+            strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 13l4 4L19 7" />
           </svg>
         </span>
-        <span className="cf-num" style={{ flex: 1, textAlign: 'left', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink-2)' }}>
-          {cantidad} cobrado{cantidad === 1 ? '' : 's'} hoy
-        </span>
-        <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-green-dark)' }}>{total}</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-          style={{ flex: 'none', transform: abierto ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
-          <path d="M6 9l6 6 6-6" />
-        </svg>
-      </button>
-      {abierto && <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>}
+      ) : (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 40, height: 40, minWidth: 40, aspectRatio: '1', borderRadius: 999, flex: 'none',
+          background: 'var(--cf-fill)', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
+        }}>{iniciales}</span>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
+        <span style={{
+          fontSize: 17, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
+          minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          textDecoration: cobrada ? 'line-through' : 'none',
+        }}>{nombre}</span>
+
+        {cobrada ? (
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+            {cobradoA ? `Cobrado ${cobradoA}` : 'Cobrado'}
+          </span>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+            {etiquetaEstado && (
+              <span className="cf-num" style={{
+                display: 'inline-flex', alignItems: 'center', flex: 'none',
+                height: 20, padding: '0 8px', borderRadius: 'var(--cf-r-pill)',
+                background: p.bg, border: `1px solid ${p.bd}`, color: p.fg,
+                fontSize: 11, fontWeight: 700,
+              }}>{etiquetaEstado}</span>
+            )}
+            {donde && (
+              <span style={{
+                fontSize: 12, color: 'var(--cf-ink-3)',
+                minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{donde}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {cobrada ? (
+        <span className="cf-fig" style={{
+          fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-green-dark)', flex: 'none',
+        }}>{montoCobrado}</span>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flex: 'none' }}>
+          {/* EN NEGRO. Era un botón rojo en cada fila, y con veinte filas eso
+              era el muro: rojo es mora, no «cobrar». */}
+          <span className="cf-fig" style={{ fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)' }}>
+            {cuota}
+          </span>
+          {debe && (
+            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>{debe}</span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ══ Los tres órdenes ══
+   Segmentado de alto 40 y radio 14, activo negro. «Cerca de mí» se deshabilita
+   sin GPS en vez de fingir una ordenación por distancia: mandar al cobrador a
+   caminar mal cuesta gasolina y tiempo de verdad. */
+function Ordenes({ activo = 'ruta', onCambiar, hayGps = false }) {
+  const ops = [
+    { id: 'ruta', nombre: 'Orden de ruta' },
+    { id: 'atrasados', nombre: 'Más atrasados' },
+    { id: 'cerca', nombre: 'Cerca de mí', requiereGps: true },
+  ]
+  return (
+    <div role="radiogroup" style={{ display: 'flex', gap: 7, flex: 'none' }}>
+      {ops.map((o) => {
+        const a = o.id === activo
+        const off = o.requiereGps && !hayGps
+        return (
+          <button key={o.id} type="button" role="radio" aria-checked={a} disabled={off}
+            onClick={() => onCambiar?.(o.id)}
+            title={off ? 'Necesita permiso de ubicación' : undefined}
+            style={{
+              flex: 1, minWidth: 0, height: 40, borderRadius: 'var(--cf-r-control)',
+              background: a ? 'var(--cf-ink)' : 'var(--cf-card)',
+              border: a ? '1px solid var(--cf-ink)' : '1px solid var(--cf-border)',
+              color: a ? 'var(--cf-surface)' : 'var(--cf-ink-2)',
+              fontSize: 13, fontWeight: a ? 700 : 600,
+              fontFamily: 'var(--font-manrope), system-ui',
+              cursor: off ? 'not-allowed' : 'pointer', opacity: off ? 0.45 : 1,
+              padding: '0 8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+            {o.nombre}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
 export default function CobrarHoy({
-  recaudado = '$0',
-  falta = '$0',
-  porcentaje = 0,
-  pendientes = [],
-  cobrados = [],
-  totalCobrados = '$0',
+  avance,
+  grupos = [],
+  pendientes = 0,
+  orden = 'ruta',
+  onOrden,
+  hayGps = false,
+  sinSubir = 0,
   onCobrar,
-  onIrARuta,
+  onMapa,
+  onEmpezar,
+  sinMargen = false,
 }) {
-  const [abierto, setAbierto] = useState(false)
-  const terminado = pendientes.length === 0
+  const vacio = grupos.every((g) => g.filas.length === 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 0' }}>
-
-      {/* La respuesta: cuánto llevas, y al lado cuánto falta. */}
-      <BloqueOscuro etiqueta="Recaudado hoy" cifra={recaudado} tono="favor">
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, marginTop: -4 }}>
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8A8E98' }}>
-              Falta
-            </span>
-            <span className="cf-fig" style={{ fontSize: 19, color: '#F3F3F6' }}>{falta}</span>
-          </span>
-          <span className="cf-num" style={{ fontSize: 12, color: '#8A8E98' }}>
-            {porcentaje}% de la meta
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 8,
+      padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
+      // Hueco para la barra de acción fija. Sin él, la última fila queda debajo
+      // del botón y no se puede tocar.
+      paddingBottom: 96,
+    }}>
+      {/* Los que no se han subido. Va arriba y en ámbar porque es lo único de
+          esta pantalla que el cobrador no puede resolver caminando: si se queda
+          sin batería con dos cobros sin subir, esos cobros no existen. */}
+      {sinSubir > 0 && (
+        <div style={{
+          display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 6,
+          height: 28, padding: '0 10px', borderRadius: 999, flex: 'none',
+          background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+        }}>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--cf-gold)' }} />
+          <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-gold-text-2)' }}>
+            {sinSubir} sin subir
           </span>
         </div>
-        <BarraProgreso porcentaje={porcentaje} tono="ok" alto={11}
-          style={{ background: 'rgba(255,255,255,.10)' }} />
-      </BloqueOscuro>
+      )}
 
-      {/* Los que ya cobró: colapsados. Están hechos, no ocupan sitio. */}
-      <LineaCobrados cantidad={cobrados.length} total={totalCobrados} abierto={abierto} onAbrir={() => setAbierto(v => !v)}>
-        {cobrados.map((c, i) => (
-          <TarjetaCliente key={i} {...c} estado="aldia" etiquetaEstado="Pagó" />
-        ))}
-      </LineaCobrados>
+      {avance && <Avance {...avance} />}
 
-      {/* Lo que falta */}
-      {terminado ? (
+      <Ordenes activo={orden} onCambiar={onOrden} hayGps={hayGps} />
+
+      {vacio ? (
         <EstadoVacio
-          titulo="Terminaste el día"
-          explicacion={`Cobraste ${totalCobrados}. No queda nadie pendiente para hoy.`}
-          accion={<BotonPrimario onClick={onIrARuta}>Ver la ruta de mañana</BotonPrimario>}
+          titulo="Hoy no toca cobrarle a nadie"
+          explicacion="Ni un cliente tiene cuota para hoy. Aprovecha para prestarle a alguien nuevo."
         />
       ) : (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '4px 2px 0', flex: 'none' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-              Faltan por cobrar
-            </span>
-            <Pastilla tono="neutro" numerica>{pendientes.length}</Pastilla>
+        grupos.map((g) => (
+          <div key={g.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+            <CabezaGrupo nombre={g.nombre} pendientes={g.pendientes} total={g.total} />
+            {g.filas.map((f) => (
+              <FilaCobro key={f.id} {...f} onClick={() => onCobrar?.(f)} />
+            ))}
           </div>
-          {pendientes.map((c, i) => (
-            <TarjetaCliente key={i} {...c} onClick={() => onCobrar?.(c)} />
-          ))}
-        </>
+        ))
+      )}
+
+      {/* ══ La barra de acción, fija abajo ══
+          Va por encima de la pastilla de navegación a propósito: mientras se
+          cobra, «el siguiente» pesa más que cambiar de pantalla. */}
+      {pendientes > 0 && (
+        <div style={{
+          position: 'fixed', left: 16, right: 16, bottom: 18, zIndex: 45,
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <BotonPrimario onClick={onEmpezar} style={{
+            flex: 1, height: 62, borderRadius: 999, fontSize: 17,
+            boxShadow: '0 6px 20px rgba(231,164,0,.32)',
+          }}>
+            Empezar ruta · {pendientes}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-ink)"
+              strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </BotonPrimario>
+          <button type="button" onClick={onMapa} aria-label="Ver en el mapa" style={{
+            width: 62, height: 62, minWidth: 62, borderRadius: 999, flex: 'none',
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            boxShadow: 'var(--cf-sh-flotante, 0 6px 20px rgba(20,20,28,.14))',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}>
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)"
+              strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 4.5L3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8 9 4.5z" />
+              <path d="M9 4.5v12.7M15 6.8v12.7" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   )

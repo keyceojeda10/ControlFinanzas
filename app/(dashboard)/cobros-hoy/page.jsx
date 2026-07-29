@@ -9,10 +9,12 @@ import { obtenerCoordsRapido } from '@/lib/geo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
-import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente } from '@/lib/offline'
+import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
+import CobrarHoy from '@/components/pantallas/CobrarHoy'
+import { adaptarCobrosHoy } from '@/lib/adaptadores/cobros'
 
 export default function CobrosHoyPage() {
-  const { loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState('')
@@ -31,6 +33,27 @@ export default function CobrosHoyPage() {
   const [fotoSubida, setFotoSubida] = useState(false)
   const fotoInputRef = useRef(null)
   const [metodosPago, setMetodosPago] = useState([])
+
+  // ── Lo que pide T02-02 y la pantalla no tenia ──
+  //
+  // `orden`: los tres chips (orden de ruta / mas atrasados / cerca de mi).
+  // `coords`: sin ellas «Cerca de mi» se deshabilita en vez de fingir una
+  //   ordenacion por distancia — mandar al cobrador a caminar mal cuesta
+  //   gasolina y tiempo de verdad, no solo una lista fea.
+  // `sinSubir`: los cobros que estan en la cola offline. Es el unico dato de
+  //   esta pantalla que el cobrador no puede resolver caminando: si se queda sin
+  //   bateria con dos cobros sin subir, esos cobros no existen.
+  const [orden, setOrden] = useState('ruta')
+  const [coords, setCoords] = useState(null)
+  const [sinSubir, setSinSubir] = useState(0)
+
+  useEffect(() => {
+    let vivo = true
+    obtenerCoordsRapido().then((c) => { if (vivo && c) setCoords(c) }).catch(() => {})
+    // `obtenerPagosPendientes` es la que existe: devuelve la cola, no el conteo.
+    obtenerPagosPendientes().then((p) => { if (vivo) setSinSubir((p || []).length) }).catch(() => {})
+    return () => { vivo = false }
+  }, [])
 
   const construirCobrosOffline = useCallback(async () => {
     const rutas = await obtenerRutasOffline()
@@ -283,255 +306,42 @@ export default function CobrosHoyPage() {
     : 0
 
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-4 px-1">
+    // SIN `px-1` NI `space-y-4`: los pone la pantalla nueva. Con ellos, la fila
+    // medía 302px desde x44 —20 del layout + 4 de acá + 20 de la pantalla— y los
+    // nombres se truncaban a «Ana Milena G...». La lámina la pone a 350 desde x20.
+    <div className="max-w-2xl lg:max-w-5xl mx-auto">
 
-      {/* ── Hero: Progreso del día — tarjeta dorada de marca ── */}
-      {clientes.length > 0 && (
-        <div
-          className="rounded-[20px] p-4 sm:p-5 relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #f9d64a 0%, #f5c518 55%, #eab308 100%)',
-            border: '1px solid rgba(180, 140, 10, 0.35)',
-            boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
-          }}
-        >
-          {/* Gloss sutil */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)' }}
-          />
+      {/* ── LA PANTALLA NUEVA, T02-02 «el arreglo del muro» ──
+          Sustituye al hero dorado con degradado, a las listas agrupadas a mano y
+          a la lista aparte de cobrados: 246 lineas de presentacion que ahora
+          viven en components/pantallas/CobrarHoy.jsx contra su lamina.
 
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3 relative z-10">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
-                Recaudado hoy
-              </p>
-              <p className="text-3xl font-extrabold font-mono-display mt-0.5" style={{ color: '#231a04' }}>
-                {formatMoney(resumen.recaudadoHoy ?? 0)}
-              </p>
-              <p className="text-xs mt-1 font-medium" style={{ color: 'rgba(35,26,4,0.62)' }}>
-                de {formatMoney(resumen.esperadoHoy ?? 0)} esperados
-              </p>
-            </div>
+          LO QUE NO SE TOCA: el modal de cobro, la cola offline, la subida de
+          foto, el deshacer y el aviso de duplicado. Eso es la funcionalidad de
+          la pantalla y sigue igual — solo cambia lo que se ve.
 
-            {/* Porcentaje circular */}
-            <div className="shrink-0 relative w-16 h-16 flex items-center justify-center">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" stroke="rgba(35,26,4,0.16)" />
-                <circle
-                  cx="18" cy="18" r="15" fill="none" strokeWidth="3"
-                  stroke="#231a04"
-                  strokeLinecap="round"
-                  strokeDasharray={`${pct * 0.942} 100`}
-                  style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(0.22,1,0.36,1)' }}
-                />
-              </svg>
-              <span className="absolute text-xs font-bold" style={{ color: '#231a04' }}>
-                {pct}%
-              </span>
-            </div>
-          </div>
+          El cambio de fondo: los cobrados ya NO van en una lista aparte al final.
+          Se quedan tachados EN SU SITIO, que es lo que pide la lamina: el
+          cobrador recorre la calle en orden, y si el cobrado desaparece de la
+          lista pierde la referencia de donde iba. */}
+      <CobrarHoy
+        {...adaptarCobrosHoy(data, { pais: user?.country, orden })}
+        sinMargen
+        orden={orden}
+        onOrden={setOrden}
+        hayGps={!!coords}
+        sinSubir={sinSubir}
+        onCobrar={(fila) => {
+          const c = clientes.find((x) => x.id === fila.id)
+          if (c) abrirPago(c)
+        }}
+        onEmpezar={() => {
+          const primero = clientes.find((x) => x.cobroPendienteHoy)
+          if (primero) abrirPago(primero)
+        }}
+        onMapa={() => { window.location.href = '/rutas' }}
+      />
 
-          {/* Barra de progreso */}
-          <div className="mt-3 relative z-10">
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(35,26,4,0.16)' }}>
-              <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${pct}%`, background: '#231a04' }}
-              />
-            </div>
-          </div>
-
-          {/* Stats inline */}
-          <div className="flex items-center gap-4 mt-3 relative z-10">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#b45309' }} />
-              <span className="text-xs font-semibold" style={{ color: 'rgba(35,26,4,0.72)' }}>
-                {resumen.pendientes ?? 0} pendientes
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#15803d' }} />
-              <span className="text-xs font-semibold" style={{ color: 'rgba(35,26,4,0.72)' }}>
-                {resumen.pagados ?? 0} cobrados
-              </span>
-            </div>
-            <button
-              onClick={fetchCobros}
-              className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'color-mix(in srgb, #231a04 12%, transparent)', color: '#231a04' }}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Celebración meta cumplida */}
-          {metaCumplida && pct >= 100 && (
-            <div
-              className="mt-3 rounded-[12px] px-3 py-2 relative z-10 flex items-center justify-center gap-2"
-              style={{
-                background: 'color-mix(in srgb, #231a04 10%, transparent)',
-                border: '1px solid color-mix(in srgb, #231a04 18%, transparent)',
-              }}
-            >
-              <MonedaCF pose="celebra" size={34} />
-              <p className="text-xs font-bold" style={{ color: '#231a04' }}>
-                Meta del dia cumplida
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-[12px] px-4 py-3 flex items-center justify-between gap-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}>
-          <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>
-          <button
-            onClick={fetchCobros}
-            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-            style={{ background: 'color-mix(in srgb, var(--color-danger) 20%, transparent)', color: 'var(--color-danger)' }}
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      {/* ── Lista: pendientes agrupados por ruta ── */}
-      {pendientes.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-warning)' }} />
-            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
-              Por cobrar ({pendientes.length})
-            </p>
-          </div>
-
-          {rutasPendientes.length === 1 ? (
-            <StaggeredList className="space-y-1.5">
-              {rutasPendientes[0][1].map(c => (
-                <ClienteCard
-                  key={c.id}
-                  cliente={c}
-                  pagando={pagando === c.id}
-                  pagoOk={pagoOk === c.id}
-                  onCobrar={() => abrirPago(c)}
-                />
-              ))}
-            </StaggeredList>
-          ) : (
-            <div className="space-y-3">
-              {rutasPendientes.map(([ruta, clientes]) => {
-                const colapsada = rutasColapsadas[ruta] ?? false
-                return (
-                  <div key={ruta} className="space-y-1.5">
-                    <button
-                      onClick={() => setRutasColapsadas(prev => ({ ...prev, [ruta]: !prev[ruta] }))}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-[12px] transition-all active:scale-[0.99]"
-                      style={{
-                        background: 'color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card))',
-                        border: '1px solid color-mix(in srgb, var(--color-accent) 12%, var(--color-border))',
-                      }}
-                    >
-                      <svg
-                        className="w-3.5 h-3.5 transition-transform shrink-0"
-                        style={{ color: 'var(--color-accent)', transform: colapsada ? 'rotate(-90deg)' : 'rotate(0deg)' }}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                      </svg>
-                      <span className="text-xs font-semibold flex-1 text-left truncate" style={{ color: 'var(--color-text-primary)' }}>
-                        {ruta}
-                      </span>
-                      <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0"
-                        style={{ background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)', color: 'var(--color-warning)' }}
-                      >
-                        {clientes.length}
-                      </span>
-                    </button>
-                    {!colapsada && (
-                      <StaggeredList className="space-y-1.5">
-                        {clientes.map(c => (
-                          <ClienteCard
-                            key={c.id}
-                            cliente={c}
-                            pagando={pagando === c.id}
-                            pagoOk={pagoOk === c.id}
-                            onCobrar={() => abrirPago(c)}
-                            showRuta={false}
-                          />
-                        ))}
-                      </StaggeredList>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Todos cobrados ── */}
-      {pendientes.length === 0 && pagados.length > 0 && (
-        <div
-          className="rounded-[20px] px-4 py-3 flex items-center gap-3 cf-card-shadow"
-          style={{
-            background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))',
-            border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
-          }}
-        >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>Todos cobrados</p>
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>No quedan cobros pendientes por hoy</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Lista: cobrados ── */}
-      {pagados.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-success)' }} />
-            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
-              Cobrados hoy ({pagados.length})
-            </p>
-          </div>
-          <StaggeredList className="space-y-1.5">
-            {pagados.map(c => (
-              <ClienteCard
-                key={c.id}
-                cliente={c}
-                pagando={false}
-                pagoOk={pagoOk === c.id}
-                onCobrar={() => abrirPago(c)}
-              />
-            ))}
-          </StaggeredList>
-        </div>
-      )}
-
-      {clientes.length === 0 && !loading && (
-        <div className="rounded-[20px] px-6 py-10 text-center" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-          <div className="inline-block mb-2">
-            <MonedaCF pose="vacia" size={100} />
-          </div>
-          <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Sin cobros programados hoy</p>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>No hay clientes con cuota pendiente para hoy.</p>
-          <Link href="/rutas" className="inline-block mt-5 text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>Ver rutas →</Link>
-        </div>
-      )}
 
       {/* ── Modal: elegir método de pago ── */}
       <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rápido">
