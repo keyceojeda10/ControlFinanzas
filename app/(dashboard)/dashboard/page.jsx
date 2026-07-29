@@ -1700,8 +1700,15 @@ export default function DashboardPage() {
       ) : data && (
         <>
           {/* Desktop: grid de 2 columnas para hero + strip lateral */}
-          <div className="lg:grid lg:grid-cols-5 lg:gap-5 lg:items-stretch">
-          <div className="lg:col-span-3">
+          {/* ── Se va la columna de KPIs de escritorio ──
+              Repetía lo que el Panel ya dice, y no una vez: «en mora» salía
+              CUATRO veces en la misma pantalla (en el bloque oscuro, en el KPI
+              rojo, en la fila de atención y en el aviso del 83%), y el saldo de
+              caja, dos. Un número repetido no se lee cuatro veces: se deja de
+              leer, y encima invita a compararlos por si no cuadran.
+
+              El Panel pasa a ancho completo. Lo único de esa columna que no
+              estaba en otro sitio era el consejo de IA, que se queda. */}
           {/* ── EL PANEL DEL REDISEÑO ──
               Sustituye al HeroCard SIN PERDER NADA: lo cobrado, lo esperado, la
               ganancia, cuántos pagos, el histórico de siete días y la frase que
@@ -1727,58 +1734,18 @@ export default function DashboardPage() {
             onIr={(destino) => { window.location.href = destino }}
           />
 
-          </div>
-          {/* Columna derecha desktop: KPIs rapidos */}
-          <div className="lg:col-span-2 flex flex-col gap-3 mt-5 lg:mt-0">
-          {/* Strip de KPIs — en desktop ocupa todo el alto del hero */}
-          {esOwner && (
-            <div className="grid grid-cols-2 lg:flex lg:flex-col gap-3 lg:flex-1 lg:min-h-0">
-              <Link href="/clientes?filtro=mora" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden group/stat lg:flex-1 lg:flex lg:flex-col lg:justify-center" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card))' : 'color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card))', border: `1px solid ${data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))' : 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'}`, boxShadow: data.clientes.enMora > 0 ? '0 4px 16px color-mix(in srgb, var(--color-danger) 12%, transparent)' : '0 4px 16px rgba(0,0,0,0.08)' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: data.clientes.enMora > 0 ? 'color-mix(in srgb, var(--color-danger) 15%, transparent)' : 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>
-                    <svg className="w-4 h-4" fill="none" stroke={data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)'} strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                    </svg>
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Clientes en mora</p>
-                </div>
-                <p className="text-3xl font-bold font-mono-display leading-none" style={{ color: data.clientes.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>{data.clientes.enMora}</p>
-                <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{data.clientes.enMora === 0 ? 'Todo al día' : `de ${data.clientes.total} activos`}</p>
-              </Link>
-              {capitalData ? (
-                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01] relative overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-teal) 20%, var(--color-border))', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-teal) 12%, transparent)' }}>
-                      <svg className="w-4 h-4" fill="none" stroke="var(--color-teal)" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
-                  </div>
-                  <p className="text-2xl font-bold font-mono-display leading-none truncate" style={{ color: capitalData.saldo < 0 ? 'var(--color-danger)' : 'var(--color-teal)' }}>{formatMoney(capitalData.saldo)}</p>
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>Para prestar ahora</p>
-                </Link>
-              ) : (
-                <Link href="/caja" className="rounded-[16px] px-4 py-4 transition-all hover:scale-[1.01]" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Saldo en caja</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Ver caja →</p>
-                </Link>
-              )}
-            </div>
-          )}
-
-          {/* Tip IA sutil */}
           <DashboardAiTip data={data} />
-          </div>
-          </div>
 
-          {/* ¿Quien no me pago? — Segunda pregunta del dashboard, asi que va
-              inmediatamente despues del hero. Antes vivia en el puesto 17 de 22,
-              debajo de 13 secciones de contabilidad mensual: en movil quedaba a
-              5 pantallas de scroll, y es lo unico accionable de la pagina. */}
-          {esOwner && data.alertas && (
-            <NecesitaAtencion alertas={data.alertas} moraData={moraData} />
-          )}
+
+          {/* El segundo «Necesita tu atención» se va: había DOS bloques con el
+              mismo título diciendo cosas distintas —uno «8 sin pagar hace más
+              de 15 días», el otro «8 préstamos sin pagos hace más de 7 días»—.
+              Mismo número, umbral distinto: uno de los dos mentía (el bueno es
+              7, que es lo que usa el endpoint). Dos verdades con el mismo
+              rótulo es peor que ninguna, porque obliga a elegir a ojo.
+
+              El del Panel se queda: lleva la misma información con la cifra
+              correcta y su enlace. */}
 
           {/* Como va cada ruta hoy. Va arriba porque con varias rutas es la
               pregunta de la mañana, y hasta ahora habia que revisarlas una por
