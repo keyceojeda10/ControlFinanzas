@@ -34,6 +34,7 @@ import FichaRuta from '@/components/pantallas/FichaRuta'
 import { CrearPrestamoMonto, CrearPrestamoCondiciones } from '@/components/pantallas/CrearPrestamo'
 import { ListaSocios, RepartirGanancia, CuentaSocio } from '@/components/pantallas/Socios'
 import { AntesDeFirmar, Firma, PagareFirmado } from '@/components/pantallas/Pagare'
+import SociosEscritorio from '@/components/pantallas/SociosEscritorio'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -1123,6 +1124,36 @@ export default function Estilo() {
           resumen="Pagaré por $800.000 · 8 cuotas de $140.000"
           fecha="28 de julio de 2026" hora="9:44 a. m."
           hayTrazo
+        />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Socios en 1440 · la tabla que se imprime cuando hay discusión
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        La acción del encabezado no es «nuevo socio»: es <strong>repartir, con la cifra dentro</strong>.
+        Crear socios se hace dos veces en la vida. Y las cinco columnas cuadran en el total —
+        $2.880.000 − $1.500.000 = $1.380.000.
+      </p>
+      <div id="socios-1440" style={{
+        width: 1440, height: 800, overflow: 'hidden',
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+      }}>
+        <SociosEscritorio
+          sinRepartir="$1.240.000" desdeCuando="30 de junio"
+          socios={[
+            { nombre: 'Carlos Andrés', iniciales: 'CA', puso: '$8.000.000', porcentaje: '66,7%',
+              haGanado: '$1.980.000', leHasDado: '$1.200.000', leDebes: '$780.000' },
+            { nombre: 'Marta Ruiz', iniciales: 'MR', puso: '$4.000.000', porcentaje: '33,3%',
+              haGanado: '$900.000', leHasDado: '$300.000', leDebes: '$600.000' },
+          ]}
+          totales={{ puso: '$12.000.000', porcentaje: '100%', haGanado: '$2.880.000',
+                     leHasDado: '$1.500.000', leDebes: '$1.380.000' }}
+          desglose={[
+            { nombre: 'Carlos Andrés', porcentaje: '66,7%', monto: '$826.667' },
+            { nombre: 'Marta Ruiz', porcentaje: '33,3%', monto: '$413.333' },
+          ]}
+          tuParte={{ socios: '$12M', total: '$27,6M', pctSocios: 43.5 }}
         />
       </div>
 
