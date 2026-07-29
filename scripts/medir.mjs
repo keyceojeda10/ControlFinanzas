@@ -25,6 +25,14 @@ function normalizarRuta(a = '/dashboard') {
 }
 
 const ruta = normalizarRuta(process.argv[2])
+
+// `--clic=<selector>` pulsa algo antes de medir. Muchas pantallas del paquete
+// son hojas y modales que no existen en el árbol hasta que se abren, y medir la
+// pantalla de debajo no dice nada de ellas. También sirve de comprobación: si el
+// clic no produce lo que se busca, el control está muerto — que es exactamente
+// lo que le pasaba al avatar.
+const clicArg = process.argv.find((a) => a.startsWith('--clic='))
+const clic = clicArg ? clicArg.slice(7) : null
 const selector = process.argv[3] || 'header'
 const ancho = Number(process.argv[4] || 390)
 
@@ -39,6 +47,24 @@ const ctx = await nav.newContext({
   serviceWorkers: 'block',
 })
 await ctx.addCookies([{ name: cookie.name, value: cookie.value, url: 'http://localhost:3000' }])
+
+// Lo mismo que hace recorrer.mjs, y que a este script le faltaba: la modal de
+// novedades se abre una vez por versión y tapa la pantalla entera. La primera
+// medición con `--clic` se estrelló contra ella —el clic no llegaba al avatar—
+// y lo medido fue la modal, no la barra.
+await ctx.addInitScript(() => {
+  try { localStorage.setItem('cf:novedades:visto', '999999') } catch {}
+  const esconder = () => {
+    if (document.getElementById('cf-sin-indicador')) return
+    const s = document.createElement('style')
+    s.id = 'cf-sin-indicador'
+    s.textContent = 'nextjs-portal,[data-nextjs-toast],[data-nextjs-dev-tools-button]{display:none!important}'
+    document.head?.appendChild(s)
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', esconder)
+  else esconder()
+})
+
 const pag = await ctx.newPage()
 
 // Doble visita: la primera calienta la compilación de la ruta en dev.
@@ -46,6 +72,16 @@ await pag.goto(`http://localhost:3000${ruta}`, { waitUntil: 'domcontentloaded', 
 await pag.waitForTimeout(2500)
 await pag.goto(`http://localhost:3000${ruta}`, { waitUntil: 'domcontentloaded', timeout: 45000 })
 await pag.waitForTimeout(3000)
+
+if (clic) {
+  try {
+    await pag.click(clic, { timeout: 8000 })
+    await pag.waitForTimeout(900)
+    console.log(`clic en «${clic}» → hecho`)
+  } catch (e) {
+    console.error(`clic en «${clic}» FALLÓ: ${String(e.message).split('\n')[0]}`)
+  }
+}
 
 const medidas = await pag.evaluate(({ selector }) => {
   const visible = (el) => {

@@ -18,6 +18,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { rolEnEspanol } from '@/lib/armazon'
+import { useOnline } from '@/hooks/useOnline'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 
 const t = { fill: 'none', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
@@ -61,13 +63,21 @@ const HERRAMIENTAS = [
   { href: '/carga-masiva',         nombre: 'Importar Excel' },
   { href: '/clavos',               nombre: 'Perdidos' },
   { href: '/actividad',            nombre: 'Quién hizo qué' },
-]
-
-const CUENTA = [
-  { href: '/configuracion',        nombre: 'Configuración' },
-  { href: '/soporte',              nombre: 'Soporte' },
+  // Venía del grupo «Cuenta», que se fue: ver la nota de abajo. Configuración y
+  // Soporte se quedaron cubiertos por HojaCuenta, pero Tutoriales no está ahí,
+  // y quitarlo sin más lo dejaba sin ninguna vía desde la barra.
   { href: '/tutoriales',           nombre: 'Tutoriales' },
 ]
+
+// EL GRUPO «CUENTA» NO EXISTE EN T39-05. En la lámina, después de «Más
+// herramientas» va un espaciador y luego directo el pie: selector de tema y
+// ficha del usuario. Yo tenía un segundo grupo desplegable con Configuración,
+// Soporte y Tutoriales — redundante con la ficha del usuario, que lleva el
+// chevron precisamente porque ES el acceso a todo eso.
+//
+// Solo se pudo quitar después de montar HojaCuenta y de que el avatar abriera
+// de verdad: hasta hace un rato pulsarlo no hacía nada, así que este grupo era
+// la única forma de llegar a Configuración en escritorio.
 
 /**
  * La campana. Igual que el FAB, tenía su prop y nadie se la pasaba: era un
@@ -79,19 +89,37 @@ function abrirAvisos() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-avisos'))
 }
 
+/**
+ * La ficha del usuario, abajo. Mismo caso: `onCuenta` estaba declarado y nadie
+ * se lo pasaba, así que pulsar el avatar no hacía NADA —ni en escritorio ni en
+ * móvil—. Y HojaCuenta, que es su destino, estaba construida y solo montada en
+ * el banco de pruebas: en la app no existía.
+ *
+ * Importa más de lo que parece: en T39-05 no hay grupo «Cuenta» en la
+ * navegación, así que esta ficha es la ÚNICA vía a Configuración y a cerrar
+ * sesión. Un avatar muerto dejaba la app sin salida.
+ *
+ * Va por evento por lo mismo que los avisos: quien monta la hoja es Armazon,
+ * que es antepasado de esta barra pero no le pasa props (las trae el layout).
+ */
+function abrirCuenta() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-cuenta'))
+}
+
 function Item({ href, nombre, icono, activo }) {
   return (
     <Link href={href} aria-current={activo ? 'page' : undefined}
       style={{
         position: 'relative',
-        display: 'flex', alignItems: 'center', gap: 10,
+        display: 'flex', alignItems: 'center',
         // `flex: none` NO ES DECORACIÓN. Sin él, al desplegar «Más
         // herramientas» flexbox ENCOGE los items de arriba para meter lo nuevo:
         // los siete destinos principales pasaban de 37px a la mitad y quedaban
         // apiñados. Flexbox encoge ANTES de dejar que el <nav> scrollee, así que
         // hay que quitarle esa licencia para que scrollee, que es lo correcto.
         flex: 'none',
-        height: 37, minHeight: 37, padding: '0 12px', borderRadius: 13,
+        // gap 11, no 10: es lo que dice T39-05.
+        height: 37, minHeight: 37, padding: '0 12px', borderRadius: 13, gap: 11,
         background: activo ? 'var(--cf-gold-tint)' : 'transparent',
         color: activo ? 'var(--cf-gold-text)' : 'var(--cf-ink-2)',
         fontSize: 14, fontWeight: activo ? 700 : 600,
@@ -117,16 +145,27 @@ function Grupo({ titulo, items, pathname, abiertoPorDefecto = false }) {
   const [abierto, setAbierto] = useState(abiertoPorDefecto || items.some(i => pathname.startsWith(i.href)))
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 'none' }}>
+      {/* Las medidas y la línea son de T39-05: el rótulo mide 35 de alto y lleva
+          ÉL el borde superior, con `padding: 13px 12px 0` y `margin-top: 6`. Yo
+          tenía el rótulo a 30 y la línea aparte, como un <div> separador de 1px
+          con margen 8 — dos formas de dibujar lo mismo, pero la separación
+          quedaba más suelta de lo que pide la lámina. */}
       <button type="button" onClick={() => setAbierto(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flex: 'none', height: 30, minHeight: 30, padding: '0 12px', background: 'none', border: 0, cursor: 'pointer',
+          flex: 'none', height: 35, minHeight: 35,
+          padding: '13px 12px 0', marginTop: 6,
+          borderTop: '1px solid var(--cf-divider)',
+          borderLeft: 0, borderRight: 0, borderBottom: 0,
+          background: 'none', cursor: 'pointer',
           fontSize: 11, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
           color: 'var(--cf-ink-3)',
         }}>
         {titulo}
-        <svg width="14" height="14" viewBox="0 0 24 24" {...t} stroke="var(--cf-ink-4)"
-          style={{ transform: abierto ? 'none' : 'rotate(-90deg)', transition: 'transform .15s' }}>
+        {/* Cerrado apunta ABAJO, abierto arriba: es lo que dibuja la lámina. Yo
+            lo tenía apuntando a la derecha cuando está cerrado. */}
+        <svg width="14" height="14" viewBox="0 0 24 24" {...t} strokeWidth={2.2} stroke="var(--cf-ink-3)"
+          style={{ transform: abierto ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
           {ICONOS.chevron}
         </svg>
       </button>
@@ -171,7 +210,7 @@ function SelectorTema({ tema, onCambiar }) {
 
 export default function BarraLateral({
   nombre = '', rol = '', iniciales = '',
-  hayAvisos = false, tema = 'light', onCambiarTema, onBuscar, onAvisos, onCuenta,
+  hayAvisos = false, onBuscar, onAvisos, onCuenta,
 }) {
   const pathname = usePathname() || '/'
 
@@ -181,25 +220,38 @@ export default function BarraLateral({
   //
   // Se detecta ACÁ y no por prop: era lo único que Armazon calculaba para pasar
   // hacia abajo, y con la cabecera móvil sin punto (T40-00-a) esta barra quedó
-  // como única consumidora. Arranca en `true` en servidor y cliente por igual,
-  // así que no hay desajuste de hidratación; el efecto lo corrige después.
-  const [conectado, setConectado] = useState(true)
+  // como única consumidora.
+  //
+  // Y se usa `useOnline()`, que ya existía, en vez del `navigator.onLine` que yo
+  // había escrito a mano: ese miente cuando hay WiFi sin paso a internet —el
+  // limbo típico del cobrador en la calle— y habría pintado el punto en verde
+  // justo en el caso en que hay que avisar. El hook además hace ping a /api/ping.
+  const conectado = useOnline()
+
+  // El tema sale del proveedor de verdad, que ya está montado en app/layout.js.
+  // Llegaba por prop con `'light'` por defecto y NADIE se la pasaba: las tres
+  // pastillas Claro/Oscuro/Auto se pulsaban y no cambiaban nada, y encima la
+  // activa siempre se dibujaba en «Claro» aunque la app estuviera en oscuro.
+  const { theme, setTheme } = useTheme() ?? {}
+
+  // Cuántos avisos hay, para el número de la campana. Lo publica PilaAvisos por
+  // evento; `hayAvisos` queda como respaldo booleano para el banco de pruebas.
+  // El layout tampoco pasaba esta prop, así que la campana de escritorio no
+  // podía enterarse de nada.
+  const [avisos, setAvisos] = useState(0)
   useEffect(() => {
-    const actualizar = () => setConectado(navigator.onLine)
-    actualizar()
-    window.addEventListener('online', actualizar)
-    window.addEventListener('offline', actualizar)
-    return () => {
-      window.removeEventListener('online', actualizar)
-      window.removeEventListener('offline', actualizar)
-    }
+    const oir = (e) => setAvisos(Number(e.detail) || 0)
+    window.addEventListener('cf:avisos', oir)
+    return () => window.removeEventListener('cf:avisos', oir)
   }, [])
+  const cuantosAvisos = avisos || (hayAvisos ? 1 : 0)
 
   return (
     // Solo escritorio. `display` NO puede ir en el estilo en linea: le ganaria
     // a `hidden` y la barra saldria tambien en el telefono, encima de la
     // pastilla.
     <aside className="hidden lg:flex" style={{
+      flex: 'none',
       width: 'var(--cf-w-sidebar)', minWidth: 'var(--cf-w-sidebar)',
       height: '100dvh', position: 'sticky', top: 0,
       background: 'var(--cf-card)',
@@ -214,7 +266,10 @@ export default function BarraLateral({
             alt="Control Finanzas"
             width={32}
             height={32}
-            style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 10 }}
+            /* Radio 11 acá, no 10: T39-05 lo dibuja un punto más redondo que el
+               de la cabecera móvil (T40-00-a dice 10). Es un píxel, pero es el
+               que hay escrito. */
+            style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 11 }}
           />
           {/* 13px y line-height 1.12, literal de T39-05. Yo los tenía a 14, y a
               esa altura las dos líneas del logotipo pesan más que el nombre de
@@ -230,15 +285,32 @@ export default function BarraLateral({
               background: 'var(--cf-fill)', border: '1px solid var(--cf-divider)', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" {...t} stroke="var(--cf-ink-2)">{ICONOS.campana}</svg>
-            {hayAvisos && <span style={{ position: 'absolute', top: 5, right: 6, width: 8, height: 8, borderRadius: 999, background: 'var(--cf-red)', border: '2px solid var(--cf-card)' }} />}
+            <svg width="16" height="16" viewBox="0 0 24 24" {...t} strokeWidth={2} stroke="var(--cf-ink-2)">{ICONOS.campana}</svg>
+            {/* ACÁ SÍ VA EL NÚMERO, al contrario que en móvil.
+                T40-00-a quitó el conteo de la cabecera —«el conteo exacto no
+                cambia ninguna decisión»— pero es una lámina de 390px y el turno
+                40 no tiene variante de escritorio. La única lámina de 1440 es
+                T39-05, y dibuja un «3». Y tiene sentido que difieran: en el
+                teléfono se cobra, y ahí un número más es ruido; en el PC se
+                revisa, y saber si son 2 o 14 sí cambia por dónde empezar.
+                Medidas literales: desborda la esquina (top/right -3), mínimo 16
+                de ancho para que un número de dos cifras no lo deforme. */}
+            {cuantosAvisos > 0 && (
+              <span className="cf-num" style={{
+                position: 'absolute', top: -3, right: -3,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                background: 'var(--cf-red)', border: '2px solid var(--cf-card)',
+                fontSize: 9, fontWeight: 700, color: '#FFF',
+              }}>{cuantosAvisos}</span>
+            )}
           </button>
         </div>
 
         <button type="button" onClick={onBuscar}
           style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            height: 38, padding: '0 10px', borderRadius: 13,
+            display: 'flex', alignItems: 'center', gap: 9,
+            height: 38, padding: '0 12px', borderRadius: 13,
             background: 'var(--cf-fill)', border: '1px solid var(--cf-divider)',
             cursor: 'pointer', width: '100%',
           }}>
@@ -257,17 +329,20 @@ export default function BarraLateral({
         {PRINCIPAL.map(i => (
           <Item key={i.href} {...i} activo={pathname === i.href || pathname.startsWith(i.href + '/')} />
         ))}
-        <div style={{ height: 1, background: 'var(--cf-divider)', margin: '8px 0' }} />
+        {/* La línea la lleva el rótulo del grupo, como en la lámina. */}
         <Grupo titulo="Más herramientas" items={HERRAMIENTAS} pathname={pathname} />
-        <Grupo titulo="Cuenta" items={CUENTA} pathname={pathname} />
+        {/* Y aquí acaba: en T39-05, detrás del grupo va este espaciador vacío y
+            nada más. El grupo «Cuenta» que yo tenía se fue al pie, que es donde
+            la lámina pone el acceso a la cuenta. */}
+        <div style={{ flex: 1, minHeight: 0 }} />
       </nav>
 
       {/* ── Zona de cuenta ── */}
       <div style={{ padding: 12, borderTop: '1px solid var(--cf-divider)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <SelectorTema tema={tema} onCambiar={onCambiarTema} />
-        <button type="button" onClick={onCuenta}
+        <SelectorTema tema={theme ?? 'system'} onCambiar={setTheme} />
+        <button type="button" onClick={onCuenta ?? abrirCuenta}
           style={{
-            display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
             padding: 10, borderRadius: 14,
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)', cursor: 'pointer',
           }}>
@@ -275,7 +350,10 @@ export default function BarraLateral({
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 32, height: 32, borderRadius: 999, background: 'var(--cf-blue)',
-              fontSize: 12, fontWeight: 700, color: '#FFF',
+              /* 11px acá, no 12: la lámina baja un punto respecto al avatar de
+                 la cabecera móvil, porque al lado hay nombre y rol y las
+                 iniciales dejan de ser lo que se lee. */
+              fontSize: 11, fontWeight: 700, color: '#FFF',
             }}>{iniciales}</span>
             <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, borderRadius: 999, background: conectado ? 'var(--cf-green)' : 'var(--cf-ink-4)', border: '2px solid var(--cf-card)' }} />
           </span>

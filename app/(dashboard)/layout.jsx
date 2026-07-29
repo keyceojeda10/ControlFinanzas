@@ -56,7 +56,7 @@ export default async function DashboardLayout({ children }) {
   const session = await getServerSession(authOptions)
   const nombre = session?.user?.nombre ?? session?.user?.name ?? ''
   return (
-    <Armazon nombre={nombre}>
+    <Armazon nombre={nombre} rol={session?.user?.rol ?? ''}>
     <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
           cobrando en la calle. La regla de supresion es exclusiva de movil.

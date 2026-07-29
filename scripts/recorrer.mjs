@@ -65,6 +65,27 @@ for (const tam of TAMANOS) {
     } catch {}
   })
 
+  // El indicador de desarrollo de Next —el circulito oscuro con la «N»— se
+  // planta abajo a la izquierda y TAPA la interfaz: se comio el avatar del pie
+  // de la barra lateral y un trozo de la pastilla en movil. Al cotejar contra
+  // una lamina, un elemento tapado es un elemento que no se puede comparar.
+  //
+  // Se oculta solo en la captura, no en la app: `devIndicators: false` en
+  // next.config se lo quitaria tambien al usuario mientras desarrolla.
+  await ctx.addInitScript(() => {
+    const esconder = () => {
+      const css = 'nextjs-portal,[data-nextjs-toast],[data-nextjs-dev-tools-button]{display:none!important}'
+      if (document.getElementById('cf-sin-indicador')) return
+      const s = document.createElement('style')
+      s.id = 'cf-sin-indicador'
+      s.textContent = css
+      document.head?.appendChild(s)
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', esconder)
+    } else esconder()
+  })
+
   const pag = await ctx.newPage()
 
   for (const p of PANTALLAS) {

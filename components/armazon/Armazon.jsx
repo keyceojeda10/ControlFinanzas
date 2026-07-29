@@ -15,11 +15,14 @@
 // cumpliría en las pantallas que alguien recordó y en las demás no.
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { CABECERA, resolverArmazon, iniciales } from '@/lib/armazon'
+import { usePathname, useRouter } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
+import { CABECERA, resolverArmazon, iniciales, rolEnEspanol } from '@/lib/armazon'
+import { useOnline } from '@/hooks/useOnline'
+import { useTheme } from '@/lib/theme/ThemeProvider'
 import CabeceraMovil from '@/components/armazon/CabeceraMovil'
 import PastillaNav from '@/components/armazon/PastillaNav'
+import HojaCuenta from '@/components/armazon/HojaCuenta'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 
 const ArmazonContext = createContext(null)
@@ -48,14 +51,16 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
   }, [registrar, clave])
 }
 
-/** Iniciales del nombre. Dos letras: más se lee como una palabra rota. */
-export default function Armazon({ children, nombre: nombreServidor, hayAvisos = false, onCrear }) {
+export default function Armazon({ children, nombre: nombreServidor, rol: rolServidor = '', hayAvisos = false, onCrear }) {
   // EL FAB ESTABA MUERTO. `onCrear` se declaraba aquí pero el layout nunca lo
   // pasaba, así que el botón principal de crear —el que sale en TODAS las
   // pantallas de navegación— se pulsaba y no hacía nada: ni menú, ni navegar,
   // ni error. Un botón que no responde enseña a no volver a tocarlo.
   const [menuCrear, setMenuCrear] = useState(false)
   const pathname = usePathname() || '/'
+  const router = useRouter()
+  const conectado = useOnline()
+  const { theme, setTheme } = useTheme() ?? {}
   const { data: session } = useSession()
   const [dePantalla, setDePantalla] = useState(null)
 
@@ -65,6 +70,23 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
     const oir = (e) => setAvisos(Number(e.detail) || 0)
     window.addEventListener('cf:avisos', oir)
     return () => window.removeEventListener('cf:avisos', oir)
+  }, [])
+
+  // ── La hoja de cuenta ──
+  // ESTABA CONSTRUIDA Y SIN MONTAR. HojaCuenta.jsx existe entero —identidad,
+  // tema, accesos, estado de conexión, cerrar sesión— y el único sitio que la
+  // instanciaba era app/estilo/page.jsx, el banco de pruebas. En la app, pulsar
+  // el avatar no hacía nada: ni en la cabecera móvil ni en la barra lateral.
+  //
+  // Y no es un adorno: en T39-05 la navegación de escritorio no tiene grupo
+  // «Cuenta», así que esta hoja es la única vía a Configuración y a cerrar
+  // sesión. La escucha del evento es para la barra lateral, que cuelga de este
+  // componente pero recibe sus props del layout.
+  const [cuenta, setCuenta] = useState(false)
+  useEffect(() => {
+    const oir = () => setCuenta(true)
+    window.addEventListener('cf:abrir-cuenta', oir)
+    return () => window.removeEventListener('cf:abrir-cuenta', oir)
   }, [])
 
   const registrar = useMemo(() => (config) => setDePantalla(config), [])
@@ -85,6 +107,7 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
   // "CA": desajuste de hidratación en TODAS las pantallas, y un parpadeo del
   // avatar en cada carga. La sesión de cliente queda solo como respaldo.
   const nombre = nombreServidor || session?.user?.nombre || session?.user?.name || ''
+  const rol = rolServidor || session?.user?.rol || ''
 
   return (
     <ArmazonContext.Provider value={valor}>
@@ -93,6 +116,7 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
           variante={armazon.cabecera}
           iniciales={iniciales(nombre)}
           hayAvisos={avisos > 0 || hayAvisos}
+          onCuenta={() => setCuenta(true)}
           titulo={dePantalla?.titulo}
           subtitulo={dePantalla?.subtitulo}
           acciones={dePantalla?.acciones}
@@ -109,6 +133,21 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
           los cinco destinos en el árbol y un lector de pantalla los sigue
           anunciando en una pantalla donde no se puede navegar. */}
       {armazon.pastilla && <PastillaNav onCrear={onCrear ?? (() => setMenuCrear(true))} />}
+
+      <HojaCuenta
+        abierta={cuenta}
+        onCerrar={() => setCuenta(false)}
+        nombre={nombre}
+        rol={rolEnEspanol(rol)}
+        iniciales={iniciales(nombre)}
+        conectado={conectado}
+        tema={theme ?? 'system'}
+        onCambiarTema={setTheme}
+        onConfiguracion={() => { setCuenta(false); router.push('/configuracion') }}
+        onPlan={() => { setCuenta(false); router.push('/configuracion/plan') }}
+        onSoporte={() => { setCuenta(false); router.push('/soporte') }}
+        onCerrarSesion={() => signOut({ callbackUrl: '/login' })}
+      />
 
       {menuCrear && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 90 }}>

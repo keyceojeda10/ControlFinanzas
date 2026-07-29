@@ -1195,7 +1195,11 @@ export default function Estilo() {
         Barra lateral · escritorio
       </h2>
       <div style={{ height: 620, width: 250, border: '1px solid var(--cf-border)', borderRadius: 18, overflow: 'hidden' }}>
-        <BarraLateral nombre="Carlos Castro" rol="dueño" iniciales="CC" conectado hayAvisos tema="light" />
+        {/* `conectado` y `tema` ya no son props: la barra saca la conexión de
+            useOnline() y el tema del proveedor, porque por prop nadie se los
+            pasaba y salían siempre «verde» y «claro». `rol` va en crudo a
+            propósito, para ver que se traduce. */}
+        <BarraLateral nombre="Carlos Castro" rol="owner" iniciales="CC" hayAvisos />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
