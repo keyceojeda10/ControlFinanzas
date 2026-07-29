@@ -1,6 +1,10 @@
 'use client'
 
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import Configuracion from '@/components/pantallas/Configuracion'
+import TuNegocio from '@/components/pantallas/config/TuNegocio'
+import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
+import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
 import { useSearchParams }     from 'next/navigation'
@@ -1356,38 +1360,120 @@ function ConfiguracionContent() {
     { key: 'referidos',      label: 'Referidos',           visible: rol === 'owner' },
   ].filter((t) => t.visible)
 
+  // La cabecera y los paneles nuevos necesitan la organización y el uso del
+  // plan. Los paneles viejos siguen trayéndose lo suyo por su cuenta: no se
+  // tocan, y duplicar una petición es más barato que reescribirlos hoy.
+  const [org, setOrg] = useState(null)
+  const [uso, setUso] = useState(null)
+  const [tema, setTema] = useState('system')
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/configuracion/organizacion', { cache: 'no-store' }).then((r) => r.json())
+      .then((d) => { if (vivo) setOrg(d?.org ?? null) }).catch(() => {})
+    fetch('/api/plan/uso', { cache: 'no-store' }).then((r) => r.json())
+      .then((d) => { if (vivo) setUso(d ?? null) }).catch(() => {})
+    try { setTema(localStorage.getItem('theme') || 'system') } catch {}
+    return () => { vivo = false }
+  }, [])
+
+  // ── El armazón del rediseño, con los paneles viejos DENTRO ──
+  //
+  // Los paneles que todavía no se han rehecho (TabOrganizacion, TabSuscripcion,
+  // TabNotificaciones, TabPerfil…) NO se tocan ni se sustituyen por huecos: se
+  // meten en la sección que les corresponde. Montar el armazón nuevo dejando
+  // cinco pantallas que hoy funcionan como cajas de «sin construir» sería un
+  // retroceso, no un avance.
+  //
+  // Según se vaya rehaciendo cada panel, se cambia su línea aquí y ya está.
+  const panel = (id) => {
+    switch (id) {
+      case 'negocio':
+        // ⚠ Aquí va TabOrganizacion, NO el TuNegocio nuevo, y es a propósito.
+        //
+        // Los dos piden nombre del negocio y teléfono. Ponerlos juntos deja DOS
+        // CAMPOS EDITANDO EL MISMO DATO en la misma pantalla: se escribe en uno,
+        // el otro sigue con lo viejo, y el último que guarde gana. Eso no es un
+        // problema estético.
+        //
+        // TuNegocio está hecho y se ve en /estilo/config, pero todavía no cubre
+        // todo lo que TabOrganizacion tiene (mora, caja, plantillas). Entra
+        // cuando lo cubra, y ese día TabOrganizacion sale.
+        return esOwner ? <TabOrganizacion /> : null
+
+      case 'comoPrestas':
+        return (
+          <ComoPrestas
+            inicial={{
+              frecuenciaDefault: org?.frecuenciaDefault ?? '',
+              tasaDefault: org?.tasaDefault ?? null,
+              modoInteresDefault: org?.modoInteresDefault ?? '',
+              diasSinCobro: org?.diasSinCobro ?? '[]',
+            }}
+          />
+        )
+
+      case 'plan':
+        return (
+          <>
+            <PlanYPagos
+              plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
+              precio={org?.plan ? formatMoney(PRECIOS[org.plan]) : null}
+              clientes={uso?.clientes?.usado}
+              limite={uso?.clientes?.limite}
+              onVerPlanes={() => { window.location.href = '/configuracion/plan' }}
+            />
+            {esOwner && <TabSuscripcion />}
+            {esOwner && <TabReferidos />}
+          </>
+        )
+
+      case 'whatsapp':  return <TabNotificaciones />
+      case 'datos':     return <TabPerfil />
+
+      // Sin panel propio todavía: en vez de un hueco, se dice dónde está hoy.
+      case 'equipo':    return <Remite nombre="Equipo" nota="Los cobradores y sus permisos se manejan en su propia pantalla." destino="/cobradores" accion="Ir a Cobradores" />
+      case 'portal':    return <Remite nombre="Portal del cliente" nota="Lo que ve tu cliente cuando entra con su cédula." destino="/configuracion" accion="Sin rehacer todavía" />
+      case 'seguridad': return <Remite nombre="Seguridad" nota="Contraseña y copia de tu información." destino="/configuracion" accion="Sin rehacer todavía" />
+
+      default: return null
+    }
+  }
+
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Configuración</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Cómo trabaja tu negocio y qué ve tu gente</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={[
-              'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap',
-              tab === t.key
-                ? 'text-[var(--color-accent)] border-[var(--color-accent)]'
-                : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-muted)]',
-            ].join(' ')}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'perfil'       && <TabPerfil />}
-      {tab === 'organizacion' && esOwner && <TabOrganizacion />}
-      {tab === 'suscripcion'  && esOwner && <TabSuscripcion />}
-      {tab === 'referidos'    && esOwner && <TabReferidos />}
-      {tab === 'notificaciones' && <TabNotificaciones />}
-      {tab === 'apariencia'     && <TabApariencia />}
+    <div className="max-w-2xl lg:max-w-6xl mx-auto">
+      <Configuracion
+        rol={rol}
+        cobradores={Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)}
+        negocio={org?.nombre}
+        plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
+        clientes={uso?.clientes?.usado}
+        limiteClientes={uso?.clientes?.limite}
+      >
+        {(id) => panel(id)}
+      </Configuracion>
     </div>
+  )
+}
+
+/** Sección aún sin rehacer: dice dónde está su contenido hoy, no un hueco. */
+function Remite({ nombre, nota, destino, accion }) {
+  return (
+    <section style={{
+      padding: '20px 22px', borderRadius: 'var(--cf-r-card)',
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+    }}>
+      <span style={{
+        display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
+        textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+      }}>{nombre}</span>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '8px 0 0', lineHeight: 1.5 }}>{nota}</p>
+      <a href={destino} style={{
+        display: 'inline-flex', alignItems: 'center', height: 38, padding: '0 15px',
+        marginTop: 12, borderRadius: 'var(--cf-r-control)',
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+        fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)', textDecoration: 'none',
+      }}>{accion}</a>
+    </section>
   )
 }
 
