@@ -16,16 +16,23 @@
 // «Pagar un plan desde ya» se queda para quien lo quiera, pero en texto: tiene
 // su enlace, no manda la pantalla.
 
-// ⚠ Los precios son los del handoff. Deberían venir de lib/planes.js
-// (PLANES_CONFIG) para que no se separen de lo que de verdad se cobra: un
-// precio escrito dos veces se desactualiza en uno de los dos sitios.
-const TRAMOS = [
-  { limite: 'Hasta 20 clientes', precio: '$39.000' },
-  { limite: 'Hasta 40',          precio: '$59.000' },
-  { limite: 'Hasta 100',         precio: '$79.000' },
-]
+// NI UN NÚMERO ESCRITO AQUÍ. Los tramos y el límite salen de PLANES_CONFIG y de
+// getPrecioPlan (lib/adaptadores/planes.js), que es lo que de verdad se cobra y
+// lo que de verdad se limita.
+//
+// Esta pantalla llegó a decir «Hasta 20 clientes · $39.000», copiado del
+// handoff. El precio era correcto; el límite real de ese plan son 150. Vendía
+// el producto siete veces peor de lo que es — y a quien tiene 68 clientes en un
+// cuaderno, un «hasta 20» le dice que no le van a caber.
 
-export default function WizardPlan({ hasta, tramos = TRAMOS, onCargar, onPagar }) {
+import { tramosDePlan, limiteInicial } from '@/lib/adaptadores/planes'
+import { useCountry } from '@/hooks/useCountry'
+
+export default function WizardPlan({ onCargar, onPagar, hasta }) {
+  const { country, formatMoney } = useCountry()
+  const tramos = tramosDePlan(country, (n) => formatMoney(n))
+  const limite = limiteInicial()
+
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 18 }}>
       <div>
@@ -37,8 +44,8 @@ export default function WizardPlan({ hasta, tramos = TRAMOS, onCargar, onPagar }
           Empieza sin pagar nada
         </h2>
         <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', marginTop: 6, lineHeight: 1.45 }}>
-          Usa la app completa 30 días. Cuando pases de 20 clientes te decimos qué
-          plan te sirve.
+          Usa la app completa 30 días. Cuando pases de {limite?.toLocaleString('es-CO')} clientes
+          te decimos qué plan te sirve.
         </p>
       </div>
 
@@ -89,12 +96,12 @@ export default function WizardPlan({ hasta, tramos = TRAMOS, onCargar, onPagar }
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
         }}>
           {tramos.map((t, i) => (
-            <div key={t.limite} style={{
+            <div key={t.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               gap: 12, padding: '11px 16px',
               borderTop: i ? '1px solid var(--cf-divider)' : 0,
             }}>
-              <span style={{ fontSize: 13.5, color: 'var(--cf-ink-2)' }}>{t.limite}</span>
+              <span style={{ fontSize: 13.5, color: 'var(--cf-ink-2)' }}>{t.texto}</span>
               <span className="cf-fig" style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
                 {t.precio}
               </span>
