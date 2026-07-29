@@ -192,14 +192,21 @@ export default function LoginPage() {
         return
       }
 
-      const sessionRes = await fetch('/api/auth/session')
-      const session    = await sessionRes.json()
-
-      if (session?.user?.rol === 'superadmin') {
-        window.location.href = '/admin/dashboard'
-      } else {
-        window.location.href = '/dashboard'
+      // Llegar aqui significa que signIn ACERTO: la persona ya esta dentro.
+      // Esta consulta solo decide a que panel mandarla, asi que si falla —red
+      // lenta, peticion abortada, respuesta a medias— NO es motivo para decirle
+      // que no pudo entrar. Se va al panel normal, que es el caso de casi
+      // todos, y el propio dashboard resuelve el rol.
+      let esSuperadmin = false
+      try {
+        const sessionRes = await fetch('/api/auth/session')
+        const session    = await sessionRes.json()
+        esSuperadmin = session?.user?.rol === 'superadmin'
+      } catch {
+        esSuperadmin = false
       }
+
+      window.location.href = esSuperadmin ? '/admin/dashboard' : '/dashboard'
     } catch {
       setError('Error al iniciar sesión. Intenta de nuevo.')
     } finally {
