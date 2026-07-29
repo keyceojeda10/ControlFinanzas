@@ -22,7 +22,9 @@
 | Inventario de 106 pantallas | `05-PANTALLAS.md` | `components/pantallas/` |
 | **Modos sin tabla + pantalla "Más"** | `06-ADENDA-modos-sin-tabla.md` | `components/pantallas/` |
 | **Menú del + y Lucas** | `07-ADENDA-menu-y-lucas.md` | `components/pantallas/` |
+| **Socios** | `08-ADENDA-socios.md` | `components/pantallas/Socios.jsx` |
 | Turnos 41–43 (visual) | `NUEVO-turnos-41-42-43.dc.html` | — |
+| Turnos 44–45 (visual) | `NUEVO-socios-turnos-44-45.dc.html` | — |
 | El documento visual | `Control Finanzas - Rediseno.dc.html` | — |
 | Banco de pruebas | — | `app/estilo` |
 
@@ -268,8 +270,34 @@ Las adendas resolvieron los tres que había:
    calendarios"** y el problema desaparece. Los 8 se comparan donde ya se
    comparan bien: el selector del paso 5 de crear préstamo, en lista vertical.
 
+## Socios — decisión de producto, no solo de diseño
+
+La adenda 08 no rediseña Socios: **cambia el modelo**. Había dos repartos
+conviviendo —por préstamo asignado (`socioId`) y por porcentaje— y la app
+mostraba los dos, admitiendo en letra chica que el % era "una referencia".
+Un socio que ve 66,7% en pantalla **cree que le toca eso**.
+
+Se queda el **porcentaje del capital aportado**. Si el reparto va por préstamo,
+al socio que le tocaron los clientes malos come una pérdida que no eligió, y eso
+es lo que rompe sociedades.
+
+`socioId` **no se borra: cambia de trabajo** — pasa de decidir quién gana a decir
+dónde está la plata de cada socio. Sin migración destructiva, y hay que decirlo
+en pantalla o el malentendido vuelve.
+
+### Qué hay ya y qué falta en el backend
+
+| | Estado |
+|---|---|
+| Reparto por porcentaje | ✅ `app/api/socios/repartir` ya lo hace |
+| No mover plata de la caja al repartir | ✅ ya es el comportamiento (`// Sin registrarMovimientoCapital a proposito`) |
+| `aporte` y `reparto` | ✅ `AporteSocio.tipo` = `aporte` / `utilidad` |
+| **`pago` al socio** | ❌ **no existe.** Sin este tipo, `leDebes = haGanado − leHasDado` no se puede calcular, y `leDebes` es la cifra héroe de toda la ficha |
+| **"Mandarle su cuenta"** | ❌ no existe. Es la acción primaria, porque el socio no entra a la app |
+| **"Tu parte"** (capital del dueño vs. de los socios) | ❌ no existe |
+| `Socio.desde` | ⚠️ se puede derivar de `createdAt` o del primer aporte |
+
 ## Lo único que sigue sin diseñar
 
-- **Socios.** No hay pantalla en ningún paquete. Si hace falta, es diseño nuevo.
 - Cualquier flujo de **renovación** que no sea "crear préstamo con datos
   prellenados".

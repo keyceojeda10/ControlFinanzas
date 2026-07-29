@@ -32,6 +32,7 @@ import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import Simulador from '@/components/pantallas/Simulador'
 import FichaRuta from '@/components/pantallas/FichaRuta'
 import { CrearPrestamoMonto, CrearPrestamoCondiciones } from '@/components/pantallas/CrearPrestamo'
+import { ListaSocios, RepartirGanancia, CuentaSocio } from '@/components/pantallas/Socios'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -989,6 +990,73 @@ export default function Estilo() {
               monto="3.900.000"
               atajos={['$500k', '$800k', '$1M']}
               alerta={<>Te quedarías con <strong>$100.000</strong> en caja. Los cobros de mañana entran, pero hoy no te queda para otro préstamo.</>}
+            />
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Socios · un solo modelo de reparto
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Había <strong>dos modelos conviviendo</strong> —por préstamo asignado y por porcentaje— y
+        la app mostraba los dos a la vez. Un socio que ve 66,7% en pantalla cree que le toca eso.
+        Se elige el porcentaje; el <code>socioId</code> del préstamo pasa a decir <em>dónde está su
+        plata</em>, no quién gana.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="socios-lista" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Socios"
+            subtitulo="2 activos · reparten por lo que pusieron"
+          />
+          <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+            <ListaSocios
+              pusieron="$12.000.000"
+              sinRepartir="$1.240.000" desdeCuando="30 de junio"
+              socios={[
+                { nombre: 'Carlos Andrés', iniciales: 'CA', puso: '$8.000.000', pusoNum: 8000000,
+                  porcentaje: '66,7%', leHasDado: '$1.200.000', leDebes: '$780.000' },
+                { nombre: 'Marta Ruiz', iniciales: 'MR', puso: '$4.000.000', pusoNum: 4000000,
+                  porcentaje: '33,3%', leHasDado: '$300.000', leDebes: '$600.000' },
+              ]}
+            />
+            <div style={{ height: 96 }} />
+          </div>
+          <PastillaDemo activo="/mas" />
+        </div>
+
+        <HojaDemo id="socios-repartir" titulo="Repartir la ganancia" subtitulo="del 30 de junio al 28 de julio">
+          <RepartirGanancia
+            desde="30 jun" hasta="28 jul"
+            aRepartir="$1.240.000"
+            deDondeSale="De $8.838.907 que entró, quitando el capital que volvió y $10.000 de gastos."
+            detalle={[
+              { nombre: 'Carlos Andrés', iniciales: 'CA', porcentaje: '66,7%', puso: '$8.000.000', monto: '$826.667' },
+              { nombre: 'Marta Ruiz', iniciales: 'MR', porcentaje: '33,3%', puso: '$4.000.000', monto: '$413.333' },
+            ]}
+            suman="$1.240.000"
+            lesDebesAntes="$1.380.000" lesDebesDespues="$2.620.000"
+          />
+        </HojaDemo>
+
+        <div id="socios-cuenta" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Carlos Andrés"
+            subtitulo="socio desde marzo · 66,7%"
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CuentaSocio
+              leDebes="$780.000" puso="$8.000.000" haGanado="$1.980.000" leHasDado="$1.200.000"
+              prestamos={18} montoEnCalle="$7,2M" montoEnMora="$420.000"
+              movimientos={[
+                { tipo: 'reparto', concepto: 'Reparto de junio', detalle: '30 jun · 66,7% de $1.410.000', monto: '+$940.000' },
+                { tipo: 'pago', concepto: 'Le pagaste', detalle: '12 jun · efectivo', monto: '−$1.200.000' },
+                { tipo: 'aporte', concepto: 'Puso plata', detalle: '4 mar · primer aporte', monto: '$8.000.000' },
+              ]}
             />
           </div>
         </div>
