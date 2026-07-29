@@ -20,6 +20,8 @@ import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import ListaClientes from '@/components/pantallas/ListaClientes'
 import ListaRutas from '@/components/pantallas/ListaRutas'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
+import PantallaMas from '@/components/pantallas/PantallaMas'
+import MenuCrear from '@/components/pantallas/MenuCrear'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -485,6 +487,45 @@ export default function Estilo() {
               ]}
             />
           </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        El quinto destino y el menú del +
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Las dos son <strong>solo móvil</strong>. En escritorio la barra lateral ya lista todo, y
+        la acción de crear vive en el botón dorado de cada pantalla.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="pantalla-mas" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+          <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+            <PantallaMas
+              plataLista="$2.520.280"
+              rendimiento="rinde 7,8% al mes"
+              gastosMes="solo $10.000 este mes"
+              cobradoresSinRegistrar="8 sin registrar nada"
+              perdidos="1 préstamo · $1.2M"
+              socios={{ cantidad: 0 }}
+              usuarios={3}
+            />
+            <div style={{ height: 96 }} />
+          </div>
+          <PastillaDemo activo="/mas" />
+        </div>
+
+        <div id="menu-crear" style={MARCO}>
+          <MenuCrear
+            fecha="martes 28" hora="7:14 a. m."
+            cobrosPendientes="te faltan 5 cobros de hoy"
+            plataLista="tienes $2.520.280 para prestar"
+            cobrosCorto="5 pendientes"
+            plataCorto="$2,5M libres"
+            cajaEstado="sin cerrar"
+            diasPlan="vence en 5 días"
+          />
         </div>
       </div>
 

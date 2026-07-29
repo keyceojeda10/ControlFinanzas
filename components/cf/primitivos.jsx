@@ -22,7 +22,10 @@ export function Tarjeta({ children, style, plana = false, ...props }) {
       border: '1px solid var(--cf-border)',
       borderRadius: 'var(--cf-r-card)',
       padding: plana ? 0 : '16px 19px',
-      display: 'flex', flexDirection: 'column', gap: 12,
+      // Una tarjeta plana ES una lista de filas, y esas filas ya se separan con
+      // su propia linea de 1px. El hueco de 12px encima de la linea hace que la
+      // fila mida 68px cuando la receta pide 56.
+      display: 'flex', flexDirection: 'column', gap: plana ? 0 : 12,
       flex: 'none',
       ...style,
     }}>{children}</div>
