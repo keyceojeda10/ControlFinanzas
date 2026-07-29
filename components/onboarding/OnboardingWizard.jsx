@@ -6,6 +6,7 @@ import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
+import WizardExcel from './wizard/WizardExcel'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 
@@ -180,13 +181,20 @@ export default function OnboardingWizard({
       {step === 2 && flujo && !metodo && (
         <WizardMetodoCarga
           onElegir={(via) => {
-            if (via === 'foto') { setMetodo('foto'); return }
-            // Excel y manual viven fuera del asistente. PENDIENTE: traerlos
-            // dentro, para no sacar a la persona del flujo a mitad de camino.
+            // Foto y Excel se quedan DENTRO: quien sale de un flujo de tres
+            // minutos para aterrizar en otra pantalla no vuelve.
+            if (via === 'foto' || via === 'excel') { setMetodo(via); return }
             persistStep(2, flujo)
-            window.location.href = via === 'excel' ? '/carga-masiva' : '/clientes/nuevo'
+            window.location.href = '/clientes/nuevo'
           }}
           onSaltar={handleCartulinaSkip}
+        />
+      )}
+
+      {step === 2 && flujo && metodo === 'excel' && (
+        <WizardExcel
+          onComplete={handleCartullinaDone}
+          onSkip={handleCartulinaSkip}
         />
       )}
 
@@ -199,9 +207,12 @@ export default function OnboardingWizard({
 
       {step === 3 && flujo && (
         <WizardExito
-          cliente={importResult?.clientesCreados > 0 ? { nombre: `${importResult.clientesCreados} importados` } : null}
-          prestamo={importResult?.prestamosCreados > 0 ? { montoPrestado: 0, totalAPagar: 0, cuotaDiaria: 0, frecuencia: 'diario' } : null}
-          flujo={flujo}
+          clientes={importResult?.clientesCreados ?? 0}
+          prestamos={importResult?.prestamosCreados ?? 0}
+          cartera={importResult?.cartera ?? 0}
+          cobrosHoy={importResult?.cobrosHoy ?? 0}
+          faltantes={importResult?.faltantes ?? []}
+          onVerCobros={() => { window.location.href = '/cobros-hoy' }}
           onFinish={handleFinish}
         />
       )}

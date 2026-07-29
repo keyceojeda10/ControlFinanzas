@@ -12,6 +12,7 @@ import WizardWelcome from '@/components/onboarding/wizard/WizardWelcome'
 import WizardCapital from '@/components/onboarding/wizard/WizardCapital'
 import WizardMetodoCarga from '@/components/onboarding/wizard/WizardMetodoCarga'
 import WizardProgress from '@/components/onboarding/wizard/WizardProgress'
+import WizardExito from '@/components/onboarding/wizard/WizardExito'
 
 function Paso({ n, titulo, children }) {
   return (
@@ -35,10 +36,10 @@ export default function PreviaOnboarding() {
       fontFamily: 'var(--font-manrope), system-ui' }}>
       <h1 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 24, fontWeight: 600,
         letterSpacing: '-.025em', color: 'var(--cf-ink)', margin: '0 0 4px' }}>
-        Onboarding · 3 de los 4 pasos
+        Onboarding · los 4 pasos
       </h1>
       <p style={{ fontSize: 13, color: 'var(--cf-ink-3)', margin: '0 0 24px' }}>
-        Falta «03 · Listo», que necesita las cifras de lo que se acaba de importar.
+        Las cifras de «Listo» son las que saldrian del Excel real de 68 creditos.
       </p>
 
       <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -50,6 +51,20 @@ export default function PreviaOnboarding() {
         </Paso>
         <Paso n={3} titulo="03 · Método de carga">
           <WizardMetodoCarga onElegir={() => {}} onSaltar={() => {}} />
+        </Paso>
+        <Paso n={4} titulo="03 · Listo">
+          <WizardExito
+            clientes={68}
+            prestamos={68}
+            cartera={128000000}
+            cobrosHoy={7}
+            faltantes={[
+              { texto: 'El archivo no trae la cédula' },
+              { texto: '44 sin el teléfono' },
+            ]}
+            onVerCobros={() => {}}
+            onFinish={() => {}}
+          />
         </Paso>
       </div>
     </div>
