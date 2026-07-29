@@ -5,9 +5,8 @@ import { headers } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import Sidebar        from '@/components/layout/Sidebar'
-import Header         from '@/components/layout/Header'
-import MobileNavGroup from '@/components/layout/MobileNavGroup'
+import BarraLateral   from '@/components/armazon/BarraLateral'
+import Armazon        from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
@@ -51,16 +50,16 @@ async function bloquearSiVencida() {
 export default async function DashboardLayout({ children }) {
   await bloquearSiVencida()
   return (
-    <div className="flex min-h-screen lg:h-screen bg-[#060609]">
-      {/* Sidebar – visible solo en lg+ */}
-      <Sidebar />
+    <Armazon>
+    <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
+      {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
+          cobrando en la calle. La regla de supresion es exclusiva de movil. */}
+      <BarraLateral />
 
       {/* Área principal */}
       {/* mobile: flex-col sin overflow → body scrollea (evita GPU artifacts Android) */}
       {/* desktop: overflow-y-auto + h-dvh → scroll interno con sidebar fija */}
       <div className="flex-1 flex flex-col min-w-0 lg:overflow-y-auto">
-        {/* Header – visible solo en mobile */}
-        <Header />
 
         {/* Aviso verificar email (periodo de gracia 24h) */}
         <VerificarEmailBanner />
@@ -74,14 +73,13 @@ export default async function DashboardLayout({ children }) {
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />
 
-        {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6">
+        {/* Contenido de la página.
+            SIN padding-bottom para la pastilla: el contenido pasa POR DEBAJO a
+            proposito, y cada pantalla reserva su propio hueco final. */}
+        <main className="flex-1">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
-
-      {/* BottomNav + AsistenteButton wired together */}
-      <MobileNavGroup />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
@@ -101,5 +99,6 @@ export default async function DashboardLayout({ children }) {
       {/* Analytics: page view tracking */}
       <Analytics />
     </div>
+    </Armazon>
   )
 }
