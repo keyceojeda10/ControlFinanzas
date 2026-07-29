@@ -153,7 +153,9 @@ export default function MenuCrear({
           letterSpacing: '-.02em', color: TINTA, padding: '0 4px', flex: 'none',
         }}>¿Qué vas a hacer?</span>
         <span className="cf-num" style={{ fontSize: 12, color: TINTA_2, padding: '0 4px', marginTop: -5, flex: 'none' }}>
-          {fecha} · {hora}
+          {/* Sin fecha ni hora NO se pinta el separador: quedaba un «·»
+              suelto bajo el título, que parece un fallo de render. */}
+          {[fecha, hora].filter(Boolean).join(' · ')}
         </span>
 
         {/* Agrupadas por lo que le pasa a la plata, no por tipo de objeto.

@@ -20,6 +20,7 @@ import { useSession } from 'next-auth/react'
 import { CABECERA, resolverArmazon } from '@/lib/armazon'
 import CabeceraMovil from '@/components/armazon/CabeceraMovil'
 import PastillaNav from '@/components/armazon/PastillaNav'
+import MenuCrear from '@/components/pantallas/MenuCrear'
 
 const ArmazonContext = createContext(null)
 
@@ -56,6 +57,11 @@ function iniciales(nombre = '') {
 }
 
 export default function Armazon({ children, nombre: nombreServidor, hayAvisos = false, onCrear }) {
+  // EL FAB ESTABA MUERTO. `onCrear` se declaraba aquí pero el layout nunca lo
+  // pasaba, así que el botón principal de crear —el que sale en TODAS las
+  // pantallas de navegación— se pulsaba y no hacía nada: ni menú, ni navegar,
+  // ni error. Un botón que no responde enseña a no volver a tocarlo.
+  const [menuCrear, setMenuCrear] = useState(false)
   const pathname = usePathname() || '/'
   const { data: session } = useSession()
   const [dePantalla, setDePantalla] = useState(null)
@@ -110,7 +116,18 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
       {/* La pastilla NO se oculta con CSS: no se monta. Un `display:none` deja
           los cinco destinos en el árbol y un lector de pantalla los sigue
           anunciando en una pantalla donde no se puede navegar. */}
-      {armazon.pastilla && <PastillaNav onCrear={onCrear} />}
+      {armazon.pastilla && <PastillaNav onCrear={onCrear ?? (() => setMenuCrear(true))} />}
+
+      {menuCrear && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90 }}>
+          <MenuCrear
+            fecha={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
+            hora={new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+            onIr={(destino) => { setMenuCrear(false); window.location.href = destino }}
+            onCerrar={() => setMenuCrear(false)}
+          />
+        </div>
+      )}
     </ArmazonContext.Provider>
   )
 }
