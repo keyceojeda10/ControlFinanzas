@@ -29,6 +29,8 @@ import TablaAmortizacion, { CompararCalendarios } from '@/components/pantallas/T
 import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
+import Simulador from '@/components/pantallas/Simulador'
+import FichaRuta from '@/components/pantallas/FichaRuta'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -883,6 +885,47 @@ export default function Estilo() {
               contexto="Cl 8 # 31-05 · 36 días de atraso"
               monto="27.500" tipo="Solo un abono" medio="Efectivo"
               debeAntes="$130.500" debeDespues="$103.000"
+            />
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Simulador y ficha de ruta
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        El simulador tenía la respuesta <strong>al final del scroll</strong> y terminaba en un
+        callejón: calculaba, pero no dejaba crear el préstamo. Y una ruta no es un recorrido: es
+        <strong> plata puesta en un barrio</strong>.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="simulador" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Simulador" subtitulo="para mostrarle a tu cliente" />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <Simulador
+              cuota="$20.000" cada="cada día" veces={30} hasta="27 ago"
+              tuPlata="$500.000" tuPlataNum={500000} ganas="$100.000" ganasNum={100000}
+              monto="500.000" interes="20" cobros="30" unidadCobros="días"
+              frecuencia="Diario" modo="Cuota fija"
+            />
+          </div>
+        </div>
+
+        <div id="ficha-ruta" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Capital de Ruta 2" subtitulo="Pepito · 9 clientes" />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaRuta
+              puesto="$11.600.000" prestado="$8,4M" porGanar="$3,2M" rinde="38%"
+              entro="$2.840.000" salioAPrestar="$3.100.000" crecio="+$260.000"
+              nombreRuta="Ruta 2"
+              comparacion={[
+                { nombre: 'Ruta sur', porcentaje: 94 },
+                { nombre: 'Ruta 2', porcentaje: 71 },
+                { nombre: 'Ruta #1', porcentaje: 54 },
+              ]}
+              lectura="Esta ruta te rinde el 38% y paga sola lo que le metes. Si tienes plata quieta, es donde conviene ponerla."
+              totalPrestamos={9}
             />
           </div>
         </div>
