@@ -15,6 +15,38 @@ node scripts/recorrer.mjs        # 14 pantallas × móvil y escritorio
 
 ## Hecho
 
+### Cartera vacía — «04 · Cartera vacía»
+La pantalla que ve el **75% de las cuentas atascadas** en 5 clientes o menos, y
+los clientes cargados son lo que predice el pago (0 clientes → 0%; 51-150 →
+74%). Tenía un texto gris y un botón. Ahora repite las **tres vías de carga del
+onboarding**, mismo orden y mismas palabras. La moneda va apagada: no hay nada
+que celebrar.
+
+Se van también los controles muertos: sobre una cartera de cero clientes había
+un buscador y cuatro filtros diciendo «Todos · 0 / Al día · 0 / En mora · 0».
+
+### Préstamos — de mil píxeles a dos filas
+Cuatro filas de chips, un desplegable, «filtros avanzados», buscador,
+«Agrupar» y conmutador de vista: **1.030px antes del primer préstamo** en un
+teléfono de 844. Ahora ~545px. Lo secundario vive en `HojaFiltros` con el
+**número de filtros puestos** en el botón — un filtro escondido sin contador es
+un filtro olvidado. El Simulador se fue a «Más».
+
+Las tarjetas de cliente ahora dicen **cuántos préstamos tiene abiertos**. La API
+lo mandaba y el adaptador lo tiraba; sin él, tres créditos abiertos y uno solo
+se ven idénticos bajo el mismo «Deuda total».
+
+### Rutas — el recuadro que repetía la franja
+El aviso ámbar de 240px repetía titular y botón de la franja de arriba. Ahora
+una línea gris con lo único suyo. Las copias de seguridad se mudan al modo
+«Ordenar», que es cuando importan.
+
+### Hidratación — un patrón que ya salió cinco veces
+Todo lo que depende de `useSession()` difiere entre servidor y cliente, y React
+tira el árbol entero y lo repinta. Queda como hook con nombre:
+`hooks/useMontado.js`. **El truco de `typeof window` no sirve** — el primer
+render del cliente también tiene window.
+
 ### Login — turno 4 · «08 · Entrar»
 Copy del handoff: «Entra a tu cartera / Tus clientes, tus rutas y tu caja, donde
 los dejaste». El anterior no decía a **qué** vuelves. Campos de 56px con etiqueta
@@ -76,10 +108,16 @@ Títulos útiles: `08 · Entrar` (login) · `02 · Registro` · `01 · Panel del
 
 ## Lo que sigue, en orden
 
-1. **Onboarding** (`04 · Cartera vacía`) — sin rediseñar.
-2. **Cabeceras de préstamos y rutas** — siguen las viejas; préstamos tiene tres
-   filas de chips.
-3. **Panel, Cobrar hoy, Caja** — componente hecho, sin cablear.
+1. **Panel, Cobrar hoy, Caja** — componente hecho, sin cablear. Es lo que queda
+   más gordo.
+2. **Las 7 pantallas con desajuste de hidratación**: capital, cobradores,
+   configuración, gastos, panel, reportes, socios. Todas sin migrar; la mayoría
+   se arregla con `useMontado`.
+3. **El `+` de la pantalla y el FAB del armazón** son dos círculos que crean
+   cosas, en la misma pantalla. Falta decidir cuál manda.
+4. **Los conteos de los chips de préstamos** solo salen en el filtro activo y en
+   mora: los demás no se saben sin otra consulta. Es honesto, pero se ve
+   irregular. Decidir si vale la consulta.
 
 ---
 
