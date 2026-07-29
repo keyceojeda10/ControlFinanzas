@@ -31,6 +31,7 @@ import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import Simulador from '@/components/pantallas/Simulador'
 import FichaRuta from '@/components/pantallas/FichaRuta'
+import { CrearPrestamoMonto, CrearPrestamoCondiciones } from '@/components/pantallas/CrearPrestamo'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -926,6 +927,68 @@ export default function Estilo() {
               ]}
               lectura="Esta ruta te rinde el 38% y paga sola lo que le metes. Si tienes plata quieta, es donde conviene ponerla."
               totalPrestamos={9}
+            />
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Crear préstamo · los dos pasos del teléfono
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Una sola barra de progreso en todo el wizard: la espina de la cabecera. Y la línea que hoy
+        no existe: <strong>con cuánto te quedas en caja después de prestar</strong>.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="crear-monto" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.TAREA} titulo="Nuevo préstamo" paso={1} total={3} />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CrearPrestamoMonto
+              cliente="Deisy Ramírez" iniciales="DR"
+              contextoCliente="CC 43987112 · al día · 1 préstamo pagado"
+              monto="800.000"
+              atajos={['$500k', '$800k', '$1M']} atajoActivo="$800k"
+              quedaEnCaja="$3,2M"
+            />
+          </div>
+        </div>
+
+        <div id="crear-condiciones" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.TAREA} titulo="Nuevo préstamo" paso={2} total={3} />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CrearPrestamoCondiciones
+              /* Numeros sacados de calcularPrestamo(), no del mockup: el
+                 handoff dibuja $180.000 / $640.000 / $1.440.000, que este
+                 sistema no produce con 20% semanal a 8 cuotas. Lo real es
+                 $140.000 / $320.000 / $1.120.000. */
+              cuotaEtiqueta="Cuota semanal" cuota="$140.000" ganancia="$320.000"
+              capital="$800.000" totalARecibir="$1.120.000"
+              capitalNum={800000} gananciaNum={320000}
+              frecuencia="Semanal"
+              interes="20" cuotas="8" unidadCuotas="semanas"
+              notaInteres="tu valor de siempre"
+              modoActivo="fija"
+              modos={[
+                { id: 'fija', nombre: 'Cuota fija', insignia: 'el más usado', nota: 'Paga lo mismo cada semana' },
+                { id: 'saldo', nombre: 'Sobre lo que falta', nota: 'Como los bancos' },
+                { id: 'solo', nombre: 'Solo interés', nota: 'El capital al final' },
+              ]}
+              primerCobro="martes 4 de agosto" enCuantos="en 7 días"
+              ruta="Ruta 2 · Pepito"
+            />
+          </div>
+        </div>
+
+        <div id="crear-monto-alerta" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.TAREA} titulo="Nuevo préstamo" paso={1} total={3} />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CrearPrestamoMonto
+              cliente="Deisy Ramírez" iniciales="DR"
+              contextoCliente="CC 43987112 · al día · 1 préstamo pagado"
+              monto="3.900.000"
+              atajos={['$500k', '$800k', '$1M']}
+              alerta={<>Te quedarías con <strong>$100.000</strong> en caja. Los cobros de mañana entran, pero hoy no te queda para otro préstamo.</>}
             />
           </div>
         </div>
