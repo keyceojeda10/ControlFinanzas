@@ -109,10 +109,15 @@ for (const tam of TAMANOS) {
       await pag.goto(`http://localhost:3000${p.ruta}`, { waitUntil: 'domcontentloaded', timeout: 60000 })
       await pag.waitForTimeout(2500)
       await pag.goto(`http://localhost:3000${p.ruta}`, { waitUntil: 'domcontentloaded', timeout: 45000 })
-      await pag.waitForTimeout(3500)
+      // 6s, no 3,5. En desarrollo el panel tarda mas: la captura salia con el
+      // esqueleto propio de la pantalla y el detector de «CARGANDO todavia»
+      // saltaba con razon. Compilar la ruta la primera vez y resolver cuatro
+      // peticiones no cabe en tres segundos y medio.
+      await pag.waitForTimeout(6000)
       // Sin esto el barrido dispara el limitador de peticiones y los 429 que
-      // salen en el informe son mios, no de la app.
-      await pag.waitForTimeout(900)
+      // salen en el informe son mios, no de la app. Con 1,8s el limitador
+      // aguanta un barrido de las catorce pantallas seguidas.
+      await pag.waitForTimeout(1800)
     } catch (e) {
       errores.push('navegación: ' + String(e.message).slice(0, 120))
     }
@@ -141,6 +146,11 @@ for (const tam of TAMANOS) {
         // Una página en blanco se nota; un esqueleto se parece lo justo a la
         // pantalla real para colarse.
         cargando: document.querySelectorAll('[aria-busy="true"]').length,
+        // Y si la app se cree SIN CONEXION. Pasa en desarrollo: el ping de
+        // /api/ping tarda o lo tumba el limitador, la app lo lee como «limbo»
+        // —WiFi sin paso a internet— y sirve el esqueleto desde cache. Lo
+        // capturado entonces no es la pantalla, es el modo offline.
+        offline: /sin conexi[oó]n/i.test(document.body?.innerText || ''),
       }
     }).catch(() => null)
 
@@ -175,6 +185,7 @@ for (const r of informe) {
   // pantalla de esta app ni en el estado vacío más pelado.
   if ((r.letras ?? 0) < 40) señales.push(`EN BLANCO (${r.letras ?? 0} letras) ← ¿está caído el servidor?`)
   if (r.cargando > 0) señales.push(`CARGANDO todavía (${r.cargando} esqueleto/s) ← no cotejes esto`)
+  if (r.offline) señales.push('la app se cree SIN CONEXIÓN ← el ping se cayó, no cotejes esto')
   if (r.cabeceras > 1) señales.push(`${r.cabeceras} cabeceras`)
   if (r.tamano === 'escritorio' && r.navs > 1) señales.push(`${r.navs} navs`)
   if (r.tamano === 'movil' && r.laterales > 0) señales.push('barra lateral en móvil')

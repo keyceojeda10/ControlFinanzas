@@ -10,7 +10,7 @@ import { useOffline } from '@/components/providers/OfflineProvider'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
 import Panel from '@/components/pantallas/Panel'
-import { adaptarPanel } from '@/lib/adaptadores/panel'
+import { adaptarPanel, porRutaHoy } from '@/lib/adaptadores/panel'
 import CacheAge from '@/components/offline/CacheAge'
 
 // Carga diferida — solo se descargan si el usuario los necesita
@@ -54,7 +54,12 @@ function KpiCardSkeleton() {
 // contenedora), o al cargar se ve un layout que luego cambia.
 function KpiGroupSkeleton({ kpis = 2 }) {
   return (
-    <div>
+    // `aria-busy` NO es adorno de accesibilidad, aunque tambien lo sea: es la
+    // senal que dice «esto no es la pantalla, es la espera». Sin ella, una
+    // captura del esqueleto se parece lo justo a la pantalla real para colarse
+    // en un cotejo — ya me pase un rato comparando esqueletos contra la lamina.
+    // Un lector de pantalla gana lo mismo: deja de leer cajas vacias.
+    <div aria-busy="true">
       <div className="px-1 py-2 flex items-center gap-2">
         <div className="w-6 h-6 rounded-[6px] animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
         <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
@@ -1620,7 +1625,12 @@ export default function DashboardPage() {
       {/* El saludo, el subtítulo «Resumen de tu cartera hoy» y la hora de
           actualización se fueron: el saludo vive ahora dentro del Panel, y los
           otros dos no respondían ninguna pregunta. */}
-      {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
+      {/* LA BANDA DE SUSCRIPCION BAJA, no se borra. Abria la pantalla por
+          delante del saludo y se comia 150px justo donde T02-01 pone el hero, y
+          encima quedaba debajo de la franja «Pasaste el limite de tu plan»: dos
+          avisos de plan apilados es el ruido que PilaAvisos existe para evitar.
+          Sigue estando —es un aviso de renovacion, no adorno— pero despues de
+          lo que el dueno abrio la pantalla a mirar. Ver mas abajo. */}
       {isOffline && (
         <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>
           <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: 'var(--color-warning)' }} />
@@ -1721,18 +1731,30 @@ export default function DashboardPage() {
             {...adaptarPanel(data, {
               nombre: session?.user?.nombre || session?.user?.name,
               hora: new Date().getHours(),
-              // ⚠ El resumen da la PLATA que toca cobrar hoy (`esperadoHoy`)
-              // pero NO a cuántos clientes. Va en 0 a propósito: `cantidadClientes`
-              // de /api/rutas es el total de la ruta, no los que tocan hoy, y
-              // poner ese número diría que hay 68 cobros pendientes cuando puede
-              // haber 12. Con 0, la tarjeta de avance no se pinta — mejor que
-              // pintarla mintiendo. Falta el conteo en el endpoint.
-              clientesHoy: 0,
+              // Ya no va en 0. El resumen daba la PLATA que toca cobrar hoy
+              // (`esperadoHoy`) pero no A CUANTOS, asi que el bloque del dia no
+              // se pintaba. Ahora el endpoint cuenta los clientes en el MISMO
+              // bucle y con la MISMA regla que la plata, en un Set por
+              // clienteId: un cliente con tres prestamos que vencen hoy es UNA
+              // visita, no tres.
+              clientesHoy: data?.prestamos?.clientesConCobroHoy ?? 0,
             })}
+            // «martes 28 de julio». T40-00-a la dibuja bajo el saludo y no
+            // salia: el adaptador no la produce y el Panel solo la pinta si
+            // llega. Se formatea aca porque depende de la zona del NAVEGADOR:
+            // hecha en el servidor, sale el dia de UTC y en Bogota eso se
+            // equivoca en las cinco primeras horas del dia.
+            fecha={new Date().toLocaleDateString('es-CO', {
+              weekday: 'long', day: 'numeric', month: 'long',
+            })}
+            porRuta={porRutaHoy(rutasData, session?.user?.country)}
             sinMargen
-            onVerCobros={() => { window.location.href = '/cobros-hoy' }}
             onIr={(destino) => { window.location.href = destino }}
           />
+
+          {/* La banda de suscripcion, AQUI. Ver la nota de arriba: antes abria
+              la pantalla y empujaba el hero fuera de la primera vista. */}
+          {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
 
           <DashboardAiTip data={data} />
 
@@ -1747,10 +1769,12 @@ export default function DashboardPage() {
               El del Panel se queda: lleva la misma información con la cifra
               correcta y su enlace. */}
 
-          {/* Como va cada ruta hoy. Va arriba porque con varias rutas es la
-              pregunta de la mañana, y hasta ahora habia que revisarlas una por
-              una entrando a Caja > Por ruta. */}
-          {esOwner && rutasData && <RutasHoy rutas={rutasData} />}
+          {/* «Como va cada ruta hoy» AHORA VIVE DENTRO DEL PANEL, que es donde
+              lo pone T02-01 («Por ruta hoy», el ultimo bloque). Este era un
+              segundo bloque con la misma informacion justo debajo: dos veces la
+              misma tabla de rutas, una con el diseno nuevo y otra con el viejo.
+              Es el mismo defecto que el «Necesita tu atencion» duplicado de
+              arriba, y se corrige igual: se queda el del Panel. */}
 
           {/* Recaudado del mes + interes — en desktop side by side */}
           {!vistaSimple && (

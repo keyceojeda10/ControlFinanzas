@@ -1,68 +1,191 @@
 'use client'
 
-// components/pantallas/Panel.jsx — El panel del dueño. Turno 2 del handoff.
+// components/pantallas/Panel.jsx — El panel del dueño. Lámina T02-01.
 //
-// LA RESPUESTA DE ESTA PANTALLA ES EL DÍA. Va en el bloque oscuro; el
-// patrimonio baja a la banda de debajo.
+// EL HERO ES DORADO, y eso no es una decisión mía. El pie de T02-01 lo explica:
 //
-// Es lo contrario de lo que dibujé primero, y el motivo es que EL PATRIMONIO NO
-// TRAE NOTICIAS: es el mismo número que ayer y que anteayer. Si lo primero que
-// se ve cada mañana es una cifra que no se ha movido, la pantalla enseña que no
-// tiene nada que contar, y en dos semanas se deja de mirar. Del día, en cambio,
-// se puede hacer algo: si a las 3 de la tarde una ruta lleva el 20% de lo que
-// debería, se llama al cobrador y se salva el día.
+//   «El hero dorado se queda —es el momento dorado del sistema— pero baja de
+//    300px a 150px y ahora sí informa: recaudado, meta, progreso y cobros.
+//    Mora y caja pasan a blanco: hoy son dos tarjetas teñidas que compiten
+//    entre sí. La misma cifra de mora dejó de repetirse tres veces.»
 //
-// Y el bloque SE VOLTEA CON LA HORA. A las 7 de la mañana un «recaudado hoy
-// $0» es inútil y hasta angustioso, así que hasta que entra el primer pago el
-// titular mira hacia adelante —lo que hay por cobrar— y en cuanto entra plata
-// pasa a decir cuánto llevas de esa meta.
+// «Hoy» ahí significa la app EN PRODUCCIÓN, no un intento anterior: el dorado
+// viene de la pantalla que el usuario ya tiene, y se queda por continuidad. Yo
+// lo había cambiado por un bloque oscuro razonando por mi cuenta.
 //
-// "Toda tu plata" = caja + calle. NO es `cobrado − prestado − gastos`: esa resta
-// da rojo en un negocio sano, porque prestar no es una pérdida. Si una fórmula
-// puede dar rojo en un caso bueno, la fórmula está mal.
+// LOS CINCO BLOQUES, EN ESTE ORDEN:
+//
+//   1 · saludo + fecha        ← lo manda T40-00-a: «el saludo baja al cuerpo»
+//   2 · hero dorado           ← recaudado, meta, %, cobrados/pendientes/ayer
+//   3 · dos tarjetas blancas  ← en caja · en mora (con su monto expuesto)
+//   4 · necesita tu atención  ← con contador y chevrones
+//   5 · por ruta hoy          ← una barra por ruta, con su color
+//
+// LA MORA SE DICE UNA VEZ. Está en su tarjeta con «20 de 25 · $3,1M expuestos»,
+// y NO vuelve a salir en «Necesita tu atención»: ahí va un corte distinto —los
+// que pasan de 30 días— porque «se atrasó» y «probablemente no vuelve» son dos
+// decisiones diferentes.
+//
+// UNA DISCREPANCIA DEL PAQUETE, dicha para que nadie la descubra a medias:
+// T40-00-a dibuja este panel con un bloque OSCURO de «Patrimonio» como titular.
+// Es turno 40, posterior a este. Pero la guía dice que el turno 40 es «la
+// cabecera definitiva» y su pie habla solo de la cabecera: el cuerpo que enseña
+// es andamio para mirar el encabezado. La guía también dice, literal, que el
+// panel es `T02-01`. Así que manda T02-01 para el cuerpo y T40 para la cabecera.
 //
 // Presentacional a propósito: recibe todo por props. Así se puede ver y ajustar
-// contra el mockup sin depender de la base de datos.
+// contra la lámina sin depender de la base de datos.
 
-import { Tarjeta, BloqueOscuro, TiraCifras, BarraProgreso, BotonTexto, Pastilla } from '@/components/cf/primitivos'
+import { Tarjeta } from '@/components/cf/primitivos'
 
-/* El histórico de siete días. Es lo que hacía útil el panel viejo: una cifra
-   sola no dice si hoy es bueno o malo, y la semana al lado sí. Va pequeño y al
-   pie del bloque — es contexto, no el titular. */
-function Historico({ datos = [], sobreOscuro = true }) {
-  const max = Math.max(...datos, 1)
-  const ALTO = 30
-  const tenue = sobreOscuro ? 'rgba(255,255,255,.22)' : 'var(--cf-border)'
-  const vivo  = sobreOscuro ? 'rgba(255,255,255,.85)' : 'var(--cf-ink)'
+/* ══ El hero dorado ══
+   Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
+   barra va en #3A2900 sobre una pista del mismo tono al 16%: sobre dorado, un
+   relleno blanco no se ve. */
+function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer }) {
+  const pie = [
+    `${cobrados} cobrado${cobrados === 1 ? '' : 's'}`,
+    `${pendientes} pendiente${pendientes === 1 ? '' : 's'}`,
+    ayer ? `ayer ${ayer}` : null,
+  ].filter(Boolean)
+
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 5, height: ALTO, flex: 'none' }}
-      aria-label="Lo recaudado en los últimos siete días">
-      {datos.map((v, i) => (
-        <span key={i} style={{
-          flex: 1, minWidth: 0, maxWidth: 18, borderRadius: 3,
-          // Mínimo 2px: una barra de altura cero desaparece y el día parece
-          // que no existió, cuando lo cierto es que no entró nada.
-          height: Math.max(2, Math.round((v / max) * ALTO)),
-          background: i === datos.length - 1 ? vivo : tenue,
+    <div style={{
+      background: 'var(--cf-gold)',
+      borderRadius: 'var(--cf-r-card)',
+      padding: '18px 20px',
+      display: 'flex', flexDirection: 'column', gap: 14,
+      flex: 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase',
+            color: 'var(--cf-gold-text)',
+          }}>Recaudado hoy</span>
+          <span className="cf-fig" style={{
+            fontSize: 38, letterSpacing: '-.03em', color: 'var(--cf-gold-ink)',
+          }}>{recaudado}</span>
+          {/* La meta va DEBAJO de la cifra, no al lado: «$412.000 de $872.867»
+              en una línea hace dudar de cuál de los dos es lo cobrado. */}
+          {meta && (
+            <span className="cf-num" style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--cf-gold-text)',
+            }}>de {meta} · meta del día</span>
+          )}
+        </div>
+        <span className="cf-fig" style={{
+          display: 'inline-flex', alignItems: 'center', flex: 'none',
+          height: 26, padding: '0 11px', borderRadius: 'var(--cf-r-pill)',
+          background: 'rgba(58,41,0,.14)',
+          fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-ink)',
+        }}>{porcentaje}%</span>
+      </div>
+
+      <div style={{
+        height: 8, borderRadius: 999, overflow: 'hidden', flex: 'none',
+        background: 'rgba(58,41,0,.16)',
+      }}>
+        <span style={{
+          display: 'block', height: 8, borderRadius: 999,
+          width: `${Math.max(0, Math.min(100, porcentaje))}%`,
+          background: 'var(--cf-gold-ink)',
         }} />
-      ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+        {pie.map((t, i) => (
+          <span key={i} className="cf-num" style={{
+            fontSize: 12, fontWeight: 600, color: 'var(--cf-gold-text)',
+          }}>{t}</span>
+        ))}
+      </div>
     </div>
   )
 }
 
-/* Fila de "necesita tu atención". El punto de color dice la gravedad sin
-   teñir la fila entera. */
-function FilaAtencion({ tono = 'atraso', texto, accion, onAccion, primera }) {
-  const color = tono === 'mora' ? 'var(--cf-red)' : tono === 'ok' ? 'var(--cf-green)' : 'var(--cf-gold)'
+/* ══ Las dos tarjetas blancas ══
+   Antes eran dos tarjetas TEÑIDAS —una verde y una roja— y competían entre sí:
+   con las dos gritando, ninguna era la importante. En blanco, el color queda
+   solo en la cifra que de verdad lo necesita. */
+function TarjetaDato({ rotulo, children, pie }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 11,
-      padding: '12px 19px', minHeight: 46, flex: 'none',
-      borderTop: primera ? 'none' : '1px solid var(--cf-hairline)',
+      flex: 1, minWidth: 0,
+      background: 'var(--cf-card)',
+      border: '1px solid var(--cf-border)',
+      borderRadius: 'var(--cf-r-card)',
+      padding: 15,
+      display: 'flex', flexDirection: 'column', gap: 7,
     }}>
-      <span style={{ width: 7, height: 7, borderRadius: 999, background: color, flex: 'none' }} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.35 }}>{texto}</span>
-      {accion && <BotonTexto onClick={onAccion} style={{ flex: 'none' }}>{accion} →</BotonTexto>}
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+        color: 'var(--cf-ink-3)',
+      }}>{rotulo}</span>
+      {children}
+      {pie && <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{pie}</span>}
+    </div>
+  )
+}
+
+/* ══ Fila de «Necesita tu atención» ══
+   El punto de 7px dice la gravedad sin teñir la fila, y el chevrón dice que se
+   entra. Antes llevaba un botón de texto «Ver →»: cuatro botones seguidos son
+   cuatro decisiones, y la fila entera ya es el objetivo. */
+function FilaAtencion({ tono = 'atraso', texto, onIr }) {
+  const color = tono === 'mora' ? 'var(--cf-red)' : tono === 'ok' ? 'var(--cf-green)' : 'var(--cf-gold)'
+  return (
+    <button type="button" onClick={onIr} style={{
+      display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+      padding: '12px 16px', flex: 'none',
+      borderTop: '1px solid var(--cf-hairline)',
+      borderLeft: 0, borderRight: 0, borderBottom: 0,
+      background: 'none', cursor: onIr ? 'pointer' : 'default',
+      fontFamily: 'var(--font-manrope), system-ui',
+    }}>
+      <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: color, flex: 'none' }} />
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.35 }}>
+        {texto}
+      </span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
+        strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+        <path d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  )
+}
+
+/* ══ Por ruta hoy ══
+   El color responde «¿a quién llamo?»: verde va bien, dorado va corto, gris no
+   ha empezado. Y el 0% lleva barra al 2%: una barra de ancho cero desaparece y
+   la ruta parece que no existe, cuando lo que pasa es que no ha cobrado nada —
+   que es justo lo que hay que ver. */
+const COLOR_RUTA = {
+  ok:   { texto: 'var(--cf-green-dark)', barra: 'var(--cf-green)' },
+  oro:  { texto: 'var(--cf-gold-dark)',  barra: 'var(--cf-gold)' },
+  nada: { texto: 'var(--cf-ink-3)',      barra: 'var(--cf-ink-4)' },
+}
+
+function FilaRuta({ nombre, porcentaje = 0, tono = 'oro' }) {
+  const c = COLOR_RUTA[tono] || COLOR_RUTA.oro
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+        <span style={{
+          fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)',
+          minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{nombre}</span>
+        <span className="cf-num" style={{ fontSize: 12, fontWeight: 700, color: c.texto, flex: 'none' }}>
+          {porcentaje}%
+        </span>
+      </div>
+      <div style={{ height: 5, borderRadius: 999, background: 'var(--cf-fill)', overflow: 'hidden', flex: 'none' }}>
+        <span style={{
+          display: 'block', height: 5, borderRadius: 999,
+          width: `${Math.max(2, Math.min(100, porcentaje))}%`,
+          background: c.barra,
+        }} />
+      </div>
     </div>
   )
 }
@@ -71,127 +194,128 @@ export default function Panel({
   saludo = 'Buenos días',
   nombre = '',
   fecha = '',
-  patrimonio,
-  enCaja,
-  porCobrar,
-  clientesEnMora = 0,
-  hoy = { clientes: 0, esperado: null, recaudado: null, porcentaje: 0 },
+  hero,
+  caja,
+  mora,
   atencion = [],
-  onVerCobros,
+  porRuta,
+  // DOBLE MARGEN, y era visible: el hero medía 310px de ancho empezando en x40
+  // cuando la lámina lo pone a 350 empezando en x20.
+  //
+  // El layout del dashboard ya pone 20px laterales con su `px-5`, así que el
+  // `var(--cf-pad-screen)` de acá los sumaba: 40 a cada lado. La convención del
+  // sistema es que la pantalla nueva suelte SU relleno con `sinMargen` —
+  // PantallaMas ya lo hacía— y este componente no declaraba la prop. La página
+  // se la pasaba desde el primer día; simplemente se caía al suelo.
+  //
+  // Cuarta vez el mismo patrón en esta sesión (el FAB, la campana, las props de
+  // la barra lateral, y esto): prop pasada, prop no consumida, y nada falla —
+  // solo queda mal. De ahí la prueba de lib/__tests__/sin-margen.test.js.
+  sinMargen = false,
+  onIr,
 }) {
-  const nadaCobrado = !hoy.recaudado || hoy.porcentaje === 0
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 0' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 12,
+      padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
+    }}>
 
-      {/* El saludo va en el CUERPO, no en la cabecera. */}
+      {/* 1 · El saludo va en el CUERPO, no en la cabecera. Lo manda T40-00-a:
+             «el saludo baja al cuerpo, donde puede ser grande». */}
       <div style={{ flex: 'none' }}>
         <h1 style={{
           fontFamily: 'var(--font-space-grotesk), system-ui',
           fontSize: 22, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2,
           color: 'var(--cf-ink)', margin: 0,
         }}>{saludo}, {nombre}</h1>
-        <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 3 }}>
-          {fecha}
-        </span>
-      </div>
-
-      {/* ── LA RESPUESTA: EL DÍA ──
-          Aquí vive TODO lo que traía el panel viejo, que era bastante útil: lo
-          cobrado, lo esperado, la ganancia, cuántos pagos, el histórico de la
-          semana y la frase que interpreta el día. No se sustituye por menos —
-          se muda al lenguaje nuevo. */}
-      <BloqueOscuro
-        etiqueta={nadaCobrado ? 'Hoy toca cobrar' : 'Recaudado hoy'}
-        cifra={nadaCobrado ? (hoy.esperado ?? '—') : hoy.recaudado}
-      >
-        <TiraCifras sobreOscuro columnas={[
-          nadaCobrado
-            ? { etiqueta: 'Clientes', valor: String(hoy.clientes ?? 0) }
-            : { etiqueta: 'De la meta', valor: hoy.esperado ?? '—' },
-          {
-            // La etiqueta dice QUÉ es la cifra. Poner «14 pagos» encima de
-            // «$142.000» hacía leer que catorce pagos son ciento cuarenta y dos
-            // mil, que es falso y además es la cifra más delicada del panel.
-            etiqueta: 'Ganancia',
-            // RECAUDADO NO ES GANANCIA. Cobrar $500.000 de capital propio
-            // volviendo no es ganar $500.000, y mezclarlos ya infló la ganancia
-            // 7,9 veces. Va al lado, con su nombre.
-            valor: hoy.ganancia ?? '—',
-            tono: hoy.ganancia ? 'oro' : 'neutro',
-          },
-          { etiqueta: 'En mora', valor: String(clientesEnMora), tono: clientesEnMora > 0 ? 'contra' : 'neutro' },
-        ]} />
-
-        {/* La frase que INTERPRETA: las cifras ya están arriba. Si no tiene
-            nada que decir no se pinta — una frase de relleno todos los días
-            enseña a saltársela. */}
-        {hoy.narrativa && (
-          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,.78)', lineHeight: 1.4 }}>
-            {hoy.narrativa}
+        {fecha && (
+          <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+            {fecha}
           </span>
         )}
+      </div>
 
-        {hoy.historico?.length > 0 && <Historico datos={hoy.historico} />}
-      </BloqueOscuro>
+      {/* 2 · El hero dorado */}
+      {hero && <Hero {...hero} />}
 
-      {/* El avance del día, con su salida al trabajo. */}
-      {hoy.clientes > 0 && (
-        <Tarjeta>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-2)' }}>
-              {hoy.pagos > 0
-                ? `${hoy.pagos} de ${hoy.clientes} cobrados`
-                : `${hoy.clientes} cliente${hoy.clientes === 1 ? '' : 's'} por cobrar hoy`}
-            </span>
-            {nadaCobrado
-              ? <Pastilla tono="neutro">sin cobrar aún</Pastilla>
-              : <Pastilla tono="aldia" numerica>{hoy.porcentaje}%</Pastilla>}
-          </div>
-
-          <BarraProgreso porcentaje={hoy.porcentaje} tono={hoy.porcentaje >= 60 ? 'ok' : 'oro'} alto={8} />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <BotonTexto onClick={onVerCobros}>Ver los {hoy.clientes} cobros →</BotonTexto>
-          </div>
-        </Tarjeta>
+      {/* 3 · Las dos tarjetas blancas.
+             `caja` solo la ve el owner: al cobrador el servidor le manda
+             `finanzas: null`, y un «$0 para prestar» le enseñaría un negocio
+             quebrado. Sin ella, la de mora ocupa el ancho entero. */}
+      {(caja || mora) && (
+        <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+          {caja && (
+            <TarjetaDato rotulo="En caja" pie="Para prestar ahora">
+              <span className="cf-fig" style={{
+                fontSize: 21, letterSpacing: '-.025em', color: 'var(--cf-ink)',
+              }}>{caja}</span>
+            </TarjetaDato>
+          )}
+          {mora && (
+            <TarjetaDato rotulo="En mora" pie={mora.expuesto ? `${mora.expuesto} expuestos` : null}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                {/* El conteo en rojo, el total en gris: son dos cifras y solo
+                    una es la mala noticia. «20 de 25» todo en rojo se lee como
+                    si los 25 estuvieran en mora. */}
+                <span className="cf-fig" style={{
+                  fontSize: 21, letterSpacing: '-.025em',
+                  color: mora.cuantos > 0 ? 'var(--cf-red)' : 'var(--cf-ink)',
+                }}>{mora.cuantos}</span>
+                {mora.deCuantos > 0 && (
+                  <span className="cf-num" style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+                    de {mora.deCuantos}
+                  </span>
+                )}
+              </div>
+            </TarjetaDato>
+          )}
+        </div>
       )}
 
-      {/* ── EL PATRIMONIO, DEBAJO ──
-          No es el titular porque no cambia de un día para otro, pero sigue
-          siendo lo que dice si el negocio crece. Aquí una referencia estable se
-          consulta sin estorbar.
-
-          Solo owner: al cobrador el servidor le manda `finanzas: null`, y un 0
-          le enseñaría un negocio quebrado. */}
-      {patrimonio && (
-        <Tarjeta>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-              Toda tu plata
-            </span>
-            <span className="cf-fig" style={{ fontSize: 21, fontWeight: 700, color: 'var(--cf-ink)' }}>
-              {patrimonio}
-            </span>
-          </div>
-          <TiraCifras columnas={[
-            { etiqueta: 'En caja',    valor: enCaja },
-            { etiqueta: 'Por cobrar', valor: porCobrar, tono: 'oro' },
-          ]} />
-        </Tarjeta>
-      )}
-
-      {/* Necesita tu atención */}
+      {/* 4 · Necesita tu atención. Si no hay nada, no se pinta: una tarjeta
+             vacía con el rótulo puesto dice que hay algo que mirar. */}
       {atencion.length > 0 && (
-        <Tarjeta plana>
-          <div style={{ padding: '14px 19px 10px', flex: 'none' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-              Necesita tu atención
-            </span>
+        <div style={{
+          background: 'var(--cf-card)',
+          border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)',
+          overflow: 'hidden', flex: 'none',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px 10px',
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+              color: 'var(--cf-ink-3)',
+            }}>Necesita tu atención</span>
+            <span className="cf-num" style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999,
+              background: 'var(--cf-fill)', fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-2)',
+            }}>{atencion.length}</span>
           </div>
           {atencion.map((a, i) => (
-            <FilaAtencion key={i} {...a} primera={i === 0} />
+            <FilaAtencion key={i} {...a} onIr={a.destino ? () => onIr?.(a.destino) : undefined} />
           ))}
+        </div>
+      )}
+
+      {/* 5 · Por ruta hoy */}
+      {porRuta?.rutas?.length > 0 && (
+        <Tarjeta style={{ gap: 13, padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+              color: 'var(--cf-ink-3)',
+            }}>Por ruta hoy</span>
+            {/* Repite el total del hero A PROPÓSITO: es la suma de las barras de
+                abajo, y verla cuadrar es lo que hace creíble el desglose. */}
+            <span className="cf-num" style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none' }}>
+              {porRuta.recaudado} de {porRuta.meta}
+            </span>
+          </div>
+          {porRuta.rutas.map((r) => <FilaRuta key={r.id ?? r.nombre} {...r} />)}
         </Tarjeta>
       )}
     </div>

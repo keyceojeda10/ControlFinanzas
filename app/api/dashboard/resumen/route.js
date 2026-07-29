@@ -350,6 +350,20 @@ export async function GET() {
   // $3.261.868 cuando lo que tocaba cobrar ese dia eran $647.867, y el donut
   // marcaba 1% en vez de 3%. Una meta inalcanzable enseña a ignorar la meta.
   let esperadoHoy = 0
+  // Cuanta plata hay ATRAPADA en los prestamos en mora. T02-01 lo pide junto al
+  // conteo: «20 de 25 · $3,1M expuestos».
+  //
+  // El conteo solo no dice el tamano del problema: veinte clientes en mora
+  // debiendo $50.000 cada uno es un mal dia, y veinte debiendo $500.000 es el
+  // negocio en peligro. Son la misma cifra en la pantalla vieja y dos
+  // situaciones distintas.
+  let saldoEnMora = 0
+  // Cuantos pasan de 30 dias. ESTABA FIJADO A CERO en la respuesta —el campo
+  // existia y nunca se calculaba— asi que la fila «N prestamos con mas de 30
+  // dias de mora» de T02-01 no podia aparecer nunca.
+  let mora30plus = 0
+  // A cuantos clientes toca cobrarles hoy. Ver la nota del `.add()` de abajo.
+  const clientesConCobroHoy = new Set()
   const proximosACompletar = []
 
   // Cachear diasExcluidos por cliente: los prestamos del mismo cliente
@@ -379,14 +393,35 @@ export async function GET() {
     const _sinCobroHoy = esHoySinCobro(_diasExcl) || esHoyFestivo(festivos)
     if (tienePeriodoEsperadoHoy(p, _sinCobroHoy, _diasExcl, festivos)) {
       esperadoHoy += p.cuotaDiaria ?? 0
+      // A CUANTOS toca cobrarles hoy, con la MISMA regla que la plata.
+      //
+      // Esto faltaba, y era una carencia con consecuencia: el resumen daba
+      // `esperadoHoy` (la plata) pero no el conteo, asi que el panel lo pasaba
+      // en 0 y el bloque del dia no se pintaba. La alternativa que se descarto
+      // —usar `cantidadClientes` de /api/rutas— es el total de la ruta, no los
+      // que tocan hoy: habria dicho 68 cobros pendientes habiendo 12.
+      //
+      // Es un Set de clienteId, no un contador: un cliente con tres prestamos
+      // que vencen hoy es UNA visita, no tres.
+      clientesConCobroHoy.add(p.clienteId)
     }
 
     const diasExcluidos = getDiasExcluidos(p.cliente)
-    if (calcularDiasMora(p, diasExcluidos, festivos) > 0) {
+    const diasMora = calcularDiasMora(p, diasExcluidos, festivos)
+    const estaEnMora = diasMora > 0
+    if (estaEnMora) {
       clientesMora.add(p.clienteId)
+      // Mas de 30 dias es otra cosa: no es un atraso, es un prestamo que
+      // probablemente no vuelve. T02-01 le da su propia fila en «Necesita tu
+      // atencion», separada del conteo general de mora.
+      if (diasMora > 30) mora30plus += 1
     }
 
     const saldoP = calcularSaldoPendiente(p)
+    // El saldo expuesto se suma ACA y no arriba porque `saldoP` se calcula en
+    // esta linea: hacerlo antes obligaria a llamar dos veces a
+    // calcularSaldoPendiente(), que recorre la cascada de pagos del prestamo.
+    if (estaEnMora) saldoEnMora += saldoP
     const pctPagado = p.totalAPagar > 0 ? Math.round(((p.totalPagado || 0) / p.totalAPagar) * 100) : 0
     if (pctPagado >= 80 && pctPagado < 100 && saldoP > 0) {
       const cuotasRest = p.cuotaDiaria > 0 ? Math.ceil(saldoP / p.cuotaDiaria) : 0
@@ -502,6 +537,10 @@ export async function GET() {
     clientes: {
       total:  clientesActivos.size,
       enMora: clientesMora.size,
+      // Ver la nota de `saldoEnMora`: el conteo solo no dice el tamano del
+      // problema. Veinte clientes debiendo $50.000 y veinte debiendo $500.000
+      // son la misma cifra en pantalla y dos situaciones distintas.
+      saldoEnMora: Math.round(saldoEnMora),
     },
     prestamos: {
       activos:         prestamosActivosDetalle.length,
@@ -513,6 +552,8 @@ export async function GET() {
       // Lo que de verdad toca cobrar hoy. Es la meta del hero; cuotaDiariaTotal
       // se queda como "suma de cuotas de la cartera" en el bloque Operacion.
       esperadoHoy: Math.round(esperadoHoy),
+      // Cuantos clientes toca visitar hoy, con la MISMA regla que `esperadoHoy`.
+      clientesConCobroHoy: clientesConCobroHoy.size,
     },
     finanzas: esCobrador ? null : {
       cajaDisponible,
@@ -577,7 +618,10 @@ export async function GET() {
     alertas: esCobrador ? null : {
       clientesSinRuta: clientesSinRutaCount ?? 0,
       prestamosSinPagosLargo: clientesSinPagosLargo ?? 0,
-      mora30plus: 0,
+      mora30plus,
+      // «5 prestamos listos para renovar»: los que van por encima del 80%. Ya se
+      // calculaban para otra cosa; T02-01 les da su fila.
+      listosParaRenovar: proximosACompletar.length,
       proximosACompletar: proximosACompletar
         .sort((a, b) => b.porcentaje - a.porcentaje)
         .slice(0, 20),
