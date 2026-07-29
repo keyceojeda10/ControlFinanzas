@@ -13,6 +13,8 @@ import { SkeletonClienteList } from '@/components/ui/Skeleton'
 import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
+import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -775,9 +777,17 @@ export default function ClientesPage() {
         // Mientras no exista el filtro server-side, al menos se avisa en vez de
         // dar un numero falso por bueno.
         const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
+        // Las tarjetas del rediseño: superficie SIEMPRE blanca y el estado en un
+        // riel de 4px. Lo anterior teñía la tarjeta entera de rosa o ámbar, y
+        // con media cartera en mora eso es un muro donde nada destaca porque
+        // todo destaca. Es la razón por la que se rediseñó esta pantalla.
+        //
+        // Las acciones en línea (WhatsApp, cobrar) salen de la tarjeta: se toca
+        // para abrir la ficha, y ahí viven. Una lista es para mirar.
+        const adaptados = adaptarClientes(filtrados, country)
         return filtrados.length > 0 ? (
-          <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'}>
-            {filtrados.map((c) => (
+          <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
+            {filtrados.map((c, i) => (
               modoAsignar ? (
                 <label
                   key={c.id}
@@ -797,22 +807,6 @@ export default function ClientesPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
                     <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">CC {c.cedula}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {c.grupoCobro ? (
-                        <span className="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full border"
-                          style={{
-                            color: c.grupoCobro.color || 'var(--color-accent)',
-                            borderColor: `color-mix(in srgb, ${c.grupoCobro.color || 'var(--color-accent)'} 27%, transparent)`,
-                            background: `color-mix(in srgb, ${c.grupoCobro.color || 'var(--color-accent)'} 10%, transparent)`,
-                          }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.grupoCobro.color || 'var(--color-accent)' }} />
-                          {c.grupoCobro.nombre}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-[var(--color-text-muted)]">Sin grupo</span>
-                      )}
-                    </div>
                   </div>
                 </label>
               ) : vista === 'compacta' ? (
@@ -820,32 +814,11 @@ export default function ClientesPage() {
                   <ClienteCardCompacto cliente={c} esNuevo={isHoy(c.createdAt, country)} />
                 </BadgeNuevo>
               ) : (
-                <BadgeNuevo key={c.id} fecha={c.createdAt}>
-                  <ClienteCard
-                    cliente={c}
-                    esNuevo={isHoy(c.createdAt, country)}
-                    actions={[
-                      ...(c.telefono ? [{
-                        icon: IconWA,
-                        label: 'WhatsApp',
-                        color: '#25D366',
-                        onClick: () => setWaCliente(c),
-                      }] : []),
-                      ...(c.prestamosActivos > 0 ? [{
-                        icon: IconPagar,
-                        label: 'Cobrar',
-                        color: 'var(--color-success)',
-                        onClick: () => { window.location.href = `/clientes/${c.id}` },
-                      }] : []),
-                      ...(puedeCrearPrestamos && c.prestamosActivos === 0 ? [{
-                        icon: IconPagar,
-                        label: 'Prestar',
-                        color: 'var(--color-accent)',
-                        onClick: () => { window.location.href = `/prestamos/nuevo?clienteId=${c.id}` },
-                      }] : []),
-                    ]}
-                  />
-                </BadgeNuevo>
+                <TarjetaCliente
+                  key={c.id}
+                  {...adaptados[i]}
+                  onClick={() => { window.location.href = `/clientes/${c.id}` }}
+                />
               )
             ))}
           </StaggeredList>

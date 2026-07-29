@@ -36,7 +36,7 @@ const [org] = await con.query('SELECT id, country FROM Organization LIMIT 1')
 const [dueno] = await con.query('SELECT id FROM User WHERE organizationId = ? LIMIT 1', [org.id])
 if (!org || !dueno) { console.error('ABORTADO: no hay organización. Regístrate primero.'); process.exit(1) }
 
-const MARCA = 'demo-auditoria'
+const MARCA = '30099'   // prefijo de telefono reservado para los datos de prueba
 
 if (process.argv.includes('--borrar')) {
   // Prestamo no tiene campo de notas, asi que la marca vive en el CLIENTE
@@ -45,11 +45,11 @@ if (process.argv.includes('--borrar')) {
     `DELETE p FROM Pago p
        JOIN Prestamo pr ON pr.id = p.prestamoId
        JOIN Cliente c ON c.id = pr.clienteId
-      WHERE c.referencia LIKE ?`, [`%${MARCA}%`])
+      WHERE c.telefono LIKE ?`, [`${MARCA}%`])
   await con.query(
     `DELETE pr FROM Prestamo pr JOIN Cliente c ON c.id = pr.clienteId
-      WHERE c.referencia LIKE ?`, [`%${MARCA}%`])
-  await con.query('DELETE FROM Cliente WHERE referencia LIKE ?', [`%${MARCA}%`])
+      WHERE c.telefono LIKE ?`, [`${MARCA}%`])
+  await con.query('DELETE FROM Cliente WHERE telefono LIKE ?', [`${MARCA}%`])
   await con.query('DELETE FROM Ruta WHERE nombre LIKE ?', ['%(demo)'])
   console.log('datos de auditoría borrados')
   await con.end()
@@ -92,7 +92,7 @@ for (const c of CASOS) {
     // Cedula unica por corrida: la tabla tiene indice unico (org, cedula) y
     // una siembra a medias dejaria la siguiente sin poder empezar.
     [cid, org.id, c.nombre, String(Date.now()).slice(-8) + String(creados),
-     '30012345' + String(creados).padStart(2, '0'), `${c.dir} · ${MARCA}`, rutas[c.ruta].id]
+     MARCA + String(creados).padStart(5, '0'), c.dir, rutas[c.ruta].id]
   )
 
   const pid = id('pr')

@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import HojaInferior from '@/components/cf/HojaInferior'
+import FranjaAviso from '@/components/armazon/FranjaAviso'
 import { BotonPrimario, BotonTexto } from '@/components/cf/primitivos'
 
 const APLAZADO = 'cf:verificar-correo:aplazado'
@@ -87,31 +88,18 @@ export default function AvisoVerificarCorreo() {
   return (
     <>
       {!aplazado && (
-        <button
-          type="button"
-          onClick={() => setAbierta(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10, width: '100%', flex: 'none',
-            minHeight: 40, padding: '0 var(--cf-pad-screen)', cursor: 'pointer', textAlign: 'left',
-            background: 'var(--cf-gold-tint)',
-            borderBottom: '1px solid var(--cf-gold-border)',
-            border: 0,
-          }}
+        <FranjaAviso
+          accion="Verificar"
+          onAccion={() => setAbierta(true)}
+          icono={
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M3 7l9 6 9-6" />
+            </svg>
+          }
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-            <rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M3 7l9 6 9-6" />
-          </svg>
-          <span style={{
-            flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--cf-gold-text)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            Falta verificar tu correo
-          </span>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)', flex: 'none' }}>
-            Verificar
-          </span>
-        </button>
+          Falta verificar tu correo
+        </FranjaAviso>
       )}
 
       <HojaInferior
