@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
-import { adaptarRutas, adaptarSinRuta } from '@/lib/adaptadores/rutas'
+import { adaptarRutas, adaptarSinRuta, resumenDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -534,8 +534,13 @@ export default function RutasPage() {
       )}
 
       {/* Toggle modo trabajo / ordenar (owner y cobrador, con 2+ rutas).
-          El cobrador solo puede reordenar sus rutas asignadas (validado en el endpoint). */}
-      {!loading && rutas.length > 1 && (
+          El cobrador solo puede reordenar sus rutas asignadas (validado en el endpoint).
+
+          EN MODO TRABAJO NO SE PINTA ACA: va dentro de ListaRutas, en la misma
+          fila del titulo, porque aca quedaba ENCIMA de el — lo primero que se
+          veia al abrir Rutas no era «Rutas» sino un conmutador de modo. En modo
+          Ordenar si se queda arriba: ahi la lista nueva no se monta. */}
+      {!loading && rutas.length > 1 && modoOrdenar && (
         <div className="flex items-center justify-between mb-3">
           <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)' }}>
             {[
@@ -588,8 +593,46 @@ export default function RutasPage() {
           <ListaRutas
             rutas={adaptarRutas(rutas, country)}
             sinRuta={adaptarSinRuta(recom, country)}
+            // «4 rutas · $34.500 de $207.500 hoy». El encabezado dice de un
+            // vistazo lo que la lista solo dice sumando tarjeta por tarjeta.
+            resumen={resumenDelDia(rutas, country)}
+            // Los controles, en la MISMA fila del titulo. El «+» se queda porque
+            // el FAB de la pastilla NO ofrece «nueva ruta» todavia: quitarlo
+            // dejaria la pantalla sin forma de crear una. Cuando MenuCrear se
+            // rehaga contra su lamina (T43), la ruta entra ahi y este se va.
+            acciones={
+              <>
+                {rutas.length > 1 && (
+                  <button type="button" onClick={() => setModoOrdenar(true)} style={{
+                    display: 'inline-flex', alignItems: 'center', flex: 'none',
+                    height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
+                    background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+                    fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', cursor: 'pointer',
+                    fontFamily: 'var(--font-manrope), system-ui',
+                  }}>Ordenar</button>
+                )}
+                {montado && esOwner && (
+                  <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+                    width: 34, height: 34, borderRadius: 999,
+                    background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                    color: 'var(--cf-ink)', cursor: 'pointer',
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            }
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
-            onAsignar={() => { window.location.href = '/clientes?filtro=sinruta' }}
+            onAsignar={(r) => {
+              // Dos agujeros distintos: la ruta SIN COBRADOR se resuelve
+              // asignandole uno en su detalle; el cliente SIN RUTA, filtrando la
+              // lista de clientes. Antes los dos iban al mismo sitio.
+              window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?filtro=sinruta'
+            }}
+            onSalirACobrar={() => { window.location.href = '/cobros-hoy' }}
           />
         </div>
       )}

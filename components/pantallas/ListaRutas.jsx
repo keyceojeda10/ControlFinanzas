@@ -1,85 +1,194 @@
 'use client'
 
-// components/pantallas/ListaRutas.jsx — Turnos 11 y 27 del handoff.
+// components/pantallas/ListaRutas.jsx — Lámina T27-01, «lista de rutas · solo hoy».
 //
-// LA DECISIÓN: en la LISTA van solo las cifras de HOY. El acumulado de la ruta
-// —capital puesto, con intereses, rendimiento— va en el DETALLE.
+// DOS CIFRAS GRANDES EN VEZ DE CINCO CHICAS. El pie de la lámina:
 //
-// Mezclar las dos escalas en la misma tarjeta fue el defecto del diseño
-// anterior: "$90.000 recaudado hoy" al lado de "$1.500.000 prestado" no se
-// comparan, y el ojo termina leyendo el número grande, que es el que no importa
-// cuando estás saliendo a cobrar.
+//   «Dos cifras grandes en vez de cinco chicas: recaudado y falta. "Falta"
+//    sustituye a "de $145.000 esperados" porque es la resta que el cobrador
+//    hacía de cabeza. El porcentaje pasa a la barra —que ya lo dice— y libera un
+//    hueco. Prestado y Con intereses desaparecen de aquí. Las rutas sin
+//    actividad se colapsan a una fila: no tienen nada de hoy que contar.»
 //
-// Una ruta sin cobrador no es una fila más: es un problema, y se muestra como
-// tal (04-CRITERIOS §E, "los agujeros se muestran como agujeros").
+// De ahí las tres cosas que cambian respecto a lo que yo tenía:
+//
+//  1 · FALTA en vez de «de $X esperados». No es un cambio de palabras: la resta
+//      ya está hecha. Antes el cobrador leía «$34.500 de $128.500» y calculaba
+//      $94.000 de cabeza, cada vez, para saber cuánto le queda por levantar.
+//  2 · FUERA EL PORCENTAJE en texto. La barra ya lo dice, y el hueco que libera
+//      es el que necesita la segunda cifra.
+//  3 · TRES TIPOS DE FILA, no uno. Una ruta que hoy no tiene cobros no necesita
+//      dos cifras en cero y una barra vacía: se colapsa a una línea. Y una ruta
+//      sin cobrador no es una fila más — es un agujero, y va con borde
+//      discontinuo y su «Asignar».
 
-import { Tarjeta, BarraProgreso, Pastilla, BotonTexto, EstadoVacio, BotonPrimario } from '@/components/cf/primitivos'
+import { BotonPrimario, EstadoVacio, Aviso } from '@/components/cf/primitivos'
 
-function TarjetaRuta({ nombre, cobrador, clientes, recaudado, esperado, porcentaje, inactiva, onAbrir }) {
-  const sinCobrador = !cobrador
-  // Una ruta a la que hoy no se le esperaba nada NO está fallando: no hay nada
-  // que cumplir. Pintarla de rojo dice "esta ruta va mal" cuando lo cierto es
-  // "esta ruta no tenía cobros". El estado tiene que significar algo.
-  const sinNadaQueCobrar = inactiva || !esperado || esperado === '$0'
-  const tono = sinNadaQueCobrar ? 'neutro'
-             : porcentaje >= 70 ? 'ok'
-             : porcentaje >= 30 ? 'oro'
-             : 'mal'
-  const color = tono === 'neutro' ? 'var(--cf-fill-2)'
-              : tono === 'ok'  ? 'var(--cf-green)'
-              : tono === 'oro' ? 'var(--cf-gold)'
-              : 'var(--cf-red)'
+const COLOR_PASTILLA = {
+  mora:   { bg: 'var(--cf-red-pill-bg)', bd: 'var(--cf-red-pill-border)', fg: 'var(--cf-red-dark)' },
+  atraso: { bg: 'var(--cf-gold-bg)',     bd: 'var(--cf-gold-border)',     fg: 'var(--cf-gold-text-2)' },
+}
 
+/* El color del riel responde «¿a esta ruta hay que llamarla?». Sin nada que
+   cobrar hoy va VERDE y no gris: no está fallando, simplemente hoy no le toca —
+   pintarla de alarma dice «esta ruta va mal» cuando lo cierto es «no tenía
+   cobros». */
+function colorRiel({ inactiva, porcentaje = 0 }) {
+  if (inactiva) return 'var(--cf-green)'
+  if (porcentaje >= 70) return 'var(--cf-green)'
+  if (porcentaje >= 30) return 'var(--cf-gold)'
+  return 'var(--cf-red)'
+}
+
+/* ══ 1 · La ruta con cobros hoy ══ */
+function RutaActiva({ nombre, subtitulo, pastilla, recaudado, falta, porcentaje = 0, onAbrir }) {
+  const p = pastilla ? COLOR_PASTILLA[pastilla.tono] : null
   return (
     <div onClick={onAbrir} role="button" tabIndex={0} style={{
       position: 'relative', cursor: 'pointer', flex: 'none',
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-      borderRadius: 'var(--cf-r-card)', padding: '15px 16px 15px 19px',
-      display: 'flex', flexDirection: 'column', gap: 11, overflow: 'hidden',
+      borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+      display: 'flex', flexDirection: 'column', gap: 13, overflow: 'hidden',
     }}>
       <span aria-hidden style={{
-        position: 'absolute', left: 0, top: 14, bottom: 14, width: 4, borderRadius: 999,
-        background: sinCobrador ? 'var(--cf-ink-4)' : color,
+        position: 'absolute', left: 0, top: 15, bottom: 15, width: 4, borderRadius: 999,
+        background: colorRiel({ porcentaje }),
       }} />
 
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <span style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{
-            display: 'block', fontSize: 16, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            fontSize: 17, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
+            minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{nombre}</span>
-          <span className="cf-num" style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3, fontSize: 12, color: 'var(--cf-ink-3)' }}>
-            {sinCobrador
-              ? <Pastilla tono="atraso" style={{ height: 20, fontSize: 10 }}>sin cobrador</Pastilla>
-              : cobrador}
-            <span>· {clientes} cliente{clientes === 1 ? '' : 's'}</span>
-          </span>
-        </span>
-        <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none', paddingTop: 2 }}>
-          {sinNadaQueCobrar ? '—' : `${porcentaje}%`}
-        </span>
+          {/* La pastilla va PEGADA al nombre, no al otro extremo: es parte de
+              cómo se llama esta ruta hoy. */}
+          {p && (
+            <span className="cf-num" style={{
+              display: 'inline-flex', alignItems: 'center', flex: 'none',
+              height: 20, padding: '0 8px', borderRadius: 'var(--cf-r-pill)',
+              background: p.bg, border: `1px solid ${p.bd}`, color: p.fg,
+              fontSize: 11, fontWeight: 700,
+            }}>{pastilla.texto}</span>
+          )}
+        </div>
+        {subtitulo && (
+          <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{subtitulo}</span>
+        )}
       </div>
 
-      {/* Solo lo de HOY. El acumulado vive en el detalle. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-            Recaudado hoy
+      {/* LAS DOS CIFRAS. La de la izquierda es lo que ya entró —lo que el
+          cobrador lleva juntando— y va grande; la de la derecha es lo que queda,
+          más pequeña y en gris porque es una consecuencia, no un logro. */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+            color: 'var(--cf-ink-3)',
+          }}>Recaudado hoy</span>
+          <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+            {recaudado}
           </span>
-          <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>de {esperado}</span>
         </div>
-        <span className="cf-fig" style={{ fontSize: 22, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>{recaudado}</span>
-        <BarraProgreso porcentaje={porcentaje} tono={tono === 'neutro' ? 'oro' : tono} alto={5} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end', flex: 'none' }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+            color: 'var(--cf-ink-3)',
+          }}>Falta</span>
+          <span className="cf-fig" style={{ fontSize: 17, color: 'var(--cf-ink-2)' }}>{falta}</span>
+        </div>
+      </div>
+
+      {/* 7px, y el mínimo de 2% para que el 0% se vea: una barra de ancho cero
+          desaparece y la ruta parece que no existe, cuando lo que pasa es que no
+          ha cobrado nada — que es justo lo que hay que ver. */}
+      <div style={{ height: 7, borderRadius: 999, background: 'var(--cf-fill)', overflow: 'hidden', flex: 'none' }}>
+        <span style={{
+          display: 'block', height: 7, borderRadius: 999,
+          width: `${Math.max(2, Math.min(100, porcentaje))}%`,
+          background: colorRiel({ porcentaje }),
+        }} />
       </div>
     </div>
   )
 }
 
-export default function ListaRutas({ rutas = [], sinRuta, onAbrir, onAsignar }) {
-  const activas = rutas.filter(r => !r.inactiva)
-  const inactivas = rutas.filter(r => r.inactiva)
+/* ══ 2 · La ruta sin cobros hoy, colapsada ══
+   Una línea. No tiene nada de hoy que contar, y dos cifras en cero con una barra
+   vacía ocupan 140px para decir «nada». El nombre va en gris: sigue estando,
+   pero no compite con las que sí hay que recorrer. */
+function RutaTranquila({ nombre, subtitulo, onAbrir }) {
+  return (
+    <div onClick={onAbrir} role="button" tabIndex={0} style={{
+      position: 'relative', cursor: 'pointer', flex: 'none',
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+      borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+      display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden',
+    }}>
+      <span aria-hidden style={{
+        position: 'absolute', left: 0, top: 15, bottom: 15, width: 4, borderRadius: 999,
+        background: 'var(--cf-green)',
+      }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <span style={{
+          fontSize: 16, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink-3)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{nombre}</span>
+        {subtitulo && (
+          <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{subtitulo}</span>
+        )}
+      </div>
+    </div>
+  )
+}
 
-  if (rutas.length === 0) {
+/* ══ 3 · La ruta sin cobrador ══
+   BORDE DISCONTINUO. Es un agujero, no una fila: esos clientes existen, deben,
+   y sus cobros no salen en la pantalla de nadie. El discontinuo dice «esto está
+   sin terminar» sin gastar una alarma roja, que sería exagerar — no hay plata
+   perdida, hay trabajo sin asignar. */
+function RutaSinCobrador({ nombre, clientes = 0, onAsignar }) {
+  return (
+    <div style={{
+      flex: 'none',
+      background: 'var(--cf-card)', border: '1px dashed rgba(20,20,28,.16)',
+      borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+      display: 'flex', alignItems: 'center', gap: 12,
+    }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <span style={{
+          fontSize: 16, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink-3)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>{nombre}</span>
+        <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+          {clientes} cliente{clientes === 1 ? '' : 's'} · sin cobrador
+        </span>
+      </div>
+      <button type="button" onClick={onAsignar} style={{
+        background: 'none', border: 0, padding: 0, cursor: 'pointer', flex: 'none',
+        fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
+        fontFamily: 'var(--font-manrope), system-ui',
+      }}>Asignar</button>
+    </div>
+  )
+}
+
+export default function ListaRutas({
+  rutas = [],
+  // «4 rutas · $34.500 de $207.500 hoy»
+  resumen,
+  sinRuta,
+  onAbrir,
+  onAsignar,
+  onSalirACobrar,
+  // Los controles de la pantalla (el modo «Trabajo / Ordenar» y el «+»), en la
+  // MISMA fila del título. En la página iban en un bloque ENCIMA del título, así
+  // que lo primero que se veía al abrir Rutas no era «Rutas» sino un conmutador
+  // de modo. La lámina pone una sola fila de controles, ahí.
+  acciones,
+  sinMargen = false,
+}) {
+  if (rutas.length === 0 && !sinRuta?.cantidad) {
     return (
       <div style={{ padding: '8px var(--cf-pad-screen) 0' }}>
         <EstadoVacio
@@ -91,35 +200,83 @@ export default function ListaRutas({ rutas = [], sinRuta, onAbrir, onAsignar }) 
     )
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 0' }}>
-      {activas.map((r, i) => <TarjetaRuta key={r.id ?? i} {...r} onAbrir={() => onAbrir?.(r)} />)}
+  // El ORDEN no es alfabético: primero las que hoy hay que recorrer, después las
+  // tranquilas, y al final los agujeros. Alfabético es el orden de un
+  // archivador; este es el orden en que hay que actuar.
+  const conCobrador = rutas.filter((r) => r.cobrador)
+  const activas = conCobrador.filter((r) => !r.inactiva)
+  const tranquilas = conCobrador.filter((r) => r.inactiva)
+  const huerfanas = rutas.filter((r) => !r.cobrador)
+  const hayQueCobrar = activas.length > 0
 
-      {inactivas.length > 0 && (
-        <>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', padding: '6px 2px 0', flex: 'none' }}>
-            Sin cobros hoy
-          </span>
-          {inactivas.map((r, i) => <TarjetaRuta key={r.id ?? `i${i}`} {...r} onAbrir={() => onAbrir?.(r)} />)}
-        </>
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 11,
+      padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
+      // El hueco de abajo es para que la pastilla no tape la última tarjeta: el
+      // contenido pasa POR DEBAJO de ella a propósito (regla §B del armazón).
+      paddingBottom: 96,
+    }}>
+      {/* El encabezado: «Rutas» con el botón de alcance, y debajo el resumen del
+          día. El botón dice «Hoy» porque esta pantalla es SOLO de hoy — el
+          acumulado de cada ruta vive en su detalle. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flex: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h1 style={{
+            flex: 1, minWidth: 0, margin: 0,
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          }}>Rutas</h1>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', flex: 'none',
+            height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
+          }}>Hoy</span>
+          {acciones}
+        </div>
+        {resumen && (
+          <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{resumen}</span>
+        )}
+      </div>
+
+      {activas.map((r) => <RutaActiva key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
+      {tranquilas.map((r) => <RutaTranquila key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
+      {huerfanas.map((r) => (
+        <RutaSinCobrador key={r.id} {...r} onAsignar={() => onAsignar?.(r)} />
+      ))}
+
+      {/* Los clientes SIN NINGUNA RUTA. Es otro agujero, distinto del de arriba:
+          allí la ruta existe y le falta cobrador; acá el cliente no está en
+          ninguna ruta, así que no aparece en el recorrido de nadie. */}
+      {sinRuta?.cantidad > 0 && (
+        <RutaSinCobrador
+          nombre="Sin ruta"
+          clientes={sinRuta.cantidad}
+          onAsignar={() => onAsignar?.(null)}
+        />
       )}
 
-      {/* Un agujero se muestra como agujero, no como una fila más de la lista. */}
-      {sinRuta?.cantidad > 0 && (
-        <Tarjeta style={{ background: 'var(--cf-card-alt)', borderStyle: 'dashed' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                Sin ruta
-              </span>
-              <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 3, lineHeight: 1.4 }}>
-                {sinRuta.cantidad} préstamo{sinRuta.cantidad === 1 ? '' : 's'} sin asignar
-                {sinRuta.monto && <> · {sinRuta.monto}</>}
-              </span>
-            </span>
-            <BotonTexto onClick={onAsignar} style={{ flex: 'none' }}>Asignar →</BotonTexto>
-          </div>
-        </Tarjeta>
+      {/* Lo que la pantalla NO muestra, dicho. Sin esta línea, un dueño que
+          busca «cuánto tengo puesto en la Ruta 2» la recorre entera y concluye
+          que la app no lo dice. */}
+      <Aviso tono="neutro">La cartera y el capital de cada ruta están adentro, en su detalle.</Aviso>
+
+      {/* «Salir a cobrar» va AL FINAL DEL CONTENIDO, no anclada abajo.
+          
+          La lámina la dibuja anclada, pero la dibuja en una pantalla SIN
+          pastilla de navegación — y acá la pastilla sí va: «Rutas» es uno de sus
+          cinco destinos, así que quitarla dejaría la barra sin barra justo en la
+          pantalla a la que se llega tocándola. La regla §4 del armazón lo dice al
+          revés: la acción ocupa ese hueco «cuando la pastilla no está».
+          
+          Anclada con la misma z que la pastilla, quedaba DETRÁS de ella: solo se
+          veía un trozo dorado asomando por el borde. Al final del contenido se
+          ve entera y no compite con nada. */}
+      {hayQueCobrar && onSalirACobrar && (
+        <div style={{ paddingTop: 2, flex: 'none' }}>
+          <BotonPrimario onClick={onSalirACobrar}>Salir a cobrar</BotonPrimario>
+        </div>
       )}
     </div>
   )
