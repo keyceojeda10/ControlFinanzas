@@ -196,11 +196,18 @@ es construir la excepción antes que la norma.
 | 2 | `unico` — cambia la pregunta | 18,6% | `06-ADENDA` §2 · turno 41·02 | ✅ |
 | 3 | `manual` = `fijo` + la cuota la puso una persona | 10,6% | `07-ADENDA` §1 · turno 42·01 | ✅ |
 | 4 | `proporcional` = `fijo` + el porcentaje explicado | 9,8% | `07-ADENDA` §2 · turno 42·02 | ✅ |
-| 5 | con tabla — la **variante** | 6,2% | paquete original | ⬜ |
+| 5 | con tabla — la **variante** | 6,2% | paquete original · turno 12 | ✅ |
 
 Las cuatro viven en `components/pantallas/FichaPrestamo.jsx`, un solo componente
-con `modo`. También construidas: **Más** (`PantallaMas.jsx`), el **menú del +**
-(`MenuCrear.jsx`) y **Lucas** en sus tres estados (`Lucas.jsx`).
+con `modo`. La quinta, en `TablaAmortizacion.jsx`.
+
+Construidas además: **Más** (`PantallaMas.jsx`), **menú del +** (`MenuCrear.jsx`),
+**Lucas** en sus tres estados (`Lucas.jsx`), **Caja** del día y cierre de
+cobradores (`Caja.jsx`), **Préstamos** (`ListaPrestamos.jsx`) y **Comparar
+calendarios** (en `TablaAmortizacion.jsx`, ya con el nombre corregido).
+
+Con eso, **las seis pantallas de navegación existen**: Panel, Cobrar hoy,
+Clientes, Préstamos, Rutas y Caja — más el quinto destino, Más.
 
 ### Tres reglas de las fichas sin tabla
 

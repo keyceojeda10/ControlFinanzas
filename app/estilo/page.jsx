@@ -25,6 +25,7 @@ import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
+import TablaAmortizacion, { CompararCalendarios } from '@/components/pantallas/TablaAmortizacion'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -705,6 +706,69 @@ export default function Estilo() {
           <div style={{ height: 96 }} />
         </div>
         <PastillaDemo activo="/prestamos" />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Tabla de amortización · la variante del 6,2%
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Cada cuota es una <strong>barra partida</strong>: negro el capital que vuelve, dorado la
+        ganancia. En decreciente dinámico la parte dorada se encoge mes a mes y eso se ve sin leer
+        un número. Solo 4 de los 8 modos llegan aquí.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="tabla-amortizacion" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Tabla del préstamo"
+            subtitulo="Carlos Prueba 1 · $1.000.000 · 20% · 6 meses" />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <TablaAmortizacion
+              modo="Decreciente dinámico"
+              capital="$1.000.000" capitalNum={1000000}
+              ganancia="$699.999"  gananciaNum={699999}
+              totalCuotas={6} total="$1.699.999" montoOculto="$433.331"
+              cuotas={[
+                { cuando: 'Mes 1 · 21 de agosto', cuota: '$366.667', siguiente: true,
+                  capital: '$166.667', capitalNum: 166667, ganancia: '$200.000', gananciaNum: 200000 },
+                { cuando: 'Mes 2 · 21 de septiembre', cuota: '$333.334',
+                  capital: '$166.667', capitalNum: 166667, ganancia: '$166.667', gananciaNum: 166667 },
+                { cuando: 'Mes 3 · 21 de octubre', cuota: '$300.000',
+                  capital: '$166.667', capitalNum: 166667, ganancia: '$133.333', gananciaNum: 133333 },
+                { cuando: 'Mes 4 · 21 de noviembre', cuota: '$266.667',
+                  capital: '$166.667', capitalNum: 166667, ganancia: '$100.000', gananciaNum: 100000 },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div id="comparar-calendarios" style={{ ...MARCO, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ borderRadius: '22px 22px 0 0', background: 'var(--cf-surface)', padding: '10px 16px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', flex: 'none' }}>
+              <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
+            </div>
+            <span style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', flex: 'none' }}>
+              Comparar calendarios
+            </span>
+            <CompararCalendarios
+              resumen="$1.000.000 al 20% · 6 meses"
+              actual="dinamico"
+              opciones={[
+                { id: 'dinamico', nombre: 'Decreciente dinámico', total: '$1.699.999',
+                  capitalNum: 1000000, gananciaNum: 699999,
+                  explicacion: 'La cuota baja cada mes: de $366.667 a $199.998. Ganancia $699.999.' },
+                { id: 'fija', nombre: 'Cuota fija', total: '$2.200.000',
+                  capitalNum: 1000000, gananciaNum: 1200000,
+                  explicacion: 'El más usado. Misma cuota siempre: $366.667 los 6 meses. Ganancia $1.200.000.' },
+                { id: 'saldo', nombre: 'Sobre lo que falta', total: '$1.612.000',
+                  capitalNum: 1000000, gananciaNum: 612000,
+                  explicacion: 'Como los bancos: el interés se calcula sobre lo que aún debe. Si abona de más, paga menos.' },
+                { id: 'solo', nombre: 'Solo interés', total: '$2.200.000',
+                  capitalNum: 1000000, gananciaNum: 1200000,
+                  explicacion: 'Paga $200.000 de interés cada mes y el millón completo al final. Ojo: el capital no baja.' },
+              ]}
+            />
+          </div>
+        </div>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
