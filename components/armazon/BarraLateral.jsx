@@ -16,7 +16,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { rolEnEspanol } from '@/lib/armazon'
 
 const t = { fill: 'none', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
@@ -169,10 +170,30 @@ function SelectorTema({ tema, onCambiar }) {
 }
 
 export default function BarraLateral({
-  nombre = '', rol = '', iniciales = '', conectado = true,
+  nombre = '', rol = '', iniciales = '',
   hayAvisos = false, tema = 'light', onCambiarTema, onBuscar, onAvisos, onCuenta,
 }) {
   const pathname = usePathname() || '/'
+
+  // El punto del avatar dice si lo que se está viendo llegó del servidor: en una
+  // app que se usa con señal intermitente, es la diferencia entre «no me han
+  // pagado» y «todavía no me ha llegado».
+  //
+  // Se detecta ACÁ y no por prop: era lo único que Armazon calculaba para pasar
+  // hacia abajo, y con la cabecera móvil sin punto (T40-00-a) esta barra quedó
+  // como única consumidora. Arranca en `true` en servidor y cliente por igual,
+  // así que no hay desajuste de hidratación; el efecto lo corrige después.
+  const [conectado, setConectado] = useState(true)
+  useEffect(() => {
+    const actualizar = () => setConectado(navigator.onLine)
+    actualizar()
+    window.addEventListener('online', actualizar)
+    window.addEventListener('offline', actualizar)
+    return () => {
+      window.removeEventListener('online', actualizar)
+      window.removeEventListener('offline', actualizar)
+    }
+  }, [])
 
   return (
     // Solo escritorio. `display` NO puede ir en el estilo en linea: le ganaria
@@ -195,15 +216,18 @@ export default function BarraLateral({
             height={32}
             style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 10 }}
           />
-          <span style={{ flex: 1, minWidth: 0, lineHeight: 1.1 }}>
-            <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Control</span>
-            {/* «Finanzas» en dorado, como en la lámina T39-05 y en la cabecera móvil. */}
-            <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--cf-gold-dark)' }}>Finanzas</span>
+          {/* 13px y line-height 1.12, literal de T39-05. Yo los tenía a 14, y a
+              esa altura las dos líneas del logotipo pesan más que el nombre de
+              la pantalla activa, que es lo que hay que leer. */}
+          <span style={{ flex: 1, minWidth: 0, lineHeight: 1.12 }}>
+            <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 13, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--cf-ink)' }}>Control</span>
+            {/* «Finanzas» en dorado: T39-05 lo pinta #b07d00 = --cf-gold-dark. */}
+            <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 13, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--cf-gold-dark)' }}>Finanzas</span>
           </span>
           <button type="button" onClick={onAvisos ?? abrirAvisos} aria-label="Avisos"
             style={{
               position: 'relative', flex: 'none', width: 32, height: 32, borderRadius: 10,
-              background: 'var(--cf-fill)', border: 0, cursor: 'pointer',
+              background: 'var(--cf-fill)', border: '1px solid var(--cf-divider)', cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}>
             <svg width="16" height="16" viewBox="0 0 24 24" {...t} stroke="var(--cf-ink-2)">{ICONOS.campana}</svg>
@@ -257,7 +281,8 @@ export default function BarraLateral({
           </span>
           <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombre}</span>
-            <span style={{ display: 'block', fontSize: 11, color: 'var(--cf-ink-3)' }}>{rol}</span>
+            {/* Traducido: en la base el rol es `owner`, y salía así tal cual. */}
+            <span style={{ display: 'block', fontSize: 11, color: 'var(--cf-ink-3)' }}>{rolEnEspanol(rol)}</span>
           </span>
           <svg width="15" height="15" viewBox="0 0 24 24" {...t} stroke="var(--cf-ink-4)" style={{ flex: 'none', transform: 'rotate(-90deg)' }}>{ICONOS.chevron}</svg>
         </button>

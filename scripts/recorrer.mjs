@@ -109,6 +109,9 @@ for (const tam of TAMANOS) {
         // Scroll horizontal: ningún elemento puede generarlo (regla del sistema).
         desbordaX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
         alto: document.documentElement.scrollHeight,
+        // Cuánto texto hay. Ver `letras` más abajo: es el detector de páginas
+        // en blanco, y sin él el cotejo de cierre se hace contra nada.
+        letras: (document.body?.innerText || '').trim().length,
       }
     }).catch(() => null)
 
@@ -134,6 +137,14 @@ console.log(`sesión: ${usuario.email} (${usuario.rol})\n`)
 const problemas = []
 for (const r of informe) {
   const señales = []
+  // PRIMERO ESTO, porque invalida todo lo demás: una página vacía tiene 0
+  // cabeceras y 0 navs, o sea que las otras comprobaciones no saltan y el
+  // script decía «sin problemas estructurales» sobre un PNG blanco.
+  //
+  // Ya pasó: se me cayó el servidor de desarrollo, capturé, y me puse a comparar
+  // una lámina contra una imagen en blanco. Menos de 40 letras no es una
+  // pantalla de esta app ni en el estado vacío más pelado.
+  if ((r.letras ?? 0) < 40) señales.push(`EN BLANCO (${r.letras ?? 0} letras) ← ¿está caído el servidor?`)
   if (r.cabeceras > 1) señales.push(`${r.cabeceras} cabeceras`)
   if (r.tamano === 'escritorio' && r.navs > 1) señales.push(`${r.navs} navs`)
   if (r.tamano === 'movil' && r.laterales > 0) señales.push('barra lateral en móvil')

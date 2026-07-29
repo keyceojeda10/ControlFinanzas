@@ -17,7 +17,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { CABECERA, resolverArmazon } from '@/lib/armazon'
+import { CABECERA, resolverArmazon, iniciales } from '@/lib/armazon'
 import CabeceraMovil from '@/components/armazon/CabeceraMovil'
 import PastillaNav from '@/components/armazon/PastillaNav'
 import MenuCrear from '@/components/pantallas/MenuCrear'
@@ -49,13 +49,6 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
 }
 
 /** Iniciales del nombre. Dos letras: más se lee como una palabra rota. */
-function iniciales(nombre = '') {
-  const partes = String(nombre).trim().split(/\s+/).filter(Boolean)
-  if (partes.length === 0) return '·'
-  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
-  return (partes[0][0] + partes[1][0]).toUpperCase()
-}
-
 export default function Armazon({ children, nombre: nombreServidor, hayAvisos = false, onCrear }) {
   // EL FAB ESTABA MUERTO. `onCrear` se declaraba aquí pero el layout nunca lo
   // pasaba, así que el botón principal de crear —el que sale en TODAS las
@@ -65,7 +58,6 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
   const pathname = usePathname() || '/'
   const { data: session } = useSession()
   const [dePantalla, setDePantalla] = useState(null)
-  const [conectado, setConectado] = useState(true)
 
   // Cuántos avisos hay ahora mismo, publicado por PilaAvisos.
   const [avisos, setAvisos] = useState(0)
@@ -78,19 +70,12 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
   const registrar = useMemo(() => (config) => setDePantalla(config), [])
   const valor = useMemo(() => ({ registrar }), [registrar])
 
-  // El punto verde del avatar dice si lo que se está viendo llegó del servidor.
-  // En una app que se usa en la calle, con señal intermitente, es la diferencia
-  // entre "no me han pagado" y "todavía no me ha llegado".
-  useEffect(() => {
-    const actualizar = () => setConectado(navigator.onLine)
-    actualizar()
-    window.addEventListener('online', actualizar)
-    window.addEventListener('offline', actualizar)
-    return () => {
-      window.removeEventListener('online', actualizar)
-      window.removeEventListener('offline', actualizar)
-    }
-  }, [])
+  // El estado de conexión SE FUE de aquí. Vivía en este componente para pintar
+  // el punto verde del avatar móvil, y T40-00-a —la cabecera elegida— quita ese
+  // punto. En móvil la conexión ahora se dice con palabras en HojaCuenta.
+  //
+  // Quien sí lo sigue mostrando es la barra lateral (T39-05 le pone un punto de
+  // 10px), y desde este cambio se lo detecta ella sola: es su único consumidor.
 
   const armazon = resolverArmazon(pathname)
 
@@ -107,8 +92,7 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
         <CabeceraMovil
           variante={armazon.cabecera}
           iniciales={iniciales(nombre)}
-          conectado={conectado}
-          hayAvisos={avisos || (hayAvisos ? 1 : 0)}
+          hayAvisos={avisos > 0 || hayAvisos}
           titulo={dePantalla?.titulo}
           subtitulo={dePantalla?.subtitulo}
           acciones={dePantalla?.acciones}

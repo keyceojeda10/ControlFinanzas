@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import BarraLateral   from '@/components/armazon/BarraLateral'
+import { iniciales }  from '@/lib/armazon'
 import Armazon        from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
@@ -58,8 +59,21 @@ export default async function DashboardLayout({ children }) {
     <Armazon nombre={nombre}>
     <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
-          cobrando en la calle. La regla de supresion es exclusiva de movil. */}
-      <BarraLateral />
+          cobrando en la calle. La regla de supresion es exclusiva de movil.
+
+          SE MONTABA SIN UNA SOLA PROP. Nombre, rol e iniciales tienen valor por
+          defecto vacio, asi que en escritorio el pie de la barra pintaba un
+          circulo azul sin letras y dos lineas de texto en blanco. Es el mismo
+          fallo del FAB muerto: el componente estaba bien, nadie lo conectaba.
+
+          Bajan del SERVIDOR, igual que en la cabecera movil: derivarlos de
+          useSession() en cliente hace que el servidor pinte «·» y el cliente
+          las iniciales — desajuste de hidratacion y parpadeo en cada carga. */}
+      <BarraLateral
+        nombre={nombre}
+        rol={session?.user?.rol ?? ''}
+        iniciales={iniciales(nombre)}
+      />
 
       {/* Área principal */}
       {/* mobile: flex-col sin overflow → body scrollea (evita GPU artifacts Android) */}

@@ -20,9 +20,12 @@ import { CABECERA } from '@/lib/armazon'
 const ALTO = 56
 
 /* ── Glifo de marca ──
-   El nombre SÍ va escrito al lado (ver la variante de navegación). Yo había
-   escrito aquí lo contrario —«el usuario ya sabe en qué app está»— y la lámina
-   T39-01 dice que no: lleva «Control / Finanzas» en dos líneas.
+   SOLO EL GLIFO, sin logotipo escrito. Es literal del pie de T40-00-a, que es
+   la cabecera elegida: «el usuario ya sabe en qué app está, así que el logotipo
+   escrito no aporta y pesa».
+
+   T39-01 la dibuja con «Control / Finanzas» al lado, pero es de un turno
+   anterior: T40 la sustituye, y la guía la llama «la cabecera definitiva».
 
    `aspect-ratio` + min-width son blindaje: sin ellos el glifo se aplana cuando
    la fila se satura. */
@@ -46,28 +49,28 @@ function Glifo() {
 
 function BotonIcono({ children, onClick, href, etiqueta, badge = false }) {
   const cuerpo = (
-    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12 }}>
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none', width: 40, height: 40, borderRadius: 12 }}>
       {children}
-      {/* CON EL NÚMERO, como la lámina T39-01. Yo había puesto un punto
-          argumentando que el conteo no cambia ninguna decisión — y es al revés:
-          «3» y «17» sí cambian si abro la campana ahora o luego. El punto
-          además no distingue «hay algo» de «hay mucho». */}
-      {badge > 0 && (
+      {/* UN PUNTO DE 8px, NO un número. Lo dice el pie de T40-00-a, que es la
+          cabecera ELEGIDA: «el conteo exacto de avisos no cambia ninguna
+          decisión». La lámina T39-01 lo dibuja con número, pero T40 es de un
+          turno posterior y la sustituye. */}
+      {badge && (
         <span style={{
-          position: 'absolute', top: 4, right: 5,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          minWidth: 17, height: 17, padding: '0 4px', borderRadius: 999,
+          position: 'absolute', top: 7, right: 9,
+          width: 8, height: 8, borderRadius: 999,
           background: 'var(--cf-red)',
           border: '2px solid var(--cf-surface)',
-          fontSize: 10, fontWeight: 700, color: '#FFF',
-          fontVariantNumeric: 'tabular-nums lining-nums',
-        }}>
-          {badge > 9 ? '9+' : badge}
-        </span>
+        }} />
       )}
     </span>
   )
-  const estilo = { background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'inherit', display: 'inline-flex' }
+  // `flex: none` — regla global 2. Sin él estos botones salen con shrink 1, y
+  // con un nombre largo o una fuente grande la fila los estrecha en vez de
+  // dejarlos a 40px: el área táctil se encoge justo donde hay que acertar.
+  // La lámina se lo pone explícito a los tres. El único encogible es el
+  // espaciador vacío de al lado.
+  const estilo = { background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'inherit', display: 'inline-flex', flex: 'none' }
   return href
     ? <Link href={href} aria-label={etiqueta} style={estilo}>{cuerpo}</Link>
     : <button type="button" onClick={onClick} aria-label={etiqueta} style={estilo}>{cuerpo}</button>
@@ -90,29 +93,27 @@ const IconoCampana = () => (
   </svg>
 )
 
-function Avatar({ iniciales = '', conectado = null, onClick }) {
+/* SIN PUNTO DE CONEXIÓN. T39-01 le cuelga uno verde de 11px abajo a la derecha;
+   T40-00-a, que es la elegida y del turno siguiente, lo quita — igual que quita
+   el número de la campana y el logotipo escrito. Es la misma poda: en la
+   cabecera solo queda lo que cambia una decisión.
+
+   El estado de conexión NO se pierde: sigue en HojaCuenta, que es justo a donde
+   lleva este avatar, y ahí se dice con palabras («Conectado» / «Sin conexión»)
+   en vez de con un punto de 11px que hay que saber interpretar. */
+function Avatar({ iniciales = '', onClick }) {
   return (
     <button type="button" onClick={onClick} aria-label="Tu cuenta"
       style={{ background: 'none', border: 0, padding: 0, marginLeft: 4, cursor: 'pointer', flex: 'none' }}>
-      <span style={{ position: 'relative', display: 'inline-flex' }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          flex: 'none',
-          /* 34px, no 32: es la medida de la lámina. */
-          width: 34, minWidth: 34, height: 34, minHeight: 34, aspectRatio: '1',
-          borderRadius: 999,
-          background: 'var(--cf-blue)',   /* azul = persona, NUNCA dinero */
-          fontSize: 12, fontWeight: 700, color: '#FFF', letterSpacing: '.01em',
-        }}>{iniciales}</span>
-        {conectado !== null && (
-          <span style={{
-            position: 'absolute', bottom: -1, right: -1,
-            width: 11, height: 11, borderRadius: 999,
-            background: conectado ? 'var(--cf-green)' : 'var(--cf-ink-4)',
-            border: '2px solid var(--cf-surface)',
-          }} />
-        )}
-      </span>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        flex: 'none',
+        /* 32px: T40-00-a. T39-01 lo dibujaba a 34. */
+        width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
+        borderRadius: 999,
+        background: 'var(--cf-blue)',   /* azul = persona, NUNCA dinero */
+        fontSize: 12, fontWeight: 700, color: '#FFF', letterSpacing: '.01em',
+      }}>{iniciales}</span>
     </button>
   )
 }
@@ -121,7 +122,7 @@ const base = {
   // OJO: `display` NO va aqui. En linea le gana a la clase `lg:hidden` y la
   // cabecera movil sale tambien en escritorio, encima de la barra lateral.
   // Lo pone la clase "flex lg:hidden" de cada variante.
-  height: ALTO, minHeight: ALTO,
+  height: ALTO, minHeight: ALTO, flex: 'none',
   alignItems: 'center', gap: 6,
   // Translúcida sobre la superficie: la separación la da el fondo, no un borde.
   background: 'color-mix(in srgb, var(--cf-surface) 86%, transparent)',
@@ -131,25 +132,20 @@ const base = {
 }
 
 /* ── Variante de navegación ── */
-function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCuenta }) {
+function Navegacion({ iniciales, hayAvisos, onBuscar, onAvisos, onCuenta }) {
   return (
-    <header className="flex lg:hidden" style={{ ...base, padding: '0 16px 0 20px', gap: 12 }}>
+    // `0 18px 0 20px` y `gap: 6`, literal de T40-00-a. Yo tenía 16 de derecha y
+    // 12 de hueco: con los botones de 40px, esos 6 de más por hueco separaban
+    // el grupo casi 20px y el avatar quedaba pegado al borde.
+    //
+    // Los 6 no aprietan nada: el área táctil son los 40px del botón, no el hueco.
+    <header className="flex lg:hidden" style={{ ...base, padding: '0 18px 0 20px', gap: 6 }}>
       <Glifo />
-      {/* EL NOMBRE VA AL LADO DEL LOGO, en dos líneas. Me lo había saltado: sin
-          él la cabecera móvil no dice de qué app es, y el glifo solo no lo
-          resuelve para quien tiene varias apps de cobro en el teléfono.
-          «Finanzas» en dorado oscuro, como en la lámina. */}
-      <span style={{
-        flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
-        lineHeight: 1.1, fontFamily: 'var(--font-space-grotesk), system-ui',
-        fontSize: 13, fontWeight: 700, letterSpacing: '-.01em',
-      }}>
-        <span style={{ color: 'var(--cf-ink)' }}>Control</span>
-        <span style={{ color: 'var(--cf-gold-dark)' }}>Finanzas</span>
-      </span>
+      {/* El ÚNICO encogible de la fila (regla global 2), y va vacío a propósito. */}
+      <span style={{ flex: 1 }} />
       <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
       <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
-      <Avatar iniciales={iniciales} conectado={conectado} onClick={onCuenta} />
+      <Avatar iniciales={iniciales} onClick={onCuenta} />
     </header>
   )
 }
