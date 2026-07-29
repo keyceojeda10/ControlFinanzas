@@ -21,8 +21,12 @@
 
 const ORO      = '#E7A400'
 const TINTA    = '#3A2900'
-const TINTA_2  = 'rgba(58,41,0,.62)'
-const ROTULO   = 'rgba(58,41,0,.55)'
+// MEDIDOS, no elegidos a ojo. El handoff pide .62 y .55, que sobre el dorado
+// dan 2,98:1 y 2,61:1 — por debajo del minimo de 4,5:1 para texto pequeño. El
+// primer alfa que pasa es .82 (4,55:1). Son los dos textos mas chicos de la
+// pantalla mas saturada del sistema, asi que es justo donde se nota.
+const TINTA_2  = 'rgba(58,41,0,.82)'   // 4,55:1 · fecha, 12px
+const ROTULO   = 'rgba(58,41,0,.86)'   // 4,94:1 · rotulos de grupo, 10px
 const LINEA    = '1px solid rgba(20,20,28,.07)'
 const TARJETA  = 'rgba(255,255,255,.92)'
 

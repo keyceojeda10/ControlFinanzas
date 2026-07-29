@@ -99,6 +99,29 @@ Esto corrige el defecto principal del diseño anterior: tarjetas teñidas de ros
 
 ---
 
+## Contraste — se mide, no se elige a ojo
+
+Mínimos: **4,5:1** para texto normal, **3:1** para texto grande (≥24px, o ≥18,66px
+en negrita) y para elementos gráficos. Cubierto por `lib/__tests__/contraste.test.js`,
+que calcula los ratios desde los tokens: si alguien baja un valor, el test cae.
+
+**El fallo real no estaba donde parecía.** Los tokens del bloque oscuro pasan con
+holgura —el más bajo es 5,36:1—. Donde fallaba era el **menú dorado**, y con los
+valores que pide el propio handoff:
+
+| Dónde | Handoff | Ratio | Ahora |
+|---|---|---|---|
+| Rótulos de grupo (10px) | `rgba(58,41,0,.55)` | **2,61:1** ❌ | `.86` → 4,94:1 |
+| Fecha (12px) | `rgba(58,41,0,.62)` | **2,98:1** ❌ | `.82` → 4,55:1 |
+
+Son los dos textos más pequeños sobre la superficie más saturada del sistema. Y
+no se ven como un error: se ven como un texto "suave". Por eso van medidos.
+
+**Regla general:** todo texto de alfa bajo sobre un fondo de color es sospechoso.
+El bloque oscuro es seguro porque sus colores son opacos y vienen del token.
+
+---
+
 ## Copy
 
 Español colombiano, coloquial, segunda persona. **El idioma del prestamista, no

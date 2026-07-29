@@ -151,7 +151,7 @@ function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
         }}>{titulo}</span>
         {subtitulo && (
           <span className="cf-num" style={{
-            fontSize: 11, color: 'var(--cf-ink-3)', lineHeight: 1.3,
+            fontSize: 11, color: 'var(--cf-ink-3)', lineHeight: 1.3, marginTop: 2,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{subtitulo}</span>
         )}
@@ -167,7 +167,15 @@ function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
    pierde datos, así que el botón no puede quedar donde cae el dedo. */
 function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
   return (
-    <header style={{ ...base, padding: '8px 20px 12px', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'center' }}>
+    // LA CUENTA DE LOS 56px, que es facil de romper sin notarlo:
+    //
+    //     8 (arriba) + 36 (boton) + 9 (hueco) + 3 (espina) = 56
+    //
+    // El handoff escribe `padding: 8px 20px 12px`, y esos 12 de abajo SON el
+    // hueco de la espina (9) mas la espina (3) — no van ADEMAS. Sumandolos
+    // aparte el contenido pide 68px dentro de una caja de 56 y la cabecera se
+    // ve apretada: es exactamente lo que pasaba.
+    <header style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="button" onClick={onCerrar} aria-label="Cerrar"
           style={{
@@ -188,7 +196,10 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
         )}
       </div>
 
-      {total > 1 && <EspinaProgreso paso={paso} total={total} style={{ marginTop: 9 }} />}
+      {/* Si no hay espina, el hueco de abajo se devuelve al centrado. */}
+      {total > 1
+        ? <EspinaProgreso paso={paso} total={total} style={{ marginTop: 9 }} />
+        : <span style={{ height: 12, flex: 'none' }} />}
     </header>
   )
 }
