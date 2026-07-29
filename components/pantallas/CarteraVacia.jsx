@@ -7,9 +7,16 @@
 // con 0 clientes convierte al 0%; una con 51-150, al 74%. Esta pantalla es el
 // cuello de botella del negocio entero.
 //
-// Repite LOS TRES MÉTODOS DE CARGA DEL ONBOARDING, con el mismo orden y las
-// mismas palabras: quien se saltó ese paso lo vuelve a tener aquí. Cambiarle el
-// orden o el nombre a una de las tres obliga a aprenderlas dos veces.
+// ⚠ OJO: la nota del diseño dice que esto «repite los tres métodos de carga del
+// onboarding, con el mismo orden y las mismas palabras». HOY NO ES CIERTO, y yo
+// lo di por hecho sin comprobarlo. El asistente real (WizardCartulina) ofrece
+// DOS caminos, no tres: «Sube una foto de tu cartulina» y «No tengo cartulinas,
+// quiero registrar manualmente». No hay Excel/CSV, aunque /carga-masiva exista.
+//
+// Así que quien se saltó el onboarding llega aquí y ve tres opciones donde vio
+// dos, con otros nombres. Hay que cuadrarlo en una de las dos direcciones:
+// añadir el Excel al asistente (que es lo que pide el diseño), o quitarlo de
+// aquí. Mientras no se decida, esto NO cumple la nota.
 //
 // La moneda va APAGADA Y DE CONTORNO. No hay nada que celebrar.
 
