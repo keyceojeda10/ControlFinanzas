@@ -168,6 +168,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [verClave, setVerClave] = useState(false)
+  const [recordar, setRecordar] = useState(true)
   const router = useRouter()
 
   const handleSubmit = async (e) => {
@@ -230,78 +232,153 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Heading */}
+          {/* El copy del turno 4. "Bienvenido de vuelta" no dice nada del
+              producto; esto sí dice a qué vuelves. */}
           <h1
-            className="text-[28px] lg:text-[32px] leading-[1.1] font-semibold mb-2"
-            style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-space-grotesk)' }}
+            className="text-[28px] lg:text-[32px] leading-[1.12] font-semibold mb-2"
+            style={{ color: 'var(--cf-ink)', fontFamily: 'var(--font-space-grotesk)', letterSpacing: '-.025em' }}
           >
-            Bienvenido<br />de <span style={{ color: 'var(--color-accent)' }}>vuelta</span>.
+            Entra a tu cartera
           </h1>
-          <p className="text-[13px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
-            La plataforma de cartera para prestamistas en LATAM.
+          <p className="text-[14px] mb-7" style={{ color: 'var(--cf-ink-2)' }}>
+            Tus clientes, tus rutas y tu caja, donde los dejaste.
           </p>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {error && (
-              <div className="flex items-center gap-2.5 text-sm rounded-[10px] px-4 py-3"
+              <div className="flex items-start gap-2.5 text-[13px] rounded-[12px] px-4 py-3"
                 style={{
-                  background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-                  color: 'var(--color-danger)',
+                  background: 'var(--cf-red-bg)',
+                  border: '1px solid var(--cf-red-border)',
+                  color: 'var(--cf-red-darker)',
                 }}
               >
-                <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M12 8v5M12 16h.01" />
                 </svg>
                 {error}
               </div>
             )}
 
-            <AuthInput
-              id="email"
-              label="Correo o número de WhatsApp"
-              type="text"
-              inputMode="email"
-              autoComplete="username"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com o 3001234567"
-              iconPath="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-            />
+            {/* Campos de 56px, etiqueta ARRIBA y 16px de fuente: por debajo de
+                16px iOS hace zoom al enfocar y saca al usuario de la pantalla. */}
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[12.5px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                Correo
+              </span>
+              <input
+                type="text"
+                inputMode="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                style={{
+                  height: 56, padding: '0 16px', borderRadius: 'var(--cf-r-control)',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  outline: 'none', fontSize: 16, color: 'var(--cf-ink)',
+                }}
+              />
+            </label>
 
-            <AuthInput
-              id="password"
-              label="Contraseña"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              showPasswordToggle
-              iconPath="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-            />
+            <label className="flex flex-col gap-1.5">
+              {/* "La olvidé" va en la fila de la etiqueta, no debajo del campo:
+                  se busca ANTES de escribir mal la clave, no después. */}
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-[12.5px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  Contraseña
+                </span>
+                <Link href="/forgot-password" className="text-[12.5px] font-semibold hover:underline"
+                  style={{ color: 'var(--cf-gold-dark)' }}>
+                  La olvidé
+                </Link>
+              </span>
+              <span className="relative flex items-center">
+                <input
+                  type={verClave ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{
+                    width: '100%', height: 56, padding: '0 52px 0 16px',
+                    borderRadius: 'var(--cf-r-control)',
+                    background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                    outline: 'none', fontSize: 16, color: 'var(--cf-ink)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setVerClave((v) => !v)}
+                  aria-label={verClave ? 'Ocultar la contraseña' : 'Ver la contraseña'}
+                  className="absolute right-2 inline-flex items-center justify-center"
+                  // z-index: sin él el icono queda DEBAJO del fondo del campo en
+                  // Safari iOS y no se ve.
+                  style={{ width: 40, height: 40, borderRadius: 12, background: 'none', border: 0, zIndex: 2, color: 'var(--cf-ink-3)' }}
+                >
+                  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    {verClave
+                      ? <><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></>
+                      : <><path d="M3 3l18 18M10.6 10.7a3 3 0 004.2 4.2" /><path d="M9.4 5.8A9.5 9.5 0 0112 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 01-3 3.8M6.3 7.3A17 17 0 002.5 12S6 18.5 12 18.5c1 0 1.9-.2 2.8-.5" /></>}
+                  </svg>
+                </button>
+              </span>
+            </label>
 
-            <div className="text-right">
-              <Link href="/forgot-password" className="text-xs hover:underline transition-colors"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Olvidaste tu contraseña?
-              </Link>
-            </div>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={recordar}
+                onChange={(e) => setRecordar(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: 'var(--cf-gold)' }}
+              />
+              <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>
+                Mantener la sesión en este teléfono
+              </span>
+            </label>
 
-            <AuthButton loading={loading} loadingLabel="Ingresando...">
-              Iniciar sesión
-            </AuthButton>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                height: 'var(--cf-h-btn)', borderRadius: 'var(--cf-r-control)',
+                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                border: 0, cursor: loading ? 'default' : 'pointer',
+                fontSize: 15, fontWeight: 700, opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading ? 'Entrando…' : 'Entrar'}
+            </button>
           </form>
 
-          {/* Sign up link */}
-          <p className="text-[13px] mt-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-            Apenas empiezas?{' '}
-            <Link href="/registro" className="font-medium hover:underline" style={{ color: 'var(--color-accent)' }}>
-              Crea tu cuenta
+          <div className="flex items-center gap-3 my-6">
+            <span className="flex-1 h-px" style={{ background: 'var(--cf-divider)' }} />
+            <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>o</span>
+            <span className="flex-1 h-px" style={{ background: 'var(--cf-divider)' }} />
+          </div>
+
+          <Link
+            href="/registro"
+            className="flex items-center justify-center"
+            style={{
+              height: 'var(--cf-h-btn-2)', borderRadius: 'var(--cf-r-control)',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              fontSize: 14.5, fontWeight: 700, color: 'var(--cf-ink)',
+            }}
+          >
+            Crear cuenta gratis
+          </Link>
+
+          {/* La salida al portal del deudor, que hoy NO EXISTE desde el login:
+              el cliente final llega aquí buscando su préstamo y se queda sin
+              entender qué hacer, porque esta pantalla pide un correo que él
+              nunca tuvo. */}
+          <p className="text-[13px] mt-6 text-center leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+            ¿Eres cliente y quieres ver tu préstamo?{' '}
+            <Link href="/portal" className="font-semibold hover:underline" style={{ color: 'var(--cf-gold-dark)' }}>
+              Entra con tu cédula
             </Link>
           </p>
 
