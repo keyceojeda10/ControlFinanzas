@@ -105,11 +105,24 @@ export default function WizardPlan({ onCargar, onPagar, hasta }) {
           {tramos.map((t, i) => (
             <div key={t.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 12, padding: '11px 16px',
+              gap: 12, padding: '12px 16px', alignItems: 'flex-start',
               borderTop: i ? '1px solid var(--cf-divider)' : 0,
             }}>
-              <span style={{ fontSize: 13.5, color: 'var(--cf-ink-2)' }}>{t.texto}</span>
-              <span className="cf-fig" style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  {t.texto}
+                </span>
+                {/* Lo que DESBLOQUEA, que es lo que decide la compra. El techo
+                    de clientes baja a la tercera línea: alguien con 60 clientes
+                    puede pagar Crecimiento solo por tener un cobrador. */}
+                <span style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-2)', marginTop: 1 }}>
+                  {t.desbloquea}
+                </span>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-4)', marginTop: 1 }}>
+                  {t.techo}
+                </span>
+              </span>
+              <span className="cf-fig" style={{ flex: 'none', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
                 {t.precio}
               </span>
             </div>
