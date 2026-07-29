@@ -2,6 +2,8 @@
 // app/(dashboard)/rutas/page.jsx - Lista de rutas
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import ListaRutas from '@/components/pantallas/ListaRutas'
+import { adaptarRutas, adaptarSinRuta } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -20,6 +22,7 @@ import { useCountry } from '@/hooks/useCountry'
 export default function RutasPage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
+  const { country } = useCountry()
 
   const { formatMoney } = useCountry()
   const { lastSyncedAt } = useOffline()
@@ -581,8 +584,17 @@ export default function RutasPage() {
       )}
 
       {!loading && rutas.length > 0 && !modoOrdenar && (
-        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          {rutas.map((r) => <RutaCard key={r.id} ruta={r} congelada={rutasPermitidas && !rutasPermitidas.has(r.id)} />)}
+        <div className="lg:grid lg:grid-cols-2 lg:gap-4">
+          {/* En la LISTA van solo las cifras de HOY; el acumulado de la ruta vive
+              en el detalle. Mezclar las dos escalas —"$90.000 recaudado hoy" al
+              lado de "$1.500.000 prestado"— hacia que el ojo se quedara con el
+              numero grande, que es el que no importa al salir a cobrar. */}
+          <ListaRutas
+            rutas={adaptarRutas(rutas, country)}
+            sinRuta={adaptarSinRuta(recom, country)}
+            onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
+            onAsignar={() => { window.location.href = '/clientes?filtro=sinruta' }}
+          />
         </div>
       )}
 
