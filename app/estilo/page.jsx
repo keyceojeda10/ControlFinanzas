@@ -33,6 +33,7 @@ import Simulador from '@/components/pantallas/Simulador'
 import FichaRuta from '@/components/pantallas/FichaRuta'
 import { CrearPrestamoMonto, CrearPrestamoCondiciones } from '@/components/pantallas/CrearPrestamo'
 import { ListaSocios, RepartirGanancia, CuentaSocio } from '@/components/pantallas/Socios'
+import { AntesDeFirmar, Firma, PagareFirmado } from '@/components/pantallas/Pagare'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -1060,6 +1061,69 @@ export default function Estilo() {
             />
           </div>
         </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        El pagaré · lo que queda cuando el cliente dice que nunca firmó
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        El único momento del flujo con consecuencia legal, y hoy es una casilla en la ficha. El
+        recargo por mora aparece <strong>antes</strong> de firmar: es la única forma de poder
+        cobrarlo después sin discusión.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="pagare-antes" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Antes de entregar la plata"
+            subtitulo="Léeselo a Deisy y que confirme"
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <AntesDeFirmar
+              nombre="Deisy"
+              recibe="$800.000" medio="en efectivo"
+              devuelve="$1.120.000" cadaCuanto="Cada semana" cuota="$140.000"
+              confirmado
+              condiciones={[
+                { etiqueta: 'Primer cobro', valor: 'martes 4 de agosto' },
+                { etiqueta: 'Son', valor: '8 cuotas semanales' },
+                { etiqueta: 'Si se atrasa', valor: '$5.000 por semana' },
+                { etiqueta: 'Le cobra', valor: 'Pepito · Ruta 2' },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div id="pagare-firmado" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.NINGUNA} />
+          <div style={{ height: '100%' }}>
+            <PagareFirmado
+              negocio="Prestamos Castro" numero="0042" fecha="28 jul 2026"
+              cliente="Deisy Ramírez" cedula="43.987.112"
+              recibio="$800.000" devuelve="$1.120.000"
+              plazoTexto="8 cuotas semanales de $140.000" empieza="4 de agosto de 2026"
+              horaFirma="9:44 a. m." verificableHasta="2031"
+              firmaCliente="M10 38 C28 12, 42 46, 60 24 S92 8, 110 32 C124 50, 140 18, 158 30 C170 38, 182 22, 194 34"
+              firmaPrestamista="M12 34 C30 18, 46 42, 66 28 S96 14, 116 34 C132 48, 150 20, 168 32 C178 38, 188 28, 196 32"
+            />
+          </div>
+        </div>
+      </div>
+
+      <h3 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-2)', margin: '22px 0 8px' }}>
+        La firma · la única pantalla horizontal del sistema
+      </h3>
+      <div id="pagare-firma" style={{
+        width: 844, height: 390, position: 'relative', overflow: 'hidden',
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+      }}>
+        <Firma
+          nombre="Deisy"
+          resumen="Pagaré por $800.000 · 8 cuotas de $140.000"
+          fecha="28 de julio de 2026" hora="9:44 a. m."
+          hayTrazo
+        />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
