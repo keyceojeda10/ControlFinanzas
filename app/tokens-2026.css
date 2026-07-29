@@ -139,7 +139,11 @@ html[data-theme="dark"] {
   --cf-h-btn:         52px;   /* boton primario movil (52-56) */
   --cf-h-btn-2:       48px;   /* boton secundario movil (46-50) */
   --cf-h-field:       54px;   /* campo de texto movil (52-56) */
-  --cf-h-chip:        34px;   /* chip / filtro (33-36) */
+  /* 36, no 34. La receta da el rango 33-36 y yo elegi 34 a ojo; las DOS laminas
+     que dibujan chips —T02-05 clientes y T02-06 prestamos— usan 36 con relleno
+     de 14 y letra de 13. Dos laminas concretas mandan sobre mi lectura de un
+     rango. */
+  --cf-h-chip:        36px;   /* chip / filtro (T02-05 y T02-06) */
   --cf-h-pill:        22px;   /* pastilla de estado (20-24) */
   --cf-h-row:         52px;   /* fila de lista dentro de tarjeta (46-56) */
   --cf-h-btn-desktop: 42px;

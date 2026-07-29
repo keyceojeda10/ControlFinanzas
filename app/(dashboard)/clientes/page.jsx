@@ -17,7 +17,7 @@ import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
-import { BarraFiltros } from '@/components/pantallas/ListaClientes'
+import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -578,47 +578,36 @@ export default function ClientesPage() {
           de rutas y un conmutador de vista. Unos 380px antes del primer cliente.
           Los filtros secundarios pasan a la hoja de "Más filtros". */}
       <div className="flex flex-col gap-3 mb-3">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 min-w-0">
-            <svg
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
-              style={{ color: 'var(--cf-ink-3)' }}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-            </svg>
-            <input
-              value={buscar}
-              onChange={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder={modoAsignar ? 'Buscar para asignar…' : 'Buscar cliente…'}
-              style={{
-                width: '100%', height: 'var(--cf-h-field)', paddingLeft: 42, paddingRight: 14,
-                borderRadius: 999, background: 'var(--cf-card)',
-                border: '1px solid var(--cf-border)', outline: 'none',
-                fontSize: 16, color: 'var(--cf-ink)',
-              }}
-            />
-          </div>
-          {montado && !authLoading && puedeCrearClientes && (
-            <Link href="/clientes/nuevo" className="shrink-0" aria-label="Nuevo cliente">
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 'var(--cf-h-field)', height: 'var(--cf-h-field)', borderRadius: 999,
-                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </span>
-            </Link>
-          )}
-        </div>
+        {/* ── El encabezado de T02-05 ──
+            «Clientes» y a la derecha «31 · 20 en mora», con la mora en rojo.
+            Faltaba entero: la cabecera del armazon es la de navegacion y no
+            lleva titulo, asi que la pantalla no decia ni como se llama ni
+            cuantos clientes hay. Y ese conteo es la unica cifra que puede
+            cambiar lo que el dueño hace al abrirla. */}
+        <EncabezadoLista titulo="Clientes" total={total} enMora={moraCount} />
+
+        {/* EL BUSCADOR DE LA LAMINA: radio 14, alto 46. Lo tenia como pildora
+            (radio 999), que es la forma del buscador de la BARRA LATERAL — otra
+            pieza. Y al lado habia un + dorado de 54px que duplicaba el FAB de la
+            pastilla: dos botones de crear en la misma pantalla, uno encima del
+            otro. Se va el de arriba; el de la pastilla es el del sistema. */}
+        <BuscadorLista
+          valor={buscar}
+          onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+          placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
+        />
 
         {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
             que aplicarlo para saber si había algo. */}
         <BarraFiltros
           activo={estado}
           onCambiar={(v) => { setEstado(v); setPage(1) }}
+          // El cuarto chip de la lamina, el del icono. Abre lo que YA existe
+          // —el modal de grupos en su pestaña de filtrar— en vez de ser un
+          // boton nuevo sin destino. Cuando ese modal se rehaga contra su
+          // lamina, este chip apuntara a la hoja de «Mas filtros».
+          onMasFiltros={() => { setTabModalGrupos('filtrar'); setModalGrupos(true) }}
+          hayMasFiltros={!!grupoFiltro}
           filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
             id: value,
             nombre: label,

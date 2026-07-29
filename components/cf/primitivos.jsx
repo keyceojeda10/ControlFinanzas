@@ -327,17 +327,22 @@ export function Chip({ children, activo = false, conteo, style, ...props }) {
   return (
     <button type="button" {...props} style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
-      height: 'var(--cf-h-chip)', padding: '0 12px', borderRadius: 'var(--cf-r-pill)',
+      /* Relleno 14 y letra 13, de T02-05 y T02-06. Tenia 12 y 12. */
+      height: 'var(--cf-h-chip)', padding: '0 14px', borderRadius: 'var(--cf-r-pill)',
       /* El chip activo es NEGRO, no dorado: el dorado es para la plata. */
       background: activo ? 'var(--cf-ink)' : 'var(--cf-card)',
       border: activo ? '1px solid var(--cf-ink)' : '1px solid var(--cf-border)',
       color: activo ? 'var(--cf-surface)' : 'var(--cf-ink-2)',
-      fontSize: 12, fontWeight: activo ? 700 : 600,
+      fontSize: 13, fontWeight: activo ? 700 : 600,
       cursor: 'pointer', flex: 'none', whiteSpace: 'nowrap',
       ...style,
     }}>
       {children}
-      {conteo != null && <span className="cf-num" style={{ opacity: .65 }}>· {conteo}</span>}
+      {/* «Todos 31», con un espacio y SIN el punto medio. Yo escribia «Todos ·
+          31», y con el separador el conteo se lee como una segunda etiqueta en
+          vez de como la cantidad de lo que el chip filtra. Las dos laminas lo
+          ponen pegado. */}
+      {conteo != null && <span className="cf-num" style={{ opacity: .7 }}>{conteo}</span>}
     </button>
   )
 }
