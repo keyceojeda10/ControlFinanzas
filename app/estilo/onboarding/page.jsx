@@ -13,6 +13,7 @@ import WizardCapital from '@/components/onboarding/wizard/WizardCapital'
 import WizardMetodoCarga from '@/components/onboarding/wizard/WizardMetodoCarga'
 import WizardProgress from '@/components/onboarding/wizard/WizardProgress'
 import WizardExito from '@/components/onboarding/wizard/WizardExito'
+import WizardPlan from '@/components/onboarding/wizard/WizardPlan'
 
 function Paso({ n, titulo, children }) {
   return (
@@ -36,7 +37,7 @@ export default function PreviaOnboarding() {
       fontFamily: 'var(--font-manrope), system-ui' }}>
       <h1 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 24, fontWeight: 600,
         letterSpacing: '-.025em', color: 'var(--cf-ink)', margin: '0 0 4px' }}>
-        Onboarding · los 4 pasos
+        Onboarding · el recorrido entero
       </h1>
       <p style={{ fontSize: 13, color: 'var(--cf-ink-3)', margin: '0 0 24px' }}>
         Las cifras de «Listo» son las que saldrian del Excel real de 68 creditos.
@@ -48,6 +49,9 @@ export default function PreviaOnboarding() {
         </Paso>
         <Paso n={2} titulo="02 · Capital">
           <WizardCapital onComplete={() => {}} alreadyDone savedMonto={3000000} />
+        </Paso>
+        <Paso n={3} titulo="02 · Elegir plan (invertido)">
+          <WizardPlan hasta="27 de agosto" onCargar={() => {}} onPagar={() => {}} />
         </Paso>
         <Paso n={3} titulo="03 · Método de carga">
           <WizardMetodoCarga onElegir={() => {}} onSaltar={() => {}} />

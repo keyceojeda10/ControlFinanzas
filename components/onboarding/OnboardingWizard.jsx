@@ -7,6 +7,7 @@ import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
+import WizardPlan from './wizard/WizardPlan'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 
@@ -21,6 +22,13 @@ import WizardAyuda      from './wizard/WizardAyuda'
   Capital se agrega porque sin él el dashboard arranca en negativo
   desde el primer préstamo. Skipeable, pero con advertencia clara.
 */
+
+/** «hasta el 27 de agosto»: la fecha concreta, no «en 30 días». */
+function finDePrueba() {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+}
 
 const persistStep = (step, flujo) => {
   fetch('/api/onboarding/progreso', {
@@ -50,6 +58,9 @@ export default function OnboardingWizard({
   // paso corre la numeración y deja a medias a quien tenga progreso guardado
   // («step: 2» pasaría a significar otra pantalla de la que dejó).
   const [metodo, setMetodo] = useState(null)
+  // El plan va ANTES de cargar la cartera y no es un paso propio: no se elige
+  // nada en él, así que no merece un punto en la espina.
+  const [vioPlan, setVioPlan] = useState(false)
 
   const bounce = (cb) => {
     setShowBounce(true)
@@ -137,7 +148,11 @@ export default function OnboardingWizard({
 
   // En el paso 2 «Volver» deshace primero la elección de método; si no, salta
   // al capital y se pierde la pantalla que se acaba de contestar.
-  const volver = () => { if (step === 2 && metodo) { setMetodo(null); return } handleBack() }
+  const volver = () => {
+    if (step === 2 && metodo)  { setMetodo(null);  return }
+    if (step === 2 && vioPlan) { setVioPlan(false); return }
+    handleBack()
+  }
 
   const BackButton = (step === 1 || step === 2) ? (
     <button
@@ -176,9 +191,19 @@ export default function OnboardingWizard({
         />
       )}
 
+      {/* «El cambio de fondo del turno»: aquí ya no se elige plan, se informa.
+          Va justo antes de cargar la cartera porque su acción ES cargarla. */}
+      {step === 2 && flujo && !vioPlan && (
+        <WizardPlan
+          hasta={finDePrueba()}
+          onCargar={() => setVioPlan(true)}
+          onPagar={() => { window.location.href = '/configuracion/plan' }}
+        />
+      )}
+
       {/* «Hoy el migrador pregunta manual o foto EN CADA CLIENTE. Aquí se
           decide una vez.» Por eso va antes de la cartulina, no dentro. */}
-      {step === 2 && flujo && !metodo && (
+      {step === 2 && flujo && vioPlan && !metodo && (
         <WizardMetodoCarga
           onElegir={(via) => {
             // Foto y Excel se quedan DENTRO: quien sale de un flujo de tres
@@ -191,14 +216,14 @@ export default function OnboardingWizard({
         />
       )}
 
-      {step === 2 && flujo && metodo === 'excel' && (
+      {step === 2 && flujo && vioPlan && metodo === 'excel' && (
         <WizardExcel
           onComplete={handleCartullinaDone}
           onSkip={handleCartulinaSkip}
         />
       )}
 
-      {step === 2 && flujo && metodo === 'foto' && (
+      {step === 2 && flujo && vioPlan && metodo === 'foto' && (
         <WizardCartulina
           onComplete={handleCartullinaDone}
           onSkip={handleCartulinaSkip}
