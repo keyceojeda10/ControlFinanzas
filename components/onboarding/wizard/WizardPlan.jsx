@@ -29,9 +29,12 @@ import { tramosDePlan } from '@/lib/adaptadores/planes'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import { useCountry } from '@/hooks/useCountry'
 
-export default function WizardPlan({ onCargar, onPagar, hasta }) {
+export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
   const { country, formatMoney } = useCountry()
-  const tramos = tramosDePlan(country, (n) => formatMoney(n))
+  // Quien contestó «tengo cobradores» ve la escalera desde el primer plan que
+  // se los permite. Ofrecerle Inicial sería ofrecerle un plan donde lo que
+  // acaba de decir que hace no se puede hacer.
+  const tramos = tramosDePlan(country, (n) => formatMoney(n), 3, perfil)
 
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 18 }}>
@@ -102,15 +105,27 @@ export default function WizardPlan({ onCargar, onPagar, hasta }) {
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
         }}>
-          {tramos.map((t, i) => (
+          {tramos.map((t, i) => {
+            // A quien cobra solo se le marca Crecimiento: es donde deja de
+            // estar solo. No es publicidad — es enseñarle dónde está la puerta.
+            const puerta = perfil !== 'equipo' && t.id === 'growth'
+            return (
             <div key={t.id} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 12, padding: '12px 16px', alignItems: 'flex-start',
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+              gap: 12, padding: '12px 16px',
               borderTop: i ? '1px solid var(--cf-divider)' : 0,
+              background: puerta ? 'var(--cf-gold-tint)' : 'transparent',
             }}>
               <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                  {t.texto}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>{t.texto}</span>
+                  {puerta && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em',
+                      padding: '2px 7px', borderRadius: 999,
+                      background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+                      AQUÍ YA NO COBRAS SOLO
+                    </span>
+                  )}
                 </span>
                 {/* Lo que DESBLOQUEA, que es lo que decide la compra. El techo
                     de clientes baja a la tercera línea: alguien con 60 clientes
@@ -126,7 +141,7 @@ export default function WizardPlan({ onCargar, onPagar, hasta }) {
                 {t.precio}
               </span>
             </div>
-          ))}
+          )})}
         </div>
       </div>
 

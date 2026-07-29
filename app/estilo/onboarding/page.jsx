@@ -51,7 +51,10 @@ export default function PreviaOnboarding() {
           <WizardCapital onComplete={() => {}} alreadyDone savedMonto={3000000} />
         </Paso>
         <Paso n={3} titulo="02 · Elegir plan (invertido)">
-          <WizardPlan hasta="27 de agosto" onCargar={() => {}} onPagar={() => {}} />
+          <WizardPlan perfil="solo" hasta="12 de agosto" onCargar={() => {}} onPagar={() => {}} />
+        </Paso>
+        <Paso n={3} titulo="02 · Elegir plan · CON COBRADORES">
+          <WizardPlan perfil="equipo" hasta="12 de agosto" onCargar={() => {}} onPagar={() => {}} />
         </Paso>
         <Paso n={3} titulo="03 · Método de carga">
           <WizardMetodoCarga onElegir={() => {}} onSaltar={() => {}} />

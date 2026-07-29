@@ -196,6 +196,7 @@ export default function OnboardingWizard({
           Va justo antes de cargar la cartera porque su acción ES cargarla. */}
       {step === 2 && flujo && !vioPlan && (
         <WizardPlan
+          perfil={flujo}
           hasta={finDePrueba()}
           onCargar={() => setVioPlan(true)}
           onPagar={() => { window.location.href = '/configuracion/plan' }}
