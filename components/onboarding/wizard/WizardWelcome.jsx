@@ -1,273 +1,116 @@
 'use client'
 
+// components/onboarding/wizard/WizardWelcome.jsx — «01 · Perfil».
+//
+// Paso 1 de 4: «¿Quién cobra?». Una sola pregunta.
+//
+// AQUÍ YA NO SE ELIGE PLAN, y es la decisión del diseñador que más cambia el
+// producto. Sus palabras: «Hoy este paso pide escoger entre tres planes CON
+// CERO CLIENTES EN LA APP: es adivinar, y es una pantalla de cobro puesta justo
+// antes del paso que decide si el negocio se queda.» El plan pasa a después del
+// primer cliente cargado, cuando ya hay con qué decidir.
+//
+// ⚠ PENDIENTE, y es importante: el paso del plan todavía NO se ha puesto en su
+// sitio nuevo. Mientras tanto, quien elija «tengo cobradores» se queda en el
+// plan por defecto de su cuenta en vez de subirlo aquí. Si empieza a chocar con
+// los límites antes de que exista la pantalla nueva, hay que adelantarla.
+
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { useCountry } from '@/hooks/useCountry'
-import { PLANES_CONFIG } from '@/lib/planes'
 
-const PLANES_SOLO   = ['starter', 'basic']
-const PLANES_EQUIPO = ['growth', 'standard', 'professional']
+const PERFILES = [
+  { id: 'solo',   titulo: 'Yo cobro',         nota: 'Manejo mi cartera directamente.' },
+  { id: 'equipo', titulo: 'Tengo cobradores', nota: 'Creo sus cuentas y asigno rutas.' },
+]
 
-export default function WizardWelcome({ nombre, plan = 'starter', onSelect, onMinimize }) {
-  const firstName = nombre ? nombre.split(' ')[0] : null
-  const { formatMoney } = useCountry()
-  const { update: refreshSession } = useSession()
-  const [showPlanPicker, setShowPlanPicker] = useState(null) // 'solo' | 'equipo' | null
-  const [upgrading, setUpgrading] = useState(false)
-  const [error, setError] = useState('')
+export default function WizardWelcome({ nombre, onSelect, onMinimize }) {
+  const primerNombre = nombre ? String(nombre).trim().split(/\s+/)[0] : null
+  // «19 de cada 20 cobran solos»: si la mayoría abrumadora elige una, esa va
+  // marcada de entrada y el paso se contesta con un solo toque.
+  const [perfil, setPerfil] = useState('solo')
 
-  const handleUpgrade = async (nuevoPlan, tipo) => {
-    if (nuevoPlan === plan) {
-      onSelect(tipo)
-      return
-    }
-    setUpgrading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/onboarding/cambiar-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: nuevoPlan }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? 'Error al cambiar de plan')
-        return
-      }
-      await refreshSession()
-      onSelect(tipo, nuevoPlan)
-    } catch {
-      setError('Error de conexion. Intenta de nuevo.')
-    } finally {
-      setUpgrading(false)
-    }
-  }
+  return (
+    <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 20 }}>
+      <div>
+        <h2 style={{
+          fontFamily: 'var(--font-space-grotesk), system-ui',
+          fontSize: 22, fontWeight: 600, letterSpacing: '-.02em',
+          color: 'var(--cf-ink)', margin: 0, lineHeight: 1.25,
+        }}>
+          {primerNombre ? `${primerNombre}, vamos a cargar tu cartera` : 'Vamos a cargar tu cartera'}
+        </h2>
+        <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', marginTop: 6, lineHeight: 1.45 }}>
+          Tres minutos. Todo lo que crees aquí lo puedes editar o borrar después.
+        </p>
+      </div>
 
-  // Sub-pantalla: seleccion de plan
-  if (showPlanPicker) {
-    const esSolo = showPlanPicker === 'solo'
-    const planes = esSolo ? PLANES_SOLO : PLANES_EQUIPO
-    const recomendado = esSolo ? 'starter' : 'growth'
+      <div>
+        <span style={{
+          display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: '.09em',
+          textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 9,
+        }}>
+          ¿Quién cobra?
+        </span>
 
-    return (
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-            style={{
-              background: esSolo ? 'rgba(245,197,24,0.12)' : 'rgba(139,92,246,0.12)',
-              color: esSolo ? 'var(--color-accent)' : 'var(--color-purple)',
-            }}>
-            {esSolo ? (
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-            ) : (
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-            )}
-          </div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
-            {esSolo ? 'Elige tu plan' : 'Elige tu plan de equipo'}
-          </h2>
-          <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-            {esSolo
-              ? 'Selecciona el plan que mejor se adapte a tu cartera.'
-              : 'Para trabajar con cobradores necesitas un plan de equipo.'
-            }
-          </p>
-        </div>
-
-        {error && (
-          <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3 mb-4"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
-            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
-          style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            14 dias gratis. No se cobra hasta que termine tu periodo de prueba.
-          </p>
-        </div>
-
-        <div className="space-y-2.5">
-          {planes.map((key) => {
-            const p = PLANES_CONFIG[key]
-            const esRecomendado = key === recomendado
-            const accentColor = esSolo ? 'var(--color-accent)' : 'var(--color-purple)'
+        <div role="radiogroup" aria-label="¿Quién cobra?" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {PERFILES.map((p) => {
+            const activo = p.id === perfil
             return (
               <button
-                key={key}
-                onClick={() => handleUpgrade(key, esSolo ? 'solo' : 'equipo')}
-                disabled={upgrading}
-                className="group w-full rounded-[14px] p-4 text-left transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                key={p.id}
+                type="button"
+                role="radio"
+                aria-checked={activo}
+                onClick={() => setPerfil(p.id)}
                 style={{
-                  background: esRecomendado
-                    ? (esSolo ? 'rgba(245,197,24,0.06)' : 'rgba(139,92,246,0.06)')
-                    : 'var(--color-bg-card)',
-                  border: `1px solid ${esRecomendado
-                    ? (esSolo ? 'rgba(245,197,24,0.25)' : 'rgba(139,92,246,0.25)')
-                    : 'var(--color-border)'}`,
+                  display: 'block', width: '100%', padding: '14px 16px',
+                  cursor: 'pointer', textAlign: 'left',
+                  background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
+                  // El estado va en el borde, no tiñendo la superficie.
+                  border: `1px solid ${activo ? 'var(--cf-gold-border)' : 'var(--cf-border)'}`,
+                  boxShadow: activo ? '0 0 0 3px rgba(231,164,0,.12)' : 'none',
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-[15px] font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                        {p.nombre}
-                      </p>
-                      {esRecomendado && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                          style={{
-                            background: esSolo ? 'rgba(245,197,24,0.15)' : 'rgba(139,92,246,0.15)',
-                            color: accentColor,
-                          }}>
-                          Recomendado
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                      {!esSolo && <span>{p.maxUsuarios} usuarios</span>}
-                      {!esSolo && <span>{p.maxRutas} rutas</span>}
-                      <span>{p.maxClientes.toLocaleString()} clientes</span>
-                    </div>
-                    <p className="text-[13px] font-bold mt-1 font-mono-display" style={{ color: esRecomendado ? accentColor : 'var(--color-text-secondary)' }}>
-                      {formatMoney(p.precio)}<span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
-                    </p>
-                  </div>
-                  <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke={esRecomendado ? accentColor : 'var(--color-text-muted)'} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
+                <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  {p.titulo}
+                </span>
+                <span style={{ display: 'block', fontSize: 12.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+                  {p.nota}
+                </span>
               </button>
             )
           })}
         </div>
-
-        <button
-          onClick={() => { setShowPlanPicker(null); setError('') }}
-          disabled={upgrading}
-          className="w-full text-[12px] text-center transition-colors cursor-pointer py-3 mt-3"
-          style={{ color: 'var(--color-text-muted)' }}>
-          Volver a elegir
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col" style={{ minHeight: '70vh' }}>
-
-      {/* Hero */}
-      <div className="text-center pt-1 pb-5">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-5"
-          style={{ background: 'rgba(245,197,24,0.1)', color: 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.18)' }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse inline-block" />
-          Tu periodo de prueba esta activo
-        </div>
-
-        <h1 className="text-[28px] font-bold leading-[1.15] mb-3"
-          style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, 'Times New Roman', serif" }}>
-          {firstName ? (
-            <>{firstName}, bienvenido a<br /><em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>Control Finanzas</em></>
-          ) : (
-            <>Bienvenido a<br /><em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>Control Finanzas</em></>
-          )}
-        </h1>
-        <p className="text-[14px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          En 3 minutos vas a tener tu cartera configurada y lista para cobrar.
-        </p>
       </div>
 
-      {/* Pregunta principal: solo o equipo */}
-      <div className="flex-1 flex flex-col justify-start gap-3 pb-2">
+      {/* El dato que quita el miedo a equivocarse, con la salida dicha: no es
+          una puerta que se cierra. */}
+      <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: 0, lineHeight: 1.5 }}>
+        19 de cada 20 negocios cobran solos. Si más adelante contratas, activas
+        el modo equipo desde Más.
+      </p>
 
-        <p className="text-[13px] font-bold text-center mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-          ¿Como trabajas?
-        </p>
-
-        {/* Solo */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
         <button
-          onClick={() => setShowPlanPicker('solo')}
-          className="group w-full rounded-[16px] p-5 text-left transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.22)' }}
+          type="button"
+          onClick={() => onSelect?.(perfil)}
+          style={{
+            width: '100%', height: 'var(--cf-h-btn)', border: 0,
+            borderRadius: 'var(--cf-r-control)', cursor: 'pointer',
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+            fontSize: 15, fontWeight: 700,
+          }}
         >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-accent)' }}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[16px] font-bold mb-0.5" style={{ color: 'var(--color-text-primary)' }}>
-                Cobro solo
-              </p>
-              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Yo manejo mi cartera directamente. No tengo cobradores.
-              </p>
-            </div>
-            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
+          Continuar
         </button>
-
-        {/* Con equipo */}
         <button
-          onClick={() => setShowPlanPicker('equipo')}
-          className="group w-full rounded-[16px] p-5 text-left transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.22)' }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(139,92,246,0.15)', color: 'var(--color-purple)' }}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[16px] font-bold mb-0.5" style={{ color: 'var(--color-text-primary)' }}>
-                Tengo cobradores
-              </p>
-              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                Tengo personas que cobran por mi. Necesito crear sus cuentas y asignarles rutas.
-              </p>
-            </div>
-            <svg className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-purple)" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </button>
-
-        {/* Nota de tranquilidad */}
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mt-1"
-          style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-            Todo lo que crees aqui puedes editarlo o borrarlo despues.
-          </p>
-        </div>
-
-        <button
+          type="button"
           onClick={onMinimize}
-          className="mt-1 text-[11px] text-center w-full transition-colors cursor-pointer"
-          style={{ color: 'var(--color-text-muted)' }}>
-          Ya conozco el sistema
+          style={{
+            background: 'none', border: 0, cursor: 'pointer',
+            fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+          }}
+        >
+          Ya conozco el sistema, saltar
         </button>
       </div>
     </div>
