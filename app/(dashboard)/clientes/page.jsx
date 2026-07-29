@@ -15,6 +15,7 @@ import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
+import { BarraFiltros } from '@/components/pantallas/ListaClientes'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -549,204 +550,70 @@ export default function ClientesPage() {
 
   return (
     <div className={`max-w-3xl lg:max-w-6xl mx-auto ${modoAsignar ? 'pb-40 lg:pb-28' : ''}`}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Clientes</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            {loading ? '...' : `${total} cliente${total !== 1 ? 's' : ''}`}
-            {!loading && moraCount > 0 && (
-              <span className="ml-2 text-[var(--color-danger)]">· {moraCount} en mora</span>
-            )}
-          </p>
-          {esOwner && (
-            <Link
-              href="/migrador"
-              className="h-7 px-3 mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--color-border-hover)] bg-[var(--color-bg-surface)] text-[10.5px] font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              Pasar mi cuaderno
-            </Link>
-          )}
-        </div>
-        {!authLoading && puedeCrearClientes && (
-          <Link href="/clientes/nuevo" className="shrink-0">
-            <Button
-              size="sm"
-              className="whitespace-nowrap"
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              Nuevo cliente
-            </Button>
-          </Link>
-        )}
-      </div>
+      {/* ── Cabecera de pantalla de navegación ──
+          Sin título propio: la cabecera del armazón ya dice dónde estás, y un
+          <h1> "Clientes" bajo un icono de Clientes es decir lo mismo dos veces.
+          Lo que va aquí es lo que la pantalla necesita para trabajar: buscar y
+          filtrar.
 
-      {/* Barra compacta: buscador + filtro estado + botón grupos */}
-      <div className="mb-4 space-y-2.5">
-        {/* Fila 1: buscador + botón grupos (solo owner) */}
+          Antes había título, subtítulo, un botón dorado, "Pasar mi cuaderno",
+          buscador, TRES filas de chips (estado, frecuencia, modo), un desplegable
+          de rutas y un conmutador de vista. Unos 380px antes del primer cliente.
+          Los filtros secundarios pasan a la hoja de "Más filtros". */}
+      <div className="flex flex-col gap-3 mb-3">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
+              style={{ color: 'var(--cf-ink-3)' }}
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
             </svg>
             <input
-              type="search"
               value={buscar}
-              onChange={(e) => setBuscar(e.target.value)}
-              placeholder={modoAsignar ? 'Buscar cliente para asignar…' : 'Buscar cliente…'}
-              className="w-full h-10 pl-9 pr-9 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
+              onChange={(e) => { setBuscar(e.target.value); setPage(1) }}
+              placeholder={modoAsignar ? 'Buscar para asignar…' : 'Buscar cliente…'}
+              style={{
+                width: '100%', height: 'var(--cf-h-field)', paddingLeft: 42, paddingRight: 14,
+                borderRadius: 999, background: 'var(--cf-card)',
+                border: '1px solid var(--cf-border)', outline: 'none',
+                fontSize: 16, color: 'var(--cf-ink)',
+              }}
             />
-            {buscar && (
-              <button
-                onClick={() => setBuscar('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                aria-label="Limpiar búsqueda"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
           </div>
-          {!authLoading && esOwner && (
-            <button
-              onClick={() => setModalGrupos(true)}
-              className="shrink-0 h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-xs font-medium text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors flex items-center gap-1.5"
-              aria-label="Grupos de cobro"
-              title="Grupos de cobro"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="hidden sm:inline">Grupos</span>
-              {grupoFiltro && (
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
-              )}
-            </button>
+          {!authLoading && puedeCrearClientes && (
+            <Link href="/clientes/nuevo" className="shrink-0" aria-label="Nuevo cliente">
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 'var(--cf-h-field)', height: 'var(--cf-h-field)', borderRadius: 999,
+                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+            </Link>
           )}
         </div>
 
-        {/* Fila 2: chips de estado + toggle vista */}
-        <div className="flex items-center gap-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5 flex-1 min-w-0">
-            {ESTADOS_CLIENTE.map(({ value, label, color }) => {
-              const isActive = estado === value
-              const accent = color ?? 'var(--color-accent)'
-              return (
-                <button
-                  key={value}
-                  onClick={() => setEstado(value)}
-                  className="shrink-0 px-3 min-h-[32px] rounded-full text-[12.5px] font-semibold border transition-all"
-                  style={isActive ? {
-                    color: accent,
-                    borderColor: `color-mix(in srgb, ${accent} 40%, transparent)`,
-                    background: `color-mix(in srgb, ${accent} 10%, transparent)`,
-                  } : {
-                    background: 'var(--color-bg-surface)',
-                    borderColor: 'var(--color-border-hover)',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  {label}
-                </button>
-              )
-            })}
-            {hayControlesActivos && (
-              <button
-                onClick={limpiarControles}
-                className="shrink-0 px-3 min-h-[32px] rounded-full text-[11px] font-semibold border border-[var(--color-border-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)] transition-colors"
-              >
-                Limpiar
-              </button>
-            )}
-          </div>
-          {!loading && clientes.length > 0 && (
-            <div className="flex rounded-full overflow-hidden shrink-0 h-8 border" style={{ borderColor: 'var(--color-border)' }}>
-              <button
-                onClick={() => cambiarVista('lista')}
-                className="w-8 h-full flex items-center justify-center transition-colors"
-                style={{
-                  background: vista === 'lista' ? 'var(--color-accent)' : 'transparent',
-                  color: vista === 'lista' ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
-                }}
-                aria-label="Vista lista"
-              >
-                {IconLista}
-              </button>
-              <button
-                onClick={() => cambiarVista('compacta')}
-                className="w-8 h-full flex items-center justify-center transition-colors"
-                style={{
-                  background: vista === 'compacta' ? 'var(--color-accent)' : 'transparent',
-                  color: vista === 'compacta' ? 'var(--color-accent-text)' : 'var(--color-text-muted)',
-                }}
-                aria-label="Vista compacta"
-              >
-                {IconGrid}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Fila 3: filtro de ruta (solo owner con rutas) */}
-        {/* Era `rutas.length > 1`, asi que con una sola ruta el selector NO
-            aparecia nunca — y el plan basico permite exactamente una. Por eso
-            parecia que "no se puede filtrar por ruta": el control existia y
-            estaba condicionado a un estado inalcanzable. */}
-        {esOwner && rutas.length >= 1 && (
-          <select
-            value={rutaIdFiltro}
-            onChange={e => setRutaIdFiltro(e.target.value)}
-            className="h-8 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
-          >
-            <option value="">Todas las rutas</option>
-            {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-          </select>
-        )}
-
-        {/* Chip del grupo activo (si hay filtro) */}
-        {grupoFiltro && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Filtrado por grupo:</span>
-            <span
-              className="inline-flex items-center gap-1.5 px-2 h-6 rounded-full text-[11px] font-medium border"
-              style={
-                grupoFiltro === '_none'
-                  ? { color: 'var(--color-info)', borderColor: 'color-mix(in srgb, var(--color-info) 40%, transparent)', background: 'var(--color-info-dim)' }
-                  : (() => {
-                    const g = grupos.find((gr) => gr.id === grupoFiltro)
-                    const c = g?.color || 'var(--color-accent)'
-                    return { color: c, borderColor: `color-mix(in srgb, ${c} 40%, transparent)`, background: `color-mix(in srgb, ${c} 12%, transparent)` }
-                  })()
-              }
-            >
-              {grupoFiltro !== '_none' && (
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: (grupos.find(g => g.id === grupoFiltro)?.color) || 'var(--color-accent)' }} />
-              )}
-              {grupoActivoLabel}
-              <button
-                onClick={() => setGrupoFiltro('')}
-                className="ml-1 opacity-70 hover:opacity-100"
-                aria-label="Quitar filtro de grupo"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </span>
-          </div>
-        )}
+        {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
+            que aplicarlo para saber si había algo. */}
+        <BarraFiltros
+          activo={estado}
+          onCambiar={(v) => { setEstado(v); setPage(1) }}
+          filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
+            id: value,
+            nombre: label,
+            // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
+            // cierto se lee como "no hay ninguno" y hace descartar el filtro
+            // antes de que llegue el dato.
+            conteo: loading ? undefined
+              : value === '' ? total
+              : value === 'mora' ? moraCount
+              : clientes.filter((c) => c.estado === value).length,
+          }))}
+        />
       </div>
 
       {/* Offline indicator */}
