@@ -131,13 +131,22 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
           <span className="cf-fig" style={{ fontSize: 21, color: colorDespues }}>{despues}</span>
         </div>
       </div>
+      {/* Un cambio de plata casi nunca mueve UNA sola cifra: subir la cuota
+          mueve tambien el saldo, estirar el plazo mueve la fecha de fin. Las
+          consecuencias que no caben en el "antes -> despues" van aqui, y van
+          TODAS: la que se omite es justo la que sorprende al confirmar. */}
       {resumen && (
         <>
           <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#A3A8B2' }}>{resumen.etiqueta}</span>
-            <span className="cf-fig" style={{ fontSize: 14, color: '#F3F3F6' }}>{resumen.valor}</span>
-          </div>
+          {(Array.isArray(resumen) ? resumen : [resumen]).map((r, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+              <span style={{ fontSize: 12, color: '#A3A8B2', flex: 1, minWidth: 0 }}>{r.etiqueta}</span>
+              <span className="cf-fig" style={{
+                fontSize: 14, flex: 'none',
+                color: r.tono === 'favor' ? '#2FBE6A' : r.tono === 'contra' ? '#F0575C' : '#F3F3F6',
+              }}>{r.valor}</span>
+            </div>
+          ))}
         </>
       )}
     </div>

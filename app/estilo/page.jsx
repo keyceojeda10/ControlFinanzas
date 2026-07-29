@@ -26,6 +26,7 @@ import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararCalendarios } from '@/components/pantallas/TablaAmortizacion'
+import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -93,6 +94,23 @@ const ACCIONES_LUCAS = [
 const MARCO = {
   width: 390, height: 844, position: 'relative', overflow: 'hidden',
   background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+}
+
+function HojaDemo({ id, titulo, subtitulo, children }) {
+  return (
+    <div id={id} style={{ ...MARCO, height: 'auto', minHeight: 560, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{ borderRadius: '22px 22px 0 0', background: 'var(--cf-surface)', padding: '10px 16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', flex: 'none' }}>
+          <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
+        </div>
+        <span style={{ flex: 'none' }}>
+          <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)' }}>{titulo}</span>
+          <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 3 }}>{subtitulo}</span>
+        </span>
+        {children}
+      </div>
+    </div>
+  )
 }
 
 function IconoWhatsApp() {
@@ -769,6 +787,45 @@ export default function Estilo() {
             />
           </div>
         </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Gestión · cinco decisiones que cambian la plata
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Mismo patrón en los cinco —qué cambia arriba, el control en medio, <strong>antes → después</strong>
+        abajo— y el botón siempre dice la acción con su cifra. Cada uno enseña una consecuencia que
+        hoy no se ve antes de confirmar.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <HojaDemo id="ges-recargo" titulo="Recargo por mora" subtitulo="Steven Olmos · lleva 36 días de atraso">
+          <Recargo monto="15.000" atajoActivo="$15.000" cuando="proxima"
+            cuotaAntes="$14.500" cuotaDespues="$29.500" saldoTotal="$145.500" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-plazo" titulo="Modificar el plazo" subtitulo="Le quedan 8 cuotas de 30 · vence el 6 de agosto">
+          <ModificarPlazo cuotas={14} cuotasAntes={8}
+            cuotaAntes="$16.312" cuotaDespues="$9.322"
+            terminaAntes="6 ago" terminaDespues="14 ago" totalRecibir="$130.500" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-descuento" titulo="Perdonarle una parte" subtitulo="Carlos Chaparro · 36 días de atraso · cumple 41%">
+          <Descuento monto="48.000" atajoActivo="Todo el atraso" origen="ganancia"
+            debeAntes="$320.000" debeDespues="$272.000"
+            gananciaQueda="$52.000 de $100.000" capitalVuelve="tus $500.000" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-perdidos" titulo="Mover a perdidos" subtitulo="Julián Vélez · 35 días sin pagar · cumple 18%">
+          <MoverAPerdidos monto="$184.733" diasSinEscribir={22} diasSinVisitar={12}
+            carteraAntes="$38.4M" carteraDespues="$38.2M" perdidaDelMes="$184.733" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-cerrar" titulo="Quiere pagar todo hoy" subtitulo="Andrés Cortés · le faltan 3 de 12 cuotas">
+          <CerrarAnticipado cuotasFaltan={3} cuotasTotal={12} opcion="capital"
+            soloCapital="$980.000" todoPactado="$1.180.000"
+            vuelveHoy="$980.000" gananciaSacrificada="$200.000" />
+        </HojaDemo>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>

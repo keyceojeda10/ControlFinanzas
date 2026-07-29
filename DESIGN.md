@@ -90,6 +90,12 @@ Esto corrige el defecto principal del diseño anterior: tarjetas teñidas de ros
 4. **Toda cifra derivada dice de qué se deriva.**
 5. **Nunca una resta que mienta.** Si una fórmula puede dar rojo en un caso
    bueno, la fórmula está mal. Prestar no es gastar.
+6. **En "antes → después", el color dice qué le pasa a TU plata** — no a la del
+   cliente, y no si la decisión es buena idea. Perdonar baja la deuda del cliente
+   y **no va en verde**: el dueño acaba de regalar plata. Cobrar un recargo la
+   sube y **no va en rojo**. Si una jugada es mala idea, eso se **dice con una
+   frase**; un color no sabe argumentar. Verde y rojo quedan para las líneas de
+   consecuencia, donde el significado es inequívoco.
 
 ---
 
