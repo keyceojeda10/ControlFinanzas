@@ -13,9 +13,47 @@
 // ATRASO. Alfabético es el orden de un archivador; por atraso es el orden en
 // que hay que actuar.
 
-import { BarraFiltros, PieTruncado } from '@/components/pantallas/ListaClientes'
+import { BarraFiltros, PieTruncado, EncabezadoLista } from '@/components/pantallas/ListaClientes'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { EstadoVacio, BotonPrimario } from '@/components/cf/primitivos'
+
+/* ══ Las tres cifras de arriba (T02-06) ══
+   EN LA CALLE, EN MORA, COBRADO MES. Tres tarjetas de 14 de radio, la cifra a
+   19px, y el color SOLO en las dos que lo necesitan: la mora en rojo y lo
+   cobrado en verde. «En la calle» va en negro porque no es ni bueno ni malo —
+   es el tamaño del negocio.
+
+   Van acá arriba porque responden lo que la lista NO puede: recorriendo 68
+   tarjetas no se sabe cuánto hay en total en la calle. */
+export function TresCifras({ enLaCalle, enMora, cobradoMes }) {
+  const celdas = [
+    { rotulo: 'En la calle',  valor: enLaCalle,  color: 'var(--cf-ink)' },
+    { rotulo: 'En mora',      valor: enMora,     color: 'var(--cf-red)' },
+    { rotulo: 'Cobrado mes',  valor: cobradoMes, color: 'var(--cf-green)' },
+  ].filter((c) => c.valor != null)
+  if (!celdas.length) return null
+
+  return (
+    <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+      {celdas.map((c) => (
+        <div key={c.rotulo} style={{
+          flex: 1, minWidth: 0,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-control)', padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: 4,
+        }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+            color: 'var(--cf-ink-3)',
+          }}>{c.rotulo}</span>
+          <span className="cf-fig" style={{
+            fontSize: 19, letterSpacing: '-.025em', color: c.color,
+          }}>{c.valor}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const ORDENES = [
   { id: 'atraso',  nombre: 'Más atrasado' },
@@ -49,7 +87,12 @@ export default function ListaPrestamos({
   filtros = [], filtroActivo, onFiltro,
   orden, onOrden,
   prestamos = [], total = 0, montoFaltante,
+  // Las tres cifras de T02-06 y el conteo del encabezado.
+  cifras,
+  activos,
+  onMasFiltros, hayMasFiltros,
   onAbrir, onVerTodos, onCrear,
+  sinMargen = false,
 }) {
   if (prestamos.length === 0 && filtros.length === 0) {
     return (
@@ -64,9 +107,19 @@ export default function ListaPrestamos({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 0' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+      padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
+    }}>
+      {/* El encabezado de T02-06: «Préstamos» y «68 activos». Faltaba entero,
+          igual que en clientes: la cabecera del armazón no lleva título. */}
+      <EncabezadoLista titulo="Préstamos" total={activos != null ? `${activos} activos` : null} />
+
+      {cifras && <TresCifras {...cifras} />}
+
       {filtros.length > 0 && (
-        <BarraFiltros filtros={filtros} activo={filtroActivo} onCambiar={onFiltro} />
+        <BarraFiltros filtros={filtros} activo={filtroActivo} onCambiar={onFiltro}
+          onMasFiltros={onMasFiltros} hayMasFiltros={hayMasFiltros} />
       )}
 
       <SelectorOrden activo={orden} total={total} onCambiar={onOrden} />

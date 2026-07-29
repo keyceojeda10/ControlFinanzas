@@ -53,9 +53,25 @@ const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
   atraso: 'var(--cf-gold)',
   aldia:  'var(--cf-green)',
+  // `renovar` es al día Y por encima del 80% pagado: mismo verde, otra pastilla.
+  // No es un estado de riesgo, es una oportunidad — de renovar sale el
+  // crecimiento del negocio.
+  renovar: 'var(--cf-green)',
+  // EL PAGADO SE APAGA EN GRIS, no se tiñe de verde. El pie de T02-06 lo dice
+  // literal: «los pagados se apagan al 60% en gris en vez de teñirse de verde».
+  // Y es la diferencia entre «va bien» y «esto ya terminó»: en verde, un
+  // préstamo cerrado compite por la atención con uno al día que sí hay que
+  // seguir cobrando.
+  pagado: 'var(--cf-ink-4)',
 }
 
-const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok' }
+/* `Pastilla` solo conoce mora/atraso/aldia/neutro/destacado, así que los dos
+   estados propios de T02-06 hay que traducirlos: `renovar` toma el verde de «al
+   día», y `pagado` la neutra — no hay «color de terminado», hay ausencia de
+   alarma. */
+const TONO_PASTILLA = { mora: 'mora', atraso: 'atraso', aldia: 'aldia', renovar: 'aldia', pagado: 'neutro' }
+
+const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
 
 /** Los seis números que cambian entre las dos láminas, juntos y con nombre. */
 const MEDIDAS = {
@@ -92,6 +108,9 @@ export default function TarjetaCliente({
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
   const m = MEDIDAS[variante] || MEDIDAS.cliente
+  // .6 de la lámina. Atenuar la fila entera dice «terminado» sin quitarla de la
+  // lista: sigue siendo historia consultable, pero deja de pedir atención.
+  const apagada = estado === 'pagado'
   const conAvatar = variante === 'cliente' && !!iniciales
   const derecha = detalle ?? (sinProgreso ? nota : `${porcentaje}% pagado`)
 
@@ -109,6 +128,7 @@ export default function TarjetaCliente({
         display: 'flex', flexDirection: 'column', gap: m.hueco,
         overflow: 'hidden',
         flex: 'none',
+        opacity: apagada ? 0.6 : 1,
         cursor: onClick ? 'pointer' : 'default',
         ...style,
       }}
@@ -153,7 +173,11 @@ export default function TarjetaCliente({
         </div>
 
         {etiquetaEstado && (
-          <Pastilla tono={estado} numerica style={{ flex: 'none' }}>{etiquetaEstado}</Pastilla>
+          // El pagado lleva pastilla NEUTRA (gris), no una de su color: no hay
+          // «color de terminado», hay ausencia de alarma.
+          <Pastilla tono={TONO_PASTILLA[estado] ?? 'neutro'} numerica style={{ flex: 'none' }}>
+            {etiquetaEstado}
+          </Pastilla>
         )}
       </div>
 

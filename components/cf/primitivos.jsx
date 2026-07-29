@@ -305,7 +305,13 @@ export function AyudaCampo({ children }) {
 
 /* ══ 9 · Barras ══ */
 export function BarraProgreso({ porcentaje = 0, tono = 'oro', alto = 5, style }) {
-  const color = tono === 'ok' ? 'var(--cf-green)' : tono === 'mal' ? 'var(--cf-red)' : 'var(--cf-gold)'
+  // `neutro` es para lo TERMINADO: un préstamo pagado con la barra al 100% en
+  // verde grita «logro» en una lista donde lo que hay que mirar es lo que falta.
+  // Ver la nota de `pagado` en TarjetaCliente.
+  const color = tono === 'ok' ? 'var(--cf-green)'
+              : tono === 'mal' ? 'var(--cf-red)'
+              : tono === 'neutro' ? 'var(--cf-ink-4)'
+              : 'var(--cf-gold)'
   return (
     <span style={{
       display: 'block', height: alto, borderRadius: 999,

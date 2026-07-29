@@ -11,8 +11,9 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
-import { adaptarPrestamos }                   from '@/lib/adaptadores/prestamos'
-import { BarraFiltros }                       from '@/components/pantallas/ListaClientes'
+import { adaptarPrestamos, tresCifras }       from '@/lib/adaptadores/prestamos'
+import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
+import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
 import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
@@ -40,6 +41,12 @@ const ESTADOS = [
   { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--color-warning)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
   { value: 'mora',       label: 'En mora',  color: 'var(--color-danger)' },
+  // «Renovar»: al dia y por encima del 80% pagado. Lo pide T02-06 como cuarto
+  // chip, y es donde esta el crecimiento del negocio — prestarle de nuevo a
+  // quien ya casi termino de pagar. No es un estado en la base: lo resuelve el
+  // endpoint con `listosRenovar=1`, con el MISMO umbral que usa el panel para
+  // contarlos, para que el numero de la fila y el largo de la lista coincidan.
+  { value: 'renovar',    label: 'Renovar' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -199,6 +206,9 @@ export default function PrestamosPage() {
   const [rutaId,    setRutaId]    = useState(() => searchParams?.get('rutaId') || '')
   const [renovacion, setRenovacion] = useState(() => searchParams?.get('renovacion') || '')
   const [sinPagosDias, setSinPagosDias] = useState(() => searchParams?.get('sinPagosDias') || '')
+  // Llega del panel: «N prestamos con mas de 30 dias de mora». El enlace existia
+  // y no filtraba nada porque ni la pagina ni el endpoint lo entendian.
+  const [diasMoraMin, setDiasMoraMin] = useState(() => searchParams?.get('diasMoraMin') || '')
 
   // TODOS los filtros viven en la URL, no solo estado y frecuencia.
   //
@@ -214,7 +224,12 @@ export default function PrestamosPage() {
   const paramsPrevios = useRef(null)
   useEffect(() => {
     const g = (k) => searchParams?.get(k) || ''
-    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias']
+    // `diasMoraMin` y `listosRenovar` llegan de los enlaces del panel. Se
+    // traducen al chip que les corresponde para que la pantalla se abra con el
+    // filtro puesto Y visible: un filtro activo que no se ve hace que la lista
+    // parezca corta sin motivo.
+    if (searchParams?.get('listosRenovar') === '1') setEstado('renovar')
+    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias', 'diasMoraMin']
       .map(g).join('|')
     if (clave !== paramsPrevios.current) {
       paramsPrevios.current = clave
@@ -224,6 +239,7 @@ export default function PrestamosPage() {
       setRenovacion(g('renovacion'))
       setModoInteres(g('modoInteres'))
       setSinPagosDias(g('sinPagosDias'))
+      setDiasMoraMin(g('diasMoraMin'))
     }
   }, [searchParams])
   const [loading,   setLoading]   = useState(true)
@@ -232,6 +248,18 @@ export default function PrestamosPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total,     setTotal]     = useState(0)
   const [rutas,     setRutas]     = useState([])
+  // La tercera cifra de T02-06. No se puede derivar de la lista: es del resumen
+  // del dia. Si no llega, la tarjeta NO se pinta — un «$0 cobrado este mes» se
+  // lee como «no cobre nada», que es otra cosa.
+  const [cobradoMes, setCobradoMes] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    fetch(`/api/dashboard/resumen?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { if (vivo && d?.cobros?.mes != null) setCobradoMes(d.cobros.mes) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [])
   const [showFiltros, setShowFiltros] = useState(false)
   // Leer localStorage EN EL INICIALIZADOR desajusta la hidratación: el servidor
   // pone 'lista' y el primer render del cliente puede poner 'compacta', así que
@@ -293,6 +321,10 @@ export default function PrestamosPage() {
       onCambiar: (v) => { setRutaId(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Todas las rutas' },
         ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
+    { id: 'diasMora', titulo: 'Dias de mora', valor: diasMoraMin,
+      onCambiar: (v) => { setDiasMoraMin(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Mas de 7' },
+        { valor: '15', nombre: 'Mas de 15' }, { valor: '30', nombre: 'Mas de 30' }] },
     { id: 'sinPagos', titulo: 'No me han pagado', valor: sinPagosDias,
       onCambiar: (v) => { setSinPagosDias(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Todos' }, { valor: '7', nombre: 'Hace +7 días' },
@@ -317,7 +349,7 @@ export default function PrestamosPage() {
 
   const limpiarFiltros = () => {
     setFrecuencia(''); setModoInteres(''); setRutaId('')
-    setSinPagosDias(''); setRenovacion(''); setAgrupar(false); setPage(1)
+    setSinPagosDias(''); setRenovacion(''); setDiasMoraMin(''); setAgrupar(false); setPage(1)
   }
   useEffect(() => {
     try {
@@ -389,9 +421,14 @@ export default function PrestamosPage() {
       // "mora" no es un estado en BD: pedimos activos y que el server filtre por
       // mora con soloMora=1. Antes se filtraba aca, sobre la pagina ya recortada,
       // asi que los morosos de la pagina 2 en adelante no se veian nunca.
-      const apiEstado = est === 'mora' ? 'activo' : est
+      // Ni «mora» ni «renovar» son estados en la base: se piden los activos y el
+      // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
+      // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
+      const derivado = est === 'mora' || est === 'renovar'
+      const apiEstado = derivado ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
       if (est === 'mora') params.set('soloMora', '1')
+      if (est === 'renovar') params.set('listosRenovar', '1')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
@@ -400,6 +437,7 @@ export default function PrestamosPage() {
       // Antes se leia de window.location porque el filtro no era estado. Ahora
       // llega por filtrosExtra como los demas.
       if (sinPagos) params.set('sinPagosDias', sinPagos)
+      if (diasMoraMin) params.set('diasMoraMin', diasMoraMin)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -527,41 +565,31 @@ export default function PrestamosPage() {
           hoja de "Más filtros", con su número puesto encima para que un filtro
           escondido no se convierta en un filtro olvidado. */}
       <div className="flex flex-col gap-3 mb-3">
+        {/* ── El encabezado de T02-06 ──
+            «Prestamos» y a la derecha «68 activos». Faltaba entero, igual que en
+            clientes: la cabecera del armazon es la de navegacion y no lleva
+            titulo, asi que la pantalla no decia ni como se llama. */}
+        <EncabezadoLista titulo="Préstamos" total={total != null ? `${total} activos` : null} />
+
+        {/* LAS TRES CIFRAS. Responden lo que la lista NO puede: recorriendo 68
+            tarjetas no se sabe cuanto hay en total en la calle ni cuanto esta
+            atascado. Se suman sobre la pagina visible cuando no hay totales del
+            servidor — `parcial` lo marca para no dar por total lo que no lo es. */}
+        <TresCifras {...tresCifras(prestamosVisibles, country, { cobradoMes })} />
+
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 min-w-0">
-            <svg
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
-              style={{ color: 'var(--cf-ink-3)' }}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-            </svg>
-            <input
-              value={buscar}
-              onChange={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder="Buscar…"
-              style={{
-                width: '100%', height: 'var(--cf-h-field)', paddingLeft: 42, paddingRight: 14,
-                borderRadius: 999, background: 'var(--cf-card)',
-                border: '1px solid var(--cf-border)', outline: 'none',
-                fontSize: 16, color: 'var(--cf-ink)',
-              }}
+          {/* El buscador de la lamina: radio 14, alto 46. Lo tenia como pildora,
+              que es la forma del buscador de la BARRA LATERAL. Y al lado habia un
+              + dorado con el FAB de la pastilla justo debajo: dos botones de
+              crear en la misma pantalla. Se va el de arriba. */}
+          <div className="flex-1 min-w-0">
+            <BuscadorLista
+              valor={buscar}
+              onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+              placeholder="Nombre o cédula"
             />
           </div>
           <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
-          {montado && puedeCrearPrestamos && (
-            <Link href="/prestamos/nuevo" className="shrink-0" aria-label="Nuevo préstamo">
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 'var(--cf-h-field)', height: 'var(--cf-h-field)', borderRadius: 999,
-                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </span>
-            </Link>
-          )}
         </div>
 
         {/* El estado se queda arriba porque es el que se toca todos los días.
