@@ -19,6 +19,7 @@ import Panel from '@/components/pantallas/Panel'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import ListaClientes from '@/components/pantallas/ListaClientes'
 import ListaRutas from '@/components/pantallas/ListaRutas'
+import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -73,6 +74,25 @@ function Relleno({ n = 4 }) {
 }
 
 // Réplica estática de la pastilla (el componente real usa usePathname).
+const MARCO = {
+  width: 390, height: 844, position: 'relative', overflow: 'hidden',
+  background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+}
+
+function IconoWhatsApp() {
+  return (
+    <button type="button" aria-label="Escribirle por WhatsApp" style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      width: 38, height: 38, borderRadius: 11, flex: 'none',
+      background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-ink-2)',
+    }}>
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 11.5a8.4 8.4 0 01-12.6 7.3L3 20.5l1.8-5.2A8.4 8.4 0 1121 11.5z" />
+      </svg>
+    </button>
+  )
+}
+
 function PastillaDemo({ activo = '/dashboard' }) {
   const ICON = {
     '/dashboard': <><path d="M4 11.5L12 4l8 7.5" /><path d="M6 10.5V20h12v-9.5" /></>,
@@ -363,6 +383,109 @@ export default function Estilo() {
           <div style={{ height: 96 }} />
         </div>
         <PastillaDemo activo="/rutas" />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Ficha de préstamo · los 4 modos sin tabla
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Estas cuatro fichas cubren el <strong>93,7%</strong> de la cartera. La ficha con tabla de
+        amortización, que el paquete original presenta como <em>la</em> ficha, cubre el 6,2% y es
+        la variante. En ninguna de estas cuatro se reparte el interés por pago: ese dato no existe.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        {/* ── fijo · 54,7% ── */}
+        <div id="ficha-fijo" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Steven Olmos"
+            subtitulo="$20.000 diarios · 36 días de atraso"
+            acciones={<IconoWhatsApp />}
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaPrestamo
+              modo="fijo"
+              faltaPagar="$469.500" pagado="$130.500" totalAPagar="$600.000" porcentaje={22}
+              cuota="$20.000" enMora="$80.000" cuotasFaltantes="24 cuotas"
+              prestado="$500.000" ganancia="$100.000" plazoTexto="30 cuotas diarias"
+              totalPagos={7} montoOculto="$50.500"
+              pagos={[
+                { fecha: 'Hoy · 9:14 a. m.', medio: 'Efectivo', saldo: '$469.500', monto: '$20.000' },
+                { fecha: 'Ayer', medio: 'Nequi', saldo: '$489.500', monto: '$20.000' },
+                { fecha: '24 jul', medio: 'Efectivo', saldo: '$509.500', monto: '$40.000' },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* ── unico · 18,6% ── */}
+        <div id="ficha-unico" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Marta Lucía Ríos"
+            subtitulo="Pago único · sin cuotas"
+            acciones={<IconoWhatsApp />}
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaPrestamo
+              modo="unico"
+              faltaPagar="$1.200.000"
+              fechaVencimiento="15 de agosto" diasParaVencer="faltan 18 días"
+              prestado="$1.000.000" totalAPagar="$1.200.000" ganancia="$200.000"
+              pagos={[]}
+              notaHistorial="Es normal: en este tipo de préstamo se paga al final. Si te abona antes, se registra y baja lo que falta."
+            />
+          </div>
+        </div>
+
+        {/* ── manual · 10,6% ── */}
+        <div id="ficha-manual" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Jhoan Sebastián Cruz"
+            subtitulo="$50.000 semanales · al día"
+            acciones={<IconoWhatsApp />}
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaPrestamo
+              modo="manual"
+              faltaPagar="$350.000" pagado="$400.000" totalAPagar="$750.000" porcentaje={53}
+              cuota="$50.000" enMora="$0" cuotasFaltantes="7 semanas"
+              prestado="$600.000" ganancia="$150.000" plazoTexto="15 semanas"
+              cuotaQuePusiste="$50.000"
+              totalPagos={8} montoOculto="$300.000"
+              pagos={[
+                { fecha: '26 jul', medio: 'Nequi', saldo: '$350.000', monto: '$50.000' },
+                { fecha: '19 jul', medio: 'Efectivo', saldo: '$400.000', monto: '$50.000' },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* ── proporcional · 9,8% ── */}
+        <div id="ficha-proporcional" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Carlitos Chaparro"
+            subtitulo="$17.334 diarios · 4 días de atraso"
+            acciones={<IconoWhatsApp />}
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaPrestamo
+              modo="proporcional"
+              faltaPagar="$553.000" pagado="$226.000" totalAPagar="$779.000" porcentaje={29}
+              cuota="$17.334" enMora="$69.336" cuotasFaltantes="32 cuotas"
+              prestado="$680.000" ganancia="$99.000" plazoTexto="45 cuotas diarias"
+              tasaTexto={{ tasa: '20% al mes', explicacion: 'repartido sobre 45 días, que es un mes y medio' }}
+              totalPagos={13} montoOculto="$173.998"
+              pagos={[
+                { fecha: '24 jul', medio: 'Efectivo', saldo: '$553.000', monto: '$17.334' },
+                { fecha: '23 jul', medio: 'Efectivo', saldo: '$570.334', monto: '$34.668' },
+              ]}
+            />
+          </div>
+        </div>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
