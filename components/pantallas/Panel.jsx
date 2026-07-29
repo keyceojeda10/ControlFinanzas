@@ -2,9 +2,20 @@
 
 // components/pantallas/Panel.jsx — El panel del dueño. Turno 2 del handoff.
 //
-// LA RESPUESTA DE ESTA PANTALLA ES EL PATRIMONIO. Una pantalla, una cifra: la
-// razón por la que el usuario la abrió va en el bloque oscuro y todo lo demás
-// baja al menos dos niveles de tamaño.
+// LA RESPUESTA DE ESTA PANTALLA ES EL DÍA. Va en el bloque oscuro; el
+// patrimonio baja a la banda de debajo.
+//
+// Es lo contrario de lo que dibujé primero, y el motivo es que EL PATRIMONIO NO
+// TRAE NOTICIAS: es el mismo número que ayer y que anteayer. Si lo primero que
+// se ve cada mañana es una cifra que no se ha movido, la pantalla enseña que no
+// tiene nada que contar, y en dos semanas se deja de mirar. Del día, en cambio,
+// se puede hacer algo: si a las 3 de la tarde una ruta lleva el 20% de lo que
+// debería, se llama al cobrador y se salva el día.
+//
+// Y el bloque SE VOLTEA CON LA HORA. A las 7 de la mañana un «recaudado hoy
+// $0» es inútil y hasta angustioso, así que hasta que entra el primer pago el
+// titular mira hacia adelante —lo que hay por cobrar— y en cuanto entra plata
+// pasa a decir cuánto llevas de esa meta.
 //
 // "Toda tu plata" = caja + calle. NO es `cobrado − prestado − gastos`: esa resta
 // da rojo en un negocio sano, porque prestar no es una pérdida. Si una fórmula
@@ -61,42 +72,64 @@ export default function Panel({
         </span>
       </div>
 
-      {/* La respuesta */}
-      <BloqueOscuro etiqueta="Patrimonio" cifra={patrimonio}>
+      {/* ── LA RESPUESTA: EL DÍA ── */}
+      <BloqueOscuro
+        etiqueta={nadaCobrado ? 'Hoy toca cobrar' : 'Recaudado hoy'}
+        cifra={nadaCobrado ? (hoy.esperado ?? '—') : hoy.recaudado}
+      >
         <TiraCifras sobreOscuro columnas={[
-          { etiqueta: 'En caja',    valor: enCaja },
-          { etiqueta: 'Por cobrar', valor: porCobrar, tono: 'oro' },
-          { etiqueta: 'En mora',    valor: String(clientesEnMora), tono: clientesEnMora > 0 ? 'contra' : 'neutro' },
+          nadaCobrado
+            ? { etiqueta: 'Clientes', valor: String(hoy.clientes ?? 0) }
+            : { etiqueta: 'De la meta', valor: hoy.esperado ?? '—' },
+          // RECAUDADO NO ES GANANCIA. Cobrar $500.000 de capital propio
+          // volviendo no es ganar $500.000, y mezclarlos ya infló la ganancia
+          // 7,9 veces una vez. Va al lado, con su nombre.
+          { etiqueta: 'Ganancia', valor: hoy.ganancia ?? '—', tono: hoy.ganancia ? 'oro' : 'neutro' },
+          { etiqueta: 'En mora', valor: String(clientesEnMora), tono: clientesEnMora > 0 ? 'contra' : 'neutro' },
         ]} />
       </BloqueOscuro>
 
-      {/* Hoy toca cobrar — la gramática de cifras del día:
-          primero lo que ya entró, después lo que falta. */}
+      {/* El avance del día, con su salida al trabajo. */}
       {hoy.clientes > 0 && (
         <Tarjeta>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <span>
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-                Hoy toca cobrar
-              </span>
-              <span className="cf-num" style={{ display: 'block', fontSize: 13, color: 'var(--cf-ink-2)', marginTop: 5 }}>
-                {hoy.clientes} cliente{hoy.clientes === 1 ? '' : 's'}
-                {hoy.esperado && <> · <span className="cf-fig" style={{ fontSize: 14, color: 'var(--cf-ink)' }}>{hoy.esperado}</span></>}
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-2)' }}>
+              {hoy.clientes} cliente{hoy.clientes === 1 ? '' : 's'} por cobrar hoy
             </span>
             {nadaCobrado
-              ? <Pastilla tono="neutro">nada cobrado aún</Pastilla>
+              ? <Pastilla tono="neutro">sin cobrar aún</Pastilla>
               : <Pastilla tono="aldia" numerica>{hoy.porcentaje}%</Pastilla>}
           </div>
 
           <BarraProgreso porcentaje={hoy.porcentaje} tono={hoy.porcentaje >= 60 ? 'ok' : 'oro'} alto={8} />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-              {hoy.recaudado ? <>Llevas <span style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>{hoy.recaudado}</span></> : 'Todavía no has cobrado nada'}
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <BotonTexto onClick={onVerCobros}>Ver los {hoy.clientes} cobros →</BotonTexto>
           </div>
+        </Tarjeta>
+      )}
+
+      {/* ── EL PATRIMONIO, DEBAJO ──
+          No es el titular porque no cambia de un día para otro, pero sigue
+          siendo lo que dice si el negocio crece. Aquí una referencia estable se
+          consulta sin estorbar.
+
+          Solo owner: al cobrador el servidor le manda `finanzas: null`, y un 0
+          le enseñaría un negocio quebrado. */}
+      {patrimonio && (
+        <Tarjeta>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+              Toda tu plata
+            </span>
+            <span className="cf-fig" style={{ fontSize: 21, fontWeight: 700, color: 'var(--cf-ink)' }}>
+              {patrimonio}
+            </span>
+          </div>
+          <TiraCifras columnas={[
+            { etiqueta: 'En caja',    valor: enCaja },
+            { etiqueta: 'Por cobrar', valor: porCobrar, tono: 'oro' },
+          ]} />
         </Tarjeta>
       )}
 
