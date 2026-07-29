@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
+import { useMontado }    from '@/hooks/useMontado'
 import { useOffline }    from '@/components/providers/OfflineProvider'
 import { guardarEnCache, leerDeCache, obtenerClientesOffline } from '@/lib/offline'
 import { Button }        from '@/components/ui/Button'
@@ -15,6 +16,7 @@ import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
+import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros } from '@/components/pantallas/ListaClientes'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
@@ -154,6 +156,8 @@ const COLORES_GRUPO = [
 
 export default function ClientesPage() {
   const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
+  const montado = useMontado()
+
   const { country } = useCountry()
   const { lastSyncedAt } = useOffline()
   const searchParams = useSearchParams()
@@ -200,6 +204,10 @@ export default function ClientesPage() {
   const [asignandoGrupo, setAsignandoGrupo] = useState(false)
 
   const [rutaIdFiltro, setRutaIdFiltro] = useState('')
+  // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
+  // pantallas distintas. Una dice como empezar; la otra, como volver atras.
+  const carteraVacia = !loading && !error && clientes.length === 0 &&
+    !buscar && !estado && !grupoFiltro && !rutaIdFiltro
   const [rutas,        setRutas]       = useState([])
   const [vista, setVista] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY) || 'lista'
@@ -550,6 +558,15 @@ export default function ClientesPage() {
 
   return (
     <div className={`max-w-3xl lg:max-w-6xl mx-auto ${modoAsignar ? 'pb-40 lg:pb-28' : ''}`}>
+      {/* Cartera vacía DE VERDAD, no "el filtro no devolvió nada". */}
+      {/* eslint-disable-next-line no-unused-vars */}
+      {null}
+      {/* La cabecera de trabajo (buscar + filtrar) SOLO si hay algo que buscar
+          o filtrar. Sobre una cartera de cero clientes eran cinco controles
+          muertos —«Todos · 0 / Al día · 0 / En mora · 0 / Cancelados · 0»—
+          empujando hacia abajo lo único que sirve ahí: cargar clientes. */}
+      {!carteraVacia && (
+      <>
       {/* ── Cabecera de pantalla de navegación ──
           Sin título propio: la cabecera del armazón ya dice dónde estás, y un
           <h1> "Clientes" bajo un icono de Clientes es decir lo mismo dos veces.
@@ -582,7 +599,7 @@ export default function ClientesPage() {
               }}
             />
           </div>
-          {!authLoading && puedeCrearClientes && (
+          {montado && !authLoading && puedeCrearClientes && (
             <Link href="/clientes/nuevo" className="shrink-0" aria-label="Nuevo cliente">
               <span style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -615,6 +632,8 @@ export default function ClientesPage() {
           }))}
         />
       </div>
+      </>
+      )}
 
       {/* Offline indicator */}
       {isOffline && (
@@ -717,11 +736,20 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Estado vacío (sin error) */}
-      {!loading && !error && clientes.length === 0 && (
+      {/* ── Cartera vacía de verdad ──
+          Distinta de "el filtro no devolvió nada": una cartera sin clientes es
+          una cuenta que todavía no arrancó, y es la pantalla que ve el 75% de
+          las cuentas atascadas en 5 clientes o menos. Ahí no va un mensaje
+          gris, van las tres vías de carga. */}
+      {carteraVacia && (
+        <CarteraVacia puedeCrear={montado && !authLoading && puedeCrearClientes} />
+      )}
+
+      {/* El filtro dejó la lista en cero — la cartera sí tiene clientes. */}
+      {!loading && !error && clientes.length === 0 && (buscar || estado || grupoFiltro || rutaIdFiltro) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
-            <MonedaCF pose={buscar || grupoFiltro ? 'busca' : 'vacia'} size={100} />
+            <MonedaCF pose="busca" size={100} />
           </div>
           {buscar ? (
             <>
@@ -739,14 +767,17 @@ export default function ClientesPage() {
               </button>
             </>
           ) : (
+            /* Filtro de estado o de ruta: antes esta rama no decía NADA — solo
+               quedaba la moneda flotando y ningún modo de volver atrás. */
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">No hay clientes aún</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cliente para comenzar</p>
-              {!authLoading && puedeCrearClientes && (
-                <Link href="/clientes/nuevo" className="mt-4">
-                  <Button size="sm">Crear primer cliente</Button>
-                </Link>
-              )}
+              <p className="text-sm font-medium text-[var(--color-text-primary)]">Ningún cliente con este filtro</p>
+              <button
+                onClick={() => { setEstado(''); setRutaIdFiltro(''); setPage(1) }}
+                className="mt-3 text-xs hover:underline"
+                style={{ color: 'var(--cf-gold-dark)' }}
+              >
+                Ver todos
+              </button>
             </>
           )}
         </div>
