@@ -101,6 +101,55 @@ Esto corrige el defecto principal del diseño anterior: tarjetas teñidas de ros
 
 ---
 
+## Cómo se verifica una pantalla
+
+**El banco de pruebas (`/estilo`) NO sirve para esto.** Ahí cada pieza se mira
+suelta y en un marco de 390px, así que no puede detectar lo que falla al
+integrarlas. Así se colaron tres barras de navegación solapadas en escritorio,
+un logo inventado y un desajuste de hidratación en todas las pantallas.
+
+El bucle es:
+
+```bash
+node scripts/sesion-dev.mjs      # firma una sesión local (no crea cuentas)
+node scripts/sembrar-demo.mjs    # cartera de prueba; --borrar la deshace
+node scripts/recorrer.mjs        # 14 pantallas × móvil y escritorio
+```
+
+`recorrer.mjs` no solo captura: **anota lo que una imagen no enseña** — cuántas
+cabeceras y barras hay montadas *y visibles*, si hay scroll horizontal, y los
+errores de consola con el diff de hidratación completo. Bloquea el service
+worker (si no, se audita el bundle anterior), marca las novedades como vistas
+(esa modal ya arruinó 88 capturas una vez) y visita cada ruta dos veces: en la
+primera Next compila y el ping de conectividad pasa de 4s, así que la app se
+pinta como offline.
+
+**Los datos de prueba no son bonitos a propósito**: mora de 36 días, atraso
+leve de 4, pago único sin cuotas, una ruta sin cobrador, un clavo. Con una
+cartera sana no se ve si el riel de estado o la pastilla de días funcionan.
+
+---
+
+## Estado del cableado
+
+| Pantalla | Estado |
+|---|---|
+| Armazón (cabecera, pastilla, barra lateral) | ✅ |
+| Avisos del armazón (una línea, `FranjaAviso`) | ✅ |
+| Más | ✅ ruta nueva + API propia |
+| Clientes · lista | ✅ tarjetas nuevas |
+| Préstamos · lista | ✅ misma tarjeta |
+| Rutas · lista | ✅ |
+| Caja, Panel, Cobrar hoy | ⬜ componente hecho, sin cablear |
+| Cabeceras de página (filtros con conteo) | ⬜ siguen siendo las viejas |
+| Onboarding | ⬜ sin rediseñar |
+
+Los desajustes de hidratación que quedan están **todos** en páginas sin migrar
+(`GastosPage`, `SociosPage`, `Configuración`, `Cobradores`), ninguno en los
+componentes nuevos. Se van con cada pantalla que se cablea.
+
+---
+
 ## Contraste — se mide, no se elige a ojo
 
 Mínimos: **4,5:1** para texto normal, **3:1** para texto grande (≥24px, o ≥18,66px
