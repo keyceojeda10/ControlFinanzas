@@ -19,6 +19,7 @@ import { Tarjeta } from '@/components/cf/primitivos'
 const I = {
   plata:      <><rect x="2.5" y="6" width="19" height="13" rx="2.5" /><path d="M2.5 10.5h19M17 15h1.5" /></>,
   negocio:    <><path d="M3 20h18M6.5 20v-7M12 20V6.5M17.5 20v-11" /></>,
+  simulador:  <><rect x="4" y="2.5" width="16" height="19" rx="2.5" /><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 15.5v3" /></>,
   reportes:   <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>,
   gastos:     <><path d="M5.5 3h13v18l-2.2-1.6-2.1 1.6-2.2-1.6L9.8 21l-2.1-1.6L5.5 21z" /><path d="M9 8h6M9 12h6" /></>,
   cobradores: <><circle cx="9" cy="8" r="3.4" /><path d="M2.8 20a6.2 6.2 0 0112.4 0M17 5.2a3.4 3.4 0 010 5.9M19.4 20a5.6 5.6 0 00-2.6-4.7" /></>,
@@ -139,6 +140,9 @@ export default function PantallaMas({
   const herramientas = [
     { icono: 'plata',      nombre: 'Mi plata',            cifra: plataLista && `${plataLista} listos para prestar`, destino: '/capital' },
     { icono: 'negocio',    nombre: '¿Cómo va el negocio?', cifra: rendimiento, tono: 'bien', destino: '/analiticas' },
+    // Salió de la cabecera de préstamos: se consulta antes de prestar, no todos
+    // los días, y allí costaba 50px permanentes en la pantalla más apretada.
+    { icono: 'simulador',  nombre: 'Simulador',           cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
     { icono: 'reportes',   nombre: 'Reportes',            cifra: null, destino: '/reportes' },
     { icono: 'gastos',     nombre: 'Gastos',              cifra: gastosMes, tono: 'ambar', destino: '/gastos' },
     { icono: 'cobradores', nombre: 'Cobradores',          cifra: cobradoresSinRegistrar, tono: 'mal', destino: '/cobradores' },

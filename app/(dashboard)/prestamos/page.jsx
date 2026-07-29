@@ -12,6 +12,9 @@ import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
 import { adaptarPrestamos }                   from '@/lib/adaptadores/prestamos'
+import { BarraFiltros }                       from '@/components/pantallas/ListaClientes'
+import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
 import Avatar                                 from '@/components/ui/Avatar'
@@ -230,10 +233,16 @@ export default function PrestamosPage() {
   const [total,     setTotal]     = useState(0)
   const [rutas,     setRutas]     = useState([])
   const [showFiltros, setShowFiltros] = useState(false)
-  const [vistaP, setVistaP] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY_P) || 'lista'
-    return 'lista'
-  })
+  // Leer localStorage EN EL INICIALIZADOR desajusta la hidratación: el servidor
+  // pone 'lista' y el primer render del cliente puede poner 'compacta', así que
+  // React tira el árbol y lo repinta. Tiene que ser un efecto.
+  const [vistaP, setVistaP] = useState('lista')
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VISTA_KEY_P)
+      if (v) setVistaP(v)
+    } catch {}
+  }, [])
 
   const cambiarVistaP = (v) => {
     setVistaP(v)
@@ -265,6 +274,51 @@ export default function PrestamosPage() {
   // Toggle "Agrupar por cliente". Persiste en localStorage para no resetear
   // la preferencia al cambiar de pagina.
   const [agrupar, setAgrupar] = useState(false)
+
+  const montado = useMontado()
+  const [hojaFiltros, setHojaFiltros] = useState(false)
+
+  // Los filtros que salieron de la cabecera. "Agrupar" y la vista van aquí
+  // también: no son filtros, pero son decisiones de cómo mirar la lista, y
+  // ocupaban otros 85px arriba para algo que se cambia una vez al mes.
+  const gruposFiltro = [
+    { id: 'frecuencia', titulo: 'Cada cuánto cobra', valor: frecuencia,
+      onCambiar: (v) => { setFrecuencia(v); setPage(1) },
+      // Con el título encima, «Toda frecuencia» sobra: ahí va «Cualquiera».
+      opciones: FRECUENCIAS.map(({ value, label }) => ({ valor: value, nombre: value === '' ? 'Cualquiera' : label })) },
+    { id: 'modo', titulo: 'Cómo se cobra el interés', valor: modoInteres,
+      onCambiar: (v) => { setModoInteres(v); setPage(1) },
+      opciones: MODOS_INTERES.map(({ value, label }) => ({ valor: value, nombre: label })) },
+    { id: 'ruta', titulo: 'Ruta', valor: rutaId,
+      onCambiar: (v) => { setRutaId(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todas las rutas' },
+        ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
+    { id: 'sinPagos', titulo: 'No me han pagado', valor: sinPagosDias,
+      onCambiar: (v) => { setSinPagosDias(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todos' }, { valor: '7', nombre: 'Hace +7 días' },
+        { valor: '15', nombre: 'Hace +15 días' }, { valor: '30', nombre: 'Hace +30 días' }] },
+    { id: 'renovacion', titulo: 'Nuevos o renovados', valor: renovacion,
+      onCambiar: (v) => { setRenovacion(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todos' }, { valor: 'si', nombre: 'Le presté de nuevo' },
+        { valor: 'no', nombre: 'Primera vez' }] },
+    { id: 'agrupar', titulo: 'Cómo verlo', valor: agrupar ? 'cliente' : '',
+      onCambiar: (v) => {
+        const next = v === 'cliente'
+        setAgrupar(next)
+        try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
+      },
+      opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
+    { id: 'vista', titulo: 'Tamaño de las tarjetas', valor: vistaP === 'compacta' ? 'compacta' : '',
+      onCambiar: (v) => cambiarVistaP(v === 'compacta' ? 'compacta' : 'lista'),
+      opciones: [{ valor: '', nombre: 'Completas' }, { valor: 'compacta', nombre: 'Compactas' }] },
+  ]
+
+  const nFiltros = contarFiltros(gruposFiltro)
+
+  const limpiarFiltros = () => {
+    setFrecuencia(''); setModoInteres(''); setRutaId('')
+    setSinPagosDias(''); setRenovacion(''); setAgrupar(false); setPage(1)
+  }
   useEffect(() => {
     try {
       const v = localStorage.getItem('cf:prestamos:agrupar')
@@ -457,285 +511,85 @@ export default function PrestamosPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Préstamos</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            <span className="font-mono-display">{loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}</span>
-            {/* En el filtro "En mora" el total de arriba ya es el conteo: no se repite.
-                Fuera de el, solo se muestra el numero cuando es exacto; si la lista
-                esta paginada seria una cuenta corta, asi que se ofrece el atajo al
-                filtro en vez de una cifra que subestima la mora real. */}
-            {!frecuencia && estado !== 'mora' && enMoraCount > 0 && conteoMoraExacto && (
-              <span className="ml-2 text-[var(--color-danger)]">· <span className="font-mono-display">{enMoraCount}</span> en mora</span>
-            )}
-            {!frecuencia && estado !== 'mora' && !conteoMoraExacto && (
-              <button
-                type="button"
-                onClick={() => setEstado('mora')}
-                className="ml-2 text-[var(--color-danger)] underline underline-offset-2"
-              >
-                · ver préstamos en mora
-              </button>
-            )}
-          </p>
-          <Link
-            href="/prestamos/simulador"
-            className="h-7 px-2.5 mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
+      {/* ── Cabecera de trabajo ──
+          Antes de aquí había: título, subtítulo, botón dorado con texto, chip
+          de Simulador, CUATRO filas de chips (estado, frecuencia, modo, ruta),
+          un desplegable de rutas, "No me han pagado", "Filtros avanzados",
+          buscador, "Agrupar" y un conmutador de vista. Más de mil píxeles antes
+          del primer préstamo, en un teléfono de 844: se scrollea una pantalla
+          entera para ver un solo préstamo.
+
+          Y tres colores de chip compitiendo —dorado el estado, azul la
+          frecuencia, morado el modo— cuando la regla es que lo único que brilla
+          es la plata.
+
+          Queda lo de todos los días: buscar y el estado. Lo demás vive en la
+          hoja de "Más filtros", con su número puesto encima para que un filtro
+          escondido no se convierta en un filtro olvidado. */}
+      <div className="flex flex-col gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
+            <svg
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
+              style={{ color: 'var(--cf-ink-3)' }}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
             </svg>
-            Simulador
-          </Link>
-        </div>
-        {!authLoading && puedeCrearPrestamos && (
-          <Link href="/prestamos/nuevo" className="shrink-0">
-            <Button
-              size="sm"
-              className="whitespace-nowrap"
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <input
+              value={buscar}
+              onChange={(e) => { setBuscar(e.target.value); setPage(1) }}
+              placeholder="Buscar…"
+              style={{
+                width: '100%', height: 'var(--cf-h-field)', paddingLeft: 42, paddingRight: 14,
+                borderRadius: 999, background: 'var(--cf-card)',
+                border: '1px solid var(--cf-border)', outline: 'none',
+                fontSize: 16, color: 'var(--cf-ink)',
+              }}
+            />
+          </div>
+          <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
+          {montado && puedeCrearPrestamos && (
+            <Link href="/prestamos/nuevo" className="shrink-0" aria-label="Nuevo préstamo">
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 'var(--cf-h-field)', height: 'var(--cf-h-field)', borderRadius: 999,
+                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
                 </svg>
-              }
-            >
-              Nuevo préstamo
-            </Button>
-          </Link>
-        )}
-      </div>
-
-      {/* Filtro de estado */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-0.5">
-        {ESTADOS.filter(e => !e.ownerOnly || esOwner).map(({ value, label, color }) => {
-          const isActive = estado === value
-          const accent = color ?? 'var(--color-accent)'
-          return (
-            <button
-              key={value}
-              onClick={() => setEstado(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Filtro de frecuencia de cobro */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
-        {FRECUENCIAS.map(({ value, label }) => {
-          const isActive = frecuencia === value
-          const accent = 'var(--color-info)'
-          return (
-            <button
-              key={value || 'todas'}
-              onClick={() => setFrecuencia(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Filtro por modo de interes */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
-        {MODOS_INTERES.map(({ value, label }) => {
-          const isActive = modoInteres === value
-          const accent = 'var(--color-purple)'
-          return (
-            <button
-              key={value || 'todos-modo'}
-              onClick={() => setModoInteres(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Ruta y "atrasados": salen del acordeon.
-          El filtro por ruta estaba enterrado bajo "Filtros avanzados", cerrado
-          por defecto — a dos toques de distancia — y el de dias sin pagar no
-          tenia control ninguno: solo se llegaba por accidente si el dashboard
-          te enlazaba. Son las dos preguntas mas frecuentes de una cartera
-          ("como va la ruta de Pedro", "quien no me paga hace rato"). */}
-      {esOwner && (rutas.length > 0 || sinPagosDias) && (
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          {rutas.length > 0 && (
-            <select
-              value={rutaId}
-              onChange={e => setRutaId(e.target.value)}
-              className="h-8 px-2 rounded-full border text-[11px] focus:outline-none transition-all max-w-[190px] truncate"
-              style={rutaId
-                ? { color: 'var(--color-accent)', background: 'var(--color-accent-soft)', borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)' }
-                : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
-            >
-              <option value="">Todas las rutas</option>
-              {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.cobrador ? ` — ${r.cobrador}` : ''}</option>)}
-            </select>
-          )}
-          <button
-            type="button"
-            onClick={() => setSinPagosDias(sinPagosDias ? '' : '7')}
-            className="h-8 px-3 rounded-full border text-[11px] font-medium transition-all"
-            style={sinPagosDias
-              ? { color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)' }
-              : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
-          >
-            {sinPagosDias ? `Sin pagar hace +${sinPagosDias}d` : 'No me han pagado'}
-          </button>
-          {sinPagosDias && (
-            <select
-              value={sinPagosDias}
-              onChange={e => setSinPagosDias(e.target.value)}
-              className="h-8 px-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-muted)] focus:outline-none"
-            >
-              <option value="3">hace 3 días</option>
-              <option value="7">hace 7 días</option>
-              <option value="15">hace 15 días</option>
-              <option value="30">hace 30 días</option>
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Filtros avanzados (solo owner) */}
-      {esOwner && (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowFiltros(!showFiltros)}
-            className="flex items-center gap-1.5 mb-3 text-[11px] font-semibold transition-colors"
-            style={{ color: renovacion ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filtros avanzados
-            {renovacion && (
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#fff' }}>
-                1
               </span>
-            )}
-            <svg className={`w-3 h-3 transition-transform ${showFiltros ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {showFiltros && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {/* El select de ruta salio de aca: ahora esta siempre visible
-                  arriba. Aca solo queda lo que de verdad se consulta poco. */}
-              <select
-                value={renovacion}
-                onChange={e => setRenovacion(e.target.value)}
-                className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
-              >
-                <option value="">Nuevos y renovados</option>
-                <option value="si">Le presté de nuevo</option>
-                <option value="no">Primera vez</option>
-              </select>
-              {(rutaId || renovacion || modoInteres || sinPagosDias) && (
-                <button
-                  onClick={() => { setRutaId(''); setRenovacion(''); setModoInteres(''); setSinPagosDias('') }}
-                  className="text-[10px] font-medium py-1 rounded-lg transition-colors"
-                  style={{ color: 'var(--color-danger)' }}
-                >
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
+            </Link>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Buscador + toggle agrupar + toggle vista */}
-      <div className="flex items-center gap-2 mb-5">
-        <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="search"
-            value={buscar}
-            onChange={(e) => setBuscar(e.target.value)}
-            placeholder="Buscar…"
-            className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-          />
-          {buscar && (
-            <button
-              onClick={() => setBuscar('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={toggleAgrupar}
-          aria-pressed={agrupar}
-          title={agrupar ? 'Mostrar lista cronologica' : 'Agrupar todos los préstamos de cada cliente'}
-          className="shrink-0 h-10 px-3 rounded-[12px] border text-xs font-medium inline-flex items-center gap-1.5 transition-all"
-          style={agrupar
-            ? { color: 'var(--color-accent)', borderColor: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }
-            : { color: 'var(--color-text-muted)', borderColor: 'var(--color-border)', background: 'var(--color-bg-surface)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM7 13a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" />
-          </svg>
-          Agrupar
-        </button>
-        <div className="flex rounded-[12px] overflow-hidden shrink-0 h-10 border" style={{ borderColor: 'var(--color-border)' }}>
-          <button
-            onClick={() => cambiarVistaP('lista')}
-            className="w-9 h-full flex items-center justify-center transition-colors"
-            style={{
-              background: vistaP === 'lista' ? 'var(--color-accent)' : 'var(--color-bg-surface)',
-              color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
-            }}
-            aria-label="Vista lista"
-          >
-            {IconListaP}
-          </button>
-          <button
-            onClick={() => cambiarVistaP('compacta')}
-            className="w-9 h-full flex items-center justify-center transition-colors"
-            style={{
-              background: vistaP === 'compacta' ? 'var(--color-accent)' : 'var(--color-bg-surface)',
-              color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
-            }}
-            aria-label="Vista compacta"
-          >
-            {IconGridP}
-          </button>
-        </div>
+        {/* El estado se queda arriba porque es el que se toca todos los días.
+            Con su conteo: sin el número hay que aplicar el filtro para saber si
+            había algo detrás. */}
+        <BarraFiltros
+          activo={estado}
+          onCambiar={(v) => { setEstado(v); setPage(1) }}
+          // `montado &&`: esOwner sale de la sesión, que en el servidor no
+          // existe. Sin esperar al montaje, el servidor pinta menos chips que
+          // el cliente y React repinta el árbol entero.
+          filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
+            id: value,
+            nombre: label,
+            conteo: loading ? undefined
+              : value === estado ? total
+              : value === 'mora' && conteoMoraExacto ? enMoraCount
+              : undefined,
+          }))}
+        />
       </div>
+
+      <HojaFiltros
+        abierta={hojaFiltros}
+        onCerrar={() => setHojaFiltros(false)}
+        onLimpiar={limpiarFiltros}
+        grupos={gruposFiltro}
+      />
 
       {/* Offline indicator */}
       {isOffline && (

@@ -81,6 +81,10 @@ const CASOS = [
   { nombre: 'Jhoan Sebastián Cruz', ruta: 1, dir: 'Cl 52 # 8-40',  monto: 600000,  total: 750000,  cuota: 50000, pagados: 8,  atraso: 0 },
   { nombre: 'Marta Lucía Ríos',    ruta: 1, dir: 'Cra 45 # 12-30', monto: 1000000, total: 1200000, cuota: 0,     pagados: 0,  atraso: 0, unico: true },
   { nombre: 'Julián Vélez',        ruta: 0, dir: 'Cl 65 # 22-14',  monto: 184733,  total: 220000,  cuota: 8000,  pagados: 2,  atraso: 35, clavo: true },
+  // Dos préstamos abiertos a la vez. La tarjeta enseña "Deuda total", que aquí
+  // es una suma: sin este caso no se ve nunca si el conteo aparece o no, y
+  // tres créditos abiertos y uno solo se leen idénticos.
+  { nombre: 'Ana Milena Guzmán',   ruta: 1, dir: 'Cl 30 # 7-22',   monto: 400000,  total: 480000,  cuota: 16000, pagados: 5,  atraso: 0, extra: { monto: 250000, total: 300000, cuota: 10000, pagados: 3, atraso: 9 } },
 ]
 
 let creados = 0
@@ -115,6 +119,29 @@ for (const c of CASOS) {
       [id('pg'), org.id, pid, dueno.id, c.cuota, n % 2 ? 'nequi' : 'efectivo', fecha(30 - n)]
     )
   }
+
+  // El segundo préstamo del mismo cliente, cuando el caso lo pide.
+  if (c.extra) {
+    const e = c.extra
+    const eid = id('pr')
+    await con.query(
+      `INSERT INTO Prestamo
+         (id, organizationId, clienteId, montoPrestado, totalAPagar, cuotaDiaria,
+          diasPlazo, frecuencia, modoInteres, tasaInteres, totalPagado, estado, esClavo,
+          fechaInicio, fechaFin, createdAt)
+       VALUES (?,?,?,?,?,?,?, 'diario', 'fijo', ?,?, 'activo', 0, ?,?,NOW())`,
+      [eid, org.id, cid, e.monto, e.total, e.cuota, 30, 20,
+       e.cuota * e.pagados, fecha(30 + e.atraso), fecha(e.atraso - 1)]
+    )
+    for (let n = 0; n < e.pagados; n++) {
+      await con.query(
+        `INSERT INTO Pago (id, organizationId, prestamoId, cobradorId, montoPagado, tipo, metodoPago, fechaPago, createdAt)
+         VALUES (?,?,?,?,?, 'completo', 'efectivo', ?, NOW())`,
+        [id('pg'), org.id, eid, dueno.id, e.cuota, fecha(30 - n)]
+      )
+    }
+  }
+
   creados++
 }
 
