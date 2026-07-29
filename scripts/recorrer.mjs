@@ -133,6 +133,14 @@ for (const tam of TAMANOS) {
         // Cuánto texto hay. Ver `letras` más abajo: es el detector de páginas
         // en blanco, y sin él el cotejo de cierre se hace contra nada.
         letras: (document.body?.innerText || '').trim().length,
+        // Y el detector de ESQUELETOS, que es el caso más frecuente: la página
+        // pinta pero los datos no llegaron, así que lo capturado es el estado de
+        // carga. Pasó cotejando la tarjeta de cliente: la captura salió con los
+        // esqueletos y estuve comparándolos contra las tarjetas de la lámina.
+        //
+        // Una página en blanco se nota; un esqueleto se parece lo justo a la
+        // pantalla real para colarse.
+        cargando: document.querySelectorAll('[aria-busy="true"]').length,
       }
     }).catch(() => null)
 
@@ -166,6 +174,7 @@ for (const r of informe) {
   // una lámina contra una imagen en blanco. Menos de 40 letras no es una
   // pantalla de esta app ni en el estado vacío más pelado.
   if ((r.letras ?? 0) < 40) señales.push(`EN BLANCO (${r.letras ?? 0} letras) ← ¿está caído el servidor?`)
+  if (r.cargando > 0) señales.push(`CARGANDO todavía (${r.cargando} esqueleto/s) ← no cotejes esto`)
   if (r.cabeceras > 1) señales.push(`${r.cabeceras} cabeceras`)
   if (r.tamano === 'escritorio' && r.navs > 1) señales.push(`${r.navs} navs`)
   if (r.tamano === 'movil' && r.laterales > 0) señales.push('barra lateral en móvil')

@@ -71,8 +71,11 @@ export default function ListaPrestamos({
 
       <SelectorOrden activo={orden} total={total} onCambiar={onOrden} />
 
+      {/* Sin `etiquetaMonto`: T02-06 pinta el monto SOLO, sin rótulo encima. Lo
+          trae el adaptador con `variante: 'prestamo'`, que además le quita el
+          avatar. Yo forzaba «Le falta pagar» desde acá. */}
       {prestamos.map((p, i) => (
-        <TarjetaCliente key={p.id ?? i} {...p} etiquetaMonto="Le falta pagar" onClick={() => onAbrir?.(p)} />
+        <TarjetaCliente key={p.id ?? i} {...p} onClick={() => onAbrir?.(p)} />
       ))}
 
       {/* Lo que no se ve se declara con su monto. Un "Ver todos" pelado deja al
