@@ -71,7 +71,13 @@ function Item({ href, nombre, icono, activo }) {
       style={{
         position: 'relative',
         display: 'flex', alignItems: 'center', gap: 10,
-        height: 37, padding: '0 12px', borderRadius: 13,
+        // `flex: none` NO ES DECORACIÓN. Sin él, al desplegar «Más
+        // herramientas» flexbox ENCOGE los items de arriba para meter lo nuevo:
+        // los siete destinos principales pasaban de 37px a la mitad y quedaban
+        // apiñados. Flexbox encoge ANTES de dejar que el <nav> scrollee, así que
+        // hay que quitarle esa licencia para que scrollee, que es lo correcto.
+        flex: 'none',
+        height: 37, minHeight: 37, padding: '0 12px', borderRadius: 13,
         background: activo ? 'var(--cf-gold-tint)' : 'transparent',
         color: activo ? 'var(--cf-gold-text)' : 'var(--cf-ink-2)',
         fontSize: 14, fontWeight: activo ? 700 : 600,
@@ -96,11 +102,11 @@ function Item({ href, nombre, icono, activo }) {
 function Grupo({ titulo, items, pathname, abiertoPorDefecto = false }) {
   const [abierto, setAbierto] = useState(abiertoPorDefecto || items.some(i => pathname.startsWith(i.href)))
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 'none' }}>
       <button type="button" onClick={() => setAbierto(v => !v)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: 30, padding: '0 12px', background: 'none', border: 0, cursor: 'pointer',
+          flex: 'none', height: 30, minHeight: 30, padding: '0 12px', background: 'none', border: 0, cursor: 'pointer',
           fontSize: 11, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
           color: 'var(--cf-ink-3)',
         }}>
