@@ -17,6 +17,7 @@ import HojaCuenta from '@/components/armazon/HojaCuenta'
 import HojaInferior from '@/components/cf/HojaInferior'
 import Panel from '@/components/pantallas/Panel'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
+import ListaClientes from '@/components/pantallas/ListaClientes'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -292,6 +293,52 @@ export default function Estilo() {
           <div style={{ height: 96 }} />
         </div>
         <PastillaDemo activo="/dashboard" />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Lista de clientes · con filtros y truncado honesto
+      </h2>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+        <div id="lista-clientes" style={{
+          width: 390, height: 844, position: 'relative', overflow: 'hidden',
+          background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+        }}>
+          <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+          <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+            <ListaClientes
+              filtros={[
+                { id: 'todos', nombre: 'Todos', conteo: 31 },
+                { id: 'mora',  nombre: 'En mora', conteo: 13 },
+                { id: 'd30',   nombre: '+30d', conteo: 13 },
+                { id: 'sinruta', nombre: 'Sin ruta', conteo: 1 },
+              ]}
+              filtroActivo="todos"
+              total={31}
+              montoFaltante="$4.826.336"
+              clientes={[
+                { nombre: 'Steven Olmos', iniciales: 'SO', estado: 'mora', etiquetaEstado: 'En mora',
+                  diasAtraso: 36, contexto: 'Bolivariana · Cl 8 # 31-05', monto: '$130.500', porcentaje: 18 },
+                { nombre: 'Carlitos Chaparro', iniciales: 'CC', estado: 'atraso', etiquetaEstado: 'Atraso leve',
+                  diasAtraso: 4, contexto: 'Ruta sur · Cra 9 # 12-40', monto: '$226.000', porcentaje: 61 },
+                { nombre: 'María Fernanda Restrepo Vélez', iniciales: 'MR', estado: 'aldia', etiquetaEstado: 'Al día',
+                  contexto: 'Centro · Cra 12 # 4-18', monto: '$811.334', porcentaje: 72 },
+              ]}
+            />
+            <div style={{ height: 96 }} />
+          </div>
+          <PastillaDemo activo="/clientes" />
+        </div>
+
+        <div id="busqueda-vacia" style={{
+          width: 390, height: 844, position: 'relative', overflow: 'hidden',
+          background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+        }}>
+          <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+          <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+            <ListaClientes busqueda="Martha" clientes={[]} filtros={[]} />
+          </div>
+          <PastillaDemo activo="/clientes" />
+        </div>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
