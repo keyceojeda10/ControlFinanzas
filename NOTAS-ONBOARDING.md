@@ -134,3 +134,46 @@ Deisy Ramírez     CC 43987112 · semanal · 15%       $300.000
 
 Esto cuadra con lo medido: la activación es el cuello de botella y los clientes
 cargados predicen el pago (0 clientes → 0%; 51-150 → 74%).
+
+
+---
+
+## ⚠ Las cifras de plan del handoff están viejas (barrido del 29 jul)
+
+Los topes de cliente que cita el diseño **no son los que el sistema cobra ni
+permite**. Confirmado por el usuario: manda el código.
+
+| El handoff dice | `PLANES_CONFIG` |
+|---|---|
+| Hasta **20** clientes · $39.000 | `starter` $39.000 · **150** |
+| Hasta **40** · $59.000 | `basic` $59.000 · **450** |
+| Hasta **100** · $79.000 | `growth` $79.000 · **1.000** |
+
+**Los precios sí coinciden. Solo están mal los límites.**
+
+### Dónde aparecen, exactamente
+
+1. **`02 · Elegir plan`** — ✅ ya arreglada. La pantalla no tiene números: salen
+   de `lib/adaptadores/planes.js`.
+2. **`03 · Plan excedido`** — ❌ **sin construir, y arrastra el error**. Dice
+   «Plan Negocio · 100 clientes · $79.000» y «Plan Medio · 40 clientes ·
+   $59.000». Además **los nombres tampoco son los del código**: no existen
+   «Negocio» ni «Medio»; son `growth` = «Crecimiento» y `basic` = «Básico».
+3. Texto narrativo del turno 37 («pedirle a alguien que escoja entre 20, 40 o
+   100 clientes…») — es prosa que describe el problema. No se toca.
+
+### Lo que lo confirma
+
+**El propio handoff se contradice.** La pantalla de Configuración dice:
+
+> Prestamos Castro · plan **Inicial** · 31 clientes **de 150**
+
+150 — el número del código. Y «Inicial» es exactamente `PLANES_CONFIG.starter.nombre`.
+Así que las láminas de plan quedaron con cifras de una versión anterior,
+mientras el resto del handoff ya usa las buenas.
+
+### Regla para lo que falta
+
+Ninguna pantalla de plan debe llevar un tope, un precio ni un nombre escrito a
+mano. Todo sale de `PLANES_CONFIG` / `getPrecioPlan(plan, pais)` vía
+`lib/adaptadores/planes.js`. Vale también para `04 · Plan y pagos`.
