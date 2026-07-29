@@ -27,6 +27,8 @@ import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararCalendarios } from '@/components/pantallas/TablaAmortizacion'
 import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
+import FichaCliente from '@/components/pantallas/FichaCliente'
+import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -155,7 +157,7 @@ function PastillaDemo({ activo = '/dashboard' }) {
 }
 
 export default function Estilo() {
-  const [paso] = useState(2)
+  const [paso] = useState(3)
   const [hoja, setHoja] = useState(null)
   const [tema, setTema] = useState('light')
   return (
@@ -828,6 +830,64 @@ export default function Estilo() {
         </HojaDemo>
       </div>
 
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Ficha de cliente y cobro en la calle
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Las dos <strong>sin pastilla</strong>, por motivos distintos: a la ficha se llegó desde una
+        lista y su salida es volver; en el cobro, salirse a medias pierde el cobro. Los 76px que
+        libera la ficha se los queda el gráfico de comportamiento.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="ficha-cliente" style={MARCO}>
+          <CabeceraMovil
+            variante={CABECERA.DETALLE}
+            titulo="Steven Olmos"
+            subtitulo="2 préstamos · debe $291.000"
+            acciones={<IconoWhatsApp />}
+          />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <FichaCliente
+              debeTotal="$291.000" pagado="$504.000" totalAPagar="$795.000" porcentaje={63}
+              prestamos={[
+                { titulo: 'Préstamo del 4 de julio', diasAtraso: 36, estado: 'mora',
+                  monto: '$130.500', cuota: 'cuota 22 de 30' },
+                { titulo: 'Préstamo del 20 de julio', diasAtraso: 8, estado: 'atraso',
+                  monto: '$160.500', cuota: 'cuota 6 de 30' },
+              ]}
+              meses={[
+                { etiqueta: 'A', cumplio: 100, estado: 'bien' },
+                { etiqueta: 'S', cumplio: 92,  estado: 'tarde' },
+                { etiqueta: 'O', cumplio: 100, estado: 'bien' },
+                { etiqueta: 'N', cumplio: 88,  estado: 'tarde' },
+                { etiqueta: 'D', cumplio: 100, estado: 'bien' },
+                { etiqueta: 'E', cumplio: 95,  estado: 'tarde' },
+                { etiqueta: 'F', cumplio: 100, estado: 'bien' },
+                { etiqueta: 'M', cumplio: 90,  estado: 'tarde' },
+                { etiqueta: 'A', cumplio: 100, estado: 'bien' },
+                { etiqueta: 'M', cumplio: 61,  estado: 'mal' },
+                { etiqueta: 'J', cumplio: 44,  estado: 'mal' },
+                { etiqueta: 'J', cumplio: 22,  estado: 'mal' },
+              ]}
+              lectura="Pagaba tarde pero cerraba el mes. Desde mayo viene fallando."
+            />
+          </div>
+        </div>
+
+        <div id="registrar-cobro" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.TAREA} titulo="Cobro 3 de 11" paso={3} total={11} />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <RegistrarCobro
+              nombre="Steven Olmos" iniciales="SO"
+              contexto="Cl 8 # 31-05 · 36 días de atraso"
+              monto="27.500" tipo="Solo un abono" medio="Efectivo"
+              debeAntes="$130.500" debeDespues="$103.000"
+            />
+          </div>
+        </div>
+      </div>
+
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
         Hojas
       </h2>
@@ -873,9 +933,9 @@ export default function Estilo() {
         Espina de progreso
       </h2>
       <div style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 18, padding: 20, maxWidth: 390, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {[0, 2, 5].map(p => (
+        {[1, 3, 6].map(p => (
           <div key={p}>
-            <div style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginBottom: 6 }}>paso {p + 1} de 6</div>
+            <div style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginBottom: 6 }}>paso {p} de 6</div>
             <EspinaProgreso paso={p} total={6} />
           </div>
         ))}

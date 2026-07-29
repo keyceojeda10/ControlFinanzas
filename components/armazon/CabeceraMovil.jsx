@@ -197,16 +197,27 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
    UNA SOLA por flujo. Nunca dos indicadores simultáneos.
    `flex:none` en los segmentos: una barra como único hijo encogible de un
    contenedor fijo absorbe el déficit y colapsa a 0px. */
-export function EspinaProgreso({ paso = 0, total = 0, style }) {
+// `paso` ES 1-INDEXADO: paso=3 pinta el tercero, no el cuarto.
+//
+// Estaba 0-indexado y eso es una trampa: el titulo de al lado SIEMPRE dice
+// "Cobro 3 de 11", asi que quien escribe paso={3} espera ver el tercero
+// marcado. Un contador 0-indexado pegado a una etiqueta 1-indexada solo puede
+// producir un desfase de uno, y no salta a la vista porque la pantalla se ve
+// bien igual — solo esta en el paso equivocado.
+export function EspinaProgreso({ paso = 1, total = 0, style }) {
   if (!(total > 1)) return null
+  const actual = Math.min(Math.max(paso, 1), total)
   return (
-    <div style={{ display: 'flex', gap: 3, ...style }} aria-label={`Paso ${paso + 1} de ${total}`}>
-      {Array.from({ length: total }, (_, i) => (
-        <span key={i} style={{
-          flex: 1, height: 3, borderRadius: 999, minWidth: 0,
-          background: i < paso ? 'var(--cf-green)' : i === paso ? 'var(--cf-gold)' : 'var(--cf-fill-2)',
-        }} />
-      ))}
+    <div style={{ display: 'flex', gap: 3, ...style }} aria-label={`Paso ${actual} de ${total}`}>
+      {Array.from({ length: total }, (_, i) => {
+        const n = i + 1
+        return (
+          <span key={i} style={{
+            flex: 1, height: 3, borderRadius: 999, minWidth: 0,
+            background: n < actual ? 'var(--cf-green)' : n === actual ? 'var(--cf-gold)' : 'var(--cf-fill-2)',
+          }} />
+        )
+      })}
     </div>
   )
 }
