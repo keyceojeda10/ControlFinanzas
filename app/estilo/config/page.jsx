@@ -3,6 +3,8 @@
 //   node scripts/ver-diseno.mjs "01 · Configuración" .auditoria/d-config.png
 import Configuracion from '@/components/pantallas/Configuracion'
 import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
+import TuNegocio from '@/components/pantallas/config/TuNegocio'
+import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
 
 function Pendiente({ nombre }) {
   return (
@@ -23,9 +25,23 @@ export default function Previa() {
         rol="owner" cobradores={9}
         negocio="Prestamos Castro" plan="Inicial" clientes={31} limiteClientes={150}
       >
-        {(id, s) => id === 'comoPrestas'
-          ? <ComoPrestas inicial={{ frecuenciaDefault: 'diario', tasaDefault: 20, modoInteresDefault: 'lineal', diasSinCobro: '["domingo"]' }} />
-          : <Pendiente nombre={s.nombre} />}
+        {(id, s) => {
+          if (id === 'negocio') return (
+            <TuNegocio
+              inicial={{ nombre: 'Prestamos Castro', telefono: '+57 310 452 1188',
+                paisNombre: 'Colombia · COP $', ejemploMonto: '$1.200.000' }}
+              tema="light" onTema={() => {}}
+            />
+          )
+          if (id === 'comoPrestas') return (
+            <ComoPrestas inicial={{ frecuenciaDefault: 'diario', tasaDefault: 20, modoInteresDefault: 'lineal', diasSinCobro: '["domingo"]' }} />
+          )
+          if (id === 'plan') return (
+            <PlanYPagos plan="Inicial" precio="$39.000" renueva="11 de agosto"
+              clientes={31} limite={100} onVerPlanes={() => {}} />
+          )
+          return <Pendiente nombre={s.nombre} />
+        }}
       </Configuracion>
     </div>
   )
