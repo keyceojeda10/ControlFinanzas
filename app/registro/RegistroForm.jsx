@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter }           from 'next/navigation'
 import { signIn }              from 'next-auth/react'
 import Link                    from 'next/link'
+import { EspinaProgreso }      from '@/components/armazon/CabeceraMovil'
 import AuthInput               from '@/components/auth/AuthInput'
 import AuthButton              from '@/components/auth/AuthButton'
 import { getCountryConfig, validatePhone } from '@/lib/i18n'
@@ -55,17 +56,9 @@ function useTheme() {
   return light ? LIGHT : DARK
 }
 
-function ProgressBar({ step, total, theme }) {
-  const pct = (step / total) * 100
-  return (
-    <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: theme.borderLight }}>
-      <div
-        className="h-full rounded-full transition-all duration-500 ease-out"
-        style={{ width: `${pct}%`, background: 'var(--color-accent)' }}
-      />
-    </div>
-  )
-}
+// El wizard son CUATRO pasos: nombre, negocio, WhatsApp, correo y clave.
+// El quinto (verificar) ya no es registro: es confirmar.
+const PASOS = 4
 
 function BackButton({ onClick, theme }) {
   return (
@@ -113,7 +106,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const planSilencioso = planParam || 'starter'
   const countryInicial = PAISES.some(p => p.code === countryParam) ? countryParam : 'co'
 
-  const [step, setStep] = useState(0)
+  // Arranca en el primer paso REAL. La portada de bienvenida se quito: nadie se
+  // registra para leer una portada, y era un clic entero antes de escribir nada.
+  const [step, setStep] = useState(1)
   const [country, setCountry] = useState(countryInicial)
   const countryCfg = getCountryConfig(country)
 
@@ -321,6 +316,18 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </Link>
           </div>
 
+          {/* La MISMA espina del onboarding: el usuario nuevo ve UNA sola barra
+              desde que se registra hasta que carga su cartera, no una por
+              tramo. El paso 5 ya no es registro, es confirmar. */}
+          {step <= PASOS && (
+            <div className="mb-6">
+              <EspinaProgreso paso={step} total={PASOS} />
+              <p className="text-[11px] mt-2" style={{ color: t.textMuted }}>
+                Paso {step} de {PASOS}
+              </p>
+            </div>
+          )}
+
           {/* Referido badge */}
           {referrer && step < 5 && (
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-5"
@@ -346,27 +353,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           )}
 
           {/* ── Step 0: Bienvenida ── */}
-          {step === 0 && (
-            <div>
-              <h1 className="text-[28px] lg:text-[32px] leading-[1.15] font-bold mb-3"
-                style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
-                Crea tu cuenta
-              </h1>
-              <p className="text-[15px] mb-8 leading-relaxed" style={{ color: t.textSecondary }}>
-                Organiza tu cartera, rutas y cobros en un solo lugar.{' '}
-                <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>14 días gratis</span>.
-              </p>
-
-              <div className="mt-2">
-                <ContinueButton onClick={goNext}>Comenzar</ContinueButton>
-              </div>
-            </div>
-          )}
-
           {/* ── Step 1: Nombre ── */}
           {step === 1 && (
             <div>
-              <BackButton onClick={goBack} theme={t} />
+              {/* Sin "Atras": el primer paso no tiene a donde volver desde que
+                  se quito la portada. Un control que no hace nada enseña a
+                  desconfiar de los que si hacen. */}
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
@@ -722,8 +714,9 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </div>
           )}
 
-          {/* Footer — solo en bienvenida */}
-          {step === 0 && (
+          {/* Vivia en la portada. Sin portada va en el PRIMER paso, que es
+              donde alguien se da cuenta de que se equivoco de pantalla. */}
+          {step === 1 && (
             <p className="text-[14px] mt-8 text-center" style={{ color: t.textMuted }}>
               ¿Ya tienes cuenta?{' '}
               <Link href="/login" className="font-semibold hover:underline" style={{ color: 'var(--color-accent)' }}>
@@ -732,7 +725,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </p>
           )}
 
-          {(step === 0 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
+          {(step === 1 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
