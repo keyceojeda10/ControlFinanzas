@@ -167,6 +167,23 @@ html[data-theme="dark"] {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
+/* ── El placeholder de los campos del rediseno ──
+   La receta (03-COMPONENTES.md §6) lo pide #8E929A con peso 400. No se puede
+   poner en estilo en linea, y ademas hay que GANARLE a esta regla del diseno
+   viejo, que vive en globals.css y se aplica a todos los inputs de la app:
+
+       html[data-theme="light"] ::placeholder { color: #a0a0b5 !important }
+
+   De ahi el selector con `html[data-theme]` y el `!important`: sin los dos, el
+   placeholder sale del color anterior y no del que dice la receta. */
+.cf-campo::placeholder,
+html[data-theme="light"] .cf-campo::placeholder,
+html[data-theme="dark"]  .cf-campo::placeholder {
+  color: var(--cf-ink-4) !important;
+  font-weight: 400;
+  opacity: 1;
+}
+
 /* Cifra: Space Grotesk siempre. Los montos grandes SIEMPRE line-height 1. */
 .cf-fig {
   font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;

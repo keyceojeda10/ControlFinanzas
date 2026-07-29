@@ -235,17 +235,27 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
 // marcado. Un contador 0-indexado pegado a una etiqueta 1-indexada solo puede
 // producir un desfase de uno, y no salta a la vista porque la pantalla se ve
 // bien igual — solo esta en el paso equivocado.
-export function EspinaProgreso({ paso = 1, total = 0, style }) {
+export function EspinaProgreso({ paso = 1, total = 0, modoRuta = false, style }) {
   if (!(total > 1)) return null
   const actual = Math.min(Math.max(paso, 1), total)
+  // Lo hecho va DORADO, no verde. La receta (§9) dice «hecho: #E7A400 (o
+  // #12A150 en el modo ruta)»: el verde está reservado al modo ruta, donde cada
+  // segmento es un cobro cerrado de verdad y el verde significa «cobrado».
+  // Yo lo tenía verde siempre, y eso convertía cada paso de un formulario en un
+  // logro: en «Cobro 3 de 11» los dos primeros salían verdes como si el dinero
+  // ya hubiera entrado.
+  const hecho = modoRuta ? 'var(--cf-green)' : 'var(--cf-gold)'
   return (
     <div style={{ display: 'flex', gap: 3, ...style }} aria-label={`Paso ${actual} de ${total}`}>
       {Array.from({ length: total }, (_, i) => {
         const n = i + 1
         return (
           <span key={i} style={{
+            // `flex: none` no va acá: los segmentos SÍ se reparten el ancho
+            // (flex:1 lo pide la receta). Lo que no puede encogerse es el alto,
+            // y ese es fijo.
             flex: 1, height: 3, borderRadius: 999, minWidth: 0,
-            background: n < actual ? 'var(--cf-green)' : n === actual ? 'var(--cf-gold)' : 'var(--cf-fill-2)',
+            background: n < actual ? hecho : n === actual ? 'var(--cf-gold)' : 'var(--cf-fill-2)',
           }} />
         )
       })}

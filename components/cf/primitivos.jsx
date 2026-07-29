@@ -48,7 +48,15 @@ export function FilaTarjeta({ children, primera = false, style, ...props }) {
 /* ══ 2 · Bloque oscuro — "la respuesta" ══
    Máximo UNO por pantalla: es la cifra que responde por qué el usuario la abrió. */
 export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', children, style }) {
-  const color = tono === 'ganancia' ? 'var(--cf-gold-light, #F5B824)'
+  // El dorado de acá es #F5B824 LITERAL, y no un token.
+  //
+  // Tenía `var(--cf-gold-light, #F5B824)`, que es un fallback que NUNCA se usa
+  // porque el token existe: resolvía a #F5C518, que es otro color —el del borde
+  // del logo—. El #F5B824 de la receta es el valor que `--cf-gold` toma EN TEMA
+  // OSCURO, y este bloque es oscuro siempre, independientemente del tema de la
+  // app. Por eso va literal, igual que el #15161A del fondo y el #F3F3F6 del
+  // texto: dentro del bloque no manda el tema, manda que el fondo es negro.
+  const color = tono === 'ganancia' ? '#F5B824'
               : tono === 'favor'    ? '#2FBE6A'
               : '#F3F3F6'
   return (
@@ -65,8 +73,15 @@ export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', childre
           {etiqueta}
         </span>
       )}
+      {/* Sin `marginTop: -4`. Era un apaño mío para compensar el hueco, y la
+          receta dice gap 14 a secas: con el -4 quedaba en 10. `.cf-fig` ya trae
+          `line-height: 1`, que es lo que de verdad ajusta la cifra.
+
+          Y el comentario va ACÁ ARRIBA, no dentro del `&&` de abajo: ahí el
+          cuerpo tiene que ser UNA sola expresión, y un comentario JSX al lado
+          del <span> son dos. Eso dejó el archivo sin compilar. */}
       {cifra != null && (
-        <span style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginTop: -4 }}>
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
           <span className="cf-fig" style={{ fontSize: 34, letterSpacing: '-.035em', color }}>
             {cifra}
           </span>
@@ -252,9 +267,13 @@ export function BarraAccion({ children, style }) {
 }
 
 /* ══ 6 · Campos ══ */
-export function Campo({ foco = false, style, ...props }) {
+export function Campo({ foco = false, style, className, ...props }) {
   return (
-    <input {...props} style={{
+    // La clase es para el placeholder: la receta lo pide #8E929A con peso 400 y
+    // eso NO se puede poner en estilo en línea. Y encima había que ganarle a un
+    // `::placeholder { color: #a0a0b5 !important }` global del diseño viejo que
+    // vive en globals.css y se aplica a todos los inputs de la app.
+    <input {...props} className={['cf-campo', className].filter(Boolean).join(' ')} style={{
       height: 'var(--cf-h-field)', padding: '0 17px', width: '100%',
       background: 'var(--cf-card)',
       border: foco ? '1.5px solid var(--cf-gold)' : '1px solid rgba(20,20,28,.10)',
