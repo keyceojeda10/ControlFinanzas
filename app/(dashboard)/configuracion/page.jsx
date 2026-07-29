@@ -1326,20 +1326,41 @@ function ConfiguracionContent() {
 
   const rol = session?.user?.rol ?? 'cobrador'
 
+  // ── Nombres como piensa el dueño, no como se llama el módulo ──
+  //
+  // «Ocho secciones nombradas como el dueño piensa —cómo prestas, avisos por
+  // WhatsApp, tus datos— en vez de por módulo técnico» (nota del diseño en
+  // «01 · Configuración»). Organización, Suscripción y Notificaciones son
+  // nombres de tablas: ningún prestamista habla así de su negocio.
+  //
+  // «Plan y pagos» y no «Suscripción» es el cambio que más se nota: suscripción
+  // es lo que la app le cobra a él; plan y pagos es lo que él viene a mirar.
+  //
+  // Las CLAVES no se tocan a propósito — el contenido de cada pestaña cuelga de
+  // ellas y renombrarlas rompería la página sin ganar nada.
+  //
+  // El orden y la regla de ocultar viven en lib/adaptadores/configuracion.js,
+  // con sus pruebas. Aquí se aplica sobre las pestañas que ya existen.
+  //
+  // ⚠ FALTAN DOS de las ocho del diseño, y necesitan panel propio, no un
+  // renombre: «Cómo prestas» —los valores que prellenan el formulario de nuevo
+  // préstamo— y «Seguridad y datos». Anotadas para la siguiente tanda.
   const tabs = [
-    { key: 'perfil',       label: 'Mi perfil',    visible: true },
-    { key: 'organizacion', label: 'Organización', visible: rol === 'owner' },
-    { key: 'suscripcion',  label: 'Suscripción',  visible: rol === 'owner' },
-    { key: 'referidos',    label: 'Referidos',     visible: rol === 'owner' },
-    { key: 'notificaciones', label: 'Notificaciones', visible: true },
-    { key: 'apariencia',     label: 'Apariencia',     visible: true },
+    { key: 'organizacion',   label: 'Tu negocio',          visible: rol === 'owner' },
+    { key: 'notificaciones', label: 'Avisos por WhatsApp', visible: true },
+    { key: 'suscripcion',    label: 'Plan y pagos',        visible: rol === 'owner' },
+    { key: 'perfil',         label: 'Tus datos',           visible: true },
+    { key: 'apariencia',     label: 'Apariencia',          visible: true },
+    // Referidos no está entre las ocho del diseño. Se queda porque existe y
+    // funciona, pero va al final: no es algo que se venga a configurar.
+    { key: 'referidos',      label: 'Referidos',           visible: rol === 'owner' },
   ].filter((t) => t.visible)
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-5">
       <div>
         <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Configuración</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestiona tu perfil y tu organización</p>
+        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Cómo trabaja tu negocio y qué ve tu gente</p>
       </div>
 
       {/* Tabs */}
