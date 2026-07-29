@@ -108,8 +108,34 @@ Títulos útiles: `08 · Entrar` (login) · `02 · Registro` · `01 · Panel del
 
 ## Lo que sigue, en orden
 
-1. **Panel, Cobrar hoy, Caja** — componente hecho, sin cablear. Es lo que queda
-   más gordo.
+### 1. Montar `<Panel>` — el adaptador ya está hecho y probado
+
+`lib/adaptadores/panel.js` (14 pruebas) traduce `/api/dashboard/resumen` a las
+props de `components/pantallas/Panel.jsx`. **Falta solo montarlo.**
+
+La forma de la respuesta, ya verificada — para no volver a deducirla:
+
+| Panel | de la API |
+|---|---|
+| `patrimonio` | `finanzas.patrimonio` — **usar tal cual, no recalcular** |
+| `enCaja` | `finanzas.cajaDisponible` |
+| `porCobrar` | `prestamos.saldoPorCobrar` |
+| `clientesEnMora` | `clientes.enMora` |
+| `hoy.esperado` | `prestamos.esperadoHoy` |
+| `hoy.recaudado` | `cobros.hoy` |
+| `atencion` | `alertas.{clientesSinRuta, prestamosSinPagosLargo}` |
+
+`finanzas` viene **null para el cobrador** — no poner 0 ahí, vería un negocio
+quebrado. Y `hoy.clientes` (a cuántos toca cobrar) **no lo trae el resumen**:
+da la plata, no la cantidad. Se pasa desde la página.
+
+Dónde cortar en `app/(dashboard)/dashboard/page.jsx` (2.000 líneas): el bloque
+del saludo empieza en el `<div>` tras `<SpotlightOverlay …/>` y el hero está
+marcado con `{/* HERO: Recaudado hoy … */}`. Los dos se reemplazan por
+`<Panel {...adaptarPanel(datos, {…})} />`. **Ojo con dejar el hero viejo
+debajo**: quedarían dos veces las mismas cifras.
+
+### 2. Cobrar hoy y Caja — componentes hechos, sin cablear
 2. **Las 7 pantallas con desajuste de hidratación**: capital, cobradores,
    configuración, gastos, panel, reportes, socios. Todas sin migrar; la mayoría
    se arregla con `useMontado`.
