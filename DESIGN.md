@@ -20,6 +20,9 @@
 | Recetas de componentes | `03-COMPONENTES.md` | `components/cf/primitivos.jsx` |
 | Los criterios (el porqué) | `04-CRITERIOS.md` | — |
 | Inventario de 106 pantallas | `05-PANTALLAS.md` | `components/pantallas/` |
+| **Modos sin tabla + pantalla "Más"** | `06-ADENDA-modos-sin-tabla.md` | `components/pantallas/` |
+| **Menú del + y Lucas** | `07-ADENDA-menu-y-lucas.md` | `components/pantallas/` |
+| Turnos 41–43 (visual) | `NUEVO-turnos-41-42-43.dc.html` | — |
 | El documento visual | `Control Finanzas - Rediseno.dc.html` | — |
 | Banco de pruebas | — | `app/estilo` |
 
@@ -176,14 +179,55 @@ Se documentan acá para que se lean como decisiones y no como olvidos.
 
 ---
 
-## Huecos conocidos del handoff
+## Orden de construcción — CORREGIDO
 
-Ver `CF Diseño 2026/PEDIDO-PANTALLAS-FALTANTES.md`.
+> ⚠️ **`05-PANTALLAS.md` tiene el orden invertido en las fichas de préstamo.**
+> Ahí la ficha CON tabla de amortización figura como *la* ficha. Es la
+> **excepción**: cubre el 6,2% de la cartera.
 
-1. **Ficha de préstamo sin tabla de amortización.** El handoff diseñó las fichas
-   sobre los 4 modos que tienen tabla — el **6,2%** de los préstamos activos. El
-   **93,7%** restante (`fijo`, `unico`, `manual`, `proporcional`) no tiene
-   desglose por período: el dato no existe.
-2. **La pantalla "Más"** (quinto destino de la pastilla). Derivable del menú de
-   configuración del turno 9 y de la agrupación que ya usa la barra lateral.
-3. **Comparar modos**: el handoff compara 4 de los 8. Puede estar bien así.
+La ficha por defecto es la de **`fijo`** (54,7%). Construir primero la de tabla
+es construir la excepción antes que la norma.
+
+| Orden | Ficha | Cartera | Dónde |
+|---|---|---|---|
+| 1 | `fijo` — **la ficha canónica** | 54,7% | `06-ADENDA` §1 · turno 41·01 |
+| 2 | `unico` — cambia la pregunta | 18,6% | `06-ADENDA` §2 · turno 41·02 |
+| 3 | `manual` = `fijo` + pastilla "cuota que le pusiste" | 10,6% | `07-ADENDA` §1 · turno 42·01 |
+| 4 | `proporcional` = `fijo` + el porcentaje explicado | 9,8% | `07-ADENDA` §2 · turno 42·02 |
+| 5 | con tabla — la **variante** | 6,2% | paquete original |
+
+### Tres reglas de las fichas sin tabla
+
+1. **Nunca repartir el interés por pago.** Se sabe el interés total; no se sabe
+   cuánto de cada pago fue interés. Mostrarlo sería fabricar un dato.
+2. **No dibujar un calendario proyectado.** En `fijo` el calendario *es* la frase
+   "$20.000 diarios durante 30 días". Treinta filas iguales es relleno.
+3. **Los números feos se dejan feos.** "39 semanas" no se redondea a 40: el dueño
+   va a cobrar 39 veces. Un plazo redondeado es un plazo mentiroso.
+
+### `unico` no es una variante menor
+
+Se le quita la **barra de progreso**: sin cuotas estaría en 0% todo el plazo, y
+882 préstamos que parecen impagos es una alarma falsa. La reemplaza la **fecha de
+vencimiento**, y el estado vacío del historial **tranquiliza en vez de alarmar**:
+*"Es normal: en este tipo de préstamo se paga al final."*
+
+---
+
+## Huecos cerrados
+
+Las adendas resolvieron los tres que había:
+
+1. ~~Ficha sin tabla~~ → `06-ADENDA` + `07-ADENDA`, los 8 modos tienen pantalla.
+2. ~~Pantalla "Más"~~ → turno 41·03. Cada fila lleva **su cifra**: un menú de
+   nombres es un índice; con la cifra al lado es un panel.
+3. ~~Comparar modos~~ → **no era un hueco.** La pantalla compara *calendarios*, y
+   los 4 que muestra son los 4 que tienen calendario. Se renombra a **"Comparar
+   calendarios"** y el problema desaparece. Los 8 se comparan donde ya se
+   comparan bien: el selector del paso 5 de crear préstamo, en lista vertical.
+
+## Lo único que sigue sin diseñar
+
+- **Socios.** No hay pantalla en ningún paquete. Si hace falta, es diseño nuevo.
+- Cualquier flujo de **renovación** que no sea "crear préstamo con datos
+  prellenados".
