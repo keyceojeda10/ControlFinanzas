@@ -188,13 +188,17 @@ Se documentan acá para que se lean como decisiones y no como olvidos.
 La ficha por defecto es la de **`fijo`** (54,7%). Construir primero la de tabla
 es construir la excepción antes que la norma.
 
-| Orden | Ficha | Cartera | Dónde |
-|---|---|---|---|
-| 1 | `fijo` — **la ficha canónica** | 54,7% | `06-ADENDA` §1 · turno 41·01 |
-| 2 | `unico` — cambia la pregunta | 18,6% | `06-ADENDA` §2 · turno 41·02 |
-| 3 | `manual` = `fijo` + pastilla "cuota que le pusiste" | 10,6% | `07-ADENDA` §1 · turno 42·01 |
-| 4 | `proporcional` = `fijo` + el porcentaje explicado | 9,8% | `07-ADENDA` §2 · turno 42·02 |
-| 5 | con tabla — la **variante** | 6,2% | paquete original |
+| Orden | Ficha | Cartera | Dónde | |
+|---|---|---|---|---|
+| 1 | `fijo` — **la ficha canónica** | 54,7% | `06-ADENDA` §1 · turno 41·01 | ✅ |
+| 2 | `unico` — cambia la pregunta | 18,6% | `06-ADENDA` §2 · turno 41·02 | ✅ |
+| 3 | `manual` = `fijo` + la cuota la puso una persona | 10,6% | `07-ADENDA` §1 · turno 42·01 | ✅ |
+| 4 | `proporcional` = `fijo` + el porcentaje explicado | 9,8% | `07-ADENDA` §2 · turno 42·02 | ✅ |
+| 5 | con tabla — la **variante** | 6,2% | paquete original | ⬜ |
+
+Las cuatro viven en `components/pantallas/FichaPrestamo.jsx`, un solo componente
+con `modo`. También construidas: **Más** (`PantallaMas.jsx`), el **menú del +**
+(`MenuCrear.jsx`) y **Lucas** en sus tres estados (`Lucas.jsx`).
 
 ### Tres reglas de las fichas sin tabla
 
