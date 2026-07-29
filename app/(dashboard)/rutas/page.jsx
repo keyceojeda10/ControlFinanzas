@@ -18,10 +18,42 @@ import MonedaCF                from '@/components/ui/MonedaCF'
 import RutaCard                from '@/components/rutas/RutaCard'
 import ModalSugerenciasRutas   from '@/components/rutas/ModalSugerenciasRutas'
 import { useCountry } from '@/hooks/useCountry'
+import { useMontado } from '@/hooks/useMontado'
+
+/** El «+» dorado. Círculo, como en clientes y préstamos. */
+function BotonNuevaRuta({ onClick }) {
+  return (
+    <button type="button" onClick={onClick} aria-label="Nueva ruta" style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+      width: 'var(--cf-h-field)', height: 'var(--cf-h-field)', borderRadius: 999,
+      background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', border: 0, cursor: 'pointer',
+    }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    </button>
+  )
+}
+
+function BotonCopia({ onClick, cargando, texto, d }) {
+  return (
+    <button type="button" onClick={onClick} disabled={cargando} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6, flex: 'none',
+      height: 36, padding: '0 13px', borderRadius: 999, cursor: cargando ? 'default' : 'pointer',
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+      fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)', opacity: cargando ? 0.55 : 1,
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+      {texto}
+    </button>
+  )
+}
 
 export default function RutasPage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
+  const montado = useMontado()
   const { country } = useCountry()
 
   const { formatMoney } = useCountry()
@@ -348,49 +380,13 @@ export default function RutasPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Rutas</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            {loading ? '…' : `${rutas.length} ruta${rutas.length !== 1 ? 's' : ''}`}
-          </p>
-        </div>
-        {!authLoading && esOwner && (
-          <Button
-            onClick={() => setShowForm(true)}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            }
-          >
-            Nueva ruta
-          </Button>
-        )}
-      </div>
+      {/* La cabecera del armazón ya dice «Rutas»; repetirlo en un <h1> con
+          «2 rutas» debajo es decirlo dos veces y cuesta 90px. El botón ancho
+          «Nueva ruta» pasa al círculo dorado: son 2-13 rutas, no hace falta un
+          botón del ancho de la pantalla para algo que se toca una vez al mes.
 
-      {!authLoading && esOwner && rutas.length > 0 && (
-        <div className="flex items-center gap-2 mb-4">
-          <button
-            onClick={descargarBackup}
-            disabled={backupLoading}
-            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] transition-all disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            title="Guardar copia de seguridad"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-            {backupLoading ? 'Guardando...' : 'Guardar copia'}
-          </button>
-          <button
-            onClick={restaurarBackup}
-            disabled={restoreLoading}
-            className="h-8 px-3 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:border-[var(--color-border-hover)] transition-all disabled:opacity-50 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            title="Restaurar copia de seguridad"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" /></svg>
-            {restoreLoading ? 'Restaurando...' : 'Restaurar copia'}
-          </button>
-        </div>
-      )}
+          Las copias de seguridad se van al modo «Ordenar», que es cuando de
+          verdad importan: se guarda una copia antes de cambiar el orden. */}
 
       {/* Mini formulario inline */}
       {showForm && (
@@ -453,33 +449,17 @@ export default function RutasPage() {
         </form>
       )}
 
+      {/* DOS ALARMAS AMBAR APILADAS PARA EL MISMO HECHO. La franja de arriba
+          ya dice «Pasaste el límite de tu plan · 2/1 rutas» y ya lleva su
+          «Ver planes»; este recuadro repetía el titular, repetía el botón, y
+          se comía 240px. Lo único suyo era explicar qué significa «Solo
+          lectura», y eso no es una alarma: es una nota. Va en gris, en una
+          línea, sin caja. */}
       {rutasPermitidas && rutas.length > 0 && rutas.some(r => !rutasPermitidas.has(r.id)) && (
-        <div
-          className="rounded-[12px] px-4 py-3 mb-4 flex items-start gap-3"
-          style={{
-            background: 'color-mix(in srgb, var(--color-warning) 6%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
-          }}
-        >
-          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--color-warning)' }}>
-              Tu plan permite {rutasPermitidas.size} ruta{rutasPermitidas.size !== 1 ? 's' : ''}
-            </p>
-            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-              Las rutas marcadas como "Solo lectura" no permiten crear clientes ni prestamos nuevos. Puedes reordenar tus rutas para elegir cuales mantener activas.
-            </p>
-          </div>
-          <Link
-            href="/configuracion/plan"
-            className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors"
-            style={{ background: 'var(--color-warning)', color: '#000' }}
-          >
-            Mejorar plan
-          </Link>
-        </div>
+        <p className="text-[12px] leading-snug mb-3" style={{ color: 'var(--cf-ink-3)' }}>
+          Las rutas en «Solo lectura» no admiten clientes ni préstamos nuevos.
+          Reordénalas para elegir cuáles siguen activas.
+        </p>
       )}
 
       {mostrarBannerRec && (
@@ -566,20 +546,36 @@ export default function RutasPage() {
                 key={String(t.key)}
                 type="button"
                 onClick={() => setModoOrdenar(t.key)}
-                className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
+                className="px-3.5 py-1.5 rounded-[8px] text-xs transition-all"
+                // El seleccionado va NEGRO, no dorado: el dorado es de la plata.
+                // Era el mismo amarillo del botón de dinero para decir «estás
+                // en la pestaña Trabajo», que no es una cifra.
                 style={modoOrdenar === t.key
-                  ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
-                  : { color: 'var(--color-text-muted)' }}
+                  ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', fontWeight: 700 }
+                  : { color: 'var(--cf-ink-3)', fontWeight: 600 }}
               >
                 {t.label}
               </button>
             ))}
           </div>
-          {modoOrdenar && (
-            <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
-              {ordenEstado === 'guardando' ? 'Guardando...' : ordenEstado === 'guardado' ? 'Guardado' : ordenEstado === 'error' ? 'Error al guardar' : 'Arrastra o usa las flechas'}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {modoOrdenar && (
+              <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                {ordenEstado === 'guardando' ? 'Guardando...' : ordenEstado === 'guardado' ? 'Guardado' : ordenEstado === 'error' ? 'Error al guardar' : 'Arrastra o usa las flechas'}
+              </span>
+            )}
+            {/* En modo Ordenar el «+» sobra —nadie crea una ruta mientras
+                reordena— y le quita el sitio a la pista de «arrastra». */}
+            {!modoOrdenar && montado && esOwner && <BotonNuevaRuta onClick={() => setShowForm(true)} />}
+          </div>
+        </div>
+      )}
+
+      {/* Con una sola ruta no hay nada que ordenar, así que la fila de arriba
+          no se pinta y el botón se quedaría sin sitio. */}
+      {!loading && rutas.length <= 1 && montado && esOwner && (
+        <div className="flex justify-end mb-3">
+          <BotonNuevaRuta onClick={() => setShowForm(true)} />
         </div>
       )}
 
@@ -595,6 +591,20 @@ export default function RutasPage() {
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
             onAsignar={() => { window.location.href = '/clientes?filtro=sinruta' }}
           />
+        </div>
+      )}
+
+      {/* Las copias viven aquí: se guarda una antes de tocar el orden, y se
+          restaura si el cambio salió mal. En la cabecera eran dos botones
+          permanentes para algo que se usa el día que algo se rompe. */}
+      {!loading && modoOrdenar && montado && esOwner && rutas.length > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <BotonCopia onClick={descargarBackup} cargando={backupLoading}
+            texto={backupLoading ? 'Guardando…' : 'Guardar copia'}
+            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+          <BotonCopia onClick={restaurarBackup} cargando={restoreLoading}
+            texto={restoreLoading ? 'Restaurando…' : 'Restaurar copia'}
+            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4-4 4M12 3v12" />
         </div>
       )}
 
