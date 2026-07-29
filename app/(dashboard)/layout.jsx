@@ -9,7 +9,7 @@ import BarraLateral   from '@/components/armazon/BarraLateral'
 import Armazon        from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
-import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
+import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
@@ -65,8 +65,8 @@ export default async function DashboardLayout({ children }) {
       {/* desktop: overflow-y-auto + h-dvh → scroll interno con sidebar fija */}
       <div className="flex-1 flex flex-col min-w-0 lg:overflow-y-auto">
 
-        {/* Aviso verificar email (periodo de gracia 24h) */}
-        <VerificarEmailBanner />
+        {/* Una linea, no un formulario. La tarea vive en su hoja. */}
+        <AvisoVerificarCorreo />
 
         {/* Aviso vencimiento de suscripcion (solo <=7 dias o vencida) */}
         <SuscripcionBanner />
@@ -77,10 +77,12 @@ export default async function DashboardLayout({ children }) {
         {/* Aviso cobrador sin ruta */}
         <SinRutaBanner />
 
-        {/* Contenido de la página.
-            SIN padding-bottom para la pastilla: el contenido pasa POR DEBAJO a
-            proposito, y cada pantalla reserva su propio hueco final. */}
-        <main className="flex-1">
+        {/* El margen lateral lo pone el LAYOUT mientras conviven pantallas
+            viejas y nuevas: las viejas dependian de el y al quitarlo se pegaron
+            todas al borde. Las nuevas lo desactivan con `sinMargen`.
+            El padding-bottom sigue fuera: el contenido pasa POR DEBAJO de la
+            pastilla a proposito, y cada pantalla reserva su hueco final. */}
+        <main className="flex-1 px-5 py-5 lg:px-6 lg:py-6">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>

@@ -30,7 +30,7 @@ export default function Mas() {
     // El contenido pasa por debajo de la pastilla; el hueco final lo reserva
     // cada pantalla, no el layout.
     <div style={{ paddingBottom: 96 }}>
-      <PantallaMas {...adaptarMas(datos)} onIr={(destino) => router.push(destino)} />
+      <PantallaMas sinMargen {...adaptarMas(datos)} onIr={(destino) => router.push(destino)} />
     </div>
   )
 }

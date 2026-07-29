@@ -126,6 +126,8 @@ function TarjetaCarga({ icono, titulo, nota, onIr }) {
 export default function PantallaMas({
   plataLista, rendimiento, gastosMes, cobradoresSinRegistrar,
   perdidos, socios, usuarios = 1, onIr,
+  // Dentro del layout el margen lateral ya lo pone el <main>.
+  sinMargen = false,
 }) {
   const ir = (destino) => () => onIr?.(destino)
 
@@ -146,7 +148,7 @@ export default function PantallaMas({
   ].filter(Boolean)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '0' : '8px var(--cf-pad-screen) 0' }}>
       <Rotulo>Más herramientas</Rotulo>
       <Tarjeta plana>
         {herramientas.map((h, i) => (
