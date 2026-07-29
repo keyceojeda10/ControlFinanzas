@@ -141,7 +141,8 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
                 {t.precio}
               </span>
             </div>
-          )})}
+            )
+          })}
         </div>
       </div>
 
