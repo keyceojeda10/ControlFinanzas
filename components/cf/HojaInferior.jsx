@@ -10,7 +10,7 @@
 // En escritorio el mismo contenido se presenta como modal centrado de 520px.
 // Es la única diferencia entre las dos presentaciones.
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function HojaInferior({
   abierta,
@@ -19,9 +19,27 @@ export default function HojaInferior({
   subtitulo,
   children,
   accion,                  // la barra de acción inferior
-  escritorio = false,      // presentar como modal centrado
+  // `undefined` = que lo decida sola por el ancho. Se puede forzar pasando
+  // true/false. Antes el valor por defecto era `false`, así que cualquier hoja
+  // que no lo pasara —todas— salía en PC como una franja pegada al borde
+  // inferior de una pantalla de 1440: el patrón es de teléfono y en escritorio
+  // no se lee como un modal, se lee como algo roto.
+  escritorio: escritorioProp,
   alturaMaxima = '88vh',
 }) {
+  // La detección va en un EFECTO, no en el primer render: leer matchMedia al
+  // pintar hace que el servidor diga una cosa y el cliente otra, y React tira
+  // el árbol entero. Ya me pasó tres veces en este rediseño.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+  const escritorio = escritorioProp ?? anchaPantalla
+
   // Escape cierra, y el fondo no scrollea mientras la hoja está abierta.
   useEffect(() => {
     if (!abierta) return
