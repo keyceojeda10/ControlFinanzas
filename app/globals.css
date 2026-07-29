@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./tokens-2026.css";
 
 /* ─── Design Tokens ──────────────────────────────────────────
    Los tokens CSS se resuelven segun data-theme en <html>.

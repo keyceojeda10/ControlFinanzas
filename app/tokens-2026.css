@@ -1,0 +1,176 @@
+/* ══════════════════════════════════════════════════════════════
+   TOKENS — Rediseño 2026
+   Transcritos de docs/design_handoff/01-TOKENS.md. Los valores son
+   EXACTOS: no se redondean a la escala de Tailwind aunque cambie el pixel.
+
+   Conviven con los tokens `--color-*` viejos mientras dura la migracion.
+   Prefijo `--cf-` para que en cualquier archivo se vea de un vistazo si una
+   pantalla ya esta migrada o no. Cuando no quede ningun consumidor de los
+   viejos, ese bloque se borra de globals.css.
+
+   El nombre de cada token es el MISMO que en el documento de diseño, para que
+   quien lea el handoff encuentre la variable sin traducir nada.
+   ══════════════════════════════════════════════════════════════ */
+
+:root,
+html[data-theme="light"] {
+  /* ── Superficies ── */
+  --cf-surface:        #F4F4F1;   /* fondo de la app. Hueso calido, no blanco */
+  --cf-card:           #FFFFFF;   /* toda tarjeta, fila, campo, barra de accion */
+  --cf-card-alt:       #F9F9F6;   /* cabecera de grupo dentro de una tarjeta */
+  --cf-fill:           #F3F3EF;   /* control inactivo, avatar, pista de barra */
+  --cf-fill-2:         #E4E4DF;   /* interruptor apagado, barra inactiva */
+
+  /* ── Trazos ── */
+  --cf-border:         rgba(20,20,28,.08);   /* borde por defecto de tarjeta */
+  --cf-border-strong:  rgba(20,20,28,.12);   /* boton secundario */
+  --cf-hairline:       rgba(20,20,28,.06);   /* separador entre filas */
+  --cf-divider:        rgba(20,20,28,.07);   /* separador entre bloques */
+  --cf-chevron:        rgba(20,20,28,.30);   /* flechas de "entrar" */
+
+  /* ── Texto ── */
+  --cf-ink:            #15161A;   /* principal, cifras, titulos */
+  --cf-ink-2:          #4A4E57;   /* secundario, descripciones */
+  --cf-ink-3:          #63676F;   /* etiquetas de seccion, metadatos */
+  --cf-ink-4:          #8E929A;   /* placeholder, deshabilitado */
+
+  /* ── Dorado: el acento de marca ──
+     Regla de oro: solo el monto principal, la accion primaria y el foco del
+     campo activo. El armazon de navegacion NO lleva dorado. */
+  --cf-gold:           #E7A400;
+  --cf-gold-light:     #F5C518;   /* borde de 2px del logo y de la moneda */
+  --cf-gold-ink:       #3A2900;   /* texto SOBRE dorado. Nunca blanco */
+  --cf-gold-dark:      #B07D00;   /* enlaces y acciones textuales */
+  --cf-gold-text:      #7A5800;   /* texto sobre gold-tint */
+  --cf-gold-text-2:    #8A6100;   /* estado "atraso leve" */
+  --cf-gold-tint:      #FDF3D6;   /* nav activa, chip seleccionado, aviso ambar */
+  --cf-gold-tint-2:    #FDF9EE;   /* fila de tabla destacada */
+  --cf-gold-focus:     rgba(231,164,0,.13);  /* anillo: 0 0 0 3px */
+  --cf-gold-border:    rgba(231,164,0,.30);
+  --cf-gold-bg:        rgba(231,164,0,.14);  /* pastilla de estado ambar */
+
+  /* ── Estado ── */
+  --cf-red:            #E5484D;
+  --cf-red-dark:       #C23B40;   /* texto rojo sobre blanco */
+  --cf-red-darker:     #A8353A;   /* texto rojo dentro de aviso rojo */
+  --cf-red-bg:         rgba(229,72,77,.07);
+  --cf-red-border:     rgba(229,72,77,.22);
+  --cf-red-pill-bg:    rgba(229,72,77,.12);
+  --cf-red-pill-border:rgba(229,72,77,.25);
+
+  --cf-green:          #12A150;
+  --cf-green-dark:     #0D7A3C;   /* texto verde sobre blanco */
+  --cf-green-pill-bg:  rgba(18,161,80,.12);
+  --cf-green-pill-border: rgba(18,161,80,.25);
+
+  /* Azul = persona, NUNCA dinero. Solo avatar y punto de ubicacion. */
+  --cf-blue:           #2F6FED;
+
+  /* Unica excepcion de marca externa permitida */
+  --cf-whatsapp:           #25D366;
+  --cf-whatsapp-bubble:    #DCF8C6;
+  --cf-whatsapp-highlight: #C3ECAB;
+
+  /* ── Velos ── */
+  --cf-scrim:        rgba(20,20,28,.42);   /* detras de hoja inferior */
+  --cf-scrim-modal:  rgba(20,20,28,.50);   /* detras de modal centrado */
+}
+
+/* ── Tema oscuro ──
+   Son CUATRO valores, no un rediseño. Tipografia, espaciado, radios y la
+   gramatica de cifras son identicos al claro. */
+html[data-theme="dark"] {
+  --cf-surface:        #15161A;
+  --cf-card:           #1E1F24;   /* NO negro puro: los bordes deben verse */
+  --cf-card-alt:       rgba(255,255,255,.04);
+  --cf-fill:           rgba(255,255,255,.07);
+  --cf-fill-2:         rgba(255,255,255,.10);
+
+  --cf-border:         rgba(255,255,255,.09);
+  --cf-border-strong:  rgba(255,255,255,.12);
+  --cf-hairline:       rgba(255,255,255,.07);
+  --cf-divider:        rgba(255,255,255,.08);
+  --cf-chevron:        rgba(255,255,255,.30);
+
+  --cf-ink:            #F3F3F6;
+  --cf-ink-2:          #A3A8B2;
+  --cf-ink-3:          #8A8E98;
+  --cf-ink-4:          #6E727A;
+
+  --cf-gold:           #F5B824;   /* mas claro, para contraste sobre oscuro */
+  --cf-green:          #2FBE6A;
+  --cf-red:            #F0575C;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RADIOS — valores exactos del documento
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --cf-r-phone:   30px;   /* marco de telefono (solo mockup) */
+  --cf-r-sheet:   22px;   /* hoja inferior: 22px 22px 0 0 */
+  --cf-r-hero:    20px;   /* bloque oscuro */
+  --cf-r-card:    18px;   /* TARJETA ESTANDAR — el mas usado */
+  --cf-r-card-sm: 16px;   /* tarjeta pequeña, campo grande */
+  --cf-r-control: 14px;   /* boton, campo, chip grande */
+  --cf-r-desktop: 13px;   /* boton de escritorio, item de nav */
+  --cf-r-pill:    11px;   /* chip, pastilla de estado, boton pequeño */
+  --cf-r-icon:    10px;   /* contenedor de icono pequeño */
+  --cf-r-key:      6px;   /* tecla de teclado */
+  --cf-r-full:   999px;   /* barra de progreso, avatar, punto, pastilla */
+
+  /* ══ SOMBRAS ══
+     Regla: la tarjeta estandar NO lleva sombra. Solo lo que de verdad flota. */
+  --cf-sh-sheet: 0 -12px 32px rgba(20,20,28,.18);
+  --cf-sh-modal: 0 24px 64px rgba(20,20,28,.40);
+  --cf-sh-fab:   0 6px 20px rgba(231,164,0,.40);
+  --cf-sh-float: 0 8px 28px rgba(20,20,28,.18);
+  --cf-sh-pill:  0 3px 12px rgba(20,20,28,.16);
+  --cf-sh-card:  0 1px 3px rgba(20,20,28,.05);
+  --cf-sh-knob:  0 1px 3px rgba(20,20,28,.24);
+  /* la pastilla de navegacion y el boton + */
+  --cf-sh-nav:   0 6px 20px rgba(20,20,28,.10);
+  --cf-sh-plus:  0 6px 20px rgba(20,20,28,.28);
+
+  /* ══ ALTURAS FIJAS ══ */
+  --cf-h-header:      56px;   /* cabecera movil — SIEMPRE, nunca se encoge */
+  --cf-h-nav:         62px;   /* pastilla flotante */
+  --cf-nav-inset:     18px;   /* separacion de la pastilla al borde inferior */
+  --cf-nav-side:      16px;   /* separacion lateral de la pastilla */
+  --cf-h-btn:         52px;   /* boton primario movil (52-56) */
+  --cf-h-btn-2:       48px;   /* boton secundario movil (46-50) */
+  --cf-h-field:       54px;   /* campo de texto movil (52-56) */
+  --cf-h-chip:        34px;   /* chip / filtro (33-36) */
+  --cf-h-pill:        22px;   /* pastilla de estado (20-24) */
+  --cf-h-row:         52px;   /* fila de lista dentro de tarjeta (46-56) */
+  --cf-h-btn-desktop: 42px;
+  --cf-h-nav-item:    37px;   /* item de nav lateral */
+  --cf-w-sidebar:    250px;   /* barra lateral de escritorio (230-250) */
+  --cf-touch-min:     44px;   /* objetivo tactil MINIMO — nunca menos */
+
+  /* ══ ESPACIADO ══
+     No hay escala rigida de 4px: son valores por contexto. */
+  --cf-pad-screen:    20px;   /* padding lateral de pantalla (movil) */
+  --cf-pad-screen-d:  36px;   /* padding lateral (escritorio) */
+  --cf-pad-sheet:     22px;   /* padding lateral de hoja inferior */
+  --cf-gap-cards:     12px;   /* entre tarjetas de una columna (11-13) */
+  --cf-gap-in-card:   12px;   /* dentro de una tarjeta (11-14) */
+  --cf-gap-chips:      7px;   /* entre chips (6-8) */
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LA REGLA DE CIFRAS
+   Todo numero que represente dinero, cantidad o fecha la lleva.
+   Sin esto las columnas de montos bailan al cambiar de digito.
+   Es el detalle mas importante de la tipografia de esta app.
+   ══════════════════════════════════════════════════════════════ */
+.cf-num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Cifra: Space Grotesk siempre. Los montos grandes SIEMPRE line-height 1. */
+.cf-fig {
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 600;
+  line-height: 1;
+}
