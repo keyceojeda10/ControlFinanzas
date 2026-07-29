@@ -47,7 +47,20 @@ if (BORRAR) {
   const [r] = await con.query(
     "DELETE FROM Prestamo WHERE clienteId IN (SELECT id FROM Cliente WHERE cedula LIKE ?)", [`SIN-${SEMILLA}%`])
   const [r2] = await con.query("DELETE FROM Cliente WHERE cedula LIKE ?", [`SIN-${SEMILLA}%`])
-  console.log(`borrados ${r2.affectedRows} clientes y ${r.affectedRows} préstamos de la prueba`)
+
+  // LOS MOVIMIENTOS DE CAPITAL TAMBIÉN. Borrar solo préstamos y clientes deja
+  // los desembolsos en el libro: la primera vez dejé 136 apuntes por
+  // $256.000.000 y el panel enseñaba «Toda tu plata −$249.410.062». Una caja en
+  // rojo por basura de pruebas es indistinguible de una caja en rojo de verdad.
+  const [r3] = await con.query(
+    "DELETE FROM MovimientoCapital WHERE tipo = 'desembolso' AND descripcion LIKE '%masiva%'")
+  const [r4] = await con.query('SELECT id, saldo FROM Capital LIMIT 1')
+  if (r4.length) {
+    const [[suma]] = await con.query(
+      "SELECT COALESCE(SUM(CASE WHEN tipo IN ('desembolso','gasto','retiro') THEN -monto ELSE monto END), 0) s FROM MovimientoCapital")
+    await con.query('UPDATE Capital SET saldo = ? WHERE id = ?', [Number(suma.s), r4[0].id])
+  }
+  console.log(`borrados ${r2.affectedRows} clientes, ${r.affectedRows} préstamos y ${r3.affectedRows} movimientos de capital`)
   await con.end()
   process.exit(0)
 }

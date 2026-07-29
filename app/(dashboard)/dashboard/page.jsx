@@ -9,6 +9,8 @@ import { guardarEnCache, leerDeCache, obtenerDashboardOffline } from '@/lib/offl
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { useOnboarding } from '@/components/onboarding/useOnboarding'
 import OnboardingChecklist from '@/components/onboarding/OnboardingChecklist'
+import Panel from '@/components/pantallas/Panel'
+import { adaptarPanel } from '@/lib/adaptadores/panel'
 import CacheAge from '@/components/offline/CacheAge'
 
 // Carga diferida — solo se descargan si el usuario los necesita
@@ -1607,40 +1609,9 @@ export default function DashboardPage() {
         spotlight={onboarding.spotlight}
         onClose={onboarding.hideSpotlight}
       />
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-              {saludoPorHora()}{session?.user?.nombre ? `, ${session.user.nombre.split(' ')[0]}` : ''}
-            </h1>
-            <p className="text-[12.5px] mt-1 font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-              Resumen de tu cartera hoy
-            </p>
-          </div>
-          <div className="shrink-0">
-            <button
-              onClick={refreshAll}
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
-              title="Actualizar datos"
-              aria-label="Actualizar"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {actualizadoEn && (
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-success)' }} />
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-              Actualizado {new Date(actualizadoEn).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
-            </p>
-            <CacheAge compact />
-          </div>
-        )}
-      </div>
+      {/* El saludo, el subtítulo «Resumen de tu cartera hoy» y la hora de
+          actualización se fueron: el saludo vive ahora dentro del Panel, y los
+          otros dos no respondían ninguna pregunta. */}
       {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
       {isOffline && (
         <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>
@@ -1723,48 +1694,29 @@ export default function DashboardPage() {
           {/* Desktop: grid de 2 columnas para hero + strip lateral */}
           <div className="lg:grid lg:grid-cols-5 lg:gap-5 lg:items-stretch">
           <div className="lg:col-span-3">
-          {/* HERO: Recaudado hoy en grande con narrativa + donut de meta integrado */}
-          <HeroCard
-            label="Recaudado hoy"
-            valueRaw={data.cobros.hoy}
-            value={formatMoney(data.cobros.hoy)}
-            sub={`${data.cobros.cantidadHoy} ${data.cobros.cantidadHoy === 1 ? 'pago' : 'pagos'}${
-              // "Recaudado" mezcla capital propio volviendo con ganancia real.
-              // Cobrar $500.000 de capital no es ganar $500.000.
-              data.cobros.interesGanadoHoy > 0 ? ` · ganancia ${formatMoney(data.cobros.interesGanadoHoy)}` : ''
-            }${data.cobros.ayer ? ` · ayer ${formatMoney(data.cobros.ayer)}` : ''}`}
-            color="var(--color-success)"
-            accent="var(--color-success)"
-            narrativa={generarNarrativa({
-              recaudadoHoy: data.cobros.hoy,
-              recaudadoAyer: data.cobros.ayer,
-              recaudadoAyerAEstaHora: data.cobros.ayerAEstaHora,
-              cuotaDiaria: data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal,
-              sparkline7d: data.cobros.sparkline7d,
+          {/* ── EL PANEL DEL REDISEÑO ──
+              Sustituye al HeroCard SIN PERDER NADA: lo cobrado, lo esperado, la
+              ganancia, cuántos pagos, el histórico de siete días y la frase que
+              interpreta el día siguen ahí, más el patrimonio y las alertas.
+
+              Y el bloque se voltea con la hora: hasta que entra el primer pago
+              el titular mira hacia adelante, porque un «recaudado hoy $0» a las
+              7 de la mañana es inútil. */}
+          <Panel
+            {...adaptarPanel(data, {
+              nombre: session?.user?.nombre || session?.user?.name,
+              hora: new Date().getHours(),
+              // ⚠ El resumen da la PLATA que toca cobrar hoy (`esperadoHoy`)
+              // pero NO a cuántos clientes. Va en 0 a propósito: `cantidadClientes`
+              // de /api/rutas es el total de la ruta, no los que tocan hoy, y
+              // poner ese número diría que hay 68 cobros pendientes cuando puede
+              // haber 12. Con 0, la tarjeta de avance no se pinta — mejor que
+              // pintarla mintiendo. Falta el conteo en el endpoint.
+              clientesHoy: 0,
             })}
-            sparklineData={data.cobros.sparkline7d}
-            metaDiaria={data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal}
-            info={{
-              titulo: 'Recaudado hoy',
-              que: 'Total de dinero que has cobrado HOY, desde la medianoche de tu país.',
-              comoSeCalcula: 'Sumo todos los pagos registrados hoy, sin importar el tipo (cuota, abono a capital, liquidación...). Lo único que NO cuento son recargos ni descuentos.',
-              ejemplo: (() => {
-                const metaHoy = data.prestamos.esperadoHoy ?? data.prestamos.cuotaDiariaTotal
-                const gan = data.cobros.interesGanadoHoy
-                const cap = data.cobros.capitalRecuperadoHoy
-                const desglose = gan > 0
-                  ? ` De eso, ${formatMoney(gan)} es ganancia suya y ${formatMoney(cap)} es su propio capital volviendo.`
-                  : ''
-                const base = `Llevas ${formatMoney(data.cobros.hoy)} cobrados en ${data.cobros.cantidadHoy} pagos hoy.${desglose}`
-                const conMeta = metaHoy > 0
-                  ? ` Eso es el ${Math.min(100, Math.round((data.cobros.hoy / metaHoy) * 100))}% de lo que toca cobrar hoy (${formatMoney(metaHoy)}).`
-                  : ' Hoy no vence ninguna cuota.'
-                const conAyer = data.cobros.ayer ? ` Ayer cobraste ${formatMoney(data.cobros.ayer)} en ${data.cobros.cantidadAyer} pagos.` : ''
-                return base + conMeta + conAyer
-              })(),
-              cuandoCambia: 'Sube cada vez que se registra un pago. Se reinicia a $0 a la medianoche de tu país.',
-              tip: 'El gráfico muestra los últimos 7 días: toca un punto para ver cuánto cobraste ese día.',
-            }}
+            sinMargen
+            onVerCobros={() => { window.location.href = '/cobros-hoy' }}
+            onIr={(destino) => { window.location.href = destino }}
           />
 
           </div>
