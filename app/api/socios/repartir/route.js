@@ -22,9 +22,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { calcularGananciaNeta } from '@/lib/calculos'
+import { calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { porcentajeParticipacion, repartirExacto } from '@/lib/socios'
+
+// Modos con tabla de amortizacion: su interes se lee de la tabla, no se reparte
+// plano. Misma regla que /api/dashboard/analiticas.
+const MODOS_CON_TABLA = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo']
 
 // Rango del mes en curso en hora de Colombia.
 function rangoMesActual() {
@@ -81,10 +85,9 @@ export async function GET() {
     const orgId = session.user.organizationId
     const { desde, hasta, periodo } = rangoMesActual()
 
-    const [interesRows, gastosAgg, participacion] = await Promise.all([
-      // Parte de INTERES de cada pago del mes. Mismo criterio que analiticas:
-      // de cada pago solo cuenta la fraccion que corresponde al interes del
-      // prestamo, no el capital que vuelve.
+    const [interesRows, prestamosConTabla, gastosAgg, participacion] = await Promise.all([
+      // Parte de INTERES de cada pago del mes: de cada pago solo cuenta la
+      // fraccion que corresponde al interes, no el capital que vuelve.
       prisma.$queryRaw`
         SELECT SUM(CASE WHEN pr.totalAPagar > 0
           THEN p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) AS interes
@@ -94,6 +97,32 @@ export async function GET() {
           AND p.fechaPago >= ${desde} AND p.fechaPago < ${hasta}
           AND p.tipo NOT IN ('recargo', 'descuento')
       `,
+      // ...y los prestamos CON tabla, para corregir su parte leyendola de la
+      // tabla en vez de repartirla plana. Sin esto, esta pantalla y la de
+      // analiticas responderian distinto a la misma pregunta — que es justo lo
+      // que se acaba de arreglar alla. Aca importa el doble: de este numero
+      // depende cuanta plata se le asigna a cada socio.
+      prisma.prestamo.findMany({
+        where: {
+          organizationId: orgId,
+          modoInteres: { in: MODOS_CON_TABLA },
+          totalAPagar: { gt: 0 },
+          cuotasAmortizacion: { some: {} },
+        },
+        select: {
+          montoPrestado: true,
+          totalAPagar: true,
+          cuotasAmortizacion: {
+            orderBy: { numeroPeriodo: 'asc' },
+            select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
+          },
+          pagos: {
+            where: { tipo: { notIn: ['recargo', 'descuento'] } },
+            orderBy: { fechaPago: 'asc' },
+            select: { montoPagado: true, fechaPago: true },
+          },
+        },
+      }),
       prisma.gastoMenor.aggregate({
         where: { organizationId: orgId, fecha: { gte: desde, lt: hasta }, estado: 'aprobado' },
         _sum: { monto: true },
@@ -101,7 +130,23 @@ export async function GET() {
       calcularParticipacion(orgId),
     ])
 
-    const interesesMes = Math.round(Number(interesRows?.[0]?.interes || 0))
+    // Correccion por tabla: la DIFERENCIA contra el reparto plano. Un prestamo
+    // que no entre aca conserva su cifra proporcional.
+    let correccion = 0
+    for (const prestamo of prestamosConTabla) {
+      const cuotas = prestamo.cuotasAmortizacion
+      if (!cuotas.length) continue
+      const fraccion = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+      let acumulado = 0
+      for (const pago of prestamo.pagos) {
+        const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
+          - pago.montoPagado * fraccion
+        acumulado += pago.montoPagado
+        if (pago.fechaPago >= desde && pago.fechaPago < hasta) correccion += delta
+      }
+    }
+
+    const interesesMes = Math.round(Number(interesRows?.[0]?.interes || 0) + correccion)
     const gastosMes = Math.round(Number(gastosAgg._sum?.monto || 0))
 
     // Lo ya repartido en este mismo periodo, para no repartir dos veces sin darse cuenta.
