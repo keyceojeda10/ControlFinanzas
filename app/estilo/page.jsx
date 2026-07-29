@@ -11,6 +11,13 @@
 import { useState } from 'react'
 import CabeceraMovil, { EspinaProgreso } from '@/components/armazon/CabeceraMovil'
 import { CABECERA, resolverArmazon, DESTINOS } from '@/lib/armazon'
+import BarraLateral from '@/components/armazon/BarraLateral'
+import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import {
+  Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
+  BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
+  Campo, EtiquetaCampo, AyudaCampo, BarraProgreso, Chip, Aviso, EstadoVacio,
+} from '@/components/cf/primitivos'
 
 const RUTAS_MUESTRA = [
   '/dashboard', '/cobros-hoy', '/clientes', '/prestamos', '/rutas', '/caja',
@@ -160,6 +167,79 @@ export default function Estilo() {
             </div>
           )
         })}
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Componentes base
+      </h2>
+      <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ width: 350, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <BloqueOscuro etiqueta="Patrimonio" cifra="$27.616.416">
+            <TiraCifras sobreOscuro columnas={[
+              { etiqueta: 'En caja', valor: '$2.5M' },
+              { etiqueta: 'Por cobrar', valor: '$25.1M', tono: 'oro' },
+              { etiqueta: 'En mora', valor: '13', tono: 'contra' },
+            ]} />
+          </BloqueOscuro>
+
+          <AntesDespues
+            concepto="Próxima cuota" antes="$14.500" despues="$29.500" tono="empeora"
+            resumen={{ etiqueta: 'Recargo aplicado', valor: '$15.000' }} />
+
+          <TarjetaCliente
+            nombre="Steven Olmos" iniciales="SO" estado="mora" etiquetaEstado="En mora"
+            diasAtraso={36} contexto="Bolivariana · Cl 8 # 31-05"
+            monto="$130.500" porcentaje={18} />
+
+          <TarjetaCliente
+            nombre="María Fernanda Restrepo Vélez" iniciales="MR" estado="aldia" etiquetaEstado="Al día"
+            contexto="Centro · Cra 12 # 4-18" monto="$811.334" porcentaje={72} />
+        </div>
+
+        <div style={{ width: 350, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Tarjeta>
+            <EtiquetaCampo>Cuánto le vas a prestar</EtiquetaCampo>
+            <Campo defaultValue="$500.000" foco />
+            <AyudaCampo>Con 20% al mes, la cuota diaria le queda en $20.000.</AyudaCampo>
+          </Tarjeta>
+
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            <Chip activo>Todos</Chip>
+            <Chip conteo={13}>+30d</Chip>
+            <Chip conteo={5}>Sin ruta</Chip>
+            <Pastilla tono="mora" numerica>36d</Pastilla>
+            <Pastilla tono="atraso">Atraso leve</Pastilla>
+            <Pastilla tono="aldia">Al día</Pastilla>
+          </div>
+
+          <Aviso tono="ambar">Si se vence sigues cobrando y registrando pagos normal. Lo que se bloquea es crear préstamos nuevos.</Aviso>
+          <Aviso tono="rojo">Lo contado no cuadra con lo registrado: faltan $12.000.</Aviso>
+
+          <BotonPrimario>Aplicar $15.000</BotonPrimario>
+          <BarraAccion style={{ borderRadius: 14, border: '1px solid var(--cf-border)' }}>
+            <BotonPrimario style={{ flex: 2 }}>Cobrar y pasar al siguiente</BotonPrimario>
+            <BotonSecundario style={{ flex: 1 }} cancelar>Cancelar</BotonSecundario>
+          </BarraAccion>
+          <BotonDestructivo>Mover a perdidos</BotonDestructivo>
+          <BotonTexto>Ver los 7 cobros de hoy</BotonTexto>
+        </div>
+
+        <div style={{ width: 350 }}>
+          <Tarjeta plana>
+            <EstadoVacio
+              titulo="Todavía no tienes clientes"
+              explicacion="Pasa tu cuaderno con una foto y en cinco minutos tienes la cartera adentro."
+              accion={<BotonPrimario>Pasar mi cuaderno</BotonPrimario>}
+              secundaria={<BotonTexto>Crear uno a mano</BotonTexto>} />
+          </Tarjeta>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Barra lateral · escritorio
+      </h2>
+      <div style={{ height: 620, width: 250, border: '1px solid var(--cf-border)', borderRadius: 18, overflow: 'hidden' }}>
+        <BarraLateral nombre="Carlos Castro" rol="dueño" iniciales="CC" conectado hayAvisos tema="light" />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
