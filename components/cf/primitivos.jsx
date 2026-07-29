@@ -47,7 +47,7 @@ export function FilaTarjeta({ children, primera = false, style, ...props }) {
 
 /* ══ 2 · Bloque oscuro — "la respuesta" ══
    Máximo UNO por pantalla: es la cifra que responde por qué el usuario la abrió. */
-export function BloqueOscuro({ etiqueta, cifra, tono = 'neutro', children, style }) {
+export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', children, style }) {
   const color = tono === 'ganancia' ? 'var(--cf-gold-light, #F5B824)'
               : tono === 'favor'    ? '#2FBE6A'
               : '#F3F3F6'
@@ -66,8 +66,17 @@ export function BloqueOscuro({ etiqueta, cifra, tono = 'neutro', children, style
         </span>
       )}
       {cifra != null && (
-        <span className="cf-fig" style={{ fontSize: 34, letterSpacing: '-.035em', color, marginTop: -4 }}>
-          {cifra}
+        <span style={{ display: 'flex', alignItems: 'baseline', gap: 9, marginTop: -4 }}>
+          <span className="cf-fig" style={{ fontSize: 34, letterSpacing: '-.035em', color }}>
+            {cifra}
+          </span>
+          {/* "7,8%" a secas no dice nada: 7,8% de que periodo. Toda cifra
+              derivada tiene que decir de que se deriva. */}
+          {unidad && (
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#A3A8B2', flex: 'none' }}>
+              {unidad}
+            </span>
+          )}
         </span>
       )}
       {children}

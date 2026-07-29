@@ -22,6 +22,7 @@ import ListaRutas from '@/components/pantallas/ListaRutas'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
+import Lucas from '@/components/pantallas/Lucas'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -76,6 +77,16 @@ function Relleno({ n = 4 }) {
 }
 
 // Réplica estática de la pastilla (el componente real usa usePathname).
+const PREGUNTAS_LUCAS = [
+  { icono: 'pregunta', texto: '¿Cuánto estoy ganando de verdad?' },
+  { icono: 'gente',    texto: '¿Quién me debe más?' },
+  { icono: 'plata',    texto: '¿Me alcanza para prestar más?' },
+]
+const ACCIONES_LUCAS = [
+  { icono: 'whatsapp', texto: 'Recordarles a los 13 en mora' },
+  { icono: 'reporte',  texto: 'Armarme el reporte del mes' },
+]
+
 const MARCO = {
   width: 390, height: 844, position: 'relative', overflow: 'hidden',
   background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
@@ -527,6 +538,75 @@ export default function Estilo() {
             diasPlan="vence en 5 días"
           />
         </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Lucas · contesta con los componentes de la app
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Un chatbot que escribe «tu ROI mensual es del 7,8%» obliga a creerle. Uno que muestra el
+        <strong> mismo bloque negro</strong> de la pantalla donde ese dato vive deja ver de dónde sale,
+        y «Ver la pantalla» lleva ahí. Lucas no reemplaza la app: la navega.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="lucas-vacio" style={{ ...MARCO, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ height: '78%', borderRadius: '22px 22px 0 0', overflow: 'hidden', background: 'var(--cf-surface)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 2px', flex: 'none' }}>
+              <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <Lucas preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
+            </div>
+          </div>
+        </div>
+
+        <div id="lucas-respuesta" style={{ ...MARCO, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ height: '92%', borderRadius: '22px 22px 0 0', overflow: 'hidden', background: 'var(--cf-surface)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 2px', flex: 'none' }}>
+              <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <Lucas respuesta={{
+                pregunta: '¿Cuánto estoy ganando realmente?',
+                frase: 'Este mes te queda $2.161.331 limpio, después de gastos.',
+                bloque: {
+                  etiqueta: 'Lo que rinde tu capital',
+                  cifra: '7,8%',
+                  unidad: 'al mes',
+                  tono: 'favor',
+                  nota: 'Por cada $100 en la calle, ganas $8 neto.',
+                  columnas: [
+                    { etiqueta: 'Recaudado',   valor: '$8,8M' },
+                    { etiqueta: 'Gastos',      valor: '$10.000' },
+                    { etiqueta: 'En la calle', valor: '$27,6M' },
+                  ],
+                },
+                chips: [{ texto: 'Ver la pantalla' }, { texto: 'Bajar en PDF', pdf: true }],
+                siguientes: ['¿Qué ruta me rinde menos?', '¿En qué se me fue la plata este mes?'],
+              }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Lucas en 1440 · al lado, no encima
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        El dueño quiere preguntar algo <strong>mientras</strong> mira sus números. Taparle el panel
+        para contestarle le quita el contexto que le da sentido a la respuesta.
+      </p>
+      <div id="lucas-escritorio" style={{
+        width: 1180, height: 620, overflow: 'hidden', display: 'flex', gap: 18,
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)',
+        borderRadius: 18, padding: 18,
+      }}>
+        <div style={{ width: 230, flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16 }} />
+        <div style={{ flex: 1, minWidth: 0, background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-4)' }}>Panel · patrimonio y atención</span>
+        </div>
+        <Lucas escritorio preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
