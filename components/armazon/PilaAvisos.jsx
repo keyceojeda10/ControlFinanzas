@@ -117,6 +117,15 @@ export default function PilaAvisos({ children, onVerTodos }) {
 
   const valor = useMemo(() => ({ ...api, ganador: ganadorClave }), [api, ganadorClave])
 
+  // La campana lleva EL NÚMERO (lámina T39-01), y quien lo sabe es esta pila:
+  // es la única que ve cuántos avisos aplican. La cabecera y la barra lateral
+  // son hermanas suyas en el árbol, no hijas, así que se publica por el mismo
+  // canal por el que ellas piden abrir la hoja.
+  const cuantos = Object.values(vivos).filter((v) => v.aplica).length
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('cf:avisos', { detail: cuantos }))
+  }, [cuantos])
+
   return (
     <Ctx.Provider value={valor}>
       {children}

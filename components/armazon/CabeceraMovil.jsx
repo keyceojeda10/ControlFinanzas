@@ -20,9 +20,12 @@ import { CABECERA } from '@/lib/armazon'
 const ALTO = 56
 
 /* ── Glifo de marca ──
-   Sin logotipo escrito: el usuario ya sabe en qué app está, y el nombre escrito
-   solo añade peso. `aspect-ratio` + min-width son blindaje — sin ellos el glifo
-   se aplana cuando la fila se satura. */
+   El nombre SÍ va escrito al lado (ver la variante de navegación). Yo había
+   escrito aquí lo contrario —«el usuario ya sabe en qué app está»— y la lámina
+   T39-01 dice que no: lleva «Control / Finanzas» en dos líneas.
+
+   `aspect-ratio` + min-width son blindaje: sin ellos el glifo se aplana cuando
+   la fila se satura. */
 function Glifo() {
   return (
     // El logo OFICIAL (/logo-icon.svg): tres barras ascendentes sobre el dorado.
@@ -45,15 +48,22 @@ function BotonIcono({ children, onClick, href, etiqueta, badge = false }) {
   const cuerpo = (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12 }}>
       {children}
-      {badge && (
-        // Un PUNTO, no un número: el conteo exacto de avisos no cambia
-        // ninguna decisión del usuario.
+      {/* CON EL NÚMERO, como la lámina T39-01. Yo había puesto un punto
+          argumentando que el conteo no cambia ninguna decisión — y es al revés:
+          «3» y «17» sí cambian si abro la campana ahora o luego. El punto
+          además no distingue «hay algo» de «hay mucho». */}
+      {badge > 0 && (
         <span style={{
-          position: 'absolute', top: 7, right: 9,
-          width: 8, height: 8, borderRadius: 999,
+          position: 'absolute', top: 4, right: 5,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          minWidth: 17, height: 17, padding: '0 4px', borderRadius: 999,
           background: 'var(--cf-red)',
           border: '2px solid var(--cf-surface)',
-        }} />
+          fontSize: 10, fontWeight: 700, color: '#FFF',
+          fontVariantNumeric: 'tabular-nums lining-nums',
+        }}>
+          {badge > 9 ? '9+' : badge}
+        </span>
       )}
     </span>
   )
@@ -88,7 +98,8 @@ function Avatar({ iniciales = '', conectado = null, onClick }) {
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           flex: 'none',
-          width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
+          /* 34px, no 32: es la medida de la lámina. */
+          width: 34, minWidth: 34, height: 34, minHeight: 34, aspectRatio: '1',
           borderRadius: 999,
           background: 'var(--cf-blue)',   /* azul = persona, NUNCA dinero */
           fontSize: 12, fontWeight: 700, color: '#FFF', letterSpacing: '.01em',
@@ -122,9 +133,20 @@ const base = {
 /* ── Variante de navegación ── */
 function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCuenta }) {
   return (
-    <header className="flex lg:hidden" style={{ ...base, padding: '0 18px 0 20px' }}>
+    <header className="flex lg:hidden" style={{ ...base, padding: '0 16px 0 20px', gap: 12 }}>
       <Glifo />
-      <span style={{ flex: 1 }} />
+      {/* EL NOMBRE VA AL LADO DEL LOGO, en dos líneas. Me lo había saltado: sin
+          él la cabecera móvil no dice de qué app es, y el glifo solo no lo
+          resuelve para quien tiene varias apps de cobro en el teléfono.
+          «Finanzas» en dorado oscuro, como en la lámina. */}
+      <span style={{
+        flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
+        lineHeight: 1.1, fontFamily: 'var(--font-space-grotesk), system-ui',
+        fontSize: 13, fontWeight: 700, letterSpacing: '-.01em',
+      }}>
+        <span style={{ color: 'var(--cf-ink)' }}>Control</span>
+        <span style={{ color: 'var(--cf-gold-dark)' }}>Finanzas</span>
+      </span>
       <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
       <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
       <Avatar iniciales={iniciales} conectado={conectado} onClick={onCuenta} />

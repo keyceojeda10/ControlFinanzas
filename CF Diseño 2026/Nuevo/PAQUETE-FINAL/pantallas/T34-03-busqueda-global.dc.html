@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 34</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">MOVIL</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Búsqueda global</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;height:96px;position:relative;overflow:hidden;">
+            <div style="padding:12px 22px 6px;height:44px;display:flex;align-items:flex-end;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:700;">12:24</span>
+              <div style="display:flex;align-items:center;gap:5px;">
+                <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+                <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+              </div>
+            </div>
+            <span style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(20,20,28,.5);"></span>
+          </div>
+          <div style="flex:1;background:#f4f4f1;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -12px 32px rgba(20,20,28,.2);">
+            <div style="flex:none;padding:14px 20px 12px;background:#fff;border-bottom:1px solid rgba(20,20,28,.08);display:flex;align-items:center;gap:11px;">
+              <div style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;height:50px;padding:0 15px;border-radius:14px;background:#f3f3ef;border:1.5px solid #e7a400;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg>
+                <span style="flex:1;font-size:16px;color:#8e929a;">Nombre, cédula o teléfono</span>
+              </div>
+              <span style="font-size:14px;font-weight:600;color:#4a4e57;flex:none;">Cerrar</span>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:16px 20px 20px;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;display:flex;flex-direction:column;gap:9px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Últimos que abriste</span>
+                <div style="background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;background:#f3f3ef;border:2px solid #e5484d;font-size:12px;font-weight:700;color:#4a4e57;flex:none;">SO</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font-size:15px;font-weight:600;">Steven Olmos</span>
+                      <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">debe $130.500 · 36 días</span>
+                    </div>
+                    <span style="font-size:11px;color:#8e929a;flex:none;">hace 1 h</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;background:#f3f3ef;border:2px solid #12a150;font-size:12px;font-weight:700;color:#4a4e57;flex:none;">HP</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font-size:15px;font-weight:600;">Hollando Pérez</span>
+                      <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">línea de crédito · corte en 2 días</span>
+                    </div>
+                    <span style="font-size:11px;color:#8e929a;flex:none;">ayer</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:#f3f3ef;flex:none;">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z"></path></svg>
+                    </span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font-size:15px;font-weight:600;">Ruta 2</span>
+                      <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">5 cobros hoy · Andres perez</span>
+                    </div>
+                    <span style="font-size:11px;color:#8e929a;flex:none;">ayer</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:9px;">
+                <span style="flex:none;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Ir directo a</span>
+                <div style="flex:none;display:flex;flex-wrap:wrap;gap:8px;">
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.09);font-size:14px;font-weight:600;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>
+                    Cobrar hoy
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.09);font-size:14px;font-weight:600;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2.5"></rect></svg>
+                    Caja
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.09);font-size:14px;font-weight:600;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11z"></path></svg>
+                    Mi plata
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.09);font-size:14px;font-weight:600;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v16H6z"></path><path d="M9 9h6M9 13h4"></path></svg>
+                    Gastos
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.09);font-size:14px;font-weight:600;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v3M12 18v3M3 12h3M18 12h3"></path></svg>
+                    Configuración
+                  </span>
+                </div>
+                <div style="flex:none;margin-top:5px;display:flex;align-items:center;gap:12px;padding:15px 17px;border-radius:18px;background:#15161a;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:rgba(245,184,36,.16);flex:none;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f5b824" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+                  </span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:15px;font-weight:700;color:#f3f3f6;">Prestarle a alguien nuevo</span>
+                    <span style="font-size:12px;color:#8a8e98;">crear cliente y préstamo de una vez</span>
+                  </div>
+                </div>
+              </div>
+              <span style="flex:none;font-size:12px;color:#63676f;text-align:center;">Escribe 3 letras y empieza a filtrar</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">03 · Búsqueda global</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Hoy la búsqueda vacía <strong>repite el texto del propio campo</strong>: arriba dice “buscar clientes, rutas, caja, configuración” y debajo “busca clientes, préstamos, rutas, caja, gastos, configuración…”. Son dos listas que ni coinciden, y ocupan la pantalla entera para no decir nada. Una búsqueda vacía es el mejor sitio para <strong>ahorrar la búsqueda</strong>: los últimos que abrió con su estado al lado, los cinco saltos que más usa, y la acción que trae a la mitad de la gente aquí —prestarle a alguien nuevo—. Y el campo pide lo que de verdad se teclea: nombre, cédula o teléfono.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

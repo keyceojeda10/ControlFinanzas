@@ -67,6 +67,14 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
   const [dePantalla, setDePantalla] = useState(null)
   const [conectado, setConectado] = useState(true)
 
+  // Cuántos avisos hay ahora mismo, publicado por PilaAvisos.
+  const [avisos, setAvisos] = useState(0)
+  useEffect(() => {
+    const oir = (e) => setAvisos(Number(e.detail) || 0)
+    window.addEventListener('cf:avisos', oir)
+    return () => window.removeEventListener('cf:avisos', oir)
+  }, [])
+
   const registrar = useMemo(() => (config) => setDePantalla(config), [])
   const valor = useMemo(() => ({ registrar }), [registrar])
 
@@ -100,7 +108,7 @@ export default function Armazon({ children, nombre: nombreServidor, hayAvisos = 
           variante={armazon.cabecera}
           iniciales={iniciales(nombre)}
           conectado={conectado}
-          hayAvisos={hayAvisos}
+          hayAvisos={avisos || (hayAvisos ? 1 : 0)}
           titulo={dePantalla?.titulo}
           subtitulo={dePantalla?.subtitulo}
           acciones={dePantalla?.acciones}

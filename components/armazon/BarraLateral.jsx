@@ -37,17 +37,20 @@ const ICONOS = {
 
 // Orden fijo del documento.
 const PRINCIPAL = [
+  // EXACTAMENTE LAS SEIS PANTALLAS DE NAVEGACIÓN, ni una más (lámina T39-05 y
+  // regla §E de 02-ARMAZON.md). Yo tenía aquí «Líneas de crédito» como séptima:
+  // se fue a «Más herramientas», que es donde va lo que no se toca a diario.
   { href: '/dashboard',            nombre: 'Dashboard',         icono: 'dashboard' },
   { href: '/cobros-hoy',           nombre: 'Cobrar hoy',        icono: 'cobros' },
   { href: '/rutas',                nombre: 'Rutas',             icono: 'rutas' },
   { href: '/prestamos',            nombre: 'Préstamos',         icono: 'prestamos' },
-  { href: '/lineas-credito',       nombre: 'Líneas de crédito', icono: 'lineas' },
   { href: '/clientes',             nombre: 'Clientes',          icono: 'clientes' },
   { href: '/caja',                 nombre: 'Caja',              icono: 'caja' },
 ]
 
 const HERRAMIENTAS = [
   { href: '/capital',              nombre: 'Mi plata' },
+  { href: '/lineas-credito',       nombre: 'Líneas de crédito' },
   { href: '/gastos',               nombre: 'Gastos' },
   { href: '/reportes',             nombre: 'Reportes' },
   { href: '/dashboard/analiticas', nombre: '¿Cómo va el negocio?' },
@@ -194,7 +197,8 @@ export default function BarraLateral({
           />
           <span style={{ flex: 1, minWidth: 0, lineHeight: 1.1 }}>
             <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Control</span>
-            <span style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--cf-ink-3)' }}>Finanzas</span>
+            {/* «Finanzas» en dorado, como en la lámina T39-05 y en la cabecera móvil. */}
+            <span style={{ display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 14, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--cf-gold-dark)' }}>Finanzas</span>
           </span>
           <button type="button" onClick={onAvisos ?? abrirAvisos} aria-label="Avisos"
             style={{

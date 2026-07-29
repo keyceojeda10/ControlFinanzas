@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 4</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">MOVIL</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Portal del cliente · acceso</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">20:15</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:34px 24px 0;display:flex;flex-direction:column;gap:26px;">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:999px;background:#e7a400;border:2px solid #f5c518;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;color:#3a2900;">$</span>
+              </span>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:27px;line-height:1.12;letter-spacing:-.025em;">Consulta tu préstamo</h1>
+                <p style="margin:0;font-size:15px;line-height:1.45;color:#4a4e57;">Con tu cédula y el PIN que te dio quien te prestó. No necesitas descargar nada.</p>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Cédula</span>
+                <div style="display:flex;align-items:center;height:56px;padding:0 18px;border-radius:14px;background:#fff;border:1.5px solid #e7a400;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;">1.034.887.212</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">PIN de 4 dígitos</span>
+                <div style="display:flex;gap:10px;">
+                  <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:62px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.1);font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;">7</span>
+                  <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:62px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.1);font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;">2</span>
+                  <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:62px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.1);font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;">4</span>
+                  <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:62px;border-radius:14px;background:#fff;border:1.5px solid rgba(20,20,28,.2);"></span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.08);">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px;"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8.5 11V8a3.5 3.5 0 017 0v3"></path></svg>
+              <span style="font-size:12px;line-height:1.45;color:#4a4e57;">Solo puedes ver tu propio préstamo: saldo, pagos y próxima cuota. No se muestra información de otras personas.</span>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 24px 26px;display:flex;flex-direction:column;gap:11px;">
+            <button style="height:52px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Entrar</button>
+            <span style="font-size:13px;text-align:center;color:#63676f;line-height:1.45;">¿No tienes PIN? <a href="#4a">Pídelo por WhatsApp</a> a quien te prestó.</span>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">06 · Portal del cliente · acceso</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">No estaba capturado, así que va propuesto de cero. Es la pantalla que más gente ve del producto y la única cara pública. PIN en cuatro casillas de 62px —se marca con el pulgar, no con precisión— y una línea que explica qué se puede y qué no se puede ver, porque el deudor desconfía por defecto.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>
