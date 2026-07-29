@@ -55,7 +55,7 @@ function iniciales(nombre = '') {
   return (partes[0][0] + partes[1][0]).toUpperCase()
 }
 
-export default function Armazon({ children, hayAvisos = false, onCrear }) {
+export default function Armazon({ children, nombre: nombreServidor, hayAvisos = false, onCrear }) {
   const pathname = usePathname() || '/'
   const { data: session } = useSession()
   const [dePantalla, setDePantalla] = useState(null)
@@ -79,7 +79,13 @@ export default function Armazon({ children, hayAvisos = false, onCrear }) {
   }, [])
 
   const armazon = resolverArmazon(pathname)
-  const nombre = session?.user?.nombre ?? session?.user?.name ?? ''
+
+  // El nombre lo manda el LAYOUT, que es servidor y ya tiene la sesión.
+  // `useSession()` devuelve null durante el render del servidor, así que
+  // derivar de él las iniciales hacía que el servidor pintara "·" y el cliente
+  // "CA": desajuste de hidratación en TODAS las pantallas, y un parpadeo del
+  // avatar en cada carga. La sesión de cliente queda solo como respaldo.
+  const nombre = nombreServidor || session?.user?.nombre || session?.user?.name || ''
 
   return (
     <ArmazonContext.Provider value={valor}>

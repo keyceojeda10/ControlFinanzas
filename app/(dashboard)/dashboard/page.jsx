@@ -1337,6 +1337,16 @@ function BandaSuscripcion({ dias }) {
   )
 }
 
+/**
+ * Un resumen a medias es peor que ninguno: el render deshace `data.cobros.hoy`
+ * y `data.clientes.total` directamente, asi que basta con que falte una de las
+ * dos claves para que la pantalla entera se caiga con un TypeError.
+ * Se comprueban SOLO las que el render deshace sin guarda.
+ */
+function esResumenValido(d) {
+  return Boolean(d) && typeof d === 'object' && Boolean(d.cobros) && Boolean(d.clientes)
+}
+
 export default function DashboardPage() {
   const { session, loading: authLoading, esOwner, puedeCrearClientes, puedeCrearPrestamos } = useAuth()
 
@@ -1427,7 +1437,14 @@ export default function DashboardPage() {
       try {
         let cached = await leerDeCache('dashboard:resumen')
         if (!cached) cached = await obtenerDashboardOffline()
-        if (cached) { setData(cached); if (!navigator.onLine) setIsOffline(true); return }
+        // El render deshace data.cobros.hoy y data.clientes.total sin guarda, asi
+        // que un cache viejo o a medias no tumba la peticion: tumba la PANTALLA
+        // entera con un TypeError. Vale mas quedarse sin resumen que en blanco.
+        if (esResumenValido(cached)) {
+          setData(cached)
+          if (!navigator.onLine) setIsOffline(true)
+          return
+        }
       } catch {}
       setError('No se pudo cargar el resumen.')
     } finally {

@@ -68,12 +68,14 @@ export default function PastillaNav({ onCrear }) {
       aria-label="Navegación principal"
       // Solo movil: en escritorio navega la barra lateral, y las dos a la vez
       // son dos barras de navegacion compitiendo en la misma pantalla.
-      className="lg:hidden"
+      // `display` va en la clase, no aqui: en linea le ganaria a lg:hidden y la
+      // pastilla saldria tambien en escritorio, bajo la barra lateral.
+      className="flex lg:hidden"
       style={{
         position: 'fixed',
         left: 'var(--cf-nav-side)', right: 'var(--cf-nav-side)',
         bottom: 'calc(var(--cf-nav-inset) + env(safe-area-inset-bottom, 0px))',
-        display: 'flex', alignItems: 'center', gap: 12,
+        alignItems: 'center', gap: 12,
         zIndex: 45,
         // Glitch de rasterizado en GPU Mali (Android): el border-radius de la
         // pastilla parpadea al hacer scroll sin una capa propia.

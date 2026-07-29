@@ -54,3 +54,4 @@ next-env.d.ts
 # guias visuales: imagenes generadas (pesadas, se regeneran) y credenciales
 /scripts/guias/output/
 /scripts/guias/.creds.json
+.auditoria/

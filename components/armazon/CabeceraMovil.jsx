@@ -107,8 +107,11 @@ function Avatar({ iniciales = '', conectado = null, onClick }) {
 }
 
 const base = {
+  // OJO: `display` NO va aqui. En linea le gana a la clase `lg:hidden` y la
+  // cabecera movil sale tambien en escritorio, encima de la barra lateral.
+  // Lo pone la clase "flex lg:hidden" de cada variante.
   height: ALTO, minHeight: ALTO,
-  display: 'flex', alignItems: 'center', gap: 6,
+  alignItems: 'center', gap: 6,
   // Translúcida sobre la superficie: la separación la da el fondo, no un borde.
   background: 'color-mix(in srgb, var(--cf-surface) 86%, transparent)',
   backdropFilter: 'saturate(180%) blur(12px)',
@@ -119,7 +122,7 @@ const base = {
 /* ── Variante de navegación ── */
 function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCuenta }) {
   return (
-    <header className="lg:hidden" style={{ ...base, padding: '0 18px 0 20px' }}>
+    <header className="flex lg:hidden" style={{ ...base, padding: '0 18px 0 20px' }}>
       <Glifo />
       <span style={{ flex: 1 }} />
       <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
@@ -133,7 +136,7 @@ function Navegacion({ iniciales, conectado, hayAvisos, onBuscar, onAvisos, onCue
    A la derecha van las acciones DE ESE OBJETO, no las de la app. */
 function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
   return (
-    <header className="lg:hidden" style={{ ...base, padding: '0 12px 0 8px' }}>
+    <header className="flex lg:hidden" style={{ ...base, padding: '0 12px 0 8px' }}>
       <button type="button" onClick={onVolver} aria-label="Volver"
         style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -174,7 +177,7 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
     // hueco de la espina (9) mas la espina (3) — no van ADEMAS. Sumandolos
     // aparte el contenido pide 68px dentro de una caja de 56 y la cabecera se
     // ve apretada: es exactamente lo que pasaba.
-    <header className="lg:hidden" style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
+    <header className="flex lg:hidden" style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="button" onClick={onCerrar} aria-label="Cerrar"
           style={{

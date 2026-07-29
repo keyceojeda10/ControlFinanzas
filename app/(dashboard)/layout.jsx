@@ -49,8 +49,12 @@ async function bloquearSiVencida() {
 
 export default async function DashboardLayout({ children }) {
   await bloquearSiVencida()
+  // El nombre baja desde el servidor para que la cabecera no cambie entre el
+  // HTML y la hidratacion. Ver el comentario de Armazon.jsx.
+  const session = await getServerSession(authOptions)
+  const nombre = session?.user?.nombre ?? session?.user?.name ?? ''
   return (
-    <Armazon>
+    <Armazon nombre={nombre}>
     <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
           cobrando en la calle. La regla de supresion es exclusiva de movil. */}
