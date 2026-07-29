@@ -17,9 +17,9 @@ export default function Previa() {
   return (
     <Vista casos={[
       { titulo: '7:10 · nadie ha pagado',
-        props: adaptarPanel({ ...CRUDO, cobros: { hoy: 0, interesGanadoHoy: 0 } }, { ...base, hora: 7 }) },
+        props: adaptarPanel({ ...CRUDO, cobros: { hoy: 0, cantidadHoy: 0, interesGanadoHoy: 0, ayer: 1180000, ayerAEstaHora: 0, sparkline7d: [980000, 1120000, 1040000, 1210000, 890000, 1180000, 0] } }, { ...base, hora: 7 }) },
       { titulo: '16:40 · a media tarde',
-        props: adaptarPanel({ ...CRUDO, cobros: { hoy: 680000, interesGanadoHoy: 142000 } }, { ...base, hora: 16 }) },
+        props: adaptarPanel({ ...CRUDO, cobros: { hoy: 680000, cantidadHoy: 14, interesGanadoHoy: 142000, ayer: 1180000, ayerAEstaHora: 520000, sparkline7d: [980000, 1120000, 1040000, 1210000, 890000, 1180000, 680000] } }, { ...base, hora: 16 }) },
     ]} />
   )
 }
