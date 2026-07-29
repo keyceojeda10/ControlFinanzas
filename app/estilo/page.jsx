@@ -18,6 +18,7 @@ import HojaInferior from '@/components/cf/HojaInferior'
 import Panel from '@/components/pantallas/Panel'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import ListaClientes from '@/components/pantallas/ListaClientes'
+import ListaRutas from '@/components/pantallas/ListaRutas'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -339,6 +340,29 @@ export default function Estilo() {
           </div>
           <PastillaDemo activo="/clientes" />
         </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
+        Rutas · solo lo de hoy
+      </h2>
+      <div id="lista-rutas" style={{
+        width: 390, height: 844, position: 'relative', overflow: 'hidden',
+        background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', borderRadius: 18,
+      }}>
+        <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+        <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+          <ListaRutas
+            rutas={[
+              { nombre: 'Ruta norte', cobrador: 'Davi', clientes: 12, recaudado: '$90.000', esperado: '$151.700', porcentaje: 59 },
+              { nombre: 'Ruta sur', cobrador: 'Jhoan', clientes: 9, recaudado: '$52.000', esperado: '$483.667', porcentaje: 11 },
+              { nombre: 'Ruta de pepito', cobrador: null, clientes: 1, recaudado: '$0', esperado: '$24.000', porcentaje: 0 },
+              { nombre: 'Ruta goty 1', cobrador: 'Camilo', clientes: 4, recaudado: '$0', esperado: '$0', porcentaje: 0, inactiva: true },
+            ]}
+            sinRuta={{ cantidad: 3, monto: '$1.240.000' }}
+          />
+          <div style={{ height: 96 }} />
+        </div>
+        <PastillaDemo activo="/rutas" />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>
