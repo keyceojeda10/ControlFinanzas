@@ -40,6 +40,12 @@ export default function TarjetaCliente({
   etiquetaMonto = 'Deuda total',
   monto,
   porcentaje = 0,
+  // `unico` no tiene cuotas: estaria en 0% durante todo el plazo. Mostrar una
+  // barra vacia aqui reintroduce en la lista la misma alarma falsa que la ficha
+  // elimina — y son 882 prestamos. La reemplaza el vencimiento.
+  sinProgreso = false,
+  nota,                    // "vence en 18 dias"
+
   onClick,
   style,
 }) {
@@ -90,7 +96,7 @@ export default function TarjetaCliente({
           }}>{nombre}</span>
 
           {/* Nivel 2 · dónde/cuándo — acá baja la pastilla de días */}
-          <span style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 3, minWidth: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 3, minWidth: 0 }}>
             {diasAtraso > 0 && (
               <Pastilla tono={estado === 'mora' ? 'mora' : 'atraso'} numerica style={{ height: 20, fontSize: 10 }}>
                 {diasAtraso}d
@@ -98,8 +104,8 @@ export default function TarjetaCliente({
             )}
             {contexto && (
               <span style={{
-                fontSize: 12, color: 'var(--cf-ink-3)',
-                minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                fontSize: 12, color: 'var(--cf-ink-3)', minWidth: 0, lineHeight: 1.35,
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>{contexto}</span>
             )}
           </span>
@@ -118,13 +124,13 @@ export default function TarjetaCliente({
               {etiquetaMonto}
             </span>
             <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>
-              {porcentaje}% pagado
+              {sinProgreso ? nota : `${porcentaje}% pagado`}
             </span>
           </div>
           <span className="cf-fig" style={{ fontSize: 22, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
             {monto}
           </span>
-          <BarraProgreso porcentaje={porcentaje} tono={TONO_BARRA[estado]} alto={5} />
+          {!sinProgreso && <BarraProgreso porcentaje={porcentaje} tono={TONO_BARRA[estado]} alto={5} />}
         </div>
       )}
     </div>

@@ -23,6 +23,8 @@ import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
+import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
+import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -607,6 +609,102 @@ export default function Estilo() {
           <span style={{ fontSize: 12, color: 'var(--cf-ink-4)' }}>Panel · patrimonio y atención</span>
         </div>
         <Lucas escritorio preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Caja · la cuenta se lee como un extracto
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Antes: la fórmula del saldo en <strong>cinco mosaicos de colores</strong> y debajo nueve
+        tarjetas idénticas con una carita triste, una por cobrador sin pagos. Unos 1.800px de vacío
+        con emojis en la pantalla donde el dueño cuadra su plata.
+      </p>
+      <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
+
+        <div id="caja-dia" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CajaDia
+              rangos={[
+                { id: 'hoy', nombre: 'Hoy' }, { id: 'ayer', nombre: 'Ayer' },
+                { id: '7d', nombre: '7 días' }, { id: '30d', nombre: '30 días' },
+                { id: 'rango', nombre: 'Rango' },
+              ]}
+              rangoActivo="hoy"
+              baseInicial="$1.800.000"
+              cobrado="$412.000"
+              prestado="$200.000"
+              gastos="$35.000"
+              ajustes="$0"
+              saldo="$1.977.000"
+              totalMovimientos={14}
+              movimientos={[
+                { concepto: 'Cobro · Steven Olmos', detalle: '14:12 · Pepito · Ruta 2', monto: '$27.500', entra: true },
+                { concepto: 'Préstamo nuevo · Carlos P.', detalle: '11:40 · Carlos · Ruta #1', monto: '$200.000' },
+              ]}
+            />
+          </div>
+          <PastillaDemo activo="/caja" />
+        </div>
+
+        <div id="cierre-cobradores" style={MARCO}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Cierre de cobradores" subtitulo="martes 28 de julio" />
+          <div style={{ height: 'calc(100% - 56px)' }}>
+            <CierreCobradores
+              faltaEntregar="$188.000" sinEntregar={3} deCuantos={9}
+              pendientes={[
+                { iniciales: 'PE', nombre: 'Pepito', detalle: 'Ruta 2 · 4 cobros · terminó 18:38', monto: '$61.500' },
+                { iniciales: 'CA', nombre: 'Carmen Calanche', detalle: 'Ruta norte · 6 cobros · en ruta', monto: '$118.300' },
+                { iniciales: 'AP', nombre: 'Andrés Pérez', detalle: 'Ruta sur · 1 cobro · en ruta', monto: '$8.200' },
+              ]}
+              totalEntregado="$224.000"
+              yaEntregaron={[
+                { iniciales: 'CA', nombre: 'Carlos Andrés', monto: '$96.000' },
+                { iniciales: 'CP', nombre: 'Carlos Pérez', monto: '$128.000' },
+              ]}
+              sinCobros={4}
+            />
+          </div>
+        </div>
+      </div>
+
+      <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
+        Préstamos · misma tarjeta, orden por atraso
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '0 0 12px', maxWidth: '72ch', lineHeight: 1.5 }}>
+        Sin tarjeta nueva: un préstamo en lista usa la <strong>misma tarjeta que un cliente</strong>.
+        Lo único propio es el orden, y el de por defecto es <strong>por atraso</strong> — alfabético
+        es el orden de un archivador.
+      </p>
+      <div id="lista-prestamos" style={MARCO}>
+        <CabeceraMovil variante={CABECERA.NAVEGACION} iniciales="CC" conectado hayAvisos />
+        <div style={{ height: 'calc(100% - 56px)', overflowY: 'auto' }}>
+          <ListaPrestamos
+            filtros={[
+              { id: 'activos', nombre: 'Activos', conteo: 47 },
+              { id: 'mora', nombre: 'En mora', conteo: 13 },
+              { id: 'hoy', nombre: 'Cobran hoy', conteo: 8 },
+              { id: 'terminados', nombre: 'Terminados', conteo: 22 },
+            ]}
+            filtroActivo="activos"
+            orden="atraso"
+            total={47}
+            montoFaltante="$18.412.900"
+            prestamos={[
+              { nombre: 'Steven Olmos', iniciales: 'SO', estado: 'mora', etiquetaEstado: 'En mora',
+                diasAtraso: 36, contexto: '$20.000 diarios · Ruta 2', monto: '$469.500', porcentaje: 22 },
+              { nombre: 'Carlitos Chaparro', iniciales: 'CC', estado: 'atraso', etiquetaEstado: 'Atraso leve',
+                diasAtraso: 4, contexto: '$17.334 diarios · Ruta #1', monto: '$553.000', porcentaje: 29 },
+              { nombre: 'Marta Lucía Ríos', iniciales: 'MR', estado: 'aldia', etiquetaEstado: 'Al día',
+                contexto: 'Pago único · Ruta centro', monto: '$1.200.000',
+                sinProgreso: true, nota: 'vence en 18 días' },
+              { nombre: 'Jhoan Sebastián Cruz', iniciales: 'JC', estado: 'aldia', etiquetaEstado: 'Al día',
+                contexto: '$50.000 semanales · Ruta norte', monto: '$350.000', porcentaje: 53 },
+            ]}
+          />
+          <div style={{ height: 96 }} />
+        </div>
+        <PastillaDemo activo="/prestamos" />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 10px' }}>

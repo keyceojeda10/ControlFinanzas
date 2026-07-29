@@ -175,6 +175,8 @@ Se documentan acá para que se lean como decisiones y no como olvidos.
 |---|---|
 | **Rutas nunca se oculta de la pastilla.** El handoff dice que desaparece en cuentas sin cobradores. | Sacar un destino de la barra ya rompió una vez al cliente con más cobradores, el mismo día. Un destino que aparece y desaparece rompe la memoria muscular, que es lo único que tiene alguien que cobra de pie. Aprobado por el dueño del producto. |
 | **La pastilla flotante de 62px**, no la barra anclada de 76px. | `01-TOKENS.md` y `05-PANTALLAS.md` dicen 76px anclada; `02-ARMAZON.md` dice que ese modelo se descartó y el definitivo es la pastilla. Gana el documento del armazón, que es el normativo y el más nuevo. |
+| **En Caja las acciones van en el contenido, no ancladas abajo.** El render del handoff las dibuja ancladas. | La tabla normativa pone caja en "pastilla: sí", y la propia § E dice que la barra anclada ocupa el sitio de la pastilla **solo cuando la pastilla no está**. Son el mismo hueco. Van justo debajo del saldo —no al final del scroll— porque cerrar el día es lo que uno hace con esa cifra. |
+| **La tarjeta de lista de un préstamo `unico` no lleva barra de progreso**, igual que su ficha. | Sin cuotas marcaría 0% durante todo el plazo. La adenda quita la barra en la ficha por eso mismo; dejarla en la lista reintroduce la misma alarma falsa en la pantalla que se abre primero, y son 882 préstamos. En su sitio va el vencimiento. |
 | **Una ruta sin cobros programados va en gris y muestra "—"**, no 0% en rojo. | El rojo dice "esta ruta va mal" cuando lo cierto es "no tenía nada que cobrar hoy". Un rojo que no significa nada entrena al usuario a ignorar los que sí. |
 
 ---
