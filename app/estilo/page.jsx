@@ -25,6 +25,11 @@ import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres, MesEnCaja, BajarInformacion } from '@/components/pantallas/Caja'
 import { MiPlata, ComoVaElNegocio, Reportes, LineaCredito } from '@/components/pantallas/Reportes'
+import { RegistroWhatsApp, VerificarWhatsApp, EmpiezaSinPagar, ListoParaCobrar } from '@/components/pantallas/Onboarding'
+import { ArranquePerfil, ArranqueCapital, ArranqueMetodo, ArranqueCierre } from '@/components/pantallas/Arranque'
+import RevisionCarga from '@/components/pantallas/RevisionCarga'
+import { tramosDePlan, limiteInicial } from '@/lib/adaptadores/planes'
+import { DIAS_PRUEBA } from '@/lib/planes'
 import {
   IndiceConfiguracion, TuNegocioMovil, ComoPrestasMovil, PlanYPagosMovil,
   AvisosWhatsAppMovil, PortalClienteMovil, SeguridadYDatosMovil, PieGuardar,
@@ -1152,6 +1157,164 @@ export default function Estilo() {
               onCerrarCuenta={() => {}}
             />
           </div>
+        </div>
+
+        {/* Las cuatro son pantalla completa CON SU PIE: registro y onboarding
+            pasan antes de que exista el armazon, asi que cada una es duena de su
+            alto y pone su propio relleno. Van directas en el MARCO, sin envolver. */}
+        <div id="onb-registro" style={MARCO}>
+          <RegistroWhatsApp
+            prefijo="+57" numero="310 452 1188" onNumero={() => {}} onPrefijo={() => {}}
+            ayuda="Para verificar tu cuenta y enviarles recordatorios de cobro a tus clientes."
+            nota="Sin el código de país, solo el número. Nunca te vamos a escribir para venderte nada."
+            onAtras={() => {}} onContinuar={() => {}}
+          />
+        </div>
+
+        <div id="onb-verificar" style={MARCO}>
+          <VerificarWhatsApp
+            numero="+57 310 452 1188" onCorregir={() => {}} onAtras={() => {}}
+            digitos={['4', '9', '2', null, null, null]} enCurso={3}
+            segundosParaOtro="0:42" onMandarOtro={() => {}}
+            consejo="Casi siempre que no llega es porque el número quedó mal escrito. Revísalo antes de pedir otro código."
+          />
+        </div>
+
+        {/* ⚠️ LAS CIFRAS SALEN DEL ADAPTADOR, no de la lamina. La lamina T37-02 dice
+            «30 dias» y «hasta 20 clientes»: son 14 y 100. Aqui se le pasan
+            `DIAS_PRUEBA` y `tramosDePlan`, que leen PLANES_CONFIG. */}
+        <div id="onb-plan" style={MARCO}>
+          <EmpiezaSinPagar
+            progresoTexto="Ya casi · falta cargar tu cartera"
+            onAtras={() => {}}
+            dias={DIAS_PRUEBA}
+            limite={limiteInicial()}
+            hasta="13 de agosto"
+            incluye="Todo abierto: clientes, préstamos, rutas, cobradores, caja y reportes. Sin tarjeta y sin cobro automático."
+            tramos={tramosDePlan('co', (n) => `$${n.toLocaleString('es-CO')}`)}
+            sinPrisa="No tienes que elegir ahora. Cuando llegues al límite te avisamos y sigues cobrando igual."
+            onCargarCartera={() => {}} onPagarYa={() => {}}
+          />
+        </div>
+
+        <div id="onb-listo" style={MARCO}>
+          <ListoParaCobrar
+            titulo="Ya tienes tu negocio" subtitulo="en la app"
+            detalle="18 clientes y 31 préstamos, sacados de tu cuaderno."
+            cartera="$14.280.000"
+            cifras={[
+              { etiqueta: 'Clientes', valor: '18' },
+              { etiqueta: 'Préstamos', valor: '31' },
+              { etiqueta: 'Cobras hoy', valor: '7', verde: true },
+            ]}
+            falta={[
+              { texto: '6 clientes sin teléfono', onIr: () => {} },
+              { texto: '3 sin dirección', onIr: () => {} },
+            ]}
+            faltaNota="Nada de esto te frena. Puedes cobrar hoy mismo y completarlo cuando pases por su casa."
+            cobrosHoy={7} onVerCobros={() => {}} onPanel={() => {}}
+          />
+        </div>
+
+        <div id="arr-perfil" style={MARCO}>
+          <ArranquePerfil
+            nombre="Carlos"
+            verificar={{ onCodigo: () => {}, onCerrar: () => {} }}
+            quienCobra="solo" onQuienCobra={() => {}}
+            opciones={[
+              { id: 'solo', titulo: 'Yo cobro', detalle: 'Manejo mi cartera directamente.' },
+              { id: 'equipo', titulo: 'Tengo cobradores', detalle: 'Creo sus cuentas y asigno rutas.' },
+            ]}
+            nota="Si más adelante contratas, activas el modo equipo desde Más."
+            onContinuar={() => {}} onSaltar={() => {}}
+          />
+        </div>
+
+        <div id="arr-capital" style={MARCO}>
+          <ArranqueCapital
+            moneda="COP" monto="3.000.000" onMonto={() => {}}
+            atajos={[{ etiqueta: '+500k' }, { etiqueta: '+1M' }, { etiqueta: '+5M' }]}
+            onAtajo={() => {}} onBorrar={() => {}}
+            advertencia="Si lo dejas en cero, tu caja va a quedar en negativo el primer día que prestes. Puedes corregirlo después en Caja."
+            onContinuar={() => {}} onDespues={() => {}}
+          />
+        </div>
+
+        <div id="arr-metodo" style={MARCO}>
+          <ArranqueMetodo
+            elegido="foto"
+            destacado={{
+              id: 'foto', titulo: 'Foto de la cartulina',
+              detalle: 'Hasta 5 fotos por tanda. Se leen los datos y tú confirmas antes de crear nada.',
+              ejemplo: <>foto de la cartulina<br />del negocio</>,
+            }}
+            opciones={[
+              {
+                id: 'excel', titulo: 'Un Excel o CSV', detalle: 'Sube el archivo que ya tengas.',
+                icono: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 4h14v16H5z" /><path d="M5 9h14M5 14h14M12 4v16" />
+                  </svg>
+                ),
+              },
+              {
+                id: 'mano', titulo: 'Los escribo yo', detalle: 'Uno por uno, a mano.',
+                icono: (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 20h4l10-10-4-4L4 16z" /><path d="M14 6l4 4" />
+                  </svg>
+                ),
+              },
+            ]}
+            onElegir={() => {}} onAccion={() => {}} onVacia={() => {}}
+          />
+        </div>
+
+        {/* «14 dias gratis» NO se escribe: sale de DIAS_PRUEBA. */}
+        <div id="arr-cierre" style={MARCO}>
+          <ArranqueCierre
+            detalle="7 clientes y 7 préstamos, en menos de tres minutos."
+            cifras={[
+              { etiqueta: 'En la calle', valor: '$4.865.000' },
+              { etiqueta: 'En caja', valor: '$3.000.000' },
+            ]}
+            misiones={[
+              { texto: 'Cargar tus primeros clientes', hecha: true },
+              { texto: 'Cobrar tu primer pago', onIr: () => {} },
+              { texto: 'Elegir tu plan', pastilla: `${DIAS_PRUEBA} días gratis`, onIr: () => {} },
+            ]}
+            nota="El plan se elige aquí, después de ver el producto funcionando — no antes."
+            onAccion={() => {}}
+          />
+        </div>
+
+        {/* T01-04. Cada cliente su tarjeta; la que se revisa lleva anillo dorado y
+            abre el campo. El campo es CONTROLADO: antes era defaultValue y nadie
+            pasaba onCorregir, o sea que escribir la cedula no hacia nada. */}
+        <div id="rev-ocr" style={{ ...MARCO, height: 'auto', minHeight: 820, padding: '16px 20px 20px', overflow: 'visible' }}>
+          <RevisionCarga
+            titulo="Encontré 7 clientes"
+            detalle="Revisa los 2 marcados en ámbar. No se crea nada hasta que confirmes."
+            total={7}
+            cartera="$4.865.000"
+            onOtraFoto={() => {}}
+            onCorregir={() => {}}
+            onCrear={() => {}}
+            filas={[
+              { nombre: 'Carlos Chaparro', contexto: 'CC 81283812 · quincenal · 20%', monto: '$1.200.000' },
+              { nombre: 'Julián Vélez', contexto: 'CC 71920034 · diario · 20%', monto: '$670.000' },
+              {
+                nombre: 'Steven Olmos', revisar: true, contexto: 'Falta la cédula', monto: '$450.000',
+                reparos: [{
+                  campo: 'cedula', texto: 'Cédula', valor: '1034',
+                  recorte: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='30'><rect width='44' height='30' fill='%23e9e7e2'/><path d='M-8 30L30-8M0 38L38 0M8 46L46 8' stroke='%23dedcd6' stroke-width='4'/></svg>",
+                  dondeIba: 'recorte de la foto donde iba el dato',
+                }],
+              },
+              { nombre: 'Carmen Jiménez', revisar: true, contexto: 'Monto poco legible', monto: '$45.000', montoDudoso: true },
+              { nombre: 'Deisy Ramírez', contexto: 'CC 43987112 · semanal · 15%', monto: '$300.000' },
+            ]}
+          />
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">

@@ -24,6 +24,18 @@ export default function WizardExcel({ onComplete, onSkip }) {
   const [error, setError] = useState('')
   const [creando, setCreando] = useState(false)
 
+  // LO QUE LA PERSONA CORRIGE A MANO, por índice de fila y campo.
+  //
+  // Esto no existía: la revisión enseñaba un campo para escribir la cédula que
+  // faltaba, y lo que se importaba salía de la lectura del archivo. O sea que se
+  // escribía el dato, se pulsaba «crear los N clientes» y el cliente entraba sin
+  // él — en la pantalla que es «la clave, porque ahí es donde se abandona».
+  const [correcciones, setCorrecciones] = useState({})
+
+  const corregir = (indice, campo, valor) => {
+    setCorrecciones((c) => ({ ...c, [`${indice}.${campo}`]: valor }))
+  }
+
   const elegirArchivo = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -58,16 +70,46 @@ export default function WizardExcel({ onComplete, onSkip }) {
     }))
   }
 
+  const puesto = (i, campo) => String(correcciones[`${i}.${campo}`] ?? '').trim()
+
+  // LO QUE SE IMPORTA lleva las correcciones aplicadas y sin el reparo: el dato ya
+  // está, así que ya no falta nada.
+  const filasCorregidas = () => filasEscaladas().map((f, i) => {
+    const resueltos = (f.reparos ?? []).map((r) => r.campo).filter((c) => puesto(i, c) !== '')
+    if (!resueltos.length) return f
+    const nuevo = { ...f }
+    for (const campo of resueltos) nuevo[campo] = puesto(i, campo)
+    nuevo.reparos = (f.reparos ?? []).filter((r) => !resueltos.includes(r.campo))
+    return nuevo
+  })
+
+  // LO QUE SE MUESTRA conserva los reparos, aunque ya estén escritos. Si se
+  // quitaran, la tarjeta se cerraría en la primera tecla y el campo desaparecería
+  // mientras la persona escribe. El adaptador ve las filas tal cual salieron del
+  // archivo; lo que cambia con la corrección es solo el estado de la fila.
   const vista = lectura
     ? adaptarRevision({ ...lectura, filas: filasEscaladas() }, (n) => formatMoney(n))
     : null
+
+  const filasParaRevisar = (vista?.filas ?? []).map((f, i) => {
+    const reparos = (f.reparos ?? []).map((r) => ({ ...r, valor: correcciones[`${i}.${r.campo}`] ?? '' }))
+    const resuelta = reparos.length > 0 && reparos.every((r) => String(r.valor).trim() !== '')
+    return {
+      ...f,
+      reparos,
+      // Corregida del todo: el punto pasa a verde y la línea deja de decir que
+      // falta algo. Es el único acuse de recibo que tiene esta pantalla.
+      revisar: f.revisar && !resuelta,
+      contexto: resuelta ? 'Corregido a mano' : f.contexto,
+    }
+  })
 
   const crear = async () => {
     setCreando(true)
     setError('')
     try {
       const hoy = new Date().toISOString().slice(0, 10)
-      const { filas, descartadas } = aCargaMasiva(filasEscaladas(), {
+      const { filas, descartadas } = aCargaMasiva(filasCorregidas(), {
         // La semilla evita que dos importaciones seguidas choquen contra el
         // índice único (organizationId, cedula) con los mismos marcadores.
         semilla: Math.random().toString(36).slice(2, 6),
@@ -155,13 +197,14 @@ export default function WizardExcel({ onComplete, onSkip }) {
       <RevisionCarga
         titulo={vista.titulo}
         detalle={vista.detalle}
-        filas={vista.filas}
+        filas={filasParaRevisar}
         total={vista.total}
         cartera={vista.cartera}
         deColumna={vista.deColumna}
         // Contestada la pregunta, la franja se retira: ya no hay decisión que tomar.
         escala={enMiles === null ? vista.escala : null}
         onConfirmarEscala={setEnMiles}
+        onCorregir={corregir}
         onCrear={crear}
         creando={creando}
       />
