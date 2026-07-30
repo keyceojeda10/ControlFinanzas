@@ -78,6 +78,11 @@ function IconoWhatsApp({ tamano = 17, color = VERDE_WA }) {
 export function PortalAcceso({
   titulo = 'Consulta tu préstamo',
   ayuda = 'Con tu cédula y el PIN que te dio quien te prestó. No necesitas descargar nada.',
+  // El rotulo es prop porque `/api/portal/auth` acepta CEDULA O TELEFONO, y a
+  // quien le llega el enlace puede no saber con cual lo registraron. Un campo que
+  // dice «Cédula» y acepta el telefono deja fuera a quien no tiene la cedula a
+  // mano — que en la calle es la mitad.
+  rotuloCedula = 'Cédula',
   cedula, onCedula,
   pin = [], onPin,
   privacidad = PROMESA_DE_PRIVACIDAD,
@@ -110,7 +115,7 @@ export function PortalAcceso({
 
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Rotulo>Cédula</Rotulo>
+            <Rotulo>{rotuloCedula}</Rotulo>
             <div style={{
               display: 'flex', alignItems: 'center', height: 56, padding: '0 18px',
               borderRadius: 14, background: 'var(--cf-card)',
@@ -123,7 +128,7 @@ export function PortalAcceso({
                 value={cedula ?? ''}
                 onChange={(e) => onCedula?.(e.target.value)}
                 type="text" inputMode="numeric" autoComplete="off"
-                aria-label="Tu número de cédula"
+                aria-label={`Tu ${String(rotuloCedula).toLowerCase()}`}
                 className="cf-num"
                 style={{
                   flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
