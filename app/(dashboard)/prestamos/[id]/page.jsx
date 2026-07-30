@@ -49,6 +49,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
+import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -411,12 +412,26 @@ export default function PrestamoDetallePage({ params }) {
   // calculan mas abajo.
   useCabecera({
     titulo: prestamo?.cliente?.nombre,
-    subtitulo: prestamo ? [
-      prestamo.cuotaDiaria > 0
-        ? `${formatMoney(Math.round(prestamo.cuotaDiaria))} ${({ diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[prestamo.frecuencia] ?? '')}`.trim()
-        : null,
-      prestamo.diasMora > 0 ? `${prestamo.diasMora} día${prestamo.diasMora === 1 ? '' : 's'} de atraso` : null,
-    ].filter(Boolean).join(' · ') || null : null,
+    subtitulo: prestamo ? (
+      // En `unico` NO hay cuota ni frecuencia que contar, asi que el subtitulo se
+      // quedaba VACIO: la cabecera solo decia el nombre. T41-02 pone «un solo
+      // pago · faltan 9 dias», que es lo que distingue esta ficha de las otras de
+      // un vistazo — y los dias que faltan son la unica cuenta que corre aca.
+      prestamo.modoInteres === 'unico'
+        ? ['un solo pago', (() => {
+            if (!prestamo.fechaFin) return null
+            const d = Math.ceil((new Date(prestamo.fechaFin) - Date.now()) / 86400000)
+            if (d > 0) return `faltan ${d} día${d === 1 ? '' : 's'}`
+            if (d === 0) return 'vence hoy'
+            return `venció hace ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`
+          })()].filter(Boolean).join(' · ')
+        : [
+            prestamo.cuotaDiaria > 0
+              ? `${formatMoney(Math.round(prestamo.cuotaDiaria))} ${({ diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[prestamo.frecuencia] ?? '')}`.trim()
+              : null,
+            prestamo.diasMora > 0 ? `${prestamo.diasMora} día${prestamo.diasMora === 1 ? '' : 's'} de atraso` : 'al día',
+          ].filter(Boolean).join(' · ') || null
+    ) : null,
   })
 
   if (loading) {
@@ -505,6 +520,53 @@ export default function PrestamoDetallePage({ params }) {
   // palabra que usa el prestamista cuando el cliente reclama, y para eso se abre
   // la ficha. Se calcula hacia atras desde el saldo actual: sumando el pago se
   // recupera el saldo que habia justo despues del anterior.
+  // ── Lo propio de cada variante (T41-02, T42-01, T42-02) ──
+  //
+  // `unico` (18,6%): no tiene cuotas, asi que el bloque oscuro cuenta DIAS en vez
+  // de plata pagada. Y hace falta «empezo el», porque sin cuotas que marquen el
+  // tiempo no hay forma de saber si el trato es de la semana pasada o de hace
+  // tres meses — y eso cambia cuanto se puede insistir.
+  const esUnicoModo = modoInteres === 'unico'
+  const fechaVencTexto = fechaFin
+    ? new Date(fechaFin).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
+  const diasParaVencerTexto = (() => {
+    if (!fechaFin) return null
+    const dias = Math.ceil((new Date(fechaFin) - Date.now()) / 86400000)
+    if (dias > 0) return `en ${dias} día${dias === 1 ? '' : 's'}`
+    if (dias === 0) return 'vence hoy'
+    return `venció hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
+  })()
+  const empezoElTexto = fechaInicio ? (() => {
+    const d = new Date(fechaInicio)
+    const dias = Math.floor((Date.now() - d) / 86400000)
+    const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+    return dias > 0 ? `${fecha} · hace ${dias} día${dias === 1 ? '' : 's'}` : fecha
+  })() : null
+
+  // `manual` (10,6%): la cuota la puso el dueño a mano y el plazo salio de esa
+  // decision. Se dice CON la cifra, porque el verbo ya reconoce que la eligio el.
+  const cuotaQuePusisteTexto = modoInteres === 'manual' && cuotaDiaria > 0
+    ? formatMoney(Math.round(cuotaDiaria))
+    : null
+
+  // `proporcional` (9,8%): el UNICO modo sin tabla donde el porcentaje si se
+  // muestra, y con su explicacion al lado. En `fijo` y `unico` el dueño pacto un
+  // total redondo y traducirlo a tasa le diria algo que nunca penso; aca el total
+  // NO es redondo —salio de una regla de tres— y sin ver el 20% sobre los dias
+  // esa cifra parece arbitraria.
+  const tasaProporcional = modoInteres === 'proporcional' && tasaInteres > 0
+    ? { tasa: `${formatearTasa(tasaInteres)}%`, explicacion: `al mes, repartido sobre ${diasPlazo} días — de ahí sale el total` }
+    : null
+
+  // El pie del historial DICE EL ATRASO EN PALABRAS. Lo pide T42-02: «le vence
+  // una cuota hace 3 dias» en vez de dejar el numero solo. Y solo cuando el
+  // atraso es CORTO sobre su propio ciclo: si ya es mora grave, el rojo de arriba
+  // lo dice de sobra y esta frase suavizaria.
+  const notaDelHistorial = (!esUnicoModo && diasMora > 0 && !moraEsGrave({ diasMora, frecuencia }))
+    ? `Le vence una cuota hace ${diasMora} día${diasMora === 1 ? '' : 's'}.`
+    : null
+
   const pagosParaFicha = (() => {
     const orden = [...pagos]
       .filter((p) => !['recargo', 'descuento'].includes(p.tipo))
@@ -932,6 +994,12 @@ export default function PrestamoDetallePage({ params }) {
         prestado={formatMoney(montoPrestadoRedondeado)}
         ganancia={formatMoney(Math.max(0, Math.round((totalAPagar || 0) - montoPrestadoRedondeado)))}
         plazoTexto={plazoPactadoTexto}
+        fechaVencimiento={fechaVencTexto}
+        diasParaVencer={diasParaVencerTexto}
+        empezoEl={empezoElTexto}
+        cuotaQuePusiste={cuotaQuePusisteTexto}
+        tasaTexto={tasaProporcional}
+        notaHistorial={notaDelHistorial}
         pagos={pagosParaFicha}
         totalPagos={pagos.length}
         // SIN `onRegistrar` NI `onGestionar`: la pagina ya tiene su propia pila de

@@ -20,7 +20,7 @@
 //  3. Los números feos se dejan feos. "39 semanas" no se redondea a 40: el dueño
 //     va a cobrar 39 veces. Un plazo redondeado es un plazo mentiroso.
 
-import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda } from '@/components/cf/primitivos'
+import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda, Aviso } from '@/components/cf/primitivos'
 
 /* Tira de tres cifras en tarjeta blanca (móvil). En escritorio son cinco. */
 function TiraTres({ columnas }) {
@@ -53,23 +53,30 @@ function TiraTres({ columnas }) {
 
 /* Historial de pagos. Cada fila dice el saldo QUE LE QUEDÓ: es la palabra que
    usa el prestamista cuando el cliente reclama, y para eso se abre esto. */
-function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie }) {
+function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnico = false }) {
+  // En `unico` son ABONOS, no pagos: no hay cuotas que pagar, asi que cualquier
+  // entrega antes del vencimiento es voluntaria. La palabra lo dice.
+  const rotulo = esUnico ? 'Abonos que ha hecho' : 'Cada pago que ha hecho'
+
   if (pagos.length === 0) {
     return (
       <Tarjeta>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-          Cómo viene pagando
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+            {rotulo}
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>ninguno</span>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 8px 20px' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 56, height: 56, borderRadius: 999, flex: 'none',
-            background: 'var(--cf-fill)', border: '2px solid rgba(231,164,0,.3)',
-            fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 24, fontWeight: 700,
-            color: 'var(--cf-gold-dark)',
-          }}>$</span>
-          <span style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', textAlign: 'center', lineHeight: 1.5, maxWidth: '32ch' }}>
-            {notaPie || 'Todavía no te ha abonado nada.'}
+          <Moneda tam={56} />
+          {/* LA FRASE TRANQUILIZA EN VEZ DE ALARMAR, y no es cortesia: el pie de
+              T41-02 lo dice —«sin esa frase, un dueño con 882 prestamos asi ve
+              882 fichas que parecen impagas»—. Un historial vacio en un prestamo
+              a un solo pago es lo NORMAL, no una senal de nada. */}
+          <span style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', textAlign: 'center', lineHeight: 1.5, maxWidth: '34ch' }}>
+            {notaPie || (esUnico
+              ? 'Todavía no te ha abonado nada. Es normal: en este tipo de préstamo se paga al final.'
+              : 'Todavía no te ha abonado nada.')}
           </span>
         </div>
       </Tarjeta>
@@ -87,11 +94,11 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie }) {
         gap: 12, padding: '14px 18px 11px', flex: 'none',
       }}>
         <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-          Cada pago que ha hecho
+          {rotulo}
         </span>
         {total > 0 && (
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>
-            {total} pago{total === 1 ? '' : 's'}
+            {total} {esUnico ? (total === 1 ? 'abono' : 'abonos') : (total === 1 ? 'pago' : 'pagos')}
           </span>
         )}
       </div>
@@ -104,8 +111,12 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie }) {
             <span className="cf-num" style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink)' }}>
               {p.fecha}
             </span>
+            {/* UNA sola cadena, ya compuesta: «efectivo · quedó en $469.500».
+                Leia `p.medio` y `p.saldo` por separado, y quien la monta pasa
+                `detalle` — asi que la segunda linea salia VACIA. Se acepta
+                `detalle` y se dejan los dos campos viejos como respaldo. */}
             <span className="cf-num" style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
-              {p.medio}{p.saldo && <> · le quedó {p.saldo}</>}
+              {p.detalle ?? <>{p.medio}{p.saldo && <> · quedó en {p.saldo}</>}</>}
             </span>
           </span>
           <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-green-dark)', flex: 'none' }}>
@@ -144,7 +155,7 @@ export default function FichaPrestamo({
   faltaPagar,
   pagado, totalAPagar, porcentaje = 0,
   // unico
-  fechaVencimiento, diasParaVencer,
+  fechaVencimiento, diasParaVencer, empezoEl,
   // tira
   cuota, enMora, cuotasFaltantes,
   // cómo se pactó
@@ -249,6 +260,16 @@ export default function FichaPrestamo({
                 <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Tu ganancia</span>
                 <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-green-dark)' }}>{ganancia}</span>
               </div>
+              {/* «Empezo el 7 de julio · hace 21 dias». En un prestamo a un solo
+                  pago no hay cuotas que cuenten el tiempo, asi que sin esta linea
+                  no hay forma de saber si el trato es de la semana pasada o de
+                  hace tres meses — y eso cambia cuanto se puede insistir. */}
+              {empezoEl && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Empezó el</span>
+                  <span className="cf-num" style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)' }}>{empezoEl}</span>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -271,8 +292,13 @@ export default function FichaPrestamo({
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
                     <path d="M15.2 5.2l3.6 3.6M16.7 3.7a2.5 2.5 0 013.6 3.6L6.5 21H3v-3.5L16.7 3.7z" />
                   </svg>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-gold-text)', lineHeight: 1.4 }}>
-                    Esta cuota la pusiste tú, no salió de una fórmula.
+                  {/* CON LA CIFRA. Decia solo «esta cuota la pusiste tu, no
+                      salio de una formula», que explica el porque y no dice el
+                      que. La lamina escribe «cuota que le pusiste: $25.000»: el
+                      verbo ya hace el trabajo de reconocer que esa cifra la
+                      eligio el, y ademas se lee el numero sin subir a la tira. */}
+                  <span className="cf-num" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-gold-text)', lineHeight: 1.4 }}>
+                    Cuota que le pusiste: {cuotaQuePusiste}
                   </span>
                 </span>
               )}
@@ -297,7 +323,20 @@ export default function FichaPrestamo({
           )}
         </Tarjeta>
 
-        <Historial pagos={pagos} total={totalPagos} montoOculto={montoOculto} onVerTodos={onVerTodos} notaPie={notaHistorial} />
+        {/* ── `unico`: decir que NO TIENE CUOTAS ──
+            Lo pide T41-02, y es la frase que evita el malentendido: un dueño con
+            882 préstamos así ve 882 fichas sin pagos y concluye que nadie le
+            paga. Acá no hay nada que cobrar todavía —se paga al final— y eso hay
+            que escribirlo, no dejarlo deducir. */}
+        {esUnico && (
+          <Aviso tono="neutro">
+            Este préstamo <strong style={{ fontWeight: 700 }}>no tiene cuotas</strong>: se paga
+            completo el día del vencimiento. Si te abona antes, se registra igual y baja lo que falta.
+          </Aviso>
+        )}
+
+        <Historial pagos={pagos} total={totalPagos} montoOculto={montoOculto}
+          onVerTodos={onVerTodos} notaPie={notaHistorial} esUnico={esUnico} />
       </div>
 
       {/* Sin pastilla: en su sitio va la acción de la ficha.
