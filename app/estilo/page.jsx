@@ -40,6 +40,7 @@ import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pant
 import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantallas/SociosReparto'
 import { FranjaSinSenal, PorSincronizar, BusquedaGlobal } from '@/components/pantallas/Estados'
 import { PanelCargando, Novedades } from '@/components/pantallas/Cargando'
+import { MenuGestion, CobroHecho } from '@/components/pantallas/MenuGestion'
 import {
   loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
   cabeceraSocios, NOTA_NO_SACA_PLATA,
@@ -1764,6 +1765,54 @@ export default function Estilo() {
               onVerTodas={() => {}} onNovedad={() => {}}
             />
           </div>
+        </div>
+
+        {/* T05-01. Filas con su valor actual, y el color solo donde significa
+            algo: SOLO «mover a perdidos» va en rojo. */}
+        <div id="ges-menu" style={{ ...MARCO, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <MenuGestion
+            detalle="Steven Olmos · diario 20% · cuota 22 de 30"
+            onAccion={() => {}}
+            grupos={[
+              {
+                titulo: 'Cambia lo que se cobra',
+                acciones: [
+                  { id: 'recargo', nombre: 'Recargo por mora', valor: '$0' },
+                  { id: 'descuento', nombre: 'Descuento', valor: '$0' },
+                  { id: 'plazo', nombre: 'Modificar el plazo', valor: '30 días' },
+                ],
+              },
+              {
+                titulo: 'Cambia cuándo se cobra',
+                acciones: [
+                  { id: 'dia', nombre: 'Día de cobro', valor: 'todos los días' },
+                  { id: 'proximo', nombre: 'Próximo cobro', valor: 'mié 30 jul' },
+                  { id: 'sincobro', nombre: 'Días sin cobro', valor: 'domingos' },
+                ],
+              },
+              {
+                titulo: 'Cierra el préstamo',
+                acciones: [
+                  { id: 'renovar', nombre: 'Renovar el préstamo', valor: '70% pagado' },
+                  { id: 'editar', nombre: 'Editar préstamo' },
+                  { id: 'anticipado', nombre: 'Cerrar anticipado', valor: 'ya pagó todo' },
+                  { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true },
+                ],
+              },
+            ]}
+          />
+        </div>
+
+        {/* T15-03. El boton dorado es el SIGUIENTE cliente, no «listo». */}
+        <div id="ges-cobrado" style={MARCO}>
+          <CobroHecho
+            monto="$14.500" cliente="Steven Olmos"
+            debe="$116.000"
+            llevas="$76.500 de $145.000" progreso={53}
+            recibo="Recibo enviado a 300 118 4471"
+            siguiente="Carlos Prueba 1"
+            onSiguiente={() => {}} onVolver={() => {}}
+          />
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
