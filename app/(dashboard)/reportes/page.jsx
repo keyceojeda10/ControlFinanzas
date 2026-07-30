@@ -3,6 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -137,6 +138,7 @@ function UpgradeNudge({ titulo, planRequerido }) {
 // ── Componente principal ───────────────────────────────────────
 export default function ReportesPage() {
   const { session, esOwner, loading: authLoading } = useAuth()
+  const router = useRouter()
 
     const plan = session?.user?.plan ?? 'starter'
 
@@ -147,13 +149,6 @@ export default function ReportesPage() {
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
   const [periodoIngresos, setPeriodoIngresos] = useState('diario')
-  const [descargando, setDescargando] = useState('')
-  const [descargandoPDF, setDescargandoPDF] = useState(false)
-  const [descargandoListado, setDescargandoListado] = useState(false)
-  const [rutasListado, setRutasListado] = useState([])
-  const [filtroRuta, setFiltroRuta] = useState('')
-  const [filtroSoloMora, setFiltroSoloMora] = useState(false)
-  const [filtroOrden, setFiltroOrden] = useState('nombre')
   // Seguros por ruta (carga independiente, con su propio periodo)
   const [seguros, setSeguros] = useState(null)
   const [periodoSeguros, setPeriodoSeguros] = useState('mes')
@@ -169,14 +164,6 @@ export default function ReportesPage() {
   const [hasta, setHasta]  = useState(hoy())
 
   const nivel = nivelReportes(plan)
-
-  useEffect(() => {
-    if (!authLoading && esOwner) {
-      fetch('/api/rutas').then(r => r.json()).then(d => {
-        if (Array.isArray(d)) setRutasListado(d)
-      }).catch(() => {})
-    }
-  }, [authLoading, esOwner])
 
   const fetchAll = async () => {
     setLoading(true)
@@ -236,66 +223,6 @@ export default function ReportesPage() {
       .finally(() => setCobrosMesLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, mesCobros, nivel])
-
-  const exportarListado = async () => {
-    setDescargandoListado(true)
-    try {
-      const params = new URLSearchParams()
-      if (filtroRuta) params.set('rutaId', filtroRuta)
-      if (filtroSoloMora) params.set('soloMora', '1')
-      if (filtroOrden !== 'nombre') params.set('orden', filtroOrden)
-      const qs = params.toString()
-      const res = await fetch(`/api/reportes/listado-cobros${qs ? `?${qs}` : ''}`)
-      if (!res.ok) { alert('Error al generar listado'); return }
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `listado-cobros-${new Date().toISOString().slice(0, 10)}.pdf`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    } catch {
-      alert('Error de conexión.')
-    } finally {
-      setDescargandoListado(false)
-    }
-  }
-
-  const exportarPDF = async () => {
-    setDescargandoPDF(true)
-    try {
-      const res = await fetch(`/api/reportes/resumen-pdf?desde=${desde}&hasta=${hasta}`)
-      if (!res.ok) { alert('Error al generar PDF'); return }
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `resumen-${desde}-a-${hasta}.pdf`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    } catch {
-      alert('Error de conexión.')
-    } finally {
-      setDescargandoPDF(false)
-    }
-  }
-
-  const exportar = async (tipo) => {
-    setDescargando(tipo)
-    try {
-      const url = `/api/reportes/exportar?tipo=${tipo}&desde=${desde}&hasta=${hasta}`
-      const res = await fetch(url)
-      if (!res.ok) { alert('Error al exportar'); return }
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `control-finanzas-${tipo}-${desde}.xlsx`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    } catch {
-      alert('Error de conexión.')
-    } finally {
-      setDescargando('')
-    }
-  }
 
   if (authLoading || (loading && nivel >= 1 && esOwner)) {
     return (
@@ -799,199 +726,43 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* ── 4.5 Listado de cobros PDF (todos los planes) ──────── */}
-      <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
+      {/* ── BAJAR INFORMACIÓN · T33-02 ─────────────────────────
+          Aquí vivían TRES tarjetas de descarga —el listado «quién me debe», el
+          resumen en PDF y los cuatro Excel—, 193 líneas al final de una página
+          de 3.700 píxeles. Después de todo el scroll, y con los filtros del
+          listado sueltos y sin resultado a la vista: se elegía ruta, orden y
+          mora sin saber cuántos clientes iban a salir, así que se bajaba el PDF
+          para ver qué traía y, si no era eso, otra vez.
+
+          Ahora son su propia pantalla, con los filtros dentro de la tarjeta,
+          encima del botón y con la cuenta hecha. Bajar un Excel para el
+          contador no es «mirar cómo va el negocio»: es otra tarea. */}
+      <button
+        type="button"
+        onClick={() => router.push('/reportes/bajar')}
+        className="w-full rounded-[20px] px-4 py-4 cf-card-shadow flex items-center gap-3 text-left"
         style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Quién me debe</p>
-            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-              Todos tus clientes con cuánto deben y cuántos días llevan atrasados.
-            </p>
-          </div>
-        </div>
-
-        {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <select
-            value={filtroRuta}
-            onChange={e => setFiltroRuta(e.target.value)}
-            className="h-8 px-2.5 rounded-[8px] text-[11px] focus:outline-none transition-all min-w-0 flex-1"
-            style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
-          >
-            <option value="">Todas las rutas</option>
-            {rutasListado.map(r => (
-              <option key={r.id} value={r.id}>{r.nombre}</option>
-            ))}
-          </select>
-          <select
-            value={filtroOrden}
-            onChange={e => setFiltroOrden(e.target.value)}
-            className="h-8 px-2.5 rounded-[8px] text-[11px] focus:outline-none transition-all"
-            style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
-          >
-            <option value="nombre">Ordenar por nombre</option>
-            <option value="mora">Mayor mora primero</option>
-            <option value="saldo">Mayor saldo primero</option>
-          </select>
-        </div>
-        <label
-          className="flex items-center gap-2 mb-3 cursor-pointer select-none"
-          onClick={() => setFiltroSoloMora(v => !v)}
-        >
-          <div
-            className="w-8 h-[18px] rounded-full relative transition-all"
-            style={{
-              background: filtroSoloMora ? 'var(--cf-red-dark)' : 'var(--cf-fill)',
-              border: `1px solid ${filtroSoloMora ? 'var(--cf-red-dark)' : 'var(--cf-border)'}`,
-            }}
-          >
-            <div
-              className="absolute top-[2px] w-3 h-3 rounded-full transition-all"
-              style={{
-                left: filtroSoloMora ? '16px' : '2px',
-                background: filtroSoloMora ? '#fff' : 'var(--cf-ink-3)',
-              }}
-            />
-          </div>
-          <span className="text-[11px] font-medium" style={{ color: filtroSoloMora ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
-            Solo clientes en mora
+        <span className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{ background: 'var(--cf-fill)' }}>
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="var(--cf-ink-2)" strokeWidth={2}
+            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M12 4v11M8 12l4 4 4-4M5 20h14" />
+          </svg>
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+            Bajar información
           </span>
-        </label>
-
-        <button
-          onClick={exportarListado}
-          disabled={descargandoListado}
-          className="group w-full h-14 px-3 rounded-[12px] flex items-center gap-3 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-surface)) 0%, var(--cf-surface) 100%)',
-            border: '1px solid color-mix(in srgb, var(--cf-ink-2) 22%, var(--cf-border))',
-          }}
-        >
-          <div
-            className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
-            style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-          </div>
-          <div className="flex flex-col items-start text-left min-w-0 flex-1">
-            <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--cf-ink-2)' }}>
-              {descargandoListado ? 'Generando PDF...' : 'Descargar quién me debe'}
-            </span>
-            <span className="text-[10px] truncate w-full" style={{ color: 'var(--cf-ink-3)' }}>
-              {filtroSoloMora ? 'Clientes en mora' : 'Todos los clientes'} · cuota, saldo, avance y mora
-            </span>
-          </div>
-        </button>
-      </div>
-
-      {/* ── 5. Descargar Resumen PDF ────────────────────────────── */}
-      {nivel < 2 && <UpgradeNudge titulo="Cómo me fue — el resumen del mes" planRequerido="standard" />}
-      {nivel >= 2 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 18%, transparent)', color: 'var(--cf-red-dark)' }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Cómo me fue</p>
-            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-              Cuánto entró, cuánto ganaste de interés y cómo le fue a cada cobrador.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={exportarPDF}
-          disabled={descargandoPDF}
-          className="group w-full h-14 px-3 rounded-[12px] flex items-center gap-3 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-surface)) 0%, var(--cf-surface) 100%)',
-            border: '1px solid color-mix(in srgb, var(--cf-red-dark) 22%, var(--cf-border))',
-          }}
-        >
-          <div
-            className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
-            style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 18%, transparent)', color: 'var(--cf-red-dark)' }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-          </div>
-          <div className="flex flex-col items-start text-left min-w-0 flex-1">
-            <span className="text-[13px] font-semibold truncate w-full" style={{ color: 'var(--cf-red-dark)' }}>
-              {descargandoPDF ? 'Generando PDF...' : 'Descargar cómo me fue'}
-            </span>
-            <span className="text-[10px] truncate w-full" style={{ color: 'var(--cf-ink-3)' }}>
-              KPIs, capital, cobradores del periodo
-            </span>
-          </div>
-        </button>
-      </div>}
-
-      {/* ── 6. Exportar a Excel como chips ──────────────────────── */}
-      {nivel < 3 && <UpgradeNudge titulo="Bajar todo a Excel" planRequerido="professional" />}
-      {nivel >= 3 && <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-      >
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 18%, transparent)', color: 'var(--cf-green-dark)' }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Bajar todo a Excel</p>
-            <p className="text-[11px] font-normal normal-case tracking-normal mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-              Tus datos crudos, para el contador o para hacer tus propias cuentas.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { tipo: 'clientes',   label: 'Clientes',   desc: 'Lista completa',           color: 'var(--cf-gold)' },
-            { tipo: 'prestamos',  label: 'Préstamos',  desc: 'Cartera con saldos',       color: 'var(--cf-green-dark)' },
-            { tipo: 'pagos',      label: 'Pagos',      desc: 'Historial del período',    color: 'var(--cf-ink-2)' },
-            { tipo: 'cobradores', label: 'Cobradores', desc: 'Rendimiento del período',  color: 'var(--cf-ink-2)' },
-          ].map(({ tipo, label, desc, color }) => (
-            <button
-              key={tipo}
-              onClick={() => exportar(tipo)}
-              disabled={!!descargando}
-              className="group h-14 px-3 rounded-[12px] flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, ${color} 8%, var(--cf-surface)) 0%, var(--cf-surface) 100%)`,
-                border: `1px solid color-mix(in srgb, ${color} 22%, var(--cf-border))`,
-              }}
-            >
-              <div
-                className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
-                style={{ background: `color-mix(in srgb, ${color} 18%, transparent)`, color }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                </svg>
-              </div>
-              <div className="flex flex-col items-start text-left min-w-0 flex-1">
-                <span className="text-[12px] font-semibold truncate w-full" style={{ color }}>
-                  {descargando === tipo ? 'Descargando…' : label}
-                </span>
-                <span className="text-[10px] truncate w-full" style={{ color: 'var(--cf-ink-3)' }}>{desc}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>}
+          <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+            Quién me debe, cómo me fue y tus datos en Excel
+          </span>
+        </span>
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" strokeWidth={2.2}
+          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
   )
 }
