@@ -5,7 +5,7 @@
 // El paso activo destaca con accent, los completados con relleno verde,
 // los futuros vacios. Onclick opcional para saltar.
 
-export default function Stepper({ steps, activeIndex, onChange, completedIndices }) {
+export default function Stepper({ steps, activeIndex, onChange, completedIndices, contador = true }) {
   const completed = new Set(completedIndices ?? [])
 
   return (
@@ -84,12 +84,19 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
 
       {/* Texto del paso activo, centrado y completo (no truncar) */}
       <div className="mt-3 text-center">
-        <p
-          className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          Paso {activeIndex + 1} de {steps.length}
-        </p>
+        {/* EL CONTADOR ES OPCIONAL porque hay pantallas con DOS niveles de paso.
+            En «nuevo prestamo» el usuario leia «PASO 2 DE 3» y justo debajo
+            «Paso 1 de 5»: dos contadores contradiciendose en la misma pantalla.
+            Manda el de dentro, que es el que avanza al pulsar «Continuar»; los
+            tres circulos se quedan como capitulos. */}
+        {contador && (
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Paso {activeIndex + 1} de {steps.length}
+          </p>
+        )}
         <p
           className="text-base font-bold mt-0.5"
           style={{ color: 'var(--color-text-primary)' }}

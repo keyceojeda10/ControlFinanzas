@@ -37,12 +37,12 @@ const leerModoPreferido = () => {
 const guardarModoPreferido = (m) => { try { localStorage.setItem(KEY_MODO_PREFERIDO, m) } catch {} }
 
 // Card de seccion premium (definida fuera para evitar perdida de focus)
-const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
+const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }) => (
   <div
     className="rounded-[20px] p-4"
     style={{
-      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-      border: '1px solid var(--color-border)',
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+      border: '1px solid var(--cf-border)',
     }}
   >
     <div className="flex items-center justify-between gap-2 mb-3">
@@ -65,20 +65,20 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
 function EditableRow({ label, value, pencil, editor, valueColor }) {
   const [editing, setEditing] = useState(false)
   return (
-    <div className="py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
+    <div className="py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--cf-border) 50%, transparent)' }}>
       {editing ? (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--color-success)', background: 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>OK</button>
+            <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
+            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--cf-green-dark)', background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)' }}>OK</button>
           </div>
           {editor}
         </div>
       ) : (
         <button type="button" onClick={() => setEditing(true)} className="flex justify-between items-center w-full text-left group">
-          <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+          <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
           <span className="flex items-center gap-1.5">
-            <span className="font-semibold text-sm" style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
+            <span className="font-semibold text-sm" style={{ color: valueColor || 'var(--cf-ink)' }}>{value}</span>
             <span className="opacity-40 group-hover:opacity-100 transition-opacity">{pencil}</span>
           </span>
         </button>
@@ -92,7 +92,7 @@ export default function NuevoPrestamoPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-40">
-        <svg className="animate-spin w-6 h-6 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin w-6 h-6 text-[var(--cf-gold)]" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -702,16 +702,20 @@ function NuevoPrestamo() {
   return (
     <div className="max-w-2xl mx-auto pb-44 lg:pb-36">
       {/* Stepper */}
+      {/* Sin contador: el de dentro del paso 2 («Paso 1 de 5») es el que avanza
+          al pulsar «Continuar». Con los dos, la pantalla decia «PASO 2 DE 3» y
+          «Paso 1 de 5» a la vez. */}
       <Stepper
         steps={PASOS}
         activeIndex={paso}
         completedIndices={completedIndices}
+        contador={false}
         onChange={(idx) => { if (idx <= paso) setPaso(idx) }}
       />
 
       {error && (
         <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
-          style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+          style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
         >
           {error}
         </div>
@@ -736,28 +740,28 @@ function NuevoPrestamo() {
             className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-[12px] border transition-all"
             style={{
               background: c.id === clienteId
-                ? 'color-mix(in srgb, var(--color-accent) 12%, transparent)'
-                : 'var(--color-bg-surface)',
+                ? 'color-mix(in srgb, var(--cf-gold) 12%, transparent)'
+                : 'var(--cf-surface)',
               borderColor: c.id === clienteId
-                ? 'var(--color-accent)'
-                : 'var(--color-border)',
+                ? 'var(--cf-gold)'
+                : 'var(--cf-border)',
             }}
           >
             <div
               className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-bold"
               style={{
-                background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)',
-                color: 'var(--color-accent)',
+                background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)',
+                color: 'var(--cf-gold)',
               }}
             >
               {c.nombre?.charAt(0)?.toUpperCase() ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
-              <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>CC {c.cedula}</p>
+              <p className="font-semibold text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>CC {c.cedula}</p>
             </div>
             {mostrarCheck && c.id === clienteId && (
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--cf-gold)' }}>
                 <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" />
               </svg>
             )}
@@ -766,10 +770,10 @@ function NuevoPrestamo() {
 
         return (
           <section className="mt-8">
-            <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
               {clienteSeleccionado ? '¿Continuamos con este cliente?' : 'Elige el cliente'}
             </h2>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
               {clienteSeleccionado
                 ? 'Si necesitas cambiarlo, usa el buscador.'
                 : 'Busca por nombre o cédula, o elige uno de los recientes.'}
@@ -780,24 +784,24 @@ function NuevoPrestamo() {
               <div
                 className="mt-7 rounded-[20px] p-4 flex items-center gap-3"
                 style={{
-                  background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
-                  border: '1.5px solid var(--color-accent)',
+                  background: 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-card))',
+                  border: '1.5px solid var(--cf-gold)',
                 }}
               >
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-base font-bold"
                   style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 22%, transparent)',
-                    color: 'var(--color-accent)',
+                    background: 'color-mix(in srgb, var(--cf-gold) 22%, transparent)',
+                    color: 'var(--cf-gold)',
                   }}
                 >
                   {clienteSeleccionado.nombre?.charAt(0)?.toUpperCase() ?? '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-base truncate" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="font-bold text-base truncate" style={{ color: 'var(--cf-ink)' }}>
                     {clienteSeleccionado.nombre}
                   </p>
-                  <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>
                     CC {clienteSeleccionado.cedula}
                   </p>
                 </div>
@@ -805,7 +809,7 @@ function NuevoPrestamo() {
                   type="button"
                   onClick={() => { setClienteId(''); setClienteNombre('') }}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-[8px] transition-colors"
-                  style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-surface)' }}
+                  style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-surface)' }}
                 >
                   Cambiar
                 </button>
@@ -815,14 +819,14 @@ function NuevoPrestamo() {
             {clienteSeleccionado?.montoMaximoPrestamo > 0 && (
               <div
                 className="mt-3 rounded-[12px] px-3.5 py-2.5 flex items-center gap-2.5"
-                style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}
+                style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)' }}
               >
-                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Tope de prestamo</p>
-                  <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Tope de prestamo</p>
+                  <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>
                     {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
                   </p>
                 </div>
@@ -834,7 +838,7 @@ function NuevoPrestamo() {
               <div className="relative">
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 pointer-events-none"
-                  style={{ color: 'var(--color-text-muted)' }}
+                  style={{ color: 'var(--cf-ink-3)' }}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -846,9 +850,9 @@ function NuevoPrestamo() {
                   placeholder="Buscar por nombre o cédula"
                   className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
                   style={{
-                    background: 'var(--color-bg-surface)',
-                    borderColor: 'var(--color-border)',
-                    color: 'var(--color-text-primary)',
+                    background: 'var(--cf-surface)',
+                    borderColor: 'var(--cf-border)',
+                    color: 'var(--cf-ink)',
                   }}
                 />
               </div>
@@ -858,7 +862,7 @@ function NuevoPrestamo() {
             {buscando && (
               <div className="mt-3 space-y-1.5">
                 {clientesFiltrados.length === 0 ? (
-                  <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-sm text-center py-8" style={{ color: 'var(--cf-ink-3)' }}>
                     Sin resultados. Prueba con otro nombre.
                   </p>
                 ) : (
@@ -870,7 +874,7 @@ function NuevoPrestamo() {
             {/* RECIENTES: solo si NO esta buscando y no hay cliente seleccionado (o hay uno pero queremos mostrar opciones rapidas) */}
             {!buscando && !clienteSeleccionado && recientes.length > 0 && (
               <div className="mt-5">
-                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                   Recientes
                 </p>
                 <div className="space-y-1.5">
@@ -885,18 +889,18 @@ function NuevoPrestamo() {
                 solo que debia irse a /clientes/nuevo. */}
             {!buscando && !clienteSeleccionado && recientes.length === 0 && (
               <div className="text-center py-8 mt-3">
-                <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-sm mb-4" style={{ color: 'var(--cf-ink-3)' }}>
                   Todavía no tienes clientes. Un préstamo siempre va a nombre de alguien.
                 </p>
                 <div className="flex flex-col gap-2 max-w-[260px] mx-auto">
                   <Link href="/clientes/nuevo"
                     className="w-full h-11 rounded-[12px] flex items-center justify-center text-sm font-bold transition-all active:scale-[0.98]"
-                    style={{ background: 'var(--color-accent)', color: '#111' }}>
+                    style={{ background: 'var(--cf-gold)', color: '#111' }}>
                     Crear mi primer cliente
                   </Link>
                   <Link href="/migrador"
                     className="w-full h-11 rounded-[12px] flex items-center justify-center text-sm font-medium border transition-all active:scale-[0.98]"
-                    style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                    style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)' }}>
                     Pasar mi cuaderno completo
                   </Link>
                 </div>
@@ -912,7 +916,7 @@ function NuevoPrestamo() {
           {/* Barra de progreso del sub-paso */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                 {clienteNombre || 'Cliente'}
               </p>
               {ultimoPrestamo && subPaso === 0 && (
@@ -920,7 +924,7 @@ function NuevoPrestamo() {
                   type="button"
                   onClick={() => { repetirCondicionesUltimo(); setSubPaso(TOTAL_SUB_PASOS - 1) }}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}
+                  style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}
                 >
                   Repetir anterior
                 </button>
@@ -934,13 +938,13 @@ function NuevoPrestamo() {
                   onClick={() => { if (i < subPaso) setSubPaso(i) }}
                   className="h-1 rounded-full flex-1 transition-all"
                   style={{
-                    background: i <= subPaso ? 'var(--color-accent)' : 'var(--color-border)',
+                    background: i <= subPaso ? 'var(--cf-gold)' : 'var(--cf-border)',
                     cursor: i < subPaso ? 'pointer' : 'default',
                   }}
                 />
               ))}
             </div>
-            <p className="text-[10px] mt-1 text-right" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-1 text-right" style={{ color: 'var(--cf-ink-3)' }}>
               Paso {subPaso + 1} de {TOTAL_SUB_PASOS}
             </p>
           </div>
@@ -949,10 +953,10 @@ function NuevoPrestamo() {
           {subPaso === 0 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                  {modo === 'mercancia' ? '¿Cuánto vale el artículo?' : 'Cuanto le prestas?'}
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>
+                  {modo === 'mercancia' ? '¿Cuánto vale el artículo?' : '¿Cuánto le prestas?'}
                 </h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>
                   {modo === 'mercancia' ? 'El valor real de la mercancía.' : 'El dinero que le entregas al cliente.'}
                 </p>
               </div>
@@ -962,20 +966,20 @@ function NuevoPrestamo() {
                 <button type="button" onClick={() => handleModoChange('prestamo')}
                   className="h-11 rounded-xl border text-sm font-semibold transition-all"
                   style={modo === 'prestamo'
-                    ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                    : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                    ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' }
+                    : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}
                 >Préstamo</button>
                 <button type="button" onClick={() => handleModoChange('mercancia')}
                   className="h-11 rounded-xl border text-sm font-semibold transition-all"
                   style={modo === 'mercancia'
-                    ? { background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', borderColor: 'var(--color-info)', color: 'var(--color-info)' }
-                    : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                    ? { background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', borderColor: 'var(--cf-ink-2)', color: 'var(--cf-ink-2)' }
+                    : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}
                 >Mercancía</button>
               </div>
 
               {modo === 'mercancia' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                     Nombre del producto <span style={{ opacity: 0.6 }}>(opcional)</span>
                   </label>
                   <div className="mt-1.5">
@@ -985,7 +989,7 @@ function NuevoPrestamo() {
               )}
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                   {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
                 </label>
                 <div className="mt-1.5">
@@ -996,13 +1000,13 @@ function NuevoPrestamo() {
                     <button key={v} type="button" onClick={() => setMonto(String(v))}
                       className="px-2.5 h-7 rounded-lg text-[11px] font-medium transition-all"
                       style={String(monto) === String(v)
-                        ? { background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
-                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                        ? { background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', border: '1px solid var(--cf-gold)', color: 'var(--cf-gold)' }
+                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}
                     >{v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}</button>
                   ))}
                 </div>
                 {clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo && (
-                  <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--color-danger)' }}>
+                  <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--cf-red-dark)' }}>
                     Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
                   </p>
                 )}
@@ -1011,23 +1015,23 @@ function NuevoPrestamo() {
               {modo === 'mercancia' && (
                 <>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Número de cuotas</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Número de cuotas</label>
                     <Input type="number" inputMode="numeric" value={numCuotas} onChange={(e) => setNumCuotas(e.target.value)} placeholder="10" suffix="cuotas" />
                   </div>
                   <div>
-                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Precio de venta</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Precio de venta</label>
                     <div className="mt-1.5"><MoneyInput value={precioVenta} onChange={(e) => setPrecioVenta(e.target.value)} placeholder="Ej: 120.000" /></div>
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu ganancia = precio de venta - valor del artículo.</p>
+                    <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu ganancia = precio de venta - valor del artículo.</p>
                     {Number(precioVenta) > 0 && Number(numCuotas) > 0 && Number(monto) > 0 && (
                       <div className="mt-2 rounded-xl border px-3 py-2 flex items-center justify-between gap-3"
-                        style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
+                        style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 8%, transparent)', borderColor: 'color-mix(in srgb, var(--cf-green-dark) 30%, transparent)' }}>
                         <div>
-                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
-                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}</p>
+                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
+                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(Math.round(Number(precioVenta) / Number(numCuotas)))}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Ganancia</p>
-                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>
+                          <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</p>
+                          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
                             {formatMoney(Number(precioVenta) - Number(monto))}
                             {Number(monto) > 0 ? ` (${Math.round(((Number(precioVenta) - Number(monto)) / Number(monto)) * 100)}%)` : ''}
                           </p>
@@ -1035,7 +1039,7 @@ function NuevoPrestamo() {
                       </div>
                     )}
                     {Number(precioVenta) > 0 && Number(precioVenta) <= Number(monto) && (
-                      <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--color-danger)' }}>El precio de venta debe ser mayor al valor del artículo.</p>
+                      <p className="text-[10px] mt-1.5 font-semibold" style={{ color: 'var(--cf-red-dark)' }}>El precio de venta debe ser mayor al valor del artículo.</p>
                     )}
                   </div>
                 </>
@@ -1047,8 +1051,8 @@ function NuevoPrestamo() {
           {subPaso === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Cada cuanto cobra?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>Cada cuanto cobra?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
               </div>
 
               <div className="space-y-2">
@@ -1059,17 +1063,17 @@ function NuevoPrestamo() {
                     <button key={f.key} type="button" onClick={() => handleFrecuenciaChange(f.key)}
                       className="w-full text-left rounded-xl p-4 transition-all"
                       style={{
-                        background: activo ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'var(--color-bg-surface)',
-                        border: activo ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)',
+                        background: activo ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'var(--cf-surface)',
+                        border: activo ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
                       }}>
                       <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
-                          style={{ borderColor: activo ? 'var(--color-accent)' : 'var(--color-border)' }}>
-                          {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+                          style={{ borderColor: activo ? 'var(--cf-gold)' : 'var(--cf-border)' }}>
+                          {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
                         </div>
                         <div>
-                          <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{f.label}</span>
-                          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{descs[f.key]}</p>
+                          <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{f.label}</span>
+                          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>{descs[f.key]}</p>
                         </div>
                       </div>
                     </button>
@@ -1080,16 +1084,16 @@ function NuevoPrestamo() {
               {/* Dia ancla para semanal */}
               {frecuencia === 'semanal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
-                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Fija el dia de la semana. "Auto" usa el dia de inicio.</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia cobras?</label>
+                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Fija el dia de la semana. "Auto" usa el dia de inicio.</p>
                   <div className="grid grid-cols-7 gap-1">
                     <button type="button" onClick={() => setDiaCobroSemana('')}
                       className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                      style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>Auto</button>
+                      style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>Auto</button>
                     {DIAS_SEMANA.slice(0, 6).map(d => (
                       <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
                         className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>{d.l}</button>
+                        style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>{d.l}</button>
                     ))}
                   </div>
                 </div>
@@ -1098,24 +1102,24 @@ function NuevoPrestamo() {
               {/* Dia ancla para quincenal */}
               {frecuencia === 'quincenal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia cobras?</label>
-                  <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia cobras?</label>
+                  <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
-                      style={modoDiaCobro === 'semana' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dia de la semana</button>
+                      style={modoDiaCobro === 'semana' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Dia de la semana</button>
                     <button type="button" onClick={() => { setModoDiaCobro('mes'); setDiaCobroSemana('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
-                      style={modoDiaCobro === 'mes' ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--color-text-muted)' }}>Dias del mes</button>
+                      style={modoDiaCobro === 'mes' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Dias del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
                     <div className="grid grid-cols-7 gap-1">
                       <button type="button" onClick={() => setDiaCobroSemana('')}
                         className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>Auto</button>
+                        style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>Auto</button>
                       {DIAS_SEMANA.slice(0, 6).map(d => (
                         <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
                           className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                          style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>{d.l}</button>
+                          style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>{d.l}</button>
                       ))}
                     </div>
                   ) : (
@@ -1134,8 +1138,8 @@ function NuevoPrestamo() {
               {/* Dia ancla para mensual — solo dia del mes (diaCobroSemana no aplica) */}
               {frecuencia === 'mensual' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Que dia del mes cobras?</label>
-                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Si el mes no tiene ese dia, se cobra el ultimo dia disponible.</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia del mes cobras?</label>
+                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Si el mes no tiene ese dia, se cobra el ultimo dia disponible.</p>
                   <Input type="number" inputMode="numeric" value={diaCobroMes}
                     onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
                     placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
@@ -1148,33 +1152,33 @@ function NuevoPrestamo() {
           {subPaso === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>¿Cuánto de interés?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Define la tasa y en cuanto tiempo paga.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cuánto de interés?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Define la tasa y en cuanto tiempo paga.</p>
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Interés mensual</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Interés mensual</label>
                 <Input type="text" inputMode="decimal" value={tasa} onChange={(e) => setTasa(soloDecimal(e.target.value))} placeholder="20" suffix="%" />
                 <div className="flex gap-1.5 mt-2 flex-wrap">
                   {[5, 10, 15, 20, 25, 30].map(v => (
                     <button key={v} type="button" onClick={() => setTasa(String(v))}
                       className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
                       style={String(v) === tasa
-                        ? { background: 'var(--color-accent)', color: '#000' }
-                        : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
+                        ? { background: 'var(--cf-gold)', color: '#000' }
+                        : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
                       }
                     >{v}%</button>
                   ))}
                 </div>
                 {Number(monto) > 0 && Number(tasa) > 0 && (
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
                     Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                   ¿En cuánto tiempo paga? ({frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
                 </label>
                 <Input type="number" inputMode="numeric" value={plazoUnidades} onChange={(e) => setPlazoUnidades(e.target.value)} />
@@ -1187,24 +1191,24 @@ function NuevoPrestamo() {
                     <button key={v} type="button" onClick={() => setPlazoUnidades(String(v))}
                       className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
                       style={String(v) === plazoUnidades
-                        ? { background: 'var(--color-accent)', color: '#000' }
-                        : { background: 'var(--color-bg-surface)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
+                        ? { background: 'var(--cf-gold)', color: '#000' }
+                        : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
                       }
                     >{v}</button>
                   ))}
                 </div>
                 {frecuencia !== 'diario' && plazoUnidades && (
-                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
+                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>= {plazo} días</p>
                 )}
               </div>
 
               {/* Preview del interes mensual (sin cuota/total — eso depende del modo de interes que se elige en el paso siguiente) */}
               {Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
-                <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {formatMoney(Number(monto))} al {tasa}% por {plazoUnidades} {frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                     La cuota exacta depende del modo de interés que elijas en el siguiente paso.
                   </p>
                 </div>
@@ -1216,8 +1220,8 @@ function NuevoPrestamo() {
           {subPaso === 3 && modo === 'prestamo' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>¿Cómo cobra el interés?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>La mayoria usa el clásico. Si no estas seguro, dejalo asi.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>La mayoria usa el clásico. Si no estas seguro, dejalo asi.</p>
               </div>
 
               <ModoInteresSelector
@@ -1239,21 +1243,21 @@ function NuevoPrestamo() {
 
               {cuotaManualActiva && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota exacta</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuota exacta</label>
                   <div className="mt-1.5">
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Ej: 60.000" />
                   </div>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
                 </div>
               )}
 
               {modoInteres === 'saldo' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Cuota fija personalizada (opcional)</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuota fija personalizada (opcional)</label>
                   <div className="mt-1.5">
                     <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Dejar vacío para calcular automático" />
                   </div>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
                     {saldoCuotaPersonalizada
                       ? 'Cuota fija definida por ti. La última cuota ajusta para cerrar el saldo.'
                       : 'Si defines una cuota, se usa en vez de la calculada. El interés se descuenta del saldo cada período.'}
@@ -1266,14 +1270,14 @@ function NuevoPrestamo() {
                     <div
                       className="mt-3 rounded-xl border p-3"
                       style={{
-                        background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-                        borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                        background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--cf-red-dark) 30%, transparent)',
                       }}
                     >
-                      <p className="text-[12px] font-semibold" style={{ color: 'var(--color-danger)' }}>
+                      <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-red-dark)' }}>
                         Con esa cuota la deuda nunca baja
                       </p>
-                      <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                      <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
                         El primer período genera{' '}
                         <span className="font-mono-display font-semibold">{formatMoney(calculo.interesPrimerPeriodo)}</span>{' '}
                         de interés. Si la cuota es menor, solo alcanza para intereses y el capital se queda igual.
@@ -1283,7 +1287,7 @@ function NuevoPrestamo() {
                           type="button"
                           onClick={() => setCuotaManual(String(calculo.cuotaSugerida))}
                           className="h-8 px-3 rounded-[10px] text-[11px] font-semibold"
-                          style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}
+                          style={{ background: 'var(--cf-gold)', color: '#1a1a2e' }}
                         >
                           Usar {formatMoney(calculo.cuotaSugerida)}
                         </button>
@@ -1291,12 +1295,12 @@ function NuevoPrestamo() {
                           type="button"
                           onClick={() => setCuotaManual('')}
                           className="h-8 px-3 rounded-[10px] text-[11px] font-semibold border"
-                          style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
+                          style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)' }}
                         >
                           Calcular automático
                         </button>
                       </div>
-                      <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                      <p className="text-[10px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
                         Mínimo para cubrir el interés: {formatMoney(calculo.cuotaMinima)}. Con{' '}
                         {formatMoney(calculo.cuotaSugerida)} termina de pagar en el plazo elegido.
                       </p>
@@ -1311,34 +1315,34 @@ function NuevoPrestamo() {
           {subPaso === (modo === 'mercancia' ? 2 : 4) && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Opciones adicionales</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Todo es opcional. Si no necesitas nada, avanza.</p>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>Opciones adicionales</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Todo es opcional. Si no necesitas nada, avanza.</p>
               </div>
 
               {clienteId && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Dias sin cobro</label>
-                  <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--color-text-muted)' }}>Dias en que NO se cobra. Se guarda en la ficha del cliente.</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Dias sin cobro</label>
+                  <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias en que NO se cobra. Se guarda en la ficha del cliente.</p>
                   <DiasSinCobroSelector value={diasSinCobroCliente} onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }} compact />
                 </div>
               )}
 
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio</label>
                 <Input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} max={hoyISO()} />
               </div>
 
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
-                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cobrar seguro</p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Suma un cargo fijo al préstamo</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Cobrar seguro</p>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Suma un cargo fijo al préstamo</p>
                 </div>
-                <input type="checkbox" checked={seguro} onChange={(e) => setSeguro(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
+                <input type="checkbox" checked={seguro} onChange={(e) => setSeguro(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
               </label>
               {seguro && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto del seguro</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
                 </div>
               )}
@@ -1355,12 +1359,12 @@ function NuevoPrestamo() {
 
               {esOwner && listaSocios.length > 0 && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Socio responsable</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Socio responsable</label>
                   <select
                     value={socioId}
                     onChange={(e) => setSocioId(e.target.value)}
                     className="mt-1.5 w-full h-10 px-2 rounded-[12px] text-sm"
-                    style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                    style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
                   >
                     <option value="">Sin socio</option>
                     {listaSocios.filter(s => s.activo).map(s => (
@@ -1371,16 +1375,16 @@ function NuevoPrestamo() {
               )}
 
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
-                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Ya habia pagado algo antes</p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Migrar un préstamo con abonos previos</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Ya habia pagado algo antes</p>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Migrar un préstamo con abonos previos</p>
                 </div>
-                <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--color-accent)]" />
+                <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
               </label>
               {esEnCurso && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto ya abonado</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto ya abonado</label>
                   <div className="mt-1.5"><MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" /></div>
                 </div>
               )}
@@ -1402,25 +1406,25 @@ function NuevoPrestamo() {
                 const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
                 const unidadPlazoL = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
                 const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
-                const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+                const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
                   <div className="rounded-2xl overflow-hidden"
-                    style={{ border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
-                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)), var(--color-bg-card))' }}>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Resumen del préstamo</p>
-                      <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
+                    style={{ border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
+                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card)), var(--cf-card))' }}>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>Resumen del préstamo</p>
+                      <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
                     </div>
-                    <div className="px-4 py-2" style={{ background: 'var(--color-bg-card)' }}>
+                    <div className="px-4 py-2" style={{ background: 'var(--cf-card)' }}>
                       {/* Cuota + Total — calculados, no editables */}
-                      <div className="grid grid-cols-2 gap-3 pb-2 mb-1" style={{ borderBottom: '2px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border))' }}>
+                      <div className="grid grid-cols-2 gap-3 pb-2 mb-1" style={{ borderBottom: '2px solid color-mix(in srgb, var(--cf-green-dark) 20%, var(--cf-border))' }}>
                         <div>
-                          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cuota {labelFreq}</p>
-                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Cuota {labelFreq}</p>
+                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
-                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalConSeguro)}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</p>
+                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(totalConSeguro)}</p>
                         </div>
                       </div>
 
@@ -1430,13 +1434,13 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} valueColor="var(--color-accent)" pencil={pencil}
+                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} valueColor="var(--cf-gold)" pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
+                                  style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
                               </div>
                             } />
                         )}
@@ -1445,7 +1449,7 @@ function NuevoPrestamo() {
                           editor={
                             <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const nd = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (nd) setPlazoUnidades(nd) }}
                               className="h-8 rounded-lg border px-2 text-sm"
-                              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                              style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                               <option value="diario">Diario</option><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option>
                             </select>
                           } />
@@ -1455,12 +1459,12 @@ function NuevoPrestamo() {
                             <div className="flex items-center gap-1.5">
                               <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
                                 className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazoL}</span>
+                                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                              <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{unidadPlazoL}</span>
                             </div>
                           } />
                         {calculo?.numPeriodos > Number(plazoUnidades) && (
-                          <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--color-warning)' }}>
+                          <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--cf-gold-dark)' }}>
                             Plazo extendido de {plazoUnidades} a {calculo.numPeriodos} {unidadPlazoL} para cubrir el interés
                           </p>
                         )}
@@ -1470,7 +1474,7 @@ function NuevoPrestamo() {
                             editor={
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
-                                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                                 <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option><option value="lineal_dinamico">Decr. dinámico</option>
                               </select>
                             } />
@@ -1478,7 +1482,7 @@ function NuevoPrestamo() {
 
                         {modoInteres === 'solo_interes' && (
                           <div className="flex items-center justify-between py-1.5 px-1">
-                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
                             <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
                           </div>
                         )}
@@ -1496,20 +1500,20 @@ function NuevoPrestamo() {
                         <div
                           className="mt-2 rounded-[12px] p-3"
                           style={{
-                            background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)',
-                            border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)',
+                            background: 'color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)',
                           }}
                         >
-                          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-warning)' }}>
+                          <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>
                             El plazo se alarga para cubrir el interés
                           </p>
-                          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                          <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
                             Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {tasa}%, se necesitan{' '}
                             <span className="font-semibold">{calculo.periodosReales} cobros</span> ({calculo.diasReales} días)
                             en vez de los {calculo.periodosPedidos} que pediste. Por eso el total es{' '}
                             {formatMoney(calculo.totalAPagar)} y no {formatMoney(calculo.totalSinExtender)}.
                           </p>
-                          <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                          <p className="text-[10px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
                             Si querías {formatMoney(calculo.totalSinExtender)} en {calculo.periodosPedidos} cobros, baja la tasa.
                             Si querías terminar en ese plazo, sube la cuota.
                           </p>
@@ -1517,37 +1521,37 @@ function NuevoPrestamo() {
                       )}
 
                       {/* Info calculada — read only */}
-                      <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--color-border) 70%, transparent)' }}>
+                      <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Cobros totales</span>
-                          <span className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>{cobrosTotales}</span>
+                          <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cobros totales</span>
+                          <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>{cobrosTotales}</span>
                         </div>
                         <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
-                          <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
+                          <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
+                          <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
                         </div>
                         {diasSinCobroCliente.length > 0 && (
                           <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Sin cobro</span>
-                            <span className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>{diasSinCobroCliente.sort((a, b) => a - b).map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1)).join(', ')}</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Sin cobro</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>{diasSinCobroCliente.sort((a, b) => a - b).map(n => DIAS_FULL_SINGULAR[n].charAt(0).toUpperCase() + DIAS_FULL_SINGULAR[n].slice(1)).join(', ')}</span>
                           </div>
                         )}
                         {seguro && Number(montoSeguro) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Seguro</span>
-                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-purple)' }}>{formatMoney(Number(montoSeguro))}</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Seguro</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(Number(montoSeguro))}</span>
                           </div>
                         )}
                         {esEnCurso && Number(yaAbonado) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Abono previo</span>
-                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(Number(yaAbonado))}</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Abono previo</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(Number(yaAbonado))}</span>
                           </div>
                         )}
                       </div>
                     </div>
                     {calculo?.tablaAmortizacion?.length > 0 && (
-                      <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)', background: 'var(--color-bg-card)' }}>
+                      <div className="px-4 py-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--cf-border) 50%, transparent)', background: 'var(--cf-card)' }}>
                         <TablaAmortizacion
                           tabla={calculo.tablaAmortizacion}
                           frecuencia={frecuencia}
@@ -1568,19 +1572,19 @@ function NuevoPrestamo() {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
         const unidadPlazoLabel = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
         const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
-        const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+        const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
               title="Resumen del préstamo"
-              color="var(--color-success)"
-              accent={<span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca un campo para editar</span>}
+              color="var(--cf-green-dark)"
+              accent={<span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un campo para editar</span>}
             >
               <div className="space-y-0 text-sm">
                 {/* Cliente — no editable */}
-                <div className="flex justify-between py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--color-border) 50%, transparent)' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Cliente</span>
+                <div className="flex justify-between py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--cf-border) 50%, transparent)' }}>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>Cliente</span>
                   <span className="font-semibold">{clienteSeleccionado?.nombre}</span>
                 </div>
 
@@ -1598,8 +1602,8 @@ function NuevoPrestamo() {
                       <div className="flex items-center gap-1.5">
                         <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                          style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
+                          style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                        <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
                       </div>
                     }
                   />
@@ -1611,7 +1615,7 @@ function NuevoPrestamo() {
                   editor={
                     <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const newDefault = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (newDefault) setPlazoUnidades(newDefault) }}
                       className="h-8 rounded-lg border px-2 text-sm"
-                      style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                      style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                       <option value="diario">Diario</option>
                       <option value="semanal">Semanal</option>
                       <option value="quincenal">Quincenal</option>
@@ -1627,13 +1631,13 @@ function NuevoPrestamo() {
                     <div className="flex items-center gap-1.5">
                       <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
                         className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                        style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazoLabel}</span>
+                        style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                      <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{unidadPlazoLabel}</span>
                     </div>
                   }
                 />
                 {calculo?.numPeriodos > Number(plazoUnidades) && (
-                  <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--color-warning)' }}>
+                  <p className="text-[10px] px-1 -mt-1 pb-1" style={{ color: 'var(--cf-gold-dark)' }}>
                     Plazo extendido de {plazoUnidades} a {calculo.numPeriodos} {unidadPlazoLabel} para cubrir el interés
                   </p>
                 )}
@@ -1645,7 +1649,7 @@ function NuevoPrestamo() {
                     editor={
                       <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                         className="h-8 rounded-lg border px-2 text-sm"
-                        style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                        style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                         <option value="fijo">Clásico</option>
                         <option value="unico">De una vez</option>
                         <option value="solo_interes">Globo</option>
@@ -1660,7 +1664,7 @@ function NuevoPrestamo() {
 
                 {modoInteres === 'solo_interes' && (
                   <div className="flex items-center justify-between py-1.5 px-1">
-                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
+                    <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
                     <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
                   </div>
                 )}
@@ -1674,19 +1678,19 @@ function NuevoPrestamo() {
                 )}
 
                 {/* Calculados — read only */}
-                <div className="pt-2 mt-1 space-y-2" style={{ borderTop: '2px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+                <div className="pt-2 mt-1 space-y-2" style={{ borderTop: '2px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
                   <div className="flex justify-between">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}</span>
-                    <span className="font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}</span>
+                    <span className="font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
-                    <span className="font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(calculo.totalAPagar)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</span>
+                    <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(calculo.totalAPagar)}</span>
                   </div>
                   {calculo.totalInteres > 0 && (
                     <div className="flex justify-between">
-                      <span style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
-                      <span className="font-semibold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.totalInteres)}</span>
+                      <span style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
+                      <span className="font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.totalInteres)}</span>
                     </div>
                   )}
                 </div>
@@ -1697,10 +1701,10 @@ function NuevoPrestamo() {
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
               title="¿De qué cuenta sale?"
-              color="var(--color-info)"
-              accent={<span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Para el desglose por cuenta</span>}
+              color="var(--cf-ink-2)"
+              accent={<span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Para el desglose por cuenta</span>}
             >
-              <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
                 De dónde entregas este dinero. Por defecto efectivo.
               </p>
               <MetodoPagoSelector
@@ -1714,12 +1718,12 @@ function NuevoPrestamo() {
             <SectionCard
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>}
               title="Firma del cliente"
-              color="var(--color-purple)"
+              color="var(--cf-ink-2)"
             >
-              <p className="text-[11px] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 El cliente firma con el dedo sobre el recuadro. Opcional.
               </p>
-              <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#ffffff' }}>
+              <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--cf-border)', background: '#ffffff' }}>
                 <canvas
                   ref={firmaCanvasRef}
                   className="w-full touch-none"
@@ -1743,7 +1747,7 @@ function NuevoPrestamo() {
                   type="button"
                   onClick={firmaLimpiar}
                   className="mt-2 text-[11px] font-medium px-3 py-1 rounded-[8px] transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)' }}
+                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-3)' }}
                 >
                   Limpiar firma
                 </button>
@@ -1762,23 +1766,23 @@ function NuevoPrestamo() {
           <div
             className="max-w-2xl mx-auto rounded-t-[12px] px-4 py-3 flex items-center justify-between gap-4"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)), var(--color-bg-card))',
-              border: '1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-border))',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 12%, var(--cf-card)), var(--cf-card))',
+              border: '1px solid color-mix(in srgb, var(--cf-green-dark) 30%, var(--cf-border))',
               borderBottom: 'none',
               boxShadow: '0 -2px 10px rgba(0,0,0,0.2)',
             }}
           >
             <div className="min-w-0">
-              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 {frecuencia === 'diario' ? 'Cuota diaria' : frecuencia === 'semanal' ? 'Cuota semanal' : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
               </p>
-              <p className="text-lg font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--color-success)' }}>
+              <p className="text-lg font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--cf-green-dark)' }}>
                 {formatMoney(calculo.cuotaDiaria)}
               </p>
             </div>
             <div className="text-right min-w-0">
-              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</p>
-              <p className="text-base font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</p>
+              <p className="text-base font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--cf-ink)' }}>
                 {formatMoney(calculo.totalAPagar)}
               </p>
             </div>
@@ -1790,8 +1794,8 @@ function NuevoPrestamo() {
       <div
         className="fixed left-0 right-0 lg:left-60 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
-          background: 'var(--color-bg-base)',
-          borderTop: '1px solid var(--color-border)',
+          background: 'var(--cf-surface)',
+          borderTop: '1px solid var(--cf-border)',
           boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
         }}
       >
@@ -1831,18 +1835,18 @@ function NuevoPrestamo() {
       {/* Modal de inyeccion de capital (sin cambios) */}
       {modalInyeccion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] w-full max-w-md p-5">
-            <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">Capital insuficiente</h3>
-            <p className="text-sm text-[var(--color-text-primary)] mb-3">
-              Tu saldo actual de capital es <span className="font-mono-display text-[var(--color-accent)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--color-danger)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
+          <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[20px] w-full max-w-md p-5">
+            <h3 className="text-base font-semibold text-[var(--cf-ink)] mb-1">Capital insuficiente</h3>
+            <p className="text-sm text-[var(--cf-ink)] mb-3">
+              Tu saldo actual de capital es <span className="font-mono-display text-[var(--cf-gold)]">{formatMoney(modalInyeccion.saldoActual)}</span>. Te faltan <span className="font-mono-display text-[var(--cf-red-dark)]">{formatMoney(modalInyeccion.faltante)}</span> para este préstamo.
             </p>
-            <p className="text-xs text-[var(--color-text-muted)] mb-4">
+            <p className="text-xs text-[var(--cf-ink-3)] mb-4">
               Puedes inyectar ese dinero ahora (por ejemplo, de tus ahorros o de un socio) y el sistema crea el préstamo. La inyección queda registrada en tus movimientos de capital.
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Monto a inyectar</label>
+                <label className="block text-xs text-[var(--cf-ink-3)] mb-1">Monto a inyectar</label>
                 <MoneyInput
                   value={modalInyeccion.montoInyeccion}
                   onChange={(e) => setModalInyeccion(m => ({ ...m, montoInyeccion: e.target.value }))}
@@ -1850,7 +1854,7 @@ function NuevoPrestamo() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[var(--color-text-muted)] mb-1">Descripción (opcional)</label>
+                <label className="block text-xs text-[var(--cf-ink-3)] mb-1">Descripción (opcional)</label>
                 <Input
                   type="text"
                   value={modalInyeccion.descripcion}
@@ -1861,7 +1865,7 @@ function NuevoPrestamo() {
             </div>
 
             {error && (
-              <div className="mt-3 text-sm text-[var(--color-danger)]">{error}</div>
+              <div className="mt-3 text-sm text-[var(--cf-red-dark)]">{error}</div>
             )}
 
             <div className="flex gap-2 mt-5">
@@ -1869,7 +1873,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={() => { setModalInyeccion(null); setError('') }}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[12px]"
+                className="flex-1 px-4 py-2 bg-[var(--cf-fill)] text-[var(--cf-ink)] text-sm font-semibold rounded-[12px]"
               >
                 Cancelar
               </button>
@@ -1877,7 +1881,7 @@ function NuevoPrestamo() {
                 type="button"
                 onClick={confirmarInyeccionYCrear}
                 disabled={inyectando}
-                className="flex-1 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[12px] disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[var(--cf-green-dark)] text-[#0a1f14] text-sm font-semibold rounded-[12px] disabled:opacity-50"
               >
                 {inyectando ? 'Procesando...' : 'Inyectar y crear'}
               </button>

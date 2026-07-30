@@ -8,10 +8,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
-const COLOR_OK   = 'var(--color-accent)'
+const COLOR_OK   = 'var(--cf-gold)'
 const COLOR_HOT  = '#f97316'
-const COLOR_CRIT = 'var(--color-danger)'
-const COLOR_OFF  = 'var(--color-text-muted)'
+const COLOR_CRIT = 'var(--cf-red-dark)'
+const COLOR_OFF  = 'var(--cf-ink-3)'
 
 function moodColorFromCliente(c, prestamosActivos) {
   if (c?.estado === 'cancelado' || c?.estado === 'inactivo') return COLOR_OFF
@@ -220,24 +220,16 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
   const tienePrestamos = prestamosActivos.length > 0
 
   return (
-    <div
-      className="cf-hero-card relative rounded-[20px] overflow-hidden"
-      style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
-        boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-      }}
-    >
-      {/* Orb pulsante decorativo */}
-      <div
-        className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-        style={{ background: `radial-gradient(circle, color-mix(in srgb, ${color} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }}
-      />
-      {/* Patron de puntos */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.04]"
-        style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color }}
-      />
+    /* EL FONDO DEJA DE TEÑIRSE SEGUN EL HUMOR DEL CLIENTE.
+       Era un degradado del color de estado —rosa si debe, verde si va al dia—
+       con un orbe difuminado y una trama de puntos encima. Tres capas decorativas
+       para decir lo mismo que ya dice la pastilla de «35d en mora», y de paso
+       teñian el saldo: la misma cifra se leia como alarma o como tranquilidad
+       segun el fondo.
+
+       Ahora es el bloque carbon del sistema, el mismo de caja, ruta y socios.
+       El estado lo sigue diciendo la pastilla, con palabras. */
+    <div className="relative rounded-[20px] overflow-hidden" style={{ background: '#15161A' }}>
 
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
         {/* Top: avatar + nombre + cedula + chip estado + boton WA */}
@@ -261,7 +253,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                   onClick={() => setFotoMenuAbierto(v => !v)}
                   disabled={subiendoFoto}
                   className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                  style={{ background: 'var(--color-bg-card)', border: '2px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+                  style={{ background: 'var(--cf-card)', border: '2px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
                   title="Cambiar foto"
                 >
                   {subiendoFoto ? (
@@ -276,14 +268,14 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 {fotoMenuAbierto && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setFotoMenuAbierto(false)} />
-                    <div className="absolute top-full left-0 mt-1.5 z-50 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] shadow-lg overflow-hidden min-w-[130px]"
+                    <div className="absolute top-full left-0 mt-1.5 z-50 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] shadow-lg overflow-hidden min-w-[130px]"
                       style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.18)' }}>
                       <button
                         type="button"
                         onClick={() => fotoInputRef.current?.click()}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] transition-colors"
                       >
-                        <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                         </svg>
                         Galería
@@ -291,10 +283,10 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                       <button
                         type="button"
                         onClick={() => fotoCameraRef.current?.click()}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-colors"
-                        style={{ borderTop: '1px solid var(--color-border)' }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-medium text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] transition-colors"
+                        style={{ borderTop: '1px solid var(--cf-border)' }}
                       >
-                        <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
                         </svg>
@@ -308,13 +300,20 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-[var(--color-text-primary)] leading-tight truncate">
+            {/* EL NOMBRE NO SE CORTA. Es la identidad de la pantalla, y
+                «Ana Milena Guz...» obliga a entrar a editar para saber a quien
+                se le va a prestar. Cabe en dos lineas; con tres, se corta. */}
+            <h1 className="text-lg font-bold leading-tight" style={{
+              color: '#F3F3F6',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}>
               {cliente?.nombre}
             </h1>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] mt-0.5" style={{ color: '#8A8E98' }}>
               {cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `CC ${cliente.cedula}` : 'Sin documento'}
               {cliente?.ruta && (
-                <> · <span style={{ color: 'var(--color-purple)' }}>{cliente.ruta.nombre}</span></>
+                <> · <span style={{ color: '#A3A8B2' }}>{cliente.ruta.nombre}</span></>
               )}
             </p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
@@ -330,7 +329,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 {label}
               </span>
               {stats && (
-                <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{stats}</span>
+                <span className="text-[10px]" style={{ color: '#8A8E98' }}>{stats}</span>
               )}
             </div>
           </div>
@@ -341,7 +340,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               <a
                 href={`tel:${cliente.telefono}`}
                 className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-                style={{ background: 'rgba(59, 130, 246, 0.18)', color: 'var(--color-info)', border: '1px solid rgba(59, 130, 246, 0.35)' }}
+                style={{ background: 'rgba(255,255,255,.08)', color: '#F3F3F6', border: '1px solid rgba(255,255,255,.14)' }}
                 title="Llamar"
                 aria-label="Llamar"
               >
@@ -354,7 +353,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 <button
                   onClick={onWhatsApp}
                   className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-                  style={{ background: 'rgba(37, 211, 102, 0.18)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.35)' }}
+                  style={{ background: 'rgba(255,255,255,.08)', color: '#25D366', border: '1px solid rgba(255,255,255,.14)' }}
                   title="WhatsApp"
                   aria-label="WhatsApp"
                 >
@@ -370,39 +369,32 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
         {/* Saldo total */}
         {tienePrestamos && (
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#A3A8B2' }}>
               Saldo total pendiente
             </p>
             <p
               className="font-mono-display font-bold leading-none tracking-tight truncate"
-              style={{
-                color,
-                fontSize: 'clamp(28px, 8vw, 40px)',
-                textShadow: 'none',
-              }}
+              style={{ color: '#F3F3F6', fontSize: 'clamp(28px, 8vw, 40px)' }}
             >
               {formatMoney(Math.round(animSaldo))}
             </p>
             <div className="flex items-center justify-between gap-2 mt-2">
-              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px]" style={{ color: '#8A8E98' }}>
                 {prestamosActivos.length} {prestamosActivos.length === 1 ? 'préstamo activo' : 'préstamos activos'}
                 {' · '}
                 {pctPagado}% pagado
               </p>
               {totalAPagar > 0 && (
-                <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
+                <p className="text-[11px] font-mono-display" style={{ color: '#8A8E98' }}>
                   de {formatMoney(totalAPagar)}
                 </p>
               )}
             </div>
             {/* Progress bar */}
-            <div className="h-1.5 rounded-full overflow-hidden mt-2" style={{ background: 'var(--color-bg-hover)' }}>
+            <div className="h-1.5 rounded-full overflow-hidden mt-2" style={{ background: 'rgba(255,255,255,.12)' }}>
               <div
                 className="h-full rounded-full transition-[width] duration-700"
-                style={{
-                  width: `${pctPagado}%`,
-                  background: `linear-gradient(90deg, color-mix(in srgb, ${color} 60%, transparent), ${color})`,
-                }}
+                style={{ width: `${pctPagado}%`, background: '#2FBE6A' }}
               />
             </div>
           </div>
@@ -410,7 +402,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
 
         {!tienePrestamos && (
           <div className="text-center py-3">
-            <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[12px]" style={{ color: '#8A8E98' }}>
               Este cliente no tiene préstamos activos
             </p>
           </div>
@@ -436,7 +428,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
       </svg>
     ),
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
   })
   if (cliente?.direccion) items.push({
     label: 'Dirección',
@@ -447,7 +439,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
       </svg>
     ),
-    color: 'var(--color-info)',
+    color: 'var(--cf-ink-2)',
   })
   if (cliente?.referencia) items.push({
     label: 'Referencia',
@@ -457,7 +449,7 @@ export function InfoContactoCard({ cliente }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
       </svg>
     ),
-    color: 'var(--color-purple)',
+    color: 'var(--cf-ink-2)',
   })
 
   if (items.length === 0 && !cliente?.notas) return null
@@ -465,14 +457,14 @@ export function InfoContactoCard({ cliente }) {
   return (
     <div
       className="rounded-[16px] p-3"
-      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, var(--color-info) 16%, var(--color-border))' }}
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 16%, var(--cf-border))' }}
     >
-      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2 px-1" style={{ color: 'var(--color-text-muted)' }}>
+      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2 px-1" style={{ color: 'var(--cf-ink-3)' }}>
         Información de contacto
       </p>
       <div className="space-y-1.5">
         {items.map((it, i) => (
-          <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-[10px]" style={{ background: `color-mix(in srgb, ${it.color} 5%, var(--color-bg-base))` }}>
+          <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-[10px]" style={{ background: `color-mix(in srgb, ${it.color} 5%, var(--cf-surface))` }}>
             <div
               className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
               style={{ background: `color-mix(in srgb, ${it.color} 15%, transparent)`, color: it.color }}
@@ -480,15 +472,15 @@ export function InfoContactoCard({ cliente }) {
               <span className="w-3.5 h-3.5">{it.icon}</span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
-              <p className="text-[12px] truncate" style={{ color: 'var(--color-text-primary)' }}>{it.value}</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>{it.label}</p>
+              <p className="text-[12px] truncate" style={{ color: 'var(--cf-ink)' }}>{it.value}</p>
             </div>
           </div>
         ))}
         {cliente?.notas && (
-          <div className="px-2 py-1.5 rounded-[10px]" style={{ background: 'var(--color-bg-base)' }}>
-            <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Notas</p>
-            <p className="text-[12px] whitespace-pre-wrap" style={{ color: 'var(--color-text-primary)' }}>{cliente.notas}</p>
+          <div className="px-2 py-1.5 rounded-[10px]" style={{ background: 'var(--cf-surface)' }}>
+            <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: 'var(--cf-ink-3)' }}>Notas</p>
+            <p className="text-[12px] whitespace-pre-wrap" style={{ color: 'var(--cf-ink)' }}>{cliente.notas}</p>
           </div>
         )}
       </div>
@@ -497,32 +489,75 @@ export function InfoContactoCard({ cliente }) {
 }
 
 // Acciones rapidas en grid (Nuevo prestamo, Historial, Editar, Inactivar, Eliminar)
+/* ══ Las acciones del cliente ══════════════════════════════════════════════
+   EL COLOR VUELVE A SU SEMÁNTICA — la misma decisión que el menú de gestión.
+
+   Eran OCHO PASTILLAS EN MOSAICO de dos columnas, cada una con su color y su
+   icono teñido: nuevo préstamo en verde, reagendar en ámbar, ubicación en gris,
+   historial en gris, QR en gris, editar en gris, inactivar en ámbar, eliminar en
+   rojo. Con ocho colores a la vez, EL COLOR NO DICE NADA: «eliminar» pesa lo
+   mismo que «QR».
+
+   Aquí son filas, y solo lleva color la que reconoce una pérdida. La primera
+   —prestarle otra vez— es la que trae al dueño a esta pantalla, así que va
+   destacada; el resto son de mantenimiento y se leen de arriba abajo. */
 export function AccionesClienteChips({ acciones }) {
   if (!acciones || acciones.length === 0) return null
+  const [principal, ...resto] = acciones
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {acciones.map((a, i) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {principal && (
         <button
-          key={i}
-          onClick={a.onClick}
-          disabled={a.disabled}
-          className="group h-12 px-3 rounded-[12px] flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40"
+          onClick={principal.onClick}
+          disabled={principal.disabled}
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${a.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: `1px solid color-mix(in srgb, ${a.color} 22%, var(--color-border))`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: '100%', height: 48, borderRadius: 14, border: 0, cursor: 'pointer',
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+            font: 'inherit', fontSize: 15, fontWeight: 700,
+            opacity: principal.disabled ? .4 : 1,
           }}
         >
-          <div
-            className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-transform group-hover:scale-110"
-            style={{ background: `color-mix(in srgb, ${a.color} 18%, transparent)`, color: a.color }}
-          >
-            <span className="w-4 h-4">{a.icon}</span>
-          </div>
-          <span className="text-[12px] font-semibold truncate text-left" style={{ color: a.color }}>
-            {a.label}
-          </span>
+          <span style={{ width: 17, height: 17, display: 'inline-flex' }}>{principal.icon}</span>
+          {principal.label}
         </button>
-      ))}
+      )}
+
+      {resto.length > 0 && (
+        <div style={{
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+        }}>
+          {resto.map((a, i) => (
+            <button
+              key={i}
+              onClick={a.onClick}
+              disabled={a.disabled}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                height: 50, padding: '0 16px', background: 'none', border: 0,
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                cursor: a.disabled ? 'default' : 'pointer',
+                textAlign: 'left', font: 'inherit',
+                opacity: a.disabled ? .4 : 1,
+                // Solo «eliminar» va en rojo: es la unica que reconoce una
+                // perdida. Ninguna otra fila lleva color.
+                color: a.peligro ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+              }}
+            >
+              <span style={{
+                width: 17, height: 17, flex: 'none', display: 'inline-flex',
+                color: a.peligro ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)',
+              }}>{a.icon}</span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 600 }}>{a.label}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
+                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                <path d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
