@@ -27,7 +27,7 @@ import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
-import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado, PieGestion } from '@/components/pantallas/Gestion'
+import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado, PieGestion, AplazarCobro, DiaDeCobro, CorregirPrestamo } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import Simulador from '@/components/pantallas/Simulador'
@@ -888,6 +888,65 @@ export default function Estilo() {
             recibes="$980.000" dejasDeGanar="$200.000"
             gananciaTotal="$580.000" cuandoVuelve="hoy, no en 3 meses" />
           <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Cerrar por $980.000" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-aplazar" titulo="Aplazar el cobro" subtitulo="Steven Olmos · toca hoy · lleva 6 días de atraso">
+          <AplazarCobro
+            cuandos={[
+              { id: 'manana', etiqueta: 'Mañana', nota: 'mié 29' },
+              { id: 'tres', etiqueta: 'En 3 días', nota: 'vie 31' },
+              { id: 'otra', etiqueta: 'Otra fecha', nota: 'elegir' },
+            ]}
+            cuando="tres"
+            motivos={[
+              { id: 'viernes', etiqueta: 'Le pagan el viernes' },
+              { id: 'noestaba', etiqueta: 'No estaba' },
+              { id: 'enfermo', etiqueta: 'Está enfermo' },
+              { id: 'otro', etiqueta: 'Otro' },
+            ]}
+            motivo="viernes"
+            cobrasAntes="hoy, martes 28" cobrasDespues="viernes 31"
+            cobrasHoyLinea="$145.000 → $107.000" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Aplazar al viernes 31" />
+        </HojaDemo>
+
+        <HojaDemo id="ges-dia" titulo="Cambiar el día de cobro" subtitulo="Para siempre, no solo esta vez">
+          <DiaDeCobro
+            dias={[
+              { id: 1, etiqueta: 'L' }, { id: 2, etiqueta: 'M' }, { id: 3, etiqueta: 'M' },
+              { id: 4, etiqueta: 'J' }, { id: 5, etiqueta: 'V' }, { id: 6, etiqueta: 'S' },
+              { id: 0, etiqueta: 'D', apagado: true },
+            ]}
+            dia={5}
+            nota="Hoy le cobras los martes. Domingo está apagado en tu configuración."
+            desdes={[
+              { id: 'proxima', etiqueta: 'Desde la próxima' },
+              { id: 'todas', etiqueta: 'Recalcular todas' },
+            ]}
+            desde="proxima"
+            cobraAntes="martes" cobraDespues="viernes"
+            proximoCobro="viernes 31 de julio" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Guardar los viernes" />
+        </HojaDemo>
+
+        {/* T19-05 NO es una hoja: la lamina la dibuja a pantalla completa con su
+            cabecera y flecha atras. Una hoja se cierra con un gesto hacia abajo, y
+            aqui un gesto de mas deja a medias un cambio que reescribe el historico.
+            En el banco se enseña con `HojaDemo` solo para que quepa en la rejilla. */}
+        <HojaDemo id="ges-corregir" titulo="Corregir el préstamo" subtitulo="Steven Olmos · préstamo 1">
+          <CorregirPrestamo
+            aviso={<>Esto es para <strong>arreglar un error de digitación</strong>, no para renegociar. Ya hay 22 pagos registrados: cambiar el monto o el interés recalcula todo hacia atrás.</>}
+            peligrosos={[
+              { clave: 'monto', etiqueta: 'Monto prestado', valor: '$350.000', consecuencia: 'Recalcula 22 pagos', onTocar: () => {} },
+              { clave: 'interes', etiqueta: 'Interés', valor: '20%', consecuencia: 'Recalcula 22 pagos', onTocar: () => {} },
+              { clave: 'inicio', etiqueta: 'Fecha de inicio', valor: '4 de julio de 2026', consecuencia: 'Mueve las fechas', texto: true, onTocar: () => {} },
+            ]}
+            seguros={[
+              { clave: 'ruta', etiqueta: 'Ruta', valor: 'Ruta 2 · Pepito', onTocar: () => {} },
+              { clave: 'nota', etiqueta: 'Nota interna', tipo: 'nota', valor: 'Trabaja en la plaza, mejor buscarlo antes de las 9.' },
+            ]}
+          />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Guardar cambios" />
         </HojaDemo>
       </div>
 

@@ -128,7 +128,12 @@ export function TiraCifras({ columnas = [], sobreOscuro = false }) {
 }
 
 /** "Antes → después" — obligatorio en TODO modal que cambie plata. */
-export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes, despues, tono = 'neutro', resumen }) {
+/* `texto` para cuando lo que cambia NO ES PLATA sino una fecha o un día —«hoy,
+   martes 28» → «viernes 31», «martes» → «viernes»—. T19-01 y T19-02 lo piden a
+   15/16px y sin cifras tabulares: alinear en columna «viernes» contra «martes» no
+   sirve de nada, y a 17/20 con la fuente de las cifras una fecha larga se sale.
+   Las cifras siguen a 17/20 con `cf-fig`, que es la regla 1 del índice. */
+export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes, despues, tono = 'neutro', resumen, texto = false }) {
   const colorDespues = tono === 'mejora' ? '#2FBE6A' : tono === 'empeora' ? '#F0575C' : '#F3F3F6'
   return (
     <div style={{ background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 'none' }}>
@@ -136,7 +141,13 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{ fontSize: 11, color: '#8A8E98' }}>{concepto}</span>
-          <span className="cf-fig" style={{ fontSize: 17, color: '#8A8E98', textDecoration: 'line-through' }}>{antes}</span>
+          <span
+            className={texto ? undefined : 'cf-fig'}
+            style={{
+              fontSize: texto ? 15 : 17, fontWeight: texto ? 600 : undefined,
+              color: '#8A8E98', textDecoration: 'line-through',
+            }}
+          >{antes}</span>
         </div>
         {/* `#F5B824` a mano y no `var(--cf-gold)`: este bloque es SIEMPRE oscuro,
             así que el token del tema claro daría el dorado equivocado. Es el error
@@ -147,7 +158,13 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
         </svg>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
           <span style={{ fontSize: 11, color: '#8A8E98' }}>ahora</span>
-          <span className="cf-fig" style={{ fontSize: 20, color: colorDespues }}>{despues}</span>
+          <span
+            className={texto ? undefined : 'cf-fig'}
+            style={{
+              fontSize: texto ? 16 : 20, fontWeight: texto ? 700 : undefined,
+              color: colorDespues, textAlign: 'right',
+            }}
+          >{despues}</span>
         </div>
       </div>
       {/* Un cambio de plata casi nunca mueve UNA sola cifra: subir la cuota
@@ -163,10 +180,14 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
               {/* `valor` acepta un nodo, no solo texto: T13-02 necesita «6 ago →
                   14 ago» con la fecha nueva en dorado dentro de la misma línea, y
                   con una cadena eso no se puede pintar a dos colores. */}
-              <span className="cf-fig" style={{
-                fontSize: 15, flex: 'none', textAlign: 'right',
-                color: r.tono === 'favor' ? '#2FBE6A' : r.tono === 'contra' ? '#F0575C' : '#F3F3F6',
-              }}>{r.valor}</span>
+              <span
+                className={r.texto ? undefined : 'cf-fig'}
+                style={{
+                  fontSize: r.texto ? 14 : 15, fontWeight: r.texto ? 600 : undefined,
+                  flex: 'none', textAlign: 'right',
+                  color: r.tono === 'favor' ? '#2FBE6A' : r.tono === 'contra' ? '#F0575C' : '#F3F3F6',
+                }}
+              >{r.valor}</span>
             </div>
           ))}
         </>

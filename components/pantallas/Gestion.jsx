@@ -109,6 +109,33 @@ function Atajos({ opciones = [], activo, onElegir }) {
   )
 }
 
+/* Etiquetas que envuelven, con el activo en anillo dorado. Son los motivos: «se
+   mudó / no contesta / otro» en T13-03 y «le pagan el viernes / no estaba / está
+   enfermo / otro» en T19-01. Envuelven y NO se recortan, porque una opción a
+   medias no se puede elegir — y estos textos son frases, no palabras.
+
+   Estaba escrita a mano dentro de `MoverAPerdidos`, y en cuanto la segunda
+   pantalla la necesitó habría habido dos copias de lo mismo divergiendo. */
+function Etiquetas({ opciones = [], activo, onElegir }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+      {opciones.map((o) => {
+        const on = o.id === activo
+        return (
+          <button key={o.id} type="button" onClick={() => onElegir?.(o)} aria-pressed={on} style={{
+            display: 'inline-flex', alignItems: 'center', height: 40, padding: '0 14px',
+            borderRadius: 14, cursor: 'pointer', font: 'inherit', flex: 'none',
+            fontSize: 13, fontWeight: on ? 700 : 600,
+            background: 'var(--cf-card)',
+            color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+            border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+          }}>{o.etiqueta}</button>
+        )
+      })}
+    </div>
+  )
+}
+
 /* El campo de monto con anillo dorado. Es la misma tarjeta de la hoja de pago:
    rótulo, `$` a 23 y la cifra a 38, y debajo los atajos. Va con anillo porque en
    estas hojas también es lo único que hay que teclear. */
@@ -570,21 +597,7 @@ export function MoverAPerdidos({
       {motivos?.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
           <Rotulo>Por qué lo das por perdido</Rotulo>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-            {motivos.map((m) => {
-              const on = m.id === motivo
-              return (
-                <button key={m.id} type="button" onClick={() => onMotivo?.(m)} aria-pressed={on} style={{
-                  display: 'inline-flex', alignItems: 'center', height: 40, padding: '0 14px',
-                  borderRadius: 14, cursor: 'pointer', font: 'inherit', flex: 'none',
-                  fontSize: 13, fontWeight: on ? 700 : 600,
-                  background: 'var(--cf-card)',
-                  color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
-                  border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
-                }}>{m.etiqueta}</button>
-              )
-            })}
-          </div>
+          <Etiquetas opciones={motivos} activo={motivo} onElegir={onMotivo} />
         </div>
       )}
 
@@ -669,6 +682,302 @@ export function CerrarAnticipado({
           <span style={{ fontSize: 14, fontWeight: 600, color: '#F3F3F6', flex: 'none' }}>{cuandoVuelve}</span>
         </div>
       </div>
+    </>
+  )
+}
+
+/* ══ T19-01 · Aplazar el cobro ═════════════════════════════════════════════
+   La hoja que hoy no existe y que el cobrador necesita a diario: el cliente dice
+   «vuelva el viernes» y hay que sacarlo de la lista de hoy sin perder el rastro.
+
+   DOS COSAS QUE LA HACEN HONESTA:
+
+   · «Aplazar NO PERDONA EL ATRASO». Sigue contando desde el día que debió pagar.
+     Solo lo saca de tu lista de hoy. Sin esa frase, aplazar parece un indulto y se
+     usaría para tapar mora — y la mora tapada es la que se convierte en pérdida.
+   · «Las demás cuotas NO SE MUEVEN». Solo se mueve este cobro. Aplazar no es
+     estirar el plazo: para eso está T13-02, y confundirlos cambia lo que el
+     cliente acaba pagando.
+
+   Y «¿qué te dijo?» no es burocracia: es el dato que explica por qué una ruta se
+   cae. «No estaba» tres veces seguidas no es lo mismo que «le pagan el viernes».
+
+   NOTA · `proximoCobroManual`. Mover este cobro escribe ese campo, y ese campo
+   PISA el cálculo del día ancla: mientras esté puesto, cambiar la frecuencia o el
+   día de cobro no mueve la fecha. Quien monte esta hoja tiene que limpiarlo en
+   todo cambio de calendario, que es el bug que ya costó una sesión. */
+export function AplazarCobro({
+  cuandos = [], cuando, onCuando,
+  motivos = [], motivo, onMotivo,
+  cobrasAntes, cobrasDespues, cobrasHoyLinea, avisoCuotas = 'no se mueven',
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+        <Rotulo>¿Para cuándo?</Rotulo>
+        <div style={{ display: 'flex', gap: 7 }}>
+          {cuandos.map((c) => {
+            const on = c.id === cuando
+            return (
+              <button key={c.id} type="button" onClick={() => onCuando?.(c)} aria-pressed={on} style={{
+                flex: 1, minWidth: 0, height: 64, borderRadius: 14, cursor: 'pointer',
+                display: 'inline-flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: 2, padding: '0 6px', font: 'inherit',
+                background: 'var(--cf-card)',
+                border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+                boxShadow: on ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)' }}>
+                  {c.etiqueta}
+                </span>
+                <span className="cf-num" style={{ fontSize: 11, color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-3)' }}>
+                  {c.nota}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {motivos.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+          <Rotulo>¿Qué te dijo?</Rotulo>
+          <Etiquetas opciones={motivos} activo={motivo} onElegir={onMotivo} />
+        </div>
+      )}
+
+      {/* Valores de TEXTO, no de plata: lo que cambia es un día. */}
+      <AntesDespues
+        concepto="Lo cobras"
+        antes={cobrasAntes}
+        despues={cobrasDespues}
+        tono="neutro"
+        texto
+        resumen={[
+          cobrasHoyLinea ? { etiqueta: 'Cobras hoy', valor: cobrasHoyLinea } : null,
+          { etiqueta: 'Las demás cuotas', valor: avisoCuotas, texto: true },
+        ].filter(Boolean)}
+      />
+
+      <Aviso>
+        Aplazar no perdona el atraso: sigue contando desde el día que debió pagar.
+        Solo lo saca de tu lista de hoy.
+      </Aviso>
+    </>
+  )
+}
+
+/* ══ T19-02 · Cambiar el día de cobro ══════════════════════════════════════
+   «PARA SIEMPRE, NO SOLO ESTA VEZ» va en el subtítulo, y es toda la pantalla:
+   es lo que la separa de aplazar. Quien quiere mover un cobro entra aquí por
+   error y le cambia el calendario al cliente para siempre.
+
+   EL DOMINGO SALE APAGADO si está desactivado en la configuración de la
+   organización. Apagado y no escondido: si falta un día en la fila, el dueño se
+   pregunta si la app está rota; apagado, entiende que él lo apagó y dónde
+   cambiarlo. Lo mismo con cualquier otro día sin cobro.
+
+   NOTA · el mismo `proximoCobroManual` de T19-01: cambiar el día de cobro tiene
+   que LIMPIARLO, o la fecha no se mueve y parece que el cambio no se guardó. */
+export function DiaDeCobro({
+  dias = [], dia, onDia, nota,
+  desdes = [], desde, onDesde,
+  cobraAntes, cobraDespues, proximoCobro,
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+        <Rotulo>¿Qué día de la semana?</Rotulo>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {dias.map((d) => {
+            const on = d.id === dia
+            return (
+              <button
+                key={d.id} type="button"
+                onClick={() => !d.apagado && onDia?.(d)}
+                disabled={d.apagado}
+                aria-pressed={on}
+                title={d.apagado ? 'Apagado en tu configuración' : undefined}
+                style={{
+                  flex: 1, minWidth: 0, height: 52, borderRadius: 12,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  font: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600,
+                  cursor: d.apagado ? 'not-allowed' : 'pointer',
+                  ...(on
+                    ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: 'none' }
+                    : d.apagado
+                      // Apagado: relleno gris y borde más suave. Se ve que está ahí y
+                      // que no se puede tocar, que es distinto de no estar.
+                      ? { background: 'var(--cf-fill)', color: 'var(--cf-ink-4)', border: '1px solid var(--cf-hairline)' }
+                      : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }),
+                }}
+              >{d.etiqueta}</button>
+            )
+          })}
+        </div>
+        {nota && <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{nota}</span>}
+      </div>
+
+      {desdes.length > 1 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+          <Rotulo>¿Desde cuándo?</Rotulo>
+          <Opciones opciones={desdes} activo={desde} onElegir={onDesde} alto={48} />
+        </div>
+      )}
+
+      <AntesDespues
+        concepto="Le cobras los"
+        antes={cobraAntes}
+        despues={cobraDespues}
+        tono="neutro"
+        texto
+        resumen={[{ etiqueta: 'Próximo cobro', valor: proximoCobro, texto: true }]}
+      />
+    </>
+  )
+}
+
+/* ══ T19-05 · Corregir el préstamo ═════════════════════════════════════════
+   LA PANTALLA MÁS PELIGROSA DEL SISTEMA, y por eso se parte en dos:
+
+     arriba  lo que RECALCULA los pagos hacia atrás, marcado en rojo CAMPO POR
+             CAMPO con lo que cada uno rompe;
+     abajo   lo que se puede tocar sin miedo.
+
+   No es un formulario plano donde el monto prestado y la nota interna valen lo
+   mismo. El aviso de arriba deja clara la intención: esto arregla ERRORES DE
+   DIGITACIÓN. Para renegociar están las otras siete hojas de gestión.
+
+   NO ES UNA HOJA INFERIOR. La lámina la dibuja a pantalla completa, con su propia
+   cabecera y flecha atrás. Tiene sentido: una hoja se cierra con un gesto hacia
+   abajo, y aquí un gesto de más deja a medias un cambio que reescribe el
+   histórico. Se sale por la flecha, a propósito.
+
+   Cada fila peligrosa lleva SU PROPIA consecuencia —«recalcula 22 pagos», «mueve
+   las fechas»—, no un aviso genérico arriba. Un aviso genérico se lee una vez y se
+   olvida; la pastilla está al lado del campo que se va a tocar. */
+export function CorregirPrestamo({
+  aviso, peligrosos = [], seguros = [], firma = 'Cada cambio queda firmado con tu nombre y la hora.',
+}) {
+  return (
+    <>
+      {aviso && (
+        <div style={{
+          flex: 'none', display: 'flex', gap: 11, alignItems: 'flex-start',
+          padding: '13px 17px', borderRadius: 'var(--cf-r-card-sm)',
+          background: 'var(--cf-red-bg)', border: '1px solid var(--cf-red-border)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red)" strokeWidth="2.2" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}>
+            <path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17h.01" />
+          </svg>
+          <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--cf-red-darker)' }}>{aviso}</span>
+        </div>
+      )}
+
+      {/* Los campos que reescriben el histórico. Van juntos en una tarjeta, con
+          filete entre filas: la agrupación ES la advertencia. */}
+      {peligrosos.length > 0 && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+        }}>
+          {peligrosos.map((c, i) => (
+            <button
+              key={c.clave}
+              type="button"
+              onClick={c.onTocar}
+              style={{
+                display: 'flex', flexDirection: 'column', gap: 6, width: '100%',
+                padding: '12px 18px', textAlign: 'left', font: 'inherit',
+                background: 'none', border: 0,
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                cursor: c.onTocar ? 'pointer' : 'default',
+              }}
+            >
+              <Rotulo>{c.etiqueta}</Rotulo>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%' }}>
+                <span
+                  className={c.texto ? undefined : 'cf-fig'}
+                  style={{
+                    flex: 1, minWidth: 0, fontSize: c.texto ? 17 : 20, fontWeight: 600,
+                    color: 'var(--cf-ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}
+                >{c.valor}</span>
+                {/* La consecuencia DE ESTE CAMPO, no un aviso genérico. */}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', height: 26, padding: '0 10px',
+                  borderRadius: 11, flex: 'none',
+                  background: 'var(--cf-red-pill-bg)', border: '1px solid var(--cf-red-pill-border)',
+                  fontSize: 11, fontWeight: 700, color: 'var(--cf-red-dark)',
+                }}>{c.consecuencia}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {seguros.length > 0 && (
+        <>
+          <Rotulo style={{ padding: '4px 2px 0' }}>Se puede cambiar sin riesgo</Rotulo>
+          <div style={{
+            flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          }}>
+            {seguros.map((c, i) => (
+              <div key={c.clave} style={{
+                display: 'flex', flexDirection: 'column', gap: 7, padding: '12px 18px',
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+              }}>
+                <Rotulo>{c.etiqueta}</Rotulo>
+                {c.tipo === 'nota' ? (
+                  <textarea
+                    value={c.valor ?? ''}
+                    onChange={(e) => c.onCambio?.(e.target.value)}
+                    rows={2}
+                    aria-label={c.etiqueta}
+                    style={{
+                      minHeight: 54, padding: '12px 15px', borderRadius: 12, width: '100%',
+                      background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+                      font: 'inherit', fontSize: 14, lineHeight: 1.45, color: 'var(--cf-ink-2)',
+                      resize: 'vertical', outline: 'none',
+                    }}
+                  />
+                ) : (
+                  <button type="button" onClick={c.onTocar} style={{
+                    display: 'flex', alignItems: 'center', gap: 11, width: '100%',
+                    height: 48, padding: '0 15px', borderRadius: 12, cursor: 'pointer',
+                    background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+                    font: 'inherit', textAlign: 'left',
+                  }}>
+                    <span style={{
+                      flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>{c.valor}</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* La firma no es un adorno legal: es lo que permite que dos personas se
+          repartan el trabajo sin desconfiar. */}
+      {firma && (
+        <div style={{
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 11,
+          padding: '12px 16px', borderRadius: 14,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)" strokeWidth="2" strokeLinecap="round" style={{ flex: 'none' }}>
+            <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" />
+          </svg>
+          <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-2)', flex: 1 }}>{firma}</span>
+        </div>
+      )}
     </>
   )
 }
