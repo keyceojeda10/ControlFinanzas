@@ -727,7 +727,10 @@ export default function CajaPage() {
         )}
 
 
-        {pagosDiaCard}
+        {/* `pagosDiaCard` se queda para el detalle —filtrar por cobrador y bajar
+          el CSV— pero SOLO CUANDO HAY PAGOS. Vacia era una segunda tarjeta
+          diciendo «0 registros» justo debajo de «Movimientos de hoy · 0». */}
+      {cantidadPagosFiltrados > 0 && pagosDiaCard}
 
         {/* Cierre */}
         {cierreHoy && !modoAjusteCierre ? (
@@ -973,26 +976,12 @@ export default function CajaPage() {
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Caja</h1>
-          <p className="text-[12px] text-[var(--color-text-secondary)] mt-0.5">
-            {periodo.modo === 'hoy' ? (cajaData?.fechaDisplay || '—') : `${periodo.desde} a ${periodo.hasta}`}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={abrirReporte}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-semibold transition-colors"
-          style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-          </svg>
-          Reporte
-        </button>
-      </div>
+      {/* LA CABECERA LA PONE `CajaDia`, no esta pagina.
+
+          Al montar el bloque nuevo dejé la vieja encima y quedaron DOS: «Caja ·
+          30 de jul de 2026 · Reporte» y debajo otra vez «Caja · jueves, 30 de
+          julio · Reporte». Dos titulos iguales con la misma fecha escrita de dos
+          maneras distintas, y dos botones que abren el mismo informe. */}
 
       {/* Banner explicativo (colapsable) */}
       {bannerCajaVisible && (
@@ -1208,6 +1197,7 @@ export default function CajaPage() {
           LO QUE NO SE TOCA: el cierre del dia, los ajustes, los gastos, la
           reapertura, el desglose por cuenta y los modales. Solo lo que se ve. */}
       <CajaDia
+        alto="auto"
         fecha={fechaLarga}
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
@@ -1225,40 +1215,52 @@ export default function CajaPage() {
         onReporte={() => setShowReporte(true)}
       />
 
-      {pagosDiaCard}
+      {cantidadPagosFiltrados > 0 && pagosDiaCard}
 
-      <div
-        className="relative rounded-[20px] overflow-hidden px-5 py-5 cf-card-shadow"
-        style={{
-          background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)',
-          border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))',
-        }}
-      >
-        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-[0.06] pointer-events-none" style={{ background: 'radial-gradient(circle, var(--color-accent), transparent 70%)' }} />
-        <div className="relative">
-          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Tu patrimonio</p>
-          <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Todo el dinero del negocio acumulado</p>
-          <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: saldoGeneralActual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-            {formatMoney(saldoGeneralActual)}
-          </p>
+      {/* PATRIMONIO Y CAJA NO SON LA MISMA CIFRA, y por eso las dos siguen
+          existiendo — pero se distinguen a la vista.
 
-          <div className="mt-4 pt-3 space-y-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--color-accent) 12%, transparent)' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setShowAjusteCaja(true)
-                setErrorAjuste('')
-                setAjusteDireccion('ingreso')
-              }}
-              className="w-full h-11 rounded-[12px] text-sm font-bold transition-all active:scale-[0.98]"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-bg-base)' }}
-            >
-              Ajustar saldo general
-            </button>
-            <Link href="/capital?view=manual-movements" className="block text-center text-xs font-semibold py-1" style={{ color: 'var(--color-info)' }}>
-              Ver movimientos en Capital
-            </Link>
-          </div>
+          Arriba, en `CajaDia`: la CAJA, el efectivo que hay ahora para prestar.
+          Aquí: el PATRIMONIO, que incluye lo que está en la calle. Cuando no hay
+          nada prestado coinciden, y ahí es cuando el nombre de cada una es lo
+          único que las separa. La de arriba manda —es la de hoy—, así que esta
+          va en tarjeta plana y con la cifra más pequeña: existe, se consulta, y
+          no compite. */}
+      <div style={{
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+        display: 'flex', flexDirection: 'column', gap: 14,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>Tu patrimonio</span>
+          <span className="cf-fig" style={{
+            fontSize: 24, color: saldoGeneralActual >= 0 ? 'var(--cf-ink)' : 'var(--cf-red-dark)',
+          }}>{formatMoney(saldoGeneralActual)}</span>
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+            Todo el dinero del negocio: lo que tienes en caja más lo que está prestado.
+          </span>
+        </div>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          paddingTop: 13, borderTop: '1px solid var(--cf-hairline)',
+        }}>
+          <button
+            type="button"
+            onClick={() => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteDireccion('ingreso') }}
+            style={{
+              height: 40, padding: '0 15px', borderRadius: 12, flex: 'none', cursor: 'pointer',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              font: 'inherit', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)',
+            }}
+          >Ajustar saldo</button>
+          <Link href="/capital?view=manual-movements" style={{
+            font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
+            textDecoration: 'none', flex: 'none',
+          }}>Ver movimientos</Link>
         </div>
       </div>
 

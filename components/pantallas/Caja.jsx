@@ -90,10 +90,20 @@ export function CajaDia({
   baseInicial, cobrado, prestado, gastos, ajustes, saldo,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
+  // `height: 100%` es para cuando la pantalla ES esta —el area de dentro
+  // scrollea sola—. Montada dentro de una pagina que ya scrollea, ese 100%
+  // reserva la altura entera y deja un HUECO BLANCO de media pantalla debajo de
+  // los movimientos. Ahi va `auto`.
+  alto = '100%',
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: alto }}>
+      <div style={{
+        flex: alto === 'auto' ? 'none' : 1, minHeight: 0,
+        overflowY: alto === 'auto' ? 'visible' : 'auto',
+        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+        padding: '8px var(--cf-pad-screen) 16px',
+      }}>
 
         {/* El encabezado: «Caja», la fecha debajo, y «Reporte» a la derecha.
             Faltaba entero, como en las otras listas: la cabecera del armazon es
@@ -276,8 +286,12 @@ export function CajaDia({
         </Tarjeta>
 
         {/* El contenido pasa POR DEBAJO de la pastilla a propósito, pero ningún
-            texto puede quedar a medio tapar. */}
-        <span style={{ height: 92, flex: 'none' }} />
+            texto puede quedar a medio tapar.
+
+            Solo cuando esta ES la pantalla. Incrustada en una página que sigue
+            debajo, estos 92px son un agujero blanco en mitad del scroll — que es
+            exactamente lo que salió al montarla. */}
+        {alto !== 'auto' && <span style={{ height: 92, flex: 'none' }} />}
       </div>
     </div>
   )
