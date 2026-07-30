@@ -18,6 +18,14 @@ import { formatearTelefono, abrirWhatsApp } from '@/lib/whatsapp'
 import MoneyInput           from '@/components/ui/MoneyInput'
 import MonedaCF             from '@/components/ui/MonedaCF'
 import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
+import HojaInferior        from '@/components/cf/HojaInferior'
+import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
+import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
+import { formatFechaCobroRelativa } from '@/lib/calculos'
+import {
+  adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
+  montoCrudo, montoParaMostrar,
+} from '@/lib/adaptadores/pago'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -46,6 +54,29 @@ export default function RegistrarPago({
   const [metodoPagoId, setMetodoPagoId] = useState(null)
   const [metodosPago,  setMetodosPago]  = useState([])
   const [nota,         setNota]         = useState('')
+  // LO RARO VA PLEGADO. Esta es la hoja de T02-04/T08-01: monto, a qué se aplica,
+  // cómo pagó, y qué queda después. Recargo, descuento y abono por días viven
+  // detrás de una línea, y al abrirla se cae al formulario completo de siempre —el
+  // que ya sabe hacer todo eso y lleva tiempo probado en la calle.
+  //
+  // NO SE REESCRIBE EL MOTOR. Este archivo tiene la cola offline, el recibo por
+  // WhatsApp, la foto de evidencia, las coordenadas y el aviso de duplicado. Piel
+  // nueva, motor igual: rehacer de cero 1.058 líneas que ESCRIBEN PAGOS para
+  // cambiar cómo se ve es la forma más rápida de perder un cobro en el campo.
+  const [verFormularioCompleto, setVerFormularioCompleto] = useState(false)
+  // Encendido por defecto, como lo dibuja la lámina, y RECORDADO: un cobrador que
+  // lo apaga no quiere apagarlo cliente por cliente.
+  const [enviarRecibo, setEnviarRecibo] = useState(true)
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem('cf:recibo-al-confirmar')
+      if (guardado !== null) setEnviarRecibo(guardado === '1')
+    } catch {}
+  }, [])
+  const cambiarRecibo = (valor) => {
+    setEnviarRecibo(valor)
+    try { localStorage.setItem('cf:recibo-al-confirmar', valor ? '1' : '0') } catch {}
+  }
   const [diasAbonados, setDiasAbonados] = useState(null)
   // Valor visual del slider — se anima entre cambios para que las transiciones
   // (boton mora, ponerse al dia) se sientan fluidas en vez de saltar de golpe.
@@ -73,6 +104,11 @@ export default function RegistrarPago({
     // Si ya estaba abierto y cambia saldoPendiente/cuotaDiaria por un
     // rerender del padre, NO pisar el monto que el usuario escribio.
     if (wasOpen) return
+
+    // El pliegue se reinicia AL ABRIR. Sin esto, quien toca una vez «Recargo,
+    // descuento y abono por días» se queda en el formulario viejo para siempre: la
+    // hoja nueva no se vuelve a ver en esa sesión.
+    setVerFormularioCompleto(tabInicial !== 'pago')
 
     if (tabInicial === 'recargo' || tabInicial === 'descuento') {
       setMonto('')
@@ -377,6 +413,34 @@ export default function RegistrarPago({
     }
   }
 
+  // EL INTERRUPTOR HACE LO QUE DICE. Lo había dejado como estado y nada lo
+  // consumía: un control que se mueve y no pasa nada, que es el patrón que ya
+  // llevaba siete apariciones en este rediseño (el FAB, la campana, las props de la
+  // barra lateral, `sinMargen`, mis propios enlaces de filtro, la barra de acción de
+  // la ficha, el aviso de la tabla).
+  //
+  // Lo que hace es ABRIR EL BORRADOR del recibo, el mismo que arma el botón «Enviar
+  // por WhatsApp» de la pantalla de éxito. No envía nada: quien pulsa enviar es el
+  // usuario, dentro de WhatsApp. Y solo con teléfono y en un pago de verdad —de un
+  // recargo no se manda recibo, porque no hubo cobro.
+  const reciboDisparadoRef = useRef(false)
+  useEffect(() => {
+    if (!exitoso || !pagoGuardado) { reciboDisparadoRef.current = false; return }
+    if (reciboDisparadoRef.current) return
+    if (!enviarRecibo) return
+    if (!cliente?.telefono) return
+    if (['recargo', 'descuento'].includes(pagoGuardado.tipo)) return
+    reciboDisparadoRef.current = true
+    const tel = formatearTelefono(cliente.telefono)
+    if (!tel) return
+    const texto = generarTextoPlantilla('pago_confirmacion', {
+      cliente, prestamo: prestamoAct ?? prestamo, pago: pagoGuardado,
+      orgNombre, ocultarSaldo: ocultarSaldoWA, camposRecibo: camposLocal,
+    }, organizationId)
+    abrirWhatsApp(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`)
+  }, [exitoso, pagoGuardado, enviarRecibo, cliente, prestamoAct, prestamo,
+      orgNombre, ocultarSaldoWA, camposLocal, organizationId])
+
   // ── Vista comprobante (segundo paso desde éxito) ──────────────
   if (exitoso && pagoGuardado && vistaComprobante) {
     const prestamoWA = prestamoAct ?? prestamo
@@ -641,6 +705,28 @@ export default function RegistrarPago({
     )
   }
 
+  // «cuota 13 de 24». Dice A QUIÉN se le cobra y por dónde va: con la ficha tapada
+  // detrás de la hoja, sin esto el cobrador teclea a ciegas.
+  const contextoCuota = (() => {
+    const porPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[prestamo?.frecuencia] ?? 1
+    const total = prestamo?.cuotasAmortizacion?.length
+      || (prestamo?.diasPlazo ? Math.round(prestamo.diasPlazo / porPeriodo) : 0)
+    const pendientes = Number(prestamo?.cuotasPendientes ?? 0)
+    if (!(total > 0) || !(pendientes > 0) || pendientes > total) return null
+    return `cuota ${total - pendientes + 1} de ${total}`
+  })()
+
+  // «¿A qué se aplica?» — las tres de la lámina. «Interés» SOLO donde existe: en un
+  // préstamo de cuota fija el interés ya viene dentro del total y no hay nada que
+  // pagar por separado, así que el botón llevaría a un ajuste que no aplica.
+  const aplicacionesDePago = [
+    { id: 'completo', etiqueta: 'Cuota' },
+    { id: 'capital', etiqueta: 'Capital' },
+    ...(['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres)
+      ? [{ id: 'intereses', etiqueta: 'Interés' }]
+      : []),
+  ]
+
   // ── Vista formulario ──────────────────────────────────────────
   const tituloModal =
     tipo === 'recargo' ? 'Agregar recargo' :
@@ -669,6 +755,95 @@ export default function RegistrarPago({
     cuotaRefExcedente > 0 &&
     excedentePago > 100 &&
     Math.round(Number(monto) || 0) < Math.round(saldoPendiente ?? 0)
+
+  // ── LA HOJA DE T02-04 / T08-01 ─────────────────────────────────────────────
+  //
+  // Es el camino del 90%: un pago normal. Los ajustes —recargo, descuento, abono a
+  // capital, pago a intereses, abono por días— siguen por el formulario de abajo,
+  // que es donde el pie de la lámina dice que van: «lo raro —recargo, descuento,
+  // abono por días— plegado».
+  const esPagoNormal = tipo === 'completo' || tipo === 'parcial'
+  if (esPagoNormal && !verFormularioCompleto) {
+    const medios = mediosParaHoja(metodosPago, (nombre) => getPlataformaInfo(nombre)?.color)
+    // Qué casilla está marcada. En la DB `metodoPago` solo dice
+    // efectivo/transferencia; la cuenta concreta la dice `metodoPagoId`. Son dos
+    // campos y confundirlos descuadra la caja por cuenta.
+    const medioElegido = metodoPago === 'transferencia' && metodoPagoId ? metodoPagoId : 'efectivo'
+    const elegido = medioAGuardar(medios, medioElegido)
+
+    const montoNum = Math.round(Number(monto) || 0)
+    const atajos = atajosDeMonto({ saldoPendiente, cuotaDiaria })
+    const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
+
+    const { filas } = adaptarDespuesDelPago(
+      { ...(prestamo ?? {}), saldoPendiente, cuotaDiaria },
+      {
+        monto: montoNum,
+        tipo,
+        metodoPago,
+        nombreCuenta: elegido.nombreCuenta,
+        // El próximo cobro se pinta TAL CUAL lo dio la API. No se recalcula aquí:
+        // ya hay tres funciones que responden a esa pregunta y se contradicen.
+        proximoCobroTexto: prestamo?.proximoCobro ? formatFechaCobroRelativa(prestamo.proximoCobro) : null,
+        // Si la fecha ya pasó, la fila se calla. Con 58 días de mora `proximoCobro`
+        // apunta al primer cobro impagado y salía «Próximo cobro: lun, 1 de jun» en
+        // pleno julio, dentro del bloque que proyecta el futuro.
+        proximoCobroFuturo: prestamo?.proximoCobro
+          ? new Date(prestamo.proximoCobro).getTime() >= Date.now() - 86400000
+          : false,
+      },
+    )
+
+    return (
+      <HojaInferior
+        abierta={open}
+        onCerrar={onClose}
+        titulo="Registrar pago"
+        subtitulo={[cliente?.nombre, contextoCuota].filter(Boolean).join(' · ') || null}
+        accion={
+          <PieRegistrarCobro
+            textoConfirmar={montoNum > 0 ? `Confirmar ${formatMoney(montoNum)}` : 'Confirmar'}
+            onConfirmar={handleSubmit}
+            confirmando={loading}
+            deshabilitado={!(montoNum > 0)}
+            error={error}
+            recibo={enviarRecibo}
+            onRecibo={cambiarRecibo}
+          />
+        }
+      >
+        <RegistrarCobro
+          // Se VE agrupado y se GUARDA crudo: el estado va al servidor con
+          // `Number(monto)`, y con puntos dentro eso daría NaN. El campo enseñaba
+          // «20000», y con seis cifras seguidas —«1250000»— nadie distingue un
+          // millón doscientos cincuenta mil de ciento veinticinco mil.
+          monto={montoParaMostrar(monto, undefined)}
+          onMonto={(v) => setMonto(montoCrudo(v))}
+          atajos={atajos}
+          atajoActivo={atajoActivo}
+          onAtajo={(a) => setMonto(String(a.monto))}
+          aplicaciones={aplicacionesDePago}
+          aplicacion={tipo}
+          onAplicacion={(a) => {
+            setTipo(a.id)
+            // Capital e interés SON ajustes: caen al formulario, que es el que sabe
+            // pedir la nota y avisar de a dónde va el excedente.
+            if (a.id !== 'completo' && a.id !== 'parcial') setVerFormularioCompleto(true)
+          }}
+          medios={medios}
+          medio={medioElegido}
+          onMedio={(m) => {
+            const g = medioAGuardar(medios, m.id)
+            setMetodoPago(g.metodoPago)
+            setMetodoPagoId(g.metodoPagoId)
+            setPlataforma(g.nombreCuenta || '')
+          }}
+          despues={filas}
+          onLoRaro={() => setVerFormularioCompleto(true)}
+        />
+      </HojaInferior>
+    )
+  }
 
   return (
     <Modal

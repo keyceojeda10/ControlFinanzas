@@ -215,7 +215,12 @@ for (const t of CON_TABLA) {
         diasPlazo, frecuencia, modoInteres, tasaInteres, totalPagado, estado, esClavo,
         fechaInicio, fechaFin, createdAt)
      VALUES (?,?,?,?,?,?,?,?,?,?,0,'activo',0,?,?,NOW())`,
-    [pid, org.id, cid, t.monto, totalReal, 0,
+    // `cuotaDiaria` es la PRIMERA cuota, no cero. Lo tenia en 0 y el boton de la
+    // ficha decia «REGISTRAR PAGO MENSUAL $0», los atajos de monto se quedaban sin
+    // «Cuota» y la proyeccion no podia contar cuotas cubiertas. Los prestamos de
+    // verdad la traen de `calcularPrestamo`; un dato de prueba que no se parece al
+    // real solo sirve para cotejar pantallas que nunca fallan.
+    [pid, org.id, cid, t.monto, totalReal, Math.round(filas[0].capital + filas[0].interes),
      diasPlazo, t.frecuencia, t.modo, t.tasa,
      // Empezado hace 10 dias: la cuota 1 aun no vence, asi que es la SIGUIENTE y
      // lleva la pastilla dorada. Con el prestamo empezado hace tres meses las

@@ -26,6 +26,7 @@ import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
+import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
 import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
@@ -881,16 +882,47 @@ export default function Estilo() {
           </div>
         </div>
 
+        {/* Es una HOJA, no una pantalla: va dentro de HojaInferior, que pone el
+            asa, el titulo, la X y la ranura de accion con las medidas de T08-01.
+            El banco la enseña abierta y sin ficha detras. */}
         <div id="registrar-cobro" style={MARCO}>
-          <CabeceraMovil variante={CABECERA.TAREA} titulo="Cobro 3 de 11" paso={3} total={11} />
-          <div style={{ height: 'calc(100% - 56px)' }}>
+          <HojaInferior
+            abierta
+            escritorio={false}
+            titulo="Registrar pago"
+            subtitulo="Steven Olmos · cuota 22 de 30"
+            onCerrar={() => {}}
+            accion={<PieRegistrarCobro textoConfirmar="Confirmar $27.500" onConfirmar={() => {}} onRecibo={() => {}} />}
+          >
             <RegistrarCobro
-              nombre="Steven Olmos" iniciales="SO"
-              contexto="Cl 8 # 31-05 · 36 días de atraso"
-              monto="27.500" tipo="Solo un abono" medio="Efectivo"
-              debeAntes="$130.500" debeDespues="$103.000"
+              monto="27.500"
+              atajos={[
+                { id: 'cuota', etiqueta: 'Cuota' },
+                { id: 'mitad', etiqueta: 'Mitad' },
+                { id: 'todo', etiqueta: 'Todo' },
+              ]}
+              atajoActivo="cuota"
+              aplicaciones={[
+                { id: 'completo', etiqueta: 'Cuota' },
+                { id: 'capital', etiqueta: 'Capital' },
+                { id: 'intereses', etiqueta: 'Interés' },
+              ]}
+              aplicacion="completo"
+              medios={[
+                { id: 'efectivo', nombre: 'Efectivo', efectivo: true },
+                { id: 'c1', nombre: 'Nequi', inicial: 'N', color: '#7A6CF0' },
+                { id: 'c2', nombre: 'Daviplata', inicial: 'D', color: '#E5484D' },
+                { id: 'c3', nombre: 'Banco', inicial: 'B', color: '#4A4E57' },
+              ]}
+              medio="efectivo"
+              despues={[
+                { clave: 'saldo', etiqueta: 'Saldo pendiente', antes: '$130.500', valor: '$103.000' },
+                { clave: 'caja', etiqueta: 'Entra a caja como', valor: 'Efectivo · Pepito' },
+                { clave: 'proximo', etiqueta: 'Próximo cobro', valor: 'mié 29 de julio' },
+              ]}
+              onLoRaro={() => {}}
             />
-          </div>
+          </HojaInferior>
         </div>
       </div>
 
