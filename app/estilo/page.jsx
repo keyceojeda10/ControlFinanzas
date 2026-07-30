@@ -71,6 +71,11 @@ import { ListaSocios, RepartirGanancia, CuentaSocio } from '@/components/pantall
 import { AntesDeFirmar, Firma, PagareFirmado } from '@/components/pantallas/Pagare'
 import SociosEscritorio from '@/components/pantallas/SociosEscritorio'
 import { Cobradores, CrearCobrador, MiDia } from '@/components/pantallas/Cobradores'
+import { ClienteNuevo } from '@/components/pantallas/ClienteNuevo'
+import { Recibo } from '@/components/pantallas/Recibo'
+import { Plantillas } from '@/components/pantallas/Plantillas'
+import { MiHistorial } from '@/components/pantallas/MiHistorial'
+import { FAMILIAS, PLANTILLAS, preparaPlantilla } from '@/lib/adaptadores/plantillas'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -1912,6 +1917,66 @@ export default function Estilo() {
               { id: 'm', iniciales: 'MQ', nombre: 'Martha Quintero', motivo: 'pidió que vuelva mañana', monto: '$22.000' },
             ]}
             faltaronTotal="$47.000"
+          />
+        </div>
+
+        {/* T07-03. Un solo campo obligatorio: el nombre. La cedula dice
+            «opcional» EN EL CAMPO, que es donde lo lee todo el mundo. */}
+        <div id="cli-nuevo" style={{ ...MARCO }}>
+          <ClienteNuevo
+            nombre="Marta Restrepo" cedula="" telefono="" direccion=""
+            rutas={[{ id: 'r2', nombre: 'Ruta 2' }, { id: 'norte', nombre: 'Ruta norte' }]}
+            ruta="r2" onRuta={() => {}}
+            onCampo={() => {}} onGuardarYPrestar={() => {}} onGuardarYOtro={() => {}}
+            onDesdeFoto={() => {}} onVolver={() => {}}
+          />
+        </div>
+
+        {/* T07-04. Comprobante para el CLIENTE, no confirmacion para el cobrador.
+            Sin numero de recibo: no existe el campo, ver el archivo. */}
+        <div id="cob-recibo" style={{ ...MARCO }}>
+          <Recibo
+            monto="$27.500" cliente="Steven Olmos"
+            saldo="$103.000" proximoCobro="mié 29 de julio"
+            cuando="martes 28 de julio · 2:12 p. m."
+            recibidoPor="Pepito" telefono="3200000000"
+            onWhatsApp={() => {}} onGuardarImagen={() => {}} onImprimir={() => {}}
+            onSiguiente={() => {}}
+          />
+        </div>
+
+        {/* T11-01. El mensaje se LEE antes de mandarlo, con lo rellenado
+            resaltado. Hoy se abre WhatsApp con un texto que nadie ha visto. */}
+        <div id="wa-plantillas" style={{ ...MARCO }}>
+          <Plantillas
+            cliente="Steven Olmos" detalle="Debe $130.500 · 36 días de atraso"
+            familias={FAMILIAS} familia="cobro" onFamilia={() => {}}
+            plantillas={PLANTILLAS.cobro.map((p) => preparaPlantilla(p, {
+              nombre: 'Steven', cuota: '$14.500', medio: 'Nequi', negocio: 'Prestamos Castro',
+              saldo: '$130.500', cuotasPagadas: '22 de 30', proximoCobro: 'mié 29',
+              portal: 'cf.co/p/8x2k',
+            }))}
+            elegida="cuota-hoy" onElegir={() => {}}
+            telefono="3200000000"
+            onEditarPlantillas={() => {}} onAbrir={() => {}} onCerrar={() => {}}
+          />
+        </div>
+
+        {/* T36-02. La cifra grande es LO QUE YA PAGO. Es su portal: viene a
+            comprobar que sus pagos estan, no a que le recuerden la deuda. */}
+        <div id="portal-historial" style={{ ...MARCO }}>
+          <MiHistorial
+            subtitulo="préstamo del 4 de julio"
+            pagado="$304.500" falta="$130.500" porcentaje={70}
+            resumen="22 cuotas pagadas de 30 · vas al 70%"
+            totalPagos="22 pagos" ocultos={19}
+            prestamista="Don Carlos"
+            pagos={[
+              { id: '1', fecha: 'Sábado 19 de julio', detalle: 'efectivo · quedaste en $130.500', monto: '$14.500' },
+              { id: '2', fecha: 'Sábado 12 de julio', detalle: 'Nequi · abono · quedaste en $145.000', monto: '$8.000' },
+              { id: '3', fecha: 'Sábado 5 de julio', detalle: 'efectivo · quedaste en $153.000', monto: '$14.500' },
+            ]}
+            onVolver={() => {}} onDescargar={() => {}} onRecibo={() => {}} onVerTodos={() => {}}
           />
         </div>
 
