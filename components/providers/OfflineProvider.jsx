@@ -522,8 +522,8 @@ export default function OfflineProvider({ children }) {
               : failedTotal > 0
                 ? `${failedTotal} sin guardar`
                 : !isOnline
-                  ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
-                  : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
+                  ? (pendingCount > 0 ? `Sin señal · ${pendingCount} por subir` : 'Sin señal')
+                  : bulkSyncing ? 'Subiendo…' : `${pendingCount} por subir`}
           </span>
         </button>
       )}

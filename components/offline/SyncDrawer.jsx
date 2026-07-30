@@ -49,8 +49,8 @@ export default function SyncDrawer({ open, onClose }) {
           <div>
             <h2 className="text-base font-bold text-[var(--cf-ink)]">Sincronización</h2>
             <p className="text-[11px] text-[var(--cf-ink-3)]">
-              {isOnline ? 'Online' : 'Offline'}
-              {syncMeta?.syncedAt && ` - última descarga ${fmtDate(syncMeta.syncedAt)}`}
+              {isOnline ? 'Con señal' : 'Sin señal'}
+              {syncMeta?.syncedAt && ` · última descarga ${fmtDate(syncMeta.syncedAt)}`}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[var(--cf-fill)] flex items-center justify-center">

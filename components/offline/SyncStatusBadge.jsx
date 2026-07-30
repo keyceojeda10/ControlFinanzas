@@ -14,17 +14,33 @@ export default function SyncStatusBadge({ onClick, variant = 'full' }) {
     (failedDetails?.prestamos?.length || 0) +
     (failedDetails?.mutaciones?.length || 0)
 
+  // EN CASTELLANO, y diciendo qué pasa con el trabajo — no cómo está la red.
+  //
+  // Decía «Offline», «Online», «3 pendientes» y «2 fallidos». Cuatro problemas en
+  // una pastilla de 8px de alto:
+  //
+  //   · Dos palabras en inglés en una app para prestamistas colombianos.
+  //   · «Offline» describe la RED. Al cobrador no le importa la red: le importa
+  //     si los cobros que acaba de meter están guardados. «Sin señal · 3 por
+  //     subir» contesta eso.
+  //   · «Fallidos» no dice qué hacer. «No subieron» sí, y lleva a tocar.
+  //   · «Online» permanente es ruido: cuando todo va bien no hay nada que decir.
+  //     Se queda «Al día», que confirma sin alarmar.
   let color, label, dot
   if (bulkSyncing) {
-    color = 'info'; label = 'Sincronizando...'; dot = 'spin'
+    color = 'info'; label = 'Subiendo…'; dot = 'spin'
   } else if (!isOnline) {
-    color = 'warning'; label = pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline'; dot = 'pulse'
+    color = 'warning'
+    label = pendingCount > 0 ? `Sin señal · ${pendingCount} por subir` : 'Sin señal'
+    dot = 'pulse'
   } else if (failedTotal > 0) {
-    color = 'danger'; label = `${failedTotal} fallidos`; dot = 'static'
+    color = 'danger'
+    label = `${failedTotal} no ${failedTotal === 1 ? 'subió' : 'subieron'}`
+    dot = 'static'
   } else if (pendingCount > 0) {
-    color = 'info'; label = `${pendingCount} pendientes`; dot = 'pulse'
+    color = 'info'; label = `${pendingCount} por subir`; dot = 'pulse'
   } else {
-    color = 'success'; label = 'Online'; dot = 'static'
+    color = 'success'; label = 'Al día'; dot = 'static'
   }
 
   const base = 'inline-flex items-center gap-1.5 rounded-full font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--cf-gold)]'
