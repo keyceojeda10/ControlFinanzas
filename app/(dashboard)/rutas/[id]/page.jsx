@@ -2,6 +2,8 @@
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
 import { formatMoney } from '@/lib/i18n'
+import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
+import { loPuestoAqui, loDeHoy } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -1212,510 +1214,94 @@ export default function RutaDetallePage({ params }) {
         Rutas
       </button>
 
-      {/* HERO CARD: Recaudado del dia + Donut + Mood color */}
-      {(() => {
-        const heroColor = progreso >= 100 ? 'var(--color-success)'
-          : progreso >= 60 ? 'var(--color-accent)'
-          : progreso >= 30 ? '#f97316'
-          : ruta.esperadoHoy > 0 ? 'var(--color-danger)'
-          : 'var(--color-text-muted)'
-        const heroLabel = progreso >= 100 ? 'Meta cumplida'
-          : progreso >= 60 ? 'Buen ritmo'
-          : progreso >= 30 ? 'Atrasada'
-          : ruta.esperadoHoy > 0 ? 'Crítica'
-          : 'Sin actividad esperada'
-        return (
-          <div
-            className="cf-hero-card relative rounded-[20px] overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* Orb pulsante */}
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
-            {/* Patron de puntos */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
+      {/* -- T24 - Lo que tienes puesto aqui, y lo de hoy --
+          Sustituye al heroe con donut de cinco colores segun el ritmo y a las
+          tres tarjetas de metricas que venian debajo. Eran CUATRO TARJETAS
+          GRANDES antes de llegar a la lista de clientes, que es a lo que se
+          entra.
 
-            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
-              {/* Top: nombre + chip + boton eliminar */}
-              <div className="flex items-start gap-3 mb-4">
-                <div
-                  className="w-12 h-12 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{
-                    background: `color-mix(in srgb, ${heroColor} 18%, transparent)`,
-                    border: `1px solid color-mix(in srgb, ${heroColor} 30%, transparent)`,
-                    color: heroColor,
-                  }}
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editandoNombre ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={nuevoNombre}
-                        onChange={(e) => setNuevoNombre(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
-                        className="flex-1 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] focus:outline-none"
-                        style={{ borderColor: heroColor }}
-                        autoFocus
-                      />
-                      <button onClick={guardarNombre} className="p-1" style={{ color: 'var(--color-success)' }}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></button>
-                      <button onClick={() => setEditandoNombre(false)} className="p-1" style={{ color: 'var(--color-text-muted)' }}><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <h1 className="text-[25px] font-semibold leading-tight truncate" style={{ color: 'var(--color-text-primary)' }}>{ruta.nombre}</h1>
-                        {esOwner && (
-                          <button onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }} className="shrink-0 p-1 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span
-                          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{
-                            background: `color-mix(in srgb, ${heroColor} 15%, transparent)`,
-                            color: heroColor,
-                            border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
-                          }}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor }} />
-                          {heroLabel}
-                        </span>
-                        {ruta.cobrador && (
-                          <span className="text-[10px]" style={{ color: 'var(--color-purple)' }}>· {ruta.cobrador.nombre}</span>
-                        )}
-                        <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>· {ruta.clientes?.length ?? 0} clientes</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-                {esOwner && !editandoNombre && (
-                  <button onClick={eliminarRuta} disabled={eliminando} className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                    style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
-                    aria-label="Eliminar ruta"
-                    title="Eliminar ruta"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
-                )}
-              </div>
+          Dos preguntas, dos bloques, y no se mezclan:
 
-              {/* "Falta para la meta" como protagonista */}
-              {(() => {
-                const recaudado = ruta.recaudadoHoy ?? 0
-                const meta = ruta.esperadoHoy ?? 0
-                const falta = Math.max(0, meta - recaudado)
-                const metaCumplida = meta > 0 && falta <= 0
-                const sinMeta = meta <= 0
-                return (
-                  <div>
-                    {sinMeta ? (
-                      <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                          Meta del día
-                        </p>
-                        <p className="font-mono-display font-bold leading-none" style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(24px, 7vw, 34px)' }}>
-                          Sin cobros hoy
-                        </p>
-                        <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-                          No hay cuotas programadas para cobrar hoy en esta ruta.
-                        </p>
-                      </div>
-                    ) : metaCumplida ? (
-                      <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-success)' }}>
-                          Meta del día
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <svg className="w-7 h-7 shrink-0" fill="none" stroke="var(--color-success)" strokeWidth={2.5} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="font-mono-display font-bold leading-none" style={{ color: 'var(--color-success)', fontSize: 'clamp(26px, 7vw, 36px)' }}>
-                            Meta cumplida
-                          </p>
-                        </div>
-                        <p className="text-[12px] font-mono-display mt-2" style={{ color: 'var(--color-text-secondary)' }}>
-                          Cobraste {formatMoney(recaudado)} de {formatMoney(meta)}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        {(ruta.pendientesHoy ?? 0) > 0 && (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
-                            <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--color-warning)' }} />
-                            <span className="text-[11px] font-bold" style={{ color: 'var(--color-warning)' }}>
-                              {ruta.pendientesHoy} cliente{ruta.pendientesHoy === 1 ? '' : 's'} por cobrar
-                            </span>
-                          </div>
-                        )}
-                        <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                          Te faltan
-                        </p>
-                        <p
-                          className="font-mono-display font-bold leading-none tracking-tight"
-                          style={{
-                            color: heroColor,
-                            fontSize: 'clamp(34px, 11vw, 52px)',
-                            textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
-                          }}
-                        >
-                          {formatMoney(falta)}
-                        </p>
-                        <p className="text-[12px] mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-                          para la meta de hoy
-                        </p>
-                      </div>
-                    )}
+            - EL CARBON es la ruta como inversion: cuanta plata tienes metida
+              aqui y cuanta esperas ganar. No cambia de un dia para otro.
+            - EL BLANCO es hoy: lo recaudado contra lo que falta. Cambia con
+              cada cobro.
 
-                    {/* Barra de progreso gruesa */}
-                    {!sinMeta && (
-                      <div className="mt-4">
-                        <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${Math.min(100, Math.max(progreso, 2))}%`,
-                              background: `linear-gradient(90deg, color-mix(in srgb, ${heroColor} 75%, transparent), ${heroColor})`,
-                            }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                          <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-                            Cobrado <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{formatMoney(recaudado)}</span> de {formatMoney(meta)}
-                          </p>
-                          <p className="text-[11px] font-mono-display font-bold" style={{ color: heroColor }}>{progreso}%</p>
-                        </div>
-                        {(ruta.clientesConCobroHoy ?? 0) > 0 && (
-                          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                            <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>{ruta.pendientesHoy ?? 0}</span> por cobrar
-                            {' · '}
-                            <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>{ruta.clientesPagaronHoy ?? 0}</span> ya pagaron
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
+          El donut se va. Un anillo de colores con un porcentaje dentro cuenta lo
+          mismo que una barra, y peor: el color pasaba de verde a naranja a rojo
+          segun el ritmo, asi que el mismo 60% se leia como bueno o como malo
+          segun la hora del dia.
 
-              {/* Controles de owner: cobrador + dias sin cobro + festivo hoy */}
-              {esOwner && !editandoNombre && (
-                <div className="mt-4 pt-3 flex flex-col gap-2" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 15%, transparent)` }}>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={ruta.cobrador?.id ?? ''}
-                      onChange={(e) => cambiarCobrador(e.target.value)}
-                      className="h-9 rounded-[12px] border bg-transparent text-xs px-2 focus:outline-none transition-all cursor-pointer"
-                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                    >
-                      <option value="">Sin cobrador</option>
-                      {cobradores.map((c) => (
-                        <option key={c.id} value={c.id}>{c.nombre}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={abrirModalDSC}
-                      className="flex items-center justify-between h-9 rounded-[12px] border bg-transparent text-xs px-2.5 hover:border-[var(--color-warning)] transition-all cursor-pointer"
-                      style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Días sin cobro
-                      </span>
-                      {ruta.diasSinCobro && JSON.parse(ruta.diasSinCobro).length > 0 && (
-                        <span className="text-[10px] font-medium" style={{ color: 'var(--color-warning)' }}>
-                          {JSON.parse(ruta.diasSinCobro).length}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                  <button
-                    onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
-                    disabled={guardandoFestivo}
-                    className={[
-                      'flex items-center justify-center gap-1.5 h-9 rounded-[12px] border text-xs px-2.5 transition-all disabled:opacity-50',
-                      festivoHoy
-                        ? 'border-[var(--color-success)] text-[var(--color-success)] bg-[rgba(34,197,94,0.08)]'
-                        : 'bg-transparent hover:border-[var(--color-success)] hover:text-[var(--color-success)]',
-                    ].join(' ')}
-                    style={!festivoHoy ? { borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' } : {}}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-3zm-3 3h.008v.008H9V16.5zm0-3h.008v.008H9V13.5zm6 3h.008v.008H15V16.5zm0-3h.008v.008H15V13.5z" />
-                    </svg>
-                    {guardandoFestivo ? 'Guardando…' : festivoHoy ? 'Hoy es festivo — toca para quitar' : 'Festivo hoy'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Tip IA contextual */}
-      <AiTipBanner tip={generarTipRuta(ruta?.clientes)} pageKey={`ruta-${id}`} />
-
-      {/* Modal días sin cobro de ruta */}
-      <Modal open={modalDiasSC} onClose={() => setModalDiasSC(false)} title="Días sin cobro de la ruta" footer={
-        <>
-          <Button variant="secondary" onClick={() => setModalDiasSC(false)}>Cancelar</Button>
-          <Button onClick={guardarDiasSCRuta} loading={guardandoDSC}>Guardar</Button>
-        </>
-      }>
-        <div className="space-y-3">
-          <p className="text-xs text-[var(--color-text-muted)] leading-snug">
-            Los clientes de esta ruta no serán cobrados estos días y no se les generará mora.
-          </p>
-          <DiasSinCobroSelector value={diasSCRuta} onChange={setDiasSCRuta} />
-          {diasSCRuta.length > 0 && (
-            <p className="text-[10px] text-[var(--color-warning)]">
-              Aplica a todos los clientes de esta ruta (salvo los que tengan configuración propia).
-            </p>
-          )}
-        </div>
-      </Modal>
-
-      {/* Métricas adicionales: Cartera + Pendientes + Mora (Cobro hoy ya esta en Hero) */}
-      {(() => {
-        const denominadorCartera = ruta.totalAPagarRuta ?? ruta.capitalTotal
-        const cobrado = Math.max(0, denominadorCartera - ruta.carteraTotal)
-        const carteraPct = denominadorCartera > 0
-          ? Math.min(100, Math.max(0, Math.round((cobrado / denominadorCartera) * 100)))
-          : 0
-        return (
-          <>
-            {/* Cartera total — owner o cobrador con permiso */}
-            {(esOwner || puedeVerCapitalRuta) && (
-            <div
-              className="cf-hero-card cf-card-shadow rounded-[20px] px-4 py-3"
+          El nombre de la ruta y su edicion se quedan, encima. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {editandoNombre ? (
+          <div className="flex items-center gap-2 flex-1">
+            <input
+              type="text"
+              value={nuevoNombre}
+              onChange={(e) => setNuevoNombre(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && guardarNombre()}
+              className="flex-1 h-10 px-3 rounded-[12px] text-sm focus:outline-none"
               style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                border: '1px solid color-mix(in srgb, var(--color-teal) 22%, var(--color-border))',
+                background: 'var(--cf-card)', border: '1.5px solid var(--cf-gold)',
+                color: 'var(--cf-ink)',
               }}
-            >
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 18%, transparent)', color: 'var(--color-teal)' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-teal)' }}>Cartera de la ruta</span>
-                </div>
-                <span className="text-[11px] font-bold" style={{ color: 'var(--color-teal)' }}>{carteraPct}% cobrado</span>
-              </div>
-              <div className="flex items-baseline justify-between">
-                <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.carteraTotal)}</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>pendiente por cobrar</p>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden mt-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-                <div className="h-full rounded-full transition-[width] duration-700"
-                  style={{
-                    width: `${carteraPct}%`,
-                    background: 'linear-gradient(90deg, color-mix(in srgb, var(--color-teal) 60%, transparent), var(--color-teal))',
-                  }}
-                />
-              </div>
-              {/* Cuanto tiene prestado en esta ruta, con y sin intereses. Son
-                  cifras distintas y en plata un rotulo ambiguo genera desconfianza,
-                  por eso van nombradas y no como un "de $X" suelto. */}
-              {typeof ruta.capitalTotal === 'number' && (
-                <div
-                  className="grid grid-cols-2 gap-2 mt-2.5 pt-2.5"
-                  style={{ borderTop: '1px solid color-mix(in srgb, var(--color-teal) 18%, var(--color-border))' }}
-                >
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>Prestado (capital)</p>
-                    <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(ruta.capitalTotal)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-semibold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>Con intereses</p>
-                    <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(denominadorCartera)}</p>
-                  </div>
-                </div>
-              )}
+              autoFocus
+            />
+            <button onClick={guardarNombre} className="p-1" style={{ color: 'var(--cf-green-dark)' }} aria-label="Guardar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </button>
+            <button onClick={() => setEditandoNombre(false)} className="p-1" style={{ color: 'var(--cf-ink-3)' }} aria-label="Cancelar">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{
+                fontFamily: 'var(--font-space-grotesk), system-ui',
+                fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{ruta.nombre}</span>
+              {/* QUIEN Y CUANTOS, no una pastilla de estado de colores. «Buen
+                  ritmo» a las nueve de la maniana no significa nada. */}
+              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                {[
+                  ruta.cobrador?.nombre ?? 'sin cobrador',
+                  `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
+                ].join(' · ')}
+              </span>
             </div>
-            )}
-
-            {/* Capital de la ruta — sub-bolsa individual (solo owner) */}
-            {esOwner && ruta.capitalHabilitado && (
-              <div className="cf-card-shadow rounded-[20px] px-4 py-3.5"
-                style={{ background: `linear-gradient(135deg, color-mix(in srgb, #6366f1 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: '1px solid color-mix(in srgb, #6366f1 25%, var(--color-border))' }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#6366f1' }}>Capital de la ruta</span>
-                  <span className="text-lg font-bold font-mono-display" style={{ color: ruta.saldoCapital >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
-                    {formatMoney(ruta.saldoCapital)}
-                  </span>
-                </div>
-                <p className="text-[10px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>Dinero asignado a esta ruta para prestar.</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => { setModalCapital('inyeccion'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
-                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold"
-                    style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
-                    Inyectar
-                  </button>
-                  <button type="button" onClick={() => { setModalCapital('retiro'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
-                    className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold"
-                    style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
-                    Retirar
-                  </button>
-                </div>
-              </div>
-            )}
-            {esOwner && !ruta.capitalHabilitado && (
-              <button type="button"
-                onClick={() => { setModalCapital('inyeccion'); setCapitalMonto(''); setCapitalDesc(''); setErrorCapital('') }}
-                className="w-full cf-card-shadow rounded-[20px] px-4 py-3 text-left"
-                style={{ background: 'var(--color-bg-card)', border: '1px dashed var(--color-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full" style={{ background: 'color-mix(in srgb, #6366f1 15%, transparent)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold" style={{ color: '#6366f1' }}>Habilitar capital de la ruta</p>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Controla cuanto dinero tiene asignado esta ruta</p>
-                  </div>
-                </div>
-              </button>
-            )}
-
-            {/* Seguros de la ruta (solo owner) */}
-            {esOwner && (ruta.segurosVigentes > 0 || ruta.segurosHoy > 0) && (
-              <div className="cf-card-shadow rounded-[20px] px-4 py-3.5"
-                style={{ background: `linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: '1px solid color-mix(in srgb, var(--color-purple) 25%, var(--color-border))' }}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-purple)' }}>Seguros de la ruta</span>
-                  <span className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-purple)' }}>
-                    {formatMoney(ruta.segurosVigentes)}
-                  </span>
-                </div>
-                <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
-                  {ruta.segurosVigentesCount} préstamo{ruta.segurosVigentesCount !== 1 ? 's' : ''} activo{ruta.segurosVigentesCount !== 1 ? 's' : ''} con seguro
-                  {ruta.segurosHoy > 0 ? ` · hoy: ${formatMoney(ruta.segurosHoy)} (${ruta.segurosHoyCount})` : ''}
-                </p>
-              </div>
-            )}
-
-            {/* Pendientes + Mora como filtros clickeables */}
-            <div className="grid grid-cols-2 gap-3">
+            {esOwner && (
               <button
-                type="button"
-                onClick={() => setEstadoFiltro(estadoFiltro === 'pendientes' ? null : 'pendientes')}
-                className="text-left rounded-[16px] px-4 py-3 transition-all kpi-lift"
-                style={{
-                  background: `linear-gradient(135deg, color-mix(in srgb, #f59e0b 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                  border: estadoFiltro === 'pendientes'
-                    ? '1px solid #f59e0b'
-                    : '1px solid color-mix(in srgb, #f59e0b 22%, var(--color-border))',
-                  boxShadow: estadoFiltro === 'pendientes' ? '0 0 0 1px #f59e0b' : 'none',
-                }}
+                onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
+                className="shrink-0 p-1"
+                style={{ color: 'var(--cf-ink-3)' }}
+                aria-label="Cambiar el nombre"
               >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, #f59e0b 18%, transparent)', color: '#f59e0b' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: '#f59e0b' }}>Pendientes</p>
-                </div>
-                <p className="text-2xl font-bold font-mono-display" style={{ color: ruta.pendientesHoy > 0 ? 'var(--color-warning)' : 'var(--color-success)' }}>
-                  {ruta.pendientesHoy}
-                </p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>de {ruta.clientesConCobroHoy ?? 0} hoy</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setEstadoFiltro(estadoFiltro === 'mora' ? null : 'mora')}
-                className="text-left rounded-[16px] px-4 py-3 transition-all kpi-lift"
-                style={{
-                  background: `linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                  border: estadoFiltro === 'mora'
-                    ? '1px solid var(--color-danger)'
-                    : '1px solid color-mix(in srgb, var(--color-danger) 22%, var(--color-border))',
-                  boxShadow: estadoFiltro === 'mora' ? '0 0 0 1px var(--color-danger)' : 'none',
-                }}
-              >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-danger) 18%, transparent)', color: 'var(--color-danger)' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-                  </div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-danger)' }}>En mora</p>
-                </div>
-                <p className="text-2xl font-bold font-mono-display" style={{ color: ruta.enMora > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
-                  {ruta.enMora}
-                </p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>del total de la ruta</p>
-              </button>
-            </div>
-            {estadoFiltro && (
-              <button
-                type="button"
-                onClick={() => setEstadoFiltro(null)}
-                className="text-[11px] hover:text-[var(--color-text-primary)] transition-colors flex items-center gap-1"
-                style={{ color: 'var(--color-accent)' }}
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                Quitar filtro ({estadoFiltro === 'pendientes' ? 'Pendientes hoy' : estadoFiltro === 'mora' ? 'En mora' : 'Pagaron hoy'})
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
             )}
           </>
-        )
-      })()}
+        )}
+      </div>
 
-      {/* Banner: Continuar ruta */}
-      {banner && (
-        <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.2)] cf-card-shadow rounded-[20px] px-4 py-3">
-          <p className="text-sm text-[var(--color-text-primary)]">
-            {banner.label} <strong className="text-[var(--color-accent)]">{banner.clienteNombre}</strong>
-          </p>
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={() => {
-                setBanner(null)
-                // Buscar el siguiente cliente después del guardado
-                const idx = ruta.clientes.findIndex(c => c.id === banner.clienteId)
-                const nextIdx = idx >= 0 ? Math.min(idx + 1, ruta.clientes.length - 1) : 0
-                const targetId = ruta.clientes[nextIdx].id
-                requestAnimationFrame(() => {
-                  const el = document.getElementById(`cliente-${targetId}`)
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    setHighlightId(targetId)
-                    setTimeout(() => setHighlightId(null), 2000)
-                  }
-                })
-              }}
-              className="px-3 py-1.5 rounded-[12px] bg-[var(--color-accent)] text-[#1a1a2e] text-xs font-semibold active:scale-95 transition-transform"
-            >
-              Continuar ruta
-            </button>
-            <button
-              onClick={() => {
-                setBanner(null)
-                localStorage.removeItem(`cf-ruta-progress-${id}`)
-              }}
-              className="px-3 py-1.5 rounded-[12px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs font-medium active:scale-95 transition-transform"
-            >
-              Nueva ruta
-            </button>
-          </div>
-        </div>
+      {(esOwner || puedeVerCapitalRuta) && (
+        <LoPuestoAqui {...loPuestoAqui({
+          carteraTotal: ruta.carteraTotal,
+          capitalPendiente: ruta.capitalPendiente,
+          capitalTotal: ruta.capitalTotal,
+          totalAPagarRuta: ruta.totalAPagarRuta,
+          clientes: ruta.clientes,
+        }, (n) => formatMoney(n))} />
       )}
+
+      <LoDeHoy {...loDeHoy({
+        esperadoHoy: ruta.esperadoHoy,
+        recaudadoHoy: ruta.recaudadoHoy,
+        clientesConCobroHoy: ruta.clientesConCobroHoy,
+        clientesPagaronHoy: ruta.clientesPagaronHoy,
+      }, (n) => formatMoney(n))} />
 
       {/* Acciones rápidas.
           "Hoja para salir a cobrar" estaba de quinta en esta fila con scroll
