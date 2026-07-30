@@ -2,6 +2,14 @@
 
 // components/pantallas/MenuCrear.jsx — turno 43·01, adenda 07 §4.
 //
+// ⚠️ ESTA ES LA IMPLEMENTACIÓN DE T43-01. NO HAY OTRA.
+// El 30 jul 2026 se construyó un `MenuMas.jsx` contra la misma lámina sin
+// comprobar que este archivo ya existía: mismos cuatro grupos, mismas cifras,
+// mismos destinos en rejilla, mismo Lucas al pie. Se borró. Antes de construir
+// una pantalla, buscar en `components/pantallas/` si ya está — los nombres no
+// siempre coinciden con el número de lámina (aquí «Crear» y la lámina es «el
+// menú del +»).
+//
 // El menú del +. LA ÚNICA PANTALLA DEL SISTEMA CON EL DORADO COMO SUPERFICIE.
 // Se justifica porque es el momento en que la app pregunta, y porque es la
 // pantalla más frecuente después del panel.
