@@ -139,14 +139,14 @@ export default function PantallaMas({
 
   const herramientas = [
     { icono: 'plata',      nombre: 'Mi plata',            cifra: plataLista && `${plataLista} listos para prestar`, destino: '/capital' },
-    { icono: 'negocio',    nombre: '¿Cómo va el negocio?', cifra: rendimiento, tono: 'bien', destino: '/analiticas' },
+    { icono: 'negocio',    nombre: '¿Cómo va el negocio?', cifra: rendimiento, tono: 'bien', destino: '/dashboard/analiticas' },
     // Salió de la cabecera de préstamos: se consulta antes de prestar, no todos
     // los días, y allí costaba 50px permanentes en la pantalla más apretada.
     { icono: 'simulador',  nombre: 'Simulador',           cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
     { icono: 'reportes',   nombre: 'Reportes',            cifra: null, destino: '/reportes' },
     { icono: 'gastos',     nombre: 'Gastos',              cifra: gastosMes, tono: 'ambar', destino: '/gastos' },
     { icono: 'cobradores', nombre: 'Cobradores',          cifra: cobradoresSinRegistrar, tono: 'mal', destino: '/cobradores' },
-    { icono: 'perdidos',   nombre: 'Perdidos',            cifra: perdidos, destino: '/perdidos' },
+    { icono: 'perdidos',   nombre: 'Perdidos',            cifra: perdidos, destino: '/clavos' },
     haySocios && { icono: 'socios', nombre: 'Socios',        cifra: socios.resumen, destino: '/socios' },
     hayEquipo && { icono: 'quien',  nombre: 'Quién hizo qué', cifra: null, destino: '/actividad' },
   ].filter(Boolean)
@@ -163,9 +163,9 @@ export default function PantallaMas({
       <Rotulo>Cargar datos</Rotulo>
       <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
         <TarjetaCarga icono="cuaderno" titulo="Pasar mi cuaderno"
-          nota="Le tomas foto y se pasa solo" onIr={ir('/importar/cuaderno')} />
+          nota="Le tomas foto y se pasa solo" onIr={ir('/migrador')} />
         <TarjetaCarga icono="excel" titulo="Importar Excel"
-          nota="Si ya lo llevas en el computador" onIr={ir('/importar/excel')} />
+          nota="Si ya lo llevas en el computador" onIr={ir('/carga-masiva')} />
       </div>
 
       <Rotulo>Cuenta</Rotulo>
