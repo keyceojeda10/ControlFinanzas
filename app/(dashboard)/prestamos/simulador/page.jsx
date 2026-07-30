@@ -118,15 +118,6 @@ export default function CalculadoraPage() {
     <div className="max-w-2xl mx-auto pb-28">
       {/* Header */}
       <header className="mb-6">
-        <Link
-          href="/prestamos"
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] transition-colors mb-2"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Préstamos
-        </Link>
         <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Simulador de préstamos</h1>
         <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
           Calcula la cuota para mostrarle a tu cliente, sin registrar nada.

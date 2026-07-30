@@ -72,7 +72,12 @@ export default function GastosPage() {
 
   const [vista, setVista] = useState(() => (searchParams?.get('tab') === 'capital' ? 'capital' : 'gastos'))
   const [estado, setEstado] = useState('pendiente')
+  // `?anotar=1` abre la hoja al llegar: el menu del + tenia `/gastos/nuevo`, que
+  // no existe, porque anotar un gasto no es una pantalla sino una hoja de aqui.
   const [abrirReportar, setAbrirReportar] = useState(false)
+  useEffect(() => {
+    if (searchParams?.get('anotar')) setAbrirReportar(true)
+  }, [searchParams])
   const [fecha, setFecha] = useState('')
   const [cobradorId, setCobradorId] = useState('')
   const [cobradores, setCobradores] = useState([])

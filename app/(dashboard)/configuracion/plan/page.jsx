@@ -207,16 +207,6 @@ export default function PlanPage() {
 
       {/* ── Header ── */}
       <div className="pt-2 flex items-start gap-3">
-        <button
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 mt-1 transition-colors"
-          style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
-          aria-label="Volver"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </button>
         <div>
           <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             Mi <em style={{ fontStyle: 'italic', color: 'var(--cf-gold)' }}>plan</em>

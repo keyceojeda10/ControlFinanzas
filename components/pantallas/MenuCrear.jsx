@@ -142,7 +142,7 @@ export default function MenuCrear({
   cobrosPendientes, plataLista, cajaEstado, diasPlan,
   cobrosCorto, plataCorto,
   ejemploLucas = '¿cuánto recaudé esta semana?',
-  onIr, onCerrar,
+  onIr, onCerrar, onEscanear,
 }) {
   const ir = (d) => () => onIr?.(d)
 
@@ -171,15 +171,21 @@ export default function MenuCrear({
         <span style={{ height: 5, flex: 'none' }} />
         <Rotulo>Entra plata</Rotulo>
         <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
-          <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobrar')} />
-          <Accion icono="qr" nombre="Escanear un QR" onClick={ir('/qr')} />
+          {/* `/cobrar` NO EXISTE, y era 404. Un pago se registra desde el
+              prestamo o desde la lista de hoy, asi que se va a la lista: ahi
+              esta a quien hay que cobrarle, que es lo que se venia a hacer. */}
+          <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobros-hoy')} />
+          {/* El escaner NO ES UNA RUTA, es un modal. `/qr` daba 404. */}
+          <Accion icono="qr" nombre="Escanear un QR" onClick={onEscanear} />
         </div>
 
         <span style={{ height: 5, flex: 'none' }} />
         <Rotulo>Sale plata</Rotulo>
         <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
           <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} />
-          <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos/nuevo')} />
+          {/* `/gastos/nuevo` tampoco existe: el gasto se anota en una hoja
+              dentro de /gastos. */}
+          <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} />
         </div>
 
         <span style={{ height: 5, flex: 'none' }} />
@@ -194,14 +200,16 @@ export default function MenuCrear({
           <Destino icono="cobrar"  nombre="Cobrar hoy" cifra={cobrosCorto} onClick={ir('/cobros-hoy')} />
           <Destino icono="caja"    nombre="La caja"    cifra={cajaEstado} onClick={ir('/caja')} />
           <Destino icono="miplata" nombre="Mi plata"   cifra={plataCorto} onClick={ir('/capital')} />
-          <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/plan')} />
+          {/* Era `/plan` — 404. La pantalla vive bajo configuracion. */}
+          <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/configuracion/plan')} />
         </div>
 
         {/* Lucas va al pie y separado: no es una acción más, es otra forma de
             usar la app. Tarjeta blanca como las demás — un círculo oscuro aquí
             se leería como un parche sobre el dorado. */}
         <span style={{ height: 9, flex: 'none' }} />
-        <button type="button" onClick={ir('/lucas')} style={{
+        {/* `/lucas` era 404: la ruta se llama `/asistente`. */}
+        <button type="button" onClick={ir('/asistente')} style={{
           display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
           minHeight: 66, padding: '0 15px', cursor: 'pointer', textAlign: 'left',
           background: TARJETA, border: 0, borderRadius: 18,
@@ -226,7 +234,13 @@ export default function MenuCrear({
       {/* El FAB se convierte en el botón de cerrar, EN EL MISMO SITIO. El pulgar
           ya está ahí: mover el objetivo sería castigar al que abrió el menú. */}
       <button type="button" onClick={onCerrar} aria-label="Cerrar" style={{
-        position: 'absolute', right: 22, bottom: 22,
+        // MISMAS COORDENADAS QUE LA PASTILLA, y por eso salen de los tokens y no
+        // de un 22 escrito a mano: estaba a 22/22 y la pastilla a 16/18, asi que
+        // el boton SE MOVIA SEIS PIXELES bajo el dedo al abrir el menu. El
+        // comentario de aqui abajo decia «EN EL MISMO SITIO» y no lo estaba.
+        position: 'absolute',
+        right: 'var(--cf-nav-side)',
+        bottom: 'calc(var(--cf-nav-inset) + env(safe-area-inset-bottom, 0px))',
         width: 62, height: 62, aspectRatio: '1', borderRadius: 999,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         background: '#15161A', border: 0, cursor: 'pointer',

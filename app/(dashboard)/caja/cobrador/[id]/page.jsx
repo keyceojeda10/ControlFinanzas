@@ -87,10 +87,6 @@ export default function CajaCobradorPage() {
     <div className="p-4 space-y-4 max-w-2xl lg:max-w-5xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
-        <Link href={`/caja?fecha=${data?.fecha || ''}`} className="text-sm text-[var(--cf-gold)] flex items-center gap-1 w-fit">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-          Volver a Caja
-        </Link>
         <div className="flex items-center justify-between gap-2">
           <div>
             <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Caja de {data?.cobrador?.nombre}</h1>

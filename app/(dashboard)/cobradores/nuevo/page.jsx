@@ -185,16 +185,6 @@ export default function NuevoCobrador() {
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-5">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
-          style={{ color: 'var(--cf-ink-3)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{

@@ -101,12 +101,6 @@ export default function NuevoTicketPage() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
-        <button onClick={() => router.back()} className="text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors mb-2 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
         <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Nuevo ticket de soporte</h1>
         <p className="text-xs text-[var(--cf-ink-3)]">Cuéntanos cómo podemos ayudarte</p>
       </div>

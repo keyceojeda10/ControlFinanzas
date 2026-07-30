@@ -109,11 +109,6 @@ export default function DetalleLineaPage({ params }) {
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
-      <button onClick={() => router.push('/lineas-credito')} className="flex items-center gap-1 text-xs text-[var(--cf-ink-3)] mb-4">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        Líneas de crédito
-      </button>
-
       {/* Hero card azul metalizado */}
       <div
         className="relative rounded-[20px] overflow-hidden mb-4"

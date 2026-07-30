@@ -743,16 +743,6 @@ export default function PrestamoDetallePage({ params }) {
 
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
-      {/* Back */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Préstamos
-      </button>
 
       {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
       {esClavo && (

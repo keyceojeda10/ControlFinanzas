@@ -253,16 +253,6 @@ export default function RankingCobradoresPage() {
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto pb-6">
       <div className="mb-6">
-        <Link
-          href="/cobradores"
-          className="inline-flex items-center gap-1.5 text-sm mb-3 transition-colors"
-          style={{ color: 'var(--cf-ink-3)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Cobradores
-        </Link>
         <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Ranking de cobradores</h1>
         {periodoLabel && (
           <p className="text-sm mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>

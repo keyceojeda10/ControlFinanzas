@@ -14,16 +14,17 @@
 // la regla de supresión volvería a ser una convención en vez de una norma: se
 // cumpliría en las pantallas que alguien recordó y en las demás no.
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { CABECERA, resolverArmazon, iniciales, rolEnEspanol } from '@/lib/armazon'
+import { CABECERA, resolverArmazon, iniciales, rolEnEspanol, volverA, puedeRetroceder } from '@/lib/armazon'
 import { useOnline } from '@/hooks/useOnline'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 import CabeceraMovil from '@/components/armazon/CabeceraMovil'
 import PastillaNav from '@/components/armazon/PastillaNav'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
 import MenuCrear from '@/components/pantallas/MenuCrear'
+import QrScanner from '@/components/qr/QrScanner'
 
 const ArmazonContext = createContext(null)
 
@@ -73,8 +74,18 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // pantallas de navegación— se pulsaba y no hacía nada: ni menú, ni navegar,
   // ni error. Un botón que no responde enseña a no volver a tocarlo.
   const [menuCrear, setMenuCrear] = useState(false)
+  // El escaner de QR es un MODAL, no una ruta: `/qr` daba 404 desde el menu.
+  const [escaner, setEscaner] = useState(false)
   const pathname = usePathname() || '/'
   const router = useRouter()
+
+  // Retroceder SOLO si hay algo de la app detrás; si no, ir al padre.
+  // `router.back()` a secas dejaba una pantalla en blanco al entrar por URL o
+  // tras recargar, que es como se entra la mitad de las veces. Ver `volverA`.
+  const volver = useCallback(() => {
+    if (puedeRetroceder()) router.back()
+    else router.push(volverA(pathname))
+  }, [router, pathname])
   const conectado = useOnline()
   const { theme, setTheme } = useTheme() ?? {}
   const { data: session } = useSession()
@@ -148,8 +159,8 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           acciones={dePantalla?.acciones}
           paso={dePantalla?.paso}
           total={dePantalla?.total}
-          onVolver={dePantalla?.onVolver ?? (() => router.back())}
-          onCerrar={dePantalla?.onCerrar ?? (() => router.back())}
+          onVolver={dePantalla?.onVolver ?? volver}
+          onCerrar={dePantalla?.onCerrar ?? volver}
         />
       )}
 
@@ -159,6 +170,17 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           los cinco destinos en el árbol y un lector de pantalla los sigue
           anunciando en una pantalla donde no se puede navegar. */}
       {armazon.pastilla && <PastillaNav onCrear={onCrear ?? (() => setMenuCrear(true))} />}
+
+      {escaner && (
+        <QrScanner
+          open={escaner}
+          onClose={() => setEscaner(false)}
+          onClientDetected={(clienteId) => {
+            setEscaner(false)
+            if (clienteId) router.push(`/clientes/${clienteId}`)
+          }}
+        />
+      )}
 
       <HojaCuenta
         abierta={cuenta}
@@ -180,7 +202,11 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           <MenuCrear
             fecha={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
             hora={new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-            onIr={(destino) => { setMenuCrear(false); window.location.href = destino }}
+            // `router.push`, no `window.location.href`: aquello RECARGABA LA APP
+            // ENTERA en cada salto —fuentes, bundle, sesion— desde un menu cuyo
+            // trabajo es llevarte rapido a otro sitio.
+            onIr={(destino) => { setMenuCrear(false); router.push(destino) }}
+            onEscanear={() => { setMenuCrear(false); setEscaner(true) }}
             onCerrar={() => setMenuCrear(false)}
           />
         </div>
