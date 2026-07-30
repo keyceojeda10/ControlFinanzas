@@ -23,7 +23,7 @@ import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
-import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre } from '@/components/pantallas/Caja'
+import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
@@ -782,6 +782,34 @@ export default function Estilo() {
                 { id: 'cobro', titulo: 'Un cobro que no se anotó', nota: 'lo cobraste y no entró a la app', accion: 'Buscar' },
                 { id: 'conteo', titulo: 'Contaste mal', nota: 'vuelve a contar los billetes', accion: 'Recontar' },
               ]}
+            />
+          </div>
+        </div>
+
+        <div id="cierres" style={{ ...MARCO, height: 'auto', minHeight: 640 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Caja" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, padding: '0 20px 20px' }}>
+            <PestanasCaja
+              pestanas={[
+                { id: 'hoy', etiqueta: 'Hoy' },
+                { id: 'cuentas', etiqueta: 'Cuentas' },
+                { id: 'cuadre', etiqueta: 'Cuadre' },
+                { id: 'cierres', etiqueta: 'Cierres' },
+              ]}
+              activa="cierres"
+            />
+            <HistorialCierres
+              resumen={[
+                { etiqueta: 'Julio', valor: '22 cierres' },
+                { etiqueta: 'Cuadraron', valor: '18', tono: 'ok' },
+                { etiqueta: 'Faltó', valor: '$112.000', tono: 'mal' },
+              ]}
+              cierres={[
+                { id: 1, dia: 'Hoy, martes 28', pastilla: 'faltó', estado: 'falto', detalle: 'Recaudó $145.000 · 9 de 14 cobros', diferencia: '−$35.000', nota: 'sin explicar' },
+                { id: 2, dia: 'Lunes 27', pastilla: 'cuadró', estado: 'cuadro', detalle: 'Recaudó $218.000 · 12 de 13 cobros' },
+                { id: 3, dia: 'Sábado 25', pastilla: 'sobró', estado: 'sobro', detalle: 'Recaudó $241.000 · 13 de 15 cobros', diferencia: '+$12.000', nota: 'cobro sin anotar' },
+              ]}
+              hallazgo="Los cuatro descuadres del mes son de la ruta de Carlos. Vale la pena revisar cómo está registrando los gastos."
             />
           </div>
         </div>

@@ -19,7 +19,7 @@
 //  3. Nueve tarjetas con emoji se vuelven TRES FILAS que importan y un pie de
 //     línea con "4 cobradores sin cobros hoy".
 
-import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Chip } from '@/components/cf/primitivos'
+import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Chip, Pastilla } from '@/components/cf/primitivos'
 
 // ⚠️ CAJA ES PANTALLA DE NAVEGACIÓN: lleva pastilla. Y `02-ARMAZON.md` §E dice
 // que la barra de acción anclada ocupa el sitio de la pastilla SOLO CUANDO LA
@@ -980,6 +980,129 @@ export function Cuadre({
             ))}
           </div>
         </>
+      )}
+    </>
+  )
+}
+
+/* ══ T20-03 · Historial de cierres ═════════════════════════════════════════
+   El pie de la lámina, que es el diseño entero:
+
+     «UNA LISTA DE DÍAS NO SIRVE DE NADA; LO QUE SIRVE ES EL PATRÓN. Por eso
+      arriba están las tres cifras del mes y abajo la línea que hace el trabajo:
+      los cuatro descuadres son de la misma ruta. Eso ningún dueño lo ve revisando
+      cierres uno por uno, y es la diferencia entre sospechar de alguien y saber
+      qué revisar. "Sobró" también es un descuadre — un cobro sin anotar.»
+
+   Así que la lista es lo de menos: lo que justifica la pantalla es el AVISO DEL
+   FINAL. Un dueño puede mirar veintidós cierres y no ver que cuatro son del mismo
+   cobrador; la app sí, y decirlo es la diferencia entre desconfiar de todos y
+   saber dónde mirar.
+
+   El riel de color repite el criterio de T20-01: verde cuadró, rojo faltó, ámbar
+   sobró. Y sobrar NO es bueno — es un cobro que no se anotó—, así que va en ámbar
+   y no en verde: verde es «esto está bien», y esto no lo está.
+
+   El aviso solo aparece cuando HAY patrón. Un aviso que sale siempre deja de
+   leerse, y «los descuadres están repartidos» no es un hallazgo. */
+export function HistorialCierres({
+  resumen = [], cierres = [], hallazgo,
+}) {
+  return (
+    <>
+      {resumen.length > 0 && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: '17px 19px', display: 'flex', gap: 8,
+        }}>
+          {resumen.map((r, i) => (
+            <span key={r.etiqueta} style={{ display: 'contents' }}>
+              {i > 0 && <span aria-hidden style={{ width: 1, background: 'var(--cf-hairline)', flex: 'none' }} />}
+              <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                }}>{r.etiqueta}</span>
+                <span className="cf-fig" style={{
+                  fontSize: 17, fontWeight: 600,
+                  color: r.tono === 'ok' ? 'var(--cf-green-dark)'
+                    : r.tono === 'mal' ? 'var(--cf-red-dark)'
+                    : 'var(--cf-ink)',
+                }}>{r.valor}</span>
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {cierres.map((c) => {
+        const color = c.estado === 'cuadro' ? 'var(--cf-green)'
+          : c.estado === 'sobro' ? ORO
+          : 'var(--cf-red)'
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={c.onAbrir}
+            style={{
+              flex: 'none', position: 'relative', overflow: 'hidden', width: '100%',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+              borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+              display: 'flex', alignItems: 'center', gap: 13,
+              font: 'inherit', textAlign: 'left', cursor: c.onAbrir ? 'pointer' : 'default',
+            }}
+          >
+            <span aria-hidden style={{
+              position: 'absolute', left: 0, top: 15, bottom: 15, width: 4,
+              borderRadius: 999, background: color,
+            }} />
+            <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span style={{
+                  fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{c.dia}</span>
+                {c.pastilla && (
+                  <Pastilla
+                    tono={c.estado === 'cuadro' ? 'aldia' : c.estado === 'sobro' ? 'atraso' : 'mora'}
+                    style={{ height: 20, fontSize: 11, flex: 'none' }}
+                  >{c.pastilla}</Pastilla>
+                )}
+              </span>
+              <span className="cf-num" style={{
+                fontSize: 12, color: 'var(--cf-ink-3)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{c.detalle}</span>
+            </span>
+            {c.diferencia && (
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end', flex: 'none' }}>
+                <span className="cf-fig" style={{
+                  fontSize: 17, fontWeight: 600,
+                  color: c.estado === 'sobro' ? 'var(--cf-gold-text-2)' : 'var(--cf-red-dark)',
+                }}>{c.diferencia}</span>
+                {/* «Sin explicar» es la mitad del dato: un faltante con motivo es un
+                    gasto que no se anotó; sin motivo es plata que se fue. */}
+                {c.nota && (
+                  <span style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>{c.nota}</span>
+                )}
+              </span>
+            )}
+          </button>
+        )
+      })}
+
+      {/* EL HALLAZGO. Es lo que justifica la pantalla: un dueño puede mirar
+          veintidós cierres y no ver que cuatro son del mismo cobrador. */}
+      {hallazgo && (
+        <div style={{
+          flex: 'none', display: 'flex', gap: 10, alignItems: 'flex-start',
+          padding: '15px 17px', borderRadius: 'var(--cf-r-card-sm)',
+          background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+        }}>
+          <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-gold-text-2)' }}>
+            {hallazgo}
+          </span>
+        </div>
       )}
     </>
   )
