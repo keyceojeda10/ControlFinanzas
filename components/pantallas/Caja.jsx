@@ -1107,3 +1107,369 @@ export function HistorialCierres({
     </>
   )
 }
+
+/* ══ T33-03 · El mes en caja ═══════════════════════════════════════════════
+   El cierre mensual que faltaba. NO REPITE EL DIARIO: responde tres preguntas que
+   solo tienen sentido con el mes entero delante.
+
+     1 · cuánto pasó por mis manos, y en qué forma
+     2 · cuántos días cuadraron
+     3 · en qué se gastó
+
+   Y trae dos cosas que solo aparecen al ver el mes completo:
+
+   EL HALLAZGO SUBE AQUÍ CON SU PESO. En el historial de cierres es un aviso ámbar
+   al final de una lista; aquí es una tarjeta roja con nombre y apellido, porque
+   cuatro faltantes de la misma ruta en un mes ya no es una casualidad.
+
+   Y LA LECTURA DE LOS GASTOS, que es la más útil de la pantalla y la que ningún
+   informe da: «un mes de $8,8M con $10.000 de gastos quiere decir que la gasolina
+   y los almuerzos no se registran, así que la ganancia se ve más alta de lo que
+   es». Un dueño mirando ese $10.000 piensa que gastó poco. La app sabe que eso es
+   imposible y lo dice.
+
+   Esa frase se compone FUERA, con la proporción real: escribirla fija aquí sería
+   afirmar lo mismo en un negocio que sí registra sus gastos. */
+export function MesEnCaja({
+  paso, formas = [], tramosFormas = [],
+  diasEtiqueta, dias = [], faltanteEtiqueta, faltanteValor,
+  hallazgoTitulo, hallazgoDetalle,
+  gastosTotal, gastos = [], lecturaGastos,
+}) {
+  return (
+    <>
+      <div style={{
+        flex: 'none', background: '#15161A', borderRadius: 20,
+        padding: '19px 21px', display: 'flex', flexDirection: 'column', gap: 14,
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+          textTransform: 'uppercase', color: '#A3A8B2',
+        }}>Pasó por tus manos</span>
+        <span className="cf-fig" style={{
+          fontSize: 34, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1, color: '#F3F3F6',
+        }}>{paso}</span>
+
+        {/* EN QUÉ FORMA. Es la pregunta que decide si el conteo físico puede
+            cuadrar: la parte de efectivo es la que pasa por manos y se puede
+            perder; la digital se concilia sola. */}
+        {tramosFormas.length > 0 && (
+          <span aria-hidden style={{
+            display: 'flex', height: 12, borderRadius: 999, overflow: 'hidden', flex: 'none',
+            background: 'rgba(255,255,255,.08)',
+          }}>
+            {tramosFormas.map((t) => (
+              <span key={t.id} style={{ width: `${t.porcentaje}%`, background: t.color, flex: 'none' }} />
+            ))}
+          </span>
+        )}
+        {formas.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {formas.map((fo) => (
+              <div key={fo.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: fo.color, flex: 'none' }} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#A3A8B2' }}>{fo.etiqueta}</span>
+                <span className="cf-fig" style={{
+                  fontSize: 14, fontWeight: 600, flex: 'none',
+                  color: fo.destacado ? fo.color : '#F3F3F6',
+                }}>{fo.valor}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {dias.length > 0 && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: '17px 19px',
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>{diasEtiqueta}</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {dias.map((d, i) => (
+              <span key={d.etiqueta} style={{ display: 'contents' }}>
+                {i > 0 && <span aria-hidden style={{ width: 1, background: 'var(--cf-hairline)', flex: 'none' }} />}
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                    textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                  }}>{d.etiqueta}</span>
+                  <span className="cf-fig" style={{
+                    fontSize: 19, fontWeight: 600,
+                    color: d.tono === 'ok' ? 'var(--cf-green-dark)'
+                      : d.tono === 'mal' ? 'var(--cf-red-dark)'
+                      : d.tono === 'aviso' ? 'var(--cf-gold-text-2)'
+                      : 'var(--cf-ink)',
+                  }}>{d.valor}</span>
+                </span>
+              </span>
+            ))}
+          </div>
+          {faltanteValor && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 11,
+              paddingTop: 12, borderTop: '1px solid var(--cf-hairline)',
+            }}>
+              <span style={{ flex: 1, fontSize: 13, color: 'var(--cf-ink-2)' }}>{faltanteEtiqueta}</span>
+              <span className="cf-fig" style={{ fontSize: 16, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>
+                {faltanteValor}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* EL HALLAZGO, con más peso que en el historial: allí es un aviso ámbar al
+          final de una lista, aquí es rojo y con nombre. Cuatro faltantes de la misma
+          ruta en un mes ya no es casualidad. */}
+      {hallazgoTitulo && (
+        <div style={{
+          flex: 'none', display: 'flex', gap: 11, alignItems: 'flex-start',
+          padding: '15px 17px', borderRadius: 'var(--cf-r-card)',
+          background: 'var(--cf-red-bg)', border: '1px solid var(--cf-red-border)',
+        }}>
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-red-darker)' }}>
+              {hallazgoTitulo}
+            </span>
+            {hallazgoDetalle && (
+              <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-red-darker)' }}>
+                {hallazgoDetalle}
+              </span>
+            )}
+          </span>
+        </div>
+      )}
+
+      {gastos.length > 0 && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 10, padding: '15px 19px 11px', flex: 'none',
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+            }}>En qué se gastó</span>
+            <span className="cf-fig" style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>
+              {gastosTotal}
+            </span>
+          </div>
+
+          {gastos.map((g) => (
+            <div key={g.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 19px', borderTop: '1px solid var(--cf-hairline)',
+            }}>
+              <span aria-hidden style={{ width: 7, height: 7, borderRadius: 999, background: 'var(--cf-red)', flex: 'none' }} />
+              <span style={{
+                flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{g.concepto}</span>
+              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none' }}>
+                {g.veces}
+              </span>
+              <span className="cf-fig" style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>
+                {g.monto}
+              </span>
+            </div>
+          ))}
+
+          {/* LA LECTURA. Es lo más útil de la pantalla y lo que ningún informe da:
+              un dueño mirando $10.000 de gastos piensa que gastó poco; la app sabe
+              que sobre $8,8M eso es imposible y lo dice. */}
+          {lecturaGastos && (
+            <div style={{ padding: '16px 19px', borderTop: '1px solid var(--cf-hairline)' }}>
+              <span style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>
+                {lecturaGastos}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
+
+/* ══ T33-02 · Bajar información ════════════════════════════════════════════
+   El pie de la lámina, con las cuatro decisiones:
+
+     «Las descargas están al fondo de Reportes, después de todo el scroll, CON LOS
+      FILTROS DE "QUIÉN ME DEBE" SUELTOS Y SIN RESULTADO VISIBLE: se elige ruta,
+      orden y mora SIN SABER CUÁNTOS CLIENTES VAN A SALIR. Aquí los filtros van
+      dentro de su tarjeta y encima del botón, con la cuenta hecha: 18 clientes ·
+      $16.2M. Y como el destinatario suele ser el contador por WhatsApp, "MANDAR"
+      ESTÁ AL LADO DE "BAJAR". Cada Excel dice cuántas filas trae — si dice 0,
+      mejor saberlo antes de abrirlo.»
+
+   LA CUENTA ANTES DE BAJAR es lo que arregla el problema real: un informe que sale
+   vacío se descubre al abrirlo, ya fuera de la app, y para entonces el dueño ya
+   cambió de pantalla. «Van a salir 18 clientes · $16.2M» convierte tres filtros a
+   ciegas en una decisión.
+
+   Y «MANDAR» AL LADO DE «BAJAR» porque el destinatario casi nunca es uno mismo: es
+   el contador, por WhatsApp. Bajar y luego buscar el archivo para compartirlo son
+   dos pasos que sobran.
+
+   Los filtros van DENTRO de la tarjeta que descargan. Sueltos arriba parecían
+   filtros de la pantalla, y el dueño no sabía a cuál de los tres informes
+   aplicaban. */
+export function BajarInformacion({ informes = [], crudos = [], crudosTitulo, crudosNota }) {
+  return (
+    <>
+      {informes.map((inf) => {
+        const destacado = Boolean(inf.filtros?.length || inf.cuenta)
+        return (
+          <div
+            key={inf.id}
+            style={{
+              flex: 'none', background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
+              padding: '17px 19px', display: 'flex', flexDirection: 'column', gap: 13,
+              // Solo el informe que TIENE filtros lleva el anillo: es el único donde
+              // hay algo que decidir antes de pulsar.
+              border: destacado ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+              boxShadow: destacado ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+            }}
+          >
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>{inf.titulo}</span>
+              <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--cf-ink-3)' }}>{inf.nota}</span>
+            </span>
+
+            {inf.filtros?.length > 0 && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                {inf.filtros.map((fi) => (
+                  <button key={fi.id} type="button" onClick={fi.onCambiar} style={{
+                    flex: 1, minWidth: 0, height: 44, padding: '0 13px', borderRadius: 12,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                    background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+                    font: 'inherit', cursor: 'pointer',
+                  }}>
+                    <span style={{
+                      flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left',
+                    }}>{fi.valor}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+                         strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {inf.interruptor && (
+              <button
+                type="button"
+                onClick={() => inf.interruptor.onCambiar?.(!inf.interruptor.activo)}
+                aria-pressed={inf.interruptor.activo}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                  border: 0, background: 'none', padding: 0, cursor: 'pointer',
+                  font: 'inherit', textAlign: 'left',
+                }}
+              >
+                <span aria-hidden style={{
+                  width: 44, height: 26, borderRadius: 999, flex: 'none', position: 'relative',
+                  background: inf.interruptor.activo ? ORO : 'var(--cf-fill-2)',
+                  transition: 'background .15s',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: 3, width: 20, height: 20, borderRadius: 999,
+                    background: '#FFF', boxShadow: '0 1px 3px rgba(20,20,28,.24)',
+                    left: inf.interruptor.activo ? 21 : 3, transition: 'left .15s',
+                  }} />
+                </span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)' }}>
+                  {inf.interruptor.etiqueta}
+                </span>
+              </button>
+            )}
+
+            {/* LA CUENTA HECHA. Es lo que convierte tres filtros a ciegas en una
+                decisión: un informe vacío se descubría al abrirlo, ya fuera de la
+                app. */}
+            {inf.cuenta && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 11,
+                padding: '13px 15px', borderRadius: 12,
+                background: 'var(--cf-fill-suave, var(--cf-fill))', border: '1px solid var(--cf-hairline)',
+              }}>
+                <span className="cf-num" style={{ flex: 1, fontSize: 13, color: 'var(--cf-ink-2)' }}>
+                  {inf.cuenta}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 9 }}>
+              {inf.onBajar && (
+                <button type="button" onClick={inf.onBajar} style={{
+                  flex: 1, height: 48, borderRadius: 13, border: 'none', cursor: 'pointer',
+                  background: ORO, color: 'var(--cf-gold-ink)', font: 'inherit',
+                  fontSize: 14, fontWeight: 700,
+                }}>Bajar</button>
+              )}
+              {/* «MANDAR» AL LADO. El destinatario casi nunca es uno mismo: es el
+                  contador, por WhatsApp. Bajar y luego buscar el archivo para
+                  compartirlo son dos pasos que sobran. */}
+              {inf.onMandar && (
+                <button type="button" onClick={inf.onMandar} style={{
+                  flex: 1, height: 48, borderRadius: 13, cursor: 'pointer',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  color: 'var(--cf-ink)', font: 'inherit', fontSize: 14, fontWeight: 700,
+                }}>Mandar</button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+
+      {crudos.length > 0 && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '17px 19px 12px', flex: 'none' }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>{crudosTitulo}</span>
+            <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--cf-ink-3)' }}>{crudosNota}</span>
+          </span>
+          {crudos.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={c.onBajar}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: '13px 19px', borderTop: '1px solid var(--cf-hairline)',
+                background: 'none', border: 0, font: 'inherit', textAlign: 'left',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)' }}>
+                {c.nombre}
+              </span>
+              {/* CUÁNTAS FILAS TRAE. Si dice 0, mejor saberlo antes de abrirlo:
+                  descubrir un Excel vacío pasa fuera de la app, cuando ya no se
+                  puede arreglar el filtro. */}
+              <span className="cf-num" style={{
+                fontSize: 12, flex: 'none',
+                color: c.filas === 0 ? 'var(--cf-gold-text-2)' : 'var(--cf-ink-3)',
+              }}>
+                {c.filas === 0 ? 'vacío' : `${c.filas} filas`}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}

@@ -23,7 +23,7 @@ import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
-import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres } from '@/components/pantallas/Caja'
+import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres, MesEnCaja, BajarInformacion } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
@@ -810,6 +810,68 @@ export default function Estilo() {
                 { id: 3, dia: 'Sábado 25', pastilla: 'sobró', estado: 'sobro', detalle: 'Recaudó $241.000 · 13 de 15 cobros', diferencia: '+$12.000', nota: 'cobro sin anotar' },
               ]}
               hallazgo="Los cuatro descuadres del mes son de la ruta de Carlos. Vale la pena revisar cómo está registrando los gastos."
+            />
+          </div>
+        </div>
+
+        <div id="mes-en-caja" style={{ ...MARCO, height: 'auto', minHeight: 700 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="El mes en caja" subtitulo="julio de 2026" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, padding: '0 20px 20px' }}>
+            <MesEnCaja
+              paso="$8.838.907"
+              tramosFormas={[
+                { id: 'efectivo', porcentaje: 71, color: '#2FBE6A' },
+                { id: 'digital', porcentaje: 29, color: '#F5B824' },
+              ]}
+              formas={[
+                { id: 'efectivo', etiqueta: 'Efectivo, contado a mano', valor: '$6.275.624', color: '#2FBE6A' },
+                { id: 'digital', etiqueta: 'Nequi y transferencias', valor: '$2.563.283', color: '#F5B824', destacado: true },
+              ]}
+              diasEtiqueta="Los 28 días de julio"
+              dias={[
+                { etiqueta: 'Cuadraron', valor: '23', tono: 'ok' },
+                { etiqueta: 'Faltó plata', valor: '4', tono: 'mal' },
+                { etiqueta: 'Sin contar', valor: '1', tono: 'aviso' },
+              ]}
+              faltanteEtiqueta="Faltante del mes" faltanteValor="$127.000"
+              hallazgoTitulo="Los 4 faltantes son de Ruta 2"
+              hallazgoDetalle="Ninguna otra ruta descuadró en julio. Andrés Pérez cerró esos cuatro días."
+              gastosTotal="$10.000"
+              gastos={[{ id: 1, concepto: 'Almuerzo', veces: '1 vez', monto: '$10.000' }]}
+              lecturaGastos={<>Un mes de $8,8M con <strong>$10.000 de gastos</strong> quiere decir que la gasolina, los almuerzos y el transporte no se están registrando: la ganancia se ve más alta de lo que es.</>}
+            />
+          </div>
+        </div>
+
+        <div id="bajar" style={{ ...MARCO, height: 'auto', minHeight: 700 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Bajar información" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11, padding: '0 20px 20px' }}>
+            <BajarInformacion
+              informes={[
+                {
+                  id: 'debe', titulo: 'Quién me debe',
+                  nota: 'Todos tus clientes con cuánto deben y cuántos días llevan atrasados.',
+                  filtros: [
+                    { id: 'ruta', valor: 'Todas las rutas' },
+                    { id: 'orden', valor: 'Más atrasado' },
+                  ],
+                  interruptor: { etiqueta: 'Solo los que están en mora', activo: true },
+                  cuenta: <>Van a salir <strong>18 clientes</strong> · $16.2M</>,
+                  onBajar: () => {}, onMandar: () => {},
+                },
+                {
+                  id: 'fue', titulo: 'Cómo me fue',
+                  nota: 'Cuánto entró, cuánto ganaste y cómo le fue a cada cobrador.',
+                  onBajar: () => {}, onMandar: () => {},
+                },
+              ]}
+              crudosTitulo="Tus datos en crudo"
+              crudosNota="Excel para el contador o para hacer tus propias cuentas."
+              crudos={[
+                { id: 'clientes', nombre: 'Clientes', filas: 25, onBajar: () => {} },
+                { id: 'prestamos', nombre: 'Préstamos', filas: 31, onBajar: () => {} },
+                { id: 'pagos', nombre: 'Pagos', filas: 0, onBajar: () => {} },
+              ]}
             />
           </div>
         </div>
