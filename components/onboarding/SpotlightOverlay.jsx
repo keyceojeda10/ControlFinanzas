@@ -76,7 +76,7 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
 
       {/* Glow border around cutout */}
       <div
-        className="absolute border-2 border-[var(--color-accent)] rounded-[12px] spotlight-pulse pointer-events-none"
+        className="absolute border-2 border-[var(--cf-gold)] rounded-[12px] spotlight-pulse pointer-events-none"
         style={{
           top: rect.top,
           left: rect.left,
@@ -87,20 +87,20 @@ export default function SpotlightOverlay({ spotlight, onClose }) {
 
       {/* Tooltip */}
       <div
-        className="absolute z-[91] bg-[var(--color-bg-surface)] border border-[var(--color-accent)] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
+        className="absolute z-[91] bg-[var(--cf-surface)] border border-[var(--cf-gold)] rounded-[12px] px-4 py-3 max-w-[260px] shadow-lg shadow-[rgba(245,197,24,0.1)] onboarding-fadein"
         style={tooltipStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-sm text-[var(--color-text-primary)] font-medium mb-1.5">{spotlight.mensaje}</p>
+        <p className="text-sm text-[var(--cf-ink)] font-medium mb-1.5">{spotlight.mensaje}</p>
         <button
           onClick={onClose}
-          className="text-[11px] text-[var(--color-accent)] hover:text-[#f0b800] font-medium transition-colors"
+          className="text-[11px] text-[var(--cf-gold)] hover:text-[var(--cf-gold)] font-medium transition-colors"
         >
           Entendido
         </button>
         {/* Arrow */}
         <div
-          className="absolute -top-1.5 left-6 w-3 h-3 bg-[var(--color-bg-surface)] border-l border-t border-[var(--color-accent)] rotate-45"
+          className="absolute -top-1.5 left-6 w-3 h-3 bg-[var(--cf-surface)] border-l border-t border-[var(--cf-gold)] rotate-45"
           style={spotlight.posicion === 'top' ? { top: 'auto', bottom: -6, transform: 'rotate(225deg)' } : {}}
         />
       </div>

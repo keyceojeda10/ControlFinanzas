@@ -166,13 +166,13 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
           href={warningHref}
           className="lg:hidden fixed bottom-[90px] left-1/2 -translate-x-1/2 z-40 max-w-[90vw] rounded-full px-3.5 py-2.5 flex items-center gap-2"
           style={{
-            background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
+            background: cierreWarning.showPendingReminder ? 'var(--cf-gold-tint)' : 'var(--cf-gold-tint)',
             border: `1px solid ${cierreWarning.showPendingReminder ? 'rgba(245,197,24,0.4)' : 'rgba(251,191,36,0.4)'}`,
             boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}
         >
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }} />
-          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{warningText}</span>
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: cierreWarning.showPendingReminder ? 'var(--cf-gold)' : 'var(--cf-gold-dark)' }} />
+          <span className="text-[11px] font-semibold whitespace-nowrap" style={{ color: cierreWarning.showPendingReminder ? 'var(--cf-gold)' : 'var(--cf-gold-dark)' }}>{warningText}</span>
         </Link>
       )}
 
@@ -180,7 +180,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
       <div
         className="lg:hidden fixed inset-0 z-[54] flex flex-col"
         style={{
-          background: 'var(--color-accent)',
+          background: 'var(--cf-gold)',
           opacity: fabOpen ? 1 : 0,
           visibility: fabOpen ? 'visible' : 'hidden',
           pointerEvents: fabOpen ? 'auto' : 'none',
@@ -246,11 +246,11 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
             style={{ maxHeight: '75vh' }}
           >
             <div className="flex justify-center pt-3 pb-1.5">
-              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--color-border-hover)' }} />
+              <div className="w-10 h-1 rounded-full" style={{ background: 'var(--cf-border-strong)' }} />
             </div>
 
             <div className="px-4 pb-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-secondary)' }}>Navegación</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--cf-ink-2)' }}>Navegación</p>
             </div>
 
             <div className="px-2 pb-6 overflow-y-auto">
@@ -267,7 +267,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
                     </>
                   )
                   const clases = "flex flex-col items-center gap-1 py-3 rounded-2xl transition-all active:scale-95 cf-nav-item"
-                  const estilo = active ? { background: 'var(--color-accent-soft)', color: 'var(--color-accent)' } : { color: 'var(--color-text-secondary)' }
+                  const estilo = active ? { background: 'var(--cf-gold-tint)', color: 'var(--cf-gold)' } : { color: 'var(--cf-ink-2)' }
 
                   if (esLucas) {
                     return (
@@ -316,12 +316,12 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
                   href={tab.href}
                   aria-current={active ? 'page' : undefined}
                   className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
-                  style={active ? { background: 'var(--color-accent-soft)' } : {}}
+                  style={active ? { background: 'var(--cf-gold-tint)' } : {}}
                 >
                   <svg
                     className="w-[22px] h-[22px]"
-                    fill={active && tab.iconFill ? 'var(--color-accent)' : 'none'}
-                    stroke={active && tab.iconFill ? 'none' : active ? 'var(--color-accent)' : 'var(--color-text-muted)'}
+                    fill={active && tab.iconFill ? 'var(--cf-gold)' : 'none'}
+                    stroke={active && tab.iconFill ? 'none' : active ? 'var(--cf-gold)' : 'var(--cf-ink-3)'}
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
                   >
@@ -338,12 +338,12 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
               aria-expanded={moreOpen}
               aria-label="Mas opciones"
               className="relative flex items-center justify-center w-12 h-12 rounded-[16px] transition-all active:scale-90"
-              style={(moreActive || moreOpen) ? { background: 'var(--color-accent-soft)' } : {}}
+              style={(moreActive || moreOpen) ? { background: 'var(--cf-gold-tint)' } : {}}
             >
               <svg
                 className="w-[22px] h-[22px]"
                 fill="none"
-                stroke={(moreActive || moreOpen) ? 'var(--color-accent)' : 'var(--color-text-muted)'}
+                stroke={(moreActive || moreOpen) ? 'var(--cf-gold)' : 'var(--cf-ink-3)'}
                 strokeWidth={1.5}
                 viewBox="0 0 24 24"
               >

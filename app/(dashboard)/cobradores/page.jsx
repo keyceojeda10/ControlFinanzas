@@ -105,7 +105,7 @@ function CobradoresPageInner() {
         clone.style.opacity = '0.95'
         clone.style.transform = 'scale(1.02)'
         clone.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)'
-        clone.style.border = '1px solid var(--color-accent)'
+        clone.style.border = '1px solid var(--cf-gold)'
         clone.style.pointerEvents = 'none'
         clone.style.transition = 'none'
         document.body.appendChild(clone)
@@ -193,28 +193,28 @@ function CobradoresPageInner() {
   if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)] mb-6">Cobradores</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)] mb-6">Cobradores</h1>
         <div
-          className="border border-[var(--color-border)] rounded-[20px] p-8 text-center cf-card-shadow"
+          className="border border-[var(--cf-border)] rounded-[20px] p-8 text-center cf-card-shadow"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-warning) 2%, transparent) 100%)',
-            boxShadow: '0 0 30px color-mix(in srgb, var(--color-warning) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold-dark) 4%, transparent) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-gold-dark) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--cf-gold-dark) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)' }}>
-            <svg className="w-7 h-7 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)' }}>
+            <svg className="w-7 h-7 text-[var(--cf-gold-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <p className="text-base font-bold text-[var(--color-text-primary)] mb-2">Función de plan premium</p>
-          <p className="text-sm text-[var(--color-text-muted)] mb-5">
+          <p className="text-base font-bold text-[var(--cf-ink)] mb-2">Función de plan premium</p>
+          <p className="text-sm text-[var(--cf-ink-3)] mb-5">
             Actualiza tu plan para agregar cobradores y gestionar rutas de cobro.
           </p>
-          <div className="inline-flex flex-col gap-2 text-xs text-[var(--color-text-muted)]">
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Crecimiento: hasta 2 usuarios</span>
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Profesional: hasta 5 usuarios</span>
-            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--color-success)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Empresarial: hasta 10 usuarios</span>
+          <div className="inline-flex flex-col gap-2 text-xs text-[var(--cf-ink-3)]">
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Crecimiento: hasta 2 usuarios</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Profesional: hasta 5 usuarios</span>
+            <span className="flex items-center gap-1.5"><svg className="w-3.5 h-3.5 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Empresarial: hasta 10 usuarios</span>
           </div>
         </div>
       </div>
@@ -225,8 +225,8 @@ function CobradoresPageInner() {
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Cobradores</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Cobradores</h1>
+          <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
             {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
           </p>
         </div>
@@ -260,7 +260,7 @@ function CobradoresPageInner() {
       </div>
 
       {error && (
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -276,8 +276,8 @@ function CobradoresPageInner() {
           <div className="mb-4">
             <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin cobradores aun</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea el primer cobrador para asignarle una ruta</p>
+          <p className="text-sm font-medium text-[var(--cf-ink)]">Sin cobradores aun</p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Crea el primer cobrador para asignarle una ruta</p>
           <Link href="/cobradores/nuevo" className="mt-4">
             <Button size="sm">Crear cobrador</Button>
           </Link>
@@ -287,7 +287,7 @@ function CobradoresPageInner() {
       {/* Toggle modo trabajo / ordenar (solo owner, con 2+ cobradores) */}
       {!loading && cobradores.length > 1 && esOwner && (
         <div className="flex items-center justify-between mb-3">
-          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--cf-fill)' }}>
             {[
               { key: false, label: 'Trabajo' },
               { key: true, label: 'Ordenar' },
@@ -298,15 +298,15 @@ function CobradoresPageInner() {
                 onClick={() => setModoOrdenar(t.key)}
                 className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
                 style={modoOrdenar === t.key
-                  ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
-                  : { color: 'var(--color-text-muted)' }}
+                  ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                  : { color: 'var(--cf-ink-3)' }}
               >
                 {t.label}
               </button>
             ))}
           </div>
           {modoOrdenar && (
-            <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+            <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
               {ordenEstado === 'guardando' ? 'Guardando...' : ordenEstado === 'guardado' ? 'Guardado' : ordenEstado === 'error' ? 'Error al guardar' : 'Arrastra o usa las flechas'}
             </span>
           )}
@@ -317,15 +317,15 @@ function CobradoresPageInner() {
         <div
           className="rounded-[12px] px-4 py-3 mb-4 text-sm"
           style={{
-            background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)',
-            color: 'var(--color-text-primary)',
+            background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 20%, transparent)',
+            color: 'var(--cf-ink)',
           }}
         >
-          <p className="font-semibold mb-1" style={{ color: 'var(--color-warning)' }}>
+          <p className="font-semibold mb-1" style={{ color: 'var(--cf-gold-dark)' }}>
             Tu plan permite {usuariosPermitidos.size - 1} cobrador{usuariosPermitidos.size - 1 !== 1 ? 'es' : ''}
           </p>
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
             Los cobradores marcados como &quot;Suspendido&quot; no pueden iniciar sesion.
             Puedes reordenar tus cobradores para elegir cuales mantener activos.
           </p>
@@ -361,29 +361,29 @@ function CobradoresPageInner() {
               onTouchStart={(e) => onTouchStart(e, i)}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
-              className="flex items-center gap-3 px-3 py-3 rounded-[12px] border bg-[var(--color-bg-card)] select-none"
+              className="flex items-center gap-3 px-3 py-3 rounded-[12px] border bg-[var(--cf-card)] select-none"
               style={{
-                borderColor: dragOverIdx === i ? 'var(--color-accent)' : 'var(--color-border)',
+                borderColor: dragOverIdx === i ? 'var(--cf-gold)' : 'var(--cf-border)',
                 opacity: dragIndex === i ? 0.4 : 1,
                 touchAction: 'none',
               }}
             >
-              <span className="text-[var(--color-text-muted)] cursor-grab shrink-0" aria-hidden>
+              <span className="text-[var(--cf-ink-3)] cursor-grab shrink-0" aria-hidden>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />
                 </svg>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
-                <p className="text-[11px] text-[var(--color-text-muted)] truncate">{c.ruta?.nombre || 'Sin ruta'}</p>
+                <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{c.nombre}</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{c.ruta?.nombre || 'Sin ruta'}</p>
               </div>
               <div className="flex flex-col gap-1 shrink-0">
                 <button type="button" onClick={() => moverCobrador(i, -1)} disabled={i === 0}
-                  className="w-7 h-6 rounded-[6px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 transition-colors">
+                  className="w-7 h-6 rounded-[6px] flex items-center justify-center text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] disabled:opacity-30 transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
                 </button>
                 <button type="button" onClick={() => moverCobrador(i, 1)} disabled={i === cobradores.length - 1}
-                  className="w-7 h-6 rounded-[6px] flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 transition-colors">
+                  className="w-7 h-6 rounded-[6px] flex items-center justify-center text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] disabled:opacity-30 transition-colors">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                 </button>
               </div>

@@ -403,9 +403,9 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-60 min-h-screen shrink-0 cf-sidebar">
       {/* Logo */}
-      <div className="flex flex-col items-center px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="flex flex-col items-center px-5 py-4" style={{ borderBottom: '1px solid var(--cf-border)' }}>
         <Image src={resolvedTheme === 'light' ? '/logo-dark.svg' : '/logo-full.svg'} alt="Control Finanzas" width={160} height={40} priority />
-        {fechaHora && <span className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>{fechaHora}</span>}
+        {fechaHora && <span className="text-[10px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>{fechaHora}</span>}
       </div>
 
       {/* Search shortcut */}
@@ -414,16 +414,16 @@ export default function Sidebar() {
           onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors text-xs"
           style={{
-            background: 'var(--color-bg-hover)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
+            background: 'var(--cf-fill)',
+            border: '1px solid var(--cf-border)',
+            color: 'var(--cf-ink-2)',
           }}
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <span className="flex-1 text-left">Buscar...</span>
-          <kbd className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>Ctrl+K</kbd>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}>Ctrl+K</kbd>
         </button>
       </div>
 
@@ -442,7 +442,7 @@ export default function Sidebar() {
                     aria-current={active ? 'page' : undefined}
                     className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-semibold min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                   >
-                    <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                    <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                       {item.icon}
                     </span>
                     <span className="flex-1">{item.label}</span>
@@ -457,7 +457,7 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => setMasHerramientasOpen(v => !v)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-[8px] text-[11px] font-semibold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2"
-                style={{ color: masHerramientasOpen ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                style={{ color: masHerramientasOpen ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}
               >
                 <span className="flex-1 text-left">Más herramientas</span>
                 <svg
@@ -480,7 +480,7 @@ export default function Sidebar() {
                         aria-current={active ? 'page' : undefined}
                         className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-semibold min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                       >
-                        <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                        <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                           {item.icon}
                         </span>
                         <span className="flex-1">{item.label}</span>
@@ -492,8 +492,8 @@ export default function Sidebar() {
             </div>
 
             {/* CUENTA — siempre visible al final */}
-            <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider px-2 mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuenta</p>
+            <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--cf-border)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider px-2 mb-1" style={{ color: 'var(--cf-ink-3)' }}>Cuenta</p>
               <div className="space-y-0.5">
                 {NAV_CUENTA_OWNER.map((item) => {
                   const active = isActive(item.href)
@@ -504,7 +504,7 @@ export default function Sidebar() {
                       aria-current={active ? 'page' : undefined}
                       className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-semibold min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
                     >
-                      <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                      <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                         {item.icon}
                       </span>
                       <span className="flex-1">{item.label}</span>
@@ -523,7 +523,7 @@ export default function Sidebar() {
               aria-current={active ? 'page' : undefined}
               className={`cf-nav-link${active ? ' active' : ''} group flex items-center gap-2.5 px-2 py-2 rounded-[12px] text-[13px] font-semibold min-h-[38px] focus-visible:outline-none focus-visible:ring-2`}
             >
-              <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+              <span className="w-5 h-5 flex items-center justify-center shrink-0" style={{ color: active ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                 {item.icon}
               </span>
               <span className="flex-1">{item.label}</span>
@@ -539,36 +539,36 @@ export default function Sidebar() {
             href={cierreWarningHref}
             className="flex items-center gap-2 px-3 py-2 rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 transition-colors"
             style={{
-              background: cierreWarning.showPendingReminder ? 'var(--color-accent-soft)' : 'var(--color-warning-dim)',
+              background: cierreWarning.showPendingReminder ? 'var(--cf-gold-tint)' : 'var(--cf-gold-tint)',
               borderColor: cierreWarning.showPendingReminder
                 ? 'rgba(245,197,24,0.35)'
-                : 'var(--color-warning-border)',
+                : 'var(--cf-gold-border)',
             }}
           >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cierreWarning.showPendingReminder ? 'var(--cf-gold)' : 'var(--cf-gold-dark)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold truncate" style={{ color: cierreWarning.showPendingReminder ? 'var(--color-accent)' : 'var(--color-warning)' }}>{cierreWarningTitle}</p>
-              <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>{cierreWarningSubtitle}</p>
+              <p className="text-[11px] font-semibold truncate" style={{ color: cierreWarning.showPendingReminder ? 'var(--cf-gold)' : 'var(--cf-gold-dark)' }}>{cierreWarningTitle}</p>
+              <p className="text-[10px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{cierreWarningSubtitle}</p>
             </div>
           </Link>
         </div>
       )}
 
       {/* Footer */}
-      <div className="px-3 pb-3 pt-3 space-y-2.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+      <div className="px-3 pb-3 pt-3 space-y-2.5" style={{ borderTop: '1px solid var(--cf-border)' }}>
         {/* Tarjeta de perfil */}
         <div
           className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-[12px]"
-          style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}
         >
           <Avatar nombre={session?.user?.nombre} avatarId={session?.user?.avatarId} size={32} fontSize={12} />
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: 'var(--cf-ink)' }}>
               {session?.user?.nombre}
             </p>
-            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
               {{ owner: 'Admin', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? session?.user?.rol}
             </span>
           </div>
@@ -581,8 +581,8 @@ export default function Sidebar() {
                 await limpiarDatosOffline()
                 signOut({ callbackUrl: '/login' })
               }}
-              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 hover:bg-[var(--color-bg-hover)]"
-              style={{ color: 'var(--color-text-muted)' }}
+              className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 hover:bg-[var(--cf-fill)]"
+              style={{ color: 'var(--cf-ink-3)' }}
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
             >
@@ -600,14 +600,14 @@ export default function Sidebar() {
           disabled={bulkSyncing}
           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[10px] focus-visible:outline-none focus-visible:ring-2 transition-colors disabled:opacity-50"
           style={{
-            background: 'var(--color-success-dim)',
-            border: '1px solid var(--color-success-border)',
+            background: 'var(--cf-green-pill-bg)',
+            border: '1px solid var(--cf-green)',
           }}
         >
-          <svg className={`w-3.5 h-3.5 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+          <svg className={`w-3.5 h-3.5 shrink-0 ${bulkSyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span className="text-[11px] font-medium truncate" style={{ color: 'var(--color-success)' }}>
+          <span className="text-[11px] font-medium truncate" style={{ color: 'var(--cf-green-dark)' }}>
             {bulkProgress ? bulkProgress.message : 'Sync offline'}
           </span>
         </button>
@@ -615,7 +615,7 @@ export default function Sidebar() {
         {/* Status line */}
         <div className="flex items-center gap-1.5 px-1 pt-0.5">
           <SyncStatusBadgeTrigger />
-          <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>·</span>
+          <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>·</span>
           <CacheAge />
         </div>
       </div>

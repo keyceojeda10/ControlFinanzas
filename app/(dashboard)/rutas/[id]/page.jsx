@@ -1869,7 +1869,7 @@ export default function RutaDetallePage({ params }) {
                         {/* Moratorio pendiente */}
                         {tieneMora && ruta?.configMoratorio?.tasaMoratorio > 0 && c.diasMora > (ruta.configMoratorio.diasGracia || 5) && (
                           <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-[6px]"
-                            style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', color: '#f59e0b' }}
+                            style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', color: 'var(--cf-gold-dark)' }}
                           >
                             <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1906,7 +1906,7 @@ export default function RutaDetallePage({ params }) {
                             </div>
                           )
                           const d = geo.distanciaMetros
-                          const geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? '#f97316' : 'var(--cf-red-dark)'
+                          const geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
                           return (
                             <div className="flex items-center gap-1 text-[9px] font-medium" style={{ color: geoColor }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
@@ -1923,7 +1923,7 @@ export default function RutaDetallePage({ params }) {
                     <button
                       onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
                       disabled={quitando === c.id}
-                      className="pr-2 pl-0 self-stretch flex items-center text-[#2a2a2a] hover:text-[var(--cf-red-dark)] transition-colors disabled:opacity-50"
+                      className="pr-2 pl-0 self-stretch flex items-center text-[var(--cf-ink-2)] hover:text-[var(--cf-red-dark)] transition-colors disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2275,7 +2275,7 @@ export default function RutaDetallePage({ params }) {
                               {/* Moratorio pendiente */}
                               {c.diasMora > 0 && ruta?.configMoratorio?.tasaMoratorio > 0 && c.diasMora > (ruta.configMoratorio.diasGracia || 5) && (
                                 <div className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-[8px]"
-                                  style={{ background: 'color-mix(in srgb, #f59e0b 8%, transparent)', color: '#f59e0b' }}
+                                  style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', color: 'var(--cf-gold-dark)' }}
                                 >
                                   <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2298,7 +2298,7 @@ export default function RutaDetallePage({ params }) {
                                       if (pg.clienteSinCoords) {
                                         geoLabel = 'sin ubicación de cliente'
                                       } else if (d != null) {
-                                        geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? '#f97316' : 'var(--cf-red-dark)'
+                                        geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
                                         geoLabel = `${d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`} del cliente`
                                       }
                                       return (

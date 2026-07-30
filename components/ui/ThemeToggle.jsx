@@ -12,7 +12,7 @@ export default function ThemeToggle({ variant = 'button', size = 'md' }) {
       { val: 'system', label: 'Sistema', icon: DesktopIcon },
     ]
     return (
-      <div className="inline-flex rounded-[12px] p-1 gap-1" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      <div className="inline-flex rounded-[12px] p-1 gap-1" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
         {opts.map(o => {
           const Icon = o.icon
           const active = theme === o.val
@@ -22,8 +22,8 @@ export default function ThemeToggle({ variant = 'button', size = 'md' }) {
               onClick={() => setTheme(o.val)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
               style={{
-                background: active ? 'var(--color-accent)' : 'transparent',
-                color: active ? '#1a1a2e' : 'var(--color-text-secondary)',
+                background: active ? 'var(--cf-gold)' : 'transparent',
+                color: active ? 'var(--cf-ink)' : 'var(--cf-ink-2)',
               }}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -36,7 +36,7 @@ export default function ThemeToggle({ variant = 'button', size = 'md' }) {
   }
 
   const toggle = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
-  const sizeClass = size === 'sm' ? 'w-7 h-7 rounded-lg hover:bg-[var(--color-bg-hover)]' : 'w-9 h-9 rounded-[10px]'
+  const sizeClass = size === 'sm' ? 'w-7 h-7 rounded-lg hover:bg-[var(--cf-fill)]' : 'w-9 h-9 rounded-[10px]'
   const iconClass = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4'
   return (
     <button
@@ -44,8 +44,8 @@ export default function ThemeToggle({ variant = 'button', size = 'md' }) {
       title={`Cambiar a tema ${resolvedTheme === 'dark' ? 'claro' : 'oscuro'}`}
       className={`flex items-center justify-center transition-colors ${sizeClass}`}
       style={size === 'sm'
-        ? { color: 'var(--color-text-muted)' }
-        : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+        ? { color: 'var(--cf-ink-3)' }
+        : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
     >
       {resolvedTheme === 'dark' ? <SunIcon className={iconClass} /> : <MoonIcon className={iconClass} />}
     </button>

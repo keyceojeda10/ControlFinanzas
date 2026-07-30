@@ -120,15 +120,15 @@ export default function CalculadoraPage() {
       <header className="mb-6">
         <Link
           href="/prestamos"
-          className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors mb-2"
+          className="inline-flex items-center gap-1.5 text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] transition-colors mb-2"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Préstamos
         </Link>
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Simulador de préstamos</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Simulador de préstamos</h1>
+        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
           Calcula la cuota para mostrarle a tu cliente, sin registrar nada.
         </p>
       </header>
@@ -139,8 +139,8 @@ export default function CalculadoraPage() {
           className="rounded-[20px] p-4 sm:p-5"
           style={{
             background:
-              'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-            border: '1px solid var(--color-border)',
+              'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 5%, var(--cf-card)) 0%, var(--cf-card) 100%)',
+            border: '1px solid var(--cf-border)',
           }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -151,7 +151,7 @@ export default function CalculadoraPage() {
               placeholder="Ej: 500.000"
             />
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-[var(--color-text-secondary)]">Interés (%)</label>
+              <label className="text-xs font-medium text-[var(--cf-ink-2)]">Interés (%)</label>
               <div className="relative flex items-center">
                 <input
                   type="text"
@@ -159,16 +159,16 @@ export default function CalculadoraPage() {
                   value={tasa}
                   onChange={(e) => setTasa(soloDecimal(e.target.value))}
                   placeholder="20"
-                  className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] transition-all pl-3 pr-8"
+                  className="w-full h-10 rounded-[12px] border text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] bg-[var(--cf-surface)] border-[var(--cf-border)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--cf-gold)_20%,transparent)] transition-all pl-3 pr-8"
                 />
-                <span className="absolute right-3 text-[var(--color-text-muted)] text-sm pointer-events-none select-none">%</span>
+                <span className="absolute right-3 text-[var(--cf-ink-3)] text-sm pointer-events-none select-none">%</span>
               </div>
             </div>
           </div>
 
           {/* Frecuencia */}
           <div className="mt-4">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">
               Frecuencia de cobro
             </label>
             <div className="grid grid-cols-4 gap-2 mt-1.5">
@@ -182,8 +182,8 @@ export default function CalculadoraPage() {
                     className="h-10 rounded-[12px] border text-xs font-semibold transition-all"
                     style={
                       activo
-                        ? { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)', borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }
-                        : { background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }
+                        ? { background: 'color-mix(in srgb, var(--cf-gold) 14%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' }
+                        : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }
                     }
                   >
                     {f.label}
@@ -195,7 +195,7 @@ export default function CalculadoraPage() {
 
           {/* Plazo */}
           <div className="mt-4">
-            <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+            <label className="text-xs font-medium text-[var(--cf-ink-2)]">
               Plazo ({freqInfo.unidad})
             </label>
             <div className="flex items-center gap-2 mt-1.5">
@@ -205,9 +205,9 @@ export default function CalculadoraPage() {
                 value={plazoUnidades}
                 onChange={(e) => setPlazoUnidades(e.target.value)}
                 placeholder="Ej: 30"
-                className="w-full h-10 rounded-[12px] border text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] bg-[var(--color-bg-surface)] border-[var(--color-border)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_20%,transparent)] transition-all px-3"
+                className="w-full h-10 rounded-[12px] border text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] bg-[var(--cf-surface)] border-[var(--cf-border)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--cf-gold)_20%,transparent)] transition-all px-3"
               />
-              <span className="shrink-0 text-xs text-[var(--color-text-muted)] whitespace-nowrap">
+              <span className="shrink-0 text-xs text-[var(--cf-ink-3)] whitespace-nowrap">
                 = {diasPlazo} días
               </span>
             </div>
@@ -227,7 +227,7 @@ export default function CalculadoraPage() {
 
           {modoInteres === 'solo_interes' && (
             <div className="flex items-center justify-between mt-3 px-1">
-              <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Interés adelantado</span>
+              <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
               <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
             </div>
           )}
@@ -252,7 +252,7 @@ export default function CalculadoraPage() {
                 onChange={(e) => setCuotaManual(e.target.value)}
                 placeholder="Dejar vacío para calcular automático"
               />
-              <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--cf-ink-3)' }}>
                 {saldoCuotaPersonalizada ? 'Cuota definida por ti. La última cuota ajusta para cerrar el saldo.' : 'Opcional: define la cuota en vez de calcularla.'}
               </p>
             </div>
@@ -263,25 +263,25 @@ export default function CalculadoraPage() {
         {calculo ? (
           <section
             className="rounded-[20px] overflow-hidden"
-            style={{ border: '1px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))' }}
+            style={{ border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, var(--cf-border))' }}
           >
             {/* Encabezado del recibo */}
             <div
               className="px-5 py-4 flex items-center justify-between gap-3"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-card))' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, var(--cf-card))' }}
             >
               <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--color-text-muted)]">
+                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--cf-ink-3)]">
                   Simulación de crédito
                 </p>
-                <p className="text-2xl font-bold font-mono-display text-[var(--color-accent)] leading-tight mt-0.5">
+                <p className="text-2xl font-bold font-mono-display text-[var(--cf-gold)] leading-tight mt-0.5">
                   {formatMoney(Number(monto))}
                 </p>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">monto del crédito</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">monto del crédito</p>
               </div>
               <div
                 className="shrink-0 w-12 h-12 rounded-[12px] flex items-center justify-center"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}
+                style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a1 1 0 011 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 011-1z" />
@@ -290,13 +290,13 @@ export default function CalculadoraPage() {
             </div>
 
             {/* Cuerpo: la cuota es el dato estrella */}
-            <div className="px-5 py-5 bg-[var(--color-bg-card)]">
+            <div className="px-5 py-5 bg-[var(--cf-card)]">
               <div className="text-center py-2">
-                <p className="text-xs text-[var(--color-text-muted)]">{freqInfo.cuotaLabel}</p>
-                <p className="text-4xl font-extrabold font-mono-display text-[var(--color-text-primary)] leading-none mt-1">
+                <p className="text-xs text-[var(--cf-ink-3)]">{freqInfo.cuotaLabel}</p>
+                <p className="text-4xl font-extrabold font-mono-display text-[var(--cf-ink)] leading-none mt-1">
                   {formatMoney(calculo.cuotaDiaria)}
                 </p>
-                <p className="text-sm text-[var(--color-text-secondary)] mt-2">
+                <p className="text-sm text-[var(--cf-ink-2)] mt-2">
                   {cuotaDistinta ? (
                     <>baja hasta {formatMoney(calculo.ultimaCuota)} · {numCuotas} cuotas</>
                   ) : (
@@ -306,9 +306,9 @@ export default function CalculadoraPage() {
               </div>
 
               {/* Desglose */}
-              <dl className="mt-5 divide-y divide-[var(--color-border)]">
+              <dl className="mt-5 divide-y divide-[var(--cf-border)]">
                 <Row k="Total a pagar" v={formatMoney(calculo.totalAPagar)} strong />
-                <Row k="Interés" v={formatMoney(calculo.totalInteres)} accent="var(--color-warning)" />
+                <Row k="Interés" v={formatMoney(calculo.totalInteres)} accent="var(--cf-gold-dark)" />
                 <Row k="Número de cuotas" v={`${numCuotas}`} />
                 <Row k="Termina el" v={fmtFecha(calculo.fechaFin)} />
               </dl>
@@ -321,12 +321,12 @@ export default function CalculadoraPage() {
             </div>
 
             {/* Acciones */}
-            <div className="px-5 py-4 bg-[var(--color-bg-card)] border-t border-[var(--color-border)] grid grid-cols-2 gap-3">
+            <div className="px-5 py-4 bg-[var(--cf-card)] border-t border-[var(--cf-border)] grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={copiar}
                 className="h-11 rounded-[12px] border text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border)', color: copiado ? 'var(--color-success)' : 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: copiado ? 'var(--cf-green-dark)' : 'var(--cf-ink)' }}
               >
                 {copiado ? (
                   <>
@@ -344,7 +344,7 @@ export default function CalculadoraPage() {
                 type="button"
                 onClick={compartir}
                 className="h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+                style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                 Compartir
@@ -352,12 +352,12 @@ export default function CalculadoraPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-[20px] border border-dashed border-[var(--color-border)] px-5 py-12 text-center bg-[var(--color-bg-card)]">
-            <div className="w-12 h-12 rounded-[12px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
+          <section className="rounded-[20px] border border-dashed border-[var(--cf-border)] px-5 py-12 text-center bg-[var(--cf-card)]">
+            <div className="w-12 h-12 rounded-[12px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
             </div>
-            <p className="text-sm font-medium text-[var(--color-text-primary)]">Escribe el monto para ver la simulación</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">El cálculo aparece al instante.</p>
+            <p className="text-sm font-medium text-[var(--cf-ink)]">Escribe el monto para ver la simulación</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-1">El cálculo aparece al instante.</p>
           </section>
         )}
       </div>
@@ -368,10 +368,10 @@ export default function CalculadoraPage() {
 function Row({ k, v, strong, accent }) {
   return (
     <div className="flex items-center justify-between py-2.5">
-      <dt className="text-sm text-[var(--color-text-secondary)]">{k}</dt>
+      <dt className="text-sm text-[var(--cf-ink-2)]">{k}</dt>
       <dd
         className={`font-mono-display ${strong ? 'text-lg font-bold' : 'text-sm font-semibold'}`}
-        style={{ color: accent || (strong ? 'var(--color-accent)' : 'var(--color-text-primary)') }}
+        style={{ color: accent || (strong ? 'var(--cf-gold)' : 'var(--cf-ink)') }}
       >
         {v}
       </dd>

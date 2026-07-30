@@ -26,7 +26,7 @@ export function ConfirmModal({
   return (
     <Modal open={open} onClose={onCancel} title={title} size="sm">
       {message && (
-        <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--cf-ink-2)' }}>
           {message}
         </p>
       )}

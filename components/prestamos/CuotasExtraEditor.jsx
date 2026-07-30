@@ -57,7 +57,7 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+        <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
           Cuotas extra
         </label>
         {!agregando && (
@@ -65,14 +65,14 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
             type="button"
             onClick={() => setAgregando(true)}
             className="text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors cursor-pointer"
-            style={{ color: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)' }}
+            style={{ color: 'var(--cf-gold)', background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' }}
           >
             + Agregar cuota extra
           </button>
         )}
       </div>
 
-      <p className="text-[10px] mb-3 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+      <p className="text-[10px] mb-3 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
         Programa abonos extra en meses especificos. Las cuotas regulares bajan automaticamente.
       </p>
 
@@ -84,27 +84,27 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
               <div
                 key={e.numeroPeriodo}
                 className="flex items-center justify-between rounded-[10px] px-3 py-2"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+                style={{ background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold w-16" style={{ color: 'var(--color-accent)' }}>
+                  <span className="text-[11px] font-bold w-16" style={{ color: 'var(--cf-gold)' }}>
                     {labelPeriodo} {e.numeroPeriodo}
                   </span>
                   {fecha && (
-                    <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
                       ({formatFecha(fecha)})
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                  <span className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
                     +{formatMoney(e.monto)}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleEliminar(e.numeroPeriodo)}
                     className="w-5 h-5 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                    style={{ color: 'var(--color-text-muted)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)' }}
+                    style={{ color: 'var(--cf-ink-3)', background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)' }}
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -114,24 +114,24 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
               </div>
             )
           })}
-          <p className="text-[10px] font-medium text-right" style={{ color: 'var(--color-accent)' }}>
+          <p className="text-[10px] font-medium text-right" style={{ color: 'var(--cf-gold)' }}>
             Total cuotas extra: {formatMoney(totalExtras)}
           </p>
         </div>
       )}
 
       {agregando && (
-        <div className="rounded-[12px] p-3 space-y-3 mb-2" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+        <div className="rounded-[12px] p-3 space-y-3 mb-2" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+              <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--cf-ink-3)' }}>
                 {labelPeriodo} #
               </label>
               <select
                 value={periodo}
                 onChange={(e) => setPeriodo(e.target.value)}
                 className="w-full h-9 rounded-[8px] px-2 text-sm"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               >
                 <option value="">Seleccionar</option>
                 {Array.from({ length: numPeriodos }, (_, i) => i + 1)
@@ -147,7 +147,7 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--color-text-muted)' }}>
+              <label className="text-[10px] font-semibold mb-1 block" style={{ color: 'var(--cf-ink-3)' }}>
                 Abono extra
               </label>
               <MoneyInput
@@ -163,7 +163,7 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
               type="button"
               onClick={() => { setAgregando(false); setPeriodo(''); setMonto('') }}
               className="flex-1 h-8 rounded-[8px] text-[12px] font-medium cursor-pointer"
-              style={{ color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+              style={{ color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }}
             >
               Cancelar
             </button>
@@ -172,7 +172,7 @@ export default function CuotasExtraEditor({ extras = [], onChange, numPeriodos, 
               onClick={handleAgregar}
               disabled={!periodo || !Number(String(monto).replace(/\D/g, ''))}
               className="flex-1 h-8 rounded-[8px] text-[12px] font-bold cursor-pointer disabled:opacity-40"
-              style={{ background: 'var(--color-accent)', color: '#111' }}
+              style={{ background: 'var(--cf-gold)', color: '#111' }}
             >
               Agregar
             </button>

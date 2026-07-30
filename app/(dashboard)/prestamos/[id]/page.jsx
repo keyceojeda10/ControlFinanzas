@@ -93,7 +93,7 @@ function GestionBtn({ label, desc, color, icon, onClick }) {
       </div>
       <div className="min-w-0">
         <p className="text-[12px] font-semibold" style={{ color: `rgb(${color})` }}>{label}</p>
-        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
+        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{desc}</p>
       </div>
     </button>
   )
@@ -453,8 +453,8 @@ export default function PrestamoDetallePage({ params }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
         <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
-        <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar el préstamo</p>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+        <p className="text-sm font-medium text-[var(--cf-ink)]">No pudimos cargar el préstamo</p>
+        <p className="text-xs text-[var(--cf-ink-3)] mt-1">Revisa tu conexión e intenta de nuevo</p>
         <div className="flex gap-3 mt-4">
           <Button size="sm" onClick={() => fetchPrestamo()}>Reintentar</Button>
           <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
@@ -737,7 +737,7 @@ export default function PrestamoDetallePage({ params }) {
     ? {
         label: cobroVencido ? 'Debió cobrarse' : 'Próximo cobro',
         value: formatFechaCobroRelativa(proximoCobro),
-        color: cobroVencido ? 'var(--color-danger)' : 'var(--color-accent)',
+        color: cobroVencido ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
       }
     : null
 
@@ -746,7 +746,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* Back */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+        className="flex items-center gap-1.5 text-sm text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -756,8 +756,8 @@ export default function PrestamoDetallePage({ params }) {
 
       {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
       {esClavo && (
-        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[var(--color-danger)]">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
+        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[var(--cf-red-dark)]">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)]" />
           Préstamo perdido — apartado de tus números normales
         </div>
       )}
@@ -767,7 +767,7 @@ export default function PrestamoDetallePage({ params }) {
         <Link
           href={`/prestamos/${renovadoDeId}`}
           className="flex items-center gap-2 bg-[rgba(139,92,246,0.10)] border border-[rgba(139,92,246,0.25)] rounded-[12px] px-3 py-2 text-xs"
-          style={{ color: 'var(--color-purple)' }}
+          style={{ color: 'var(--cf-ink-2)' }}
         >
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -779,21 +779,21 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── CELEBRACIÓN ──────────────────────────────────────────── */}
       {completado && (
         <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[20px] cf-card-shadow p-4 text-center">
-          <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+          <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 20%, transparent)' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-[var(--color-success)] font-bold">Préstamo completado</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente terminó de pagar</p>
+          <p className="text-[var(--cf-green-dark)] font-bold">Préstamo completado</p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
       {/* ── ALERTA MORA ──────────────────────────────────────────── */}
       {enMora && estaActivo && !completado && (
         <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
-          <div className="w-2 h-2 rounded-full bg-[var(--color-danger)] animate-pulse shrink-0" />
-          <p className="text-sm text-[var(--color-danger)] font-semibold">
+          <div className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] animate-pulse shrink-0" />
+          <p className="text-sm text-[var(--cf-red-dark)] font-semibold">
             {diasMora} días en mora
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
             {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
@@ -805,14 +805,14 @@ export default function PrestamoDetallePage({ params }) {
       {moratorio?.aplicable && estaActivo && !completado && esOwner && (
         <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] rounded-[20px] cf-card-shadow p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-[var(--color-warning)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--cf-gold-dark)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-warning)]">
+              <p className="text-sm font-semibold text-[var(--cf-gold-dark)]">
                 Interés moratorio: {formatMoney(moratorio.montoMoratorio)}
               </p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                 {moratorio.diasMoraEfectivos} dias efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
               </p>
             </div>
@@ -824,7 +824,7 @@ export default function PrestamoDetallePage({ params }) {
               setMoratorioError('')
               setModalMoratorio(true)
             }}
-            className="w-full h-10 rounded-[12px] text-sm font-semibold text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
+            className="w-full h-10 rounded-[12px] text-sm font-semibold text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
           >
             Aplicar como recargo
           </button>
@@ -835,10 +835,10 @@ export default function PrestamoDetallePage({ params }) {
       {exito && !completado && (
         <div className="space-y-2">
           <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
-            <svg className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
+            <p className="text-sm text-[var(--cf-green-dark)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
             <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -900,7 +900,7 @@ export default function PrestamoDetallePage({ params }) {
         if (isLast || !nextCliente) return (
           <button
             onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
-            className="w-full py-3.5 rounded-[12px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
+            className="w-full py-3.5 rounded-[12px] bg-[var(--cf-green-dark)] text-[var(--cf-ink)] text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}
           </button>
@@ -910,7 +910,7 @@ export default function PrestamoDetallePage({ params }) {
           <button
             onClick={navigateNext}
             className="w-full py-3.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
-            style={{ background: 'linear-gradient(135deg, var(--color-accent), #f0b800)', color: '#0a0a0a' }}
+            style={{ background: 'linear-gradient(135deg, var(--cf-gold), var(--cf-gold))', color: 'var(--cf-ink)' }}
           >
             Siguiente → {nextCliente.nombre}
           </button>
@@ -949,7 +949,7 @@ export default function PrestamoDetallePage({ params }) {
           {/* Icono circular fijo a la izquierda */}
           <span
             className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-3"
-            style={{ background: 'rgba(34, 197, 94, 0.25)', color: 'var(--color-success)' }}
+            style={{ background: 'rgba(34, 197, 94, 0.25)', color: 'var(--cf-green-dark)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -957,10 +957,10 @@ export default function PrestamoDetallePage({ params }) {
           </span>
           {/* Texto en 2 lineas */}
           <span className="flex-1 flex flex-col items-start min-w-0 text-left leading-tight">
-            <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--color-success)' }}>
+            <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--cf-green-dark)' }}>
               Pago {frecuenciaLabel} registrado
             </span>
-            <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
+            <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>
               {formatMoney(cuotaDiaria)}
             </span>
           </span>
@@ -974,14 +974,14 @@ export default function PrestamoDetallePage({ params }) {
             ...(mostrarAtajosCobro ? [{
               label: 'Cobros',
               sublabel: hayMontoMora ? `Mora ${formatMoney(montoEnMora)}` : 'Abonos y atajos',
-              color: hayMontoMora ? 'var(--color-danger)' : 'var(--color-accent)',
+              color: hayMontoMora ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
               onClick: () => setModalAtajosCobro(true),
             }] : []),
             ...(mostrarGestionPrestamo ? [{
               label: 'Gestión',
               sublabel: 'Renovar, plazo, ajustes',
-              color: 'var(--color-purple)',
+              color: 'var(--cf-ink-2)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" /></svg>,
               onClick: () => setModalGestionPrestamo(true),
             }] : []),
@@ -1059,14 +1059,14 @@ export default function PrestamoDetallePage({ params }) {
         <Card>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                 Pendiente de tu aprobacion
               </p>
             </div>
-            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
               {creadoPor?.nombre ?? 'Un cobrador'} solicita crear este prestamo de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. El dinero no se ha desembolsado todavia.
             </p>
             <div className="flex gap-2">
@@ -1122,10 +1122,10 @@ export default function PrestamoDetallePage({ params }) {
       {esCobrador && estado === 'pendiente_aprobacion' && (
         <Card>
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
               Este prestamo esta pendiente de aprobacion por el administrador.
             </p>
           </div>
@@ -1243,12 +1243,12 @@ export default function PrestamoDetallePage({ params }) {
           onClick={() => setHistorialOpen(v => !v)}
           className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
         >
-          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">
+          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">
             Historial de pagos ({pagos.length})
           </p>
           <svg
             className="w-4 h-4 shrink-0 transition-transform duration-200"
-            style={{ color: 'var(--color-text-muted)', transform: historialOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            style={{ color: 'var(--cf-ink-3)', transform: historialOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1257,7 +1257,7 @@ export default function PrestamoDetallePage({ params }) {
 
         {historialOpen && <div className="mt-3">
           <div className="flex items-center justify-between gap-2 mb-3">
-          <p className="text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--cf-ink-3)]">
             {filtroFecha ? `${pagos.filter(p => {
               const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
               return d === filtroFecha
@@ -1265,13 +1265,13 @@ export default function PrestamoDetallePage({ params }) {
           </p>
           <div className="flex items-center gap-1">
             <label
-              className="relative h-8 flex items-center gap-1.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 cursor-pointer hover:border-[var(--color-info)] transition-colors"
+              className="relative h-8 flex items-center gap-1.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-2 cursor-pointer hover:border-[var(--cf-ink-2)] transition-colors"
               title="Filtrar por fecha"
             >
-              <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[11px] text-[var(--color-text-primary)] whitespace-nowrap">
+              <span className="text-[11px] text-[var(--cf-ink)] whitespace-nowrap">
                 {filtroFecha || 'Fecha'}
               </span>
               <input
@@ -1285,7 +1285,7 @@ export default function PrestamoDetallePage({ params }) {
               <button
                 type="button"
                 onClick={() => setFiltroFecha('')}
-                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] px-2 py-1"
+                className="text-[10px] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] px-2 py-1"
               >
                 Limpiar
               </button>
@@ -1309,7 +1309,7 @@ export default function PrestamoDetallePage({ params }) {
               })
             : pagos
           return pagosFiltrados.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
+            <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">
               {filtroFecha ? 'Sin pagos en esta fecha' : 'Sin pagos registrados'}
             </p>
           ) : (
@@ -1320,15 +1320,15 @@ export default function PrestamoDetallePage({ params }) {
               return (
                 <PagoMiniCard key={pago.id} pago={pago} isOffline={pago.id?.startsWith?.('offline-')}>
                   {/* Botones de accion (comprobante, editar fecha, anular) */}
-                  <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-border)' }}>
                     {!esAjuste && (
                       <button
                         onClick={() => setComprobante(comprobanteAbierto ? null : pago.id)}
                         className={[
                           'flex items-center gap-1 px-2 h-7 rounded-[8px] text-[10px] font-medium transition-colors',
                           comprobanteAbierto
-                            ? 'text-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]'
-                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.08)]',
+                            ? 'text-[var(--cf-gold)] bg-[rgba(245,197,24,0.1)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.08)]',
                         ].join(' ')}
                         title="Enviar comprobante"
                       >
@@ -1339,7 +1339,7 @@ export default function PrestamoDetallePage({ params }) {
                       </button>
                     )}
                     {pago.tipo === 'capital' && tasaInteres > 0 && (
-                      <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--color-purple)' }}>
+                      <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--cf-ink-2)' }}>
                         -{formatMoney(Math.round(pago.montoPagado * tasaInteres / 100))} int.
                       </span>
                     )}
@@ -1350,8 +1350,8 @@ export default function PrestamoDetallePage({ params }) {
                         className={[
                           'w-9 h-9 flex items-center justify-center rounded-[8px] transition-colors',
                           editandoFecha === pago.id
-                            ? 'text-[var(--color-info)] bg-[rgba(59,130,246,0.1)]'
-                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.08)]',
+                            ? 'text-[var(--cf-ink-2)] bg-[rgba(59,130,246,0.1)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink-2)] hover:bg-[rgba(59,130,246,0.08)]',
                         ].join(' ')}
                         title="Editar fecha"
                       >
@@ -1367,7 +1367,7 @@ export default function PrestamoDetallePage({ params }) {
                           setConfirmAnularPago({ pagoId: pago.id, monto: pago.montoPagado })
                         }}
                         disabled={anulando === pago.id}
-                        className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
+                        className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-pill-bg)] transition-colors disabled:opacity-50"
                         title="Anular pago"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1404,7 +1404,7 @@ export default function PrestamoDetallePage({ params }) {
                         <input
                           type="date"
                           defaultValue={new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
-                          className="h-9 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)] transition-colors"
+                          className="h-9 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-ink-2)] transition-colors"
                           id={`fecha-pago-${pago.id}`}
                         />
                         <button
@@ -1426,13 +1426,13 @@ export default function PrestamoDetallePage({ params }) {
                               setError('No se pudo cambiar la fecha.')
                             }
                           }}
-                          className="h-9 px-3 rounded-[12px] text-xs font-medium text-[var(--color-text-primary)] bg-[var(--color-info)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
+                          className="h-9 px-3 rounded-[12px] text-xs font-medium text-[var(--cf-ink)] bg-[var(--cf-ink-2)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
                         >
                           Guardar
                         </button>
                         <button
                           onClick={() => setEditandoFecha(null)}
-                          className="h-9 px-2 rounded-[12px] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                          className="h-9 px-2 rounded-[12px] text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
                         >
                           Cancelar
                         </button>
@@ -1457,7 +1457,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
                 setConfirmCancel(true)
               }}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--color-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--cf-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -1466,16 +1466,16 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           ) : (
             <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[20px] cf-card-shadow p-4 space-y-3">
-              <p className="text-sm text-[var(--color-danger)] font-semibold">¿Cancelar este préstamo?</p>
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-sm text-[var(--cf-red-dark)] font-semibold">¿Cancelar este préstamo?</p>
+              <p className="text-xs text-[var(--cf-ink-3)]">
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
               </p>
 
               {hayCobrosRegistrados && (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
+                  <p className="text-[11px] text-[var(--cf-ink-2)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1485,12 +1485,12 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
+                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
+                      <p className="text-[11px] text-[var(--cf-ink-3)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1500,8 +1500,8 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)]">Calculado como prestado menos cobrado real.</p>
+                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
+                      <p className="text-[11px] text-[var(--cf-ink-3)]">Calculado como prestado menos cobrado real.</p>
                     </div>
                   </label>
                 </div>
@@ -1510,7 +1510,7 @@ export default function PrestamoDetallePage({ params }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-bg-surface)] transition-colors"
+                  className="flex-1 h-10 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:bg-[var(--cf-surface)] transition-colors"
                 >
                   No, volver
                 </button>
@@ -1543,7 +1543,7 @@ export default function PrestamoDetallePage({ params }) {
                     }
                   }}
                   disabled={cancelando}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-bold text-[var(--color-text-primary)] bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_85%,black)] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-10 rounded-[12px] text-sm font-bold text-[var(--cf-ink)] bg-[var(--cf-red-dark)] hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_85%,black)] disabled:opacity-50 transition-colors"
                 >
                   {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
                 </button>
@@ -1566,7 +1566,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoEnMora)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
             >
               Pagar mora
               {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
@@ -1581,7 +1581,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoParaPonerseAlDia)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
             >
               Ponerse al día · {formatMoney(montoParaPonerseAlDia)}
             </button>
@@ -1597,7 +1597,7 @@ export default function PrestamoDetallePage({ params }) {
                   setModalAtajosCobro(false)
                   setModalIntereses(true)
                 }}
-                className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-warning)] bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] hover:bg-[rgba(245,158,11,0.15)] transition-all"
+                className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] hover:bg-[rgba(245,158,11,0.15)] transition-all"
               >
                 Pagar intereses · {formatMoney(interesesPend)}
               </button>
@@ -1609,7 +1609,7 @@ export default function PrestamoDetallePage({ params }) {
               setModalAtajosCobro(false)
               abrirPagoNormal()
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
           >
             Hacer abono extraordinario
           </button>
@@ -1626,7 +1626,7 @@ export default function PrestamoDetallePage({ params }) {
           {(puedeGestionarPrestamos || esOwner) && puedeEditar && (
             <button
               onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-ink)] bg-[var(--cf-fill)] border-2 border-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1637,7 +1637,7 @@ export default function PrestamoDetallePage({ params }) {
 
           {puedeGestionarPrestamos && (
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Plazo y calendario
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1688,7 +1688,7 @@ export default function PrestamoDetallePage({ params }) {
 
           {puedeGestionarPrestamos && (
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Ajustes de saldo
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1716,7 +1716,7 @@ export default function PrestamoDetallePage({ params }) {
             <button
               onClick={() => { setModalGestionPrestamo(false); abrirLiquidacion() }}
               className="w-full h-11 rounded-[12px] font-medium text-sm transition-all flex items-center justify-center gap-2"
-              style={{ color: 'var(--color-accent)', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}
+              style={{ color: 'var(--cf-gold)', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1725,18 +1725,18 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           )}
 
-          <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="pt-2 border-t" style={{ borderColor: 'var(--cf-border)' }}>
             {esClavo ? (
               <button
                 onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
               >
                 Quitar de préstamos perdidos
               </button>
             ) : (
               <button
                 onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
+                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
               >
                 Mover a préstamos perdidos
               </button>
@@ -1848,14 +1848,14 @@ export default function PrestamoDetallePage({ params }) {
         }
       >
         <div className="space-y-3">
-          <p className="text-xs text-[var(--color-text-secondary)] leading-snug">
+          <p className="text-xs text-[var(--cf-ink-2)] leading-snug">
             Este préstamo no generará mora en los días seleccionados. Vacío = hereda la configuración del cliente, ruta u organización.
           </p>
           <DiasSinCobroSelector value={dscDias} onChange={setDscDias} />
           {dscDias.length > 0 && (
             <button
               onClick={() => setDscDias([])}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
             >
               Limpiar (heredar de cliente/ruta/org)
             </button>
@@ -2115,34 +2115,34 @@ export default function PrestamoDetallePage({ params }) {
       >
         <div className="space-y-4">
           <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--cf-ink-3)]">
               Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} dias sobre {formatMoney(moratorio?.montoBase ?? 0)})
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Monto a aplicar</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Monto a aplicar</label>
             <input
               type="number"
               min="0"
               value={moratorioMonto}
               onChange={(e) => setMoratorioMonto(Number(e.target.value) || 0)}
-              className="w-full h-11 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-lg font-semibold font-mono-display text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-lg font-semibold font-mono-display text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
             />
-            <p className="text-[10px] text-[var(--color-text-muted)]">
+            <p className="text-[10px] text-[var(--cf-ink-3)]">
               Puedes editar el monto. El sistema sugiere {formatMoney(moratorio?.montoMoratorio ?? 0)}.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nota (opcional)</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nota (opcional)</label>
             <input
               type="text"
               value={moratorioNota}
               onChange={(e) => setMoratorioNota(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
             />
           </div>
           {moratorioError && (
-            <p className="text-xs text-[var(--color-danger)]">{moratorioError}</p>
+            <p className="text-xs text-[var(--cf-red-dark)]">{moratorioError}</p>
           )}
           <button
             disabled={moratorioEnviando || moratorioMonto <= 0}
@@ -2171,7 +2171,7 @@ export default function PrestamoDetallePage({ params }) {
                 setMoratorioEnviando(false)
               }
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent-text)] bg-[var(--color-warning)] hover:opacity-90 disabled:opacity-50 transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-ink)] bg-[var(--cf-gold-dark)] hover:opacity-90 disabled:opacity-50 transition-all"
           >
             {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
           </button>
@@ -2211,7 +2211,7 @@ function BotonAbrirRecibo({ onClick, label = 'Imprimir', small }) {
       onClick={onClick}
       className={[
         'flex items-center justify-center gap-2 rounded-[12px] font-medium transition-all cursor-pointer w-full',
-        'bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]',
+        'bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]',
         small ? 'px-3 h-8 text-xs' : 'px-4 h-10 text-sm',
       ].join(' ')}
     >
@@ -2246,7 +2246,7 @@ function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSa
           <ChecklistCamposRecibo campos={camposLocal} onChange={handleChange} />
         )}
 
-        <div className="pt-2 border-t border-[var(--color-border)] flex gap-2">
+        <div className="pt-2 border-t border-[var(--cf-border)] flex gap-2">
           {tipo !== 'historial' && (
             <BotonCompartirRecibo
               cliente={cliente}

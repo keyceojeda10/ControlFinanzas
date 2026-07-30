@@ -56,13 +56,13 @@ export default function MissionItem({ mision, onSpotlight }) {
     return (
       <div className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] bg-[rgba(34,197,94,0.06)]">
         {/* Check animado */}
-        <div className="w-7 h-7 rounded-full bg-[var(--color-success)] flex items-center justify-center shrink-0 onboarding-check">
-          <svg className="w-3.5 h-3.5 text-[var(--color-text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-7 h-7 rounded-full bg-[var(--cf-green-dark)] flex items-center justify-center shrink-0 onboarding-check">
+          <svg className="w-3.5 h-3.5 text-[var(--cf-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[var(--color-success)] line-through opacity-70">{mision.titulo}</p>
+          <p className="text-sm font-medium text-[var(--cf-green-dark)] line-through opacity-70">{mision.titulo}</p>
         </div>
       </div>
     )
@@ -74,16 +74,16 @@ export default function MissionItem({ mision, onSpotlight }) {
       <>
         <button
           onClick={() => setShowInstallGuide(true)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group text-left"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--cf-fill)] transition-all group text-left"
         >
-          <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-accent)] group-hover:text-[var(--color-accent)] transition-colors">
+          <div className="w-7 h-7 rounded-full border-2 border-[var(--cf-border-strong)] flex items-center justify-center shrink-0 text-[var(--cf-ink-3)] group-hover:border-[var(--cf-gold)] group-hover:text-[var(--cf-gold)] transition-colors">
             {icono}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{mision.titulo}</p>
-            <p className="text-[10px] text-[var(--color-text-muted)]">{mision.descripcion}</p>
+            <p className="text-sm font-medium text-[var(--cf-ink)] group-hover:text-[var(--cf-gold)] transition-colors">{mision.titulo}</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">{mision.descripcion}</p>
           </div>
-          <svg className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-ink-3)] group-hover:text-[var(--cf-gold)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -96,18 +96,18 @@ export default function MissionItem({ mision, onSpotlight }) {
     <Link
       href={mision.href}
       onClick={() => onSpotlight?.(mision.id)}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group"
+      className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--cf-fill)] transition-all group"
     >
       {/* Icon circle */}
-      <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-accent)] group-hover:text-[var(--color-accent)] transition-colors">
+      <div className="w-7 h-7 rounded-full border-2 border-[var(--cf-border-strong)] flex items-center justify-center shrink-0 text-[var(--cf-ink-3)] group-hover:border-[var(--cf-gold)] group-hover:text-[var(--cf-gold)] transition-colors">
         {icono}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors">{mision.titulo}</p>
-        <p className="text-[10px] text-[var(--color-text-muted)]">{mision.descripcion}</p>
+        <p className="text-sm font-medium text-[var(--cf-ink)] group-hover:text-[var(--cf-gold)] transition-colors">{mision.titulo}</p>
+        <p className="text-[10px] text-[var(--cf-ink-3)]">{mision.descripcion}</p>
       </div>
       {/* Arrow */}
-      <svg className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-[var(--cf-ink-3)] group-hover:text-[var(--cf-gold)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </Link>

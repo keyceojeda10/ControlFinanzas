@@ -496,12 +496,12 @@ const VoiceInput = forwardRef(function VoiceInput(
         className="flex items-center gap-2 w-full rounded-[16px] px-3"
         style={{
           height: '48px',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border-hover)',
+          background: 'var(--cf-fill)',
+          border: '1px solid var(--cf-border-strong)',
         }}
       >
-        <span className="w-4 h-4 shrink-0 animate-spin rounded-full border-2" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
-        <span className="text-xs italic flex-1" style={{ color: 'var(--color-text-muted)' }}>Transcribiendo...</span>
+        <span className="w-4 h-4 shrink-0 animate-spin rounded-full border-2" style={{ borderColor: 'var(--cf-gold)', borderTopColor: 'transparent' }} />
+        <span className="text-xs italic flex-1" style={{ color: 'var(--cf-ink-3)' }}>Transcribiendo...</span>
       </div>
     )
   }
@@ -513,31 +513,31 @@ const VoiceInput = forwardRef(function VoiceInput(
         className="flex items-center gap-2 w-full rounded-[16px] px-3"
         style={{
           height: '48px',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border-hover)',
+          background: 'var(--cf-fill)',
+          border: '1px solid var(--cf-border-strong)',
         }}
       >
-        <span className="text-xs flex-1 truncate" style={{ color: 'var(--color-text-primary)' }} title={transcript}>
+        <span className="text-xs flex-1 truncate" style={{ color: 'var(--cf-ink)' }} title={transcript}>
           {transcript}
         </span>
         <div className="flex items-center gap-1 shrink-0">
           <button type="button" onClick={() => { setTranscript(''); setState('idle'); cbRef.current.onRecordingEnd?.(); cbRef.current.onCancel?.() }}
             className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-3)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           <button type="button" onClick={() => { const t = transcript; setState('idle'); setTranscript(''); cbRef.current.onConfirm?.(t) }}
             className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-3)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 013.182 3.182L7.5 20.213l-4 1 1-4L16.862 4.487z" />
             </svg>
           </button>
           <button type="button" onClick={() => { const t = transcript; setState('idle'); setTranscript(''); if (cbRef.current.onSend) cbRef.current.onSend(t); else cbRef.current.onConfirm?.(t) }}
             className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-            style={{ background: 'var(--color-accent)', color: '#3a2900', border: 'none' }}>
+            style={{ background: 'var(--cf-gold)', color: '#3a2900', border: 'none' }}>
             <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
             </svg>
@@ -555,13 +555,13 @@ const VoiceInput = forwardRef(function VoiceInput(
         className="flex items-center gap-2 w-full rounded-[16px] px-3"
         style={{
           height: '48px',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border-hover)',
+          background: 'var(--cf-fill)',
+          border: '1px solid var(--cf-border-strong)',
         }}
       >
         <span
           className="shrink-0 w-2 h-2 rounded-full"
-          style={{ background: 'var(--color-danger)', animation: 'voice-pulse 1.4s ease-in-out infinite' }}
+          style={{ background: 'var(--cf-red-dark)', animation: 'voice-pulse 1.4s ease-in-out infinite' }}
         />
 
         <span
@@ -569,7 +569,7 @@ const VoiceInput = forwardRef(function VoiceInput(
           style={{
             minWidth: '44px',
             maxWidth: '110px',
-            color: showPermHint ? 'var(--color-warning)' : (hasText ? 'var(--color-text-primary)' : 'var(--color-text-muted)'),
+            color: showPermHint ? 'var(--cf-gold-dark)' : (hasText ? 'var(--cf-ink)' : 'var(--cf-ink-3)'),
             fontStyle: hasText && !showPermHint ? 'normal' : 'italic',
           }}
           title={transcript}
@@ -587,7 +587,7 @@ const VoiceInput = forwardRef(function VoiceInput(
           <button type="button" onClick={() => { if (whisperMode) cancelWhisper(); else stopAll('cancel') }}
             aria-label="Cancelar"
             className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-3)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -598,7 +598,7 @@ const VoiceInput = forwardRef(function VoiceInput(
             <button type="button" onClick={stopWhisperRecording}
               aria-label="Detener y transcribir"
               className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all"
-              style={{ background: 'var(--color-accent)', color: '#3a2900', border: 'none' }}>
+              style={{ background: 'var(--cf-gold)', color: '#3a2900', border: 'none' }}>
               <svg style={{ width: '13px', height: '13px' }} fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="6" width="12" height="12" rx="2" />
               </svg>
@@ -609,7 +609,7 @@ const VoiceInput = forwardRef(function VoiceInput(
                 onClick={() => { const final = accRef.current.trim() || transcript.trim(); stopAll('confirm'); if (final) cbRef.current.onConfirm?.(final) }}
                 disabled={!hasText} aria-label="Editar texto"
                 className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
-                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-muted)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-3)', border: '1px solid rgba(255,255,255,0.1)' }}>
                 <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 013.182 3.182L7.5 20.213l-4 1 1-4L16.862 4.487z" />
                 </svg>
@@ -618,7 +618,7 @@ const VoiceInput = forwardRef(function VoiceInput(
                 onClick={() => { const final = accRef.current.trim() || transcript.trim(); stopAll('confirm'); if (final) { if (cbRef.current.onSend) cbRef.current.onSend(final); else cbRef.current.onConfirm?.(final) } }}
                 disabled={!hasText} aria-label="Enviar"
                 className="w-8 h-8 rounded-[10px] flex items-center justify-center transition-all disabled:opacity-30"
-                style={{ background: hasText ? 'var(--color-accent)' : 'transparent', color: hasText ? '#3a2900' : 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.35)' }}>
+                style={{ background: hasText ? 'var(--cf-gold)' : 'transparent', color: hasText ? '#3a2900' : 'var(--cf-gold)', border: '1px solid rgba(245,197,24,0.35)' }}>
                 <svg style={{ width: '13px', height: '13px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
                 </svg>
@@ -640,13 +640,13 @@ const VoiceInput = forwardRef(function VoiceInput(
           border: '1px solid rgba(248,113,113,0.30)',
         }}
       >
-        <svg style={{ width: '14px', height: '14px', color: 'var(--color-danger)', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg style={{ width: '14px', height: '14px', color: 'var(--cf-red-dark)', flexShrink: 0 }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
         </svg>
-        <span className="text-xs flex-1" style={{ color: 'var(--color-danger)' }}>{errorMsg}</span>
+        <span className="text-xs flex-1" style={{ color: 'var(--cf-red-dark)' }}>{errorMsg}</span>
         <button type="button" onClick={() => setState('idle')}
           className="text-[10px] px-2 py-1 rounded-lg"
-          style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+          style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
           OK
         </button>
       </div>
@@ -662,9 +662,9 @@ const VoiceInput = forwardRef(function VoiceInput(
       aria-label="Hablar con Lucas"
       className="w-10 h-10 rounded-[12px] flex items-center justify-center transition-all disabled:opacity-40 shrink-0"
       style={{
-        background: 'var(--color-bg-hover)',
-        border: '1px solid var(--color-border)',
-        color: 'var(--color-text-muted)',
+        background: 'var(--cf-fill)',
+        border: '1px solid var(--cf-border)',
+        color: 'var(--cf-ink-3)',
       }}
     >
       <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">

@@ -147,7 +147,7 @@ export default function SocioDetallePage() {
   if (authLoading) return null
 
   if (!esOwner) {
-    return <div className="p-4 text-center" style={{ color: 'var(--color-text-muted)' }}>No tienes acceso.</div>
+    return <div className="p-4 text-center" style={{ color: 'var(--cf-ink-3)' }}>No tienes acceso.</div>
   }
 
   if (loading) {
@@ -159,12 +159,12 @@ export default function SocioDetallePage() {
       <div className="pb-28">
         <div
           className="cf-card-shadow rounded-[20px] p-6 text-center"
-          style={{ background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+          style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
         >
-          <p className="font-semibold mb-2" style={{ color: 'var(--color-danger)' }}>{error || 'Socio no encontrado'}</p>
+          <p className="font-semibold mb-2" style={{ color: 'var(--cf-red-dark)' }}>{error || 'Socio no encontrado'}</p>
           <div className="flex items-center justify-center gap-4 mt-3">
-            <button onClick={cargar} className="text-sm underline" style={{ color: 'var(--color-danger)' }}>Reintentar</button>
-            <button onClick={() => router.back()} className="text-sm underline opacity-70" style={{ color: 'var(--color-text-muted)' }}>Volver</button>
+            <button onClick={cargar} className="text-sm underline" style={{ color: 'var(--cf-red-dark)' }}>Reintentar</button>
+            <button onClick={() => router.back()} className="text-sm underline opacity-70" style={{ color: 'var(--cf-ink-3)' }}>Volver</button>
           </div>
         </div>
       </div>
@@ -252,24 +252,24 @@ export default function SocioDetallePage() {
       {/* Liquidacion anual */}
       <div
         className="cf-card-shadow rounded-[20px] p-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
             Liquidacion {anioLiquidacion}
           </h2>
           <div className="flex gap-1">
             <button
               onClick={() => setAnioLiquidacion((a) => a - 1)}
               className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[13px]"
-              style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+              style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}
             >
               {'<'}
             </button>
             <button
               onClick={() => setAnioLiquidacion((a) => a + 1)}
               className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[13px]"
-              style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+              style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}
             >
               {'>'}
             </button>
@@ -277,24 +277,24 @@ export default function SocioDetallePage() {
         </div>
 
         {prestamosConInteresAnio.length === 0 && !aportesAnio && !retirosAnio ? (
-          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin movimientos en {anioLiquidacion}</p>
+          <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Sin movimientos en {anioLiquidacion}</p>
         ) : (
           <>
             {prestamosConInteresAnio.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--cf-ink)' }}>
                     {p.clienteNombre}
                   </p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {fmt(p.montoPrestado)} al {p.tasaInteres}%
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[13px] font-semibold" style={{ color: 'var(--color-success)' }}>
+                  <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-green-dark)' }}>
                     {fmt(p.interesAnio)}
                   </p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {p.estado === 'activo' ? 'Activo' : 'Completado'}
                   </p>
                 </div>
@@ -302,17 +302,17 @@ export default function SocioDetallePage() {
             ))}
 
             {(aportesAnio > 0 || retirosAnio > 0) && (
-              <div className="pt-2 mt-1 space-y-1" style={{ borderTop: '1px dashed var(--color-border)' }}>
+              <div className="pt-2 mt-1 space-y-1" style={{ borderTop: '1px dashed var(--cf-border)' }}>
                 {aportesAnio > 0 && (
                   <div className="flex justify-between text-[12px]">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Aportes en {anioLiquidacion}</span>
-                    <span className="font-medium" style={{ color: 'var(--color-accent)' }}>+{fmt(aportesAnio)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Aportes en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--cf-gold)' }}>+{fmt(aportesAnio)}</span>
                   </div>
                 )}
                 {retirosAnio > 0 && (
                   <div className="flex justify-between text-[12px]">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Retiros en {anioLiquidacion}</span>
-                    <span className="font-medium" style={{ color: 'var(--color-danger)' }}>-{fmt(retirosAnio)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Retiros en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--cf-red-dark)' }}>-{fmt(retirosAnio)}</span>
                   </div>
                 )}
               </div>
@@ -320,12 +320,12 @@ export default function SocioDetallePage() {
 
             <div className="pt-3 mt-1 space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Intereses {anioLiquidacion}</p>
-                <p className="text-[16px] font-bold" style={{ color: 'var(--color-success)' }}>{fmt(interesesAnio)}</p>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Intereses {anioLiquidacion}</p>
+                <p className="text-[16px] font-bold" style={{ color: 'var(--cf-green-dark)' }}>{fmt(interesesAnio)}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>Rendimiento (ROI)</p>
-                <p className="text-[13px] font-semibold" style={{ color: roiAnio > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{roiAnio}%</p>
+                <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Rendimiento (ROI)</p>
+                <p className="text-[13px] font-semibold" style={{ color: roiAnio > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{roiAnio}%</p>
               </div>
             </div>
           </>
@@ -335,9 +335,9 @@ export default function SocioDetallePage() {
       {/* Prestamos del socio */}
       <div
         className="cf-card-shadow rounded-[20px] p-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--cf-ink)' }}>
           Prestamos ({socio.prestamos.length})
         </h2>
         {socio.prestamos.length === 0 ? (
@@ -353,19 +353,19 @@ export default function SocioDetallePage() {
               <div
                 key={p.id}
                 className="rounded-[12px] p-3"
-                style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>
                     {p.clienteNombre}
                   </p>
                   <span
                     className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
                     style={{
                       background: p.estado === 'activo'
-                        ? 'color-mix(in srgb, var(--color-success) 12%, transparent)'
-                        : 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)',
-                      color: p.estado === 'activo' ? 'var(--color-success)' : 'var(--color-text-muted)',
+                        ? 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)'
+                        : 'color-mix(in srgb, var(--cf-ink-3) 12%, transparent)',
+                      color: p.estado === 'activo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)',
                     }}
                   >
                     {p.estado}
@@ -373,16 +373,16 @@ export default function SocioDetallePage() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Capital</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{fmt(p.montoPrestado)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Capital</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-ink)' }}>{fmt(p.montoPrestado)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cobrado</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{fmt(p.totalPagado)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Cobrado</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-ink)' }}>{fmt(p.totalPagado)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Intereses</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-success)' }}>{fmt(p.interesesCobrados)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Intereses</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-green-dark)' }}>{fmt(p.interesesCobrados)}</p>
                   </div>
                 </div>
               </div>
@@ -406,10 +406,10 @@ export default function SocioDetallePage() {
       {socio.notas && (
         <div
           className="cf-card-shadow rounded-[20px] p-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
-          <h2 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Notas</h2>
-          <p className="text-[13px] whitespace-pre-wrap" style={{ color: 'var(--color-text-muted)' }}>{socio.notas}</p>
+          <h2 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--cf-ink)' }}>Notas</h2>
+          <p className="text-[13px] whitespace-pre-wrap" style={{ color: 'var(--cf-ink-3)' }}>{socio.notas}</p>
         </div>
       )}
 
@@ -420,7 +420,7 @@ export default function SocioDetallePage() {
       <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
         <div className="space-y-4">
           {tipoAporte === 'retiro' && (
-            <p className="text-[12px] px-3 py-2 rounded-[12px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)' }}>
+            <p className="text-[12px] px-3 py-2 rounded-[12px]" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)', color: 'var(--cf-gold-dark)' }}>
               El retiro se restara del capital disponible del negocio.
             </p>
           )}
@@ -457,13 +457,13 @@ export default function SocioDetallePage() {
           <Input label="Cédula" value={formEdit.cedula || ''} onChange={(e) => setFormEdit((f) => ({ ...f, cedula: e.target.value }))} />
           <Input label="Teléfono" value={formEdit.telefono || ''} onChange={(e) => setFormEdit((f) => ({ ...f, telefono: e.target.value }))} />
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--color-text-muted)' }}>Notas</label>
+            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--cf-ink-3)' }}>Notas</label>
             <textarea
               value={formEdit.notas || ''}
               onChange={(e) => setFormEdit((f) => ({ ...f, notas: e.target.value }))}
               rows={3}
               className="px-3 py-2 rounded-[12px] text-sm resize-none"
-              style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -476,16 +476,16 @@ export default function SocioDetallePage() {
       {/* Acciones */}
       <div
         className="cf-card-shadow rounded-[20px] p-4 space-y-3"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Acciones</h2>
+        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Acciones</h2>
         <div className="flex gap-3">
           <button
             onClick={toggleActivo}
             className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
-              background: socio.activo ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)' : 'color-mix(in srgb, var(--color-success) 10%, transparent)',
-              color: socio.activo ? 'var(--color-warning)' : 'var(--color-success)',
+              background: socio.activo ? 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)' : 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
+              color: socio.activo ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)',
             }}
           >
             {socio.activo ? 'Desactivar socio' : 'Reactivar socio'}
@@ -494,8 +494,8 @@ export default function SocioDetallePage() {
             onClick={() => setConfirmEliminarSocio(true)}
             className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
-              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-              color: 'var(--color-danger)',
+              background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
+              color: 'var(--cf-red-dark)',
             }}
           >
             Eliminar socio

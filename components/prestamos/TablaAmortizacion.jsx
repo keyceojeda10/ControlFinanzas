@@ -43,7 +43,7 @@ export default function TablaAmortizacion({
         Desglose por {labelPeriodo.toLowerCase()}
       </p>
       {esGloboEditable && (
-        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
           Toca una cuota para agregar abono a capital (ej: primas, bonos, ingresos extra)
         </p>
       )}
@@ -120,16 +120,16 @@ function CuotaFila({
 
   return (
     <div
-      className="relative bg-[var(--color-bg-surface)] border rounded-[10px] px-3 py-2 transition-all"
+      className="relative bg-[var(--cf-surface)] border rounded-[10px] px-3 py-2 transition-all"
       style={{
         borderColor: esProxima
-          ? 'var(--color-accent)'
+          ? 'var(--cf-gold)'
           : tieneExtra
-            ? 'var(--color-info)'
+            ? 'var(--cf-ink-2)'
             : vencida
-              ? 'var(--color-danger)'
-              : 'var(--color-border)',
-        boxShadow: esProxima ? '0 0 0 1px var(--color-accent)' : undefined,
+              ? 'var(--cf-red-dark)'
+              : 'var(--cf-border)',
+        boxShadow: esProxima ? '0 0 0 1px var(--cf-gold)' : undefined,
         cursor: esGloboEditable ? 'pointer' : undefined,
       }}
       onClick={esGloboEditable && !editando ? handleTapCuota : undefined}
@@ -141,8 +141,8 @@ function CuotaFila({
             <span
               className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: completado ? 'var(--color-success)' : interesAlDia ? 'var(--color-warning)' : vencida ? 'var(--color-danger)' : 'transparent',
-                border: (completado || interesAlDia || vencida) ? 'none' : '1.5px solid var(--color-border)',
+                background: completado ? 'var(--cf-green-dark)' : interesAlDia ? 'var(--cf-gold-dark)' : vencida ? 'var(--cf-red-dark)' : 'transparent',
+                border: (completado || interesAlDia || vencida) ? 'none' : '1.5px solid var(--cf-border)',
               }}
               title={completado ? 'Cuota pagada' : interesAlDia ? 'Intereses al día' : vencida ? 'Vencida' : 'Pendiente'}
             >
@@ -164,32 +164,32 @@ function CuotaFila({
             </span>
           )}
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-            <p className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[11px] font-semibold whitespace-nowrap" style={{ color: 'var(--cf-ink)' }}>
               {labelPeriodo} {fila.numeroPeriodo}
             </p>
-            <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>
               · {fmtFecha(fila.fechaEsperada)}
             </span>
             {esProxima && (
               <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+                style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
                 Siguiente
               </span>
             )}
             {esBalloon && !completado && (
               <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
-                style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger)' }}>
+                style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
                 Capital + interes
               </span>
             )}
             {tieneExtra && (
               <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
-                style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
+                style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
                 + Capital extra
               </span>
             )}
             {mostrarPagado && !completado && faltante > 0 && faltante < fila.cuotaTotal && (
-              <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--color-warning)' }}>
+              <span className="text-[10px] whitespace-nowrap" style={{ color: 'var(--cf-gold-dark)' }}>
                 falta {formatMoney(faltante)}
               </span>
             )}
@@ -201,8 +201,8 @@ function CuotaFila({
             onClick={() => onPagarCuota(fila)}
             className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-95"
             style={{
-              background: esProxima ? 'var(--color-accent)' : 'var(--color-bg-hover)',
-              color: esProxima ? '#000' : 'var(--color-text-muted)',
+              background: esProxima ? 'var(--cf-gold)' : 'var(--cf-fill)',
+              color: esProxima ? '#000' : 'var(--cf-ink-3)',
             }}
             title={`Pagar ${labelPeriodo.toLowerCase()} ${fila.numeroPeriodo}`}
           >
@@ -226,19 +226,19 @@ function CuotaFila({
       {/* Linea 2: montos en 3 columnas — nunca compite con el encabezado */}
       <div
         className="grid grid-cols-3 gap-2 mt-1.5 pt-1.5"
-        style={{ borderTop: '1px dashed color-mix(in srgb, var(--color-border) 70%, transparent)' }}
+        style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}
       >
         <div>
-          <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Capital</p>
-          <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--color-info)' : 'var(--color-text-primary)' }}>{formatMoney(fila.capital)}</p>
+          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Capital</p>
+          <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--cf-ink-2)' : 'var(--cf-ink)' }}>{formatMoney(fila.capital)}</p>
         </div>
         <div className="text-center">
-          <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Interés</p>
-          <p className="text-[11px] font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(fila.interes)}</p>
+          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Interés</p>
+          <p className="text-[11px] font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(fila.interes)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Cuota</p>
-          <p className="text-[12px] font-bold font-mono-display" style={{ color: completado ? 'var(--color-success)' : 'var(--color-accent)' }}>
+          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
+          <p className="text-[12px] font-bold font-mono-display" style={{ color: completado ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>
             {formatMoney(fila.cuotaTotal)}
           </p>
         </div>
@@ -253,10 +253,10 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
   return (
     <div
       className="mt-2 p-2 rounded-lg"
-      style={{ background: 'color-mix(in srgb, var(--color-info) 8%, var(--color-bg-base))' }}
+      style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-surface))' }}
       onClick={e => e.stopPropagation()}
     >
-      <p className="text-[10px] font-semibold mb-1.5" style={{ color: 'var(--color-info)' }}>
+      <p className="text-[10px] font-semibold mb-1.5" style={{ color: 'var(--cf-ink-2)' }}>
         Abono extra a capital
       </p>
       <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
           placeholder="Monto"
           autoFocus
           className="flex-1 h-7 rounded-md border px-2 text-xs"
-          style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+          style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
           onKeyDown={e => {
             if (e.key === 'Enter') onGuardar(valor)
             if (e.key === 'Escape') onCancelar()
@@ -278,7 +278,7 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
           type="button"
           onClick={() => onGuardar(valor)}
           className="h-7 px-2.5 rounded-md text-[10px] font-bold"
-          style={{ background: 'var(--color-info)', color: '#fff' }}
+          style={{ background: 'var(--cf-ink-2)', color: '#fff' }}
         >
           OK
         </button>
@@ -287,7 +287,7 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
             type="button"
             onClick={onQuitar}
             className="h-7 px-2 rounded-md text-[10px] font-bold"
-            style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
           >
             Quitar
           </button>
@@ -296,7 +296,7 @@ function CapitalExtraEditor({ montoActual, onGuardar, onQuitar, onCancelar }) {
           type="button"
           onClick={onCancelar}
           className="h-7 px-2 rounded-md text-[10px]"
-          style={{ color: 'var(--color-text-muted)' }}
+          style={{ color: 'var(--cf-ink-3)' }}
         >
           X
         </button>

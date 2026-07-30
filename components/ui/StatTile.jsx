@@ -6,8 +6,8 @@ import MoneyText from './MoneyText'
 
 export default function StatTile({ label, value, isMoney = false, color, icon, className = '' }) {
   const bgColor = color
-    ? `color-mix(in srgb, ${color} 12%, var(--color-bg-surface))`
-    : 'var(--color-bg-hover)'
+    ? `color-mix(in srgb, ${color} 12%, var(--cf-surface))`
+    : 'var(--cf-fill)'
 
   return (
     <div
@@ -15,15 +15,15 @@ export default function StatTile({ label, value, isMoney = false, color, icon, c
       style={{ background: bgColor }}
     >
       <div className="flex items-center gap-2">
-        {icon && <span className="shrink-0" style={{ color: color || 'var(--color-text-muted)' }}>{icon}</span>}
+        {icon && <span className="shrink-0" style={{ color: color || 'var(--cf-ink-3)' }}>{icon}</span>}
         <SectionLabel color={color}>{label}</SectionLabel>
       </div>
       {isMoney ? (
-        <MoneyText value={value} size="sm" color={color || 'var(--color-text-primary)'} />
+        <MoneyText value={value} size="sm" color={color || 'var(--cf-ink)'} />
       ) : (
         <span
           className="font-mono-display font-bold text-[20px]"
-          style={{ color: color || 'var(--color-text-primary)' }}
+          style={{ color: color || 'var(--cf-ink)' }}
         >
           {value}
         </span>

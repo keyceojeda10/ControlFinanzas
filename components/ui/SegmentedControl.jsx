@@ -21,7 +21,7 @@ export default function SegmentedControl({ options, value, onChange, className =
     <div
       ref={containerRef}
       className={`relative inline-flex p-1 rounded-[14px] ${className}`}
-      style={{ background: 'var(--color-bg-hover)' }}
+      style={{ background: 'var(--cf-fill)' }}
     >
       <div
         className="absolute top-1 rounded-[11px] transition-all duration-200 ease-[cubic-bezier(.22,1,.36,1)]"
@@ -29,7 +29,7 @@ export default function SegmentedControl({ options, value, onChange, className =
           left: `${indicator.left}px`,
           width: `${indicator.width}px`,
           height: 'calc(100% - 8px)',
-          background: 'var(--color-bg-surface)',
+          background: 'var(--cf-surface)',
           boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         }}
       />
@@ -46,7 +46,7 @@ export default function SegmentedControl({ options, value, onChange, className =
               'relative z-[1] px-3.5 py-2 text-[12.5px] font-semibold rounded-[11px]',
               'transition-colors duration-200 cursor-pointer select-none whitespace-nowrap',
             ].join(' ')}
-            style={{ color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+            style={{ color: isActive ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}
           >
             {label}
           </button>

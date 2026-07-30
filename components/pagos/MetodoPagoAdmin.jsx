@@ -73,7 +73,7 @@ export default function MetodoPagoAdmin() {
     return (
       <Card>
         <div className="h-20 flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'transparent' }} />
+          <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--cf-border)', borderTopColor: 'transparent' }} />
         </div>
       </Card>
     )
@@ -82,12 +82,12 @@ export default function MetodoPagoAdmin() {
   return (
     <Card>
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>
+        <div className="w-7 h-7 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>
           {ICON_TRANSFER}
         </div>
-        <h3 className="font-medium text-sm" style={{ color: 'var(--color-text-primary)' }}>Medios de transferencia</h3>
+        <h3 className="font-medium text-sm" style={{ color: 'var(--cf-ink)' }}>Medios de transferencia</h3>
       </div>
-      <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+      <p className="text-xs mb-4" style={{ color: 'var(--cf-ink-3)' }}>
         Cuando un cobrador registra un pago por transferencia, puede elegir el medio. Estos aparecen para toda tu organizacion.
       </p>
 
@@ -96,21 +96,21 @@ export default function MetodoPagoAdmin() {
           <div
             key={m.id}
             className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-[10px] border"
-            style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-hover)' }}
+            style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-fill)' }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
+              <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
                 {ICON_TRANSFER}
               </div>
-              <span className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{m.nombre}</span>
+              <span className="text-sm font-medium truncate" style={{ color: 'var(--cf-ink)' }}>{m.nombre}</span>
               {m.esPredeterminado && (
-                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>Default</span>
+                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>Default</span>
               )}
             </div>
             <button
               onClick={() => eliminar(m.id)}
               className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
+              style={{ color: 'var(--cf-ink-3)' }}
               title="Eliminar"
             >
               {ICON_TRASH}
@@ -118,7 +118,7 @@ export default function MetodoPagoAdmin() {
           </div>
         ))}
         {metodos.length === 0 && (
-          <p className="text-xs text-center py-3" style={{ color: 'var(--color-text-muted)' }}>No hay medios configurados. Agrega uno para empezar.</p>
+          <p className="text-xs text-center py-3" style={{ color: 'var(--cf-ink-3)' }}>No hay medios configurados. Agrega uno para empezar.</p>
         )}
       </div>
 
@@ -129,7 +129,7 @@ export default function MetodoPagoAdmin() {
           onKeyDown={e => e.key === 'Enter' && agregar()}
           placeholder="Ej: Nequi, Daviplata..."
           className="flex-1 h-9 px-3 rounded-[10px] border text-sm outline-none transition-all"
-          style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)' }}
+          style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-fill)', color: 'var(--cf-ink)' }}
         />
         <Button
           size="sm"
@@ -140,7 +140,7 @@ export default function MetodoPagoAdmin() {
           <span className="flex items-center gap-1">{ICON_PLUS} Agregar</span>
         </Button>
       </div>
-      {error && <p className="text-xs mt-2" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {error && <p className="text-xs mt-2" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
     </Card>
   )
 }

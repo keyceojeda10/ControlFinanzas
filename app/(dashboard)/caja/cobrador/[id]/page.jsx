@@ -66,7 +66,7 @@ export default function CajaCobradorPage() {
   if (!esOwner) {
     return (
       <div className="p-4 max-w-2xl mx-auto">
-        <p className="text-sm text-[var(--color-text-muted)]">Solo el administrador puede ver la caja por cobrador.</p>
+        <p className="text-sm text-[var(--cf-ink-3)]">Solo el administrador puede ver la caja por cobrador.</p>
       </div>
     )
   }
@@ -74,11 +74,11 @@ export default function CajaCobradorPage() {
   if (error) {
     return (
       <div className="p-4 space-y-3 max-w-2xl mx-auto">
-        <Link href="/caja" className="text-sm text-[var(--color-accent)] flex items-center gap-1">
+        <Link href="/caja" className="text-sm text-[var(--cf-gold)] flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           Volver a Caja
         </Link>
-        <p className="text-sm text-[var(--color-danger)]">{error}</p>
+        <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>
       </div>
     )
   }
@@ -87,14 +87,14 @@ export default function CajaCobradorPage() {
     <div className="p-4 space-y-4 max-w-2xl lg:max-w-5xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
-        <Link href={`/caja?fecha=${data?.fecha || ''}`} className="text-sm text-[var(--color-accent)] flex items-center gap-1 w-fit">
+        <Link href={`/caja?fecha=${data?.fecha || ''}`} className="text-sm text-[var(--cf-gold)] flex items-center gap-1 w-fit">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           Volver a Caja
         </Link>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Caja de {data?.cobrador?.nombre}</h1>
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Caja de {data?.cobrador?.nombre}</h1>
+            <p className="text-xs text-[var(--cf-ink-3)]">
               {data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha)}
             </p>
           </div>

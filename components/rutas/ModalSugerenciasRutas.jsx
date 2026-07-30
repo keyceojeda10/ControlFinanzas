@@ -126,14 +126,14 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
   return (
     <Modal open={open} onClose={onClose} title="Sugerencias de rutas" size="lg">
       {cargando && (
-        <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-sm text-center py-8" style={{ color: 'var(--cf-ink-3)' }}>
           Analizando direcciones...
         </p>
       )}
 
       {!cargando && datos && (
         <div className="space-y-4">
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
             Detectamos clientes sin ruta con direcciones parecidas. Crea una ruta con cada grupo en un click.
             El nombre y el cobrador son editables.
           </p>
@@ -142,17 +142,17 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
             <div
               key={g.id}
               className="rounded-[12px] border p-3 space-y-3"
-              style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-card)' }}
+              style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-card)' }}
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>
                   "{g.nombreSugerido}"
                 </span>
                 <span
                   className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
                   style={{
-                    background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)',
-                    color: 'var(--color-accent)',
+                    background: 'color-mix(in srgb, var(--cf-gold) 14%, transparent)',
+                    color: 'var(--cf-gold)',
                   }}
                 >
                   {g.clientes.length} cliente{g.clientes.length === 1 ? '' : 's'}
@@ -164,13 +164,13 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                   <li
                     key={c.id}
                     className="text-[11px] flex items-center gap-2 px-2 py-1 rounded-md"
-                    style={{ background: 'color-mix(in srgb, var(--color-text-primary) 3%, transparent)' }}
+                    style={{ background: 'color-mix(in srgb, var(--cf-ink) 3%, transparent)' }}
                   >
-                    <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    <span className="font-semibold" style={{ color: 'var(--cf-ink)' }}>
                       {c.nombre}
                     </span>
                     {c.direccion && (
-                      <span className="truncate" style={{ color: 'var(--color-text-muted)' }}>
+                      <span className="truncate" style={{ color: 'var(--cf-ink-3)' }}>
                         · {c.direccion}
                       </span>
                     )}
@@ -186,7 +186,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                 />
                 {cobradores.length > 0 && (
                   <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                    <label className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                       Cobrador
                     </label>
                     <select
@@ -194,9 +194,9 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                       onChange={(e) => setSelCobrador((p) => ({ ...p, [g.id]: e.target.value }))}
                       className="w-full mt-1 px-3 py-2 rounded-[10px] border text-sm"
                       style={{
-                        background: 'var(--color-bg-surface)',
-                        borderColor: 'var(--color-border)',
-                        color: 'var(--color-text-primary)',
+                        background: 'var(--cf-surface)',
+                        borderColor: 'var(--cf-border)',
+                        color: 'var(--cf-ink)',
                       }}
                     >
                       <option value="">Sin cobrador (yo cobro)</option>
@@ -209,7 +209,7 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
               </div>
 
               {errores[g.id] && (
-                <p className="text-xs" style={{ color: 'var(--color-danger)' }}>{errores[g.id]}</p>
+                <p className="text-xs" style={{ color: 'var(--cf-red-dark)' }}>{errores[g.id]}</p>
               )}
 
               <div className="flex justify-end">
@@ -223,12 +223,12 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
           {sugerencias.length > 0 && (
             <div
               className="rounded-[12px] border p-3 space-y-2"
-              style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-card)' }}
+              style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-card)' }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 Agregar a rutas existentes
               </p>
-              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                 Estos clientes encajan con rutas que ya tienes.
               </p>
               <ul className="space-y-1.5">
@@ -236,13 +236,13 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                   <li
                     key={`${s.clienteId}-${s.rutaId}`}
                     className="flex items-center gap-2 px-2 py-2 rounded-md"
-                    style={{ background: 'color-mix(in srgb, var(--color-text-primary) 3%, transparent)' }}
+                    style={{ background: 'color-mix(in srgb, var(--cf-ink) 3%, transparent)' }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                      <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>
                         {s.clienteNombre}
                       </p>
-                      <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                      <p className="text-[10px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
                         → {s.rutaNombre} · {s.motivo}
                       </p>
                     </div>
@@ -252,8 +252,8 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
                       disabled={agregando === idx}
                       className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold border transition-colors disabled:opacity-50"
                       style={{
-                        borderColor: 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
-                        color: 'var(--color-accent)',
+                        borderColor: 'color-mix(in srgb, var(--cf-gold) 40%, transparent)',
+                        color: 'var(--cf-gold)',
                       }}
                     >
                       {agregando === idx ? 'Agregando...' : 'Agregar'}
@@ -265,13 +265,13 @@ export default function ModalSugerenciasRutas({ open, onClose, onSuccess }) {
           )}
 
           {datos.sueltos > 0 && grupos.length > 0 && (
-            <p className="text-[11px] text-center" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] text-center" style={{ color: 'var(--cf-ink-3)' }}>
               {datos.sueltos} cliente{datos.sueltos === 1 ? '' : 's'} sin agrupación clara. Asigna manualmente desde su perfil.
             </p>
           )}
 
           {nadaQueMostrar && (
-            <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm text-center py-8" style={{ color: 'var(--cf-ink-3)' }}>
               Todos los clientes con dirección parecida ya están agrupados. Buen trabajo.
             </p>
           )}

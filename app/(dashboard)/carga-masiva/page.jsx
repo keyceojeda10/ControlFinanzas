@@ -120,15 +120,15 @@ export default function CargaMasivaPage() {
       <div className="mb-6">
         <button
           onClick={handleVolver}
-          className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors mb-4"
+          className="flex items-center gap-1.5 text-sm text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           {paso === 1 ? 'Volver' : 'Paso anterior'}
         </button>
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Importar clientes desde archivo</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Importar clientes desde archivo</h1>
+        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
           Sube tu Excel o CSV y el sistema detecta las columnas
         </p>
       </div>
@@ -140,8 +140,8 @@ export default function CargaMasivaPage() {
             <div className={[
               'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors',
               paso >= p.num
-                ? 'bg-[var(--color-accent)] text-[var(--color-text-primary)]'
-                : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]',
+                ? 'bg-[var(--cf-gold)] text-[var(--cf-ink)]'
+                : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)]',
             ].join(' ')}>
               {paso > p.num ? (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,14 +151,14 @@ export default function CargaMasivaPage() {
             </div>
             <span className={[
               'text-[10px] font-medium hidden sm:block',
-              paso >= p.num ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]',
+              paso >= p.num ? 'text-[var(--cf-ink)]' : 'text-[var(--cf-ink-3)]',
             ].join(' ')}>
               {p.label}
             </span>
             {i < PASOS.length - 1 && (
               <div className={[
                 'flex-1 h-[2px] rounded-full',
-                paso > p.num ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
+                paso > p.num ? 'bg-[var(--cf-gold)]' : 'bg-[var(--cf-fill)]',
               ].join(' ')} />
             )}
           </div>
@@ -166,18 +166,18 @@ export default function CargaMasivaPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
 
       {validando && (
         <div className="flex items-center justify-center gap-2 py-12">
-          <svg className="animate-spin w-5 h-5 text-[var(--color-accent)]" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin w-5 h-5 text-[var(--cf-gold)]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          <span className="text-sm text-[var(--color-text-muted)]">Validando datos...</span>
+          <span className="text-sm text-[var(--cf-ink-3)]">Validando datos...</span>
         </div>
       )}
 

@@ -89,7 +89,7 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
           onClick={() => setPaso('tipo')}
           disabled={disabled}
           className="flex items-center gap-1.5 text-xs font-medium transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
+          style={{ color: 'var(--cf-ink-3)' }}
         >
           {ICON_BACK}
           Volver
@@ -98,7 +98,7 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
           {metodosPago.map(m => {
             const selected = medioActivo === m.id
             const platInfo = getPlataformaInfo(m.nombre)
-            const brandColor = platInfo?.color || 'var(--color-info)'
+            const brandColor = platInfo?.color || 'var(--cf-ink-2)'
             return (
               <button
                 key={m.id}
@@ -107,11 +107,11 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
                 className={`flex flex-col items-center gap-2 ${compact ? 'py-3' : 'py-4'} rounded-[12px] border transition-all active:scale-95 relative`}
                 style={{
                   background: selected
-                    ? `color-mix(in srgb, ${brandColor} 12%, var(--color-bg-card))`
-                    : `color-mix(in srgb, ${brandColor} 5%, var(--color-bg-card))`,
+                    ? `color-mix(in srgb, ${brandColor} 12%, var(--cf-card))`
+                    : `color-mix(in srgb, ${brandColor} 5%, var(--cf-card))`,
                   borderColor: selected
                     ? brandColor
-                    : 'var(--color-border)',
+                    : 'var(--cf-border)',
                 }}
               >
                 {selected && (
@@ -124,12 +124,12 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
                 ) : (
                   <div
                     className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                    style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
+                    style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}
                   >
                     {ICON_TRANSFER}
                   </div>
                 )}
-                <span className="text-xs font-semibold leading-tight text-center" style={{ color: 'var(--color-text-primary)' }}>{m.nombre}</span>
+                <span className="text-xs font-semibold leading-tight text-center" style={{ color: 'var(--cf-ink)' }}>{m.nombre}</span>
               </button>
             )
           })}
@@ -146,28 +146,28 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
         className={`flex flex-col items-center gap-2.5 ${compact ? 'py-3.5' : 'py-5'} rounded-[16px] border transition-all active:scale-95 relative`}
         style={{
           background: metodoActivo === 'efectivo'
-            ? 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))'
-            : 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))',
+            ? 'color-mix(in srgb, var(--cf-green-dark) 10%, var(--cf-card))'
+            : 'color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card))',
           borderColor: metodoActivo === 'efectivo'
-            ? (controlado ? 'var(--color-success)' : 'color-mix(in srgb, var(--color-success) 35%, var(--color-border))')
-            : 'var(--color-border)',
+            ? (controlado ? 'var(--cf-green-dark)' : 'color-mix(in srgb, var(--cf-green-dark) 35%, var(--cf-border))')
+            : 'var(--cf-border)',
         }}
       >
         {metodoActivo === 'efectivo' && controlado && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success)', color: '#fff' }}>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--cf-green-dark)', color: '#fff' }}>
             {ICON_CHECK}
           </span>
         )}
         {metodoActivo === 'efectivo' && !controlado && (
-          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>Ultimo</span>
+          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>Ultimo</span>
         )}
         <div
           className="w-11 h-11 rounded-[12px] flex items-center justify-center"
-          style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}
+          style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}
         >
           {ICON_EFECTIVO}
         </div>
-        <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Efectivo</span>
+        <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Efectivo</span>
       </button>
       <button
         onClick={() => {
@@ -182,30 +182,30 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
         className={`flex flex-col items-center gap-2.5 ${compact ? 'py-3.5' : 'py-5'} rounded-[16px] border transition-all active:scale-95 relative`}
         style={{
           background: metodoActivo === 'transferencia'
-            ? 'color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card))'
-            : 'color-mix(in srgb, var(--color-info) 5%, var(--color-bg-card))',
+            ? 'color-mix(in srgb, var(--cf-ink-2) 10%, var(--cf-card))'
+            : 'color-mix(in srgb, var(--cf-ink-2) 5%, var(--cf-card))',
           borderColor: metodoActivo === 'transferencia'
-            ? (controlado ? 'var(--color-info)' : 'color-mix(in srgb, var(--color-info) 35%, var(--color-border))')
-            : 'var(--color-border)',
+            ? (controlado ? 'var(--cf-ink-2)' : 'color-mix(in srgb, var(--cf-ink-2) 35%, var(--cf-border))')
+            : 'var(--cf-border)',
         }}
       >
         {metodoActivo === 'transferencia' && controlado && (
-          <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-info)', color: '#fff' }}>
+          <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--cf-ink-2)', color: '#fff' }}>
             {ICON_CHECK}
           </span>
         )}
         {metodoActivo === 'transferencia' && !controlado && (
-          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}>Ultimo</span>
+          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>Ultimo</span>
         )}
         <div
           className="w-11 h-11 rounded-[12px] flex items-center justify-center"
-          style={{ background: 'color-mix(in srgb, var(--color-info) 15%, transparent)', color: 'var(--color-info)' }}
+          style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}
         >
           {ICON_TRANSFER}
         </div>
-        <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Transferencia</span>
+        <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Transferencia</span>
         {metodoActivo === 'transferencia' && medioNombre && (
-          <span className="text-[10px] font-medium -mt-1" style={{ color: 'var(--color-info)' }}>{medioNombre}</span>
+          <span className="text-[10px] font-medium -mt-1" style={{ color: 'var(--cf-ink-2)' }}>{medioNombre}</span>
         )}
       </button>
     </div>

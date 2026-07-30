@@ -75,13 +75,13 @@ export default function VerificarEmailBanner() {
     <div className="bg-[rgba(245,197,24,0.08)] border-b border-[rgba(245,197,24,0.15)] px-4 py-3">
       <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-4">
         <div className="flex items-start gap-2.5 flex-1 min-w-0">
-          <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[var(--cf-gold)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
           </svg>
           <div>
-            <p className="text-sm text-[var(--color-accent)] font-semibold">Verifica tu correo para asegurar tu cuenta</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">
-              Ingresa el código de 6 dígitos que enviamos a <span className="text-[var(--color-text-primary)] font-medium">{email}</span>
+            <p className="text-sm text-[var(--cf-gold)] font-semibold">Verifica tu correo para asegurar tu cuenta</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-0.5 leading-relaxed">
+              Ingresa el código de 6 dígitos que enviamos a <span className="text-[var(--cf-ink)] font-medium">{email}</span>
             </p>
           </div>
         </div>
@@ -99,14 +99,14 @@ export default function VerificarEmailBanner() {
             style={{
               background: 'rgba(255,255,255,0.06)',
               border: `1px solid ${codigo.length === 6 ? 'rgba(245,197,24,0.5)' : 'rgba(255,255,255,0.1)'}`,
-              color: 'var(--color-text-primary)',
+              color: 'var(--cf-ink)',
             }}
           />
           <button
             onClick={handleVerificar}
             disabled={loading || codigo.length !== 6}
             className="shrink-0 h-8 px-4 rounded-[8px] text-xs font-semibold transition-all disabled:opacity-40 cursor-pointer"
-            style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-accent)', border: '1px solid rgba(245,197,24,0.3)' }}
+            style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--cf-gold)', border: '1px solid rgba(245,197,24,0.3)' }}
           >
             {loading ? '...' : 'Verificar'}
           </button>
@@ -114,7 +114,7 @@ export default function VerificarEmailBanner() {
             onClick={handleReenviar}
             disabled={reenviando || reenviado}
             className="shrink-0 text-[11px] font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
-            style={{ color: reenviado ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+            style={{ color: reenviado ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}
           >
             {reenviado ? 'Enviado' : reenviando ? '...' : 'Reenviar'}
           </button>
@@ -123,7 +123,7 @@ export default function VerificarEmailBanner() {
 
       {error && (
         <div className="max-w-3xl mx-auto mt-1.5">
-          <p className="text-[11px] text-[var(--color-danger)]">{error}</p>
+          <p className="text-[11px] text-[var(--cf-red-dark)]">{error}</p>
         </div>
       )}
     </div>

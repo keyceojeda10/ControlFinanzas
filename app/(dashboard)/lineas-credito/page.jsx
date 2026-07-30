@@ -61,8 +61,8 @@ export default function LineasCreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Líneas de crédito</h1>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Líneas de crédito</h1>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">
             {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function LineasCreditoPage() {
       </div>
 
       {/* Explicacion */}
-      <div className="mb-4 p-3 rounded-xl text-[11px] text-[var(--color-text-muted)] leading-relaxed" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+      <div className="mb-4 p-3 rounded-xl text-[11px] text-[var(--cf-ink-3)] leading-relaxed" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         Una línea de crédito funciona como un cupo rotativo: le apruebas un monto máximo al cliente y él puede pedir plata varias veces sin crear un préstamo nuevo cada vez. Al final del mes se genera un corte con lo que debe (capital + intereses) y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes.
       </div>
 
@@ -86,8 +86,8 @@ export default function LineasCreditoPage() {
             onClick={() => setEstado(e.value)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               estado === e.value
-                ? 'bg-[var(--color-accent)] text-black'
-                : 'bg-[var(--color-bg-card)] text-[var(--color-text-secondary)] border border-[var(--color-border)]'
+                ? 'bg-[var(--cf-gold)] text-black'
+                : 'bg-[var(--cf-card)] text-[var(--cf-ink-2)] border border-[var(--cf-border)]'
             }`}
           >
             {e.label}
@@ -97,7 +97,7 @@ export default function LineasCreditoPage() {
 
       {/* Buscar */}
       <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -105,7 +105,7 @@ export default function LineasCreditoPage() {
           placeholder="Buscar por nombre o cédula..."
           value={buscar}
           onChange={e => setBuscar(e.target.value)}
-          className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]"
+          className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--cf-card)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)]"
         />
       </div>
 
@@ -114,10 +114,10 @@ export default function LineasCreditoPage() {
         <div className="space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
       ) : lineas.length === 0 ? (
         <div className="text-center py-16">
-          <svg className="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-12 h-12 mx-auto text-[var(--cf-ink-3)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v10.5A2.25 2.25 0 004.5 19.5z" />
           </svg>
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-sm text-[var(--cf-ink-3)]">
             {buscar || estado ? 'No se encontraron líneas con esos filtros' : 'No hay líneas de crédito creadas'}
           </p>
           {esOwner && !buscar && !estado && (
@@ -170,14 +170,14 @@ function LineaCreditoCard({ linea }) {
         sheen: 'linear-gradient(105deg, transparent 30%, rgba(120,180,255,0.10) 45%, rgba(200,225,255,0.14) 50%, rgba(120,180,255,0.10) 55%, transparent 70%)',
       }
     : congelada ? {
-        grad: 'linear-gradient(135deg, #b45309 0%, #d97706 25%, #f59e0b 50%, #d97706 75%, #b45309 100%)',
+        grad: 'linear-gradient(135deg, #b45309 0%, #d97706 25%, var(--cf-gold-dark) 50%, #d97706 75%, #b45309 100%)',
         ink: '#ffffff', sub: 'rgba(255, 255, 255, 0.72)', accent: '#fef3c7',
         track: 'rgba(255, 255, 255, 0.18)', border: 'rgba(255, 255, 255, 0.25)',
         shadow: '0 6px 18px rgba(180, 83, 9, 0.25)', waves: 'rgba(255,255,255,0.07)',
         sheen: 'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.10) 48%, rgba(255,255,255,0.18) 52%, transparent 65%)',
       }
       : cerrada ? {
-        grad: 'linear-gradient(135deg, #64748b 0%, #94a3b8 50%, #64748b 100%)',
+        grad: 'linear-gradient(135deg, var(--cf-ink-3) 0%, #94a3b8 50%, var(--cf-ink-3) 100%)',
         ink: '#f8fafc', sub: 'rgba(248, 250, 252, 0.65)', accent: '#e2e8f0',
         track: 'rgba(255, 255, 255, 0.14)', border: 'rgba(255, 255, 255, 0.20)',
         shadow: '0 6px 18px rgba(0,0,0,0.12)', waves: 'rgba(255,255,255,0.05)',

@@ -71,9 +71,9 @@ export default function RutaCard({ ruta, congelada }) {
             <span
               className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
               style={{
-                background: 'color-mix(in srgb, var(--color-warning) 14%, transparent)',
-                color: 'var(--color-warning)',
-                border: '1px solid color-mix(in srgb, var(--color-warning) 26%, transparent)',
+                background: 'color-mix(in srgb, var(--cf-gold-dark) 14%, transparent)',
+                color: 'var(--cf-gold-dark)',
+                border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 26%, transparent)',
               }}
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

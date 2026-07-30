@@ -40,7 +40,7 @@ const IconPagar = (
 const ESTADOS_CLIENTE = [
   { value: '',          label: 'Todos'     },
   { value: 'activo',    label: 'Al día'    },
-  { value: 'mora',      label: 'En mora',  color: 'var(--color-danger)' },
+  { value: 'mora',      label: 'En mora',  color: 'var(--cf-red-dark)' },
   { value: 'cancelado', label: 'Cancelados' },
 ]
 
@@ -48,10 +48,10 @@ const LIMIT = 50
 
 const VISTA_KEY = 'cf-clientes-vista'
 
-const COLOR_OK   = 'var(--color-accent)'
-const COLOR_HOT  = '#f97316'
-const COLOR_CRIT = 'var(--color-danger)'
-const COLOR_OFF  = 'var(--color-text-muted)'
+const COLOR_OK   = 'var(--cf-gold)'
+const COLOR_HOT  = 'var(--cf-gold-dark)'
+const COLOR_CRIT = 'var(--cf-red-dark)'
+const COLOR_OFF  = 'var(--cf-ink-3)'
 
 function moodColorCompacto(c) {
   if (c.estado === 'cancelado' || c.estado === 'inactivo') return COLOR_OFF
@@ -97,11 +97,11 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
           {cliente.pagoHoy && (
             <span
               className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full"
-              style={{ background: 'var(--color-success)', border: '1.5px solid var(--color-bg-card)' }}
+              style={{ background: 'var(--cf-green-dark)', border: '1.5px solid var(--cf-card)' }}
             />
           )}
         </div>
-        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0 truncate">
+        <p className="text-[12px] font-semibold text-[var(--cf-ink)] leading-tight flex-1 min-w-0 truncate">
           {cliente.nombre}
         </p>
       </div>
@@ -116,7 +116,7 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
           {label}
         </span>
         {tienePrestamo && (
-          <span className="text-[11px] font-mono-display font-bold truncate" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--color-text-secondary)' }}>
+          <span className="text-[11px] font-mono-display font-bold truncate" style={{ color: cliente.diasMoraMax > 0 ? color : 'var(--cf-ink-2)' }}>
             {formatMoney(saldo)}
           </span>
         )}
@@ -126,7 +126,7 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
       {(cliente.creadoPor || esNuevo) && (
         <div className="flex items-center justify-between gap-1 mt-1.5">
           {cliente.creadoPor ? (
-            <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+            <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
               {cliente.creadoPor.nombre || 'Cobrador'}
             </span>
           ) : <span />}
@@ -150,8 +150,8 @@ const IconGrid = (
 )
 
 const COLORES_GRUPO = [
-  'var(--color-info)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-danger)',
-  'var(--color-purple)', 'var(--color-info)', '#ec4899', '#84cc16',
+  'var(--cf-ink-2)', 'var(--cf-green-dark)', 'var(--cf-gold-dark)', 'var(--cf-red-dark)',
+  'var(--cf-ink-2)', 'var(--cf-ink-2)', '#ec4899', '#84cc16',
 ]
 
 export default function ClientesPage() {
@@ -626,15 +626,15 @@ export default function ClientesPage() {
 
       {/* Offline indicator */}
       {isOffline && (
-        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
+        <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-gold)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
 
       {/* Error — solo mostrar si ya teniamos datos o si no es la primera carga */}
       {error && total > 0 && (
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -669,19 +669,19 @@ export default function ClientesPage() {
                   className={[
                     'flex items-center gap-3 border rounded-[12px] p-4 transition-all cursor-pointer',
                     selAsignar.includes(c.id)
-                      ? 'border-[color-mix(in_srgb,var(--color-accent)_35%,transparent)] bg-[var(--color-accent-soft)]'
-                      : 'border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)]',
+                      ? 'border-[color-mix(in_srgb,var(--cf-gold)_35%,transparent)] bg-[var(--cf-gold-tint)]'
+                      : 'border-[var(--cf-border)] bg-[var(--cf-surface)] hover:border-[color-mix(in_srgb,var(--cf-gold)_40%,transparent)]',
                   ].join(' ')}
                 >
                   <input
                     type="checkbox"
                     checked={selAsignar.includes(c.id)}
                     onChange={() => toggleSeleccion(c.id)}
-                    className="accent-[var(--color-accent)]"
+                    className="accent-[var(--cf-gold)]"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{c.nombre}</p>
-                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">CC {c.cedula}</p>
+                    <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{c.nombre}</p>
+                    <p className="text-xs text-[var(--cf-ink-2)] mt-0.5">CC {c.cedula}</p>
                   </div>
                 </label>
               ) : vista === 'compacta' ? (
@@ -699,8 +699,8 @@ export default function ClientesPage() {
           </StaggeredList>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
-            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[var(--color-accent)] hover:underline">
+            <p className="text-sm font-medium text-[var(--cf-ink)]">Sin clientes {estado === 'mora' ? 'en mora' : estado === 'activo' ? 'al día' : 'cancelados'}</p>
+            <button onClick={() => setEstado('')} className="mt-2 text-xs text-[var(--cf-gold)] hover:underline">
               Ver todos
             </button>
           </div>
@@ -713,8 +713,8 @@ export default function ClientesPage() {
           <div className="mb-4">
             <MonedaCF pose="busca" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar tus clientes</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+          <p className="text-sm font-medium text-[var(--cf-ink)]">No pudimos cargar tus clientes</p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Revisa tu conexión e intenta de nuevo</p>
           <Button
             size="sm"
             className="mt-4"
@@ -742,16 +742,16 @@ export default function ClientesPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin resultados</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">No se encontró ningún cliente con "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin resultados</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">No se encontró ningún cliente con "{buscar}"</p>
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
           ) : grupoFiltro ? (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin clientes en este grupo</p>
-              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin clientes en este grupo</p>
+              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
                 Ver todos los grupos
               </button>
             </>
@@ -759,7 +759,7 @@ export default function ClientesPage() {
             /* Filtro de estado o de ruta: antes esta rama no decía NADA — solo
                quedaba la moneda flotando y ningún modo de volver atrás. */
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Ningún cliente con este filtro</p>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Ningún cliente con este filtro</p>
               <button
                 onClick={() => { setEstado(''); setRutaIdFiltro(''); setPage(1) }}
                 className="mt-3 text-xs hover:underline"
@@ -780,7 +780,7 @@ export default function ClientesPage() {
       >
         <div className="space-y-4">
           {/* Tabs */}
-          <div className="flex gap-1 p-1 rounded-xl bg-[var(--color-bg-card)] border border-[var(--color-border)]">
+          <div className="flex gap-1 p-1 rounded-xl bg-[var(--cf-card)] border border-[var(--cf-border)]">
             {[
               { key: 'filtrar', label: 'Filtrar' },
               { key: 'gestionar', label: 'Gestionar' },
@@ -792,8 +792,8 @@ export default function ClientesPage() {
                 className={[
                   'flex-1 h-8 rounded-lg text-xs font-medium transition-colors',
                   tabModalGrupos === t.key
-                    ? 'bg-[var(--color-accent)] text-[var(--color-accent-text)]'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
+                    ? 'bg-[var(--cf-gold)] text-[var(--cf-gold-ink)]'
+                    : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
                 ].join(' ')}
               >
                 {t.label}
@@ -804,15 +804,15 @@ export default function ClientesPage() {
           {/* FILTRAR */}
           {tabModalGrupos === 'filtrar' && (
             <div className="space-y-2">
-              <p className="text-[11px] text-[var(--color-text-muted)]">Mostrar solo clientes de un grupo:</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)]">Mostrar solo clientes de un grupo:</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => { setGrupoFiltro(''); setModalGrupos(false) }}
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     !grupoFiltro
-                      ? 'border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent-soft)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
+                      ? 'border-[var(--cf-gold)] text-[var(--cf-gold)] bg-[var(--cf-gold-tint)]'
+                      : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
                   ].join(' ')}
                 >
                   Todos
@@ -822,14 +822,14 @@ export default function ClientesPage() {
                   className={[
                     'px-3 h-8 rounded-full text-xs border transition-colors',
                     grupoFiltro === '_none'
-                      ? 'border-[var(--color-info)] text-[var(--color-info)] bg-[var(--color-info-dim)]'
-                      : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
+                      ? 'border-[var(--cf-ink-2)] text-[var(--cf-ink-2)] bg-[var(--cf-fill)]'
+                      : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
                   ].join(' ')}
                 >
                   Sin grupo
                 </button>
                 {grupos.map((g) => {
-                  const c = g.color || 'var(--color-accent)'
+                  const c = g.color || 'var(--cf-gold)'
                   const active = grupoFiltro === g.id
                   return (
                     <button
@@ -838,7 +838,7 @@ export default function ClientesPage() {
                       className="px-3 h-8 rounded-full text-xs border inline-flex items-center gap-1.5 transition-colors"
                       style={active
                         ? { color: c, borderColor: c, background: `color-mix(in srgb, ${c} 12%, transparent)` }
-                        : { color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
+                        : { color: 'var(--cf-ink-3)', borderColor: 'var(--cf-border)' }}
                     >
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
                       {g.nombre}
@@ -848,7 +848,7 @@ export default function ClientesPage() {
                 })}
               </div>
               {grupos.length === 0 && (
-                <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
+                <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">
                   Aún no tienes grupos. Créalos en la pestaña "Gestionar".
                 </p>
               )}
@@ -863,13 +863,13 @@ export default function ClientesPage() {
                   value={nuevoGrupo}
                   onChange={e => setNuevoGrupo(e.target.value)}
                   placeholder="Nombre del grupo..."
-                  className="flex-1 h-9 px-3 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+                  className="flex-1 h-9 px-3 rounded-lg bg-[var(--cf-surface)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)]"
                   onKeyDown={e => e.key === 'Enter' && crearGrupo()}
                 />
                 <button
                   onClick={crearGrupo}
                   disabled={!nuevoGrupo.trim() || guardandoGrupo}
-                  className="h-9 px-4 rounded-lg bg-[var(--color-accent)] text-[var(--color-accent-text)] text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
+                  className="h-9 px-4 rounded-lg bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
                 >
                   {guardandoGrupo ? '...' : 'Crear'}
                 </button>
@@ -880,22 +880,22 @@ export default function ClientesPage() {
                   <button
                     key={c}
                     onClick={() => setGrupoColor(grupoColor === c ? null : c)}
-                    className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--color-bg-base)] scale-110' : 'hover:scale-110'}`}
+                    className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--cf-surface)] scale-110' : 'hover:scale-110'}`}
                     style={{ background: c }}
                   />
                 ))}
               </div>
 
               {grupos.length > 0 ? (
-                <div className="space-y-2 pt-2 border-t border-[var(--color-border)]">
+                <div className="space-y-2 pt-2 border-t border-[var(--cf-border)]">
                   {grupos.map(g => (
-                    <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--color-bg-hover)] border border-[var(--color-border)]">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || 'var(--color-text-muted)' }} />
+                    <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--cf-fill)] border border-[var(--cf-border)]">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || 'var(--cf-ink-3)' }} />
                       {editandoGrupo === g.id ? (
                         <input
                           defaultValue={g.nombre}
                           autoFocus
-                          className="flex-1 h-7 px-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-hover)] text-sm text-[var(--color-text-primary)]"
+                          className="flex-1 h-7 px-2 rounded bg-[var(--cf-surface)] border border-[var(--cf-border-strong)] text-sm text-[var(--cf-ink)]"
                           onKeyDown={e => {
                             if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
                             if (e.key === 'Escape') setEditandoGrupo(null)
@@ -903,11 +903,11 @@ export default function ClientesPage() {
                           onBlur={e => { guardarNombreGrupo(g, e.target.value) }}
                         />
                       ) : (
-                        <span className="flex-1 text-sm text-[var(--color-text-primary)] truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
+                        <span className="flex-1 text-sm text-[var(--cf-ink)] truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
                           {g.nombre}
                         </span>
                       )}
-                      <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{g._count?.clientes ?? 0}</span>
+                      <span className="text-[10px] text-[var(--cf-ink-3)] shrink-0">{g._count?.clientes ?? 0}</span>
                       <div className="flex gap-1 shrink-0">
                         {COLORES_GRUPO.slice(0, 4).map(c => (
                           <button
@@ -918,14 +918,14 @@ export default function ClientesPage() {
                           />
                         ))}
                       </div>
-                      <button onClick={() => eliminarGrupo(g.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)] transition-colors shrink-0">
+                      <button onClick={() => eliminarGrupo(g.id)} className="text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] transition-colors shrink-0">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--color-text-muted)] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
+                <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
               )}
             </div>
           )}
@@ -933,14 +933,14 @@ export default function ClientesPage() {
           {/* ASIGNAR */}
           {tabModalGrupos === 'asignar' && (
             <div className="space-y-3">
-              <p className="text-[11px] text-[var(--color-text-muted)]">
+              <p className="text-[11px] text-[var(--cf-ink-3)]">
                 Activa el modo asignación para seleccionar varios clientes de la lista y cambiarles el grupo.
               </p>
               <Button onClick={abrirModoAsignar} className="w-full">
                 Activar selección múltiple
               </Button>
               {grupos.length === 0 && (
-                <p className="text-[11px] text-[var(--color-warning)] text-center">
+                <p className="text-[11px] text-[var(--cf-gold-dark)] text-center">
                   Primero crea al menos un grupo en la pestaña "Gestionar".
                 </p>
               )}
@@ -951,15 +951,15 @@ export default function ClientesPage() {
 
       {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
       {modoAsignar && (
-        <div className="fixed left-0 right-0 z-50 border-t border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] bg-[var(--color-bg-base)] lg:bg-[var(--color-bg-base)]/98 lg:backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+        <div className="fixed left-0 right-0 z-50 border-t border-[color-mix(in_srgb,var(--cf-gold)_40%,transparent)] bg-[var(--cf-surface)] lg:bg-[var(--cf-surface)]/98 lg:backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
           <div className="max-w-3xl lg:max-w-6xl mx-auto px-3 py-2.5">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="text-xs text-[var(--color-accent)] font-semibold">
+              <div className="text-xs text-[var(--cf-gold)] font-semibold">
                 {selAsignar.length} {selAsignar.length === 1 ? 'seleccionado' : 'seleccionados'}
               </div>
               <button
                 onClick={cancelarAsignacion}
-                className="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] underline underline-offset-2"
+                className="text-xs text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] underline underline-offset-2"
               >
                 Cancelar
               </button>
@@ -968,7 +968,7 @@ export default function ClientesPage() {
               <select
                 value={grupoAsignar}
                 onChange={(e) => setGrupoAsignar(e.target.value)}
-                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[var(--color-bg-hover)] border border-[var(--color-border)] text-xs text-[var(--color-text-primary)]"
+                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[var(--cf-fill)] border border-[var(--cf-border)] text-xs text-[var(--cf-ink)]"
               >
                 <option value="">Elegir grupo…</option>
                 <option value="_none">Sin grupo</option>
@@ -979,7 +979,7 @@ export default function ClientesPage() {
               <button
                 onClick={asignarGrupoClientes}
                 disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
-                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--color-accent)] text-[var(--color-accent-text)] text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
+                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
               >
                 {asignandoGrupo ? '...' : 'Asignar'}
               </button>
@@ -993,7 +993,7 @@ export default function ClientesPage() {
           pagina actual, asi que "Pagina 1 de 6" sugiere que hay mas morosos
           adelante cuando en realidad cada pagina se filtra por separado. */}
       {!loading && estado && totalPages > 1 && (
-        <p className="text-center text-[12px] mt-4 px-4" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-center text-[12px] mt-4 px-4" style={{ color: 'var(--cf-ink-3)' }}>
           Mostrando los de esta página. Para ver toda la cartera en mora, usa la alerta del inicio.
         </p>
       )}
@@ -1002,17 +1002,17 @@ export default function ClientesPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          <span className="text-xs text-[var(--cf-ink-3)]">
             Página {page} de {totalPages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

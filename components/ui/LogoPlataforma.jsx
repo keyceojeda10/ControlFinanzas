@@ -75,16 +75,16 @@ export function metodoInfo(pago) {
     const plat = getPlataformaInfo(pago?.plataforma)
     return {
       label: pago?.plataforma || 'Transferencia',
-      color: plat?.color || 'var(--color-info)',
-      bg: plat?.bg || 'color-mix(in srgb, var(--color-info) 12%, transparent)',
+      color: plat?.color || 'var(--cf-ink-2)',
+      bg: plat?.bg || 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)',
       plataforma: pago?.plataforma || null,
     }
   }
   if (pago?.metodoPago === 'efectivo') {
     return {
       label: 'Efectivo',
-      color: 'var(--color-success)',
-      bg: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
+      color: 'var(--cf-green-dark)',
+      bg: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)',
       plataforma: null,
     }
   }

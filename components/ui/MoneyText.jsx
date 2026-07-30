@@ -19,7 +19,7 @@ export default function MoneyText({ value, currency = '$', size = 'md', color, c
     <span
       className={`font-mono-display font-bold ${sizes[size] || sizes.md} ${className}`}
       style={{
-        color: color || 'var(--color-text-primary)',
+        color: color || 'var(--cf-ink)',
         ...extraStyle,
       }}
     >

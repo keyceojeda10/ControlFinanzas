@@ -64,12 +64,12 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
     <div className="space-y-4">
       {/* --- Hoy --- */}
       {festivoHoy ? (
-        <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-[var(--color-success)]/30 bg-[var(--color-success)]/5">
+        <div className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-[var(--cf-green-dark)]/30 bg-[var(--cf-green-dark)]/5">
           <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-xs font-medium text-[var(--color-success)]">Hoy marcado como festivo</span>
+            <span className="text-xs font-medium text-[var(--cf-green-dark)]">Hoy marcado como festivo</span>
             {festivoHoy.nombre && (
               <span className="text-xs text-[#a0a0a0]">— {festivoHoy.nombre}</span>
             )}
@@ -78,7 +78,7 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
             onClick={handleEliminarHoy}
             disabled={loading}
             aria-label="Quitar festivo de hoy"
-            className="p-1.5 rounded-lg text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-lg text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-dark)]/10 transition-colors disabled:opacity-40"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -89,14 +89,14 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
         <button
           onClick={handleAgregarHoy}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#2a2a2a] bg-[#111] hover:bg-[#1a1a1a] hover:border-[var(--color-accent)]/40 text-sm text-[#a0a0a0] hover:text-white transition-all disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--cf-ink-2)] bg-[#111] hover:bg-[#1a1a1a] hover:border-[var(--cf-gold)]/40 text-sm text-[#a0a0a0] hover:text-white transition-all disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[var(--cf-gold)]/40"
         >
-          <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span>Marcar hoy como festivo</span>
           {loading && (
-            <div className="w-3.5 h-3.5 border-2 border-[#333] border-t-[var(--color-accent)] rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-[#333] border-t-[var(--cf-gold)] rounded-full animate-spin" />
           )}
         </button>
       )}
@@ -114,7 +114,7 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
             Agregar otra fecha
           </button>
         ) : (
-          <div className="space-y-2 p-3 rounded-xl border border-[#2a2a2a] bg-[#111]">
+          <div className="space-y-2 p-3 rounded-xl border border-[var(--cf-ink-2)] bg-[#111]">
             <p className="text-xs font-medium text-[#a0a0a0] mb-2">Agregar festivo</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
@@ -122,7 +122,7 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
                 value={fecha}
                 onChange={e => { setFecha(e.target.value); setFormError('') }}
                 aria-label="Fecha del festivo"
-                className="flex-1 h-9 px-3 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] text-sm text-white focus:outline-none focus:border-[var(--color-accent)] transition-colors [color-scheme:dark]"
+                className="flex-1 h-9 px-3 rounded-lg border border-[var(--cf-ink-2)] bg-[#0f0f0f] text-sm text-white focus:outline-none focus:border-[var(--cf-gold)] transition-colors [color-scheme:dark]"
               />
               <input
                 type="text"
@@ -130,23 +130,23 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
                 onChange={e => setNombre(e.target.value)}
                 placeholder="Nombre (opcional)"
                 aria-label="Nombre del festivo"
-                className="flex-1 h-9 px-3 rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] text-sm text-white placeholder-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+                className="flex-1 h-9 px-3 rounded-lg border border-[var(--cf-ink-2)] bg-[#0f0f0f] text-sm text-white placeholder-[var(--cf-ink-2)] focus:outline-none focus:border-[var(--cf-gold)] transition-colors"
               />
             </div>
             {formError && (
-              <p className="text-xs text-[var(--color-danger)]">{formError}</p>
+              <p className="text-xs text-[var(--cf-red-dark)]">{formError}</p>
             )}
             <div className="flex gap-2 pt-1">
               <button
                 onClick={handleAgregar}
                 disabled={loading || !fecha}
-                className="px-4 py-1.5 rounded-lg bg-[var(--color-accent)] text-black text-xs font-semibold hover:bg-[#f0b800] transition-colors disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/40"
+                className="px-4 py-1.5 rounded-lg bg-[var(--cf-gold)] text-black text-xs font-semibold hover:bg-[var(--cf-gold)] transition-colors disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[var(--cf-gold)]/40"
               >
                 {loading ? 'Agregando...' : 'Agregar'}
               </button>
               <button
                 onClick={() => { setShowForm(false); setFecha(''); setNombre(''); setFormError('') }}
-                className="px-4 py-1.5 rounded-lg border border-[#2a2a2a] text-xs text-[#a0a0a0] hover:text-white transition-colors focus:outline-none"
+                className="px-4 py-1.5 rounded-lg border border-[var(--cf-ink-2)] text-xs text-[#a0a0a0] hover:text-white transition-colors focus:outline-none"
               >
                 Cancelar
               </button>
@@ -157,12 +157,12 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
 
       {/* --- Lista de festivos --- */}
       {sorted.length === 0 ? (
-        <p className="text-xs text-[var(--color-text-secondary)] py-2">No hay festivos configurados.</p>
+        <p className="text-xs text-[var(--cf-ink-2)] py-2">No hay festivos configurados.</p>
       ) : agrupar && porAnio ? (
         <div className="space-y-4">
           {Object.entries(porAnio).map(([anio, items]) => (
             <div key={anio}>
-              <p className="text-[10px] font-extrabold text-[var(--color-text-secondary)] uppercase tracking-[.07em] mb-1.5">{anio}</p>
+              <p className="text-[10px] font-extrabold text-[var(--cf-ink-2)] uppercase tracking-[.07em] mb-1.5">{anio}</p>
               <FestivosList items={items} hoyStr={hoyStr} loading={loading} onDelete={onDelete} />
             </div>
           ))}
@@ -176,29 +176,29 @@ export default function FestivosManager({ festivos = [], onAdd, onDelete, loadin
 
 function FestivosList({ items, hoyStr, loading, onDelete }) {
   return (
-    <div className="divide-y divide-[#2a2a2a] rounded-xl border border-[#2a2a2a] overflow-hidden">
+    <div className="divide-y divide-[var(--cf-ink-2)] rounded-xl border border-[var(--cf-ink-2)] overflow-hidden">
       {items.map((f) => {
         const fStr = festivoFechaStr(f)
         const esHoy = fStr === hoyStr
         return (
           <div
             key={f.id}
-            className={`flex items-center justify-between px-3 py-2.5 ${esHoy ? 'bg-[var(--color-success)]/5' : 'bg-[#111]'}`}
+            className={`flex items-center justify-between px-3 py-2.5 ${esHoy ? 'bg-[var(--cf-green-dark)]/5' : 'bg-[#111]'}`}
           >
             <div className="min-w-0">
               <span className="text-xs text-white font-medium">{formatFecha(f.fecha)}</span>
               {f.nombre && (
-                <span className="text-xs text-[var(--color-text-secondary)] ml-2">{f.nombre}</span>
+                <span className="text-xs text-[var(--cf-ink-2)] ml-2">{f.nombre}</span>
               )}
               {esHoy && (
-                <span className="ml-2 text-[10px] font-semibold text-[var(--color-success)] uppercase tracking-wide">Hoy</span>
+                <span className="ml-2 text-[10px] font-semibold text-[var(--cf-green-dark)] uppercase tracking-wide">Hoy</span>
               )}
             </div>
             <button
               onClick={() => onDelete && onDelete(f.id)}
               disabled={loading}
               aria-label={`Eliminar festivo ${formatFecha(f.fecha)}`}
-              className="ml-2 p-1.5 rounded-lg text-[var(--color-text-secondary)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 transition-colors disabled:opacity-40 shrink-0 focus:outline-none focus:ring-1 focus:ring-[var(--color-danger)]/40"
+              className="ml-2 p-1.5 rounded-lg text-[var(--cf-ink-2)] hover:text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-dark)]/10 transition-colors disabled:opacity-40 shrink-0 focus:outline-none focus:ring-1 focus:ring-[var(--cf-red-dark)]/40"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

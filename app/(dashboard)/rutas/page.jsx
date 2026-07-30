@@ -158,7 +158,7 @@ export default function RutasPage() {
         clone.style.opacity = '0.95'
         clone.style.transform = 'scale(1.02)'
         clone.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)'
-        clone.style.border = '1px solid var(--color-accent)'
+        clone.style.border = '1px solid var(--cf-gold)'
         clone.style.pointerEvents = 'none'
         clone.style.transition = 'none'
         document.body.appendChild(clone)
@@ -390,7 +390,7 @@ export default function RutasPage() {
 
       {/* Mini formulario inline */}
       {showForm && (
-        <form onSubmit={crearRuta} className="bg-[var(--color-bg-surface)] border border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] rounded-[16px] p-4 mb-4 space-y-3">
+        <form onSubmit={crearRuta} className="bg-[var(--cf-surface)] border border-[color-mix(in_srgb,var(--cf-gold)_30%,transparent)] rounded-[16px] p-4 mb-4 space-y-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
@@ -405,7 +405,7 @@ export default function RutasPage() {
               value={capitalRuta}
               onChange={(e) => setCapitalRuta(e.target.value)}
             />
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
               Asigna un capital propio para esta ruta. Si lo dejas vacío, usa el capital general.
             </p>
           </div>
@@ -413,31 +413,31 @@ export default function RutasPage() {
           {/* Origen del capital: solo relevante si se ingresó un monto */}
           {Number(capitalRuta) > 0 && (
             <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿De dónde sale este capital?</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>¿De dónde sale este capital?</p>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
                   onClick={() => setOrigenCapital('nuevo')}
                   className="text-left rounded-[10px] border p-2.5 transition-colors"
                   style={{
-                    borderColor: origenCapital === 'nuevo' ? 'var(--color-accent)' : 'var(--color-border)',
-                    background: origenCapital === 'nuevo' ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                    borderColor: origenCapital === 'nuevo' ? 'var(--cf-gold)' : 'var(--cf-border)',
+                    background: origenCapital === 'nuevo' ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'transparent',
                   }}
                 >
-                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>Es plata nueva (inyección)</p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Entra dinero nuevo: sube el capital total del negocio y se asigna a esta ruta.</p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>Es plata nueva (inyección)</p>
+                  <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Entra dinero nuevo: sube el capital total del negocio y se asigna a esta ruta.</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setOrigenCapital('existente')}
                   className="text-left rounded-[10px] border p-2.5 transition-colors"
                   style={{
-                    borderColor: origenCapital === 'existente' ? 'var(--color-accent)' : 'var(--color-border)',
-                    background: origenCapital === 'existente' ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'transparent',
+                    borderColor: origenCapital === 'existente' ? 'var(--cf-gold)' : 'var(--cf-border)',
+                    background: origenCapital === 'existente' ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'transparent',
                   }}
                 >
-                  <p className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>Del capital existente</p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Se mueve del capital que ya tiene el negocio: el total NO cambia, solo se reserva para esta ruta.</p>
+                  <p className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>Del capital existente</p>
+                  <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Se mueve del capital que ya tiene el negocio: el total NO cambia, solo se reserva para esta ruta.</p>
                 </button>
               </div>
             </div>
@@ -466,15 +466,15 @@ export default function RutasPage() {
         <div
           className="rounded-[12px] px-4 py-3 mb-4 flex items-center gap-3"
           style={{
-            background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)',
-            borderLeft: '2px solid var(--color-accent)',
+            background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)',
+            borderLeft: '2px solid var(--cf-gold)',
           }}
         >
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--cf-gold)' }}>
             <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-xs leading-snug" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-xs leading-snug" style={{ color: 'var(--cf-ink)' }}>
               Tienes <strong>{recom.totalSinRuta}</strong> cliente{recom.totalSinRuta === 1 ? '' : 's'} sin ruta asignada.
               {recom.gruposSugeridos?.length > 0 && (
                 <> Detectamos {recom.gruposSugeridos.length} grupo{recom.gruposSugeridos.length === 1 ? '' : 's'} por dirección.</>
@@ -484,14 +484,14 @@ export default function RutasPage() {
           <button
             onClick={() => setShowSugerencias(true)}
             className="shrink-0 px-3 py-1.5 rounded-[8px] text-[11px] font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
           >
             Ver sugerencias
           </button>
           <button
             onClick={ignorarRecomendacion}
             className="shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: 'var(--cf-ink-3)' }}
             aria-label="Ignorar"
             title="Ignorar (solo vuelve a aparecer si hay nuevos clientes sin ruta)"
           >
@@ -503,13 +503,13 @@ export default function RutasPage() {
       )}
 
       {isOffline && (
-        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
+        <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-gold)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
       {error && (
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -525,9 +525,9 @@ export default function RutasPage() {
           <div className="mb-4">
             <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin rutas aun</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">Crea una ruta y asignale un cobrador</p>
-          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--color-accent)] hover:underline">
+          <p className="text-sm font-medium text-[var(--cf-ink)]">Sin rutas aun</p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Crea una ruta y asignale un cobrador</p>
+          <button onClick={() => setShowForm(true)} className="mt-4 text-sm text-[var(--cf-gold)] hover:underline">
             Crear primera ruta
           </button>
         </div>
@@ -542,7 +542,7 @@ export default function RutasPage() {
           Ordenar si se queda arriba: ahi la lista nueva no se monta. */}
       {!loading && rutas.length > 1 && modoOrdenar && (
         <div className="flex items-center justify-between mb-3">
-          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--cf-fill)' }}>
             {[
               { key: false, label: 'Trabajo' },
               { key: true, label: 'Ordenar' },
@@ -565,7 +565,7 @@ export default function RutasPage() {
           </div>
           <div className="flex items-center gap-2">
             {modoOrdenar && (
-              <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+              <span className="text-[11px]" style={{ color: ordenEstado === 'error' ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
                 {ordenEstado === 'guardando' ? 'Guardando...' : ordenEstado === 'guardado' ? 'Guardado' : ordenEstado === 'error' ? 'Error al guardar' : 'Arrastra o usa las flechas'}
               </span>
             )}
@@ -668,22 +668,22 @@ export default function RutasPage() {
               onTouchEnd={onTouchEnd}
               className="flex items-center gap-2 px-3 py-3 rounded-[12px] border transition-all"
               style={{
-                background: 'var(--color-bg-card)',
-                borderColor: dragOverIdx === i ? 'var(--color-accent)' : 'var(--color-border)',
+                background: 'var(--cf-card)',
+                borderColor: dragOverIdx === i ? 'var(--cf-gold)' : 'var(--cf-border)',
                 opacity: dragIndex === i ? 0.5 : 1,
                 cursor: 'grab',
                 touchAction: 'none',
               }}
             >
               {/* Grip */}
-              <svg className="w-6 h-6 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="currentColor" viewBox="0 0 24 24">
                 <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
                 <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
                 <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
               </svg>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.nombre}</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-sm font-bold truncate" style={{ color: 'var(--cf-ink)' }}>{r.nombre}</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                   {r.cobrador?.nombre || 'Sin cobrador'} · {r.cantidadClientes} cliente{r.cantidadClientes !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -692,7 +692,7 @@ export default function RutasPage() {
                 <button
                   type="button" onClick={() => moverRuta(i, -1)} disabled={i === 0}
                   className="w-7 h-7 flex items-center justify-center rounded-[8px] disabled:opacity-30"
-                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)' }}
+                  style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink)' }}
                   aria-label="Subir"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7"/></svg>
@@ -700,7 +700,7 @@ export default function RutasPage() {
                 <button
                   type="button" onClick={() => moverRuta(i, 1)} disabled={i === rutas.length - 1}
                   className="w-7 h-7 flex items-center justify-center rounded-[8px] disabled:opacity-30"
-                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-primary)' }}
+                  style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink)' }}
                   aria-label="Bajar"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>

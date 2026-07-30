@@ -190,7 +190,7 @@ function NuevoPrestamo() {
     ctx.lineWidth = 2.5
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = '#111111'
+    ctx.strokeStyle = 'var(--cf-ink)'
   }, [])
 
   const firmaGetPoint = (e) => {
@@ -1287,7 +1287,7 @@ function NuevoPrestamo() {
                           type="button"
                           onClick={() => setCuotaManual(String(calculo.cuotaSugerida))}
                           className="h-8 px-3 rounded-[10px] text-[11px] font-semibold"
-                          style={{ background: 'var(--cf-gold)', color: '#1a1a2e' }}
+                          style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}
                         >
                           Usar {formatMoney(calculo.cuotaSugerida)}
                         </button>

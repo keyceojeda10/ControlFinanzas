@@ -70,20 +70,20 @@ export default function WizardCliente({ onComplete, onSkip }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--cf-ink)' }}>
           Tu primer cliente
         </h2>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
           Piensa en el cliente que mejor conoces. Puedes editarlo después.
         </p>
       </div>
 
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
         style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.12)' }}>
-        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-info)" viewBox="0 0 24 24">
+        <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--cf-ink-2)" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
           Después puedes subir toda tu cartera con foto de cartulinas o Excel.
         </p>
       </div>
@@ -91,7 +91,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--cf-red-dark)' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -100,7 +100,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
         )}
 
         <div className="rounded-[16px] p-5 space-y-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
           <Input
             label="Nombre completo"
             placeholder="Ej: Juan García"
@@ -132,9 +132,9 @@ export default function WizardCliente({ onComplete, onSkip }) {
                   setErrores(prev => ({ ...prev, cedula: '' }))
                 }
               }}
-              className="accent-[var(--color-accent)] w-3.5 h-3.5 cursor-pointer"
+              className="accent-[var(--cf-gold)] w-3.5 h-3.5 cursor-pointer"
             />
-            <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
               No tengo la {documentConfig.label.toLowerCase()}
             </span>
           </label>
@@ -147,7 +147,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
             error={errores.telefono}
             inputMode="tel"
           />
-          <p className="text-[10px] -mt-2 px-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[10px] -mt-2 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             Opcional. Puedes agregarlo después.
           </p>
         </div>
@@ -156,7 +156,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
           type="submit"
           disabled={loading}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: 'var(--color-accent)', color: '#111' }}>
+          style={{ background: 'var(--cf-gold)', color: '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -170,7 +170,7 @@ export default function WizardCliente({ onComplete, onSkip }) {
             type="button"
             onClick={onSkip}
             className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-            style={{ color: 'var(--color-text-muted)' }}>
+            style={{ color: 'var(--cf-ink-3)' }}>
             Omitir por ahora
           </button>
         )}

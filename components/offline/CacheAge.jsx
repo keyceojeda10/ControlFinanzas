@@ -31,10 +31,10 @@ export default function CacheAge({ className = '', compact = false }) {
   const stale = horas >= 24
   const warn = !stale && horas >= 2
   const color = stale
-    ? 'text-[var(--color-danger)]'
+    ? 'text-[var(--cf-red-dark)]'
     : warn
-      ? 'text-[var(--color-warning)]'
-      : 'text-[var(--color-text-muted)]'
+      ? 'text-[var(--cf-gold-dark)]'
+      : 'text-[var(--cf-ink-3)]'
 
   const label = compact
     ? formatRelativo(diff)

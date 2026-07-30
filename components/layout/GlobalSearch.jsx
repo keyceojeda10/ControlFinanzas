@@ -146,11 +146,11 @@ export default function GlobalSearch() {
   if (!open) return null
 
   const ICON_COLORS = {
-    comando: 'var(--color-info)',
-    accion: 'var(--color-accent)',
-    cliente: 'var(--color-accent)',
-    prestamo: 'var(--color-success)',
-    ruta: 'var(--color-purple)',
+    comando: 'var(--cf-ink-2)',
+    accion: 'var(--cf-gold)',
+    cliente: 'var(--cf-gold)',
+    prestamo: 'var(--cf-green-dark)',
+    ruta: 'var(--cf-ink-2)',
   }
 
   // Offsets de cada seccion (sin mutar durante el render): cada seccion empieza
@@ -165,17 +165,17 @@ export default function GlobalSearch() {
   const OFF_RUT = OFF_PRE + pre.length
 
   const hayAlgo = allItems.length > 0
-  const colorDe = (k) => ICON_COLORS[k] || 'var(--color-text-muted)'
+  const colorDe = (k) => ICON_COLORS[k] || 'var(--cf-ink-3)'
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]">
       <div className="absolute inset-0 bg-black/72 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       <div className="relative w-full max-w-lg mx-3 sm:mx-4 rounded-[16px] shadow-2xl overflow-hidden"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--cf-gold)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
           <input
@@ -185,16 +185,16 @@ export default function GlobalSearch() {
             onKeyDown={handleKeyDown}
             placeholder="Buscar clientes, rutas, caja, configuración..."
             className="flex-1 bg-transparent text-sm outline-none"
-            style={{ color: 'var(--color-text-primary)' }}
+            style={{ color: 'var(--cf-ink)' }}
           />
           {query && (
-            <button onClick={() => { setQuery(''); setResults(null); setSelected(0) }} className="p-1 rounded-md" style={{ color: 'var(--color-text-muted)' }}>
+            <button onClick={() => { setQuery(''); setResults(null); setSelected(0) }} className="p-1 rounded-md" style={{ color: 'var(--cf-ink-3)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
-          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md font-mono" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>ESC</kbd>
+          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md font-mono" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>ESC</kbd>
         </div>
 
         {/* Results */}
@@ -202,7 +202,7 @@ export default function GlobalSearch() {
           {/* Comandos: navegacion */}
           {comandosNav.length > 0 && (
             <div>
-              <SectionLabel color="var(--color-info)">Ir a</SectionLabel>
+              <SectionLabel color="var(--cf-ink-2)">Ir a</SectionLabel>
               {comandosNav.map((c, i) => (
                 <ResultRow key={c.id} item={c} idx={OFF_NAV + i} color={colorDe('comando')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
               ))}
@@ -212,7 +212,7 @@ export default function GlobalSearch() {
           {/* Comandos: acciones */}
           {comandosAccion.length > 0 && (
             <div>
-              <SectionLabel color="var(--color-accent)">Acciones</SectionLabel>
+              <SectionLabel color="var(--cf-gold)">Acciones</SectionLabel>
               {comandosAccion.map((c, i) => (
                 <ResultRow key={c.id} item={c} idx={OFF_ACCION + i} color={colorDe('accion')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
               ))}
@@ -222,14 +222,14 @@ export default function GlobalSearch() {
           {/* API: loading */}
           {loading && (
             <div className="flex justify-center py-6">
-              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
+              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--cf-border)', borderTopColor: 'var(--cf-gold)' }} />
             </div>
           )}
 
           {/* API: clientes */}
           {results?.clientes?.length > 0 && (
             <div>
-              <SectionLabel color="var(--color-accent)">Clientes</SectionLabel>
+              <SectionLabel color="var(--cf-gold)">Clientes</SectionLabel>
               {results.clientes.map((c, i) => {
                 const cedSub = c.cedula && !c.cedula.startsWith('SIN-') ? c.cedula : ''
                 const item = { id: `cli-${c.id}`, label: c.nombre, sub: `${cedSub}${c.telefono ? `${cedSub ? ' · ' : ''}${c.telefono}` : ''}`, href: `/clientes/${c.id}`, icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' }
@@ -241,7 +241,7 @@ export default function GlobalSearch() {
           {/* API: prestamos */}
           {results?.prestamos?.length > 0 && (
             <div>
-              <SectionLabel color="var(--color-success)">Préstamos</SectionLabel>
+              <SectionLabel color="var(--cf-green-dark)">Préstamos</SectionLabel>
               {results.prestamos.map((p, i) => {
                 const item = { id: `pre-${p.id}`, label: p.clienteNombre, sub: `$${Math.round(p.saldoPendiente).toLocaleString('es-CO')} pendiente`, href: `/prestamos/${p.id}`, estado: p.estado, icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
                 return <ResultRow key={item.id} item={item} idx={OFF_PRE + i} color={colorDe('prestamo')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
@@ -252,7 +252,7 @@ export default function GlobalSearch() {
           {/* API: rutas */}
           {results?.rutas?.length > 0 && (
             <div>
-              <SectionLabel color="var(--color-purple)">Rutas</SectionLabel>
+              <SectionLabel color="var(--cf-ink-2)">Rutas</SectionLabel>
               {results.rutas.map((r, i) => {
                 const item = { id: `rut-${r.id}`, label: r.nombre, sub: `${r._count?.clientes || 0} clientes`, href: `/rutas/${r.id}`, icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
                 return <ResultRow key={item.id} item={item} idx={OFF_RUT + i} color={colorDe('ruta')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
@@ -263,29 +263,29 @@ export default function GlobalSearch() {
           {/* Sin resultados */}
           {!loading && query.trim().length >= 1 && !hayAlgo && (
             <div className="py-8 text-center">
-              <svg className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Sin resultados para "{query}"</p>
+              <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Sin resultados para "{query}"</p>
             </div>
           )}
 
           {/* Estado inicial (sin query) */}
           {query.trim().length === 0 && (
             <div className="py-10 text-center">
-              <svg className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--cf-border-strong)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Busca clientes, préstamos, rutas, caja, gastos, configuración…</p>
+              <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Busca clientes, préstamos, rutas, caja, gastos, configuración…</p>
             </div>
           )}
         </div>
 
         {/* Footer — solo desktop */}
-        <div className="hidden sm:flex items-center justify-between px-4 py-2 text-[10px]" style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+        <div className="hidden sm:flex items-center justify-between px-4 py-2 text-[10px]" style={{ borderTop: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}>
           <div className="flex items-center gap-3">
-            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&uarr;</kbd> <kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&darr;</kbd> navegar</span>
-            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>Enter</kbd> abrir</span>
+            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>&uarr;</kbd> <kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>&darr;</kbd> navegar</span>
+            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>Enter</kbd> abrir</span>
           </div>
         </div>
       </div>
@@ -299,7 +299,7 @@ function SectionLabel({ color, children }) {
   return (
     <div className="flex items-center gap-2 px-4 py-2 mt-1">
       <div className="w-1 h-3 rounded-full" style={{ background: color }} />
-      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{children}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>{children}</p>
     </div>
   )
 }
@@ -309,7 +309,7 @@ function ResultRow({ item, idx, color, selected, onSelect, onNavigate }) {
     <button
       className={[
         'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg min-h-[46px] focus-visible:outline-none',
-        idx === selected ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-bg-hover)]',
+        idx === selected ? 'bg-[var(--cf-gold-tint)]' : 'hover:bg-[var(--cf-fill)]',
       ].join(' ')}
       onClick={() => onNavigate(item.href)}
       onMouseEnter={() => onSelect(idx)}
@@ -320,8 +320,8 @@ function ResultRow({ item, idx, color, selected, onSelect, onNavigate }) {
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{item.label}</p>
-        {item.sub && <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{item.sub}</p>}
+        <p className="text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{item.label}</p>
+        {item.sub && <p className="text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{item.sub}</p>}
       </div>
       {item.estado && (
         <span className={[

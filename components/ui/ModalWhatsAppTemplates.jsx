@@ -35,9 +35,9 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
   }
 
   return (
-    <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)' }}>
-      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
+    <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-surface)' }}>
+      <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
           Secciones del mensaje
         </p>
         <button
@@ -45,9 +45,9 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
           onClick={onGuardar}
           className="flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[10px] font-medium transition-all"
           style={{
-            background: guardado ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'var(--color-bg-card)',
-            color: guardado ? 'var(--color-success)' : 'var(--color-accent)',
-            border: `1px solid ${guardado ? 'var(--color-success)' : 'var(--color-border)'}`,
+            background: guardado ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' : 'var(--cf-card)',
+            color: guardado ? 'var(--cf-green-dark)' : 'var(--cf-gold)',
+            border: `1px solid ${guardado ? 'var(--cf-green-dark)' : 'var(--cf-border)'}`,
           }}
         >
           {guardado ? (
@@ -63,7 +63,7 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
         </button>
       </div>
 
-      <div className="divide-y divide-[var(--color-border)]">
+      <div className="divide-y divide-[var(--cf-border)]">
         {toggleables.map(sec => {
           const checked = activas.has(sec.key)
           return (
@@ -72,18 +72,18 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
               type="button"
               onClick={() => onChange(sec.key)}
               className="flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors"
-              style={{ background: checked ? 'color-mix(in srgb, var(--color-accent) 4%, transparent)' : 'transparent' }}
+              style={{ background: checked ? 'color-mix(in srgb, var(--cf-gold) 4%, transparent)' : 'transparent' }}
             >
               {checked ? (
-                <span className="flex items-center justify-center w-[18px] h-[18px] rounded-[5px] shrink-0 transition-all" style={{ background: 'var(--color-accent)' }}>
+                <span className="flex items-center justify-center w-[18px] h-[18px] rounded-[5px] shrink-0 transition-all" style={{ background: 'var(--cf-gold)' }}>
                   <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
               ) : (
-                <span className="flex items-center justify-center w-[18px] h-[18px] rounded-[5px] shrink-0 transition-all" style={{ border: '2px solid var(--color-border)' }} />
+                <span className="flex items-center justify-center w-[18px] h-[18px] rounded-[5px] shrink-0 transition-all" style={{ border: '2px solid var(--cf-border)' }} />
               )}
-              <span className={`text-[11px] font-medium transition-colors ${checked ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}`}>
+              <span className={`text-[11px] font-medium transition-colors ${checked ? 'text-[var(--cf-ink)]' : 'text-[var(--cf-ink-3)]'}`}>
                 {sec.label}
               </span>
             </button>
@@ -92,22 +92,22 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
       </div>
 
       {/* Campos personalizados */}
-      <div style={{ borderTop: '1px solid var(--color-border)' }}>
+      <div style={{ borderTop: '1px solid var(--cf-border)' }}>
         {Array.isArray(extras) && extras.length > 0 && (
           <div className="px-3 pt-2 pb-1 space-y-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[9px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>
               Campos adicionales
             </p>
             {extras.map((e, idx) => (
               <div key={idx} className="flex items-center gap-2 text-[11px]">
-                <span className="flex-1 truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="flex-1 truncate" style={{ color: 'var(--cf-ink-2)' }}>
                   {e.nombre}: {e.valor}
                 </span>
                 <button
                   type="button"
                   onClick={() => eliminarCampo(idx)}
-                  className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,transparent)] transition-colors"
-                  style={{ color: 'var(--color-danger)' }}
+                  className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_10%,transparent)] transition-colors"
+                  style={{ color: 'var(--cf-red-dark)' }}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -126,8 +126,8 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
                 placeholder="Nombre"
                 value={nuevoNombre}
                 onChange={e => setNuevoNombre(e.target.value)}
-                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--cf-gold)]"
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
                 autoFocus
               />
               <input
@@ -135,8 +135,8 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
                 placeholder="Valor"
                 value={nuevoValor}
                 onChange={e => setNuevoValor(e.target.value)}
-                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                className="flex-1 h-8 px-2 rounded-[8px] text-[11px] focus:outline-none focus:ring-1 focus:ring-[var(--cf-gold)]"
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
                 onKeyDown={e => e.key === 'Enter' && agregarCampo()}
               />
             </div>
@@ -145,7 +145,7 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
                 type="button"
                 onClick={() => { setAgregando(false); setNuevoNombre(''); setNuevoValor('') }}
                 className="flex-1 h-7 rounded-[6px] text-[10px] font-medium"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}
               >
                 Cancelar
               </button>
@@ -154,7 +154,7 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
                 onClick={agregarCampo}
                 disabled={!nuevoNombre.trim() || !nuevoValor.trim()}
                 className="flex-1 h-7 rounded-[6px] text-[10px] font-medium disabled:opacity-40"
-                style={{ background: 'var(--color-accent)', color: '#3a2900' }}
+                style={{ background: 'var(--cf-gold)', color: '#3a2900' }}
               >
                 Agregar
               </button>
@@ -164,12 +164,12 @@ function PanelSecciones({ secciones, activas, onChange, guardado, onGuardar, ext
           <button
             type="button"
             onClick={() => setAgregando(true)}
-            className="flex items-center gap-1.5 w-full px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
+            className="flex items-center gap-1.5 w-full px-3 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--cf-gold)_4%,transparent)]"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="var(--color-accent)" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="var(--cf-gold)" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>
+            <span className="text-[11px] font-medium" style={{ color: 'var(--cf-gold)' }}>
               Agregar campo personalizado
             </span>
           </button>
@@ -362,13 +362,13 @@ export default function ModalWhatsAppTemplates({
     >
       <div className="space-y-3">
         {!tel && (
-          <div className="rounded-[10px] px-3 py-2.5 text-[12px]" style={{ background: 'var(--color-warning-dim)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)' }}>
+          <div className="rounded-[10px] px-3 py-2.5 text-[12px]" style={{ background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)' }}>
             Este cliente no tiene un telefono valido registrado.
           </div>
         )}
 
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
             Elige una plantilla
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -381,16 +381,16 @@ export default function ModalWhatsAppTemplates({
                   onClick={() => handleSelect(t)}
                   className="rounded-[10px] px-2.5 py-2 text-left transition-all"
                   style={{
-                    background: active ? `color-mix(in srgb, ${t.color} 18%, transparent)` : 'var(--color-bg-card)',
-                    border: `1px solid ${active ? t.color : 'var(--color-border)'}`,
+                    background: active ? `color-mix(in srgb, ${t.color} 18%, transparent)` : 'var(--cf-card)',
+                    border: `1px solid ${active ? t.color : 'var(--cf-border)'}`,
                     boxShadow: active ? `0 0 0 1px ${t.color}, 0 4px 12px color-mix(in srgb, ${t.color} 20%, transparent)` : 'none',
                   }}
                 >
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-[14px]">{t.icon}</span>
-                    <span className="text-[11px] font-semibold truncate" style={{ color: active ? t.color : 'var(--color-text-primary)' }}>{t.label}</span>
+                    <span className="text-[11px] font-semibold truncate" style={{ color: active ? t.color : 'var(--cf-ink)' }}>{t.label}</span>
                   </div>
-                  <p className="text-[9px] leading-tight" style={{ color: 'var(--color-text-muted)' }}>{t.desc}</p>
+                  <p className="text-[9px] leading-tight" style={{ color: 'var(--cf-ink-3)' }}>{t.desc}</p>
                 </button>
               )
             })}
@@ -406,15 +406,15 @@ export default function ModalWhatsAppTemplates({
             >
               <svg
                 className="w-3 h-3 transition-transform"
-                style={{ transform: showSecciones ? 'rotate(90deg)' : 'rotate(0)', color: 'var(--color-text-muted)' }}
+                style={{ transform: showSecciones ? 'rotate(90deg)' : 'rotate(0)', color: 'var(--cf-ink-3)' }}
                 fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
                 Personalizar secciones
               </span>
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}>
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
                 {seccionesActuales.filter(s => !s.locked && seccionesActivas.has(s.key)).length}/{seccionesActuales.filter(s => !s.locked).length}
               </span>
             </button>
@@ -435,11 +435,11 @@ export default function ModalWhatsAppTemplates({
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
               Mensaje (puedes editarlo)
             </p>
             <div className="flex items-center gap-2">
-              <p className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>
                 {textoEditable.length} caracteres
               </p>
               <button
@@ -453,9 +453,9 @@ export default function ModalWhatsAppTemplates({
                 }}
                 className="flex items-center gap-1 px-2 py-0.5 rounded-[6px] text-[10px] font-medium transition-all"
                 style={{
-                  background: copiado ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'var(--color-bg-card)',
-                  color: copiado ? 'var(--color-success)' : 'var(--color-text-muted)',
-                  border: `1px solid ${copiado ? 'var(--color-success)' : 'var(--color-border)'}`,
+                  background: copiado ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' : 'var(--cf-card)',
+                  color: copiado ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)',
+                  border: `1px solid ${copiado ? 'var(--cf-green-dark)' : 'var(--cf-border)'}`,
                 }}
               >
                 {copiado ? (
@@ -477,9 +477,9 @@ export default function ModalWhatsAppTemplates({
             rows={10}
             className="w-full rounded-[10px] px-3 py-2.5 text-[13px] font-mono resize-y focus:outline-none focus:ring-2"
             style={{
-              background: 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
+              background: 'var(--cf-card)',
+              border: '1px solid var(--cf-border)',
+              color: 'var(--cf-ink)',
               minHeight: '180px',
             }}
             placeholder="Escribe tu mensaje..."

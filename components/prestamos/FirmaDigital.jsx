@@ -53,7 +53,7 @@ async function generarComprobante(prestamo) {
   let y = 40
 
   // Title
-  ctx.fillStyle = '#111111'
+  ctx.fillStyle = 'var(--cf-ink)'
   ctx.font = 'bold 22px system-ui, sans-serif'
   ctx.fillText('Comprobante de préstamo', 40, y += 30)
 
@@ -73,7 +73,7 @@ async function generarComprobante(prestamo) {
   ctx.font = '13px system-ui, sans-serif'
   ctx.fillText('DATOS DEL CLIENTE', 40, y)
 
-  ctx.fillStyle = '#111111'
+  ctx.fillStyle = 'var(--cf-ink)'
   ctx.font = '15px system-ui, sans-serif'
   y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
   y += 24; ctx.fillText(`Cédula: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
@@ -106,7 +106,7 @@ async function generarComprobante(prestamo) {
     ctx.fillStyle = '#555555'
     ctx.font = '14px system-ui, sans-serif'
     ctx.fillText(label, 40, y)
-    ctx.fillStyle = '#111111'
+    ctx.fillStyle = 'var(--cf-ink)'
     ctx.font = 'bold 14px system-ui, sans-serif'
     ctx.textAlign = 'right'
     ctx.fillText(value, w - 40, y)
@@ -129,7 +129,7 @@ async function generarComprobante(prestamo) {
       ctx.fillStyle = '#555555'
       ctx.font = '13px system-ui, sans-serif'
       ctx.fillText(formatFecha(pago.fechaPago), 40, y)
-      ctx.fillStyle = '#111111'
+      ctx.fillStyle = 'var(--cf-ink)'
       ctx.font = 'bold 13px system-ui, sans-serif'
       ctx.textAlign = 'right'
       ctx.fillText(formatMoney(pago.montoPagado), w - 40, y)
@@ -197,7 +197,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
     ctx.lineWidth = 2.5
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = '#111111'
+    ctx.strokeStyle = 'var(--cf-ink)'
   }, [])
 
   useEffect(() => {
@@ -307,26 +307,26 @@ export default function FirmaDigital({ prestamo, onSave }) {
         className="w-full rounded-[12px] border overflow-hidden"
         style={{
           background: firmaUrl
-            ? 'color-mix(in srgb, var(--color-success) 5%, var(--color-bg-card))'
-            : 'var(--color-bg-card)',
+            ? 'color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card))'
+            : 'var(--cf-card)',
           borderColor: firmaUrl
-            ? 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'
-            : 'var(--color-border)',
+            ? 'color-mix(in srgb, var(--cf-green-dark) 20%, var(--cf-border))'
+            : 'var(--cf-border)',
         }}
       >
         {/* Header */}
         <div className="p-3 flex items-center gap-3">
           <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-            style={{ background: firmaUrl ? 'color-mix(in srgb, var(--color-success) 15%, transparent)' : 'color-mix(in srgb, var(--color-text-muted) 10%, transparent)' }}
+            style={{ background: firmaUrl ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' : 'color-mix(in srgb, var(--cf-ink-3) 10%, transparent)' }}
           >
-            <svg className="w-4 h-4" style={{ color: firmaUrl ? 'var(--color-success)' : 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: firmaUrl ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Firma del cliente</p>
+            <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
             {!firmaUrl && (
-              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Sin firma</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Sin firma</p>
             )}
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             onClick={() => setModalVer(true)}
             className="w-full px-3 pb-2"
           >
-            <div className="rounded-[10px] overflow-hidden w-full border" style={{ background: '#ffffff', borderColor: 'var(--color-border)', height: 80 }}>
+            <div className="rounded-[10px] overflow-hidden w-full border" style={{ background: '#ffffff', borderColor: 'var(--cf-border)', height: 80 }}>
               <img src={firmaUrl} alt="Firma" className="h-full w-auto object-contain mx-auto" />
             </div>
           </button>
@@ -352,7 +352,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
             style={{
               background: 'rgba(255,255,255,0.06)',
-              color: 'var(--color-text-secondary)',
+              color: 'var(--cf-ink-2)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -366,8 +366,8 @@ export default function FirmaDigital({ prestamo, onSave }) {
             disabled={descargandoPagare}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
             style={{
-              background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-              color: 'var(--color-accent)',
+              background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+              color: 'var(--cf-gold)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -382,7 +382,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
             style={{
               background: 'rgba(255,255,255,0.06)',
-              color: 'var(--color-text-secondary)',
+              color: 'var(--cf-ink-2)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -396,7 +396,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
       {/* Modal ver firma ampliada */}
       <Modal open={modalVer} onClose={() => setModalVer(false)} title="Firma del cliente">
         {firmaUrl && (
-          <div className="rounded-[12px] overflow-hidden border" style={{ background: '#ffffff', borderColor: 'var(--color-border)' }}>
+          <div className="rounded-[12px] overflow-hidden border" style={{ background: '#ffffff', borderColor: 'var(--cf-border)' }}>
             <img src={firmaUrl} alt="Firma" className="w-full object-contain" style={{ maxHeight: 300 }} />
           </div>
         )}
@@ -405,10 +405,10 @@ export default function FirmaDigital({ prestamo, onSave }) {
       {/* Modal firmar/re-firmar */}
       <Modal open={modalFirmar} onClose={() => setModalFirmar(false)} title={firmaUrl ? 'Modificar firma' : 'Firma del cliente'}>
         <div className="space-y-3">
-          <p className="text-[11px] text-[var(--color-text-muted)]">
+          <p className="text-[11px] text-[var(--cf-ink-3)]">
             El cliente firma con el dedo sobre el recuadro.
           </p>
-          <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--color-border)', background: '#ffffff' }}>
+          <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--cf-border)', background: '#ffffff' }}>
             <canvas
               ref={canvasRef}
               className="w-full touch-none"

@@ -28,10 +28,10 @@ const ESTADO_BADGE = {
 }
 
 const ESTADO_COLOR = {
-  abierto: 'var(--color-warning)',
-  en_progreso: 'var(--color-info)',
-  resuelto: 'var(--color-success)',
-  cerrado: 'var(--color-text-secondary)',
+  abierto: 'var(--cf-gold-dark)',
+  en_progreso: 'var(--cf-ink-2)',
+  resuelto: 'var(--cf-green-dark)',
+  cerrado: 'var(--cf-ink-2)',
 }
 
 export default function SoportePage() {
@@ -62,9 +62,9 @@ export default function SoportePage() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-accent) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-              color: 'var(--color-accent)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 22%, transparent), color-mix(in srgb, var(--cf-gold) 12%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
+              color: 'var(--cf-gold)',
             }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -72,8 +72,8 @@ export default function SoportePage() {
             </svg>
           </div>
           <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Soporte</h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Crea un ticket o revisa el estado de tus solicitudes</p>
+            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>Soporte</h1>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Crea un ticket o revisa el estado de tus solicitudes</p>
           </div>
         </div>
         <Link href="/soporte/nuevo">
@@ -90,8 +90,8 @@ export default function SoportePage() {
       <div
         className="rounded-[20px] p-4 mb-5 flex flex-col sm:flex-row items-center gap-3 justify-between"
         style={{
-          background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.10) 0%, var(--color-bg-card) 60%, var(--color-bg-card) 100%)',
-          border: '1px solid color-mix(in srgb, #25D366 22%, var(--color-border))',
+          background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.10) 0%, var(--cf-card) 60%, var(--cf-card) 100%)',
+          border: '1px solid color-mix(in srgb, #25D366 22%, var(--cf-border))',
           boxShadow: '0 4px 16px color-mix(in srgb, #25D366 12%, transparent)',
         }}
       >
@@ -104,8 +104,8 @@ export default function SoportePage() {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>¿Necesitas respuesta rápida?</p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escríbenos por WhatsApp y te atendemos directamente.</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>¿Necesitas respuesta rápida?</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Escríbenos por WhatsApp y te atendemos directamente.</p>
           </div>
         </div>
         <a
@@ -134,18 +134,18 @@ export default function SoportePage() {
       ) : tickets.length === 0 ? (
         <div
           className="rounded-[20px] cf-card-shadow py-12 text-center"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
           <div
             className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)', color: 'var(--color-accent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}
           >
             <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
           </div>
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No tienes tickets de soporte</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Crea uno si necesitas ayuda con algo</p>
+          <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>No tienes tickets de soporte</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--cf-ink-3)' }}>Crea uno si necesitas ayuda con algo</p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -158,8 +158,8 @@ export default function SoportePage() {
                 <div
                   className="rounded-[12px] px-4 py-3 transition-all kpi-lift cursor-pointer"
                   style={{
-                    background: `linear-gradient(135deg, color-mix(in srgb, ${eColor} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                    border: `1px solid color-mix(in srgb, ${eColor} 18%, var(--color-border))`,
+                    background: `linear-gradient(135deg, color-mix(in srgb, ${eColor} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+                    border: `1px solid color-mix(in srgb, ${eColor} 18%, var(--cf-border))`,
                   }}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -167,7 +167,7 @@ export default function SoportePage() {
                       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                         <span
                           className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}
+                          style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}
                         >
                           {TIPO_LABEL[t.tipo] || t.tipo}
                         </span>
@@ -186,19 +186,19 @@ export default function SoportePage() {
                           <span
                             className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center"
                             style={{
-                              background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
-                              color: '#1a1a2e',
-                              boxShadow: '0 0 8px color-mix(in srgb, var(--color-accent) 40%, transparent)',
+                              background: 'linear-gradient(135deg, var(--cf-gold), var(--cf-gold-dark))',
+                              color: 'var(--cf-ink)',
+                              boxShadow: '0 0 8px color-mix(in srgb, var(--cf-gold) 40%, transparent)',
                             }}
                           >
                             {mensajesNuevos}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{t.asunto}</p>
-                      <p className="text-[11px] mt-0.5 line-clamp-1" style={{ color: 'var(--color-text-muted)' }}>{t.descripcion}</p>
+                      <p className="text-sm font-bold truncate" style={{ color: 'var(--cf-ink)' }}>{t.asunto}</p>
+                      <p className="text-[11px] mt-0.5 line-clamp-1" style={{ color: 'var(--cf-ink-3)' }}>{t.descripcion}</p>
                     </div>
-                    <span className="text-[10px] shrink-0 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="text-[10px] shrink-0 font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                       {new Date(t.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>

@@ -22,13 +22,13 @@ const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),   
 const InstallBanner       = dynamic(() => import('@/components/layout/InstallBanner'),            { ssr: false })
 
 function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--color-bg-hover)' }} />
+  return <div className={`animate-pulse rounded-[12px] ${className}`} style={{ background: 'var(--cf-fill)' }} />
 }
 
 // Skeleton con forma de KpiCard real para que la carga no parezca un bloque vacio
 function KpiCardSkeleton() {
   const shimmerStyle = {
-    background: 'linear-gradient(90deg, var(--color-bg-hover) 0%, color-mix(in srgb, var(--color-text-muted) 18%, var(--color-bg-hover)) 50%, var(--color-bg-hover) 100%)',
+    background: 'linear-gradient(90deg, var(--cf-fill) 0%, color-mix(in srgb, var(--cf-ink-3) 18%, var(--cf-fill)) 50%, var(--cf-fill) 100%)',
     backgroundSize: '200% 100%',
     animation: 'shimmer 1.6s ease-in-out infinite',
   }
@@ -36,8 +36,8 @@ function KpiCardSkeleton() {
     <div
       className="rounded-[16px] px-4 py-4"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -61,8 +61,8 @@ function KpiGroupSkeleton({ kpis = 2 }) {
     // Un lector de pantalla gana lo mismo: deja de leer cajas vacias.
     <div aria-busy="true">
       <div className="px-1 py-2 flex items-center gap-2">
-        <div className="w-6 h-6 rounded-[6px] animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
-        <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--color-bg-hover)' }} />
+        <div className="w-6 h-6 rounded-[6px] animate-pulse" style={{ background: 'var(--cf-fill)' }} />
+        <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--cf-fill)' }} />
       </div>
       <div className="pt-1.5">
         <div className="grid grid-cols-2 gap-3">
@@ -110,7 +110,7 @@ function useCountUp(target, duration = 800) {
 // que muestra el monto y la fecha. El ultimo dia (hoy) se destaca con un
 // anillo brillante. La linea NO usa preserveAspectRatio=none para no
 // deformar el grosor del trazo.
-function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasDias, mutedColor, tooltipBg, tooltipText }) {
+function Sparkline({ data, color = 'var(--cf-green-dark)', ariaLabel, etiquetasDias, mutedColor, tooltipBg, tooltipText }) {
   const reactId = useId()
   // hovered = mouse desktop (se va al salir). pinned = touch movil (queda fijo).
   const [hovered, setHovered] = useState(null)
@@ -228,7 +228,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
                 cx={x}
                 cy={y}
                 r={esActive ? 4 : (esHoy ? 3.2 : 2)}
-                fill={esHoy || esActive ? color : (tooltipBg || 'var(--color-bg-card)')}
+                fill={esHoy || esActive ? color : (tooltipBg || 'var(--cf-card)')}
                 stroke={color}
                 strokeWidth={esHoy || esActive ? 1.5 : 1.2}
                 style={{ transition: 'r 0.15s ease' }}
@@ -266,7 +266,7 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
               y={h - 2}
               fontSize="9"
               textAnchor={i === 0 ? 'start' : 'end'}
-              fill={esHoy ? color : (mutedColor || 'var(--color-text-muted)')}
+              fill={esHoy ? color : (mutedColor || 'var(--cf-ink-3)')}
               style={{ fontWeight: esHoy ? 600 : 400 }}
             >
               {esHoy ? 'Hoy' : 'Hace 6d'}
@@ -283,13 +283,13 @@ function Sparkline({ data, color = 'var(--color-success)', ariaLabel, etiquetasD
             left: `${activePoint[0]}px`,
             top: `${activePoint[1] - 8}px`,
             transform: 'translate(-50%, -100%)',
-            background: tooltipBg || 'var(--color-bg-base)',
-            border: `1px solid color-mix(in srgb, ${color} 35%, ${tooltipBg ? 'rgba(0,0,0,0.2)' : 'var(--color-border)'})`,
+            background: tooltipBg || 'var(--cf-surface)',
+            border: `1px solid color-mix(in srgb, ${color} 35%, ${tooltipBg ? 'rgba(0,0,0,0.2)' : 'var(--cf-border)'})`,
             boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
             zIndex: 10,
           }}
         >
-          <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tooltipBg ? 'rgba(245, 197, 24, 0.6)' : (mutedColor || 'var(--color-text-muted)') }}>{dias[activeIdx]}</p>
+          <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: tooltipBg ? 'rgba(245, 197, 24, 0.6)' : (mutedColor || 'var(--cf-ink-3)') }}>{dias[activeIdx]}</p>
           <p className="font-mono-display font-bold" style={{ color: tooltipText || color }}>{formatMoney(activePoint[2])}</p>
         </div>
       )}
@@ -305,7 +305,7 @@ const HERO_SUB   = 'rgba(58, 41, 0, 0.62)'
 const HERO_TRACK = 'rgba(58, 41, 0, 0.16)'
 const HERO_GLOSS = 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)'
 
-function HeroCard({ label, value, valueRaw, sub, color = 'var(--color-success)', accent = 'var(--color-success)', narrativa, sparklineData, metaDiaria, info }) {
+function HeroCard({ label, value, valueRaw, sub, color = 'var(--cf-green-dark)', accent = 'var(--cf-green-dark)', narrativa, sparklineData, metaDiaria, info }) {
   const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
@@ -405,7 +405,7 @@ function HeroCard({ label, value, valueRaw, sub, color = 'var(--color-success)',
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-3">
-            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="var(--color-accent)" ariaLabel="Tendencia últimos 7 días" />
+            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="var(--cf-gold)" ariaLabel="Tendencia últimos 7 días" />
           </div>
         )}
 
@@ -418,7 +418,7 @@ function HeroCard({ label, value, valueRaw, sub, color = 'var(--color-success)',
 }
 
 // Donut de progreso animado: anillo SVG con porcentaje en el centro.
-function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', size = 90, strokeWidth = 9, label, sublabel, trackColor = 'var(--color-bg-hover)', labelColor = 'var(--color-text-secondary)' }) {
+function DonutProgress({ value = 0, max = 100, color = 'var(--cf-green-dark)', size = 90, strokeWidth = 9, label, sublabel, trackColor = 'var(--cf-fill)', labelColor = 'var(--cf-ink-2)' }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
   const animatedPct = useCountUp(pct, 1000)
   const r = (size - strokeWidth) / 2
@@ -466,7 +466,7 @@ function DonutProgress({ value = 0, max = 100, color = 'var(--color-success)', s
         <p className="text-[11px] mt-2 font-semibold uppercase tracking-wider text-center" style={{ color: labelColor }}>{label}</p>
       )}
       {sublabel && (
-        <p className="text-[10px] mt-0.5 text-center" style={{ color: 'var(--color-text-muted)' }}>{sublabel}</p>
+        <p className="text-[10px] mt-0.5 text-center" style={{ color: 'var(--cf-ink-3)' }}>{sublabel}</p>
       )}
     </div>
   )
@@ -505,7 +505,7 @@ function generarNarrativa({ recaudadoHoy, recaudadoAyer, recaudadoAyerAEstaHora,
   return null
 }
 
-function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--color-text-primary)', icon, info }) {
+function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--cf-ink)', icon, info }) {
   const [showInfo, setShowInfo] = useState(false)
   const hasInfo = Boolean(info)
   const openInfo = (e) => {
@@ -545,8 +545,8 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
       className={`rounded-[16px] px-4 py-4 relative group kpi-lift cf-card-shadow ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 45%, var(--color-bg-card) 75%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
-        border: '1px solid var(--color-border)',
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 45%, var(--cf-card) 75%, color-mix(in srgb, ${color} 6%, var(--cf-card)) 100%)`,
+        border: '1px solid var(--cf-border)',
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -564,7 +564,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
               aria-label={`Qué significa ${label}`}
               className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold relative
                          before:absolute before:-inset-3 before:content-['']
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]"
               style={{ background: `color-mix(in srgb, ${color} 25%, transparent)`, color }}
             >
               i
@@ -578,7 +578,7 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
         )}
       </div>
       <p className={`${tamValor} font-bold leading-tight font-mono-display whitespace-nowrap`} style={{ color }}>{displayValue}</p>
-      {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
+      {sub && <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>{sub}</p>}
       {hasInfo && showInfo && (
         <KpiInfoPopover info={infoObj} color={color} onClose={() => setShowInfo(false)} />
       )}
@@ -632,8 +632,8 @@ function KpiInfoPopover({ info, color, onClose }) {
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'var(--color-bg-base)',
-          border: `1px solid color-mix(in srgb, ${color} 35%, var(--color-border))`,
+          background: 'var(--cf-surface)',
+          border: `1px solid color-mix(in srgb, ${color} 35%, var(--cf-border))`,
           boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
           animation: 'cardFadeUp 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
@@ -641,7 +641,7 @@ function KpiInfoPopover({ info, color, onClose }) {
         {/* Header con color del KPI */}
         <div
           className="px-4 py-3 flex items-center justify-between sticky top-0 z-10"
-          style={{ background: `color-mix(in srgb, ${color} 12%, var(--color-bg-base))`, borderBottom: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
+          style={{ background: `color-mix(in srgb, ${color} 12%, var(--cf-surface))`, borderBottom: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
@@ -649,8 +649,8 @@ function KpiInfoPopover({ info, color, onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="text-[18px] leading-none w-7 h-7 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--color-bg-hover)] shrink-0"
-            style={{ color: 'var(--color-text-secondary)' }}
+            className="text-[18px] leading-none w-7 h-7 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--cf-fill)] shrink-0"
+            style={{ color: 'var(--cf-ink-2)' }}
             aria-label="Cerrar"
           >
             ×
@@ -665,7 +665,7 @@ function KpiInfoPopover({ info, color, onClose }) {
             ni una palabra del contenido. */}
         <div className="p-4 sm:p-5 text-[12px] leading-relaxed space-y-3">
           {info.que && (
-            <p style={{ color: 'var(--color-text-primary)' }}>{info.que}</p>
+            <p style={{ color: 'var(--cf-ink)' }}>{info.que}</p>
           )}
 
           {/* Lo mejor del panel: la formula con las cifras REALES del usuario.
@@ -676,14 +676,14 @@ function KpiInfoPopover({ info, color, onClose }) {
               style={{ background: `color-mix(in srgb, ${color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)` }}
             >
               <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color }}>Tu número ahora</p>
-              <p style={{ color: 'var(--color-text-primary)' }}>{info.ejemplo}</p>
+              <p style={{ color: 'var(--cf-ink)' }}>{info.ejemplo}</p>
             </div>
           )}
 
           {info.comoSeCalcula && (
-            <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula</p>
-              <p style={{ color: 'var(--color-text-secondary)' }}>{info.comoSeCalcula}</p>
+            <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--cf-fill)' }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-3)' }}>Cómo se calcula</p>
+              <p style={{ color: 'var(--cf-ink-2)' }}>{info.comoSeCalcula}</p>
             </div>
           )}
 
@@ -692,8 +692,8 @@ function KpiInfoPopover({ info, color, onClose }) {
               {!verMas && (
                 <button
                   onClick={() => setVerMas(true)}
-                  className="w-full rounded-[12px] py-2 text-[11px] font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
-                  style={{ color: 'var(--color-text-secondary)', border: '1px dashed var(--color-border)' }}
+                  className="w-full rounded-[12px] py-2 text-[11px] font-medium transition-colors hover:bg-[var(--cf-fill)]"
+                  style={{ color: 'var(--cf-ink-2)', border: '1px dashed var(--cf-border)' }}
                 >
                   Ver más
                 </button>
@@ -701,18 +701,18 @@ function KpiInfoPopover({ info, color, onClose }) {
               {verMas && (
                 <div className="space-y-3">
                   {info.cuandoCambia && (
-                    <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--color-bg-hover)' }}>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-text-muted)' }}>Cuándo cambia</p>
-                      <p style={{ color: 'var(--color-text-secondary)' }}>{info.cuandoCambia}</p>
+                    <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--cf-fill)' }}>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-3)' }}>Cuándo cambia</p>
+                      <p style={{ color: 'var(--cf-ink-2)' }}>{info.cuandoCambia}</p>
                     </div>
                   )}
                   {info.tip && (
                     <div
                       className="rounded-[12px] px-3 py-2.5"
-                      style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, transparent)' }}
+                      style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 20%, transparent)' }}
                     >
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--color-warning)' }}>Tip</p>
-                      <p style={{ color: 'var(--color-text-secondary)' }}>{info.tip}</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-gold-dark)' }}>Tip</p>
+                      <p style={{ color: 'var(--cf-ink-2)' }}>{info.tip}</p>
                     </div>
                   )}
                 </div>
@@ -751,13 +751,13 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
       className={`rounded-[16px] px-4 py-4 relative kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 100%)`,
-        border: '1px solid var(--color-border)',
-        boxShadow: '0 4px 12px color-mix(in srgb, var(--color-border) 60%, transparent)',
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 50%, color-mix(in srgb, ${color} 6%, var(--cf-card)) 100%)`,
+        border: '1px solid var(--cf-border)',
+        boxShadow: '0 4px 12px color-mix(in srgb, var(--cf-border) 60%, transparent)',
       }}
     >
       <div className="flex items-center gap-1.5 mb-1">
-        <p className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        <p className="text-[11px]" style={{ color: 'var(--cf-ink-2)' }}>{label}</p>
         {hasInfo && (
           <span
             aria-hidden
@@ -770,7 +770,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       </div>
       <p className={`${tamMonto} font-bold font-mono-display whitespace-nowrap`} style={{ color }}>{textoMonto}</p>
       <div className="flex items-center gap-1.5 flex-wrap mt-1">
-        <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
+        <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
         {montoAyer !== undefined && montoAyer !== null && (
           <ComparativoChip actual={monto} anterior={montoAyer} />
         )}
@@ -782,24 +782,24 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       )}
       {pct !== null && !sparklineData && (
         <>
-          <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
             <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{cuotaDiaria > 0 ? `${pct}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
+          <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>{cuotaDiaria > 0 ? `${pct}% de la cuota diaria` : 'Sin cuotas esperadas'}</p>
         </>
       )}
       {pct !== null && sparklineData && (
         <>
-          <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
             <div className="h-full rounded-full progress-shimmer transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{pct}% de la cuota diaria</p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{pct}% de la cuota diaria</p>
         </>
       )}
       {extraSub && (
         <div className="mt-2 flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--color-danger)' }} />
-          <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{extraSub}</p>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--cf-red-dark)' }} />
+          <p className="text-[10px]" style={{ color: 'var(--cf-red-dark)' }}>{extraSub}</p>
         </div>
       )}
       {hasInfo && showInfo && (
@@ -817,7 +817,7 @@ function RoutesCard({ value, sub }) {
       valueRaw={value}
       format="int"
       sub={sub}
-      color="var(--color-purple)"
+      color="var(--cf-ink-2)"
       info={{
         titulo: 'Rutas activas',
         que: 'Zonas o sectores de cobro que tienes habilitados. Cada ruta puede tener un cobrador asignado y sus propios clientes.',
@@ -838,8 +838,8 @@ function QuickLink({ href, label, desc, color, dataTour }) {
       data-tour={dataTour}
       className="relative overflow-hidden rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 active:scale-[0.98]"
       style={{
-        background: `linear-gradient(145deg, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 18%, var(--color-border))`,
+        background: `linear-gradient(145deg, color-mix(in srgb, ${color} 8%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 18%, var(--cf-border))`,
       }}
     >
       <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-[0.05] pointer-events-none" style={{ background: `radial-gradient(circle, ${color}, transparent 70%)` }} />
@@ -847,8 +847,8 @@ function QuickLink({ href, label, desc, color, dataTour }) {
         <div className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       </div>
       <div className="min-w-0 relative z-10">
-        <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>{label}</p>
-        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
+        <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>{label}</p>
+        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{desc}</p>
       </div>
     </Link>
   )
@@ -872,12 +872,12 @@ function ComparativoChip({ actual, anterior }) {
   if (anterior === undefined || anterior === null) return null
   const diff = actual - anterior
   if (Math.abs(diff) < 1) return (
-    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>
+    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
       = vs ayer
     </span>
   )
   const positivo = diff > 0
-  const color = positivo ? 'var(--color-success)' : 'var(--color-danger)'
+  const color = positivo ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)'
   const arrow = positivo ? '↑' : '↓'
   return (
     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold inline-flex items-center gap-0.5" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}>
@@ -926,15 +926,15 @@ function KpiGroup({ title, icon, children, defaultOpen = true, storageKey }) {
     <div>
       <button
         onClick={toggle}
-        className="w-full px-1 py-2 flex items-center justify-between gap-2 rounded-[12px] transition-colors hover:bg-[var(--color-bg-hover)]"
+        className="w-full px-1 py-2 flex items-center justify-between gap-2 rounded-[12px] transition-colors hover:bg-[var(--cf-fill)]"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)', color: 'var(--color-text-secondary)' }}>
+          <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-3) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
             {icon}
           </div>
-          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>{title}</h2>
+          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>{title}</h2>
         </div>
-        <svg className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
+        <svg className={`w-4 h-4 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--cf-ink-3)' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -1013,31 +1013,31 @@ function ResumenDelDia({ actividad, esOwner }) {
   const items = []
   if (pagos.cantidad > 0) items.push({
     icon: Icons.pagoIn,
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
     text: `${pagos.cantidad} ${pagos.cantidad === 1 ? 'pago' : 'pagos'}`,
     monto: formatMoney(pagos.monto),
   })
   if (prestamos.cantidad > 0) items.push({
     icon: Icons.prestamoOut,
-    color: 'var(--color-warning)',
+    color: 'var(--cf-gold-dark)',
     text: `${prestamos.cantidad} ${prestamos.cantidad === 1 ? 'préstamo entregado' : 'préstamos entregados'}`,
     monto: formatMoney(prestamos.monto),
   })
   if (esOwner && gastos && gastos.cantidad > 0) items.push({
     icon: Icons.gasto,
-    color: 'var(--color-warning)',
+    color: 'var(--cf-gold-dark)',
     text: `${gastos.cantidad} ${gastos.cantidad === 1 ? 'gasto' : 'gastos'}`,
     monto: formatMoney(gastos.monto),
   })
   if (esOwner && retiros && retiros.monto > 0) items.push({
     icon: Icons.retiro,
-    color: 'var(--color-danger)',
+    color: 'var(--cf-red-dark)',
     text: 'Retiro de caja',
     monto: formatMoney(retiros.monto),
   })
   if (esOwner && inyecciones && inyecciones.monto > 0) items.push({
     icon: Icons.retiro,
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
     text: 'Inyección de capital',
     monto: formatMoney(inyecciones.monto),
   })
@@ -1048,19 +1048,19 @@ function ResumenDelDia({ actividad, esOwner }) {
     <div
       className="rounded-[16px] overflow-hidden"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
-      <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+      <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
           {Icons.actividad}
         </div>
-        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Movimientos de hoy</h2>
+        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Movimientos de hoy</h2>
       </div>
       <div className="px-4 py-3">
         {sinMovimientos && (
-          <p className="text-[12px] text-center py-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[12px] text-center py-2" style={{ color: 'var(--cf-ink-3)' }}>
             Aún no hay movimientos registrados hoy
           </p>
         )}
@@ -1072,7 +1072,7 @@ function ResumenDelDia({ actividad, esOwner }) {
                   <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${it.color} 15%, transparent)`, color: it.color }}>
                     {it.icon}
                   </div>
-                  <span className="text-[13px] truncate" style={{ color: 'var(--color-text-primary)' }}>{it.text}</span>
+                  <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink)' }}>{it.text}</span>
                 </div>
                 <span className="text-[13px] font-bold font-mono-display shrink-0" style={{ color: it.color }}>{it.monto}</span>
               </div>
@@ -1080,19 +1080,19 @@ function ResumenDelDia({ actividad, esOwner }) {
           </div>
         )}
         {esOwner && desgloseCobradores && desgloseCobradores.length > 0 && (
-          <div className={`${items.length > 0 ? 'mt-3 pt-3 border-t' : ''}`} style={{ borderColor: 'var(--color-border)' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
+          <div className={`${items.length > 0 ? 'mt-3 pt-3 border-t' : ''}`} style={{ borderColor: 'var(--cf-border)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: 'var(--cf-ink-3)' }}>
               <span style={{ width: 12, height: 12, display: 'inline-flex' }}>{Icons.clientes}</span>
               Por cobrador
             </p>
             <div className="space-y-1.5">
               {desgloseCobradores.map((c) => (
                 <div key={c.cobradorId || 'sin'} className="flex items-center justify-between text-[12px]">
-                  <span style={{ color: 'var(--color-text-secondary)' }}>{c.nombre}</span>
-                  <span className="font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
-                    <span style={{ color: 'var(--color-text-muted)' }}>{c.pagos} pagos</span>
-                    <span className="mx-1.5" style={{ color: 'var(--color-text-muted)' }}>·</span>
-                    <span style={{ color: 'var(--color-success)' }}>{formatMoney(c.monto)}</span>
+                  <span style={{ color: 'var(--cf-ink-2)' }}>{c.nombre}</span>
+                  <span className="font-mono-display" style={{ color: 'var(--cf-ink)' }}>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>{c.pagos} pagos</span>
+                    <span className="mx-1.5" style={{ color: 'var(--cf-ink-3)' }}>·</span>
+                    <span style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.monto)}</span>
                   </span>
                 </div>
               ))}
@@ -1126,41 +1126,41 @@ function RutasHoy({ rutas }) {
   return (
     <div
       className="rounded-[16px] px-4 py-4"
-      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
     >
       <div className="flex items-center justify-between gap-2 mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>
+        <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-2)' }}>
           Por ruta hoy
         </p>
-        <span className="text-[11px] font-mono-display whitespace-nowrap" style={{ color: 'var(--color-text-muted)' }}>
+        <span className="text-[11px] font-mono-display whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>
           {formatMoney(totalRecaudado)} de {formatMoney(totalEsperado)}
         </span>
       </div>
       <div className="space-y-1">
         {ordenadas.map((r) => {
           const pct = pctDe(r)
-          const color = pct >= 80 ? 'var(--color-success)'
-            : pct >= 40 ? 'var(--color-warning)'
-            : 'var(--color-danger)'
+          const color = pct >= 80 ? 'var(--cf-green-dark)'
+            : pct >= 40 ? 'var(--cf-gold-dark)'
+            : 'var(--cf-red-dark)'
           return (
             <Link
               key={r.id}
               href={`/rutas/${r.id}`}
-              className="block rounded-[12px] px-2 py-2 -mx-2 transition-colors hover:bg-[var(--color-bg-hover)]"
+              className="block rounded-[12px] px-2 py-2 -mx-2 transition-colors hover:bg-[var(--cf-fill)]"
             >
               <div className="flex items-center justify-between gap-3 mb-1.5">
-                <span className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-[13px] font-medium truncate" style={{ color: 'var(--cf-ink)' }}>
                   {r.nombre}
                 </span>
                 <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color }}>{pct}%</span>
               </div>
-              <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ background: 'var(--color-bg-hover)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ background: 'var(--cf-fill)' }}>
                 <div
                   className="h-full rounded-full transition-[width] duration-500"
                   style={{ width: `${Math.max(pct, 2)}%`, background: color }}
                 />
               </div>
-              <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                 {formatMoney(r.recaudadoHoy || 0)} de {formatMoney(r.esperadoHoy || 0)}
               </p>
             </Link>
@@ -1176,23 +1176,23 @@ function NecesitaAtencion({ alertas, moraData }) {
   const items = []
   const mora30 = moraData?.agrupado?.mora31plus?.length ?? 0
   if (mora30 > 0) items.push({
-    color: 'var(--color-danger)',
+    color: 'var(--cf-red-dark)',
     text: `${mora30} ${mora30 === 1 ? 'préstamo con más de 30 días de mora' : 'préstamos con más de 30 días de mora'}`,
     href: '/clientes?filtro=mora',
   })
   if (alertas.clientesSinRuta > 0) items.push({
-    color: 'var(--color-warning)',
+    color: 'var(--cf-gold-dark)',
     text: `${alertas.clientesSinRuta} ${alertas.clientesSinRuta === 1 ? 'cliente sin ruta asignada' : 'clientes sin ruta asignada'}`,
     href: '/clientes?sinRuta=1',
   })
   if (alertas.prestamosSinPagosLargo > 0) items.push({
-    color: 'var(--color-warning)',
+    color: 'var(--cf-gold-dark)',
     text: `${alertas.prestamosSinPagosLargo} ${alertas.prestamosSinPagosLargo === 1 ? 'préstamo sin pagos hace más de 7 días' : 'préstamos sin pagos hace más de 7 días'}`,
     href: '/prestamos?sinPagosDias=7',
   })
   const proximos = alertas.proximosACompletar?.length ?? 0
   if (proximos > 0) items.push({
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
     text: `${proximos} ${proximos === 1 ? 'préstamo listo para renovar' : 'préstamos listos para renovar'} (80%+ pagado)`,
     href: '#renovar',
     scroll: true,
@@ -1204,22 +1204,22 @@ function NecesitaAtencion({ alertas, moraData }) {
     <div
       className="rounded-[16px] overflow-hidden"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-border))',
+        background: 'var(--cf-card)',
+        border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, var(--cf-border))',
       }}
     >
-      <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--color-border)', background: 'color-mix(in srgb, var(--color-warning) 6%, transparent)' }}>
-        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, transparent)', color: 'var(--color-warning)' }}>
+      <div className="px-4 py-2.5 flex items-center gap-2" style={{ borderBottom: '1px solid var(--cf-border)', background: 'color-mix(in srgb, var(--cf-gold-dark) 6%, transparent)' }}>
+        <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 18%, transparent)', color: 'var(--cf-gold-dark)' }}>
           {Icons.alerta}
         </div>
-        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-warning)' }}>Necesita tu atención</h2>
+        <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-gold-dark)' }}>Necesita tu atención</h2>
       </div>
       <div className="px-2 py-1">
         {items.map((it, i) => (
-          <Link key={i} href={it.href} className="flex items-center justify-between gap-2 py-2 px-2 rounded-[8px] transition-colors hover:bg-[var(--color-bg-hover)]">
+          <Link key={i} href={it.href} className="flex items-center justify-between gap-2 py-2 px-2 rounded-[8px] transition-colors hover:bg-[var(--cf-fill)]">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: it.color }} />
-              <span className="text-[12px] truncate" style={{ color: 'var(--color-text-primary)' }}>{it.text}</span>
+              <span className="text-[12px] truncate" style={{ color: 'var(--cf-ink)' }}>{it.text}</span>
             </div>
             <span className="text-[11px] shrink-0 font-medium" style={{ color: it.color }}>Ver →</span>
           </Link>
@@ -1238,20 +1238,20 @@ function ProximosARenovar({ alertas }) {
       id="renovar"
       className="rounded-[16px] overflow-hidden"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))',
+        background: 'var(--cf-card)',
+        border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))',
       }}
     >
-      <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)', background: 'color-mix(in srgb, var(--color-success) 6%, transparent)' }}>
+      <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--cf-border)', background: 'color-mix(in srgb, var(--cf-green-dark) 6%, transparent)' }}>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 18%, transparent)', color: 'var(--color-success)' }}>
+          <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 18%, transparent)', color: 'var(--cf-green-dark)' }}>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644l3.181-3.183" />
             </svg>
           </div>
-          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Listos para renovar</h2>
+          <h2 className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>Listos para renovar</h2>
         </div>
-        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+        <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
           {lista.length}
         </span>
       </div>
@@ -1260,29 +1260,29 @@ function ProximosARenovar({ alertas }) {
           <Link
             key={p.prestamoId}
             href={`/prestamos/${p.prestamoId}`}
-            className="flex items-center justify-between gap-2 py-2.5 px-2 rounded-[8px] transition-colors hover:bg-[var(--color-bg-hover)]"
+            className="flex items-center justify-between gap-2 py-2.5 px-2 rounded-[8px] transition-colors hover:bg-[var(--cf-fill)]"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-[13px] font-medium truncate" style={{ color: 'var(--cf-ink)' }}>
                   {p.clienteNombre}
                 </span>
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)', color: 'var(--color-success)' }}>
+                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
                   {p.porcentaje}%
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                 <span>Faltan {formatMoney(p.saldoPendiente)}</span>
                 {p.cuotasRestantes > 0 && <span>{p.cuotasRestantes} cuotas</span>}
                 {p.rutaNombre && <span>{p.rutaNombre}</span>}
               </div>
-              <div className="w-full h-1 rounded-full overflow-hidden mt-1.5" style={{ background: 'var(--color-border)' }}>
-                <div className="h-full rounded-full" style={{ width: `${p.porcentaje}%`, background: 'var(--color-success)' }} />
+              <div className="w-full h-1 rounded-full overflow-hidden mt-1.5" style={{ background: 'var(--cf-border)' }}>
+                <div className="h-full rounded-full" style={{ width: `${p.porcentaje}%`, background: 'var(--cf-green-dark)' }} />
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <span className="text-[11px] font-medium" style={{ color: 'var(--color-success)' }}>Renovar</span>
-              <svg className="w-3 h-3" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <span className="text-[11px] font-medium" style={{ color: 'var(--cf-green-dark)' }}>Renovar</span>
+              <svg className="w-3 h-3" style={{ color: 'var(--cf-green-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
             </div>
@@ -1304,20 +1304,20 @@ function BandaSuscripcion({ dias }) {
       ? 'Tu negocio va bien, asegura la continuidad'
       : 'Aprovecha al maximo tu plan'
 
-  const accentColor = urgente ? 'var(--color-danger)' : 'var(--color-accent)'
+  const accentColor = urgente ? 'var(--cf-red-dark)' : 'var(--cf-gold)'
   const gradientBg = urgente
-    ? 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card)), color-mix(in srgb, var(--color-warning) 5%, var(--color-bg-card)))'
-    : 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))'
+    ? 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card)), color-mix(in srgb, var(--cf-gold-dark) 5%, var(--cf-card)))'
+    : 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 6%, var(--cf-card)), var(--cf-card))'
 
   return (
     <a href="/configuracion/plan"
       className="block rounded-[16px] px-4 py-3.5 transition-all hover:scale-[1.005] active:scale-[0.995] relative overflow-hidden"
-      style={{ background: gradientBg, border: '1px solid var(--color-border)' }}
+      style={{ background: gradientBg, border: '1px solid var(--cf-border)' }}
     >
       <div className="flex items-center gap-3">
         <div className="relative w-11 h-11 shrink-0">
           <svg className="w-11 h-11 -rotate-90" viewBox="0 0 44 44">
-            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--color-bg-hover)" strokeWidth="3.5" />
+            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--cf-fill)" strokeWidth="3.5" />
             <circle cx="22" cy="22" r="18" fill="none" stroke={accentColor} strokeWidth="3.5"
               strokeLinecap="round"
               strokeDasharray={`${pct * 1.13} 113`}
@@ -1329,10 +1329,10 @@ function BandaSuscripcion({ dias }) {
           </span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-semibold text-[var(--color-text-primary)]">
+          <p className="text-[12px] font-semibold text-[var(--cf-ink)]">
             {dias} dias restantes
           </p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{mensaje}</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">{mensaje}</p>
         </div>
         <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full shrink-0 transition-all"
           style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, color: accentColor }}
@@ -1580,18 +1580,18 @@ export default function DashboardPage() {
         <button
           onClick={() => onboarding.unminimize()}
           className="w-full flex items-center gap-3 rounded-[12px] px-4 py-3 text-left transition-all active:scale-[0.99] cursor-pointer"
-          style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}>
+          style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)' }}>
           <div className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
+            style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="var(--cf-gold)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-accent)' }}>Continuar configuración</p>
-            <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Retoma el asistente donde lo dejaste</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-gold)' }}>Continuar configuración</p>
+            <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Retoma el asistente donde lo dejaste</p>
           </div>
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -1632,12 +1632,12 @@ export default function DashboardPage() {
           Sigue estando —es un aviso de renovacion, no adorno— pero despues de
           lo que el dueno abrio la pantalla a mirar. Ver mas abajo. */}
       {isOffline && (
-        <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--color-warning-dim)', border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)', color: 'var(--color-warning)' }}>
-          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: 'var(--color-warning)' }} />
+        <div className="text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2" style={{ background: 'var(--cf-gold-tint)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)', color: 'var(--cf-gold-dark)' }}>
+          <span className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: 'var(--cf-gold-dark)' }} />
           Datos guardados — sin conexión
         </div>
       )}
-      {error && <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>{error}</div>}
+      {error && <div className="text-sm rounded-[12px] px-4 py-3" style={{ background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)', color: 'var(--cf-red-dark)' }}>{error}</div>}
 
 
       {loading || !mounted ? (
@@ -1649,59 +1649,59 @@ export default function DashboardPage() {
       ) : data && data.clientes?.total === 0 && data.prestamos?.activos === 0 && esOwner ? (
         <div className="flex flex-col items-center text-center py-8">
           <MonedaCF pose="guia" size={100} />
-          <h2 className="text-lg font-bold mt-4 mb-1" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-lg font-bold mt-4 mb-1" style={{ color: 'var(--cf-ink)' }}>
             Tu cartera está lista
           </h2>
-          <p className="text-[13px] max-w-[280px] mx-auto mb-6 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[13px] max-w-[280px] mx-auto mb-6 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
             Ya configuraste el sistema. Ahora sube tus clientes para que el dashboard cobre vida.
           </p>
           <div className="w-full max-w-sm space-y-2.5">
             <Link href="/migrador" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}>
+              style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+                style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Sube tu cartera</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Foto de cartulina, Excel o manual</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Sube tu cartera</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Foto de cartulina, Excel o manual</p>
               </div>
-              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
             <Link href="/clientes/nuevo" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', color: 'var(--color-purple)' }}>
+                style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Crear cliente manual</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Agrega uno a uno desde el formulario</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Crear cliente manual</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Agrega uno a uno desde el formulario</p>
               </div>
-              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
             <Link href="/prestamos/nuevo" className="group flex items-center gap-3 w-full rounded-[16px] p-4 text-left transition-all active:scale-[0.98]"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
               <div className="w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: 'color-mix(in srgb, var(--color-success) 10%, transparent)', color: 'var(--color-success)' }}>
+                style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)', color: 'var(--cf-green-dark)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-bold" style={{ color: 'var(--color-text-primary)' }}>Crear un prestamo</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>El sistema calcula cuota y saldo</p>
+                <p className="text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Crear un prestamo</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>El sistema calcula cuota y saldo</p>
               </div>
-              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
@@ -1781,8 +1781,8 @@ export default function DashboardPage() {
           <div className="lg:grid lg:grid-cols-2 lg:gap-5 space-y-5 lg:space-y-0">
           <RecaudoCard
             label="Recaudado este mes"
-            color="var(--color-accent)"
-            colorHex="var(--color-accent)"
+            color="var(--cf-gold)"
+            colorHex="var(--cf-gold)"
             monto={data.cobros.mes}
             cantidad={data.cobros.cantidadMes}
             extraSub={data.clientes.enMora > 0 ? `${moraPct}% de clientes en mora` : null}
@@ -1798,8 +1798,8 @@ export default function DashboardPage() {
           {esOwner && data.cobros.interesGanadoMes != null && (
             <RecaudoCard
               label="Interés ganado este mes"
-              color="var(--color-success)"
-              colorHex="var(--color-success)"
+              color="var(--cf-green-dark)"
+              colorHex="var(--cf-green-dark)"
               monto={data.cobros.interesGanadoMes}
               cantidad={data.cobros.cantidadMes}
               info={{
@@ -1829,7 +1829,7 @@ export default function DashboardPage() {
                     value={formatMoney(data.finanzas.patrimonio)}
                     valueRaw={data.finanzas.patrimonio}
                     sub={`Caja + por cobrar`}
-                    color="var(--color-success)"
+                    color="var(--cf-green-dark)"
                     info={{
                       titulo: 'Patrimonio',
                       que: 'Tu foto financiera completa hoy: cuánto vale tu negocio sumando la plata que tienes en caja y la que te deben.',
@@ -1848,11 +1848,11 @@ export default function DashboardPage() {
           {/* Toggle "Mostrar mas / menos KPIs" — sutil, contextual */}
           <button
             onClick={toggleVista}
-            className="w-full rounded-[12px] py-2.5 px-4 flex items-center justify-center gap-2 transition-colors hover:bg-[var(--color-bg-hover)]"
+            className="w-full rounded-[12px] py-2.5 px-4 flex items-center justify-center gap-2 transition-colors hover:bg-[var(--cf-fill)]"
             style={{
-              background: 'var(--color-bg-card)',
-              border: '1px dashed var(--color-border)',
-              color: 'var(--color-text-secondary)',
+              background: 'var(--cf-card)',
+              border: '1px dashed var(--cf-border)',
+              color: 'var(--cf-ink-2)',
             }}
             title={vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}
           >
@@ -1873,7 +1873,7 @@ export default function DashboardPage() {
                 value={formatMoney(data.prestamos.saldoPorCobrar ?? data.prestamos.carteraActiva)}
                 valueRaw={data.prestamos.saldoPorCobrar ?? data.prestamos.carteraActiva}
                 sub={`Promesa total: ${formatMoney(data.prestamos.carteraActiva)}`}
-                color="var(--color-warning)"
+                color="var(--cf-gold-dark)"
                 info={{
                   titulo: 'Cartera activa',
                   que: 'Lo que tus clientes te deben HOY. Es la suma del saldo pendiente de todos los préstamos activos.',
@@ -1889,7 +1889,7 @@ export default function DashboardPage() {
                 value={formatMoney((data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0))}
                 valueRaw={(data.prestamos.carteraActiva ?? 0) - (data.prestamos.saldoPorCobrar ?? 0)}
                 sub={`Capital: ${formatMoney(data.prestamos.capitalPrestado)}`}
-                color="var(--color-success)"
+                color="var(--cf-green-dark)"
                 info={{
                   titulo: 'Ya cobrado',
                   que: 'Lo que ya has recibido de los préstamos que siguen activos.',
@@ -1911,7 +1911,7 @@ export default function DashboardPage() {
                 valueRaw={data.clientes.total}
                 format="int"
                 sub={data.clientes.enMora > 0 ? `${data.clientes.enMora} en mora` : 'Sin mora'}
-                color="var(--color-accent)"
+                color="var(--cf-gold)"
                 info={{
                   titulo: 'Clientes activos',
                   que: 'Personas que tienen al menos un préstamo vigente (sin terminar de pagar) en este momento.',
@@ -1927,7 +1927,7 @@ export default function DashboardPage() {
                 valueRaw={data.prestamos.activos}
                 format="int"
                 sub={`${data.prestamos.completados} completados`}
-                color="var(--color-success)"
+                color="var(--cf-green-dark)"
                 info={{
                   titulo: 'Préstamos activos',
                   que: 'Préstamos vigentes que aún no se han pagado completamente.',
@@ -1951,7 +1951,7 @@ export default function DashboardPage() {
                 value={formatMoney(data.prestamos.cuotaDiariaTotal)}
                 valueRaw={data.prestamos.cuotaDiariaTotal}
                 sub="Esperado por día"
-                color="var(--color-purple)"
+                color="var(--cf-ink-2)"
                 info={{
                   titulo: 'Cuota diaria total',
                   que: 'La suma de una cuota de cada préstamo activo. Sirve como referencia de cuánto mueve tu cartera, no como meta exacta del día.',
@@ -1984,32 +1984,32 @@ export default function DashboardPage() {
           {!vistaSimple && esOwner && equipoData && equipoData.cobradores.length > 0 && (
             <div
               className="rounded-[16px] overflow-hidden"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
             >
               <button
                 type="button"
                 onClick={() => setEquipoOpen(v => !v)}
                 className="w-full px-4 py-3 flex items-center gap-2 cursor-pointer"
               >
-                <div className="w-6 h-6 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-purple) 15%, transparent)', color: 'var(--color-purple)' }}>
+                <div className="w-6 h-6 rounded-[8px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                   </svg>
                 </div>
-                <span className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Mi equipo</span>
-                <span className="text-[10px] font-mono-display px-2 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-purple) 12%, transparent)', color: 'var(--color-purple)' }}>
+                <span className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Mi equipo</span>
+                <span className="text-[10px] font-mono-display px-2 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
                   {equipoData.cobradores.length}
                 </span>
                 <svg
                   className="w-4 h-4 ml-auto transition-transform duration-200"
-                  style={{ color: 'var(--color-text-muted)', transform: equipoOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  style={{ color: 'var(--cf-ink-3)', transform: equipoOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                   fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {equipoOpen && (
-                <div className="divide-y" style={{ borderColor: 'var(--color-border)', borderTop: '1px solid var(--color-border)' }}>
+                <div className="divide-y" style={{ borderColor: 'var(--cf-border)', borderTop: '1px solid var(--cf-border)' }}>
                   {equipoData.cobradores.map(c => {
                     const inactivo = c.minutesSinceActivity !== null && c.minutesSinceActivity > 120
                     const tiempoStr = c.minutesSinceActivity === null
@@ -2027,54 +2027,54 @@ export default function DashboardPage() {
                           className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-xs font-bold relative"
                           style={{
                             background: inactivo
-                              ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
-                              : 'color-mix(in srgb, var(--color-purple) 12%, transparent)',
-                            color: inactivo ? 'var(--color-danger)' : 'var(--color-purple)',
+                              ? 'color-mix(in srgb, var(--cf-red-dark) 12%, transparent)'
+                              : 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)',
+                            color: inactivo ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
                           }}
                         >
                           {c.nombre.charAt(0).toUpperCase()}
                           <div
                             className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
                             style={{
-                              borderColor: 'var(--color-bg-card)',
+                              borderColor: 'var(--cf-card)',
                               background: c.minutesSinceActivity !== null && c.minutesSinceActivity < 15
-                                ? 'var(--color-success)'
+                                ? 'var(--cf-green-dark)'
                                 : inactivo
-                                  ? 'var(--color-danger)'
-                                  : 'var(--color-text-muted)',
+                                  ? 'var(--cf-red-dark)'
+                                  : 'var(--cf-ink-3)',
                             }}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+                            <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
                             {inactivo && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>
                                 Inactivo
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             {c.rutas.length > 0 && (
-                              <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{c.rutas.join(', ')}</span>
+                              <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{c.rutas.join(', ')}</span>
                             )}
-                            <span className="text-[10px]" style={{ color: inactivo ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+                            <span className="text-[10px]" style={{ color: inactivo ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
                               {tiempoStr}
                             </span>
                           </div>
                         </div>
                         <div className="shrink-0 text-right">
-                          <p className="text-[13px] font-bold font-mono-display" style={{ color: c.recaudadoHoy > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                          <p className="text-[13px] font-bold font-mono-display" style={{ color: c.recaudadoHoy > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>
                             {formatMoney(c.recaudadoHoy)}
                           </p>
                           <div className="flex items-center justify-end gap-1 mt-0.5">
-                            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{c.pagosHoy} cobros</span>
+                            <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{c.pagosHoy} cobros</span>
                             {c.cajaCerrada && (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{
                                 background: c.cajaDiferencia === 0
-                                  ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
-                                  : 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
-                                color: c.cajaDiferencia === 0 ? 'var(--color-success)' : 'var(--color-warning)',
+                                  ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)'
+                                  : 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)',
+                                color: c.cajaDiferencia === 0 ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
                               }}>
                                 Caja OK
                               </span>
@@ -2106,68 +2106,68 @@ export default function DashboardPage() {
         <div
           className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
-            border: '1px solid var(--color-border)',
-            boxShadow: '0 4px 14px color-mix(in srgb, var(--color-danger) 12%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card)) 0%, var(--cf-card) 50%, var(--cf-card) 100%)',
+            border: '1px solid var(--cf-border)',
+            boxShadow: '0 4px 14px color-mix(in srgb, var(--cf-red-dark) 12%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Alertas de mora</p>
-            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--color-danger)', color: 'var(--color-text-primary)' }}>{moraData.total} préstamos</span>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-2)' }}>Alertas de mora</p>
+            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--cf-red-dark)', color: 'var(--cf-ink)' }}>{moraData.total} préstamos</span>
           </div>
           <div className="space-y-2">
             {moraData.agrupado.mora31plus.length > 0 && (
-              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-danger) 18%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-danger) 35%, transparent)' }}>
-                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-danger)' }}>Más de 30 días ({moraData.agrupado.mora31plus.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 18%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 35%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--cf-red-dark)' }}>Más de 30 días ({moraData.agrupado.mora31plus.length})</p>
                 {moraData.agrupado.mora31plus.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-danger)_15%,transparent)]">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--cf-red-dark)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatMoney(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--cf-red-dark)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora16a30.length > 0 && (
-              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 35%, transparent)' }}>
-                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-warning)' }}>16-30 días ({moraData.agrupado.mora16a30.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 18%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 35%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--cf-gold-dark)' }}>16-30 días ({moraData.agrupado.mora16a30.length})</p>
                 {moraData.agrupado.mora16a30.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)]">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--cf-gold-dark)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--cf-gold-dark)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora8a15.length > 0 && (
-              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)' }}>
-                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-accent)' }}>8-15 días ({moraData.agrupado.mora8a15.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--cf-gold)' }}>8-15 días ({moraData.agrupado.mora8a15.length})</p>
                 {moraData.agrupado.mora8a15.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)]">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--cf-gold)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--color-accent)' }}>{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--cf-gold)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
             )}
             {moraData.agrupado.mora1a7.length > 0 && (
-              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)' }}>
-                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--color-success)' }}>1-7 días ({moraData.agrupado.mora1a7.length})</p>
+              <div className="rounded-[12px] p-3" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 30%, transparent)' }}>
+                <p className="text-[11px] font-medium mb-2" style={{ color: 'var(--cf-green-dark)' }}>1-7 días ({moraData.agrupado.mora1a7.length})</p>
                 {moraData.agrupado.mora1a7.slice(0, 3).map((c) => (
-                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--color-success)_15%,transparent)]">
+                  <Link key={c.prestamoId} href={`/clientes/${c.cliente.id}`} className="flex items-center justify-between py-1.5 rounded px-1 -mx-1 transition-colors hover:bg-[color-mix(in_srgb,var(--cf-green-dark)_15%,transparent)]">
                     <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{c.cliente.nombre}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--color-success)' }}>{c.diasMora} días de mora</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.cliente.nombre}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--cf-green-dark)' }}>{c.diasMora} días de mora</p>
                     </div>
-                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(c.saldoPendiente)}</p>
+                    <p className="text-sm font-bold shrink-0 ml-2 font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.saldoPendiente)}</p>
                   </Link>
                 ))}
               </div>
@@ -2179,23 +2179,23 @@ export default function DashboardPage() {
         <div
           className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, var(--color-bg-card) 100%)',
-            border: '1px solid var(--color-border)',
-            boxShadow: '0 4px 12px color-mix(in srgb, var(--color-border) 60%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card)) 0%, var(--cf-card) 50%, var(--cf-card) 100%)',
+            border: '1px solid var(--cf-border)',
+            boxShadow: '0 4px 12px color-mix(in srgb, var(--cf-border) 60%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-secondary)' }}>Últimos pagos</p>
-            <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--color-accent)' }}>Ver todos →</Link>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-2)' }}>Últimos pagos</p>
+            <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--cf-gold)' }}>Ver todos →</Link>
           </div>
-          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--cf-border)' }}>
             {data.ultimosPagos.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--color-border)' }}>
+              <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--cf-border)' }}>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>{p.cliente}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--cf-ink)' }}>{p.cliente}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{fechaCorta(p.fecha)} · {p.tipo}</p>
                 </div>
-                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--color-success)' }}>+{formatMoney(p.monto)}</p>
+                <p className="text-sm font-bold shrink-0 ml-3 font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>+{formatMoney(p.monto)}</p>
               </div>
             ))}
           </div>
@@ -2203,21 +2203,21 @@ export default function DashboardPage() {
       )}
       {/* Offline sync status indicator */}
       {syncMeta && !bulkSyncing && !bulkProgress && (
-        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                 Datos offline: {syncMeta.totalClientes} clientes, {syncMeta.totalPrestamos} préstamos
                 <span> · </span>
                 {new Date(syncMeta.syncedAt).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' })}
               </p>
             </div>
-            <button onClick={startBulkSync} className="text-[10px] transition-colors shrink-0 hover:text-[var(--color-success)]" style={{ color: 'var(--color-text-muted)' }}>
+            <button onClick={startBulkSync} className="text-[10px] transition-colors shrink-0 hover:text-[var(--cf-green-dark)]" style={{ color: 'var(--cf-ink-3)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -2226,13 +2226,13 @@ export default function DashboardPage() {
         </div>
       )}
       {bulkSyncing && (
-        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)' }}>
+        <div className="w-full rounded-[16px] px-4 py-3 text-left" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, transparent)' }}>
           <div className="flex items-center gap-3">
-            <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+            <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-[11px]" style={{ color: 'var(--color-success)' }}>{bulkProgress?.message || 'Sincronizando datos...'}</p>
+            <p className="text-[11px]" style={{ color: 'var(--cf-green-dark)' }}>{bulkProgress?.message || 'Sincronizando datos...'}</p>
           </div>
         </div>
       )}
@@ -2240,12 +2240,12 @@ export default function DashboardPage() {
       {/* Accesos rápidos — para cobrador; el owner ya tiene los botones arriba */}
       {!esOwner && (
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-secondary)' }}>Accesos rápidos</p>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--cf-ink-2)' }}>Accesos rápidos</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="var(--color-accent)" dataTour="nuevo-cliente" />}
-            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="var(--color-success)" dataTour="nuevo-prestamo" />}
-            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="var(--color-warning)" dataTour="caja" />
-            <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="var(--color-purple)" dataTour="prestamos" />
+            {puedeCrearClientes && <QuickLink href="/clientes/nuevo" label="Nuevo cliente" desc="Registrar cliente" color="var(--cf-gold)" dataTour="nuevo-cliente" />}
+            {puedeCrearPrestamos && <QuickLink href="/prestamos/nuevo" label="Nuevo préstamo" desc="Crear préstamo" color="var(--cf-green-dark)" dataTour="nuevo-prestamo" />}
+            <QuickLink href="/caja" label="Cierre de caja" desc="Registrar cierre del día" color="var(--cf-gold-dark)" dataTour="caja" />
+            <QuickLink href="/clientes" label="Clientes" desc="Ver cartera completa" color="var(--cf-ink-2)" dataTour="prestamos" />
           </div>
         </div>
       )}

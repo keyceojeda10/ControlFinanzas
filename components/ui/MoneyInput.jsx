@@ -46,10 +46,10 @@ export default function MoneyInput({
   return (
     <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
       {label && (
-        <label className="text-xs font-medium text-[var(--color-text-secondary)]">{label}</label>
+        <label className="text-xs font-medium text-[var(--cf-ink-2)]">{label}</label>
       )}
       <div className="relative flex items-center">
-        <span className="absolute left-3 text-[var(--color-text-muted)] text-sm pointer-events-none select-none">$</span>
+        <span className="absolute left-3 text-[var(--cf-ink-3)] text-sm pointer-events-none select-none">$</span>
         <input
           ref={inputRef}
           type="text"
@@ -63,9 +63,9 @@ export default function MoneyInput({
             className,
           ].join(' ')}
           style={{
-            background: 'var(--color-bg-hover)',
-            borderColor: 'var(--color-border)',
-            color: 'var(--color-text-primary)',
+            background: 'var(--cf-fill)',
+            borderColor: 'var(--cf-border)',
+            color: 'var(--cf-ink)',
           }}
           value={display}
           onChange={handleChange}
@@ -73,17 +73,17 @@ export default function MoneyInput({
           {...props}
         />
         {abreviado && (
-          <span className="absolute right-3 text-[10px] font-medium pointer-events-none select-none" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="absolute right-3 text-[10px] font-medium pointer-events-none select-none" style={{ color: 'var(--cf-ink-3)' }}>
             x1.000
           </span>
         )}
       </div>
       {abreviado && display && (
-        <p className="text-[11px] font-semibold" style={{ color: 'var(--color-accent)' }}>
+        <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-gold)' }}>
           = {formatWithDots(String(Number(String(display).replace(/\D/g, '')) * 1000))}
         </p>
       )}
-      {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
+      {error && <p className="text-xs text-[var(--cf-red-dark)]">{error}</p>}
     </div>
   )
 }

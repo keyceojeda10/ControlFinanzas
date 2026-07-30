@@ -24,15 +24,15 @@ export function Checkbox({ checked = false, onChange, label, description, disabl
         <span
           className={[
             'flex items-center justify-center w-[18px] h-[18px] rounded-[6px] border transition-all duration-150',
-            'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--color-bg-base)]',
+            'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--cf-gold)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--cf-surface)]',
           ].join(' ')}
           style={{
-            background: checked ? 'var(--color-accent)' : 'var(--color-bg-hover)',
-            borderColor: checked ? 'var(--color-accent)' : 'var(--color-border-hover)',
+            background: checked ? 'var(--cf-gold)' : 'var(--cf-fill)',
+            borderColor: checked ? 'var(--cf-gold)' : 'var(--cf-border-strong)',
           }}
         >
           {checked && (
-            <svg className="w-3 h-3" fill="none" stroke="#1a1a2e" strokeWidth={3} viewBox="0 0 24 24">
+            <svg className="w-3 h-3" fill="none" stroke="var(--cf-ink)" strokeWidth={3} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           )}
@@ -40,9 +40,9 @@ export function Checkbox({ checked = false, onChange, label, description, disabl
       </span>
       {(label || description) && (
         <span className="flex-1 min-w-0">
-          {label && <span className="block text-sm" style={{ color: 'var(--color-text-primary)' }}>{label}</span>}
+          {label && <span className="block text-sm" style={{ color: 'var(--cf-ink)' }}>{label}</span>}
           {description && (
-            <span className="block text-[11px] leading-snug mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{description}</span>
+            <span className="block text-[11px] leading-snug mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{description}</span>
           )}
         </span>
       )}

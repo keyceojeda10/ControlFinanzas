@@ -109,26 +109,26 @@ export default function WizardCobrador({ onComplete, onSkip }) {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--color-info)' }}>
+            style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--cf-ink-2)' }}>
             <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--cf-ink)' }}>
             Crea una ruta para {cobradorCreado?.nombre ?? nombre}
           </h2>
-          <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
             La ruta organiza los clientes por zona. Asígnale los clientes que este cobrador va a visitar.
           </p>
         </div>
 
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mb-4"
           style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--cf-green-dark)" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <p className="text-[11px]" style={{ color: 'var(--color-success)' }}>
+          <p className="text-[11px]" style={{ color: 'var(--cf-green-dark)' }}>
             Cobrador <strong>{cobradorCreado?.nombre ?? nombre}</strong> creado
           </p>
         </div>
@@ -136,7 +136,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
         <form onSubmit={handleCrearRuta} className="space-y-4">
           {error && (
             <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--cf-red-dark)' }}>
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -145,9 +145,9 @@ export default function WizardCobrador({ onComplete, onSkip }) {
           )}
 
           <div className="rounded-[16px] p-5 space-y-4"
-            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
             <div>
-              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--cf-ink-2)' }}>
                 Nombre de la ruta
               </label>
               <input
@@ -158,19 +158,19 @@ export default function WizardCobrador({ onComplete, onSkip }) {
                 autoFocus
                 className="w-full h-12 rounded-[12px] px-4 text-[15px] transition-all outline-none"
                 style={{
-                  background: 'var(--color-bg-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  color: 'var(--color-text-primary)',
+                  background: 'var(--cf-surface)',
+                  border: '1.5px solid var(--cf-border)',
+                  color: 'var(--cf-ink)',
                 }}
               />
             </div>
 
             <div>
-              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-                Capital de la ruta <span className="font-normal" style={{ color: 'var(--color-text-muted)' }}>(opcional)</span>
+              <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--cf-ink-2)' }}>
+                Capital de la ruta <span className="font-normal" style={{ color: 'var(--cf-ink-3)' }}>(opcional)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[15px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[15px] font-bold" style={{ color: 'var(--cf-ink-3)' }}>
                   {currencySymbol || '$'}
                 </span>
                 <input
@@ -181,18 +181,18 @@ export default function WizardCobrador({ onComplete, onSkip }) {
                   placeholder="0"
                   className="w-full h-12 rounded-[12px] pl-9 pr-4 text-[18px] font-bold font-mono-display transition-all outline-none"
                   style={{
-                    background: 'var(--color-bg-surface)',
-                    border: '1.5px solid var(--color-border)',
-                    color: 'var(--color-text-primary)',
+                    background: 'var(--cf-surface)',
+                    border: '1.5px solid var(--cf-border)',
+                    color: 'var(--cf-ink)',
                   }}
                 />
               </div>
               {capitalNum > 0 && (
-                <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'var(--color-success)' }}>
+                <p className="text-[11px] mt-1.5 font-medium" style={{ color: 'var(--cf-green-dark)' }}>
                   {formatMoney(capitalNum)} asignados a esta ruta
                 </p>
               )}
-              <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
                 Si cada cobrador maneja su propio capital, ponlo aquí. Si todo sale de una sola caja, déjalo en 0.
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
             type="submit"
             disabled={loading || !rutaNombre.trim()}
             className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-            style={{ background: 'var(--color-info)', color: '#fff' }}>
+            style={{ background: 'var(--cf-ink-2)', color: '#fff' }}>
             {loading ? (
               <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -215,7 +215,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
             type="button"
             onClick={() => onComplete({ cobrador: cobradorCreado, ruta: null })}
             className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-            style={{ color: 'var(--color-text-muted)' }}>
+            style={{ color: 'var(--cf-ink-3)' }}>
             Omitir por ahora
           </button>
         </form>
@@ -227,16 +227,16 @@ export default function WizardCobrador({ onComplete, onSkip }) {
     <div className="max-w-md mx-auto">
       <div className="text-center mb-6">
         <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'rgba(139,92,246,0.12)', color: 'var(--color-purple)' }}>
+          style={{ background: 'rgba(139,92,246,0.12)', color: 'var(--cf-ink-2)' }}>
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
               d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--cf-ink)' }}>
           Crea tu primer cobrador
         </h2>
-        <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
           El cobrador cobra desde su celular con su propia cuenta. Tú ves todo en tiempo real.
         </p>
       </div>
@@ -244,7 +244,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
       <form onSubmit={handleCrearCobrador} className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--cf-red-dark)' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -253,10 +253,10 @@ export default function WizardCobrador({ onComplete, onSkip }) {
         )}
 
         <div className="rounded-[16px] p-5 space-y-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
 
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--cf-ink-2)' }}>
               Nombre del cobrador
             </label>
             <input
@@ -267,15 +267,15 @@ export default function WizardCobrador({ onComplete, onSkip }) {
               autoFocus
               className="w-full h-11 rounded-[10px] px-4 text-[14px] transition-all outline-none"
               style={{
-                background: 'var(--color-bg-surface)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
+                background: 'var(--cf-surface)',
+                border: '1.5px solid var(--cf-border)',
+                color: 'var(--cf-ink)',
               }}
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--cf-ink-2)' }}>
               Correo del cobrador
             </label>
             <input
@@ -285,15 +285,15 @@ export default function WizardCobrador({ onComplete, onSkip }) {
               placeholder="cobrador@correo.com"
               className="w-full h-11 rounded-[10px] px-4 text-[14px] transition-all outline-none"
               style={{
-                background: 'var(--color-bg-surface)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
+                background: 'var(--cf-surface)',
+                border: '1.5px solid var(--cf-border)',
+                color: 'var(--cf-ink)',
               }}
             />
           </div>
 
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--cf-ink-2)' }}>
               Contraseña
             </label>
             <input
@@ -303,12 +303,12 @@ export default function WizardCobrador({ onComplete, onSkip }) {
               placeholder="Mínimo 6 caracteres"
               className="w-full h-11 rounded-[10px] px-4 text-[14px] transition-all outline-none"
               style={{
-                background: 'var(--color-bg-surface)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
+                background: 'var(--cf-surface)',
+                border: '1.5px solid var(--cf-border)',
+                color: 'var(--cf-ink)',
               }}
             />
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
               Dale esta contraseña a tu cobrador para que entre al sistema.
             </p>
           </div>
@@ -318,7 +318,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
           type="submit"
           disabled={loading || !nombre.trim() || !email.trim() || !password.trim()}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: 'var(--color-purple)', color: '#fff' }}>
+          style={{ background: 'var(--cf-ink-2)', color: '#fff' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -332,7 +332,7 @@ export default function WizardCobrador({ onComplete, onSkip }) {
             type="button"
             onClick={onSkip}
             className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-            style={{ color: 'var(--color-text-muted)' }}>
+            style={{ color: 'var(--cf-ink-3)' }}>
             Omitir por ahora
           </button>
         )}

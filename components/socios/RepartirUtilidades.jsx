@@ -89,33 +89,33 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
   return (
     <Modal open={open} onClose={onClose} title="Repartir utilidades" size="md">
       {cargando ? (
-        <p className="text-sm py-6 text-center" style={{ color: 'var(--color-text-muted)' }}>Cargando…</p>
+        <p className="text-sm py-6 text-center" style={{ color: 'var(--cf-ink-3)' }}>Cargando…</p>
       ) : (
         <div className="space-y-4">
           {/* Sugerencia del periodo */}
           {datos?.sugerido && (
-            <div className="rounded-[12px] p-3" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="rounded-[12px] p-3" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Utilidad de {datos.periodo}
               </p>
               <div className="space-y-1 text-[12px]">
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--color-text-muted)' }}>Intereses cobrados</span>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>Intereses cobrados</span>
                   <span className="font-mono-display">{formatMoney(datos.sugerido.interesesMes)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--color-text-muted)' }}>Gastos aprobados</span>
-                  <span className="font-mono-display" style={{ color: 'var(--color-danger)' }}>−{formatMoney(datos.sugerido.gastosMes)}</span>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>Gastos aprobados</span>
+                  <span className="font-mono-display" style={{ color: 'var(--cf-red-dark)' }}>−{formatMoney(datos.sugerido.gastosMes)}</span>
                 </div>
-                <div className="flex justify-between pt-1 font-semibold" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <div className="flex justify-between pt-1 font-semibold" style={{ borderTop: '1px solid var(--cf-border)' }}>
                   <span>Utilidad neta</span>
-                  <span className="font-mono-display" style={{ color: datos.sugerido.utilidadNeta >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                  <span className="font-mono-display" style={{ color: datos.sugerido.utilidadNeta >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
                     {formatMoney(datos.sugerido.utilidadNeta)}
                   </span>
                 </div>
               </div>
               {datos.repartosEnElPeriodo > 0 && (
-                <p className="text-[11px] mt-2 pt-2" style={{ color: 'var(--color-warning)', borderTop: '1px solid var(--color-border)' }}>
+                <p className="text-[11px] mt-2 pt-2" style={{ color: 'var(--cf-gold-dark)', borderTop: '1px solid var(--cf-border)' }}>
                   Ya repartiste {formatMoney(datos.yaRepartidoEnElPeriodo)} en este mes.
                 </p>
               )}
@@ -125,13 +125,13 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
           {/* Monto y fondo */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Monto a repartir</label>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto a repartir</label>
               <div className="mt-1.5">
                 <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
               </div>
             </div>
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Fondo pérdidas</label>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Fondo pérdidas</label>
               <div className="mt-1.5 relative">
                 <input
                   type="text" inputMode="decimal" value={fondoPct}
@@ -139,13 +139,13 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
                   placeholder="0"
                   className="cf-input w-full pr-7 text-right"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'var(--color-text-muted)' }}>%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>%</span>
               </div>
             </div>
           </div>
 
           {sinAportes && (
-            <p className="text-[12px] rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)', color: 'var(--color-warning)' }}>
+            <p className="text-[12px] rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)', color: 'var(--cf-gold-dark)' }}>
               Los socios no tienen aportes registrados, así que no hay porcentajes con los cuales repartir. Registra primero el capital que puso cada uno.
             </p>
           )}
@@ -155,22 +155,22 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
             <div className="space-y-2">
               {fondo > 0 && (
                 <div className="flex justify-between text-[12px] px-1">
-                  <span style={{ color: 'var(--color-text-muted)' }}>Fondo de pérdidas ({pctNum}%) — queda en el negocio</span>
-                  <span className="font-mono-display font-semibold" style={{ color: 'var(--color-warning)' }}>{formatMoney(fondo)}</span>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>Fondo de pérdidas ({pctNum}%) — queda en el negocio</span>
+                  <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(fondo)}</span>
                 </div>
               )}
               {preview.map((s) => (
-                <div key={s.id} className="flex items-center justify-between rounded-[10px] px-3 py-2" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+                <div key={s.id} className="flex items-center justify-between rounded-[10px] px-3 py-2" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
                   <div className="min-w-0">
-                    <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{s.nombre}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{s.porcentaje}% de participación</p>
+                    <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{s.nombre}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{s.porcentaje}% de participación</p>
                   </div>
-                  <span className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: 'var(--color-success)' }}>{formatMoney(s.monto)}</span>
+                  <span className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(s.monto)}</span>
                 </div>
               ))}
               {restanteNegocio > 0 && (
                 <div className="flex justify-between text-[12px] px-1">
-                  <span style={{ color: 'var(--color-text-muted)' }}>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>
                     Queda en el negocio{datos?.metaSociedad ? ' (parte no cubierta por los socios)' : ''}
                   </span>
                   <span className="font-mono-display font-semibold">{formatMoney(restanteNegocio)}</span>
@@ -180,7 +180,7 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
           )}
 
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Nota (opcional)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Nota (opcional)</label>
             <input
               type="text" value={nota} onChange={(e) => setNota(e.target.value)}
               placeholder="Ej: utilidades de julio"
@@ -188,14 +188,14 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
             />
           </div>
 
-          <p className="text-[10px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[10px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
             Lo repartido se suma al balance de cada socio como utilidad reinvertida, así que su porcentaje de
             participación se recalcula. No sale plata de la caja: ese dinero ya entró cuando cobraste los intereses.
             Si un socio quiere sacarlo, se registra como retiro.
           </p>
 
           {error && (
-            <p className="text-[12px] rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)' }}>
+            <p className="text-[12px] rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 12%, transparent)', color: 'var(--cf-red-dark)' }}>
               {error}
             </p>
           )}

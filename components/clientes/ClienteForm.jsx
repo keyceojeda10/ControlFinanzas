@@ -361,7 +361,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {error && (
         <div
           className="mt-6 flex items-center gap-2.5 rounded-[12px] px-4 py-3 text-sm"
-          style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+          style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
         >
           {error}
         </div>
@@ -370,10 +370,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {/* Paso 1 — Datos basicos */}
       {paso === 0 && (
         <section className="mt-8">
-          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
           </h2>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
             Nombre, documento y teléfono. Lo mínimo para registrarlo.
           </p>
 
@@ -387,15 +387,15 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 onClick={() => fotoInputRef.current?.click()}
                 className="relative w-20 h-20 rounded-full shrink-0 overflow-hidden transition-all active:scale-95"
                 style={{
-                  background: fotoPreview ? 'transparent' : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                  border: `2px dashed ${fotoPreview ? 'var(--color-accent)' : 'color-mix(in srgb, var(--color-accent) 40%, transparent)'}`,
+                  background: fotoPreview ? 'transparent' : 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                  border: `2px dashed ${fotoPreview ? 'var(--cf-gold)' : 'color-mix(in srgb, var(--cf-gold) 40%, transparent)'}`,
                 }}
               >
                 {fotoPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex items-center justify-center w-full h-full" style={{ color: 'var(--color-accent)' }}>
+                  <div className="flex items-center justify-center w-full h-full" style={{ color: 'var(--cf-gold)' }}>
                     <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
@@ -404,10 +404,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 )}
               </button>
               <div className="flex-1">
-                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                   {fotoPreview ? 'Foto del cliente' : 'Agregar foto'}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                   Opcional. JPG, PNG o WebP (max 5MB).
                 </p>
                 <div className="flex items-center gap-3 mt-2">
@@ -416,9 +416,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     onClick={() => fotoInputRef.current?.click()}
                     className="text-xs font-medium px-2.5 py-1 rounded-full border transition-all active:scale-95"
                     style={{
-                      color: 'var(--color-accent)',
-                      background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
-                      borderColor: 'color-mix(in srgb, var(--color-accent) 20%, transparent)',
+                      color: 'var(--cf-gold)',
+                      background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--cf-gold) 20%, transparent)',
                     }}
                   >
                     <span className="flex items-center gap-1">
@@ -433,9 +433,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     onClick={() => fotoCameraRef.current?.click()}
                     className="text-xs font-medium px-2.5 py-1 rounded-full border transition-all active:scale-95"
                     style={{
-                      color: 'var(--color-text-secondary)',
-                      background: 'var(--color-bg-hover)',
-                      borderColor: 'var(--color-border)',
+                      color: 'var(--cf-ink-2)',
+                      background: 'var(--cf-fill)',
+                      borderColor: 'var(--cf-border)',
                     }}
                   >
                     <span className="flex items-center gap-1">
@@ -451,7 +451,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                       type="button"
                       onClick={() => { setFotoFile(null); setFotoPreview(clienteInicial?.fotoUrl || null) }}
                       className="text-xs font-medium"
-                      style={{ color: 'var(--color-danger)' }}
+                      style={{ color: 'var(--cf-red-dark)' }}
                     >
                       Quitar
                     </button>
@@ -484,7 +484,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                     disabled={esEdicion}
                   />
                   {scoreData?.encontrado && (() => {
-                    const sColor = scoreData.score === 'rojo' ? 'var(--color-danger)' : scoreData.score === 'amarillo' ? 'var(--color-accent)' : 'var(--color-success)'
+                    const sColor = scoreData.score === 'rojo' ? 'var(--cf-red-dark)' : scoreData.score === 'amarillo' ? 'var(--cf-gold)' : 'var(--cf-green-dark)'
                     return (
                       <div className="mt-2 text-xs px-3 py-2 rounded-[10px] flex items-center gap-2"
                         style={{ background: `color-mix(in srgb, ${sColor} 10%, transparent)`, color: sColor, border: `1px solid color-mix(in srgb, ${sColor} 25%, transparent)` }}
@@ -510,9 +510,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                         setErrores(prev => ({ ...prev, cedula: '' }))
                       }
                     }}
-                    className="accent-[var(--color-accent)] w-4 h-4 rounded"
+                    className="accent-[var(--cf-gold)] w-4 h-4 rounded"
                   />
-                  <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
                     No tengo la cédula
                   </span>
                 </label>
@@ -533,10 +533,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {/* Paso 2 — Ubicacion */}
       {paso === 1 && (
         <section className="mt-8">
-          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             ¿Donde lo ubicamos?
           </h2>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
             Dirección y referencias. Sirve para visitarlo y enrutarlo.
           </p>
 
@@ -557,7 +557,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               maxLength={100}
             />
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 Ubicación en el mapa (opcional)
               </label>
               <div className="mt-2">
@@ -575,10 +575,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {/* Paso 3 — Organizacion */}
       {paso === 2 && (
         <section className="mt-8">
-          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             ¿Lo asignamos a una ruta?
           </h2>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
             Esto es opcional. Si tienes rutas o grupos definidos, asignalo aquí para que aparezca en el listado correcto.
           </p>
 
@@ -606,7 +606,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   </Select>
                 )}
                 {form.rutaId && !esEdicion && loadingClientesRuta && (
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Cargando clientes de la ruta...</p>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cargando clientes de la ruta...</p>
                 )}
               </>
             )}
@@ -620,10 +620,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             )}
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 Días sin cobro (opcional)
               </label>
-              <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Este cliente no será cobrado en los días que selecciones. Si no defines nada, hereda de la ruta o la organización.
               </p>
               <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} compact />
@@ -631,10 +631,10 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
             {esOwner && (
               <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                   Tope maximo de prestamo
                 </label>
-                <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-[11px] leading-snug mt-1 mb-2" style={{ color: 'var(--cf-ink-3)' }}>
                   Monto maximo que se le puede prestar a este cliente. Dejalo vacio para sin limite.
                 </p>
                 <MoneyInput
@@ -646,7 +646,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             )}
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+              <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 Notas
               </label>
               <textarea
@@ -656,9 +656,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 maxLength={500}
                 rows={4}
                 className="cf-input w-full mt-1.5 px-3 py-2.5 rounded-[12px] border text-sm resize-none"
-                style={{ background: 'var(--color-bg-hover)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
               />
-              <span className="text-[10px] text-right block mt-1" style={{ color: 'var(--color-text-muted)' }}>{form.notas.length}/500</span>
+              <span className="text-[10px] text-right block mt-1" style={{ color: 'var(--cf-ink-3)' }}>{form.notas.length}/500</span>
             </div>
           </div>
         </section>
@@ -668,8 +668,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       <div
         className="fixed left-0 right-0 lg:left-60 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
-          background: 'var(--color-bg-base)',
-          borderTop: '1px solid var(--color-border)',
+          background: 'var(--cf-surface)',
+          borderTop: '1px solid var(--cf-border)',
           boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
         }}
       >
@@ -721,27 +721,27 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
           <div
             className="w-[90%] max-w-sm rounded-2xl p-6 text-center"
-            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
           >
             <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,0.12)' }}>
               <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--color-text-primary)' }}>Cliente creado</h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--color-text-secondary)' }}>{clienteCreado.nombre}</p>
+            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--cf-ink)' }}>Cliente creado</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--cf-ink-2)' }}>{clienteCreado.nombre}</p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => router.push(`/prestamos/nuevo?clienteId=${clienteCreado.id}`)}
                 className="w-full h-12 rounded-xl font-semibold text-sm text-black transition-all"
-                style={{ background: 'var(--color-accent)' }}
+                style={{ background: 'var(--cf-gold)' }}
               >
                 Crear préstamo ahora
               </button>
               <button
                 onClick={() => router.push(`/clientes/${clienteCreado.id}`)}
                 className="w-full h-11 rounded-xl font-medium text-sm transition-all"
-                style={{ color: 'var(--color-text-secondary)', background: 'var(--color-bg-hover)' }}
+                style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-fill)' }}
               >
                 Ver ficha del cliente
               </button>

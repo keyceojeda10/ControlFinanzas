@@ -27,18 +27,18 @@ export default function SyncStatusBadge({ onClick, variant = 'full' }) {
     color = 'success'; label = 'Online'; dot = 'static'
   }
 
-  const base = 'inline-flex items-center gap-1.5 rounded-full font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]'
+  const base = 'inline-flex items-center gap-1.5 rounded-full font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--cf-gold)]'
   const colorClass = {
-    success: 'bg-[var(--color-success-dim)] text-[var(--color-success)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)]',
-    info:    'bg-[var(--color-info-dim)] text-[var(--color-info)] border border-[color-mix(in_srgb,var(--color-info)_30%,transparent)]',
-    warning: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
-    danger:  'bg-[var(--color-danger-dim)] text-[var(--color-danger)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)]',
+    success: 'bg-[var(--cf-green-pill-bg)] text-[var(--cf-green-dark)] border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)]',
+    info:    'bg-[var(--cf-fill)] text-[var(--cf-ink-2)] border border-[color-mix(in_srgb,var(--cf-ink-2)_30%,transparent)]',
+    warning: 'bg-[var(--cf-gold-tint)] text-[var(--cf-gold-dark)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)]',
+    danger:  'bg-[var(--cf-red-pill-bg)] text-[var(--cf-red-dark)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)]',
   }[color]
   const dotClass = {
-    success: 'bg-[var(--color-success)]',
-    info:    'bg-[var(--color-info)]',
-    warning: 'bg-[var(--color-warning)]',
-    danger:  'bg-[var(--color-danger)]',
+    success: 'bg-[var(--cf-green-dark)]',
+    info:    'bg-[var(--cf-ink-2)]',
+    warning: 'bg-[var(--cf-gold-dark)]',
+    danger:  'bg-[var(--cf-red-dark)]',
   }[color]
 
   if (variant === 'compact') {
@@ -50,7 +50,7 @@ export default function SyncStatusBadge({ onClick, variant = 'full' }) {
       >
         <span className={`w-2 h-2 rounded-full ${dotClass} ${dot === 'pulse' ? 'animate-pulse' : ''}`} />
         {pendingCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--color-accent)] text-[10px] font-bold text-black flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--cf-gold)] text-[10px] font-bold text-black flex items-center justify-center">
             {pendingCount > 99 ? '99+' : pendingCount}
           </span>
         )}

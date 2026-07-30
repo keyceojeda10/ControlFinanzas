@@ -57,55 +57,55 @@ const IconShareIOS = () => (
 )
 // 3 puntos vertical
 const IconDotsVertical = () => (
-  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="currentColor" viewBox="0 0 24 24">
+  <svg className="w-7 h-7 text-[var(--cf-ink-3)]" fill="currentColor" viewBox="0 0 24 24">
     <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
   </svg>
 )
 // 3 puntos horizontal
 const IconDotsHorizontal = () => (
-  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="currentColor" viewBox="0 0 24 24">
+  <svg className="w-7 h-7 text-[var(--cf-ink-3)]" fill="currentColor" viewBox="0 0 24 24">
     <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
   </svg>
 )
 // Desplazar abajo (scroll)
 const IconScrollDown = () => (
-  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
   </svg>
 )
 // Agregar / Plus en cuadrado
 const IconAddSquare = () => (
-  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
 // Check / Listo
 const IconCheck = () => (
-  <svg className="w-7 h-7 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
 // Instalar (descarga)
 const IconInstall = () => (
-  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
   </svg>
 )
 // Plus simple
 const IconPlus = () => (
-  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+  <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
   </svg>
 )
 // Monitor con flecha (desktop install)
 const IconDesktopInstall = () => (
-  <svg className="w-7 h-7 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
   </svg>
 )
 // Info
 const IconInfo = () => (
-  <svg className="w-7 h-7 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+  <svg className="w-7 h-7 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 )
@@ -262,7 +262,7 @@ function renderBoldText(text) {
   const parts = text.split(/\*\*(.*?)\*\*/g)
   return parts.map((part, i) =>
     i % 2 === 1
-      ? <strong key={i} className="text-[var(--color-text-primary)]">{part}</strong>
+      ? <strong key={i} className="text-[var(--cf-ink)]">{part}</strong>
       : <span key={i}>{part}</span>
   )
 }
@@ -274,21 +274,21 @@ export function InstallGuideModal({ onClose }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-[var(--color-bg-surface)] border-t border-x sm:border border-[var(--color-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh]"
+        className="w-full sm:max-w-sm bg-[var(--cf-surface)] border-t border-x sm:border border-[var(--cf-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] sm:max-h-[80vh]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header fijo */}
         <div className="px-5 pt-5 pb-3 shrink-0">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold text-[var(--color-text-primary)]">{instructions.title}</h3>
-            <button onClick={onClose} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-1 -mr-1">
+            <h3 className="text-base font-semibold text-[var(--cf-ink)]">{instructions.title}</h3>
+            <button onClick={onClose} className="text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] p-1 -mr-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <p className="text-xs text-[var(--color-text-muted)]">Agrega la app a tu celular para acceder más rápido y usarla sin internet.</p>
+          <p className="text-xs text-[var(--cf-ink-3)]">Agrega la app a tu celular para acceder más rápido y usarla sin internet.</p>
         </div>
 
         {/* Contenido scrollable */}
@@ -297,22 +297,22 @@ export function InstallGuideModal({ onClose }) {
             {instructions.steps.map((step, i) => {
               const StepIconComponent = ICON_MAP[step.icon]
               return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-[12px] bg-[var(--color-bg-hover)] border border-[var(--color-border)]">
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[12px] bg-[var(--cf-fill)] border border-[var(--cf-border)]">
                   {/* Numero + Icono en fila */}
                   <div className="shrink-0 flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-[#0a0a0a] text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full bg-[var(--cf-gold)] flex items-center justify-center text-[var(--cf-ink)] text-xs font-bold">
                       {i + 1}
                     </div>
                     {StepIconComponent && (
-                      <div className="w-11 h-11 rounded-[12px] bg-[var(--color-bg-hover)] flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-[12px] bg-[var(--cf-fill)] flex items-center justify-center">
                         <StepIconComponent />
                       </div>
                     )}
                   </div>
                   {/* Texto */}
                   <div className="pt-1 min-w-0 flex-1">
-                    <p className="text-[13px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{renderBoldText(step.text)}</p>
-                    {step.sub && <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{step.sub}</p>}
+                    <p className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{renderBoldText(step.text)}</p>
+                    {step.sub && <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{step.sub}</p>}
                   </div>
                 </div>
               )
@@ -324,7 +324,7 @@ export function InstallGuideModal({ onClose }) {
         <div className="px-5 pb-5 pt-3 shrink-0">
           <button
             onClick={onClose}
-            className="w-full py-3.5 rounded-[12px] bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-bold hover:bg-[var(--color-accent-hover)] transition-colors"
+            className="w-full py-3.5 rounded-[12px] bg-[var(--cf-gold)] text-[var(--cf-ink)] text-sm font-bold hover:bg-[var(--cf-gold-dark)] transition-colors"
           >
             Entendido
           </button>

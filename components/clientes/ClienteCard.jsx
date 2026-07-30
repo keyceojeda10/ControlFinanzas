@@ -5,10 +5,10 @@ import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 
 const STATUS = {
-  ok:    { color: 'var(--color-success)', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
-  nuevo: { color: 'var(--color-info)', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.18)' },
-  hot:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)' },
-  crit:  { color: 'var(--color-danger)', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.22)' },
+  ok:    { color: 'var(--cf-green-dark)', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
+  nuevo: { color: 'var(--cf-ink-2)', bg: 'rgba(59,130,246,0.06)', border: 'rgba(59,130,246,0.18)' },
+  hot:   { color: 'var(--cf-gold-dark)', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.18)' },
+  crit:  { color: 'var(--cf-red-dark)', bg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.22)' },
   off:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.06)',border: 'rgba(148,163,184,0.18)' },
 }
 
@@ -42,7 +42,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
       href={`/clientes/${cliente.id}`}
       className="block rounded-[16px] overflow-hidden relative transition-all duration-200 hover:scale-[1.015] active:scale-[0.985]"
       style={{
-        background: `linear-gradient(135deg, var(--color-bg-card), ${S.bg})`,
+        background: `linear-gradient(135deg, var(--cf-card), ${S.bg})`,
         border: `1px solid ${S.border}`,
         boxShadow: `0 2px 8px ${S.border}`,
       }}
@@ -58,13 +58,13 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
               fontSize={15}
               style={{
                 border: `2px solid ${S.color}`,
-                boxShadow: `0 0 0 2px var(--color-bg-card)`,
+                boxShadow: `0 0 0 2px var(--cf-card)`,
               }}
             />
             {cliente.pagoHoy && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)' }}
+                style={{ background: 'var(--cf-green-dark)', border: '2px solid var(--cf-card)' }}
               >
                 <svg className="w-2 h-2" fill="white" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -74,19 +74,19 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[15px] font-bold truncate leading-tight" style={{ color: 'var(--cf-ink)' }}>
               {cliente.nombre}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
-                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>CC {cliente.cedula}</span>
+                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>CC {cliente.cedula}</span>
               )}
               {cliente.creadoPor && (
                 <>
                   {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
-                    <span style={{ color: 'var(--color-text-muted)' }}>·</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>·</span>
                   )}
-                  <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {cliente.creadoPor.nombre || 'Cobrador'}
                   </span>
                 </>
@@ -110,16 +110,16 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
               {cliente.tieneClavo && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                   style={{
-                    background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)',
-                    color: 'var(--color-danger)',
-                    border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
+                    background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)',
+                    color: 'var(--cf-red-dark)',
+                    border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)',
                   }}>
                   Perdido
                 </span>
               )}
               {cliente.grupoCobro && (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                  style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}>
+                  style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}>
                   {cliente.grupoCobro.nombre}
                 </span>
               )}
@@ -133,27 +133,27 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
           <>
             {/* Monto */}
             <div className="mb-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Deuda total
               </p>
-              <p className="text-[22px] font-mono-display font-bold leading-none tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-[22px] font-mono-display font-bold leading-none tracking-tight" style={{ color: 'var(--cf-ink)' }}>
                 {formatMoney(saldoTotal)}
               </p>
             </div>
 
             {/* Progreso */}
             <div className="mb-2.5">
-              <div className="h-[5px] rounded-full overflow-hidden" style={{ background: `color-mix(in srgb, ${S.color} 12%, var(--color-bg-hover))` }}>
+              <div className="h-[5px] rounded-full overflow-hidden" style={{ background: `color-mix(in srgb, ${S.color} 12%, var(--cf-fill))` }}>
                 <div
                   className="h-full rounded-full transition-[width] duration-500"
                   style={{ width: `${Math.max(porcentaje, 2)}%`, background: S.color }}
                 />
               </div>
               <div className="flex items-center justify-between mt-1">
-                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                   <span className="font-mono-display font-bold" style={{ color: S.color }}>{porcentaje}%</span> pagado
                 </span>
-                <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                   {cliente.prestamosActivos} {cliente.prestamosActivos === 1 ? 'prestamo' : 'prestamos'}
                 </span>
               </div>
@@ -166,7 +166,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
                 style={{ borderTop: `1px solid ${S.border}` }}
               >
                 {cliente.proximoCobroLabel && (
-                  <span className="text-[12px] font-semibold capitalize" style={{ color: cliente.diasMoraMax > 0 ? S.color : 'var(--color-text-secondary)' }}>
+                  <span className="text-[12px] font-semibold capitalize" style={{ color: cliente.diasMoraMax > 0 ? S.color : 'var(--cf-ink-2)' }}>
                     {cliente.proximoCobroLabel}
                   </span>
                 )}
@@ -179,15 +179,15 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
             )}
           </>
         ) : (
-          <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>Sin prestamos activos</p>
+          <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Sin prestamos activos</p>
         )}
 
         {(cliente.lineasCreditoActivas ?? 0) > 0 && (
           <div className="flex items-center gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${S.border}` }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="var(--color-text-muted)" strokeWidth={1.5} viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="var(--cf-ink-3)" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
-            <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-[11px] font-medium" style={{ color: 'var(--cf-ink-3)' }}>
               {cliente.lineasCreditoActivas > 1 ? `${cliente.lineasCreditoActivas} lineas credito` : 'Linea credito'}
             </span>
           </div>

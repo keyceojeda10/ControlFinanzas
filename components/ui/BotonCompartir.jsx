@@ -43,7 +43,7 @@ export default function BotonCompartir({ tipo = 'pago', cliente, prestamo, pago,
     <button
       type="button"
       onClick={handleClick}
-      className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[#444]"
+      className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[#444]"
     >
       {SHARE_ICON}
       {copiado ? 'Copiado' : (tipo === 'historial' ? 'Compartir historial' : 'Compartir')}

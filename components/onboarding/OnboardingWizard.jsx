@@ -131,7 +131,7 @@ export default function OnboardingWizard({
         <div style={{ animation: 'wizardBounce 0.6s ease' }}>
           <div className="w-20 h-20 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(245,197,24,0.15)' }}>
-            <svg className="w-10 h-10" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
+            <svg className="w-10 h-10" fill="none" stroke="var(--cf-gold)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -159,7 +159,7 @@ export default function OnboardingWizard({
     <button
       onClick={volver}
       className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
-      style={{ color: 'var(--color-text-muted)' }}>
+      style={{ color: 'var(--cf-ink-3)' }}>
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
       </svg>

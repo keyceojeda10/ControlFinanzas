@@ -9,7 +9,7 @@ import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
 const COLOR_OK   = 'var(--cf-gold)'
-const COLOR_HOT  = '#f97316'
+const COLOR_HOT  = 'var(--cf-gold-dark)'
 const COLOR_CRIT = 'var(--cf-red-dark)'
 const COLOR_OFF  = 'var(--cf-ink-3)'
 

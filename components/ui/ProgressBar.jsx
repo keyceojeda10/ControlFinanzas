@@ -6,7 +6,7 @@ export default function ProgressBar({ value = 0, color, height = 6, animated = t
   return (
     <div
       className={`w-full rounded-full overflow-hidden ${className}`}
-      style={{ height: `${height}px`, background: 'var(--color-bg-hover)' }}
+      style={{ height: `${height}px`, background: 'var(--cf-fill)' }}
     >
       <div
         className={animated ? 'animate-grow' : ''}
@@ -14,7 +14,7 @@ export default function ProgressBar({ value = 0, color, height = 6, animated = t
           width: `${pct}%`,
           height: '100%',
           borderRadius: 'inherit',
-          background: color || 'var(--color-success)',
+          background: color || 'var(--cf-green-dark)',
           transformOrigin: 'left',
         }}
       />

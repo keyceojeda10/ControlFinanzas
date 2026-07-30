@@ -31,7 +31,7 @@ const METODOS = [
     label: 'Interés fijo por período',
     desc: 'El interés se calcula sobre el capital inicial por cada período (semana, mes...). El más usado en Colombia.',
     ejemplo: 'Prestas $500k al 20% mensual → cobras $100k de interés fijo cada mes.',
-    color: 'var(--color-accent)',
+    color: 'var(--cf-gold)',
     bg: 'rgba(245,197,24,0.1)',
   },
   {
@@ -39,7 +39,7 @@ const METODOS = [
     label: 'Interés sobre saldo',
     desc: 'El interés se recalcula sobre lo que queda por pagar. La cuota inicial es mayor pero va bajando.',
     ejemplo: 'Amortización tipo banco. Ideal para montos altos o clientes grandes.',
-    color: 'var(--color-info)',
+    color: 'var(--cf-ink-2)',
     bg: 'rgba(59,130,246,0.1)',
   },
   {
@@ -47,7 +47,7 @@ const METODOS = [
     label: 'Interés único al inicio',
     desc: 'El interés se cobra una sola vez al entregar el dinero. El cliente devuelve el capital en cuotas.',
     ejemplo: 'Prestas $500k al 20% → se cobran $100k al inicio, quedan $400k netos.',
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
     bg: 'rgba(34,197,94,0.1)',
   },
   {
@@ -55,7 +55,7 @@ const METODOS = [
     label: 'Solo interés (globo)',
     desc: 'El cliente paga solo intereses en cada cuota y devuelve todo el capital al final.',
     ejemplo: 'Prestas $500k al 20% mensual → cuotas de $100k de interés, al final paga los $500k.',
-    color: 'var(--color-purple)',
+    color: 'var(--cf-ink-2)',
     bg: 'rgba(168,85,247,0.1)',
   },
   {
@@ -63,7 +63,7 @@ const METODOS = [
     label: 'Cuota decreciente (lineal)',
     desc: 'Capital fijo en cada cuota más interés sobre el saldo. La cuota baja período a período.',
     ejemplo: 'Similar a créditos de vehículo. Las primeras cuotas son las más altas.',
-    color: '#f97316',
+    color: 'var(--cf-gold-dark)',
     bg: 'rgba(249,115,22,0.1)',
   },
   {
@@ -71,7 +71,7 @@ const METODOS = [
     label: 'Decreciente dinámico',
     desc: 'Cuota que se ajusta al pago real del cliente',
     ejemplo: '10% mensual → $700K → $650K → ...',
-    color: 'var(--color-teal)',
+    color: 'var(--cf-ink-2)',
     bg: 'rgba(6,182,212,0.1)',
   },
   {
@@ -170,19 +170,19 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="text-center mb-5">
-        <h2 className="text-xl font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-xl font-bold mb-1.5" style={{ color: 'var(--cf-ink)' }}>
           Crea el préstamo
         </h2>
         <div className="flex items-center justify-center gap-2">
           <Avatar nombre={cliente.nombre} size={22} fontSize={8} />
-          <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>{cliente.nombre}</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--cf-gold)' }}>{cliente.nombre}</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--cf-red-dark)' }}>
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
@@ -191,7 +191,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         )}
 
         <div className="rounded-[16px] p-5 space-y-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
 
           <MoneyInput
             label="Monto a prestar"
@@ -211,7 +211,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   onChange={(e) => setTasa(soloDecimal(e.target.value))}
                   suffix="%"
                 />
-                <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>20% mensual es lo más común</p>
+                <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>20% mensual es lo más común</p>
               </div>
               <div>
                 <Input
@@ -233,7 +233,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   }
                 />
                 {frecuencia !== 'diario' && plazoUnidades && (
-                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--color-text-muted)' }}>= {plazo} días</p>
+                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>= {plazo} días</p>
                 )}
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
           )}
 
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--color-text-muted)' }}>¿Cada cuánto cobras?</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>¿Cada cuánto cobras?</p>
             <div className="grid grid-cols-4 gap-2">
               {FRECUENCIAS.map((f) => (
                 <button
@@ -279,8 +279,8 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   onClick={() => handleFrecuenciaChange(f.value)}
                   className="h-9 rounded-[10px] border text-[12px] font-medium transition-all cursor-pointer"
                   style={frecuencia === f.value
-                    ? { background: 'rgba(245,197,24,0.15)', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }
-                    : { background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }
+                    ? { background: 'rgba(245,197,24,0.15)', border: '1px solid var(--cf-gold)', color: 'var(--cf-gold)' }
+                    : { background: 'transparent', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }
                   }>
                   {f.label}
                 </button>
@@ -320,11 +320,11 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   className="w-full text-left rounded-[12px] p-4 transition-all cursor-pointer"
                   style={metodo === m.value
                     ? { background: m.bg, border: `1px solid ${m.color}55` }
-                    : { background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }
+                    : { background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }
                   }>
                   <div className="flex items-start gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: m.color }} />
-                    <p className="text-[13px] font-semibold" style={{ color: metodo === m.value ? m.color : 'var(--color-text-primary)' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: metodo === m.value ? m.color : 'var(--cf-ink)' }}>
                       {m.label}
                     </p>
                     {metodo === m.value && (
@@ -333,8 +333,8 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                       </svg>
                     )}
                   </div>
-                  <p className="text-[11px] leading-relaxed mb-1.5 pl-4" style={{ color: 'var(--color-text-muted)' }}>{m.desc}</p>
-                  <p className="text-[10px] pl-4" style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>{m.ejemplo}</p>
+                  <p className="text-[11px] leading-relaxed mb-1.5 pl-4" style={{ color: 'var(--cf-ink-3)' }}>{m.desc}</p>
+                  <p className="text-[10px] pl-4" style={{ color: 'var(--cf-ink-3)', fontStyle: 'italic' }}>{m.ejemplo}</p>
                 </button>
               ))}
             </div>
@@ -346,10 +346,10 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         {!calculo && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-[10px]"
             style={{ background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.12)' }}>
-            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 mt-0.5 shrink-0" fill="none" stroke="var(--cf-gold)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
               {metodo === 'manual'
                 ? 'Ingresa el monto y la cuota para ver el resumen.'
                 : 'Ingresa el monto para ver el resumen del préstamo en tiempo real.'
@@ -362,7 +362,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
           type="submit"
           disabled={loading}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: 'var(--color-accent)', color: '#111' }}>
+          style={{ background: 'var(--cf-gold)', color: '#111' }}>
           {loading ? (
             <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -376,7 +376,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
             type="button"
             onClick={onSkip}
             className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-            style={{ color: 'var(--color-text-muted)' }}>
+            style={{ color: 'var(--cf-ink-3)' }}>
             Omitir por ahora
           </button>
         )}

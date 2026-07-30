@@ -16,10 +16,10 @@ import { Button } from '@/components/ui/Button'
 
 // Config visual por estado (sin emojis: punto de color + label).
 const ESTADO = {
-  cuadrado:  { label: 'Cuadró',   color: 'var(--color-success)', orden: 3 },
-  sobrante:  { label: 'Sobrante', color: 'var(--color-warning)', orden: 1 },
-  faltante:  { label: 'Faltante', color: 'var(--color-danger)',  orden: 0 },
-  pendiente: { label: 'Pendiente', color: 'var(--color-text-muted)', orden: 2 },
+  cuadrado:  { label: 'Cuadró',   color: 'var(--cf-green-dark)', orden: 3 },
+  sobrante:  { label: 'Sobrante', color: 'var(--cf-gold-dark)', orden: 1 },
+  faltante:  { label: 'Faltante', color: 'var(--cf-red-dark)',  orden: 0 },
+  pendiente: { label: 'Pendiente', color: 'var(--cf-ink-3)', orden: 2 },
 }
 
 const fmtHora = (d) => d ? new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' }) : ''
@@ -106,7 +106,7 @@ export default function CuadreDia({ fecha }) {
     } catch { /* noop */ } finally { setGuardando(false) }
   }
 
-  if (loading) return <Card><p className="text-sm text-[var(--color-text-muted)]">Cargando cuadre…</p></Card>
+  if (loading) return <Card><p className="text-sm text-[var(--cf-ink-3)]">Cargando cuadre…</p></Card>
   if (!data || data.filas.length === 0) return null
 
   const difModal = modal ? Math.round(Number(montoRecibido || 0) - modal.recaudadoSistema) : 0
@@ -116,20 +116,20 @@ export default function CuadreDia({ fecha }) {
       {/* Banner global */}
       <Card>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Cuadre del día</p>
-          <span className="text-[11px] text-[var(--color-text-muted)]">
-            <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--color-success)' : 'var(--color-accent)' }}>{g.cuadraron}/{g.total}</span> cuadraron
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuadre del día</p>
+          <span className="text-[11px] text-[var(--cf-ink-3)]">
+            <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>{g.cuadraron}/{g.total}</span> cuadraron
           </span>
         </div>
-        <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Total recibido hoy</p>
-        <p className="text-2xl font-bold font-mono-display text-[var(--color-success)]">
+        <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Total recibido hoy</p>
+        <p className="text-2xl font-bold font-mono-display text-[var(--cf-green-dark)]">
           {formatMoney(g.totalRecibido)}
-          <span className="text-xs font-normal text-[var(--color-text-muted)]"> / {formatMoney(g.totalRecaudadoSistema)} sistema</span>
+          <span className="text-xs font-normal text-[var(--cf-ink-3)]"> / {formatMoney(g.totalRecaudadoSistema)} sistema</span>
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px]">
-          {g.pendientes > 0 && <span className="text-[var(--color-text-muted)]">{g.pendientes} pendiente{g.pendientes === 1 ? '' : 's'}</span>}
-          {g.conDiferencia > 0 && <span className="text-[var(--color-danger)]">{g.conDiferencia} con diferencia</span>}
-          {g.faltanteTotal < 0 && <span className="text-[var(--color-danger)]">Faltante total: {formatMoney(g.faltanteTotal)}</span>}
+          {g.pendientes > 0 && <span className="text-[var(--cf-ink-3)]">{g.pendientes} pendiente{g.pendientes === 1 ? '' : 's'}</span>}
+          {g.conDiferencia > 0 && <span className="text-[var(--cf-red-dark)]">{g.conDiferencia} con diferencia</span>}
+          {g.faltanteTotal < 0 && <span className="text-[var(--cf-red-dark)]">Faltante total: {formatMoney(g.faltanteTotal)}</span>}
         </div>
         {/* El boton aparece segun `exactos` (los que declararon lo mismo que el
             sistema), no segun `g.pendientes` (los que faltan por confirmar).
@@ -139,24 +139,24 @@ export default function CuadreDia({ fecha }) {
             type="button"
             onClick={confirmarExactos}
             disabled={guardando}
-            className="mt-3 w-full h-9 rounded-[10px] text-xs font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
+            className="mt-3 w-full h-9 rounded-[10px] text-xs font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] disabled:opacity-50 transition-colors"
           >
             Confirmar {exactos.length} que entregó{exactos.length === 1 ? '' : 'aron'} lo mismo que dice el sistema
           </button>
         )}
         {g.pendientes > exactos.length && (
-          <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+          <p className="mt-2 text-[11px] text-[var(--cf-ink-3)]">
             {g.pendientes - exactos.length} cobrador{g.pendientes - exactos.length === 1 ? '' : 'es'} no coincide{g.pendientes - exactos.length === 1 ? '' : 'n'} con el sistema: cuéntale{g.pendientes - exactos.length === 1 ? '' : 's'} el efectivo y confirma abajo.
           </p>
         )}
       </Card>
 
       {/* Filtros */}
-      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
         {[{ k: 'todos', l: 'Todos' }, { k: 'pendientes', l: 'Pendientes' }, { k: 'diferencia', l: 'Con diferencia' }].map((t) => (
           <button key={t.k} type="button" onClick={() => setFiltro(t.k)}
             className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
-            style={filtro === t.k ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}>
+            style={filtro === t.k ? { background: 'var(--cf-card)', color: 'var(--cf-gold)' } : { color: 'var(--cf-ink-3)' }}>
             {t.l}
           </button>
         ))}
@@ -168,48 +168,48 @@ export default function CuadreDia({ fecha }) {
           const est = ESTADO[f.estado] || ESTADO.pendiente
           const confirmado = f.estado !== 'pendiente'
           return (
-            <div key={f.cobradorId} className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3">
+            <div key={f.cobradorId} className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: est.color, boxShadow: `0 0 8px ${est.color}` }} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{f.nombre}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
+                    <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{f.nombre}</p>
+                    <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
                   </div>
                 </div>
                 {!confirmado ? (
                   <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] rounded-[8px] px-3 py-1.5 transition-colors">
+                    className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
                     Confirmar
                   </button>
                 ) : (
                   <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-medium text-[var(--color-accent)] hover:underline px-2 py-1">
+                    className="shrink-0 text-[11px] font-medium text-[var(--cf-gold)] hover:underline px-2 py-1">
                     Editar
                   </button>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2.5">
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Sistema</p>
-                  <p className="text-[13px] font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(f.recaudadoSistema)}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
+                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(f.recaudadoSistema)}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Recibido</p>
-                  <p className="text-[13px] font-bold font-mono-display text-[var(--color-text-primary)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
+                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Diferencia</p>
-                  <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--color-text-muted)' : f.diferencia === 0 ? 'var(--color-success)' : f.diferencia < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
+                  <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--cf-ink-3)' : f.diferencia === 0 ? 'var(--cf-green-dark)' : f.diferencia < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
                     {f.diferencia == null ? '—' : `${f.diferencia > 0 ? '+' : ''}${formatMoney(f.diferencia)}`}
                   </p>
                 </div>
               </div>
-              {f.notaCuadre && <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 italic">“{f.notaCuadre}”</p>}
+              {f.notaCuadre && <p className="text-[11px] text-[var(--cf-ink-3)] mt-1.5 italic">“{f.notaCuadre}”</p>}
             </div>
           )
         })}
-        {filas.length === 0 && <p className="text-sm text-[var(--color-text-muted)] text-center py-4">Sin cobradores en este filtro.</p>}
+        {filas.length === 0 && <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">Sin cobradores en este filtro.</p>}
       </div>
 
       {/* Modal confirmar recibo */}

@@ -33,7 +33,7 @@ const TEXTOS = {
 const ESTILOS = {
   prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-white',
   pago:     'bg-[#25d366] hover:bg-[#1da855] text-white',
-  mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[var(--color-warning)] border border-[rgba(245,158,11,0.3)]',
+  mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[var(--cf-gold-dark)] border border-[rgba(245,158,11,0.3)]',
   historial:'bg-[#25d366] hover:bg-[#1da855] text-white',
 }
 

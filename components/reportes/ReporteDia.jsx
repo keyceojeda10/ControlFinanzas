@@ -238,7 +238,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             value={fecha}
             max={getColombiaDateStr()}
             onChange={(e) => setFecha(e.target.value)}
-            className="flex-1 h-9 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
+            className="flex-1 h-9 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-ink-2)]"
           />
         </div>
 
@@ -246,11 +246,11 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
         {esOwner && rutasDisponibles.length > 1 && (
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-[var(--color-text-muted)]">Rutas</p>
+              <p className="text-xs font-semibold text-[var(--cf-ink-3)]">Rutas</p>
               <button
                 type="button"
                 onClick={seleccionarTodas}
-                className="text-[11px] font-semibold text-[var(--color-info)]"
+                className="text-[11px] font-semibold text-[var(--cf-ink-2)]"
               >
                 {rutasSeleccionadas.length === rutasDisponibles.length ? 'Deseleccionar' : 'Todas'}
               </button>
@@ -265,9 +265,9 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
                     onClick={() => toggleRuta(r.id)}
                     className="px-2.5 py-1 rounded-[8px] text-xs font-medium transition-colors"
                     style={{
-                      background: sel ? 'var(--color-info)' : 'var(--color-bg-hover)',
-                      color: sel ? '#fff' : 'var(--color-text-muted)',
-                      border: `1px solid ${sel ? 'var(--color-info)' : 'var(--color-border)'}`,
+                      background: sel ? 'var(--cf-ink-2)' : 'var(--cf-fill)',
+                      color: sel ? '#fff' : 'var(--cf-ink-3)',
+                      border: `1px solid ${sel ? 'var(--cf-ink-2)' : 'var(--cf-border)'}`,
                     }}
                   >
                     {r.nombre}
@@ -285,12 +285,12 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-[var(--color-info)] border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-[var(--cf-ink-2)] border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {error && (
-          <div className="p-3 rounded-[10px] text-sm text-[var(--color-danger)]" style={{ background: 'var(--color-danger-dim)' }}>
+          <div className="p-3 rounded-[10px] text-sm text-[var(--cf-red-dark)]" style={{ background: 'var(--cf-red-pill-bg)' }}>
             {error}
           </div>
         )}
@@ -298,23 +298,23 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
         {data && !loading && (
           <>
             {/* Header */}
-            <div className="text-center pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <p className="text-[11px] text-[var(--color-text-muted)] capitalize">{fmtFechaDisplay(data.fecha)}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">{data.rutas.map(r => r.nombre).join(', ')}</p>
+            <div className="text-center pb-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+              <p className="text-[11px] text-[var(--cf-ink-3)] capitalize">{fmtFechaDisplay(data.fecha)}</p>
+              <p className="text-xs text-[var(--cf-ink-3)]">{data.rutas.map(r => r.nombre).join(', ')}</p>
             </div>
 
             {/* Resumen */}
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Recaudado', value: formatMoney(data.resumen.totalRecaudado), color: 'var(--color-success)' },
-                { label: 'Esperado', value: formatMoney(data.resumen.totalEsperado), color: 'var(--color-text-primary)' },
-                { label: 'Recaudo', value: `${data.resumen.tasaRecaudo}%`, color: data.resumen.tasaRecaudo >= 80 ? 'var(--color-success)' : data.resumen.tasaRecaudo >= 50 ? 'var(--color-warning)' : 'var(--color-danger)' },
-                { label: 'Gastos', value: formatMoney(data.resumen.totalGastos), color: 'var(--color-danger)' },
-                { label: 'Disponible', value: formatMoney(data.resumen.disponible), color: 'var(--color-info)' },
-                { label: 'Pagos', value: `${data.resumen.pagosCount}`, color: 'var(--color-text-primary)' },
+                { label: 'Recaudado', value: formatMoney(data.resumen.totalRecaudado), color: 'var(--cf-green-dark)' },
+                { label: 'Esperado', value: formatMoney(data.resumen.totalEsperado), color: 'var(--cf-ink)' },
+                { label: 'Recaudo', value: `${data.resumen.tasaRecaudo}%`, color: data.resumen.tasaRecaudo >= 80 ? 'var(--cf-green-dark)' : data.resumen.tasaRecaudo >= 50 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)' },
+                { label: 'Gastos', value: formatMoney(data.resumen.totalGastos), color: 'var(--cf-red-dark)' },
+                { label: 'Disponible', value: formatMoney(data.resumen.disponible), color: 'var(--cf-ink-2)' },
+                { label: 'Pagos', value: `${data.resumen.pagosCount}`, color: 'var(--cf-ink)' },
               ].map(s => (
-                <div key={s.label} className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--color-bg-hover)' }}>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">{s.label}</p>
+                <div key={s.label} className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--cf-fill)' }}>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">{s.label}</p>
                   <p className="text-sm font-bold font-mono-display" style={{ color: s.color }}>{s.value}</p>
                 </div>
               ))}
@@ -323,17 +323,17 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* Por ruta (si hay más de 1) */}
             {data.porRuta.length > 1 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">Por ruta</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">Por ruta</p>
                 <div className="space-y-1.5">
                   {data.porRuta.map(rr => (
-                    <div key={rr.id} className="flex items-center justify-between rounded-[8px] px-2.5 py-1.5" style={{ background: 'var(--color-bg-hover)' }}>
+                    <div key={rr.id} className="flex items-center justify-between rounded-[8px] px-2.5 py-1.5" style={{ background: 'var(--cf-fill)' }}>
                       <div>
-                        <p className="text-xs font-semibold text-[var(--color-text-primary)]">{rr.nombre}</p>
-                        {rr.cobrador && <p className="text-[10px] text-[var(--color-text-muted)]">{rr.cobrador}</p>}
+                        <p className="text-xs font-semibold text-[var(--cf-ink)]">{rr.nombre}</p>
+                        {rr.cobrador && <p className="text-[10px] text-[var(--cf-ink-3)]">{rr.cobrador}</p>}
                       </div>
                       <div className="text-right">
-                        <p className="text-xs font-bold font-mono-display text-[var(--color-success)]">{formatMoney(rr.recaudado)}</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)]">{rr.pagosCount} pagos · {rr.pendientesCount} pend.</p>
+                        <p className="text-xs font-bold font-mono-display text-[var(--cf-green-dark)]">{formatMoney(rr.recaudado)}</p>
+                        <p className="text-[10px] text-[var(--cf-ink-3)]">{rr.pagosCount} pagos · {rr.pendientesCount} pend.</p>
                       </div>
                     </div>
                   ))}
@@ -343,46 +343,46 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
 
             {/* Pagos del día */}
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
                 Pagos del dia ({data.pagos.length})
               </p>
               {data.pagos.length > 0 ? (
                 <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
                   {data.pagos.map((p, i) => (
-                    <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--color-bg-hover)' }}>
+                    <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--cf-fill)' }}>
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] text-[var(--color-text-muted)] w-5 text-right shrink-0">{i + 1}</span>
+                        <span className="text-[10px] text-[var(--cf-ink-3)] w-5 text-right shrink-0">{i + 1}</span>
                         <div className="min-w-0">
-                          <p className="text-xs text-[var(--color-text-primary)] truncate">{p.clienteNombre}</p>
-                          <p className="text-[10px] text-[var(--color-text-muted)]">{fmtHora(p.hora)}{p.metodoPago === 'transferencia' ? ' · Transf.' : ''}</p>
+                          <p className="text-xs text-[var(--cf-ink)] truncate">{p.clienteNombre}</p>
+                          <p className="text-[10px] text-[var(--cf-ink-3)]">{fmtHora(p.hora)}{p.metodoPago === 'transferencia' ? ' · Transf.' : ''}</p>
                         </div>
                       </div>
-                      <p className="text-xs font-bold font-mono-display text-[var(--color-success)] shrink-0">{formatMoney(p.monto)}</p>
+                      <p className="text-xs font-bold font-mono-display text-[var(--cf-green-dark)] shrink-0">{formatMoney(p.monto)}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-[var(--color-text-muted)] py-3 text-center">Sin pagos registrados</p>
+                <p className="text-xs text-[var(--cf-ink-3)] py-3 text-center">Sin pagos registrados</p>
               )}
             </div>
 
             {/* No pagaron */}
             {data.pendientes.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
                   No pagaron ({data.pendientes.length})
                 </p>
                 <div className="space-y-0.5 max-h-[200px] overflow-y-auto">
                   {data.pendientes.map((p, i) => (
-                    <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--color-bg-hover)' }}>
+                    <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--cf-fill)' }}>
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[10px] text-[var(--color-text-muted)] w-5 text-right shrink-0">{i + 1}</span>
+                        <span className="text-[10px] text-[var(--cf-ink-3)] w-5 text-right shrink-0">{i + 1}</span>
                         <div className="min-w-0">
-                          <p className="text-xs text-[var(--color-text-primary)] truncate">{p.clienteNombre}</p>
-                          {p.clienteTelefono && <p className="text-[10px] text-[var(--color-text-muted)]">{p.clienteTelefono}</p>}
+                          <p className="text-xs text-[var(--cf-ink)] truncate">{p.clienteNombre}</p>
+                          {p.clienteTelefono && <p className="text-[10px] text-[var(--cf-ink-3)]">{p.clienteTelefono}</p>}
                         </div>
                       </div>
-                      <p className="text-xs font-bold font-mono-display text-[var(--color-danger)] shrink-0">{formatMoney(p.cuotaTotal)}</p>
+                      <p className="text-xs font-bold font-mono-display text-[var(--cf-red-dark)] shrink-0">{formatMoney(p.cuotaTotal)}</p>
                     </div>
                   ))}
                 </div>
@@ -392,14 +392,14 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             {/* Gastos */}
             {data.gastos.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)] mb-1.5">
                   Gastos ({data.gastos.length})
                 </p>
                 <div className="space-y-0.5">
                   {data.gastos.map((g, i) => (
-                    <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--color-bg-hover)' }}>
-                      <p className="text-xs text-[var(--color-text-primary)] truncate">{g.descripcion}</p>
-                      <p className="text-xs font-bold font-mono-display text-[var(--color-danger)] shrink-0">{formatMoney(g.monto)}</p>
+                    <div key={i} className="flex items-center justify-between px-2 py-1.5 rounded-[6px]" style={{ background: i % 2 === 0 ? 'transparent' : 'var(--cf-fill)' }}>
+                      <p className="text-xs text-[var(--cf-ink)] truncate">{g.descripcion}</p>
+                      <p className="text-xs font-bold font-mono-display text-[var(--cf-red-dark)] shrink-0">{formatMoney(g.monto)}</p>
                     </div>
                   ))}
                 </div>
@@ -407,7 +407,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
             )}
 
             {/* Acciones */}
-            <div className="flex gap-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="flex gap-2 pt-2" style={{ borderTop: '1px solid var(--cf-border)' }}>
               <Button onClick={imprimir} size="sm" variant="outline" className="flex-1 gap-1.5">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18.25 7.234l.002.001" />

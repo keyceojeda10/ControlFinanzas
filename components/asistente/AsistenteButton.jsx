@@ -44,10 +44,10 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
           display: open ? 'none' : undefined,
           alignItems: 'center',
           gap: '8px',
-          background: 'var(--color-bg-surface)',
+          background: 'var(--cf-surface)',
           border: '1px solid rgba(245,197,24,0.35)',
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-          color: 'var(--color-accent)',
+          color: 'var(--cf-gold)',
         }}
       >
         <svg style={{ width: '20px', height: '20px', flexShrink: 0 }} viewBox="0 0 24 24" fill="currentColor">
@@ -73,8 +73,8 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
           height: open ? '85vh' : '0',
           overflow: 'hidden',
           borderRadius: '24px 24px 0 0',
-          background: 'var(--color-bg-card)',
-          border: open ? '1px solid var(--color-border)' : 'none',
+          background: 'var(--cf-card)',
+          border: open ? '1px solid var(--cf-border)' : 'none',
           borderBottom: 'none',
           boxShadow: open ? '0 -4px 16px rgba(0,0,0,0.3)' : 'none',
           visibility: open ? 'visible' : 'hidden',
@@ -83,7 +83,7 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
       >
         <div style={{ display: open ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
           <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--color-border-hover)' }} />
+            <div className="w-10 h-1 rounded-full" style={{ background: 'var(--cf-border-strong)' }} />
           </div>
           <div className="flex-1 overflow-hidden">
             <AsistenteChat onClose={() => setOpen(false)} />
@@ -98,8 +98,8 @@ const AsistenteButton = forwardRef(function AsistenteButton({ onOpenChange }, re
           bottom: '80px', right: '24px',
           width: '380px', height: '520px',
           borderRadius: '16px',
-          background: 'var(--color-bg-card)',
-          border: '1px solid var(--color-border)',
+          background: 'var(--cf-card)',
+          border: '1px solid var(--cf-border)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
           overflow: 'hidden',
           transform: open ? 'scale(1)' : 'scale(0.9)',

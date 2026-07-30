@@ -139,7 +139,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   if (!esSemana && !esMes) {
     return (
       <Modal open={open} onClose={handleClose} title="Día de cobro">
-        <p className="text-sm text-[var(--color-text-muted)]">
+        <p className="text-sm text-[var(--cf-ink-3)]">
           La frecuencia diaria no admite un día fijo de cobro.
         </p>
         <div className="pt-3">
@@ -208,23 +208,23 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   return (
     <Modal open={open} onClose={handleClose} title="Día de cobro">
       <div className="space-y-4">
-        <p className="text-xs text-[var(--color-text-muted)] leading-snug">
+        <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
           {modo === 'semana'
             ? 'Fija el día de la semana en que siempre se cobra. Aunque se atrase un pago, el próximo cobro caerá en ese día.'
             : 'Fija el día del mes en que siempre se cobra. Si el mes no tiene ese día, se cobra el último día disponible.'}
         </p>
 
         {esSemana && (
-          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+          <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
             <button
               type="button"
               onClick={() => { setModo('semana'); setValor('') }}
               className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
               style={modo === 'semana' ? {
-                background: 'var(--color-bg-card)',
-                color: 'var(--color-accent)',
+                background: 'var(--cf-card)',
+                color: 'var(--cf-gold)',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-              } : { color: 'var(--color-text-muted)' }}
+              } : { color: 'var(--cf-ink-3)' }}
             >
               Día de la semana
             </button>
@@ -233,10 +233,10 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
               onClick={() => { setModo('mes'); setValor('') }}
               className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
               style={modo === 'mes' ? {
-                background: 'var(--color-bg-card)',
-                color: 'var(--color-accent)',
+                background: 'var(--cf-card)',
+                color: 'var(--cf-gold)',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-              } : { color: 'var(--color-text-muted)' }}
+              } : { color: 'var(--cf-ink-3)' }}
             >
               {esQuincenal ? 'Días del mes' : 'Día del mes'}
             </button>
@@ -246,13 +246,13 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
         {modo === 'mes' && esQuincenal ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+              <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
                 Primer cobro
               </label>
               <select
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
-                className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+                className="h-10 px-2 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)]"
               >
                 <option value="">—</option>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -261,13 +261,13 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+              <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
                 Segundo cobro
               </label>
               <select
                 value={valor2}
                 onChange={(e) => setValor2(e.target.value)}
-                className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+                className="h-10 px-2 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)]"
               >
                 <option value="">—</option>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -278,13 +278,13 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
+            <label className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em]">
               {modo === 'semana' ? 'Día de la semana' : 'Día del mes'}
             </label>
             <select
               value={valor}
               onChange={(e) => setValor(e.target.value)}
-              className="h-10 px-2 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+              className="h-10 px-2 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)]"
             >
               <option value="">Sin día fijo (corre según inicio)</option>
               {modo === 'semana'
@@ -296,7 +296,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
           </div>
         )}
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+        {error && <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">Cancelar</Button>

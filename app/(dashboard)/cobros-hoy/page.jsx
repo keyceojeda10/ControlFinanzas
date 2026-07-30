@@ -275,10 +275,10 @@ export default function CobrosHoyPage() {
 
   if (authLoading || loading) return (
     <div className="max-w-2xl mx-auto space-y-3 px-1">
-      <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--color-bg-card)' }} />
-      <div className="rounded-[16px] h-16 animate-pulse" style={{ background: 'var(--color-bg-card)' }} />
+      <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--cf-card)' }} />
+      <div className="rounded-[16px] h-16 animate-pulse" style={{ background: 'var(--cf-card)' }} />
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="rounded-[16px] h-[76px] animate-pulse" style={{ background: 'var(--color-bg-card)' }} />
+        <div key={i} className="rounded-[16px] h-[76px] animate-pulse" style={{ background: 'var(--cf-card)' }} />
       ))}
     </div>
   )
@@ -347,8 +347,8 @@ export default function CobrosHoyPage() {
       <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rápido">
         {modalPago && !modalPago.prestamoActivo && (modalPago.prestamosActivos?.length ?? 0) > 1 && (
           <div className="space-y-3">
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>{modalPago.nombre}</span> tiene varios préstamos. Elige cual cobrar.
+            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{modalPago.nombre}</span> tiene varios préstamos. Elige cual cobrar.
             </p>
             <div className="space-y-2">
               {modalPago.prestamosActivos.map((p, i) => (
@@ -357,14 +357,14 @@ export default function CobrosHoyPage() {
                   onClick={() => elegirPrestamo(p.id, p.cuotaDiaria, { esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy, montoCuotaExtra: p.montoCuotaExtra })}
                   disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
                   className="w-full text-left px-4 py-3.5 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50"
-                  style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
+                  style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)' }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Préstamo {i + 1}</p>
-                    <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(p.cuotaDiaria ?? 0)}</span>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Préstamo {i + 1}</p>
+                    <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(p.cuotaDiaria ?? 0)}</span>
                   </div>
                   {p.diasMora > 0 && (
-                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-danger)' }}>{p.diasMora} días de atraso</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-red-dark)' }}>{p.diasMora} días de atraso</p>
                   )}
                 </button>
               ))}
@@ -376,13 +376,13 @@ export default function CobrosHoyPage() {
           return (
           <div className="space-y-4">
             <div className="text-center">
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{modoParcial ? 'Pago parcial para' : 'Registrar 1 cuota para'}</p>
-              <p className="text-base font-bold mt-1" style={{ color: 'var(--color-text-primary)' }}>{modalPago.nombre}</p>
+              <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{modoParcial ? 'Pago parcial para' : 'Registrar 1 cuota para'}</p>
+              <p className="text-base font-bold mt-1" style={{ color: 'var(--cf-ink)' }}>{modalPago.nombre}</p>
               {!modoParcial ? (
-                <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: 'var(--color-success)' }}>{formatMoney(modalPago.cuota)}</p>
+                <p className="text-3xl font-extrabold font-mono-display mt-2" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(modalPago.cuota)}</p>
               ) : (
                 <div className="mt-3 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold" style={{ color: 'var(--color-text-muted)' }}>$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold" style={{ color: 'var(--cf-ink-3)' }}>$</span>
                   <input
                     type="number"
                     inputMode="numeric"
@@ -391,40 +391,40 @@ export default function CobrosHoyPage() {
                     placeholder="Monto"
                     autoFocus
                     className="w-full text-center text-2xl font-extrabold font-mono-display py-3 pl-8 pr-3 rounded-[12px] border outline-none"
-                    style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                    style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
                     min={1}
                     max={modalPago.cuota}
                   />
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>Cuota completa: {formatMoney(modalPago.cuota)}</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>Cuota completa: {formatMoney(modalPago.cuota)}</p>
                 </div>
               )}
             </div>
             <button
               onClick={() => { setModoParcial(!modoParcial); setMontoParcial('') }}
               className="w-full text-center text-[12px] font-medium py-1.5 rounded-lg transition-all"
-              style={{ color: 'var(--color-text-secondary)' }}
+              style={{ color: 'var(--cf-ink-2)' }}
             >
               {modoParcial ? 'Cobrar cuota completa' : 'Cobrar otro monto'}
             </button>
             {modalPago.esBalloon && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--color-danger)' }}>Cuota de capital + interés (globo)</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.</p>
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>Cuota de capital + interés (globo)</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.</p>
               </div>
             )}
             {modalPago.cuotaExtraHoy && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-purple) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--color-purple)' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Cuota extra programada: {formatMoney(modalPago.montoCuotaExtra)}</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.</p>
               </div>
             )}
             {modalPago.cuotaNumero && ['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modalPago.modoInteres) && (
-              <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>Cuota #{modalPago.cuotaNumero}</p>
+              <p className="text-[10px] text-center" style={{ color: 'var(--cf-ink-3)' }}>Cuota #{modalPago.cuotaNumero}</p>
             )}
             {modalPago.abonoConPendiente && (
-              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
-                <p className="text-xs font-semibold" style={{ color: 'var(--color-warning)' }}>Tiene cuotas atrasadas</p>
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Ya pagó hoy pero aún debe mas. Cada registro cubre 1 cuota.</p>
+              <div className="rounded-[12px] px-3 py-2.5 text-center" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Tiene cuotas atrasadas</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Ya pagó hoy pero aún debe mas. Cada registro cubre 1 cuota.</p>
               </div>
             )}
             <MetodoPagoSelector
@@ -449,23 +449,23 @@ export default function CobrosHoyPage() {
       >
         {confirmDuplicado && (
           <div className="space-y-4">
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              <span className="font-medium" style={{ color: 'var(--color-text-primary)' }}>{confirmDuplicado.nombre}</span> ya recibio un pago por{' '}
-              <span className="font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(confirmDuplicado.cuota)}</span> hace menos de 1 minuto.
+            <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{confirmDuplicado.nombre}</span> ya recibio un pago por{' '}
+              <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(confirmDuplicado.cuota)}</span> hace menos de 1 minuto.
             </p>
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Registrar este pago de todos modos?</p>
+            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Registrar este pago de todos modos?</p>
             <div className="flex gap-3">
               <button
                 onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); setModalPago({ id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo, prestamosActivos: [], abonoConPendiente: false }); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId }) }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
-                style={{ background: 'var(--color-warning)', color: 'var(--color-accent-text)' }}
+                style={{ background: 'var(--cf-gold-dark)', color: 'var(--cf-gold-ink)' }}
               >
                 Si, registrar igual
               </button>
               <button
                 onClick={() => { setConfirmDuplicado(null); fetchCobros() }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-medium transition-all"
-                style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+                style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
               >
                 Cancelar
               </button>
@@ -493,17 +493,17 @@ export default function CobrosHoyPage() {
             className="flex items-center gap-3 px-4 py-3 rounded-[12px] border sm:min-w-[320px]"
             style={{ background: 'rgba(15,15,22,0.98)', border: '1px solid rgba(34,197,94,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
           >
-            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 20%, transparent)' }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span className="text-sm flex-1 truncate" style={{ color: 'var(--color-text-primary)' }}>Pago registrado — {undoPago.clienteNombre}</span>
+            <span className="text-sm flex-1 truncate" style={{ color: 'var(--cf-ink)' }}>Pago registrado — {undoPago.clienteNombre}</span>
             <button
               onClick={() => fotoInputRef.current?.click()}
               disabled={subiendoFoto || fotoSubida}
               className="shrink-0 transition-colors disabled:opacity-50"
-              style={{ color: fotoSubida ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+              style={{ color: fotoSubida ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}
               title={fotoSubida ? 'Foto guardada' : 'Adjuntar foto'}
             >
               {subiendoFoto ? (
@@ -522,10 +522,10 @@ export default function CobrosHoyPage() {
                 </svg>
               )}
             </button>
-            <button onClick={deshacerPago} className="text-sm font-bold shrink-0 transition-colors" style={{ color: 'var(--color-accent)' }}>
+            <button onClick={deshacerPago} className="text-sm font-bold shrink-0 transition-colors" style={{ color: 'var(--cf-gold)' }}>
               Deshacer
             </button>
-            <button onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }} className="shrink-0 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+            <button onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }} className="shrink-0 transition-colors" style={{ color: 'var(--cf-ink-3)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -542,18 +542,18 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
   const enMora = cliente.diasMora > 0
 
   const borderColor = pagoOk
-    ? 'color-mix(in srgb, var(--color-success) 40%, var(--color-border))'
+    ? 'color-mix(in srgb, var(--cf-green-dark) 40%, var(--cf-border))'
     : enMora && !pagado
-      ? 'color-mix(in srgb, var(--color-danger) 25%, var(--color-border))'
+      ? 'color-mix(in srgb, var(--cf-red-dark) 25%, var(--cf-border))'
       : pagado
-        ? 'color-mix(in srgb, var(--color-success) 20%, var(--color-border))'
-        : 'var(--color-border)'
+        ? 'color-mix(in srgb, var(--cf-green-dark) 20%, var(--cf-border))'
+        : 'var(--cf-border)'
 
   const bgColor = pagoOk
-    ? 'color-mix(in srgb, var(--color-success) 8%, var(--color-bg-card))'
+    ? 'color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card))'
     : enMora && !pagado
-      ? 'color-mix(in srgb, var(--color-danger) 4%, var(--color-bg-card))'
-      : 'var(--color-bg-card)'
+      ? 'color-mix(in srgb, var(--cf-red-dark) 4%, var(--cf-card))'
+      : 'var(--cf-card)'
 
   return (
     <div
@@ -565,11 +565,11 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
         className="w-11 h-11 rounded-[12px] flex items-center justify-center shrink-0 text-sm font-bold"
         style={{
           background: pagado
-            ? 'color-mix(in srgb, var(--color-success) 15%, transparent)'
+            ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)'
             : enMora
-              ? 'color-mix(in srgb, var(--color-danger) 12%, transparent)'
-              : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-          color: pagado ? 'var(--color-success)' : enMora ? 'var(--color-danger)' : 'var(--color-accent)',
+              ? 'color-mix(in srgb, var(--cf-red-dark) 12%, transparent)'
+              : 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+          color: pagado ? 'var(--cf-green-dark)' : enMora ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
         }}
       >
         {pagado
@@ -580,21 +580,21 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <Link href={`/clientes/${cliente.id}`} className="text-[15px] font-semibold truncate block" style={{ color: 'var(--color-text-primary)' }}>{cliente.nombre}</Link>
+        <Link href={`/clientes/${cliente.id}`} className="text-[15px] font-semibold truncate block" style={{ color: 'var(--cf-ink)' }}>{cliente.nombre}</Link>
         {cliente.direccion && (
-          <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{cliente.direccion}</p>
+          <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{cliente.direccion}</p>
         )}
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           {enMora && !pagado && (
             <>
               <span
                 className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-                style={{ background: 'color-mix(in srgb, var(--color-danger) 15%, transparent)', color: 'var(--color-danger)' }}
+                style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
               >
                 {cliente.diasMora}d atraso
               </span>
               {cliente.montoParaPonerseAlDia > cliente.cuota && (
-                <span className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+                <span className="text-[10px]" style={{ color: 'var(--cf-gold-dark)' }}>
                   Al día: {formatMoney(cliente.montoParaPonerseAlDia)}
                 </span>
               )}
@@ -603,16 +603,16 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
           {cliente.cuotaExtraHoy && (
             <span
               className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-              style={{ background: 'color-mix(in srgb, var(--color-purple) 15%, transparent)', color: 'var(--color-purple)' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}
             >
               +Extra {formatMoney(cliente.montoCuotaExtra)}
             </span>
           )}
           {showRuta && cliente.rutaNombre && (
-            <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{cliente.rutaNombre}</span>
+            <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{cliente.rutaNombre}</span>
           )}
           {pagado && (
-            <span className="text-[10px] font-medium" style={{ color: 'var(--color-success)' }}>Pagó hoy</span>
+            <span className="text-[10px] font-medium" style={{ color: 'var(--cf-green-dark)' }}>Pagó hoy</span>
           )}
         </div>
       </div>
@@ -620,8 +620,8 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
       {/* Acción */}
       {pagado ? (
         <div className="shrink-0 text-right">
-          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(cliente.cuota)}</p>
-          <Link href={`/clientes/${cliente.id}`} className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Ver detalle</Link>
+          <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(cliente.cuota)}</p>
+          <Link href={`/clientes/${cliente.id}`} className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Ver detalle</Link>
         </div>
       ) : (
         <button
@@ -629,7 +629,7 @@ function ClienteCard({ cliente, pagando, pagoOk, onCobrar, showRuta = true }) {
           disabled={pagando}
           className="shrink-0 px-4 h-11 rounded-[12px] font-bold text-sm font-mono-display transition-all active:scale-95 disabled:opacity-60"
           style={{
-            background: pagando ? 'var(--color-bg-hover)' : enMora ? 'var(--color-danger)' : 'var(--color-success)',
+            background: pagando ? 'var(--cf-fill)' : enMora ? 'var(--cf-red-dark)' : 'var(--cf-green-dark)',
             color: '#fff',
             minWidth: '90px',
           }}

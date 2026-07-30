@@ -36,22 +36,22 @@ function UsageBar({ label, usado, limite }) {
   return (
     <div
       className="flex items-center justify-between gap-4 px-4 py-3"
-      style={{ borderBottom: '1px solid var(--color-border)' }}
+      style={{ borderBottom: '1px solid var(--cf-border)' }}
     >
-      <span className="text-[13px]" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+      <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>{label}</span>
       <div className="flex items-center gap-3 flex-1 max-w-[200px]">
-        <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+        <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
               width: `${pct}%`,
-              background: high ? 'var(--color-warning)' : 'var(--color-accent)',
+              background: high ? 'var(--cf-gold-dark)' : 'var(--cf-gold)',
             }}
           />
         </div>
-        <span className="text-[12px] font-mono-display font-medium tabular whitespace-nowrap" style={{ color: high ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
+        <span className="text-[12px] font-mono-display font-medium tabular whitespace-nowrap" style={{ color: high ? 'var(--cf-gold-dark)' : 'var(--cf-ink)' }}>
           {usado.toLocaleString('es-CO')}
-          <span style={{ color: 'var(--color-text-muted)' }}> / {limite.toLocaleString('es-CO')}</span>
+          <span style={{ color: 'var(--cf-ink-3)' }}> / {limite.toLocaleString('es-CO')}</span>
         </span>
       </div>
     </div>
@@ -210,7 +210,7 @@ export default function PlanPage() {
         <button
           onClick={() => router.back()}
           className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 mt-1 transition-colors"
-          style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+          style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
           aria-label="Volver"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -218,10 +218,10 @@ export default function PlanPage() {
           </svg>
         </button>
         <div>
-          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-            Mi <em style={{ fontStyle: 'italic', color: 'var(--color-accent)' }}>plan</em>
+          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>
+            Mi <em style={{ fontStyle: 'italic', color: 'var(--cf-gold)' }}>plan</em>
           </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             {orgNombre}{orgNombre ? ' · ' : ''}{infoPlan.nombre}
           </p>
         </div>
@@ -232,20 +232,20 @@ export default function PlanPage() {
         <div
           className="rounded-[20px] cf-card-shadow px-5 py-4 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 12%, transparent) 0%, color-mix(in srgb, var(--color-accent) 4%, transparent) 100%)',
-            border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 12%, transparent) 0%, color-mix(in srgb, var(--cf-gold) 4%, transparent) 100%)',
+            border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
           }}
         >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}>
-            <svg className="w-4 h-4" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>
+            <svg className="w-4 h-4" style={{ color: 'var(--cf-gold)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
               Prueba gratuita · {estado.diasTrial} {estado.diasTrial === 1 ? 'dia' : 'dias'} restantes
             </p>
-            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
               Tienes acceso completo al plan Empresarial. Al terminar la prueba, tu cuenta pasara al plan {PLANES_CONFIG[estado.planAlTerminar]?.nombre || 'Inicial'}.
             </p>
           </div>
@@ -257,20 +257,20 @@ export default function PlanPage() {
         <div
           className="rounded-[20px] cf-card-shadow px-5 py-4 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, transparent) 0%, color-mix(in srgb, var(--color-success) 4%, transparent) 100%)',
-            border: '1px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 12%, transparent) 0%, color-mix(in srgb, var(--cf-green-dark) 4%, transparent) 100%)',
+            border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, transparent)',
           }}
         >
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--color-success) 15%, transparent)' }}>
-            <svg className="w-4 h-4" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' }}>
+            <svg className="w-4 h-4" style={{ color: 'var(--cf-green-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div>
-            <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
               Pago procesado
             </p>
-            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
               Tu pago se está verificando. El plan se activará automáticamente en unos segundos. Si no se refleja, recarga la página.
             </p>
           </div>
@@ -281,20 +281,20 @@ export default function PlanPage() {
       <div
         className="rounded-[20px] cf-card-shadow p-5 relative overflow-hidden"
         style={{
-          background: 'var(--color-bg-card)',
-          border: '1px solid var(--color-border)',
+          background: 'var(--cf-card)',
+          border: '1px solid var(--cf-border)',
         }}
       >
         {/* Decorative gradient blob */}
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full" style={{
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--cf-gold) 8%, transparent) 0%, transparent 70%)',
           transform: 'translate(30%, -30%)',
         }} />
 
-        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] mb-3 font-mono-display" style={{ color: 'var(--color-accent)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] mb-3 font-mono-display" style={{ color: 'var(--cf-gold)' }}>
           Plan actual
         </p>
-        <h2 className="text-[32px] font-normal leading-none mb-1 serif" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-[32px] font-normal leading-none mb-1 serif" style={{ color: 'var(--cf-ink)' }}>
           {infoPlan.nombre}
         </h2>
         {(() => {
@@ -302,17 +302,17 @@ export default function PlanPage() {
           const limClientes = uso?.clientes?.limite ?? cfg.maxClientes
           const limUsuarios = uso?.usuarios?.limite ?? cfg.maxUsuarios
           return (
-            <p className="text-[13px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[13px] mb-4" style={{ color: 'var(--cf-ink-3)' }}>
               Hasta {limClientes.toLocaleString('es-CO')} clientes · {limUsuarios} {limUsuarios === 1 ? 'usuario' : 'usuarios'}
             </p>
           )
         })()}
 
         <div className="flex items-baseline gap-1">
-          <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+          <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--cf-ink)' }}>
             {formatMoney(infoPlan.precio)}
           </span>
-          <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>/mes</span>
+          <span className="text-[12px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>/mes</span>
         </div>
       </div>
 
@@ -324,27 +324,27 @@ export default function PlanPage() {
         const diasTranscurridos = Math.max(0, totalDias - dias)
         const pctUsado = Math.min((diasTranscurridos / totalDias) * 100, 100)
         const urgente = dias <= 5
-        const barColor = urgente ? 'var(--color-warning)' : 'var(--color-accent)'
+        const barColor = urgente ? 'var(--cf-gold-dark)' : 'var(--cf-gold)'
 
         return (
           <div
             className="rounded-[20px] cf-card-shadow p-5"
-            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
           >
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                 {esTrial ? 'Prueba gratuita' : subCancelada ? 'Acceso hasta' : 'Vencimiento'}
               </p>
               {tieneRecurrente && !subCancelada && (
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{
-                  background: 'var(--color-bg-hover)',
-                  border: '1px solid var(--color-border)',
-                  color: 'var(--color-text-muted)',
+                  background: 'var(--cf-fill)',
+                  border: '1px solid var(--cf-border)',
+                  color: 'var(--cf-ink-3)',
                 }}>Renovación automática</span>
               )}
             </div>
 
-            <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--cf-ink)' }}>
               {subCancelada
                 ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
                 : fechaVenc
@@ -353,7 +353,7 @@ export default function PlanPage() {
             </p>
 
             {/* Progress bar */}
-            <div className="h-[6px] rounded-full overflow-hidden mt-3 mb-2" style={{ background: 'var(--color-bg-hover)' }}>
+            <div className="h-[6px] rounded-full overflow-hidden mt-3 mb-2" style={{ background: 'var(--cf-fill)' }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${100 - pctUsado}%`, background: barColor }}
@@ -361,10 +361,10 @@ export default function PlanPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--color-warning)' : 'var(--color-text-primary)' }}>
+              <span className="text-[12px] font-mono-display font-semibold" style={{ color: urgente ? 'var(--cf-gold-dark)' : 'var(--cf-ink)' }}>
                 {dias} días restantes
               </span>
-              <span className="text-[11px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                 de {totalDias} días
               </span>
             </div>
@@ -382,8 +382,8 @@ export default function PlanPage() {
           lucasMensajes: { usado: 0, limite: cfg.aiMensajesDia },
         }
         return (
-          <div className="rounded-[20px] cf-card-shadow overflow-hidden" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="rounded-[20px] cf-card-shadow overflow-hidden" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
               Uso actual
             </p>
             <UsageBar label="Clientes"   usado={u.clientes.usado}      limite={u.clientes.limite} />
@@ -402,7 +402,7 @@ export default function PlanPage() {
           onClick={() => gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
           disabled={pagando === planActual}
           className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+          style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
         >
           {pagando === planActual ? (
             <Spinner />
@@ -424,7 +424,7 @@ export default function PlanPage() {
         <button
           onClick={() => setShowPlanes(v => !v)}
           className="w-full h-10 rounded-[12px] text-[12px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-          style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+          style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
         >
           {showPlanes ? 'Ocultar planes' : 'Cambiar de plan'}
         </button>
@@ -433,7 +433,7 @@ export default function PlanPage() {
           <button
             onClick={cancelarPlanWA}
             className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors"
-            style={{ color: 'var(--color-danger)' }}
+            style={{ color: 'var(--cf-red-dark)' }}
           >
             Cancelar suscripción
           </button>
@@ -444,17 +444,17 @@ export default function PlanPage() {
       {showPlanes && (
         <div className="space-y-5 pt-2">
           <div className="text-center">
-            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
               Cambiar plan
             </h2>
-            <p className="text-[12px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
               El cambio aplica inmediatamente.
             </p>
           </div>
 
           {/* Period toggle — elige cuanto tiempo activar */}
           <div className="flex justify-center">
-            <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+            <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
               {[
                 { key: 'mensual', label: 'Mensual' },
                 { key: 'trimestral', label: 'Trimestral', badge: '-10%' },
@@ -465,15 +465,15 @@ export default function PlanPage() {
                   onClick={() => setPeriodo(p.key)}
                   className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
                   style={periodo === p.key
-                    ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
-                    : { color: 'var(--color-text-muted)' }
+                    ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                    : { color: 'var(--cf-ink-3)' }
                   }
                 >
                   {p.label}
                   {p.badge && (
                     <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
-                      background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--color-success)',
-                      color: periodo === p.key ? 'var(--color-accent-text)' : '#fff',
+                      background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--cf-green-dark)',
+                      color: periodo === p.key ? 'var(--cf-gold-ink)' : '#fff',
                     }}>{p.badge}</span>
                   )}
                 </button>
@@ -482,7 +482,7 @@ export default function PlanPage() {
           </div>
 
           {esSuperadmin && (
-            <p className="text-[10px] text-center" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] text-center" style={{ color: 'var(--cf-ink-3)' }}>
               Modo superadmin — plan test disponible
             </p>
           )}
@@ -501,26 +501,26 @@ export default function PlanPage() {
                   key={p.key}
                   className="rounded-[12px] p-4 transition-all"
                   style={{
-                    background: esActual ? 'color-mix(in srgb, var(--color-accent) 4%, transparent)' : 'var(--color-bg-card)',
+                    background: esActual ? 'color-mix(in srgb, var(--cf-gold) 4%, transparent)' : 'var(--cf-card)',
                     border: esActual
-                      ? '1.5px solid color-mix(in srgb, var(--color-accent) 40%, transparent)'
+                      ? '1.5px solid color-mix(in srgb, var(--cf-gold) 40%, transparent)'
                       : esTest
-                      ? '1px dashed var(--color-border-hover)'
-                      : '1px solid var(--color-border)',
+                      ? '1px dashed var(--cf-border-strong)'
+                      : '1px solid var(--cf-border)',
                   }}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-semibold" style={{ color: esActual ? 'var(--color-accent)' : 'var(--color-text-primary)' }}>
+                      <span className="text-[14px] font-semibold" style={{ color: esActual ? 'var(--cf-gold)' : 'var(--cf-ink)' }}>
                         {p.nombre}
                       </span>
                       {p.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
                           {p.badge}
                         </span>
                       )}
                       {esRecurrActiva && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--color-success)', color: '#fff' }}>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-green-dark)', color: '#fff' }}>
                           Activo
                         </span>
                       )}
@@ -528,23 +528,23 @@ export default function PlanPage() {
                     <div className="text-right">
                       {tieneDesc ? (
                         <div>
-                          <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+                          <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                             {formatMoney(p.precio * meses)}
                           </span>
-                          <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--color-text-primary)' }}>
+                          <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--cf-ink)' }}>
                             {formatMoney(conDescuento)}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                        <span className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
                           {formatMoney(conDescuento)}
-                          <span className="text-[10px] font-normal" style={{ color: 'var(--color-text-muted)' }}>
+                          <span className="text-[10px] font-normal" style={{ color: 'var(--cf-ink-3)' }}>
                             /{meses === 12 ? 'ano' : meses === 3 ? 'trim.' : 'mes'}
                           </span>
                         </span>
                       )}
                       {ahorro > 0 && (
-                        <p className="text-[9px] font-mono-display" style={{ color: 'var(--color-success)' }}>
+                        <p className="text-[9px] font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
                           Ahorras {formatMoney(ahorro)}
                         </p>
                       )}
@@ -553,7 +553,7 @@ export default function PlanPage() {
 
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mb-3">
                     {p.features.map((f, i) => (
-                      <span key={i} className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                      <span key={i} className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                         {f}
                       </span>
                     ))}
@@ -561,13 +561,13 @@ export default function PlanPage() {
 
                   {esRecurrActiva ? (
                     <div className="h-9 rounded-[12px] flex items-center justify-center text-[12px] font-semibold" style={{
-                      background: 'var(--color-bg-hover)', color: 'var(--color-success)',
+                      background: 'var(--cf-fill)', color: 'var(--cf-green-dark)',
                     }}>
                       Plan actual
                     </div>
                   ) : esActual && periodo === 'mensual' && !subCancelada ? (
                     <div className="h-9 rounded-[12px] flex items-center justify-center text-[12px] font-semibold" style={{
-                      background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)',
+                      background: 'var(--cf-fill)', color: 'var(--cf-ink-3)',
                     }}>
                       Plan actual
                     </div>
@@ -587,7 +587,7 @@ export default function PlanPage() {
                       onClick={() => activarPlanOnline(p.key)}
                       disabled={pagando === p.key}
                       className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-60"
-                      style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+                      style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
                     >
                       {pagando === p.key ? (
                         <Spinner />
@@ -609,19 +609,19 @@ export default function PlanPage() {
 
       {errorPago && (
         <div className="rounded-[12px] px-4 py-3 text-[12px] font-medium" style={{
-          background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-          color: 'var(--color-danger)',
+          background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)',
+          color: 'var(--cf-red-dark)',
         }}>
           {errorPago}
         </div>
       )}
 
       {/* ── Support ── */}
-      <div className="rounded-[20px] cf-card-shadow p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+      <div className="rounded-[20px] cf-card-shadow p-4 flex items-center gap-3" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         <div className="flex-1">
-          <p className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Necesitas ayuda?</p>
-          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Te ayudamos por WhatsApp con pagos y planes.</p>
+          <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Necesitas ayuda?</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Te ayudamos por WhatsApp con pagos y planes.</p>
         </div>
         <a
           href={whatsappLink('Hola, necesito ayuda con el pago de mi plan en Control Finanzas.')}

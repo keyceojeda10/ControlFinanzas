@@ -13,7 +13,7 @@ export default function IconButton({ children, onClick, color, soft = false, siz
       className={[
         'inline-flex items-center justify-center shrink-0 cursor-pointer select-none',
         'transition-all duration-200 border-0',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]',
         className,
       ].join(' ')}
       style={{
@@ -22,9 +22,9 @@ export default function IconButton({ children, onClick, color, soft = false, siz
         minWidth: px,
         borderRadius: radius,
         background: soft && color
-          ? `color-mix(in srgb, ${color} 12%, var(--color-bg-surface))`
-          : 'var(--color-bg-hover)',
-        color: color || 'var(--color-text-secondary)',
+          ? `color-mix(in srgb, ${color} 12%, var(--cf-surface))`
+          : 'var(--cf-fill)',
+        color: color || 'var(--cf-ink-2)',
       }}
       {...props}
     >

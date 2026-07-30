@@ -70,18 +70,18 @@ export default function NovedadesModal() {
 
       {/* Panel */}
       <div
-        className="relative w-full sm:max-w-md max-h-[88vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-card)]"
+        className="relative w-full sm:max-w-md max-h-[88vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px] border border-[var(--cf-border)] bg-[var(--cf-card)]"
         style={{ animation: 'cf-nov-up 260ms cubic-bezier(0.22,1,0.36,1)' }}
       >
         {/* Encabezado con acento */}
         <div
-          className="px-5 pt-5 pb-4 border-b border-[var(--color-border)]"
-          style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 100%)' }}
+          className="px-5 pt-5 pb-4 border-b border-[var(--cf-border)]"
+          style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--cf-gold) 10%, transparent) 0%, transparent 100%)' }}
         >
           <div className="flex items-center gap-2.5">
             <div
               className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.sparkles} />
@@ -89,7 +89,7 @@ export default function NovedadesModal() {
             </div>
             <div>
               <h2 className="text-base font-bold text-[white] leading-tight">¡Tenemos novedades!</h2>
-              <p className="text-[11px] text-[var(--color-text-muted)]">Esto es lo nuevo en Control Finanzas</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)]">Esto es lo nuevo en Control Finanzas</p>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function NovedadesModal() {
             <div key={i} className="flex gap-3">
               <div
                 className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
-                style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-accent)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-gold)' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[it.icon] || ICONS.sparkles} />
@@ -108,7 +108,7 @@ export default function NovedadesModal() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[white] leading-snug">{it.titulo}</p>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-0.5">{it.texto}</p>
+                <p className="text-xs text-[var(--cf-ink-2)] leading-relaxed mt-0.5">{it.texto}</p>
               </div>
             </div>
           ))}
@@ -119,7 +119,7 @@ export default function NovedadesModal() {
           <button
             onClick={cerrar}
             className="w-full h-11 rounded-[12px] text-sm font-semibold transition-all"
-            style={{ background: 'var(--color-accent)', color: '#1a1a1a' }}
+            style={{ background: 'var(--cf-gold)', color: '#1a1a1a' }}
           >
             Entendido
           </button>

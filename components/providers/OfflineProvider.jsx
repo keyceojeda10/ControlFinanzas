@@ -505,16 +505,16 @@ export default function OfflineProvider({ children }) {
       {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0 || failedTotal > 0) && (
         <button
           onClick={() => setDrawerOpen(true)}
-          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
+          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--cf-surface)] border text-[var(--cf-ink)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--cf-red-dark)] animate-pulse' : 'border-[var(--cf-border)]'}`}
           aria-label="Estado de sincronización"
         >
           {bulkSyncing ? (
-            <svg className="w-3 h-3 animate-spin text-[var(--color-info)]" fill="none" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 animate-spin text-[var(--cf-ink-2)]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <span className={`w-2 h-2 rounded-full ${(conflictos.length > 0 || failedTotal > 0) ? 'bg-[var(--color-danger)]' : !isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
+            <span className={`w-2 h-2 rounded-full ${(conflictos.length > 0 || failedTotal > 0) ? 'bg-[var(--cf-red-dark)]' : !isOnline ? 'bg-[var(--cf-gold-dark)] animate-pulse' : 'bg-[var(--cf-ink-2)]'}`} />
           )}
           <span>
             {conflictos.length > 0
@@ -530,8 +530,8 @@ export default function OfflineProvider({ children }) {
 
       {/* Custom toast (cliente/prestamo guardado offline, etc) */}
       {customToast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-accent)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
-          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--cf-surface)] border border-[var(--cf-gold)] text-[var(--cf-ink)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
+          <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           <span>{customToast}</span>
@@ -540,12 +540,12 @@ export default function OfflineProvider({ children }) {
 
       {/* Sync result toast */}
       {syncResult && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
           {syncResult.synced > 0 && (
-            <span className="text-[var(--color-success)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
+            <span className="text-[var(--cf-green-dark)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
           )}
           {syncResult.failed > 0 && (
-            <span className="text-[var(--color-danger)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
+            <span className="text-[var(--cf-red-dark)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
           )}
         </div>
       )}

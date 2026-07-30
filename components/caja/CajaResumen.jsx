@@ -3,10 +3,10 @@
 import { formatMoney } from '@/lib/i18n'
 import CardWaves from '@/components/ui/CardWaves'
 
-const COLOR_TASA = (t) => (t >= 80 ? 'var(--color-success)' : t >= 50 ? 'var(--color-accent)' : 'var(--color-danger)')
+const COLOR_TASA = (t) => (t >= 80 ? 'var(--cf-green-dark)' : t >= 50 ? 'var(--cf-gold)' : 'var(--cf-red-dark)')
 
 export default function CajaResumen({ hero, cards = [], detalle = [] }) {
-  const heroColor = hero?.color || (hero?.valor >= 0 ? 'var(--color-success)' : 'var(--color-danger)')
+  const heroColor = hero?.color || (hero?.valor >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)')
   const tasa = hero?.tasa || 0
   const pct = Math.min(100, Math.max(0, tasa))
 
@@ -14,8 +14,8 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
     <div
       className="relative rounded-[20px] overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 16%, var(--color-bg-card)) 0%, var(--color-bg-card) 65%)`,
-        border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 16%, var(--cf-card)) 0%, var(--cf-card) 65%)`,
+        border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--cf-border))`,
       }}
     >
       <CardWaves tint={`color-mix(in srgb, ${heroColor} 12%, transparent)`} />
@@ -29,7 +29,7 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
               {hero?.label || 'Efectivo en caja'}
             </p>
             <p
@@ -39,7 +39,7 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
               {formatMoney(hero?.valor || 0)}
             </p>
             {hero?.subtitulo && (
-              <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-secondary)' }}>{hero.subtitulo}</p>
+              <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-2)' }}>{hero.subtitulo}</p>
             )}
           </div>
 
@@ -47,7 +47,7 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
           {tasa > 0 && (
             <div className="shrink-0 relative w-16 h-16 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" stroke="var(--color-border)" />
+                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3" stroke="var(--cf-border)" />
                 <circle
                   cx="18" cy="18" r="15" fill="none" strokeWidth="3"
                   stroke={COLOR_TASA(tasa)}
@@ -73,12 +73,12 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
               <div
                 key={i}
                 className="rounded-[12px] px-3 py-2.5"
-                style={{ background: `color-mix(in srgb, ${c.color || 'var(--color-info)'} 14%, transparent)` }}
+                style={{ background: `color-mix(in srgb, ${c.color || 'var(--cf-ink-2)'} 14%, transparent)` }}
               >
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{c.label}</p>
-                <p className="text-[15px] font-bold font-mono-display mt-0.5" style={{ color: c.color || 'var(--color-text-primary)' }}>
+                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>{c.label}</p>
+                <p className="text-[15px] font-bold font-mono-display mt-0.5" style={{ color: c.color || 'var(--cf-ink)' }}>
                   {c.signo === '-' && c.valor > 0 ? '-' : c.signo === '+' && c.valor > 0 ? '+' : ''}{formatMoney(c.valor || 0)}
-                  {c.sub ? <span className="text-[9px] text-[var(--color-text-muted)] ml-1">{c.sub}</span> : null}
+                  {c.sub ? <span className="text-[9px] text-[var(--cf-ink-3)] ml-1">{c.sub}</span> : null}
                 </p>
               </div>
             ))}
@@ -88,12 +88,12 @@ export default function CajaResumen({ hero, cards = [], detalle = [] }) {
         {/* Detalle opcional */}
         {detalle.length > 0 && (
           <details className="mt-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${heroColor} 12%, transparent)` }}>
-            <summary className="cursor-pointer text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Ver detalle del calculo</summary>
+            <summary className="cursor-pointer text-[11px] font-medium" style={{ color: 'var(--cf-ink-3)' }}>Ver detalle del calculo</summary>
             <div className="mt-2 space-y-1.5 text-[11px]">
               {detalle.map((d, i) => (
                 <div key={i} className="flex justify-between">
-                  <span style={{ color: 'var(--color-text-muted)' }}>{d.label}</span>
-                  <span className="font-semibold font-mono-display" style={{ color: d.color || 'var(--color-text-primary)' }}>{formatMoney(d.valor || 0)}</span>
+                  <span style={{ color: 'var(--cf-ink-3)' }}>{d.label}</span>
+                  <span className="font-semibold font-mono-display" style={{ color: d.color || 'var(--cf-ink)' }}>{formatMoney(d.valor || 0)}</span>
                 </div>
               ))}
             </div>

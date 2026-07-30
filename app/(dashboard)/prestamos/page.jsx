@@ -38,9 +38,9 @@ const IconPagar = (
 
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
-  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--color-warning)', ownerOnly: true },
+  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
-  { value: 'mora',       label: 'En mora',  color: 'var(--color-danger)' },
+  { value: 'mora',       label: 'En mora',  color: 'var(--cf-red-dark)' },
   // «Renovar»: al dia y por encima del 80% pagado. Lo pide T02-06 como cuarto
   // chip, y es donde esta el crecimiento del negocio — prestarle de nuevo a
   // quien ya casi termino de pagar. No es un estado en la base: lo resuelve el
@@ -75,11 +75,11 @@ const LIMIT = 50
 
 const VISTA_KEY_P = 'cf-prestamos-vista'
 
-const P_COLOR_OK   = 'var(--color-accent)'
-const P_COLOR_HOT  = '#f97316'
-const P_COLOR_CRIT = 'var(--color-danger)'
-const P_COLOR_DONE = 'var(--color-success)'
-const P_COLOR_OFF  = 'var(--color-text-muted)'
+const P_COLOR_OK   = 'var(--cf-gold)'
+const P_COLOR_HOT  = 'var(--cf-gold-dark)'
+const P_COLOR_CRIT = 'var(--cf-red-dark)'
+const P_COLOR_DONE = 'var(--cf-green-dark)'
+const P_COLOR_OFF  = 'var(--cf-ink-3)'
 
 const MODO_TAG = {
   fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
@@ -127,7 +127,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           fontSize={10}
           style={p.cliente?.fotoUrl ? { border: `1.5px solid ${color}` } : undefined}
         />
-        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0 truncate">
+        <p className="text-[12px] font-semibold text-[var(--cf-ink)] leading-tight flex-1 min-w-0 truncate">
           {p.cliente?.nombre}
         </p>
       </div>
@@ -145,20 +145,20 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           {p.modoInteres && MODO_TAG[p.modoInteres] && (
             <span
               className="text-[7px] font-semibold px-1.5 py-px rounded-full shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', color: 'var(--color-purple)', border: '1px solid color-mix(in srgb, var(--color-purple) 20%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
             >
               {MODO_TAG[p.modoInteres]}
             </span>
           )}
         </div>
-        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
+        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--cf-ink)' }}>
           {formatMoney(p.saldoPendiente)}
         </span>
       </div>
 
       {/* Row 3: progress */}
       <div>
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
           <div
             className="h-full rounded-full"
             style={{
@@ -170,7 +170,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           />
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <p className="text-[9px] text-[var(--color-text-muted)]">
+          <p className="text-[9px] text-[var(--cf-ink-3)]">
             <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
           </p>
           {esNuevo && <NuevoChip />}
@@ -621,15 +621,15 @@ export default function PrestamosPage() {
 
       {/* Offline indicator */}
       {isOffline && (
-        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
+        <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-gold)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -697,19 +697,19 @@ export default function PrestamosPage() {
                   {tieneVarios && (
                     <div
                       className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg"
-                      style={{ background: 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)' }}
+                      style={{ background: 'color-mix(in srgb, var(--cf-ink) 4%, transparent)' }}
                     >
                       <span
                         className="text-[11px] font-extrabold uppercase tracking-[.07em] truncate"
-                        style={{ color: 'var(--color-text-primary)' }}
+                        style={{ color: 'var(--cf-ink)' }}
                       >
                         {cliente.nombre}
                       </span>
                       <span
                         className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap font-mono-display"
                         style={{
-                          background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                          color: 'var(--color-accent)',
+                          background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                          color: 'var(--cf-gold)',
                         }}
                       >
                         {prestCliente.length}
@@ -718,18 +718,18 @@ export default function PrestamosPage() {
                         <span
                           className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-full whitespace-nowrap"
                           style={{
-                            background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
-                            color: 'var(--color-success)',
-                            border: '1px solid color-mix(in srgb, var(--color-success) 35%, transparent)',
+                            background: 'color-mix(in srgb, var(--cf-green-dark) 14%, transparent)',
+                            color: 'var(--cf-green-dark)',
+                            border: '1px solid color-mix(in srgb, var(--cf-green-dark) 35%, transparent)',
                           }}
                         >
-                          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-success)' }} />
+                          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--cf-green-dark)' }} />
                           Nuevo
                         </span>
                       )}
                       <span
                         className="ml-auto text-[10px] font-mono-display whitespace-nowrap"
-                        style={{ color: 'var(--color-text-muted)' }}
+                        style={{ color: 'var(--cf-ink-3)' }}
                       >
                         {formatMoney(Math.round(saldoTotal), country)}
                       </span>
@@ -737,7 +737,7 @@ export default function PrestamosPage() {
                   )}
                   <div
                     className={tieneVarios ? 'space-y-2.5 pl-2 ml-1 border-l' : 'space-y-2.5'}
-                    style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
+                    style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--cf-border) 60%, transparent)' } : undefined}
                   >
                     {prestCliente.map((p) => {
                       if (vistaP === 'compacta') {
@@ -760,7 +760,7 @@ export default function PrestamosPage() {
                         cardActions.push({
                           icon: IconPagar,
                           label: 'Registrar pago',
-                          color: 'var(--color-success)',
+                          color: 'var(--cf-green-dark)',
                           onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
                         })
                       }
@@ -784,11 +784,11 @@ export default function PrestamosPage() {
           <div className="mb-4">
             <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">
+          <p className="text-sm font-medium text-[var(--cf-ink)]">
             No hay préstamos {FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()}
           </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            <button onClick={() => setFrecuencia('')} className="text-[var(--color-info)] hover:underline">
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">
+            <button onClick={() => setFrecuencia('')} className="text-[var(--cf-ink-2)] hover:underline">
               Ver toda frecuencia
             </button>
           </p>
@@ -803,20 +803,20 @@ export default function PrestamosPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin resultados</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">No hay préstamos para "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin resultados</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">No hay préstamos para "{buscar}"</p>
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">
                 {estado === 'activo' ? 'No hay préstamos activos' : estado === 'mora' ? 'No hay préstamos en mora' : 'Sin préstamos'}
               </p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                 {estado !== '' && (
-                  <button onClick={() => setEstado('')} className="text-[var(--color-accent)] hover:underline">
+                  <button onClick={() => setEstado('')} className="text-[var(--cf-gold)] hover:underline">
                     Ver todos los estados
                   </button>
                 )}
@@ -837,17 +837,17 @@ export default function PrestamosPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          <span className="text-xs text-[var(--cf-ink-3)]">
             Página <span className="font-mono-display">{page}</span> de <span className="font-mono-display">{totalPages}</span>
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>

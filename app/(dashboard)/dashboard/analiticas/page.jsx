@@ -6,12 +6,12 @@ import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 
 function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse rounded-[10px] bg-[var(--color-bg-hover)] ${className}`} />
+  return <div className={`animate-pulse rounded-[10px] bg-[var(--cf-fill)] ${className}`} />
 }
 
 function Card({ children, className = '', href }) {
-  const cls = `bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[16px] p-4 lg:p-5 ${className}`
-  if (href) return <Link href={href} className={`${cls} hover:border-[var(--color-border-hover)] transition-colors block`}>{children}</Link>
+  const cls = `bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[16px] p-4 lg:p-5 ${className}`
+  if (href) return <Link href={href} className={`${cls} hover:border-[var(--cf-border-strong)] transition-colors block`}>{children}</Link>
   return <div className={cls}>{children}</div>
 }
 
@@ -19,7 +19,7 @@ function Badge({ value, suffix = '%' }) {
   if (value === 0 || value === undefined) return null
   const positive = value > 0
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${positive ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' : 'bg-[var(--color-danger-dim)] text-[var(--color-danger)]'}`}>
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${positive ? 'bg-[var(--cf-green-pill-bg)] text-[var(--cf-green-dark)]' : 'bg-[var(--cf-red-pill-bg)] text-[var(--cf-red-dark)]'}`}>
       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: positive ? 'none' : 'rotate(180deg)' }}>
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
       </svg>
@@ -28,16 +28,16 @@ function Badge({ value, suffix = '%' }) {
   )
 }
 
-function ProgressBar({ value, max, color = 'var(--color-accent)', height = 8 }) {
+function ProgressBar({ value, max, color = 'var(--cf-gold)', height = 8 }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0
   return (
-    <div className="w-full rounded-full bg-[var(--color-bg-hover)] overflow-hidden" style={{ height }}>
+    <div className="w-full rounded-full bg-[var(--cf-fill)] overflow-hidden" style={{ height }}>
       <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pct}%`, background: color }} />
     </div>
   )
 }
 
-function BarChart({ data, dataKey, color = 'var(--color-accent)', formatValue }) {
+function BarChart({ data, dataKey, color = 'var(--cf-gold)', formatValue }) {
   if (!data?.length) return null
   const max = Math.max(...data.map(d => d[dataKey]), 1)
   const fmt = formatValue || (v => v.toLocaleString())
@@ -48,11 +48,11 @@ function BarChart({ data, dataKey, color = 'var(--color-accent)', formatValue })
         const mesLabel = new Date(d.mes + '-15').toLocaleDateString('es', { month: 'short' })
         return (
           <div key={i} className="flex items-center gap-2.5">
-            <span className="text-[11px] w-8 text-right text-[var(--color-text-muted)] font-medium uppercase">{mesLabel}</span>
-            <div className="flex-1 h-7 rounded-[6px] bg-[var(--color-bg-hover)] overflow-hidden relative">
+            <span className="text-[11px] w-8 text-right text-[var(--cf-ink-3)] font-medium uppercase">{mesLabel}</span>
+            <div className="flex-1 h-7 rounded-[6px] bg-[var(--cf-fill)] overflow-hidden relative">
               <div className="h-full rounded-[6px] transition-all duration-500 ease-out" style={{ width: `${Math.max(pct, 2)}%`, background: color }} />
               {d[dataKey] > 0 && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--color-text-secondary)]">{fmt(d[dataKey])}</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--cf-ink-2)]">{fmt(d[dataKey])}</span>
               )}
             </div>
           </div>
@@ -63,9 +63,9 @@ function BarChart({ data, dataKey, color = 'var(--color-accent)', formatValue })
 }
 
 const SEV_STYLES = {
-  grave:    { bg: 'bg-[var(--color-danger-dim)]', text: 'text-[var(--color-danger)]' },
-  moderada: { bg: 'bg-[var(--color-warning-dim)]', text: 'text-[var(--color-warning)]' },
-  leve:     { bg: 'bg-[var(--color-bg-hover)]', text: 'text-[var(--color-text-muted)]' },
+  grave:    { bg: 'bg-[var(--cf-red-pill-bg)]', text: 'text-[var(--cf-red-dark)]' },
+  moderada: { bg: 'bg-[var(--cf-gold-tint)]', text: 'text-[var(--cf-gold-dark)]' },
+  leve:     { bg: 'bg-[var(--cf-fill)]', text: 'text-[var(--cf-ink-3)]' },
 }
 
 export default function AnaliticasPage() {
@@ -121,8 +121,8 @@ export default function AnaliticasPage() {
   if (error) {
     return (
       <div className="p-4 lg:p-8 max-w-5xl mx-auto">
-        <p className="text-[var(--color-danger)] text-[14px]">{error}</p>
-        <Link href="/dashboard" className="text-[13px] text-[var(--color-info)] underline mt-2 block">Volver al dashboard</Link>
+        <p className="text-[var(--cf-red-dark)] text-[14px]">{error}</p>
+        <Link href="/dashboard" className="text-[13px] text-[var(--cf-ink-2)] underline mt-2 block">Volver al dashboard</Link>
       </div>
     )
   }
@@ -135,7 +135,7 @@ export default function AnaliticasPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors">
+          <Link href="/dashboard" className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--cf-fill)] text-[var(--cf-ink-2)] hover:bg-[var(--cf-border-strong)] transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </Link>
           <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analíticas</h1>
@@ -143,7 +143,7 @@ export default function AnaliticasPage() {
         <button
           onClick={descargarPDF}
           disabled={descargando}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-hover)] transition-colors text-[12px] font-medium disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-fill)] text-[var(--cf-ink-2)] hover:bg-[var(--cf-border-strong)] transition-colors text-[12px] font-medium disabled:opacity-50"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -154,34 +154,34 @@ export default function AnaliticasPage() {
 
       {/* === ROI headline === */}
       <Card>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Rendimiento de tu capital</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Rendimiento de tu capital</p>
         <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-[32px] lg:text-[44px] font-mono font-bold tracking-tight" style={{ color: resumen.roiMensual >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+          <span className="text-[32px] lg:text-[44px] font-mono font-bold tracking-tight" style={{ color: resumen.roiMensual >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
             {resumen.roiMensual}%
           </span>
-          <span className="text-[12px] text-[var(--color-text-muted)]">mensual</span>
+          <span className="text-[12px] text-[var(--cf-ink-3)]">mensual</span>
           <Badge value={resumen.cambioRecaudado} />
         </div>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+        <p className="text-[11px] text-[var(--cf-ink-3)] mt-1">
           Por cada {fmt(100)} en la calle, ganas {fmt(resumen.roiMensual)} neto
         </p>
-        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--color-border)]">
+        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--cf-border)]">
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Ganancia neta</p>
-            <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate" style={{ color: resumen.gananciaNetaMes >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Ganancia neta</p>
+            <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate" style={{ color: resumen.gananciaNetaMes >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
               <span className="hidden sm:inline">{fmt(resumen.gananciaNetaMes)}</span>
               <span className="sm:hidden">{fmtShort(resumen.gananciaNetaMes)}</span>
             </p>
           </div>
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Recaudado</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Recaudado</p>
             <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate">
               <span className="hidden sm:inline">{fmt(resumen.recaudadoMes)}</span>
               <span className="sm:hidden">{fmtShort(resumen.recaudadoMes)}</span>
             </p>
           </div>
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Capital</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Capital</p>
             <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate">
               <span className="hidden sm:inline">{fmt(resumen.capitalEnCalle)}</span>
               <span className="sm:hidden">{fmtShort(resumen.capitalEnCalle)}</span>
@@ -193,53 +193,53 @@ export default function AnaliticasPage() {
       {/* === Desglose de rentabilidad === */}
       {rentabilidad && (
         <Card>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">De cada peso recaudado</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)] mb-3">De cada peso recaudado</p>
           {(() => {
             const total = rentabilidad.interesGanadoMes + rentabilidad.capitalRecuperadoMes
             const pctInteres = total > 0 ? Math.round((rentabilidad.interesGanadoMes / total) * 100) : 0
             const pctCapital = 100 - pctInteres
             return (
               <>
-                <div className="h-3 rounded-full bg-[var(--color-bg-hover)] overflow-hidden flex">
-                  <div className="h-full transition-all duration-500" style={{ width: `${pctInteres}%`, background: 'var(--color-success)' }} />
-                  <div className="h-full transition-all duration-500" style={{ width: `${pctCapital}%`, background: 'var(--color-accent)' }} />
+                <div className="h-3 rounded-full bg-[var(--cf-fill)] overflow-hidden flex">
+                  <div className="h-full transition-all duration-500" style={{ width: `${pctInteres}%`, background: 'var(--cf-green-dark)' }} />
+                  <div className="h-full transition-all duration-500" style={{ width: `${pctCapital}%`, background: 'var(--cf-gold)' }} />
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)] shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--cf-green-dark)] shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[9px] text-[var(--color-text-muted)]">Ganancia (interés)</p>
-                      <p className="text-[14px] lg:text-[16px] font-mono font-bold text-[var(--color-success)] truncate">
+                      <p className="text-[9px] text-[var(--cf-ink-3)]">Ganancia (interés)</p>
+                      <p className="text-[14px] lg:text-[16px] font-mono font-bold text-[var(--cf-green-dark)] truncate">
                         <span className="hidden sm:inline">{fmt(rentabilidad.interesGanadoMes)}</span>
                         <span className="sm:hidden">{fmtShort(rentabilidad.interesGanadoMes)}</span>
-                        <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">{pctInteres}%</span>
+                        <span className="text-[10px] font-normal text-[var(--cf-ink-3)] ml-1">{pctInteres}%</span>
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] shrink-0" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--cf-gold)] shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[9px] text-[var(--color-text-muted)]">Capital recuperado</p>
+                      <p className="text-[9px] text-[var(--cf-ink-3)]">Capital recuperado</p>
                       <p className="text-[14px] lg:text-[16px] font-mono font-bold truncate">
                         <span className="hidden sm:inline">{fmt(rentabilidad.capitalRecuperadoMes)}</span>
                         <span className="sm:hidden">{fmtShort(rentabilidad.capitalRecuperadoMes)}</span>
-                        <span className="text-[10px] font-normal text-[var(--color-text-muted)] ml-1">{pctCapital}%</span>
+                        <span className="text-[10px] font-normal text-[var(--cf-ink-3)] ml-1">{pctCapital}%</span>
                       </p>
                     </div>
                   </div>
                 </div>
                 {resumen.gastosMes > 0 && (
-                  <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
+                  <div className="mt-3 pt-3 border-t border-[var(--cf-border)] flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)] shrink-0" />
-                      <span className="text-[11px] text-[var(--color-text-muted)]">Gastos operativos</span>
+                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--cf-red-dark)] shrink-0" />
+                      <span className="text-[11px] text-[var(--cf-ink-3)]">Gastos operativos</span>
                     </div>
-                    <span className="text-[13px] font-mono font-bold text-[var(--color-danger)]">-{fmtShort(resumen.gastosMes)}</span>
+                    <span className="text-[13px] font-mono font-bold text-[var(--cf-red-dark)]">-{fmtShort(resumen.gastosMes)}</span>
                   </div>
                 )}
-                <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[var(--color-text-secondary)]">Utilidad neta</span>
-                  <span className={`text-[15px] font-mono font-bold ${rentabilidad.utilidadMes >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                <div className="mt-2 pt-2 border-t border-[var(--cf-border)] flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[var(--cf-ink-2)]">Utilidad neta</span>
+                  <span className={`text-[15px] font-mono font-bold ${rentabilidad.utilidadMes >= 0 ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                     {fmtShort(rentabilidad.utilidadMes)}
                   </span>
                 </div>
@@ -252,7 +252,7 @@ export default function AnaliticasPage() {
       {/* === Tendencia de utilidad === */}
       {tendenciaMensual?.some(t => t.interesGanado > 0) && (
         <Card>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Utilidad por mes</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)] mb-3">Utilidad por mes</p>
           <div className="space-y-1.5">
             {tendenciaMensual.map((d, i) => {
               const maxUtil = Math.max(...tendenciaMensual.map(t => Math.abs(t.utilidad)), 1)
@@ -261,18 +261,18 @@ export default function AnaliticasPage() {
               const positivo = d.utilidad >= 0
               return (
                 <div key={i} className="flex items-center gap-2.5">
-                  <span className="text-[11px] w-8 text-right text-[var(--color-text-muted)] font-medium uppercase">{mesLabel}</span>
-                  <div className="flex-1 h-7 rounded-[6px] bg-[var(--color-bg-hover)] overflow-hidden relative">
+                  <span className="text-[11px] w-8 text-right text-[var(--cf-ink-3)] font-medium uppercase">{mesLabel}</span>
+                  <div className="flex-1 h-7 rounded-[6px] bg-[var(--cf-fill)] overflow-hidden relative">
                     <div
                       className="h-full rounded-[6px] transition-all duration-500 ease-out"
                       style={{
                         width: `${Math.max(pct, 2)}%`,
-                        background: positivo ? 'var(--color-success)' : 'var(--color-danger)',
+                        background: positivo ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
                         opacity: positivo ? 1 : 0.7,
                       }}
                     />
                     {d.utilidad !== 0 && (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--color-text-secondary)]">
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-[var(--cf-ink-2)]">
                         {fmtShort(d.utilidad)}
                       </span>
                     )}
@@ -282,9 +282,9 @@ export default function AnaliticasPage() {
             })}
           </div>
           {rentabilidad?.rotacionCapital > 0 && (
-            <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center justify-between">
-              <span className="text-[11px] text-[var(--color-text-muted)]">Rotación de capital</span>
-              <span className="text-[13px] font-mono font-bold text-[var(--color-info)]">{rentabilidad.rotacionCapital}% /mes</span>
+            <div className="mt-3 pt-3 border-t border-[var(--cf-border)] flex items-center justify-between">
+              <span className="text-[11px] text-[var(--cf-ink-3)]">Rotación de capital</span>
+              <span className="text-[13px] font-mono font-bold text-[var(--cf-ink-2)]">{rentabilidad.rotacionCapital}% /mes</span>
             </div>
           )}
         </Card>
@@ -293,35 +293,35 @@ export default function AnaliticasPage() {
       {/* === Proyección del mes === */}
       <Card>
         <div className="flex items-start justify-between mb-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Proyección del mes</p>
-          <span className="text-[10px] font-mono text-[var(--color-text-muted)]">día {proyeccion.diasHabiles}/{proyeccion.diasHabilesTotalMes}</span>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Proyección del mes</p>
+          <span className="text-[10px] font-mono text-[var(--cf-ink-3)]">día {proyeccion.diasHabiles}/{proyeccion.diasHabilesTotalMes}</span>
         </div>
-        <ProgressBar value={proyeccion.recaudado} max={proyeccion.esperado} color="var(--color-accent)" height={10} />
+        <ProgressBar value={proyeccion.recaudado} max={proyeccion.esperado} color="var(--cf-gold)" height={10} />
         <div className="grid grid-cols-3 gap-2 mt-2">
           <div>
-            <p className="text-[9px] text-[var(--color-text-muted)]">Recaudado</p>
+            <p className="text-[9px] text-[var(--cf-ink-3)]">Recaudado</p>
             <p className="text-[13px] lg:text-[15px] font-mono font-bold truncate">
               <span className="hidden sm:inline">{fmt(proyeccion.recaudado)}</span>
               <span className="sm:hidden">{fmtShort(proyeccion.recaudado)}</span>
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[9px] text-[var(--color-text-muted)]">Prom. diario</p>
-            <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--color-info)] truncate">
+            <p className="text-[9px] text-[var(--cf-ink-3)]">Prom. diario</p>
+            <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--cf-ink-2)] truncate">
               <span className="hidden sm:inline">{fmt(proyeccion.promedioDiario)}</span>
               <span className="sm:hidden">{fmtShort(proyeccion.promedioDiario)}</span>
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] text-[var(--color-text-muted)]">Proyectado</p>
-            <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--color-accent)] truncate">
+            <p className="text-[9px] text-[var(--cf-ink-3)]">Proyectado</p>
+            <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--cf-gold)] truncate">
               <span className="hidden sm:inline">{fmt(proyeccion.proyectado)}</span>
               <span className="sm:hidden">{fmtShort(proyeccion.proyectado)}</span>
             </p>
           </div>
         </div>
         {proyeccion.esperado > 0 && (
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-2 text-center">
+          <p className="text-[10px] text-[var(--cf-ink-3)] mt-2 text-center">
             {proyeccion.proyectado >= proyeccion.esperado
               ? `${Math.round(((proyeccion.proyectado / proyeccion.esperado) - 1) * 100)}% por encima de lo esperado`
               : `${Math.round((1 - (proyeccion.proyectado / proyeccion.esperado)) * 100)}% por debajo de lo esperado`
@@ -332,25 +332,25 @@ export default function AnaliticasPage() {
 
       {/* === Alertas de mora === */}
       {alertasResumen.total > 0 && (
-        <Card className={alertasResumen.graves > 0 ? '!border-[var(--color-danger)]' : ''}>
+        <Card className={alertasResumen.graves > 0 ? '!border-[var(--cf-red-dark)]' : ''}>
           <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-danger)]">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">
                 {alertasResumen.total} en mora
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
                 {fmt(alertasResumen.montoTotal)} en riesgo
               </p>
             </div>
             <div className="flex flex-wrap justify-end gap-1">
               {alertasResumen.graves > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-danger-dim)] text-[var(--color-danger)] font-bold">{alertasResumen.graves} graves</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-red-pill-bg)] text-[var(--cf-red-dark)] font-bold">{alertasResumen.graves} graves</span>
               )}
               {alertasResumen.moderadas > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-warning-dim)] text-[var(--color-warning)] font-bold">{alertasResumen.moderadas} mod.</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-gold-tint)] text-[var(--cf-gold-dark)] font-bold">{alertasResumen.moderadas} mod.</span>
               )}
               {alertasResumen.leves > 0 && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] font-bold">{alertasResumen.leves} leves</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] font-bold">{alertasResumen.leves} leves</span>
               )}
             </div>
           </div>
@@ -362,15 +362,15 @@ export default function AnaliticasPage() {
                 <Link
                   key={a.prestamoId}
                   href={`/prestamos/${a.prestamoId}`}
-                  className="flex items-center justify-between py-2 px-2 sm:px-3 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-colors group gap-2"
+                  className="flex items-center justify-between py-2 px-2 sm:px-3 rounded-[10px] hover:bg-[var(--cf-fill)] transition-colors group gap-2"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${sev.bg} ${sev.text} shrink-0`}>
                       {a.diasMora}d
                     </span>
-                    <span className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] truncate">{a.clienteNombre}</span>
+                    <span className="text-[12px] sm:text-[13px] font-medium text-[var(--cf-ink)] truncate">{a.clienteNombre}</span>
                   </div>
-                  <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[var(--color-text-secondary)] shrink-0">{fmtShort(a.montoEnRiesgo)}</span>
+                  <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[var(--cf-ink-2)] shrink-0">{fmtShort(a.montoEnRiesgo)}</span>
                 </Link>
               )
             })}
@@ -379,7 +379,7 @@ export default function AnaliticasPage() {
           {alertas.length > 5 && (
             <button
               onClick={(e) => { e.preventDefault(); setShowAllAlertas(!showAllAlertas) }}
-              className="w-full text-center text-[12px] text-[var(--color-info)] font-medium mt-2 py-1 hover:underline"
+              className="w-full text-center text-[12px] text-[var(--cf-ink-2)] font-medium mt-2 py-1 hover:underline"
             >
               {showAllAlertas ? 'Ver menos' : `Ver todos (${alertas.length})`}
             </button>
@@ -390,47 +390,47 @@ export default function AnaliticasPage() {
       {/* === Cartera + Negocio === */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <Card href="/prestamos" className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Préstamos activos</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Préstamos activos</p>
           <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1">{cartera.activos}</p>
-          {cartera.pctMora > 0 && <p className="text-[9px] text-[var(--color-danger)] font-medium">{cartera.pctMora}% en mora</p>}
+          {cartera.pctMora > 0 && <p className="text-[9px] text-[var(--cf-red-dark)] font-medium">{cartera.pctMora}% en mora</p>}
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Por cobrar</p>
-          <p className="text-[16px] lg:text-[22px] font-mono font-bold mt-1 text-[var(--color-accent)] truncate">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Por cobrar</p>
+          <p className="text-[16px] lg:text-[22px] font-mono font-bold mt-1 text-[var(--cf-gold)] truncate">
             <span className="hidden sm:inline">{fmt(resumen.porCobrar)}</span>
             <span className="sm:hidden">{fmtShort(resumen.porCobrar)}</span>
           </p>
-          <p className="text-[9px] text-[var(--color-text-muted)] truncate">
+          <p className="text-[9px] text-[var(--cf-ink-3)] truncate">
             <span className="hidden sm:inline">{fmt(resumen.interesEnCartera)}</span>
             <span className="sm:hidden">{fmtShort(resumen.interesEnCartera)}</span>
             {' '}interés
           </p>
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Ticket promedio</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Ticket promedio</p>
           <p className="text-[16px] lg:text-[22px] font-mono font-bold mt-1 truncate">
             <span className="hidden sm:inline">{fmt(cartera.ticketPromedio)}</span>
             <span className="sm:hidden">{fmtShort(cartera.ticketPromedio)}</span>
           </p>
-          <p className="text-[9px] text-[var(--color-text-muted)]">por préstamo</p>
+          <p className="text-[9px] text-[var(--cf-ink-3)]">por préstamo</p>
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Clientes que repiten</p>
-          <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1 text-[var(--color-info)]">{cartera.clientesRepiten}%</p>
-          <p className="text-[9px] text-[var(--color-text-muted)]">2+ préstamos</p>
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Clientes que repiten</p>
+          <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1 text-[var(--cf-ink-2)]">{cartera.clientesRepiten}%</p>
+          <p className="text-[9px] text-[var(--cf-ink-3)]">2+ préstamos</p>
         </Card>
       </div>
 
       {/* === Recaudado mensual === */}
       <Card>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Recaudado por mes</p>
-        <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmtShort(v)} color="var(--color-accent)" />
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)] mb-3">Recaudado por mes</p>
+        <BarChart data={tendenciaMensual} dataKey="recaudado" formatValue={v => fmtShort(v)} color="var(--cf-gold)" />
       </Card>
 
       {/* === Rentabilidad por ruta === */}
       {rentabilidad?.porRuta?.length > 0 && (
         <Card>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Rentabilidad por ruta</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)] mb-3">Rentabilidad por ruta</p>
           <div className="space-y-2.5">
             {rentabilidad.porRuta.map((r, i) => {
               const maxInteres = rentabilidad.porRuta[0]?.interesGanado || 1
@@ -439,24 +439,24 @@ export default function AnaliticasPage() {
                 <div key={r.rutaId || i}>
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${i < 3 ? 'bg-[var(--color-success-dim)] text-[var(--color-success)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
+                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${i < 3 ? 'bg-[var(--cf-green-pill-bg)] text-[var(--cf-green-dark)]' : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)]'}`}>
                         {i + 1}
                       </span>
                       <span className="text-[12px] sm:text-[13px] font-medium truncate">{r.nombre}</span>
-                      <span className="text-[9px] text-[var(--color-text-muted)] shrink-0">{r.prestamos}p</span>
+                      <span className="text-[9px] text-[var(--cf-ink-3)] shrink-0">{r.prestamos}p</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-[10px] font-mono text-[var(--color-info)]">{r.roi}%</span>
-                      <span className="text-[12px] sm:text-[13px] font-mono font-bold text-[var(--color-success)]">{fmtShort(r.interesGanado)}</span>
+                      <span className="text-[10px] font-mono text-[var(--cf-ink-2)]">{r.roi}%</span>
+                      <span className="text-[12px] sm:text-[13px] font-mono font-bold text-[var(--cf-green-dark)]">{fmtShort(r.interesGanado)}</span>
                     </div>
                   </div>
                   <div className="ml-7">
-                    <div className="h-1.5 rounded-full bg-[var(--color-bg-hover)] overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%`, background: 'var(--color-success)' }} />
+                    <div className="h-1.5 rounded-full bg-[var(--cf-fill)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%`, background: 'var(--cf-green-dark)' }} />
                     </div>
                     <div className="flex justify-between mt-0.5">
-                      <span className="text-[9px] text-[var(--color-text-muted)]">Capital: {fmtShort(r.capitalDesplegado)}</span>
-                      <span className="text-[9px] text-[var(--color-text-muted)]">Pendiente: {fmtShort(r.saldoPendiente)}</span>
+                      <span className="text-[9px] text-[var(--cf-ink-3)]">Capital: {fmtShort(r.capitalDesplegado)}</span>
+                      <span className="text-[9px] text-[var(--cf-ink-3)]">Pendiente: {fmtShort(r.saldoPendiente)}</span>
                     </div>
                   </div>
                 </div>
@@ -470,8 +470,8 @@ export default function AnaliticasPage() {
       {cobradores.length > 0 && (
         <Card href="/cobradores">
           <div className="flex items-start justify-between mb-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Cobradores este mes</p>
-            <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Cobradores este mes</p>
+            <svg className="w-3.5 h-3.5 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -482,19 +482,19 @@ export default function AnaliticasPage() {
                 <div key={c.id} className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${i < 3 ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]'}`}>
+                      <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${i < 3 ? 'bg-[var(--cf-gold-tint)] text-[var(--cf-gold)]' : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)]'}`}>
                         {i + 1}
                       </span>
                       <span className="text-[12px] sm:text-[13px] font-medium truncate">{c.nombre}</span>
-                      {c.rol === 'owner' && <span className="text-[8px] px-1 py-0.5 rounded bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] shrink-0">admin</span>}
+                      {c.rol === 'owner' && <span className="text-[8px] px-1 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] shrink-0">admin</span>}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[9px] text-[var(--color-text-muted)] font-mono hidden sm:inline">{c.pagos} pagos</span>
+                      <span className="text-[9px] text-[var(--cf-ink-3)] font-mono hidden sm:inline">{c.pagos} pagos</span>
                       <span className="text-[12px] sm:text-[13px] font-mono font-bold">{fmtShort(c.recaudado)}</span>
                     </div>
                   </div>
                   <div className="ml-7">
-                    <ProgressBar value={c.recaudado} max={max} color={i === 0 ? 'var(--color-accent)' : 'var(--color-info)'} height={4} />
+                    <ProgressBar value={c.recaudado} max={max} color={i === 0 ? 'var(--cf-gold)' : 'var(--cf-ink-2)'} height={4} />
                   </div>
                 </div>
               )
@@ -505,16 +505,16 @@ export default function AnaliticasPage() {
 
       {/* === Clavos === */}
       {cartera.clavos > 0 && (
-        <Card href="/clavos" className="!border-[var(--color-danger)] border-opacity-50">
+        <Card href="/clavos" className="!border-[var(--cf-red-dark)] border-opacity-50">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-danger)]">Clavos</p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{cartera.clavos} préstamos irrecuperables</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">Clavos</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">{cartera.clavos} préstamos irrecuperables</p>
             </div>
-            <p className="text-[16px] sm:text-[20px] font-mono font-bold text-[var(--color-danger)] shrink-0">{fmtShort(cartera.moraIrrecuperable)}</p>
+            <p className="text-[16px] sm:text-[20px] font-mono font-bold text-[var(--cf-red-dark)] shrink-0">{fmtShort(cartera.moraIrrecuperable)}</p>
           </div>
           {resumen.capitalEnCalle > 0 && (
-            <p className="text-[10px] text-[var(--color-text-muted)] mt-2 pt-2 border-t border-[var(--color-border)]">
+            <p className="text-[10px] text-[var(--cf-ink-3)] mt-2 pt-2 border-t border-[var(--cf-border)]">
               Impacto: {Math.round((cartera.moraIrrecuperable / resumen.capitalEnCalle) * 100)}% del capital activo comprometido
             </p>
           )}

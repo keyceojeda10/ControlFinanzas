@@ -50,19 +50,19 @@ export default function ScoreCrediticio({ cedula, plan }) {
 
       <Modal open={modal} onClose={() => setModal(false)} title="Historial Crediticio" size="sm">
         {!data.encontrado ? (
-          <p className="text-sm text-[var(--color-text-muted)]">
+          <p className="text-sm text-[var(--cf-ink-3)]">
             No se encontraron registros de esta cédula en otras entidades de la plataforma.
           </p>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Créditos activos" value={data.datos.creditosActivos} color="var(--color-accent)" />
-              <StatCard label="Completados" value={data.datos.creditosCompletados} color="var(--color-success)" />
-              <StatCard label="En mora" value={data.datos.creditosEnMora} color="var(--color-danger)" />
-              <StatCard label="Cancelados" value={data.datos.creditosCancelados} color="var(--color-text-muted)" />
+              <StatCard label="Créditos activos" value={data.datos.creditosActivos} color="var(--cf-gold)" />
+              <StatCard label="Completados" value={data.datos.creditosCompletados} color="var(--cf-green-dark)" />
+              <StatCard label="En mora" value={data.datos.creditosEnMora} color="var(--cf-red-dark)" />
+              <StatCard label="Cancelados" value={data.datos.creditosCancelados} color="var(--cf-ink-3)" />
             </div>
 
-            <div className="text-xs text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3">
+            <div className="text-xs text-[var(--cf-ink-3)] border-t border-[var(--cf-border)] pt-3">
               <p>Datos basados en {data.datos.totalOrganizaciones} entidad{data.datos.totalOrganizaciones !== 1 ? 'es' : ''} de la plataforma.</p>
               <p className="mt-1">Esta información es un indicador agregado y anónimo. No se revelan datos específicos de terceros.</p>
             </div>
@@ -75,9 +75,9 @@ export default function ScoreCrediticio({ cedula, plan }) {
 
 function StatCard({ label, value, color }) {
   return (
-    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-xl p-3 text-center">
+    <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-xl p-3 text-center">
       <p className="text-2xl font-bold font-mono-display" style={{ color }}>{value}</p>
-      <p className="text-xs text-[var(--color-text-muted)] mt-1">{label}</p>
+      <p className="text-xs text-[var(--cf-ink-3)] mt-1">{label}</p>
     </div>
   )
 }

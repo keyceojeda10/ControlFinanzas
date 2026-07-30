@@ -48,7 +48,7 @@ export default function MisEstadisticasPage() {
 
   if (session?.user?.rol !== 'cobrador') {
     return (
-      <div className="max-w-xl mx-auto mt-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="max-w-xl mx-auto mt-8 text-center" style={{ color: 'var(--cf-ink-3)' }}>
         Esta página es solo para cobradores.
       </div>
     )
@@ -57,22 +57,22 @@ export default function MisEstadisticasPage() {
   if (error) {
     return (
       <div className="cf-card-shadow max-w-xl mx-auto mt-6 rounded-[20px] px-4 py-3 text-sm"
-        style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+        style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
       >
         {error}
       </div>
     )
   }
 
-  const pctColor = data.pctMeta >= 90 ? 'var(--color-success)' : data.pctMeta >= 60 ? 'var(--color-warning)' : 'var(--color-danger)'
+  const pctColor = data.pctMeta >= 90 ? 'var(--cf-green-dark)' : data.pctMeta >= 60 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
   const maxSemana = Math.max(...(data.semana?.map((d) => d.total) ?? [1]), 1)
 
   return (
     <div className="max-w-xl lg:max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Mi resumen</h1>
+        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Mi resumen</h1>
         {data.rutaNombre && (
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             Ruta: {data.rutaNombre} · {data.totalClientesActivos} clientes activos
           </p>
         )}
@@ -81,27 +81,27 @@ export default function MisEstadisticasPage() {
       {/* ── Hoy: recaudado vs meta ── */}
       <div className="cf-card-shadow rounded-[20px] px-5 py-5"
         style={{
-          background: `linear-gradient(135deg, color-mix(in srgb, ${pctColor} 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-          border: `1px solid color-mix(in srgb, ${pctColor} 22%, var(--color-border))`,
+          background: `linear-gradient(135deg, color-mix(in srgb, ${pctColor} 12%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+          border: `1px solid color-mix(in srgb, ${pctColor} 22%, var(--cf-border))`,
         }}
       >
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>Hoy</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>Hoy</p>
         <div className="flex items-end justify-between mb-3">
           <div>
-            <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Recaudado</p>
+            <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Recaudado</p>
             <p className="text-[32px] font-bold font-mono-display leading-none" style={{ color: pctColor }}>
               {formatMoney(data.recaudadoHoy)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Meta</p>
-            <p className="text-[20px] font-bold font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Meta</p>
+            <p className="text-[20px] font-bold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
               {formatMoney(data.metaHoy)}
             </p>
           </div>
         </div>
         {/* Barra progreso */}
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
           <div
             className="h-full rounded-full transition-[width] duration-700"
             style={{
@@ -115,9 +115,9 @@ export default function MisEstadisticasPage() {
 
       {/* ── Últimos 7 días ── */}
       <div className="cf-card-shadow rounded-[20px] px-4 py-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-4" style={{ color: 'var(--color-text-muted)' }}>Últimos 7 días</p>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-4" style={{ color: 'var(--cf-ink-3)' }}>Últimos 7 días</p>
         <div className="flex items-end gap-1.5 h-28">
           {data.semana?.map((d, i) => {
             const pct = maxSemana > 0 ? Math.max(4, Math.round((d.total / maxSemana) * 100)) : 4
@@ -130,22 +130,22 @@ export default function MisEstadisticasPage() {
                     style={{
                       height: `${pct}%`,
                       background: isHoy
-                        ? 'var(--color-accent)'
-                        : 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
+                        ? 'var(--cf-gold)'
+                        : 'color-mix(in srgb, var(--cf-gold) 40%, transparent)',
                     }}
                     title={formatMoney(d.total)}
                   />
                 </div>
-                <p className="text-[9px] text-center leading-tight" style={{ color: isHoy ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                <p className="text-[9px] text-center leading-tight" style={{ color: isHoy ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                   {fmtFechaCorta(d.fecha)}
                 </p>
               </div>
             )
           })}
         </div>
-        <div className="mt-3 pt-3 border-t flex justify-between text-[11px]" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}>
+        <div className="mt-3 pt-3 border-t flex justify-between text-[11px]" style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>
           <span>Total semana</span>
-          <span className="font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+          <span className="font-semibold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
             {formatMoney(data.semana?.reduce((s, d) => s + d.total, 0) ?? 0)}
           </span>
         </div>
@@ -154,19 +154,19 @@ export default function MisEstadisticasPage() {
       {/* ── Clientes en mora en mi ruta ── */}
       {data.clientesMora?.length > 0 && (
         <div className="cf-card-shadow rounded-[20px] px-4 py-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
-          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
             Mi cartera en mora ({data.clientesMora.length})
           </p>
           <div className="space-y-2">
             {data.clientesMora.map((c, i) => {
-              const moraColor = c.diasMora > 30 ? 'var(--color-danger)' : c.diasMora > 14 ? 'var(--color-warning)' : 'var(--color-text-muted)'
+              const moraColor = c.diasMora > 30 ? 'var(--cf-red-dark)' : c.diasMora > 14 ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)'
               return (
                 <div key={i} className="flex items-center justify-between px-3 py-2 rounded-[12px]"
-                  style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}
+                  style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}
                 >
-                  <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
                   <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                     style={{
                       background: `color-mix(in srgb, ${moraColor} 12%, transparent)`,
@@ -185,10 +185,10 @@ export default function MisEstadisticasPage() {
 
       {data.clientesMora?.length === 0 && (
         <div className="cf-card-shadow rounded-[20px] px-4 py-5 text-center"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-success)' }}>Sin clientes en mora</p>
-          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu cartera está al día</p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Sin clientes en mora</p>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu cartera está al día</p>
         </div>
       )}
     </div>

@@ -10,24 +10,24 @@ export default function ResumenCard({
   loading = false,
 }) {
   const accents = {
-    blue:   { bg: 'rgba(245,197,24,0.12)',  icon: 'var(--color-accent)', border: 'rgba(245,197,24,0.2)' },
-    green:  { bg: 'rgba(16,185,129,0.12)',  icon: 'var(--color-success)', border: 'rgba(16,185,129,0.2)' },
-    yellow: { bg: 'rgba(245,158,11,0.12)',  icon: 'var(--color-warning)', border: 'rgba(245,158,11,0.2)' },
-    red:    { bg: 'rgba(239,68,68,0.12)',   icon: 'var(--color-danger)', border: 'rgba(239,68,68,0.2)'  },
-    purple: { bg: 'rgba(139,92,246,0.12)',  icon: 'var(--color-purple)', border: 'rgba(139,92,246,0.2)' },
+    blue:   { bg: 'rgba(245,197,24,0.12)',  icon: 'var(--cf-gold)', border: 'rgba(245,197,24,0.2)' },
+    green:  { bg: 'rgba(16,185,129,0.12)',  icon: 'var(--cf-green-dark)', border: 'rgba(16,185,129,0.2)' },
+    yellow: { bg: 'rgba(245,158,11,0.12)',  icon: 'var(--cf-gold-dark)', border: 'rgba(245,158,11,0.2)' },
+    red:    { bg: 'rgba(239,68,68,0.12)',   icon: 'var(--cf-red-dark)', border: 'rgba(239,68,68,0.2)'  },
+    purple: { bg: 'rgba(139,92,246,0.12)',  icon: 'var(--cf-ink-2)', border: 'rgba(139,92,246,0.2)' },
   }
 
   const colors = accents[accent] ?? accents.blue
 
   if (loading) {
     return (
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[12px] p-5 animate-pulse">
+      <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[12px] p-5 animate-pulse">
         <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-[10px] bg-[var(--color-bg-hover)]" />
-          <div className="h-5 w-14 rounded-full bg-[var(--color-bg-hover)]" />
+          <div className="w-10 h-10 rounded-[10px] bg-[var(--cf-fill)]" />
+          <div className="h-5 w-14 rounded-full bg-[var(--cf-fill)]" />
         </div>
-        <div className="h-3 w-24 rounded bg-[var(--color-bg-hover)] mb-2" />
-        <div className="h-7 w-32 rounded bg-[var(--color-bg-hover)]" />
+        <div className="h-3 w-24 rounded bg-[var(--cf-fill)] mb-2" />
+        <div className="h-7 w-32 rounded bg-[var(--cf-fill)]" />
       </div>
     )
   }
@@ -36,8 +36,8 @@ export default function ResumenCard({
     <div
       className="border rounded-[12px] p-5 flex flex-col gap-3"
       style={{
-        borderColor: 'var(--color-border)',
-        background: 'var(--color-bg-card)',
+        borderColor: 'var(--cf-border)',
+        background: 'var(--cf-card)',
       }}
     >
       {/* Top row: icon + trend */}
@@ -54,8 +54,8 @@ export default function ResumenCard({
             className={[
               'text-xs font-semibold px-2 py-0.5 rounded-full',
               trend >= 0
-                ? 'bg-[rgba(16,185,129,0.12)] text-[var(--color-success)]'
-                : 'bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]',
+                ? 'bg-[rgba(16,185,129,0.12)] text-[var(--cf-green-dark)]'
+                : 'bg-[rgba(239,68,68,0.12)] text-[var(--cf-red-dark)]',
             ].join(' ')}
           >
             {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%

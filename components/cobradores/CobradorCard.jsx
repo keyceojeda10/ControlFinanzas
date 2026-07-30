@@ -6,11 +6,11 @@ import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
-const COLOR_OK   = 'var(--color-success)'
-const COLOR_HOT  = 'var(--color-accent)'
-const COLOR_WARN = '#f97316'
-const COLOR_CRIT = 'var(--color-danger)'
-const COLOR_OFF  = 'var(--color-text-muted)'
+const COLOR_OK   = 'var(--cf-green-dark)'
+const COLOR_HOT  = 'var(--cf-gold)'
+const COLOR_WARN = 'var(--cf-gold-dark)'
+const COLOR_CRIT = 'var(--cf-red-dark)'
+const COLOR_OFF  = 'var(--cf-ink-3)'
 
 function moodColor(progreso, esperadoHoy, activo) {
   if (!activo) return COLOR_OFF
@@ -54,8 +54,8 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
     <div
       className="rounded-[16px] overflow-hidden transition-all kpi-lift"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 8%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 20%, var(--cf-border))`,
         boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
       }}
     >
@@ -68,7 +68,7 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
             {actividad?.activo && (
               <span
                 className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full"
-                style={{ background: 'var(--color-success)', border: '2px solid var(--color-bg-card)', boxShadow: '0 0 4px var(--color-success)' }}
+                style={{ background: 'var(--cf-green-dark)', border: '2px solid var(--cf-card)', boxShadow: '0 0 4px var(--cf-green-dark)' }}
                 title="Activo ahora"
               />
             )}
@@ -76,16 +76,16 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
 
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-sm font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-sm font-bold truncate leading-tight" style={{ color: 'var(--cf-ink)' }}>
                 {cobrador.nombre}
               </p>
               {suspendido ? (
                 <span
                   className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
                   style={{
-                    background: 'color-mix(in srgb, var(--color-warning) 15%, transparent)',
-                    color: 'var(--color-warning)',
-                    border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)',
+                    background: 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)',
+                    color: 'var(--cf-gold-dark)',
+                    border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)',
                   }}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -110,12 +110,12 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
               </button>
               )}
             </div>
-            <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--cf-ink-3)' }}>
               {cobrador.email}
             </p>
             {actividad && (
-              <p className="text-[10px] mt-0.5" style={{ color: actividad.activo ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
-                {actividad.activo && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 animate-pulse" style={{ background: 'var(--color-success)' }} />}
+              <p className="text-[10px] mt-0.5" style={{ color: actividad.activo ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>
+                {actividad.activo && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 animate-pulse" style={{ background: 'var(--cf-green-dark)' }} />}
                 {actividad.texto}
               </p>
             )}
@@ -125,25 +125,25 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
         {/* Recaudado hoy con progress bar */}
         <div className="mb-2">
           <div className="flex items-baseline justify-between gap-2 mb-1">
-            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Recaudado hoy</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Recaudado hoy</p>
             <p className="text-[10px] font-mono-display font-semibold" style={{ color }}>{progreso}%</p>
           </div>
           <div className="flex items-baseline justify-between mb-2">
             <p
               className="font-mono-display font-bold leading-none"
               style={{
-                color: progreso >= 100 ? color : 'var(--color-text-primary)',
+                color: progreso >= 100 ? color : 'var(--cf-ink)',
                 fontSize: '20px',
                 textShadow: 'none',
               }}
             >
               {formatMoney(cobrador.recaudadoHoy ?? 0)}
             </p>
-            <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
               de {formatMoney(cobrador.esperadoHoy ?? 0)}
             </p>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
             <div
               className="h-full rounded-full transition-[width] duration-700"
               style={{
@@ -157,21 +157,21 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
         {/* Footer stats: ruta + clientes + pagos hoy */}
         <div
           className="grid grid-cols-3 gap-2 pt-3"
-          style={{ borderTop: '1px solid var(--color-border)' }}
+          style={{ borderTop: '1px solid var(--cf-border)' }}
         >
           <div>
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Ruta</p>
-            <p className="text-[11px] font-semibold mt-0.5 truncate" style={{ color: cobrador.ruta ? 'var(--color-purple)' : 'var(--color-text-muted)' }}>
+            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Ruta</p>
+            <p className="text-[11px] font-semibold mt-0.5 truncate" style={{ color: cobrador.ruta ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)' }}>
               {cobrador.ruta?.nombre ?? 'Sin ruta'}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Clientes</p>
-            <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{cobrador.cantidadClientes ?? 0}</p>
+            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Clientes</p>
+            <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-ink)' }}>{cobrador.cantidadClientes ?? 0}</p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Pagos hoy</p>
-            <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>{cobrador.cantidadPagosHoy ?? 0}</p>
+            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagos hoy</p>
+            <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>{cobrador.cantidadPagosHoy ?? 0}</p>
           </div>
         </div>
       </Link>

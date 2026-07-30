@@ -9,9 +9,9 @@ import { calcularPrestamo } from '@/lib/calculos'
 //   'total'   -> es del préstamo completo; el plazo no cambia el interés
 //   'periodo' -> se cobra ENTERO en cada cobro (semanal = 20% por semana)
 const BASES = {
-  mes:     { texto: 'El % es por mes',             color: 'var(--color-info)' },
-  total:   { texto: 'El % es de todo el préstamo', color: 'var(--color-success)' },
-  periodo: { texto: 'El % es por cada cobro',      color: 'var(--color-warning)' },
+  mes:     { texto: 'El % es por mes',             color: 'var(--cf-ink-2)' },
+  total:   { texto: 'El % es de todo el préstamo', color: 'var(--cf-green-dark)' },
+  periodo: { texto: 'El % es por cada cobro',      color: 'var(--cf-gold-dark)' },
 }
 
 const MODOS = [
@@ -110,27 +110,27 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
   if (paso === 'q1' || paso === 'q2') {
     const preg = paso === 'q1' ? PREGUNTA_1 : PREGUNTA_2
     return (
-      <div className="rounded-[16px] p-4" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+      <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
         <div className="flex items-start justify-between gap-3 mb-1">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-accent)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-gold)' }}>
               {paso === 'q1' ? 'Paso 1 de 2' : 'Paso 2 de 2'}
             </p>
-            <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{preg.titulo}</p>
+            <p className="text-[15px] font-bold leading-tight mt-0.5" style={{ color: 'var(--cf-ink)' }}>{preg.titulo}</p>
           </div>
           <button type="button" onClick={() => setPaso(paso === 'q2' ? 'q1' : 'lista')}
-            className="text-[11px] font-semibold shrink-0 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            className="text-[11px] font-semibold shrink-0 mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             {paso === 'q2' ? '← Atrás' : 'Cerrar'}
           </button>
         </div>
-        <p className="text-[11px] mb-3" style={{ color: 'var(--color-text-muted)' }}>{preg.ayuda}</p>
+        <p className="text-[11px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>{preg.ayuda}</p>
         <div className="space-y-2">
           {preg.opciones.map((op, i) => (
             <button key={i} type="button" onClick={() => elegirOpcion(op)}
               className="w-full text-left rounded-[12px] p-3 transition-all active:scale-[0.99]"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{op.label}</p>
-              <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--color-text-muted)' }}>{op.ej}</p>
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{op.label}</p>
+              <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{op.ej}</p>
             </button>
           ))}
         </div>
@@ -139,7 +139,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
             en vez de mandarlo a un modo equivocado. */}
         {paso === 'q1' && (
           <button type="button" onClick={() => { setVerAvanzados(true); setPaso('lista') }}
-            className="w-full text-center text-[11px] font-semibold mt-3 py-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            className="w-full text-center text-[11px] font-semibold mt-3 py-1.5" style={{ color: 'var(--cf-ink-3)' }}>
             Ninguna se parece — ver todos los modos
           </button>
         )}
@@ -152,42 +152,42 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     const md = modoData(sugerido)
     const ej = calcularEjemplo(sugerido, ctx)
     return (
-      <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-surface))', border: '1.5px solid var(--color-accent)' }}>
-        <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--color-text-muted)' }}>Tu modo ideal es</p>
-        <p className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{md?.label}</p>
+      <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-surface))', border: '1.5px solid var(--cf-gold)' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cf-ink-3)' }}>Tu modo ideal es</p>
+        <p className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>{md?.label}</p>
         {md?.base && <p className="text-[11px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
-        <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{md?.desc}</p>
+        <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{md?.desc}</p>
         {ej && sugerido !== 'manual' && (
-          <p className="text-[12px] mt-2 font-medium tabular-nums" style={{ color: 'var(--color-accent)' }}>
+          <p className="text-[12px] mt-2 font-medium tabular-nums" style={{ color: 'var(--cf-gold)' }}>
             {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
           </p>
         )}
-        <p className="text-[11px] mt-2.5 leading-snug rounded-[8px] p-2" style={{ background: 'var(--color-bg-card)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}>
-          <span className="font-semibold" style={{ color: 'var(--color-text-muted)' }}>Cómo se calcula: </span>{md?.formula}
+        <p className="text-[11px] mt-2.5 leading-snug rounded-[8px] p-2" style={{ background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}>
+          <span className="font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Cómo se calcula: </span>{md?.formula}
         </p>
         <div className="flex flex-col gap-2 mt-4">
           {onGuardarPreferido ? (
             <>
               <button type="button" onClick={() => aplicarSugerido(true)}
                 className="h-11 rounded-[12px] text-sm font-bold flex items-center justify-center gap-2"
-                style={{ background: 'var(--color-accent)', color: '#111' }}>
+                style={{ background: 'var(--cf-gold)', color: '#111' }}>
                 {CHECK} Usar siempre este modo
               </button>
               <button type="button" onClick={() => aplicarSugerido(false)}
                 className="h-10 rounded-[12px] text-sm font-semibold"
-                style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}>
                 Solo para este préstamo
               </button>
             </>
           ) : (
             <button type="button" onClick={() => aplicarSugerido(false)}
               className="h-11 rounded-[12px] text-sm font-bold flex items-center justify-center gap-2"
-              style={{ background: 'var(--color-accent)', color: '#111' }}>
+              style={{ background: 'var(--cf-gold)', color: '#111' }}>
               {CHECK} Usar este modo
             </button>
           )}
           <button type="button" onClick={() => setPaso('q1')}
-            className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+            className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             Volver a responder
           </button>
         </div>
@@ -204,33 +204,33 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     return (
       <button key={m.key} type="button" onClick={() => onChange(m.key)}
         className="w-full text-left rounded-xl p-3 transition-all"
-        style={{ background: activo ? 'color-mix(in srgb, var(--color-accent) 8%, transparent)' : 'var(--color-bg-surface)', border: activo ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)' }}>
+        style={{ background: activo ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'var(--cf-surface)', border: activo ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)' }}>
         <div className="flex items-start gap-2.5">
-          <div className="mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--color-accent)' : 'var(--color-border)' }}>
-            {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+          <div className="mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center" style={{ borderColor: activo ? 'var(--cf-gold)' : 'var(--cf-border)' }}>
+            {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{m.label}</span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.label}</span>
               {esPreferido && (
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}>Tu modo habitual</span>
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>Tu modo habitual</span>
               )}
               {m.tag && !esPreferido && (
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{m.tag}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{m.tag}</span>
               )}
             </div>
             {m.base && <p className="text-[11px] font-semibold mb-0.5" style={{ color: BASES[m.base].color }}>{BASES[m.base].texto}</p>}
-            <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-muted)' }}>{m.desc}</p>
+            <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{m.desc}</p>
             {ej && m.key !== 'manual' && (
-              <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--color-accent)' : 'var(--color-text-secondary)' }}>
+              <p className="text-[11px] mt-1 font-medium tabular-nums" style={{ color: activo ? 'var(--cf-gold)' : 'var(--cf-ink-2)' }}>
                 {ej.numPeriodos} cuotas de {formatMoney(ej.cuotaDiaria)} · Total {formatMoney(ej.totalAPagar)}
-                <span style={{ color: 'var(--color-text-muted)' }}> · Interés {formatMoney(ej.totalInteres)}</span>
+                <span style={{ color: 'var(--cf-ink-3)' }}> · Interés {formatMoney(ej.totalInteres)}</span>
               </p>
             )}
             {/* La formula aparece SOLO en el modo elegido (para los que quieren el
                 detalle), sin llenar todas las tarjetas de botones. */}
             {activo && (
-              <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
                 <span className="font-semibold">Cómo se calcula: </span>{m.formula}
               </p>
             )}
@@ -244,20 +244,20 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
 
   return (
     <div>
-      <label className="block text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>
+      <label className="block text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--cf-ink-3)' }}>
         Modo de interés
       </label>
 
       {/* Asistente: quita la fricción de leer 7 modos y decidir */}
       <button type="button" onClick={() => { setSugerido(null); setPaso('q1') }}
         className="w-full flex items-center gap-2.5 rounded-[12px] p-3 mb-3 transition-all active:scale-[0.99]"
-        style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, transparent)', border: '1px dashed color-mix(in srgb, var(--color-accent) 45%, transparent)' }}>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent)', color: '#111' }}>
+        style={{ background: 'color-mix(in srgb, var(--cf-gold) 10%, transparent)', border: '1px dashed color-mix(in srgb, var(--cf-gold) 45%, transparent)' }}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--cf-gold)', color: '#111' }}>
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M12 17h.008M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
         <div className="text-left">
-          <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>¿No sabes cuál usar?</p>
-          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Responde 2 preguntas y te decimos cuál es tu modo ideal.</p>
+          <p className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>¿No sabes cuál usar?</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Responde 2 preguntas y te decimos cuál es tu modo ideal.</p>
         </div>
       </button>
 
@@ -267,7 +267,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
 
       {hayAvanzadosOcultos && (
         <button type="button" onClick={() => setVerAvanzados(true)}
-          className="w-full mt-2 h-9 rounded-[10px] text-[12px] font-semibold" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}>
+          className="w-full mt-2 h-9 rounded-[10px] text-[12px] font-semibold" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
           Ver modos avanzados ▾
         </button>
       )}

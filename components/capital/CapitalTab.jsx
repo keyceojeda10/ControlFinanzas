@@ -14,13 +14,13 @@ const TIPO_LABELS = {
 }
 
 const TIPO_COLORS = {
-  capital_inicial: 'var(--color-success)',
-  inyeccion: 'var(--color-success)',
-  retiro: 'var(--color-danger)',
-  desembolso: 'var(--color-warning)',
-  recaudo: 'var(--color-info)',
-  gasto: 'var(--color-danger)',
-  ajuste: 'var(--color-purple)',
+  capital_inicial: 'var(--cf-green-dark)',
+  inyeccion: 'var(--cf-green-dark)',
+  retiro: 'var(--cf-red-dark)',
+  desembolso: 'var(--cf-gold-dark)',
+  recaudo: 'var(--cf-ink-2)',
+  gasto: 'var(--cf-red-dark)',
+  ajuste: 'var(--cf-ink-2)',
 }
 
 function esIngreso(tipo) {
@@ -256,14 +256,14 @@ export default function CapitalTab() {
     setShowModal(true)
   }
 
-  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--color-bg-hover)] rounded-[16px] h-20" />)}</div>
+  if (loading) return <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--cf-fill)] rounded-[16px] h-20" />)}</div>
 
   const noConfigurado = resumen && !resumen.configurado
   const sugerido = resumen?.sugerido
   const saldoCapital = Math.round(Number(resumen?.saldo || 0))
   const mostrarSugerido = Boolean(sugerido) && saldoCapital === 0
   const calidadSugerida = sugerido?.calidad || 'baja'
-  const colorCalidad = calidadSugerida === 'alta' ? 'var(--color-success)' : calidadSugerida === 'media' ? 'var(--color-accent)' : 'var(--color-danger)'
+  const colorCalidad = calidadSugerida === 'alta' ? 'var(--cf-green-dark)' : calidadSugerida === 'media' ? 'var(--cf-gold)' : 'var(--cf-red-dark)'
 
   return (
     <div className="space-y-5">
@@ -271,7 +271,7 @@ export default function CapitalTab() {
       <div className="flex justify-end">
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold rounded-[10px] hover:bg-[var(--color-accent-hover)] transition-colors"
+          className="px-4 py-2 bg-[var(--cf-gold)] text-[var(--cf-ink)] text-sm font-semibold rounded-[10px] hover:bg-[var(--cf-gold-dark)] transition-colors"
         >
           + Movimiento
         </button>
@@ -281,19 +281,19 @@ export default function CapitalTab() {
         <div
           className="rounded-[12px] px-4 py-3 text-sm border"
           style={feedback.tipo === 'ok'
-            ? { color: 'var(--color-success)', borderColor: 'var(--color-success-border)', background: 'var(--color-success-dim)' }
-            : { color: 'var(--color-danger)', borderColor: 'var(--color-danger-border)', background: 'var(--color-danger-dim)' }}
+            ? { color: 'var(--cf-green-dark)', borderColor: 'var(--cf-green)', background: 'var(--cf-green-pill-bg)' }
+            : { color: 'var(--cf-red-dark)', borderColor: 'var(--cf-red-border)', background: 'var(--cf-red-pill-bg)' }}
         >
           {feedback.mensaje}
         </div>
       )}
 
       {noConfigurado && (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-hover)] rounded-[16px] px-5 py-5 text-center">
-          <p className="text-[var(--color-text-primary)] font-medium mb-2">Configura tu capital inicial</p>
-          <p className="text-sm text-[var(--color-text-muted)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automáticamente.</p>
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border-strong)] rounded-[16px] px-5 py-5 text-center">
+          <p className="text-[var(--cf-ink)] font-medium mb-2">Configura tu capital inicial</p>
+          <p className="text-sm text-[var(--cf-ink-3)] mb-2">Registra con cuanto capital empiezas para que el sistema lleve el control automáticamente.</p>
           {mostrarSugerido && (
-            <p className="text-sm text-[var(--color-success)] mb-4">
+            <p className="text-sm text-[var(--cf-green-dark)] mb-4">
               Sugerencia por historial: <span className="font-semibold font-mono-display">{formatMoney(sugerido.saldo)}</span>
             </p>
           )}
@@ -302,14 +302,14 @@ export default function CapitalTab() {
               <button
                 onClick={aplicarCapitalSugerido}
                 disabled={aplicandoSugerido || Number(sugerido?.saldo || 0) <= 0}
-                className="px-5 py-2.5 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50 transition-colors"
+                className="px-5 py-2.5 bg-[var(--cf-green-dark)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50 transition-colors"
               >
                 {aplicandoSugerido ? 'Aplicando...' : 'Aplicar capital sugerido'}
               </button>
             )}
             <button
               onClick={() => { setModalTipo('capital_inicial'); setShowModal(true) }}
-              className="px-5 py-2.5 bg-[var(--color-accent)] text-[#1a1a2e] text-sm font-semibold rounded-[10px] hover:bg-[var(--color-accent-hover)] transition-colors"
+              className="px-5 py-2.5 bg-[var(--cf-gold)] text-[var(--cf-ink)] text-sm font-semibold rounded-[10px] hover:bg-[var(--cf-gold-dark)] transition-colors"
             >
               Registrar capital inicial
             </button>
@@ -318,12 +318,12 @@ export default function CapitalTab() {
       )}
 
       {resumen?.configurado && (() => {
-        const heroColor = resumen.saldo >= 0 ? 'var(--color-teal)' : 'var(--color-danger)'
+        const heroColor = resumen.saldo >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)'
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
             style={{
-              background: `var(--color-bg-card)`,
+              background: `var(--cf-card)`,
               border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
               boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
             }}
@@ -335,12 +335,12 @@ export default function CapitalTab() {
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 5px ${heroColor}` }} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>Saldo del capital</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--cf-ink-2)' }}>Saldo del capital</p>
               </div>
               <p
                 className="font-mono-display font-bold leading-none tracking-tight"
                 style={{
-                  color: resumen.saldo >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                  color: resumen.saldo >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
                   fontSize: 'clamp(36px, 10vw, 52px)',
                   textShadow: 'none',
                 }}
@@ -348,7 +348,7 @@ export default function CapitalTab() {
                 {formatMoney(resumen.saldo)}
               </p>
               {resumen.saldo < 0 && (
-                <p className="text-[12px] mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium" style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--color-danger)' }}>
+                <p className="text-[12px] mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium" style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--cf-red-dark)' }}>
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                   Capital en negativo
                 </p>
@@ -361,32 +361,32 @@ export default function CapitalTab() {
       {resumen?.configurado && resumen.cartera && (
         <div className="rounded-[16px] px-4 py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)',
-            border: '1px solid color-mix(in srgb, var(--color-teal) 22%, var(--color-border))',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)',
+            border: '1px solid color-mix(in srgb, var(--cf-ink-2) 22%, var(--cf-border))',
           }}
         >
           <div className="flex items-center gap-1.5 mb-3">
-            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 18%, transparent)', color: 'var(--color-teal)' }}>
+            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-teal)' }}>Dinero en la calle</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Dinero en la calle</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Capital prestado</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.cartera.capitalEnCalle)}</p>
+              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Capital prestado</p>
+              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(resumen.cartera.capitalEnCalle)}</p>
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Por cobrar (cartera)</p>
-              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--color-teal)' }}>{formatMoney(resumen.cartera.total)}</p>
+              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Por cobrar (cartera)</p>
+              <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(resumen.cartera.total)}</p>
             </div>
           </div>
-          <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[10px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
             {resumen.cartera.prestamosActivos} préstamos activos en todas las rutas
             {resumen.cartera.sinRuta > 0 && (
-              <span className="block mt-1" style={{ color: 'var(--color-warning)' }}>
+              <span className="block mt-1" style={{ color: 'var(--cf-gold-dark)' }}>
                 {formatMoney(resumen.cartera.sinRuta)} en {resumen.cartera.prestamosSinRuta} préstamo{resumen.cartera.prestamosSinRuta !== 1 ? 's' : ''} de clientes sin ruta asignada
               </span>
             )}
@@ -395,11 +395,11 @@ export default function CapitalTab() {
       )}
 
       {resumen?.configurado && (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-5 py-4">
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Modo estricto</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              <p className="text-sm font-semibold text-[var(--cf-ink)]">Modo estricto</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                 {capitalEstricto
                   ? 'Activado: no podrás crear préstamos si no tienes capital suficiente.'
                   : 'Desactivado: puedes crear préstamos aunque no tengas capital (saldo puede quedar negativo).'}
@@ -411,8 +411,8 @@ export default function CapitalTab() {
               disabled={togglingEstricto}
               className={`px-3 py-1.5 text-xs font-semibold rounded-[10px] transition-colors ${
                 capitalEstricto
-                  ? 'bg-[var(--color-success-dim)] text-[var(--color-success)] border border-[var(--color-success-border)]'
-                  : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] border border-[var(--color-border)]'
+                  ? 'bg-[var(--cf-green-pill-bg)] text-[var(--cf-green-dark)] border border-[var(--cf-green)]'
+                  : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)] border border-[var(--cf-border)]'
               }`}
             >
               {capitalEstricto ? 'Activo' : 'Inactivo'}
@@ -423,23 +423,23 @@ export default function CapitalTab() {
 
       {confirmEstricto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
-            <h3 className="text-base font-semibold text-[var(--color-text-primary)] mb-2">
+          <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] w-full max-w-md p-5">
+            <h3 className="text-base font-semibold text-[var(--cf-ink)] mb-2">
               {confirmEstricto === 'activar' ? 'Activar modo estricto' : 'Desactivar modo estricto'}
             </h3>
             {confirmEstricto === 'activar' ? (
-              <div className="text-sm text-[var(--color-text-primary)] space-y-2">
+              <div className="text-sm text-[var(--cf-ink)] space-y-2">
                 <p>Al activar este modo:</p>
-                <ul className="list-disc pl-5 space-y-1 text-[var(--color-text-secondary)]">
+                <ul className="list-disc pl-5 space-y-1 text-[var(--cf-ink-2)]">
                   <li>No podrás crear préstamos si no tienes capital suficiente.</li>
                   <li>Cuando falte capital, se abrirá un aviso para inyectar el faltante.</li>
                   <li>Tu saldo de capital nunca quedará en negativo.</li>
                 </ul>
               </div>
             ) : (
-              <div className="text-sm text-[var(--color-text-primary)] space-y-2">
+              <div className="text-sm text-[var(--cf-ink)] space-y-2">
                 <p>Al desactivar este modo:</p>
-                <ul className="list-disc pl-5 space-y-1 text-[var(--color-text-secondary)]">
+                <ul className="list-disc pl-5 space-y-1 text-[var(--cf-ink-2)]">
                   <li>Podrás crear préstamos aunque no tengas capital registrado.</li>
                   <li>Tu saldo de capital puede quedar en negativo sin advertencia.</li>
                 </ul>
@@ -447,14 +447,14 @@ export default function CapitalTab() {
             )}
             <div className="flex gap-2 mt-5">
               <button type="button" onClick={() => setConfirmEstricto(null)} disabled={togglingEstricto}
-                className="flex-1 px-4 py-2 bg-[var(--color-bg-hover)] text-[var(--color-text-primary)] text-sm font-semibold rounded-[10px]">
+                className="flex-1 px-4 py-2 bg-[var(--cf-fill)] text-[var(--cf-ink)] text-sm font-semibold rounded-[10px]">
                 Cancelar
               </button>
               <button type="button" onClick={() => aplicarToggleEstricto(confirmEstricto === 'activar')} disabled={togglingEstricto}
                 className={`flex-1 px-4 py-2 text-sm font-semibold rounded-[10px] disabled:opacity-50 ${
                   confirmEstricto === 'activar'
-                    ? 'bg-[var(--color-success)] text-[#0a1f14]'
-                    : 'bg-[var(--color-danger)] text-[var(--color-text-primary)]'
+                    ? 'bg-[var(--cf-green-dark)] text-[#0a1f14]'
+                    : 'bg-[var(--cf-red-dark)] text-[var(--cf-ink)]'
                 }`}>
                 {togglingEstricto ? 'Aplicando...' : (confirmEstricto === 'activar' ? 'Activar' : 'Desactivar')}
               </button>
@@ -464,18 +464,18 @@ export default function CapitalTab() {
       )}
 
       {mostrarSugerido && (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-5 py-4">
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-5 py-4">
           <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">Capital sugerido</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] uppercase tracking-wide">Capital sugerido</p>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `color-mix(in srgb, ${colorCalidad} 13%, transparent)`, color: colorCalidad }}>
               Calidad {calidadSugerida}
             </span>
           </div>
-          <p className="text-2xl font-bold font-mono-display text-[var(--color-accent)]">{formatMoney(sugerido.saldo)}</p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Tu saldo está en cero. Puedes aplicarlo como capital inicial con un clic.</p>
+          <p className="text-2xl font-bold font-mono-display text-[var(--cf-gold)]">{formatMoney(sugerido.saldo)}</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-1">Tu saldo está en cero. Puedes aplicarlo como capital inicial con un clic.</p>
           <button type="button" onClick={aplicarCapitalSugerido}
             disabled={aplicandoSugerido || Number(sugerido?.saldo || 0) <= 0}
-            className="mt-3 px-4 py-2 bg-[var(--color-success)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50 transition-colors">
+            className="mt-3 px-4 py-2 bg-[var(--cf-green-dark)] text-[#0a1f14] text-sm font-semibold rounded-[10px] disabled:opacity-50 transition-colors">
             {aplicandoSugerido ? 'Aplicando...' : 'Aplicar como saldo del capital'}
           </button>
         </div>
@@ -484,31 +484,31 @@ export default function CapitalTab() {
       {resumen?.mes && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Prestado', value: formatMoney(resumen.mes.desembolsado), sub: `${resumen.mes.prestamosOtorgados} préstamos`, color: '#f97316',
+            { label: 'Prestado', value: formatMoney(resumen.mes.desembolsado), sub: `${resumen.mes.prestamosOtorgados} préstamos`, color: 'var(--cf-gold-dark)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" /></svg> },
-            { label: 'Cobrado', value: formatMoney(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: 'var(--color-success)',
+            { label: 'Cobrado', value: formatMoney(resumen.mes.recaudado), sub: `${resumen.mes.pagosRecibidos} pagos`, color: 'var(--cf-green-dark)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m-6 6l3-3m0 0l3 3m-3-3v6.75" /></svg> },
-            { label: 'Gastos', value: formatMoney(resumen.mes.gastos), sub: 'del mes', color: 'var(--color-danger)',
+            { label: 'Gastos', value: formatMoney(resumen.mes.gastos), sub: 'del mes', color: 'var(--cf-red-dark)',
               icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" /></svg> },
           ].map((s, i) => (
             <div key={i} className="rounded-[16px] px-4 py-3 kpi-lift"
-              style={{ background: `var(--color-bg-card)`, border: `1px solid color-mix(in srgb, ${s.color} 22%, transparent)` }}>
+              style={{ background: `var(--cf-card)`, border: `1px solid color-mix(in srgb, ${s.color} 22%, transparent)` }}>
               <div className="flex items-center gap-1.5 mb-1">
                 <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
                   <span className="w-3 h-3">{s.icon}</span>
                 </div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: s.color }}>{s.label}</p>
               </div>
-              <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-text-primary)' }}>{s.value}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{s.sub}</p>
+              <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--cf-ink)' }}>{s.value}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{s.sub}</p>
             </div>
           ))}
           {(() => {
             const flujo = resumen.mes.flujoNeto ?? 0
-            const balanceColor = flujo >= 0 ? 'var(--color-success)' : 'var(--color-danger)'
+            const balanceColor = flujo >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)'
             return (
               <div className="rounded-[16px] px-4 py-3 kpi-lift"
-                style={{ background: `var(--color-bg-card)`, border: `1px solid color-mix(in srgb, ${balanceColor} 22%, transparent)` }}>
+                style={{ background: `var(--cf-card)`, border: `1px solid color-mix(in srgb, ${balanceColor} 22%, transparent)` }}>
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${balanceColor} 18%, transparent)`, color: balanceColor }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -520,7 +520,7 @@ export default function CapitalTab() {
                 <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: balanceColor }}>
                   {flujo >= 0 ? '+' : ''}{formatMoney(flujo)}
                 </p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Cobrado − Prestado − Gastos</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Cobrado − Prestado − Gastos</p>
               </div>
             )
           })()}
@@ -529,34 +529,34 @@ export default function CapitalTab() {
 
       {/* Capital por ruta — sub-bolsas individuales (solo rutas con capital habilitado) */}
       {porRuta.filter(r => r.capitalHabilitado).length > 0 && (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-3">Capital por ruta</p>
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-4 py-4">
+          <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-3">Capital por ruta</p>
           <div className="space-y-2.5">
             {porRuta.filter(r => r.capitalHabilitado).map((r) => (
-              <div key={r.rutaId} className="rounded-[12px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-card)' }}>
+              <div key={r.rutaId} className="rounded-[12px] border border-[var(--cf-border)] p-3" style={{ background: 'var(--cf-card)' }}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.nombre}</p>
-                    {r.cobrador && <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>{r.cobrador}</p>}
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{r.nombre}</p>
+                    {r.cobrador && <p className="text-[10px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{r.cobrador}</p>}
                   </div>
-                  <p className="text-base font-bold font-mono-display shrink-0" style={{ color: r.saldoCapital >= 0 ? 'var(--color-info)' : 'var(--color-danger)' }}>
+                  <p className="text-base font-bold font-mono-display shrink-0" style={{ color: r.saldoCapital >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
                     {formatMoney(r.saldoCapital)}
                   </p>
                 </div>
-                <div className="grid grid-cols-3 gap-2 mt-2 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                  <span>Agregado: <span className="font-semibold" style={{ color: 'var(--color-success)' }}>{formatMoney(r.inyectado)}</span></span>
-                  <span>Prestado: <span className="font-semibold" style={{ color: 'var(--color-warning)' }}>{formatMoney(r.prestado)}</span></span>
-                  <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--color-info)' }}>{formatMoney(r.recaudado)}</span></span>
+                <div className="grid grid-cols-3 gap-2 mt-2 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  <span>Agregado: <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(r.inyectado)}</span></span>
+                  <span>Prestado: <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(r.prestado)}</span></span>
+                  <span>Cobrado: <span className="font-semibold" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(r.recaudado)}</span></span>
                 </div>
                 <div className="flex gap-2 mt-2.5">
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'inyeccion')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
-                    style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
+                    style={{ background: 'var(--cf-green-pill-bg)', color: 'var(--cf-green-dark)', border: '1px solid var(--cf-green)' }}>
                     Agregar dinero
                   </button>
                   <button type="button" onClick={() => abrirMovimientoRuta(r.rutaId, 'retiro')}
                     className="flex-1 py-1.5 rounded-[8px] text-xs font-semibold transition-colors"
-                    style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid var(--color-danger-border)' }}>
+                    style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid var(--cf-red-border)' }}>
                     Retirar dinero
                   </button>
                 </div>
@@ -566,11 +566,11 @@ export default function CapitalTab() {
         </div>
       )}
 
-      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] px-4 py-4">
+      <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-4 py-4">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide">Movimientos</p>
+          <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">Movimientos</p>
           <select value={filtroTipo} onChange={(e) => { setFiltroTipo(e.target.value); setPage(1) }}
-            className="text-xs bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-lg px-2 py-1">
+            className="text-xs bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] rounded-lg px-2 py-1">
             <option value="">Todos</option>
             <option value="capital_inicial">Capital inicial</option>
             <option value="inyeccion">Dinero agregado</option>
@@ -583,11 +583,11 @@ export default function CapitalTab() {
         </div>
 
         {loadingMov ? (
-          <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--color-bg-hover)] rounded-[10px] h-14" />)}</div>
+          <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="animate-pulse bg-[var(--cf-fill)] rounded-[10px] h-14" />)}</div>
         ) : movimientos.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)] text-center py-6">No hay movimientos registrados</p>
+          <p className="text-sm text-[var(--cf-ink-3)] text-center py-6">No hay movimientos registrados</p>
         ) : (
-          <div className="space-y-0 divide-y divide-[var(--color-border)]">
+          <div className="space-y-0 divide-y divide-[var(--cf-border)]">
             {movimientos.map((m) => (
               <div key={m.id} className="flex items-center justify-between py-3">
                 <div className="min-w-0 flex-1">
@@ -597,26 +597,26 @@ export default function CapitalTab() {
                       {TIPO_LABELS[m.tipo] || m.tipo}
                     </span>
                   </div>
-                  {m.descripcion && <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate">{m.descripcion}</p>}
-                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{fechaCorta(m.createdAt)}</p>
+                  {m.descripcion && <p className="text-xs text-[var(--cf-ink-3)] mt-0.5 truncate">{m.descripcion}</p>}
+                  <p className="text-[10px] text-[var(--cf-ink-3)] mt-0.5">{fechaCorta(m.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${esMovimientoIngreso(m) ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                    <p className={`text-sm font-bold ${esMovimientoIngreso(m) ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                       {esMovimientoIngreso(m) ? '+' : '-'}{formatMoney(m.monto)}
                     </p>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)]">Saldo: {formatMoney(m.saldoNuevo)}</p>
                   </div>
                   {TIPOS_MANUALES.includes(m.tipo) && (
                     <>
                       <button type="button" onClick={() => abrirEditar(m)} title="Editar movimiento"
-                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors">
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--cf-gold)] hover:bg-[var(--cf-fill)] transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                         </svg>
                       </button>
                       <button type="button" onClick={() => handleEliminar(m)} disabled={eliminando === m.id} title="Eliminar movimiento"
-                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] disabled:opacity-50 transition-colors">
+                        className="w-7 h-7 flex items-center justify-center rounded-[8px] text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-pill-bg)] disabled:opacity-50 transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -630,14 +630,14 @@ export default function CapitalTab() {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-4 pt-3 border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-center gap-3 mt-4 pt-3 border-t border-[var(--cf-border)]">
             <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed">
+              className="text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] disabled:opacity-30 disabled:cursor-not-allowed">
               Anterior
             </button>
-            <span className="text-xs text-[var(--color-text-muted)]">{page} / {totalPages}</span>
+            <span className="text-xs text-[var(--cf-ink-3)]">{page} / {totalPages}</span>
             <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed">
+              className="text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] disabled:opacity-30 disabled:cursor-not-allowed">
               Siguiente
             </button>
           </div>
@@ -646,13 +646,13 @@ export default function CapitalTab() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
-            <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-4">Registrar movimiento</h2>
+          <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] w-full max-w-md p-5">
+            <h2 className="text-lg font-bold text-[var(--cf-ink)] mb-4">Registrar movimiento</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Tipo</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Tipo</label>
                 <select value={modalTipo} onChange={(e) => setModalTipo(e.target.value)}
-                  className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm">
+                  className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm">
                   <option value="capital_inicial">Capital inicial</option>
                   <option value="inyeccion">Agregar dinero</option>
                   <option value="retiro">Retirar dinero</option>
@@ -661,9 +661,9 @@ export default function CapitalTab() {
               </div>
               {porRuta.filter(r => r.capitalHabilitado).length > 0 && modalTipo !== 'capital_inicial' && (
                 <div>
-                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Ruta (opcional)</label>
+                  <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Ruta (opcional)</label>
                   <select value={modalRutaId} onChange={(e) => setModalRutaId(e.target.value)}
-                    className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm">
+                    className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm">
                     <option value="">General (sin ruta)</option>
                     {porRuta.filter(r => r.capitalHabilitado).map((r) => (
                       <option key={r.rutaId} value={r.rutaId}>{r.nombre}</option>
@@ -673,16 +673,16 @@ export default function CapitalTab() {
               )}
               {modalTipo === 'ajuste' && (
                 <div>
-                  <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Dirección del ajuste</label>
+                  <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Dirección del ajuste</label>
                   <div className="grid grid-cols-2 gap-2">
                     {['ingreso', 'egreso'].map(dir => (
                       <button key={dir} type="button" onClick={() => setModalDireccion(dir)}
                         className={['h-10 rounded-[10px] border text-sm font-semibold transition-all',
                           modalDireccion === dir
                             ? dir === 'ingreso'
-                              ? 'bg-[var(--color-success-dim)] border-[var(--color-success-border)] text-[var(--color-success)]'
-                              : 'bg-[var(--color-danger-dim)] border-[var(--color-danger-border)] text-[var(--color-danger)]'
-                            : 'bg-[var(--color-bg-base)] border-[var(--color-border)] text-[var(--color-text-muted)]',
+                              ? 'bg-[var(--cf-green-pill-bg)] border-[var(--cf-green)] text-[var(--cf-green-dark)]'
+                              : 'bg-[var(--cf-red-pill-bg)] border-[var(--cf-red-border)] text-[var(--cf-red-dark)]'
+                            : 'bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-ink-3)]',
                         ].join(' ')}>
                         {dir === 'ingreso' ? 'Entrada' : 'Salida'}
                       </button>
@@ -691,7 +691,7 @@ export default function CapitalTab() {
                 </div>
               )}
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Monto</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Monto</label>
                 <MoneyInput value={modalMonto} onChange={(e) => setModalMonto(e.target.value)} placeholder="0" />
               </div>
               {/* Absorber: solo al inyectar a una ruta que ya tiene prestamos activos */}
@@ -700,10 +700,10 @@ export default function CapitalTab() {
                 // Si la ruta ya absorbio sus prestamos previos una vez, no volver a ofrecer.
                 if (!r || (r.arranqueAbsorbido || 0) > 0) return null
                 return (
-                  <div className="rounded-[10px] border border-[var(--color-border)] p-3" style={{ background: 'var(--color-bg-base)' }}>
+                  <div className="rounded-[10px] border border-[var(--cf-border)] p-3" style={{ background: 'var(--cf-surface)' }}>
                     <label className="flex items-start gap-2 cursor-pointer">
                       <input type="checkbox" checked={modalAbsorber} onChange={(e) => setModalAbsorber(e.target.checked)} className="mt-0.5 accent-[#6366f1]" />
-                      <span className="text-xs text-[var(--color-text-secondary)]">
+                      <span className="text-xs text-[var(--cf-ink-2)]">
                         Si esta ruta ya tiene préstamos activos de antes, descontar lo que falta por cobrar de esta inyección. El sistema calcula el monto exacto.
                       </span>
                     </label>
@@ -711,19 +711,19 @@ export default function CapitalTab() {
                 )
               })()}
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Descripción (opcional)</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Descripción (opcional)</label>
                 <input type="text" value={modalDesc} onChange={(e) => setModalDesc(e.target.value)}
                   placeholder="Ej: Capital para iniciar el mes"
-                  className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm" />
+                  className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm" />
               </div>
-              {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+              {error && <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>}
               <div className="flex gap-3">
                 <button type="button" onClick={() => { setShowModal(false); setError(''); setModalDireccion('ingreso'); setModalRutaId(''); setModalAbsorber(false) }}
-                  className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-[10px] text-sm hover:bg-[var(--color-bg-hover)] transition-colors">
+                  className="flex-1 px-4 py-2.5 border border-[var(--cf-border)] text-[var(--cf-ink-3)] rounded-[10px] text-sm hover:bg-[var(--cf-fill)] transition-colors">
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 px-4 py-2.5 bg-[var(--color-accent)] text-[#1a1a2e] font-semibold rounded-[10px] text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors">
+                  className="flex-1 px-4 py-2.5 bg-[var(--cf-gold)] text-[var(--cf-ink)] font-semibold rounded-[10px] text-sm hover:bg-[var(--cf-gold-dark)] disabled:opacity-50 transition-colors">
                   {saving ? 'Guardando...' : 'Registrar'}
                 </button>
               </div>
@@ -735,29 +735,29 @@ export default function CapitalTab() {
       {/* Modal: editar movimiento manual (corregir monto mal escrito) */}
       {editMov && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] w-full max-w-md p-5">
-            <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-1">Editar movimiento</h2>
-            <p className="text-xs text-[var(--color-text-muted)] mb-4">
+          <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] w-full max-w-md p-5">
+            <h2 className="text-lg font-bold text-[var(--cf-ink)] mb-1">Editar movimiento</h2>
+            <p className="text-xs text-[var(--cf-ink-3)] mb-4">
               Corrige el monto de este {TIPO_LABELS[editMov.tipo]?.toLowerCase() || 'movimiento'}. Se recalculará el saldo.
             </p>
             <form onSubmit={guardarEditar} className="space-y-4">
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Monto</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Monto</label>
                 <MoneyInput value={editMonto} onChange={(e) => setEditMonto(e.target.value)} placeholder="0" />
               </div>
               <div>
-                <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Descripción (opcional)</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Descripción (opcional)</label>
                 <input type="text" value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
-                  className="w-full bg-[var(--color-bg-base)] border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-[10px] px-3 py-2.5 text-sm" />
+                  className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm" />
               </div>
-              {editError && <p className="text-sm text-[var(--color-danger)]">{editError}</p>}
+              {editError && <p className="text-sm text-[var(--cf-red-dark)]">{editError}</p>}
               <div className="flex gap-3">
                 <button type="button" onClick={() => { setEditMov(null); setEditError('') }}
-                  className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-text-muted)] rounded-[10px] text-sm hover:bg-[var(--color-bg-hover)] transition-colors">
+                  className="flex-1 px-4 py-2.5 border border-[var(--cf-border)] text-[var(--cf-ink-3)] rounded-[10px] text-sm hover:bg-[var(--cf-fill)] transition-colors">
                   Cancelar
                 </button>
                 <button type="submit" disabled={editSaving}
-                  className="flex-1 px-4 py-2.5 bg-[var(--color-accent)] text-[#1a1a2e] font-semibold rounded-[10px] text-sm hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors">
+                  className="flex-1 px-4 py-2.5 bg-[var(--cf-gold)] text-[var(--cf-ink)] font-semibold rounded-[10px] text-sm hover:bg-[var(--cf-gold-dark)] disabled:opacity-50 transition-colors">
                   {editSaving ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>
