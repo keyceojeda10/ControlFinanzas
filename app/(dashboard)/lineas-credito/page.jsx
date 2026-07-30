@@ -84,9 +84,9 @@ export default function LineasCreditoPage() {
           <button
             key={e.value}
             onClick={() => setEstado(e.value)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`shrink-0 px-3.5 h-9 rounded-full text-xs font-semibold transition-colors ${
               estado === e.value
-                ? 'bg-[var(--cf-gold)] text-black'
+                ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)]'
                 : 'bg-[var(--cf-card)] text-[var(--cf-ink-2)] border border-[var(--cf-border)]'
             }`}
           >
@@ -117,13 +117,37 @@ export default function LineasCreditoPage() {
           <svg className="w-12 h-12 mx-auto text-[var(--cf-ink-3)] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v10.5A2.25 2.25 0 004.5 19.5z" />
           </svg>
-          <p className="text-sm text-[var(--cf-ink-3)]">
-            {buscar || estado ? 'No se encontraron líneas con esos filtros' : 'No hay líneas de crédito creadas'}
-          </p>
-          {esOwner && !buscar && !estado && (
-            <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs mt-4">
-              Crear primera línea
-            </Link>
+          {/* CON FILTRO Y SIN NADA NO SON EL MISMO VACIO.
+              El filtro «Activas» viene puesto por defecto, asi que un negocio que
+              no ha creado NINGUNA linea leia «no se encontraron lineas con esos
+              filtros» y se quedaba sin salida: ni le explica que es esto ni le
+              ofrece crear la primera. */}
+          {buscar || estado ? (
+            <>
+              <p className="text-sm text-[var(--cf-ink-3)]">Ninguna línea con este filtro.</p>
+              <button
+                type="button"
+                onClick={() => { setBuscar(''); setEstado('') }}
+                className="mt-3 text-xs font-bold"
+                style={{ color: 'var(--cf-gold-dark)' }}
+              >
+                Ver todas
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-[var(--cf-ink)]">
+                Todavía no tienes líneas de crédito
+              </p>
+              <p className="text-[13px] text-[var(--cf-ink-3)] mt-1 max-w-xs mx-auto leading-relaxed">
+                Un cupo que el cliente usa varias veces sin abrirle un préstamo cada vez.
+              </p>
+              {esOwner && (
+                <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-10 px-4 text-[13px] mt-4">
+                  Crear la primera
+                </Link>
+              )}
+            </>
           )}
         </div>
       ) : (
