@@ -1,4 +1,7 @@
 'use client'
+
+import { Cuentas } from '@/components/pantallas/Caja'
+import { adaptarCuentas } from '@/lib/adaptadores/cuentas'
 // components/caja/DesglosePorCuenta.jsx
 // Vista "Cuentas": cuanto dinero ENTRO / SALIO / NETO por cada cuenta usada
 // (efectivo, Nequi, Daviplata...). No usa saldo inicial: es movimiento del periodo.
@@ -37,8 +40,6 @@ export default function DesglosePorCuenta() {
       .finally(() => { if (!cancelado) setLoading(false) })
     return () => { cancelado = true }
   }, [periodo])
-
-  const conMovimiento = (cuentas || []).filter((c) => c.entradas !== 0 || c.salidas !== 0)
 
   return (
     <div className="space-y-4">
@@ -98,66 +99,34 @@ export default function DesglosePorCuenta() {
         <p className="text-sm text-center py-8" style={{ color: 'var(--color-danger)' }}>{error}</p>
       )}
 
-      {!loading && !error && conMovimiento.length === 0 && (
-        <p className="text-sm text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
+      {/* El vacío es para cuando NO HAY NI CUENTAS, no para cuando no hubo
+          movimientos: el efectivo se enseña siempre —aunque esté en cero— y su
+          propia fila ya dice «sin movimientos». Con la condición vieja
+          (`conMovimiento.length === 0`) se pintaban las dos cosas a la vez: el
+          texto de vacío y debajo el bloque con el efectivo en $0. */}
+      {!loading && !error && (!cuentas || cuentas.length === 0) && (
+        <p style={{ fontSize: 14, textAlign: 'center', padding: '32px 0', color: 'var(--cf-ink-3)' }}>
           Sin movimientos en este período. Cuando cobres o prestes eligiendo la cuenta, aparecerá aquí.
         </p>
       )}
 
-      {!loading && !error && conMovimiento.map((c) => {
-        const platInfo = c.tipoCuenta === 'transferencia' ? getPlataformaInfo(c.nombre) : null
-        const acento = platInfo?.color || (c.tipoCuenta === 'efectivo' ? 'var(--color-success)' : 'var(--color-info)')
-        const netoColor = c.neto > 0 ? 'var(--color-success)' : c.neto < 0 ? 'var(--color-danger)' : 'var(--color-text-primary)'
-        return (
-          <div
-            key={c.key}
-            className="rounded-[16px] p-4"
-            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-          >
-            <div className="flex items-center gap-2.5 mb-3">
-              <div
-                className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-                style={{ background: `color-mix(in srgb, ${acento} 15%, transparent)`, color: acento }}
-              >
-                {platInfo ? <PlataformaIcon plataforma={c.nombre} size={22} /> : ICON_EFECTIVO}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{c.nombre}</p>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                  {c.tipoCuenta === 'efectivo' ? 'Efectivo' : c.tipoCuenta === 'transferencia' ? 'Transferencia' : 'Sin cuenta asignada'}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Neto</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: netoColor }}>
-                  {c.neto >= 0 ? '' : '−'}{formatMoney(Math.abs(c.neto))}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-[10px] px-3 py-2" style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)' }}>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Entró</p>
-                <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(c.entradas)}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                  Cobros {formatMoney(c.recaudado)}{c.inyectado > 0 ? ` · Aportes ${formatMoney(c.inyectado)}` : ''}
-                </p>
-              </div>
-              <div className="rounded-[10px] px-3 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)' }}>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Salió</p>
-                <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-danger)' }}>{formatMoney(c.salidas)}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                  Préstamos {formatMoney(c.prestado)}{c.gastos > 0 ? ` · Gastos ${formatMoney(c.gastos)}` : ''}{c.retirado > 0 ? ` · Retiros ${formatMoney(c.retirado)}` : ''}
-                </p>
-              </div>
-            </div>
-          </div>
-        )
-      })}
+      {/* LA LISTA PASA AL COMPONENTE DEL REDISEÑO (T20-01).
+          Lo que cambia y por qué:
 
-      {!loading && !error && conMovimiento.some((c) => c.tipoCuenta === 'sin_registrar') && (
-        <p className="text-[11px] px-1" style={{ color: 'var(--color-text-muted)' }}>
-          "Sin cuenta asignada" son movimientos viejos o cobros donde no se eligió cuenta. De ahora en adelante, al elegir la cuenta en cada cobro se clasifican solos.
-        </p>
+          · LO QUE SE ENSEÑA GRANDE ES EL NETO, no las entradas. «Entró $500.000
+            por Nequi» no dice cuánto hay: si salieron $480.000 desembolsando,
+            quedan $20.000. Entró y salió bajan a la línea pequeña, que es lo que
+            explica de dónde sale el neto.
+          · LA BARRA PARTIDA arriba dice de un vistazo cuánto del total está en la
+            mano y cuánto en una cuenta. El pie de la lámina: «si todo entra como
+            efectivo, el conteo físico nunca cuadra».
+          · EL EFECTIVO VA PRIMERO Y SIEMPRE, aunque esté en cero — es la única
+            que se cuenta con la mano, y su ausencia se leería como «no hay
+            efectivo» en vez de «hoy no entró efectivo».
+
+          El fetch, el estado y el endpoint no se tocan. */}
+      {!loading && !error && cuentas && cuentas.length > 0 && (
+        <Cuentas {...adaptarCuentas(cuentas, formatMoney)} />
       )}
     </div>
   )
