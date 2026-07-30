@@ -172,7 +172,14 @@ export default function PrestamoDetallePage({ params }) {
   const [liqEnviando, setLiqEnviando] = useState(false)
   const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
-  const [historialOpen, setHistorialOpen] = useState(true)
+  // CERRADO, como decia el comentario de mas abajo y NO hacia el codigo.
+  //
+  // Abierto por defecto, la pantalla enseñaba LA MISMA LISTA DE PAGOS DOS VECES:
+  // «Cada pago que ha hecho» del rediseño, con el saldo en que quedo cada uno, y
+  // debajo esta con las mismas filas. Esta se queda porque es la unica que deja
+  // compartir el recibo y borrar un pago mal metido — pero es la de GESTIONAR, no
+  // la de consultar, y se abre cuando hace falta.
+  const [historialOpen, setHistorialOpen] = useState(false)
   const [camposReciboCliente, setCamposReciboCliente] = useState(null)
   const [guardandoCamposRecibo, setGuardandoCamposRecibo] = useState(false)
   const [modalRecibo, setModalRecibo] = useState(null)
@@ -744,11 +751,27 @@ export default function PrestamoDetallePage({ params }) {
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
 
-      {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
+      {/* ── UNA SOLA FRANJA ROJA ──
+          Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62
+          cuotas vencidas · $204.000». Las dos ciertas, pero dos muros rojos
+          seguidos no alarman el doble: se leen como uno solo y mal. Cuando el
+          préstamo está dado por perdido, esa es LA noticia, y la mora entra
+          dentro como el detalle que la sostiene. */}
       {esClavo && (
-        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[var(--cf-red-dark)]">
-          <span className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)]" />
-          Préstamo perdido — apartado de tus números normales
+        <div className="flex items-start gap-2.5 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] shrink-0 mt-1.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--cf-red-dark)]">
+              Préstamo perdido — apartado de tus números normales
+            </p>
+            {enMora && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cf-red-dark)', opacity: .85 }}>
+                {diasMora} días en mora
+                {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
+                {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -779,8 +802,8 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       )}
 
-      {/* ── ALERTA MORA ──────────────────────────────────────────── */}
-      {enMora && estaActivo && !completado && (
+      {/* La franja de mora NO se pinta si ya está dentro de la del clavo. */}
+      {enMora && estaActivo && !completado && !esClavo && (
         <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
           <div className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] animate-pulse shrink-0" />
           <p className="text-sm text-[var(--cf-red-dark)] font-semibold">
@@ -1234,7 +1257,7 @@ export default function PrestamoDetallePage({ params }) {
           className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
         >
           <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">
-            Historial de pagos ({pagos.length})
+            Gestionar los pagos ({pagos.length})
           </p>
           <svg
             className="w-4 h-4 shrink-0 transition-transform duration-200"

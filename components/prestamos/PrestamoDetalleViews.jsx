@@ -433,14 +433,16 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
     }
   }
 
-  // Mora
-  if (diasMora > 0) {
-    stats.push({
-      color: diasMora > 7 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)',
-      icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-      text: `${diasMora} día${diasMora === 1 ? '' : 's'} en mora`,
-    })
-  }
+  // LA MORA NO VUELVE A DECIRSE AQUI.
+  //
+  // En la ficha de un prestamo atrasado, «62 dias en mora» salia CINCO VECES en
+  // la misma pantalla: la franja roja de arriba, la pastilla del cliente, la
+  // columna «EN MORA» de las cifras, el consejo de la IA y este chip. Cinco
+  // formas de decir lo mismo no lo dicen mas fuerte: hacen que ninguna se lea.
+  //
+  // Se quedan las dos del rediseño —la pastilla dice el ESTADO, la columna dice
+  // la PLATA— y la franja de arriba, que es la unica que trae el agregado
+  // («62 cuotas vencidas · $204.000»). Este chip no añadia nada.
 
   // Casi terminado
   if (porcentajePagado >= 90 && porcentajePagado < 100) {

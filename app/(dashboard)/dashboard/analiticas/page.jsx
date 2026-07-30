@@ -319,9 +319,14 @@ export default function AnaliticasPage() {
         </div>
         {proyeccion.esperado > 0 && (
           <p className="text-[10px] text-[var(--cf-ink-3)] mt-2 text-center">
+            {/* CON LA CIFRA ESPERADA, o el porcentaje no se puede comprobar.
+                Salia «95% por debajo de lo esperado» justo al lado de
+                «Proyectado 1M», y las dos juntas se leen como que se contradicen:
+                si proyectas un millon, ¿un 95% por debajo de qué? Lo esperado no
+                se enseñaba en ningun sitio de la tarjeta. */}
             {proyeccion.proyectado >= proyeccion.esperado
-              ? `${Math.round(((proyeccion.proyectado / proyeccion.esperado) - 1) * 100)}% por encima de lo esperado`
-              : `${Math.round((1 - (proyeccion.proyectado / proyeccion.esperado)) * 100)}% por debajo de lo esperado`
+              ? `${Math.round(((proyeccion.proyectado / proyeccion.esperado) - 1) * 100)}% por encima de los ${fmtShort(proyeccion.esperado)} esperados`
+              : `${Math.round((1 - (proyeccion.proyectado / proyeccion.esperado)) * 100)}% por debajo de los ${fmtShort(proyeccion.esperado)} esperados`
             }
           </p>
         )}
@@ -506,7 +511,9 @@ export default function AnaliticasPage() {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">Clavos</p>
-              <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">{cartera.clavos} préstamos irrecuperables</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
+                {cartera.clavos} préstamo{cartera.clavos === 1 ? '' : 's'} irrecuperable{cartera.clavos === 1 ? '' : 's'}
+              </p>
             </div>
             <p className="text-[16px] sm:text-[20px] font-mono font-bold text-[var(--cf-red-dark)] shrink-0">{fmtShort(cartera.moraIrrecuperable)}</p>
           </div>
