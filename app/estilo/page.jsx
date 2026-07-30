@@ -35,6 +35,13 @@ import { CrearRuta, OrdenRecorrido } from '@/components/pantallas/RutaEditar'
 import RutaCerrada, { RutaEnMapa, TarjetaCierre } from '@/components/pantallas/RutaCierre'
 import { ConmutadorVista } from '@/components/pantallas/ModoRuta'
 import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pantallas/PortalCliente'
+// `Socios.jsx` (turno 44) tambien exporta `ListaSocios`. La de T45 es la que
+// manda —turno posterior— y se importa con alias hasta que la vieja se retire.
+import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantallas/SociosReparto'
+import {
+  loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
+  cabeceraSocios, NOTA_NO_SACA_PLATA,
+} from '@/lib/adaptadores/socios'
 import { loQueDebe, proximaCuota, misPagos, respuestaDeRecuperacion } from '@/lib/adaptadores/portal'
 import {
   cobradoresParaElegir, clientesParaElegir, avisoDeRobo, tramosDelRecorrido,
@@ -1608,6 +1615,83 @@ export default function Estilo() {
             numero="300 118 4471" onNumero={() => {}}
             onMandar={() => {}} onEscribir={() => {}}
           />
+        </div>
+
+        {/* «Le debes» NO se dibuja: hoy no hay donde registrar un reparto
+            (AporteSocio.tipo solo admite aporte|retiro). Ver el PENDIENTE en
+            lib/adaptadores/socios.js. */}
+        <div id="socios-lista" style={MARCO}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const SOCIOS = [
+              { id: 'c', nombre: 'Carlos Andrés', puesto: 8_000_000, pagado: 1_200_000, activo: true },
+              { id: 'm', nombre: 'Marta Ruiz', puesto: 4_000_000, pagado: 300_000, activo: true },
+            ]
+            const puesto = loQuePusieron(SOCIOS, fmt)
+            return (
+              <ListaSociosT45
+                cabecera={cabeceraSocios(SOCIOS)}
+                onAtras={() => {}} onNuevo={() => {}}
+                puesto={puesto}
+                pendiente={{ monto: fmt(1_240_000), desde: 'desde el 30 de junio' }}
+                onRepartir={() => {}}
+                sociosTitulo={`Los ${SOCIOS.length} socios`}
+                socios={SOCIOS.map((x, i) => cuentaDelSocio(
+                  { ...x, porcentaje: puesto.socios[i].porcentaje }, fmt,
+                ))}
+                onSocio={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* El mismo con repartos ya registrados: aqui SI aparece «Le debes». */}
+        <div id="socios-lista-deuda" style={MARCO}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const SOCIOS = [
+              { id: 'c', nombre: 'Carlos Andrés', puesto: 8_000_000, pagado: 1_200_000, repartido: 1_980_000, activo: true },
+              { id: 'm', nombre: 'Marta Ruiz', puesto: 4_000_000, pagado: 300_000, repartido: 900_000, activo: true },
+            ]
+            const puesto = loQuePusieron(SOCIOS, fmt)
+            return (
+              <ListaSociosT45
+                cabecera={cabeceraSocios(SOCIOS)}
+                onAtras={() => {}} onNuevo={() => {}}
+                puesto={puesto}
+                pendiente={{ monto: fmt(1_240_000), desde: 'desde el 30 de junio' }}
+                onRepartir={() => {}}
+                sociosTitulo={`Los ${SOCIOS.length} socios`}
+                socios={SOCIOS.map((x, i) => cuentaDelSocio(
+                  { ...x, porcentaje: puesto.socios[i].porcentaje }, fmt,
+                ))}
+                onSocio={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* T45-02. La suma CUADRA AL PESO: 826.667 + 413.333 = 1.240.000. */}
+        <div id="socios-repartir-t45" style={{ ...MARCO, background: 'var(--cf-scrim)' }}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const SOCIOS = [
+              { id: 'c', nombre: 'Carlos Andrés', puesto: 8_000_000 },
+              { id: 'm', nombre: 'Marta Ruiz', puesto: 4_000_000 },
+            ]
+            const puesto = loQuePusieron(SOCIOS, fmt)
+            return (
+              <HojaRepartir
+                periodo="del 30 de junio al 28 de julio"
+                onCerrar={() => {}}
+                reparto={repartoDe(1_240_000, puesto.socios, fmt)}
+                deDonde={deDondeSale({ entro: 8_838_907, gastos: 10_000 }, fmt)}
+                antesDespues={loQueQuedaDebiendo({ antes: 1_380_000, reparto: 1_240_000 }, fmt)}
+                nota={NOTA_NO_SACA_PLATA}
+                onConfirmar={() => {}} onCambiarPeriodo={() => {}}
+              />
+            )
+          })()}
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
