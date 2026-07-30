@@ -2169,15 +2169,17 @@ export default function Estilo() {
           </div>
         </div>
 
+        {/* SIN `numero` NI `verificacion`: hoy no existen en el modelo. El banco
+            enseña lo que la app puede enseñar, no lo que promete la lamina. */}
         <div id="pagare-firmado" style={MARCO}>
           <CabeceraMovil variante={CABECERA.NINGUNA} />
           <div style={{ height: '100%' }}>
             <PagareFirmado
-              negocio="Prestamos Castro" numero="0042" fecha="28 jul 2026"
+              negocio="Prestamos Castro" fecha="28 jul 2026"
               cliente="Deisy Ramírez" cedula="43.987.112"
               recibio="$800.000" devuelve="$1.120.000"
               plazoTexto="8 cuotas semanales de $140.000" empieza="4 de agosto de 2026"
-              horaFirma="9:44 a. m." verificableHasta="2031"
+              horaFirma="9:44 a. m." prestamista="Carlos Castro"
               firmaCliente="M10 38 C28 12, 42 46, 60 24 S92 8, 110 32 C124 50, 140 18, 158 30 C170 38, 182 22, 194 34"
               firmaPrestamista="M12 34 C30 18, 46 42, 66 28 S96 14, 116 34 C132 48, 150 20, 168 32 C178 38, 188 28, 196 32"
             />

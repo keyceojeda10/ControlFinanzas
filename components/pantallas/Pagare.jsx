@@ -197,12 +197,36 @@ export function Firma({ nombre, resumen, fecha, hora, hayTrazo = false, onBorrar
    un código para verificarlo en línea — porque el valor del pagaré es que el
    cliente NO PUEDA decir que no lo firmó.
    Se manda por WhatsApp de una vez: el que se queda solo en el teléfono del
-   cobrador no sirve de nada. */
+   cobrador no sirve de nada.
+
+   ══ EL QR Y EL NÚMERO SOLO SE DIBUJAN SI EXISTEN DE VERDAD ═════════════════
+
+   La lámina promete «escanea para verificar este pagaré en línea · verificable
+   hasta 2031», y hoy NO HAY NADA QUE VERIFICAR: no existe `pagareNumero` ni
+   ningún código en el modelo, no hay ruta pública que resuelva un código, y el QR
+   de esta pantalla es un dibujo. Un pagaré cuyo único valor es que no se pueda
+   negar la firma no puede además afirmar una verificabilidad que no tiene — y si
+   alguien lo lleva a un juzgado, esa frase es lo primero que se cae.
+
+   Así que el bloque es CONDICIONAL: sin `verificacion` no se pinta ni el QR ni la
+   frase, y sin `numero` no se escribe un «Nº» inventado por la interfaz (dos
+   pagarés con el mismo número son peores que ninguno).
+
+   PENDIENTE-BACKEND para cumplirla, en este orden:
+     1. `Prestamo.pagareNumero  Int?`    — secuencial POR ORGANIZACIÓN, no global:
+        el número lo lee un tercero y «Nº 4021» de otra empresa confunde.
+     2. `Prestamo.pagareCodigo  String?` — opaco y aleatorio. Si fuera el id del
+        préstamo, cambiar un dígito enseñaría el pagaré de otra persona.
+     3. Una ruta pública de SOLO LECTURA que, dado el código, confirme lo que ya
+        está impreso —negocio, número, fecha, montos y que está firmado— y nada
+        más. Ni el teléfono del cliente, ni su dirección, ni su saldo actual: quien
+        escanea puede ser cualquiera que tenga el papel en la mano.
+     4. El QR se genera en el servidor, junto al PDF. */
 export function PagareFirmado({
   negocio, numero, fecha,
   cliente, cedula, recibio, devuelve, plazoTexto, empieza,
-  firmaCliente, horaFirma, firmaPrestamista,
-  verificableHasta,
+  firmaCliente, horaFirma, firmaPrestamista, prestamista,
+  verificacion,          // { url, hasta } — sin esto no hay bloque de QR
   onMandar, onDescargar, onImprimir, onVerPrestamo,
 }) {
   return (
@@ -236,8 +260,11 @@ export function PagareFirmado({
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>{negocio}</span>
+              {/* Sin número de verdad no se escribe un «Nº»: la interfaz no puede
+                  inventarlo, y dos pagarés con el mismo número son peores que
+                  ninguno. Queda la fecha, que sí es cierta. */}
               <span className="cf-num" style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
-                Pagaré Nº {numero} · {fecha}
+                {[numero ? `Pagaré Nº ${numero}` : 'Pagaré', fecha].filter(Boolean).join(' · ')}
               </span>
             </span>
             <span style={{
@@ -258,7 +285,13 @@ export function PagareFirmado({
           </span>
 
           <div style={{ display: 'flex', gap: 14, marginTop: 4 }}>
-            {[[firmaCliente, `${cliente} · ${horaFirma}`], [firmaPrestamista, 'prestamista']].map(([trazo, pie], i) => (
+            {/* LAS DOS FIRMAS VAN CON NOMBRE. Un pagaré con una rúbrica y debajo
+                solo la palabra «prestamista» no identifica a quién se le debe, que
+                es la mitad del documento. */}
+            {[
+              [firmaCliente, [cliente, horaFirma].filter(Boolean).join(' · ')],
+              [firmaPrestamista, [prestamista, 'prestamista'].filter(Boolean).join(' · ')],
+            ].map(([trazo, pie], i) => (
               <span key={i} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <svg viewBox="0 0 200 52" style={{ width: '100%', height: 44 }}>
                   <path d={trazo} fill="none" stroke="var(--cf-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -272,13 +305,17 @@ export function PagareFirmado({
             ))}
           </div>
 
+          {/* SIN VERIFICACION REAL, ESTE BLOQUE NO EXISTE.
+              Hoy no hay codigo, ni ruta publica que lo resuelva, ni QR generado en
+              el servidor — ver la cabecera de la funcion. Dibujar aqui un QR de
+              adorno y la frase «verificable hasta 2031» seria afirmar, en el unico
+              documento del producto que puede acabar delante de un juez, algo que
+              no se puede cumplir. */}
+          {verificacion?.url && (
+          <>
           <span style={{ height: 1, background: 'var(--cf-hairline)' }} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* El QR real lo genera el servidor con el codigo de verificacion.
-                Aca va un marcador que se LEE como QR —los tres cuadros de
-                esquina son lo que lo identifica— para que el maquetado no
-                mienta sobre el tamaño que va a ocupar. */}
             <svg aria-hidden width="48" height="48" viewBox="0 0 29 29" style={{ flex: 'none' }}>
               <rect width="29" height="29" fill="var(--cf-card)" />
               {[[0, 0], [22, 0], [0, 22]].map(([x, y]) => (
@@ -295,27 +332,45 @@ export function PagareFirmado({
               </g>
             </svg>
             <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
-              Escanea para verificar este pagaré en línea. Nº {numero} · verificable hasta {verificableHasta}.
+              Escanea para verificar este pagaré en línea.
+              {numero ? ` Nº ${numero}.` : ''}
+              {verificacion.hasta ? ` Verificable hasta ${verificacion.hasta}.` : ''}
             </span>
           </div>
+          </>
+          )}
         </div>
 
-        {/* "Mandárselo" primero y en verde WhatsApp: el pagaré que se queda solo
-            en el teléfono del cobrador no sirve de nada. */}
-        <div style={{ display: 'flex', gap: 9, flex: 'none' }}>
-          <button type="button" onClick={onMandar} style={{
-            flex: 1.4, minWidth: 0, height: 'var(--cf-h-btn-2)', borderRadius: 'var(--cf-r-control)',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: 'var(--cf-whatsapp)', border: 0, cursor: 'pointer',
-            fontSize: 14, fontWeight: 700, color: '#FFF',
-          }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 11.5a8.4 8.4 0 01-12.6 7.3L3 20.5l1.8-5.2A8.4 8.4 0 1121 11.5z" />
-            </svg>
-            Mandárselo
-          </button>
-          <BotonSecundario style={{ flex: 1 }} onClick={onDescargar}>Descargar</BotonSecundario>
-          <BotonSecundario style={{ flex: 1 }} onClick={onImprimir}>Imprimir</BotonSecundario>
+        {/* LOS TRES IGUALES: son tres formas de sacar el mismo documento, y la
+            acción de la pantalla ya es el botón dorado del pie. Destacar
+            «mandárselo» en verde relleno le daba peso de acción primaria y dejaba
+            «descargar» e «imprimir» como si fueran de segunda — y en un pagaré
+            imprimir no es de segunda.
+
+            Lo único verde es el icono de WhatsApp, que es una marca ajena. */}
+        <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+          {[
+            { id: 'mandar', texto: 'Mandárselo', onClick: onMandar, marca: 'var(--cf-whatsapp)',
+              icono: <path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z" /> },
+            { id: 'bajar', texto: 'Descargar', onClick: onDescargar,
+              icono: <path d="M12 4v11M8 11l4 4 4-4M5 19h14" /> },
+            { id: 'imprimir', texto: 'Imprimir', onClick: onImprimir,
+              icono: <><rect x="6" y="3" width="12" height="6" /><path d="M6 14H4a1 1 0 01-1-1v-3a1 1 0 011-1h16a1 1 0 011 1v3a1 1 0 01-1 1h-2" /><rect x="6" y="14" width="12" height="7" /></> },
+          ].map((a) => (
+            <button key={a.id} type="button" onClick={a.onClick} style={{
+              flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 7, padding: '14px 8px', borderRadius: 14,
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+              cursor: 'pointer', font: 'inherit', color: 'var(--cf-ink)',
+            }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
+                stroke={a.marca ?? 'var(--cf-ink-2)'} strokeWidth="1.9"
+                strokeLinecap="round" strokeLinejoin="round">
+                {a.icono}
+              </svg>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>{a.texto}</span>
+            </button>
+          ))}
         </div>
       </div>
 
