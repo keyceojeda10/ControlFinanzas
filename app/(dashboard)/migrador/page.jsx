@@ -72,14 +72,14 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
       <div className="mb-5">
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
             {numero}
           </div>
-          <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>
             Agregar cliente #{numero}
           </h2>
         </div>
-        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
           Si tienes una foto de la cartulina, cuaderno o libreta del cliente, la IA puede leer los datos por ti. Si no, puedes escribir todo manual.
         </p>
       </div>
@@ -89,29 +89,29 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
         <button type="button" onClick={onManual} disabled={ocrLoading}
           className="w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)), var(--color-bg-card))',
-            border: '1.5px solid color-mix(in srgb, var(--color-accent) 30%, var(--color-border))',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 8%, var(--cf-card)), var(--cf-card))',
+            border: '1.5px solid color-mix(in srgb, var(--cf-gold) 30%, var(--cf-border))',
           }}>
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}>
+              style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Escribir manual</h3>
-              <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Escribe el nombre, cédula, monto y condiciones del préstamo.</p>
+              <h3 className="text-base font-bold" style={{ color: 'var(--cf-ink)' }}>Escribir manual</h3>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Escribe el nombre, cédula, monto y condiciones del préstamo.</p>
             </div>
           </div>
         </button>
 
         <button type="button" onClick={onFoto} disabled={ocrLoading}
           className="w-full text-left rounded-2xl p-4 transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{ background: 'var(--color-bg-card)', border: '1.5px solid var(--color-border)' }}>
+          style={{ background: 'var(--cf-card)', border: '1.5px solid var(--cf-border)' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-info) 12%, transparent)', color: 'var(--color-info)' }}>
+              style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
               {ocrLoading ? (
                 <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -125,10 +125,10 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
               )}
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                 {ocrLoading ? 'Leyendo foto...' : 'Desde foto'}
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 {ocrLoading ? 'Extrayendo datos...' : 'La IA lee la cartulina o libreta'}
               </p>
             </div>
@@ -138,7 +138,7 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
 
       {ocrError && (
         <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}>
+          style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
@@ -156,17 +156,17 @@ function EditableResumenRow({ label, value, children, valueColor, mono }) {
       {editing ? (
         <div className="space-y-1.5 py-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
-            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--color-success)', background: 'color-mix(in srgb, var(--color-success) 12%, transparent)' }}>OK</button>
+            <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
+            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--cf-green-dark)', background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)' }}>OK</button>
           </div>
           {children}
         </div>
       ) : (
         <button type="button" onClick={() => setEditing(true)} className="flex justify-between items-center w-full py-1 text-left group">
-          <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{label}</span>
+          <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
           <span className="flex items-center gap-1.5">
-            <span className={`text-sm font-semibold${mono ? ' font-mono-display' : ''}`} style={{ color: valueColor || 'var(--color-text-primary)' }}>{value}</span>
-            <svg className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+            <span className={`text-sm font-semibold${mono ? ' font-mono-display' : ''}`} style={{ color: valueColor || 'var(--cf-ink)' }}>{value}</span>
+            <svg className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
           </span>
         </button>
       )}
@@ -197,12 +197,12 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {!editando && (
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
             {numero}
           </div>
           <div>
-            <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Cliente #{numero}</h2>
-            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Completa los datos y configura su préstamo</p>
+            <h2 className="text-base font-bold" style={{ color: 'var(--cf-ink)' }}>Cliente #{numero}</h2>
+            <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Completa los datos y configura su préstamo</p>
           </div>
         </div>
       )}
@@ -210,8 +210,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {/* ── DATOS DEL CLIENTE ── */}
       <div>
         <h3 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1"
-          style={{ color: 'var(--color-accent)' }}>Datos del cliente</h3>
-        <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          style={{ color: 'var(--cf-gold)' }}>Datos del cliente</h3>
+        <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
           {/* Decia que la cedula era opcional y despues el guardado la rechazaba
               con "La cédula es obligatoria". El usuario llenaba lo que le
               pedian, tocaba Guardar, y recibia un error que contradecia el
@@ -222,18 +222,18 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           <input ref={nombreRef} type="text" placeholder="Nombre completo *" autoFocus
             value={ficha.nombre} onChange={e => set('nombre', e.target.value)}
             className="w-full h-11 rounded-[12px] border px-3 text-sm"
-            style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+            style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
           <div className={`grid gap-2.5 ${sinCedula ? '' : 'grid-cols-2'}`}>
             {!sinCedula && (
               <input type="text" placeholder="Cédula *" inputMode="numeric"
                 value={ficha.cedula} onChange={e => set('cedula', e.target.value)}
                 className="w-full h-11 rounded-[12px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
             )}
             <input type="tel" placeholder="Teléfono *"
               value={ficha.telefono} onChange={e => set('telefono', e.target.value)}
               className="w-full h-11 rounded-[12px] border px-3 text-sm"
-              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+              style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
           </div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={sinCedula}
@@ -241,30 +241,30 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 setSinCedula(e.target.checked)
                 if (e.target.checked) set('cedula', '')
               }}
-              className="accent-[var(--color-accent)] w-4 h-4 rounded" />
-            <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+              className="accent-[var(--cf-gold)] w-4 h-4 rounded" />
+            <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
               No tengo el número de la cédula
             </span>
           </label>
           <input type="text" placeholder="Dirección (opcional)"
             value={ficha.direccion} onChange={e => set('direccion', e.target.value)}
             className="w-full h-11 rounded-[12px] border px-3 text-sm"
-            style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+            style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
         </div>
       </div>
 
       {/* ── PRÉSTAMO ── */}
       <div>
         <h3 className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-1"
-          style={{ color: 'var(--color-accent)' }}>Condiciones del préstamo</h3>
-        <p className="text-[11px] mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          style={{ color: 'var(--cf-gold)' }}>Condiciones del préstamo</h3>
+        <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
           Configura el monto, la tasa, la frecuencia de cobro y el plazo. Si este cliente tiene condiciones diferentes a los demas, puedes cambiarlo aqui.
         </p>
         <div className="space-y-3">
           {/* Monto */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--color-text-muted)' }}>Cuanto le prestas?</label>
+              style={{ color: 'var(--cf-ink-3)' }}>Cuanto le prestas?</label>
             <MoneyInput
               value={ficha.monto}
               onChange={e => set('monto', e.target.value)}
@@ -276,9 +276,9 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 <button key={v} type="button" onClick={() => set('monto', String(v))}
                   className="px-2.5 py-1 rounded-full text-[11px] font-medium font-mono-display border transition-colors"
                   style={{
-                    background: Number(ficha.monto) === v ? 'var(--color-accent-soft)' : 'var(--color-bg-base)',
-                    borderColor: Number(ficha.monto) === v ? 'var(--color-accent)' : 'var(--color-border)',
-                    color: Number(ficha.monto) === v ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                    background: Number(ficha.monto) === v ? 'var(--cf-gold-tint)' : 'var(--cf-surface)',
+                    borderColor: Number(ficha.monto) === v ? 'var(--cf-gold)' : 'var(--cf-border)',
+                    color: Number(ficha.monto) === v ? 'var(--cf-gold)' : 'var(--cf-ink-3)',
                   }}>
                   {formatMoney(v)}
                 </button>
@@ -290,28 +290,28 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           <div className="grid grid-cols-3 gap-2.5">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Tasa %</label>
+                style={{ color: 'var(--cf-ink-3)' }}>Tasa %</label>
               <input type="text" inputMode="decimal" value={ficha.tasa}
                 onChange={e => set('tasa', soloDecimal(e.target.value))}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Frecuencia</label>
+                style={{ color: 'var(--cf-ink-3)' }}>Frecuencia</label>
               <select value={ficha.frecuencia} onChange={e => handleFrecuenciaChange(e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-2 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}>
                 {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Plazo ({unidadPlazo})</label>
+                style={{ color: 'var(--cf-ink-3)' }}>Plazo ({unidadPlazo})</label>
               <input type="number" inputMode="numeric" value={ficha.plazoUnidades}
                 onChange={e => set('plazoUnidades', e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
             </div>
           </div>
 
@@ -327,7 +327,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 onChange={e => set('cuotaManual', e.target.value)}
                 placeholder="Ej: 60.000"
               />
-              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Tu defines la cuota. Total = cuota x número de cobros.</p>
             </div>
           )}
           {ficha.modoInteres === 'saldo' && (
@@ -338,34 +338,34 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
                 onChange={e => set('cuotaManual', e.target.value)}
                 placeholder="Dejar vacío para calcular automático"
               />
-              <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>Opcional: define la cuota en vez de calcularla con la fórmula francesa.</p>
+              <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>Opcional: define la cuota en vez de calcularla con la fórmula francesa.</p>
             </div>
           )}
 
           {/* Fecha inicio */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--color-text-muted)' }}>Fecha de inicio del préstamo</label>
+              style={{ color: 'var(--cf-ink-3)' }}>Fecha de inicio del préstamo</label>
             <input type="date" value={ficha.fechaInicio} onChange={e => set('fechaInicio', e.target.value)}
               max={hoyISO()} className="w-full h-10 rounded-[12px] border px-3 text-sm"
-              style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} />
+              style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} />
           </div>
 
           {/* Días sin cobro */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--color-text-muted)' }}>Dias sin cobro</label>
-            <p className="text-[10px] mb-2" style={{ color: 'var(--color-text-muted)' }}>Dias de la semana en que NO se cobra a este cliente.</p>
+              style={{ color: 'var(--cf-ink-3)' }}>Dias sin cobro</label>
+            <p className="text-[10px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias de la semana en que NO se cobra a este cliente.</p>
             <DiasSinCobroSelector value={ficha.diasSinCobro} onChange={arr => set('diasSinCobro', arr)} compact />
           </div>
 
           {/* Préstamo en curso */}
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input type="checkbox" checked={ficha.esEnCurso} onChange={e => set('esEnCurso', e.target.checked)}
-              className="w-4 h-4 rounded accent-[var(--color-accent)]" />
+              className="w-4 h-4 rounded accent-[var(--cf-gold)]" />
             <div>
-              <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Este préstamo ya tiene abonos</span>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Activalo si el cliente ya venia pagando y estás migrando un préstamo en curso</p>
+              <span className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>Este préstamo ya tiene abonos</span>
+              <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Activalo si el cliente ya venia pagando y estás migrando un préstamo en curso</p>
             </div>
           </label>
 
@@ -384,10 +384,10 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {rutas.length > 0 && !defaultRutaId && (
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-                style={{ color: 'var(--color-text-muted)' }}>Ruta de cobro</label>
+                style={{ color: 'var(--cf-ink-3)' }}>Ruta de cobro</label>
               <select value={ficha.rutaId} onChange={e => set('rutaId', e.target.value)}
                 className="w-full h-10 rounded-[12px] border px-3 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}>
                 <option value="">Sin ruta</option>
                 {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
@@ -399,14 +399,14 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {/* ── RESUMEN DEL PRESTAMO (solo después de elegir modo de interés) ── */}
       {calculo && modoInteresTocado && (
         <div className="rounded-[12px] overflow-hidden"
-          style={{ border: '1.5px solid color-mix(in srgb, var(--color-success) 35%, var(--color-border))' }}>
-          <div className="px-3.5 py-2 flex items-center justify-between" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-base))' }}>
-            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>
+          style={{ border: '1.5px solid color-mix(in srgb, var(--cf-green-dark) 35%, var(--cf-border))' }}>
+          <div className="px-3.5 py-2 flex items-center justify-between" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, var(--cf-surface))' }}>
+            <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>
               Resumen del prestamo
             </p>
-            <span className="text-[9px]" style={{ color: 'var(--color-text-muted)' }}>Toca para editar</span>
+            <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
           </div>
-          <div className="px-3.5 py-2 space-y-0" style={{ background: 'var(--color-bg-base)' }}>
+          <div className="px-3.5 py-2 space-y-0" style={{ background: 'var(--cf-surface)' }}>
             {/* Editable: Monto */}
             <EditableResumenRow label="Monto" value={formatMoney(Number(ficha.monto))} mono>
               <MoneyInput
@@ -421,8 +421,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               <div className="flex items-center gap-1.5">
                 <input type="text" inputMode="decimal" value={ficha.tasa} onChange={e => set('tasa', soloDecimal(e.target.value))}
                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>% mensual</span>
+                  style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
               </div>
             </EditableResumenRow>
 
@@ -430,7 +430,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             <EditableResumenRow label="Frecuencia" value={FRECUENCIAS.find(f => f.key === ficha.frecuencia)?.label || ficha.frecuencia}>
               <select value={ficha.frecuencia} onChange={e => handleFrecuenciaChange(e.target.value)}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                 {FRECUENCIAS.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
               </select>
             </EditableResumenRow>
@@ -440,8 +440,8 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
               <div className="flex items-center gap-1.5">
                 <input type="number" inputMode="numeric" value={ficha.plazoUnidades} onChange={e => set('plazoUnidades', e.target.value)}
                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                  style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus />
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unidadPlazo}</span>
+                  style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{unidadPlazo}</span>
               </div>
             </EditableResumenRow>
 
@@ -449,7 +449,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Decr. dinámico' }[ficha.modoInteres] || 'Clásico'}>
               <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual' && e.target.value !== 'saldo') set('cuotaManual', '') }}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
-                style={{ background: 'var(--color-bg-base)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} autoFocus>
+                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                 <option value="fijo">Clásico</option>
                 <option value="unico">De una vez</option>
                 <option value="saldo">Sobre saldo</option>
@@ -471,33 +471,33 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             )}
 
             {/* Calculados — read only */}
-            <div className="pt-2 mt-1 space-y-1.5" style={{ borderTop: '2px solid color-mix(in srgb, var(--color-success) 25%, var(--color-border))' }}>
+            <div className="pt-2 mt-1 space-y-1.5" style={{ borderTop: '2px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cuota {freqLabel}</span>
-                <span className="text-base font-bold font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Cuota {freqLabel}</span>
+                <span className="text-base font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Total a pagar</span>
-                <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(calculo.totalAPagar)}</span>
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</span>
+                <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(calculo.totalAPagar)}</span>
               </div>
               {calculo.totalInteres > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Ganancia</span>
-                  <span className="text-sm font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(calculo.totalInteres)}</span>
+                  <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
+                  <span className="text-sm font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(calculo.totalInteres)}</span>
                 </div>
               )}
               {calculo.numeroCuotas && (
                 <div className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Número de cuotas</span>
-                  <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{calculo.numeroCuotas}</span>
+                  <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Número de cuotas</span>
+                  <span className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>{calculo.numeroCuotas}</span>
                 </div>
               )}
             </div>
 
             {ficha.esEnCurso && Number(ficha.yaAbonado) > 0 && saldoPendiente !== null && (
-              <div className="flex justify-between items-center pt-1.5" style={{ borderTop: '1px dashed var(--color-border)' }}>
-                <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>Saldo pendiente</span>
-                <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(saldoPendiente)}</span>
+              <div className="flex justify-between items-center pt-1.5" style={{ borderTop: '1px dashed var(--cf-border)' }}>
+                <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Saldo pendiente</span>
+                <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(saldoPendiente)}</span>
               </div>
             )}
           </div>
@@ -507,7 +507,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {/* Error */}
       {error && (
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-[12px] text-sm"
-          style={{ background: 'var(--color-danger-dim)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}>
+          style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
@@ -518,7 +518,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
       {/* Boton guardar */}
       <button type="button" onClick={onGuardar} disabled={saving}
         className="w-full h-12 rounded-[12px] text-sm font-bold transition-all disabled:opacity-50"
-        style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+        style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
         {saving ? (
           <span className="flex items-center justify-center gap-2">
             <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -538,36 +538,36 @@ function ClienteCard({ item, indice, onEditar, onEliminar, eliminando }) {
   const freqLabel = FRECUENCIAS.find(f => f.key === item.frecuencia)?.label || item.frecuencia
   return (
     <div className="rounded-[12px] border overflow-hidden transition-all"
-      style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+      style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)' }}>
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
-          style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)' }}>
+          style={{ background: 'var(--cf-green-pill-bg)', color: 'var(--cf-green-dark)' }}>
           {indice}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold truncate" style={{ color: 'var(--color-text-primary)' }}>{item.nombre}</p>
-          <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-sm font-bold truncate" style={{ color: 'var(--cf-ink)' }}>{item.nombre}</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
             <span className="font-mono-display">{formatMoney(item.monto)}</span> · {freqLabel} · Cuota <span className="font-mono-display">{formatMoney(item.cuota)}</span>
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-xs font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(item.totalAPagar)}</p>
-          <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>total</p>
+          <p className="text-xs font-bold font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(item.totalAPagar)}</p>
+          <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>total</p>
         </div>
       </div>
-      <div className="flex border-t" style={{ borderColor: 'var(--color-border)' }}>
+      <div className="flex border-t" style={{ borderColor: 'var(--cf-border)' }}>
         <button type="button" onClick={onEditar}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors"
-          style={{ color: 'var(--color-text-secondary)' }}>
+          style={{ color: 'var(--cf-ink-2)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
           </svg>
           Editar
         </button>
-        <div style={{ width: 1, background: 'var(--color-border)' }} />
+        <div style={{ width: 1, background: 'var(--cf-border)' }} />
         <button type="button" onClick={onEliminar} disabled={eliminando}
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-50"
-          style={{ color: 'var(--color-danger)' }}>
+          style={{ color: 'var(--cf-red-dark)' }}>
           {eliminando ? (
             <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -913,7 +913,7 @@ export default function MigradorPage() {
       <div className="mb-5">
         <button onClick={handleVolver}
           className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}>
+          style={{ color: 'var(--cf-ink-3)' }}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -921,13 +921,13 @@ export default function MigradorPage() {
         </button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{headerTitulo}</h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{headerSub}</p>
+            <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{headerTitulo}</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{headerSub}</p>
           </div>
           {creados.length > 0 && vista !== 'lista' && (
             <button type="button" onClick={() => irA('lista')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors"
-              style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)' }}>
+              style={{ background: 'var(--cf-green-pill-bg)', color: 'var(--cf-green-dark)' }}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
@@ -941,19 +941,19 @@ export default function MigradorPage() {
       {vista === 'selector' && (
         <Link href="/carga-masiva"
           className="flex items-center gap-2 px-3 py-2 rounded-[12px] mb-4 text-[12px] transition-colors"
-          style={{ background: 'color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--color-border))', color: 'var(--color-text-muted)' }}>
-          <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-success)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 6%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 18%, var(--cf-border))', color: 'var(--cf-ink-3)' }}>
+          <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--cf-green-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
               d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
-          <span>Tienes un archivo Excel? <span className="font-semibold" style={{ color: 'var(--color-success)' }}>Importalo aqui</span></span>
+          <span>Tienes un archivo Excel? <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Importalo aqui</span></span>
         </Link>
       )}
 
       {/* Success msg (global) */}
       {successMsg && (
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-[12px] mb-4 text-sm font-medium"
-          style={{ background: 'var(--color-success-dim)', color: 'var(--color-success)', border: '1px solid var(--color-success-border)' }}>
+          style={{ background: 'var(--cf-green-pill-bg)', color: 'var(--cf-green-dark)', border: '1px solid var(--cf-green)' }}>
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
           </svg>
@@ -966,23 +966,23 @@ export default function MigradorPage() {
         <>
           {/* Resumen global */}
           <div className="rounded-[20px] cf-card-shadow border p-4 mb-4"
-            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 6%, var(--color-bg-card)), var(--color-bg-card))', borderColor: 'color-mix(in srgb, var(--color-accent) 25%, var(--color-border))' }}>
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 6%, var(--cf-card)), var(--cf-card))', borderColor: 'color-mix(in srgb, var(--cf-gold) 25%, var(--cf-border))' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-accent)' }}>
+              <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-gold)' }}>
                 Resumen de cartera
               </span>
-              <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-[11px] font-bold" style={{ color: 'var(--cf-ink-3)' }}>
                 {creados.length} cliente{creados.length !== 1 ? 's' : ''}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Capital prestado</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalCapital)}</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Capital prestado</p>
+                <p className="text-base font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(totalCapital)}</p>
               </div>
               <div>
-                <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Total a cobrar</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: 'var(--color-accent)' }}>{formatMoney(totalAPagarGlobal)}</p>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Total a cobrar</p>
+                <p className="text-base font-bold font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(totalAPagarGlobal)}</p>
               </div>
             </div>
           </div>
@@ -1000,7 +1000,7 @@ export default function MigradorPage() {
           {/* Boton agregar otro */}
           <button type="button" onClick={() => { setFicha(fichaVacia(defaults)); setSinCedula(false); setEditandoIdx(null); setError(''); setOcrError(''); irA('selector') }}
             className="w-full h-14 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}>
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
@@ -1009,7 +1009,7 @@ export default function MigradorPage() {
 
           <button type="button" onClick={() => router.push('/prestamos')}
             className="w-full h-12 rounded-2xl text-sm font-semibold mt-3 border transition-all"
-            style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', background: 'var(--color-bg-surface)' }}>
+            style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)', background: 'var(--cf-surface)' }}>
             Termine, ir a prestamos
           </button>
         </>
@@ -1023,29 +1023,29 @@ export default function MigradorPage() {
             <div className="mb-5">
               <button type="button" onClick={() => irA('lista')}
                 className="w-full text-left rounded-[20px] cf-card-shadow border px-4 py-3 transition-colors"
-                style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+                style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
-                      style={{ color: 'var(--color-success)' }}>
+                      style={{ color: 'var(--cf-green-dark)' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--cf-ink)' }}>
                       {creados.length} cliente{creados.length !== 1 ? 's' : ''} agregado{creados.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <span className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Ver lista</span>
+                  <span className="text-[11px] font-medium" style={{ color: 'var(--cf-gold)' }}>Ver lista</span>
                 </div>
                 <div className="mt-1.5 flex gap-1 flex-wrap">
                   {creados.slice(-5).map((c, i) => (
                     <span key={i} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
+                      style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink-3)' }}>
                       {c.nombre.split(' ')[0]}
                     </span>
                   ))}
                   {creados.length > 5 && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
+                      style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink-3)' }}>
                       +{creados.length - 5} mas
                     </span>
                   )}
@@ -1069,7 +1069,7 @@ export default function MigradorPage() {
       {/* ════════ VISTA: FORMULARIO ════════ */}
       {vista === 'formulario' && (
         <div className="rounded-[20px] cf-card-shadow border overflow-hidden p-4"
-          style={{ background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}>
+          style={{ background: 'var(--cf-card)', borderColor: 'var(--cf-border)' }}>
           <FormularioFicha
             ficha={ficha} set={set} calculo={calculo} diasPlazo={diasPlazo}
             rutas={rutas} defaultRutaId={defaults.rutaId} nombreRef={nombreRef}
