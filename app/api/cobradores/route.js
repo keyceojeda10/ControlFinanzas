@@ -83,7 +83,10 @@ export async function GET(request) {
       },
       pagos: {
         where:      { fechaPago: { gte: hoy(), lt: manana() } },
-        select:     { montoPagado: true, tipo: true, fechaPago: true },
+        // `metodoPago` es 'efectivo' | 'transferencia', y es lo que separa lo
+        // que el cobrador TIENE EN EL BOLSILLO de lo que ya está en la cuenta.
+        // Sin él, «debe entregar» miente en cuanto un cliente paga por Nequi.
+        select:     { montoPagado: true, tipo: true, fechaPago: true, metodoPago: true },
         orderBy:    { fechaPago: 'desc' },
       },
     },
@@ -99,6 +102,15 @@ export async function GET(request) {
     const pagosValidos = c.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo))
     const recaudadoHoy = pagosValidos.reduce((a, p) => a + p.montoPagado, 0)
     const cantidadPagos = pagosValidos.length
+    // Lo que lleva encima vs lo que ya está en la cuenta. Sin `metodoPago` un
+    // pago es efectivo: es lo que asumía el sistema antes y es la suposición
+    // conservadora — de más para entregar, nunca de menos.
+    let recaudadoDigitalHoy = 0
+    let recaudadoEfectivoHoy = 0
+    for (const p of pagosValidos) {
+      if (p.metodoPago === 'transferencia') recaudadoDigitalHoy += p.montoPagado
+      else recaudadoEfectivoHoy += p.montoPagado
+    }
     const ultimoPago = c.pagos[0]?.fechaPago ?? null
     // Esperado hoy: solo cuotas de prestamos cuyo ciclo de cobro toca HOY
     // (frecuencia diaria, semanal en el dia ancla, mensual en el dia configurado).
@@ -137,6 +149,8 @@ export async function GET(request) {
       ruta:            c.rutas[0] ? { id: c.rutas[0].id, nombre: c.rutas[0].nombre } : null,
       cantidadClientes: c.rutas[0]?.clientes?.length ?? 0,
       recaudadoHoy,
+      recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
+      recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
       esperadoHoy,
       cantidadPagosHoy: cantidadPagos,
       ultimoPago,

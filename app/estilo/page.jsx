@@ -70,6 +70,7 @@ import { CrearPrestamoMonto, CrearPrestamoCondiciones } from '@/components/panta
 import { ListaSocios, RepartirGanancia, CuentaSocio } from '@/components/pantallas/Socios'
 import { AntesDeFirmar, Firma, PagareFirmado } from '@/components/pantallas/Pagare'
 import SociosEscritorio from '@/components/pantallas/SociosEscritorio'
+import { Cobradores, CrearCobrador, MiDia } from '@/components/pantallas/Cobradores'
 import {
   Tarjeta, BloqueOscuro, TiraCifras, AntesDespues, Pastilla,
   BotonPrimario, BotonSecundario, BotonDestructivo, BotonTexto, BarraAccion,
@@ -1848,6 +1849,69 @@ export default function Estilo() {
             }}
             nota="Sábados y domingos dejan de generar mora. La cuota, el plazo y la fecha de vencimiento no cambian."
             onCancelar={() => {}} onGuardar={() => {}}
+          />
+        </div>
+
+        {/* T09-02. Dos grupos: los que cobran, con sus tres cifras; los que no
+            tienen ruta —y por tanto no pueden cobrar nada—, colapsados. */}
+        <div id="cob-lista" style={{ ...MARCO, position: 'relative' }}>
+          <Cobradores
+            resumen="9 cuentas · 4 con ruta asignada"
+            aviso={{ cuantas: 5, texto: '5 cuentas sin ruta' }}
+            cobrando={[
+              { id: 'p', nombre: 'Pepito', iniciales: 'PE', detalle: 'Ruta 2 · 9 clientes',
+                hoy: '$61.500', efectividad: '83%', tonoEfectividad: 'ok', entrega: '$61.500', debeAlgo: true },
+              { id: 'c', nombre: 'Carmen Calanche', iniciales: 'CA', detalle: 'Ruta norte · 8 clientes',
+                hoy: '$118.300', efectividad: '78%', tonoEfectividad: 'ok', entrega: '$118.300', debeAlgo: true },
+            ]}
+            sinRuta={[
+              { id: '1', nombre: 'Carlos lopez', iniciales: 'CL' },
+              { id: '2', nombre: 'Carlos 1', iniciales: 'C1' },
+              { id: '3', nombre: 'Prueba dos', iniciales: 'PD' },
+              { id: '4', nombre: 'Nuevo cobrador', iniciales: 'NC' },
+              { id: '5', nombre: 'Sin nombre', iniciales: 'SN' },
+            ]}
+            onVolver={() => {}} onAbrir={() => {}} onAsignar={() => {}} onCrear={() => {}}
+          />
+        </div>
+
+        {/* T09-03. La ruta se elige AQUI: es lo que evita las cinco cuentas sin
+            ruta. La clave la genera la app, no la inventa el dueno. */}
+        <div id="cob-crear" style={{ ...MARCO, height: 'auto', minHeight: 900, overflow: 'visible' }}>
+          <CrearCobrador
+            nombre="Andrés Pérez" correo="andres@correo.com" whatsapp="320 771 0942"
+            rutas={[
+              { id: 'sur', nombre: 'Ruta sur' }, { id: 'r1', nombre: 'Ruta #1' },
+              { id: 'goty', nombre: 'Ruta goty 1' }, { id: 'nueva', nombre: 'Nueva ruta' },
+            ]}
+            rutaElegida="sur"
+            permisos={{}}
+            onCampo={() => {}} onRuta={() => {}} onPermiso={() => {}} onCrear={() => {}}
+            onVolver={() => {}}
+          />
+        </div>
+
+        {/* T36-03. La pantalla del cobrador. Le devuelve algo a cambio de
+            registrar: su porcentaje, su mejor dia y lo que debe entregar. */}
+        <div id="cob-midia" style={{ ...MARCO }}>
+          <MiDia
+            iniciales="PG" cobrador="Pepito" ruta="Ruta de pepito" fecha="martes 28"
+            recogido="$188.000" deEsperado="de $235.000" porcentaje="80%" barra={80}
+            clientes="9 de 11 clientes te pagaron · 2 quedaron pendientes"
+            entrega="$153.000" entregaDetalle="efectivo · $35.000 entraron por Nequi"
+            onEntregar={() => {}}
+            semana={[
+              { etiqueta: 'L', valor: 64, tono: 'inactiva' }, { etiqueta: 'M', valor: 88, tono: 'inactiva' },
+              { etiqueta: 'M', valor: 41, tono: 'inactiva' }, { etiqueta: 'J', valor: 76, tono: 'inactiva' },
+              { etiqueta: 'V', valor: 100, tono: 'oro' },
+              { etiqueta: 'S', valor: 0, tono: 'inactiva' }, { etiqueta: 'D', valor: 0, tono: 'inactiva' },
+            ]}
+            fraseSemana="Hoy es tu mejor día de la semana. Llevas $742.000 recogidos."
+            faltaron={[
+              { id: 'j', iniciales: 'JV', nombre: 'Julián Vélez', motivo: 'no estaba en la casa', monto: '$25.000' },
+              { id: 'm', iniciales: 'MQ', nombre: 'Martha Quintero', motivo: 'pidió que vuelva mañana', monto: '$22.000' },
+            ]}
+            faltaronTotal="$47.000"
           />
         </div>
 
