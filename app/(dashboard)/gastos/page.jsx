@@ -23,15 +23,15 @@
 // que mueven plata.
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
 import { formatMoney } from '@/lib/i18n'
-import CapitalTab from '@/components/capital/CapitalTab'
 import ReportarGasto from '@/components/gastos/ReportarGasto'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Tarjeta, BloqueOscuro, Chip, EstadoVacio } from '@/components/cf/primitivos'
-import { GrupoSegmentado, PilaEsqueletos } from '@/components/cf/primitivos2'
+import { PilaEsqueletos } from '@/components/cf/primitivos2'
 
 const ESTADOS = [
   { id: 'pendiente', etiqueta: 'Pendientes' },
@@ -68,9 +68,9 @@ export default function GastosPage() {
   const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const fmt = useCallback((v) => formatMoney(v, country), [country])
 
-  const [vista, setVista] = useState(() => (searchParams?.get('tab') === 'capital' ? 'capital' : 'gastos'))
   const [estado, setEstado] = useState('pendiente')
   // `?anotar=1` abre la hoja al llegar: el menu del + tenia `/gastos/nuevo`, que
   // no existe, porque anotar un gasto no es una pantalla sino una hoja de aqui.
@@ -108,7 +108,7 @@ export default function GastosPage() {
       .then((d) => setCobradores(Array.isArray(d) ? d : [])).catch(() => {})
   }, [esOwner])
 
-  useEffect(() => { if (vista === 'gastos') traer() }, [traer, vista])
+  useEffect(() => { traer() }, [traer])
 
   const total = useMemo(() => gastos.reduce((a, g) => a + (g.monto || 0), 0), [gastos])
 
@@ -171,7 +171,7 @@ export default function GastosPage() {
             Lo que se sale del capital
           </span>
         </div>
-        {vista === 'gastos' && (
+        {(
           <button type="button" onClick={() => setAbrirReportar(true)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px',
             borderRadius: 12, flex: 'none', cursor: 'pointer', border: 0,
@@ -193,19 +193,16 @@ export default function GastosPage() {
         cobradores={cobradores}
       />
 
-      {/* Dos cosas distintas: lo que piden los cobradores y el fondo del que sale.
-          Segmentado, no pestañas con icono: son dos, y la palabra basta. */}
-      <GrupoSegmentado
-        opciones={[
-          { id: 'gastos', nombre: 'Gastos' },
-          { id: 'capital', nombre: 'Capital' },
-        ]}
-        valor={vista}
-        onElegir={setVista}
-        alto={44}
-      />
+      {/* ── «CAPITAL» ESTABA EN DOS SITIOS ──
+          Aquí había un segmentado «Gastos | Capital», y la pestaña Capital
+          pintaba `<CapitalTab />`… que es EXACTAMENTE lo mismo que pinta la
+          pantalla `/capital`, la que el menú llama «Mi plata». No era una vista
+          parecida: era el mismo componente importado dos veces.
 
-      {vista === 'capital' ? <CapitalTab /> : (
+          Y que el fondo del negocio viva dentro de «Gastos» no se sostiene: los
+          gastos son lo que SALE del capital, no el capital. Se queda solo en su
+          pantalla; abajo hay una fila que lleva a ella. */}
+      {(
         <>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
             {ESTADOS.map((e) => (
@@ -373,6 +370,32 @@ export default function GastosPage() {
           )}
         </>
       )}
+
+      {/* Para quien llegaba al capital por la pestaña que estaba aquí. */}
+      <button
+        type="button"
+        onClick={() => router.push('/capital')}
+        className="w-full flex items-center gap-3 rounded-[16px] px-4 py-3.5 text-left"
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+      >
+        <span className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{ background: 'var(--cf-fill)' }}>
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="var(--cf-ink-2)" strokeWidth={1.9}
+            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M4 20V9l8-5 8 5v11z" />
+          </svg>
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Mi plata</span>
+          <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+            El fondo del que sale todo esto
+          </span>
+        </span>
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" strokeWidth={2.2}
+          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
 
       <ConfirmModal
         open={Boolean(aBorrar)}
