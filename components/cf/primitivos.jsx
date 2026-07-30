@@ -151,7 +151,12 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
   const colorDespues = tono === 'mejora' ? '#2FBE6A' : tono === 'empeora' ? '#F0575C' : '#F3F3F6'
   return (
     <div style={{ background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 'none' }}>
-      <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#A3A8B2' }}>{etiqueta}</span>
+      {/* Sin rótulo cuando no se pasa. T06-04 dibuja el bloque con «Caja antes» y
+          «después» a los lados y NADA encima: ahí el rótulo sería una tercera
+          etiqueta diciendo lo que las otras dos ya dicen. */}
+      {etiqueta && (
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#A3A8B2' }}>{etiqueta}</span>
+      )}
       {cambia && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>

@@ -33,6 +33,35 @@ import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Chip } from '@/co
 // final del scroll— porque cerrar el día es lo que uno hace con esa cifra, y
 // enterrarlas tras la lista de movimientos sería esconder la razón de entrar.
 
+const ORO = '#E7A400'
+
+/* Rótulo de sección con FILETE que estira, y opcionalmente una cifra al final.
+   Es el mismo de T12-01 —«Las 6 cuotas ——— total $1.699.999»— y el de T06-02
+   —«Ya entregaron ——— $224.000»—: la raya ata el título al grupo que encabeza y el
+   valor al final es la contrapartida que se lee de paso.
+
+   Va sobre el fondo, no dentro de una tarjeta: metido en la tarjeta se lee como
+   una fila más del contenido. */
+function Rotulo({ children, filete = false, valor, tonoValor }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 'none', padding: '0 2px' }}>
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+        textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none',
+      }}>{children}</span>
+      {filete && <span aria-hidden style={{ flex: 1, height: 1, background: 'var(--cf-hairline)' }} />}
+      {valor && (
+        <span className="cf-num" style={{
+          fontSize: 11, fontWeight: 700, flex: 'none',
+          color: tonoValor === 'ok' ? 'var(--cf-green-dark)'
+            : tonoValor === 'mal' ? 'var(--cf-red-dark)'
+            : 'var(--cf-ink-3)',
+        }}>{valor}</span>
+      )}
+    </div>
+  )
+}
+
 /* ── Extracto ──────────────────────────────────────────────────────────── */
 
 function LineaExtracto({ concepto, valor, signo }) {
@@ -254,123 +283,376 @@ export function CajaDia({
   )
 }
 
-/* ── Cierre de cobradores ──────────────────────────────────────────────── */
+/* ══ T06-02 · Cierre de cobradores ═════════════════════════════════════════
+   «ADIÓS A LAS CARITAS.» El pie de la lámina:
 
-function Avatar({ iniciales, entregado }) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      width: 36, minWidth: 36, height: 36, borderRadius: 999, flex: 'none',
-      background: entregado ? 'var(--cf-green-pill-bg)' : 'var(--cf-fill)',
-      color: entregado ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
-      fontSize: 12, fontWeight: 700, letterSpacing: '.02em',
-    }}>{iniciales}</span>
-  )
-}
+     «Nueve tarjetas con emoji se vuelven tres filas que importan y un pie de
+      línea con "4 cobradores sin cobros hoy". Arriba, la única cifra que el dueño
+      busca a esa hora: cuánta plata falta que le entreguen. Los que no cobraron no
+      merecen 200px cada uno.»
 
+   Todo el diseño está en esa última frase. La pantalla de hoy le da el mismo
+   espacio al que trajo $118.300 que al que no salió, y a las siete de la noche el
+   dueño solo quiere saber una cosa: cuánto falta por entrar y quién lo tiene.
+
+   TRES NIVELES DE ESPACIO, y cada uno dice cuánto importa:
+
+     pendientes    fila de 15/18 con avatar de 38 y ANILLO DORADO. Es plata que
+                   está en la calle: el anillo es el mismo que marca la cuota que
+                   toca en la tabla, y significa lo mismo — esto es lo que sigue
+                   abierto.
+     ya entregaron fila más baja, check verde de 30, monto en gris. Está resuelto,
+                   así que se lee y se pasa.
+     sin cobros    UNA LÍNEA al pie de la tarjeta, sin nombres. Que Fulano no
+                   cobrara hoy no es un hecho de la caja.
+
+   Y el botón lleva NOMBRE Y CIFRA —«Recibir de Pepito · $61.500»—: a esa hora hay
+   tres personas esperando y «Recibir» a secas no dice de cuál. */
 export function CierreCobradores({
-  faltaEntregar, sinEntregar, deCuantos,
+  fecha,
+  faltaEntregar, pastillaFaltan,
   pendientes = [], yaEntregaron = [], totalEntregado,
   sinCobros = 0, onRecibir,
 }) {
   const primero = pendientes[0]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
-
-        {/* La única cifra que el dueño busca a las 7 de la noche. */}
-        <div style={{
-          background: '#15161A', borderRadius: 'var(--cf-r-hero)', padding: '19px 21px',
-          display: 'flex', alignItems: 'flex-end', gap: 12, flex: 'none',
-        }}>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#A3A8B2' }}>
-              Falta que te entreguen
-            </span>
-            <span className="cf-fig" style={{ display: 'block', fontSize: 34, letterSpacing: '-.035em', color: '#F3F3F6', marginTop: 6 }}>
-              {faltaEntregar}
-            </span>
-          </span>
-          {/* "3 de 9" a secas, debajo de "falta que te entreguen", se puede
-              leer como "3 ya entregaron". Son los que FALTAN. El verbo lo
-              desambigua y cuesta una palabra. */}
-          <span className="cf-num" style={{ fontSize: 13, color: '#8A8E98', flex: 'none', paddingBottom: 5 }}>
-            faltan {sinEntregar} de {deCuantos}
-          </span>
-        </div>
-
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', padding: '0 2px', flex: 'none' }}>
-          Pendientes de cierre
+    <>
+      {/* La única cifra que el dueño busca a las siete de la noche. Va en tarjeta
+          blanca y no en bloque oscuro: el oscuro de esta familia es para el «antes →
+          después», y aquí no hay comparación, hay un saldo. */}
+      <div style={{
+        flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12,
+      }}>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>Falta que te entreguen</span>
+          <span className="cf-fig" style={{
+            fontSize: 30, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1, color: 'var(--cf-ink)',
+          }}>{faltaEntregar}</span>
         </span>
-        <Tarjeta plana>
-          {pendientes.map((p, i) => (
-            <div key={p.nombre} style={{
-              display: 'flex', alignItems: 'center', gap: 12, flex: 'none',
-              minHeight: 62, padding: '11px 16px',
-              borderTop: i === 0 ? 0 : '1px solid var(--cf-hairline)',
-            }}>
-              <Avatar iniciales={p.iniciales} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{
-                  display: 'block', fontSize: 14.5, fontWeight: 600, color: 'var(--cf-ink)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{p.nombre}</span>
-                <span className="cf-num" style={{
-                  display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2,
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{p.detalle}</span>
-              </span>
-              <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-ink)', flex: 'none' }}>
-                {p.monto}
-              </span>
-            </div>
-          ))}
-        </Tarjeta>
-
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', padding: '0 2px', flex: 'none' }}>
-          Ya entregaron · {totalEntregado}
-        </span>
-        <Tarjeta plana>
-          {yaEntregaron.map((p, i) => (
-            <div key={p.nombre} style={{
-              display: 'flex', alignItems: 'center', gap: 12, flex: 'none',
-              minHeight: 54, padding: '9px 16px',
-              borderTop: i === 0 ? 0 : '1px solid var(--cf-hairline)',
-            }}>
-              <Avatar iniciales={p.iniciales} entregado />
-              <span style={{
-                flex: 1, minWidth: 0, fontSize: 14, color: 'var(--cf-ink-2)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>{p.nombre}</span>
-              <span className="cf-num" style={{ fontSize: 13.5, color: 'var(--cf-ink-3)', flex: 'none' }}>
-                {p.monto}
-              </span>
-            </div>
-          ))}
-
-          {/* Nueve tarjetas con carita triste se vuelven ESTA línea. Un cobrador
-              sin cobros no es una novedad: es la mayoría de los días. */}
-          {sinCobros > 0 && (
-            <div style={{
-              padding: '11px 16px', borderTop: '1px solid var(--cf-hairline)', flex: 'none',
-              fontSize: 12, color: 'var(--cf-ink-3)',
-            }}>
-              {sinCobros} cobrador{sinCobros === 1 ? '' : 'es'} sin cobros hoy
-            </div>
-          )}
-        </Tarjeta>
+        {/* «3 de 9» a secas, debajo de «falta que te entreguen», se puede leer como
+            «3 ya entregaron». El verbo lo desambigua y cuesta una palabra. */}
+        {pastillaFaltan && (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', height: 26, padding: '0 11px',
+            borderRadius: 11, flex: 'none',
+            background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+            fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-text-2)',
+          }} className="cf-num">{pastillaFaltan}</span>
+        )}
       </div>
 
-      {/* La acción lleva SU CIFRA y el nombre de quien entrega: a las 7 p. m. el
-          dueño no está eligiendo, está recibiendo del que tiene enfrente. */}
-      {primero && (
-        <BarraAccion>
-          <BotonPrimario style={{ flex: 1 }} onClick={() => onRecibir?.(primero)}>
-            Recibir de {primero.nombre.split(' ')[0]} · {primero.monto}
-          </BotonPrimario>
-        </BarraAccion>
+      {pendientes.length > 0 && (
+        <>
+          <Rotulo filete>Pendientes de cierre</Rotulo>
+          <div style={{
+            flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          }}>
+            {pendientes.map((p, i) => (
+              <button
+                key={p.id ?? p.nombre}
+                type="button"
+                onClick={p.onRecibir ? () => p.onRecibir(p) : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 13, width: '100%',
+                  padding: '15px 18px', font: 'inherit', textAlign: 'left',
+                  background: 'none', border: 0,
+                  borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                  cursor: p.onRecibir ? 'pointer' : 'default',
+                }}
+              >
+                {/* ANILLO DORADO de 2px: plata que sigue en la calle. Es el mismo
+                    anillo que marca la cuota que toca, y significa lo mismo. */}
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 38, height: 38, borderRadius: 999, flex: 'none',
+                  background: 'var(--cf-fill)', border: `2px solid ${ORO}`,
+                  fontSize: 13, fontWeight: 700, color: 'var(--cf-ink-2)',
+                }}>{p.iniciales}</span>
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{
+                    fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{p.nombre}</span>
+                  {/* «Ruta 2 · 4 cobros · terminó 18:38». La hora de fin es lo que
+                      distingue al que ya acabó y no ha entregado del que sigue en la
+                      calle, y son dos conversaciones distintas. */}
+                  <span className="cf-num" style={{
+                    fontSize: 12, color: 'var(--cf-ink-3)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{p.detalle}</span>
+                </span>
+                <span className="cf-fig" style={{ fontSize: 17, fontWeight: 600, color: 'var(--cf-ink)', flex: 'none' }}>
+                  {p.monto}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
       )}
+
+      {(yaEntregaron.length > 0 || sinCobros > 0) && (
+        <>
+          {/* El total de lo entregado va EN EL RÓTULO y en verde. Es la contrapartida
+              de la cifra de arriba: cuánto ya entró. En su propia tarjeta ocuparía
+              una fila entera para un número que se lee de paso. */}
+          <Rotulo filete valor={totalEntregado} tonoValor="ok">Ya entregaron</Rotulo>
+          <div style={{
+            flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          }}>
+            {yaEntregaron.map((p, i) => (
+              <div key={p.id ?? p.nombre} style={{
+                display: 'flex', alignItems: 'center', gap: 13,
+                padding: '14px 18px',
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+              }}>
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 30, height: 30, borderRadius: 999, flex: 'none',
+                  background: 'var(--cf-green-pill-bg)',
+                }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-green)"
+                       strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span style={{
+                  flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{p.nombre}</span>
+                {/* El monto en GRIS: está resuelto, no compite con los pendientes. */}
+                <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none' }}>
+                  {p.monto}
+                </span>
+              </div>
+            ))}
+
+            {/* UNA LÍNEA, sin nombres. Que Fulano no cobrara hoy no es un hecho de la
+                caja, y nueve tarjetas con carita son 1.800px de nada. */}
+            {sinCobros > 0 && (
+              <div style={{
+                padding: '13px 18px', textAlign: 'center',
+                borderTop: yaEntregaron.length > 0 ? '1px solid var(--cf-hairline)' : 'none',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+                  {sinCobros} {sinCobros === 1 ? 'cobrador' : 'cobradores'} sin cobros hoy
+                </span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
+/** El pie de T06-02: recibir del PRIMER pendiente, con su nombre y su cifra. A esa
+    hora hay tres personas esperando y «Recibir» a secas no dice de cuál. */
+export function PieCierreCobradores({ pendiente, onRecibir, recibiendo = false, error }) {
+  if (!pendiente) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
+      {error && (
+        <span role="alert" style={{ fontSize: 13, color: 'var(--cf-red-dark)', textAlign: 'center' }}>
+          {error}
+        </span>
+      )}
+      <button type="button" onClick={() => onRecibir?.(pendiente)} disabled={recibiendo} style={{
+        width: '100%', height: 50, border: 'none', borderRadius: 14,
+        background: ORO, color: 'var(--cf-gold-ink)', font: 'inherit',
+        fontSize: 15, fontWeight: 700,
+        cursor: recibiendo ? 'progress' : 'pointer', opacity: recibiendo ? 0.6 : 1,
+      }}>
+        {recibiendo ? 'Recibiendo…' : `Recibir de ${pendiente.nombre} · ${pendiente.monto}`}
+      </button>
     </div>
+  )
+}
+
+/* ══ T06-03 · Tu dinero ════════════════════════════════════════════════════
+   El pie de la lámina dice qué estaba mal:
+
+     «Hoy "Tu patrimonio" es una cifra sola con un botón dorado de "Ajustar saldo
+      general" debajo — LA ACCIÓN MÁS PELIGROSA DE LA APP, EN EL SITIO MÁS
+      VISIBLE. Aquí el patrimonio se abre en caja / calle / riesgo, aparece la
+      ganancia del mes con su tendencia, y ajustar el saldo baja a una fila
+      discreta con su explicación.»
+
+   Tres cambios, y el tercero es el importante: ajustar el saldo general reescribe
+   la caja a mano. Ponerlo en dorado debajo de la cifra grande lo convierte en el
+   siguiente paso natural, cuando debería ser el último recurso.
+
+   ── LA TARJETA DORADA ────────────────────────────────────────────────────
+
+   Es el único sitio del sistema donde el dorado es EL FONDO y no un acento. Se lo
+   gana: es la cifra que resume el negocio entero. Todo lo que va encima usa la
+   tinta oscura sobre dorado —`#3A2900` para las cifras, `#7A5800` para los
+   rótulos—, nunca blanco: sobre este dorado el blanco no se lee.
+
+   Y se abre en TRES: en caja, en la calle, en riesgo. Un patrimonio de $27M sin
+   ese desglose no dice si el dueño está líquido o si lo tiene todo prestado, que
+   es la diferencia entre poder prestar mañana y no poder.
+
+   ── LA GANANCIA ES INTERÉS COBRADO MENOS GASTOS ──────────────────────────
+
+   NUNCA recaudado menos gastos. El recaudado incluye el capital que vuelve, que
+   no es ganancia: es la plata que ya era tuya. Confundirlos infló las analíticas
+   7,9 veces y escondió negocios que estaban en pérdida. La lámina lo hace bien
+   —$1.877.000 de intereses menos $35.000 de gastos son los $1.842.000 de arriba—
+   y las dos líneas de abajo están para que la cuenta se pueda comprobar a ojo. */
+export function TuDinero({
+  patrimonio, enCaja, enCalle, enRiesgo,
+  gananciaEtiqueta, ganancia, tendencia, tendenciaTono = 'ok', meses = [],
+  interesesCobrados, gastosDelMes,
+  onAjustar,
+}) {
+  const maximo = Math.max(...meses.map((m) => Number(m?.valor) || 0), 1)
+
+  return (
+    <>
+      <div style={{
+        flex: 'none', background: ORO, borderRadius: 'var(--cf-r-card)',
+        padding: 20, display: 'flex', flexDirection: 'column', gap: 14,
+      }}>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.11em',
+            textTransform: 'uppercase', color: '#7A5800',
+          }}>Patrimonio</span>
+          <span className="cf-fig" style={{
+            fontSize: 38, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1, color: '#3A2900',
+          }}>{patrimonio}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#7A5800' }}>
+            Todo el dinero del negocio
+          </span>
+        </span>
+
+        {/* Las tres partes, separadas por líneas verticales y no por huecos: son un
+            reparto de la cifra de arriba, no tres datos sueltos. */}
+        <div style={{
+          display: 'flex', gap: 8, paddingTop: 14,
+          borderTop: '1px solid rgba(58,41,0,.16)',
+        }}>
+          {[
+            ['En caja', enCaja],
+            ['En la calle', enCalle],
+            ['En riesgo', enRiesgo],
+          ].map(([etiqueta, valor], i) => (
+            <span key={etiqueta} style={{ display: 'contents' }}>
+              {i > 0 && <span aria-hidden style={{ width: 1, background: 'rgba(58,41,0,.16)', flex: 'none' }} />}
+              <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: '#7A5800',
+                }}>{etiqueta}</span>
+                <span className="cf-fig" style={{ fontSize: 16, fontWeight: 600, color: '#3A2900' }}>
+                  {valor ?? '—'}
+                </span>
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {ganancia && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: 20,
+          display: 'flex', flexDirection: 'column', gap: 15,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+            }}>{gananciaEtiqueta}</span>
+            {tendencia && (
+              <span style={{
+                fontSize: 12, fontWeight: 700, flex: 'none',
+                color: tendenciaTono === 'mal' ? 'var(--cf-red-dark)' : 'var(--cf-green-dark)',
+              }}>{tendencia}</span>
+            )}
+          </div>
+
+          <span className="cf-fig" style={{
+            fontSize: 30, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1,
+            color: 'var(--cf-green-dark)',
+          }}>{ganancia}</span>
+
+          {/* Los meses anteriores en gris y el actual en verde. Sin ejes ni cifras:
+              lo que se lee de un vistazo es la FORMA —si viene subiendo o cayendo—,
+              y para el número exacto está la cifra de arriba. */}
+          {meses.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 56, flex: 'none' }}>
+              {meses.map((m, i) => (
+                <span
+                  key={m.id ?? i}
+                  title={m.etiqueta}
+                  style={{
+                    flex: 1, borderRadius: '4px 4px 0 0',
+                    // Mínimo 4%: un mes de cero se vería como un hueco en la fila y
+                    // parecería que falta el dato, no que no hubo ganancia.
+                    height: `${Math.max(4, ((Number(m.valor) || 0) / maximo) * 100)}%`,
+                    background: i === meses.length - 1 ? 'var(--cf-green)' : 'var(--cf-fill-2)',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* La cuenta, para que se pueda comprobar a ojo: intereses menos gastos. */}
+          {interesesCobrados && (
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+              paddingTop: 13, borderTop: '1px solid var(--cf-hairline)',
+            }}>
+              <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Intereses cobrados</span>
+              <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)', flex: 'none' }}>
+                {interesesCobrados}
+              </span>
+            </div>
+          )}
+          {gastosDelMes && (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Gastos del mes</span>
+              <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>
+                − {gastosDelMes}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* LA ACCIÓN MÁS PELIGROSA DE LA APP, en una fila discreta y con su
+          explicación. Reescribe la caja a mano: en dorado debajo de la cifra grande
+          se leía como el siguiente paso natural. */}
+      {onAjustar && (
+        <button type="button" onClick={onAjustar} style={{
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 13, width: '100%',
+          padding: '18px 20px', borderRadius: 'var(--cf-r-card)', cursor: 'pointer',
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          font: 'inherit', textAlign: 'left',
+        }}>
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
+              Ajustar el saldo general
+            </span>
+            <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--cf-ink-3)' }}>
+              Si contaste el efectivo y no cuadra
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+               strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      )}
+    </>
   )
 }

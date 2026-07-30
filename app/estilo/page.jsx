@@ -23,11 +23,11 @@ import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
-import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
+import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
-import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado, PieGestion, AplazarCobro, DiaDeCobro, CorregirPrestamo } from '@/components/pantallas/Gestion'
+import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado, PieGestion, AplazarCobro, DiaDeCobro, CorregirPrestamo, RegistrarGasto } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import Simulador from '@/components/pantallas/Simulador'
@@ -675,25 +675,73 @@ export default function Estilo() {
           <PastillaDemo activo="/caja" />
         </div>
 
+        {/* NO va en `HojaDemo`: ésta es pantalla completa con su barra abajo, no
+            una hoja. Se enseña en el marco con su pie propio. */}
         <div id="cierre-cobradores" style={MARCO}>
           <CabeceraMovil variante={CABECERA.DETALLE} titulo="Cierre de cobradores" subtitulo="martes 28 de julio" />
-          <div style={{ height: 'calc(100% - 56px)' }}>
-            <CierreCobradores
-              faltaEntregar="$188.000" sinEntregar={3} deCuantos={9}
-              pendientes={[
-                { iniciales: 'PE', nombre: 'Pepito', detalle: 'Ruta 2 · 4 cobros · terminó 18:38', monto: '$61.500' },
-                { iniciales: 'CA', nombre: 'Carmen Calanche', detalle: 'Ruta norte · 6 cobros · en ruta', monto: '$118.300' },
-                { iniciales: 'AP', nombre: 'Andrés Pérez', detalle: 'Ruta sur · 1 cobro · en ruta', monto: '$8.200' },
+          <div style={{ height: 'calc(100% - 56px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+              <CierreCobradores
+                faltaEntregar="$188.000"
+                pastillaFaltan="faltan 3 de 9"
+                pendientes={[
+                  { iniciales: 'PE', nombre: 'Pepito', detalle: 'Ruta 2 · 4 cobros · terminó 18:38', monto: '$61.500' },
+                  { iniciales: 'CC', nombre: 'Carmen Calanche', detalle: 'Ruta norte · 6 cobros · en ruta', monto: '$118.300' },
+                  { iniciales: 'AP', nombre: 'Andrés Pérez', detalle: 'Ruta sur · 1 cobro · en ruta', monto: '$8.200' },
+                ]}
+                totalEntregado="$224.000"
+                yaEntregaron={[
+                  { iniciales: 'CA', nombre: 'Carlos Andrés', monto: '$96.000' },
+                  { iniciales: 'CP', nombre: 'Carlos Pérez', monto: '$128.000' },
+                ]}
+                sinCobros={4}
+              />
+            </div>
+            <div style={{ flex: 'none', padding: '14px 20px 22px', background: 'var(--cf-card)', borderTop: '1px solid var(--cf-border)' }}>
+              <PieCierreCobradores pendiente={{ nombre: 'Pepito', monto: '$61.500' }} onRecibir={() => {}} />
+            </div>
+          </div>
+        </div>
+
+        <div id="tu-dinero" style={{ ...MARCO, height: 'auto', minHeight: 620 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Tu dinero" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <TuDinero
+              patrimonio="$27.616.416"
+              enCaja="$1.98M" enCalle="$25.6M" enRiesgo="$3.1M"
+              gananciaEtiqueta="Ganancia de julio"
+              ganancia="$1.842.000"
+              tendencia="+18% vs junio"
+              meses={[
+                { id: 1, etiqueta: 'ene', valor: 42 }, { id: 2, etiqueta: 'feb', valor: 58 },
+                { id: 3, etiqueta: 'mar', valor: 50 }, { id: 4, etiqueta: 'abr', valor: 71 },
+                { id: 5, etiqueta: 'may', valor: 64 }, { id: 6, etiqueta: 'jun', valor: 86 },
+                { id: 7, etiqueta: 'jul', valor: 100 },
               ]}
-              totalEntregado="$224.000"
-              yaEntregaron={[
-                { iniciales: 'CA', nombre: 'Carlos Andrés', monto: '$96.000' },
-                { iniciales: 'CP', nombre: 'Carlos Pérez', monto: '$128.000' },
-              ]}
-              sinCobros={4}
+              interesesCobrados="$1.877.000"
+              gastosDelMes="$35.000"
+              onAjustar={() => {}}
             />
           </div>
         </div>
+
+        <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
+          <RegistrarGasto
+            monto="35.000"
+            categorias={[
+              { id: 'gasolina', etiqueta: 'Gasolina' },
+              { id: 'comida', etiqueta: 'Comida' },
+              { id: 'transporte', etiqueta: 'Transporte' },
+              { id: 'sueldo', etiqueta: 'Sueldo' },
+              { id: 'otro', etiqueta: 'Otro' },
+            ]}
+            categoria="gasolina"
+            nota=""
+            cajaAntes="$2.012.000"
+            cajaDespues="$1.977.000"
+          />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Registrar $35.000" />
+        </HojaDemo>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>

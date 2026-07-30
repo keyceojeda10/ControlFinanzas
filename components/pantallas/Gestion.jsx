@@ -1025,3 +1025,71 @@ export function CorregirPrestamo({
     </>
   )
 }
+
+
+/* ══ T06-04 · Registrar gasto ══════════════════════════════════════════════
+   Vive aquí y no en Caja.jsx porque es la misma hoja que las ocho de gestión: el
+   campo de monto con anillo, las etiquetas de categoría, la nota y el bloque negro
+   con lo que queda después. Repetir esas cuatro piezas en otro archivo sería tener
+   dos campos de monto que se desincronizan.
+
+   «SALE DE LA CAJA DE HOY» va en el subtítulo, y es la mitad de la pantalla: un
+   gasto no es una anotación, es plata que se va. Por eso el bloque negro enseña la
+   caja antes y después — la misma pregunta que responde la hoja de pago con el
+   saldo del préstamo.
+
+   Ese bloque va SIN RÓTULO: «Caja antes» y «después» a los lados ya lo dicen, y
+   «antes → después» encima sería una tercera etiqueta repitiéndolo. */
+export function RegistrarGasto({
+  monto, onMonto,
+  categorias = [], categoria, onCategoria,
+  nota, onNota,
+  cajaAntes, cajaDespues,
+}) {
+  return (
+    <>
+      <CampoMonto rotulo="Monto" monto={monto} onMonto={onMonto} />
+
+      {categorias.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+          <Rotulo>¿En qué?</Rotulo>
+          {/* Las etiquetas de esta hoja van a 42 de alto y 14 de letra —la lámina las
+              hace más grandes que las de motivo— porque se pulsan con el pulgar en la
+              calle, no sentado. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {categorias.map((c) => {
+              const on = c.id === categoria
+              return (
+                <button key={c.id} type="button" onClick={() => onCategoria?.(c)} aria-pressed={on} style={{
+                  display: 'inline-flex', alignItems: 'center', height: 42, padding: '0 15px',
+                  borderRadius: 14, cursor: 'pointer', font: 'inherit', flex: 'none',
+                  fontSize: 14, fontWeight: on ? 700 : 600,
+                  background: on ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
+                  color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+                  border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+                }}>{c.etiqueta}</button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <CampoTexto
+        rotulo="Nota (opcional)"
+        valor={nota}
+        onCambio={onNota}
+        sugerencia="Tanqueada de la moto"
+      />
+
+      {/* Lo que le pasa a la caja. Sin rótulo: las dos etiquetas de los lados ya
+          dicen qué es. */}
+      <AntesDespues
+        etiqueta={null}
+        concepto="Caja antes"
+        antes={cajaAntes}
+        despues={cajaDespues}
+        tono="neutro"
+      />
+    </>
+  )
+}
