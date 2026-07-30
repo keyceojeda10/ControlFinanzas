@@ -8,6 +8,8 @@ import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import EmptyState              from '@/components/ui/EmptyState'
 import { nivelReportes }       from '@/lib/planes'
+import { Reportes }             from '@/components/pantallas/Reportes'
+import { abreviarMillones }     from '@/lib/adaptadores/ruta'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -306,6 +308,45 @@ export default function ReportesPage() {
   if (!esOwner || nivel === 0) return <PlanGate />
 
   // Top recaudacion del periodo (medalla)
+  // ── EL HALLAZGO: solo si es cierto ──
+  //
+  // Un reporte que solo enseña cifras deja el trabajo de encontrar el problema al
+  // dueño, que es justo el trabajo que no tiene tiempo de hacer. Este busca uno
+  // concreto: COBRADORES QUE COBRAN Y NO REGISTRAN.
+  //
+  // La condición es estricta a propósito. Tiene que haber cobradores, tiene que
+  // haber entrado plata en el período, y TODOS tienen que marcar cero. Si uno
+  // solo registró algo, el problema es de ese cobrador y no de la práctica, y
+  // decirlo en grande sería una acusación falsa a los demás.
+  //
+  // Un hallazgo equivocado quema la sección para siempre: la segunda vez que el
+  // dueño lea algo que sabe que no es verdad, deja de leer las de arriba también.
+  const hallazgo = (() => {
+    if (nivel < 2 || cobsData.length === 0) return {}
+    const entro = resumen?.pagos?.totalPeriodo ?? 0
+    if (entro <= 0) return {}
+    const registraron = cobsData.filter((c) => (c.totalRecogido || 0) > 0)
+    if (registraron.length > 0) return {}
+    return {
+      hallazgoTitulo: cobsData.length === 1
+        ? 'Tu cobrador no registró un peso'
+        : `Ninguno de tus ${cobsData.length} cobradores registró un peso`,
+      hallazgoDetalle: `Entraron ${formatMoney(entro)} en el período y todos los pagos llevan tu nombre. O estás cobrando tú solo, o están cobrando sin registrarlo.`,
+    }
+  })()
+
+  // Las rutas que no movieron nada. Van aparte de la lista porque una ruta en
+  // cero no se compara con las otras: se pregunta qué pasó.
+  const sinPeso = (() => {
+    if (nivel < 2) return null
+    const paradas = cartera.filter((r) => (r.cuotaDiariaTotal || 0) <= 0)
+    if (paradas.length === 0) return null
+    return {
+      titulo: `${paradas.length} ${paradas.length === 1 ? 'ruta sin un peso' : 'rutas sin un peso'}`,
+      detalle: paradas.map((r) => r.ruta).slice(0, 3).join(' · '),
+    }
+  })()
+
   const topCobradores = nivel >= 2 ? [...cobsData].sort((a, b) => (b.totalRecogido || 0) - (a.totalRecogido || 0)).slice(0, 3) : []
 
   return (
@@ -372,142 +413,52 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* HERO: Ingresos del período (lo más mirado) */}
-      {resumen && (() => {
-        const heroColor = 'var(--color-success)'
-        return (
-          <div
-            className="cf-hero-card relative rounded-[20px] overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--color-bg-card)) 100%)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--color-border))`,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
-            }}
-          >
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
-            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
+      {/* ── T30 · Lo que entró, y lo que hay que mirar ──
+          Sustituye al héroe verde con brillo, a los cuatro KPI con icono
+          circular de colores, a la tarjeta de «interés ganado» y a las dos de
+          capital prestado y completados. Eran SEIS tarjetas para cinco cifras.
 
-            <div className="relative px-5 py-5 sm:px-6 sm:py-6">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 12px ${heroColor}` }} />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
-                  Ingresos del período
-                </p>
-              </div>
-              <p
-                className="font-mono-display font-bold leading-none tracking-tight"
-                style={{
-                  color: heroColor,
-                  fontSize: 'clamp(36px, 10vw, 52px)',
-                  textShadow: `0 0 30px color-mix(in srgb, ${heroColor} 25%, transparent)`,
-                }}
-              >
-                {formatMoney(resumen.pagos.totalPeriodo)}
-              </p>
-              <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
-                {resumen.pagos.cantidad} pagos registrados
-              </p>
-            </div>
-          </div>
-        )
-      })()}
+          Tres decisiones que trae la lámina:
 
-      {/* ── 1. Resumen de cartera (4 KPIs con icono SVG circular) ── */}
+            · UNA CIFRA GRANDE, LAS DEMÁS DENTRO. Las cuatro no son cuatro
+              noticias: son el contexto de la de arriba, así que van en la misma
+              tinta y dentro del mismo bloque. Ocho tarjetas de colores hacen que
+              ninguna destaque.
+            · EL HALLAZGO. Un reporte que solo enseña cifras deja el trabajo de
+              encontrar el problema al dueño. Este busca uno concreto y lo dice
+              con palabras. Y NO SE INVENTA: solo aparece cuando es cierto —ver
+              abajo la condición—, porque un hallazgo falso quema la sección para
+              siempre.
+            · LAS RUTAS ORDENADAS POR CARTERA, con lo que rinde cada una al día.
+
+          Lo que NO se toca: la gráfica de ingresos, los seguros, el podio de
+          cobradores, el listado en PDF y las exportaciones. */}
       {resumen && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            {
-              label: 'Clientes activos',
-              value: resumen.clientes.total,
-              color: 'var(--color-accent)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>,
-            },
-            {
-              label: 'En mora',
-              value: resumen.clientes.enMora,
-              color: 'var(--color-danger)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
-            },
-            {
-              label: 'Préstamos activos',
-              value: resumen.prestamos.activos,
-              color: 'var(--color-success)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>,
-            },
-            {
-              label: 'Cartera activa',
-              value: formatMoney(resumen.prestamos.saldoPorCobrar ?? resumen.prestamos.carteraActiva),
-              color: 'var(--color-teal)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-            },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-[16px] px-3 py-3 transition-all kpi-lift"
-              style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, ${s.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                border: `1px solid color-mix(in srgb, ${s.color} 22%, var(--color-border))`,
-              }}
-            >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${s.color} 18%, transparent)`, color: s.color }}>
-                  <span className="w-3 h-3">{s.icon}</span>
-                </div>
-                <p className="text-[9px] font-extrabold uppercase tracking-[.07em]" style={{ color: s.color }}>{s.label}</p>
-              </div>
-              <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-text-primary)' }}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Interés ganado del período — la GANANCIA real (lo que pide el cliente) */}
-      {resumen && resumen.pagos?.interesGanado != null && (
-        <div className="rounded-[16px] px-4 py-4 transition-all kpi-lift"
-          style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: '1px solid color-mix(in srgb, var(--color-success) 28%, var(--color-border))',
-          }}
-        >
-          <div className="flex items-center gap-1.5 mb-1">
-            <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-success) 18%, transparent)', color: 'var(--color-success)' }}>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" /></svg>
-            </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-success)' }}>Interés ganado</p>
-          </div>
-          <p className="text-[24px] font-bold font-mono-display leading-tight" style={{ color: 'var(--color-success)' }}>{formatMoney(resumen.pagos.interesGanado)}</p>
-          <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            tu ganancia del período · capital recuperado {formatMoney(resumen.pagos.capitalRecuperado ?? 0)}
-          </p>
-        </div>
-      )}
-
-      {/* Capital prestado + completados como cards complementarias */}
-      {resumen && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-              border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
-            }}
-          >
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-accent)' }}>Capital prestado activo</p>
-            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.prestamos.capitalPrestado)}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>en la calle</p>
-          </div>
-          <div className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-              border: '1px solid color-mix(in srgb, var(--color-purple) 22%, var(--color-border))',
-            }}
-          >
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-purple)' }}>Completados</p>
-            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{resumen.prestamos.completados}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>préstamos finalizados</p>
-          </div>
-        </div>
+        <Reportes
+          entroEtiqueta="Entró en el período"
+          entro={formatMoney(resumen.pagos.totalPeriodo)}
+          entroDetalle={`${resumen.pagos.cantidad} ${resumen.pagos.cantidad === 1 ? 'pago' : 'pagos'}`}
+          cifras={[
+            { etiqueta: 'Clientes', valor: String(resumen.clientes.total) },
+            { etiqueta: 'En mora', valor: String(resumen.clientes.enMora) },
+            { etiqueta: 'Activos', valor: String(resumen.prestamos.activos) },
+            // ABREVIADA. Son cuatro columnas en 390px y «$8.369.659» completo
+            // desborda la última y se corta contra el borde. Ocho millones se
+            // leen igual de bien como «$8,4M», y la cifra exacta está en la
+            // cartera por ruta de abajo.
+            { etiqueta: 'Cartera', valor: abreviarMillones(resumen.prestamos.saldoPorCobrar ?? resumen.prestamos.carteraActiva, formatMoney) },
+          ]}
+          {...hallazgo}
+          rutasTotal={cartera.length > 0 ? `${cartera.length} ${cartera.length === 1 ? 'ruta' : 'rutas'}` : null}
+          rutas={nivel >= 2 ? cartera.map((r) => ({
+            id: r.id,
+            nombre: r.ruta,
+            detalle: `${r.cobrador || 'sin cobrador'} · ${r.clientes} ${r.clientes === 1 ? 'cliente' : 'clientes'}`,
+            cartera: formatMoney(r.saldoPendiente),
+            porDia: `${formatMoney(r.cuotaDiariaTotal)}/día`,
+          })) : []}
+          sinPeso={sinPeso}
+        />
       )}
 
       {/* ── 2. Gráfica de ingresos ───────────────────────────── */}
@@ -574,42 +525,10 @@ export default function ReportesPage() {
         )}
       </div>
 
-      {/* ── 3. Cartera por ruta ──────────────────────────────── */}
+      {/* La cartera por ruta subió dentro de <Reportes>: estaba dos pantallas
+          más abajo que las cifras que explica. El aviso de plan se queda, que es
+          lo único que esta tarjeta añadía cuando no se tiene. */}
       {nivel < 2 && <UpgradeNudge titulo="Cartera por ruta" planRequerido="standard" />}
-      {nivel >= 2 && cartera.length > 0 && (
-        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-teal) 18%, transparent)', color: 'var(--color-teal)' }}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75v11.25m6-9v11.25m5.25-14.25L15 8.25l-6-2.25L3.75 8.25v12l5.25-2.25 6 2.25 5.25-2.25v-12z" />
-              </svg>
-            </div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-secondary)' }}>Cartera por ruta</p>
-          </div>
-          <div className="space-y-2">
-            {cartera.map((r) => (
-              <div
-                key={r.id}
-                className="rounded-[12px] px-3 py-2.5 flex items-center justify-between gap-3"
-                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)' }}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{r.ruta}</p>
-                  <p className="text-[10px] truncate" style={{ color: 'var(--color-purple)' }}>
-                    {r.cobrador} · {r.clientes} {r.clientes === 1 ? 'cliente' : 'clientes'}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(r.saldoPendiente)}</p>
-                  <p className="text-[10px] font-mono-display" style={{ color: 'var(--color-success)' }}>{formatMoney(r.cuotaDiariaTotal)}/día</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Seguros por ruta ── */}
       {nivel >= 2 && seguros && (
