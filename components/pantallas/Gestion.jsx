@@ -412,6 +412,9 @@ export function Recargo({
 
           Las dos líneas de abajo son la respuesta a la pregunta del cobrador —qué le
           pido mañana—: la cuota sigue igual, le quedan N cobros más. */}
+      {/* Solo con las dos cifras: el adaptador devuelve `null` cuando no hay monto,
+          y entonces aquí no llegan. Ver la nota de `adaptarRecargo`. */}
+      {saldoAntes && saldoDespues && (
       <AntesDespues
         concepto="Saldo total"
         antes={saldoAntes}
@@ -422,6 +425,7 @@ export function Recargo({
           cobrosDeMas ? { etiqueta: 'Le quedan', valor: cobrosDeMas } : null,
         ].filter(Boolean)}
       />
+      )}
     </>
   )
 }
@@ -516,16 +520,18 @@ export function Descuento({
       {/* VERDE, y no es una contradicción con «acabas de regalar plata»: esa fila
           mide LO QUE DEBE EL CLIENTE, y eso baja. Lo que te pasa a ti lo dicen las
           dos líneas siguientes. El color describe la fila, no el juicio. */}
-      <AntesDespues
-        concepto="Le queda debiendo"
-        antes={debeAntes}
-        despues={debeDespues}
-        tono="mejora"
-        resumen={[
-          { etiqueta: 'Tu ganancia baja a', valor: gananciaLinea },
-          { etiqueta: 'Sigues recuperando', valor: capitalLinea },
-        ]}
-      />
+      {debeAntes && debeDespues && (
+        <AntesDespues
+          concepto="Le queda debiendo"
+          antes={debeAntes}
+          despues={debeDespues}
+          tono="mejora"
+          resumen={[
+            gananciaLinea ? { etiqueta: 'Tu ganancia baja a', valor: gananciaLinea } : null,
+            capitalLinea ? { etiqueta: 'Sigues recuperando', valor: capitalLinea } : null,
+          ].filter(Boolean)}
+        />
+      )}
     </>
   )
 }

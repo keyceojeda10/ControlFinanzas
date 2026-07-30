@@ -26,6 +26,10 @@ import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
   montoCrudo, montoParaMostrar,
 } from '@/lib/adaptadores/pago'
+import { Recargo, Descuento, PieGestion } from '@/components/pantallas/Gestion'
+import {
+  adaptarRecargo, atajosDeRecargo, adaptarDescuento, atajosDeDescuento,
+} from '@/lib/adaptadores/gestion'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -108,7 +112,11 @@ export default function RegistrarPago({
     // El pliegue se reinicia AL ABRIR. Sin esto, quien toca una vez «Recargo,
     // descuento y abono por días» se queda en el formulario viejo para siempre: la
     // hoja nueva no se vuelve a ver en esa sesión.
-    setVerFormularioCompleto(tabInicial !== 'pago')
+    // Los tipos que YA TIENEN hoja propia arrancan en la hoja. Cuando solo la
+    // tenia el pago, esto era `tabInicial !== 'pago'`, y al darles hoja a recargo y
+    // descuento seguia mandandolos al formulario viejo: la hoja nueva no se veia
+    // NUNCA. Lo caze abriendola en la app, no con una prueba.
+    setVerFormularioCompleto(!['pago', 'recargo', 'descuento'].includes(tabInicial))
 
     if (tabInicial === 'recargo' || tabInicial === 'descuento') {
       setMonto('')
@@ -755,6 +763,80 @@ export default function RegistrarPago({
     cuotaRefExcedente > 0 &&
     excedentePago > 100 &&
     Math.round(Number(monto) || 0) < Math.round(saldoPendiente ?? 0)
+
+  // ── LAS HOJAS DE AJUSTE: T13-01 RECARGO Y T19-03 DESCUENTO ────────────────
+  //
+  // Mismo criterio que la hoja de pago: piel nueva, motor igual. El envío, la nota
+  // obligatoria, el permiso de gestionar y la guardia de DESCUENTO_EXCESIVO siguen
+  // siendo los de este archivo.
+  //
+  // El MOTIVO es obligatorio en los dos y ya lo era: se reutiliza `nota`, que es el
+  // campo que el endpoint espera. Sin motivo no se puede confirmar, y eso se dice
+  // apagando el botón en vez de dejar que el servidor lo rechace después.
+  if ((tipo === 'recargo' || tipo === 'descuento') && !verFormularioCompleto) {
+    const esRecargo = tipo === 'recargo'
+    const montoNum = Math.round(Number(monto) || 0)
+    const base = { ...(prestamo ?? {}), saldoPendiente, cuotaDiaria }
+    const atajos = esRecargo ? atajosDeRecargo(base) : atajosDeDescuento(base)
+    const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
+    const datos = esRecargo ? adaptarRecargo(base, montoNum) : adaptarDescuento(base, montoNum)
+    const sinMotivo = !nota.trim()
+    // El tope del descuento se dice ANTES, no después de que el dueño le prometió el
+    // perdón al cliente: el servidor lo rechaza con DESCUENTO_EXCESIVO.
+    const pasaDelTope = !esRecargo && Boolean(datos?.excede)
+
+    return (
+      <HojaInferior
+        abierta={open}
+        onCerrar={onClose}
+        titulo={esRecargo ? 'Recargo por mora' : 'Perdonarle una parte'}
+        subtitulo={[
+          cliente?.nombre,
+          Number(prestamo?.diasMora ?? 0) > 0
+            ? `lleva ${prestamo.diasMora} ${prestamo.diasMora === 1 ? 'día' : 'días'} de atraso`
+            : null,
+        ].filter(Boolean).join(' · ') || null}
+        accion={
+          <PieGestion
+            onCancelar={onClose}
+            onAceptar={handleSubmit}
+            textoAceptar={montoNum > 0
+              ? `${esRecargo ? 'Aplicar' : 'Perdonar'} ${formatMoney(montoNum)}`
+              : (esRecargo ? 'Aplicar' : 'Perdonar')}
+            aceptando={loading}
+            deshabilitado={!(montoNum > 0) || sinMotivo || pasaDelTope}
+            error={error || (pasaDelTope
+              ? `No puedes perdonar más de ${formatMoney(datos.tope)}: es todo lo que queda por cobrar.`
+              : sinMotivo && montoNum > 0 ? 'Escribe el motivo: queda en el historial.' : null)}
+          />
+        }
+      >
+        {esRecargo ? (
+          <Recargo
+            monto={montoParaMostrar(monto)}
+            onMonto={(v) => setMonto(montoCrudo(v))}
+            atajos={atajos}
+            atajoActivo={atajoActivo}
+            onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
+            motivo={nota}
+            onMotivo={setNota}
+            {...(datos ?? {})}
+          />
+        ) : (
+          <Descuento
+            monto={montoParaMostrar(monto)}
+            onMonto={(v) => setMonto(montoCrudo(v))}
+            atajos={atajos}
+            atajoActivo={atajoActivo}
+            onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
+            motivo={nota}
+            onMotivo={setNota}
+            {...(datos ?? {})}
+          />
+        )}
+      </HojaInferior>
+    )
+  }
 
   // ── LA HOJA DE T02-04 / T08-01 ─────────────────────────────────────────────
   //
