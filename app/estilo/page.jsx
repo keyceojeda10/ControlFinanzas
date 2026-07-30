@@ -27,7 +27,7 @@ import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
-import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
+import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado, PieGestion } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
 import Simulador from '@/components/pantallas/Simulador'
@@ -809,31 +809,85 @@ export default function Estilo() {
       <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
 
         <HojaDemo id="ges-recargo" titulo="Recargo por mora" subtitulo="Steven Olmos · lleva 36 días de atraso">
-          <Recargo monto="15.000" atajoActivo="$15.000" cuando="proxima"
-            cuotaAntes="$14.500" cuotaDespues="$29.500" saldoTotal="$145.500" />
+          {/* Sin el selector de «¿cuándo lo cobra?»: el backend no lo modela. Ver
+              la nota PENDIENTE-BACKEND en Gestion.jsx. La consecuencia de verdad
+              —le pides lo mismo durante más tiempo— va en el bloque negro. */}
+          <Recargo
+            monto="15.000"
+            atajos={[
+              { id: 'a', etiqueta: '$5.000' },
+              { id: 'b', etiqueta: '$10.000' },
+              { id: 'c', etiqueta: '$15.000' },
+              { id: 'otro', etiqueta: 'Otro' },
+            ]}
+            atajoActivo="c"
+            motivo=""
+            saldoAntes="$130.500" saldoDespues="$145.500"
+            cuotaIgual="sigue en $14.500" cobrosDeMas="2 cobros más" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Aplicar $15.000" />
         </HojaDemo>
 
         <HojaDemo id="ges-plazo" titulo="Modificar el plazo" subtitulo="Le quedan 8 cuotas de 30 · vence el 6 de agosto">
-          <ModificarPlazo cuotas={14} cuotasAntes={8}
+          <ModificarPlazo
+            intenciones={[
+              { id: 'extender', etiqueta: 'Extender plazo' },
+              { id: 'fin', etiqueta: 'Corregir fin' },
+              { id: 'inicio', etiqueta: 'Corregir inicio' },
+            ]}
+            intencion="extender"
+            cuotas={14} cuotasAntes={8} unidad="cuotas diarias" minimoCuotas={8}
             cuotaAntes="$16.312" cuotaDespues="$9.322"
-            terminaAntes="6 ago" terminaDespues="14 ago" totalRecibir="$130.500" />
+            terminaAntes="6 ago" terminaDespues="14 ago" totalIgual="igual: $130.500" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Guardar 14 cuotas" />
         </HojaDemo>
 
         <HojaDemo id="ges-descuento" titulo="Perdonarle una parte" subtitulo="Carlos Chaparro · 36 días de atraso · cumple 41%">
-          <Descuento monto="48.000" atajoActivo="Todo el atraso" origen="ganancia"
+          {/* Sin el selector de «¿de dónde sale?»: el backend no lo modela. Lo que
+              la lámina quería que se viera son las dos líneas de abajo. */}
+          <Descuento
+            monto="48.000"
+            atajos={[
+              { id: 'atraso', etiqueta: 'Todo el atraso' },
+              { id: 'cuota', etiqueta: 'Una cuota' },
+              { id: 'otro', etiqueta: 'Otro' },
+            ]}
+            atajoActivo="atraso"
+            motivo=""
             debeAntes="$320.000" debeDespues="$272.000"
-            gananciaQueda="$52.000 de $100.000" capitalVuelve="tus $500.000" />
+            gananciaLinea="$52.000 de $100.000" capitalLinea="tus $500.000" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Perdonar $48.000" />
         </HojaDemo>
 
         <HojaDemo id="ges-perdidos" titulo="Mover a perdidos" subtitulo="Julián Vélez · 35 días sin pagar · cumple 18%">
-          <MoverAPerdidos monto="$184.733" diasSinEscribir={22} diasSinVisitar={12}
-            carteraAntes="$38.4M" carteraDespues="$38.2M" perdidaDelMes="$184.733" />
+          <MoverAPerdidos
+            montoEnJuego="$184.733"
+            contactoLinea={<>Le escribiste hace <strong>22 días</strong> · lo visitaron hace <strong>12</strong></>}
+            onAcuerdo={() => {}}
+            motivos={[
+              { id: 'mudo', etiqueta: 'Se mudó' },
+              { id: 'nocontesta', etiqueta: 'No contesta' },
+              { id: 'otro', etiqueta: 'Otro' },
+            ]}
+            motivo="mudo"
+            carteraAntes="$38.4M" carteraDespues="$38.2M"
+            perdidaEtiqueta="Pérdida de julio" perdidaValor="$184.733" />
+          {/* `peligro`: la accion destacada es NO hacerlo. Es la unica pantalla del
+              sistema donde el dorado no va en la accion principal. */}
+          <PieGestion peligro textoCancelar="Seguir cobrando" onCancelar={() => {}}
+            onAceptar={() => {}} textoAceptar="Dar por perdido" />
         </HojaDemo>
 
         <HojaDemo id="ges-cerrar" titulo="Quiere pagar todo hoy" subtitulo="Andrés Cortés · le faltan 3 de 12 cuotas">
-          <CerrarAnticipado cuotasFaltan={3} cuotasTotal={12} opcion="capital"
-            soloCapital="$980.000" todoPactado="$1.180.000"
-            vuelveHoy="$980.000" gananciaSacrificada="$200.000" />
+          <CerrarAnticipado
+            opciones={[
+              { id: 'capital', etiqueta: 'Solo el capital que debe', nota: 'Le perdonas el interés de las 3 que faltan', valor: '$980.000' },
+              { id: 'todo', etiqueta: 'Todo lo pactado', nota: 'Como si pagara las 3 cuotas', valor: '$1.180.000' },
+              { id: 'medio', etiqueta: 'Un punto medio', nota: 'Tú pones el monto', valor: 'Elegir', tono: 'enlace' },
+            ]}
+            opcion="capital"
+            recibes="$980.000" dejasDeGanar="$200.000"
+            gananciaTotal="$580.000" cuandoVuelve="hoy, no en 3 meses" />
+          <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Cerrar por $980.000" />
         </HojaDemo>
       </div>
 
@@ -882,48 +936,43 @@ export default function Estilo() {
           </div>
         </div>
 
-        {/* Es una HOJA, no una pantalla: va dentro de HojaInferior, que pone el
-            asa, el titulo, la X y la ranura de accion con las medidas de T08-01.
-            El banco la enseña abierta y sin ficha detras. */}
-        <div id="registrar-cobro" style={MARCO}>
-          <HojaInferior
-            abierta
-            escritorio={false}
-            titulo="Registrar pago"
-            subtitulo="Steven Olmos · cuota 22 de 30"
-            onCerrar={() => {}}
-            accion={<PieRegistrarCobro textoConfirmar="Confirmar $27.500" onConfirmar={() => {}} onRecibo={() => {}} />}
-          >
-            <RegistrarCobro
-              monto="27.500"
-              atajos={[
-                { id: 'cuota', etiqueta: 'Cuota' },
-                { id: 'mitad', etiqueta: 'Mitad' },
-                { id: 'todo', etiqueta: 'Todo' },
-              ]}
-              atajoActivo="cuota"
-              aplicaciones={[
-                { id: 'completo', etiqueta: 'Cuota' },
-                { id: 'capital', etiqueta: 'Capital' },
-                { id: 'intereses', etiqueta: 'Interés' },
-              ]}
-              aplicacion="completo"
-              medios={[
-                { id: 'efectivo', nombre: 'Efectivo', efectivo: true },
-                { id: 'c1', nombre: 'Nequi', inicial: 'N', color: '#7A6CF0' },
-                { id: 'c2', nombre: 'Daviplata', inicial: 'D', color: '#E5484D' },
-                { id: 'c3', nombre: 'Banco', inicial: 'B', color: '#4A4E57' },
-              ]}
-              medio="efectivo"
-              despues={[
-                { clave: 'saldo', etiqueta: 'Saldo pendiente', antes: '$130.500', valor: '$103.000' },
-                { clave: 'caja', etiqueta: 'Entra a caja como', valor: 'Efectivo · Pepito' },
-                { clave: 'proximo', etiqueta: 'Próximo cobro', valor: 'mié 29 de julio' },
-              ]}
-              onLoRaro={() => {}}
-            />
-          </HojaInferior>
-        </div>
+        {/* CON `HojaDemo`, NO con `HojaInferior`. La pieza de verdad es
+            `position: fixed; inset: 0` —es un modal—, asi que metida en el banco
+            tapaba la pagina ENTERA: todos los bloques de abajo quedaban debajo de
+            un velo y no se podia cotejar ninguno. Lo vi al capturar el recargo y
+            salir la hoja de pago. `HojaDemo` finge el asa, el titulo y el velo sin
+            salirse de su marco, que es para lo que existe. */}
+        <HojaDemo id="registrar-cobro" titulo="Registrar pago" subtitulo="Steven Olmos · cuota 22 de 30">
+          <RegistrarCobro
+            monto="27.500"
+            atajos={[
+              { id: 'cuota', etiqueta: 'Cuota' },
+              { id: 'mitad', etiqueta: 'Mitad' },
+              { id: 'todo', etiqueta: 'Todo' },
+            ]}
+            atajoActivo="cuota"
+            aplicaciones={[
+              { id: 'completo', etiqueta: 'Cuota' },
+              { id: 'capital', etiqueta: 'Capital' },
+              { id: 'intereses', etiqueta: 'Interés' },
+            ]}
+            aplicacion="completo"
+            medios={[
+              { id: 'efectivo', nombre: 'Efectivo', efectivo: true },
+              { id: 'c1', nombre: 'Nequi', inicial: 'N', color: '#7A6CF0' },
+              { id: 'c2', nombre: 'Daviplata', inicial: 'D', color: '#E5484D' },
+              { id: 'c3', nombre: 'Bancolombia', inicial: 'B', color: '#4A4E57' },
+            ]}
+            medio="efectivo"
+            despues={[
+              { clave: 'saldo', etiqueta: 'Saldo pendiente', antes: '$130.500', valor: '$103.000' },
+              { clave: 'caja', etiqueta: 'Entra a caja como', valor: 'Efectivo · Pepito' },
+              { clave: 'proximo', etiqueta: 'Próximo cobro', valor: 'mié 29 de julio' },
+            ]}
+            onLoRaro={() => {}}
+          />
+          <PieRegistrarCobro textoConfirmar="Confirmar $27.500" onConfirmar={() => {}} onRecibo={() => {}} />
+        </HojaDemo>
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
