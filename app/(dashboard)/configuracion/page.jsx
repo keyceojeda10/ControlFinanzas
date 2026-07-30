@@ -329,7 +329,21 @@ function TabPerfil() {
 // TAB 2 — MI ORGANIZACIÓN
 // ══════════════════════════════════════════════════════════════
 
-function TabOrganizacion() {
+function TabOrganizacion({ bloques }) {
+  // ── UN MEGA-PANEL PARTIDO EN BLOQUES ──
+  //
+  // `TabOrganizacion` llevaba dentro TRECE tarjetas: los datos del negocio, los
+  // dias sin cobro, cuatro interruptores de comportamiento, los intereses
+  // moratorios, los mensajes de WhatsApp, los campos del recibo, los festivos, el
+  // plan y la zona de peligro. Todo eso caia en «Tu negocio», asi que esa seccion
+  // eran 3.912 pixeles y las demas quedaban vacias — el menu parecia navegar y en
+  // realidad no habia a donde ir.
+  //
+  // Ahora cada tarjeta declara A QUE SECCION pertenece y el panel pinta solo las
+  // suyas. `bloques` sin valor las pinta todas, que es el comportamiento de
+  // antes: ningun sitio que lo use hoy se rompe.
+  const quiere = (clave) => !bloques || bloques.includes(clave)
+
   const { updateSession } = useAuth()
   const [data,     setData]     = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -483,6 +497,7 @@ function TabOrganizacion() {
 
   return (
     <div className="space-y-5">
+      {quiere('negocio') && (
       <Card>
         <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Datos del negocio</p>
         <div className="space-y-4">
@@ -534,7 +549,9 @@ function TabOrganizacion() {
           <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
         </div>
       </Card>
+      )}
 
+      {quiere('negocio') && (
       <Card>
         <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-3">Días sin cobro</p>
         <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mb-3">
@@ -549,8 +566,10 @@ function TabOrganizacion() {
         {msgDSC && <Alerta tipo={msgDSC.tipo}>{msgDSC.texto}</Alerta>}
         <Button onClick={guardarDSC} loading={guardandoDSC} size="sm" className="mt-3">Guardar días sin cobro</Button>
       </Card>
+      )}
 
       {/* Toggle capital = efectivo en mano */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -573,8 +592,10 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle vista bruta de renovaciones en la caja */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -597,8 +618,10 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle modo abreviado de montos */}
+      {quiere('negocio') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -624,8 +647,10 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle aprobación de préstamos */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -648,8 +673,10 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle portal de clientes — datos completos */}
+      {quiere('portal') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -672,8 +699,10 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Intereses moratorios */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[var(--cf-gold-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -741,8 +770,10 @@ function TabOrganizacion() {
           </Button>
         </div>
       </Card>
+      )}
 
       {/* Mensajes de WhatsApp */}
+      {quiere('whatsapp') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[#25d366] shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -772,8 +803,10 @@ function TabOrganizacion() {
           }}
         />
       </Card>
+      )}
 
       {/* Campos personalizados en recibos — plantilla por defecto */}
+      {quiere('whatsapp') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -795,8 +828,10 @@ function TabOrganizacion() {
 
         {msgCampos && <div className="mt-3"><Alerta tipo={msgCampos.tipo}>{msgCampos.texto}</Alerta></div>}
       </Card>
+      )}
 
       {/* Festivos */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -814,7 +849,9 @@ function TabOrganizacion() {
           loading={festivosLoading}
         />
       </Card>
+      )}
 
+      {quiere('plan') && (
       <Card>
         <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Plan y suscripción</p>
         <div className="space-y-4">
@@ -862,11 +899,15 @@ function TabOrganizacion() {
           )}
         </div>
       </Card>
+      )}
 
-      {/* Medios de transferencia */}
-      <MetodoPagoAdmin />
+      {/* Los medios de transferencia van con «Tu negocio»: son las cuentas a las
+          que TE pagan, no un ajuste de cobro ni de seguridad. Sin envolverlo se
+          colaba en las tres secciones a la vez. */}
+      {quiere('negocio') && <MetodoPagoAdmin />}
 
       {/* Zona de peligro */}
+      {quiere('peligro') && (
       <Card style={{ border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, var(--cf-border))' }}>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--cf-red-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -940,6 +981,7 @@ function TabOrganizacion() {
           {msgReinicio && <Alerta tipo={msgReinicio.tipo}>{msgReinicio.texto}</Alerta>}
         </div>
       </Card>
+      )}
 
       <ConfirmModal
         open={confirmReinicio}
@@ -1399,7 +1441,23 @@ function ConfiguracionContent() {
   }, [])
 
   const router = useRouter()
-  const seccionParam = searchParams.get('s')
+
+  // LA SECCION SE LEE DESPUES DE MONTAR, no en el primer render.
+  //
+  // El servidor no ve `?s=` y renderiza la seccion por defecto; el cliente si lo
+  // ve. Que los dos primeros renders pinten lo mismo es lo correcto, y es el
+  // mismo patron que el ancho de pantalla tres lineas mas abajo.
+  //
+  // ⚠ CORRECCION DE UNA MEDICION MIA: culpe a este parametro de un
+  // «Hydration failed» que NO ES SUYO. Compare una carga sin el parametro contra
+  // ocho con el, y lo que cambiaba no era el parametro sino el numero de carga:
+  // la PRIMERA carga de cualquier ruta da cero avisos y la segunda en adelante da
+  // uno — /dashboard incluido, que no toque. Es de toda la app y viene del tema
+  // guardado en localStorage, que el servidor no puede saber. Queda anotado
+  // aparte; esto no lo arregla y no pretende arreglarlo.
+  const [montado, setMontado] = useState(false)
+  useEffect(() => { setMontado(true) }, [])
+  const seccionParam = montado ? searchParams.get('s') : null
   const cobradores = Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)
 
   const paisCfg = COUNTRIES[org?.country] ?? null
@@ -1435,31 +1493,33 @@ function ConfiguracionContent() {
   // retroceso, no un avance.
   //
   // Según se vaya rehaciendo cada panel, se cambia su línea aquí y ya está.
+  // ── CADA BLOQUE A SU SECCION ──
+  //
+  // Antes «Tu negocio» se llevaba las trece tarjetas y tres secciones —Portal,
+  // Seguridad y media Como prestas— eran una nota diciendo «sin rehacer
+  // todavia». El menu prometia ocho sitios y solo uno tenia algo.
   const panel = (id) => {
     switch (id) {
+      // Los datos que identifican el negocio, y nada mas.
       case 'negocio':
-        // ⚠ Aquí va TabOrganizacion, NO el TuNegocio nuevo, y es a propósito.
-        //
-        // Los dos piden nombre del negocio y teléfono. Ponerlos juntos deja DOS
-        // CAMPOS EDITANDO EL MISMO DATO en la misma pantalla: se escribe en uno,
-        // el otro sigue con lo viejo, y el último que guarde gana. Eso no es un
-        // problema estético.
-        //
-        // TuNegocio está hecho y se ve en /estilo/config, pero todavía no cubre
-        // todo lo que TabOrganizacion tiene (mora, caja, plantillas). Entra
-        // cuando lo cubra, y ese día TabOrganizacion sale.
-        return esOwner ? <TabOrganizacion /> : null
+        return esOwner ? <TabOrganizacion bloques={['negocio']} /> : null
 
+      // Los valores por defecto del prestamo MAS lo que cambia como se cobra:
+      // moratorios, festivos, si la renovacion cuenta como cobrado y si el
+      // cobrador necesita aprobacion. Todo eso vivia en «Tu negocio».
       case 'comoPrestas':
         return (
-          <ComoPrestas
-            inicial={{
-              frecuenciaDefault: org?.frecuenciaDefault ?? '',
-              tasaDefault: org?.tasaDefault ?? null,
-              modoInteresDefault: org?.modoInteresDefault ?? '',
-              diasSinCobro: org?.diasSinCobro ?? '[]',
-            }}
-          />
+          <>
+            <ComoPrestas
+              inicial={{
+                frecuenciaDefault: org?.frecuenciaDefault ?? '',
+                tasaDefault: org?.tasaDefault ?? null,
+                modoInteresDefault: org?.modoInteresDefault ?? '',
+                diasSinCobro: org?.diasSinCobro ?? '[]',
+              }}
+            />
+            {esOwner && <TabOrganizacion bloques={['prestas']} />}
+          </>
         )
 
       case 'plan':
@@ -1472,18 +1532,37 @@ function ConfiguracionContent() {
               limite={uso?.clientes?.limite}
               onVerPlanes={() => { window.location.href = '/configuracion/plan' }}
             />
+            {esOwner && <TabOrganizacion bloques={['plan']} />}
             {esOwner && <TabSuscripcion />}
             {esOwner && <TabReferidos />}
           </>
         )
 
-      case 'whatsapp':  return <TabNotificaciones />
+      // Ya no es un remite: el interruptor del portal estaba escondido dentro de
+      // «Tu negocio».
+      case 'portal':
+        return esOwner
+          ? <TabOrganizacion bloques={['portal']} />
+          : <Remite nombre="Portal del cliente" nota="Lo que ve tu cliente cuando entra con su cédula." destino="/configuracion" accion="Solo el administrador" />
+
+      case 'whatsapp':
+        return (
+          <>
+            <TabNotificaciones />
+            {esOwner && <TabOrganizacion bloques={['whatsapp']} />}
+          </>
+        )
+
+      // Tampoco es un remite: la zona de peligro estaba al final de «Tu negocio»,
+      // debajo de todo lo demas, que es el peor sitio para poner lo irreversible.
+      case 'seguridad':
+        return esOwner
+          ? <TabOrganizacion bloques={['peligro']} />
+          : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />
+
       case 'datos':     return <TabPerfil />
 
-      // Sin panel propio todavía: en vez de un hueco, se dice dónde está hoy.
       case 'equipo':    return <Remite nombre="Equipo" nota="Los cobradores y sus permisos se manejan en su propia pantalla." destino="/cobradores" accion="Ir a Cobradores" />
-      case 'portal':    return <Remite nombre="Portal del cliente" nota="Lo que ve tu cliente cuando entra con su cédula." destino="/configuracion" accion="Sin rehacer todavía" />
-      case 'seguridad': return <Remite nombre="Seguridad" nota="Contraseña y copia de tu información." destino="/configuracion" accion="Sin rehacer todavía" />
 
       default: return null
     }
@@ -1551,6 +1630,11 @@ function ConfiguracionContent() {
 
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto">
+      {/* LA MISMA SECCION EN LOS DOS ANCHOS, y en la URL.
+          Antes el escritorio apilaba las ocho y el menu llevaba a un ancla; ahora
+          navega, igual que el movil. `?s=` es la misma clave, asi que un enlace a
+          «Como prestas» abre «Como prestas» venga de donde venga, y el boton de
+          atras sale de la seccion en vez de sacarte de configuracion. */}
       <Configuracion
         rol={rol}
         cobradores={cobradores}
@@ -1558,6 +1642,8 @@ function ConfiguracionContent() {
         plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
         clientes={uso?.clientes?.usado}
         limiteClientes={uso?.clientes?.limite}
+        activa={abierta?.id ?? visibles[0]?.id}
+        onSeccion={(id) => router.push(`/configuracion?s=${id}`)}
       >
         {(id) => panel(id)}
       </Configuracion>

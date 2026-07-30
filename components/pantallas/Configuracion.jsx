@@ -14,10 +14,25 @@
 //   · Puse los ítems como lista. Son TARJETAS: la activa es una tarjeta blanca
 //     elevada, las demás van planas sobre el fondo.
 //
-// Que estén todas apiladas cambia el uso: se busca con la vista o con el menú,
-// no se navega. Por eso el menú no oculta nada — lleva.
+// ── CORRECCIÓN, 30 de julio ──
+//
+// Lo de arriba era lo que decía la lámina y lo que construí: todas apiladas, el
+// menú llevando a un ancla. EN LA APP DE VERDAD ESO NO FUNCIONA.
+//
+// La configuración real no son los cuatro bloques que la lámina dibuja: son
+// intereses moratorios, mensajes de WhatsApp, campos del recibo, festivos, medios
+// de transferencia, notificaciones push, referidos y zona de peligro. Todo eso
+// junto en una columna es un rollo por el que se navega a ciegas, y el menú deja
+// de ser un menú: se convierte en una tabla de contenidos que te tira a un punto
+// del que ya no sabes salir.
+//
+// Peor: el ítem «activo» del menú no significa nada, porque al hacer scroll el
+// contenido se mueve y el menú se queda marcando otra cosa.
+//
+// AHORA EL MENÚ NAVEGA. Una sección a la vez, la elegida en la URL (`?s=`), igual
+// que en el móvil. Es la misma pantalla en los dos anchos, cambia el sitio del
+// menú: columna izquierda en PC, lista propia en teléfono.
 
-import { useCallback, useRef } from 'react'
 import { seccionesConfig, modoDeTrabajo } from '@/lib/adaptadores/configuracion'
 
 function Tarjeta({ nombre, cifra, activa, onIr }) {
@@ -51,17 +66,13 @@ function Tarjeta({ nombre, cifra, activa, onIr }) {
 export default function Configuracion({
   rol = 'owner', cobradores = 0,
   negocio, plan, clientes, limiteClientes,
-  activa,                 // id de la sección visible ahora (opcional)
-  children,               // (id) => nodo, una vez por sección
+  activa,                 // id de la sección visible ahora
+  onSeccion,              // (id) => void — la elige el que monta, va a la URL
+  children,               // (id) => nodo, SOLO el de la sección visible
 }) {
   const secciones = seccionesConfig({ rol, cobradores })
   const modo = modoDeTrabajo(cobradores)
-  const refs = useRef({})
-
-  // El menú LLEVA, no cambia el contenido: todas las secciones están montadas.
-  const ir = useCallback((id) => {
-    refs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [])
+  const actual = secciones.find((s) => s.id === activa) ?? secciones[0]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -88,7 +99,7 @@ export default function Configuracion({
         <nav aria-label="Secciones de configuración"
           style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 'none' }}>
           {secciones.map((s) => (
-            <Tarjeta key={s.id} {...s} activa={s.id === (activa ?? secciones[0]?.id)} onIr={() => ir(s.id)} />
+            <Tarjeta key={s.id} {...s} activa={s.id === actual?.id} onIr={() => onSeccion?.(s.id)} />
           ))}
 
           {/* ── Modo de trabajo ──
@@ -114,13 +125,21 @@ export default function Configuracion({
           </div>
         </nav>
 
-        {/* Todas las secciones, apiladas. */}
+        {/* SOLO LA SECCIÓN ELEGIDA. Las demás no se montan: no es solo que no se
+            vean —montarlas todas hace ocho peticiones al abrir configuración y
+            deja ocho formularios con estado propio compitiendo por el mismo
+            dato—. */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
-          {secciones.map((s) => (
-            <div key={s.id} ref={(el) => { refs.current[s.id] = el }} style={{ scrollMarginTop: 16 }}>
-              {children?.(s.id, s)}
-            </div>
-          ))}
+          {actual && (
+            <>
+              <h2 style={{
+                fontFamily: 'var(--font-space-grotesk), system-ui',
+                fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
+                color: 'var(--cf-ink)', margin: 0,
+              }}>{actual.nombre}</h2>
+              {children?.(actual.id, actual)}
+            </>
+          )}
         </div>
       </div>
 
