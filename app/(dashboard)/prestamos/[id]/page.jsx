@@ -48,6 +48,8 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
+import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
+import { useCabecera } from '@/components/armazon/Armazon'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -395,6 +397,28 @@ export default function PrestamoDetallePage({ params }) {
   }
 
   // ─── Loading ────────────────────────────────────────────────────
+  // ── La cabecera de detalle de T41-01 ──
+  //
+  // «Steven Olmos» y debajo «$20.000 diarios · 36 dias de atraso». La cabecera
+  // decia solo «‹ Prestamos»: el nombre vivia en una tarjeta DENTRO del
+  // contenido, asi que al bajar por la ficha se perdia de quien es el prestamo. En
+  // una pantalla que se abre para discutir con alguien, el nombre va fijo arriba.
+  //
+  // VA AQUI, ANTES DE LOS RETURNS TEMPRANOS. `useCabecera` es un hook: puesto
+  // despues del `if (loading) return`, el orden de hooks cambia entre renders y
+  // React rompe la pantalla entera — salio con el triangulo rojo de error.
+  // Por eso lee del ESTADO (`prestamo?.…`) y no de los valores derivados, que se
+  // calculan mas abajo.
+  useCabecera({
+    titulo: prestamo?.cliente?.nombre,
+    subtitulo: prestamo ? [
+      prestamo.cuotaDiaria > 0
+        ? `${formatMoney(Math.round(prestamo.cuotaDiaria))} ${({ diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[prestamo.frecuencia] ?? '')}`.trim()
+        : null,
+      prestamo.diasMora > 0 ? `${prestamo.diasMora} día${prestamo.diasMora === 1 ? '' : 's'} de atraso` : null,
+    ].filter(Boolean).join(' · ') || null : null,
+  })
+
   if (loading) {
     return <SkeletonPrestamoDetalle />
   }
@@ -446,6 +470,62 @@ export default function PrestamoDetallePage({ params }) {
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
+
+  // ── Lo que pide la ficha de T41-01 ──
+  //
+  // «LE FALTAN 24 cuotas». Se deriva del saldo y la cuota, que es exacto en los
+  // modos SIN tabla —la cuota no cambia— y es el 93,7% de la cartera. En los que
+  // tienen tabla se cuentan las filas pendientes, que es el numero de verdad.
+  const cuotasFaltantesTexto = (() => {
+    if (cuotasAmortizacion.length > 0) {
+      const pend = cuotasAmortizacion.filter((c) => (c.pagado || 0) < c.cuotaTotal).length
+      return `${pend} cuota${pend === 1 ? '' : 's'}`
+    }
+    if (!(cuotaDiaria > 0) || !(saldoPendiente > 0)) return '—'
+    const n = Math.ceil(saldoPendiente / cuotaDiaria)
+    return `${n} cuota${n === 1 ? '' : 's'}`
+  })()
+
+  // «30 cuotas diarias». El numero de cuotas del PLAZO PACTADO, no las que
+  // quedan: es la segunda linea de «como se pacto», y ahi se cuenta el trato
+  // completo. Los numeros feos se dejan feos: «39 semanas» no se redondea a 40,
+  // porque el dueño va a cobrar 39 veces y un plazo redondeado es un plazo
+  // mentiroso.
+  const plazoPactadoTexto = (() => {
+    const porPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[frecuencia] ?? 1
+    const n = cuotasAmortizacion.length > 0
+      ? cuotasAmortizacion.length
+      : (diasPlazo > 0 ? Math.round(diasPlazo / porPeriodo) : 0)
+    if (!n) return null
+    const adj = { diario: 'diarias', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[frecuencia] ?? ''
+    return `${n} cuotas ${adj}`.trim()
+  })()
+
+  // Los ultimos pagos, con el SALDO QUE LE QUEDO despues de cada uno. Esa es la
+  // palabra que usa el prestamista cuando el cliente reclama, y para eso se abre
+  // la ficha. Se calcula hacia atras desde el saldo actual: sumando el pago se
+  // recupera el saldo que habia justo despues del anterior.
+  const pagosParaFicha = (() => {
+    const orden = [...pagos]
+      .filter((p) => !['recargo', 'descuento'].includes(p.tipo))
+      .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+    let saldo = Math.round(saldoPendiente || 0)
+    const filas = []
+    for (const p of orden.slice(0, 3)) {
+      const monto = Math.round(p.montoPagado || 0)
+      filas.push({
+        fecha: new Date(p.fechaPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
+        detalle: [
+          p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+          `quedó en ${formatMoney(saldo)}`,
+        ].filter(Boolean).join(' · '),
+        monto: formatMoney(monto),
+      })
+      saldo += monto
+    }
+    return filas
+  })()
 
   // Sparkline 14 dias: monto cobrado por dia (excluye recargos/descuentos)
   const sparkline14d = (() => {
@@ -816,11 +896,63 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── 1. HERO CARD: SALDO PENDIENTE EN GRANDE + DONUT + SPARKLINE ── */}
-      <PrestamoHeroCard
-        prestamo={prestamo}
-        narrativa={narrativaSaldo}
-        sparklineData={esOwner && sparkline14d.some(v => v > 0) ? sparkline14d : null}
+      {/* ── LA FICHA DE T41-01 ──
+          Sustituye al hero con donut y sparkline, y a la grilla de datos en tres
+          secciones. La lamina se llama «Ficha fijo — el 54,7% de la cartera» y
+          trae tres decisiones que no son de estilo:
+
+          1 · EN EL LUGAR DEL DESGLOSE VA EL HISTORIAL DE PAGOS, no un calendario
+              proyectado. En un prestamo `fijo` el calendario es una sola frase
+              —«$20.000 diarios durante 30 dias»— y ya esta arriba; dibujar 30
+              filas identicas es relleno. El historial es lo que el cliente
+              discute y lo unico que no se puede deducir de memoria.
+
+          2 · EL INTERES SE MUESTRA UNA SOLA VEZ, en «como se pacto», escrito como
+              lo diria el prestamista: «le preste $500.000, me paga $600.000 · tu
+              ganancia $100.000». NUNCA por pago — el sistema sabe el interes
+              TOTAL, no cuanto de cada pago fue interes, e inventar ese reparto es
+              justo el tipo de dato que hace que alguien deje de confiar en la app.
+
+          3 · Dice «LE FALTA PAGAR», no «saldo pendiente». Aca no hay
+              amortizacion, asi que no hay razon para hablar como un banco.
+
+          LO QUE LA LAMINA NO TIENE y aqui se queda mas abajo: la linea de tiempo,
+          el comparativo de prestamos del cliente, los chips de stats y el tip de
+          IA. No los borro — son cosas que el dueño puede estar usando, y quitar
+          features no es rediseñar. Si sobran, se van cuando lo digas. */}
+      <FichaPrestamo
+        modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
+        faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
+        pagado={formatMoney(totalPagadoReal)}
+        totalAPagar={formatMoney(Math.round(totalAPagar || 0))}
+        porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}
+        cuota={formatMoney(Math.round(cuotaDiaria || 0))}
+        enMora={hayMontoMora ? formatMoney(Math.round(montoEnMora)) : '$0'}
+        cuotasFaltantes={cuotasFaltantesTexto}
+        prestado={formatMoney(montoPrestadoRedondeado)}
+        ganancia={formatMoney(Math.max(0, Math.round((totalAPagar || 0) - montoPrestadoRedondeado)))}
+        plazoTexto={plazoPactadoTexto}
+        pagos={pagosParaFicha}
+        totalPagos={pagos.length}
+        // SIN `onRegistrar` NI `onGestionar`: la pagina ya tiene su propia pila de
+        // acciones arriba —el boton rojo «PAGAR AHORA · VENCIDO» con el monto, y
+        // los chips «Cobros» y «Gestion»— y son mas informativas que un
+        // «Registrar pago» neutro: el rojo con la cifra dice que esta vencido y
+        // cuanto, sin tener que leer nada mas.
+        //
+        // La lamina pone las suyas abajo porque dibuja la pantalla SIN esa pila.
+        // Tener las dos es peor que cualquiera de las dos: cuatro botones de
+        // cobrar en una pantalla de cobrar. Si prefieres las de la lamina y que
+        // se vaya la pila de arriba, es cambiar estas dos lineas.
+        onRegistrar={undefined}
+        onVerTodos={pagos.length > pagosParaFicha.length ? () => {
+          // Abre el historial completo que YA vive mas abajo en la pantalla, y
+          // lleva la vista hasta el. No se inventa una pantalla nueva.
+          setHistorialOpen(true)
+          setTimeout(() => {
+            document.getElementById('cf-historial-pagos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 60)
+        } : undefined}
       />
 
       {/* Banner aprobación — solo owner y préstamos pendientes */}
@@ -926,86 +1058,10 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── 6. GRILLA DE DATOS EN 3 SECCIONES ─────────────────────── */}
-      <GrillaDatosSecciones
-        secciones={[
-          {
-            titulo: 'Crédito',
-            color: 'var(--color-accent)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            ),
-            items: [
-              ...(nombreProducto ? [{ label: 'Producto', value: nombreProducto }] : []),
-              { label: nombreProducto ? 'Valor artículo' : 'Prestado', value: formatMoney(montoPrestado), hero: true },
-              { label: 'Total a pagar', value: formatMoney(totalAPagar), hero: true },
-              ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
-              { label: 'Plazo', value: `${diasPlazo} días` },
-              { label: 'Tipo de interés', value: (({
-                fijo: 'Cuota fija (clásico)',
-                unico: 'Interés único',
-                saldo: 'Sobre saldo',
-                lineal: 'Decreciente (lineal)',
-                lineal_dinamico: 'Decreciente dinámico',
-                solo_interes: 'Solo interés (globo)',
-                manual: 'Cuota manual',
-                proporcional: 'Proporcional',
-              })[modoInteres] || modoInteres || 'Clásico') + (interesAdelantado ? ' (adelantado)' : '') },
-              ...(prestamo.socio ? [{ label: 'Socio', value: prestamo.socio.nombre }] : []),
-            ],
-          },
-          {
-            titulo: 'Pagos',
-            color: 'var(--color-success)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ),
-            items: [
-              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria), hero: true,
-                ...(modoInteres === 'solo_interes' && cuotasAmortizacion.length > 0
-                  ? { sub: `Última cuota: ${formatMoney(cuotasAmortizacion[cuotasAmortizacion.length - 1]?.cuotaTotal || 0)}` }
-                  : {}) },
-              { label: 'Cuotas pendientes', value: `${cuotasPendientes}`, hero: true },
-              ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
-              {
-                label: diasMora > 0 ? 'Días en mora' : 'Estado',
-                value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora}c` : ''}` : 'Al día',
-                color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-              },
-            ],
-          },
-          {
-            titulo: 'Fechas',
-            color: 'var(--color-info)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            ),
-            items: [
-              { label: 'Inicio', value: fmtFecha(fechaInicio) },
-              { label: 'Vencimiento', value: fmtFecha(fechaFin) },
-              ...(creadoPor?.nombre ? [{ label: 'Creado por', value: creadoPor.nombre }] : []),
-            ],
-          },
-          ...(seguro ? [{
-            titulo: 'Seguro',
-            color: '#6366f1',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-              </svg>
-            ),
-            items: [
-              { label: 'Cobro de seguro', value: montoSeguro ? formatMoney(montoSeguro) : 'Si', color: '#6366f1' },
-            ],
-          }] : []),
-        ]}
-      />
+      {/* La grilla de datos en tres secciones se fue: lo que decia —credito,
+          plazo, cobro— ya lo dice «como se pacto» en una frase, y lo que no cabia
+          ahi no responde ninguna pregunta que se haga mirando un prestamo. Era el
+          desglose que T41-01 sustituye por el historial. */}
 
       {/* ── TABLA DE AMORTIZACION (lineal / globo / sobre saldo) ──── */}
       {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
@@ -1067,7 +1123,9 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ──────────── */}
+      {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ────────────
+          `id` para que «Ver los N pagos» de la ficha pueda traer aqui. */}
+      <div id="cf-historial-pagos" />
       <Card>
         <button
           type="button"

@@ -304,18 +304,32 @@ export function AyudaCampo({ children }) {
 }
 
 /* ══ 9 · Barras ══ */
-export function BarraProgreso({ porcentaje = 0, tono = 'oro', alto = 5, style }) {
+/**
+ * `sobreOscuro`: los colores del TEMA OSCURO, literales.
+ *
+ * Dentro de un bloque oscuro no manda el tema de la app, manda que el fondo es
+ * negro. `var(--cf-green)` vale #12A150 en claro —que es el verde correcto sobre
+ * blanco— y sobre negro se hunde: la barra de progreso casi no se ve. La lámina
+ * usa #2FBE6A, que es justo lo que `--cf-green` vale EN OSCURO.
+ *
+ * Es el mismo fallo que ya tenía el dorado del bloque oscuro (#F5C518 donde iba
+ * #F5B824), y por la misma causa: usar un token de tema dentro de algo que no
+ * sigue el tema.
+ */
+export function BarraProgreso({ porcentaje = 0, tono = 'oro', alto = 5, sobreOscuro = false, style }) {
   // `neutro` es para lo TERMINADO: un préstamo pagado con la barra al 100% en
   // verde grita «logro» en una lista donde lo que hay que mirar es lo que falta.
   // Ver la nota de `pagado` en TarjetaCliente.
-  const color = tono === 'ok' ? 'var(--cf-green)'
-              : tono === 'mal' ? 'var(--cf-red)'
-              : tono === 'neutro' ? 'var(--cf-ink-4)'
-              : 'var(--cf-gold)'
+  const color = sobreOscuro
+    ? (tono === 'ok' ? '#2FBE6A' : tono === 'mal' ? '#F0575C' : tono === 'neutro' ? '#8A8E98' : '#F5B824')
+    : (tono === 'ok' ? 'var(--cf-green)'
+      : tono === 'mal' ? 'var(--cf-red)'
+      : tono === 'neutro' ? 'var(--cf-ink-4)'
+      : 'var(--cf-gold)')
   return (
     <span style={{
       display: 'block', height: alto, borderRadius: 999,
-      background: 'var(--cf-fill)', overflow: 'hidden',
+      background: sobreOscuro ? 'rgba(255,255,255,.12)' : 'var(--cf-fill)', overflow: 'hidden',
       flex: 'none',            /* OBLIGATORIO: si es encogible, colapsa a 0 */
       ...style,
     }}>

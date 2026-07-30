@@ -33,8 +33,8 @@ function TiraTres({ columnas }) {
       {columnas.map((c, i) => (
         <div key={i} style={{ display: 'contents' }}>
           {i > 0 && <span style={{ width: 1, background: 'var(--cf-divider)', flex: 'none' }} />}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', whiteSpace: 'nowrap' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', whiteSpace: 'nowrap' }}>
               {c.etiqueta}
             </span>
             <span className="cf-fig" style={{
@@ -78,10 +78,22 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie }) {
 
   return (
     <Tarjeta plana>
-      <div style={{ padding: '14px 19px 10px', flex: 'none' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-          Cómo viene pagando
+      {/* «CADA PAGO QUE HA HECHO», con su conteo a la derecha. Decia «Cómo viene
+          pagando», que es una interpretacion —suena a valoracion del cliente— y
+          esto no interpreta nada: es la lista de lo que pago. Y el conteo importa:
+          sin el, dos filas visibles parecen ser todo el historial. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, padding: '14px 18px 11px', flex: 'none',
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          Cada pago que ha hecho
         </span>
+        {total > 0 && (
+          <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>
+            {total} pago{total === 1 ? '' : 's'}
+          </span>
+        )}
       </div>
       {pagos.map((p, i) => (
         <div key={i} style={{
@@ -179,8 +191,12 @@ export default function FichaPrestamo({
           </BloqueOscuro>
         ) : (
           <BloqueOscuro etiqueta="Le falta pagar" cifra={faltaPagar}>
-            <BarraProgreso porcentaje={porcentaje} tono="ok" alto={11}
-              style={{ background: 'rgba(255,255,255,.12)' }} />
+            {/* `sobreOscuro`: el verde de aca es #2FBE6A, no #12A150. El token
+                `--cf-green` vale #12A150 en tema claro —correcto sobre blanco— y
+                sobre este negro se hunde. Mismo fallo que tenia el dorado del
+                bloque, y por la misma causa: un token de tema dentro de algo que
+                no sigue el tema. */}
+            <BarraProgreso porcentaje={porcentaje} tono="ok" alto={11} sobreOscuro />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: -4 }}>
               <span className="cf-num" style={{ fontSize: 13, color: '#A3A8B2' }}>
                 pagó {pagado} de {totalAPagar}
@@ -204,8 +220,12 @@ export default function FichaPrestamo({
         )}
 
         {/* ── Cómo se pactó — el ÚNICO sitio donde aparece el interés ── */}
-        <Tarjeta>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+        {/* Relleno 15/18 y hueco 3, de la lamina: es una tarjeta de TRES LINEAS
+            de texto, no una tarjeta de bloques, y con el relleno estandar (16/19,
+            gap 12) las tres lineas quedan separadas como si no se leyeran juntas
+            — y se leen juntas: son una frase. */}
+        <Tarjeta style={{ padding: '15px 18px', gap: 3 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
             Cómo se pactó
           </span>
 
@@ -280,13 +300,23 @@ export default function FichaPrestamo({
         <Historial pagos={pagos} total={totalPagos} montoOculto={montoOculto} onVerTodos={onVerTodos} notaPie={notaHistorial} />
       </div>
 
-      {/* Sin pastilla: en su sitio va la acción de la ficha. */}
-      <BarraAccion>
-        <BotonSecundario style={{ flex: 1 }} onClick={onGestionar}>Gestionar</BotonSecundario>
-        <BotonPrimario style={{ flex: 1.7 }} onClick={onRegistrar}>
-          {esUnico ? 'Registrar abono' : 'Registrar pago'}
-        </BotonPrimario>
-      </BarraAccion>
+      {/* Sin pastilla: en su sitio va la acción de la ficha.
+
+          PERO SOLO SI HAY ACCION. Se pintaba SIEMPRE, asi que montada en una
+          pagina que ya tiene su propia pila de botones de cobro salian cuatro
+          botones de cobrar en una pantalla de cobrar — y los dos de aca sin
+          `onClick` no hacian nada al tocarlos, que es el patron del control
+          muerto una vez mas. */}
+      {(onGestionar || onRegistrar) && (
+        <BarraAccion>
+          {onGestionar && <BotonSecundario style={{ flex: 1 }} onClick={onGestionar}>Gestionar</BotonSecundario>}
+          {onRegistrar && (
+            <BotonPrimario style={{ flex: 1.7 }} onClick={onRegistrar}>
+              {esUnico ? 'Registrar abono' : 'Registrar pago'}
+            </BotonPrimario>
+          )}
+        </BarraAccion>
+      )}
     </div>
   )
 }
