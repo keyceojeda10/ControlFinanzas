@@ -38,6 +38,7 @@ import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pant
 // `Socios.jsx` (turno 44) tambien exporta `ListaSocios`. La de T45 es la que
 // manda —turno posterior— y se importa con alias hasta que la vieja se retire.
 import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantallas/SociosReparto'
+import MenuMas from '@/components/pantallas/MenuMas'
 import {
   loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
   cabeceraSocios, NOTA_NO_SACA_PLATA,
@@ -1689,6 +1690,73 @@ export default function Estilo() {
                 antesDespues={loQueQuedaDebiendo({ antes: 1_380_000, reparto: 1_240_000 }, fmt)}
                 nota={NOTA_NO_SACA_PLATA}
                 onConfirmar={() => {}} onCambiarPeriodo={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* T43-01. Agrupado por lo que le pasa a la plata, y cada opcion con su
+            cifra: con la cifra al lado un menu se vuelve un panel. */}
+        <div id="menu-mas" style={MARCO}>
+          {(() => {
+            const T = (d) => (
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.95" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+            )
+            const D = (d) => (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+            )
+            return (
+              <MenuMas
+                cuando="martes 28 · 7:14 a. m."
+                grupos={[
+                  {
+                    titulo: 'Entra plata',
+                    acciones: [
+                      {
+                        id: 'pago', titulo: 'Registrar un pago', cifra: 'te faltan 5 cobros de hoy',
+                        destacado: true, onClick: () => {},
+                        icono: T(<><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></>),
+                      },
+                      {
+                        id: 'qr', titulo: 'Escanear un QR', onClick: () => {},
+                        icono: T(<><rect x="4" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" /></>),
+                      },
+                    ],
+                  },
+                  {
+                    titulo: 'Sale plata',
+                    acciones: [
+                      {
+                        id: 'prestar', titulo: 'Prestarle a alguien', cifra: 'tienes $2.5M para prestar',
+                        destacado: true, onClick: () => {},
+                        icono: T(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5v9M14.4 9.6c-.5-.7-1.4-1.1-2.4-1.1-1.4 0-2.4.8-2.4 1.9 0 1.2 1 1.7 2.4 2 1.4.3 2.4.8 2.4 2 0 1.1-1 1.9-2.4 1.9-1 0-1.9-.4-2.4-1.1" /></>),
+                      },
+                      {
+                        id: 'gasto', titulo: 'Anotar un gasto', onClick: () => {},
+                        icono: T(<><path d="M6 4h12v16H6z" /><path d="M9 9h6M9 13h4" /></>),
+                      },
+                    ],
+                  },
+                  {
+                    titulo: 'Crear',
+                    acciones: [
+                      {
+                        id: 'cliente', titulo: 'Un cliente nuevo', onClick: () => {},
+                        icono: T(<><circle cx="11" cy="8.5" r="3.5" /><path d="M4 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5" /><path d="M18 7h4M20 5v4" /></>),
+                      },
+                    ],
+                  },
+                ]}
+                destinos={[
+                  { id: 'hoy', titulo: 'Cobrar hoy', cifra: '5 pendientes', onClick: () => {}, icono: D(<><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></>) },
+                  { id: 'caja', titulo: 'La caja', cifra: 'sin cerrar', onClick: () => {}, icono: D(<rect x="3" y="7" width="18" height="12" rx="2.5" />) },
+                  { id: 'plata', titulo: 'Mi plata', cifra: '$2.5M libres', onClick: () => {}, icono: D(<><path d="M4 20V9l8-5 8 5v11z" /><path d="M10 20v-6h4v6" /></>) },
+                  { id: 'plan', titulo: 'Mi plan', cifra: 'vence en 5 días', urgente: true, onClick: () => {}, icono: D(<><rect x="3" y="6" width="18" height="12" rx="2.5" /><path d="M3 10.5h18" /></>) },
+                ]}
+                lucas={{ ejemplo: '¿cuánto recaudé esta semana?', onClick: () => {} }}
+                onCerrar={() => {}}
               />
             )
           })()}
