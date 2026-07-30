@@ -24,6 +24,7 @@ import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres, MesEnCaja, BajarInformacion } from '@/components/pantallas/Caja'
+import { MiPlata, ComoVaElNegocio, Reportes, LineaCredito } from '@/components/pantallas/Reportes'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
@@ -872,6 +873,111 @@ export default function Estilo() {
                 { id: 'prestamos', nombre: 'Préstamos', filas: 31, onBajar: () => {} },
                 { id: 'pagos', nombre: 'Pagos', filas: 0, onBajar: () => {} },
               ]}
+            />
+          </div>
+        </div>
+
+        <div id="mi-plata" style={{ ...MARCO, height: 'auto', minHeight: 700 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Mi plata" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 20px 20px' }}>
+            <MiPlata
+              total="$30.170.280"
+              tramos={[
+                { id: 'lista', porcentaje: 8.4, color: '#2FBE6A' },
+                { id: 'calle', porcentaje: 91.6, color: '#F5B824' },
+              ]}
+              partes={[
+                { id: 'lista', etiqueta: 'Lista para prestar', valor: '$2.520.280', color: '#2FBE6A' },
+                { id: 'calle', etiqueta: 'En la calle, cobrándose', valor: '$27.650.000', color: '#F5B824', destacado: true },
+              ]}
+              mes={[
+                { etiqueta: 'Prestaste', valor: '$26.5M' },
+                { etiqueta: 'Te pagaron', valor: '$8.9M' },
+                { etiqueta: 'Gastos', valor: '$10.000' },
+                { etiqueta: 'Ganaste', valor: '$2.2M', tono: 'ok' },
+              ]}
+              explicacion="Prestaste más de lo que te pagaron porque la cartera está creciendo. Eso no es una pérdida: esos $17.6M están en la calle con tu nombre."
+              estricto={false}
+              onEstricto={() => {}}
+              onTodosLosMovimientos={() => {}}
+              movimientos={[
+                { id: 1, concepto: 'Te pagaron un préstamo', detalle: 'ayer 10:00 p. m. · quedaste en $2.520.280', monto: '+$8.000', signo: '+' },
+                { id: 2, concepto: 'Le prestaste a Carlos Prueba 1', detalle: 'ayer 9:14 p. m. · quedaste en $2.512.280', monto: '−$1.000.000', signo: '−' },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div id="como-va" style={{ ...MARCO, height: 'auto', minHeight: 760 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="¿Cómo va el negocio?" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 20px 20px' }}>
+            <ComoVaElNegocio
+              rendimiento="7,8%"
+              porCada={<>Por cada $100 en la calle, ganas <strong style={{ color: '#F3F3F6' }}>$8 neto</strong>.</>}
+              cifras={[
+                { etiqueta: 'Ganancia', valor: '$2.2M', tono: 'ok' },
+                { etiqueta: 'Recaudado', valor: '$8.8M' },
+                { etiqueta: 'Capital', valor: '$27.6M' },
+              ]}
+              proyeccionEtiqueta="Va a cerrar el mes en"
+              proyeccionDia="día 28 de 31"
+              proyeccion="$9.785.933"
+              proyeccionPorcentaje="92% de lo esperado"
+              proyeccionFalta={<>Llevas $8.8M · te faltan <strong>$947.026</strong> en 3 días para llegar.</>}
+              repartoPeso={[
+                { etiqueta: 'ganancia', valor: '25¢', color: '#12A150' },
+                { etiqueta: 'tu capital de vuelta', valor: '75¢', color: '#8A8E98' },
+              ]}
+              rutasTotal="9 rutas"
+              rutas={[
+                { id: 1, nombre: 'Ruta de pepito', rendimiento: '16,7%' },
+                { id: 2, nombre: 'Ruta sur', rendimiento: '16,5%' },
+              ]}
+              sinRuta={{ texto: 'Sin ruta · 3 préstamos · $4.8M al 1%', onAsignar: () => {} }}
+              clavos={{ detalle: '1 préstamo irrecuperable · 4% de tu capital', monto: '$1.2M' }}
+            />
+          </div>
+        </div>
+
+        <div id="reportes" style={{ ...MARCO, height: 'auto', minHeight: 720 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Reportes" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <Reportes
+              entro="$8.838.907" entroDetalle="78 pagos"
+              cifras={[
+                { etiqueta: 'Clientes', valor: '25' },
+                { etiqueta: 'En mora', valor: '18' },
+                { etiqueta: 'Activos', valor: '47' },
+                { etiqueta: 'Cartera', valor: '$25.1M' },
+              ]}
+              hallazgoTitulo="Ningún cobrador registró un peso"
+              hallazgoDetalle="En 26 días, los 8 cobradores marcan $0 recogido sobre $45M esperados. Los pagos entran todos con tu nombre: están cobrando y no lo están registrando."
+              rutasTotal="9 rutas"
+              rutas={[
+                { id: 1, nombre: 'Ruta sur', detalle: 'sin cobrador · 6 clientes', cartera: '$4.5M', porDia: '$483.667/día' },
+                { id: 2, nombre: 'Ruta goty 1', detalle: 'Carlos 1 · 4 clientes', cartera: '$4.3M', porDia: '$811.334/día' },
+                { id: 3, nombre: 'Ruta norte', detalle: 'Carlos Andrés · 6 clientes', cartera: '$3.9M', porDia: '$768.367/día' },
+              ]}
+              sinPeso={{ titulo: '3 rutas sin un peso', detalle: 'Ruta #1 · Carlos perez · cobrador nueva', onVer: () => {} }}
+            />
+          </div>
+        </div>
+
+        <div id="linea-credito" style={{ ...MARCO, height: 'auto', minHeight: 700 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Línea de crédito" subtitulo="Marta Lucía Ríos" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <LineaCredito
+              puedePedir="$210.000" cupoTotal="$500.000" estado="Activa"
+              usado="$290.000" usadoPorcentaje="58%" tasa="10% mensual"
+              corteEn="2 días" corteDetalle="30 de julio · le va a quedar $319.000"
+              onVerCorte={() => {}}
+              onDarPlata={() => {}} onRecibirPago={() => {}}
+              movimientosNota="2 este ciclo"
+              movimientos={[
+                { id: 1, concepto: 'Le pagó', detalle: '25 jul · $40.000 interés + $110.000 capital', monto: '+$150.000', signo: '+' },
+                { id: 2, concepto: 'Le dio plata', detalle: '25 jul · quedó en $400.000 usados', monto: '−$400.000', signo: '−' },
+              ]}
+              onCongelar={() => {}} onCerrar={() => {}}
             />
           </div>
         </div>
