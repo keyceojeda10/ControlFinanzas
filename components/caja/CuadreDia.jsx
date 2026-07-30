@@ -1,4 +1,7 @@
 'use client'
+
+import { Cuadre } from '@/components/pantallas/Caja'
+import { diferenciaDeCuadre, causasDeDescuadre } from '@/lib/adaptadores/cuadre'
 // components/caja/CuadreDia.jsx
 // Cuadre del día (solo owner): el admin verifica y confirma el efectivo que recibe de
 // cada cobrador. Banner global + lista por cobrador (semáforos, problemas primero) +
@@ -222,30 +225,60 @@ export default function CuadreDia({ fecha }) {
         }
       >
         {modal && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--color-text-muted)]">Dinero en mano (sistema)</span>
-              <span className="font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(modal.recaudadoSistema)}</span>
-            </div>
-            <div>
-              <label className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Efectivo que recibiste</label>
-              <MoneyInput value={montoRecibido} onChange={(e) => setMontoRecibido(e.target.value)} placeholder="0" />
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* EL CUERPO DEL MODAL PASA A `Cuadre` (T33).
+                Lo que cambia, y por qué importa en el momento en que una persona
+                le entrega dinero a otra:
+
+                · LAS CAUSAS SON BOTONES, no un «motivo (opcional)» en blanco. Un
+                  campo vacío se deja vacío: el administrador tiene ocho cobradores
+                  esperando. Con las cuatro causas reales a un toque, la diferencia
+                  queda explicada — y una diferencia explicada es la que después se
+                  puede buscar.
+                · LAS CAUSAS CAMBIAN DE LADO: un faltante y un sobrante no se
+                  explican igual. Faltar suele ser un gasto sin registrar; sobrar,
+                  un cobro sin anotar.
+                · LA DIFERENCIA TRAE SU PROPORCIÓN («4% de lo recaudado»), que es
+                  lo que dice si buscar un error de conteo o un billete perdido.
+
+                El endpoint, el guardado y `nota` no se tocan: la causa elegida
+                escribe en `nota`, que es lo que ya viajaba. */}
+            <Cuadre
+              segunLaApp={formatMoney(modal.recaudadoSistema)}
+              contado={montoRecibido}
+              /* SOLO DÍGITOS. `MoneyInput` entregaba el valor ya limpio; el campo
+                 de `Cuadre` no limpia nada, y `confirmar` hace `Number(...)`. Si
+                 alguien teclea «1.200.000» —que es como se escribe aquí— eso da
+                 NaN y viaja al endpoint como el efectivo recibido. Es el momento
+                 en que una persona le entrega dinero a otra: no puede depender de
+                 si escribió los puntos. */
+              onContado={(v) => setMontoRecibido(String(v ?? '').replace(/\D/g, ''))}
+              diferencia={diferenciaDeCuadre(
+                { sistema: modal.recaudadoSistema, contado: montoRecibido },
+                formatMoney,
+              )}
+              causas={difModal !== 0 ? causasDeDescuadre(difModal > 0 ? 'sobra' : 'falta') : []}
+              onCausa={(c) => setNota(c.texto)}
+            />
+
+            {/* La causa elegida se ve y se puede matizar a mano: «un gasto que no
+                se registró» es el titular, y a veces hace falta decir cuál. */}
             {difModal !== 0 && (
-              <>
-                <div className="flex items-center justify-between text-sm rounded-[10px] px-3 py-2"
-                  style={{ background: difModal < 0 ? 'var(--color-danger-dim)' : 'var(--color-warning-dim)' }}>
-                  <span style={{ color: difModal < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>{difModal < 0 ? 'Faltante' : 'Sobrante'}</span>
-                  <span className="font-bold font-mono-display" style={{ color: difModal < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>{difModal > 0 ? '+' : ''}{formatMoney(difModal)}</span>
-                </div>
-                <div>
-                  <label className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Motivo (opcional)</label>
-                  <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. gasto no registrado, faltante…"
-                    className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]" />
-                </div>
-              </>
+              <input
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Puedes añadir un detalle…"
+                style={{
+                  width: '100%', height: 44, padding: '0 14px', borderRadius: 14,
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 14, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
             )}
-            <p className="text-[11px] text-[var(--color-text-muted)]">La diferencia se registra como ajuste de caja para no descuadrar el capital.</p>
+
+            <p style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: 0 }}>
+              La diferencia se registra como ajuste de caja para no descuadrar el capital.
+            </p>
           </div>
         )}
       </Modal>
