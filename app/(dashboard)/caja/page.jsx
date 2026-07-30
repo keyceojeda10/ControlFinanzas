@@ -26,6 +26,7 @@ import DesglosePorCuenta      from '@/components/caja/DesglosePorCuenta'
 import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
+import { CajaDia }            from '@/components/pantallas/Caja'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -502,6 +503,37 @@ export default function CajaPage() {
   const resumenPagosDia = cajaData?.resumenPagosDia || {}
   const cantidadPagosDia = resumenPagosDia.cantidad ?? pagosDelDia.length
   const totalPagosDia = Math.round(resumenPagosDia.total ?? pagosDelDia.reduce((acc, pago) => acc + Number(pago.montoPagado || 0), 0))
+
+  // ── Lo que necesita el extracto de T06-01 ──
+  //
+  // `fechaLarga`: «martes 28 de julio». Se formatea en el CLIENTE porque depende
+  // de su zona; hecha en el servidor saldria el dia de UTC, y en Bogota eso se
+  // equivoca en las cinco primeras horas de cada dia.
+  //
+  // Esta caja es la de UN DIA, y los chips de arriba lo cambian: sin la fecha
+  // escrita, mirando «Ayer» no hay forma de saber que dia se esta cuadrando.
+  const fechaLarga = new Date().toLocaleDateString('es-CO', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  })
+
+  // Los movimientos con el formato que pide la lamina: «Cobro · Steven Olmos» y
+  // debajo «14:12 · Pepito · Ruta 2». La HORA y el QUIEN son el punto — el pie
+  // de la lamina dice que hoy estan «escondidos tras un desplegable de
+  // cobradores», y sin quien ni cuando un movimiento solo se puede creer, no
+  // reclamar.
+  const movimientosDelDia = pagosDelDia.slice(0, 3).map((p) => {
+    const hora = p.fechaPago
+      ? new Date(p.fechaPago).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      : null
+    const quien = p.cobradorNombre || p.registradoPor || null
+    const donde = p.rutaNombre || null
+    return {
+      concepto: `Cobro · ${p.clienteNombre || p.cliente?.nombre || 'Cliente'}`,
+      detalle: [hora, quien, donde].filter(Boolean).join(' · '),
+      monto: formatMoney(Math.round(Number(p.montoPagado || 0))),
+      entra: true,
+    }
+  })
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
@@ -694,138 +726,6 @@ export default function CajaPage() {
           </Card>
         )}
 
-        {/* Hero dorado de marca: saldo en caja */}
-        <Card
-          className="relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #f9d64a 0%, var(--color-accent) 55%, #eab308 100%)',
-            border: '1px solid rgba(180, 140, 10, 0.35)',
-            boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
-          }}
-        >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)' }}
-          />
-          <div className="relative">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em]" style={{ color: 'rgba(35,26,4,0.62)' }}>
-                {puedeVerSaldoCaja ? 'Saldo en caja' : 'Flujo del día'}
-              </p>
-              <p className="text-[11px]" style={{ color: 'rgba(35,26,4,0.55)' }}>
-                {puedeVerSaldoCaja ? 'Disponible para prestar ahora' : 'Neto operativo de hoy'}
-              </p>
-            </div>
-            {tasaRecaudo > 0 && (
-              <span className="text-sm font-bold" style={{ color: '#231a04' }}>
-                {tasaRecaudo}% cobrado
-              </span>
-            )}
-          </div>
-          <p className="text-3xl font-bold font-mono-display" style={{ color: disponibleHoy >= 0 ? '#231a04' : '#b91c1c' }}>
-            {formatMoney(disponibleHoy)}
-          </p>
-          <p className="text-[11px] mt-1" style={{ color: 'rgba(35,26,4,0.55)' }}>
-            {puedeVerSaldoCaja ? 'Saldo compartido con el administrador' : 'Cobrado - Prestado hoy - Gastos'}
-          </p>
-
-          {!esCobrador && (
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              <div>
-                <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Base inicial</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(baseInicialDia)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Ajustes manuales</p>
-                <p className="text-base font-bold font-mono-display" style={{ color: ajustesDelDia >= 0 ? '#15803d' : '#b91c1c' }}>
-                  {ajustesDelDia > 0 ? '+' : ''}{formatMoney(ajustesDelDia)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <div>
-              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Cobrado</p>
-              <p className="text-base font-bold font-mono-display" style={{ color: '#15803d' }}>{formatMoney(cobradoHoy)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Prestado hoy</p>
-              <p className="text-base font-bold font-mono-display" style={{ color: '#92400e' }}>{prestadoHoy > 0 ? '-' : ''}{formatMoney(prestadoHoy)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Gastos</p>
-              <p className="text-base font-bold font-mono-display" style={{ color: '#b91c1c' }}>{gastosHoy > 0 ? '-' : ''}{formatMoney(gastosHoy)}</p>
-            </div>
-          </div>
-
-          {/* Cuanto presto hoy vs cuanto salio de la caja.
-              La fila de arriba es flujo de caja (alimenta el saldo). Esto es
-              produccion de cartera, que es otra pregunta: en una renovacion de
-              $100 a quien debia $50, presta $100 pero de la caja salen $50.
-              Pedido por el cliente con mas cobradores: "para yo saber cuanto
-              presta el cobrador en el dia". */}
-          {cantidadPrestamosDia > 0 && (
-            <div className="mt-3 rounded-[12px] px-3 py-2.5"
-              style={{ background: 'color-mix(in srgb, #231a04 8%, transparent)', border: '1px solid color-mix(in srgb, #231a04 16%, transparent)' }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Valor prestado hoy</p>
-                  <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(valorPrestadoDia)}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'rgba(35,26,4,0.5)' }}>
-                    {cantidadPrestamosDia} {cantidadPrestamosDia === 1 ? 'préstamo' : 'préstamos'}
-                  </p>
-                </div>
-                <div className="min-w-0 text-right">
-                  <p className="text-[10px] uppercase" style={{ color: 'rgba(35,26,4,0.55)' }}>Salió de la caja</p>
-                  <p className="text-base font-bold font-mono-display" style={{ color: '#92400e' }}>{formatMoney(efectivoEntregadoDia)}</p>
-                </div>
-              </div>
-              {valorPrestadoDia !== efectivoEntregadoDia && (
-                <p className="text-[10px] mt-2 pt-2" style={{ color: 'rgba(35,26,4,0.6)', borderTop: '1px solid color-mix(in srgb, #231a04 12%, transparent)' }}>
-                  La diferencia de {formatMoney(Math.abs(valorPrestadoDia - efectivoEntregadoDia))} son renovaciones:
-                  el cliente ya debía parte, así que no salió en efectivo.
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Seguros cobrados hoy */}
-          {segurosDia.monto > 0 && (
-            <div className="mt-3 rounded-[12px] px-3 py-2.5 flex items-center justify-between"
-              style={{ background: 'color-mix(in srgb, #231a04 8%, transparent)', border: '1px solid color-mix(in srgb, #231a04 16%, transparent)' }}
-            >
-              <div>
-                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(35,26,4,0.55)' }}>Seguros cobrados hoy</p>
-                <p className="text-[10px]" style={{ color: 'rgba(35,26,4,0.55)' }}>{segurosDia.cantidad} {segurosDia.cantidad === 1 ? 'préstamo' : 'préstamos'}</p>
-              </div>
-              <p className="text-base font-bold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(segurosDia.monto)}</p>
-            </div>
-          )}
-
-          <details className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(35,26,4,0.16)' }}>
-            <summary className="cursor-pointer text-[11px]" style={{ color: 'rgba(35,26,4,0.62)' }}>Ver detalle del cálculo</summary>
-            <div className="mt-2 space-y-1.5 text-[11px]">
-              <div className="flex justify-between">
-                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Efectivo del día</span>
-                <span className="font-semibold font-mono-display" style={{ color: saldoRealCaja >= 0 ? '#231a04' : '#b91c1c' }}>{formatMoney(saldoRealCaja)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Esperado</span>
-                <span className="font-semibold font-mono-display" style={{ color: '#231a04' }}>{formatMoney(stats.esperado || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span style={{ color: 'rgba(35,26,4,0.55)' }}>Diferencia vs esperado</span>
-                <span className="font-semibold font-mono-display" style={{ color: diferenciaRecaudo >= 0 ? '#15803d' : '#b91c1c' }}>
-                  {diferenciaRecaudo >= 0 ? '+' : ''}{formatMoney(diferenciaRecaudo)}
-                </span>
-              </div>
-            </div>
-          </details>
-          </div>
-        </Card>
 
         {pagosDiaCard}
 
@@ -972,7 +872,7 @@ export default function CajaPage() {
                 Estas reportando lo de ayer. Anota cuanto efectivo recogiste para que quede registrado.
               </p>
             )}
-            <form onSubmit={registrarCierre} className="space-y-4">
+            <form id="cf-cierre-del-dia" onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--color-text-muted)]">{esAyer ? 'Deberias tener (ayer)' : 'Deberias tener en caja'}</span>
                 <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(stats.esperado || 0)}</span>
@@ -1261,29 +1161,48 @@ export default function CajaPage() {
       )}
 
       {cajaTab === 'cobros' && periodo.modo === 'hoy' && <>
-      {/* HERO CARD unificada: Saldo/Efectivo en caja del día */}
-      <CajaResumen
-        hero={{
-          label: 'Saldo en caja',
-          valor: disponibleHoy,
-          subtitulo: 'Base inicial + Cobrado − Prestado − Gastos + Ajustes',
-          tasa: tasaRecaudo,
+      {/* ── EL EXTRACTO DE T06-01 ──
+          Sustituye al bloque CajaResumen, que era la formula repartida en CINCO
+          MOSAICOS de colores: el saldo arriba en grande y debajo un mosaico por
+          sumando —cobrado en verde, prestado en ambar, gastos en rojo, base
+          inicial en azul, ajustes en verde—.
+
+          El pie de la lamina: «la formula deja de ser cinco mosaicos de colores y
+          se lee como un extracto: cada linea con su signo y el saldo abajo, en
+          grande. Verde suma, rojo resta — el color por fin significa algo».
+
+          Y ahi esta el defecto de fondo, que no era la estetica:
+
+            · EL SALDO IBA ARRIBA y los sumandos abajo, asi que la cifra aparecia
+              ANTES que la cuenta que la produce. Un extracto se lee al reves: las
+              lineas y luego el total.
+            · LOS COLORES ERAN DE MARCA, no del signo. «Prestado» iba en ambar y
+              «gastos» en rojo siendo las dos restas, y «base inicial» en azul
+              siendo un punto de partida. Cinco colores para dos operaciones.
+
+          Los chips de rango y las pestañas «Caja del dia / Por ruta / Cuentas» se
+          quedan como estan: son de la pagina, y son mas de lo que la lamina
+          dibuja. Por eso no se le pasan `rangos` al componente — pintaria una
+          segunda fila de chips diciendo lo mismo.
+
+          LO QUE NO SE TOCA: el cierre del dia, los ajustes, los gastos, la
+          reapertura, el desglose por cuenta y los modales. Solo lo que se ve. */}
+      <CajaDia
+        fecha={fechaLarga}
+        baseInicial={formatMoney(baseInicialDia)}
+        cobrado={formatMoney(cobradoHoy)}
+        prestado={formatMoney(prestadoHoy)}
+        gastos={formatMoney(gastosHoy)}
+        ajustes={formatMoney(ajustesDelDia)}
+        saldo={formatMoney(disponibleHoy)}
+        movimientos={movimientosDelDia}
+        totalMovimientos={cantidadPagosDia}
+        onVerMovimientos={() => { window.location.href = '/actividad' }}
+        onGasto={puedeReportarGastos ? () => setShowGasto(true) : undefined}
+        onCerrarDia={() => {
+          document.getElementById('cf-cierre-del-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }}
-        cards={[
-          { label: 'Cobrado', valor: cobradoHoy, color: 'var(--color-success)' },
-          { label: 'Prestado', valor: prestadoHoy, color: 'var(--color-warning)', signo: '-' },
-          { label: 'Gastos', valor: gastosHoy, color: 'var(--color-danger)', signo: '-' },
-          ...(!esCobrador ? [
-            { label: 'Base inicial', valor: baseInicialDia, color: 'var(--color-info)' },
-            { label: 'Ajustes', valor: ajustesDelDia, color: ajustesDelDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)', signo: '+' },
-          ] : []),
-          ...(segurosDia.monto > 0 ? [{ label: 'Seguros', valor: segurosDia.monto, color: '#6366f1', sub: `·${segurosDia.cantidad}` }] : []),
-        ]}
-        detalle={[
-          { label: 'Efectivo del día', valor: saldoRealCaja, color: saldoRealCaja >= 0 ? 'var(--color-info)' : 'var(--color-danger)' },
-          { label: 'Esperado', valor: stats.esperado || 0 },
-          { label: 'Diferencia vs esperado', valor: diferenciaRecaudo, color: diferenciaRecaudo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' },
-        ]}
+        onReporte={() => setShowReporte(true)}
       />
 
       {pagosDiaCard}

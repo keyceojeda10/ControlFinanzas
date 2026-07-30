@@ -329,17 +329,28 @@ export function BarraProgreso({ porcentaje = 0, tono = 'oro', alto = 5, style })
 }
 
 /* ══ 7 · Chips ══ */
-export function Chip({ children, activo = false, conteo, style, ...props }) {
+/**
+ * `chico`: 34 de alto, relleno 13, letra 12.
+ *
+ * SON DOS CHIPS DISTINTOS y la receta los mete en el mismo rango (33-36). El de
+ * FILTRO de una lista —T02-05, T02-06— va a 36/14/13 porque lleva su conteo y
+ * hay que poder tocarlo con el pulgar mientras se recorre. El de RANGO —T06-01
+ * «Hoy · Ayer · 7 días · 30 días · Rango»— va a 34/13/12: son cinco en una fila
+ * de 350px, y a 36/14 no caben sin que el último se corte.
+ */
+export function Chip({ children, activo = false, conteo, chico = false, style, ...props }) {
   return (
     <button type="button" {...props} style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
       /* Relleno 14 y letra 13, de T02-05 y T02-06. Tenia 12 y 12. */
-      height: 'var(--cf-h-chip)', padding: '0 14px', borderRadius: 'var(--cf-r-pill)',
+      height: chico ? 34 : 'var(--cf-h-chip)',
+      padding: chico ? '0 13px' : '0 14px',
+      borderRadius: 'var(--cf-r-pill)',
       /* El chip activo es NEGRO, no dorado: el dorado es para la plata. */
       background: activo ? 'var(--cf-ink)' : 'var(--cf-card)',
       border: activo ? '1px solid var(--cf-ink)' : '1px solid var(--cf-border)',
       color: activo ? 'var(--cf-surface)' : 'var(--cf-ink-2)',
-      fontSize: 13, fontWeight: activo ? 700 : 600,
+      fontSize: chico ? 12 : 13, fontWeight: activo ? 700 : 600,
       cursor: 'pointer', flex: 'none', whiteSpace: 'nowrap',
       ...style,
     }}>

@@ -35,20 +35,20 @@ import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Chip } from '@/co
 
 /* ── Extracto ──────────────────────────────────────────────────────────── */
 
-function LineaExtracto({ concepto, valor, signo, primera }) {
+function LineaExtracto({ concepto, valor, signo }) {
   const color = signo === '+' ? 'var(--cf-green-dark)'
               : signo === '−' ? 'var(--cf-red-dark)'
-              : 'var(--cf-ink)'
+              : 'var(--cf-ink-3)'
   return (
-    <div style={{
-      display: 'flex', alignItems: 'baseline', gap: 12, flex: 'none',
-      minHeight: 40, padding: '9px 0',
-      borderTop: primera ? 0 : '1px solid var(--cf-hairline)',
-    }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: 'var(--cf-ink-2)' }}>
+    // SIN separador entre lineas. Los tenia, y la lamina no: un extracto son
+    // cinco lineas de UNA MISMA cuenta, y una raya entre cada dos las convierte
+    // en cinco cosas distintas. La unica raya es la de ANTES DEL SALDO, y esa si
+    // significa algo: cierra la suma.
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flex: 'none' }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: 'var(--cf-ink-2)' }}>
         {concepto}
       </span>
-      <span className="cf-num" style={{ fontSize: 15, fontWeight: 600, color, flex: 'none' }}>
+      <span className="cf-fig" style={{ fontSize: 16, color, flex: 'none' }}>
         {signo && `${signo} `}{valor}
       </span>
     </div>
@@ -56,34 +56,81 @@ function LineaExtracto({ concepto, valor, signo, primera }) {
 }
 
 export function CajaDia({
+  fecha,
   rangos = [], rangoActivo, onRango,
   baseInicial, cobrado, prestado, gastos, ajustes, saldo,
   movimientos = [], totalMovimientos = 0,
-  onDetalle, onVerMovimientos, onGasto, onCerrarDia,
+  onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
 
+        {/* El encabezado: «Caja», la fecha debajo, y «Reporte» a la derecha.
+            Faltaba entero, como en las otras listas: la cabecera del armazon es
+            la de navegacion y no lleva titulo.
+
+            LA FECHA IMPORTA MAS AQUI que en las otras pantallas. Esta caja es la
+            de UN DIA concreto, y los chips de arriba la cambian: sin la fecha
+            escrita, mirando «Ayer» no hay forma de saber que dia se esta
+            cuadrando. */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 'none' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{
+              margin: 0,
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 22, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+            }}>Caja</h1>
+            {fecha && (
+              <span className="cf-num" style={{ display: 'block', fontSize: 13, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+                {fecha}
+              </span>
+            )}
+          </div>
+          {onReporte && (
+            <button type="button" onClick={onReporte} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, flex: 'none',
+              height: 42, padding: '0 15px', borderRadius: 'var(--cf-r-control)',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)', cursor: 'pointer',
+              fontFamily: 'var(--font-manrope), system-ui',
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h4" />
+              </svg>
+              Reporte
+            </button>
+          )}
+        </div>
+
         {rangos.length > 0 && (
           <div style={{ display: 'flex', gap: 'var(--cf-gap-chips)', overflowX: 'auto', flex: 'none', paddingBottom: 2 }}>
             {rangos.map((r) => (
-              <Chip key={r.id} activo={r.id === rangoActivo} onClick={() => onRango?.(r.id)}>
+              <Chip key={r.id} chico activo={r.id === rangoActivo} onClick={() => onRango?.(r.id)}>
                 {r.nombre}
               </Chip>
             ))}
           </div>
         )}
 
-        <Tarjeta>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+        {/* Relleno 20 y hueco 13, de la lamina. La tarjeta estandar trae 16/19 y
+            gap 12, que esta bien para una tarjeta cualquiera; un extracto de
+            cinco lineas necesita algo mas de aire o las cifras se apelotonan. */}
+        <Tarjeta style={{ padding: 20, gap: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
               Cómo se arma el saldo
             </span>
-            <button type="button" onClick={onDetalle} style={{
-              background: 'none', border: 0, cursor: 'pointer', flex: 'none',
-              fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)',
-            }}>Ver detalle</button>
+            {/* Solo si hay a donde ir. Un «Ver detalle» que no abre nada es el
+                patron del control muerto, que ya costo cinco esta sesion. */}
+            {onDetalle && (
+              <button type="button" onClick={onDetalle} style={{
+                background: 'none', border: 0, cursor: 'pointer', flex: 'none',
+                fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
+                fontFamily: 'var(--font-manrope), system-ui',
+              }}>Ver detalle</button>
+            )}
           </div>
 
           {/* Un extracto: se lee de arriba abajo y el saldo cierra la cuenta.
@@ -91,81 +138,110 @@ export function CajaDia({
               hoy. Eso NO contradice "prestar no es una pérdida": esa regla es
               para el patrimonio, y esto es el efectivo del día. Son dos
               preguntas distintas y por eso pueden dar signos distintos. */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <LineaExtracto concepto="Base inicial" valor={baseInicial} primera />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            <LineaExtracto concepto="Base inicial" valor={baseInicial} />
             <LineaExtracto concepto="Cobrado hoy"  valor={cobrado}  signo="+" />
             <LineaExtracto concepto="Prestado hoy" valor={prestado} signo="−" />
             <LineaExtracto concepto="Gastos"       valor={gastos}   signo="−" />
             <LineaExtracto concepto="Ajustes"      valor={ajustes} />
           </div>
 
-          {/* El saldo cierra el extracto DENTRO de la misma tarjeta: sacarlo a
-              otra tarjeta rompería la cuenta en dos y habría que buscar de dónde
-              sale la cifra. */}
+          {/* EL SALDO VA SOBRE BLANCO, cerrando el extracto. NO en un bloque
+              oscuro: ese era una invencion mia.
+
+              La receta §2 reserva el bloque oscuro para «una cifra que es LA
+              RESPUESTA de la pantalla», y aqui el saldo no es una cifra suelta:
+              es la ULTIMA LINEA DE UNA CUENTA. Metida en un rectangulo negro se
+              sale de la cuenta, y lo que la hace creible es justo verla salir de
+              las cinco lineas de arriba.
+
+              La raya de 1.5px es la del subtotal de un extracto hecho a mano:
+              mas gruesa que las demas a proposito, porque es la unica que separa
+              algo. */}
           <div style={{
-            display: 'flex', alignItems: 'flex-end', gap: 12, flex: 'none',
-            margin: '2px -19px -16px', padding: '16px 21px 18px',
-            background: '#15161A',
-            borderRadius: '0 0 var(--cf-r-card) var(--cf-r-card)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12,
+            flex: 'none', paddingTop: 13, borderTop: '1.5px solid rgba(20,20,28,.14)',
           }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#A3A8B2' }}>
-                Saldo en caja
-              </span>
-              <span style={{ display: 'block', fontSize: 11.5, color: '#8A8E98', marginTop: 3 }}>
-                disponible para prestar
-              </span>
-            </span>
-            <span className="cf-fig" style={{ fontSize: 28, letterSpacing: '-.03em', color: '#F3F3F6', flex: 'none' }}>
-              {saldo}
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                color: 'var(--cf-ink-3)',
+              }}>Saldo en caja</span>
+              {/* «disponible para prestar» no es decoracion: es la diferencia
+                  entre el saldo contable y la plata con la que de verdad se puede
+                  salir a la calle hoy. */}
+              <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>disponible para prestar</span>
+            </div>
+            <span className="cf-fig" style={{
+              fontSize: 30, letterSpacing: '-.03em', color: 'var(--cf-ink)', flex: 'none',
+            }}>{saldo}</span>
           </div>
         </Tarjeta>
 
-        <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
-          <BotonSecundario style={{ flex: 1 }} onClick={onGasto}>Registrar gasto</BotonSecundario>
-          <BotonPrimario style={{ flex: 1.3 }} onClick={onCerrarDia}>Cerrar el día</BotonPrimario>
-        </div>
+        {/* Las acciones. `flex: 1.3` en la primaria es de la lamina: con las dos
+            al mismo ancho, «cerrar el dia» y «registrar gasto» pesan igual, y no
+            pesan igual — una cierra la jornada. */}
+        {(onGasto || onCerrarDia) && (
+          <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+            {onGasto && <BotonSecundario style={{ flex: 1 }} onClick={onGasto}>Registrar gasto</BotonSecundario>}
+            {onCerrarDia && <BotonPrimario style={{ flex: 1.3 }} onClick={onCerrarDia}>Cerrar el día</BotonPrimario>}
+          </div>
+        )}
 
         {/* Estaban detrás de un desplegable de cobradores. Con quién y a qué
             hora, un movimiento se puede reclamar; sin eso, solo se puede creer. */}
         <Tarjeta plana>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px 11px', flex: 'none' }}>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '17px 20px 13px', flex: 'none' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
               Movimientos de hoy
             </span>
-            <span className="cf-num" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink-2)', flex: 'none' }}>
+            <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none' }}>
               {totalMovimientos}
             </span>
           </div>
 
           {movimientos.map((m, i) => (
             <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 12, flex: 'none',
-              minHeight: 56, padding: '10px 18px', borderTop: '1px solid var(--cf-hairline)',
+              display: 'flex', alignItems: 'center', gap: 13, flex: 'none',
+              padding: '13px 20px', borderTop: '1px solid var(--cf-hairline)',
             }}>
-              <span style={{ flex: 1, minWidth: 0 }}>
+              {/* EL PUNTO DE COLOR, que faltaba. Dice si el movimiento suma o
+                  resta ANTES de leer el monto, y con catorce filas eso es la
+                  diferencia entre recorrer la lista y leerla. El signo del monto
+                  lo repite, y esta bien que lo repita: el punto se ve de lejos y
+                  el signo confirma de cerca. */}
+              <span aria-hidden style={{
+                width: 7, height: 7, borderRadius: 999, flex: 'none',
+                background: m.entra ? 'var(--cf-green)' : 'var(--cf-red)',
+              }} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{
-                  display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink)',
+                  fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{m.concepto}</span>
                 <span className="cf-num" style={{
-                  display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2,
+                  fontSize: 12, color: 'var(--cf-ink-3)',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{m.detalle}</span>
-              </span>
+              </div>
               <span className="cf-fig" style={{
-                fontSize: 14.5, flex: 'none',
+                fontSize: 15, flex: 'none',
                 color: m.entra ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
               }}>{m.entra ? '+' : '−'}{m.monto}</span>
             </div>
           ))}
 
-          {totalMovimientos > movimientos.length && (
+          {/* El pie va SIEMPRE que haya movimientos, no solo cuando hay mas de
+              los que caben. La lamina lo pone con dos filas visibles y catorce en
+              total, y el sentido es «aqui esta el resto»; pero incluso con dos de
+              dos, el extracto completo del dia es otra pantalla —con sus filtros
+              y su exportacion— y desde aqui hay que poder llegar. */}
+          {movimientos.length > 0 && (
             <button type="button" onClick={onVerMovimientos} style={{
-              display: 'block', width: '100%', padding: '13px 18px', cursor: 'pointer',
+              display: 'block', width: '100%', padding: '13px 20px', cursor: 'pointer',
               background: 'none', border: 0, borderTop: '1px solid var(--cf-hairline)',
               fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)', textAlign: 'center',
+              fontFamily: 'var(--font-manrope), system-ui',
             }}>Ver los {totalMovimientos} movimientos</button>
           )}
         </Tarjeta>
