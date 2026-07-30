@@ -1058,22 +1058,45 @@ export default function CajaPage() {
 
       {cajaTab === 'porruta' && (
         <div className="space-y-4">
-          <Card>
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-1">Caja por cobrador / ruta</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-3">
-              Selecciona un cobrador para ver su caja del día: lo que prestó, cobró, los seguros, el efectivo y el capital de cada ruta, con todos sus movimientos.
-            </p>
+          {/* El selector de cobrador, con los tokens del rediseño. Dos cosas
+              cambian ademas del color:
+
+              · El campo sube de 40px a 48. Un `select` de 40 en un telefono se
+                falla con el pulgar, y este abre la caja de OTRA persona.
+              · La explicacion baja DEBAJO del selector. Arriba obligaba a leer
+                dos lineas antes de llegar a lo unico que hay que hacer aqui, que
+                es elegir un nombre. */}
+          <div style={{
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+            }}>Caja por cobrador</span>
+
             <select
               value={cajaRutaCobradorId}
               onChange={(e) => setCajaRutaCobradorId(e.target.value)}
-              className="w-full h-10 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)]"
+              style={{
+                width: '100%', height: 48, borderRadius: 14, padding: '0 12px',
+                background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)',
+                font: 'inherit', fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
+                outline: 'none', cursor: 'pointer',
+              }}
             >
               <option value="">— Elige un cobrador —</option>
               {cobradoresParaFiltro.map((c) => (
                 <option key={c.id} value={c.id}>{c.nombre}{c.inactivo ? ' (inactivo)' : ''}</option>
               ))}
             </select>
-          </Card>
+
+            <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+              Su caja del día: lo que prestó, lo que cobró, los seguros, el efectivo
+              y el capital de cada ruta, con todos sus movimientos.
+            </span>
+          </div>
 
           {cajaRutaLoading && <SkeletonCard />}
           {cajaRutaError && (
