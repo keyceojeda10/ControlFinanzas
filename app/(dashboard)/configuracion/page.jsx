@@ -6,6 +6,7 @@ import TuNegocio from '@/components/pantallas/config/TuNegocio'
 import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
 import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
 import { IndiceConfiguracion } from '@/components/pantallas/config/movil'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
@@ -1460,6 +1461,14 @@ function ConfiguracionContent() {
   const seccionParam = montado ? searchParams.get('s') : null
   const cobradores = Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)
 
+  // La flecha de la cabecera: dentro de una seccion vuelve al INDICE; en el
+  // indice sale de configuracion. Sin esto salia siempre, y desde una seccion eso
+  // se siente como perder el sitio.
+  useCabecera({
+    titulo: 'Configuración',
+    onVolver: seccionParam ? () => router.push('/configuracion') : undefined,
+  })
+
   const paisCfg = COUNTRIES[org?.country] ?? null
   const valores = valoresIndice({
     org, uso, cobradores, diasParaRenovar,
@@ -1589,21 +1598,15 @@ function ConfiguracionContent() {
   if (!anchaPantalla) {
     if (abierta) {
       return (
+        /* SIN FLECHA PROPIA. La cabecera del armazon ya pinta una, y salian dos
+           seguidas con destinos distintos: la de arriba salia de configuracion y
+           la de abajo volvia al indice. Ahora hay una sola y va al indice, que es
+           lo que espera quien entro desde ahi. */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
-          <button type="button" onClick={() => router.push('/configuracion')} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10, alignSelf: 'flex-start',
-            background: 'none', border: 0, padding: '2px 0 6px', cursor: 'pointer', font: 'inherit',
-            color: 'var(--cf-ink)',
-          }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
-              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
-            <span style={{
-              fontFamily: 'var(--font-space-grotesk), system-ui',
-              fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
-            }}>{abierta.nombre}</span>
-          </button>
+          <span style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          }}>{abierta.nombre}</span>
           {panel(abierta.id)}
         </div>
       )

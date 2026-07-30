@@ -42,13 +42,29 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
   const ultimo = useRef(null)
   ultimo.current = { titulo, subtitulo, acciones, paso, total, onVolver, onCerrar }
 
-  const clave = `${titulo ?? ''}|${subtitulo ?? ''}|${paso ?? ''}|${total ?? ''}`
+  // Los MANEJADORES van en la clave como «hay o no hay», no por identidad.
+  //
+  // Sin esto, una pantalla que cambia a donde vuelve —configuracion: dentro de
+  // una seccion al indice, en el indice fuera— registraba el `onVolver` del
+  // PRIMER render y se quedaba con el para siempre, porque el titulo no cambiaba
+  // y la clave tampoco. La flecha hacia lo que hacia al abrir la pantalla, no lo
+  // que toca ahora. Es la misma familia de fallo que la flecha sin `onClick`.
+  const clave = [
+    titulo ?? '', subtitulo ?? '', paso ?? '', total ?? '',
+    onVolver ? 'v' : '', onCerrar ? 'c' : '',
+  ].join('|')
 
   useEffect(() => {
     if (!registrar) return
-    registrar(ultimo.current)
+    // Se registran ENVOLTORIOS que leen del ref: asi el manejador que se ejecuta
+    // es siempre el ultimo, aunque cambie de identidad en cada render.
+    registrar({
+      ...ultimo.current,
+      onVolver: onVolver ? (...args) => ultimo.current.onVolver?.(...args) : undefined,
+      onCerrar: onCerrar ? (...args) => ultimo.current.onCerrar?.(...args) : undefined,
+    })
     return () => registrar(null)
-  }, [registrar, clave])
+  }, [registrar, clave])   // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 export default function Armazon({ children, nombre: nombreServidor, rol: rolServidor = '', hayAvisos = false, onCrear }) {
@@ -111,6 +127,16 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
 
   return (
     <ArmazonContext.Provider value={valor}>
+      {/* UNA FLECHA QUE NO HACE NADA ES PEOR QUE NO TENERLA.
+
+          `onVolver` lo pone la pantalla con `useCabecera`, y la mayoria no lo
+          pasa: la flecha se pintaba igual, con el `onClick` a `undefined`. Se
+          pulsaba y no pasaba nada — y en las pantallas que ademas traen su
+          propio «‹ Clientes» dentro quedaban DOS flechas, de las cuales solo
+          funcionaba la de abajo. Es lo que reporto el usuario.
+
+          Volver atras es lo mismo en todas: `router.back()`. La pantalla solo lo
+          sobreescribe cuando de verdad tiene que ir a otro sitio. */}
       {armazon.cabecera !== CABECERA.NINGUNA && (
         <CabeceraMovil
           variante={armazon.cabecera}
@@ -122,8 +148,8 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           acciones={dePantalla?.acciones}
           paso={dePantalla?.paso}
           total={dePantalla?.total}
-          onVolver={dePantalla?.onVolver}
-          onCerrar={dePantalla?.onCerrar}
+          onVolver={dePantalla?.onVolver ?? (() => router.back())}
+          onCerrar={dePantalla?.onCerrar ?? (() => router.back())}
         />
       )}
 

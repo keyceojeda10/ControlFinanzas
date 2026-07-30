@@ -93,7 +93,10 @@ export default function BottomSheet({ open, onClose, title, children, footer, cl
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        {/* `pt-1` cuando hay titulo: la cabecera cierra con `pb-3` y el contenido
+            arrancaba justo ahi, sin respirar. Es el mismo fallo que tenia
+            HojaInferior, y el usuario lo vio en las dos. */}
+        <div className={`flex-1 overflow-y-auto px-5 pb-5 ${title ? 'pt-1' : ''}`}>{children}</div>
 
         {footer && (
           <div className="shrink-0 px-5 py-4 flex items-center gap-3" style={{ borderTop: '1px solid var(--cf-border)' }}>

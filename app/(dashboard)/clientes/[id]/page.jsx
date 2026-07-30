@@ -1293,7 +1293,7 @@ function TopePrestamoCard({ tope, onSave }) {
               onChange={handleChange}
               placeholder="Sin limite"
               autoFocus
-              className="w-full h-9 rounded-[12px] border text-sm pl-7 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
+              className="w-full h-9 rounded-[12px] border text-sm pl-9 pr-3 bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[rgba(245,197,24,0.2)] transition-all"
             />
           </div>
         </div>

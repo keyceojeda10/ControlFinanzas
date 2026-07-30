@@ -93,9 +93,17 @@ export default function HojaInferior({
         </button>
       </div>
 
+      {/* AIRE DEBAJO DE LA CABECERA. Iba a `padding-top: 0`, asi que en
+          escritorio el primer rotulo del contenido nacia pegado al filete que
+          separa el titulo — «Más filtros» y debajo, sin respirar, «CADA CUÁNTO
+          COBRA». Abajo si tenia, y por eso se leia torcido: el bloque parecia
+          empujado hacia arriba.
+
+          En movil no hay filete y la cabecera ya deja 14px, asi que basta un
+          poco menos. */}
       <div style={{
         flex: 1, minHeight: 0, overflowY: 'auto',
-        padding: '0 22px 18px',
+        padding: escritorio ? '18px 22px 18px' : '4px 22px 18px',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>{children}</div>
 

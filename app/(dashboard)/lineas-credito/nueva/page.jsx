@@ -107,7 +107,7 @@ export default function NuevaLineaPage() {
       {paso === 0 && (
         <>
           <div className="relative mb-3">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--cf-ink-3)] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -115,7 +115,7 @@ export default function NuevaLineaPage() {
               placeholder="Buscar cliente..."
               value={buscar}
               onChange={e => setBuscar(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-[var(--cf-card)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)]"
+              className="w-full h-10 pl-11 pr-3 rounded-xl bg-[var(--cf-card)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)]"
             />
           </div>
 
