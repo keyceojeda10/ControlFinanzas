@@ -9,7 +9,7 @@
 // derecha. Si el hueco no coincide con lo que llega, al cargar todo salta y la
 // pantalla parece que se rompió — que es peor que no haber enseñado nada.
 //
-// Por eso no hay un `<Cargando />` único: hay piezas con la forma de cada cosa, y
+// Por eso no hay una sola pieza que valga para todo: hay una por forma, y
 // cada pantalla arma la suya con las que le tocan.
 //
 // Y NO SE ANIMA. Un brillo recorriendo ocho tarjetas en un teléfono de gama baja
