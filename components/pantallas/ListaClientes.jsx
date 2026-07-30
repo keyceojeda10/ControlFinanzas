@@ -59,15 +59,29 @@ export function EncabezadoLista({ titulo, total, enMora, unidadMora = 'en mora' 
  *
  * Radio 14 y alto 46, de la lámina. Yo lo tenía como una píldora (radio 999),
  * que es la forma del buscador de la BARRA LATERAL — otra pieza.
+ *
+ * ── LA LUPA NO PUEDE IR EN EL RELLENO DE UN CONTENEDOR REDONDO ──
+ *
+ * Iba a 15px del borde, que es el relleno lateral de la caja. En una caja recta
+ * eso está bien; en una de radio 14 el icono cae DONDE LA ESQUINA TODAVÍA ESTÁ
+ * DOBLANDO, y se lee como pegado a la pared. El margen vertical era 14,5 a cada
+ * lado y el horizontal 15: iguales de número, distintos de aspecto, porque
+ * arriba y abajo el borde es recto y a la izquierda es curvo.
+ *
+ * Va a 18. Y el icono sube de 17 a 19: al lado de un texto de 16px, uno de 17
+ * con trazo de 2 se lee como un adorno, no como parte del campo.
+ *
+ * Reportado dos veces por el usuario. La primera lo «arreglé» en tres pantallas
+ * que no eran esta —medí las que yo suponía en vez de la que él estaba mirando—.
  */
 export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o cédula' }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10, flex: 'none',
-      height: 46, padding: '0 14px', borderRadius: 'var(--cf-r-control)',
+      height: 46, padding: '0 18px', borderRadius: 'var(--cf-r-control)',
       background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.09)',
     }}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
         strokeWidth="2" strokeLinecap="round" style={{ flex: 'none' }}>
         <circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" />
       </svg>

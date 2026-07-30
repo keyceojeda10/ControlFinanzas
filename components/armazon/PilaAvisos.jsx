@@ -117,11 +117,19 @@ export default function PilaAvisos({ children, onVerTodos }) {
 
   const valor = useMemo(() => ({ ...api, ganador: ganadorClave }), [api, ganadorClave])
 
-  // La campana lleva EL NÚMERO (lámina T39-01), y quien lo sabe es esta pila:
-  // es la única que ve cuántos avisos aplican. La cabecera y la barra lateral
-  // son hermanas suyas en el árbol, no hijas, así que se publica por el mismo
-  // canal por el que ellas piden abrir la hoja.
-  const cuantos = Object.values(vivos).filter((v) => v.aplica).length
+  // LA CAMPANA CUENTA LO QUE NO SE VE, no todos los avisos.
+  //
+  // Contaba TODOS los que aplican, y la hoja enseña solo los PERDEDORES —los que
+  // no caben en la franja—. Con un unico aviso, que por definicion es el ganador
+  // y ya esta en pantalla, la campana marcaba «1» y al abrirla decia «No hay nada
+  // pendiente». Dos definiciones distintas de «aviso» en la misma cabecera.
+  //
+  // Manda la de la hoja: la campana es lo que la app NO te esta enseñando. Es la
+  // misma cuenta que la franja de abajo («Hay 2 avisos mas de la app»), asi que
+  // el numero de arriba y el texto de abajo dicen por fin lo mismo.
+  //
+  // Reportado por el usuario: «la campanita notifica y al abrir no hay nada».
+  const cuantos = perdedores.length
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('cf:avisos', { detail: cuantos }))
   }, [cuantos])
