@@ -656,3 +656,331 @@ export function TuDinero({
     </>
   )
 }
+
+/* ══ Las cuatro pestañas de la caja (T20) ══════════════════════════════════
+   Caja no es una pantalla, son cuatro: HOY, CUENTAS, CUADRE y CIERRES. Es la
+   estructura que las láminas de T20 dan por hecha y que hoy no existe: todo vive
+   en una sola página de 1.855 líneas donde el conteo físico, el saldo por cuenta y
+   el historial se mezclan con el movimiento del día.
+
+   El grupo va ARRIBA y pegado al título, no flotando en el contenido: es
+   navegación, no un filtro. Los filtros de rango —hoy, semana, mes— son otra cosa
+   y viven dentro de la pestaña que los necesita. */
+export function PestanasCaja({ pestanas = [], activa, onCambiar }) {
+  return (
+    <div style={{
+      display: 'flex', gap: 5, padding: 4, borderRadius: 14, flex: 'none',
+      background: 'var(--cf-fill-2)',
+    }}>
+      {pestanas.map((p) => {
+        const on = p.id === activa
+        return (
+          <button key={p.id} type="button" onClick={() => onCambiar?.(p)} aria-pressed={on} style={{
+            flex: 1, minWidth: 0, height: 36, borderRadius: 11, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            font: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600, border: 0,
+            color: on ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
+            // El activo es una pastilla BLANCA con sombra, no un relleno de color:
+            // sobre el gris del carril, el blanco elevado se lee como «estás aquí»
+            // sin gastar el dorado, que en esta pantalla hace falta para el dinero.
+            background: on ? 'var(--cf-card)' : 'transparent',
+            boxShadow: on ? '0 1px 3px rgba(20,20,28,.1)' : 'none',
+          }}>{p.etiqueta}</button>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ══ T20-01 · Cuentas ══════════════════════════════════════════════════════
+   El pie de la lámina:
+
+     «La pestaña que hacía falta para que el hallazgo #3 se pueda arreglar: SI
+      TODO ENTRA COMO EFECTIVO, EL CONTEO FÍSICO NUNCA CUADRA. Solo el efectivo
+      lleva las tres cifras del día y el aviso de 4 días sin contar, porque es el
+      único dinero que se puede perder por el camino — Nequi y el banco se
+      concilian solos.»
+
+   Ahí está toda la pantalla, y explica por qué el efectivo se trata distinto: no
+   es que sea más importante, es que es el único que se puede perder entre la mano
+   del cliente y la caja fuerte. Una transferencia o está o no está.
+
+   EL RIEL DE COLOR de 4px a la izquierda de cada tarjeta es lo que ata la fila con
+   su tramo de la barra de arriba. Sin él, la barra partida es una decoración: con
+   él, el dueño ve que el trozo dorado grande es el efectivo que todavía no ha
+   contado. */
+export function Cuentas({
+  total, tramos = [], cuentas = [], onMover,
+}) {
+  return (
+    <>
+      <div style={{
+        flex: 'none', background: '#15161A', borderRadius: 'var(--cf-r-card)',
+        padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 15,
+      }}>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+            textTransform: 'uppercase', color: '#A3A8B2',
+          }}>Tienes en total</span>
+          <span className="cf-fig" style={{
+            fontSize: 32, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1, color: '#F3F3F6',
+          }}>{total}</span>
+        </span>
+
+        {tramos.length > 0 && (
+          <>
+            <span aria-hidden style={{
+              display: 'flex', height: 11, borderRadius: 999, overflow: 'hidden', flex: 'none',
+              background: 'rgba(255,255,255,.08)',
+            }}>
+              {tramos.map((t) => (
+                <span key={t.id} style={{ width: `${t.porcentaje}%`, background: t.color, flex: 'none' }} />
+              ))}
+            </span>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              {tramos.map((t) => (
+                <span key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 'none' }}>
+                  <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: t.color, flex: 'none' }} />
+                  <span className="cf-num" style={{ fontSize: 12, color: '#A3A8B2' }}>
+                    {t.etiqueta} <strong className="cf-fig" style={{ color: '#F3F3F6' }}>{t.corto}</strong>
+                  </span>
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {cuentas.map((c) => (
+        <div key={c.id} style={{
+          flex: 'none', position: 'relative', overflow: 'hidden',
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: '17px 19px',
+          display: 'flex', flexDirection: 'column', gap: 13,
+        }}>
+          {/* El riel que ata la tarjeta con su tramo de la barra. */}
+          <span aria-hidden style={{
+            position: 'absolute', left: 0, top: 16, bottom: 16, width: 4,
+            borderRadius: 999, background: c.color,
+          }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span aria-hidden style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 38, height: 38, borderRadius: 11, flex: 'none',
+              background: c.fondoIcono ?? 'var(--cf-fill)',
+              fontSize: 14, fontWeight: 700, color: c.colorIcono ?? 'var(--cf-ink-2)',
+            }}>{c.inicial}</span>
+            <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{
+                fontSize: 16, fontWeight: 700, color: 'var(--cf-ink)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{c.nombre}</span>
+              {c.detalle && (
+                <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{c.detalle}</span>
+              )}
+            </span>
+            <span className="cf-fig" style={{
+              fontSize: 20, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)', flex: 'none',
+            }}>{c.saldo}</span>
+          </div>
+
+          {/* Las tres cifras del día SOLO en efectivo. Nequi y el banco se concilian
+              solos: enseñarles «entró / salió / sin contar» sería inventar una
+              vigilancia que no hace falta y quitarle peso a la que sí. */}
+          {c.movimiento && (
+            <div style={{ display: 'flex', gap: 8, paddingTop: 12, borderTop: '1px solid var(--cf-hairline)' }}>
+              {[
+                ['Entró hoy', c.movimiento.entro, 'var(--cf-green-dark)'],
+                ['Salió hoy', c.movimiento.salio, 'var(--cf-red-dark)'],
+                ['Sin contar', c.movimiento.sinContar, 'var(--cf-gold-text-2)'],
+              ].map(([etiqueta, valor, color], i) => (
+                <span key={etiqueta} style={{ display: 'contents' }}>
+                  {i > 0 && <span aria-hidden style={{ width: 1, background: 'var(--cf-hairline)', flex: 'none' }} />}
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                      textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                    }}>{etiqueta}</span>
+                    <span className="cf-fig" style={{ fontSize: 14, fontWeight: 600, color }}>
+                      {valor ?? '—'}
+                    </span>
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {/* «Mover plata» cubre el gesto real de consignar lo recogido: el cobrador
+          trae efectivo y el dueño lo mete al banco. Sin esta acción, el efectivo
+          crece en la app para siempre y el conteo nunca cuadra. */}
+      {onMover && (
+        <button type="button" onClick={onMover} style={{
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 13, width: '100%',
+          padding: '17px 19px', borderRadius: 'var(--cf-r-card)', cursor: 'pointer',
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          font: 'inherit', textAlign: 'left',
+        }}>
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>Mover plata</span>
+            <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+              Consignar el efectivo o sacar del banco
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+               strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      )}
+    </>
+  )
+}
+
+/* ══ T20-02 · Cuadre ═══════════════════════════════════════════════════════
+   El pie:
+
+     «Cuentas los billetes, escribes el número y la app hace la resta. LO QUE LA
+      VUELVE ÚTIL ES LO QUE PASA DESPUÉS: en vez de un "no cuadra", la app
+      reconoce la cifra —$35.000 es exactamente la gasolina de la mañana— y ofrece
+      las tres causas reales en orden de probabilidad. Cerrar con faltante se
+      puede, pero queda en texto: EL FALTANTE SIN EXPLICAR ES CÓMO SE PIERDE PLATA
+      SIN DARSE CUENTA.»
+
+   El reconocimiento es la pantalla entera. «No cuadra» es un callejón; «justo lo
+   que costó la gasolina de esta mañana» es una pista. Y por eso la sospecha se
+   compone ARRIBA, con los datos del día, y no aquí: esta pieza solo la pinta. */
+export function Cuadre({
+  segunLaApp, contado, onContado,
+  diferencia, onCausa, causas = [],
+}) {
+  return (
+    <>
+      <div style={{
+        flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+        <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>La app dice que tienes</span>
+          <span className="cf-fig" style={{
+            fontSize: 26, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1, color: 'var(--cf-ink)',
+          }}>{segunLaApp}</span>
+        </span>
+      </div>
+
+      <div style={{
+        flex: 'none', background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
+        border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px rgba(231,164,0,.13)',
+        padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12,
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+          textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+        }}>Cuenta lo que tienes de verdad</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+          <span style={{ fontSize: 23, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none' }}>$</span>
+          <input
+            value={contado ?? ''}
+            onChange={(e) => onContado?.(e.target.value)}
+            type="text" inputMode="decimal" autoComplete="off"
+            aria-label="Cuenta lo que tienes de verdad"
+            className="cf-fig"
+            style={{
+              flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
+              outline: 'none', font: 'inherit',
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 38, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1,
+              color: 'var(--cf-ink)',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* LA DIFERENCIA, con su sospecha. En rojo si falta, en ámbar si sobra: sobrar
+          también es un descuadre —un cobro sin anotar— pero no es una pérdida, así
+          que no se pinta como tal. */}
+      {diferencia && (
+        <div style={{
+          flex: 'none', borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+          display: 'flex', flexDirection: 'column', gap: 13,
+          background: diferencia.tono === 'sobra' ? 'var(--cf-gold-bg)' : 'var(--cf-red-bg)',
+          border: `1px solid ${diferencia.tono === 'sobra' ? 'var(--cf-gold-border)' : 'var(--cf-red-border)'}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                color: diferencia.tono === 'sobra' ? 'var(--cf-gold-text-2)' : 'var(--cf-red-darker)',
+              }}>{diferencia.etiqueta}</span>
+              <span className="cf-fig" style={{
+                fontSize: 30, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1,
+                color: diferencia.tono === 'sobra' ? 'var(--cf-gold-text-2)' : 'var(--cf-red-dark)',
+              }}>{diferencia.monto}</span>
+            </span>
+            {diferencia.proporcion && (
+              <span style={{
+                fontSize: 12, flex: 'none',
+                color: diferencia.tono === 'sobra' ? 'var(--cf-gold-text-2)' : 'var(--cf-red-darker)',
+              }}>{diferencia.proporcion}</span>
+            )}
+          </div>
+          {/* LA PISTA. «No cuadra» es un callejón; «justo lo que costó la gasolina de
+              esta mañana» es por dónde empezar a buscar. */}
+          {diferencia.sospecha && (
+            <span style={{
+              fontSize: 13, lineHeight: 1.5,
+              color: diferencia.tono === 'sobra' ? 'var(--cf-gold-text-2)' : 'var(--cf-red-darker)',
+            }}>{diferencia.sospecha}</span>
+          )}
+        </div>
+      )}
+
+      {causas.length > 0 && (
+        <>
+          <Rotulo>Puede ser esto</Rotulo>
+          <div style={{
+            flex: 'none', background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+          }}>
+            {causas.map((c, i) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onCausa?.(c)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 13, width: '100%',
+                  padding: '15px 18px', font: 'inherit', textAlign: 'left',
+                  background: 'none', border: 0,
+                  borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 32, height: 32, borderRadius: 999, flex: 'none',
+                  background: i === 0 ? 'var(--cf-gold-tint)' : 'var(--cf-fill)',
+                  fontSize: 13, fontWeight: 700,
+                  color: i === 0 ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+                }}>{i + 1}</span>
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)' }}>{c.titulo}</span>
+                  {c.nota && <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{c.nota}</span>}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)', flex: 'none' }}>
+                  {c.accion}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  )
+}

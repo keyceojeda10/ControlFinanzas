@@ -23,7 +23,7 @@ import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
-import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero } from '@/components/pantallas/Caja'
+import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
@@ -721,6 +721,67 @@ export default function Estilo() {
               interesesCobrados="$1.877.000"
               gastosDelMes="$35.000"
               onAjustar={() => {}}
+            />
+          </div>
+        </div>
+
+        <div id="cuentas" style={{ ...MARCO, height: 'auto', minHeight: 640 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Caja" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <PestanasCaja
+              pestanas={[
+                { id: 'hoy', etiqueta: 'Hoy' },
+                { id: 'cuentas', etiqueta: 'Cuentas' },
+                { id: 'cuadre', etiqueta: 'Cuadre' },
+                { id: 'cierres', etiqueta: 'Cierres' },
+              ]}
+              activa="cuentas"
+            />
+            <Cuentas
+              total="$4.180.000"
+              tramos={[
+                { id: 'efectivo', etiqueta: 'Efectivo', corto: '$1.84M', porcentaje: 44, color: '#F5B824' },
+                { id: 'nequi', etiqueta: 'Nequi', corto: '$1.59M', porcentaje: 38, color: '#5B8DEF' },
+                { id: 'banco', etiqueta: 'Banco', corto: '$750k', porcentaje: 18, color: '#4A4E57' },
+              ]}
+              cuentas={[
+                {
+                  id: 'efectivo', nombre: 'Efectivo', inicial: '$', detalle: 'en el bolsillo y la caja fuerte',
+                  saldo: '$1.840.000', color: '#E7A400', fondoIcono: 'var(--cf-gold-tint)', colorIcono: 'var(--cf-gold-dark)',
+                  movimiento: { entro: '+$62.000', salio: '−$35.000', sinContar: '4 días' },
+                },
+                { id: 'nequi', nombre: 'Nequi', inicial: 'N', saldo: '$1.590.000', color: '#5B8DEF', fondoIcono: 'rgba(91,141,239,.13)', colorIcono: '#5B8DEF' },
+                { id: 'banco', nombre: 'Banco', inicial: 'B', saldo: '$750.000', color: '#4A4E57' },
+              ]}
+              onMover={() => {}}
+            />
+          </div>
+        </div>
+
+        <div id="cuadre" style={{ ...MARCO, height: 'auto', minHeight: 640 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Caja" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13, padding: '0 20px 20px' }}>
+            <PestanasCaja
+              pestanas={[
+                { id: 'hoy', etiqueta: 'Hoy' },
+                { id: 'cuentas', etiqueta: 'Cuentas' },
+                { id: 'cuadre', etiqueta: 'Cuadre' },
+                { id: 'cierres', etiqueta: 'Cierres' },
+              ]}
+              activa="cuadre"
+            />
+            <Cuadre
+              segunLaApp="$1.840.000"
+              contado="1.805.000"
+              diferencia={{
+                etiqueta: 'Te faltan', monto: '$35.000', proporcion: '2% de la caja', tono: 'falta',
+                sospecha: 'Justo lo que costó la gasolina de esta mañana. ¿Se te olvidó registrarla?',
+              }}
+              causas={[
+                { id: 'gasto', titulo: 'Un gasto sin registrar', nota: 'gasolina, comida, transporte', accion: 'Anotar' },
+                { id: 'cobro', titulo: 'Un cobro que no se anotó', nota: 'lo cobraste y no entró a la app', accion: 'Buscar' },
+                { id: 'conteo', titulo: 'Contaste mal', nota: 'vuelve a contar los billetes', accion: 'Recontar' },
+              ]}
             />
           </div>
         </div>
