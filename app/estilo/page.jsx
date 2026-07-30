@@ -31,6 +31,14 @@ import RevisionCarga from '@/components/pantallas/RevisionCarga'
 import DetalleRuta from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, adaptarRecorrido, siguienteParada, adaptarCabeceraRuta, adaptarParadaActual, partirRecorrido, tiempoFuera } from '@/lib/adaptadores/ruta'
 import ModoRuta from '@/components/pantallas/ModoRuta'
+import { CrearRuta, OrdenRecorrido } from '@/components/pantallas/RutaEditar'
+import RutaCerrada, { RutaEnMapa, TarjetaCierre } from '@/components/pantallas/RutaCierre'
+import { ConmutadorVista } from '@/components/pantallas/ModoRuta'
+import {
+  cobradoresParaElegir, clientesParaElegir, avisoDeRobo, tramosDelRecorrido,
+  propuestaPorCercania, cierreDelDia, resumenDeCierre, loQuePasoHoy,
+  pinesDelMapa, LEYENDA_MAPA, cabeceraMapa,
+} from '@/lib/adaptadores/ruta'
 import { tramosDePlan, limiteInicial } from '@/lib/adaptadores/planes'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import {
@@ -1428,6 +1436,128 @@ export default function Estilo() {
                 cobradosTotal={partes.cobradosTotal}
                 onParada={() => {}}
               />
+            )
+          })()}
+        </div>
+
+        <div id="ruta-crear" style={MARCO}>
+          {(() => {
+            const COBRADORES = [
+              { id: 'p', nombre: 'Pepito Perez', rutas: 1 },
+              { id: 'c1', nombre: 'Carlos 1', rutas: 0 },
+            ]
+            const CLIENTES = [
+              { id: 1, nombre: 'Steven Olmos', direccion: 'Cl 8 # 31-05', rutaNombre: 'Ruta 2', rutaCobrador: 'Pepito' },
+              { id: 2, nombre: 'Carlos Chaparro', direccion: 'Cra 12 # 4-18', rutaNombre: 'Ruta #1', rutaCobrador: 'Carlos' },
+              { id: 3, nombre: 'Deisy Ramírez', direccion: 'Cra 45 # 12-30' },
+            ]
+            const ELEGIDOS = [1, 2, 3]
+            const co = cobradoresParaElegir(COBRADORES, { id: 'yo', nombre: 'Carlos Castro' })
+            return (
+              <CrearRuta
+                nombre="Bolivariana" onNombre={() => {}}
+                cobradores={co.filas} cobradorNota={co.nota}
+                cobrador="c1" onCobrador={() => {}}
+                clientes={clientesParaElegir(CLIENTES, ELEGIDOS)} elegidos={ELEGIDOS}
+                onCliente={() => {}}
+                buscarPlaceholder="Buscar entre tus 31 clientes…" onBuscar={() => {}}
+                aviso={avisoDeRobo(CLIENTES, ELEGIDOS)}
+                onCrear={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        <div id="ruta-orden" style={MARCO}>
+          {(() => {
+            const PARADAS = [
+              { id: 1, orden: 1, nombre: 'Steven Olmos', direccion: 'Cl 8 # 31-05', diasMora: 36, tramoMetros: 240 },
+              { id: 2, orden: 2, nombre: 'Pepito Gómez', direccion: 'Calle 65 # 22-14', tramoMetros: 520 },
+              { id: 3, orden: 3, nombre: 'Fantasma 4', direccion: 'Cra 7 # 44-12', tramoMetros: 680 },
+              { id: 4, orden: 4, nombre: 'Luz Mery Ossa', direccion: 'Cra 7 # 51-08', tramoMetros: 410 },
+              { id: 5, orden: 5, nombre: 'Nelson Aguirre', direccion: 'Cl 52 # 8-40', diasMora: 9, tramoMetros: 1_240 },
+            ]
+            return (
+              <OrdenRecorrido
+                detalle="Ruta 2 · 5 paradas · 3,4 km"
+                onAtras={() => {}} onMapa={() => {}}
+                paradas={tramosDelRecorrido(PARADAS)}
+                onReordenar={() => {}}
+                propuesta={propuestaPorCercania({ actualMetros: 3400, propuestaMetros: 2600 })}
+                onProbar={() => {}}
+                sucio onDeshacer={() => {}} onGuardar={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* La cuenta del cierre es la del endpoint de caja —cobrado - prestado -
+            gastos—, NO la de la lamina, que pone «61.500 - 200.000» y luego «a
+            entregar 61.500». */}
+        <div id="ruta-cierre" style={MARCO}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const RUTA = { recaudadoHoy: 61_500, esperadoHoy: 74_500, clientesConCobroHoy: 5, clientesPagaronHoy: 4 }
+            return (
+              <RutaCerrada
+                titulo="Ruta 2" terminado="Recorrido terminado · 18:38"
+                onAtras={() => {}} onMas={() => {}}
+                resumen={resumenDeCierre(RUTA, fmt)}
+                cierre={cierreDelDia({ cobradoEfectivo: 61_500, prestadoEfectivo: 0, gastos: 0 }, fmt)}
+                onCerrar={() => {}}
+                hoy={loQuePasoHoy([
+                  { id: 1, nombre: 'Steven Olmos', hora: '14:12', concepto: 'cuota completa', monto: 27_500 },
+                  { id: 2, nombre: 'Fantasma 4', hora: '15:48', concepto: 'abono parcial', monto: 20_000 },
+                  { id: 3, nombre: 'Carmen Jiménez', hora: '17:02', tipo: 'no_pago', motivo: 'vuelve mañana', monto: 13_000 },
+                ], fmt)}
+              />
+            )
+          })()}
+        </div>
+
+        {/* El mismo cierre cuando presto mas de lo que cobro: la casa le debe. */}
+        <div id="ruta-cierre-negativo" style={{ ...MARCO, height: 'auto', minHeight: 380, overflow: 'visible', padding: 20 }}>
+          <TarjetaCierre
+            {...cierreDelDia(
+              { cobradoEfectivo: 61_500, prestadoEfectivo: 200_000, gastos: 8_000 },
+              (n) => `$${n.toLocaleString('es-CO')}`,
+            )}
+            onCerrar={() => {}}
+          />
+        </div>
+
+        <div id="ruta-mapa" style={MARCO}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const CLIENTES = [
+              { id: 1, orden: 1, nombre: 'Steven Olmos', diasMora: 36 },
+              { id: 2, orden: 2, nombre: 'Pepito Gómez', cobradoHoy: true },
+              { id: 3, orden: 3, nombre: 'Luz Mery Ossa', diasMora: 0 },
+              { id: 4, orden: 4, nombre: 'Nelson Aguirre', cobradoHoy: true },
+              { id: 5, orden: 5, nombre: 'Yeison Patiño', diasMora: 31 },
+            ]
+            const EN = [[36, 44], [224, 44], [224, 222], [104, 222], [104, 372]]
+            const pines = pinesDelMapa(CLIENTES).map((p, i) => ({ ...p, x: EN[i][0], y: EN[i][1] }))
+            return (
+              <RutaEnMapa
+                titulo="Ruta 2 · en mapa"
+                detalle={cabeceraMapa({ cobros: 5, metros: 3400, minutos: 80 })}
+                onAtras={() => {}}
+                conmutador={<ConmutadorVista vista="mapa" onVista={() => {}} />}
+                pines={pines} onPin={() => {}}
+                tuPunto={{ x: 300, y: 150 }}
+                leyenda={LEYENDA_MAPA}
+                tarjeta={{
+                  orden: 1, color: 'rojo', nombre: 'Steven Olmos', pastilla: '36d',
+                  donde: 'Cl 8 # 31-05 · a 240 m de ti', monto: fmt(27_500),
+                }}
+                onLlegar={() => {}} onCobrar={() => {}}
+              >
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'repeating-linear-gradient(0deg,#e8e6e0 0 1px,#eeece6 1px 44px),repeating-linear-gradient(90deg,#e8e6e0 0 1px,#eeece6 1px 44px)',
+                }} />
+              </RutaEnMapa>
             )
           })()}
         </div>
