@@ -268,6 +268,20 @@ function CifrasPrevia({ celdas = [] }) {
 /* El pie de guardar. Solo en las secciones que cambian algo que hay que confirmar:
    el tema y los interruptores se guardan al tocarlos, porque el resultado se ve
    inmediatamente y pedir «Guardar» para encender un aviso es un paso de más. */
+/* ══ CUÁNDO GUARDA CADA COSA — DECIDIDO ═══════════════════════════════════
+   No es lo mismo en toda la configuración, y por eso este pie no está en todas
+   las secciones:
+
+     · LOS INTERRUPTORES GUARDAN SOLOS — avisos de WhatsApp, portal del cliente,
+       tema. Encender un recordatorio es reversible de un toque y pedir «Guardar»
+       después de mover un interruptor se siente roto: el interruptor ya se movió.
+
+     · LO QUE TOCA DINERO PIDE «GUARDAR» — tasa por defecto, plazo, frecuencia,
+       días sin cobro, país y moneda. Un toque accidental ahí cambia cómo se
+       calculan los préstamos que se creen a partir de ese momento, y eso no se
+       nota hasta que alguien mira una cuota rara tres días después.
+
+   El criterio no es la comodidad: es si equivocarse cuesta plata. */
 export function PieGuardar({ onGuardar, texto = 'Guardar', guardando = false, deshabilitado = false, error }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>

@@ -26,7 +26,7 @@ import DesglosePorCuenta      from '@/components/caja/DesglosePorCuenta'
 import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
-import { CajaDia }            from '@/components/pantallas/Caja'
+import { CajaDia, PestanasCaja } from '@/components/pantallas/Caja'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -1014,29 +1014,26 @@ export default function CajaPage() {
       {/* Filtro de periodo */}
       <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
-        {[
-          { key: 'cobros', label: 'Caja del dia' },
-          { key: 'porruta', label: 'Por ruta' },
-          ...(esOwner ? [{ key: 'cuentas', label: 'Cuentas' }] : []),
-          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ key: 'cuadre', label: 'Cuadre' }] : []),
-        ].map(t => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setCajaTab(t.key)}
-            className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
-            style={cajaTab === t.key ? {
-              background: 'var(--color-bg-card)',
-              color: 'var(--color-accent)',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-            } : { color: 'var(--color-text-muted)' }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* Las pestañas pasan al componente del rediseño (T20). Tres cambios que
+          se ven: el activo es una pastilla BLANCA con sombra y no un texto en
+          dorado —sobre el carril gris, el blanco elevado dice «estás aquí» sin
+          gastar el dorado, que en esta pantalla hace falta para el dinero—; la
+          altura sube de ~26px a 36, que es lo que se puede tocar con el pulgar;
+          y «Caja del dia» pasa a llevar tilde.
+
+          Los ids de pestaña NO cambian: `cobros`, `porruta`, `cuentas` y
+          `cuadre` siguen siendo los mismos que lee el resto del archivo y los
+          que viajan en la URL (?tab=gastos). */}
+      <PestanasCaja
+        activa={cajaTab}
+        onCambiar={(p) => setCajaTab(p.id)}
+        pestanas={[
+          { id: 'cobros', etiqueta: 'Caja del día' },
+          { id: 'porruta', etiqueta: 'Por ruta' },
+          ...(esOwner ? [{ id: 'cuentas', etiqueta: 'Cuentas' }] : []),
+          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ id: 'cuadre', etiqueta: 'Cuadre' }] : []),
+        ]}
+      />
 
       {isOffline && (
         <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">
