@@ -266,10 +266,23 @@ export function RepartirGanancia({
 const PUNTO = { reparto: '#2FBE6A', pago: 'var(--cf-gold)', aporte: 'var(--cf-blue)' }
 
 export function CuentaSocio({
+  // La ETIQUETA de la cifra héroe es prop, y no por gusto: mientras no exista el
+  // tipo de movimiento «reparto», «le debes» NO SE PUEDE CALCULAR. Al montarla
+  // puse ahí el capital del socio con el rótulo «Le debes» y quedó una pantalla
+  // afirmando una deuda de dos millones que nadie ha declarado. Una etiqueta
+  // equivocada sobre plata es una mentira, no un detalle de copia.
+  leDebesEtiqueta = 'Le debes',
   leDebes, puso, haGanado, leHasDado,
   prestamos, montoEnCalle, montoEnMora,
   movimientos = [],
   onMandarCuenta, onPagar, onVerPrestamos,
+  // `onBorrarMovimiento` y `children` son para MONTARLA sin perder nada.
+  //
+  // La ruta real trae cosas que la lámina no dibuja pero que ya funcionaban:
+  // borrar un aporte mal metido, la liquidación del año, las notas, editar y dar
+  // de baja al socio. Sin estos dos puntos, montar la pantalla nueva significaría
+  // quitarle funciones al dueño, que es peor que dejarla vieja.
+  onBorrarMovimiento, children,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -277,7 +290,7 @@ export function CuentaSocio({
 
         {/* La relación con un socio es una DEUDA, no un balance. Por eso la
             cifra héroe es "le debes" y va en dorado. */}
-        <BloqueOscuro etiqueta="Le debes" cifra={leDebes} tono="ganancia">
+        <BloqueOscuro etiqueta={leDebesEtiqueta} cifra={leDebes} tono="ganancia">
           <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
           <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
             {[
@@ -359,9 +372,26 @@ export function CuentaSocio({
                      : m.tipo === 'pago'    ? 'var(--cf-ink-2)'
                      : 'var(--cf-ink)',
               }}>{m.monto}</span>
+              {/* Borrar un movimiento mal metido. Sin icono de papelera roja: es
+                  una corrección, no una acción peligrosa que anunciar. */}
+              {onBorrarMovimiento && m.id && (
+                <button type="button" onClick={() => onBorrarMovimiento(m)}
+                  aria-label={`Borrar ${m.concepto}`} style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 30, height: 30, flex: 'none', borderRadius: 9,
+                    background: 'none', border: 0, padding: 0, cursor: 'pointer',
+                  }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))}
         </Tarjeta>
+
+        {children}
       </div>
 
       {/* "Mandarle su cuenta" ES LA PRINCIPAL porque el socio no entra a la app.
