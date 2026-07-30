@@ -37,27 +37,24 @@ Todas las pantallas juntas, con datos de mentira, en `http://localhost:3000/esti
 **Las 47 usan el sistema de color de 2026.** Cero referencias a la paleta vieja
 fuera de `app/admin`, que es la consola interna y no la app del cliente.
 
-### Con componente del rediseño montado · 17
+### ⚠ «Montado» no quiere decir «rediseñada»
 
-| Ruta | Qué monta |
-|---|---|
-| `/dashboard` | `Panel` |
-| `/caja` | `Caja` (día, cuentas, cuadre, pestañas) |
-| `/cobros-hoy` | `CobrarHoy` |
-| `/clientes` | `ListaClientes`, `CarteraVacia` |
-| `/prestamos` | `ListaPrestamos`, `HojaFiltros` |
-| `/prestamos/[id]` | `FichaPrestamo`, `Gestion`, `TablaAmortizacion` |
-| `/prestamos/[id]/tabla` | `TablaAmortizacion` |
-| `/rutas` | `ListaRutas` |
-| `/rutas/[id]` | `DetalleRuta` (bloques de cartera y de hoy) |
-| `/socios` | `SociosReparto` |
-| `/socios/[id]` | `CuentaSocio` |
-| `/cobradores` | `Cobradores` |
-| `/reportes` | `Reportes` |
-| `/configuracion` | índice móvil + 6 secciones · dos columnas en PC |
-| `/mas` | `PantallaMas` |
-| `/portal/login` | `PortalAcceso` |
-| `/portal/prestamos/[id]` | `PortalPrestamo` |
+**Esta lista decía «montado» cuando lo único cierto era que la ruta importa el
+componente nuevo.** No es lo mismo. Medido el 30 de julio, después de que el
+usuario reportara cinco pantallas viejas:
+
+| Ruta | Qué monta | Qué queda del diseño anterior |
+|---|---|---|
+| `/reportes` | `Reportes`, **1 sección de 8** | La gráfica, seguros por ruta, cobros del mes, top cobradores, listado PDF, resumen PDF y exportar a Excel — **534 líneas**, con 3 desplegables nativos y dorado en cada cifra |
+| `/cobradores` | `Cobradores` | La fila «Ranking» + «Nuevo cobrador», que es del diseño anterior. Su lámina es T09-02 |
+| `/prestamos/simulador` | **nada** | La pantalla entera. `Simulador` está construido y sin montar |
+| `/gastos` | primitivos, sin lámina | «Capital» es una pestaña aquí **y además** su propia pantalla en `/capital` |
+| `/dashboard/analiticas` | rehecha | Nada. El 404 era el enlace de «Más», no la pantalla |
+
+Todas usan ya el sistema de color nuevo, que es lo que hace que **parezcan**
+hechas. Lo que falta es la estructura.
+
+### Con componente del rediseño montado · 17
 
 ### Rehechas sin componente de banco · 30
 
