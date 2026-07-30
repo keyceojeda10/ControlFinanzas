@@ -38,6 +38,7 @@ import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pant
 // `Socios.jsx` (turno 44) tambien exporta `ListaSocios`. La de T45 es la que
 // manda —turno posterior— y se importa con alias hasta que la vieja se retire.
 import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantallas/SociosReparto'
+import { FranjaSinSenal, PorSincronizar, BusquedaGlobal } from '@/components/pantallas/Estados'
 import {
   loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
   cabeceraSocios, NOTA_NO_SACA_PLATA,
@@ -1692,6 +1693,45 @@ export default function Estilo() {
               />
             )
           })()}
+        </div>
+
+        {/* T05-05. La franja NO es roja: un cobrador pierde señal cinco veces
+            al dia y la app no puede decirle «error» cinco veces al dia. */}
+        <div id="est-offline" style={MARCO}>
+          <FranjaSinSenal onReintentar={() => {}} />
+          <div style={{ height: 'calc(100% - 38px)' }}>
+            <PorSincronizar
+              onAtras={() => {}}
+              guardado="$61.500" pendientes="4 pendientes"
+              cobros={[
+                { id: 1, nombre: 'Steven Olmos', detalle: '14:12 · cuota completa', monto: '$27.500', entro: true },
+                { id: 2, nombre: 'Fantasma 4', detalle: '15:48 · abono parcial', monto: '$20.000', entro: true },
+                { id: 3, nombre: 'Carmen Jiménez', detalle: '17:02 · no pagó', monto: '$0' },
+                { id: 4, nombre: 'Deisy Ramírez', detalle: '9:20 · ya sincronizado', monto: '$14.000', entro: true, sincronizado: true },
+              ]}
+              nota="Se suben solos en cuanto vuelva la señal. No hace falta que hagas nada."
+            />
+          </div>
+        </div>
+
+        {/* T34-03. Se abre con algo ya escrito aunque el campo este vacio. */}
+        <div id="est-buscar" style={MARCO}>
+          <BusquedaGlobal
+            texto="" onTexto={() => {}} onCerrar={() => {}}
+            recientes={[
+              { id: 1, iniciales: 'SO', nombre: 'Steven Olmos', detalle: 'debe $130.500 · 36 días', cuando: 'hace 1 h', estado: 'rojo' },
+              { id: 2, iniciales: 'HP', nombre: 'Hollando Pérez', detalle: 'línea de crédito · corte en 2 días', cuando: 'ayer', estado: 'verde' },
+              { id: 3, nombre: 'Ruta 2', detalle: '5 cobros hoy · Andres perez', cuando: 'ayer',
+                icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z" /></svg> },
+            ]}
+            atajos={[
+              { id: 'hoy', texto: 'Cobrar hoy', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></></svg> },
+              { id: 'caja', texto: 'Caja', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="12" rx="2.5" /></svg> },
+              { id: 'plata', texto: 'Mi plata', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V9l8-5 8 5v11z" /></svg> },
+              { id: 'gastos', texto: 'Gastos', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><><path d="M6 4h12v16H6z" /><path d="M9 9h6M9 13h4" /></></svg> },
+            ]}
+            onAbrir={() => {}} onAtajo={() => {}}
+          />
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
