@@ -34,6 +34,8 @@ import ModoRuta from '@/components/pantallas/ModoRuta'
 import { CrearRuta, OrdenRecorrido } from '@/components/pantallas/RutaEditar'
 import RutaCerrada, { RutaEnMapa, TarjetaCierre } from '@/components/pantallas/RutaCierre'
 import { ConmutadorVista } from '@/components/pantallas/ModoRuta'
+import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pantallas/PortalCliente'
+import { loQueDebe, proximaCuota, misPagos, respuestaDeRecuperacion } from '@/lib/adaptadores/portal'
 import {
   cobradoresParaElegir, clientesParaElegir, avisoDeRobo, tramosDelRecorrido,
   propuestaPorCercania, cierreDelDia, resumenDeCierre, loQuePasoHoy,
@@ -1560,6 +1562,52 @@ export default function Estilo() {
               </RutaEnMapa>
             )
           })()}
+        </div>
+
+        <div id="portal-acceso" style={MARCO}>
+          <PortalAcceso
+            cedula="1.034.887.212" onCedula={() => {}}
+            pin={['7', '2', '4']} onPin={() => {}}
+            onEntrar={() => {}} onPedirPin={() => {}}
+          />
+        </div>
+
+        {/* La barra va en VERDE y mide LO PAGADO: para el deudor lo saldado es el
+            logro. Es el mismo numero que el dueno ve como «cobrado». */}
+        <div id="portal-prestamo" style={MARCO}>
+          {(() => {
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            return (
+              <PortalPrestamo
+                cliente="Steven Olmos" cedula="CC 1.034.887.212" onSalir={() => {}}
+                deuda={loQueDebe({
+                  totalAPagar: 435_000, pagado: 304_500,
+                  cuotasPagadas: 22, cuotasTotales: 30, diasMora: 36,
+                }, fmt)}
+                proxima={proximaCuota({ monto: 14_500, relativo: 'mañana', fecha: 'martes 29 de julio' }, fmt)}
+                onAvisar={() => {}}
+                pagosCuenta="22 pagos"
+                pagos={misPagos([
+                  { id: 1, fecha: '19 de julio', monto: 14_500 },
+                  { id: 2, fecha: '12 de julio', monto: 8_000, tipo: 'abono' },
+                  { id: 3, fecha: '5 de julio', monto: 14_500 },
+                ], fmt)}
+                onTodos={() => {}}
+                prestamista="Carlos Castro" onEscribir={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* T36-01. La respuesta es IDENTICA exista el numero o no: un desconocido
+            no puede averiguar quien le debe a quien probando telefonos. */}
+        <div id="portal-recuperar" style={MARCO}>
+          <PortalRecuperar
+            negocio="Prestamos Castro" onAtras={() => {}}
+            {...respuestaDeRecuperacion({ prestamista: 'Don Carlos' })}
+            numero="300 118 4471" onNumero={() => {}}
+            onMandar={() => {}} onEscribir={() => {}}
+          />
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
