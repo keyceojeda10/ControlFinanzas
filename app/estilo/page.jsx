@@ -25,6 +25,10 @@ import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores, PieCierreCobradores, TuDinero, PestanasCaja, Cuentas, Cuadre, HistorialCierres, MesEnCaja, BajarInformacion } from '@/components/pantallas/Caja'
 import { MiPlata, ComoVaElNegocio, Reportes, LineaCredito } from '@/components/pantallas/Reportes'
+import {
+  IndiceConfiguracion, TuNegocioMovil, ComoPrestasMovil, PlanYPagosMovil,
+  AvisosWhatsAppMovil, PortalClienteMovil, SeguridadYDatosMovil, PieGuardar,
+} from '@/components/pantallas/config/movil'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
 import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
@@ -978,6 +982,174 @@ export default function Estilo() {
                 { id: 2, concepto: 'Le dio plata', detalle: '25 jul · quedó en $400.000 usados', monto: '−$400.000', signo: '−' },
               ]}
               onCongelar={() => {}} onCerrar={() => {}}
+            />
+          </div>
+        </div>
+
+        {/* Las OCHO filas del indice. En el intento anterior me invente «Rutas» y
+            me falto «Portal del cliente»: aqui estan las que la lamina dibuja, y el
+            tope de clientes NO se escribe a mano —sale de PLANES_CONFIG—. */}
+        <div id="cfg-indice" style={{ ...MARCO, height: 'auto', minHeight: 680 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Configuración" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <IndiceConfiguracion
+              negocio="Prestamos Castro"
+              negocioNota="Plan Inicial · 31 de 100 clientes"
+              filas={[
+                { id: 'negocio', nombre: 'Tu negocio', valor: 'Colombia · COP', onIr: () => {} },
+                { id: 'prestas', nombre: 'Cómo prestas', valor: 'Diario · 20%', onIr: () => {} },
+                { id: 'plan', nombre: 'Plan y pagos', valor: 'renueva 11 ago', onIr: () => {} },
+                { id: 'equipo', nombre: 'Equipo', alerta: '5 sin ruta', onIr: () => {} },
+                { id: 'portal', nombre: 'Portal del cliente', valor: '7 activos', onIr: () => {} },
+                { id: 'avisos', nombre: 'Avisos por WhatsApp', valor: 'activos', onIr: () => {} },
+                { id: 'seguridad', nombre: 'Seguridad', alerta: 'Sin PIN', onIr: () => {} },
+                { id: 'datos', nombre: 'Tus datos', onIr: () => {} },
+              ]}
+              tema="claro"
+              temas={[
+                { id: 'claro', etiqueta: 'Claro' },
+                { id: 'oscuro', etiqueta: 'Oscuro' },
+                { id: 'auto', etiqueta: 'Auto' },
+              ]}
+              onTema={() => {}}
+            />
+          </div>
+        </div>
+
+        <div id="cfg-negocio" style={{ ...MARCO, height: 'auto', minHeight: 660 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Tu negocio" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <TuNegocioMovil
+              nombre="Prestamos Castro"
+              nombreNota="Aparece en los recibos y en el portal de tus clientes."
+              whatsapp="+57 310 452 1188" whatsappEstado="Verificado"
+              pais="Colombia" moneda="Peso colombiano · $"
+              formato="punto"
+              formatos={[
+                { id: 'punto', etiqueta: '$1.200.000', nota: 'punto de miles', cifra: true },
+                { id: 'coma', etiqueta: '$1,200,000', nota: 'coma de miles', cifra: true },
+                { id: 'corto', etiqueta: '$1.2M', nota: 'abreviado', cifra: true },
+              ]}
+              onFormato={() => {}}
+              avisoPais="Cambiar el país no convierte los montos ya registrados: solo cambia el símbolo y el formato de aquí en adelante."
+            />
+            <PieGuardar onGuardar={() => {}} />
+          </div>
+        </div>
+
+        <div id="cfg-prestas" style={{ ...MARCO, height: 'auto', minHeight: 720 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Cómo prestas" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <ComoPrestasMovil
+              intro="Con estos valores se llena el formulario de nuevo préstamo. Cambiarlos no toca los préstamos que ya existen."
+              frecuencia="diario"
+              frecuencias={[
+                { id: 'diario', etiqueta: 'Diario' },
+                { id: 'semanal', etiqueta: 'Semanal' },
+                { id: 'quincenal', etiqueta: 'Quincenal' },
+                { id: 'mensual', etiqueta: 'Mensual' },
+              ]}
+              onFrecuencia={() => {}}
+              tasa="20" plazo="30"
+              modo={{ valor: 'Decreciente' }}
+              diasSinCobro={{ valor: 'Domingos' }}
+              recargo={{ valor: 'No aplicar' }}
+              ejemploTitulo="Así quedaría un préstamo de $500.000"
+              ejemplo={[
+                { etiqueta: 'Cuota diaria', valor: '$20.000' },
+                { etiqueta: 'Total', valor: '$600.000' },
+                { etiqueta: 'Ganancia', valor: '$100.000' },
+              ]}
+            />
+            <PieGuardar onGuardar={() => {}} />
+          </div>
+        </div>
+
+        <div id="cfg-plan" style={{ ...MARCO, height: 'auto', minHeight: 760 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Plan y pagos" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <PlanYPagosMovil
+              plan="Inicial" precio="$39.000/mes" renueva="renueva el 11 de agosto" estado="Al día"
+              clientes={31} limite={100}
+              caben="Te caben 69 clientes más en este plan."
+              metodoPago="Nequi · termina en 4471" onCambiarMetodo={() => {}}
+              pagos={[
+                { id: 1, fecha: '11 de julio', monto: '$39.000' },
+                { id: 2, fecha: '11 de junio', monto: '$39.000' },
+                { id: 3, fecha: '11 de mayo', monto: '$39.000' },
+              ]}
+              onDescargarPagos={() => {}}
+              subidaTitulo="¿Necesitas más clientes?"
+              subidaTexto="El plan Básico llega a 450 por $59.000/mes. Se cobra la diferencia proporcional al día que cambies."
+              onVerPlanes={() => {}}
+            />
+          </div>
+        </div>
+
+        <div id="cfg-avisos" style={{ ...MARCO, height: 'auto', minHeight: 720 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Avisos por WhatsApp" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <AvisosWhatsAppMovil
+              intro="Mensajes automáticos a tus clientes desde tu propio número. Puedes editarlos."
+              avisos={[
+                { id: 'recordatorio', titulo: 'Recordatorio el día del cobro', nota: '7:00 a. m.', activo: true },
+                { id: 'atraso', titulo: 'Aviso de atraso', nota: 'a los 3 días', activo: true },
+                { id: 'recibo', titulo: 'Recibo al registrar el pago', nota: 'se envía al confirmar', activo: true },
+                { id: 'felicitacion', titulo: 'Felicitación al terminar de pagar', nota: 'buen momento para renovar', activo: false },
+              ]}
+              onAviso={() => {}}
+              previaTitulo="Así le llega el recordatorio"
+              mensaje={<>Hola Steven, hoy vence tu cuota de <strong>$14.500</strong>. Puedes pagar en efectivo o por Nequi. — Prestamos Castro</>}
+              hora="7:00 a. m."
+              onEditar={() => {}}
+              avisoSinTelefono="Solo se envían a clientes con teléfono guardado. Hoy 12 de tus 31 clientes no tienen número."
+            />
+          </div>
+        </div>
+
+        <div id="cfg-portal" style={{ ...MARCO, height: 'auto', minHeight: 760 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Portal del cliente" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <PortalClienteMovil
+              activo
+              activoNota="Tus clientes pueden ver su saldo con cédula y PIN"
+              onActivo={() => {}}
+              puedeVer={[
+                { id: 'saldo', titulo: 'Saldo y próxima cuota', activo: true },
+                { id: 'historial', titulo: 'Historial de sus pagos', activo: true },
+                { id: 'mora', titulo: 'Días de atraso y mora', activo: false },
+              ]}
+              onPuedeVer={() => {}}
+              conAccesoTotal="7 de 31"
+              conAcceso={[
+                { id: 1, nombre: 'Steven Olmos', pin: '7248' },
+                { id: 2, nombre: 'Deisy Ramírez', pin: '1190' },
+              ]}
+              onReenviar={() => {}}
+              onActivarTodos={() => {}}
+              avisoPin="El PIN se genera solo y se manda por WhatsApp. El cliente nunca ve datos de otras personas ni tus totales."
+            />
+          </div>
+        </div>
+
+        <div id="cfg-seguridad" style={{ ...MARCO, height: 'auto', minHeight: 780 }}>
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Seguridad y datos" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 20px 20px' }}>
+            <SeguridadYDatosMovil
+              tienePin={false}
+              pinTitulo="Protege la app con un PIN"
+              pinTexto="Si prestas el teléfono o lo pierdes, tu cartera queda expuesta. Son 4 dígitos."
+              onCrearPin={() => {}}
+              ajustes={[
+                { id: 'clave', nombre: 'Cambiar contraseña', onIr: () => {} },
+                { id: 'sesiones', nombre: 'Sesiones abiertas', valor: '2 aparatos', onIr: () => {} },
+              ]}
+              datos={[
+                { id: 'excel', nombre: 'Descargar todo en Excel', nota: 'clientes, préstamos y pagos', onIr: () => {} },
+                { id: 'copia', nombre: 'Copia de seguridad', nota: 'automática cada noche', estado: 'Al día' },
+              ]}
+              cerrarTexto="Se borra todo: 31 clientes, 68 préstamos y su historial. No se puede deshacer. Descarga tus datos antes."
+              onCerrarCuenta={() => {}}
             />
           </div>
         </div>
