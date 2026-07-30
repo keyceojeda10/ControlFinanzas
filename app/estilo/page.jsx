@@ -39,6 +39,7 @@ import { PortalAcceso, PortalPrestamo, PortalRecuperar } from '@/components/pant
 // manda —turno posterior— y se importa con alias hasta que la vieja se retire.
 import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantallas/SociosReparto'
 import { FranjaSinSenal, PorSincronizar, BusquedaGlobal } from '@/components/pantallas/Estados'
+import { PanelCargando, Novedades } from '@/components/pantallas/Cargando'
 import {
   loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
   cabeceraSocios, NOTA_NO_SACA_PLATA,
@@ -1732,6 +1733,37 @@ export default function Estilo() {
             ]}
             onAbrir={() => {}} onAtajo={() => {}}
           />
+        </div>
+
+        {/* T05-06. El esqueleto tiene LA FORMA de lo que va a aparecer: si el
+            hueco no coincide con lo que llega, al cargar todo salta. */}
+        <div id="est-cargando" style={MARCO}>
+          <PanelCargando />
+        </div>
+
+        {/* T34-02. Una sola novedad se explica; las demas son una linea. */}
+        <div id="est-novedades" style={{ ...MARCO, background: 'var(--cf-scrim)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ height: '78%' }}>
+            <Novedades
+              titulo="Novedades de julio"
+              detalle="7 cosas nuevas · la más útil primero"
+              onCerrar={() => {}}
+              destacada={{
+                titulo: 'Tus clientes ya pueden ver su propia deuda',
+                texto: 'Les mandas un enlace y entran con su teléfono y un PIN. Ven el próximo pago, lo que han abonado y lo que falta — así dejan de llamarte a preguntar.',
+              }}
+              onActivar={() => {}} onLuego={() => {}}
+              resto={[
+                { id: 1, texto: 'Puedes pagar la suscripción sin salir de la app' },
+                { id: 2, texto: 'Los cobros del día salen en PDF para imprimir' },
+                { id: 3, texto: 'Eliges qué datos salen en el recibo' },
+                { id: 4, texto: 'La caja separa efectivo de transferencias' },
+                { id: 5, texto: 'Puedes reordenar el recorrido arrastrando' },
+                { id: 6, texto: 'El pagaré se manda por WhatsApp al firmar' },
+              ]}
+              onVerTodas={() => {}} onNovedad={() => {}}
+            />
+          </div>
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
