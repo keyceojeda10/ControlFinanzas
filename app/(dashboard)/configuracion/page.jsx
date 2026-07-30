@@ -5,9 +5,11 @@ import Configuracion from '@/components/pantallas/Configuracion'
 import TuNegocio from '@/components/pantallas/config/TuNegocio'
 import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
 import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
+import { IndiceConfiguracion } from '@/components/pantallas/config/movil'
+import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
-import { useSearchParams }     from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
@@ -1320,6 +1322,7 @@ function TabNotificaciones() {
 // ══════════════════════════════════════════════════════════════
 function ConfiguracionContent() {
   const { session, esOwner } = useAuth()
+  const { setTheme: setThemeGlobal } = useTheme()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [tab, setTab] = useState(tabParam || 'perfil')
@@ -1365,16 +1368,63 @@ function ConfiguracionContent() {
   // tocan, y duplicar una petición es más barato que reescribirlos hoy.
   const [org, setOrg] = useState(null)
   const [uso, setUso] = useState(null)
+  const [diasParaRenovar, setDiasParaRenovar] = useState(null)
   const [tema, setTema] = useState('system')
   useEffect(() => {
     let vivo = true
     fetch('/api/configuracion/organizacion', { cache: 'no-store' }).then((r) => r.json())
-      .then((d) => { if (vivo) setOrg(d?.org ?? null) }).catch(() => {})
+      .then((d) => {
+        if (!vivo) return
+        setOrg(d?.org ?? null)
+        // Ya venía en la misma respuesta y se estaba tirando. Es el valor de la
+        // fila «Plan y pagos» del índice.
+        setDiasParaRenovar(Number.isFinite(d?.diasRestantes) ? d.diasRestantes : null)
+      }).catch(() => {})
     fetch('/api/plan/uso', { cache: 'no-store' }).then((r) => r.json())
       .then((d) => { if (vivo) setUso(d ?? null) }).catch(() => {})
     try { setTema(localStorage.getItem('theme') || 'system') } catch {}
     return () => { vivo = false }
   }, [])
+
+  // La detección del ancho va en un EFECTO, no en el primer render: leer
+  // matchMedia al pintar hace que el servidor diga una cosa y el cliente otra, y
+  // React tira el árbol entero.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+
+  const router = useRouter()
+  const seccionParam = searchParams.get('s')
+  const cobradores = Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)
+
+  const paisCfg = COUNTRIES[org?.country] ?? null
+  const valores = valoresIndice({
+    org, uso, cobradores, diasParaRenovar,
+    pais: paisCfg ? { nombre: paisCfg.name, moneda: paisCfg.currency } : null,
+  })
+  const filas = filasIndice({ rol, cobradores }, valores)
+
+  // La nota del negocio: plan y consumo de clientes, los dos leídos del API.
+  // Nunca escritos a mano — en el intento anterior puse «hasta 20 clientes»
+  // cuando el plan Inicial son 100, y eso vende el producto cinco veces peor.
+  const notaNegocio = [
+    org?.plan ? `Plan ${PLAN_NAMES[org.plan] ?? org.plan}` : null,
+    valores.clientesNota,
+  ].filter(Boolean).join(' · ') || null
+
+  const inicialesNegocio = (org?.nombre ?? '')
+    .trim().split(/\s+/).filter(Boolean).slice(0, 2)
+    .map((p) => p[0]).join('').toUpperCase() || '$'
+
+  // Por `setTheme` del proveedor, no escribiendo en localStorage a mano: el
+  // proveedor es quien pone el atributo en <html>, y escribiendo la clave por
+  // fuera el tema cambia en disco pero la pantalla se queda igual hasta recargar.
+  const cambiarTema = (t) => { setTema(t); setThemeGlobal(t) }
 
   // ── El armazón del rediseño, con los paneles viejos DENTRO ──
   //
@@ -1439,11 +1489,71 @@ function ConfiguracionContent() {
     }
   }
 
+  // ── EN MÓVIL, EL ÍNDICE LLEVA A PANTALLAS; EN PC, TODO APILADO ──
+  //
+  // Son DOS diseños distintos y hasta ahora se estaba pintando solo el de PC en
+  // los dos anchos. En un teléfono eso daba UNA PÁGINA DE 15.510 PÍXELES —nueve
+  // pantallas seguidas— con los ocho nombres arriba haciendo de anclas. Se
+  // pulsaba «Seguridad» y saltaba a un punto de un rollo interminable, sin forma
+  // de volver ni de saber dónde acababa una sección y empezaba otra.
+  //
+  // T10-01 es un ÍNDICE y T10-02..07 son SEIS PANTALLAS. En PC sí van apiladas a
+  // la derecha con el menú a la izquierda —«configuración es tarea de PC»— y eso
+  // es lo que `Configuracion` ya hacía bien.
+  //
+  // La sección abierta va en la URL (`?s=`), no en un estado: así el botón de
+  // atrás del teléfono sale de la sección en vez de sacarte de configuración, y
+  // un enlace a «Cómo prestas» abre «Cómo prestas».
+  const visibles = seccionesConfig({ rol, cobradores })
+  const abierta = visibles.find((s) => s.id === seccionParam) ?? null
+
+  if (!anchaPantalla) {
+    if (abierta) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+          <button type="button" onClick={() => router.push('/configuracion')} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 10, alignSelf: 'flex-start',
+            background: 'none', border: 0, padding: '2px 0 6px', cursor: 'pointer', font: 'inherit',
+            color: 'var(--cf-ink)',
+          }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
+              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+            <span style={{
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+            }}>{abierta.nombre}</span>
+          </button>
+          {panel(abierta.id)}
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+        <IndiceConfiguracion
+          negocio={org?.nombre ?? 'Tu negocio'}
+          negocioNota={notaNegocio}
+          iniciales={inicialesNegocio}
+          filas={filas.map((f) => ({ ...f, onIr: () => router.push(`/configuracion?s=${f.id}`) }))}
+          tema={tema}
+          temas={[
+            { id: 'light', etiqueta: 'Claro' },
+            { id: 'dark', etiqueta: 'Oscuro' },
+            { id: 'system', etiqueta: 'Auto' },
+          ]}
+          onTema={cambiarTema}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto">
       <Configuracion
         rol={rol}
-        cobradores={Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)}
+        cobradores={cobradores}
         negocio={org?.nombre}
         plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
         clientes={uso?.clientes?.usado}
