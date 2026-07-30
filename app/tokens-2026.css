@@ -100,6 +100,38 @@ html[data-theme="dark"] {
   --cf-gold:           #F5B824;   /* mas claro, para contraste sobre oscuro */
   --cf-green:          #2FBE6A;
   --cf-red:            #F0575C;
+
+  /* ── Los derivados de TEXTO tambien cambian, y esto faltaba ──
+     Los `-dark` y `-text` estan pensados «sobre blanco» (lo dice su propio
+     comentario en el tema claro): son versiones OSCURECIDAS del acento para que
+     contrasten con una tarjeta blanca. Sobre carbon hacen lo contrario — se
+     apagan hasta no leerse.
+
+     La lamina T28-02 lo marca como uno de los tres ajustes «que no son
+     automaticos»: «el verde y el rojo de estado se aclaran (#2FBE6A, #F0575C)
+     porque los de claro se apagan». Sin esto, en tema oscuro quedaba ilegible
+     TODO texto de acento de la app: 35 archivos usan --cf-gold-dark, 17
+     --cf-green-dark y 27 los rojos.
+
+     En oscuro el texto de acento ES el color base. No hay una version «mas
+     oscura» que sirva: el fondo ya es lo oscuro. */
+  --cf-gold-dark:      #F5B824;
+  --cf-gold-text:      #F5B824;
+  --cf-gold-text-2:    #F5B824;
+  --cf-green-dark:     #2FBE6A;
+  --cf-red-dark:       #F0575C;
+  --cf-red-darker:     #F0575C;
+
+  /* Y los FONDOS crema tienen que irse con ellos.
+     `--cf-gold-tint` es #FDF3D6 —crema— y no tenia variante oscura: con el texto
+     ya aclarado arriba, una pastilla de tint quedaria dorado claro sobre crema,
+     ilegible. Es el mismo fallo que acabo de arreglar, del otro lado.
+     Translucidos, como hace el resto del tema oscuro con --cf-fill. */
+  --cf-gold-tint:      rgba(245,184,36,.14);
+  --cf-gold-tint-2:    rgba(245,184,36,.07);
+  --cf-gold-focus:     rgba(245,184,36,.16);
+  --cf-gold-border:    rgba(245,184,36,.32);
+  --cf-gold-bg:        rgba(245,184,36,.16);
 }
 
 /* ══════════════════════════════════════════════════════════════

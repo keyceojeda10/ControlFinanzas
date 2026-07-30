@@ -30,7 +30,10 @@
 // tiene valor por defecto: es una estadística que no he podido verificar contra
 // la base, así que va en `nota` y quien cablee decide si la dice.
 
-const ORO = '#E7A400'
+/* El oro va por TOKEN y no literal: en tema oscuro el sistema lo sube a
+   #F5B824 para mantener contraste sobre carbon. Con el literal, el modo
+   oscuro salia con el dorado del claro. */
+const ORO = 'var(--cf-gold)'
 const PAD = 24  // el relleno lateral del turno 01
 
 /* ── Piezas compartidas por los cuatro pasos ─────────────────────────────── */
@@ -44,7 +47,7 @@ function Progreso({ paso, total = 4, deQue }) {
         {Array.from({ length: total }, (_, i) => (
           <span key={i} style={{
             flex: 1, height: 3, borderRadius: 999, flexShrink: 0,
-            background: i < paso ? ORO : 'rgba(20,20,28,.11)',
+            background: i < paso ? ORO : 'var(--cf-border-strong)',
           }} />
         ))}
       </div>
@@ -113,7 +116,7 @@ function Pie({ accion, onAccion, salida, onSalida, ocupado }) {
   return (
     <div style={{
       flex: 'none', padding: `14px ${PAD}px 22px`, background: 'var(--cf-surface)',
-      borderTop: '1px solid rgba(20,20,28,.07)',
+      borderTop: '1px solid var(--cf-hairline)',
       display: 'flex', flexDirection: 'column', gap: 10,
     }}>
       <button type="button" onClick={onAccion} disabled={ocupado} style={{
@@ -153,7 +156,7 @@ function Marca({ elegido, verde }) {
     return (
       <span style={{
         width: 22, height: 22, borderRadius: 999, flex: 'none',
-        border: '1.5px solid rgba(20,20,28,.18)',
+        border: '1.5px solid var(--cf-border-strong)',
       }} />
     )
   }
@@ -172,7 +175,7 @@ function Marca({ elegido, verde }) {
 
 function Chevron({ tamano = 18 }) {
   return (
-    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)"
+    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
       <path d="M9 5l7 7-7 7" />
     </svg>
@@ -189,7 +192,7 @@ function Opcion({ elegida, onClick, children, relleno = 16, columna }) {
       background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
       padding: relleno, cursor: 'pointer',
       border: elegida ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
-      boxShadow: elegida ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+      boxShadow: elegida ? '0 0 0 3px var(--cf-gold-focus)' : 'none',
     }}>{children}</button>
   )
 }
@@ -222,13 +225,13 @@ export function ArranquePerfil({
         <div style={{
           flex: 'none', display: 'flex', alignItems: 'center', gap: 10, height: 34,
           padding: `0 ${PAD - 4}px`, background: 'var(--cf-gold-tint)',
-          borderBottom: '1px solid rgba(231,164,0,.25)',
+          borderBottom: '1px solid var(--cf-gold-border)',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
             strokeWidth="2.2" strokeLinecap="round" style={{ flex: 'none' }}>
             <path d="M4 6h16v12H4z" /><path d="M4 7l8 6 8-6" />
           </svg>
-          <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: '#7A5800' }}>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: 'var(--cf-gold-text)' }}>
             {verificar.texto ?? 'Verifica tu correo'}
           </span>
           {verificar.onCodigo && (
@@ -242,7 +245,7 @@ export function ArranquePerfil({
               border: 0, background: 'none', padding: 0, cursor: 'pointer', flex: 'none',
               display: 'inline-flex',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(122,88,0,.55)"
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-text-2)"
                 strokeWidth="2.4" strokeLinecap="round">
                 <path d="M6 6l12 12M18 6L6 18" />
               </svg>
@@ -318,7 +321,7 @@ export function ArranqueCapital({
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{
             background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
-            border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px rgba(231,164,0,.13)',
+            border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px var(--cf-gold-focus)',
             padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6,
           }}>
             <Rotulo>{moneda ? `${etiqueta} · ${moneda}` : etiqueta}</Rotulo>
@@ -378,13 +381,13 @@ export function ArranqueCapital({
           <div style={{
             flex: 'none', display: 'flex', gap: 10, alignItems: 'flex-start',
             padding: '14px 16px', borderRadius: 14,
-            background: 'rgba(229,72,77,.08)', border: '1px solid rgba(229,72,77,.22)',
+            background: 'var(--cf-red-bg)', border: '1px solid var(--cf-red-border)',
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E5484D"
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red)"
               strokeWidth="2.2" strokeLinecap="round" style={{ flex: 'none', marginTop: 1 }}>
               <path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17h.01" />
             </svg>
-            <span style={{ fontSize: 13, lineHeight: 1.45, color: '#A8353A' }}>{advertencia}</span>
+            <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-red-darker)' }}>{advertencia}</span>
           </div>
         )}
       </Cuerpo>
@@ -542,7 +545,7 @@ export function ArranqueCierre({
           <span aria-hidden style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 76, minWidth: 76, height: 76, minHeight: 76, flex: 'none',
-            borderRadius: 999, background: ORO, border: '3px solid #F5C518',
+            borderRadius: 999, background: ORO, border: '3px solid var(--cf-gold-light)',
             boxShadow: '0 6px 20px rgba(231,164,0,.32)',
           }}>
             <span style={{
@@ -589,7 +592,7 @@ export function ArranqueCierre({
                     style={{
                       display: 'flex', alignItems: 'center', gap: 13, width: '100%',
                       padding: '15px 16px', background: 'none', border: 0,
-                      borderBottom: i === misiones.length - 1 ? 'none' : '1px solid rgba(20,20,28,.07)',
+                      borderBottom: i === misiones.length - 1 ? 'none' : '1px solid var(--cf-hairline)',
                       font: 'inherit', textAlign: 'left', color: 'var(--cf-ink)',
                       cursor: m.onIr ? 'pointer' : 'default',
                     }}
@@ -605,8 +608,8 @@ export function ArranqueCierre({
                       <span className="cf-num" style={{
                         display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 9px',
                         borderRadius: 11, flex: 'none',
-                        background: 'rgba(18,161,80,.12)', border: '1px solid rgba(18,161,80,.25)',
-                        fontSize: 11, fontWeight: 700, color: '#0D7A3C',
+                        background: 'var(--cf-green-pill-bg)', border: '1px solid var(--cf-green-pill-border)',
+                        fontSize: 11, fontWeight: 700, color: 'var(--cf-green-dark)',
                       }}>{m.pastilla}</span>
                     )}
                     {m.onIr && !m.pastilla && <Chevron tamano={17} />}

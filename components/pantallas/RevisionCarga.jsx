@@ -182,7 +182,7 @@ export default function RevisionCarga({
                  abierta lo lleva: si lo llevaran las dos ámbar a la vez, volvería a
                  no destacar ninguna. */
               border: abierto ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
-              boxShadow: abierto ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+              boxShadow: abierto ? '0 0 0 3px var(--cf-gold-focus)' : 'none',
               padding: abierto ? 16 : 0,
               display: 'flex', flexDirection: 'column', gap: 14,
             }}>
@@ -246,7 +246,7 @@ export default function RevisionCarga({
                         inputMode={r.campo === 'telefono' || r.campo === 'cedula' ? 'numeric' : 'text'}
                         style={{
                           height: 48, padding: '0 14px', borderRadius: 14,
-                          background: 'var(--cf-fill)', border: '1px solid rgba(20,20,28,.1)',
+                          background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)',
                           outline: 'none', font: 'inherit',
                           fontFamily: 'var(--font-space-grotesk), system-ui',
                           fontSize: 16, fontWeight: 500, color: 'var(--cf-ink)',

@@ -38,7 +38,10 @@
 // el marco redondeado y la hora: no se construye (`01-TOKENS.md` lo dice de las
 // teclas — «solo en mockups»).
 
-const ORO = '#E7A400'
+/* El oro va por TOKEN y no literal: en tema oscuro el sistema lo sube a
+   #F5B824 para mantener contraste sobre carbon. Con el literal, el modo
+   oscuro salia con el dorado del claro. */
+const ORO = 'var(--cf-gold)'
 
 /* Dentro del bloque carbón los tokens no sirven: `--cf-ink` y compañía cambian con
    el tema y ese bloque es oscuro siempre. Literales de la paleta oscura. */
@@ -100,7 +103,7 @@ function IconoWhatsApp({ tamano = 16 }) {
 
 function Chevron({ tamano = 15 }) {
   return (
-    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)"
+    <svg width={tamano} height={tamano} viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
       <path d="M9 5l7 7-7 7" />
     </svg>
@@ -148,7 +151,7 @@ function Pie({ fondo = 'var(--cf-card)', relleno, children }) {
   return (
     <div style={{
       flex: 'none', padding: relleno, background: fondo,
-      borderTop: `1px solid rgba(20,20,28,${blanca ? '.09' : '.07'})`,
+      borderTop: `1px solid ${blanca ? 'var(--cf-border)' : 'var(--cf-hairline)'}`,
       display: 'flex', flexDirection: 'column', gap: 9,
     }}>{children}</div>
   )
@@ -223,7 +226,7 @@ export function RegistroWhatsApp({
       {/* Aquí la barra va ARRIBA y las etiquetas debajo; en T37-01 es al revés.
           Cada lámina tiene su orden y no lo unifico. */}
       <div style={{ flex: 'none', padding: `14px ${PAD_ANCHO}px 0` }}>
-        <Segmentos paso={paso} total={total} alto={3} apagado="rgba(20,20,28,.11)" />
+        <Segmentos paso={paso} total={total} alto={3} apagado="var(--cf-border-strong)" />
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 9,
         }}>
@@ -248,13 +251,13 @@ export function RegistroWhatsApp({
               style={{
                 flex: 'none', display: 'flex', alignItems: 'center', gap: 9,
                 height: 58, padding: '0 15px', borderRadius: 14,
-                background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.1)',
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                 font: 'inherit', color: 'var(--cf-ink)',
                 cursor: onPrefijo ? 'pointer' : 'default',
               }}
             >
               <span className="cf-num" style={{ fontSize: 17, fontWeight: 700 }}>{prefijo}</span>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)"
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
                 strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -266,7 +269,7 @@ export function RegistroWhatsApp({
             flex: 1, minWidth: 0, display: 'flex', alignItems: 'center',
             height: 58, padding: '0 16px', borderRadius: 14,
             background: 'var(--cf-card)',
-            border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px rgba(231,164,0,.13)',
+            border: `1.5px solid ${ORO}`, boxShadow: '0 0 0 3px var(--cf-gold-focus)',
           }}>
             <input
               value={numero ?? ''}
@@ -298,7 +301,7 @@ export function RegistroWhatsApp({
           {onAtras && (
             <button type="button" onClick={onAtras} style={{
               flex: 1, height: 48, borderRadius: 14, cursor: 'pointer',
-              background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.1)',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
               color: 'var(--cf-ink-2)', font: 'inherit', fontSize: 15, fontWeight: 600,
             }}>Atrás</button>
           )}
@@ -355,7 +358,7 @@ export function VerificarWhatsApp({
         <div style={{
           flex: 'none', display: 'flex', alignItems: 'center', gap: 11,
           padding: '13px 16px', borderRadius: 14,
-          background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.09)',
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         }}>
           <IconoWhatsApp tamano={17} />
           <span className="cf-num" style={{
@@ -382,8 +385,8 @@ export function VerificarWhatsApp({
                 flex: 1, minWidth: 0, height: 66, borderRadius: 14,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 background: 'var(--cf-card)',
-                border: activa ? `1.5px solid ${ORO}` : '1px solid rgba(20,20,28,.1)',
-                boxShadow: activa ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+                border: activa ? `1.5px solid ${ORO}` : '1px solid var(--cf-border-strong)',
+                boxShadow: activa ? '0 0 0 3px var(--cf-gold-focus)' : 'none',
               }}>
                 {activa
                   ? <span aria-hidden style={{ width: 2, height: 28, background: 'var(--cf-ink)' }} />
@@ -622,7 +625,7 @@ export function ListoParaCobrar({
           <span aria-hidden style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 88, minWidth: 88, height: 88, minHeight: 88, flex: 'none',
-            borderRadius: 999, background: ORO, border: '4px solid #F5C518',
+            borderRadius: 999, background: ORO, border: '4px solid var(--cf-gold-light)',
             boxShadow: '0 10px 28px rgba(231,164,0,.32)',
           }}>
             <span style={{

@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import {
   calcularDiasMora,
   calcularSaldoPendiente,
+  calcularCapitalRestante,
   calcularProximoCobro,
   formatFechaCobro,
   tieneCobroPendienteHoy,
@@ -147,6 +148,8 @@ export async function GET(request, { params }) {
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
   let recaudadoHoy = 0
+  let recaudadoEfectivoHoy = 0   // ver el desglose por medio, más abajo
+  let recaudadoDigitalHoy = 0
   let pendientesHoy = 0
   let clientesConCobroHoy = 0
   let clientesPagaronHoy = 0
@@ -154,6 +157,21 @@ export async function GET(request, { params }) {
   let carteraTotal = 0      // saldo pendiente total (principal + intereses que faltan)
   let capitalTotal = 0      // monto original prestado (sin intereses)
   let totalAPagarRuta = 0   // suma de totalAPagar (principal + intereses) — denominador correcto para % cobrado
+
+  // CAPITAL QUE TODAVÍA ESTÁ EN LA CALLE, no el que se prestó algún día.
+  //
+  // Hace falta para partir la cartera de la ruta en «lo puesto» y «lo que queda
+  // por ganar» (T27-02). Con `capitalTotal` no se puede: es el monto ORIGINAL, así
+  // que en cuanto un cliente abona, `carteraTotal - capitalTotal` sale NEGATIVO y
+  // la ruta que más cobra es la que peor se ve.
+  //
+  //   presté 1.000.000 · total pactado 1.200.000 · ya pagó 300.000
+  //   → saldo pendiente 900.000 · capitalTotal 1.000.000 → «por ganar» −100.000
+  //
+  // `calcularCapitalRestante` reparte cada pago entre interés y capital con la
+  // misma cascada que usa la ficha, y excluye los abonos tipo 'capital' de esa
+  // cascada. Así `capitalPendiente + porGanar = carteraTotal` siempre.
+  let capitalPendiente = 0
 
   // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
   const cobrosGeoHoy = []
@@ -206,9 +224,23 @@ export async function GET(request, { params }) {
       // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
       const pagosHoy = p.pagos
       for (const pg of pagosHoy) pagoIdsRuta.push(pg.id)
-      const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
+      const cobrosReales = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      const montoPagadoHoy = cobrosReales.reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
+
+      // EN QUÉ SE COBRÓ, separado. Es lo que hace posible cuadrar la caja de la
+      // noche: sin esto el cobrador entrega un fajo de efectivo y nadie sabe
+      // cuánto de lo recaudado llegó por transferencia y no tiene que aparecer.
+      //
+      // `metodoPago` es 'efectivo' | 'transferencia' y es distinto de
+      // `metodoPagoId`, que apunta a la cuenta concreta de la organización.
+      // Confundirlos rompe la vista por cuenta. Lo que no dice nada cuenta como
+      // efectivo, que es el modo por defecto de un cobro en la calle.
+      for (const pg of cobrosReales) {
+        if (pg.metodoPago === 'transferencia') recaudadoDigitalHoy += pg.montoPagado
+        else recaudadoEfectivoHoy += pg.montoPagado
+      }
 
       // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente
       // primero. Incluye distancia al cliente cuando el pago trae coords (para
@@ -307,6 +339,9 @@ export async function GET(request, { params }) {
       carteraTotal    += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado
       totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
+      // Nunca por encima del saldo: si un préstamo tiene recargos, el capital
+      // restante no puede pasarse de lo que queda por cobrar.
+      capitalPendiente += Math.min(calcularCapitalRestante(p), saldoPendientePrestamo)
       const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
       const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
       const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidosPrestamo, festivos)
@@ -480,12 +515,15 @@ export async function GET(request, { params }) {
       capitalHabilitado: !!ruta.capitalHabilitado,
       carteraTotal: Math.round(carteraTotal),
       capitalTotal: Math.round(capitalTotal),
+      capitalPendiente: Math.round(capitalPendiente),
     } : {}),
     cobrador:    ruta.cobrador,
     gruposCobro,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
+    recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
+    recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
     pendientesHoy,
     clientesConCobroHoy,
     clientesPagaronHoy,

@@ -28,6 +28,9 @@ import { MiPlata, ComoVaElNegocio, Reportes, LineaCredito } from '@/components/p
 import { RegistroWhatsApp, VerificarWhatsApp, EmpiezaSinPagar, ListoParaCobrar } from '@/components/pantallas/Onboarding'
 import { ArranquePerfil, ArranqueCapital, ArranqueMetodo, ArranqueCierre } from '@/components/pantallas/Arranque'
 import RevisionCarga from '@/components/pantallas/RevisionCarga'
+import DetalleRuta from '@/components/pantallas/DetalleRuta'
+import { loPuestoAqui, loDeHoy, adaptarRecorrido, siguienteParada, adaptarCabeceraRuta, adaptarParadaActual, partirRecorrido, tiempoFuera } from '@/lib/adaptadores/ruta'
+import ModoRuta from '@/components/pantallas/ModoRuta'
 import { tramosDePlan, limiteInicial } from '@/lib/adaptadores/planes'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import {
@@ -1315,6 +1318,118 @@ export default function Estilo() {
               { nombre: 'Deisy Ramírez', contexto: 'CC 43987112 · semanal · 15%', monto: '$300.000' },
             ]}
           />
+        </div>
+
+        {/* T27-02. Los datos son los de la lamina, pero las cifras del bloque
+            negro las calcula el adaptador: «por ganar» con la resta ingenua sale
+            NEGATIVA en cuanto un cliente abona. */}
+        <div id="ruta-detalle" style={MARCO}>
+          {(() => {
+            const RUTA = {
+              nombre: 'Ruta 2',
+              cobrador: { nombre: 'Pepito' },
+              carteraTotal: 11_600_000,
+              capitalPendiente: 8_400_000,
+              totalAPagarRuta: 40_000_000,
+              esperadoHoy: 128_500,
+              recaudadoHoy: 34_500,
+              recaudadoEfectivoHoy: 34_500,
+              recaudadoDigitalHoy: 0,
+              clientesConCobroHoy: 5,
+              clientesPagaronHoy: 1,
+              clientes: [
+                { id: 1, orden: 1, nombre: 'Steven Olmos', diasMora: 36, direccion: 'Cl 8 # 31-05', montoACobrar: 27_500 },
+                { id: 2, orden: 2, nombre: 'Pepito Gómez', cobradoHoy: true, horaCobro: '6:52', medio: 'efectivo', montoACobrar: 34_500 },
+                { id: 3, orden: 3, nombre: 'Luz Mery Ossa', diasMora: 0, direccion: 'Cra 7 # 51-08', montoACobrar: 18_000 },
+              ],
+            }
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            return (
+              <DetalleRuta
+                cabecera={adaptarCabeceraRuta(RUTA, '3,4 km')}
+                onAtras={() => {}} onMas={() => {}}
+                puesto={loPuestoAqui(RUTA, fmt)}
+                hoy={loDeHoy(RUTA, fmt)}
+                recorrido={adaptarRecorrido(RUTA.clientes, fmt)}
+                siguiente={siguienteParada(RUTA.clientes)}
+                onParada={() => {}} onSeguir={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* T28-01 «claro — el default» y T28-02 oscuro SON LA MISMA PANTALLA:
+            escrita con tokens, el tema la cambia sola. Aqui la misma en los dos. */}
+        <div id="modo-ruta-claro" style={MARCO}>
+          {(() => {
+            const CLIENTES = [
+              { id: 1, orden: 1, nombre: 'Steven Olmos', cobradoHoy: true, horaCobro: '15:40', medio: 'efectivo', montoACobrar: 27_500, montoCobrado: 27_500 },
+              { id: 2, orden: 2, nombre: 'Pepito Gómez', cobradoHoy: true, horaCobro: '16:20', medio: 'Nequi', montoACobrar: 34_500, montoCobrado: 34_500 },
+              { id: 3, orden: 3, nombre: 'Luz Mery Ossa', diasMora: 0, direccion: 'Cra 7 # 51-08', distanciaMetros: 410, saldoPendiente: 126_000, montoACobrar: 18_000, telefono: '3104521188' },
+              { id: 4, orden: 4, nombre: 'Nelson Aguirre', diasMora: 9, distanciaMetros: 1_240, montoACobrar: 21_500 },
+              { id: 5, orden: 5, nombre: 'Yeison Patiño', diasMora: 31, distanciaMetros: 1_640, montoACobrar: 27_000 },
+            ]
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const partes = partirRecorrido(CLIENTES, fmt)
+            const RUTA = {
+              esperadoHoy: 128_500, recaudadoHoy: 62_000,
+              clientesConCobroHoy: 5, clientesPagaronHoy: 2,
+            }
+            return (
+              <ModoRuta
+                ruta="Ruta 2"
+                posicion={partes.posicion}
+                tiempo={tiempoFuera(72)}
+                vista="lista" onVista={() => {}}
+                onAtras={() => {}}
+                hoy={loDeHoy(RUTA, fmt)}
+                actual={adaptarParadaActual(partes.actual, fmt)}
+                onAvisar={() => {}} onLlegar={() => {}} onCobrar={() => {}}
+                faltan={partes.faltan}
+                cobradosTitulo={partes.cobradosTitulo}
+                cobrados={partes.cobrados}
+                cobradosTotal={partes.cobradosTotal}
+                onParada={() => {}}
+              />
+            )
+          })()}
+        </div>
+
+        {/* T28-01 «claro — el default» y T28-02 oscuro SON LA MISMA PANTALLA:
+            escrita con tokens, el tema la cambia sola. Aqui la misma en los dos. */}
+        <div id="modo-ruta-oscuro" data-theme="dark" style={MARCO}>
+          {(() => {
+            const CLIENTES = [
+              { id: 1, orden: 1, nombre: 'Steven Olmos', cobradoHoy: true, horaCobro: '15:40', medio: 'efectivo', montoACobrar: 27_500, montoCobrado: 27_500 },
+              { id: 2, orden: 2, nombre: 'Pepito Gómez', cobradoHoy: true, horaCobro: '16:20', medio: 'Nequi', montoACobrar: 34_500, montoCobrado: 34_500 },
+              { id: 3, orden: 3, nombre: 'Luz Mery Ossa', diasMora: 0, direccion: 'Cra 7 # 51-08', distanciaMetros: 410, saldoPendiente: 126_000, montoACobrar: 18_000, telefono: '3104521188' },
+              { id: 4, orden: 4, nombre: 'Nelson Aguirre', diasMora: 9, distanciaMetros: 1_240, montoACobrar: 21_500 },
+              { id: 5, orden: 5, nombre: 'Yeison Patiño', diasMora: 31, distanciaMetros: 1_640, montoACobrar: 27_000 },
+            ]
+            const fmt = (n) => `$${n.toLocaleString('es-CO')}`
+            const partes = partirRecorrido(CLIENTES, fmt)
+            const RUTA = {
+              esperadoHoy: 128_500, recaudadoHoy: 62_000,
+              clientesConCobroHoy: 5, clientesPagaronHoy: 2,
+            }
+            return (
+              <ModoRuta
+                ruta="Ruta 2"
+                posicion={partes.posicion}
+                tiempo={tiempoFuera(72)}
+                vista="lista" onVista={() => {}}
+                onAtras={() => {}}
+                hoy={loDeHoy(RUTA, fmt)}
+                actual={adaptarParadaActual(partes.actual, fmt)}
+                onAvisar={() => {}} onLlegar={() => {}} onCobrar={() => {}}
+                faltan={partes.faltan}
+                cobradosTitulo={partes.cobradosTitulo}
+                cobrados={partes.cobrados}
+                cobradosTotal={partes.cobradosTotal}
+                onParada={() => {}}
+              />
+            )
+          })()}
         </div>
 
         <HojaDemo id="registrar-gasto" titulo="Registrar gasto" subtitulo="Sale de la caja de hoy">
