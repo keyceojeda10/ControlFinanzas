@@ -2,7 +2,7 @@
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
 import { useState, useEffect, useRef, useCallback, use } from 'react'
-import { useRouter }                  from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
@@ -40,13 +40,14 @@ import {
   ComparativoPrestamosCliente,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
+import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
+import { adaptarTabla } from '@/lib/adaptadores/tabla'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
@@ -98,6 +99,13 @@ function GestionBtn({ label, desc, color, icon, onClick }) {
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
+  // `?editar=<modo>` viene de la hoja de comparar calendarios, que vive en la ruta
+  // de la tabla y no puede abrir un modal de esta pagina. El parametro es el
+  // puente: sin el, «elegir este calendario» era un enlace a
+  // /prestamos/[id]/editar, ruta que NO EXISTE y que habria escrito yo mismo —el
+  // mismo enlace muerto que ya me pasó con ?diasMoraMin=30.
+  const parametros         = useSearchParams()
+  const modoPedido         = parametros.get('editar')
   const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
@@ -566,6 +574,26 @@ export default function PrestamoDetallePage({ params }) {
   const notaDelHistorial = (!esUnicoModo && diasMora > 0 && !moraEsGrave({ diasMora, frecuencia }))
     ? `Le vence una cuota hace ${diasMora} día${diasMora === 1 ? '' : 's'}.`
     : null
+
+  // La tabla, recortada a las 4 primeras como en la lamina: mas abajo no cabe sin
+  // que la ficha se vuelva un scroll infinito, y el aviso «Ves 4 de las 6» lleva a
+  // la pantalla completa. El recorte va DECLARADO —`totalCuotas` sigue siendo el
+  // total— para que la suma de lo visible mas lo declarado cuadre con el total de
+  // arriba; si no, un «total $1.699.999» sobre cuatro filas que suman $1.266.668
+  // deja al dueño creyendo que ya vio la tabla entera.
+  const tablaParaFicha = (() => {
+    if (!tieneTablaAmortizacion(prestamo)) return null
+    const t = adaptarTabla(prestamo)
+    const visibles = t.cuotas.slice(0, 4)
+    const ocultas = t.cuotas.length - visibles.length
+    return {
+      ...t,
+      cuotas: visibles,
+      montoOculto: ocultas > 0
+        ? formatMoney(Math.round(cuotasAmortizacion.slice(4).reduce((a, c) => a + (c.cuotaTotal || 0), 0)))
+        : null,
+    }
+  })()
 
   const pagosParaFicha = (() => {
     const orden = [...pagos]
@@ -1131,22 +1159,34 @@ export default function PrestamoDetallePage({ params }) {
           ahi no responde ninguna pregunta que se haga mirando un prestamo. Era el
           desglose que T41-01 sustituye por el historial. */}
 
-      {/* ── TABLA DE AMORTIZACION (lineal / globo / sobre saldo) ──── */}
-      {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
-        <Card>
-          <TablaAmortizacion
-            tabla={cuotasAmortizacion}
-            frecuencia={frecuencia}
-            modoInteres={modoInteres}
-            mostrarPagado
-            onPagarCuota={estaActivo && !completado ? (fila) => {
-              const faltante = Math.max(0, fila.cuotaTotal - (fila.pagado || 0))
-              if (faltante <= 0) return
-              setPresetPago({ monto: Math.round(faltante), tipo: 'completo' })
-              setModalPago(true)
-            } : undefined}
-          />
-        </Card>
+      {/* ── LA TABLA (T12-01) ──────────────────────────────────────
+          Solo los 4 modos que TIENEN calendario: `lineal`, `lineal_dinamico`,
+          `solo_interes` y `saldo`, el 6,2% de la cartera. En los otros cuatro no
+          hay tabla guardada y dibujar treinta filas identicas seria inventar un
+          desglose que el sistema no tiene.
+
+          Es la tabla NUEVA, la de barras partidas. La vieja era una lista de
+          acordeones, que es literalmente lo que la lamina dice que deja de ser.
+
+          Sin `onCompartir`/`onImprimir`: aqui NO va la barra de accion, porque la
+          ficha ya tiene la suya. Compartir e imprimir viven en /prestamos/[id]/tabla,
+          que es su propia pantalla porque una tabla que se le manda al cliente
+          necesita cabecera propia y no puede ser un trozo de otra pagina.
+
+          Lo que si se conserva es pulsar la cuota para dejar el pago listo: eso lo
+          tenia el montaje viejo, es funcion real, y rehacer la pantalla no es
+          excusa para perderla. */}
+      {tablaParaFicha && (
+        <TablaAmortizacion
+          {...tablaParaFicha}
+          onTocarCuota={estaActivo && !completado ? (c) => {
+            const faltante = Math.max(0, c.faltanteNum || 0)
+            if (faltante <= 0) return
+            setPresetPago({ monto: Math.round(faltante), tipo: 'completo' })
+            setModalPago(true)
+          } : undefined}
+          onVerTodas={() => router.push(`/prestamos/${prestamo.id}/tabla`)}
+        />
       )}
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
@@ -1962,9 +2002,19 @@ export default function PrestamoDetallePage({ params }) {
       {/* Modal editar préstamo */}
       <EditarPrestamo
         prestamo={prestamo}
-        open={modalEditar}
-        onClose={() => setModalEditar(false)}
-        onSuccess={() => { setModalEditar(false); fetchPrestamo() }}
+        modoInicial={modoPedido || undefined}
+        open={modalEditar || Boolean(modoPedido)}
+        onClose={() => {
+          setModalEditar(false)
+          // Y se limpia el parametro: si se queda, cerrar el modal y volver atras
+          // lo vuelve a abrir, y el dueño no puede salir de la pantalla.
+          if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)
+        }}
+        onSuccess={() => {
+          setModalEditar(false)
+          if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)
+          fetchPrestamo()
+        }}
         socios={sociosLista}
       />
 

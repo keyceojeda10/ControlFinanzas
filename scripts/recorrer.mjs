@@ -6,6 +6,13 @@
 // hasta el navegador del dueño.
 //
 //   node scripts/recorrer.mjs [carpeta] [--solo=rutas,caja]
+//   node scripts/recorrer.mjs .auditoria/x --extra=/prestamos/pr_abc/tabla:tabla
+//
+// `--extra` es para las rutas con id, que no pueden ir en la lista fija porque el
+// id cambia con la base. Sin esto ninguna FICHA de prestamo entraba nunca al
+// barrido —ni la del cliente, ni la del prestamo, ni la tabla—, o sea que las
+// pantallas del bloque 4 se quedaron fuera de la unica herramienta que mira la
+// app entera. Formato `ruta:nombre`, separadas por coma.
 //
 // Además de la imagen, anota lo que una captura NO enseña: errores de consola,
 // peticiones caídas, y cuántas cabeceras y barras de navegación hay montadas.
@@ -17,6 +24,16 @@ import { chromium } from 'playwright'
 const SALIDA = process.argv[2] || '.auditoria/capturas'
 const soloArg = process.argv.find((a) => a.startsWith('--solo='))
 const solo = soloArg ? soloArg.slice(7).split(',').map((s) => s.trim()) : null
+const extraArg = process.argv.find((a) => a.startsWith('--extra='))
+const EXTRA = extraArg
+  ? extraArg.slice(8).split(',').map((par) => {
+      // El id lleva `_`, la ruta lleva `/`: se parte por el ULTIMO `:` para que
+      // un nombre con dos puntos no rompa la ruta.
+      const i = par.lastIndexOf(':')
+      return i < 0 ? { ruta: par, nombre: par.replace(/\W+/g, '-').replace(/^-|-$/g, '') }
+                   : { ruta: par.slice(0, i), nombre: par.slice(i + 1) }
+    })
+  : []
 
 const TAMANOS = [
   { nombre: 'movil', width: 390, height: 844 },
@@ -38,6 +55,7 @@ const PANTALLAS = [
   { ruta: '/cobradores', nombre: 'cobradores' },
   { ruta: '/reportes', nombre: 'reportes' },
   { ruta: '/configuracion', nombre: 'configuracion' },
+  ...EXTRA,
 ]
 
 const { cookie, usuario } = JSON.parse(fs.readFileSync('.auditoria/sesion.json', 'utf8'))

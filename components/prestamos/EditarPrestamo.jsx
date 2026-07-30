@@ -28,7 +28,11 @@ const diasAperiodos = (dias, freq) => {
 }
 const periodosADias = (periodos, freq) => periodos * (DIAS_POR_PERIODO[freq] || 1)
 
-export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [] }) {
+// `modoInicial` es de donde viene la comparacion de calendarios (T12-02): la hoja
+// enseña que en «Sobre saldo» el cliente pagaria menos, y al elegirlo abre este
+// modal YA en ese modo. Sin el, elegir un calendario dejaba al dueño en un modal
+// con el modo viejo puesto y teniendo que acordarse de cual habia elegido.
+export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [], modoInicial }) {
   // Los hooks SIEMPRE se llaman (regla de React). Si no hay préstamo el modal no se abre.
   const p = prestamo || {}
   const hayPagos = (p.pagos || []).filter(
@@ -43,7 +47,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
   const [fechaInicio,  setFechaInicio]  = useState(
     p.fechaInicio ? new Date(p.fechaInicio).toISOString().slice(0, 10) : hoyISO()
   )
-  const [modoInteres,  setModoInteres]  = useState(p.modoInteres || 'fijo')
+  const [modoInteres,  setModoInteres]  = useState(modoInicial || p.modoInteres || 'fijo')
   const [cuotaManual,  setCuotaManual]  = useState(
     (p.modoInteres === 'manual' || p.modoInteres === 'saldo') && p.cuotaManual
       ? String(Math.round(p.cuotaManual))

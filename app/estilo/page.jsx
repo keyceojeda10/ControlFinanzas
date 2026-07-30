@@ -25,7 +25,7 @@ import MenuCrear from '@/components/pantallas/MenuCrear'
 import Lucas from '@/components/pantallas/Lucas'
 import { CajaDia, CierreCobradores } from '@/components/pantallas/Caja'
 import ListaPrestamos from '@/components/pantallas/ListaPrestamos'
-import TablaAmortizacion, { CompararCalendarios } from '@/components/pantallas/TablaAmortizacion'
+import TablaAmortizacion, { CompararModos } from '@/components/pantallas/TablaAmortizacion'
 import { Recargo, ModificarPlazo, Descuento, MoverAPerdidos, CerrarAnticipado } from '@/components/pantallas/Gestion'
 import FichaCliente from '@/components/pantallas/FichaCliente'
 import RegistrarCobro from '@/components/pantallas/RegistrarCobro'
@@ -775,7 +775,7 @@ export default function Estilo() {
             <span style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', flex: 'none' }}>
               Comparar calendarios
             </span>
-            <CompararCalendarios
+            <CompararModos
               resumen="$1.000.000 al 20% · 6 meses"
               actual="dinamico"
               opciones={[

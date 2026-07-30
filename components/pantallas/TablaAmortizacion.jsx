@@ -15,21 +15,49 @@
 //
 // Y deja de ser un acordeón, así que se puede compartir con el cliente. Esta es
 // la tabla que el cliente pide cuando reclama.
+//
+// ── Lo que el cotejo contra T12-01 corrigió, con las cifras del archivo ──────
+//
+// Yo había construido esto como filas dentro de UNA tarjeta plana separadas por
+// filetes. La lámina hace algo distinto y por un motivo: **cada cuota es su
+// propia tarjeta** (fondo blanco, borde, radio 18, relleno 15/17, hueco de 10
+// entre tarjetas). Con filas pegadas, la cuota que toca no se puede destacar sin
+// romper la caja; con tarjetas sueltas, la siguiente lleva **anillo dorado**
+// —borde 1,5px `#E7A400` más `box-shadow: 0 0 0 3px rgba(231,164,0,.13)`— y se
+// encuentra de un vistazo entre treinta.
+//
+// Y EL DORADO ES UNO SOLO, el de ese anillo. Yo tenía tres: «Comparar» en texto
+// dorado, el botón primario dorado de la barra, y ningún anillo. En la lámina
+// «Comparar modos» es una pastilla GRIS de 32px y los dos botones de abajo son
+// IGUALES —los dos con borde, fondo blanco, `flex: 1`, ninguno primario—. En una
+// pantalla de leer y mandar, compartir no compite con nada: lo único que pide
+// atención es la cuota que viene.
+//
+// El pie de cada cuota va a los dos extremos (`space-between`) y SIN puntos de
+// color: los puntos están arriba, en el resumen, donde se explica qué es cada
+// color. Repetirlos doce veces es ruido. «ganancia» va en `#B07D00` con peso
+// 600, que es lo que la ata al tramo dorado sin necesitar el punto.
 
-import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Pastilla } from '@/components/cf/primitivos'
+import { BarraAccion, BotonSecundario, Pastilla } from '@/components/cf/primitivos'
 
 const NEGRO = '#15161A'
-const ORO   = 'var(--cf-gold)'
+const ORO   = '#E7A400'
 
-/* La barra partida. `capital` y `ganancia` son números crudos: el reparto no se
-   puede calcular sobre texto formateado. */
-function BarraPartida({ capital, ganancia, alto = 10 }) {
-  const total = capital + ganancia
-  const pct = total > 0 ? (capital / total) * 100 : 0
+/* La barra partida. Local y a propósito: la del sistema trae leyenda debajo y
+   aquí la leyenda va a los dos lados, así que encenderla pintaría las mismas dos
+   cifras dos veces. Y `flex: none` en el tramo negro más `flex: 1` en el dorado,
+   que es cómo la lámina evita que un capital de 0 —la cuota de un globo— colapse
+   la barra entera a nada. */
+function Barra({ capital, ganancia, alto = 10 }) {
+  const total = Number(capital) + Number(ganancia)
+  const pct = total > 0 ? (Number(capital) / total) * 100 : 0
   return (
-    <span style={{
-      display: 'flex', height: alto, borderRadius: 999, overflow: 'hidden',
-      background: 'var(--cf-fill-2)', flex: 'none',
+    <span aria-hidden style={{
+      display: 'flex', height: alto, borderRadius: 999, overflow: 'hidden', flex: 'none',
+      // El fondo importa cuando los dos tramos son 0 (una cuota de $0 en una
+      // tabla a medio construir): sin él la barra desaparece y la fila parece
+      // rota en vez de vacía.
+      background: 'var(--cf-fill-2)',
     }}>
       <span style={{ width: `${pct}%`, background: NEGRO, flex: 'none' }} />
       <span style={{ flex: 1, background: ORO }} />
@@ -37,164 +65,332 @@ function BarraPartida({ capital, ganancia, alto = 10 }) {
   )
 }
 
-function Leyenda({ etiqueta, valor, color, alineado }) {
-  return (
-    <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, justifyContent: alineado }}>
-      <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: color, flex: 'none' }} />
-      <span style={{ fontSize: 11.5, color: 'var(--cf-ink-3)', flex: 'none' }}>{etiqueta}</span>
-      <span className="cf-num" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink)', flex: 'none' }}>
-        {valor}
-      </span>
-    </span>
-  )
-}
+/* DOS MONTAJES, UN COMPONENTE.
+   Dentro de la ficha del préstamo lleva `onTocarCuota` y las filas se pueden
+   pulsar para dejar el pago listo; en su propia ruta (T12-01) lleva
+   `onCompartir`/`onImprimir` y la tabla es de LEER y MANDAR. La lámina no dibuja
+   ningún botón de pagar por cuota, pero el montaje viejo sí lo tenía y esa es una
+   función real que no se pierde por rehacer la pantalla.
 
+   Todo control va detrás de su handler. Sin eso la ruta de compartir sale con un
+   «Comparar» que no compara, y el montaje inline con una barra de «Compartir
+   tabla» que no comparte — el patrón del control muerto, que ya lleva seis
+   apariciones en este rediseño. */
 export default function TablaAmortizacion({
   modo, capital, ganancia, capitalNum, gananciaNum,
   totalCuotas, total, cuotas = [], montoOculto,
-  onComparar, onCompartir, onImprimir,
+  onComparar, onCompartir, onImprimir, onTocarCuota, onVerTodas,
 }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+  const conBarra = Boolean(onCompartir || onImprimir)
 
-        <Tarjeta>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+  /* EL ALTO SE DECIDE POR MONTAJE.
+     La lámina es una pantalla completa —cuotas que scrollean con la barra de acción
+     clavada abajo—, y eso se arma con `height: 100%` arriba más `flex: 1` en la zona
+     de cuotas. Montada dentro de la ficha eso no aplica: ahí la tabla es un bloque
+     más de una página que ya scrollea, y su alto lo pone su contenido.
+
+     Con barra: dueña del viewport, la zona de cuotas scrollea por su cuenta.
+     Sin barra: bloque de flujo normal, crece con su contenido.
+
+     Hoy `height: 100%` sobre un padre de alto automático resuelve a `auto` y no
+     rompe nada — lo comprobé midiendo, la tabla ya salía a 649px dentro de la
+     ficha—. Es explícito porque el día que ese padre reciba un alto, el `100%`
+     empezaría a resolver contra él y la tabla se recortaría sin que nada avise. */
+  const dueñaDelAlto = conBarra
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      ...(dueñaDelAlto ? { height: '100%' } : {}),
+    }}>
+
+      {/* EL RESUMEN NO SCROLLEA. Va en la zona fija, pegado a la cabecera: es el
+          reparto del préstamo ENTERO, y si se va con el scroll se pierde la
+          referencia contra la que se lee cada cuota. Lo scrolleable son las
+          cuotas, que es lo que puede tener treinta filas. */}
+      {/* SIN relleno lateral: el armazon YA da los 20px de `--cf-pad-screen`, y
+          poniendolos otra vez aqui dejaba las tarjetas en x40 con 310px de ancho
+          cuando la lamina las quiere en x20 con 350. Es el margen doble, y van
+          tres: el panel (310 en x40), cobrar hoy (302 en x44) y esta. La regla:
+          el relleno lateral lo pone el armazon, el componente NO. */}
+      <div style={{ flex: 'none', padding: '6px 0 12px' }}>
+        <div style={{
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
                 Modo de interés
               </span>
-              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)', marginTop: 3 }}>
-                {modo}
+              {/* Una sola línea con elipsis: partido en dos, el nombre del modo
+                  descuadra la tarjeta y la barra se va para abajo. */}
+              <span style={{
+                fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{modo}</span>
+            </span>
+
+            {/* «Comparar» a secas. La lámina dice «Comparar modos», que sugiere
+                los ocho cuando enseña cuatro; «Comparar calendarios» arregla eso
+                pero es tan ancho que parte «Decreciente dinámico» en dos líneas —lo
+                vi en la captura— y ahí es justo donde ese modo se distingue de
+                «Decreciente». Es el mismo motivo por el que la pastilla de T12-02
+                no va en la fila del nombre. Dentro de una tarjeta titulada «Modo de
+                interés» no hace falta repetir qué se compara.
+                Pastilla GRIS, no texto dorado: el único dorado de esta pantalla es
+                el anillo de la cuota que viene. */}
+            {onComparar && (
+              <button type="button" onClick={onComparar} style={{
+                display: 'inline-flex', alignItems: 'center', height: 32, padding: '0 12px',
+                borderRadius: 11, background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+                fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', cursor: 'pointer', flex: 'none',
+              }}>Comparar</button>
+            )}
+          </div>
+
+          <Barra capital={capitalNum} ganancia={gananciaNum} alto={12} />
+
+          {/* Las dos leyendas van JUNTAS, con hueco de 16, no repartidas a los
+              extremos: aquí se están definiendo los colores, y una definición se
+              lee de corrido. Repartidas a los bordes parecen dos datos que se
+              comparan, que es lo que sí hacen en el pie de cada cuota. */}
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 'none' }}>
+              <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: NEGRO, flex: 'none' }} />
+              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-2)' }}>
+                Capital <strong className="cf-fig">{capital}</strong>
               </span>
             </span>
-            {/* "Comparar modos" prometía los ocho y enseñaba cuatro. Lo que
-                compara son CALENDARIOS, y los 4 que muestra son exactamente los
-                4 que tienen calendario: con el nombre correcto, la selección
-                deja de ser un recorte y pasa a ser la lista completa. */}
-            <button type="button" onClick={onComparar} style={{
-              background: 'none', border: 0, cursor: 'pointer', flex: 'none',
-              fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)',
-            }}>Comparar calendarios</button>
-          </div>
-
-          <span style={{ height: 1, background: 'var(--cf-hairline)' }} />
-
-          {/* La misma partición para el préstamo entero, arriba. */}
-          <BarraPartida capital={capitalNum} ganancia={gananciaNum} alto={12} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ flex: 1, minWidth: 0 }}><Leyenda etiqueta="Capital" valor={capital} color={NEGRO} /></span>
-            <span style={{ flex: 'none' }}><Leyenda etiqueta="Ganancia" valor={ganancia} color={ORO} /></span>
-          </div>
-        </Tarjeta>
-
-        <Tarjeta plana>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '14px 18px 12px', flex: 'none' }}>
-            <span style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-              Las {totalCuotas} cuotas
-            </span>
-            <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none' }}>
-              total {total}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 'none' }}>
+              <span aria-hidden style={{ width: 9, height: 9, borderRadius: 3, background: ORO, flex: 'none' }} />
+              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-2)' }}>
+                Ganancia <strong className="cf-fig">{ganancia}</strong>
+              </span>
             </span>
           </div>
-
-          {cuotas.map((c, i) => (
-            <div key={i} style={{
-              display: 'flex', flexDirection: 'column', gap: 8, flex: 'none',
-              padding: '13px 18px 15px', borderTop: '1px solid var(--cf-hairline)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                <span style={{
-                  flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{c.cuando}</span>
-                {c.siguiente && (
-                  <Pastilla tono="oro" style={{ height: 19, fontSize: 9, flex: 'none' }}>siguiente</Pastilla>
-                )}
-                <span className="cf-fig" style={{ fontSize: 16, color: 'var(--cf-ink)', flex: 'none' }}>
-                  {c.cuota}
-                </span>
-              </div>
-
-              <BarraPartida capital={c.capitalNum} ganancia={c.gananciaNum} />
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <Leyenda etiqueta="capital" valor={c.capital} color={NEGRO} />
-                </span>
-                <span style={{ flex: 'none' }}>
-                  <Leyenda etiqueta="ganancia" valor={c.ganancia} color={ORO} />
-                </span>
-              </div>
-            </div>
-          ))}
-
-          {/* La suma de lo visible MÁS lo declarado tiene que dar el total de
-              arriba. Un "total $1.699.999" sobre cuatro filas que suman
-              $1.266.668 deja al dueño creyendo que ya vio la tabla entera. */}
-          {totalCuotas > cuotas.length && (
-            <button type="button" style={{
-              display: 'block', width: '100%', padding: '13px 18px', cursor: 'pointer',
-              background: 'none', border: 0, borderTop: '1px solid var(--cf-hairline)',
-              fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)', textAlign: 'center',
-            }}>
-              Ves {cuotas.length} de las {totalCuotas}
-              {montoOculto && <> · faltan {totalCuotas - cuotas.length} por {montoOculto}</>}
-            </button>
-          )}
-        </Tarjeta>
+        </div>
       </div>
 
-      <BarraAccion>
-        <BotonPrimario style={{ flex: 1.4 }} onClick={onCompartir}>Compartir tabla</BotonPrimario>
-        <BotonSecundario style={{ flex: 1 }} onClick={onImprimir}>Imprimir</BotonSecundario>
-      </BarraAccion>
+      {/* ── Las cuotas ─────────────────────────────────────────────────────── */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 10,
+        padding: `0 0 ${conBarra ? 20 : 0}px`,
+        ...(dueñaDelAlto ? { flex: 1, minHeight: 0, overflowY: 'auto' } : { flex: 'none' }),
+      }}>
+
+        {/* El encabezado va SOBRE EL FONDO, no dentro de una tarjeta, con el
+            filete que estira entre la etiqueta y el total. Así el total queda
+            atado al grupo de cuotas y no parece el total de otra cosa. */}
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 9, padding: '0 2px' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none' }}>
+            Las {totalCuotas} cuotas
+          </span>
+          <span aria-hidden style={{ flex: 1, height: 1, background: 'var(--cf-hairline)' }} />
+          <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)', flex: 'none' }}>
+            total {total}
+          </span>
+        </div>
+
+        {cuotas.map((c, i) => {
+          // Pulsable solo lo que se puede pagar: una cuota ya cubierta no abre
+          // nada, y un botón que al pulsarlo no hace nada se siente roto.
+          const pulsable = Boolean(onTocarCuota) && !c.pagada
+          const Fila = pulsable ? 'button' : 'div'
+          return (
+            <Fila
+              key={c.id ?? i}
+              type={pulsable ? 'button' : undefined}
+              onClick={pulsable ? () => onTocarCuota(c) : undefined}
+              style={{
+                flex: 'none', display: 'flex', flexDirection: 'column', gap: 10,
+                background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
+                padding: '15px 17px', width: '100%', textAlign: 'left', font: 'inherit',
+                cursor: pulsable ? 'pointer' : 'default',
+                // EL ANILLO DORADO de la cuota que viene. Borde de 1,5px más un
+                // halo de 3px al 13%: es lo que la encuentra de un vistazo entre
+                // treinta filas iguales, y es el único dorado de la pantalla.
+                border: c.siguiente ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+                boxShadow: c.siguiente ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
+                // Una cuota ya cubierta se APAGA, no se tiñe de verde: en verde
+                // competiría por la atención con la que toca. Regla de T02-06.
+                opacity: c.pagada ? 0.5 : 1,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{c.cuando}</span>
+
+                {/* La pastilla a mano, no la del sistema: la de la lámina es
+                    fondo dorado plano con letra `#3A2900`, y el tono `destacado`
+                    del sistema no es ese. Y va ANTES del monto, no después: el
+                    monto es lo último de la fila en todas las demás pantallas. */}
+                {c.siguiente && (
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px',
+                    borderRadius: 11, background: ORO, color: '#3A2900',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.02em', flex: 'none',
+                  }}>SIGUIENTE</span>
+                )}
+
+                <span className="cf-fig" style={{
+                  fontSize: 18, fontWeight: 600, letterSpacing: '-.025em',
+                  color: 'var(--cf-ink)', flex: 'none',
+                }}>{c.cuota}</span>
+              </div>
+
+              <Barra capital={c.capitalNum} ganancia={c.gananciaNum} />
+
+              {/* A los dos extremos y SIN puntos: cada cifra queda bajo su tramo,
+                  y «ganancia» en dorado oscuro es lo que la ata al tramo dorado.
+                  Con puntos serían doce repeticiones de lo que el resumen ya
+                  explicó una vez. */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-2)', flex: 'none' }}>
+                  capital {c.capital}
+                </span>
+                <span className="cf-num" style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-gold-dark)', flex: 'none' }}>
+                  ganancia {c.ganancia}
+                </span>
+              </div>
+            </Fila>
+          )
+        })}
+
+        {/* LA SUMA DE LO VISIBLE MÁS LO DECLARADO TIENE QUE DAR EL TOTAL DE
+            ARRIBA. La lámina enseña 4 cuotas bajo un «total $1.699.999» y las 4
+            suman $1.266.668: sin decir que faltan dos, el dueño se queda creyendo
+            que ya vio la tabla entera.
+
+            Y sin `onVerTodas` esto NO es un botón. Era uno sin `onClick` —dorado,
+            con cursor de mano, y al pulsarlo nada—. Cuando hay a dónde ir es
+            botón; cuando no, es el aviso de que la tabla sigue. */}
+        {totalCuotas > cuotas.length && (() => {
+          const Aviso = onVerTodas ? 'button' : 'div'
+          return (
+            <Aviso
+              type={onVerTodas ? 'button' : undefined}
+              onClick={onVerTodas || undefined}
+              style={{
+                flex: 'none', width: '100%', padding: '11px 12px', font: 'inherit',
+                background: 'none', border: 0, textAlign: 'center',
+                cursor: onVerTodas ? 'pointer' : 'default',
+                fontSize: 12.5, fontWeight: 700,
+                color: onVerTodas ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
+              }}
+            >
+              Ves {cuotas.length} de las {totalCuotas}
+              {montoOculto ? ` · faltan ${totalCuotas - cuotas.length} por ${montoOculto}` : ''}
+            </Aviso>
+          )
+        })()}
+      </div>
+
+      {/* LOS DOS BOTONES SON IGUALES: los dos con borde, fondo de tarjeta y
+          `flex: 1`. Ninguno primario, porque en una pantalla de leer y mandar
+          compartir no compite con nada — y porque el dorado de esta pantalla ya
+          está gastado en el anillo de la cuota que viene.
+
+          Y la barra solo cuando hay algo que compartir o imprimir: montada dentro
+          de la ficha sobraba, la ficha tiene la suya y salían dos pegadas, igual
+          que los cuatro botones de cobrar que dejó el montaje de FichaPrestamo. */}
+      {conBarra && (
+        <BarraAccion>
+          {onCompartir && <BotonSecundario style={{ flex: 1 }} onClick={onCompartir}>Compartir tabla</BotonSecundario>}
+          {onImprimir && <BotonSecundario style={{ flex: 1 }} onClick={onImprimir}>Imprimir</BotonSecundario>}
+        </BarraAccion>
+      )}
     </div>
   )
 }
 
-/* ── Comparar calendarios (turno 12 · 02) ──────────────────────────────────
+
+/* ── Comparar modos (turno 12 · 02) ────────────────────────────────────────
+   SE LLAMA «MODOS», que es como lo llama la lámina. Yo lo había renombrado a
+   «calendarios» razonando que solo cuatro de los ocho tienen calendario y que
+   «modos» prometía más de lo que enseñaba. Ese razonamiento se cayó cuando el
+   cotejo metió CUOTA FIJA en la comparación: cuota fija no tiene calendario, así
+   que lo que la hoja compara son modos de cobrar, no calendarios. La lámina lo
+   tenía bien y yo lo «arreglé» hacia el lado equivocado.
+
    Lo que NO existía: comparar DESPUÉS, sobre un préstamo ya creado. El selector
    del paso 5 ya nombra los modos en cristiano y marca el recomendado; esta hoja
    usa los mismos nombres y la misma matemática, con la partición a la vista.
 
-   Cada opción trae la frase que explica QUÉ LE PASA AL CLIENTE, no la fórmula.
-   Y el actual va marcado: sin eso, la comparación no tiene desde dónde. */
-export function CompararCalendarios({ resumen, opciones = [], actual, onDejar, onElegir }) {
+   Lo que el cotejo contra la lámina corrigió, con sus cifras:
+
+   · UN RADIO DE 20px al principio de cada fila. Yo había puesto una pastilla «el
+     de ahora» debajo del nombre. El radio dice dos cosas que la pastilla no: que
+     esto es una ELECCIÓN —hay que marcar una— y cuál está marcada ahora. El del
+     actual es un círculo dorado relleno con un check `#3A2900`; los otros, un
+     anillo vacío de 1,5px.
+   · EL ACTUAL LLEVA ANILLO DORADO, borde 1,5px más halo de 3px al 13%: el mismo
+     tratamiento que la cuota que viene en T12-01. Yo le había puesto borde negro,
+     que en este sistema significa «pulsado», no «el tuyo».
+   · EL BOTÓN DE ABAJO ES DORADO y dice el nombre —«Dejar decreciente dinámico»—.
+     Después de cinco comparaciones, «Dejar el de ahora» obliga a subir a buscar
+     cuál era el de ahora.
+   · La frase de cada opción trae LAS CIFRAS de este préstamo. Sin ellas es una
+     definición, y definiciones ya da el paso 5.
+
+   La pastilla no va en la fila del nombre —le roba ~85px y corta «Decreciente
+   dinámico» justo donde se distingue de «Decreciente»—: por eso el estado vive en
+   el radio de la izquierda, que ocupa 20px fijos. */
+export function CompararModos({ resumen, opciones = [], actual, nombreActual, onDejar, onElegir }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-      <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', flex: 'none' }}>
+      <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)', flex: 'none' }}>
         {resumen}
       </span>
 
       {opciones.map((o) => {
-        const esActual = o.id === actual
+        // `esActual` lo trae el adaptador ya resuelto; el `||` es para quien monte
+        // esta hoja pasando solo `actual`, que es como estaba antes.
+        const esActual = o.esActual ?? (o.id === actual)
         return (
           <button key={o.id} type="button" onClick={() => onElegir?.(o)} style={{
-            display: 'flex', flexDirection: 'column', gap: 9, flex: 'none',
-            padding: '14px 15px 15px', cursor: 'pointer', textAlign: 'left',
+            display: 'flex', flexDirection: 'column', gap: 11, flex: 'none',
+            padding: '16px 18px', cursor: 'pointer', textAlign: 'left',
             background: 'var(--cf-card)',
-            border: `1px solid ${esActual ? 'var(--cf-ink)' : 'var(--cf-border)'}`,
             borderRadius: 'var(--cf-r-card)',
+            border: esActual ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
+            boxShadow: esActual ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
           }}>
-            {/* La pastilla NO va en la fila del nombre: le roba ~85px y corta
-                "Decreciente dinámico" justo donde se distingue de los otros. */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* El radio. Relleno dorado con check si es el actual; anillo vacío si
+                  no. `flex: none` porque 20px son 20px: encogido a 14 deja de
+                  leerse como un control de selección. */}
+              <span aria-hidden style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 20, height: 20, borderRadius: 999, flex: 'none',
+                background: esActual ? ORO : 'transparent',
+                // `.18` de la lámina no tiene token: `--cf-border-strong` está en `.12` y a
+                // ese contraste el anillo vacío casi no se ve sobre blanco. `color-mix`
+                // en vez de un literal para que el tema oscuro lo resuelva solo, que es
+                // lo que pide el canon.
+                border: esActual ? 'none' : '1.5px solid color-mix(in srgb, var(--cf-ink) 18%, transparent)',
+              }}>
+                {esActual && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                       stroke="#3A2900" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
               <span style={{
-                flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: 'var(--cf-ink)',
+                flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{o.nombre}</span>
-              <span className="cf-fig" style={{ fontSize: 16, color: 'var(--cf-ink)', flex: 'none' }}>
-                {o.total}
-              </span>
+              <span className="cf-fig" style={{
+                fontSize: 17, fontWeight: 600, letterSpacing: '-.02em',
+                color: 'var(--cf-ink)', flex: 'none',
+              }}>{o.total}</span>
             </div>
-            {esActual && (
-              <Pastilla tono="neutro" style={{ height: 20, fontSize: 9.5, alignSelf: 'flex-start', marginTop: -3 }}>
-                el de ahora
-              </Pastilla>
-            )}
 
-            <BarraPartida capital={o.capitalNum} ganancia={o.gananciaNum} alto={8} />
+            <Barra capital={o.capitalNum} ganancia={o.gananciaNum} alto={9} />
 
             <span style={{ fontSize: 12, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
               {o.explicacion}
@@ -203,7 +399,16 @@ export function CompararCalendarios({ resumen, opciones = [], actual, onDejar, o
         )
       })}
 
-      <BotonSecundario onClick={onDejar}>Dejar el de ahora</BotonSecundario>
+      {/* DORADO y con el nombre. Es la salida sin consecuencias de una hoja donde
+          todo lo demás cambia el préstamo, así que es la acción segura y va marcada
+          como tal — no escondida en un secundario gris entre cinco tarjetas. */}
+      <button type="button" onClick={onDejar} style={{
+        width: '100%', height: 52, border: 'none', borderRadius: 14,
+        background: ORO, color: '#3A2900', flex: 'none',
+        font: 'inherit', fontSize: 16, fontWeight: 700, cursor: 'pointer',
+      }}>
+        Dejar {(nombreActual || 'el de ahora').toLowerCase()}
+      </button>
     </div>
   )
 }
