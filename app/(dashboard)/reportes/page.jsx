@@ -2,7 +2,7 @@
 // app/(dashboard)/reportes/page.jsx — Reportes escalonados por plan
 
 import { formatMoney } from '@/lib/i18n'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
@@ -10,6 +10,8 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import EmptyState              from '@/components/ui/EmptyState'
 import { nivelReportes }       from '@/lib/planes'
 import { Reportes }             from '@/components/pantallas/Reportes'
+import { ComoVaEntrando, SegurosCobrados, CobrosDelMes } from '@/components/pantallas/ReportesDetalle'
+import { aGrafica, aSeguros, aCobrosMes } from '@/lib/adaptadores/reportes-detalle'
 import { abreviarMillones }     from '@/lib/adaptadores/ruta'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -164,6 +166,85 @@ export default function ReportesPage() {
   const [hasta, setHasta]  = useState(hoy())
 
   const nivel = nivelReportes(plan)
+
+  // ── LOS DOCE ÚLTIMOS MESES ──
+  // Era un `<input type="month">`, que en cada sistema se dibuja distinto —en
+  // unos con calendario, en otros con dos ruedas— y en ninguno se parece a la
+  // app. Doce meses cubren de sobra lo que se consulta, y se leen sin abrir
+  // nada.
+  const mesesDisponibles = useMemo(() => {
+    const NOMBRE = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    const hoy = new Date()
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      return {
+        valor: `${d.getFullYear()}-${mm}`,
+        texto: `${NOMBRE[d.getMonth()]} ${d.getFullYear()}`,
+      }
+    })
+  }, [])
+
+  // Lo que DE VERDAD entró en el mes elegido, para poder decir cuánto falta.
+  // Va aparte de `resumen` porque ese usa el rango de fechas de arriba, que
+  // casi nunca es el mes: compararlos daría un «falta» que no significa nada.
+  const [entradoMes, setEntradoMes] = useState(null)
+  useEffect(() => {
+    if (authLoading || !esOwner || nivel < 1 || !mesCobros) return
+    let vivo = true
+    const [y, m] = mesCobros.split('-').map(Number)
+    const ultimo = new Date(y, m, 0).getDate()
+    const d1 = `${mesCobros}-01`
+    const d2 = `${mesCobros}-${String(ultimo).padStart(2, '0')}`
+    setEntradoMes(null)
+    fetch(`/api/reportes/resumen?desde=${d1}&hasta=${d2}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo && d) setEntradoMes(d.pagos?.totalPeriodo ?? null) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [mesCobros, authLoading, esOwner, nivel])
+
+  // La hoja para imprimir. Se saca del JSX porque eran 38 líneas de HTML dentro
+  // de un `onClick`.
+  const imprimirCobrosMes = useCallback(() => {
+    if (!cobrosMes?.rutas?.length) return
+    const ventana = window.open('', '_blank')
+    if (!ventana) return
+    const pesos = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CO')}`
+    // LOS BORDES IBAN CON `var(--cf-border)`, que en una ventana nueva NO
+    // EXISTE: la tabla salía sin una sola línea. Aquí van literales, que es lo
+    // único que funciona fuera de la app.
+    const filas = cobrosMes.rutas.flatMap((r) => r.clientes.map((c) => `<tr>
+      <td>${r.ruta}</td><td>${c.nombre}</td><td>${c.telefono || ''}</td>
+      <td class="n">${c.cuotasMes}</td>
+      <td class="n b">${pesos(c.totalMes)}</td>
+      <td class="n gris">${pesos(c.saldoPendiente)}</td></tr>`))
+    ventana.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Cobros ${cobrosMes.monthLabel}</title>
+      <style>
+        body{font-family:system-ui,sans-serif;padding:20px;color:#111}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th{text-align:left;padding:6px 8px;border-bottom:2px solid #111;font-size:11px;text-transform:uppercase}
+        td{padding:4px 8px;border-bottom:1px solid #dddddd}
+        .n{text-align:right;font-variant-numeric:tabular-nums}
+        .b{font-weight:600}
+        .gris{color:#666}
+        .total td{font-weight:700;border-top:2px solid #111;padding-top:8px}
+        @media print{body{padding:10px}}
+      </style></head><body>
+      <h2 style="margin-bottom:4px">Cobros programados</h2>
+      <p style="color:#666;margin-bottom:16px;font-size:14px">${cobrosMes.monthLabel} — ${cobrosMes.totalClientes} clientes</p>
+      <table><thead><tr><th>Ruta</th><th>Cliente</th><th>Tel</th>
+      <th class="n">Cuotas</th><th class="n">Total mes</th><th class="n">Saldo</th></tr></thead>
+      <tbody>${filas.join('')}
+      <tr class="total"><td colspan="4">TOTAL</td><td class="n">${pesos(cobrosMes.granTotal)}</td><td></td></tr>
+      </tbody></table></body></html>`)
+    ventana.document.close()
+    ventana.focus()
+    ventana.print()
+  }, [cobrosMes])
+
 
   const fetchAll = async () => {
     setLoading(true)
@@ -388,247 +469,54 @@ export default function ReportesPage() {
         />
       )}
 
-      {/* ── 2. Gráfica de ingresos ───────────────────────────── */}
-      <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-              </svg>
-            </div>
-            <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Ingresos</p>
-          </div>
-          <div className="flex gap-1">
-            {['diario', 'semanal', 'mensual'].map((p) => {
-              const active = periodoIngresos === p
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPeriodoIngresos(p)}
-                  className="px-2.5 py-1 rounded-[8px] text-[10px] font-medium capitalize transition-all"
-                  style={{
-                    background: active ? 'color-mix(in srgb, var(--cf-gold) 18%, transparent)' : 'transparent',
-                    color: active ? 'var(--cf-gold)' : 'var(--cf-ink-3)',
-                    border: active ? '1px solid color-mix(in srgb, var(--cf-gold) 35%, transparent)' : '1px solid var(--cf-border)',
-                  }}
-                >
-                  {p}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+      {/* ── T33-01 · Cómo va entrando ─────────────────────────
+          Eran barras de Recharts con dos verdes —fuerte la última, claro las
+          demás— y sin un solo número encima. Pintar la última de otro color
+          sugiere que hoy es especial, y no lo es: es la barra que aún no ha
+          terminado. Y para saber cuánto entra al día había que mirar veinte
+          barras y estimar.
 
-        {ingresos.length === 0 ? (
-          <EmptyState pose="busca" titulo="Sin pagos en el periodo" hint="Ajusta las fechas o espera a que se registren cobros." size={64} />
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={ingresos} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--cf-border)" vertical={false} />
-              <XAxis
-                dataKey="fecha"
-                tick={{ fill: 'var(--cf-ink-3)', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fill: 'var(--cf-ink-3)', fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--cf-green-dark) 8%, transparent)' }} />
-              <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                {ingresos.map((_, i) => (
-                  <Cell key={i} fill={i === ingresos.length - 1 ? 'var(--cf-green-dark)' : 'color-mix(in srgb, var(--cf-green-dark) 60%, transparent)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+          Ahora son barras planas de un solo dorado, y debajo va escrito lo que
+          la gráfica tenía que decir: el día grande y la media. */}
+      <ComoVaEntrando
+        periodo={periodoIngresos}
+        onPeriodo={setPeriodoIngresos}
+        {...aGrafica(ingresos)}
+      />
 
       {/* La cartera por ruta subió dentro de <Reportes>: estaba dos pantallas
           más abajo que las cifras que explica. El aviso de plan se queda, que es
           lo único que esta tarjeta añadía cuando no se tiene. */}
       {nivel < 2 && <UpgradeNudge titulo="Cartera por ruta" planRequerido="standard" />}
 
-      {/* ── Seguros por ruta ── */}
+      {/* ── T33-01 · Seguros cobrados ─────────────────────────
+          El período era un `<select>` nativo, que en cada teléfono se ve
+          distinto y en ninguno se ve como la app. */}
       {nivel >= 2 && seguros && (
-        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-        >
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[.07em] truncate" style={{ color: 'var(--cf-ink-2)' }}>Seguros por ruta</p>
-            </div>
-            <select
-              value={periodoSeguros}
-              onChange={e => setPeriodoSeguros(e.target.value)}
-              className="text-[11px] rounded-[8px] px-2 py-1 shrink-0"
-              style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
-            >
-              <option value="dia">Hoy</option>
-              <option value="semana">7 días</option>
-              <option value="mes">30 días</option>
-              <option value="todo">Histórico</option>
-            </select>
-          </div>
-          {seguros.items.length === 0 ? (
-            <p className="text-[12px] text-center py-3" style={{ color: 'var(--cf-ink-3)' }}>Sin seguros cobrados en este período</p>
-          ) : (
-            <>
-              <div className="space-y-2">
-                {seguros.items.map((r) => (
-                  <div key={r.rutaId || 'sin'} className="rounded-[12px] px-3 py-2.5 flex items-center justify-between gap-3"
-                    style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{r.ruta}</p>
-                      <p className="text-[10px] truncate" style={{ color: 'var(--cf-ink-2)' }}>
-                        {r.cobrador} · {r.cantPrestamosConSeguro} {r.cantPrestamosConSeguro === 1 ? 'préstamo' : 'préstamos'}
-                      </p>
-                    </div>
-                    <p className="text-[14px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(r.totalSeguro)}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid var(--cf-border)' }}>
-                <span className="text-[12px] font-bold" style={{ color: 'var(--cf-ink-2)' }}>Total seguros</span>
-                <span className="text-[15px] font-bold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(seguros.totalGeneral)}</span>
-              </div>
-            </>
-          )}
-        </div>
+        <SegurosCobrados
+          periodo={periodoSeguros}
+          onPeriodo={setPeriodoSeguros}
+          {...aSeguros(seguros)}
+        />
       )}
 
-      {/* ── Cobros del mes (reporte mensual imprimible, nivel 1+) ── */}
+      {/* ── T33-01 · Cobros del mes ───────────────────────────
+          Era un título, un desplegable y una tabla: para saber si el mes iba
+          bien había que sumar mentalmente. Ahora la cifra manda, va arriba y en
+          oscuro, y al lado lo que YA entró con lo que falta.
+
+          «Ya entró» sale de los pagos del mismo mes, y solo se enseña si se
+          pudo pedir: en una pantalla de plata, un hueco es mejor que un número
+          inventado. */}
       {nivel >= 1 && (
-        <div className="rounded-[20px] px-4 py-4 cf-card-shadow"
-          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-        >
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-[8px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 18%, transparent)', color: 'var(--cf-gold-dark)' }}>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                </svg>
-              </div>
-              <p className="text-[12px] font-extrabold uppercase tracking-[.07em] truncate" style={{ color: 'var(--cf-ink-2)' }}>Cobros del mes</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <input
-                type="month"
-                value={mesCobros}
-                onChange={e => setMesCobros(e.target.value)}
-                className="h-7 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none"
-                style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
-              />
-              {cobrosMes && cobrosMes.rutas?.length > 0 && (
-                <button
-                  onClick={() => {
-                    const printW = window.open('', '_blank')
-                    if (!printW) return
-                    const rows = cobrosMes.rutas.flatMap(r =>
-                      r.clientes.map(c => `<tr>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border)">${r.ruta}</td>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border)">${c.nombre}</td>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border)">${c.telefono || ''}</td>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border);text-align:right">${c.cuotasMes}</td>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border);text-align:right;font-weight:600">$${c.totalMes.toLocaleString('es-CO')}</td>
-                        <td style="padding:4px 8px;border-bottom:1px solid var(--cf-border);text-align:right;color:#666">$${c.saldoPendiente.toLocaleString('es-CO')}</td>
-                      </tr>`)
-                    )
-                    printW.document.write(`<!DOCTYPE html><html><head><title>Cobros ${cobrosMes.monthLabel}</title>
-                      <style>body{font-family:system-ui,sans-serif;padding:20px;color:#111}
-                      table{width:100%;border-collapse:collapse;font-size:13px}
-                      th{text-align:left;padding:6px 8px;border-bottom:2px solid #111;font-size:11px;text-transform:uppercase}
-                      .total-row td{font-weight:700;border-top:2px solid #111;padding-top:8px}
-                      @media print{body{padding:10px}}</style></head>
-                      <body><h2 style="margin-bottom:4px">Cobros programados</h2>
-                      <p style="color:#666;margin-bottom:16px;font-size:14px">${cobrosMes.monthLabel} — ${cobrosMes.totalClientes} clientes</p>
-                      <table><thead><tr><th>Ruta</th><th>Cliente</th><th>Tel</th><th style="text-align:right">Cuotas</th><th style="text-align:right">Total mes</th><th style="text-align:right">Saldo</th></tr></thead>
-                      <tbody>${rows.join('')}
-                      <tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">$${cobrosMes.granTotal.toLocaleString('es-CO')}</td><td></td></tr>
-                      </tbody></table></body></html>`)
-                    printW.document.close()
-                    printW.focus()
-                    printW.print()
-                  }}
-                  className="h-7 px-2.5 rounded-[8px] text-[11px] font-semibold transition-all cursor-pointer"
-                  style={{ color: 'var(--cf-gold-dark)', background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)' }}
-                >
-                  Imprimir
-                </button>
-              )}
-            </div>
-          </div>
-
-          {cobrosMesLoading ? (
-            <div className="py-8 text-center">
-              <div className="w-6 h-6 mx-auto border-2 border-[var(--cf-border)] border-t-[var(--cf-gold)] rounded-full animate-spin" />
-            </div>
-          ) : !cobrosMes || cobrosMes.rutas?.length === 0 ? (
-            <EmptyState pose="vacia" titulo="Sin cobros programados" hint="No hay cobros pendientes en el periodo seleccionado." size={64} />
-          ) : (
-            <>
-              <div className="rounded-[12px] px-3 py-2.5 mb-3 flex items-center justify-between"
-                style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 20%, transparent)' }}
-              >
-                <span className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
-                  {cobrosMes.totalClientes} clientes
-                </span>
-                <span className="text-[16px] font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>
-                  {formatMoney(cobrosMes.granTotal)}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {cobrosMes.rutas.map((ruta) => (
-                  <div key={ruta.rutaId}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[12px] font-bold" style={{ color: 'var(--cf-ink)' }}>{ruta.ruta}</span>
-                        <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>({ruta.cobrador})</span>
-                      </div>
-                      <span className="text-[12px] font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(ruta.totalRuta)}</span>
-                    </div>
-                    <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
-                      {ruta.clientes.map((c, i) => (
-                        <div
-                          key={c.id}
-                          className="flex items-center justify-between px-3 py-2 gap-2"
-                          style={{
-                            background: i % 2 === 0 ? 'var(--cf-surface)' : 'var(--cf-card)',
-                            borderBottom: i < ruta.clientes.length - 1 ? '1px solid var(--cf-border)' : 'none',
-                          }}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-medium truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
-                            <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
-                              {c.cuotasMes} {c.cuotasMes === 1 ? 'cuota' : 'cuotas'} · Saldo {formatMoney(c.saldoPendiente)}
-                            </p>
-                          </div>
-                          <span className="text-[13px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-ink)' }}>
-                            {formatMoney(c.totalMes)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <CobrosDelMes
+          mes={mesCobros}
+          onMes={setMesCobros}
+          meses={mesesDisponibles}
+          cargando={cobrosMesLoading}
+          onImprimir={cobrosMes?.rutas?.length > 0 ? imprimirCobrosMes : null}
+          {...aCobrosMes(cobrosMes, entradoMes)}
+        />
       )}
 
       {/* ── 4. Top cobradores (podio visual) + lista completa ── */}

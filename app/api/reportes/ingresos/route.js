@@ -10,11 +10,24 @@ const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal,
 
 const toLocalDate = (date, country = 'co') => new Date(date.getTime() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 
+// ── RESTABA LA ZONA HORARIA DOS VECES ──
+//
+// `toLocalDate` ya corre el instante las horas del pais; leerlo despues con
+// `getFullYear/getMonth/getDate` —que son los del SERVIDOR— lo vuelve a correr.
+// En produccion no se nota porque el servidor va en UTC y ahi esos metodos son
+// los de UTC. En una maquina en Bogota si: un pago del 1 de julio, guardado a
+// las 05:00Z por el convenio de la casa, salia como 30 DE JUNIO.
+//
+// Se veia en la grafica de reportes, que decia «el dia grande fue el 30 de
+// junio» con el periodo puesto en julio.
+//
+// Con los metodos UTC el resultado es el mismo en las dos maquinas, que es la
+// regla de fechas de este proyecto: la aritmetica va en UTC.
 const formatLocalDate = (date, country = 'co') => {
   const d = toLocalDate(new Date(date), country)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
+  const year = d.getUTCFullYear()
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
