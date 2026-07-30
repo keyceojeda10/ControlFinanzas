@@ -41,6 +41,7 @@ import { ListaSocios as ListaSociosT45, HojaRepartir } from '@/components/pantal
 import { FranjaSinSenal, PorSincronizar, BusquedaGlobal } from '@/components/pantallas/Estados'
 import { PanelCargando, Novedades } from '@/components/pantallas/Cargando'
 import { MenuGestion, CobroHecho } from '@/components/pantallas/MenuGestion'
+import { Renovar, DiasSinCobro } from '@/components/pantallas/Renovar'
 import {
   loQuePusieron, cuentaDelSocio, repartoDe, deDondeSale, loQueQuedaDebiendo,
   cabeceraSocios, NOTA_NO_SACA_PLATA,
@@ -1812,6 +1813,41 @@ export default function Estilo() {
             recibo="Recibo enviado a 300 118 4471"
             siguiente="Carlos Prueba 1"
             onSiguiente={() => {}} onVolver={() => {}}
+          />
+        </div>
+
+        {/* T05-02. El campo es el TOTAL, pero debajo se calcula lo que sale del
+            bolsillo — y el boton lo repite. Hoy esa resta se hace de cabeza. */}
+        <div id="ges-renovar" style={{ ...MARCO, height: 'auto', minHeight: 900, overflow: 'visible', padding: '20px' }}>
+          <Renovar
+            saldo="$130.500" saldoNota="El actual queda cerrado como completado."
+            total="500.000" onTotal={() => {}}
+            atajos={[{ etiqueta: '350k' }, { etiqueta: '500k' }, { etiqueta: '700k' }, { etiqueta: 'Otro' }]}
+            onAtajo={() => {}}
+            incluye="Incluye los $130.500 que ya debe · mismas condiciones: diario, 20%, 30 cuotas."
+            antesDespues={{
+              etiqueta: 'Cuota diaria', antes: '$14.500', despues: '$20.000',
+            }}
+            entrega="$369.500" ganancia="$100.000"
+            onRenovar={() => {}}
+            nota="El préstamo actual queda cerrado como renovado."
+          />
+        </div>
+
+        {/* T05-03. La herencia se VE: de donde sale el domingo que ya estaba. */}
+        <div id="ges-sincobro" style={{ ...MARCO, height: 'auto', minHeight: 720, overflow: 'visible', padding: '20px' }}>
+          <DiasSinCobro
+            elegidos={[0, 6]} onDia={() => {}}
+            herencia={[
+              { nivel: 'Cliente', valor: null },
+              { nivel: 'Ruta 2', valor: 'dom', manda: true },
+              { nivel: 'Negocio', valor: 'dom' },
+            ]}
+            antesDespues={{
+              etiqueta: 'Mora del fin de semana', antes: '$2.900', despues: '$0',
+            }}
+            nota="Sábados y domingos dejan de generar mora. La cuota, el plazo y la fecha de vencimiento no cambian."
+            onCancelar={() => {}} onGuardar={() => {}}
           />
         </div>
 
