@@ -227,44 +227,16 @@ function CobradoresPageInner() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      {/* En 390px el titulo y los dos botones NO CABEN en una fila: «Cobradores»
-          se metia por debajo de «Ranking». Se apilan en movil y vuelven a la
-          misma linea en cuanto hay sitio. */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Cobradores</h1>
-          <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
-            {loading ? '…' : `${cobradores.length} cobrador${cobradores.length !== 1 ? 'es' : ''}`}
-          </p>
-        </div>
-        {!authLoading && esOwner && (
-          <div className="flex items-center gap-2">
-            <Link href="/cobradores/ranking">
-              <Button
-                variant="secondary"
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h4v11H3zM10 3h4v18h-4zM17 7h4v14h-4z" />
-                  </svg>
-                }
-              >
-                Ranking
-              </Button>
-            </Link>
-            <Link href="/cobradores/nuevo">
-              <Button
-                icon={
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                }
-              >
-                Nuevo cobrador
-              </Button>
-            </Link>
-          </div>
-        )}
-      </div>
+      {/* ── LOS DOS BOTONES DE ARRIBA SE VAN (T09-02) ──
+          Aqui habia un titulo «Cobradores» y, a su derecha, «Ranking» y «Nuevo
+          cobrador»: dos botones del mismo tamaño, pegados, que en 390px no
+          caben en la misma fila que el titulo. La lamina no los tiene. Pone
+          «Crear cobrador» ABAJO, entero y solo, porque crear un cobrador es la
+          accion de esta pantalla; y el ranking no es su par — se mira de
+          pasada, no se crea cada dia.
+
+          La cabecera vuelve al componente, que ya la trae con las dos cifras
+          que hacen evidente el hueco: «9 cuentas · 4 con ruta asignada». */}
 
       {error && (
         <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
@@ -345,15 +317,13 @@ function CobradoresPageInner() {
           diagnostico: una cuenta SIN RUTA no puede cobrar nada, y mezclada con
           las que trabajan no avisa de nada.
 
-          La cabecera se queda la de la pagina —lleva «Ranking» y «Nuevo
-          cobrador», que el componente no tiene— y por eso va con
-          `cabecera={false}`. Sin eso saldrian dos titulos «Cobradores» seguidos,
-          que es lo que me paso al montar caja. */}
+          La cabecera la pinta el componente: trae las dos cifras juntas
+          —«9 cuentas · 4 con ruta asignada»— que son las que hacen evidente el
+          hueco. Cualquiera de las dos sola no dice nada. */}
       {!loading && cobradores.length > 0 && !modoOrdenar && (() => {
         const grupos = agrupaCobradores(cobradores, formatMoney)
         return (
           <Cobradores
-            cabecera={false}
             alto="auto"
             resumen={grupos.resumen}
             aviso={grupos.aviso}
@@ -361,6 +331,8 @@ function CobradoresPageInner() {
             sinRuta={grupos.sinRuta}
             onAbrir={(c) => router.push(`/cobradores/${c.id}`)}
             onAsignar={(c) => router.push(`/cobradores/${c.id}`)}
+            onCrear={esOwner ? () => router.push('/cobradores/nuevo') : null}
+            onRanking={esOwner ? () => router.push('/cobradores/ranking') : null}
           />
         )
       })()}

@@ -78,12 +78,17 @@ function Cifra({ rotulo, valor, tono }) {
 export function Cobradores({
   resumen, aviso, cobrando = [], sinRuta = [],
   visiblesSinRuta = 2,
-  onVolver, onAbrir, onAsignar, onCrear,
-  // La ruta real ya trae su propia cabecera, con «Ranking» y «Nuevo cobrador»
-  // que esta pantalla no tiene. Sin este interruptor saldrian DOS titulos
-  // «Cobradores» seguidos — es lo que me paso al montar caja.
+  onVolver, onAbrir, onAsignar, onCrear, onRanking,
+  crearTexto = 'Crear cobrador',
+  // La cabecera es de esta pantalla, no de la pagina. `cabecera={false}` queda
+  // por si algun sitio la mete dentro de otra que ya tiene titulo — sin eso
+  // saldrian DOS «Cobradores» seguidos, que es lo que me paso al montar caja.
   cabecera = true, alto = '100%',
 }) {
+  // En el banco la pantalla mide 844 y el boton flota al fondo. En una ruta de
+  // verdad la pagina crece con el contenido, y un `absolute` sin ancestro
+  // posicionado se pega a la ventana o desaparece: ahi va en el flujo.
+  const botonFlotante = alto === '100%'
   const [todosSinRuta, setTodosSinRuta] = useState(false)
   const visibles = todosSinRuta ? sinRuta : sinRuta.slice(0, visiblesSinRuta)
   const ocultos = sinRuta.length - visibles.length
@@ -220,14 +225,33 @@ export function Cobradores({
         )}
       </div>
 
-      {onCrear && (
-        <div style={{ position: 'absolute', left: 16, right: 16, bottom: 18 }}>
-          <button type="button" onClick={onCrear} style={{
-            width: '100%', height: 56, border: 'none', borderRadius: 999,
-            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', cursor: 'pointer',
-            font: 'inherit', fontSize: 16, fontWeight: 700,
-            boxShadow: '0 6px 20px rgba(231,164,0,.32)',
-          }}>Crear cobrador</button>
+      {(onCrear || onRanking) && (
+        <div style={botonFlotante
+          ? { position: 'absolute', left: 16, right: 16, bottom: 18 }
+          : { flex: 'none', padding: '18px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {onCrear && (
+            <button type="button" onClick={onCrear} style={{
+              width: '100%', height: 56, border: 'none', borderRadius: 999,
+              background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', cursor: 'pointer',
+              font: 'inherit', fontSize: 16, fontWeight: 700,
+              boxShadow: '0 6px 20px rgba(231,164,0,.32)',
+            }}>{crearTexto}</button>
+          )}
+          {/* EL RANKING NO ES UN BOTON DE PAR A PAR CON «CREAR».
+              Iban los dos arriba, uno al lado del otro y del mismo tamaño, y
+              en 390px no cabian: el titulo se metia por debajo. Ademas compiten
+              — crear un cobrador se hace una vez cada varios meses y mirar el
+              ranking es de pasada. Aqui el ranking es una linea. */}
+          {onRanking && !botonFlotante && (
+            <button type="button" onClick={onRanking} style={{
+              width: '100%', height: 40, border: 0, background: 'none',
+              cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700,
+              // En tinta y no en oro: el dorado de esta pantalla ya lo llevan
+              // el aviso, «Asignar» y «Crear cobrador». Un cuarto dorado no
+              // destaca — reparte.
+              color: 'var(--cf-ink-2)',
+            }}>Ver el ranking</button>
+          )}
         </div>
       )}
     </div>
