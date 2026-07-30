@@ -26,6 +26,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Modal } from '@/components/ui/Modal'
 import QrClienteModal from '@/components/clientes/QrClienteModal'
 import dynamic from 'next/dynamic'
+import { anotarReciente } from '@/lib/recientes'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -50,6 +51,20 @@ export default function ClienteDetallePage({ params }) {
   const { lastSyncedAt } = useOffline()
 
   const [cliente, setCliente]   = useState(null)
+
+  // Deja constancia para «Últimos que abriste» del buscador (T34-03). Se anota
+  // AQUI y no en el armazón porque la ruta sola trae el id: el nombre y el
+  // estado solo los sabe esta pantalla.
+  useEffect(() => {
+    if (!cliente?.nombre) return
+    anotarReciente({
+      tipo: 'cliente', id: cliente.id, nombre: cliente.nombre,
+      detalle: cliente.cedula && !String(cliente.cedula).startsWith('SIN-')
+        ? cliente.cedula : (cliente.telefono || ''),
+      estado: cliente.estado === 'mora' ? 'rojo' : undefined,
+    })
+  }, [cliente])
+
   const [loading, setLoading]   = useState(true)
   const [error,   setError]     = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)

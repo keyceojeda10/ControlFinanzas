@@ -25,6 +25,7 @@ import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
+import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -240,6 +241,15 @@ export default function RutaDetallePage({ params }) {
     const { lastSyncedAt } = useOffline()
 
   const [ruta,          setRuta]          = useState(null)
+
+  // Deja constancia para «Últimos que abriste» del buscador (T34-03). Se anota
+  // AQUI y no en el armazón porque la ruta sola trae el id: el nombre y el
+  // estado solo los sabe esta pantalla.
+  useEffect(() => {
+    if (!ruta?.nombre) return
+    anotarReciente({ tipo: 'ruta', id: ruta.id, nombre: ruta.nombre })
+  }, [ruta])
+
   const [loading,       setLoading]       = useState(true)
   const [error,         setError]         = useState('')
   const [cobradores,    setCobradores]    = useState([])

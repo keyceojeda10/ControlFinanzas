@@ -17,6 +17,7 @@
 const CARBON = '#15161A'
 const CARBON_ORO = '#F5B824'
 const CARBON_TINTA = '#F3F3F6'
+const CARBON_APAGADO = '#8A8E98'
 
 function Rotulo({ children }) {
   return (
@@ -204,11 +205,17 @@ export function BusquedaGlobal({
   atajosTitulo = 'Ir directo a', atajos = [],
   onAbrir, onAtajo,
   resultados, vacio,
+  accion, pie,
 }) {
   const buscando = String(texto ?? '').trim().length > 0
 
   return (
     <div style={{
+      // El ANCHO hace falta explicito: como hijo de un contenedor en fila se
+      // encogia al tamaño de su contenido —medido, 337 de 390— y dejaba una
+      // franja del fondo asomando por la derecha. En el banco no se veia
+      // porque el marco del telefono ya lo estiraba.
+      width: '100%',
       height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
       background: 'var(--cf-surface)', color: 'var(--cf-ink)',
     }}>
@@ -301,6 +308,48 @@ export function BusquedaGlobal({
                 </div>
               </div>
             )}
+
+            {/* LA ACCION QUE TRAE AQUI A LA MITAD DE LA GENTE.
+                Se abre el buscador para llegar a alguien que YA existe; cuando
+                no aparece es porque todavia no esta. Sin esto el camino es
+                cerrar, buscar el boton de crear y volver a empezar. */}
+            {accion && (
+              <button
+                type="button"
+                onClick={accion.onIr}
+                style={{
+                  flex: 'none', marginTop: 5, display: 'flex', alignItems: 'center', gap: 12,
+                  width: '100%', padding: '15px 17px', borderRadius: 18, cursor: 'pointer',
+                  border: 0, textAlign: 'left', font: 'inherit',
+                  // Bloque permanentemente oscuro: color fijo, no token. Con
+                  // tokens se aclara en tema claro y el dorado deja de leerse.
+                  background: CARBON,
+                }}
+              >
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 36, height: 36, borderRadius: 12, flex: 'none',
+                  background: 'color-mix(in srgb, ' + CARBON_ORO + ' 16%, transparent)',
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={CARBON_ORO}
+                    strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </span>
+                <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: CARBON_TINTA }}>{accion.texto}</span>
+                  {accion.nota && (
+                    <span style={{ fontSize: 12, color: CARBON_APAGADO }}>{accion.nota}</span>
+                  )}
+                </span>
+              </button>
+            )}
+
+            {pie && (
+              <span style={{
+                flex: 'none', fontSize: 12, color: 'var(--cf-ink-3)', textAlign: 'center',
+              }}>{pie}</span>
+            )}
           </>
         )}
       </div>
@@ -312,12 +361,25 @@ export function BusquedaGlobal({
    a alguien casi siempre quiere saber cómo va, no solo entrar. */
 function Lista({ filas = [], onIr }) {
   const ARO = { rojo: 'var(--cf-red)', verde: 'var(--cf-green)', oro: 'var(--cf-gold)' }
+  // Las cosas que no son personas traen icono. Se deriva del tipo aqui para que
+  // quien llame pase datos y no JSX: los adaptadores son `.js` con pruebas, y
+  // meterles un `<svg>` los volveria imposibles de probar sin montar React.
+  const ICONO = {
+    ruta: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
+        strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z" />
+      </svg>
+    ),
+  }
   return (
     <div style={{
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
       borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
     }}>
-      {filas.map((f, i) => (
+      {filas.map((f, i) => {
+        const icono = f.icono ?? ICONO[f.tipo]
+        return (
         <button
           key={f.id}
           type="button"
@@ -334,11 +396,11 @@ function Lista({ filas = [], onIr }) {
             width: 34, height: 34, flex: 'none',
             // Las cosas que no son personas llevan icono y esquina redondeada, no
             // círculo: una ruta con iniciales se leería como un cliente.
-            borderRadius: f.icono ? 11 : 999,
+            borderRadius: icono ? 11 : 999,
             background: 'var(--cf-fill)',
             border: f.estado ? `2px solid ${ARO[f.estado] ?? ARO.oro}` : 'none',
             fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
-          }}>{f.icono ?? f.iniciales}</span>
+          }}>{icono ?? f.iniciales}</span>
 
           <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 15, fontWeight: 600 }}>{f.nombre}</span>
@@ -353,7 +415,8 @@ function Lista({ filas = [], onIr }) {
             <span style={{ fontSize: 11, color: 'var(--cf-ink-4)', flex: 'none' }}>{f.cuando}</span>
           )}
         </button>
-      ))}
+        )
+      })}
     </div>
   )
 }

@@ -55,6 +55,7 @@ import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/Ca
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { anotarReciente } from '@/lib/recientes'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -114,6 +115,20 @@ export default function PrestamoDetallePage({ params }) {
   const { lastSyncedAt }   = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
+
+  // Deja constancia para «Últimos que abriste» del buscador (T34-03). Se anota
+  // AQUI y no en el armazón porque la ruta sola trae el id: el nombre y el
+  // estado solo los sabe esta pantalla.
+  useEffect(() => {
+    if (!prestamo?.cliente?.nombre) return
+    anotarReciente({
+      tipo: 'prestamo', id: prestamo.id, nombre: prestamo.cliente.nombre,
+      detalle: prestamo.saldoPendiente > 0
+        ? `debe $${Math.round(prestamo.saldoPendiente).toLocaleString('es-CO')}` : 'saldado',
+      estado: prestamo.diasAtraso > 0 ? 'rojo' : undefined,
+    })
+  }, [prestamo])
+
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
   const [modalPago,    setModalPago]    = useState(false)
