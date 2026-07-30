@@ -852,56 +852,11 @@ function TabOrganizacion({ bloques }) {
       </Card>
       )}
 
-      {quiere('plan') && (
-      <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Plan y suscripción</p>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[var(--cf-ink-3)]">Plan actual</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={planBadge[org?.plan ?? 'starter']}>
-                  {PLAN_NAMES[org?.plan ?? 'starter']}
-                </Badge>
-                <span className="text-xs text-[var(--cf-ink-3)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
-              </div>
-            </div>
-            <Link
-              href="/configuracion/plan"
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] transition-all"
-            >
-              Cambiar plan
-            </Link>
-          </div>
-
-          {suscripcion && (
-            <div className="pt-3 border-t border-[var(--cf-border)] space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-[var(--cf-ink-3)]">Vencimiento</span>
-                <span className="text-[var(--cf-ink-3)]">
-                  {new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO', {
-                    day: 'numeric', month: 'long', year: 'numeric',
-                  })}
-                </span>
-              </div>
-              {vencida && (
-                <Alerta tipo="error">
-                  Tu suscripción venció hace {Math.abs(diasRestantes)} día{Math.abs(diasRestantes) !== 1 ? 's' : ''}.
-                  {' '}<Link href="/configuracion/plan" className="underline font-medium">Renueva ahora</Link>
-                </Alerta>
-              )}
-              {porVencer && (
-                <Alerta tipo="warning">
-                  Tu suscripción vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}.
-                  {' '}<Link href="/configuracion/plan" className="underline font-medium">Renueva ahora</Link>
-                </Alerta>
-              )}
-            </div>
-          )}
-        </div>
-      </Card>
-      )}
-
+      {/* LA TERCERA TARJETA DE PLAN, FUERA.
+          Repetia el nombre del plan, el precio y el vencimiento —que ya estan en
+          la de arriba— y su boton «Cambiar plan» va al mismo sitio que «Ver
+          planes». Tres tarjetas seguidas contando lo mismo con tres tipografias
+          distintas es lo que hacia que la seccion pareciera un desorden. */}
       {/* Los medios de transferencia van con «Tu negocio»: son las cuentas a las
           que TE pagan, no un ajuste de cobro ni de seguridad. Sin envolverlo se
           colaba en las tres secciones a la vez. */}
@@ -1055,23 +1010,14 @@ function TabSuscripcion() {
           boxShadow: `0 0 30px color-mix(in srgb, var(--cf-gold) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
         }}
       >
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-          <div>
-            <p className="text-xs text-[var(--cf-ink-3)] mb-1">Plan actual</p>
-            <div className="flex items-center gap-2">
-              <Badge variant={planBadge[org?.plan ?? 'starter']}>
-                {PLAN_NAMES[org?.plan ?? 'starter']}
-              </Badge>
-              <span className="text-xs text-[var(--cf-ink-3)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
-            </div>
-          </div>
-          <Link
-            href="/configuracion/plan"
-            className="inline-flex items-center justify-center h-10 px-5 rounded-[12px] text-sm font-semibold bg-[var(--cf-gold)] text-white hover:bg-[var(--cf-gold-dark)] transition-all shrink-0"
-          >
-            Renovar / Cambiar
-          </Link>
-        </div>
+        {/* EL NOMBRE DEL PLAN, EL PRECIO Y EL BOTON YA ESTAN ARRIBA, en la
+            tarjeta del rediseño. Aqui se repetian con otra tipografia y otro
+            boton que va al mismo sitio: dos tarjetas contando lo mismo, y la de
+            arriba salia con rayas porque nunca recibio la fecha. Esta se queda
+            con LO QUE NO ESTA ARRIBA: las fechas exactas y cuanto falta. */}
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">
+          Detalle de la suscripción
+        </p>
 
         {suscripcion ? (
           <div className="space-y-3">
@@ -1412,6 +1358,7 @@ function ConfiguracionContent() {
   const [org, setOrg] = useState(null)
   const [uso, setUso] = useState(null)
   const [diasParaRenovar, setDiasParaRenovar] = useState(null)
+  const [vencimiento, setVencimiento] = useState(null)
   const [tema, setTema] = useState('system')
   useEffect(() => {
     let vivo = true
@@ -1422,6 +1369,11 @@ function ConfiguracionContent() {
         // Ya venía en la misma respuesta y se estaba tirando. Es el valor de la
         // fila «Plan y pagos» del índice.
         setDiasParaRenovar(Number.isFinite(d?.diasRestantes) ? d.diasRestantes : null)
+        // «renueva el 12 de agosto» dice mas que «en 13 días»: la fecha se
+        // apunta en la cabeza, el contador hay que volver a mirarlo mañana.
+        setVencimiento(d?.suscripcion?.fechaVencimiento
+          ? new Date(d.suscripcion.fechaVencimiento).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+          : null)
       }).catch(() => {})
     fetch('/api/plan/uso', { cache: 'no-store' }).then((r) => r.json())
       .then((d) => { if (vivo) setUso(d ?? null) }).catch(() => {})
@@ -1537,11 +1489,18 @@ function ConfiguracionContent() {
             <PlanYPagos
               plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
               precio={org?.plan ? formatMoney(PRECIOS[org.plan]) : null}
+              // `renueva` existia en el componente y NUNCA se pasaba, asi que la
+              // fecha —que es la mitad de lo que uno viene a mirar aqui— salia
+              // vacia mientras la tarjeta vieja de abajo si la tenia.
+              // El componente ya escribe «renueva el », asi que aqui va SOLO la
+              // fecha. Con «en 13 días» salia «renueva el en 13 días».
+              renueva={org?.plan && Number.isFinite(diasParaRenovar) && vencimiento
+                ? vencimiento
+                : undefined}
               clientes={uso?.clientes?.usado}
               limite={uso?.clientes?.limite}
               onVerPlanes={() => { window.location.href = '/configuracion/plan' }}
             />
-            {esOwner && <TabOrganizacion bloques={['plan']} />}
             {esOwner && <TabSuscripcion />}
             {esOwner && <TabReferidos />}
           </>
