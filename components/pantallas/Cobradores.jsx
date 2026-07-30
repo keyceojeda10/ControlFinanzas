@@ -79,6 +79,10 @@ export function Cobradores({
   resumen, aviso, cobrando = [], sinRuta = [],
   visiblesSinRuta = 2,
   onVolver, onAbrir, onAsignar, onCrear,
+  // La ruta real ya trae su propia cabecera, con «Ranking» y «Nuevo cobrador»
+  // que esta pantalla no tiene. Sin este interruptor saldrian DOS titulos
+  // «Cobradores» seguidos — es lo que me paso al montar caja.
+  cabecera = true, alto = '100%',
 }) {
   const [todosSinRuta, setTodosSinRuta] = useState(false)
   const visibles = todosSinRuta ? sinRuta : sinRuta.slice(0, visiblesSinRuta)
@@ -86,10 +90,11 @@ export function Cobradores({
 
   return (
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      height: alto, minHeight: 0, display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
-      <div style={{ flex: 'none', padding: '6px 20px 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ flex: 'none', padding: cabecera ? '6px 20px 14px' : '0 0 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {cabecera && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {onVolver && (
             <button type="button" onClick={onVolver} aria-label="Volver" style={{
@@ -114,6 +119,7 @@ export function Cobradores({
             )}
           </div>
         </div>
+        )}
 
         {/* El aviso solo existe si hay cuentas sin ruta, y dice qué hacer con
             ellas: asignar o desactivar. Un aviso sin salida es ruido. */}
@@ -128,14 +134,16 @@ export function Cobradores({
               <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" />
             </svg>
             <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-gold-text)', flex: 1 }}>
-              <strong>{aviso.texto}</strong> no pueden cobrar nada. Asígnales una o desactívalas.
+              <strong>{aviso.texto}</strong> {aviso.resto ?? 'no pueden cobrar nada. Asígnales una o desactívalas.'}
             </span>
           </div>
         )}
       </div>
 
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 96px',
+        flex: alto === 'auto' ? 'none' : 1, minHeight: 0,
+        overflowY: alto === 'auto' ? 'visible' : 'auto',
+        padding: cabecera ? '0 20px 96px' : 0,
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         {cobrando.length > 0 && <Separador>Cobrando hoy</Separador>}

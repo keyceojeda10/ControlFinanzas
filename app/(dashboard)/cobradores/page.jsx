@@ -2,6 +2,9 @@
 // app/(dashboard)/cobradores/page.jsx - Lista de cobradores
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { Cobradores } from '@/components/pantallas/Cobradores'
+import { agrupaCobradores } from '@/lib/adaptadores/cobradores'
 import Link                    from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { Badge }               from '@/components/ui/Badge'
@@ -21,6 +24,7 @@ function CobradoresPageInner() {
   const { session, esOwner, loading: authLoading } = useAuth()
 
   const { formatMoney } = useCountry()
+  const router = useRouter()
   const [cobradores, setCobradores] = useState([])
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
@@ -223,7 +227,10 @@ function CobradoresPageInner() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      {/* En 390px el titulo y los dos botones NO CABEN en una fila: «Cobradores»
+          se metia por debajo de «Ranking». Se apilan en movil y vuelven a la
+          misma linea en cuanto hay sitio. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Cobradores</h1>
           <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
@@ -332,19 +339,31 @@ function CobradoresPageInner() {
         </div>
       )}
 
-      {!loading && cobradores.length > 0 && !modoOrdenar && (
-        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          {cobradores.map((c) => (
-            <CobradorCard
-              key={c.id}
-              cobrador={c}
-              onToggleActivo={toggleCobrador}
-              toggling={toggling === c.id}
-              suspendido={usuariosPermitidos && !usuariosPermitidos.has(c.id)}
-            />
-          ))}
-        </div>
-      )}
+      {/* ── T09-02 · Dos grupos, no una lista ──
+          Estaba construido y probado desde el bloque de cobradores y esta ruta
+          seguia pintando una rejilla de tarjetas iguales. La separacion ES el
+          diagnostico: una cuenta SIN RUTA no puede cobrar nada, y mezclada con
+          las que trabajan no avisa de nada.
+
+          La cabecera se queda la de la pagina —lleva «Ranking» y «Nuevo
+          cobrador», que el componente no tiene— y por eso va con
+          `cabecera={false}`. Sin eso saldrian dos titulos «Cobradores» seguidos,
+          que es lo que me paso al montar caja. */}
+      {!loading && cobradores.length > 0 && !modoOrdenar && (() => {
+        const grupos = agrupaCobradores(cobradores, formatMoney)
+        return (
+          <Cobradores
+            cabecera={false}
+            alto="auto"
+            resumen={grupos.resumen}
+            aviso={grupos.aviso}
+            cobrando={grupos.cobrando}
+            sinRuta={grupos.sinRuta}
+            onAbrir={(c) => router.push(`/cobradores/${c.id}`)}
+            onAsignar={(c) => router.push(`/cobradores/${c.id}`)}
+          />
+        )
+      })()}
 
       {/* Modo ordenar: cards no clicables, con grip (drag) y flechas subir/bajar */}
       {!loading && cobradores.length > 0 && modoOrdenar && (
