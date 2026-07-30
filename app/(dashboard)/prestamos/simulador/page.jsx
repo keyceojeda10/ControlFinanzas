@@ -1,34 +1,67 @@
 'use client'
-// app/(dashboard)/prestamos/simulador/page.jsx
-// Simulador de préstamos (sub-sección de Préstamos). Usa la MISMA lógica de
-// cálculo del sistema (calcularPrestamo) para que el número coincida con el
-// préstamo real cuando el usuario lo cree. No crea cliente, no toca BD, no
-// guarda nada. Pensado para mostrarle/compartirle la cotización al cliente.
+// app/(dashboard)/prestamos/simulador/page.jsx — turno 29.
+//
+// Usa la MISMA lógica de cálculo del sistema (`calcularPrestamo`) para que el
+// número coincida con el préstamo real cuando se cree. No crea cliente, no toca
+// la base de datos, no guarda nada.
+//
+// ── LO QUE CAMBIA RESPECTO A LA PANTALLA ANTERIOR ──
+//
+// 1. LA RESPUESTA SUBE AL TOPE y se recalcula al escribir. Estaba debajo de
+//    todo, en un recuadro punteado que decía «escribe el monto para ver la
+//    simulación»: se configuraba a ciegas y luego había que bajar a mirarla.
+//
+// 2. LOS CINCO MODOS SE COLAPSAN a una fila con el recomendado y un «cambiar».
+//    La lista completa está bien escrita, pero como hoja que se abre solo si
+//    hace falta — así el simulador cabe sin scroll.
+//
+// 3. EL RESULTADO ESTÁ REDACTADO PARA DECIRLO EN VOZ ALTA: «le cobras $20.000
+//    cada día, 30 veces, hasta el 27 de agosto». No «cuota: 20.000».
+//
+// 4. Y EL QUE NO ES DE FORMA: DEJA DE SER UN CALLEJÓN SIN SALIDA. Decía «sin
+//    registrar nada» como si fuera una virtud, y cuando el cliente aceptaba
+//    había que teclear los mismos cuatro datos otra vez en crear préstamo.
+//    Ahora la acción dorada es CREAR ESTE PRÉSTAMO, con todo prellenado. Nadie
+//    simula por deporte: simula porque tiene un cliente enfrente.
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
-import MoneyInput from '@/components/ui/MoneyInput'
-import { Toggle } from '@/components/ui/Toggle'
+import { useRouter } from 'next/navigation'
+import Simulador from '@/components/pantallas/Simulador'
+import HojaInferior from '@/components/cf/HojaInferior'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
+import { Toggle } from '@/components/ui/Toggle'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
 const FRECUENCIAS = [
-  { value: 'diario',    label: 'Diario',    unidad: 'días',      cuotaLabel: 'Cuota diaria' },
-  { value: 'semanal',   label: 'Semanal',   unidad: 'semanas',   cuotaLabel: 'Cuota semanal' },
-  { value: 'quincenal', label: 'Quincenal', unidad: 'quincenas', cuotaLabel: 'Cuota quincenal' },
-  { value: 'mensual',   label: 'Mensual',   unidad: 'meses',     cuotaLabel: 'Cuota mensual' },
+  { value: 'diario',    label: 'Diario',    unidad: 'días',      cuotaLabel: 'Cuota diaria',    cada: 'cada día' },
+  { value: 'semanal',   label: 'Semanal',   unidad: 'semanas',   cuotaLabel: 'Cuota semanal',   cada: 'cada semana' },
+  { value: 'quincenal', label: 'Quincenal', unidad: 'quincenas', cuotaLabel: 'Cuota quincenal', cada: 'cada quincena' },
+  { value: 'mensual',   label: 'Mensual',   unidad: 'meses',     cuotaLabel: 'Cuota mensual',   cada: 'cada mes' },
 ]
 
 const PLAZO_DEFAULT = { diario: '30', semanal: '8', quincenal: '4', mensual: '3' }
 
-const fmtFecha = (d) =>
-  d ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'
+const MODOS = {
+  fijo: 'Cuota fija',
+  unico: 'Interés de una sola vez',
+  solo_interes: 'Solo interés, capital al final',
+  saldo: 'Interés sobre lo que falta',
+  manual: 'Yo decido la cuota',
+  lineal: 'Interés que baja',
+  lineal_dinamico: 'Proporcional',
+}
 
-export default function CalculadoraPage() {
+const fmtFecha = (d) =>
+  d ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : '—'
+
+export default function SimuladorPage() {
+  const router = useRouter()
+
   const [monto, setMonto] = useState('')
   const [tasa, setTasa] = useState('20')
   const [frecuencia, setFrecuencia] = useState('diario')
@@ -36,23 +69,23 @@ export default function CalculadoraPage() {
   const [modoInteres, setModoInteres] = useState('fijo')
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [cuotaManual, setCuotaManual] = useState('')
-  const [copiado, setCopiado] = useState(false)
+
+  const [hojaModos, setHojaModos] = useState(false)
+  const [hojaTabla, setHojaTabla] = useState(false)
+  const [aviso, setAviso] = useState('')
+
+  useCabecera({ titulo: 'Simulador', subtitulo: 'La cuota para enseñársela, sin registrar nada' })
 
   const freqInfo = FRECUENCIAS.find((f) => f.value === frecuencia) || FRECUENCIAS[0]
+  const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
   const cuotaManualActiva = modoInteres === 'manual'
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
-  const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
-
-  const cambiarFrecuencia = (nueva) => {
-    setFrecuencia(nueva)
-    setPlazoUnidades(PLAZO_DEFAULT[nueva] || '30')
-  }
 
   const calculo = useMemo(() => {
     const m = Number(monto)
     const t = Number(tasa)
     if (!m || tasa === '' || tasa == null || !diasPlazo) return null
-    const cm = cuotaManualActiva ? Number(cuotaManual) : (saldoCuotaPersonalizada ? Number(cuotaManual) : 0)
+    const cm = cuotaManualActiva || saldoCuotaPersonalizada ? Number(cuotaManual) : 0
     try {
       return calcularPrestamo({
         montoPrestado: m,
@@ -67,306 +100,174 @@ export default function CalculadoraPage() {
     } catch {
       return null
     }
-  }, [monto, tasa, diasPlazo, frecuencia, modoInteres, cuotaManualActiva, cuotaManual, interesAdelantado])
+  }, [monto, tasa, diasPlazo, frecuencia, modoInteres, cuotaManualActiva,
+    saldoCuotaPersonalizada, cuotaManual, interesAdelantado])
 
   const numCuotas = calculo?.numPeriodos || 0
-  const cuotaDistinta =
-    calculo?.ultimaCuota && calculo?.cuotaDiaria && calculo.ultimaCuota !== calculo.cuotaDiaria && numCuotas > 1
+  const cuotaDistinta = calculo?.ultimaCuota && calculo?.cuotaDiaria
+    && calculo.ultimaCuota !== calculo.cuotaDiaria && numCuotas > 1
 
   // Texto plano para WhatsApp.
   const textoCompartir = useMemo(() => {
     if (!calculo) return ''
-    const L = []
-    L.push('*Simulación de crédito*')
-    L.push('')
+    const L = ['*Simulación de crédito*', '']
     L.push(`Monto del crédito: ${formatMoney(Number(monto))}`)
-    if (['lineal', 'lineal_dinamico', 'solo_interes'].includes(modoInteres) && cuotaDistinta) {
-      L.push(`${freqInfo.cuotaLabel}: de ${formatMoney(calculo.cuotaDiaria)} a ${formatMoney(calculo.ultimaCuota)}`)
-    } else {
-      L.push(`${freqInfo.cuotaLabel}: ${formatMoney(calculo.cuotaDiaria)}`)
-    }
+    L.push(cuotaDistinta
+      ? `${freqInfo.cuotaLabel}: de ${formatMoney(calculo.cuotaDiaria)} a ${formatMoney(calculo.ultimaCuota)}`
+      : `${freqInfo.cuotaLabel}: ${formatMoney(calculo.cuotaDiaria)}`)
     L.push(`Número de cuotas: ${numCuotas}`)
     L.push(`Total a pagar: ${formatMoney(calculo.totalAPagar)}`)
     L.push(`Interés: ${formatMoney(calculo.totalInteres)}`)
     L.push(`Termina el: ${fmtFecha(calculo.fechaFin)}`)
     return L.join('\n')
-  }, [calculo, monto, modoInteres, cuotaDistinta, freqInfo, numCuotas])
+  }, [calculo, monto, cuotaDistinta, freqInfo, numCuotas])
 
-  const copiar = async () => {
-    if (!textoCompartir) return
-    try {
-      await navigator.clipboard.writeText(textoCompartir)
-      setCopiado(true)
-      setTimeout(() => setCopiado(false), 2000)
-    } catch {}
-  }
-
-  const compartir = async () => {
+  const mandar = async () => {
     if (!textoCompartir) return
     if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({ title: 'Simulación de crédito', text: textoCompartir })
-        return
-      } catch {
-        // usuario canceló o no soportado: caer a copiar
-      }
+      try { await navigator.share({ title: 'Simulación de crédito', text: textoCompartir }); return } catch {}
     }
-    copiar()
+    // Donde no hay hoja de compartir, al portapapeles Y SE DICE: un botón que
+    // copia en silencio parece que no hizo nada.
+    try {
+      await navigator.clipboard.writeText(textoCompartir)
+      setAviso('Copiado. Pégalo en el chat del cliente.')
+      setTimeout(() => setAviso(''), 2500)
+    } catch {
+      setAviso('Este aparato no deja copiar ni compartir.')
+    }
   }
 
+  // ── EL ATAJO QUE NO EXISTÍA ──
+  // Se lleva los cuatro datos ya ajustados. Lo único que falta al llegar es de
+  // quién es el préstamo, que es justo lo que aquí todavía no se sabe.
+  const crear = () => {
+    const p = new URLSearchParams({
+      monto: String(Number(monto) || ''),
+      tasa: String(tasa),
+      frecuencia,
+      plazo: String(plazoUnidades),
+      modo: modoInteres,
+    })
+    router.push(`/prestamos/nuevo?${p}`)
+  }
+
+  const cambiarFrecuencia = (etiqueta) => {
+    const f = FRECUENCIAS.find((x) => x.label === etiqueta)
+    if (!f) return
+    setFrecuencia(f.value)
+    // El plazo por defecto de cada frecuencia: dejar «30» al pasar a mensual
+    // simularía dos años y medio, que no es lo que nadie quiere ver.
+    setPlazoUnidades(PLAZO_DEFAULT[f.value] || '30')
+  }
+
+  // Con puntos de mil al escribir. «500000» se lee, pero medio millón escrito
+  // seguido es justo donde se cuela un cero de más — y aquí se le está diciendo
+  // una cifra a un cliente en la cara. Se guarda el número pelado y solo se
+  // PINTA con puntos.
+  const montoConPuntos = monto === '' ? '' : Number(monto).toLocaleString('es-CO')
+
+  // La cuota va con su rango cuando cambia a lo largo del préstamo: decir un
+  // solo número en «interés que baja» sería mentirle al cliente en la cara.
+  const cuotaTexto = !calculo ? '—'
+    : cuotaDistinta ? `${formatMoney(calculo.cuotaDiaria)}–${formatMoney(calculo.ultimaCuota)}`
+      : formatMoney(calculo.cuotaDiaria)
+
   return (
-    <div className="max-w-2xl mx-auto pb-28">
-      {/* Header */}
-      <header className="mb-6">
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Simulador de préstamos</h1>
-        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
-          Calcula la cuota para mostrarle a tu cliente, sin registrar nada.
-        </p>
-      </header>
+    <>
+      {aviso && (
+        <p className="text-[13px] mb-2 text-center" style={{ color: 'var(--cf-ink-2)' }}>{aviso}</p>
+      )}
 
-      <div className="space-y-4">
-        {/* ── Datos del crédito ── */}
-        <section
-          className="rounded-[20px] p-4 sm:p-5"
-          style={{
-            background:
-              'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 5%, var(--cf-card)) 0%, var(--cf-card) 100%)',
-            border: '1px solid var(--cf-border)',
-          }}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <MoneyInput
-              label="Monto a prestar"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="Ej: 500.000"
-            />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-[var(--cf-ink-2)]">Interés (%)</label>
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={tasa}
-                  onChange={(e) => setTasa(soloDecimal(e.target.value))}
-                  placeholder="20"
-                  className="w-full h-10 rounded-[12px] border text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] bg-[var(--cf-surface)] border-[var(--cf-border)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--cf-gold)_20%,transparent)] transition-all pl-3 pr-8"
-                />
-                <span className="absolute right-3 text-[var(--cf-ink-3)] text-sm pointer-events-none select-none">%</span>
-              </div>
-            </div>
-          </div>
+      <Simulador
+        sinDatos={!calculo ? 'Escribe cuánto le vas a prestar y aquí sale la cuota.' : null}
+        cuota={cuotaTexto}
+        cada={freqInfo.cada}
+        veces={numCuotas}
+        hasta={fmtFecha(calculo?.fechaFin)}
+        tuPlata={formatMoney(Number(monto) || 0)}
+        tuPlataNum={Number(monto) || 0}
+        ganas={formatMoney(calculo?.totalInteres || 0)}
+        ganasNum={calculo?.totalInteres || 0}
 
-          {/* Frecuencia */}
-          <div className="mt-4">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">
-              Frecuencia de cobro
-            </label>
-            <div className="grid grid-cols-4 gap-2 mt-1.5">
-              {FRECUENCIAS.map((f) => {
-                const activo = frecuencia === f.value
-                return (
-                  <button
-                    key={f.value}
-                    type="button"
-                    onClick={() => cambiarFrecuencia(f.value)}
-                    className="h-10 rounded-[12px] border text-xs font-semibold transition-all"
-                    style={
-                      activo
-                        ? { background: 'color-mix(in srgb, var(--cf-gold) 14%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' }
-                        : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }
-                    }
-                  >
-                    {f.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+        monto={montoConPuntos}
+        onMonto={(v) => setMonto(String(v).replace(/\D/g, ''))}
+        interes={tasa}
+        onInteres={(v) => setTasa(soloDecimal(v))}
+        cobros={plazoUnidades}
+        onCobros={(v) => setPlazoUnidades(soloDecimal(v))}
+        unidadCobros={freqInfo.unidad}
 
-          {/* Plazo */}
-          <div className="mt-4">
-            <label className="text-xs font-medium text-[var(--cf-ink-2)]">
-              Plazo ({freqInfo.unidad})
-            </label>
-            <div className="flex items-center gap-2 mt-1.5">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={plazoUnidades}
-                onChange={(e) => setPlazoUnidades(e.target.value)}
-                placeholder="Ej: 30"
-                className="w-full h-10 rounded-[12px] border text-sm text-[var(--cf-ink)] placeholder-[var(--cf-ink-3)] bg-[var(--cf-surface)] border-[var(--cf-border)] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--cf-gold)_20%,transparent)] transition-all px-3"
-              />
-              <span className="shrink-0 text-xs text-[var(--cf-ink-3)] whitespace-nowrap">
-                = {diasPlazo} días
-              </span>
-            </div>
-          </div>
+        frecuencia={freqInfo.label}
+        frecuencias={FRECUENCIAS.map((f) => f.label)}
+        onFrecuencia={cambiarFrecuencia}
 
-          {/* Modo de interés */}
-          <div className="mt-4">
-            <ModoInteresSelector
-              modoInteres={modoInteres}
-              onChange={setModoInteres}
-              monto={monto}
-              tasa={tasa}
-              frecuencia={frecuencia}
-              diasPlazo={diasPlazo}
-            />
-          </div>
+        modo={MODOS[modoInteres] ?? modoInteres}
+        recomendado={modoInteres === 'fijo'}
+        onCambiarModo={() => setHojaModos(true)}
 
-          {modoInteres === 'solo_interes' && (
-            <div className="flex items-center justify-between mt-3 px-1">
-              <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
-              <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
-            </div>
-          )}
+        onCrear={calculo ? crear : null}
+        onMandar={calculo ? mandar : null}
+        onTabla={calculo ? () => setHojaTabla(true) : null}
+      />
 
-          {/* Cuota manual (solo modo manual) */}
-          {cuotaManualActiva && (
-            <div className="mt-4">
-              <MoneyInput
-                label="Cuota exacta que quieres cobrar"
-                value={cuotaManual}
-                onChange={(e) => setCuotaManual(e.target.value)}
-                placeholder="Ej: 20.000"
-              />
-            </div>
-          )}
-
-          {modoInteres === 'saldo' && (
-            <div className="mt-4">
-              <MoneyInput
-                label="Cuota fija personalizada (opcional)"
-                value={cuotaManual}
-                onChange={(e) => setCuotaManual(e.target.value)}
-                placeholder="Dejar vacío para calcular automático"
-              />
-              <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--cf-ink-3)' }}>
-                {saldoCuotaPersonalizada ? 'Cuota definida por ti. La última cuota ajusta para cerrar el saldo.' : 'Opcional: define la cuota en vez de calcularla.'}
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* ── Resultado tipo recibo ── */}
-        {calculo ? (
-          <section
-            className="rounded-[20px] overflow-hidden"
-            style={{ border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, var(--cf-border))' }}
-          >
-            {/* Encabezado del recibo */}
-            <div
-              className="px-5 py-4 flex items-center justify-between gap-3"
-              style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, var(--cf-card))' }}
-            >
-              <div>
-                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--cf-ink-3)]">
-                  Simulación de crédito
-                </p>
-                <p className="text-2xl font-bold font-mono-display text-[var(--cf-gold)] leading-tight mt-0.5">
-                  {formatMoney(Number(monto))}
-                </p>
-                <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">monto del crédito</p>
-              </div>
-              <div
-                className="shrink-0 w-12 h-12 rounded-[12px] flex items-center justify-center"
-                style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a1 1 0 011 1v17l-3-2-2 2-2-2-2 2-2-2-3 2V4a1 1 0 011-1z" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Cuerpo: la cuota es el dato estrella */}
-            <div className="px-5 py-5 bg-[var(--cf-card)]">
-              <div className="text-center py-2">
-                <p className="text-xs text-[var(--cf-ink-3)]">{freqInfo.cuotaLabel}</p>
-                <p className="text-4xl font-extrabold font-mono-display text-[var(--cf-ink)] leading-none mt-1">
-                  {formatMoney(calculo.cuotaDiaria)}
-                </p>
-                <p className="text-sm text-[var(--cf-ink-2)] mt-2">
-                  {cuotaDistinta ? (
-                    <>baja hasta {formatMoney(calculo.ultimaCuota)} · {numCuotas} cuotas</>
-                  ) : (
-                    <>× {numCuotas} {numCuotas === 1 ? 'cuota' : 'cuotas'}</>
-                  )}
-                </p>
-              </div>
-
-              {/* Desglose */}
-              <dl className="mt-5 divide-y divide-[var(--cf-border)]">
-                <Row k="Total a pagar" v={formatMoney(calculo.totalAPagar)} strong />
-                <Row k="Interés" v={formatMoney(calculo.totalInteres)} accent="var(--cf-gold-dark)" />
-                <Row k="Número de cuotas" v={`${numCuotas}`} />
-                <Row k="Termina el" v={fmtFecha(calculo.fechaFin)} />
-              </dl>
-
-              {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && calculo.tablaAmortizacion?.length > 0 && (
-                <div className="mt-4">
-                  <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
-                </div>
-              )}
-            </div>
-
-            {/* Acciones */}
-            <div className="px-5 py-4 bg-[var(--cf-card)] border-t border-[var(--cf-border)] grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={copiar}
-                className="h-11 rounded-[12px] border text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: copiado ? 'var(--cf-green-dark)' : 'var(--cf-ink)' }}
-              >
-                {copiado ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    Copiado
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Copiar
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={compartir}
-                className="h-11 rounded-[12px] text-sm font-semibold transition-all flex items-center justify-center gap-2"
-                style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                Compartir
-              </button>
-            </div>
-          </section>
-        ) : (
-          <section className="rounded-[20px] border border-dashed border-[var(--cf-border)] px-5 py-12 text-center bg-[var(--cf-card)]">
-            <div className="w-12 h-12 rounded-[12px] mx-auto flex items-center justify-center mb-3" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.6} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" /></svg>
-            </div>
-            <p className="text-sm font-medium text-[var(--cf-ink)]">Escribe el monto para ver la simulación</p>
-            <p className="text-xs text-[var(--cf-ink-3)] mt-1">El cálculo aparece al instante.</p>
-          </section>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function Row({ k, v, strong, accent }) {
-  return (
-    <div className="flex items-center justify-between py-2.5">
-      <dt className="text-sm text-[var(--cf-ink-2)]">{k}</dt>
-      <dd
-        className={`font-mono-display ${strong ? 'text-lg font-bold' : 'text-sm font-semibold'}`}
-        style={{ color: accent || (strong ? 'var(--cf-gold)' : 'var(--cf-ink)') }}
+      {/* Los cinco modos, como hoja: la lista entera ocupa media pantalla y solo
+          hace falta cuando se va a cambiar. */}
+      <HojaInferior
+        abierta={hojaModos}
+        onCerrar={() => setHojaModos(false)}
+        titulo="Cómo se cobra el interés"
       >
-        {v}
-      </dd>
-    </div>
+        <ModoInteresSelector
+          modoInteres={modoInteres}
+          onChange={(m) => { setModoInteres(m); setHojaModos(false) }}
+          calculo={calculo}
+          monto={Number(monto) || 0}
+          tasa={Number(tasa) || 0}
+          frecuencia={frecuencia}
+          diasPlazo={diasPlazo}
+        />
+
+        {/* Los dos ajustes que solo existen dentro de su modo. Fuera de él no se
+            enseñan: un campo que no hace nada es peor que no tenerlo. */}
+        {cuotaManualActiva && (
+          <label className="flex flex-col gap-2 mt-4">
+            <span className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
+              Cuánto le cobras {freqInfo.cada}
+            </span>
+            <input
+              type="text" inputMode="decimal"
+              value={cuotaManual}
+              onChange={(e) => setCuotaManual(soloDecimal(e.target.value))}
+              placeholder="Ej: 20.000"
+              className="h-12 px-3.5 rounded-[14px] text-[16px] font-semibold outline-none"
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}
+            />
+          </label>
+        )}
+
+        {modoInteres === 'solo_interes' && (
+          <div className="flex items-center gap-3 mt-4">
+            <span className="flex-1 text-[13px]" style={{ color: 'var(--cf-ink)' }}>
+              Cobrar el primer interés al entregar
+            </span>
+            <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+          </div>
+        )}
+      </HojaInferior>
+
+      <HojaInferior
+        abierta={hojaTabla}
+        onCerrar={() => setHojaTabla(false)}
+        titulo="Cobro por cobro"
+        subtitulo={calculo
+          ? `${numCuotas} ${numCuotas === 1 ? 'cobro' : 'cobros'} · termina el ${fmtFecha(calculo.fechaFin)}`
+          : null}
+      >
+        {calculo && (
+          <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
+        )}
+      </HojaInferior>
+    </>
   )
 }
-

@@ -113,11 +113,25 @@ function NuevoPrestamo() {
   const [clienteId,    setClienteId]    = useState(clienteIdParam)
   const [clientes,     setClientes]     = useState([])
   const [clienteNombre, setClienteNombre] = useState('')
-  const [monto,        setMonto]        = useState('')
-  const [tasa,         setTasa]         = useState('20')
+  // ── LO QUE VIENE DEL SIMULADOR ──
+  //
+  // El simulador era un callejon sin salida: se ajustaba el monto, el interes,
+  // el plazo y el modo, se le enseñaba la cuota al cliente… y cuando aceptaba
+  // habia que teclear los mismos cuatro datos otra vez aqui. Nadie simula por
+  // deporte: simula porque tiene un cliente enfrente.
+  //
+  // Se leen UNA VEZ, al arrancar el estado, y no en un efecto: asi el
+  // formulario nace con los datos puestos en vez de parpadear vacio y luego
+  // llenarse, y escribir encima no se pisa con lo que traia la URL.
+  const deLaUrl = (clave, porDefecto) => {
+    const v = searchParams.get(clave)
+    return v != null && v !== '' ? v : porDefecto
+  }
+  const [monto,        setMonto]        = useState(() => deLaUrl('monto', ''))
+  const [tasa,         setTasa]         = useState(() => deLaUrl('tasa', '20'))
   // plazo se ingresa en la unidad de la frecuencia (dias, semanas, quincenas o meses)
-  const [plazoUnidades, setPlazoUnidades] = useState('30')
-  const [frecuencia,   setFrecuencia]   = useState('diario')
+  const [plazoUnidades, setPlazoUnidades] = useState(() => deLaUrl('plazo', '30'))
+  const [frecuencia,   setFrecuencia]   = useState(() => deLaUrl('frecuencia', 'diario'))
   // Dia ancla opcional: fija el dia de cobro sin importar cuando empieza el prestamo
   // - semanal/quincenal: 0=dom..6=sab (string '' = sin ancla)
   // - mensual: 1..31 (string '' = sin ancla)
@@ -155,7 +169,7 @@ function NuevoPrestamo() {
   const [metodosPago, setMetodosPago] = useState([])
   const [cuentaDesembolso, setCuentaDesembolso] = useState({ metodoPago: 'efectivo', metodoPagoId: null, plataforma: null })
   // Modo de interes: 'fijo' (clasico, default) | 'unico' | 'saldo' | 'manual'.
-  const [modoInteres, setModoInteres] = useState('fijo')
+  const [modoInteres, setModoInteres] = useState(() => deLaUrl('modo', 'fijo'))
   const [modoPreferido, setModoPreferido] = useState(null)
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [capitalExtra, setCapitalExtra] = useState([])

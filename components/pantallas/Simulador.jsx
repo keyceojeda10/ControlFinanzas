@@ -25,7 +25,7 @@
 
 import { BarraAccion, BotonPrimario, BotonSecundario, Tarjeta, EtiquetaCampo, Chip, Pastilla } from '@/components/cf/primitivos'
 
-function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, enFila = false }) {
+function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, enFila = false }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0,
@@ -40,8 +40,17 @@ function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, enFila = false }) {
         background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
       }}>
         {prefijo && <span className="cf-fig" style={{ fontSize: 16, color: 'var(--cf-ink-3)', flex: 'none' }}>{prefijo}</span>}
+        {/* ── CON MANEJADOR ES UN CAMPO DE VERDAD; SIN ÉL, UNA MAQUETA ──
+            Iba con `defaultValue` y sin `onChange`: se podía teclear y el padre
+            no se enteraba nunca. Por eso esta pantalla no se podía montar sin
+            romper la calculadora — enseñaba una cuota que no correspondía a lo
+            escrito. Con `onCambio` pasa a ser controlado; sin él se comporta
+            igual que antes, que es lo que necesita el banco de pruebas. */}
         <input
-          defaultValue={valor}
+          {...(onCambio
+            ? { value: valor ?? '', onChange: (e) => onCambio(e.target.value) }
+            : { defaultValue: valor })}
+          placeholder={marcador}
           // Nunca type="number": rechaza el separador decimal que no coincide
           // con el locale del teléfono.
           type="text" inputMode="decimal"
@@ -62,9 +71,12 @@ export default function Simulador({
   cuota, cada, veces, hasta,
   tuPlata, tuPlataNum, ganas, ganasNum,
   monto = '500.000', interes = '20', cobros = '30', unidadCobros = 'días',
+  onMonto, onInteres, onCobros,
+  montoMarcador = 'Ej: 500.000',
   frecuencia = 'Diario', frecuencias = ['Diario', 'Semanal', 'Quincenal', 'Mensual'],
   modo = 'Cuota fija', recomendado = true,
   onFrecuencia, onCambiarModo, onCrear, onMandar, onTabla,
+  sinDatos,
 }) {
   const total = (tuPlataNum ?? 0) + (ganasNum ?? 0)
   const pctCapital = total > 0 ? (tuPlataNum / total) * 100 : 0
@@ -85,6 +97,15 @@ export default function Simulador({
             </span>
           </span>
 
+          {/* SIN MONTO NO HAY RESPUESTA QUE DAR.
+              Con el bloque en blanco se leía «Le cobras · veces · hasta el»,
+              tres palabras sueltas sobre negro. Aquí dice qué falta. */}
+          {sinDatos ? (
+            <span style={{ fontSize: 15, lineHeight: 1.5, color: '#A3A8B2', padding: '10px 0 4px' }}>
+              {sinDatos}
+            </span>
+          ) : (
+          <>
           {/* Redactado para leerlo en voz alta con el cliente delante. */}
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, color: '#A3A8B2', flex: 'none' }}>Le cobras {cada}</span>
@@ -113,14 +134,17 @@ export default function Simulador({
               <span className="cf-num" style={{ fontSize: 12.5, fontWeight: 700, color: '#F3F3F6' }}>{ganas}</span>
             </span>
           </div>
+          </>
+          )}
         </div>
 
         {/* ── Los datos ── */}
-        <CampoConSufijo etiqueta="Cuánto le vas a prestar" prefijo="$" valor={monto} />
+        <CampoConSufijo etiqueta="Cuánto le vas a prestar" prefijo="$" valor={monto}
+          onCambio={onMonto} marcador={montoMarcador} />
 
         <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
-          <CampoConSufijo enFila etiqueta="Interés" sufijo="%" valor={interes} />
-          <CampoConSufijo enFila etiqueta="Cuántos cobros" sufijo={unidadCobros} valor={cobros} />
+          <CampoConSufijo enFila etiqueta="Interés" sufijo="%" valor={interes} onCambio={onInteres} />
+          <CampoConSufijo enFila etiqueta="Cuántos cobros" sufijo={unidadCobros} valor={cobros} onCambio={onCobros} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
