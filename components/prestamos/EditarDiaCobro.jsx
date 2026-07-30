@@ -1,10 +1,29 @@
 'use client'
-// components/prestamos/EditarDiaCobro.jsx — Modal para fijar/quitar el dia de cobro ancla
+// components/prestamos/EditarDiaCobro.jsx — T19-02 «Cambiar el dia de cobro».
+//
+// PIEL NUEVA, MOTOR IGUAL. El payload, la cola offline y la validacion siguen
+// siendo los de siempre.
+//
+// LA HOJA NUEVA SOLO CUBRE EL DIA DE LA SEMANA, que es lo que dibuja T19-02. Los
+// otros dos casos se quedan con el formulario de antes y NO se pierden:
+//
+//   · dia del MES —«siempre el 15»—, que es como cobra media cartera mensual;
+//   · las DOS fechas del quincenal —«el 15 y el 30»—, que la lamina ni menciona.
+//
+// Cambiar de forma la mitad y borrar la otra mitad no es rediseñar, es quitar
+// funciones.
+//
+// «PARA SIEMPRE, NO SOLO ESTA VEZ» va en el subtitulo, y es lo que separa esta
+// pantalla de aplazar. Quien quiere mover UN cobro entra aqui por error y le cambia
+// el calendario al cliente para siempre.
 
 import { useState, useEffect } from 'react'
 import { Modal }  from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { encolarMutacion } from '@/lib/offline'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { DiaDeCobro, PieGestion } from '@/components/pantallas/Gestion'
+import { diasDeCobro, adaptarDiaDeCobro } from '@/lib/adaptadores/gestion'
 
 const DIAS_SEMANA = [
   { value: '1', label: 'Lunes' },
@@ -127,6 +146,62 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
           <Button variant="secondary" onClick={handleClose} className="w-full">Cerrar</Button>
         </div>
       </Modal>
+    )
+  }
+
+  // ── LA HOJA DE T19-02 ──────────────────────────────────────────────────────
+  //
+  // Solo para el dia de la SEMANA. Con `modo === 'mes'` se cae al formulario de
+  // abajo, que es el que sabe pedir un dia del mes y las dos fechas del quincenal.
+  if (esSemana && modo === 'semana') {
+    const dias = diasDeCobro(prestamo, prestamo?.diasSinCobro ?? prestamo?.cliente?.diasSinCobro)
+    const elegido = valor === '' ? null : Number(valor)
+    const datos = adaptarDiaDeCobro(
+      prestamo,
+      elegido,
+      // El proximo cobro con el dia nuevo lo calcula el SERVIDOR al guardar. Aqui no
+      // se recalcula: ya hay tres funciones que responden a esa pregunta y se
+      // contradicen, y esta es la pantalla que las mueve.
+      null,
+      prestamo?.diasSinCobro ?? prestamo?.cliente?.diasSinCobro,
+    )
+    const nombreElegido = dias.find((d) => d.id === elegido)?.nombre
+
+    return (
+      <HojaInferior
+        abierta={open}
+        onCerrar={handleClose}
+        titulo="Cambiar el día de cobro"
+        subtitulo="Para siempre, no solo esta vez"
+        accion={
+          <PieGestion
+            onCancelar={handleClose}
+            onAceptar={handleSubmit}
+            textoAceptar={nombreElegido ? `Guardar los ${nombreElegido}` : 'Guardar'}
+            aceptando={loading}
+            deshabilitado={elegido == null}
+            error={error}
+          />
+        }
+      >
+        <DiaDeCobro
+          dias={dias}
+          dia={elegido}
+          onDia={(d) => setValor(String(d.id))}
+          nota={datos.nota}
+          {...datos}
+        />
+
+        {/* La otra forma de fijarlo, que la lamina no dibuja y que media cartera
+            mensual usa: «siempre el 15». Va como enlace, no como opcion de la fila:
+            son dos maneras distintas de contestar la misma pregunta, y ponerlas al
+            mismo nivel es lo que hacia que se contradijeran. */}
+        <button type="button" onClick={() => { setModo('mes'); setValor('') }} style={{
+          alignSelf: 'flex-start', padding: '0 2px', border: 0, background: 'none',
+          cursor: 'pointer', font: 'inherit', textAlign: 'left',
+          fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
+        }}>Mejor por día del mes {esQuincenal ? '(o dos fechas)' : ''}</button>
+      </HojaInferior>
     )
   }
 

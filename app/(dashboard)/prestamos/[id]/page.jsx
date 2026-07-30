@@ -48,6 +48,9 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
 import { adaptarTabla } from '@/lib/adaptadores/tabla'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { MoverAPerdidos, CerrarAnticipado, PieGestion } from '@/components/pantallas/Gestion'
+import { adaptarPerdidos, adaptarCerrar, resumenCerrar } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
@@ -1743,29 +1746,78 @@ export default function PrestamoDetallePage({ params }) {
       </Modal>
 
       {/* Modal: confirmar mover a préstamos perdidos */}
-      <Modal open={modalClavo} onClose={() => setModalClavo(false)} title="Mover a préstamos perdidos">
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la sección de préstamos perdidos. Podrás seguir registrando pagos si el cliente abona.
-          </p>
-          <label className="flex items-start gap-2 cursor-pointer rounded-[12px] border border-[var(--color-border)] p-3">
-            <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[var(--color-danger)]" />
-            <span className="text-sm text-[var(--color-text-primary)]">
-              Registrar el capital prestado como dinero en riesgo
-              <span className="block text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                Resta de tu capital el dinero que aún no has recuperado de este préstamo. Si no lo marcas, solo se aparta de la cartera sin tocar tu caja.
+      {/* ── T13-03 · MOVER A PERDIDOS ──────────────────────────────────────
+          LA ÚNICA PANTALLA DEL SISTEMA DONDE EL DORADO NO VA EN LA ACCIÓN
+          PRINCIPAL: aquí la acción destacada es «seguir cobrando» y «dar por
+          perdido» queda en rojo de contorno. `PieGestion peligro` invierte los pesos.
+
+          SE CONSERVA LA CASILLA de «registrar como dinero en riesgo», que la lámina
+          no dibuja y que decide si el capital se resta de verdad o el préstamo solo
+          se aparta. Y ahora su consecuencia SE VE: la fila de pérdida del bloque
+          negro sale solo cuando está marcada, que es cuando de verdad hay pérdida.
+
+          PENDIENTE-BACKEND · el motivo. La lámina dice que «alimenta la estadística
+          de por qué se pierde plata», pero el endpoint solo acepta
+          `{ esClavo, clavoPerdida }` y no hay columna donde guardarlo. No se dibuja:
+          un selector que se mueve y no se guarda es el patrón que ya lleva ocho
+          apariciones en este rediseño. */}
+      {modalClavo && (() => {
+        const datos = adaptarPerdidos(prestamo, null, null, null) ?? {}
+        return (
+          <HojaInferior
+            abierta={modalClavo}
+            onCerrar={() => setModalClavo(false)}
+            titulo="Mover a perdidos"
+            subtitulo={[
+              cliente?.nombre,
+              diasMora > 0 ? `${diasMora} ${diasMora === 1 ? 'día' : 'días'} sin pagar` : null,
+            ].filter(Boolean).join(' · ') || null}
+            accion={
+              <PieGestion
+                peligro
+                textoCancelar="Seguir cobrando"
+                onCancelar={() => setModalClavo(false)}
+                textoAceptar="Dar por perdido"
+                onAceptar={confirmarClavo}
+                aceptando={clavoEnviando}
+                error={clavoError}
+              />
+            }
+          >
+            <MoverAPerdidos
+              {...datos}
+              // La pérdida del mes solo si se marca: sin marcar, el préstamo se
+              // aparta de los números pero el capital no se resta.
+              perdidaEtiqueta={clavoPerdida ? datos.perdidaEtiqueta : null}
+              perdidaValor={clavoPerdida ? datos.perdidaValor : null}
+            />
+
+            {/* La casilla, con su consecuencia escrita. Va DESPUÉS del bloque negro a
+                propósito: primero se ve qué pasa, después se decide cuánto duele. */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 11, flex: 'none',
+              padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            }}>
+              <input
+                type="checkbox"
+                checked={clavoPerdida}
+                onChange={(e) => setClavoPerdida(e.target.checked)}
+                style={{ width: 18, height: 18, marginTop: 1, flex: 'none', accentColor: 'var(--cf-red)' }}
+              />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  Registrarlo como dinero perdido
+                </span>
+                <span style={{ display: 'block', fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', marginTop: 3 }}>
+                  Resta de tu capital lo que no recuperaste. Sin marcar, el préstamo
+                  solo sale de tus números y el capital se queda como está.
+                </span>
               </span>
-            </span>
-          </label>
-          {clavoError && <p className="text-sm text-[var(--color-danger)]">{clavoError}</p>}
-          <div className="flex gap-3">
-            <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
-            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-danger-text,#fff)] bg-[var(--color-danger)] disabled:opacity-40">
-              {clavoEnviando ? 'Moviendo...' : 'Mover a perdidos'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+            </label>
+          </HojaInferior>
+        )
+      })()}
 
       {/* Modal: días sin cobro del préstamo */}
       <Modal
@@ -1869,97 +1921,121 @@ export default function PrestamoDetallePage({ params }) {
       />
 
       {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}
-      <Modal open={modalLiquidacion} onClose={() => setModalLiquidacion(false)} title="Liquidación anticipada">
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            El cliente paga todo hoy. Solo se cobra capital + interés de los meses transcurridos; se perdona el interés futuro.
-          </p>
+      {/* ── T19-04 · CERRAR ANTICIPADO ─────────────────────────────────────
+          El cliente paga todo hoy. Solo se cobra capital más el interés de lo que ya
+          corrió; el interés futuro se perdona.
 
-          {liqCargando && <p className="text-sm text-[var(--color-text-muted)]">Calculando...</p>}
+          LAS TRES OPCIONES SON LAS QUE EL MODELO CALCULA, no las de la lámina. La
+          lámina dice «solo el capital que debe», y esa cifra lleva interés devengado
+          dentro: ponerle ese nombre sería mentir sobre plata en la pantalla donde se
+          cierra un préstamo. Se enseñan prorrateado por días, mes completo y todo lo
+          pactado, de la que más perdona a la que menos, y cada una dice cuánto
+          perdona. Ver la nota de `adaptarCerrar`.
 
-          {liqData && !liqCargando && (
-            <>
-              {liqData.aproximado && (
-                <div className="text-[12px] text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] rounded-[12px] px-3 py-2">
-                  Este préstamo es modo {liqData.modo}; el cálculo es aproximado. Ajusta el monto final según lo pactado.
-                </div>
-              )}
+          SE CONSERVA el motivo obligatorio y el monto editable, que es lo que
+          permite «un punto medio» de la lámina sin inventar una cuarta modalidad. */}
+      {modalLiquidacion && (() => {
+        const comp = adaptarCerrar(liqData)
+        const resumen = resumenCerrar(liqData, liqModalidad) ?? {}
+        // Cuando el dueño teclea un monto propio, ninguna de las tres queda marcada:
+        // marcar una que no coincide con la cifra sería decirle que eligió algo que no
+        // eligió.
+        const coincide = comp?.opciones.find((o) => o.monto === Math.round(liqMonto || 0))
+        return (
+          <HojaInferior
+            abierta={modalLiquidacion}
+            onCerrar={() => setModalLiquidacion(false)}
+            titulo="Quiere pagar todo hoy"
+            subtitulo={[
+              cliente?.nombre,
+              cuotasPendientes > 0 ? `le faltan ${cuotasPendientes} cuotas` : null,
+            ].filter(Boolean).join(' · ') || null}
+            accion={
+              <PieGestion
+                onCancelar={() => setModalLiquidacion(false)}
+                onAceptar={confirmarLiquidacion}
+                textoAceptar={liqMonto > 0 ? `Cerrar por ${formatMoney(Math.round(liqMonto))}` : 'Cerrar'}
+                aceptando={liqEnviando}
+                deshabilitado={!(liqMonto > 0) || !liqNota.trim()}
+                error={liqError || (!liqNota.trim() && liqMonto > 0
+                  ? 'Escribe el motivo: queda en el historial.' : null)}
+              />
+            }
+          >
+            {liqCargando && (
+              <p style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>Calculando…</p>
+            )}
 
-              {/* Selector de modalidad */}
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'mesCompleto', label: 'Mes completo' },
-                  { id: 'proporcional', label: 'Proporcional (días)' },
-                ].map(m => {
-                  const d = liqData[m.id]
-                  const activo = liqModalidad === m.id
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => seleccionarModalidad(m.id)}
-                      className={`rounded-[12px] px-3 py-2.5 text-left border transition-all ${activo ? 'border-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]' : 'border-[var(--color-border)] bg-[var(--color-bg-card)]'}`}
-                    >
-                      <p className="text-[11px] text-[var(--color-text-muted)]">{m.label}</p>
-                      <p className="text-base font-bold text-[var(--color-text-primary)] font-mono-display">${(d?.restanteHoy ?? 0).toLocaleString('es-CO')}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{(d?.mesesTranscurridos ?? 0)} mes(es) · perdona ${ (d?.interesPerdonado ?? 0).toLocaleString('es-CO')}</p>
-                    </button>
-                  )
-                })}
+            {/* El aviso de cálculo APROXIMADO. Va arriba y en ámbar: cerrar por una
+                cifra aproximada sin avisar es cómo se generan las discusiones que
+                acaban en el préstamo reabierto. */}
+            {comp?.aproximado && (
+              <div style={{
+                flex: 'none', display: 'flex', gap: 11, alignItems: 'flex-start',
+                padding: '13px 16px', borderRadius: 14,
+                background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+              }}>
+                <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--cf-gold-text-2)' }}>
+                  Este préstamo es modo <strong>{comp.modo}</strong>: el cálculo es
+                  aproximado. Ajusta el monto a lo que pactaste.
+                </span>
               </div>
+            )}
 
-              {/* Desglose */}
-              <div className="rounded-[12px] bg-[var(--color-bg-hover)] px-3 py-2.5 text-[13px] space-y-1">
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital{liqData.capitalRestante != null ? ' restante' : ''}</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.capitalRestante ?? liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-success)]">Interés que se perdona</span><span className="text-[var(--color-success)] font-semibold font-mono-display">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
-              </div>
+            {comp && (
+              <CerrarAnticipado
+                opciones={comp.opciones}
+                opcion={coincide?.id ?? null}
+                onOpcion={(o) => {
+                  if (o.monto == null) return
+                  // «todo lo pactado» no es una modalidad del cálculo: es el saldo tal
+                  // cual. Se guarda la modalidad más cercana para que el servidor no
+                  // reciba un valor que no conoce.
+                  if (o.id !== 'todo') setLiqModalidad(o.id)
+                  setLiqMonto(o.monto)
+                }}
+                {...resumen}
+              />
+            )}
 
-              {/* Monto final editable */}
-              <div>
-                <label className="text-[12px] text-[var(--color-text-muted)]">Monto para cerrar hoy (editable)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={liqMonto ? liqMonto.toLocaleString('es-CO') : ''}
-                  onChange={e => {
-                    const n = Number((e.target.value || '').replace(/\D/g, ''))
-                    setLiqMonto(Number.isFinite(n) ? n : 0)
-                  }}
-                  placeholder="Escribe el monto a cobrar"
-                  className="w-full mt-1 px-3 py-2.5 rounded-[12px] bg-[var(--color-bg-base)] text-lg font-bold text-[var(--color-text-primary)] font-mono-display placeholder:text-[var(--color-text-muted)] placeholder:font-normal placeholder:text-sm outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
-                />
-              </div>
+            {/* El monto a mano, que es «un punto medio» de la lámina. Y el motivo,
+                obligatorio, que ya lo era. */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              }}>O pon el monto que pactaste</span>
+              <input
+                type="text" inputMode="decimal"
+                value={liqMonto ? String(Math.round(liqMonto)) : ''}
+                onChange={(e) => setLiqMonto(Number(String(e.target.value).replace(/\D/g, '')) || 0)}
+                style={{
+                  height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 16, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
+            </label>
 
-              {/* Nota */}
-              <div>
-                <label className="text-[12px] text-[var(--color-text-muted)]">Motivo / nota (obligatorio)</label>
-                <input
-                  type="text"
-                  value={liqNota}
-                  onChange={e => setLiqNota(e.target.value)}
-                  placeholder="Ej: pago anticipado pactado con el cliente"
-                  className="w-full mt-1 px-3 py-2 rounded-[12px] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
-                />
-              </div>
-            </>
-          )}
-
-          {liqError && <p className="text-sm text-[var(--color-danger)]">{liqError}</p>}
-
-          <div className="flex gap-2 pt-1">
-            <button onClick={() => setModalLiquidacion(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
-            <button
-              onClick={confirmarLiquidacion}
-              disabled={liqEnviando || liqCargando || !liqData}
-              className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-accent-text)] bg-[var(--color-accent)] disabled:opacity-40"
-            >
-              {liqEnviando ? 'Cerrando...' : 'Cerrar préstamo'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              }}>Motivo (queda en el historial)</span>
+              <input
+                value={liqNota}
+                onChange={(e) => setLiqNota(e.target.value)}
+                placeholder="Pago anticipado pactado"
+                style={{
+                  height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 16, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
+            </label>
+          </HojaInferior>
+        )
+      })()}
 
       {/* Modal de renovación */}
       <RenovarPrestamo

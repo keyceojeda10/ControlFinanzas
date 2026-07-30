@@ -133,11 +133,26 @@ export function TiraCifras({ columnas = [], sobreOscuro = false }) {
    15/16px y sin cifras tabulares: alinear en columna «viernes» contra «martes» no
    sirve de nada, y a 17/20 con la fuente de las cifras una fecha larga se sale.
    Las cifras siguen a 17/20 con `cf-fig`, que es la regla 1 del índice. */
+/* ── SI LOS DOS LADOS SON IGUALES, NO HAY FLECHA ─────────────────────────────
+
+   Pasó tres veces en tres pantallas distintas: el recargo con el monto vacío
+   —«$480.000 tachado → $480.000»—, el plazo recién abierto —«$20.000 → $20.000» y
+   «jue 25 → jue 25»— y el bloque de perdidos sin cartera. El mismo número a los dos
+   lados, uno de ellos TACHADO, se lee como una avería del programa.
+
+   Tres veces significa que el sitio de arreglarlo es la pieza y no cada pantalla:
+   éste es un bloque que dice QUÉ CAMBIA, así que cuando nada cambia se calla. Si hay
+   líneas de consecuencia se quedan —pueden tener algo que decir aunque la cifra de
+   arriba no se mueva—, y si tampoco hay, no se dibuja nada. */
 export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes, despues, tono = 'neutro', resumen, texto = false }) {
+  const cambia = antes != null && despues != null && String(antes) !== String(despues)
+  const filas = resumen ? (Array.isArray(resumen) ? resumen.filter(Boolean) : [resumen]) : []
+  if (!cambia && filas.length === 0) return null
   const colorDespues = tono === 'mejora' ? '#2FBE6A' : tono === 'empeora' ? '#F0575C' : '#F3F3F6'
   return (
     <div style={{ background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 'none' }}>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#A3A8B2' }}>{etiqueta}</span>
+      {cambia && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{ fontSize: 11, color: '#8A8E98' }}>{concepto}</span>
@@ -167,14 +182,17 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
           >{despues}</span>
         </div>
       </div>
+      )}
       {/* Un cambio de plata casi nunca mueve UNA sola cifra: subir la cuota
           mueve tambien el saldo, estirar el plazo mueve la fecha de fin. Las
           consecuencias que no caben en el "antes -> despues" van aqui, y van
           TODAS: la que se omite es justo la que sorprende al confirmar. */}
-      {resumen && (
+      {filas.length > 0 && (
         <>
-          <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
-          {(Array.isArray(resumen) ? resumen : [resumen]).map((r, i) => (
+          {/* El filete separa la flecha de las consecuencias. Sin flecha no separa
+              nada: sería una línea suelta debajo del rótulo. */}
+          {cambia && <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />}
+          {filas.map((r, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
               <span style={{ fontSize: 13, color: '#A3A8B2', flex: 1, minWidth: 0 }}>{r.etiqueta}</span>
               {/* `valor` acepta un nodo, no solo texto: T13-02 necesita «6 ago →

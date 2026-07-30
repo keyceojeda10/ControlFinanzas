@@ -469,14 +469,21 @@ export function ModificarPlazo({
         despues={cuotaDespues}
         tono="mejora"
         resumen={[
-          {
-            etiqueta: 'Termina el',
-            // Dos colores en una línea: la fecha nueva en dorado. Por eso `valor`
-            // acepta un nodo y no solo una cadena.
-            valor: <>{terminaAntes} → <span style={{ color: '#F5B824' }}>{terminaDespues}</span></>,
-          },
-          { etiqueta: 'Lo que vas a recibir', valor: totalIgual },
-        ]}
+          // SOLO SI LA FECHA SE MUEVE. Recién abierta la hoja, el contador está en las
+          // cuotas que ya faltan y la fila salía «jue 25 → jue 25»: la misma fecha a
+          // los dos lados. La guardia de `AntesDespues` no puede verlo porque esto es
+          // un nodo, no dos valores, así que se decide aquí.
+          (terminaAntes && terminaDespues && terminaAntes !== terminaDespues)
+            ? {
+                etiqueta: 'Termina el',
+                // Dos colores en una línea: la fecha nueva en dorado. Por eso `valor`
+                // acepta un nodo y no solo una cadena.
+                valor: <>{terminaAntes} → <span style={{ color: '#F5B824' }}>{terminaDespues}</span></>,
+                texto: true,
+              }
+            : null,
+          totalIgual ? { etiqueta: 'Lo que vas a recibir', valor: totalIgual } : null,
+        ].filter(Boolean)}
       />
 
       <Aviso>
@@ -607,15 +614,34 @@ export function MoverAPerdidos({
         </div>
       )}
 
-      {/* ROJO: tu cartera baja de verdad. Es el único de los cinco donde el rojo
-          es el color correcto. */}
-      <AntesDespues
-        concepto="Cartera en la calle"
-        antes={carteraAntes}
-        despues={carteraDespues}
-        tono="neutro"
-        resumen={[{ etiqueta: perdidaEtiqueta, valor: perdidaValor, tono: 'contra' }]}
-      />
+      {/* ROJO: tu cartera baja de verdad. Es el único de los cinco donde el rojo es
+          el color correcto.
+
+          Y SOLO SI HAY ALGO QUE ENSEÑAR. La ficha no siempre conoce la cartera total,
+          y sin ella el bloque salía con «Cartera en la calle → ahora» y ni un número
+          debajo: una caja negra vacía, que es peor que ninguna. Lo vi al abrirla.
+          Cuando falta la cartera pero sí se sabe la pérdida, se enseña solo esa fila;
+          cuando no se sabe nada, no hay bloque. */}
+      {(carteraAntes && carteraDespues) ? (
+        <AntesDespues
+          concepto="Cartera en la calle"
+          antes={carteraAntes}
+          despues={carteraDespues}
+          tono="neutro"
+          resumen={perdidaValor ? [{ etiqueta: perdidaEtiqueta, valor: perdidaValor, tono: 'contra' }] : null}
+        />
+      ) : perdidaValor ? (
+        <div style={{
+          flex: 'none', background: '#15161A', borderRadius: 'var(--cf-r-card)',
+          padding: '16px 18px', display: 'flex', alignItems: 'baseline',
+          justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontSize: 13, color: '#A3A8B2' }}>{perdidaEtiqueta}</span>
+          <span className="cf-fig" style={{ fontSize: 20, fontWeight: 600, color: '#F0575C', flex: 'none' }}>
+            {perdidaValor}
+          </span>
+        </div>
+      ) : null}
     </>
   )
 }
@@ -635,10 +661,15 @@ export function CerrarAnticipado({
   opciones = [], opcion, onOpcion,
   recibes, dejasDeGanar, gananciaTotal, cuandoVuelve,
 }) {
+  // Con una sola opción esto NO es una elección. Pasa cuando el préstamo ya rebasó su
+  // plazo: el interés está todo devengado, no hay nada que perdonar y las tres
+  // modalidades dan la misma cifra. Preguntar «¿le cobras el interés que falta?» ahí
+  // es preguntar por algo que no existe.
+  const eligiendo = opciones.length > 1
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
-        <Rotulo>¿Le cobras el interés que falta?</Rotulo>
+        <Rotulo>{eligiendo ? '¿Le cobras el interés que falta?' : 'Lo que tiene que pagar hoy'}</Rotulo>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           {opciones.map((o) => (
             <FilaOpcion
@@ -668,21 +699,28 @@ export function CerrarAnticipado({
               {recibes}
             </span>
           </span>
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-            <span style={{ fontSize: 11, color: '#8A8E98' }}>Dejas de ganar</span>
-            {/* `#F5B824` a mano: bloque siempre oscuro. */}
-            <span className="cf-fig" style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.025em', lineHeight: 1, color: '#F5B824' }}>
-              {dejasDeGanar}
+          {/* «Dejas de ganar» solo cuando de verdad se deja de ganar algo. Sin la
+              guardia salía la etiqueta con un hueco debajo, que es peor que nada:
+              parece que la cifra no cargó. */}
+          {dejasDeGanar && (
+            <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+              <span style={{ fontSize: 11, color: '#8A8E98' }}>Dejas de ganar</span>
+              {/* `#F5B824` a mano: bloque siempre oscuro. */}
+              <span className="cf-fig" style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-.025em', lineHeight: 1, color: '#F5B824' }}>
+                {dejasDeGanar}
+              </span>
             </span>
-          </span>
+          )}
         </div>
         <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#A3A8B2' }}>Ganancia total del préstamo</span>
-          <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: '#F3F3F6', flex: 'none' }}>
-            {gananciaTotal}
-          </span>
-        </div>
+        {gananciaTotal && (
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <span style={{ fontSize: 13, color: '#A3A8B2' }}>Ganancia total del préstamo</span>
+            <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: '#F3F3F6', flex: 'none' }}>
+              {gananciaTotal}
+            </span>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 13, color: '#A3A8B2' }}>Esa plata vuelve a tu caja</span>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#F3F3F6', flex: 'none' }}>{cuandoVuelve}</span>

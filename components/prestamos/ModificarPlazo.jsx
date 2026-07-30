@@ -2,6 +2,9 @@
 // components/prestamos/ModificarPlazo.jsx — Modal para extender o corregir fecha fin
 
 import { useState, useEffect, useMemo } from 'react'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { ModificarPlazo as HojaPlazo, PieGestion } from '@/components/pantallas/Gestion'
+import { adaptarPlazo } from '@/lib/adaptadores/gestion'
 import { useCountry } from '@/hooks/useCountry'
 import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
@@ -189,6 +192,69 @@ export default function ModificarPlazo({
     setDiasExtra('')
     setError('')
     onClose?.()
+  }
+
+  // ── LA HOJA DE T13-02 ──────────────────────────────────────────────────────
+  //
+  // Solo para EXTENDER, que es lo que la lámina dibuja. «Corregir fin» y «corregir
+  // inicio» siguen por el formulario de abajo, que es el que sabe pedir una fecha:
+  // ahí no se está repartiendo el saldo en más cuotas, se está arreglando un dato
+  // mal metido, y un contador de cuotas no sirve para eso.
+  //
+  // EL CONTADOR SUSTITUYE al campo «días extra» más el selector de fecha, que se
+  // contradecían entre sí. Aquí el contador es la única fuente: la fecha se deriva
+  // de él y se manda al mismo endpoint de siempre.
+  if (modo === 'extender') {
+    const porPeriodo = diasPorPeriodo
+    const pendientes = Math.max(1, Number(prestamo?.cuotasPendientes ?? 1))
+    // Cuántas cuotas faltan HOY según lo que se lleva tecleado: el contador arranca
+    // en las que faltan y los `diasExtra` lo mueven.
+    const extra = Math.max(0, Number(diasExtra) || 0)
+    const cuotas = pendientes + Math.round(extra / porPeriodo)
+    const datos = adaptarPlazo(prestamo, cuotas) ?? {}
+
+    const mover = (delta) => {
+      const nuevas = Math.max(pendientes, cuotas + delta)
+      handleDiasChange(String((nuevas - pendientes) * porPeriodo))
+    }
+
+    return (
+      <HojaInferior
+        abierta={open}
+        onCerrar={handleClose}
+        titulo="Modificar el plazo"
+        subtitulo={[
+          prestamo?.cliente?.nombre,
+          `le quedan ${pendientes} ${pendientes === 1 ? 'cuota' : 'cuotas'}`,
+        ].filter(Boolean).join(' · ')}
+        accion={
+          <PieGestion
+            onCancelar={handleClose}
+            onAceptar={handleSubmit}
+            textoAceptar={cuotas > pendientes ? `Guardar ${cuotas} cuotas` : 'Guardar'}
+            aceptando={loading}
+            deshabilitado={cuotas <= pendientes}
+            error={error}
+          />
+        }
+      >
+        <HojaPlazo
+          intenciones={[
+            { id: 'extender', etiqueta: 'Extender plazo' },
+            { id: 'corregirFin', etiqueta: 'Corregir fin' },
+            { id: 'corregirInicio', etiqueta: 'Corregir inicio' },
+          ]}
+          intencion="extender"
+          onIntencion={(i) => setModo(i.id)}
+          cuotas={cuotas}
+          cuotasAntes={pendientes}
+          minimoCuotas={pendientes}
+          onMenos={() => mover(-1)}
+          onMas={() => mover(1)}
+          {...datos}
+        />
+      </HojaInferior>
+    )
   }
 
   return (

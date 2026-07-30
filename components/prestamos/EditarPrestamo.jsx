@@ -13,6 +13,8 @@ import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { CorregirPrestamo } from '@/components/pantallas/Gestion'
+import { adaptarCorregir } from '@/lib/adaptadores/gestion'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -128,11 +130,23 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
     finally { setGuardando(false) }
   }
 
+  // ── T19-05 · LA CABECERA DE «CORREGIR EL PRÉSTAMO» ────────────────────────
+  //
+  // Con pagos encima, esta pantalla NO es un formulario de renegociar: los campos de
+  // cálculo están bloqueados a propósito porque tocarlos inflaba la deuda. Lo que la
+  // lámina aporta y aquí faltaba es decir CUÁNTOS pagos hay y qué pasa con cada
+  // campo, en vez de un aviso genérico que se lee una vez y se olvida.
+  //
+  // El resumen va DENTRO del modal existente, no en una hoja aparte: el formulario
+  // de abajo sigue siendo el que guarda, y partirlo en dos pantallas para cambiar
+  // cómo se ve sería mover el riesgo de sitio.
+  const resumenCorregir = adaptarCorregir(prestamo)
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Editar préstamo"
+      title="Corregir el préstamo"
       size="lg"
       footer={
         <>
@@ -142,12 +156,14 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
       }
     >
       <div className="space-y-4 pb-2">
-        {hayPagos && (
-          <div className="rounded-[10px] px-3 py-2.5 text-[12px] leading-snug"
-            style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
-            Este préstamo ya tiene pagos, así que solo puedes corregir datos que no cambian el cálculo (seguro, producto, socio). Para cambiar monto, tasa o plazo: usa <strong>abono a capital</strong>, <strong>renovar</strong>, o cancela y crea uno nuevo.
-          </div>
-        )}
+        {/* T19-05: la consecuencia CAMPO POR CAMPO, con el numero real de pagos.
+            Sustituye al aviso generico, que decia lo mismo para los tres campos y no
+            distinguia el que si se puede tocar —la fecha de inicio— de los dos que
+            estan bloqueados. */}
+        <CorregirPrestamo
+          aviso={resumenCorregir.aviso}
+          peligrosos={resumenCorregir.peligrosos}
+        />
 
         {/* Campos de cálculo: solo si NO hay pagos. Con pagos, cambiarlos
             recalculaba mal (re-cobraba interés) e inflaba la deuda. */}
