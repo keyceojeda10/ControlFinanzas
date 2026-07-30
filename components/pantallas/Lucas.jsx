@@ -138,9 +138,27 @@ function Grupo({ children }) {
   )
 }
 
-function Vacio({ preguntas = [], acciones = [], onElegir }) {
+function Vacio({
+  titulo = 'Pregúntame lo que sea de tu negocio',
+  ayuda = 'O pídeme que haga algo: buscar un cliente, armar un reporte, mandar un recordatorio.',
+  preguntas = [], acciones = [], onElegir,
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, padding: '14px 14px 6px' }}>
+      {/* EL TITULAR ES LO QUE ANUNCIA QUE LUCAS ACTÚA. Sin la segunda línea —«o
+          pídeme que haga algo»— los dos grupos de abajo son la única pista de que
+          esto no es solo un buscador de respuestas, y es el fallo que la lámina
+          señala como el principal: la pantalla promete que puede hacer cosas y
+          luego solo ofrece preguntas. */}
+      <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 7, paddingBottom: 5 }}>
+        <span style={{
+          fontFamily: 'var(--font-space-grotesk), system-ui',
+          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.25,
+          color: 'var(--cf-ink)',
+        }}>{titulo}</span>
+        <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>{ayuda}</span>
+      </div>
+
       <Rotulo>Lo que más te preguntas</Rotulo>
       <Grupo>
         {preguntas.map((p, i) => (
@@ -261,17 +279,36 @@ function Respuesta({ pregunta, frase, bloque, clientes, chips = [], siguientes =
 
 /* ── Compositor ────────────────────────────────────────────────────────── */
 
-function Compositor({ escritorio, onEnviar }) {
+function Compositor({ escritorio, onEnviar, onDictar }) {
   const [texto, setTexto] = useState('')
   const listo = texto.trim().length > 0
 
   return (
     <div style={{ flex: 'none', borderTop: '1px solid var(--cf-hairline)', background: 'var(--cf-card)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 9, padding: '11px 12px 8px' }}>
+        {/* EL MICRÓFONO, y no es un extra: el público de esta app teclea poco y
+            muchas veces va caminando. Dictar «cuánto recaudé esta semana» es lo
+            que hace que Lucas se use; escribirlo con una mano, no. */}
+        {onDictar && (
+          <button type="button" onClick={onDictar} aria-label="Dictar" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 44, minWidth: 44, height: 44, minHeight: 44, borderRadius: 14, flex: 'none',
+            background: 'var(--cf-fill)', border: '1px solid var(--cf-hairline)',
+            cursor: 'pointer', padding: 0,
+          }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
+              strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M6 11a6 6 0 0012 0M12 17v4" />
+            </svg>
+          </button>
+        )}
         <input
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          placeholder="Pregúntale lo que sea"
+          /* El placeholder repite que puede hacer cosas: es el último sitio donde
+             se puede decir antes de que el usuario escriba. */
+          placeholder="Pregúntame o pídeme algo…"
           style={{
             flex: 1, minWidth: 0, height: 44, padding: '0 15px',
             borderRadius: 999, background: 'var(--cf-fill)',
@@ -314,7 +351,7 @@ export default function Lucas({
   escritorio = false,
   respuesta,                       // si viene, se muestra en vez del vacío
   preguntas = [], acciones = [],
-  onElegir, onChip, onEnviar, onEditar, onCerrar,
+  onElegir, onChip, onEnviar, onEditar, onCerrar, onDictar,
 }) {
   return (
     <div style={{
@@ -336,7 +373,7 @@ export default function Lucas({
           : <Vacio preguntas={preguntas} acciones={acciones} onElegir={onElegir} />}
       </div>
 
-      <Compositor escritorio={escritorio} onEnviar={onEnviar} />
+      <Compositor escritorio={escritorio} onEnviar={onEnviar} onDictar={onDictar} />
     </div>
   )
 }

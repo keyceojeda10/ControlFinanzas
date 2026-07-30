@@ -617,7 +617,7 @@ export default function Estilo() {
               <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <Lucas preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
+              <Lucas onDictar={() => {}} preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
             </div>
           </div>
         </div>
@@ -628,7 +628,7 @@ export default function Estilo() {
               <span style={{ width: 38, height: 4, borderRadius: 999, background: 'var(--cf-fill-2)' }} />
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-              <Lucas respuesta={{
+              <Lucas onDictar={() => {}} respuesta={{
                 pregunta: '¿Cuánto estoy ganando realmente?',
                 frase: 'Este mes te queda $2.161.331 limpio, después de gastos.',
                 bloque: {
@@ -667,7 +667,7 @@ export default function Estilo() {
         <div style={{ flex: 1, minWidth: 0, background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--cf-ink-4)' }}>Panel · patrimonio y atención</span>
         </div>
-        <Lucas escritorio preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
+        <Lucas escritorio onDictar={() => {}} preguntas={PREGUNTAS_LUCAS} acciones={ACCIONES_LUCAS} />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: '34px 0 4px' }}>
