@@ -1528,7 +1528,14 @@ function ConfiguracionContent() {
           ? <TabOrganizacion bloques={['peligro']} />
           : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />
 
-      case 'datos':     return <TabPerfil />
+      case 'datos':
+        return (
+          <>
+            <TabPerfil />
+            {/* Solo en escritorio: en móvil vive en el índice, junto al tema. */}
+            {anchaPantalla && <InstallSection />}
+          </>
+        )
 
       case 'equipo':    return <Remite nombre="Equipo" nota="Los cobradores y sus permisos se manejan en su propia pantalla." destino="/cobradores" accion="Ir a Cobradores" />
 
@@ -1586,6 +1593,20 @@ function ConfiguracionContent() {
           ]}
           onTema={cambiarTema}
         />
+
+        {/* ── INSTALAR VA CON EL TEMA, NO CON «TUS DATOS» ──
+            Estaba al final de «Tus datos», que es nombre, correo y contraseña:
+            instalar la app NO ES UN DATO TUYO, y ahí no lo encuentra nadie.
+
+            El tema y la instalación son las dos cosas que se ajustan DE ESTE
+            TELÉFONO, no del negocio — las ocho secciones de arriba son el
+            negocio, y estas dos son cómo lo ves en este aparato. Por eso van
+            juntas, fuera de la lista.
+
+            En el FAB no: ese menú es «¿qué vas a hacer?», cosas que se hacen a
+            diario y mueven plata. Instalar se hace UNA VEZ, y ponerlo ahí se lo
+            pone delante todos los días a quien ya la instaló. */}
+        <InstallSection />
       </div>
     )
   }
@@ -1666,7 +1687,7 @@ function InstallSection() {
         <div>
           <h3 className="text-base font-semibold" style={{ color: 'var(--cf-ink)' }}>Instalar la app</h3>
           <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-2)' }}>
-            Instala Control Finanzas como aplicacion en tu dispositivo para acceder mas rapido y usarla sin internet.
+            Instálala en tu teléfono para abrirla de un toque y usarla sin internet.
           </p>
         </div>
 
@@ -1678,7 +1699,7 @@ function InstallSection() {
             <svg className="w-5 h-5 shrink-0" fill="none" stroke="var(--cf-green-dark)" viewBox="0 0 24 24" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-[13px]" style={{ color: 'var(--cf-green-dark)' }}>La app ya esta instalada en este dispositivo</p>
+            <p className="text-[13px]" style={{ color: 'var(--cf-green-dark)' }}>Ya está instalada en este teléfono</p>
           </div>
         ) : (
           <button
@@ -1731,7 +1752,6 @@ function TabApariencia() {
           </p>
         </div>
       </Card>
-      <InstallSection />
     </div>
   )
 }
