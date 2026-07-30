@@ -174,6 +174,20 @@ export default function PantallaMas({
         <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
         <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
       </Tarjeta>
+
+      {/* SITIO PARA LA PASTILLA. La regla 2 del armazón dice que ningún texto
+          puede quedar detrás de la barra flotante: el contenido pasa por debajo
+          mientras se hace scroll —así se ve que hay más—, pero al llegar al final
+          nada puede estar tapado.
+
+          Sin esto, «Soporte» y «Tutoriales» quedaban debajo de la pastilla en la
+          lista más larga del sistema: existían, se podían pulsar en teoría, y no
+          se veían nunca.
+
+          Va aquí y no en el armazón porque es la única pantalla del rediseño que
+          termina en una tarjeta pegada al borde; si aparecen más, el espaciador
+          sube al `<main>`. */}
+      <span aria-hidden style={{ height: 96, flex: 'none' }} />
     </div>
   )
 }
