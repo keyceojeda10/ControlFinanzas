@@ -50,12 +50,20 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
   ].filter(Boolean)
 
   return (
+    /* EL DORADO NO CRECE CON LA PANTALLA.
+       En un teléfono son 350px de ancho y funciona: la cifra llena el bloque. A
+       1440 el mismo bloque son 1.560px de oro macizo con «$0» solo en la esquina
+       izquierda y medio metro de amarillo vacío a la derecha — la pantalla entera
+       gritando por una cifra que cabe en dos dedos.
+
+       Se le pone tope. El resto del ancho lo aprovechan las tarjetas de abajo,
+       que sí tienen dos columnas que llenar. */
     <div style={{
       background: 'var(--cf-gold)',
       borderRadius: 'var(--cf-r-card)',
       padding: '18px 20px',
       display: 'flex', flexDirection: 'column', gap: 14,
-      flex: 'none',
+      flex: 'none', maxWidth: 720,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
