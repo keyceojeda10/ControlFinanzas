@@ -85,6 +85,11 @@ const HERRAMIENTAS = [
  * —lo que no ganó la franja de arriba—, que vive en PilaAvisos, hermana en el
  * árbol y no antepasada. Por eso el aviso va por evento del navegador.
  */
+/** Igual que en la cabecera movil: `layout.jsx` monta la barra sin `onBuscar`. */
+function abrirBuscador() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-buscador'))
+}
+
 function abrirAvisos() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-avisos'))
 }
@@ -307,7 +312,7 @@ export default function BarraLateral({
           </button>
         </div>
 
-        <button type="button" onClick={onBuscar}
+        <button type="button" onClick={onBuscar ?? abrirBuscador}
           style={{
             display: 'flex', alignItems: 'center', gap: 9,
             height: 38, padding: '0 12px', borderRadius: 13,

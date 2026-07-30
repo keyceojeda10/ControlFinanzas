@@ -143,7 +143,7 @@ function Navegacion({ iniciales, hayAvisos, onBuscar, onAvisos, onCuenta }) {
       <Glifo />
       {/* El ÚNICO encogible de la fila (regla global 2), y va vacío a propósito. */}
       <span style={{ flex: 1 }} />
-      <BotonIcono etiqueta="Buscar" onClick={onBuscar}><IconoBuscar /></BotonIcono>
+      <BotonIcono etiqueta="Buscar" onClick={onBuscar ?? abrirBuscador}><IconoBuscar /></BotonIcono>
       <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
       <Avatar iniciales={iniciales} onClick={onCuenta} />
     </header>
@@ -261,6 +261,22 @@ export function EspinaProgreso({ paso = 1, total = 0, modoRuta = false, style })
       })}
     </div>
   )
+}
+
+/* ── LA LUPA NO ABRIA NADA ──
+   `CabeceraMovil` pintaba el boton con `onClick={onBuscar}` y NADIE pasaba
+   `onBuscar`: ni `Armazon` en movil ni `layout.jsx` en escritorio. Quedaba
+   `onClick={undefined}`, o sea un boton que se pulsa y no hace nada — y sin
+   error en consola, porque React acepta un manejador vacio sin quejarse.
+
+   `GlobalSearch` solo abria con Ctrl+K, que en un telefono no existe: la
+   busqueda de toda la app era inalcanzable desde el movil.
+
+   Mismo apaño que la campana: un evento de ventana. Los dos viven en ramas
+   distintas del arbol (la cabecera cuelga del armazon, el buscador de
+   `layout.jsx`), asi que no hay prop que pasar entre ellos. */
+function abrirBuscador() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('cf:abrir-buscador'))
 }
 
 /** Mismo destino que la campana de escritorio: la hoja «Cosas por resolver». */

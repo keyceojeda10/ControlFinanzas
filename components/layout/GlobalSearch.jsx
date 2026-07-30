@@ -32,6 +32,14 @@ export default function GlobalSearch() {
     [comandos, query]
   )
 
+  // La lupa de la cabecera y de la barra lateral. Ctrl+K no existe en un
+  // telefono, asi que sin esto la busqueda no se podia abrir desde el movil.
+  useEffect(() => {
+    const abrir = () => setOpen(true)
+    window.addEventListener('cf:abrir-buscador', abrir)
+    return () => window.removeEventListener('cf:abrir-buscador', abrir)
+  }, [])
+
   // Ctrl+K / Cmd+K to open
   useEffect(() => {
     const handler = (e) => {
