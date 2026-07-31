@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
@@ -69,6 +70,8 @@ const SEV_STYLES = {
 }
 
 export default function AnaliticasPage() {
+  useCabecera({ titulo: 'Analíticas' })
+
   const { session } = useAuth()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -134,9 +137,9 @@ export default function AnaliticasPage() {
     <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 space-y-4 lg:space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-[20px] lg:text-[24px] font-semibold tracking-tight">Analíticas</h1>
-        </div>
+        {/* Titulo en la cabecera. Se queda el boton de descargar, que es la
+            unica accion de esta pantalla. */}
+        <div />
         <button
           onClick={descargarPDF}
           disabled={descargando}

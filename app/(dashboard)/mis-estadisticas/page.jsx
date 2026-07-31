@@ -2,6 +2,7 @@
 // app/(dashboard)/mis-estadisticas/page.jsx — Estadísticas propias del cobrador
 
 import { formatMoney } from '@/lib/i18n'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -13,6 +14,8 @@ function fmtFechaCorta(yyyy_mm_dd) {
 }
 
 export default function MisEstadisticasPage() {
+  useCabecera({ titulo: 'Mi resumen' })
+
   const { session, loading: authLoading } = useAuth()
 
   const [data,    setData]    = useState(null)
@@ -70,7 +73,8 @@ export default function MisEstadisticasPage() {
   return (
     <div className="max-w-xl lg:max-w-4xl mx-auto space-y-5">
       <div>
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Mi resumen</h1>
+        {/* Titulo en la cabecera; debajo se queda la ruta y sus clientes,
+            que es lo que la cabecera no sabe. */}
         {data.rutaNombre && (
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
             Ruta: {data.rutaNombre} · {data.totalClientesActivos} clientes activos
