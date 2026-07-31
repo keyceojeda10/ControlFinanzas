@@ -28,14 +28,31 @@ export function ClienteNuevo({
   rutas = [], ruta, onRuta,
   onCampo, onGuardarYPrestar, onGuardarYOtro, onDesdeFoto, onVolver,
   guardando = false,
+  // ── LO QUE LA LAMINA NO DIBUJA Y EL FORMULARIO REAL SI TIENE ──
+  //
+  // T07-03 pone cinco campos. El formulario de verdad tiene ademas referencia,
+  // grupo de cobro, dias sin cobro, tope de prestamo, notas y el acceso al
+  // portal. Por eso este componente llevaba meses sin montar: montarlo tal cual
+  // le QUITABA campos al usuario.
+  //
+  // La salida no es elegir entre la lamina y las funciones: es respetar lo que
+  // la lamina defiende —un solo campo obligatorio, todo en una pantalla, sin
+  // pasos— y meter el resto detras de «Mas datos», cerrado. Quien carga en la
+  // calle no lo abre nunca; quien lo necesita lo tiene a un toque.
+  extras,
+  extrasTitulo = 'Más datos',
+  extrasNota = 'Referencia, grupo, tope y notas',
+  cabecera = true, alto = '100%', sinMargen = false,
 }) {
+  const [verExtras, setVerExtras] = useState(false)
   const listo = String(nombre).trim().length > 0
 
   return (
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      height: alto, minHeight: 0, display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
+      {cabecera && (
       <div style={{ flex: 'none', padding: '6px 20px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
         {onVolver && (
           <button type="button" onClick={onVolver} aria-label="Volver" style={{
@@ -60,9 +77,12 @@ export function ClienteNuevo({
           }}>Desde foto</button>
         )}
       </div>
+      )}
 
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 20px',
+        flex: sinMargen ? 'none' : 1, minHeight: 0,
+        overflowY: sinMargen ? 'visible' : 'auto',
+        padding: sinMargen ? '0 0 20px' : '0 20px 20px',
         display: 'flex', flexDirection: 'column', gap: 14,
       }}>
         <Campo rotulo="Nombre" valor={nombre} foco
@@ -100,6 +120,36 @@ export function ClienteNuevo({
               <path d="M12 21s6-5.4 6-10.2A6 6 0 006 10.8C6 15.6 12 21 12 21z" />
             </svg>
           } />
+
+        {extras && (
+          <div style={{ flex: 'none' }}>
+            <button
+              type="button"
+              onClick={() => setVerExtras((v) => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+                font: 'inherit', textAlign: 'left', color: 'var(--cf-ink)',
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{extrasTitulo}</span>
+                <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{extrasNota}</span>
+              </span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
+                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ flex: 'none', transform: verExtras ? 'rotate(180deg)' : 'none' }}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            {verExtras && (
+              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {extras}
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{
           flex: 'none', display: 'flex', gap: 10, alignItems: 'flex-start',
