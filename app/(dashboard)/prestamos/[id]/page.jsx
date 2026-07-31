@@ -160,6 +160,17 @@ export default function PrestamoDetallePage({ params }) {
   const [moratorioEnviando, setMoratorioEnviando] = useState(false)
   const [moratorioError, setMoratorioError] = useState('')
   const [modalLiquidacion, setModalLiquidacion] = useState(false)
+  // ── LO QUE DEBE SI CANCELA HOY ──
+  //
+  // Se pide al ABRIR LA FICHA, no al abrir el menú de gestión. Es la primera
+  // pregunta que hace un cliente que llegó con plata —«¿cuánto por cerrarlo
+  // ya?»— y hasta ahora la respuesta estaba a dos toques y solo para quien
+  // tuviera permiso de descuentos.
+  //
+  // Va en su propio estado, aparte de `liqData`: ese lo maneja el modal y lo
+  // limpia al abrirlo, así que compartirlo dejaría la cifra de la ficha en
+  // blanco cada vez que alguien entra al menú.
+  const [cierreHoy, setCierreHoy] = useState(null)
   const [liqData, setLiqData] = useState(null)        // calculo del backend
   const [liqModalidad, setLiqModalidad] = useState('mesCompleto') // mesCompleto | proporcional
   const [liqMonto, setLiqMonto] = useState(0)          // monto editable del cierre
@@ -312,6 +323,20 @@ export default function PrestamoDetallePage({ params }) {
       setLiqCargando(false)
     }
   }
+
+  useEffect(() => {
+    // Solo para préstamos vivos: el endpoint responde 400 si no está activo, y
+    // en uno cerrado la pregunta no tiene sentido.
+    if (!prestamo || prestamo.estado !== 'activo') { setCierreHoy(null); return }
+    let vivo = true
+    fetch(`/api/prestamos/${id}/liquidacion`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo) setCierreHoy(d) })
+      // Si falla, NO se enseña nada. Es plata: un hueco es mejor que una cifra
+      // que no se sabe de dónde salió.
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [prestamo?.id, prestamo?.estado, prestamo?.totalPagado, id])
 
   function seleccionarModalidad(mod) {
     setLiqModalidad(mod)
@@ -717,6 +742,22 @@ export default function PrestamoDetallePage({ params }) {
   //
   // Las condiciones son las mismas de antes, una por una: sin permiso la fila
   // no se pinta, en vez de pintarse y fallar al pulsarla.
+  // ── LOS DOS TEXTOS DEL CIERRE ──
+  //
+  // Manda `proporcional`: es la modalidad que perdona mas interes, la que el
+  // cliente esperaria si pregunta «cuanto por cerrarlo hoy». La del mes
+  // completo se elige dentro de la hoja, si se quiere.
+  const cierre = cierreHoy?.proporcional ?? cierreHoy?.mesCompleto ?? null
+  // SOLO SE ENSEÑA SI HAY ALGO QUE AHORRAR. En un prestamo pasado de plazo ya
+  // corrio todo el interes, asi que cerrarlo hoy cuesta exactamente lo que
+  // debe: la linea repetiria la cifra de arriba sin decir nada, y dos veces el
+  // mismo numero en un bloque de plata se lee como un error.
+  const hayCierre = cierre && cierre.interesPerdonado > 0
+  const cierreTexto = hayCierre ? formatMoney(Math.round(cierre.restanteHoy ?? 0)) : null
+  const cierrePerdonaTexto = hayCierre
+    ? `se ahorra ${formatMoney(Math.round(cierre.interesPerdonado))} de interés`
+    : null
+
   const detalleGestion = [
     cliente?.nombre,
     frecuencia && tasaInteres != null ? `${frecuenciaLabel} ${tasaInteres}%` : null,
@@ -775,7 +816,7 @@ export default function PrestamoDetallePage({ params }) {
       })
     }
     if (puedeAplicarDescuentos) {
-      cierra.push({ id: 'anticipado', nombre: 'Cerrar anticipado', hacer: () => abrirLiquidacion() })
+      cierra.push({ id: 'anticipado', nombre: 'Cerrar anticipado', valor: cierreTexto, hacer: () => abrirLiquidacion() })
     }
     if (puedeGestionarPrestamos) {
       cierra.push(esClavo
@@ -1101,7 +1142,10 @@ export default function PrestamoDetallePage({ params }) {
           IA. No los borro — son cosas que el dueño puede estar usando, y quitar
           features no es rediseñar. Si sobran, se van cuando lo digas. */}
       <FichaPrestamo
-            sinMargen
+        sinMargen
+        cierreHoy={cierreTexto}
+        cierrePerdona={cierrePerdonaTexto}
+        onCerrarHoy={puedeAplicarDescuentos ? () => abrirLiquidacion() : null}
         modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
         faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
         pagado={formatMoney(totalPagadoReal)}
@@ -1947,7 +1991,7 @@ export default function PrestamoDetallePage({ params }) {
                 onAceptar={confirmarLiquidacion}
                 textoAceptar={liqMonto > 0 ? `Cerrar por ${formatMoney(Math.round(liqMonto))}` : 'Cerrar'}
                 aceptando={liqEnviando}
-                deshabilitado={!(liqMonto > 0) || !liqNota.trim()}
+                deshabilitado={liqMonto < 0 || !liqNota.trim()}
                 error={liqError || (!liqNota.trim() && liqMonto > 0
                   ? 'Escribe el motivo: queda en el historial.' : null)}
               />

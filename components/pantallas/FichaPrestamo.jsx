@@ -165,6 +165,12 @@ export default function FichaPrestamo({
   // historial
   pagos = [], totalPagos = 0, montoOculto, notaHistorial,
   onGestionar, onRegistrar, onVerTodos,
+  // ── SI LO CANCELA HOY ──
+  // Lo que tendría que pagar HOY para cerrar, sin el interés que todavía no ha
+  // corrido. Es la primera pregunta que hace un cliente que llegó con plata, y
+  // hasta ahora la respuesta estaba a dos toques dentro del menú de gestión —y
+  // solo para quien tenga permiso de descuentos.
+  cierreHoy, cierrePerdona, onCerrarHoy,
   // ── EL RELLENO LATERAL LO PONE EL ARMAZON, EL COMPONENTE NO ──
   //
   // Sin esta prop, este componente ponia sus 20px de `--cf-pad-screen` ENCIMA
@@ -238,6 +244,48 @@ export default function FichaPrestamo({
                 {porcentaje}%
               </span>
             </div>
+
+            {/* La cifra va DENTRO del bloque oscuro, debajo de la deuda, porque
+                es la misma pregunta con otra respuesta: cuánto debe hoy. Fuera,
+                en su propia tarjeta, se leería como otro concepto. */}
+            {cierreHoy && (
+              <>
+                <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
+                <button
+                  type="button"
+                  onClick={onCerrarHoy}
+                  disabled={!onCerrarHoy}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                    background: 'none', border: 0, padding: 0,
+                    cursor: onCerrarHoy ? 'pointer' : 'default',
+                    font: 'inherit', textAlign: 'left',
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12, color: '#8A8E98' }}>
+                      Si lo cancela hoy
+                    </span>
+                    <span className="cf-num" style={{
+                      display: 'block', fontSize: 17, fontWeight: 700, color: '#F3F3F6', marginTop: 2,
+                    }}>{cierreHoy}</span>
+                    {/* Cuánto interés se le perdona. Sin esto, «$180.000» al
+                        lado de «le falta pagar $204.000» parece un descuadre. */}
+                    {cierrePerdona && (
+                      <span className="cf-num" style={{ display: 'block', fontSize: 12, color: '#8A8E98', marginTop: 2 }}>
+                        {cierrePerdona}
+                      </span>
+                    )}
+                  </span>
+                  {onCerrarHoy && (
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8E98"
+                      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                      <path d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+              </>
+            )}
           </BloqueOscuro>
         )}
 
