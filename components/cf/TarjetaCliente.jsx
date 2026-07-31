@@ -20,22 +20,11 @@
 //   3. Aparece la TIRA DE CIFRAS: cuatro columnas con filete, sobre un borde.
 //      Es lo que el usuario echaba en falta, y es la mitad de la tarjeta.
 //
-// ES UNA SOLA TARJETA CON DOS JUEGOS DE MEDIDAS. Las dos láminas la dibujan
-// igual salvo en seis números, y esos seis van juntos:
-//
-//                        cliente (T02-05)      préstamo (T02-06)
-//   relleno              15px …15px 19px       14px …14px 19px
-//   hueco de la columna  11                    10
-//   riel arriba/abajo    14                    13
-//   fila 1: alineado     center                flex-start
-//   fila 1: hueco        12                    10
-//   monto                23px                  21px
-//   avatar               sí, 40px              NO hay
-//   rótulo del monto     «DEUDA TOTAL»         no hay: el monto va solo
-//
-// La diferencia de fondo: la tarjeta de préstamo no tiene a quién retratar —el
-// dueño ya sabe de quién es— así que suelta el avatar y gana ancho para la línea
-// de condiciones («Semanal 20% · cuota 13 de 24 · Ruta #1»), que es más larga.
+// LAS DOS VARIANTES CONVERGEN. Con el turno 02 se separaban en seis numeros
+// (relleno 15 vs 14, riel 14 vs 13, monto 23 vs 21, y la de cliente llevaba un
+// rotulo «DEUDA TOTAL» encima del monto). T03-03 y T03-04 las dibujan con el
+// mismo relleno y el mismo riel, y ninguna lleva rotulo. Lo unico que las
+// separa hoy es el avatar —solo la de cliente— y el hueco que necesita al lado.
 //
 // DOS NIVELES DE INFORMACIÓN, NUNCA TRES:
 //   nivel 1 — quién:  nombre + UNA pastilla
@@ -52,9 +41,9 @@
 //    importa»), pero ninguna de las tres láminas lo usa: los nueve avatares son
 //    #F3F3EF pelado. Con riel, pastilla y barra ya hay tres sitios diciendo lo
 //    mismo; el cuarto es ruido.
-//  · «% pagado» va ABAJO, a la altura del monto, no arriba junto al rótulo. La
-//    fila es `align-items: flex-end; justify-content: space-between`. Importa:
-//    el porcentaje se lee CONTRA la cifra, no contra la palabra «deuda total».
+//  · El «% pagado» va al lado de la BARRA, con la cuota exacta: «cuota 13/24 ·
+//    54%». Las dos dicen cosas distintas y las dos hacen falta — por donde va el
+//    calendario y por donde va la plata.
 //  · La tarjeta es `flex:none`. Con `flex:1` dentro de una columna saturada
 //    absorbe todo el déficit, se aplasta y su texto se sale del overflow.
 //  · La barra de progreso es `flex:none`. Si es encogible colapsa a 0px y con
@@ -62,8 +51,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
-import { Fragment } from 'react'
-import { BarraProgreso, Pastilla } from './primitivos'
+import { BarraProgreso, Pastilla, TiraCifras } from './primitivos'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -87,12 +75,7 @@ const COLOR_ESTADO = {
    alarma. */
 const TONO_PASTILLA = { mora: 'mora', atraso: 'atraso', aldia: 'aldia', renovar: 'aldia', pagado: 'neutro' }
 
-// Los valores de la tira son casi todos tinta normal. Solo dos se tiñen, y son
-// los dos que el dueño busca: lo que le deben de más y lo que ha ganado. Si se
-// tiñeran los cuatro, la tira dejaría de señalar nada.
-const TONO_CIFRA = { mora: 'var(--cf-red-dark)', ganancia: 'var(--cf-green-dark)' }
-
-const TONO_BARRA ={ mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
+const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
 
 /** Los seis números que cambian entre las dos láminas, juntos y con nombre. */
 const MEDIDAS = {
@@ -106,8 +89,8 @@ const MEDIDAS = {
 export default function TarjetaCliente({
   nombre,
   iniciales,
-  // 'cliente' → con avatar y con rótulo sobre el monto (T02-05, T02-02).
-  // 'prestamo' → sin avatar y el monto solo (T02-06).
+  // 'cliente' → con avatar. 'prestamo' → sin él: el dueño ya sabe de quién es,
+  // y ese ancho se lo lleva la línea de condiciones, que es más larga.
   variante = 'cliente',
   estado = 'aldia',        // 'mora' | 'atraso' | 'aldia' — solo el COLOR
   // El TEXTO de la pastilla lo compone la pantalla, porque cambia en cada una:
@@ -125,10 +108,11 @@ export default function TarjetaCliente({
   // «3 préstamos» en clientes.
   detalle,
   // ── LA TIRA DEL TURNO 03 ──
-  // Cuatro columnas: [{ rotulo, valor, tono }]. `tono` es 'mora' | 'ganancia'
-  // | undefined. La pantalla las compone porque cambian en cada una: cuota /
-  // atraso / ganancia / vence en préstamos, atraso / cumple / pagado / próximo
-  // cobro en clientes.
+  // Cuatro columnas: [{ etiqueta, valor, tono }], el mismo formato que ya usa
+  // `TiraCifras` en el bloque oscuro. `tono` es 'contra' | 'favor' | 'oro'.
+  // Las compone la pantalla porque cambian en cada una: cuota / atraso /
+  // ganancia / vence en préstamos, y atraso / cumple / pagado / próximo cobro
+  // en clientes.
   cifras,
   porcentaje = 0,
   // Lo que se lee al lado de la barra: «cuota 13/24 · 54%».
@@ -264,30 +248,9 @@ export default function TarjetaCliente({
           Cuatro columnas iguales separadas por filetes de 1px. Van sobre un
           borde superior, así que la tarjeta se lee en dos bloques: quién y
           cuánto arriba, los números del negocio abajo. */}
-      {cifras?.length > 0 && (
-        <div style={{
-          display: 'flex', gap: 6,
-          paddingTop: 11, borderTop: '1px solid var(--cf-border-soft)',
-        }}>
-          {cifras.map((c, i) => (
-            <Fragment key={c.rotulo}>
-              {i > 0 && <span aria-hidden style={{ width: 1, flex: 'none', background: 'var(--cf-border-soft)' }} />}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
-                  textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{c.rotulo}</span>
-                <span className="cf-fig" style={{
-                  fontSize: 14, letterSpacing: 0,
-                  color: TONO_CIFRA[c.tono] || 'var(--cf-ink)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{c.valor}</span>
-              </div>
-            </Fragment>
-          ))}
-        </div>
-      )}
+      {/* La pinta `TiraCifras`, en primitivos: la comparte con la FilaCobro de
+          cobrar hoy, que no tiene esta estructura pero sí esta tira. */}
+      <TiraCifras columnas={cifras} enTarjeta />
 
       {/* ── El avance ──
           La barra y su lectura en la MISMA fila. Antes la barra iba sola y el

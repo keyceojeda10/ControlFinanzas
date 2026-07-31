@@ -14,6 +14,9 @@ import {
   obtenerProximaCuotaTabla,
   tieneTablaAmortizacion,
   cuotaProximoCobro,
+  // La tira de cifras de T03-01.
+  calcularCuotasPendientes,
+  calcularCuotasEnMora,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
@@ -120,6 +123,9 @@ export async function GET() {
           modoInteres: true,
           capitalExtra: true,
           proximoCobroManual: true,
+          // «Ult. pago 21 jun», la cuarta columna de la tira de T03-01. Es la
+          // que dice si el cliente esta frio o si se le vio la semana pasada.
+          ultimoPagoAt: true,
           cuotasAmortizacion: {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
             orderBy: { numeroPeriodo: 'asc' },
@@ -153,6 +159,12 @@ export async function GET() {
       let pagadoHoy = 0
       let mora = 0
       let montoParaAlDia = 0
+      // La tira de cifras de T03-01: Atraso · Cumple · Cuota · Ult. pago.
+      // El atraso en plata es `montoParaAlDia`, que ya estaba. Estas tres no.
+      let cuotasVencidas = 0
+      let cuotasPagadasSum = 0
+      let cuotaDeMayorMora = null
+      let ultimoPagoISO = null
       let cobroPendienteHoy = false
       const prestamosActivos = []
       // La HORA del ultimo cobro de hoy y el SALDO total del cliente.
@@ -220,6 +232,28 @@ export async function GET() {
         mora = Math.max(mora, moraPrestamo)
         montoParaAlDia += alDia
 
+        // ── LA TIRA DE CIFRAS DE T03-01: Atraso · Cumple · Cuota · Ult. pago ──
+        // El atraso en plata ya lo da `montoParaAlDia`. Faltaban las otras tres.
+        //
+        // CUMPLIMIENTO: de las cuotas que YA debian estar pagadas, cuantas lo
+        // estan. Misma definicion que en /api/clientes — si se cambia alli, se
+        // cambia aqui.
+        const totalCuotas = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadasP = Math.max(0, totalCuotas - calcularCuotasPendientes(p))
+        cuotasPagadasSum += pagadasP
+        cuotasVencidas += pagadasP + calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
+        // «Cuota 13/24». Se queda con la del prestamo mas atrasado, que es el
+        // que manda la visita: con dos prestamos, el numero de uno solo mentiria.
+        if (totalCuotas > 0 && moraPrestamo >= (cuotaDeMayorMora?.mora ?? -1)) {
+          cuotaDeMayorMora = { mora: moraPrestamo, texto: `${Math.min(totalCuotas, pagadasP + 1)}/${totalCuotas}` }
+        }
+        if (p.ultimoPagoAt) {
+          const t = new Date(p.ultimoPagoAt).getTime()
+          if (!ultimoPagoISO || t > new Date(ultimoPagoISO).getTime()) ultimoPagoISO = p.ultimoPagoAt
+        }
+
         const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         const extraInfo = detectarCuotaExtra(p, proximaCuota)
         prestamosActivos.push({
@@ -266,6 +300,11 @@ export async function GET() {
         cobroPendienteHoy: pendienteHoyCliente,
         diasMora: mora,
         montoParaPonerseAlDia: Math.round(montoParaAlDia),
+        // La tira de T03-01. `null` cuando no hay nada vencido todavia: un 0%
+        // en un cliente recien prestado lo pinta como el peor de la ruta.
+        cumplimiento: cuotasVencidas > 0 ? Math.round((cuotasPagadasSum / cuotasVencidas) * 100) : null,
+        cuotaTexto: cuotaDeMayorMora?.texto ?? null,
+        ultimoPagoAt: ultimoPagoISO,
         hoySinCobro: _hoySinCobro,
         prestamoActivo: prestamosActivos[0]?.id ?? null,
         prestamosActivos,

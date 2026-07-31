@@ -99,22 +99,45 @@ export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', childre
   )
 }
 
-/** Tira de cifras del bloque oscuro. Máximo 4 columnas en móvil. */
-export function TiraCifras({ columnas = [], sobreOscuro = false }) {
-  const sep = sobreOscuro ? 'rgba(255,255,255,.09)' : 'var(--cf-divider)'
+/**
+ * Tira de cifras. Máximo 4 columnas en móvil.
+ *
+ * Nació para el bloque oscuro, y el TURNO 03 la mete también DENTRO de la
+ * tarjeta de lista: T03-01 (cobrar hoy), T03-03 (clientes) y T03-04
+ * (préstamos). El pie de T03-04 dice por qué, y es la mitad de la tarjeta:
+ *
+ *   «Faltaba lo más básico: la cuota. Y la ganancia acumulada, que es la razón
+ *    de ser del préstamo y no aparecía en ninguna lista.»
+ *
+ * `enTarjeta` es esa segunda vida: filete superior, hueco de 11 y valores a 14
+ * en vez de 15. Es una VARIANTE y no un componente nuevo a propósito — llegué a
+ * escribir el segundo sin ver que este ya existía, y dos tiras con vocabulario
+ * distinto («rótulo» vs «etiqueta», «mora» vs «contra») es exactamente cómo se
+ * separan dos cosas que deberían moverse juntas.
+ */
+export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = false }) {
+  if (!columnas?.length) return null
+  const sep = enTarjeta ? 'var(--cf-border-soft)'
+    : sobreOscuro ? 'rgba(255,255,255,.09)' : 'var(--cf-divider)'
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+    <div style={{
+      display: 'flex', gap: enTarjeta ? 6 : 8, alignItems: 'stretch',
+      ...(enTarjeta ? {
+        flex: 'none', paddingTop: 11,
+        borderTop: '1px solid var(--cf-border-soft)',
+      } : null),
+    }}>
       {columnas.map((c, i) => (
         <div key={i} style={{ display: 'contents' }}>
           {i > 0 && <span style={{ width: 1, background: sep, flex: 'none' }} />}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: enTarjeta ? 2 : 4 }}>
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
               color: sobreOscuro ? '#8A8E98' : 'var(--cf-ink-3)',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>{c.etiqueta}</span>
             <span className="cf-fig" style={{
-              fontSize: sobreOscuro ? 16 : 15,
+              fontSize: enTarjeta ? 14 : sobreOscuro ? 16 : 15,
               color: c.tono === 'favor'  ? (sobreOscuro ? '#2FBE6A' : 'var(--cf-green-dark)')
                    : c.tono === 'contra' ? (sobreOscuro ? '#F0575C' : 'var(--cf-red-dark)')
                    : c.tono === 'oro'    ? (sobreOscuro ? '#F5B824' : 'var(--cf-gold-dark)')

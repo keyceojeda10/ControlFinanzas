@@ -21,7 +21,7 @@
 // recorre la calle en orden, y si el cobrado desaparece pierde la referencia de
 // dónde iba. Tachado sigue siendo el mapa del recorrido.
 
-import { BotonPrimario, EstadoVacio } from '@/components/cf/primitivos'
+import { BotonPrimario, EstadoVacio , TiraCifras} from '@/components/cf/primitivos'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -93,7 +93,7 @@ function CabezaGrupo({ nombre, pendientes, total }) {
 /* ══ La fila de cobro ══ */
 function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde,
-  cuota, debe, cobrada = false, cobradoA, montoCobrado, onClick,
+  cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, onClick,
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
   const p = PASTILLA[estado] || PASTILLA.aldia
@@ -109,7 +109,10 @@ function FilaCobro({
         border: '1px solid var(--cf-border)',
         borderRadius: 'var(--cf-r-card)',
         padding: '14px 16px 14px 19px',
-        display: 'flex', alignItems: 'center', gap: 13,
+        // COLUMNA, no fila. Antes era una sola fila —avatar, nombre, cuota— y
+        // T03-01 le pone debajo la tira de cifras. La fila de siempre baja un
+        // nivel y se queda igual; lo que cambia es que ahora tiene hermana.
+        display: 'flex', flexDirection: 'column', gap: 11,
         overflow: 'hidden', flex: 'none',
         // El cobrado se atenúa, no se borra. .6 es de la lámina.
         opacity: cobrada ? 0.6 : 1,
@@ -121,6 +124,8 @@ function FilaCobro({
         width: 4, borderRadius: 999,
         background: cobrada ? 'var(--cf-green)' : color,
       }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
 
       {/* El avatar del cobrado es un CHECK, no sus iniciales: la fila ya está
           tachada, y un avatar normal invita a volver a tocarla. */}
@@ -190,6 +195,12 @@ function FilaCobro({
           )}
         </div>
       )}
+      </div>
+
+      {/* «Atraso $48.000 · Cumple 62% · Cuota 13/24 · Últ. pago 21 jun».
+          El adaptador no la manda en el cobrado: ya está tachado y con su hora,
+          y enseñarle el atraso a alguien que acaba de pagar es ruido. */}
+      <TiraCifras columnas={cifras} enTarjeta />
     </div>
   )
 }
