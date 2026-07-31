@@ -21,9 +21,9 @@ pegados encima de la anterior — que es justo lo que pasa en la ruta.
 
 | Pantalla | Del rediseño | Del diseño anterior |
 |---|---|---|
-| `rutas/[id]` · 3.098 líneas | 2 bloques (`LoPuestoAqui`, `LoDeHoy`) | **todo lo demás** — cabecera, lista de clientes, 10 modales, cierre, modo ruta |
+| `rutas/[id]` · 3.098 líneas | ~~2 bloques~~ → cabecera, banda del día, atajos de cobro, modo recorrido, cierre, reordenar, capital | la lista de clientes y 9 modales |
 
-Es 1 import de rediseño sobre 25. La lámina de escritorio que le corresponde
+Era 1 import de rediseño sobre 25; el 31 jul pasó a 8. La lámina de escritorio que le corresponde
 —**T04-09**, con la tabla y la columna derecha— no está construida.
 
 ---
@@ -100,10 +100,10 @@ Las descarté leyendo su nombre en vez de su pie:
 |---|---|---|
 | T03-04 préstamos | T02-06 | ✅ hecha 31 jul |
 | T03-03 clientes | T02-05 | ✅ hecha 31 jul |
-| T03-01 cobrar hoy | T02-02 | pendiente |
-| T03-02 filtros y orden | los 4 chips de hoy | pendiente |
-| T27-02 detalle de ruta | T04-02 | pendiente |
-| T15-02 atajos de cobro | *nunca diseñada* | pendiente |
+| T03-01 cobrar hoy | T02-02 | ✅ hecha 31 jul |
+| T03-02 filtros y orden | los 4 chips de hoy | ✅ hecha 31 jul |
+| T27-02 detalle de ruta | T04-02 | ✅ hecha 31 jul |
+| T15-02 atajos de cobro | *nunca diseñada* | ✅ hecha 31 jul |
 | T28-01/02 recorriendo | T02-03, T04-04 | pendiente |
 | T45-01/02/03/04 socios | T44 | decidido, T45 manda |
 | T40-A cabecera | T39-01 | ✅ |
