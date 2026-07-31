@@ -2113,7 +2113,14 @@ export default function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-2)' }}>Alertas de mora</p>
-            <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'var(--cf-red-dark)', color: 'var(--cf-ink)' }}>{moraData.total} préstamos</span>
+            {/* NO `--cf-ink` sobre rojo: en tema claro es casi negro y no se lee.
+                La pastilla va en rojo TENUE con el texto rojo oscuro encima,
+                que es el mismo par que usa `Pastilla tono="mora"`. */}
+            <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold" style={{
+              background: 'color-mix(in srgb, var(--cf-red) 14%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--cf-red) 26%, transparent)',
+              color: 'var(--cf-red-dark)',
+            }}>{moraData.total} préstamos</span>
           </div>
           <div className="space-y-2">
             {moraData.agrupado.mora31plus.length > 0 && (

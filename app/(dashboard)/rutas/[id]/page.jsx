@@ -29,6 +29,7 @@ import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import ModoRuta                      from '@/components/pantallas/ModoRuta'
 import RutaCerrada                   from '@/components/pantallas/RutaCierre'
 import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
+import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
@@ -3147,15 +3148,21 @@ export default function RutaDetallePage({ params }) {
         onClose={() => setConfirmQuitar(null)}
         title="Quitar cliente de la ruta"
         footer={
-          <>
-            <Button variant="secondary" onClick={() => setConfirmQuitar(null)}>Cancelar</Button>
-            <Button
-              onClick={() => confirmQuitar && quitarCliente(confirmQuitar.id)}
-              style={{ background: 'var(--cf-red-dark)', color: 'var(--cf-ink)' }}
-            >
-              Quitar
-            </Button>
-          </>
+          /* ── DOS COSAS MAL, Y LA PRIMERA ERA ILEGIBLE ──
+             1. El boton decia `color: var(--cf-ink)` sobre `--cf-red-dark`. En
+                tema CLARO `--cf-ink` es casi negro: texto negro sobre rojo
+                oscuro no se lee. Solo funcionaba de casualidad en oscuro.
+             2. La accion destructiva llevaba TODO el peso visual. T13-03 lo
+                invierte a proposito: quitar a un cliente de la ruta se deshace,
+                pero hay que quererlo — el boton lleno es «Cancelar» y el rojo
+                va de contorno. `PieGestion peligro` ya implementa esa regla. */
+          <PieGestion
+            peligro
+            textoCancelar="Cancelar"
+            onCancelar={() => setConfirmQuitar(null)}
+            textoAceptar="Quitar de la ruta"
+            onAceptar={() => confirmQuitar && quitarCliente(confirmQuitar.id)}
+          />
         }
       >
         <p className="text-sm text-[var(--cf-ink-3)]">

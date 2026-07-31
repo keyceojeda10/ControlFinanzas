@@ -506,7 +506,10 @@ export default function RegistrarPago({
                 onClick={navigateNextInRuta}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
                 style={rutaInfo.isLast
-                  ? { background: 'var(--cf-green-dark)', color: 'var(--cf-ink)' }
+                  // Texto CLARO sobre verde oscuro. Decia `--cf-ink`, que en tema
+                  // claro es casi negro: negro sobre verde oscuro no se lee. Es la
+                  // tercera vez que aparece esta misma pareja en el repo.
+                  ? { background: 'var(--cf-green-dark)', color: '#F3F3F6' }
                   : { background: 'linear-gradient(135deg, var(--cf-gold), color-mix(in srgb, var(--cf-gold) 85%, black))', color: '#3a2900' }
                 }
               >
