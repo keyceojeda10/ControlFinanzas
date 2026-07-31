@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { ACCIONES } from '@/lib/activity-log-types'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
@@ -117,6 +118,8 @@ const FILTROS_COMPLETOS = [
 ]
 
 export default function ActividadPage() {
+  useCabecera({ titulo: 'Actividad', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
+
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [cursor, setCursor] = useState(null)
@@ -206,13 +209,8 @@ export default function ActividadPage() {
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-5">
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Actividad</h1>
-        <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-          Todo lo que pasa en tu negocio, en orden
-        </p>
-      </div>
+      {/* El titulo y el subtitulo los pone el armazon (`useCabecera` arriba):
+          aqui salian OTRA VEZ, justo debajo de la cabecera que ya los dice. */}
 
       {/* Filtros rapidos — chips */}
       <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-3" style={{ scrollbarWidth: 'none' }}>

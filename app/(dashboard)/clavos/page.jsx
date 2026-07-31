@@ -2,6 +2,7 @@
 // app/(dashboard)/clavos/page.jsx - Contabilidad aparte de tarjetas clavo
 
 import { useState, useEffect, useMemo } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { useCountry } from '@/hooks/useCountry'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -13,6 +14,8 @@ const ORDEN_OPTS = [
 ]
 
 export default function ClavosPage() {
+  useCabecera({ titulo: 'Préstamos perdidos', subtitulo: 'Préstamos que separaste de tu cartera. Si el cliente paga algo, se registra aquí.' })
+
   const { formatMoney } = useCountry()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -60,12 +63,7 @@ export default function ClavosPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Préstamos perdidos</h1>
-        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
-          Préstamos que separaste de tu cartera. Si el cliente paga algo, se registra aquí.
-        </p>
-      </div>
+      {/* Titulo y subtitulo, en la cabecera del armazon y en un solo sitio. */}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
