@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -603,6 +604,28 @@ export default function MigradorPage() {
   const [ficha, setFicha] = useState(() => fichaVacia(defaults))
   const [creados, setCreados] = useState([])
   const [editandoIdx, setEditandoIdx] = useState(null)
+
+  // ── LA CABECERA, ARRIBA DEL TODO ──
+  //
+  // `useCabecera` es un HOOK: puesto donde se calculan `headerTitulo` y
+  // `headerSub` —que es mas abajo— queda DETRAS del `return null` de
+  // authLoading, y entonces no se ejecuta nunca. La cabecera salia con la X y
+  // sin una palabra. Por eso el texto se calcula aqui, con `vista`, que es
+  // estado y ya existe.
+  useCabecera({
+    titulo: {
+      lista: 'Tu cartera',
+      selector: creados.length > 0 ? 'Agregar cliente' : 'Pasar mi cuaderno',
+      formulario: editandoIdx !== null
+        ? `Editar: ${creados[editandoIdx]?.nombre || 'cliente'}`
+        : `Cliente #${creados.length + 1}`,
+    }[vista],
+    subtitulo: {
+      lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
+      selector: creados.length > 0 ? 'Cómo quieres registrar este cliente' : 'Agrega tus clientes con foto o a mano, uno a uno',
+      formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su préstamo',
+    }[vista],
+  })
   const [saving, setSaving] = useState(false)
   const [eliminandoIdx, setEliminandoIdx] = useState(null)
   const [error, setError] = useState('')
@@ -888,6 +911,7 @@ export default function MigradorPage() {
     formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su prestamo',
   }[vista]
 
+
   const volverLabel = {
     lista: 'Salir',
     selector: creados.length > 0 ? 'Ver mis clientes' : 'Salir',
@@ -920,10 +944,10 @@ export default function MigradorPage() {
           {volverLabel}
         </button>
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{headerTitulo}</h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{headerSub}</p>
-          </div>
+          {/* El titulo cambia con la vista, y por eso vive en la cabecera del
+              armazon: asi cambia EN LA CABECERA en vez de aparecer un segundo
+              titulo debajo de ella. */}
+          <div />
           {creados.length > 0 && vista !== 'lista' && (
             <button type="button" onClick={() => irA('lista')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors"

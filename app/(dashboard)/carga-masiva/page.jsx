@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { aplicarMapeo, parsearNumero } from '@/lib/carga-masiva'
@@ -17,6 +18,12 @@ const PASOS = [
 ]
 
 export default function CargaMasivaPage() {
+  useCabecera({
+    titulo: 'Importar clientes',
+    subtitulo: 'Sube tu Excel o CSV y el sistema detecta las columnas',
+    onVolver: handleVolver,
+  })
+
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
 
@@ -117,20 +124,11 @@ export default function CargaMasivaPage() {
   return (
     <div className="max-w-xl mx-auto pb-8">
       {/* Header */}
+      {/* SIN FLECHA PROPIA Y SIN TITULO PROPIO. Los dos los pone el armazon.
+          La flecha ademas hacia dos cosas —«Volver» o «Paso anterior»— y ahora
+          eso viaja como `onVolver`, asi que sigue retrocediendo por pasos pero
+          con un solo control en la pantalla. */}
       <div className="mb-6">
-        <button
-          onClick={handleVolver}
-          className="flex items-center gap-1.5 text-sm text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors mb-4"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          {paso === 1 ? 'Volver' : 'Paso anterior'}
-        </button>
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Importar clientes desde archivo</h1>
-        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
-          Sube tu Excel o CSV y el sistema detecta las columnas
-        </p>
       </div>
 
       {/* Indicador de pasos */}
