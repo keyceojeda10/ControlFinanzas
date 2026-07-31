@@ -105,13 +105,17 @@ export function HuecoFila({ conPie, atenuada }) {
 
 /* El panel cargando, armado con las piezas. La cabecera conserva la moneda —lo
    único que ya se sabe— para que al llegar los datos no parpadee entera. */
-export function PanelCargando() {
+// `sinMargen`: el relleno lateral lo pone el armazon. Montado en
+// app/(dashboard)/loading.jsx, que ya va dentro del `px-5` del layout, los 20px
+// de aqui hacian 40 — y el esqueleto salia mas estrecho que la pantalla que
+// anuncia, que es justo el salto que existe para evitar. Van SIETE.
+export function PanelCargando({ sinMargen = false }) {
   return (
     <div aria-busy="true" aria-label="Cargando" style={{
       height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
     }}>
       <div style={{
-        flex: 'none', padding: '6px 20px 14px', display: 'flex', flexDirection: 'column', gap: 14,
+        flex: 'none', padding: sinMargen ? '6px 0 14px' : '6px 20px 14px', display: 'flex', flexDirection: 'column', gap: 14,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <span style={{
