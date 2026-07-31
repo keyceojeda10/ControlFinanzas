@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
+import HojaInferior from '@/components/cf/HojaInferior'
 import { adaptarRutas, adaptarSinRuta, resumenDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
@@ -388,9 +389,22 @@ export default function RutasPage() {
           Las copias de seguridad se van al modo «Ordenar», que es cuando de
           verdad importan: se guarda una copia antes de cambiar el orden. */}
 
-      {/* Mini formulario inline */}
-      {showForm && (
-        <form onSubmit={crearRuta} className="bg-[var(--cf-surface)] border border-[color-mix(in_srgb,var(--cf-gold)_30%,transparent)] rounded-[16px] p-4 mb-4 space-y-3">
+      {/* ── CREAR RUTA ES UNA HOJA, NO UN PANEL ENCIMA DEL TITULO ──
+          Este formulario se abria INLINE y ARRIBA DEL TODO: al pulsar «+», lo
+          primero de la pantalla dejaba de ser «Rutas» y pasaba a ser un
+          recuadro con dos campos, un párrafo de ayuda y dos botones — con el
+          titulo de la pantalla y la lista empujados fuera de la vista.
+
+          Como hoja se comporta como el resto de la app: la pantalla se queda
+          donde estaba, el formulario sube encima, y al cerrarlo vuelves a lo
+          que estabas mirando. */}
+      <HojaInferior
+        abierta={showForm}
+        onCerrar={() => { setShowForm(false); setCapitalRuta('') }}
+        titulo="Nueva ruta"
+        subtitulo="Un grupo de clientes que cobra la misma persona"
+      >
+        <form onSubmit={crearRuta} className="space-y-3">
           <Input
             placeholder="Nombre de la ruta (ej: Zona Norte)"
             value={nombre}
@@ -442,12 +456,11 @@ export default function RutasPage() {
               </div>
             </div>
           )}
-          <div className="flex gap-2 justify-end">
-            <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setCapitalRuta('') }} disabled={saving}>Cancelar</Button>
-            <Button type="submit" loading={saving}>Crear ruta</Button>
-          </div>
+          {/* Un solo botón: «Cancelar» ya es cerrar la hoja, y dos acciones
+              donde una es «no hacer nada» reparten la atención. */}
+          <Button type="submit" loading={saving} className="w-full">Crear ruta</Button>
         </form>
-      )}
+      </HojaInferior>
 
       {/* DOS ALARMAS AMBAR APILADAS PARA EL MISMO HECHO. La franja de arriba
           ya dice «Pasaste el límite de tu plan · 2/1 rutas» y ya lleva su
@@ -576,13 +589,14 @@ export default function RutasPage() {
         </div>
       )}
 
-      {/* Con una sola ruta no hay nada que ordenar, así que la fila de arriba
-          no se pinta y el botón se quedaría sin sitio. */}
-      {!loading && rutas.length <= 1 && montado && esOwner && (
-        <div className="flex justify-end mb-3">
-          <BotonNuevaRuta onClick={() => setShowForm(true)} />
-        </div>
-      )}
+      {/* ── AQUI HABIA UN TERCER «+» ──
+          Con una sola ruta se pintaba este botón flotando entre el formulario y
+          el título, ADEMÁS del que `ListaRutas` ya lleva en su fila de título y
+          ADEMÁS del FAB de la pastilla: tres botones de crear en la misma
+          pantalla, uno de ellos sin nada al lado que dijera qué crea.
+
+          Se queda el de la lista, que es el que está junto a «Rutas». Cuando no
+          hay ninguna, el estado vacío tiene su propio «Crear primera ruta». */}
 
       {!loading && rutas.length > 0 && !modoOrdenar && (
         <div className="lg:grid lg:grid-cols-2 lg:gap-4">

@@ -147,10 +147,20 @@ function RutaTranquila({ nombre, subtitulo, onAbrir }) {
    y sus cobros no salen en la pantalla de nadie. El discontinuo dice «esto está
    sin terminar» sin gastar una alarma roja, que sería exagerar — no hay plata
    perdida, hay trabajo sin asignar. */
-function RutaSinCobrador({ nombre, clientes = 0, onAsignar }) {
+/* ── UNA RUTA SIN COBRADOR SIGUE SIENDO UNA RUTA ──
+   Esta tarjeta no se podia abrir: solo tenia el boton «Asignar». Y una ruta sin
+   cobrador tiene igualmente sus clientes, su cartera y su capital — de hecho es
+   la que MAS hay que mirar, porque nadie la esta cobrando. El usuario le dio y
+   no le dejo entrar.
+
+   La tarjeta abre; «Asignar» sigue haciendo lo suyo y NO deja que el clic suba
+   a la tarjeta, o pulsarlo abriria la ruta en vez de asignar. */
+function RutaSinCobrador({ nombre, clientes = 0, onAsignar, onAbrir }) {
   return (
-    <div style={{
-      flex: 'none',
+    <div onClick={onAbrir} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAbrir?.() } }}
+      style={{
+      flex: 'none', cursor: onAbrir ? 'pointer' : 'default',
       background: 'var(--cf-card)', border: '1px dashed rgba(20,20,28,.16)',
       borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
       display: 'flex', alignItems: 'center', gap: 12,
@@ -164,7 +174,7 @@ function RutaSinCobrador({ nombre, clientes = 0, onAsignar }) {
           {clientes} cliente{clientes === 1 ? '' : 's'} · sin cobrador
         </span>
       </div>
-      <button type="button" onClick={onAsignar} style={{
+      <button type="button" onClick={(e) => { e.stopPropagation(); onAsignar?.() }} style={{
         background: 'none', border: 0, padding: 0, cursor: 'pointer', flex: 'none',
         fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
         fontFamily: 'var(--font-manrope), system-ui',
@@ -243,7 +253,8 @@ export default function ListaRutas({
       {activas.map((r) => <RutaActiva key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
       {tranquilas.map((r) => <RutaTranquila key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
       {huerfanas.map((r) => (
-        <RutaSinCobrador key={r.id} {...r} onAsignar={() => onAsignar?.(r)} />
+        <RutaSinCobrador key={r.id} {...r}
+          onAsignar={() => onAsignar?.(r)} onAbrir={() => onAbrir?.(r)} />
       ))}
 
       {/* Los clientes SIN NINGUNA RUTA. Es otro agujero, distinto del de arriba:
