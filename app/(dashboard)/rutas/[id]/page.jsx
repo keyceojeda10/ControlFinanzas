@@ -1325,6 +1325,16 @@ export default function RutaDetallePage({ params }) {
 
   const recorrido = partirRecorrido(paradasDeHoy, (n) => formatMoney(n))
 
+  // El cuadre del fajo: cobrado en efectivo - entregado en prestamos - gastos.
+  // Lo usan la pantalla de cierre (T04-03) y el modal de registrar cierre, y
+  // sale del MISMO sitio en los dos — que es lo que evita tener dos cifras
+  // distintas para la misma pregunta.
+  const cierreHoyRuta = cierreDelDia({
+    cobradoEfectivo: ruta?.recaudadoEfectivoHoy,
+    prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
+    gastos: ruta?.gastosEfectivoHoy,
+  }, (n) => formatMoney(n))
+
   // ── LA HOJA DE COBRO, FUERA DEL JSX PRINCIPAL ──
   // Vive en una variable porque hace falta en LAS DOS pantallas: la lista y
   // el modo recorrido. Estaba solo en el `return` de abajo, y como el
@@ -2995,24 +3005,60 @@ export default function RutaDetallePage({ params }) {
               {errorCaja}
             </div>
           )}
-          <div className="flex justify-between text-sm">
-            <span className="text-[var(--cf-ink-3)]">Total esperado hoy</span>
-            <span className="font-semibold text-[var(--cf-ink)] font-mono-display">{formatMoney(ruta.esperadoHoy)}</span>
+          {/* ── SE COMPARA CONTRA LO QUE DEBE TENER, NO CONTRA LA META ──
+              Decia «Total esperado hoy» y restaba lo recogido MENOS lo esperado.
+              Eso responde otra pregunta: si un cliente no pago, al cobrador le
+              salia «Diferencia -$50.000» EN ROJO, como si le faltara plata a
+              el. Y no le falta — es que ese cliente no pago, cosa que ya se
+              sabe. Confundir «no cobre todo» con «me falta plata» acusa a quien
+              acaba de trabajar todo el dia.
+
+              Lo que hay que cuadrar es EL FAJO: lo cobrado en efectivo, menos
+              lo que entrego en prestamos, menos lo que gasto. `cierreDelDia` ya
+              lo calcula, y es el mismo que usa la pantalla de cierre. */}
+          <div className="rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+            {cierreHoyRuta.lineas.map((l, i) => (
+              <div key={l.id} className="flex justify-between items-center text-sm px-3.5 py-2.5"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)' }}>
+                <span style={{ color: 'var(--cf-ink-3)' }}>{l.texto}</span>
+                <span className="font-mono-display" style={{ fontWeight: 600, color: l.resta ? 'var(--cf-ink-2)' : 'var(--cf-ink)' }}>
+                  {l.valor}
+                </span>
+              </div>
+            ))}
+            <div className="flex justify-between items-center px-3.5 py-3"
+              style={{ borderTop: '1px solid var(--cf-border)', background: 'var(--cf-fill)' }}>
+              <span style={{ fontWeight: 700, color: 'var(--cf-ink)' }}>{cierreHoyRuta.totalTexto}</span>
+              <span className="font-mono-display" style={{ fontWeight: 700, fontSize: 17, color: cierreHoyRuta.aFavor ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
+                {cierreHoyRuta.total}
+              </span>
+            </div>
           </div>
+
           <MoneyInput
-            label="Dinero recogido (COP)"
-            placeholder="Ej: 250.000"
+            label="Cuanto traes de verdad"
+            placeholder={cierreHoyRuta.total}
             value={totalRecogido}
             onChange={(e) => setTotalRecogido(e.target.value)}
           />
-          {totalRecogido && (
-            <div className="text-sm">
-              <span className="text-[var(--cf-ink-3)]">Diferencia: </span>
-              <span className="font-mono-display" style={{ color: Number(totalRecogido) >= ruta.esperadoHoy ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)', fontWeight: 700 }}>
-                {Number(totalRecogido) >= ruta.esperadoHoy ? '+' : ''}{formatMoney(Number(totalRecogido) - ruta.esperadoHoy)}
-              </span>
-            </div>
-          )}
+
+          {/* La diferencia, contra el fajo que TOCA. */}
+          {totalRecogido && (() => {
+            const debe = Math.abs(cierreHoyRuta.numeros?.neto ?? 0)
+            const trae = Math.round(Number(String(totalRecogido).replace(/\./g, '')) || 0)
+            const dif = trae - debe
+            if (dif === 0) {
+              return <p className="text-sm" style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Cuadra exacto.</p>
+            }
+            return (
+              <p className="text-sm">
+                <span style={{ color: 'var(--cf-ink-3)' }}>{dif > 0 ? 'Traes de mas: ' : 'Falta: '}</span>
+                <span className="font-mono-display" style={{ fontWeight: 700, color: dif > 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
+                  {formatMoney(Math.abs(dif))}
+                </span>
+              </p>
+            )
+          })()}
         </div>
       </Modal>
 
