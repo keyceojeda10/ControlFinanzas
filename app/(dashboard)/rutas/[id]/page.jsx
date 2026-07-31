@@ -29,6 +29,7 @@ import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import ModoRuta                      from '@/components/pantallas/ModoRuta'
 import RutaCerrada                   from '@/components/pantallas/RutaCierre'
 import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
+import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -349,6 +350,9 @@ export default function RutaDetallePage({ params }) {
   // vez, con el siguiente ya preparado— y hasta hoy la jornada se hacia sobre
   // una lista de veinte nombres.
   const [enRecorrido, setEnRecorrido] = useState(false)
+  // T24-03: la ficha de capital de la ruta. Se abre tocando el bloque negro,
+  // que es justo la cifra sobre la que responde («¿me rinde meter plata aqui?»).
+  const [fichaCapital, setFichaCapital] = useState(false)
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
   const [vistaPlana, setVistaPlana] = useState(() => {
     try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
@@ -1571,14 +1575,21 @@ export default function RutaDetallePage({ params }) {
         )}
       </div>
 
+      {/* Tocar el bloque negro abre la ficha de capital (T24-03). Era una cifra
+          sin salida: el dueño la miraba y no tenia donde ir a entenderla. */}
       {(esOwner || puedeVerCapitalRuta) && (
-        <LoPuestoAqui {...loPuestoAqui({
+      <div
+        onClick={(esOwner || puedeVerCapitalRuta) ? () => setFichaCapital(true) : undefined}
+        style={{ cursor: (esOwner || puedeVerCapitalRuta) ? 'pointer' : 'default' }}
+      >
+      <LoPuestoAqui {...loPuestoAqui({
           carteraTotal: ruta.carteraTotal,
           capitalPendiente: ruta.capitalPendiente,
           capitalTotal: ruta.capitalTotal,
           totalAPagarRuta: ruta.totalAPagarRuta,
           clientes: ruta.clientes,
         }, (n) => formatMoney(n))} />
+      </div>
       )}
 
       <LoDeHoy {...loDeHoy({
@@ -3140,6 +3151,39 @@ export default function RutaDetallePage({ params }) {
           </div>
         )}
       </Modal>
+
+      {/* ── T24-03 · CAPITAL DE LA RUTA ──
+          La pregunta que el dueño se hace mirando el bloque negro y que hasta
+          hoy no tenia respuesta en ninguna pantalla: si tiene plata quieta,
+          ¿conviene meterla en ESTA ruta? Por eso se abre desde ahi.
+
+          `entroMes` y `salioAPrestarMes` salen de `MovimientoCapital`, el libro
+          unico. La comparacion con las otras rutas usa el cumplimiento, que es
+          la unica metrica que ya calculan todas por igual. */}
+      {(esOwner || puedeVerCapitalRuta) && (
+        <HojaInferior
+          abierta={fichaCapital}
+          onCerrar={() => setFichaCapital(false)}
+          titulo="Capital de la ruta"
+          subtitulo={ruta?.nombre}
+        >
+          <FichaRuta
+            puesto={formatMoney(Math.round(ruta?.capitalPendiente ?? 0))}
+            prestado={formatMoney(Math.round(ruta?.capitalTotal ?? 0))}
+            porGanar={formatMoney(Math.round((ruta?.carteraTotal ?? 0) - (ruta?.capitalPendiente ?? 0)))}
+            rinde={ruta?.capitalPendiente > 0
+              ? `${Math.round((((ruta.carteraTotal ?? 0) - ruta.capitalPendiente) / ruta.capitalPendiente) * 100)}%`
+              : '—'}
+            entro={formatMoney(ruta?.entroMes ?? 0)}
+            salioAPrestar={formatMoney(ruta?.salioAPrestarMes ?? 0)}
+            crecio={formatMoney(Math.abs((ruta?.entroMes ?? 0) - (ruta?.salioAPrestarMes ?? 0)))}
+            crecioFavor={(ruta?.entroMes ?? 0) >= (ruta?.salioAPrestarMes ?? 0)}
+            nombreRuta={ruta?.nombre}
+            totalPrestamos={(ruta?.clientes ?? []).reduce((n, c) => n + (c.prestamosActivos?.length ?? 0), 0)}
+            onVerPrestamos={() => router.push(`/prestamos?rutaId=${id}`)}
+          />
+        </HojaInferior>
+      )}
 
       {/* ── EMPEZAR RECORRIDO ──
           La accion que abre la jornada, y la unica de esta pantalla que el

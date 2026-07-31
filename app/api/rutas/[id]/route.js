@@ -184,6 +184,27 @@ export async function GET(request, { params }) {
   //
   // SOLO EFECTIVO. Lo que salio por transferencia no esta en el fajo que el
   // cobrador entrega de noche, asi que restarlo descuadraria el cierre.
+  // ── EL MES DE LA RUTA (T24-03) ──
+  // Lo que entro, lo que salio a prestar y la diferencia. `FichaRuta` responde
+  // «¿me rinde meter plata aqui?», y sin el mes esa pregunta no se puede
+  // contestar: el dia suelto no dice nada de una ruta.
+  const inicioMes = new Date(Date.UTC(_hoy.getUTCFullYear(), _hoy.getUTCMonth(), 1))
+  const movimientosMes = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      rutaId: id,
+      tipo: { in: ['recaudo', 'desembolso'] },
+      createdAt: { gte: inicioMes },
+    },
+    select: { tipo: true, monto: true },
+  })
+  let entroMes = 0
+  let salioAPrestarMes = 0
+  for (const m of movimientosMes) {
+    if (m.tipo === 'recaudo') entroMes += m.monto
+    else salioAPrestarMes += m.monto
+  }
+
   const movimientosHoy = await prisma.movimientoCapital.findMany({
     where: {
       organizationId,
@@ -565,6 +586,8 @@ export async function GET(request, { params }) {
     // que entregar, asi que restarlo descuadraria el cierre al reves.
     desembolsadoEfectivoHoy: Math.round(desembolsadoEfectivoHoy),
     gastosEfectivoHoy: Math.round(gastosEfectivoHoy),
+    entroMes: Math.round(entroMes),
+    salioAPrestarMes: Math.round(salioAPrestarMes),
     // ── «3,4 km» EN LA CABECERA (T27-02) ──
     //
     // Lo que se camina hoy, en el orden del recorrido. Es lo que decide si la
