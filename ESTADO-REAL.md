@@ -60,8 +60,26 @@ a una pantalla), pero con los componentes viejos. Funcionan, no son la lámina.
 
 ## Los 22 componentes construidos que nadie ve
 
-Están hechos y cotejados, viven solo en `/estilo`. Montar cada uno es cablear,
-no diseñar:
+⚠ **CORRECCIÓN (31 jul): montarlos NO es «cablear, no diseñar».** Eso lo escribí
+yo y es falso. Comprobados cuatro, fallan los cuatro por el mismo motivo: el
+componente del banco recibe **datos ya calculados** y el de la app **los
+calcula dentro**. No hay adaptador que los una, y montar el nuevo tal cual
+PIERDE funciones:
+
+| Del banco | En la app | Qué se perdería |
+|---|---|---|
+| `Renovar` | `RenovarPrestamo` (470) | los cálculos de entrega/ganancia, en un flujo que ya tuvo un bug de caja |
+| `Lucas` | `AsistenteChat` (479) | historial, streaming, límite por plan, dictado |
+| `Plantillas` | `ModalWhatsAppTemplates` (491) | construcción de plantillas, edición, secciones, extras |
+| `Pagare` | `FirmaDigital` (438) | lienzo de firma, guardado, descarga |
+
+El patrón es siempre el mismo: **el del banco es la piel, el de la app es el
+motor**. El trabajo real es escribir el adaptador que los junta, no cambiar un
+import. Los que SÍ son montaje directo son los que no tienen motor detrás —
+`PlanExcedido` (sustituye a un `router.replace` silencioso) y `PanelCargando`
+(sustituye a un esqueleto dibujado a mano).
+
+Están hechos y cotejados, viven solo en `/estilo`:
 
 ```
 Arranque       Estados        ModoRuta       Recibo         RutaCierre
