@@ -6,6 +6,7 @@ import { prisma }              from '@/lib/prisma'
 import {
   calcularPrestamo,
   calcularDiasMora,
+  calcularMontoEnMora,
   calcularSaldoPendiente,
   calcularPorcentajePagado,
   calcularCapitalRestante,
@@ -204,6 +205,12 @@ export async function GET(request) {
     porcentajePagado: calcularPorcentajePagado(p),
     capitalRestante:  calcularCapitalRestante(p),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
+    // ── LA TIRA DE CIFRAS DE T03-04 ──
+    // «ATRASO» en PLATA, no en dias. La tarjeta ya dice «36d» en la pastilla; lo
+    // que el dueño decide con ello es cuanto le deben de mas, y eso son pesos.
+    // Se calcula aca porque `calcularMontoEnMora` necesita los dias excluidos y
+    // los festivos de la organizacion, que el navegador no tiene.
+    montoEnMora:      calcularMontoEnMora(p, diasExcluidos, festivos),
     // «cuota 13 de 24», que es lo que T02-06 pone en la linea de contexto.
     //
     // Se calcula ACA y no en el adaptador porque `calcularCuotasPendientes` sabe

@@ -24,6 +24,7 @@ html[data-theme="light"] {
   /* ── Trazos ── */
   --cf-border:         rgba(20,20,28,.08);   /* borde por defecto de tarjeta */
   --cf-border-strong:  rgba(20,20,28,.12);   /* boton secundario */
+  --cf-border-soft:    rgba(20,20,28,.07);   /* filetes DENTRO de una tarjeta */
   --cf-hairline:       rgba(20,20,28,.06);   /* separador entre filas */
   --cf-divider:        rgba(20,20,28,.07);   /* separador entre bloques */
   --cf-chevron:        rgba(20,20,28,.30);   /* flechas de "entrar" */
@@ -88,6 +89,7 @@ html[data-theme="dark"] {
 
   --cf-border:         rgba(255,255,255,.09);
   --cf-border-strong:  rgba(255,255,255,.12);
+  --cf-border-soft:    rgba(255,255,255,.07);
   --cf-hairline:       rgba(255,255,255,.07);
   --cf-divider:        rgba(255,255,255,.08);
   --cf-chevron:        rgba(255,255,255,.30);

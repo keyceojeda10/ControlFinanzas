@@ -2,8 +2,23 @@
 
 // components/cf/TarjetaCliente.jsx
 //
-// LA PIEZA MÁS REPETIDA DEL SISTEMA. Receta en 03-COMPONENTES.md §3, y dibujada
-// en T02-05 (clientes), T02-06 (préstamos) y T02-02 (cobrar hoy).
+// LA PIEZA MÁS REPETIDA DEL SISTEMA. Receta en 03-COMPONENTES.md §3.
+//
+// ⚠ LA MANDA EL TURNO 03, NO EL 02. La dibujan T02-05/06/02 y, DESPUÉS,
+// T03-03 (clientes), T03-04 (préstamos) y T03-01 (cobrar hoy) — que la
+// corrigen. La construí contra el turno 02 porque en el inventario anoté que
+// las del 03 eran «las mismas con datos de ejemplo»; no lo eran, y el usuario
+// lo vio de inmediato. El pie de T03-04 lo dice sin rodeos:
+//
+//   «Faltaba lo más básico: la cuota. Y la ganancia acumulada, que es la razón
+//    de ser del préstamo y no aparecía en ninguna lista.»
+//
+// Tres cambios del 03 sobre el 02, y son de estructura:
+//   1. El monto sube a la fila del nombre, a la derecha, con su subtítulo
+//      debajo («de $1.200.000»). Ya no tiene fila propia.
+//   2. La pastilla de estado baja a la segunda línea, junto al contexto.
+//   3. Aparece la TIRA DE CIFRAS: cuatro columnas con filete, sobre un borde.
+//      Es lo que el usuario echaba en falta, y es la mitad de la tarjeta.
 //
 // ES UNA SOLA TARJETA CON DOS JUEGOS DE MEDIDAS. Las dos láminas la dibujan
 // igual salvo en seis números, y esos seis van juntos:
@@ -47,6 +62,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
+import { Fragment } from 'react'
 import { BarraProgreso, Pastilla } from './primitivos'
 
 const COLOR_ESTADO = {
@@ -71,12 +87,20 @@ const COLOR_ESTADO = {
    alarma. */
 const TONO_PASTILLA = { mora: 'mora', atraso: 'atraso', aldia: 'aldia', renovar: 'aldia', pagado: 'neutro' }
 
-const TONO_BARRA = { mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
+// Los valores de la tira son casi todos tinta normal. Solo dos se tiñen, y son
+// los dos que el dueño busca: lo que le deben de más y lo que ha ganado. Si se
+// tiñeran los cuatro, la tira dejaría de señalar nada.
+const TONO_CIFRA = { mora: 'var(--cf-red-dark)', ganancia: 'var(--cf-green-dark)' }
+
+const TONO_BARRA ={ mora: 'mal', atraso: 'oro', aldia: 'ok', renovar: 'ok', pagado: 'neutro' }
 
 /** Los seis números que cambian entre las dos láminas, juntos y con nombre. */
 const MEDIDAS = {
-  cliente:  { relleno: '15px 16px 15px 19px', hueco: 11, riel: 14, alineado: 'center',     huecoFila: 12, monto: 23, huecoSub: 2 },
-  prestamo: { relleno: '14px 16px 14px 19px', hueco: 10, riel: 13, alineado: 'flex-start', huecoFila: 10, monto: 21, huecoSub: 3 },
+  // Con la tira del turno 03 las dos convergen: T03-03 y T03-04 dibujan el
+  // mismo relleno y el mismo riel. Lo único que las separa es el avatar, que
+  // solo lleva la de cliente, y el hueco que necesita a su lado.
+  cliente:  { relleno: '15px 16px 15px 19px', hueco: 12, riel: 14, huecoFila: 12, monto: 20, huecoSub: 4 },
+  prestamo: { relleno: '15px 16px 15px 19px', hueco: 12, riel: 14, huecoFila: 10, monto: 20, huecoSub: 4 },
 }
 
 export default function TarjetaCliente({
@@ -96,12 +120,19 @@ export default function TarjetaCliente({
   // ya está a la derecha y dos pastillas en la misma fila compiten. El punto
   // dice «mira aquí» sin quitarle sitio al nombre, que es lo que se lee.
   nuevo = false,
-  etiquetaMonto,           // «Deuda total» · sin él, el monto va solo
   monto,
-  // Lo de la derecha, a la altura del monto: «2% pagado» en clientes,
-  // «de $1.200.000 · 54% pagado» en préstamos.
+  // Debajo del monto y alineado a su derecha: «de $1.200.000» en préstamos,
+  // «3 préstamos» en clientes.
   detalle,
+  // ── LA TIRA DEL TURNO 03 ──
+  // Cuatro columnas: [{ rotulo, valor, tono }]. `tono` es 'mora' | 'ganancia'
+  // | undefined. La pantalla las compone porque cambian en cada una: cuota /
+  // atraso / ganancia / vence en préstamos, atraso / cumple / pagado / próximo
+  // cobro en clientes.
+  cifras,
   porcentaje = 0,
+  // Lo que se lee al lado de la barra: «cuota 13/24 · 54%».
+  avance,
   // `unico` no tiene cuotas: estaría en 0% durante todo el plazo. Mostrar una
   // barra vacía acá reintroduce en la lista la misma alarma falsa que la ficha
   // elimina — y son 882 préstamos. La reemplaza el vencimiento.
@@ -117,7 +148,11 @@ export default function TarjetaCliente({
   // lista: sigue siendo historia consultable, pero deja de pedir atención.
   const apagada = estado === 'pagado'
   const conAvatar = variante === 'cliente' && !!iniciales
-  const derecha = detalle ?? (sinProgreso ? nota : `${porcentaje}% pagado`)
+  // Bajo el monto. Antes este hueco cargaba con todo —el detalle, la nota Y el
+  // porcentaje— porque no había dónde más ponerlo. Ahora el porcentaje vive al
+  // lado de la barra (`avance`) y la nota tiene su propia línea, así que aquí
+  // queda solo lo que la lámina pone: el total del que sale ese saldo.
+  const derecha = detalle
 
   return (
     <div
@@ -144,8 +179,14 @@ export default function TarjetaCliente({
         width: 4, borderRadius: 999, background: color,
       }} />
 
-      {/* ── Nivel 1 · quién ── */}
-      <div style={{ display: 'flex', alignItems: m.alineado, gap: m.huecoFila }}>
+      {/* ── Nivel 1 · quién, y cuánto ──
+          EL TURNO 03 MANDA SOBRE EL 02, Y ESTO ES LO QUE CAMBIA.
+          T02-05/06 ponían el monto en su propia fila debajo, y la pastilla de
+          estado a la derecha del nombre. T03-03 y T03-04 lo reordenan: el monto
+          sube a esta fila, alineado a la derecha con su subtítulo debajo, y la
+          pastilla baja a la segunda línea junto al contexto.
+          Gana una fila entera de alto, que es la que ocupan las cifras. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: m.huecoFila }}>
         {conAvatar && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -178,48 +219,95 @@ export default function TarjetaCliente({
               `WebkitLineClamp: 2` y las tarjetas cambiaban de alto según lo
               larga que fuera la dirección: una lista de alturas distintas se
               recorre peor, y la lámina las dibuja todas iguales. */}
-          {contexto && (
-            <span className="cf-num" style={{
-              fontSize: 12, color: 'var(--cf-ink-3)',
-              minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>{contexto}</span>
+          {/* La pastilla y el contexto comparten esta línea. El contexto se
+              encoge, la pastilla no: con un nombre de ruta largo se recorta la
+              ruta, nunca los días de mora. */}
+          {(etiquetaEstado || contexto) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+              {etiquetaEstado && (
+                // El pagado lleva pastilla NEUTRA (gris), no una de su color: no
+                // hay «color de terminado», hay ausencia de alarma.
+                <Pastilla tono={TONO_PASTILLA[estado] ?? 'neutro'} numerica style={{ flex: 'none' }}>
+                  {etiquetaEstado}
+                </Pastilla>
+              )}
+              {contexto && (
+                <span className="cf-num" style={{
+                  fontSize: 12, color: 'var(--cf-ink-3)',
+                  minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{contexto}</span>
+              )}
+            </div>
           )}
         </div>
 
-        {etiquetaEstado && (
-          // El pagado lleva pastilla NEUTRA (gris), no una de su color: no hay
-          // «color de terminado», hay ausencia de alarma.
-          <Pastilla tono={TONO_PASTILLA[estado] ?? 'neutro'} numerica style={{ flex: 'none' }}>
-            {etiquetaEstado}
-          </Pastilla>
-        )}
-      </div>
-
-      {/* ── El monto y su barra ──
-          `flex-end` + `space-between`: el rótulo y el monto en columna a la
-          izquierda, y el detalle a la derecha alineado con la BASE del monto. */}
-      {monto != null && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-              {etiquetaMonto && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-                  color: 'var(--cf-ink-3)',
-                }}>{etiquetaMonto}</span>
-              )}
-              <span className="cf-fig" style={{
-                fontSize: m.monto, letterSpacing: '-.03em', color: 'var(--cf-ink)',
-              }}>{monto}</span>
-            </div>
+        {monto != null && (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+            gap: 2, flex: 'none',
+          }}>
+            <span className="cf-fig" style={{
+              fontSize: m.monto, letterSpacing: '-.025em', lineHeight: 1, color: 'var(--cf-ink)',
+            }}>{monto}</span>
             {derecha && (
               <span className="cf-num" style={{
-                fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none', whiteSpace: 'nowrap',
+                fontSize: 11, color: 'var(--cf-ink-3)', whiteSpace: 'nowrap',
               }}>{derecha}</span>
             )}
           </div>
-          {!sinProgreso && <BarraProgreso porcentaje={porcentaje} tono={TONO_BARRA[estado]} alto={5} />}
-        </>
+        )}
+      </div>
+
+      {/* ── La tira de cifras ──
+          «Faltaba lo más básico: la cuota. Y la ganancia acumulada, que es la
+          razón de ser del préstamo y no aparecía en ninguna lista» (T03-04).
+          Cuatro columnas iguales separadas por filetes de 1px. Van sobre un
+          borde superior, así que la tarjeta se lee en dos bloques: quién y
+          cuánto arriba, los números del negocio abajo. */}
+      {cifras?.length > 0 && (
+        <div style={{
+          display: 'flex', gap: 6,
+          paddingTop: 11, borderTop: '1px solid var(--cf-border-soft)',
+        }}>
+          {cifras.map((c, i) => (
+            <Fragment key={c.rotulo}>
+              {i > 0 && <span aria-hidden style={{ width: 1, flex: 'none', background: 'var(--cf-border-soft)' }} />}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{c.rotulo}</span>
+                <span className="cf-fig" style={{
+                  fontSize: 14, letterSpacing: 0,
+                  color: TONO_CIFRA[c.tono] || 'var(--cf-ink)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>{c.valor}</span>
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      )}
+
+      {/* ── El avance ──
+          La barra y su lectura en la MISMA fila. Antes la barra iba sola y el
+          «54% pagado» vivía arriba, al lado del monto; la lámina los junta y
+          añade la cuota exacta, que es lo que dice por dónde va el cliente. */}
+      {!sinProgreso && monto != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <BarraProgreso porcentaje={porcentaje} tono={TONO_BARRA[estado]} alto={5} style={{ flex: 1 }} />
+          {avance && (
+            <span className="cf-num" style={{
+              fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)',
+              flex: 'none', whiteSpace: 'nowrap',
+            }}>{avance}</span>
+          )}
+        </div>
+      )}
+
+      {/* `unico` no tiene cuotas: sin barra, la nota ocupa su sitio. */}
+      {sinProgreso && nota && (
+        <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)' }}>{nota}</span>
       )}
     </div>
   )
