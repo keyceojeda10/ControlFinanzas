@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { Firma } from '@/components/pantallas/Pagare'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/i18n'
@@ -174,6 +175,14 @@ export default function FirmaDigital({ prestamo, onSave }) {
   const firmaUrl = prestamo?.firmaUrl
 
   const [modalFirmar, setModalFirmar] = useState(false)
+  // QUE ESTA FIRMANDO. Va en la cabecera del recuadro, en una linea: recibio
+  // tanto, devuelve tanto, en tantas cuotas. Un pagare que no dice las cifras
+  // encima de la firma no zanja nada despues.
+  const resumenFirma = [
+    prestamo?.montoPrestado > 0 ? `Recibió ${formatMoney(prestamo.montoPrestado)}` : null,
+    prestamo?.totalAPagar > 0 ? `devuelve ${formatMoney(prestamo.totalAPagar)}` : null,
+    prestamo?.cuotaDiaria > 0 ? `cuota ${formatMoney(prestamo.cuotaDiaria)}` : null,
+  ].filter(Boolean).join(' · ')
   const [modalVer, setModalVer] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
@@ -403,16 +412,38 @@ export default function FirmaDigital({ prestamo, onSave }) {
       </Modal>
 
       {/* Modal firmar/re-firmar */}
-      <Modal open={modalFirmar} onClose={() => setModalFirmar(false)} title={firmaUrl ? 'Modificar firma' : 'Firma del cliente'}>
-        <div className="space-y-3">
-          <p className="text-[11px] text-[var(--cf-ink-3)]">
-            El cliente firma con el dedo sobre el recuadro.
-          </p>
-          <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--cf-border)', background: '#ffffff' }}>
+      {/* -- T18-02, MONTADA --
+          El recuadro era un cuadro blanco con «Firmar aqui» en gris y dos
+          botones iguales debajo. `Firma` le pone lo que un papel tiene y una
+          caja no: LA LINEA sobre la que se firma, el rotulo «Firma del
+          cliente», y la fecha y la hora al lado — que es lo que convierte un
+          garabato en algo fechado.
+
+          Y el titular dice el nombre: «Firma aqui, Steven Olmos». Se lo enseña
+          el cobrador al cliente, y un «Firma del cliente» generico no confirma
+          a quien se le esta pidiendo.
+
+          El `canvas` va por la ranura `children`: el trazo que dibuja la lamina
+          es de mentira, aqui la firma es de verdad. */}
+      <Modal open={modalFirmar} onClose={() => setModalFirmar(false)}>
+        <div style={{ height: 'min(70vh, 460px)' }}>
+          <Firma
+            nombre={prestamo?.cliente?.nombre ?? 'aquí'}
+            resumen={resumenFirma}
+            fecha={new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+            hora={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
+            onBorrar={limpiar}
+            onListo={guardar}
+            guardando={saving}
+            puedeGuardar={hasStrokes}
+          >
             <canvas
               ref={canvasRef}
-              className="w-full touch-none"
-              style={{ height: 200, cursor: 'crosshair' }}
+              className="touch-none"
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                cursor: 'crosshair', background: 'transparent',
+              }}
               onMouseDown={startDraw}
               onMouseMove={draw}
               onMouseUp={endDraw}
@@ -421,16 +452,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
               onTouchMove={draw}
               onTouchEnd={endDraw}
             />
-            {!hasStrokes && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-sm text-[#aaa]">Firmar aqui</p>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={limpiar} className="flex-1">Limpiar</Button>
-            <Button onClick={guardar} loading={saving} disabled={!hasStrokes} className="flex-1">Guardar firma</Button>
-          </div>
+          </Firma>
         </div>
       </Modal>
     </>

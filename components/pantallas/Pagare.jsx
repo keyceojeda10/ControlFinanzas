@@ -129,14 +129,22 @@ export function AntesDeFirmar({
    Arriba se repite QUÉ SE ESTÁ FIRMANDO, porque el teléfono cambia de manos y
    quien firma no vio la pantalla anterior.
    La fecha y la hora se estampan solas: un pagaré sin fecha no sirve. */
-export function Firma({ nombre, resumen, fecha, hora, hayTrazo = false, onBorrar, onListo }) {
+// `children` es EL LIENZO DE VERDAD. El trazo de abajo es un dibujo —la lamina
+// tiene que enseñar una firma sin que nadie firme— y cuando esta pantalla se
+// monta sobre la captura real, ese dibujo estorba: se sustituye por el `canvas`.
+// `guardando` y `puedeGuardar` vienen de la app: subir la firma es una peticion
+// y el boton tiene que decir que esta en ello.
+export function Firma({
+  nombre, resumen, fecha, hora, hayTrazo = false, onBorrar, onListo,
+  children, guardando = false, puedeGuardar = true,
+}) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%',
       background: 'var(--cf-surface)', padding: '14px 20px 16px', gap: 12,
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 'none' }}>
-        <span style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flex: 'none' }}>
+        <span style={{ minWidth: 0 }}>
           <span style={{
             display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',
             fontSize: 19, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
@@ -145,12 +153,18 @@ export function Firma({ nombre, resumen, fecha, hora, hayTrazo = false, onBorrar
             {resumen}
           </span>
         </span>
-        <BotonSecundario style={{ width: 'auto', padding: '0 15px', height: 38, flex: 'none' }} onClick={onBorrar}>
+        <span style={{ display: 'flex', gap: 9 }}>
+        <BotonSecundario style={{ flex: 1, minWidth: 0, height: 42 }} onClick={onBorrar}>
           Borrar y repetir
         </BotonSecundario>
-        <BotonPrimario style={{ width: 'auto', padding: '0 22px', height: 38, flex: 'none' }} onClick={onListo}>
-          Listo
+        <BotonPrimario
+          style={{ flex: 1, minWidth: 0, height: 42, opacity: puedeGuardar && !guardando ? 1 : .45 }}
+          disabled={guardando || !puedeGuardar}
+          onClick={onListo}
+        >
+          {guardando ? 'Guardando…' : 'Listo'}
         </BotonPrimario>
+        </span>
       </div>
 
       <div style={{
@@ -179,7 +193,9 @@ export function Firma({ nombre, resumen, fecha, hora, hayTrazo = false, onBorrar
         {/* El trazo se APOYA en la línea, no flota sobre ella: una firma que
             levita en mitad del recuadro no se lee como una firma. El viewBox va
             ajustado al alto real del trazo para que no sobre caja vacía. */}
-        {hayTrazo && (
+        {children}
+
+        {!children && hayTrazo && (
           <svg viewBox="0 0 520 96" preserveAspectRatio="none"
             style={{ position: 'absolute', left: 44, right: 44, bottom: 50, width: 'calc(100% - 88px)', height: 88 }}>
             <path d="M18 72 C58 18, 88 94, 128 46 S198 10, 238 60 C268 92, 298 26, 338 54 C368 76, 398 40, 442 68"
