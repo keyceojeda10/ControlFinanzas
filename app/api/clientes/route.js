@@ -3,7 +3,12 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual } from '@/lib/calculos'
+import {
+  LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente,
+  calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual,
+  // La tira de cifras de T03-03: el atraso en plata y el cumplimiento.
+  calcularMontoEnMora, calcularCuotasEnMora, calcularCuotasPendientes, tieneTablaAmortizacion,
+} from '@/lib/calculos'
 import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -191,6 +196,13 @@ export async function GET(request) {
     let diasMoraMax = 0
     let pagoHoy = false
     let proximoCobroMin = null
+    // ── LA TIRA DE CIFRAS DE T03-03 ──
+    // El atraso EN PLATA (la pastilla ya dice los dias) y el cumplimiento. Los
+    // dos se acumulan aca porque necesitan los dias excluidos y los festivos de
+    // la organizacion, que el navegador no tiene.
+    let montoEnMoraTotal = 0
+    let cuotasVencidas = 0     // las que ya debian estar pagadas
+    let cuotasPagadasSum = 0
 
     for (const p of c.prestamos) {
       try { saldoTotal += calcularSaldoPendiente(p) } catch (e) {
@@ -212,6 +224,27 @@ export async function GET(request) {
       } catch (e) {
         console.error(`[clientes] calcularProximoCobro falló para préstamo ${p.id}:`, e.message)
       }
+      try {
+        montoEnMoraTotal += calcularMontoEnMora(p, diasExcluidos, festivos)
+        // CUMPLIMIENTO = de las cuotas que YA debian estar pagadas, cuantas lo
+        // estan. Las pagadas salen de `totalCuotas - cuotasPendientes`; las que
+        // ya vencieron son esas mismas mas las que estan en mora.
+        //
+        // ATENCION: esta definicion la puse yo. La lamina T03-03 pinta «Cumple
+        // 31%» y no dice como se calcula, y no hay ninguna funcion de
+        // cumplimiento en el repo. Es la unica lectura sensata de la palabra
+        // —de lo que ya tocaba, cuanto pago— pero si el diseñador queria otra
+        // cosa, se cambia AQUI y en ningun otro sitio.
+        const total = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadas = Math.max(0, total - calcularCuotasPendientes(p))
+        const enMora = calcularCuotasEnMora(p, diasExcluidos, festivos)
+        cuotasPagadasSum += pagadas
+        cuotasVencidas += pagadas + enMora
+      } catch (e) {
+        console.error(`[clientes] la tira de cifras fallo para prestamo ${p.id}:`, e.message)
+      }
     }
 
     const porcentajePagadoPromedio = totalAPagarSum > 0
@@ -230,6 +263,11 @@ export async function GET(request) {
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
+      montoEnMora:      montoEnMoraTotal,
+      // Sin nada vencido todavia no hay nada que cumplir: `null`, no 0%. Un 0%
+      // en un cliente que acaba de recibir el prestamo lo pinta como el peor de
+      // la lista, y es justo al reves.
+      cumplimiento:     cuotasVencidas > 0 ? Math.round((cuotasPagadasSum / cuotasVencidas) * 100) : null,
       lineasCreditoActivas: c.lineasCredito?.length ?? 0,
       creadoPor:        c.creadoPor ?? null,
       createdAt:        c.createdAt,
