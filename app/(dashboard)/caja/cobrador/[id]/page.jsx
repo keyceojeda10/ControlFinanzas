@@ -5,6 +5,7 @@
 // Solo accesible por el owner.
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
@@ -21,6 +22,11 @@ const fmtFecha = (d) => {
 }
 
 export default function CajaCobradorPage() {
+  useCabecera({
+    titulo: data?.cobrador?.nombre ? `Caja de ${data.cobrador.nombre}` : 'Caja del cobrador',
+    subtitulo: data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha),
+  })
+
   const { id } = useParams()
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
@@ -88,11 +94,9 @@ export default function CajaCobradorPage() {
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
+          {/* El nombre del cobrador y la fecha viajan a la cabecera: son el
+              titulo de esta pantalla, y salian repetidos debajo de ella. */}
           <div>
-            <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Caja de {data?.cobrador?.nombre}</h1>
-            <p className="text-xs text-[var(--cf-ink-3)]">
-              {data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha)}
-            </p>
           </div>
           {data?.esRango ? null : (data?.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
         </div>
