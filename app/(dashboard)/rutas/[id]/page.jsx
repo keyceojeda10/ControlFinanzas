@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, propuestaPorCercania } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -12,6 +12,8 @@ import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
 import { obtenerCoordsRapido } from '@/lib/geo'
+// Las mismas que usa el servidor para el «3,4 km» de la cabecera.
+import { optimizeRoute, totalDistance } from '@/lib/routeOptimizer'
 import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { Modal }                     from '@/components/ui/Modal'
@@ -1330,6 +1332,20 @@ export default function RutaDetallePage({ params }) {
   // Lo usan la pantalla de cierre (T04-03) y el modal de registrar cierre, y
   // sale del MISMO sitio en los dos — que es lo que evita tener dos cifras
   // distintas para la misma pregunta.
+  // Lo que ahorraria reordenar por cercania. Se calcula con las MISMAS
+  // funciones que el «3,4 km» de la cabecera —`optimizeRoute` y
+  // `totalDistance`, las dos ya existian— para que las dos cifras no puedan
+  // contradecirse. `null` con menos de tres paradas con coordenadas: con dos no
+  // hay nada que reordenar.
+  const propuestaOptimizar = (() => {
+    const conCoords = (ruta?.clientes ?? []).filter((c) => c.latitud != null && c.longitud != null)
+    if (conCoords.length < 3) return null
+    const actual = totalDistance(conCoords)
+    const propuesta = totalDistance(optimizeRoute(conCoords))
+    if (!(actual > propuesta)) return null
+    return propuestaPorCercania({ actualMetros: actual, propuestaMetros: propuesta })
+  })()
+
   const cierreHoyRuta = cierreDelDia({
     cobradoEfectivo: ruta?.recaudadoEfectivoHoy,
     prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
@@ -3137,9 +3153,39 @@ export default function RutaDetallePage({ params }) {
           </>
         }
       >
-        <p className="text-sm text-[var(--cf-ink-3)]">
-          Se reordenarán los clientes según su ubicación GPS para crear la ruta mas corta. Esto puede cambiar el orden que configuraste manualmente.
-        </p>
+        {/* ── SE DICE CUANTO SE AHORRA, NO SOLO QUE SE VA A REORDENAR ──
+            Pedia confirmar a ciegas: «se reordenaran los clientes… esto puede
+            cambiar el orden que configuraste». O sea, todo el riesgo enunciado
+            y ninguna ganancia. Nadie acepta eso, y quien lo acepta no sabe que
+            gano.
+
+            `propuestaPorCercania` compara el recorrido de hoy con el que
+            saldria, y la cuenta se hace AQUI con las mismas funciones que usa
+            el servidor para el «3,4 km» de la cabecera. Si no hay coordenadas
+            suficientes no se inventa nada: se cae al aviso de siempre. */}
+        {propuestaOptimizar ? (
+          <div className="flex flex-col gap-3">
+            <div className="rounded-[12px] px-3.5 py-3" style={{
+              background: 'color-mix(in srgb, var(--cf-green) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--cf-green) 22%, transparent)',
+            }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+                {propuestaOptimizar.titulo}
+              </p>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--cf-green-dark)', fontWeight: 600 }}>
+                {propuestaOptimizar.detalle}
+              </p>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
+              Cambia el orden que hayas puesto a mano. Se puede volver a ordenar cuando quieras.
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--cf-ink-3)]">
+            Se reordenarán los clientes según su ubicación para crear la ruta más corta.
+            Cambia el orden que hayas puesto a mano.
+          </p>
+        )}
       </Modal>
 
       {/* Modal: confirmar quitar cliente */}
