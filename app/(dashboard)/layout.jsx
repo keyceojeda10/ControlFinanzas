@@ -12,6 +12,7 @@ import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
 import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
+import AvisoSinSenal from '@/components/armazon/AvisoSinSenal'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
@@ -89,6 +90,12 @@ export default async function DashboardLayout({ children }) {
             lo que impide cobrar, después lo que caduca, y al final lo cómodo.
             Antes los cuatro se apilaban y lo primero que veía el dueño al abrir
             era que le iban a cobrar la suscripción. */}
+        {/* ── SIN SEÑAL, ARRIBA DEL TODO (T05-05) ──
+            Va ANTES de la pila de avisos y no dentro: la pila enseña UNO solo y
+            ordena por urgencia, y quedarse sin red no compite con «te caduca la
+            suscripción» — es la condición bajo la que se lee todo lo demás. */}
+        <AvisoSinSenal />
+
         <PilaAvisos>
           <Ranura id="sinRuta"><SinRutaBanner /></Ranura>
           <Ranura id="suscripcion"><SuscripcionBanner /></Ranura>
