@@ -49,8 +49,8 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
 import { adaptarTabla } from '@/lib/adaptadores/tabla'
 import HojaInferior from '@/components/cf/HojaInferior'
-import { MoverAPerdidos, CerrarAnticipado, PieGestion } from '@/components/pantallas/Gestion'
-import { adaptarPerdidos, adaptarCerrar, resumenCerrar } from '@/lib/adaptadores/gestion'
+import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
+import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento} from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
@@ -130,6 +130,13 @@ export default function PrestamoDetallePage({ params }) {
   const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
   const [filtroFecha,  setFiltroFecha]  = useState('')    // YYYY-MM-DD opcional para filtrar historial
   const [rutaNav,      setRutaNav]     = useState(null)
+  // ── EL AJUSTE (recargo / descuento) ──
+  // Un solo juego de estado para las dos hojas: nunca estan abiertas a la vez,
+  // y duplicarlo era garantizar que una se quedara con el monto de la otra.
+  const [ajusteMonto, setAjusteMonto] = useState('')
+  const [ajusteNota, setAjusteNota] = useState('')
+  const [ajustando, setAjustando] = useState(false)
+  const [ajusteError, setAjusteError] = useState('')
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalIntereses, setModalIntereses] = useState(false)
@@ -757,6 +764,63 @@ export default function PrestamoDetallePage({ params }) {
   const cierrePerdonaTexto = hayCierre
     ? `se ahorra ${formatMoney(Math.round(cierre.interesPerdonado))} de interés`
     : null
+
+  // ⚠ VA AQUI Y NO ARRIBA: `atajosAjuste` lee `cuotaDiaria`, que se define en
+  // el bloque de derivados de mas arriba. Puesto antes reventaba con «Cannot
+  // access 'cuotaDiaria' before initialization» — el mismo fallo que ya ha
+  // aparecido tres veces en este rediseño por insertar bloques a ojo.
+  const ajusteNum = Math.max(0, Math.round(Number(String(ajusteMonto).replace(/\./g, '').replace(',', '.')) || 0))
+
+  // Los atajos del ajuste: fracciones de la cuota, que es la unidad en que se
+  // piensa un recargo por mora. Sin esto habria que teclear siempre.
+  const atajosAjuste = (() => {
+    const c = Math.round(Number(cuotaDiaria) || 0)
+    if (!(c > 0)) return []
+    return [
+      { id: 'media', etiqueta: formatMoney(Math.round(c / 2 / 100) * 100), monto: Math.round(c / 2 / 100) * 100 },
+      { id: 'una', etiqueta: formatMoney(c), monto: c },
+      { id: 'dos', etiqueta: formatMoney(c * 2), monto: c * 2 },
+    ]
+  })()
+
+  /**
+   * Manda el ajuste. MISMO CONTRATO que el formulario anterior: POST /pagos con
+   * `tipo` y `nota`. Lo unico que cambia es la pantalla desde la que se manda.
+   *
+   * La nota es OBLIGATORIA en los dos casos, igual que antes: un recargo sin
+   * motivo es una subida de deuda que nadie sabe explicar tres meses despues,
+   * y un descuento sin motivo es plata que se fue sin rastro.
+   */
+  const aplicarAjuste = async (tipo) => {
+    if (!(ajusteNum > 0) || !ajusteNota.trim() || ajustando) return
+    setAjustando(true)
+    setAjusteError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ montoPagado: ajusteNum, tipo, nota: ajusteNota.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setAjusteError(data?.error || 'No se pudo aplicar')
+        return
+      }
+      if (data?.prestamo) {
+        setPrestamo(data.prestamo)
+        if (data.prestamo.estado === 'completado') setCompletado(true)
+      }
+      setModalRecargo(false)
+      setModalDescuento(false)
+      setAjusteMonto('')
+      setAjusteNota('')
+    } catch {
+      setAjusteError('Sin conexión. El ajuste no quedó aplicado.')
+    } finally {
+      setAjustando(false)
+    }
+  }
+
 
   const detalleGestion = [
     cliente?.nombre,
@@ -1924,33 +1988,71 @@ export default function PrestamoDetallePage({ params }) {
         cancelarHoy={hayCierre ? Math.round(cierre.restanteHoy ?? 0) : 0}
       />
 
-      {/* Modales de ajuste: usan el mismo RegistrarPago con tabInicial.
-          Antes habia un AjusteSaldo separado — se unifico para evitar UX divergente. */}
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalRecargo}
-        onClose={() => setModalRecargo(false)}
-        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="recargo"
-      />
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalDescuento}
-        onClose={() => setModalDescuento(false)}
-        onSuccess={(prestamoActualizado) => {
-          setPrestamo(prestamoActualizado)
-          if (prestamoActualizado.estado === 'completado') setCompletado(true)
-        }}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="descuento"
-      />
+      {/* ── RECARGO Y DESCUENTO, EN SU HOJA ──
+          Abrian `RegistrarPago` con `tabInicial`, o sea el formulario ANTERIOR
+          de 1.315 lineas: se pulsaba una fila del menu rediseñado y encima
+          aparecia la pantalla vieja. El usuario lo describio exacto: «cuando se
+          le dan las opciones como abonar a intereses o descuentos, recargos, se
+          pone el otro modal».
+
+          Las hojas ya estaban construidas y cotejadas en Gestion.jsx, sin
+          montar. Lo unico que hacia falta era enchufarlas — el contrato con la
+          API es el mismo POST /pagos con `tipo` y `nota`. */}
+      <HojaInferior
+        abierta={modalRecargo}
+        onCerrar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
+        titulo="Recargo por mora"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
+            onAceptar={() => aplicarAjuste('recargo')}
+            textoAceptar={ajusteNum > 0 ? `Aplicar ${formatMoney(ajusteNum)}` : 'Aplicar'}
+            deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
+            aceptando={ajustando}
+            error={ajusteError}
+          />
+        }
+      >
+        <Recargo
+          monto={ajusteMonto}
+          onMonto={setAjusteMonto}
+          atajos={atajosAjuste}
+          atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
+          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          motivo={ajusteNota}
+          onMotivo={setAjusteNota}
+          {...(adaptarRecargo({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
+        />
+      </HojaInferior>
+
+      <HojaInferior
+        abierta={modalDescuento}
+        onCerrar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
+        titulo="Descuento"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
+            onAceptar={() => aplicarAjuste('descuento')}
+            textoAceptar={ajusteNum > 0 ? `Perdonar ${formatMoney(ajusteNum)}` : 'Perdonar'}
+            deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
+            aceptando={ajustando}
+            error={ajusteError}
+          />
+        }
+      >
+        <Descuento
+          monto={ajusteMonto}
+          onMonto={setAjusteMonto}
+          atajos={atajosAjuste}
+          atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
+          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          motivo={ajusteNota}
+          onMotivo={setAjusteNota}
+          {...(adaptarDescuento({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
+        />
+      </HojaInferior>
 
       <RegistrarPago
         prestamoId={id}
