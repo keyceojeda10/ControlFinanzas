@@ -37,10 +37,15 @@ export default function FichaRuta({
   entro, salioAPrestar, crecio, crecioFavor = true,
   comparacion = [], nombreRuta,
   lectura, totalPrestamos, onVerPrestamos,
+  // «El relleno lateral lo pone el armazón, el componente NO». Dentro de una
+  // HojaInferior, que ya trae el suyo, esto sumaba 40px por lado. Es el sexto
+  // sitio donde aparece el mismo defecto, y por eso hay una prueba que lo caza
+  // antes de que se vea.
+  sinMargen = false,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px' }}>
 
         <BloqueOscuro etiqueta="Tienes puesto en esta ruta" cifra={puesto}>
           <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />

@@ -30,6 +30,7 @@ import ModoRuta                      from '@/components/pantallas/ModoRuta'
 import RutaCerrada                   from '@/components/pantallas/RutaCierre'
 import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
+import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -3168,6 +3169,7 @@ export default function RutaDetallePage({ params }) {
           subtitulo={ruta?.nombre}
         >
           <FichaRuta
+            sinMargen
             puesto={formatMoney(Math.round(ruta?.capitalPendiente ?? 0))}
             prestado={formatMoney(Math.round(ruta?.capitalTotal ?? 0))}
             porGanar={formatMoney(Math.round((ruta?.carteraTotal ?? 0) - (ruta?.capitalPendiente ?? 0)))}
