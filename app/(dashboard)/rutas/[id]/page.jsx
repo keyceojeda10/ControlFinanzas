@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -26,6 +26,7 @@ import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
 import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
+import ModoRuta                      from '@/components/pantallas/ModoRuta'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -317,6 +318,13 @@ export default function RutaDetallePage({ params }) {
   // Vista de la lista: 'trabajo' = 3 secciones (por cobrar/pagados/proximos) sin drag.
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
+  // ── EL MODO RECORRIDO (T28-01) ──
+  // NO EXISTIA EN LA APP, ni siquiera en version anterior: `ModoRuta` llevaba
+  // construido y cotejado en el banco desde hace semanas y nadie lo veia. Es la
+  // pantalla que el cobrador tiene delante toda la mañana — una parada a la
+  // vez, con el siguiente ya preparado— y hasta hoy la jornada se hacia sobre
+  // una lista de veinte nombres.
+  const [enRecorrido, setEnRecorrido] = useState(false)
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
   const [vistaPlana, setVistaPlana] = useState(() => {
     try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
@@ -1259,6 +1267,69 @@ export default function RutaDetallePage({ params }) {
       </div>
     </div>
   )
+
+    // ── LAS PARADAS, EN EL ORDEN DEL RECORRIDO ──
+  // `partirRecorrido` reparte en actual / faltan / cobrados y calcula «parada 3
+  // de 5». Se le dan los clientes de HOY, no todos: en la calle no se camina
+  // hacia quien no toca.
+  const paradasDeHoy = (ruta?.clientes ?? [])
+    .filter((c) => c.cobroPendienteHoy || c.pagoHoy)
+    .map((c, i) => ({
+      id: c.id,
+      orden: i + 1,
+      nombre: c.nombre,
+      direccion: c.direccion,
+      telefono: c.telefono,
+      diasMora: c.diasMora,
+      // `cobradoHoy` es como lo llama el adaptador; la API lo llama `pagoHoy`.
+      cobradoHoy: !!c.pagoHoy,
+      montoACobrar: c.cuota,
+      montoCobrado: c.montoPagadoHoy,
+      debe: c.saldoPendiente,
+      metros: c.distanciaMetros,
+    }))
+
+  const recorrido = partirRecorrido(paradasDeHoy, (n) => formatMoney(n))
+
+  if (enRecorrido) {
+    // SIN ARMAZON Y SIN NADA MAS. La lamina la dibuja a pantalla completa: el
+    // cobrador esta de pie, con una mano, y cualquier cosa de mas es un toque
+    // equivocado. Por eso se devuelve AQUI y no envuelto en el resto.
+    return (
+      <ModoRuta
+        ruta={ruta?.nombre}
+        posicion={recorrido.posicion}
+        onAtras={() => setEnRecorrido(false)}
+        hoy={loDeHoy({
+          esperadoHoy: ruta?.esperadoHoy,
+          recaudadoHoy: ruta?.recaudadoHoy,
+          clientesConCobroHoy: ruta?.clientesConCobroHoy,
+          clientesPagaronHoy: ruta?.clientesPagaronHoy,
+          recaudadoEfectivoHoy: ruta?.recaudadoEfectivoHoy,
+          recaudadoDigitalHoy: ruta?.recaudadoDigitalHoy,
+        }, (n) => formatMoney(n))}
+        actual={recorrido.actual ? adaptarParadaActual(recorrido.actual, (n) => formatMoney(n)) : null}
+        faltan={recorrido.faltan}
+        cobrados={recorrido.cobrados}
+        cobradosTitulo={recorrido.cobradosTitulo}
+        cobradosTotal={recorrido.cobradosTotal}
+        onCobrar={() => {
+          // El cobro es EL MISMO de la lista: la hoja de atajos, con su cola
+          // offline y su deshacer. No hay un segundo camino para la plata.
+          const c = ruta?.clientes?.find((x) => x.id === recorrido.actual?.id)
+          if (c) abrirPagoRapido(c)
+        }}
+        onAvisar={() => {
+          const c = ruta?.clientes?.find((x) => x.id === recorrido.actual?.id)
+          if (c?.telefono) window.open(`https://wa.me/${String(c.telefono).replace(/\D/g, '')}`, '_blank')
+        }}
+        onParada={(pa) => {
+          const c = ruta?.clientes?.find((x) => x.id === pa?.id)
+          if (c) abrirPagoRapido(c)
+        }}
+      />
+    )
+  }
 
   const progreso = ruta.esperadoHoy > 0
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0
@@ -2888,6 +2959,33 @@ export default function RutaDetallePage({ params }) {
           </div>
         )}
       </Modal>
+
+      {/* ── EMPEZAR RECORRIDO ──
+          La accion que abre la jornada, y la unica de esta pantalla que el
+          cobrador pulsa todos los dias. Va fija abajo, sobre la pastilla, para
+          que se alcance con el pulgar sin mirar. Solo sale si queda algo por
+          cobrar: en una ruta terminada seria un boton que no lleva a ninguna
+          parte. */}
+      {(ruta?.pendientesHoy ?? 0) > 0 && (
+        <div style={{
+          position: 'fixed', left: 0, right: 0, bottom: 92, zIndex: 40,
+          padding: '0 var(--cf-pad-screen)', pointerEvents: 'none',
+        }}>
+          <button
+            type="button"
+            onClick={() => setEnRecorrido(true)}
+            style={{
+              pointerEvents: 'auto', width: '100%', height: 54, cursor: 'pointer',
+              borderRadius: 'var(--cf-r-control)', border: 0,
+              background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+              fontSize: 15.5, fontWeight: 700,
+              boxShadow: '0 6px 20px rgba(20,20,28,.18)',
+            }}
+          >
+            Empezar recorrido · {ruta.pendientesHoy}
+          </button>
+        </div>
+      )}
 
       {/* ── ATAJOS DE COBRO (T15-02) ──
           Sustituye al modal de «Cobro rápido», que eran 246 líneas y DOS PASOS:
