@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -60,6 +61,8 @@ function UsageBar({ label, usado, limite }) {
 
 // ── Main ───────────────────────────────────────────────────
 export default function PlanPage() {
+  useCabecera({ titulo: 'Mi plan' })
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
@@ -205,17 +208,10 @@ export default function PlanPage() {
   return (
     <div className="max-w-lg mx-auto px-4 pb-12 space-y-5">
 
-      {/* ── Header ── */}
-      <div className="pt-2 flex items-start gap-3">
-        <div>
-          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>
-            Mi <em style={{ fontStyle: 'italic', color: 'var(--cf-gold)' }}>plan</em>
-          </h1>
-          <p className="text-[13px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-            {orgNombre}{orgNombre ? ' · ' : ''}{infoPlan.nombre}
-          </p>
-        </div>
-      </div>
+      {/* Titulo y subtitulo, en la cabecera del armazon: salian otra vez justo
+          debajo de ella. El «plan» en cursiva dorada se pierde, y esta bien —
+          era el UNICO dorado de la pantalla compitiendo con los precios, que
+          son lo que de verdad hay que mirar aqui. */}
 
       {/* ── Banner trial ── */}
       {estado?.enTrial && (
