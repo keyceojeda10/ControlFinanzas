@@ -764,7 +764,7 @@ export default function PrestamoDetallePage({ params }) {
     : null
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-28 lg:pb-4">
 
       {/* ── UNA SOLA FRANJA ROJA ──
           Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62
@@ -1042,6 +1042,7 @@ export default function PrestamoDetallePage({ params }) {
           IA. No los borro — son cosas que el dueño puede estar usando, y quitar
           features no es rediseñar. Si sobran, se van cuando lo digas. */}
       <FichaPrestamo
+            sinMargen
         modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
         faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
         pagado={formatMoney(totalPagadoReal)}

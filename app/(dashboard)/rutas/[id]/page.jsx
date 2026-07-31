@@ -1216,7 +1216,7 @@ export default function RutaDetallePage({ params }) {
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-28 lg:pb-4">
 
       {/* -- T24 - Lo que tienes puesto aqui, y lo de hoy --
           Sustituye al heroe con donut de cinco colores segun el ritmo y a las

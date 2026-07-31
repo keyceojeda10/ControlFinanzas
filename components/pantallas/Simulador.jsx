@@ -77,13 +77,24 @@ export default function Simulador({
   modo = 'Cuota fija', recomendado = true,
   onFrecuencia, onCambiarModo, onCrear, onMandar, onTabla,
   sinDatos,
+  // El relleno lateral lo pone el armazon. Sin esto eran 40px por lado en la
+  // ruta real — lo cazo la prueba del margen doble el mismo dia que lo monte.
+  sinMargen = false,
 }) {
   const total = (tuPlataNum ?? 0) + (ganasNum ?? 0)
   const pctCapital = total > 0 ? (tuPlataNum / total) * 100 : 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      height: sinMargen ? 'auto' : '100%',
+    }}>
+      <div style={{
+        flex: sinMargen ? 'none' : 1, minHeight: 0,
+        overflowY: sinMargen ? 'visible' : 'auto',
+        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+        padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
+      }}>
 
         {/* ── LA RESPUESTA, ARRIBA ── */}
         <div style={{

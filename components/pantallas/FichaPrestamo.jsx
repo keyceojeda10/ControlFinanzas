@@ -165,13 +165,35 @@ export default function FichaPrestamo({
   // historial
   pagos = [], totalPagos = 0, montoOculto, notaHistorial,
   onGestionar, onRegistrar, onVerTodos,
+  // ── EL RELLENO LATERAL LO PONE EL ARMAZON, EL COMPONENTE NO ──
+  //
+  // Sin esta prop, este componente ponia sus 20px de `--cf-pad-screen` ENCIMA
+  // de los 20px que ya da `layout.jsx` con `px-5`: 40px por lado, o sea 80px
+  // menos de ancho que la tarjeta del cliente y el boton verde de arriba. Se
+  // veia como si la mitad de abajo de la ficha fuera otra pantalla, y asi lo
+  // reporto el usuario.
+  //
+  // Es la CUARTA vez que pasa: el panel (310px donde la lamina pide 350),
+  // cobrar hoy (302), la tabla de amortizacion, y esta.
+  sinMargen = false,
 }) {
   const esUnico = modo === 'unico'
   const hayMora = enMora && enMora !== '$0'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      // Con `sinMargen` esto va DENTRO del flujo de una pagina que crece, no es
+      // una pantalla de telefono: fijarle el 100% de alto y su propio scroll
+      // creaba una ventana con scroll dentro de otra.
+      height: sinMargen ? 'auto' : '100%',
+    }}>
+      <div style={{
+        flex: sinMargen ? 'none' : 1, minHeight: 0,
+        overflowY: sinMargen ? 'visible' : 'auto',
+        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+        padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
+      }}>
 
         {/* ── La respuesta ── */}
         {esUnico ? (

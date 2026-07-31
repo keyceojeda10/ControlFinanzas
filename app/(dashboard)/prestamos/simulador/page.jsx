@@ -180,6 +180,7 @@ export default function SimuladorPage() {
       )}
 
       <Simulador
+        sinMargen
         sinDatos={!calculo ? 'Escribe cuánto le vas a prestar y aquí sale la cuota.' : null}
         cuota={cuotaTexto}
         cada={freqInfo.cada}
