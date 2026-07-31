@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -21,6 +22,8 @@ const ESTADOS = [
 ]
 
 export default function LineasCreditoPage() {
+  useCabecera({ titulo: 'Líneas de crédito' })
+
   const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const router = useRouter()
   const [lineas, setLineas] = useState([])
@@ -60,9 +63,10 @@ export default function LineasCreditoPage() {
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
+        {/* El titulo lo pone el armazon; el CONTEO se queda, que es lo que
+            cambia y lo unico que la cabecera no puede saber. */}
         <div>
-          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Líneas de crédito</h1>
-          <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">
+          <p className="text-xs text-[var(--cf-ink-3)]">
             {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
           </p>
         </div>

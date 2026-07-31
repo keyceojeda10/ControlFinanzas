@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +12,12 @@ import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { MODOS_INTERES } from '@/lib/linea-credito'
 
 export default function NuevaLineaPage() {
+  useCabecera({
+    titulo: 'Nueva línea de crédito',
+    subtitulo: 'Un cupo rotativo, como una tarjeta de crédito',
+    onVolver: () => (paso > 0 ? setPaso(paso - 1) : router.back()),
+  })
+
   const router = useRouter()
   const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const [clientes, setClientes] = useState([])
@@ -92,13 +99,10 @@ export default function NuevaLineaPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 pb-28">
-      <button onClick={() => paso > 0 ? setPaso(paso - 1) : router.back()} className="flex items-center gap-1 text-xs text-[var(--cf-ink-3)] mb-4">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-        {paso > 0 ? 'Atras' : 'Volver'}
-      </button>
-
-      <h1 className="text-[25px] font-semibold text-[var(--cf-ink)] mb-1">Nueva línea de crédito</h1>
-      <p className="text-xs text-[var(--cf-ink-3)] mb-2">Crea un cupo rotativo para tu cliente, similar a una tarjeta de crédito.</p>
+      {/* SIN FLECHA PROPIA Y SIN TITULO PROPIO: los dos los pone el armazon,
+          y aqui salian OTRA VEZ debajo. La flecha ademas hacia dos cosas
+          distintas —retroceder de paso o salir— sin decir cual, asi que ahora
+          el armazon recibe el `onVolver` que decide eso. */}
       <div className="mb-5 p-3 rounded-xl text-[11px] text-[var(--cf-ink-3)] leading-relaxed" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         El cliente podrá pedir plata del cupo varias veces sin crear un préstamo nuevo. Cada mes se genera un corte (estado de cuenta) con lo que debe, y puede pagar todo o una parte. Lo que no pague, rota al siguiente mes con intereses.
       </div>
