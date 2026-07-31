@@ -14,6 +14,8 @@ import { Card }                      from '@/components/ui/Card'
 import { SkeletonPrestamoDetalle }    from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
 import HojaWhatsApp        from '@/components/whatsapp/HojaWhatsApp'
+import TarjetaCliente      from '@/components/cf/TarjetaCliente'
+import { adaptarPrestamos } from '@/lib/adaptadores/prestamos'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import { planTieneFotos }            from '@/lib/planes'
@@ -46,7 +48,7 @@ const estadoPrestamoBadge = {
 export default function ClienteDetallePage({ params }) {
   const { id }     = use(params)
   const router     = useRouter()
-  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan, orgNombre, ocultarSaldoWA, organizationId } = useAuth()
+  const { esOwner, puedeCrearPrestamos, puedeEditarClientes, plan, orgNombre, ocultarSaldoWA, organizationId, country } = useAuth()
 
   const { lastSyncedAt } = useOffline()
 
@@ -632,10 +634,32 @@ export default function ClienteDetallePage({ params }) {
           <h2 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] mb-3 uppercase tracking-[.07em]">
             Préstamos activos
           </h2>
+          {/* LA MISMA TARJETA QUE EN /prestamos, no otra.
+              `PrestamoCard` era propia de esta pagina: monto arriba a la
+              izquierda, un «Activo» gris a la derecha, y DOS botones dentro —
+              «Ver prestamo» y «Enviar alerta de mora», este ultimo dorado. Con
+              el «Nuevo prestamo» de arriba y el «Activar portal» del portal,
+              eran TRES dorados en una pantalla; la receta permite uno.
+
+              `TarjetaCliente` es la del rediseño: riel de estado, monto en la
+              fila del nombre, pastilla de dias y la tira de cifras. Se lee igual
+              aqui que en la lista, que es de donde se viene. */}
           <div className="space-y-3">
-            {prestamosActivos.map((p) => (
-              <PrestamoCard key={p.id} prestamo={p} clienteId={id} cliente={cliente} orgNombre={orgNombre} ocultarSaldoWA={ocultarSaldoWA} organizationId={organizationId} />
-            ))}
+            {(() => {
+              const adaptados = adaptarPrestamos(prestamosActivos, country)
+              return prestamosActivos.map((p, i) => (
+                <TarjetaCliente
+                  key={p.id}
+                  {...adaptados[i]}
+                  // EL TITULAR NO ES EL NOMBRE. Aqui ya se sabe de quien es la
+                  // ficha; repetirlo gasta la linea mas visible. Y ademas salia
+                  // «Sin cliente», porque en esta pagina los prestamos llegan
+                  // sin el cliente anidado — no hace falta, ya esta arriba.
+                  nombre={`Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
+                  onClick={() => router.push(`/prestamos/${p.id}`)}
+                />
+              ))
+            })()}
           </div>
         </div>
       )}
@@ -1021,7 +1045,8 @@ function PortalClienteCard({ clienteId, organizationId, cedula }) {
           {!showSetPin ? (
             <button
               onClick={() => setShowSetPin(true)}
-              className="w-full h-9 rounded-[10px] bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-[12px] font-bold hover:opacity-90 transition-opacity"
+              className="w-full h-9 rounded-[10px] text-[12px] font-bold transition-opacity hover:opacity-90"
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}
             >
               Activar portal
             </button>
