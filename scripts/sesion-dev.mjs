@@ -34,6 +34,13 @@ const con = await mariadb.createConnection({
   user: decodeURIComponent(url.username),
   password: decodeURIComponent(url.password),
   database: url.pathname.slice(1),
+  // MySQL 8 usa `caching_sha2_password`, y el driver de MariaDB necesita
+  // permiso explícito para pedirle al servidor su clave pública. Sin esto:
+  // «RSA public key is not available client side» y el script no arranca.
+  //
+  // Es seguro AQUÍ y solo aquí: este script aborta si `DATABASE_URL` no apunta
+  // a localhost (ver arriba), así que la clave nunca viaja por una red.
+  allowPublicKeyRetrieval: true,
 })
 
 const [usuario] = await con.query(
