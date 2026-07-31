@@ -243,15 +243,12 @@ function NuevoPrestamo() {
 
   // Wizard: 3 pasos. 0 = Cliente, 1 = Plan (sub-pasos internos), 2 = Confirmar y firma.
   const [paso, setPaso] = useState(0)
-  const [subPaso, setSubPaso] = useState(0) // sub-paso dentro del paso 1
 
   // Sub-pasos del wizard de datos (paso 1)
-  const SUB_PASOS_LABELS = ['Monto', 'Cobro', 'Plazo', 'Tipo', 'Extras']
-  const TOTAL_SUB_PASOS = modo === 'mercancia' ? 3 : 5
 
   const PASOS = [
     { label: 'Cliente' },
-    { label: SUB_PASOS_LABELS[subPaso] || 'Datos' },
+    { label: 'Condiciones' },
     { label: 'Confirmar' },
   ]
 
@@ -511,47 +508,33 @@ function NuevoPrestamo() {
   // ultima cuota). No se deja avanzar hasta corregirla.
   const cuotaInsuficiente = !!calculo?.cuotaInsuficiente
 
-  const puedeAvanzarSubPaso = () => {
-    if (cuotaInsuficiente) return false
-    if (subPaso === 0) {
-      if (modo === 'mercancia') return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0
-      return Number(monto) > 0
-    }
-    if (subPaso === 1) return true
-    if (subPaso === 2) {
-      if (modo === 'mercancia') return true
-      return Number(tasa) >= 0 && Number(plazoUnidades) > 0
-    }
-    return true
-  }
-
+  // ── UNA SOLA COMPROBACION, NO CINCO ──
+  //
+  // Habia dos funciones: una por sub-paso y otra por paso. Con las condiciones
+  // en una pantalla, la del paso ya cubre casi todo —monto, plazo, fecha y que
+  // el calculo salga— y solo faltaba subir lo especifico de mercancia, que
+  // vivia en la del sub-paso 0.
   const puedeAvanzarPaso = () => {
     if (cuotaInsuficiente) return false
     if (paso === 0) return !!clienteId
     if (paso === 1) {
       if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
-      return Number(monto) > 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
+      // Mercancia: se vende mas caro de lo que costo, y en un numero de cuotas.
+      // Sin esto se podia «vender» con perdida y el calculo salia en negativo.
+      if (modo === 'mercancia') {
+        return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0 && !!calculo
+      }
+      return Number(monto) > 0 && Number(tasa) >= 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
     }
     if (paso === 2) return !!calculo
     return true
   }
   const irAlSiguientePaso = () => {
-    if (paso === 1 && subPaso < TOTAL_SUB_PASOS - 1) {
-      if (!puedeAvanzarSubPaso()) return
-      setSubPaso(s => s + 1)
-      window.scrollTo({ top: 0, behavior: 'instant' })
-      return
-    }
     if (!puedeAvanzarPaso()) return
     setPaso(p => Math.min(PASOS.length - 1, p + 1))
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
   const irAlPasoAnterior = () => {
-    if (paso === 1 && subPaso > 0) {
-      setSubPaso(s => s - 1)
-      window.scrollTo({ top: 0, behavior: 'instant' })
-      return
-    }
     setPaso(p => Math.max(0, p - 1))
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
@@ -933,10 +916,10 @@ function NuevoPrestamo() {
               <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                 {clienteNombre || 'Cliente'}
               </p>
-              {ultimoPrestamo && subPaso === 0 && (
+              {ultimoPrestamo && (
                 <button
                   type="button"
-                  onClick={() => { repetirCondicionesUltimo(); setSubPaso(TOTAL_SUB_PASOS - 1) }}
+                  onClick={() => repetirCondicionesUltimo()}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full"
                   style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}
                 >
@@ -944,27 +927,10 @@ function NuevoPrestamo() {
                 </button>
               )}
             </div>
-            <div className="flex gap-1">
-              {Array.from({ length: TOTAL_SUB_PASOS }, (_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => { if (i < subPaso) setSubPaso(i) }}
-                  className="h-1 rounded-full flex-1 transition-all"
-                  style={{
-                    background: i <= subPaso ? 'var(--cf-gold)' : 'var(--cf-border)',
-                    cursor: i < subPaso ? 'pointer' : 'default',
-                  }}
-                />
-              ))}
-            </div>
-            <p className="text-[10px] mt-1 text-right" style={{ color: 'var(--cf-ink-3)' }}>
-              Paso {subPaso + 1} de {TOTAL_SUB_PASOS}
-            </p>
           </div>
 
           {/* SUB-PASO 0: Tipo + Monto */}
-          {subPaso === 0 && (
+          {(
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>
@@ -1062,7 +1028,7 @@ function NuevoPrestamo() {
           )}
 
           {/* SUB-PASO 1: Frecuencia de cobro */}
-          {subPaso === 1 && (
+          {(
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>Cada cuanto cobra?</h2>
@@ -1163,7 +1129,7 @@ function NuevoPrestamo() {
           )}
 
           {/* SUB-PASO 2: Interes + Plazo */}
-          {subPaso === 2 && (
+          {(
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cuánto de interés?</h2>
@@ -1231,7 +1197,7 @@ function NuevoPrestamo() {
           )}
 
           {/* SUB-PASO 3: Tipo de interes */}
-          {subPaso === 3 && modo === 'prestamo' && (
+          {modo === 'prestamo' && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
@@ -1326,7 +1292,7 @@ function NuevoPrestamo() {
           )}
 
           {/* SUB-PASO 4: Opciones adicionales */}
-          {subPaso === (modo === 'mercancia' ? 2 : 4) && (
+          {(
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>Opciones adicionales</h2>
@@ -1772,7 +1738,11 @@ function NuevoPrestamo() {
       })()}
 
       {/* Barra sticky de resumen en vivo — visible en sub-pasos 2+ del wizard */}
-      {paso === 1 && calculo && subPaso >= (modo === 'mercancia' ? 2 : 4) && (
+      {/* LA CUOTA, EN VIVO. Solo salia en el ultimo sub-paso: se ajustaba el
+          monto, el interes y el plazo A CIEGAS y la cifra aparecia al final.
+          Con todo en una pantalla se recalcula mientras se escribe, que es lo
+          que pide T01-06. */}
+      {paso === 1 && calculo && (
         <div
           className="fixed left-0 right-0 lg:left-60 z-[44] px-4 lg:px-6"
           style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
@@ -1827,10 +1797,10 @@ function NuevoPrestamo() {
             <Button
               type="button"
               onClick={irAlSiguientePaso}
-              disabled={paso === 0 ? !puedeAvanzarPaso() : paso === 1 ? !puedeAvanzarSubPaso() : false}
+              disabled={paso <= 1 ? !puedeAvanzarPaso() : false}
               className="flex-[2]"
             >
-              {paso === 1 && subPaso === TOTAL_SUB_PASOS - 1 ? 'Revisar préstamo' : 'Continuar'}
+              {paso === 1 ? 'Revisar préstamo' : 'Continuar'}
             </Button>
           ) : (
             <Button
@@ -1840,7 +1810,7 @@ function NuevoPrestamo() {
               disabled={!puedeAvanzarPaso()}
               className="flex-[2]"
             >
-              Crear prestamo
+              Crear préstamo
             </Button>
           )}
         </div>
