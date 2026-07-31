@@ -343,7 +343,10 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
+  // `cedula` con `let`: cuando no viene se le pone el marcador «SIN-…» unas
+  // lineas mas abajo, y con `const` eso seria un error en ejecucion.
+  const { nombre, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
+  let { cedula } = body
 
   let diasSinCobroVal
   try {
@@ -353,9 +356,18 @@ export async function POST(request) {
   }
 
   // Validaciones básicas
-  if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
-  if (!cedula?.trim())   return Response.json({ error: 'La cédula es requerida' },  { status: 400 })
-  if (!telefono?.trim()) return Response.json({ error: 'El teléfono es requerido' }, { status: 400 })
+  // ── SOLO EL NOMBRE (T07-03) ──
+  // Exigia los tres. La carga masiva desde Excel ya aceptaba clientes sin
+  // telefono, asi que se podian importar doscientos sin numero y no se podia
+  // crear uno a mano. Y pedir datos en la calle es lo que frena la carga.
+  //
+  // La cedula sigue siendo la clave con la que se busca y se evita el
+  // duplicado, asi que cuando no viene se genera el mismo marcador «SIN-…» que
+  // ya usaba la casilla «no tiene cedula» y la importacion de cuadernos.
+  if (!nombre?.trim()) return Response.json({ error: 'El nombre es requerido' }, { status: 400 })
+  if (!cedula?.trim()) {
+    cedula = `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  }
 
   const esSinCedula = cedula.trim().startsWith('SIN-')
   const country = session.user.country ?? 'co'

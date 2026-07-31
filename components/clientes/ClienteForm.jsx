@@ -10,7 +10,6 @@ import { Input, Select }       from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
-import Stepper                 from '@/components/ui/Stepper'
 import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline, leerDeCache } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -173,34 +172,34 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const validarPasoEstricto = (idx) => {
     const errs = {}
     if (idx === 0) {
+      // ── SOLO EL NOMBRE ES OBLIGATORIO (T07-03) ──
+      //
+      // Exigia nombre, cedula Y telefono. La lamina dice «solo el nombre es
+      // obligatorio, lo demas lo puedes completar cuando lo visites», y su pie
+      // explica por que: pedir datos en la calle frena la carga, y esa es la
+      // razon de que muchos negocios se queden en cinco clientes. Cargar
+      // clientes es lo que predice que la cuenta sobreviva.
+      //
+      // Y ya era incoherente: la carga masiva desde Excel acepta clientes SIN
+      // TELEFONO. Se podian importar doscientos sin numero y no se podia crear
+      // uno a mano.
+      //
+      // Lo que SI se sigue comprobando es que lo escrito sea valido: un
+      // telefono a medias es peor que ninguno, porque el recordatorio se manda
+      // y no llega.
       if (!form.nombre.trim()) errs.nombre = 'El nombre es requerido'
-      if (!sinCedula) {
-        if (!form.cedula.trim()) errs.cedula = 'La cédula es requerida'
-        else if (!validateDocument(form.cedula.trim())) {
-          errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
-        }
+      if (!sinCedula && form.cedula.trim() && !validateDocument(form.cedula.trim())) {
+        errs.cedula = `${documentConfig.label} no válido (ej: ${documentConfig.placeholder})`
       }
-      if (!form.telefono.trim()) errs.telefono = 'El teléfono es requerido'
-      else if (!validatePhone(form.telefono.replace(/\s/g, ''))) {
+      if (form.telefono.trim() && !validatePhone(form.telefono.replace(/\s/g, ''))) {
         errs.telefono = `Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`
       }
     }
     return errs
   }
 
-  const puedeAvanzar = camposRequeridosLlenos(paso)
 
-  const irAlSiguiente = () => {
-    const errs = validarPasoEstricto(paso)
-    if (Object.keys(errs).length) {
-      setErrores(errs)
-      return
-    }
-    setErrores({})
-    setPaso(p => Math.min(PASOS.length - 1, p + 1))
-  }
 
-  const irAlAnterior = () => setPaso(p => Math.max(0, p - 1))
 
   const handleSubmit = async (e) => {
     e?.preventDefault?.()
@@ -215,7 +214,9 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setLoading(true)
     setError('')
 
-    const cedulaFinal = sinCedula
+    // El marcador tambien cuando el campo se deja vacio, no solo con la casilla:
+    // ahora la cedula es opcional y el backend la sigue usando como clave.
+    const cedulaFinal = sinCedula || !form.cedula.trim()
       ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
       : form.cedula.trim()
 
@@ -342,8 +343,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     }
   }
 
-  const completedIndices = []
-  for (let i = 0; i < paso; i++) completedIndices.push(i)
 
   // Los planes de entrada no traen rutas: ahí el mensaje es otro —no es que no
   // tengas, es que no vienen— y ofrecer «crear una ruta» sería mandar a una
@@ -352,15 +351,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
   return (
     <div className="max-w-xl mx-auto pb-32 lg:pb-32">
-      {/* Stepper */}
-      <Stepper
-        steps={PASOS}
-        activeIndex={paso}
-        completedIndices={completedIndices}
-        onChange={(idx) => {
-          if (idx <= paso) setPaso(idx)
-        }}
-      />
+      {/* ── UNA PANTALLA, NO TRES PASOS (T07-03) ──
+          Esto eran tres pasos con su barra de progreso: datos, ubicación y
+          organización. Y de los tres, DOS ERAN ENTEROS OPCIONALES — dirección,
+          referencia, ruta, grupo, tope y notas—, así que se obligaba a pasar por
+          dos pantallas que casi nadie rellena para llegar a «Crear».
+
+          La lámina pone los cinco campos que importan en una sola pantalla y
+          dice «solo el nombre es obligatorio». Su pie explica por qué, y es lo
+          más importante de esta pantalla: exigir datos en la calle frena la
+          carga, y esa es la razón de que muchos negocios se queden en cinco
+          clientes. Cargar clientes es lo que predice que la cuenta sobreviva.
+
+          No se pierde ni un campo: los opcionales bajan a «Más datos», cerrado.
+          Quien carga en la calle no lo abre; quien lo necesita, un toque. */}
 
       {/* Error global */}
       {error && (
@@ -373,7 +377,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       )}
 
       {/* Paso 1 — Datos basicos */}
-      {paso === 0 && (
+      {(
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
@@ -536,7 +540,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       )}
 
       {/* Paso 2 — Ubicacion */}
-      {paso === 1 && (
+      {(
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             ¿Donde lo ubicamos?
@@ -578,7 +582,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       )}
 
       {/* Paso 3 — Organizacion */}
-      {paso === 2 && (
+      {(
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             ¿Lo asignamos a una ruta?
@@ -716,46 +720,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         }}
       >
         <div className="max-w-xl mx-auto flex items-center gap-3">
-          {paso === 0 ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => router.back()}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={irAlAnterior}
-              disabled={loading}
-              className="flex-1"
-            >
-              Atrás
-            </Button>
-          )}
-          {paso < PASOS.length - 1 ? (
-            <Button
-              type="button"
-              onClick={irAlSiguiente}
-              disabled={!puedeAvanzar}
-              className="flex-[2]"
-            >
-              Continuar
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              loading={loading}
-              className="flex-[2]"
-            >
-              {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
-            </Button>
-          )}
+          {/* UN SOLO BOTON. «Atrás» y «Siguiente» eran de los pasos, y
+              «Cancelar» es lo mismo que la flecha de volver de la cabecera:
+              dos formas de no hacer nada, ocupando la mitad del pie. */}
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            loading={loading}
+            className="flex-1"
+          >
+            {esEdicion ? 'Guardar cambios' : 'Crear cliente'}
+          </Button>
         </div>
       </div>
 
