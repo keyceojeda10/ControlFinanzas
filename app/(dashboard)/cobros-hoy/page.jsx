@@ -11,7 +11,10 @@ import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
-import { adaptarCobrosHoy } from '@/lib/adaptadores/cobros'
+import {
+  adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion,
+} from '@/lib/adaptadores/cobros'
+import HojaFiltros from '@/components/pantallas/HojaFiltros'
 
 export default function CobrosHoyPage() {
   const { user, loading: authLoading } = useAuth()
@@ -44,6 +47,13 @@ export default function CobrosHoyPage() {
   //   esta pantalla que el cobrador no puede resolver caminando: si se queda sin
   //   bateria con dos cobros sin subir, esos cobros no existen.
   const [orden, setOrden] = useState('ruta')
+  // ── LOS FILTROS DE T03-02 ──
+  // Hasta ahora esta pantalla solo ordenaba, con tres chips. La lamina añade
+  // rangos de atraso CON CONTEO, ruta, y dos interruptores. Viven aca y no en
+  // la URL porque son de la jornada: se rearman cada mañana, no se comparten.
+  const [hojaFiltros, setHojaFiltros] = useState(false)
+  const [filtros, setFiltros] = useState({ atraso: '', rutaId: '', ocultarCobrados: false })
+  const cambiar = (k, v) => setFiltros((f) => ({ ...f, [k]: v }))
   const [coords, setCoords] = useState(null)
   const [sinSubir, setSinSubir] = useState(0)
 
@@ -305,6 +315,19 @@ export default function CobrosHoyPage() {
     ? Math.min(100, Math.round((resumen.recaudadoHoy / resumen.esperadoHoy) * 100))
     : 0
 
+  // Lo que la hoja necesita saber, todo derivado — nada de estado paralelo.
+  const conteos = conteosAtraso(data?.clientes, filtros)
+  const seleccion = resumenSeleccion(data?.clientes, filtros, user?.country)
+  // Las rutas que tienen a alguien HOY, con cuantos. El grupo de ruta solo se
+  // enseña si hay mas de una: con una sola es un filtro que no filtra.
+  const rutasDeHoy = Object.values((data?.clientes ?? []).reduce((m, c) => {
+    const id = c.rutaId ?? ''
+    if (!id) return m
+    m[id] = m[id] ?? { id, nombre: c.rutaNombre || 'Sin ruta', n: 0 }
+    m[id].n += 1
+    return m
+  }, {}))
+
   return (
     // SIN `px-1` NI `space-y-4`: los pone la pantalla nueva. Con ellos, la fila
     // medía 302px desde x44 —20 del layout + 4 de acá + 20 de la pantalla— y los
@@ -324,11 +347,60 @@ export default function CobrosHoyPage() {
           Se quedan tachados EN SU SITIO, que es lo que pide la lamina: el
           cobrador recorre la calle en orden, y si el cobrado desaparece de la
           lista pierde la referencia de donde iba. */}
+      {/* ── LA HOJA DE «FILTRAR Y ORDENAR» (T03-02) ──
+          Reusa `HojaFiltros`, la misma de prestamos y clientes, con dos cosas
+          que la lamina pide y no tenia: los conteos al lado de cada rango y un
+          boton que dice cuanta plata queda seleccionada.
+
+          Los conteos se calculan IGNORANDO el propio rango: si se contaran
+          sobre la lista ya filtrada, al entrar en «+30d» los otros tres dirian
+          0 y pareceria que no hay nadie en ellos. */}
+      <HojaFiltros
+        abierta={hojaFiltros}
+        onCerrar={() => setHojaFiltros(false)}
+        titulo="Filtrar y ordenar"
+        accion={seleccion.texto}
+        onLimpiar={() => { setFiltros({ atraso: '', rutaId: '', ocultarCobrados: false }); setOrden('ruta') }}
+        grupos={[
+          {
+            id: 'orden', tipo: 'orden', titulo: 'Ordenar por', valor: orden,
+            onCambiar: setOrden,
+            // «Cerca de mi» sin GPS no se ofrece: fingir una ordenacion por
+            // distancia manda al cobrador a caminar mal, y eso cuesta gasolina.
+            opciones: ORDENES
+              .filter((o) => o.id !== 'cerca' || !!coords)
+              .map((o) => ({ valor: o.id, nombre: o.nombre })),
+          },
+          {
+            id: 'atraso', titulo: 'Atraso', valor: filtros.atraso,
+            onCambiar: (v) => cambiar('atraso', v),
+            opciones: RANGOS_ATRASO.map((r) => ({
+              valor: r.id, nombre: r.nombre, conteo: conteos[r.id],
+            })),
+          },
+          ...(rutasDeHoy.length > 1 ? [{
+            id: 'ruta', titulo: 'Ruta', valor: filtros.rutaId,
+            onCambiar: (v) => cambiar('rutaId', v),
+            opciones: [{ valor: '', nombre: 'Todas', conteo: rutasDeHoy.length },
+              ...rutasDeHoy.map((r) => ({ valor: r.id, nombre: r.nombre, conteo: r.n }))],
+          }] : []),
+          {
+            id: 'interruptores', tipo: 'interruptores',
+            onCambiar: (k, v) => cambiar(k, v),
+            opciones: [
+              { valor: 'ocultarCobrados', nombre: 'Ocultar los ya cobrados', activo: filtros.ocultarCobrados },
+            ],
+          },
+        ]}
+      />
+
       <CobrarHoy
-        {...adaptarCobrosHoy(data, { pais: user?.country, orden })}
+        {...adaptarCobrosHoy(data, { pais: user?.country, orden, filtros })}
         sinMargen
         orden={orden}
         onOrden={setOrden}
+        onFiltros={() => setHojaFiltros(true)}
+        nFiltros={(filtros.atraso ? 1 : 0) + (filtros.rutaId ? 1 : 0) + (filtros.ocultarCobrados ? 1 : 0)}
         hayGps={!!coords}
         sinSubir={sinSubir}
         onCobrar={(fila) => {

@@ -22,6 +22,7 @@
 // dónde iba. Tachado sigue siendo el mapa del recorrido.
 
 import { BotonPrimario, EstadoVacio , TiraCifras} from '@/components/cf/primitivos'
+import { BotonFiltros } from './HojaFiltros'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -249,6 +250,9 @@ export default function CobrarHoy({
   orden = 'ruta',
   onOrden,
   hayGps = false,
+  // T03-02: abre la hoja de «Filtrar y ordenar», y cuantos filtros hay.
+  onFiltros,
+  nFiltros = 0,
   sinSubir = 0,
   onCobrar,
   onMapa,
@@ -283,7 +287,19 @@ export default function CobrarHoy({
 
       {avance && <Avance {...avance} />}
 
-      <Ordenes activo={orden} onCambiar={onOrden} hayGps={hayGps} />
+      {/* ── EL SEGMENTADO SE VA, LO SUSTITUYE LA HOJA (T03-02) ──
+          Eran tres ordenes fijos ocupando una fila entera. T03-02 los sube a
+          cinco y añade filtros, y eso ya no cabe en un segmentado: va a una
+          hoja, y aqui queda un solo chip que dice cuantos hay puestos.
+          `onFiltros` es opcional — sin el, se conserva el segmentado de antes,
+          que es lo que usan el banco de pruebas y las capturas viejas. */}
+      {onFiltros ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <BotonFiltros n={nFiltros} onClick={onFiltros} />
+        </div>
+      ) : (
+        <Ordenes activo={orden} onCambiar={onOrden} hayGps={hayGps} />
+      )}
 
       {vacio ? (
         <EstadoVacio
