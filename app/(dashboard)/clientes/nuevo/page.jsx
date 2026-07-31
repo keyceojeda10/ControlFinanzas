@@ -4,6 +4,9 @@ import { useRouter }   from 'next/navigation'
 import { useAuth }     from '@/hooks/useAuth'
 import ClienteForm     from '@/components/clientes/ClienteForm'
 import { planTieneFotos } from '@/lib/planes'
+import { formatMoney } from '@/lib/i18n'
+import PlanExcedido from '@/components/pantallas/PlanExcedido'
+import { adaptarPlanExcedido } from '@/lib/adaptadores/planes'
 
 export default function NuevoClientePage() {
   const router = useRouter()
