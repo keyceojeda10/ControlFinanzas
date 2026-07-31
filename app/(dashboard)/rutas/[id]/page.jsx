@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -28,6 +28,7 @@ import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector
 import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import ModoRuta                      from '@/components/pantallas/ModoRuta'
 import RutaCerrada                   from '@/components/pantallas/RutaCierre'
+import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -1487,7 +1488,7 @@ export default function RutaDetallePage({ params }) {
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-28 lg:pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-44 lg:pb-4">
 
       {/* -- T24 - Lo que tienes puesto aqui, y lo de hoy --
           Sustituye al heroe con donut de cinco colores segun el ritmo y a las
@@ -2232,10 +2233,38 @@ export default function RutaDetallePage({ params }) {
 
           // MODO ORDENAR: lista plana con drag-and-drop (comportamiento original).
           if (modoVista === 'ordenar') {
+            // ── T24-02 «REORDENAR EL RECORRIDO — NUNCA EXISTIO» ──
+            //
+            // Eran las MISMAS tarjetas de cobro con un asa pegada: se arrastraba
+            // sobre una lista pensada para otra cosa, con el monto, el boton de
+            // cobrar y el de WhatsApp compitiendo con el gesto de arrastrar.
+            //
+            // `OrdenRecorrido` las reduce a lo unico que importa cuando ordenas:
+            // el numero, el nombre, donde vive y cuanto hay de una a la
+            // siguiente. Y añade el consejo, que es lo que nadie sabia: «asi es
+            // como te van a salir los cobros cada dia».
+            //
+            // El guardado NO cambia: sigue `guardarOrden`, con su rebote de un
+            // segundo, su cancelacion de la peticion anterior y su cola offline.
             return (
-              <div className="space-y-1.5" ref={listRef}>
-                {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: true }))}
-              </div>
+              <OrdenRecorrido
+                detalle={[
+                  `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? 'parada' : 'paradas'}`,
+                  ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+                ].filter(Boolean).join(' · ')}
+                paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
+                  orden: i + 1,
+                  nombre: c.nombre,
+                  direccion: c.direccion,
+                  diasMora: c.diasMora,
+                  metros: c.distanciaMetros,
+                })))}
+                onReordenar={(desde, hasta) => {
+                  const movidos = moverParada(clientesFiltrados, desde, hasta)
+                  setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
+                  guardarOrden(movidos)
+                }}
+              />
             )
           }
 
@@ -3118,7 +3147,10 @@ export default function RutaDetallePage({ params }) {
           que se alcance con el pulgar sin mirar. Solo sale si queda algo por
           cobrar: en una ruta terminada seria un boton que no lleva a ninguna
           parte. */}
-      {(ruta?.pendientesHoy ?? 0) > 0 && (
+      {/* Solo en «Cobros»: mientras se ordena o se audita, empezar el recorrido
+          no es lo que se viene a hacer — y ahi el boton TAPABA la lista, que es
+          justo lo que se esta manipulando. */}
+      {modoVista === 'trabajo' && (ruta?.pendientesHoy ?? 0) > 0 && (
         <div style={{
           position: 'fixed', left: 0, right: 0, bottom: 92, zIndex: 40,
           padding: '0 var(--cf-pad-screen)', pointerEvents: 'none',
