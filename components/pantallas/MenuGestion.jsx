@@ -67,20 +67,26 @@ function Fila({ nombre, valor, peligro, onIr, primera }) {
 export function MenuGestion({
   titulo = 'Gestionar préstamo', detalle,
   grupos = [], onAccion,
+  // Dentro de una hoja que YA tiene cabecera y asa, las suyas sobran: saldrian
+  // dos titulos seguidos. Es lo que me paso al montar caja y cobradores.
+  cabecera = true,
 }) {
   return (
     <div style={{
       background: 'var(--cf-surface)', color: 'var(--cf-ink)',
-      borderRadius: 'var(--cf-r-sheet) var(--cf-r-sheet) 0 0',
-      boxShadow: '0 -12px 32px rgba(20,20,28,.18)',
-      padding: '10px 0 0', display: 'flex', flexDirection: 'column',
+      borderRadius: cabecera ? 'var(--cf-r-sheet) var(--cf-r-sheet) 0 0' : 0,
+      boxShadow: cabecera ? '0 -12px 32px rgba(20,20,28,.18)' : 'none',
+      padding: cabecera ? '10px 0 0' : 0, display: 'flex', flexDirection: 'column',
     }}>
-      <span aria-hidden style={{
-        width: 38, height: 4, borderRadius: 999, alignSelf: 'center', marginBottom: 14,
-        background: 'var(--cf-border-strong)',
-      }} />
+      {cabecera && (
+        <span aria-hidden style={{
+          width: 38, height: 4, borderRadius: 999, alignSelf: 'center', marginBottom: 14,
+          background: 'var(--cf-border-strong)',
+        }} />
+      )}
 
-      <div style={{ padding: '0 22px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ padding: cabecera ? '0 22px 20px' : 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {cabecera && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{
             fontFamily: 'var(--font-space-grotesk), system-ui',
@@ -92,6 +98,7 @@ export function MenuGestion({
             <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{detalle}</span>
           )}
         </div>
+        )}
 
         {grupos.map((g) => (
           <div key={g.titulo} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>

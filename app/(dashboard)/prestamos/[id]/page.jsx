@@ -55,6 +55,7 @@ import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/Ca
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { MenuGestion } from '@/components/pantallas/MenuGestion'
 import { anotarReciente } from '@/lib/recientes'
 
 // ─── Helpers de formato ──────────────────────────────────────────
@@ -79,26 +80,6 @@ const tipoPagoBadge = {
   liquidacion:{ variant: 'green',  label: 'Liquidación' },
 }
 
-function GestionBtn({ label, desc, color, icon, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-start gap-2.5 p-2.5 rounded-[12px] text-left transition-all active:scale-[0.97]"
-      style={{ background: `rgba(${color},0.06)`, border: `1px solid rgba(${color},0.2)` }}
-    >
-      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: `rgba(${color},0.12)`, color: `rgb(${color})` }}>
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-        </svg>
-      </div>
-      <div className="min-w-0">
-        <p className="text-[12px] font-semibold" style={{ color: `rgb(${color})` }}>{label}</p>
-        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{desc}</p>
-      </div>
-    </button>
-  )
-}
 
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
@@ -728,6 +709,84 @@ export default function PrestamoDetallePage({ params }) {
     return creadoISO === hoyISO
   })()
   const puedeEditar = esOwner || esDeHoy
+
+  // ── LO QUE VE CADA FILA DE «GESTIONAR EL PRÉSTAMO» ──
+  //
+  // Cada acción trae su VALOR ACTUAL. Es la diferencia con el menú anterior:
+  // antes había que abrir «Día de cobro» para enterarse de cuál era.
+  //
+  // Las condiciones son las mismas de antes, una por una: sin permiso la fila
+  // no se pinta, en vez de pintarse y fallar al pulsarla.
+  const detalleGestion = [
+    cliente?.nombre,
+    frecuencia && tasaInteres != null ? `${frecuenciaLabel} ${tasaInteres}%` : null,
+    cuotasAmortizacion.length > 0 ? `cuota ${cuotasPagadas} de ${cuotasAmortizacion.length}` : null,
+  ].filter(Boolean).join(' · ')
+
+  const gruposGestion = (() => {
+    const g = []
+
+    const cobra = []
+    if (puedeGestionarPrestamos) {
+      cobra.push({ id: 'recargo', nombre: 'Recargo por mora', hacer: () => setModalRecargo(true) })
+    }
+    if (puedeAplicarDescuentos) {
+      cobra.push({ id: 'descuento', nombre: 'Descuento', hacer: () => setModalDescuento(true) })
+    }
+    if (puedeGestionarPrestamos) {
+      cobra.push({
+        id: 'plazo', nombre: 'Modificar el plazo',
+        valor: diasPlazo ? `${diasPlazo} días` : null,
+        hacer: () => setModalPlazo(true),
+      })
+    }
+    if (cobra.length) g.push({ titulo: 'Cambia lo que se cobra', acciones: cobra })
+
+    const cuando = []
+    if (puedeGestionarPrestamos) {
+      // «Día de cobro» solo existe si NO es diario: en diario no hay día que elegir.
+      if (frecuencia && frecuencia !== 'diario') {
+        cuando.push({ id: 'dia', nombre: 'Día de cobro', valor: frecuenciaLabel, hacer: () => setModalDiaCobro(true) })
+      }
+      cuando.push({
+        id: 'proximo', nombre: 'Próximo cobro',
+        valor: proximoCobro ? fmtFecha(proximoCobro) : null,
+        hacer: () => setModalProximoCobro(true),
+      })
+      cuando.push({
+        id: 'sincobro', nombre: 'Días sin cobro',
+        hacer: () => {
+          try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
+          setModalDiasSinCobro(true)
+        },
+      })
+    }
+    if (cuando.length) g.push({ titulo: 'Cambia cuándo se cobra', acciones: cuando })
+
+    const cierra = []
+    if ((puedeGestionarPrestamos || esOwner) && puedeEditar) {
+      cierra.push({ id: 'editar', nombre: 'Editar el préstamo', hacer: () => setModalEditar(true) })
+    }
+    if (puedeGestionarPrestamos) {
+      cierra.push({
+        id: 'renovar', nombre: 'Renovar el préstamo',
+        valor: porcentajePagado > 0 ? `${Math.round(porcentajePagado)}% pagado` : null,
+        hacer: () => setModalRenovar(true),
+      })
+    }
+    if (puedeAplicarDescuentos) {
+      cierra.push({ id: 'anticipado', nombre: 'Cerrar anticipado', hacer: () => abrirLiquidacion() })
+    }
+    if (puedeGestionarPrestamos) {
+      cierra.push(esClavo
+        ? { id: 'recuperar', nombre: 'Sacar de perdidos', hacer: () => quitarClavo() }
+        : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
+    }
+    if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
+
+    return g
+  })()
+
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1645,134 +1704,37 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       </Modal>
 
-      {/* Modal: gestión del préstamo (según permisos) */}
-      <Modal
-        open={modalGestionPrestamo}
-        onClose={() => setModalGestionPrestamo(false)}
-        title="Gestión del préstamo"
+      {/* ── T05-01 · GESTIÓN DEL PRÉSTAMO ─────────────────────────────
+          Aquí había un `<Modal>` con nueve botones en mosaico de dos columnas,
+          cada uno teñido de un color distinto: morado renovar, azul el plazo,
+          ámbar el próximo cobro, naranja el recargo, verde el descuento. El
+          color no significaba nada —no hay forma de saber por qué renovar es
+          morado— y con nueve mosaicos hay que leerlos todos para encontrar uno.
+
+          Comparado con `main`, este bloque solo había cambiado en siete sitios,
+          y los siete eran renombres de variable de color. El usuario lo dijo
+          exacto: «está completamente igual a como estaba antes».
+
+          Ahora son filas agrupadas por QUÉ CAMBIA cada una —lo que se cobra,
+          cuándo se cobra, o el préstamo entero— y cada fila trae SU VALOR
+          ACTUAL a la derecha. Antes había que abrir «Día de cobro» para saber
+          cuál era el día de cobro, y salir sin tocar nada si ya estaba bien.
+
+          El rojo se queda para una sola fila, la de mover a perdidos: no es un
+          aviso genérico, es la única acción que reconoce una pérdida. */}
+      <HojaInferior
+        abierta={modalGestionPrestamo}
+        onCerrar={() => setModalGestionPrestamo(false)}
+        titulo="Gestionar el préstamo"
+        subtitulo={detalleGestion}
       >
-        <div className="space-y-4">
-          {(puedeGestionarPrestamos || esOwner) && puedeEditar && (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-ink)] bg-[var(--cf-fill)] border-2 border-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Editar préstamo
-            </button>
-          )}
+        <MenuGestion
+          cabecera={false}
+          grupos={gruposGestion}
+          onAccion={(a) => { setModalGestionPrestamo(false); a.hacer?.() }}
+        />
+      </HojaInferior>
 
-          {puedeGestionarPrestamos && (
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
-                Plazo y calendario
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <GestionBtn
-                  label="Renovar"
-                  desc="Prestar más al cliente"
-                  color="168,85,247"
-                  icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  onClick={() => { setModalGestionPrestamo(false); setModalRenovar(true) }}
-                />
-                <GestionBtn
-                  label="Modificar plazo"
-                  desc="Cambiar duración o fecha"
-                  color="59,130,246"
-                  icon="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalPlazo(true) }}
-                />
-                {prestamo?.frecuencia && prestamo.frecuencia !== 'diario' && (
-                  <GestionBtn
-                    label="Día de cobro"
-                    desc="Fijar día de la semana"
-                    color="245,197,24"
-                    icon="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                    onClick={() => { setModalGestionPrestamo(false); setModalDiaCobro(true) }}
-                  />
-                )}
-                <GestionBtn
-                  label="Próximo cobro"
-                  desc="Cambiar fecha manual"
-                  color="139,92,246"
-                  icon="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalProximoCobro(true) }}
-                />
-                <GestionBtn
-                  label="Días sin cobro"
-                  desc="Excluir días de la semana"
-                  color="160,160,160"
-                  onClick={() => {
-                    try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
-                    setModalGestionPrestamo(false)
-                    setModalDscPrestamo(true)
-                  }}
-                  icon="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                />
-              </div>
-            </div>
-          )}
-
-          {puedeGestionarPrestamos && (
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--cf-ink-3)' }}>
-                Ajustes de saldo
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <GestionBtn
-                  label="Recargo"
-                  desc="Agregar castigo o multa"
-                  color="249,115,22"
-                  icon="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalRecargo(true) }}
-                />
-                {puedeAplicarDescuentos && (
-                  <GestionBtn
-                    label="Descuento"
-                    desc="Reducir saldo pendiente"
-                    color="34,197,94"
-                    icon="M9 14.25l3-3m0 0l3 3m-3-3v8.25M3 11.25a4.502 4.502 0 018.206-2.913 4.5 4.5 0 015.588 5.163"
-                    onClick={() => { setModalGestionPrestamo(false); setModalDescuento(true) }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {puedeAplicarDescuentos && (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); abrirLiquidacion() }}
-              className="w-full h-11 rounded-[12px] font-medium text-sm transition-all flex items-center justify-center gap-2"
-              style={{ color: 'var(--cf-gold)', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Cerrar préstamo anticipado
-            </button>
-          )}
-
-          <div className="pt-2 border-t" style={{ borderColor: 'var(--cf-border)' }}>
-            {esClavo ? (
-              <button
-                onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
-              >
-                Quitar de préstamos perdidos
-              </button>
-            ) : (
-              <button
-                onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
-              >
-                Mover a préstamos perdidos
-              </button>
-            )}
-          </div>
-        </div>
-      </Modal>
 
       {/* Modal: confirmar mover a préstamos perdidos */}
       {/* ── T13-03 · MOVER A PERDIDOS ──────────────────────────────────────
