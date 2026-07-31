@@ -4,6 +4,7 @@
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, propuestaPorCercania } from '@/lib/adaptadores/ruta'
+import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -58,7 +59,10 @@ function CapaRecorrido({ children }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 60,
-      background: 'var(--cf-bg)', overflowY: 'auto',
+      // `--cf-surface`. Decia `--cf-bg`, que no existe, asi que esta capa —la
+      // del recorrido, a pantalla completa— se pintaba TRANSPARENTE y dejaba
+      // ver la lista de debajo.
+      background: 'var(--cf-surface)', overflowY: 'auto',
     }}>{children}</div>
   )
 }
@@ -821,17 +825,29 @@ export default function RutaDetallePage({ params }) {
         const pagoId = data.pagos?.[0]?.id
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
-        await fetchRuta()
-        // El recibo se arma con lo que devolvio el servidor, no con lo que se
-        // tecleo: si el backend ajusto el monto —excedente, redondeo, saldo
-        // menor que la cuota— el papel tiene que decir lo que de VERDAD entro.
+        // ── EL RECIBO, ANTES DE RECARGAR ──
+        // Estaba despues de `await fetchRuta()`, y ahi no llegaba a verse. Y
+        // ademas es lo correcto: la confirmacion de que la plata entro no debe
+        // esperar a una segunda peticion — el servidor ya dijo que si.
+        //
+        // Se arma con lo que devolvio el servidor, no con lo que se tecleo: si
+        // el backend ajusto el monto —excedente, redondeo, saldo menor que la
+        // cuota— el papel tiene que decir lo que de VERDAD entro.
         setReciboCobro({
           clienteId,
           nombre,
-          monto: Math.round(data?.pago?.montoPagado ?? cuota),
-          saldo: data?.prestamo?.saldoPendiente ?? null,
+          // LA RESPUESTA ES EL PRESTAMO, PLANO. No `data.pago` ni
+          // `data.prestamo`: la API devuelve `{...prestamo, saldoPendiente,
+          // proximoCobro, …}`. Buscarlo anidado daba `undefined` en silencio y
+          // el recibo salia sin saldo y con el monto de reserva.
+          // `pagos[0]`, que es el recien hecho: vienen en orden descendente
+          // (lo dice la linea del `pagoId` de arriba).
+          monto: Math.round(data?.pagos?.[0]?.montoPagado ?? cuota),
+          saldo: data?.saldoPendiente ?? null,
+          proximoCobro: data?.proximoCobro ?? null,
           numero: pagoId ? String(pagoId).slice(-6).toUpperCase() : null,
         })
+        await fetchRuta()
         // Mostrar undo por 10 segundos
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
@@ -1379,16 +1395,35 @@ export default function RutaDetallePage({ params }) {
   // La pantalla de «cobro hecho». Se pinta encima de todo —tambien del modo
   // recorrido— porque es la confirmacion de que la plata entro, y eso no puede
   // quedar debajo de nada.
-  const pantallaRecibo = reciboCobro ? (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 70,
-      background: 'var(--cf-bg)', overflowY: 'auto',
+  //
+  // POR UN PORTAL, no en su sitio del arbol. `position: fixed` se ancla al
+  // ancestro con `transform` mas cercano, no a la ventana, y la ruta tiene
+  // varios (las transiciones de pagina). El resultado era una capa que empezaba
+  // a media pantalla y dejaba la lista de clientes viendose por detras: no
+  // parecia una confirmacion, parecia un fallo de pintado.
+  //
+  // z-index por encima de la hoja de cobro (10001): el recibo la sustituye.
+  const pantallaRecibo = reciboCobro && typeof document !== 'undefined' ? createPortal(
+    <div data-recibo="1" style={{
+      position: 'fixed', inset: 0, zIndex: 10002,
+      // `--cf-surface`, no `--cf-bg`: ese token NO EXISTE. Un nombre inventado
+      // no da error, simplemente no pinta — y la capa salia transparente con la
+      // lista de clientes viendose por detras. Lo caza `tokens-existen.test.js`.
+      background: 'var(--cf-surface)', overflowY: 'auto',
     }}>
       <Recibo
         monto={formatMoney(reciboCobro.monto)}
         cliente={reciboCobro.nombre}
         saldo={reciboCobro.saldo != null ? formatMoney(Math.round(reciboCobro.saldo)) : null}
+        proximoCobro={reciboCobro.proximoCobro
+          ? new Date(reciboCobro.proximoCobro).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
+          : null}
         numero={reciboCobro.numero}
+        // Cómo va el día. `ruta` ya está recargada cuando esto se pinta.
+        progresoDia={(ruta?.esperadoHoy ?? 0) > 0 ? {
+          texto: `${formatMoney(ruta.recaudadoHoy ?? 0)} de ${formatMoney(ruta.esperadoHoy)}`,
+          porcentaje: Math.round(((ruta.recaudadoHoy ?? 0) / ruta.esperadoHoy) * 100),
+        } : null}
         negocio={orgNombre}
         cuando={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
         recibidoPor={ruta?.cobrador?.nombre ?? null}
@@ -1408,7 +1443,8 @@ export default function RutaDetallePage({ params }) {
         siguienteNombre={(ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)?.nombre ?? null}
         onCerrar={() => setReciboCobro(null)}
       />
-    </div>
+    </div>,
+    document.body,
   ) : null
 
   const hojaCobro = (

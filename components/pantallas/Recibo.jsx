@@ -54,6 +54,12 @@ export function Recibo({
   siguienteNombre,
   // «Volver a la lista queda de segunda» — existe, pero sin peso.
   onCerrar,
+  // ── EL TERCER DATO DE T15-03 ──
+  // «Tres datos y una salida: cuánto entró, cuánto le queda al cliente y CÓMO
+  // VA EL DÍA — con la barra que el cobrador vigila». Los dos primeros ya
+  // estaban (el monto y el saldo); éste faltaba, y es el que dice si se puede
+  // ir a casa. `{ texto: '$76.500 de $145.000', porcentaje: 53 }`.
+  progresoDia,
 }) {
   return (
     <div style={{
@@ -127,6 +133,35 @@ export function Recibo({
             {recibidoPor ? `Recibido por ${recibidoPor} · ${negocio}` : negocio}
           </span>
         </div>
+
+        {/* CÓMO VA EL DÍA. Fuera del troquelado a propósito: no es parte del
+            comprobante del cliente —a él no le importa la meta de la ruta— sino
+            del cobrador que acaba de cobrar. */}
+        {progresoDia && (
+          <div style={{
+            flex: 'none', display: 'flex', flexDirection: 'column', gap: 9,
+            padding: '2px 2px 0',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)', flex: 'none',
+              }}>Llevas hoy</span>
+              <span className="cf-num" style={{ fontSize: 14, fontWeight: 700 }}>{progresoDia.texto}</span>
+            </div>
+            {/* `flex: none` obligatorio: sin él la barra colapsa a 0px dentro de
+                una columna flex y el estado desaparece. */}
+            <div style={{
+              flex: 'none', height: 7, borderRadius: 999,
+              background: 'var(--cf-fill-2)', overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%', borderRadius: 999, background: 'var(--cf-green)',
+                width: `${Math.max(0, Math.min(100, progresoDia.porcentaje ?? 0))}%`,
+              }} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{

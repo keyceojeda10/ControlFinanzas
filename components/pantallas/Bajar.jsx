@@ -63,7 +63,7 @@ function Selector({ valor, onCambio, opciones = [], etiqueta }) {
   )
 }
 
-const IconoBajar = ({ color = 'var(--cf-on-gold)', tam = 16 }) => (
+const IconoBajar = ({ color = 'var(--cf-gold-ink)', tam = 16 }) => (
   <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke={color}
     strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
     <path d="M12 4v11M8 12l4 4 4-4M5 20h14" />
@@ -93,7 +93,7 @@ function Boton({ onClick, ocupado, tono = 'oro', children }) {
         fontSize: 14, fontWeight: deOro ? 700 : 600,
         opacity: ocupado ? 0.6 : 1,
         background: deOro ? 'var(--cf-gold)' : 'var(--cf-card)',
-        color: deOro ? 'var(--cf-on-gold)' : 'var(--cf-ink)',
+        color: deOro ? 'var(--cf-gold-ink)' : 'var(--cf-ink)',
         border: deOro ? 'none' : '1px solid var(--cf-border-strong)',
       }}
     >

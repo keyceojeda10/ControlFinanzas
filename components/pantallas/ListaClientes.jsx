@@ -58,7 +58,7 @@ function BotonCrear({ texto, onClick }) {
       style={{
         alignItems: 'center', gap: 7, flex: 'none',
         height: 38, padding: '0 15px', borderRadius: 'var(--cf-r-control)',
-        background: 'var(--cf-gold)', color: 'var(--cf-on-gold)',
+        background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
         border: 0, cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700,
       }}
     >
