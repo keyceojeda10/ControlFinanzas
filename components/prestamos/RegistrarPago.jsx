@@ -41,6 +41,8 @@ export default function RegistrarPago({
   // tabInicial: 'pago' (default) | 'capital' | 'recargo' | 'descuento'
   // Cuando se abre desde botones "Recargo" / "Descuento" / "Abono a capital".
   tabInicial = 'pago',
+  montoAlDia = 0,
+  cancelarHoy = 0,
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
@@ -854,7 +856,10 @@ export default function RegistrarPago({
     const elegido = medioAGuardar(medios, medioElegido)
 
     const montoNum = Math.round(Number(monto) || 0)
-    const atajos = atajosDeMonto({ saldoPendiente, cuotaDiaria })
+    // `montoAlDia` y `cancelarHoy` los manda la pagina: el primero lo calcula
+    // el servidor con los festivos de la organizacion, el segundo viene del
+    // endpoint de liquidacion. Si no llegan, esos dos atajos no salen.
+    const atajos = atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy })
     const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
 
     const { filas } = adaptarDespuesDelPago(

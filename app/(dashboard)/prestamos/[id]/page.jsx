@@ -1913,6 +1913,15 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         rutaNav={rutaNav}
         presetPago={presetPago}
+        // ── LOS DOS ATAJOS NUEVOS ──
+        // Sustituyen a «Mitad» y «Todo». «Mitad» era la mitad del SALDO —con
+        // cuota $17.334 y saldo $553.658 escribía $276.829, que no se cobra en
+        // ninguna visita— y «Todo» ponía el saldo entero, con TODO el interés
+        // futuro dentro, cuando el sistema sabe perdonarlo.
+        //
+        // Los dos datos ya vivían en esta página; solo no llegaban al modal.
+        montoAlDia={montoParaPonerseAlDia}
+        cancelarHoy={hayCierre ? Math.round(cierre.restanteHoy ?? 0) : 0}
       />
 
       {/* Modales de ajuste: usan el mismo RegistrarPago con tabInicial.
