@@ -2931,11 +2931,33 @@ export default function RutaDetallePage({ params }) {
                 </div>
               )}
 
-              {modalPagoRapido.saldoPendiente > 0 && (
-                <p className="text-[10px] text-[var(--cf-ink-3)] text-center">
-                  Saldo pendiente: <span className="font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(modalPagoRapido.saldoPendiente)}</span>
-                </p>
-              )}
+              {/* ── LO QUE QUEDA DESPUES, QUE ES LO QUE SE PREGUNTA ──
+                  La hoja decia lo que debe AHORA y lo que se va a cobrar, y
+                  dejaba la resta para la cabeza del cobrador — de pie, con el
+                  cliente delante. Y esa resta es justo la que el cliente
+                  pregunta: «¿y cuanto me queda?».
+
+                  Cuando el pago SALDA el prestamo se dice con todas las letras:
+                  «queda en cero» y no «$0». Es la unica vez que esa cifra es una
+                  buena noticia y merece leerse como tal. */}
+              {modalPagoRapido.saldoPendiente > 0 && (() => {
+                const cobra = Number(modalPagoRapido.cuota) || 0
+                const queda = Math.max(0, modalPagoRapido.saldoPendiente - cobra)
+                return (
+                  <div className="text-center flex flex-col gap-0.5">
+                    <p className="text-[10px] text-[var(--cf-ink-3)]">
+                      Debe <span className="font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(modalPagoRapido.saldoPendiente)}</span>
+                    </p>
+                    {cobra > 0 && (
+                      <p className="text-[11px]" style={{ color: queda === 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)' }}>
+                        {queda === 0
+                          ? 'Con este pago queda en cero'
+                          : <>Le queda debiendo <span className="font-semibold font-mono-display">{formatMoney(queda)}</span></>}
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
 
               <div>
                 <label className="text-[10px] font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-1 block">Monto a cobrar</label>
