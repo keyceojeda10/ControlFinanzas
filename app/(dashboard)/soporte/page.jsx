@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -35,6 +36,8 @@ const ESTADO_COLOR = {
 }
 
 export default function SoportePage() {
+  useCabecera({ titulo: 'Soporte', subtitulo: 'Crea un ticket o revisa el estado de tus solicitudes' })
+
   const [tickets, setTickets] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -57,25 +60,12 @@ export default function SoportePage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      {/* Header con icono + boton accion */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 22%, transparent), color-mix(in srgb, var(--cf-gold) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
-              color: 'var(--cf-gold)',
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>Soporte</h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Crea un ticket o revisa el estado de tus solicitudes</p>
-          </div>
-        </div>
+      {/* ── LA CABECERA ENTERA SE VA AL ARMAZON ──
+          Dibujaba un icono dorado de 40px, «Soporte» a 25px y su subtitulo,
+          todo JUSTO DEBAJO de la cabecera que ya dice «Soporte». Dos veces el
+          mismo titulo y un icono que no aporta: la pantalla ya se llama asi.
+          Queda solo la accion, que es lo unico que no dice la cabecera. */}
+      <div className="flex items-center justify-end mb-5">
         <Link href="/soporte/nuevo">
           <Button size="sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

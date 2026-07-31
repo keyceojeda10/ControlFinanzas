@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -17,6 +18,8 @@ const TIPOS = [
 ]
 
 export default function NuevoTicketPage() {
+  useCabecera({ titulo: 'Nuevo ticket', subtitulo: 'Cuéntanos cómo podemos ayudarte' })
+
   const router = useRouter()
   const [form, setForm] = useState({
     tipo: 'pregunta',
@@ -100,10 +103,8 @@ export default function NuevoTicketPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Nuevo ticket de soporte</h1>
-        <p className="text-xs text-[var(--cf-ink-3)]">Cuéntanos cómo podemos ayudarte</p>
-      </div>
+      {/* Titulo y subtitulo, en la cabecera del armazon. «Nuevo ticket de
+          soporte» dentro de la seccion Soporte dice «soporte» dos veces. */}
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
