@@ -643,9 +643,11 @@ export default function CajaPage() {
       <div className="max-w-xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
+          {/* El titulo lo pone el armazon; aqui se queda solo la FECHA, que es
+              el dato que cambia y por el que se abre esta pantalla. «Caja del
+              dia» salia dos veces, una encima de otra. */}
           <div>
-            <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Caja del dia</h1>
-            <p className="text-[12px] text-[var(--cf-ink-2)] mt-0.5">{cajaData?.fechaDisplay || '—'}</p>
+            <p className="text-[12px] text-[var(--cf-ink-2)]">{cajaData?.fechaDisplay || '—'}</p>
           </div>
           <input
             type="date"

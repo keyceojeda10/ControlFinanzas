@@ -196,7 +196,8 @@ function CobradoresPageInner() {
   if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)] mb-6">Cobradores</h1>
+        {/* Sin <h1>: la cabecera del armazon ya dice «Cobradores». Aqui salia
+            otra vez justo encima del aviso de plan. */}
         <div
           className="border border-[var(--cf-border)] rounded-[20px] p-8 text-center cf-card-shadow"
           style={{
