@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/nuevo/page.jsx
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
@@ -37,6 +38,8 @@ const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }
 )
 
 export default function NuevoCobrador() {
+  useCabecera({ titulo: 'Nuevo cobrador' })
+
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
 
@@ -198,7 +201,8 @@ export default function NuevoCobrador() {
             </svg>
           </div>
           <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>Nuevo cobrador</h1>
+            {/* Titulo en la cabecera. Debajo se queda cuantos cobradores
+                quedan, que es la unica cifra que importa aqui. */}
             {restantes !== null && (
               <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Puedes agregar{' '}

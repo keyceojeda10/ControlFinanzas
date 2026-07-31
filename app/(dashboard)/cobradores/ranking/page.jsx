@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/ranking/page.jsx - Ranking / scorecard de cobradores
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
@@ -199,6 +200,8 @@ function RankingSkeleton() {
 }
 
 export default function RankingCobradoresPage() {
+  useCabecera({ titulo: 'Ranking de cobradores' })
+
   const { esOwner, loading: authLoading } = useAuth()
   const [cobradores, setCobradores] = useState([])
   const [periodo, setPeriodo] = useState(null)
@@ -252,12 +255,11 @@ export default function RankingCobradoresPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto pb-6">
-      <div className="mb-6">
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Ranking de cobradores</h1>
-        {periodoLabel && (
-          <p className="text-sm mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>
-        )}
-      </div>
+      {/* El titulo lo pone el armazon. Se queda el PERIODO, que cambia con el
+          filtro y es lo unico que la cabecera no puede saber. */}
+      {periodoLabel && (
+        <p className="text-sm mb-6" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>
+      )}
 
       {loading && <RankingSkeleton />}
 

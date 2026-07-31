@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/[id]/editar/page.jsx
 
 import { useState, useEffect, use } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import { Input }                    from '@/components/ui/Input'
@@ -35,6 +36,8 @@ const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }
 )
 
 export default function EditarCobrador({ params }) {
+  useCabecera({ titulo: 'Editar cobrador' })
+
   const { id } = use(params)
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
@@ -183,7 +186,7 @@ export default function EditarCobrador({ params }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
             </svg>
           </div>
-          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>Editar cobrador</h1>
+          {/* Titulo en la cabecera del armazon. */}
         </div>
       </div>
 
