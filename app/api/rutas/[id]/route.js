@@ -12,6 +12,7 @@ import {
   tieneCobroPendienteHoy,
   tienePeriodoEsperadoHoy,
   calcularCuotasEnMora,
+  calcularCuotasPendientes,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
   obtenerCuotaPeriodoActual,
@@ -242,6 +243,11 @@ export async function GET(request, { params }) {
     let cuotasEnMoraCliente = 0
     let montoEnMoraCliente = 0
     let montoParaAlDiaCliente = 0
+    // CUMPLIMIENTO del cliente: de las cuotas que YA debian estar pagadas,
+    // cuantas lo estan. Misma definicion que en /api/clientes — si se cambia
+    // alli, se cambia aqui. Es la columna «Cumple» de la tabla de T04-09.
+    let cuotasVencidasCliente = 0
+    let cuotasPagadasCliente = 0
     const prestamosActivos = []
     let ultimaFechaPago = null
     let frecuencia   = 'diario'
@@ -401,6 +407,14 @@ export async function GET(request, { params }) {
       cuotasEnMoraCliente += cuotasMoraPrestamo
       montoEnMoraCliente += montoMoraPrestamo
       montoParaAlDiaCliente += montoAlDiaPrestamo
+      {
+        const totalCuotasP = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadasP = Math.max(0, totalCuotasP - calcularCuotasPendientes(p))
+        cuotasPagadasCliente += pagadasP
+        cuotasVencidasCliente += pagadasP + cuotasMoraPrestamo
+      }
       const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
       const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
       const extraInfo = detectarCuotaExtra(p, proximaCuota)
@@ -489,6 +503,11 @@ export async function GET(request, { params }) {
       cuotasEnMora: cuotasEnMoraCliente,
       montoEnMora: Math.round(montoEnMoraCliente),
       montoParaPonerseAlDia: Math.round(montoParaAlDiaCliente),
+      // `null` mientras no le haya vencido nada: un 0% en un cliente recien
+      // prestado lo pinta como el peor de la ruta, y es al reves.
+      cumplimiento: cuotasVencidasCliente > 0
+        ? Math.round((cuotasPagadasCliente / cuotasVencidasCliente) * 100)
+        : null,
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,

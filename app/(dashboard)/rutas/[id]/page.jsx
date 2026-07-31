@@ -33,6 +33,7 @@ import RutaCerrada                   from '@/components/pantallas/RutaCierre'
 import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
+import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
 
@@ -1520,6 +1521,94 @@ export default function RutaDetallePage({ params }) {
     ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0
 
   return (
+    <>
+    {/* ── T04-09 · LA RUTA EN ESCRITORIO ──
+        En 1440 la ruta es una TABLA, no nueve tarjetas apiladas. El pie de la
+        lamina lo explica: sentado y con ancho de sobra, comparar dos cifras que
+        estan en la misma columna no deberia costar recorrer nueve bloques.
+        El resumen del dueño se va a la derecha «donde no estorba el trabajo», y
+        la fila de botones que hoy se sale de la pantalla sube al encabezado.
+
+        Se pinta por CSS y no por JavaScript —`hidden lg:block`— igual que el
+        resto de la app: sin medir la ventana no hay parpadeo al cargar ni dos
+        arboles con estado distinto. Las dos vistas comparten handlers, asi que
+        cobrar es el mismo cobro en las dos. */}
+    <div className="hidden lg:block">
+      <RutaEscritorio
+        nombre={ruta.nombre}
+        subtitulo={[
+          ruta.cobrador?.nombre ? `Cobra ${ruta.cobrador.nombre}` : 'Sin cobrador',
+          `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
+          `${ruta.pendientesHoy ?? 0} ${(ruta.pendientesHoy ?? 0) === 1 ? 'cobro programado hoy' : 'cobros programados hoy'}`,
+          ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+        ].filter(Boolean).join(' · ')}
+        migaVolver={`Rutas · ${ruta.nombre}`}
+        onVolver={() => router.push('/rutas')}
+        acciones={[
+          { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.open(`/api/rutas/${id}/hoja`, '_blank') },
+          { id: 'agregar', texto: 'Agregar cliente', onClick: () => setModalClientes(true) },
+          ...((ruta.pendientesHoy ?? 0) > 0
+            ? [{ id: 'recorrido', texto: `Empezar recorrido · ${ruta.pendientesHoy}`, principal: true, onClick: () => setEnRecorrido(true) }]
+            : []),
+        ]}
+        chips={[{ id: 'trabajo', texto: 'Hoy', conteo: ruta.pendientesHoy ?? 0 },
+                { id: 'auditoria', texto: 'Todos', conteo: ruta.clientes?.length ?? 0 }]}
+        chipActivo={modoVista === 'auditoria' ? 'auditoria' : 'trabajo'}
+        onChip={(v) => setModoVista(v)}
+        onReordenar={() => setModoVista('ordenar')}
+        filas={(modoVista === 'auditoria'
+          ? (ruta.clientes ?? [])
+          : (ruta.clientes ?? []).filter((c) => c.cobroPendienteHoy || c.pagoHoy)
+        ).map((c, i) => ({
+          id: c.id,
+          orden: i + 1,
+          iniciales: inicialesDe(c.nombre),
+          nombre: c.nombre,
+          donde: [c.direccion, (c.prestamosActivos?.length ?? 0) > 1
+            ? `${c.prestamosActivos.length} préstamos` : null].filter(Boolean).join(' · '),
+          diasMora: c.diasMora ?? 0,
+          cuotaHoy: formatMoney(c.cuota ?? 0),
+          atraso: formatMoney(c.montoParaPonerseAlDia ?? 0),
+          atrasoNumero: c.montoParaPonerseAlDia ?? 0,
+          // `null` no es 0%: al cliente recien prestado no le ha vencido nada.
+          cumple: c.cumplimiento != null ? `${c.cumplimiento}%` : '—',
+          cumpleNumero: c.cumplimiento,
+          // `saldoPendiente` NO existe a nivel de cliente en esta API — vive en
+          // cada prestamo. Ponia «Debe $0» a gente que debe $638.000, que es la
+          // clase de error que hace desconfiar de toda la pantalla.
+          debe: formatMoney((c.prestamosActivos ?? []).reduce((n, pr) => n + (pr.saldoPendiente ?? 0), 0)),
+          cobrada: !c.cobroPendienteHoy && !!c.pagoHoy,
+        }))}
+        onCobrar={(f) => {
+          const c = ruta.clientes?.find((x) => x.id === f.id)
+          if (c) abrirPagoRapido(c)
+        }}
+        onFila={(f) => {
+          const c = ruta.clientes?.find((x) => x.id === f.id)
+          if (c) abrirClienteDesdeRuta(c, 0)
+        }}
+        porCobrarHoy={formatMoney(Math.max(0, (ruta.esperadoHoy ?? 0) - (ruta.recaudadoHoy ?? 0)))}
+        recaudadoHoy={formatMoney(ruta.recaudadoHoy ?? 0)}
+        progreso={ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0}
+        conteoCobros={`${ruta.clientesPagaronHoy ?? 0} de ${ruta.clientesConCobroHoy ?? 0}`}
+        cartera={[
+          { texto: 'Pendiente por cobrar', valor: formatMoney(ruta.carteraTotal ?? 0) },
+          { texto: 'Prestado (capital)', valor: formatMoney(ruta.capitalPendiente ?? 0) },
+          { texto: 'Atraso acumulado', valor: formatMoney((ruta.clientes ?? []).reduce((n, c) => n + (c.montoParaPonerseAlDia ?? 0), 0)), tono: 'mora' },
+          { texto: 'Clientes en mora', valor: `${ruta.enMora ?? 0} de ${ruta.clientes?.length ?? 0}`, tono: (ruta.enMora ?? 0) > 0 ? 'mora' : undefined },
+        ]}
+        cierreTexto={ruta.cierre
+          ? 'El cierre de hoy ya está registrado.'
+          : (ruta.recaudadoHoy ?? 0) > 0
+            ? `Tienes ${cierreHoyRuta.total} para entregar.`
+            : 'Se habilita al terminar el recorrido. Hoy no hay cobros registrados todavía.'}
+        cierreListo={!ruta.cierre && (ruta.recaudadoHoy ?? 0) > 0}
+        onCierre={() => { setTotalRecogido(''); setModalCaja(true) }}
+      />
+    </div>
+
+    {/* La vista de movil, que es la que se usa en la calle. */}
+    <div className="lg:hidden">
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-44 lg:pb-4">
 
       {/* -- T24 - Lo que tienes puesto aqui, y lo de hoy --
@@ -3367,5 +3456,7 @@ export default function RutaDetallePage({ params }) {
         organizationId={organizationId}
       />
     </div>
+    </div>
+    </>
   )
 }
