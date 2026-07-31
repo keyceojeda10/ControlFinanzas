@@ -4,6 +4,19 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
 
+import { Cabecera as CabeceraLucas, Vacio as VacioLucas } from '@/components/pantallas/Lucas'
+
+// ── T43-02/03/04 · LO QUE SE INJERTA Y LO QUE NO ──
+//
+// De `Lucas` se toman la CABECERA y el VACIO. El compositor NO: el de aqui
+// lleva `VoiceInput`, que es dictado de verdad contra la API, y el de la lamina
+// solo dibuja el boton. El publico de esta app teclea poco; perder el microfono
+// por ganar una pastilla habria sido un mal cambio.
+//
+// El vacio es el arreglo de fondo que señala la lamina: «la app promete "pideme
+// que haga algo" y luego SOLO OFRECE PREGUNTAS», asi que el dueño nunca
+// descubre que Lucas actua. Ahora son dos grupos.
+
 const SUGERENCIAS_DEFAULT = [
   '¿Cuánto estoy ganando realmente?',
   '¿Cuánto recaudé esta semana?',
@@ -11,6 +24,23 @@ const SUGERENCIAS_DEFAULT = [
   '¿Cuántos clientes están en mora?',
   '¿Tengo capital disponible para prestar más?',
 ]
+
+// Lo que Lucas PUEDE HACER, no lo que puede contestar. Fijas a proposito: son
+// las capacidades del asistente, no dependen de la cartera. La cifra real —«los
+// 13 en mora»— se le pega abajo cuando existe: sin ella es una promesa, con
+// ella es una tarea a medio hacer.
+const ACCIONES_BASE = [
+  { texto: 'Mándale un recordatorio a los que deben', icono: 'whatsapp' },
+  { texto: 'Ármame el reporte del mes', icono: 'reporte' },
+  { texto: 'Búscame un cliente por nombre o cédula', icono: 'gente' },
+]
+
+function generarAcciones(alertas) {
+  const n = alertas?.clientesMora ?? 0
+  return ACCIONES_BASE.map((a, i) => (i === 0 && n > 0
+    ? { ...a, texto: `Mándale un recordatorio a los ${n} en mora` }
+    : a))
+}
 
 function generarSugerencias(alertas) {
   if (!alertas) return SUGERENCIAS_DEFAULT
@@ -68,7 +98,11 @@ export default function AsistenteChat({ onClose }) {
 
   useEffect(() => {
     messagesRef.current = messages
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // SOLO SI HAY CONVERSACION. Sin mensajes, bajar al final arrastraba la
+    // pagina entera y metia el titulo del vacio —«Pregúntame lo que sea de tu
+    // negocio»— DEBAJO de la cabecera pegajosa. Se entraba a Lucas y lo primero
+    // que se leia era la segunda linea.
+    if (messages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   // Fetch uso + alertas al montar
@@ -215,6 +249,7 @@ export default function AsistenteChat({ onClose }) {
   }
 
   const sugerencias = generarSugerencias(usageInfo?.alertas)
+  const acciones   = generarAcciones(usageInfo?.alertas)
 
   // Determinar color del contador
   const restantes = usageInfo?.restantes ?? null
@@ -222,64 +257,46 @@ export default function AsistenteChat({ onClose }) {
   const sinMensajes = restantes !== null && restantes <= 0
   const pocasCuotas = restantes !== null && restantes > 0 && restantes <= 3
 
+  // OJO CON EL ORDEN: esto lee `restantes`, `limite`, `sinMensajes` y
+  // `pocasCuotas`. Estaba ARRIBA, junto a las sugerencias, y reventaba con
+  // «Cannot access 'restantes' before initialization» — la pantalla entera
+  // caia a la frontera de error. Un `const` no se puede leer antes de su linea.
+  const nuevaConversacion = () => {
+    setMessages([]); messagesRef.current = []; setError(''); setInput('')
+  }
+  const contadorPlan = restantes !== null && limite !== null && limite > 0 ? (
+    <span
+      className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+      style={{
+        flex: 'none', whiteSpace: 'nowrap',
+        background: pocasCuotas || sinMensajes
+          ? 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)'
+          : 'var(--cf-fill)',
+        color: pocasCuotas || sinMensajes ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+        border: `1px solid ${pocasCuotas || sinMensajes ? 'color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)' : 'var(--cf-border)'}`,
+      }}
+    >
+      {sinMensajes ? '0 restantes' : `${restantes} de ${limite}`}
+    </span>
+  ) : null
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'var(--cf-border)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-            style={{
-              background: 'var(--cf-gold-tint)',
-              border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
-            }}>
-            <svg style={{ width: '16px', height: '16px', display: 'block', color: 'var(--cf-gold)' }}
-              viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>Lucas</p>
-            <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Asistente financiero</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Contador de mensajes */}
-          {restantes !== null && limite !== null && limite > 0 && (
-            <span
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-              style={{
-                background: pocasCuotas || sinMensajes
-                  ? 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)'
-                  : 'var(--cf-fill)',
-                color: pocasCuotas || sinMensajes ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
-                border: `1px solid ${pocasCuotas || sinMensajes ? 'color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)' : 'var(--cf-border)'}`,
-              }}
-            >
-              {sinMensajes ? '0 restantes' : `${restantes} de ${limite}`}
-            </span>
-          )}
-          <button
-            onClick={() => { setMessages([]); messagesRef.current = []; setError(''); setInput('') }}
-            title="Nueva conversación"
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--cf-ink-3)' }}
-            aria-label="Nueva conversación"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-          {onClose && (
-            <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
-              style={{ color: 'var(--cf-ink-3)' }} aria-label="Cerrar asistente">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
+      {/* ── LA CABECERA VA EN EL ARMAZON, NO AQUI ──
+          Se monto la de `Lucas` y quedaron DOS: la del armazon fija arriba con
+          la flecha de volver, y la de Lucas debajo con el mismo nombre. Es el
+          patron del titulo duplicado que ya tiene su propia prueba.
+          Manda el armazon —es quien sabe volver— y las dos cosas que la
+          cabecera de Lucas aportaba, el contador del plan y «empezar de nuevo»,
+          se le pasan por `acciones`. En panel flotante (`onClose`) no hay
+          armazon, y ahi si se pinta la de Lucas. */}
+      {onClose && (
+        <CabeceraLucas
+          onEditar={nuevaConversacion}
+          onCerrar={onClose}
+          extra={contadorPlan}
+        />
+      )}
 
       {/* Plan error */}
       {planError && (
@@ -300,26 +317,11 @@ export default function AsistenteChat({ onClose }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && !planError && (
-          <div className="space-y-4">
-            <div className="text-center pt-4">
-              <p className="text-sm font-medium" style={{ color: 'var(--cf-ink-2)' }}>
-                Hola, soy Lucas. Pregúntame sobre tu negocio o pídeme que haga algo.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {sugerencias.map((s) => (
-                <button key={s} onClick={() => sendMessage(s)}
-                  className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-[0.98]"
-                  style={{
-                    background: 'var(--cf-fill)',
-                    border: '1px solid var(--cf-border)',
-                    color: 'var(--cf-ink-2)',
-                  }}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          <VacioLucas
+            preguntas={sugerencias.map((t) => ({ texto: t, icono: 'pregunta' }))}
+            acciones={acciones}
+            onElegir={(t) => sendMessage(t)}
+          />
         )}
 
         {messages.map((msg, i) => {

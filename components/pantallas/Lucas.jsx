@@ -41,7 +41,10 @@ function BotonIcono({ etiqueta, children, onClick }) {
   )
 }
 
-function Cabecera({ onEditar, onCerrar }) {
+// `extra` es para el contador de mensajes del plan. No estaba: la lámina lo
+// prohíbe en el vacío —«doscientos de qué»— pero la app sí lo enseña cuando
+// queda poco, y ese aviso tiene que caber sin romper la cabecera.
+export function Cabecera({ onEditar, onCerrar, extra }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 11, flex: 'none',
@@ -62,6 +65,8 @@ function Cabecera({ onEditar, onCerrar }) {
           sabe todo de tu negocio
         </span>
       </span>
+
+      {extra}
 
       <BotonIcono etiqueta="Empezar de nuevo" onClick={onEditar}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -138,7 +143,7 @@ function Grupo({ children }) {
   )
 }
 
-function Vacio({
+export function Vacio({
   titulo = 'Pregúntame lo que sea de tu negocio',
   ayuda = 'O pídeme que haga algo: buscar un cliente, armar un reporte, mandar un recordatorio.',
   preguntas = [], acciones = [], onElegir,
@@ -279,7 +284,7 @@ function Respuesta({ pregunta, frase, bloque, clientes, chips = [], siguientes =
 
 /* ── Compositor ────────────────────────────────────────────────────────── */
 
-function Compositor({ escritorio, onEnviar, onDictar }) {
+export function Compositor({ escritorio, onEnviar, onDictar }) {
   const [texto, setTexto] = useState('')
   const listo = texto.trim().length > 0
 
