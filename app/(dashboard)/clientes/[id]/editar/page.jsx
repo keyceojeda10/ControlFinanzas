@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/[id]/editar/page.jsx - Editar datos de cliente existente
 
 import { useState, useEffect, use } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import ClienteForm                  from '@/components/clientes/ClienteForm'
@@ -10,6 +11,8 @@ import { SkeletonCard }             from '@/components/ui/Skeleton'
 import { obtenerClienteOffline }    from '@/lib/offline'
 
 export default function EditarClientePage({ params }) {
+  useCabecera({ titulo: 'Editar cliente', subtitulo: 'Modifica los datos del cliente' })
+
   const { id }              = use(params)
   const router              = useRouter()
   const { session, puedeEditarClientes, esOwner, loading: authLoading } = useAuth()
@@ -61,25 +64,9 @@ export default function EditarClientePage({ params }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 22%, transparent), color-mix(in srgb, var(--cf-gold) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
-              color: 'var(--cf-gold)',
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>Editar cliente</h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Modifica los datos del cliente</p>
-          </div>
-        </div>
-      </div>
+      {/* Fuera el icono dorado de 40px y el titulo: los dos salian JUSTO
+          debajo de la cabecera que ya dice «Editar cliente». El icono ademas
+          gastaba el unico dorado de la pantalla en decorar. */}
 
       <ClienteForm
         clienteInicial={cliente}

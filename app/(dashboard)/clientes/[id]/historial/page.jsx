@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/[id]/historial/page.jsx - Historial de pagos del cliente
 
 import { formatMoney } from '@/lib/i18n'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,6 +12,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import ListadoPagos from '@/components/pagos/ListadoPagos'
 
 export default function HistorialPage() {
+  useCabecera({ titulo: 'Historial de pagos', subtitulo: 'Todos los pagos de todos los préstamos' })
+
   const params = useParams()
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -71,11 +74,8 @@ export default function HistorialPage() {
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4">
 
+      {/* Titulo y subtitulo en la cabecera del armazon. */}
       <div className="mb-4">
-        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Historial de Pagos</h1>
-        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
-          Todos los pagos de todos los préstamos
-        </p>
       </div>
 
       {/* Filtro por fecha + export */}
