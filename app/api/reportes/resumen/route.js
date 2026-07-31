@@ -3,7 +3,7 @@ import { NextResponse }  from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { nivelReportes } from '@/lib/planes'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
@@ -71,6 +71,16 @@ export async function GET(req) {
         cuotaDiaria: true,
         frecuencia: true,
         estado: true,
+        // modoInteres + totalPagado + la tabla: lo que necesita
+        // calcularCapitalRestante. Sin modoInteres, tieneTablaAmortizacion da
+        // false siempre y los modos con tabla se calcularian por la rama
+        // equivocada.
+        modoInteres: true,
+        totalPagado: true,
+        cuotasAmortizacion: {
+          orderBy: { numeroPeriodo: 'asc' },
+          select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, fechaEsperada: true },
+        },
         pagos: { select: { montoPagado: true, tipo: true } },
         cliente: {
           select: {
@@ -136,13 +146,16 @@ export async function GET(req) {
   const clientesActivos = new Set()
   const clientesMora = new Set()
   let carteraActiva = 0
-  let capitalPrestado = 0
+  // Capital que sigue AFUERA (no el que salio algun dia). Misma definicion que
+  // el dashboard: si las dos pantallas dan cifras distintas para lo mismo, se
+  // rompe la confianza. Ver app/api/dashboard/resumen/route.js.
+  let capitalEnCalle = 0
   let saldoPorCobrar = 0
 
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
     carteraActiva += p.totalAPagar ?? 0
-    capitalPrestado += p.montoPrestado ?? 0
+    capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
     const pagado = (p.pagos || [])
       .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
       .reduce((a, pg) => a + (pg.montoPagado || 0), 0)
@@ -164,7 +177,7 @@ export async function GET(req) {
       completados: prestamosCompletados,
       carteraActiva,
       saldoPorCobrar,
-      capitalPrestado,
+      capitalEnCalle,
     },
     pagos: {
       totalPeriodo: pagos._sum.montoPagado ?? 0,

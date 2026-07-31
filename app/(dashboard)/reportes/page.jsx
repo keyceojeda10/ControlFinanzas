@@ -493,9 +493,9 @@ export default function ReportesPage() {
               border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
             }}
           >
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-accent)' }}>Capital prestado activo</p>
-            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.prestamos.capitalPrestado)}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>en la calle</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-accent)' }}>Capital en la calle</p>
+            <p className="text-[18px] font-bold font-mono-display mt-1" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(resumen.prestamos.capitalEnCalle)}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>tu plata, sin intereses</p>
           </div>
           <div className="rounded-[16px] px-4 py-3 transition-all kpi-lift"
             style={{

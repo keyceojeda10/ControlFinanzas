@@ -5,7 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
-import { tienePeriodoEsperadoHoy, tieneTablaAmortizacion, obtenerCuotaPeriodoActual } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -1031,24 +1031,35 @@ export async function GET(request) {
         select: {
           totalAPagar: true,
           montoPrestado: true,
+          // Necesarios para calcularCapitalRestante (ver dashboard/resumen).
+          modoInteres: true,
+          totalPagado: true,
+          cuotasAmortizacion: {
+            orderBy: { numeroPeriodo: 'asc' },
+            select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, fechaEsperada: true },
+          },
           pagos: { select: { montoPagado: true, tipo: true } },
         },
       }),
     ])
     const saldoCaja = Math.round(cap?.saldo ?? 0)
-    let carteraActiva = 0   // pendiente por cobrar, CON intereses
-    let capitalPrestado = 0 // capital puro colocado, SIN intereses
+    let carteraActiva = 0  // pendiente por cobrar, CON intereses
+    // Capital que sigue AFUERA, no el que salio algun dia. Antes sumaba
+    // montoPrestado y nunca bajaba con los abonos. Misma definicion que el
+    // dashboard a proposito: dos cifras distintas para lo mismo rompen la
+    // confianza en una app de plata.
+    let capitalEnCalle = 0
     for (const p of prestamosActivos) {
       const pagado = p.pagos
         .filter((pg) => !['recargo', 'descuento'].includes(pg.tipo))
         .reduce((a, pg) => a + pg.montoPagado, 0)
-      carteraActiva   += Math.max(0, (p.totalAPagar || 0) - pagado)
-      capitalPrestado += p.montoPrestado || 0
+      carteraActiva  += Math.max(0, (p.totalAPagar || 0) - pagado)
+      capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
     }
     payload.stats.capitalOrganizacion = {
       saldoCaja,
       carteraActiva: Math.round(carteraActiva),
-      capitalPrestado: Math.round(capitalPrestado),
+      capitalEnCalle: Math.round(capitalEnCalle),
       // Se deja el mismo significado de siempre a proposito: cambiar que cuenta
       // como "capital total" es una decision del negocio, no un refactor.
       total: saldoCaja + Math.round(carteraActiva),

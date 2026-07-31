@@ -154,12 +154,14 @@ export async function GET(req) {
 
   const clientesActivos = new Set()
   const clientesMora = new Set()
-  let carteraActiva = 0, capitalPrestado = 0, saldoPorCobrar = 0
+  // capitalPrestado se calculaba aqui y no se imprimia en ninguna parte del PDF.
+  // Se quita en vez de "arreglarlo": habria costado traer la tabla de
+  // amortizacion de cada prestamo para un numero que nadie ve.
+  let carteraActiva = 0, saldoPorCobrar = 0
 
   for (const p of prestamosActivos) {
     clientesActivos.add(p.clienteId)
     carteraActiva += p.totalAPagar ?? 0
-    capitalPrestado += p.montoPrestado ?? 0
     const pagado = (p.pagos || [])
       .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
       .reduce((a, pg) => a + (pg.montoPagado || 0), 0)

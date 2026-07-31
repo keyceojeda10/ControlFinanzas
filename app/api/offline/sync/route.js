@@ -2,7 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
@@ -83,9 +83,18 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         include: {
           pagos: {
-            where: { fechaPago: { gte: hace90Dias } },
+            // Los abonos a capital entran SIEMPRE, aunque sean mas viejos que
+            // los 90 dias: calcularCapitalRestante los necesita completos para
+            // no repartirlos por la cascada interes-primero. Son pocos, asi que
+            // no engordan el sync. Sin esto, el capital offline se separaba del
+            // que muestra el dashboard en los prestamos con abonos antiguos.
+            where: { OR: [{ fechaPago: { gte: hace90Dias } }, { tipo: 'capital' }] },
             orderBy: { fechaPago: 'desc' },
             include: { cobrador: { select: { id: true, nombre: true } } },
+          },
+          cuotasAmortizacion: {
+            orderBy: { numeroPeriodo: 'asc' },
+            select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
           },
         },
       },
@@ -255,7 +264,15 @@ export async function GET() {
       activos: prestamosActivos.length,
       completados: prestamosCompletados.length,
       carteraActiva: prestamosActivos.reduce((s, p) => s + (p.saldoPendiente || 0), 0),
-      capitalPrestado: prestamosActivos.reduce((s, p) => s + p.montoPrestado, 0),
+      // Capital que sigue AFUERA. Se calcula sobre clientesRaw, NO sobre los
+      // prestamos enriquecidos: el enriquecimiento PISA `totalPagado` con la
+      // suma de los pagos de los ultimos 90 dias, y calcularCapitalRestante lo
+      // usa como el pagado total. Sobre el enriquecido, un prestamo con
+      // historia vieja saldria con capital inflado.
+      // Tambien excluye clavos, igual que el dashboard y la caja.
+      capitalEnCalle: Math.round(clientesRaw.reduce((s, c) => s + c.prestamos
+        .filter(p => p.estado === 'activo' && !p.esClavo)
+        .reduce((a, p) => a + (calcularCapitalRestante(p) ?? p.montoPrestado ?? 0), 0), 0)),
       cuotaDiariaTotal: prestamosActivos.reduce((s, p) => s + (p.cuotaDiaria || 0), 0),
     },
   }
