@@ -18,7 +18,7 @@ import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
-import HojaFiltros, { contarFiltros } from '@/components/pantallas/HojaFiltros'
+import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -206,6 +206,11 @@ export default function ClientesPage() {
 
 
   const [rutaIdFiltro, setRutaIdFiltro] = useState('')
+  // Los tres que necesitan que el servidor haga la cuenta. Ver el comentario de
+  // `/api/clientes`: en el navegador solo mirarian los 50 de esta pagina.
+  const [moraMin, setMoraMin] = useState('')
+  const [pagaHoy, setPagaHoy] = useState(false)
+  const [sinPrestamo, setSinPrestamo] = useState(false)
   // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
   // pantallas distintas. Una dice como empezar; la otra, como volver atras.
   const carteraVacia = !loading && !error && clientes.length === 0 &&
@@ -232,6 +237,21 @@ export default function ClientesPage() {
       onCambiar: (v) => { setRutaIdFiltro(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Todas las rutas' },
         ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
+    { id: 'pagaHoy', titulo: 'A quién le toca', valor: pagaHoy ? 'hoy' : '',
+      onCambiar: (v) => { setPagaHoy(v === 'hoy'); setPage(1) },
+      // «Hoy o antes» y no «hoy»: el que lleva tres días atrasado también tiene
+      // que aparecer. Dejarlo fuera esconde justo a los que hay que ir a ver.
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: 'hoy', nombre: 'Hoy o antes' }] },
+    { id: 'mora', titulo: 'Días de mora', valor: moraMin,
+      onCambiar: (v) => { setMoraMin(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7' },
+        { valor: '15', nombre: 'Más de 15' }, { valor: '30', nombre: 'Más de 30' }] },
+    { id: 'sinPrestamo', titulo: 'Sin préstamo activo', valor: sinPrestamo ? 'si' : '',
+      onCambiar: (v) => { setSinPrestamo(v === 'si'); setPage(1) },
+      // El cliente que ya terminó y no debe nada: es al que hay que volver a
+      // prestarle, y hasta ahora no habia forma de encontrarlo sin recorrer la
+      // lista entera a mano.
+      opciones: [{ valor: '', nombre: 'Todos' }, { valor: 'si', nombre: 'Ya terminó de pagar' }] },
     ...(grupos.length > 0 ? [{
       id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
       onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
@@ -269,7 +289,7 @@ export default function ClientesPage() {
     }).catch(() => {})
   }, [esOwner])
 
-  const fetchClientes = useCallback(async (q, p, grupoId = '', rutaId = '', { soft = false } = {}) => {
+  const fetchClientes = useCallback(async (q, p, grupoId = '', rutaId = '', { soft = false, calculados = {} } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
@@ -332,6 +352,10 @@ export default function ClientesPage() {
       if (new URLSearchParams(window.location.search).get('sinRuta') === '1') {
         params.set('sinRuta', '1')
       }
+      // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
+      if (calculados.mora) params.set('mora', String(calculados.mora))
+      if (calculados.pagaHoy) params.set('pagaHoy', '1')
+      if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/clientes?${params}`)
@@ -408,9 +432,10 @@ export default function ClientesPage() {
 
   // Carga de clientes con debounce
   useEffect(() => {
-    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: refreshKey > 0 }), 280)
+    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro,
+      { soft: refreshKey > 0, calculados: { mora: moraMin, pagaHoy, sinPrestamo } }), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey])
+  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey, moraMin, pagaHoy, sinPrestamo])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {
@@ -623,27 +648,37 @@ export default function ClientesPage() {
         <HojaFiltros
           abierta={hojaFiltros}
           onCerrar={() => setHojaFiltros(false)}
-          onLimpiar={() => { setRutaIdFiltro(''); setGrupoFiltro(''); setPage(1) }}
+          onLimpiar={() => { setRutaIdFiltro(''); setGrupoFiltro(''); setMoraMin('')
+            setPagaHoy(false); setSinPrestamo(false); setPage(1) }}
           grupos={gruposFiltro}
         />
 
-        <BuscadorLista
-          valor={buscar}
-          onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-          placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
-        />
+        {/* ── LA MISMA FILA QUE PRESTAMOS, Y NO ES UN CAPRICHO ──
+            Aquí el buscador iba a todo lo ancho y el acceso a los filtros era un
+            chip con un icono AL FINAL de la tira de estados — una tira que se
+            desplaza, así que en cuanto hay cuatro estados el botón queda fuera
+            de la pantalla y no se ve que existe.
+
+            En préstamos el mismo par lleva meses resuelto: buscador y «Filtros»
+            en una fila, y la tira de estados debajo. Dos pantallas hermanas con
+            dos disposiciones distintas obligan a aprender la app dos veces, y la
+            de clientes escondía su mitad útil. */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <BuscadorLista
+              valor={buscar}
+              onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+              placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
+            />
+          </div>
+          <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
+        </div>
 
         {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
             que aplicarlo para saber si había algo. */}
         <BarraFiltros
           activo={estado}
           onCambiar={(v) => { setEstado(v); setPage(1) }}
-          // ── EL CHIP YA ABRE LA HOJA DE FILTROS ──
-          // Abria el MODAL DE GRUPOS en su pestaña de filtrar, que es otra cosa:
-          // el usuario pulsaba «Más filtros» y le salia la gestion de grupos de
-          // cobro. Ahora abre `HojaFiltros`, la misma de prestamos.
-          onMasFiltros={() => setHojaFiltros(true)}
-          hayMasFiltros={nFiltros > 0}
           filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
             id: value,
             nombre: label,

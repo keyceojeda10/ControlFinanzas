@@ -63,6 +63,25 @@ export async function GET(request) {
   // caias al listado completo, sin forma de saber cuales eran.
   const soloSinRuta = searchParams.get('sinRuta') === '1'
 
+  // ── FILTROS QUE NO SE PUEDEN HACER EN SQL ──
+  //
+  // La mora de un cliente no es una columna: depende de sus prestamos, de los
+  // dias sin cobro de su ruta, de los festivos y del calendario de cada uno. Se
+  // calcula abajo, DESPUES de traer las filas.
+  //
+  // Y ahi esta el problema: la paginacion la hace la base ANTES de ese calculo,
+  // asi que filtrar por mora sobre la pagina ya cortada solo mira 50 clientes y
+  // MIENTE — con 200 en cartera, «en mora» enseñaria los que hubiera entre los
+  // primeros 50 y diria que no hay mas.
+  //
+  // Cuando se pide uno de estos, se trae la cartera entera, se calcula, se
+  // filtra y se pagina aqui. Es mas caro, pero es el unico resultado cierto.
+  // Cuando NO se pide —el caso de todos los dias— no cambia nada.
+  const moraMin = Number(searchParams.get('mora') || 0) || 0
+  const pagaHoy = searchParams.get('pagaHoy') === '1'
+  const sinPrestamo = searchParams.get('sinPrestamo') === '1'
+  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo
+
   const condiciones = [
     { organizationId },
     { estado: { notIn: ['eliminado'] } },
@@ -125,7 +144,8 @@ export async function GET(request) {
       ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true } } }),
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
-    ...(page != null && { take: limit, skip: (page - 1) * limit }),
+    // Sin `take/skip` cuando hay filtro calculado: se corta despues, ya filtrado.
+    ...(page != null && !filtraCalculado && { take: limit, skip: (page - 1) * limit }),
   })
 
   const [org, festivos] = await Promise.all([
@@ -219,6 +239,9 @@ export async function GET(request) {
       diasMoraMax,
       pagoHoy,
       porcentajePagadoPromedio,
+      // La fecha cruda, ademas de la etiqueta: el filtro «le toca hoy» no puede
+      // leer «mañana» ni «hace 3 dias».
+      proximoCobro: proximoCobroMin,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
       tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
     }
@@ -231,12 +254,47 @@ export async function GET(request) {
   })
   for (const c of resultado) delete c._actividadAt
 
+  // Los filtros que necesitan el calculo hecho.
+  let filtrado = resultado
+  const hoyISO = new Date().toISOString().slice(0, 10)
+  if (filtraCalculado) {
+    filtrado = resultado.filter((c) => {
+      // «Le toca pagar hoy»: la fecha del proximo cobro mas cercano es hoy o ya
+      // paso. Incluye los atrasados a proposito — a esos tambien les toca, y
+      // dejarlos fuera seria justo esconder a los que hay que ir a ver.
+      //
+      // Se compara la fecha en texto (AAAA-MM-DD) y no con `Date`: los cobros se
+      // guardan a las 05:00Z por el convenio de la casa, asi que el trozo de
+      // fecha del ISO ES el dia que toca, mire desde donde se mire.
+      if (pagaHoy) {
+        const dia = c.proximoCobro ? new Date(c.proximoCobro).toISOString().slice(0, 10) : null
+        if (!dia || dia > hoyISO) return false
+      }
+      if (moraMin > 0 && Number(c.diasMoraMax ?? 0) < moraMin) return false
+      // «Sin prestamo activo»: el cliente que esta en la cartera y no debe nada.
+      // Es al que hay que volver a prestarle, y hasta ahora no habia forma de
+      // encontrarlo sin recorrer la lista entera a mano.
+      if (sinPrestamo && Number(c.prestamosActivos ?? 0) > 0) return false
+      return true
+    })
+  }
+
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {
+    if (filtraCalculado) {
+      // El total es el de LO FILTRADO, no el de la cartera: si dice 200 y
+      // enseña 3, el usuario cree que se perdieron 197.
+      const total = filtrado.length
+      const desde = (page - 1) * limit
+      return Response.json({
+        clientes: filtrado.slice(desde, desde + limit),
+        total, page, totalPages: Math.ceil(total / limit),
+      })
+    }
     const total = await prisma.cliente.count({ where: whereClause })
-    return Response.json({ clientes: resultado, total, page, totalPages: Math.ceil(total / limit) })
+    return Response.json({ clientes: filtrado, total, page, totalPages: Math.ceil(total / limit) })
   }
-  return Response.json(resultado)
+  return Response.json(filtrado)
   } catch (err) {
     console.error('[GET /api/clientes]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })

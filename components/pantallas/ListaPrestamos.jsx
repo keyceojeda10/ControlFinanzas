@@ -39,7 +39,10 @@ export function TresCifras({ enLaCalle, enMora, cobradoMes }) {
         <div key={c.rotulo} style={{
           flex: 1, minWidth: 0,
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-          borderRadius: 'var(--cf-r-control)', padding: '12px 14px',
+          // Relleno lateral 12 y no 14: la cifra mas ancha que NO se abrevia es
+          // «$999.999», que a cuerpo 19 con cifras tabulares mide 84px. Con 14
+          // de relleno el hueco util eran 82 y se salia. Con 12 son 86.
+          borderRadius: 'var(--cf-r-control)', padding: '12px',
           display: 'flex', flexDirection: 'column', gap: 4,
         }}>
           <span style={{
