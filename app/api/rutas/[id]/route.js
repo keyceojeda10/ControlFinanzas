@@ -21,6 +21,9 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { distanciaMetros } from '@/lib/geo'
+// Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
+// usa el optimizador de orden; aquí da el «3,4 km» de la cabecera (T27-02).
+import { totalDistance } from '@/lib/routeOptimizer'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -524,6 +527,27 @@ export async function GET(request, { params }) {
     recaudadoHoy: Math.round(recaudadoHoy),
     recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
     recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
+    // ── «3,4 km» EN LA CABECERA (T27-02) ──
+    //
+    // Lo que se camina hoy, en el orden del recorrido. Es lo que decide si la
+    // ruta cabe en una mañana, y hasta ahora no estaba en ninguna pantalla.
+    //
+    // `totalDistance` ya existía en lib/routeOptimizer.js — la usa el
+    // optimizador de orden. Se le pasan solo los clientes CON coordenadas: los
+    // que no las tienen se saltan en vez de contar como (0,0), que metería
+    // miles de kilómetros de ida y vuelta al golfo de Guinea.
+    //
+    // NO se reordena aquí: la consulta ya sale `orderBy ordenRuta asc` (y
+    // `ordenRuta` ni siquiera viaja en el objeto mapeado, así que ordenar por
+    // él sería ordenar por `undefined` y dejar la lista como estaba... o no,
+    // según el navegador).
+    //
+    // `null` con menos de dos puntos: no hay tramo que medir, y un «0,0 km» se
+    // lee como que la ruta entera está en el mismo portal.
+    distanciaMetros: (() => {
+      const conCoords = clientesEnriquecidos.filter((c) => c.latitud != null && c.longitud != null)
+      return conCoords.length >= 2 ? Math.round(totalDistance(conCoords)) : null
+    })(),
     pendientesHoy,
     clientesConCobroHoy,
     clientesPagaronHoy,

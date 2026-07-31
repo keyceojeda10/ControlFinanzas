@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -1273,7 +1273,16 @@ export default function RutaDetallePage({ params }) {
                 {[
                   ruta.cobrador?.nombre ?? 'sin cobrador',
                   `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
-                ].join(' · ')}
+                  // ── «3,4 km» (T27-02) ──
+                  // Lo que se camina hoy. Es lo que decide si la ruta cabe en
+                  // una mañana, y no estaba en ninguna pantalla.
+                  //
+                  // Solo sale si de verdad se pudo medir: la API devuelve `null`
+                  // cuando hay menos de dos clientes con coordenadas, y ahí es
+                  // mejor no decir nada que decir «0 km» — que se leería como
+                  // que están todos en el mismo portal.
+                  ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+                ].filter(Boolean).join(' · ')}
               </span>
             </div>
             {esOwner && (
