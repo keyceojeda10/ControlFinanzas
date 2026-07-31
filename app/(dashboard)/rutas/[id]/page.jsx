@@ -25,6 +25,7 @@ import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
 import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
 import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
+import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
@@ -295,7 +296,11 @@ export default function RutaDetallePage({ params }) {
   const [banner,         setBanner]         = useState(null)
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
   const [pagoRapidoOk,   setPagoRapidoOk]   = useState(null) // clienteId after success
-  const [modalPagoRapido, setModalPagoRapido] = useState(null) // { id, nombre, cuota, prestamoActivo }
+  const [modalPagoRapido, setModalPagoRapido] = useState(null)
+  // Con QUE paga, elegido arriba y valido para todas las tarjetas de abajo.
+  // Efectivo por defecto, que es como se cobra en la calle: si no se toca, el
+  // cobro sale igual que antes.
+  const [metodoRapido, setMetodoRapido] = useState({ metodoPago: 'efectivo', metodoPagoId: null }) // { id, nombre, cuota, prestamoActivo }
   const [modalSeleccionPrestamo, setModalSeleccionPrestamo] = useState(null) // { clienteId, clienteNombre, idxRuta, prestamos }
   const [undoPago,       setUndoPago]       = useState(null)  // { pagoId, prestamoId, clienteNombre, timer }
   const undoTimerRef = useRef(null)
@@ -325,6 +330,14 @@ export default function RutaDetallePage({ params }) {
   const getColombiaDateStr = () => {
     const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
     return d.toISOString().slice(0, 10)
+  }
+
+  /** «Ana Milena Guzman» → «AM». Dos letras, que es lo que cabe en el circulo. */
+  const inicialesDe = (nombre = '') => {
+    const partes = String(nombre).trim().split(/\s+/).filter(Boolean)
+    if (!partes.length) return '·'
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
+    return (partes[0][0] + partes[1][0]).toUpperCase()
   }
 
   const frecuenciaPrestamoLabel = (f) => {
@@ -646,39 +659,22 @@ export default function RutaDetallePage({ params }) {
     )
     const abonoConPendiente = Boolean(datos?.pagoHoy && pendiente)
 
-    // Si hay multiples prestamos activos, dejar que el cobrador elija cual cobrar
-    if (activos.length > 1) {
-      setModalPagoRapido({
-        id: cliente.id,
-        nombre: cliente.nombre,
-        abonoConPendiente,
-        prestamosActivos: activos,
-        prestamoActivo: null,
-        cuota: null,
-      })
-      return
-    }
-
-    const p = activos[0]
-    const cuota = p.cuotaDiaria || cliente.cuota
-    if (!cuota || cuota <= 0) return
+    // ── SIEMPRE TODOS LOS PRESTAMOS ──
+    // Habia dos caminos: con uno solo se preparaba el cobro directo, y con
+    // varios se abria una lista para elegir. T15-02 los junta —cada prestamo es
+    // una tarjeta con su cuota y sus tres botones— asi que el modal solo
+    // necesita saber a quien se le cobra y que tiene abierto.
+    //
+    // `prestamoActivo` y `cuota` se quedan por compatibilidad: los usa el
+    // reintento tras un duplicado (`ejecutarPagoRapido`), que reconstruye el
+    // estado con un solo prestamo dentro.
     setModalPagoRapido({
       id: cliente.id,
       nombre: cliente.nombre,
-      cuota,
-      cuotaOriginal: cuota,
-      prestamoActivo: p.id,
       abonoConPendiente,
-      modoInteres: p.modoInteres,
-      esBalloon: p.esBalloon || false,
-      cuotaNumero: p.cuotaNumero ?? null,
-      diasMora: p.diasMora || 0,
-      cuotasEnMora: p.cuotasEnMora || 0,
-      montoEnMora: p.montoEnMora || 0,
-      montoAlDia: p.montoParaPonerseAlDia || 0,
-      saldoPendiente: p.saldoPendiente || 0,
-      cuotaExtraHoy: p.cuotaExtraHoy || false,
-      montoCuotaExtra: p.montoCuotaExtra || 0,
+      prestamosActivos: activos,
+      prestamoActivo: activos.length === 1 ? activos[0].id : null,
+      cuota: activos.length === 1 ? (activos[0].cuotaDiaria || cliente.cuota) : null,
     })
   }
 
@@ -696,9 +692,61 @@ export default function RutaDetallePage({ params }) {
     } : prev)
   }
 
-  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false, metodoPagoId = null } = {}) => {
-    if (!modalPagoRapido || pagandoRapido) return
-    const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = modalPagoRapido
+  // `destino` permite cobrar un préstamo CONCRETO sin pasar antes por el estado.
+  //
+  // Hasta ahora esto solo sabía cobrar lo que hubiera en `modalPagoRapido`, y
+  // por eso el modal tenía que ser de dos pasos: primero elegir el préstamo
+  // —que era un `setState`— y solo después cobrar. En T15-02 los tres botones
+  // están en la tarjeta de cada préstamo, así que pulsar «Cuota» tiene que
+  // cobrar ESE préstamo ya; encadenarlo a un `setState` cobraría el anterior,
+  // porque el estado nuevo no ha llegado todavía cuando la función lee.
+  /**
+   * «No pago» — la tercera salida de cada tarjeta en T15-02.
+   *
+   * Antes NO EXISTIA: la unica forma de cerrar la visita sin cobrar era cerrar
+   * el modal, y eso no deja rastro de que se paso por ahi. El cliente aparecia
+   * al dia siguiente igual de pendiente, sin saber si no se le visito o si se
+   * le visito y no tenia.
+   *
+   * Se guarda como `VisitaReagendada`, que ya existe con sus cuatro motivos.
+   * La fecha reagendada es MAÑANA: es lo que hace el cobrador de todas formas,
+   * y dejarla vacia obligaria a pedir una fecha en la puerta.
+   */
+  const registrarNoPago = async (prestamoId, motivo) => {
+    const hoy = new Date()
+    const maniana = new Date(hoy.getTime() + 24 * 60 * 60 * 1000)
+    const cliente = modalPagoRapido
+    setModalPagoRapido(null)
+    try {
+      const res = await fetch('/api/visitas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId: cliente?.id,
+          prestamoId,
+          rutaId: ruta?.id,
+          fechaOriginal: hoy.toISOString(),
+          fechaReagendada: maniana.toISOString(),
+          motivo,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(d?.error || 'No se pudo anotar la visita')
+        return
+      }
+      await fetchRuta()
+    } catch {
+      // Sin red no se pierde el gesto en silencio: se dice, porque el cobrador
+      // acaba de decidir algo sobre este cliente y tiene que saber si quedo.
+      alert('Sin conexión: la visita no quedó anotada. Vuelve a intentarlo.')
+    }
+  }
+
+  const ejecutarPagoRapido = async (metodoPago, { confirmarDuplicado = false, metodoPagoId = null, destino = null } = {}) => {
+    const objetivo = destino ?? modalPagoRapido
+    if (!objetivo || pagandoRapido) return
+    const { id: clienteId, nombre, cuota, cuotaOriginal, prestamoActivo } = objetivo
     if (!cuota || cuota <= 0) return
     const esCuotaExacta = cuota === (cuotaOriginal ?? cuota)
     setModalPagoRapido(null)
@@ -2841,251 +2889,84 @@ export default function RutaDetallePage({ params }) {
         )}
       </Modal>
 
-      {/* Modal: cobro rápido — elegir método */}
+      {/* ── ATAJOS DE COBRO (T15-02) ──
+          Sustituye al modal de «Cobro rápido», que eran 246 líneas y DOS PASOS:
+          con varios préstamos había que elegir uno de una lista y solo entonces
+          aparecía el formulario. El pie de la lámina explica por qué eso está
+          mal, y es el gesto que más se repite en todo el producto:
+
+            «Con dos préstamos activos hay que elegir cuál, y ahí está el valor —
+             hoy el cobrador tiene que salir, abrir el otro préstamo y volver.
+             El botón cierra el bucle: cobrar y pasar al siguiente, sin volver a
+             la lista.»
+
+          Ahora los préstamos están todos a la vez, cada uno con su cuota y tres
+          salidas. El método se elige ARRIBA y vale para las tres.
+
+          NO CAMBIA NADA DE LO QUE MUEVE PLATA: sigue pasando por
+          `ejecutarPagoRapido`, con su cola offline, su deshacer de 10 segundos y
+          su detección de duplicados. */}
       <Modal
         open={!!modalPagoRapido}
         onClose={() => setModalPagoRapido(null)}
-        title="Cobro rápido"
+        title="Cobrar"
       >
-        {modalPagoRapido && !modalPagoRapido.prestamoActivo && Array.isArray(modalPagoRapido.prestamosActivos) && modalPagoRapido.prestamosActivos.length > 1 && (
-          <div className="space-y-3">
-            <p className="text-sm text-[var(--cf-ink-3)]">
-              <span className="text-[var(--cf-ink)] font-medium">{modalPagoRapido.nombre}</span> tiene {modalPagoRapido.prestamosActivos.length} préstamos activos.
-            </p>
-            <div className="space-y-2">
-              {modalPagoRapido.prestamosActivos.map((p, i) => {
-                const modoLabel = ({ fijo: 'Clásico', solo_interes: 'Globo', lineal: 'Lineal', lineal_dinamico: 'Dinámico', saldo: 'Sobre saldo', unico: 'Int. único', manual: 'Manual' })[p.modoInteres] || ''
-                const yaPago = p.pagadoHoy
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => elegirPrestamoPagoRapido(p.id, p.cuotaDiaria, p.modoInteres, {
-                      esBalloon: p.esBalloon, cuotaNumero: p.cuotaNumero,
-                      diasMora: p.diasMora, cuotasEnMora: p.cuotasEnMora,
-                      montoEnMora: p.montoEnMora, montoAlDia: p.montoParaPonerseAlDia,
-                      saldoPendiente: p.saldoPendiente,
-                      cuotaExtraHoy: p.cuotaExtraHoy, montoCuotaExtra: p.montoCuotaExtra,
-                    })}
-                    disabled={!p.cuotaDiaria || p.cuotaDiaria <= 0}
-                    className={`w-full text-left px-3 py-3 rounded-[12px] border transition-all active:scale-[0.99] disabled:opacity-50 ${
-                      yaPago && p.diasMora <= 0
-                        ? 'border-[rgba(34,197,94,0.25)] bg-[rgba(34,197,94,0.05)]'
-                        : yaPago && p.diasMora > 0
-                          ? 'border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.06)] hover:bg-[rgba(245,158,11,0.1)] hover:border-[rgba(245,158,11,0.45)]'
-                          : p.diasMora > 0
-                            ? 'border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.04)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[rgba(239,68,68,0.4)]'
-                            : 'border-[var(--cf-border)] bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(34,197,94,0.08)] hover:border-[rgba(34,197,94,0.3)]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink)]">
-                          {formatMoney(p.montoPrestado)}
-                        </p>
-                        {modoLabel && (
-                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                            style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
-                            {modoLabel}
-                          </span>
-                        )}
-                        {yaPago && (
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-                            style={p.diasMora > 0
-                              ? { background: 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)', color: 'var(--cf-gold-dark)' }
-                              : { background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }
-                            }>
-                            {p.diasMora > 0 ? 'Pagó · Debe más' : 'Pagado hoy'}
-                          </span>
-                        )}
-                      </div>
-                      <span className={`text-sm font-bold font-mono-display shrink-0 ${p.diasMora > 0 ? 'text-[var(--cf-red-dark)]' : 'text-[var(--cf-green-dark)]'}`}>
-                        {formatMoney(p.cuotaDiaria ?? 0)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-mono-display text-[var(--cf-ink-3)] mt-1">
-                      {frecuenciaPrestamoLabel(p.frecuencia)} · Saldo {formatMoney(p.saldoPendiente ?? 0)}
-                      {p.diasMora > 0 ? ` · ${p.diasMora}d mora · ${p.cuotasEnMora} cuota${p.cuotasEnMora === 1 ? '' : 's'}` : ''}
-                    </p>
-                    {p.diasMora > 0 && p.montoParaPonerseAlDia > p.cuotaDiaria && (
-                      <p className="text-[10px] font-semibold font-mono-display mt-1" style={{ color: 'var(--cf-gold-dark)' }}>
-                        Al día: {formatMoney(p.montoParaPonerseAlDia)}
-                      </p>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {modalPagoRapido && modalPagoRapido.prestamoActivo && (() => {
-          const modo = modalPagoRapido.modoInteres
-          const esEspecial = ['solo_interes', 'lineal', 'lineal_dinamico'].includes(modo)
-          const modoTag = ({ solo_interes: 'Globo', lineal: 'Lineal', lineal_dinamico: 'Dinámico', saldo: 'Sobre saldo', unico: 'Int. único' })[modo]
-          return (
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-[var(--cf-ink-3)]">Registrar pago para</p>
-                <p className="text-base font-bold text-[var(--cf-ink)] mt-1">{modalPagoRapido.nombre}</p>
-                {modoTag && (
-                  <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1.5"
-                    style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
-                    {modoTag}
-                  </span>
-                )}
-              </div>
-              {modalPagoRapido.diasMora > 0 && (
-                <div className="rounded-[12px] border border-[rgba(239,68,68,0.25)] bg-[rgba(239,68,68,0.06)] px-3 py-2.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <svg className="w-3.5 h-3.5 text-[var(--cf-red-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                      </svg>
-                      <span className="text-[11px] font-semibold text-[var(--cf-red-dark)]">
-                        {modalPagoRapido.diasMora}d mora · {modalPagoRapido.cuotasEnMora} cuota{modalPagoRapido.cuotasEnMora === 1 ? '' : 's'}
-                      </span>
-                    </div>
-                    <span className="text-[11px] font-bold font-mono-display text-[var(--cf-red-dark)]">
-                      {formatMoney(modalPagoRapido.montoEnMora)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* ── LO QUE QUEDA DESPUES, QUE ES LO QUE SE PREGUNTA ──
-                  La hoja decia lo que debe AHORA y lo que se va a cobrar, y
-                  dejaba la resta para la cabeza del cobrador — de pie, con el
-                  cliente delante. Y esa resta es justo la que el cliente
-                  pregunta: «¿y cuanto me queda?».
-
-                  Cuando el pago SALDA el prestamo se dice con todas las letras:
-                  «queda en cero» y no «$0». Es la unica vez que esa cifra es una
-                  buena noticia y merece leerse como tal. */}
-              {modalPagoRapido.saldoPendiente > 0 && (() => {
-                const cobra = Number(modalPagoRapido.cuota) || 0
-                const queda = Math.max(0, modalPagoRapido.saldoPendiente - cobra)
-                return (
-                  <div className="text-center flex flex-col gap-0.5">
-                    <p className="text-[10px] text-[var(--cf-ink-3)]">
-                      Debe <span className="font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(modalPagoRapido.saldoPendiente)}</span>
-                    </p>
-                    {cobra > 0 && (
-                      <p className="text-[11px]" style={{ color: queda === 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)' }}>
-                        {queda === 0
-                          ? 'Con este pago queda en cero'
-                          : <>Le queda debiendo <span className="font-semibold font-mono-display">{formatMoney(queda)}</span></>}
-                      </p>
-                    )}
-                  </div>
-                )
-              })()}
-
-              <div>
-                <label className="text-[10px] font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-1 block">Monto a cobrar</label>
-                <MoneyInput
-                  value={String(modalPagoRapido.cuota || '')}
-                  onChange={(e) => setModalPagoRapido(prev => prev ? { ...prev, cuota: Number(e.target.value) || 0 } : prev)}
-                  placeholder="0"
-                />
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.cuotaOriginal ?? prev.cuota } : prev)}
-                    className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
-                    style={{
-                      color: 'var(--cf-green-dark)',
-                      background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
-                      borderColor: 'color-mix(in srgb, var(--cf-green-dark) 25%, transparent)',
-                    }}
-                  >
-                    1 Cuota
-                  </button>
-                  {modalPagoRapido.montoEnMora > 0 && modalPagoRapido.montoEnMora !== (modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota) && (
-                    <button
-                      type="button"
-                      onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.montoEnMora } : prev)}
-                      className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
-                      style={{
-                        color: 'var(--cf-red-dark)',
-                        background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
-                        borderColor: 'color-mix(in srgb, var(--cf-red-dark) 25%, transparent)',
-                      }}
-                    >
-                      Pagar mora
-                    </button>
-                  )}
-                  {modalPagoRapido.montoAlDia > 0 && modalPagoRapido.montoAlDia !== (modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota) && modalPagoRapido.montoAlDia !== modalPagoRapido.montoEnMora && (
-                    <button
-                      type="button"
-                      onClick={() => setModalPagoRapido(prev => prev ? { ...prev, cuota: prev.montoAlDia } : prev)}
-                      className="text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all active:scale-95"
-                      style={{
-                        color: 'var(--cf-gold-dark)',
-                        background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)',
-                        borderColor: 'color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)',
-                      }}
-                    >
-                      Al día
-                    </button>
-                  )}
-                </div>
-                <p className="text-[10px] font-mono-display text-[var(--cf-ink-3)] mt-1">
-                  Cuota: {formatMoney(modalPagoRapido.cuotaOriginal ?? modalPagoRapido.cuota)}
-                  {esEspecial && !modalPagoRapido.esBalloon ? ' (interés del período)' : ''}
-                  {modalPagoRapido.esBalloon ? ' (capital + interés)' : ''}
-                </p>
-              </div>
-              {modalPagoRapido.esBalloon && (
-                <div className="rounded-[12px] border border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.08)] p-3 text-center">
-                  <p className="text-xs text-[var(--cf-red-dark)] font-semibold">Cuota de capital + interés (globo)</p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
-                    Esta es la última cuota. Incluye la devolución del capital completo mas el interés del período.
-                  </p>
-                </div>
-              )}
-              {modalPagoRapido.cuotaExtraHoy && (
-                <div className="rounded-[12px] border border-[rgba(139,92,246,0.3)] bg-[rgba(139,92,246,0.08)] p-3 text-center">
-                  <p className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>Cuota extra programada: {formatMoney(modalPagoRapido.montoCuotaExtra)}</p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
-                    Esta cuota incluye un abono extra a capital. Ya está incluido en el monto total.
-                  </p>
-                </div>
-              )}
-              {modalPagoRapido.cuotaNumero && esEspecial && (
-                <p className="text-[10px] text-[var(--cf-ink-3)] text-center">
-                  Cuota #{modalPagoRapido.cuotaNumero}
-                </p>
-              )}
-              {modalPagoRapido.abonoConPendiente && (
-                <div className="rounded-[12px] border border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.08)] p-3 text-center">
-                  <p className="text-xs text-[var(--cf-gold-dark)] font-semibold">El cliente tiene cuotas atrasadas</p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
-                    Ya recibió un pago hoy, pero aún debe mas cuotas.
-                  </p>
-                </div>
-              )}
+        {/* Sin `pais`: TODA esta pantalla llama a `formatMoney(n)` a secas y se
+            apoya en el valor por defecto. Pasarlo solo aquí metía una segunda
+            convención en el mismo archivo — y `user` ni siquiera existe: esta
+            página usa `useAuth()`, con otros campos. Reventó en pantalla con
+            «ReferenceError: user is not defined». */}
+        {modalPagoRapido && (
+          <AtajosCobro
+            nombre={modalPagoRapido.nombre}
+            iniciales={inicialesDe(modalPagoRapido.nombre)}
+            ocupado={!!pagandoRapido}
+            prestamos={(modalPagoRapido.prestamosActivos ?? []).map((pr) => ({
+              id: pr.id,
+              cuota: pr.cuotaDiaria,
+              saldoPendiente: pr.saldoPendiente,
+              diasMora: pr.diasMora,
+              frecuencia: frecuenciaPrestamoLabel(pr.frecuencia),
+              pagadoHoy: pr.pagadoHoy,
+            }))}
+            selectorMetodo={
               <MetodoPagoSelector
                 metodosPago={metodosPago}
-                disabled={!modalPagoRapido.cuota || modalPagoRapido.cuota <= 0}
-                onSelect={({ metodoPago: mp, metodoPagoId: mpId }) => {
-                  ejecutarPagoRapido(mp, { metodoPagoId: mpId })
-                }}
+                /* Aquí SOLO elige; antes cobraba al pulsarlo. Con un préstamo
+                   era equivalente, pero con tres tarjetas debajo el método tiene
+                   que quedar puesto y esperar a que se diga QUÉ se cobra. */
+                onSelect={({ metodoPago: mp, metodoPagoId: mpId }) =>
+                  setMetodoRapido({ metodoPago: mp, metodoPagoId: mpId })}
               />
-              {esEspecial && (
-                <button
-                  onClick={() => {
-                    setModalPagoRapido(null)
-                    router.push(`/prestamos/${modalPagoRapido.prestamoActivo}`)
-                  }}
-                  className="w-full text-center text-[11px] font-medium py-2 rounded-[12px] transition-all"
-                  style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-fill)' }}
-                >
-                  Abono a capital o intereses por separado
-                </button>
-              )}
-            </div>
-          )
-        })()}
+            }
+            onCobrarCuota={(pr) => ejecutarPagoRapido(metodoRapido.metodoPago, {
+              metodoPagoId: metodoRapido.metodoPagoId,
+              // El préstamo va EXPLÍCITO. Pasarlo por el estado cobraría el
+              // anterior: `setState` no ha llegado cuando la función lee.
+              destino: {
+                id: modalPagoRapido.id,
+                nombre: modalPagoRapido.nombre,
+                cuota: pr.cuota,
+                cuotaOriginal: pr.cuota,
+                prestamoActivo: pr.id,
+              },
+            })}
+            onOtroMonto={(pr, cuanto) => ejecutarPagoRapido(metodoRapido.metodoPago, {
+              metodoPagoId: metodoRapido.metodoPagoId,
+              destino: {
+                id: modalPagoRapido.id,
+                nombre: modalPagoRapido.nombre,
+                cuota: cuanto,
+                // `cuotaOriginal` distinta hace que se registre como PARCIAL y
+                // no como cuota completa. Es la diferencia entre abonar y
+                // marcar la cuota del día como saldada.
+                cuotaOriginal: pr.cuota,
+                prestamoActivo: pr.id,
+              },
+            })}
+            onNoPago={(pr, motivo) => registrarNoPago(pr.id, motivo)}
+          />
+        )}
       </Modal>
 
       {/* Toast: deshacer pago */}
