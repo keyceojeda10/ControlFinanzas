@@ -2,6 +2,7 @@
 // app/(dashboard)/reportes/page.jsx — Reportes escalonados por plan
 
 import { formatMoney } from '@/lib/i18n'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -48,7 +49,7 @@ function PlanGate() {
   ]
   return (
     <div className="max-w-xl mx-auto mt-8">
-      <h1 className="text-[25px] font-semibold mb-6" style={{ color: 'var(--cf-ink)' }}>Reportes</h1>
+      {/* Sin <h1>: la cabecera ya dice «Reportes». */}
       <div className="rounded-[20px] p-6 text-center cf-card-shadow"
         style={{
           background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)',
@@ -139,6 +140,8 @@ function UpgradeNudge({ titulo, planRequerido }) {
 
 // ── Componente principal ───────────────────────────────────────
 export default function ReportesPage() {
+  useCabecera({ titulo: 'Reportes', subtitulo: 'Análisis de tu cartera y cobradores' })
+
   const { session, esOwner, loading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -362,10 +365,8 @@ export default function ReportesPage() {
       {/* Header + filtro fechas como chips de periodo + date pickers */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Reportes</h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Análisis de tu cartera y cobradores</p>
-          </div>
+          {/* Titulo y subtitulo, en la cabecera del armazon. */}
+          <div />
         </div>
         {/* Chips de período rápido + date inputs */}
         <div className="rounded-[12px] p-2.5 flex flex-wrap items-center gap-2"

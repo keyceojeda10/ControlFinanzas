@@ -4,6 +4,7 @@ import { useRouter }   from 'next/navigation'
 import { useAuth }     from '@/hooks/useAuth'
 import ClienteForm     from '@/components/clientes/ClienteForm'
 import { planTieneFotos } from '@/lib/planes'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { formatMoney } from '@/lib/i18n'
 import PlanExcedido from '@/components/pantallas/PlanExcedido'
 import { adaptarPlanExcedido } from '@/lib/adaptadores/planes'
@@ -19,9 +20,37 @@ export default function NuevoClientePage() {
   const fotoInputRef = useRef(null)
   const fotoCameraRef = useRef(null)
 
+  // La cabecera cambia con la vista: el selector, la revisión del OCR o el
+  // formulario. Va AQUÍ —después del estado que lee y antes de cualquier
+  // `return`— por dos motivos que ya me mordieron esta tanda:
+  //   · `useCabecera` es un HOOK: detrás de un return temprano no se ejecuta,
+  //     y la cabecera sale con la X y sin una palabra (pasó en el migrador).
+  //   · Puesto ANTES de `const [metodo]`, lee una variable que todavía no
+  //     existe y la pantalla entera queda en blanco.
+  useCabecera({
+    titulo: metodo === 'foto' ? 'Revisa los datos' : 'Nuevo cliente',
+    subtitulo: metodo === null
+      ? '¿Cómo quieres registrar al cliente?'
+      : metodo === 'foto'
+        ? 'Datos extraídos de la foto. Verifica y completa.'
+        : 'Registra los datos del cliente',
+  })
+
+  // ── SE PASÓ DEL PLAN: SE DICE, NO SE DEVUELVE EN SILENCIO ──
+  //
+  // Estaba `router.replace('/clientes')`: pulsabas «cliente nuevo» y la app te
+  // escupía de vuelta a la lista SIN UNA PALABRA. T35-03 existe para esto y
+  // llevaba construida sin montar.
+  const [datosPlan, setDatosPlan] = useState(null)
   useEffect(() => {
-    if (!loading && !puedeCrearClientes) router.replace('/clientes')
-  }, [loading, puedeCrearClientes, router])
+    if (loading || puedeCrearClientes) return
+    let vivo = true
+    fetch('/api/pagos/estado')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo && d) setDatosPlan(d) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [loading, puedeCrearClientes])
 
   const handleFotoUpload = async (e) => {
     const archivos = Array.from(e.target.files ?? [])
@@ -67,7 +96,30 @@ export default function NuevoClientePage() {
     )
   }
 
-  if (!puedeCrearClientes) return null
+  // Enseña dónde estás, qué plan te sirve —solo por ENCIMA del tuyo— y una
+  // salida que NO es pagar. Se decide SOLO con los datos delante: mientras
+  // cargan, `info` sería null y redirigir ahí es el mismo exilio en silencio
+  // que este bloque vino a quitar.
+  if (!loading && !puedeCrearClientes) {
+    if (!datosPlan) return null
+    const info = adaptarPlanExcedido({
+      plan: datosPlan.plan,
+      clientes: datosPlan.clientesActivos ?? 0,
+      carteraPorCobrar: datosPlan.carteraPorCobrar ?? 0,
+      pais: session?.user?.country,
+    }, (n) => formatMoney(n, session?.user?.country))
+    // Sin nada que recomendar —ya está en el plan más alto— no se inventa una
+    // pantalla de venta: ahí sí se vuelve a la lista.
+    if (!info) { router.replace('/clientes'); return null }
+    return (
+      <PlanExcedido
+        {...info}
+        onElegirPlan={() => router.push('/configuracion/plan')}
+        onSubir={() => router.push('/configuracion/plan')}
+        onSeguir={() => router.push('/clientes')}
+      />
+    )
+  }
 
   // Pantalla selector
   if (!metodo) {
@@ -76,18 +128,8 @@ export default function NuevoClientePage() {
         <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFotoUpload} />
         <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFotoUpload} />
 
-        <div className="mb-8">
-          <button onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm transition-colors mb-3"
-            style={{ color: 'var(--cf-ink-3)' }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Volver
-          </button>
-          <h1 className="text-[25px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Nuevo cliente</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Como quieres registrar al cliente?</p>
-        </div>
+        {/* Ni flecha ni titulo propios: los dos los pone el armazon, y aqui
+            salian JUSTO debajo. */}
 
         <div className="space-y-3">
           {/* Opcion principal: Manual */}
@@ -218,14 +260,9 @@ export default function NuevoClientePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
             </svg>
           </div>
-          <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--cf-ink)' }}>
-              {metodo === 'foto' ? 'Revisa los datos' : 'Nuevo cliente'}
-            </h1>
-            <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-              {metodo === 'foto' ? 'Datos extraidos de la foto. Verifica y completa.' : 'Registra los datos del cliente'}
-            </p>
-          </div>
+          {/* El titulo de esta vista tambien va a la cabecera: cambia con el
+              metodo, y por eso tiene que cambiar ARRIBA, no aparecer un
+              segundo titulo debajo. */}
         </div>
       </div>
 
