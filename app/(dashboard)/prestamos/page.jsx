@@ -569,7 +569,11 @@ export default function PrestamosPage() {
             «Prestamos» y a la derecha «68 activos». Faltaba entero, igual que en
             clientes: la cabecera del armazon es la de navegacion y no lleva
             titulo, asi que la pantalla no decia ni como se llama. */}
-        <EncabezadoLista titulo="Préstamos" total={total != null ? `${total} activos` : null} />
+        <EncabezadoLista
+          titulo="Préstamos" total={total != null ? `${total} activos` : null}
+          crearTexto="Nuevo préstamo"
+          onCrear={puedeCrearPrestamos ? () => router.push('/prestamos/nuevo') : null}
+        />
 
         {/* LAS TRES CIFRAS. Responden lo que la lista NO puede: recorriendo 68
             tarjetas no se sabe cuanto hay en total en la calle ni cuanto esta

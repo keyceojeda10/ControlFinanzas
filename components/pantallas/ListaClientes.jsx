@@ -33,7 +33,45 @@ import { Chip, EstadoVacio, BotonPrimario, BotonTexto } from '@/components/cf/pr
  * lo que el dueño hace al abrir esta pantalla. Y el rojo va SOLO en la parte de
  * la mora: «31 · 20 en mora» todo en rojo diría que los 31 están mal.
  */
-export function EncabezadoLista({ titulo, total, enMora, unidadMora = 'en mora' }) {
+/**
+ * ── EL BOTON DE CREAR, Y SOLO EN ESCRITORIO ──
+ *
+ * En movil crear vive en el FAB, como pide la lamina: aqui habia un «+» dorado
+ * de 54px junto al buscador y el FAB justo debajo — dos botones de crear
+ * apilados—, asi que lo quite.
+ *
+ * Y con eso deje el ESCRITORIO SIN NINGUNA FORMA DE CREAR. La pastilla lleva
+ * `lg:hidden`, o sea que en PC no existe, y la barra lateral solo tiene
+ * destinos de navegacion. Quien abriera Clientes en un computador no tenia
+ * boton, ni menu, ni nada: solo escribir la URL a mano. Lo encontro el usuario.
+ *
+ * Va con `hidden lg:inline-flex`: aparece donde no hay FAB con el que competir,
+ * y no aparece donde si lo hay.
+ */
+function BotonCrear({ texto, onClick }) {
+  if (!onClick) return null
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="hidden lg:inline-flex"
+      style={{
+        alignItems: 'center', gap: 7, flex: 'none',
+        height: 38, padding: '0 15px', borderRadius: 'var(--cf-r-control)',
+        background: 'var(--cf-gold)', color: 'var(--cf-on-gold)',
+        border: 0, cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700,
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2.6" strokeLinecap="round" style={{ flex: 'none' }}>
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      {texto}
+    </button>
+  )
+}
+
+export function EncabezadoLista({ titulo, total, enMora, unidadMora = 'en mora', crearTexto, onCrear }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flex: 'none' }}>
       <h1 style={{
@@ -49,6 +87,7 @@ export function EncabezadoLista({ titulo, total, enMora, unidadMora = 'en mora' 
           )}
         </span>
       )}
+      <BotonCrear texto={crearTexto} onClick={onCrear} />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { Fragment } from 'react'
+
 // components/pantallas/MenuCrear.jsx — turno 43·01, adenda 07 §4.
 //
 // ⚠️ ESTA ES LA IMPLEMENTACIÓN DE T43-01. NO HAY OTRA.
@@ -143,8 +145,47 @@ export default function MenuCrear({
   cobrosCorto, plataCorto,
   ejemploLucas = '¿cuánto recaudé esta semana?',
   onIr, onCerrar, onEscanear,
+  // Qué se viene a hacer desde la pantalla en la que se está: 'crear' en
+  // Clientes, 'sale' en Préstamos. El armazón es el único que sabe dónde
+  // estamos, así que lo manda él.
+  aqui = null,
 }) {
   const ir = (d) => () => onIr?.(d)
+
+  // Agrupadas por lo que le pasa a la plata, no por tipo de objeto: el dueño
+  // piensa «entra» o «sale», no «entidad Pago» o «entidad Gasto».
+  const grupos = [
+    {
+      id: 'entra', rotulo: 'Entra plata',
+      filas: <>
+        {/* `/cobrar` NO EXISTE, y era 404. Un pago se registra desde el
+            prestamo o desde la lista de hoy, asi que se va a la lista: ahi
+            esta a quien hay que cobrarle, que es lo que se venia a hacer. */}
+        <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobros-hoy')} />
+        {/* El escaner NO ES UNA RUTA, es un modal. `/qr` daba 404. */}
+        <Accion icono="qr" nombre="Escanear un QR" onClick={onEscanear} />
+      </>,
+    },
+    {
+      id: 'sale', rotulo: 'Sale plata',
+      filas: <>
+        <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} />
+        {/* `/gastos/nuevo` tampoco existe: el gasto se anota en una hoja
+            dentro de /gastos. */}
+        <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} />
+      </>,
+    },
+    {
+      id: 'crear', rotulo: 'Crear',
+      filas: <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} />,
+    },
+  ]
+
+  // El grupo de la pantalla en la que se esta, primero. `aqui` lo manda el
+  // armazon, que es el unico que sabe donde estamos.
+  const GRUPOS = aqui
+    ? [...grupos.filter((g) => g.id === aqui), ...grupos.filter((g) => g.id !== aqui)]
+    : grupos
 
   return (
     <div style={{
@@ -166,33 +207,25 @@ export default function MenuCrear({
           {[fecha, hora].filter(Boolean).join(' · ')}
         </span>
 
-        {/* Agrupadas por lo que le pasa a la plata, no por tipo de objeto.
-            El dueño piensa "entra" o "sale", no "entidad Pago" o "entidad Gasto". */}
-        <span style={{ height: 5, flex: 'none' }} />
-        <Rotulo>Entra plata</Rotulo>
-        <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
-          {/* `/cobrar` NO EXISTE, y era 404. Un pago se registra desde el
-              prestamo o desde la lista de hoy, asi que se va a la lista: ahi
-              esta a quien hay que cobrarle, que es lo que se venia a hacer. */}
-          <Accion icono="pago" nombre="Registrar un pago" cifra={cobrosPendientes} destacada primera onClick={ir('/cobros-hoy')} />
-          {/* El escaner NO ES UNA RUTA, es un modal. `/qr` daba 404. */}
-          <Accion icono="qr" nombre="Escanear un QR" onClick={onEscanear} />
-        </div>
+        {/* ── LO QUE SE VIENE A HACER DESDE ESTA PANTALLA, ARRIBA ──
+            El menu era siempre el mismo, en el mismo orden. Desde «Clientes» se
+            pulsaba el + y lo primero era «Registrar un pago»: «Un cliente
+            nuevo» quedaba en el TERCER grupo, cuarta fila. Desde una pantalla
+            que se llama Clientes, eso no es encontrar el boton de crear
+            cliente — el usuario dijo, con razon, que no lo veia.
 
-        <span style={{ height: 5, flex: 'none' }} />
-        <Rotulo>Sale plata</Rotulo>
-        <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
-          <Accion icono="prestar" nombre="Prestarle a alguien" cifra={plataLista} destacada primera onClick={ir('/prestamos/nuevo')} />
-          {/* `/gastos/nuevo` tampoco existe: el gasto se anota en una hoja
-              dentro de /gastos. */}
-          <Accion icono="gasto" nombre="Anotar un gasto" onClick={ir('/gastos?anotar=1')} />
-        </div>
-
-        <span style={{ height: 5, flex: 'none' }} />
-        <Rotulo>Crear</Rotulo>
-        <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
-          <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} />
-        </div>
+            Ahora el grupo que corresponde a la pantalla sube al principio. El
+            resto no se mueve ni se quita: sigue estando todo, y quien ya sabia
+            donde buscarlo lo encuentra igual, solo que un poco mas abajo. */}
+        {GRUPOS.map((g) => (
+          <Fragment key={g.id}>
+            <span style={{ height: 5, flex: 'none' }} />
+            <Rotulo>{g.rotulo}</Rotulo>
+            <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
+              {g.filas}
+            </div>
+          </Fragment>
+        ))}
 
         <span style={{ height: 5, flex: 'none' }} />
         <Rotulo>Ir a</Rotulo>

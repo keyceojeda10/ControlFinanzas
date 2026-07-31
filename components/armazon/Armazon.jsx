@@ -200,6 +200,10 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
       {menuCrear && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 90 }}>
           <MenuCrear
+          // El grupo que corresponde a donde estamos, primero. Es lo unico que
+          // hace falta para que el + deje de esconder lo obvio.
+          aqui={pathname?.startsWith('/clientes') ? 'crear'
+            : pathname?.startsWith('/prestamos') ? 'sale' : null}
             fecha={new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
             hora={new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
             // `router.push`, no `window.location.href`: aquello RECARGABA LA APP

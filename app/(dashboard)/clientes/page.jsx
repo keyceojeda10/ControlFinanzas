@@ -19,6 +19,7 @@ import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import { useRouter } from 'next/navigation'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -156,6 +157,7 @@ const COLORES_GRUPO = [
 ]
 
 export default function ClientesPage() {
+  const router = useRouter()
   const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const montado = useMontado()
 
@@ -627,7 +629,11 @@ export default function ClientesPage() {
             lleva titulo, asi que la pantalla no decia ni como se llama ni
             cuantos clientes hay. Y ese conteo es la unica cifra que puede
             cambiar lo que el dueño hace al abrirla. */}
-        <EncabezadoLista titulo="Clientes" total={total} enMora={moraCount} />
+        <EncabezadoLista
+          titulo="Clientes" total={total} enMora={moraCount}
+          crearTexto="Nuevo cliente"
+          onCrear={puedeCrearClientes ? () => router.push('/clientes/nuevo') : null}
+        />
 
         {/* EL BUSCADOR DE LA LAMINA: radio 14, alto 46. Lo tenia como pildora
             (radio 999), que es la forma del buscador de la BARRA LATERAL — otra
