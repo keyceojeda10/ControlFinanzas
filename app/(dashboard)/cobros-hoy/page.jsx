@@ -381,7 +381,9 @@ export default function CobrosHoyPage() {
           ...(rutasDeHoy.length > 1 ? [{
             id: 'ruta', titulo: 'Ruta', valor: filtros.rutaId,
             onCambiar: (v) => cambiar('rutaId', v),
-            opciones: [{ valor: '', nombre: 'Todas', conteo: rutasDeHoy.length },
+            // «Todas» cuenta CLIENTES, no rutas. Decía 2 —las rutas que hay— al lado de
+              // un «Todos · 6» que son clientes: el mismo sitio contando dos cosas.
+              opciones: [{ valor: '', nombre: 'Todas', conteo: rutasDeHoy.reduce((n, r) => n + r.n, 0) },
               ...rutasDeHoy.map((r) => ({ valor: r.id, nombre: r.nombre, conteo: r.n }))],
           }] : []),
           {

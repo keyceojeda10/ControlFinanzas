@@ -48,6 +48,23 @@ export default function NovedadesModal() {
     setAbierto(false)
   }
 
+  // ── ESCAPE LO CIERRA ──
+  //
+  // No lo hacía, y es un `role="dialog" aria-modal="true"` que ocupa la pantalla
+  // entera con z-1100: mientras está puesto se come TODOS los clics de debajo.
+  // Tiene dos salidas —el fondo y «Entendido»— pero ninguna por teclado, así que
+  // quien navegue con teclado se queda encerrado, y en escritorio el reflejo es
+  // pulsar Escape antes que buscar el botón.
+  //
+  // Salió intentando automatizar un clic sobre la pantalla de cobrar hoy: el
+  // modal bloqueaba la prueba igual que bloquea a quien entra.
+  useEffect(() => {
+    if (!abierto) return
+    const alPulsar = (e) => { if (e.key === 'Escape') cerrar() }
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [abierto])
+
   if (!abierto) return null
 
   const entrada = NOVEDADES[0]
