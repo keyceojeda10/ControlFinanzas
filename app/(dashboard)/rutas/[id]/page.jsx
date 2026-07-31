@@ -1305,6 +1305,18 @@ export default function RutaDetallePage({ params }) {
         recaudadoHoy: ruta.recaudadoHoy,
         clientesConCobroHoy: ruta.clientesConCobroHoy,
         clientesPagaronHoy: ruta.clientesPagaronHoy,
+        // ── «efectivo $34.500 · digital $0» (T27-02) ──
+        // La API los calcula y los devuelve, y `loDeHoy` sabe pintarlos desde
+        // que se escribió. Solo faltaba pasárselos: la banda decía «0 de 1
+        // cobros» a secas.
+        //
+        // Y es lo que el pie de la lámina llama esencial: «la banda de hoy suma
+        // efectivo y digital, que es lo que hace posible cuadrar la caja de la
+        // noche». Sin el desglose, el cobrador entrega un fajo y nadie sabe
+        // cuánto de lo recaudado entró por transferencia y NO tiene que venir
+        // en ese fajo.
+        recaudadoEfectivoHoy: ruta.recaudadoEfectivoHoy,
+        recaudadoDigitalHoy: ruta.recaudadoDigitalHoy,
       }, (n) => formatMoney(n))} />
 
       {/* Acciones rápidas.
