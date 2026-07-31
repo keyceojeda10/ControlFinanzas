@@ -13,7 +13,7 @@ import { Button }                    from '@/components/ui/Button'
 import { Card }                      from '@/components/ui/Card'
 import { SkeletonPrestamoDetalle }    from '@/components/ui/Skeleton'
 import BotonWhatsApp                 from '@/components/ui/BotonWhatsApp'
-import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp        from '@/components/whatsapp/HojaWhatsApp'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import { planTieneFotos }            from '@/lib/planes'
@@ -828,7 +828,7 @@ export default function ClienteDetallePage({ params }) {
       )}
 
       {/* Modal selector de plantillas WhatsApp */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={modalWA}
         onClose={() => setModalWA(false)}
         cliente={cliente}

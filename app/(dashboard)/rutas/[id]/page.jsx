@@ -26,7 +26,7 @@ import { generarTipRuta }            from '@/lib/tips/rutaTips'
 import DiasSinCobroSelector          from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal }              from '@/components/ui/ConfirmModal'
 import HojaRutaImprimible            from '@/components/rutas/HojaRutaImprimible'
-import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp        from '@/components/whatsapp/HojaWhatsApp'
 import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
 import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import ModoRuta                      from '@/components/pantallas/ModoRuta'
@@ -3538,7 +3538,7 @@ export default function RutaDetallePage({ params }) {
       />
 
       {/* Modal: plantillas WhatsApp desde la ruta */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={!!modalWA}
         onClose={() => setModalWA(null)}
         cliente={modalWA?.cliente}

@@ -25,7 +25,7 @@ import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import BotonCompartirRecibo          from '@/components/ui/BotonCompartirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
-import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp         from '@/components/whatsapp/HojaWhatsApp'
 import FirmaDigital                   from '@/components/prestamos/FirmaDigital'
 import {
   PrestamoHeroCard,
@@ -2241,7 +2241,7 @@ export default function PrestamoDetallePage({ params }) {
       />
 
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={modalWA}
         onClose={() => { setModalWA(false); setWaSugerida(null) }}
         cliente={cliente}

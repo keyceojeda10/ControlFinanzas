@@ -17,7 +17,7 @@ import { TresCifras }                         from '@/components/pantallas/Lista
 import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
-import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
 import MonedaCF                               from '@/components/ui/MonedaCF'
@@ -859,7 +859,7 @@ export default function PrestamosPage() {
       )}
 
       {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={!!waContext}
         onClose={() => setWaContext(null)}
         cliente={waContext?.cliente}

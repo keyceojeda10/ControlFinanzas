@@ -11,7 +11,7 @@ import { Input }       from '@/components/ui/Input'
 import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import BotonCompartirRecibo from '@/components/ui/BotonCompartirRecibo'
-import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { generarTextoPlantilla } from '@/lib/whatsapp-plantillas'
 import { formatearTelefono, abrirWhatsApp } from '@/lib/whatsapp'
@@ -701,7 +701,7 @@ export default function RegistrarPago({
             </div>
           )}
 
-          <ModalWhatsAppTemplates
+          <HojaWhatsApp
             open={modalWA}
             onClose={() => setModalWA(false)}
             cliente={cliente}

@@ -20,7 +20,7 @@ import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
-import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
@@ -1122,7 +1122,7 @@ export default function ClientesPage() {
       )}
 
       {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={!!waCliente}
         onClose={() => setWaCliente(null)}
         cliente={waCliente}
