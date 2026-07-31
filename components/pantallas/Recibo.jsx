@@ -47,6 +47,13 @@ export function Recibo({
   cuando,
   onWhatsApp, onGuardarImagen, onImprimir, onSiguiente,
   telefono,
+  // EL NOMBRE DEL SIGUIENTE, no «Siguiente cobro». El pie de T15-03 lo dice
+  // literal: «la accion dorada NO es "listo": es el nombre del siguiente,
+  // porque en la calle el cobro no termina, SIGUE». Un boton que dice a quien
+  // se va ahorra mirar la lista para saberlo.
+  siguienteNombre,
+  // «Volver a la lista queda de segunda» — existe, pero sin peso.
+  onCerrar,
 }) {
   return (
     <div style={{
@@ -159,7 +166,16 @@ export function Recibo({
             height: 44, border: 'none', borderRadius: 14,
             background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', cursor: 'pointer',
             font: 'inherit', fontSize: 15, fontWeight: 700,
-          }}>Siguiente cobro</button>
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{siguienteNombre ? `Sigue: ${siguienteNombre}` : 'Siguiente cobro'}</button>
+        )}
+
+        {/* De segunda, como pide la lamina: sin relleno y sin borde. */}
+        {onCerrar && (
+          <button type="button" onClick={onCerrar} style={{
+            height: 40, border: 0, background: 'none', cursor: 'pointer',
+            font: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink-3)',
+          }}>{siguienteNombre ? 'Volver a la lista' : 'Listo'}</button>
         )}
       </div>
     </div>

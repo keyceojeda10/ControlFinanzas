@@ -34,6 +34,7 @@ import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
+import { Recibo }                    from '@/components/pantallas/Recibo'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
 
@@ -327,6 +328,13 @@ export default function RutaDetallePage({ params }) {
   const [banner,         setBanner]         = useState(null)
   const [pagandoRapido,  setPagandoRapido]  = useState(null) // clienteId while paying
   const [pagoRapidoOk,   setPagoRapidoOk]   = useState(null) // clienteId after success
+  // ── EL COBRO HECHO (T15-03 / T07-04) ──
+  // Hasta ahora un cobro solo dejaba un aviso de 1,2 segundos. El pie de la
+  // lamina dice lo que falta, y es de producto, no de estilo:
+  //
+  //   «La accion dorada NO es "listo": es el nombre del siguiente, porque en la
+  //    calle el cobro no termina, SIGUE. Volver a la lista queda de segunda.»
+  const [reciboCobro, setReciboCobro] = useState(null)
   const [modalPagoRapido, setModalPagoRapido] = useState(null)
   // Con QUE paga, elegido arriba y valido para todas las tarjetas de abajo.
   // Efectivo por defecto, que es como se cobra en la calle: si no se toca, el
@@ -814,6 +822,16 @@ export default function RutaDetallePage({ params }) {
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
         await fetchRuta()
+        // El recibo se arma con lo que devolvio el servidor, no con lo que se
+        // tecleo: si el backend ajusto el monto —excedente, redondeo, saldo
+        // menor que la cuota— el papel tiene que decir lo que de VERDAD entro.
+        setReciboCobro({
+          clienteId,
+          nombre,
+          monto: Math.round(data?.pago?.montoPagado ?? cuota),
+          saldo: data?.prestamo?.saldoPendiente ?? null,
+          numero: pagoId ? String(pagoId).slice(-6).toUpperCase() : null,
+        })
         // Mostrar undo por 10 segundos
         if (pagoId) {
           if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
@@ -1358,6 +1376,41 @@ export default function RutaDetallePage({ params }) {
   // el modo recorrido. Estaba solo en el `return` de abajo, y como el
   // recorrido sale antes, pulsar «Cobrarle a Ana Milena» no abria nada — el
   // cobrador daba toques a la pantalla sin que pasara nada.
+  // La pantalla de «cobro hecho». Se pinta encima de todo —tambien del modo
+  // recorrido— porque es la confirmacion de que la plata entro, y eso no puede
+  // quedar debajo de nada.
+  const pantallaRecibo = reciboCobro ? (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 70,
+      background: 'var(--cf-bg)', overflowY: 'auto',
+    }}>
+      <Recibo
+        monto={formatMoney(reciboCobro.monto)}
+        cliente={reciboCobro.nombre}
+        saldo={reciboCobro.saldo != null ? formatMoney(Math.round(reciboCobro.saldo)) : null}
+        numero={reciboCobro.numero}
+        negocio={orgNombre}
+        cuando={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
+        recibidoPor={ruta?.cobrador?.nombre ?? null}
+        telefono={ruta?.clientes?.find((c) => c.id === reciboCobro.clienteId)?.telefono ?? null}
+        onWhatsApp={() => {
+          const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
+          if (c?.telefono) setModalWA({ cliente: c, prestamo: null })
+        }}
+        onSiguiente={() => {
+          setReciboCobro(null)
+          // «El nombre del siguiente» es la accion dorada: se busca la proxima
+          // parada pendiente y se abre su cobro. Si no queda ninguna, el
+          // recorrido ha terminado y la pantalla de cierre toma el relevo.
+          const siguiente = (ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)
+          if (siguiente) abrirPagoRapido(siguiente)
+        }}
+        siguienteNombre={(ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)?.nombre ?? null}
+        onCerrar={() => setReciboCobro(null)}
+      />
+    </div>
+  ) : null
+
   const hojaCobro = (
     <>
       {/* ── ATAJOS DE COBRO (T15-02) ──
@@ -1471,6 +1524,7 @@ export default function RutaDetallePage({ params }) {
           cerrando={guardandoCaja}
         />
         {hojaCobro}
+        {pantallaRecibo}
         </CapaRecorrido>
       )
     }
@@ -1513,6 +1567,7 @@ export default function RutaDetallePage({ params }) {
         }}
       />
       {hojaCobro}
+      {pantallaRecibo}
       </CapaRecorrido>
     )
   }
@@ -3406,6 +3461,7 @@ export default function RutaDetallePage({ params }) {
       )}
 
       {hojaCobro}
+      {pantallaRecibo}
 
       {/* Toast: deshacer pago */}
       {undoPago && (
