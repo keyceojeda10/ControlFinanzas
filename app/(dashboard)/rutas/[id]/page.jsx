@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre } from '@/lib/adaptadores/ruta'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -27,10 +27,33 @@ import ModalWhatsAppTemplates        from '@/components/ui/ModalWhatsAppTemplate
 import MetodoPagoSelector            from '@/components/pagos/MetodoPagoSelector'
 import AtajosCobro                   from '@/components/pantallas/AtajosCobro'
 import ModoRuta                      from '@/components/pantallas/ModoRuta'
+import RutaCerrada                   from '@/components/pantallas/RutaCierre'
 import { anotarReciente } from '@/lib/recientes'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
+
+/**
+ * La capa del modo recorrido: pantalla completa POR ENCIMA del armazón.
+ *
+ * Sin esto, la barra de navegación —que va en z-index 45— se queda flotando
+ * sobre el botón «Cobrarle a Ana Milena» y SE COME EL CLIC. Lo descubrió el
+ * script de pulsar: «<nav aria-label="Navegación principal"> subtree intercepts
+ * pointer events». En la calle eso es un cobrador dando toques a la pantalla
+ * sin que pase nada.
+ *
+ * Y ademas es lo que pide la lámina: el recorrido se dibuja a pantalla
+ * completa, sin pastilla ni cabecera. Quien está de pie con una mano no navega
+ * a otra sección — sale por la flecha de atrás.
+ */
+function CapaRecorrido({ children }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 60,
+      background: 'var(--cf-bg)', overflowY: 'auto',
+    }}>{children}</div>
+  )
+}
 
 function HistorialCobros({ rutaId }) {
   const [open, setOpen] = useState(false)
@@ -1291,11 +1314,133 @@ export default function RutaDetallePage({ params }) {
 
   const recorrido = partirRecorrido(paradasDeHoy, (n) => formatMoney(n))
 
+  // ── LA HOJA DE COBRO, FUERA DEL JSX PRINCIPAL ──
+  // Vive en una variable porque hace falta en LAS DOS pantallas: la lista y
+  // el modo recorrido. Estaba solo en el `return` de abajo, y como el
+  // recorrido sale antes, pulsar «Cobrarle a Ana Milena» no abria nada — el
+  // cobrador daba toques a la pantalla sin que pasara nada.
+  const hojaCobro = (
+    <>
+      {/* ── ATAJOS DE COBRO (T15-02) ──
+        Sustituye al modal de «Cobro rápido», que eran 246 líneas y DOS PASOS:
+        con varios préstamos había que elegir uno de una lista y solo entonces
+        aparecía el formulario. El pie de la lámina explica por qué eso está
+        mal, y es el gesto que más se repite en todo el producto:
+
+          «Con dos préstamos activos hay que elegir cuál, y ahí está el valor —
+           hoy el cobrador tiene que salir, abrir el otro préstamo y volver.
+           El botón cierra el bucle: cobrar y pasar al siguiente, sin volver a
+           la lista.»
+
+        Ahora los préstamos están todos a la vez, cada uno con su cuota y tres
+        salidas. El método se elige ARRIBA y vale para las tres.
+
+        NO CAMBIA NADA DE LO QUE MUEVE PLATA: sigue pasando por
+        `ejecutarPagoRapido`, con su cola offline, su deshacer de 10 segundos y
+        su detección de duplicados. */}
+    <Modal
+      open={!!modalPagoRapido}
+      onClose={() => setModalPagoRapido(null)}
+      title="Cobrar"
+    >
+      {/* Sin `pais`: TODA esta pantalla llama a `formatMoney(n)` a secas y se
+          apoya en el valor por defecto. Pasarlo solo aquí metía una segunda
+          convención en el mismo archivo — y `user` ni siquiera existe: esta
+          página usa `useAuth()`, con otros campos. Reventó en pantalla con
+          «ReferenceError: user is not defined». */}
+      {modalPagoRapido && (
+        <AtajosCobro
+          nombre={modalPagoRapido.nombre}
+          iniciales={inicialesDe(modalPagoRapido.nombre)}
+          ocupado={!!pagandoRapido}
+          prestamos={(modalPagoRapido.prestamosActivos ?? []).map((pr) => ({
+            id: pr.id,
+            cuota: pr.cuotaDiaria,
+            saldoPendiente: pr.saldoPendiente,
+            diasMora: pr.diasMora,
+            frecuencia: frecuenciaPrestamoLabel(pr.frecuencia),
+            pagadoHoy: pr.pagadoHoy,
+          }))}
+          selectorMetodo={
+            <MetodoPagoSelector
+              metodosPago={metodosPago}
+              /* Aquí SOLO elige; antes cobraba al pulsarlo. Con un préstamo
+                 era equivalente, pero con tres tarjetas debajo el método tiene
+                 que quedar puesto y esperar a que se diga QUÉ se cobra. */
+              onSelect={({ metodoPago: mp, metodoPagoId: mpId }) =>
+                setMetodoRapido({ metodoPago: mp, metodoPagoId: mpId })}
+            />
+          }
+          onCobrarCuota={(pr) => ejecutarPagoRapido(metodoRapido.metodoPago, {
+            metodoPagoId: metodoRapido.metodoPagoId,
+            // El préstamo va EXPLÍCITO. Pasarlo por el estado cobraría el
+            // anterior: `setState` no ha llegado cuando la función lee.
+            destino: {
+              id: modalPagoRapido.id,
+              nombre: modalPagoRapido.nombre,
+              cuota: pr.cuota,
+              cuotaOriginal: pr.cuota,
+              prestamoActivo: pr.id,
+            },
+          })}
+          onOtroMonto={(pr, cuanto) => ejecutarPagoRapido(metodoRapido.metodoPago, {
+            metodoPagoId: metodoRapido.metodoPagoId,
+            destino: {
+              id: modalPagoRapido.id,
+              nombre: modalPagoRapido.nombre,
+              cuota: cuanto,
+              // `cuotaOriginal` distinta hace que se registre como PARCIAL y
+              // no como cuota completa. Es la diferencia entre abonar y
+              // marcar la cuota del día como saldada.
+              cuotaOriginal: pr.cuota,
+              prestamoActivo: pr.id,
+            },
+          })}
+          onNoPago={(pr, motivo) => registrarNoPago(pr.id, motivo)}
+        />
+      )}
+    </Modal>
+    </>
+  )
+
   if (enRecorrido) {
+    // ── SE ACABO EL RECORRIDO → LA PANTALLA DE CIERRE (T04-03) ──
+    //
+    // No hay una tercera pantalla ni un boton de «terminar»: cuando ya no queda
+    // parada actual, el recorrido ES el cierre. Su propia ayuda lo dice —
+    // «aparece cuando terminas el recorrido, no todo el dia»— y hasta ahora el
+    // cobrador cerraba caja tecleando un total a secas, de noche y con el fajo
+    // en la mano.
+    if (!recorrido.actual) {
+      return (
+        <CapaRecorrido>
+        <RutaCerrada
+          titulo={ruta?.nombre}
+          terminado={recorrido.posicion}
+          onAtras={() => setEnRecorrido(false)}
+          resumen={resumenDeCierre(ruta ?? {}, (n) => formatMoney(n))}
+          // LA RESTA QUE SE HACIA DE CABEZA: lo cobrado en efectivo menos lo
+          // que se entrego en prestamos y menos los gastos. Las tres salen de
+          // `MovimientoCapital`, que es el libro unico — no se recalculan por
+          // otro camino, que es como se acaban teniendo dos cifras distintas.
+          cierre={cierreDelDia({
+            cobradoEfectivo: ruta?.recaudadoEfectivoHoy,
+            prestadoEfectivo: ruta?.desembolsadoEfectivoHoy,
+            gastos: ruta?.gastosEfectivoHoy,
+          }, (n) => formatMoney(n))}
+          onCerrar={() => setModalCaja(true)}
+          cerrando={guardandoCaja}
+        />
+        {hojaCobro}
+        </CapaRecorrido>
+      )
+    }
+
     // SIN ARMAZON Y SIN NADA MAS. La lamina la dibuja a pantalla completa: el
     // cobrador esta de pie, con una mano, y cualquier cosa de mas es un toque
-    // equivocado. Por eso se devuelve AQUI y no envuelto en el resto.
+    // equivocado.
     return (
+      <CapaRecorrido>
       <ModoRuta
         ruta={ruta?.nombre}
         posicion={recorrido.posicion}
@@ -1328,6 +1473,8 @@ export default function RutaDetallePage({ params }) {
           if (c) abrirPagoRapido(c)
         }}
       />
+      {hojaCobro}
+      </CapaRecorrido>
     )
   }
 
@@ -2987,85 +3134,7 @@ export default function RutaDetallePage({ params }) {
         </div>
       )}
 
-      {/* ── ATAJOS DE COBRO (T15-02) ──
-          Sustituye al modal de «Cobro rápido», que eran 246 líneas y DOS PASOS:
-          con varios préstamos había que elegir uno de una lista y solo entonces
-          aparecía el formulario. El pie de la lámina explica por qué eso está
-          mal, y es el gesto que más se repite en todo el producto:
-
-            «Con dos préstamos activos hay que elegir cuál, y ahí está el valor —
-             hoy el cobrador tiene que salir, abrir el otro préstamo y volver.
-             El botón cierra el bucle: cobrar y pasar al siguiente, sin volver a
-             la lista.»
-
-          Ahora los préstamos están todos a la vez, cada uno con su cuota y tres
-          salidas. El método se elige ARRIBA y vale para las tres.
-
-          NO CAMBIA NADA DE LO QUE MUEVE PLATA: sigue pasando por
-          `ejecutarPagoRapido`, con su cola offline, su deshacer de 10 segundos y
-          su detección de duplicados. */}
-      <Modal
-        open={!!modalPagoRapido}
-        onClose={() => setModalPagoRapido(null)}
-        title="Cobrar"
-      >
-        {/* Sin `pais`: TODA esta pantalla llama a `formatMoney(n)` a secas y se
-            apoya en el valor por defecto. Pasarlo solo aquí metía una segunda
-            convención en el mismo archivo — y `user` ni siquiera existe: esta
-            página usa `useAuth()`, con otros campos. Reventó en pantalla con
-            «ReferenceError: user is not defined». */}
-        {modalPagoRapido && (
-          <AtajosCobro
-            nombre={modalPagoRapido.nombre}
-            iniciales={inicialesDe(modalPagoRapido.nombre)}
-            ocupado={!!pagandoRapido}
-            prestamos={(modalPagoRapido.prestamosActivos ?? []).map((pr) => ({
-              id: pr.id,
-              cuota: pr.cuotaDiaria,
-              saldoPendiente: pr.saldoPendiente,
-              diasMora: pr.diasMora,
-              frecuencia: frecuenciaPrestamoLabel(pr.frecuencia),
-              pagadoHoy: pr.pagadoHoy,
-            }))}
-            selectorMetodo={
-              <MetodoPagoSelector
-                metodosPago={metodosPago}
-                /* Aquí SOLO elige; antes cobraba al pulsarlo. Con un préstamo
-                   era equivalente, pero con tres tarjetas debajo el método tiene
-                   que quedar puesto y esperar a que se diga QUÉ se cobra. */
-                onSelect={({ metodoPago: mp, metodoPagoId: mpId }) =>
-                  setMetodoRapido({ metodoPago: mp, metodoPagoId: mpId })}
-              />
-            }
-            onCobrarCuota={(pr) => ejecutarPagoRapido(metodoRapido.metodoPago, {
-              metodoPagoId: metodoRapido.metodoPagoId,
-              // El préstamo va EXPLÍCITO. Pasarlo por el estado cobraría el
-              // anterior: `setState` no ha llegado cuando la función lee.
-              destino: {
-                id: modalPagoRapido.id,
-                nombre: modalPagoRapido.nombre,
-                cuota: pr.cuota,
-                cuotaOriginal: pr.cuota,
-                prestamoActivo: pr.id,
-              },
-            })}
-            onOtroMonto={(pr, cuanto) => ejecutarPagoRapido(metodoRapido.metodoPago, {
-              metodoPagoId: metodoRapido.metodoPagoId,
-              destino: {
-                id: modalPagoRapido.id,
-                nombre: modalPagoRapido.nombre,
-                cuota: cuanto,
-                // `cuotaOriginal` distinta hace que se registre como PARCIAL y
-                // no como cuota completa. Es la diferencia entre abonar y
-                // marcar la cuota del día como saldada.
-                cuotaOriginal: pr.cuota,
-                prestamoActivo: pr.id,
-              },
-            })}
-            onNoPago={(pr, motivo) => registrarNoPago(pr.id, motivo)}
-          />
-        )}
-      </Modal>
+      {hojaCobro}
 
       {/* Toast: deshacer pago */}
       {undoPago && (

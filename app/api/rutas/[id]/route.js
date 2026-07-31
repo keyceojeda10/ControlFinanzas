@@ -176,6 +176,33 @@ export async function GET(request, { params }) {
   // cascada. Así `capitalPendiente + porGanar = carteraTotal` siempre.
   let capitalPendiente = 0
 
+  // ── LO QUE SALIO DE LA CARTERA HOY EN ESTA RUTA (T04-03) ──
+  //
+  // Se lee de `MovimientoCapital`, que es el libro unico del sistema y ya lleva
+  // `rutaId` y `metodoPago`. No se recalcula desde prestamos ni gastos: hacerlo
+  // por otro camino es como se acaban teniendo dos cifras que no cuadran.
+  //
+  // SOLO EFECTIVO. Lo que salio por transferencia no esta en el fajo que el
+  // cobrador entrega de noche, asi que restarlo descuadraria el cierre.
+  const movimientosHoy = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      rutaId: id,
+      tipo: { in: ['desembolso', 'gasto'] },
+      createdAt: { gte: _hoy, lt: _manana },
+    },
+    select: { tipo: true, monto: true, metodoPago: true },
+  })
+  let desembolsadoEfectivoHoy = 0
+  let gastosEfectivoHoy = 0
+  for (const m of movimientosHoy) {
+    // `null` cuenta como efectivo: es el modo por defecto y el de todo lo
+    // historico, anterior a que existiera la columna.
+    if (m.metodoPago === 'transferencia') continue
+    if (m.tipo === 'desembolso') desembolsadoEfectivoHoy += m.monto
+    else gastosEfectivoHoy += m.monto
+  }
+
   // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
   const cobrosGeoHoy = []
   // IDs de pagos y prestamos de esta ruta — para cruzar con ActividadLog y
@@ -527,6 +554,17 @@ export async function GET(request, { params }) {
     recaudadoHoy: Math.round(recaudadoHoy),
     recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
     recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
+    // ── LO QUE SALIO DE LA CARTERA HOY, EN ESTA RUTA ──
+    //
+    // El cierre del dia no es «cuanto recogiste»: es cuanto recogiste MENOS lo
+    // que entregaste en prestamos y MENOS lo que gastaste. Hasta ahora la
+    // pantalla pedia un total a secas y el cobrador tenia que hacer esa resta
+    // de cabeza, de noche y con el fajo en la mano.
+    //
+    // Solo EFECTIVO: lo que salio por transferencia no esta en el fajo que hay
+    // que entregar, asi que restarlo descuadraria el cierre al reves.
+    desembolsadoEfectivoHoy: Math.round(desembolsadoEfectivoHoy),
+    gastosEfectivoHoy: Math.round(gastosEfectivoHoy),
     // ── «3,4 km» EN LA CABECERA (T27-02) ──
     //
     // Lo que se camina hoy, en el orden del recorrido. Es lo que decide si la
