@@ -100,10 +100,30 @@ export default function FichaCliente({
   debeTotal, pagado, totalAPagar, porcentaje,
   prestamos = [], meses = [], lectura,
   onAbrirPrestamo, onPrestar, onCobrar,
+  // ── EL RELLENO LATERAL LO PONE EL ARMAZON, EL COMPONENTE NO ──
+  //
+  // Sin esta prop, al montarlo en `clientes/[id]` pondria sus 20px de
+  // `--cf-pad-screen` ENCIMA de los 20px que ya da `layout.jsx` con `px-5`: 40
+  // por lado, 80px menos de ancho que el resto de la pantalla.
+  //
+  // Es el mismo defecto que el usuario vio en la ficha del prestamo y que ya
+  // llevaba cuatro apariciones. Se arregla ANTES de montar, no despues de que
+  // se vea.
+  sinMargen = false,
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      // Dentro de una pagina que crece no es una pantalla de telefono: fijarle
+      // el 100% de alto y su propio scroll crea una ventana dentro de otra.
+      height: sinMargen ? 'auto' : '100%',
+    }}>
+      <div style={{
+        flex: sinMargen ? 'none' : 1, minHeight: 0,
+        overflowY: sinMargen ? 'visible' : 'auto',
+        display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
+        padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px',
+      }}>
 
         <BloqueOscuro etiqueta="Debe en total" cifra={debeTotal}>
           {/* El denominador del porcentaje es el TOTAL A PAGAR. Llamarlo
