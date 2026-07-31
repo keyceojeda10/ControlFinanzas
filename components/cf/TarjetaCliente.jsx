@@ -90,7 +90,12 @@ export default function TarjetaCliente({
   // «10d mora» en clientes, «36d mora» en préstamos, «36d de atraso» en cobrar
   // hoy. Meterlo acá obligaría a la tarjeta a saber en qué pantalla está.
   etiquetaEstado,
-  contexto,                // «CC 81283812 · 3 préstamos»
+  contexto,                // «Ana María · 3 préstamos»
+  // ── DE HOY ──
+  // Un punto verde al lado del nombre, no una pastilla: la pastilla de estado
+  // ya está a la derecha y dos pastillas en la misma fila compiten. El punto
+  // dice «mira aquí» sin quitarle sitio al nombre, que es lo que se lee.
+  nuevo = false,
   etiquetaMonto,           // «Deuda total» · sin él, el monto va solo
   monto,
   // Lo de la derecha, a la altura del monto: «2% pagado» en clientes,
@@ -153,12 +158,21 @@ export default function TarjetaCliente({
         )}
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: m.huecoSub }}>
-          {/* El nombre SOLO en su línea: nada le puede robar ancho. */}
-          <span style={{
-            fontSize: 16, fontWeight: 700, letterSpacing: '-.015em',
-            color: 'var(--cf-ink)',
-            minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>{nombre}</span>
+          {/* El nombre SOLO en su línea: nada le puede robar ancho. El punto de
+              «nuevo» va con `flex: none` y 6px, así que no se lo quita. */}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+            {nuevo && (
+              <span aria-label="Nuevo hoy" title="Creado hoy" style={{
+                width: 7, height: 7, borderRadius: 999, flex: 'none',
+                background: 'var(--cf-green)',
+              }} />
+            )}
+            <span style={{
+              fontSize: 16, fontWeight: 700, letterSpacing: '-.015em',
+              color: 'var(--cf-ink)',
+              minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{nombre}</span>
+          </span>
 
           {/* Nivel 2 · UNA línea, que no se parte en dos. Antes iba con
               `WebkitLineClamp: 2` y las tarjetas cambiaban de alto según lo

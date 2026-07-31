@@ -18,6 +18,7 @@ import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
+import HojaFiltros, { contarFiltros } from '@/components/pantallas/HojaFiltros'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
@@ -203,6 +204,7 @@ export default function ClientesPage() {
   const [grupoAsignar, setGrupoAsignar] = useState('')
   const [asignandoGrupo, setAsignandoGrupo] = useState(false)
 
+
   const [rutaIdFiltro, setRutaIdFiltro] = useState('')
   // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
   // pantallas distintas. Una dice como empezar; la otra, como volver atras.
@@ -222,6 +224,22 @@ export default function ClientesPage() {
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [hojaFiltros, setHojaFiltros] = useState(false)
+  // Los grupos de la hoja. Van con el mismo contrato que en prestamos, para que
+  // las dos pantallas se filtren igual.
+  const gruposFiltro = [
+    { id: 'ruta', titulo: 'Ruta', valor: rutaIdFiltro,
+      onCambiar: (v) => { setRutaIdFiltro(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todas las rutas' },
+        ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
+    ...(grupos.length > 0 ? [{
+      id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
+      onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todos' },
+        ...grupos.map((g) => ({ valor: String(g.nombre ?? g), nombre: String(g.nombre ?? g) }))],
+    }] : []),
+  ]
+  const nFiltros = contarFiltros(gruposFiltro)
 
   useEffect(() => {
     const goOnline = () => { setIsOffline(false) }
@@ -591,6 +609,24 @@ export default function ClientesPage() {
             pieza. Y al lado habia un + dorado de 54px que duplicaba el FAB de la
             pastilla: dos botones de crear en la misma pantalla, uno encima del
             otro. Se va el de arriba; el de la pastilla es el del sistema. */}
+        {/* ── LOS FILTROS QUE FALTABAN ──
+            Clientes tenia busqueda y cuatro chips de estado. Prestamos tiene
+            nueve grupos en una hoja. Y `rutaIdFiltro` existia en el estado de
+            esta pagina DESDE SIEMPRE, sin ningun control que lo cambiara: solo
+            se podia poner llegando con `?rutaId=` en la URL.
+
+            Los dos que van aqui —ruta y grupo de cobro— son los que el
+            servidor sabe filtrar de verdad, sobre TODA la cartera. No se añaden
+            los de mora ni «le toca hoy» todavia porque `/api/clientes` no los
+            acepta: filtrarlos en el navegador solo miraria los 50 de esta
+            pagina, y un filtro que MIENTE es peor que no tenerlo. */}
+        <HojaFiltros
+          abierta={hojaFiltros}
+          onCerrar={() => setHojaFiltros(false)}
+          onLimpiar={() => { setRutaIdFiltro(''); setGrupoFiltro(''); setPage(1) }}
+          grupos={gruposFiltro}
+        />
+
         <BuscadorLista
           valor={buscar}
           onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
@@ -602,12 +638,12 @@ export default function ClientesPage() {
         <BarraFiltros
           activo={estado}
           onCambiar={(v) => { setEstado(v); setPage(1) }}
-          // El cuarto chip de la lamina, el del icono. Abre lo que YA existe
-          // —el modal de grupos en su pestaña de filtrar— en vez de ser un
-          // boton nuevo sin destino. Cuando ese modal se rehaga contra su
-          // lamina, este chip apuntara a la hoja de «Mas filtros».
-          onMasFiltros={() => { setTabModalGrupos('filtrar'); setModalGrupos(true) }}
-          hayMasFiltros={!!grupoFiltro}
+          // ── EL CHIP YA ABRE LA HOJA DE FILTROS ──
+          // Abria el MODAL DE GRUPOS en su pestaña de filtrar, que es otra cosa:
+          // el usuario pulsaba «Más filtros» y le salia la gestion de grupos de
+          // cobro. Ahora abre `HojaFiltros`, la misma de prestamos.
+          onMasFiltros={() => setHojaFiltros(true)}
+          hayMasFiltros={nFiltros > 0}
           filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
             id: value,
             nombre: label,
