@@ -1304,8 +1304,13 @@ export default function RutaDetallePage({ params }) {
       direccion: c.direccion,
       telefono: c.telefono,
       diasMora: c.diasMora,
-      // `cobradoHoy` es como lo llama el adaptador; la API lo llama `pagoHoy`.
-      cobradoHoy: !!c.pagoHoy,
+      // ── «HECHO» NO ES «PAGO ALGO» ──
+      // Estaba en `!!c.pagoHoy`, y eso da por cerrada la parada de quien pago
+      // UNO de sus dos prestamos: Ana Milena aparecia como cobrada con la mitad
+      // del dia sin cobrar, y el recorrido pasaba de largo por su casa.
+      // La API ya distingue las dos cosas — `pagoHoy` es «pago algo» y
+      // `cobroPendienteHoy` es «le queda algo». La que manda es la segunda.
+      cobradoHoy: !c.cobroPendienteHoy,
       montoACobrar: c.cuota,
       montoCobrado: c.montoPagadoHoy,
       debe: c.saldoPendiente,

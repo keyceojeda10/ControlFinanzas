@@ -247,8 +247,22 @@ export default function AtajosCobro({
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
-                <Boton tono="principal" disabled={ocupado || !(cuota > 0)} onClick={() => onCobrarCuota?.(p)}>
-                  Cuota
+                {/* ── EL YA COBRADO NO SE VUELVE A COBRAR DE UN TOQUE ──
+                    Estaba solo atenuado, y «Cuota» seguia pulsable: se cobra
+                    dos veces el mismo prestamo sin que nada avise. Lo comprobe
+                    sin querer —recaudado $32.000 sobre una cuota de $16.000— y
+                    en la calle eso es plata de mas cobrada a un cliente.
+
+                    No se OCULTA: el cobrador tiene que ver que ese prestamo ya
+                    esta hecho. Y «Otro monto» se queda vivo, porque un segundo
+                    abono el mismo dia es legitimo — lo que no puede pasar es de
+                    un toque y sin decidirlo. */}
+                <Boton
+                  tono="principal"
+                  disabled={ocupado || !(cuota > 0) || p.pagadoHoy}
+                  onClick={() => onCobrarCuota?.(p)}
+                >
+                  {p.pagadoHoy ? 'Ya cobrado' : 'Cuota'}
                 </Boton>
                 <Boton disabled={ocupado} onClick={() => { setMonto(''); setMontoAbierto(p.id) }}>Otro monto</Boton>
                 <Boton tono="aviso" disabled={ocupado} onClick={() => setMotivoAbierto(p.id)}>No pagó</Boton>
