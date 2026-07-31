@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 
 export default function NuevoSocioPage() {
+  useCabecera({ titulo: 'Nuevo socio' })
+
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
   const [form, setForm] = useState({ nombre: '', cedula: '', telefono: '', notas: '' })
@@ -49,9 +52,8 @@ export default function NuevoSocioPage() {
 
   return (
     <div className="pb-28">
-      <h1 className="text-[25px] font-semibold mb-4" style={{ color: 'var(--cf-ink)' }}>
-        Nuevo socio
-      </h1>
+      {/* El titulo lo pone el armazon: este <h1> salia DEBAJO del que ya dibuja
+          la cabecera. Dos veces «Nuevo socio», una encima de otra. */}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div
