@@ -345,6 +345,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const completedIndices = []
   for (let i = 0; i < paso; i++) completedIndices.push(i)
 
+  // Los planes de entrada no traen rutas: ahí el mensaje es otro —no es que no
+  // tengas, es que no vienen— y ofrecer «crear una ruta» sería mandar a una
+  // pantalla que va a decir que no.
+  const planSinRutas = ['starter', 'basic'].includes(plan)
+
   return (
     <div className="max-w-xl mx-auto pb-32 lg:pb-32">
       {/* Stepper */}
@@ -579,11 +584,48 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             ¿Lo asignamos a una ruta?
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-            Esto es opcional. Si tienes rutas o grupos definidos, asignalo aquí para que aparezca en el listado correcto.
+            Esto es opcional. Puedes crearlo sin ruta y asignarla después.
           </p>
 
           <div className="mt-7 space-y-5">
-            {!['starter', 'basic'].includes(plan) && rutas.length > 0 && (
+            {/* ── UNA PREGUNTA QUE LA PANTALLA NO DEJABA RESPONDER ──
+                El título dice «¿Lo asignamos a una ruta?» y el selector iba
+                detrás de `rutas.length > 0 &&`, sin `else`. Con cero rutas —que
+                es como empieza todo el mundo— se leía la pregunta, se leía «si
+                tienes rutas o grupos definidos, asígnalo aquí», y debajo no
+                había ningún control de ruta. Nada explicaba por qué.
+
+                Ahora hay tres respuestas posibles y las tres se dicen: no
+                tienes rutas todavía, tu plan no las incluye, o aquí están. */}
+            {planSinRutas ? (
+              <div className="rounded-[14px] px-4 py-3.5" style={{
+                background: 'var(--cf-gold-tint-2)', border: '1px solid var(--cf-gold-border)',
+              }}>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                  Las rutas vienen con los planes de más arriba. Puedes crear el
+                  cliente igual: se le asigna ruta después, sin volver a teclear
+                  nada.
+                </p>
+              </div>
+            ) : rutas.length === 0 ? (
+              <div className="rounded-[14px] px-4 py-3.5" style={{
+                background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+              }}>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                  Todavía no tienes rutas. Crea el cliente sin ruta y se la
+                  asignas cuando tengas una — no se pierde nada.
+                </p>
+                <a
+                  href="/rutas"
+                  className="inline-block mt-2.5 text-[13px] font-bold"
+                  style={{ color: 'var(--cf-gold-dark)' }}
+                >
+                  Ver mis rutas
+                </a>
+              </div>
+            ) : null}
+
+            {!planSinRutas && rutas.length > 0 && (
               <>
                 <Select label="Ruta" value={form.rutaId} onChange={set('rutaId')}>
                   <option value="">Sin ruta asignada</option>

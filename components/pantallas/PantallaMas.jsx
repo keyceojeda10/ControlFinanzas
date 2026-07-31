@@ -132,9 +132,27 @@ export default function PantallaMas({
 }) {
   const ir = (destino) => () => onIr?.(destino)
 
-  // Se ocultan igual que Rutas y Equipo en el resto del sistema. Catorce filas de
-  // las que cuatro no aplican es peor que diez que sí.
-  const haySocios = socios?.cantidad > 0
+  /** «Ninguno todavía» cuando no hay: es la única cifra que invita a entrar. */
+  const textoSocios = (n) => {
+    const c = Number(n ?? 0)
+    if (c === 0) return 'Ninguno todavía'
+    return c === 1 ? '1 socio' : `${c} socios`
+  }
+
+  // ── SOCIOS DEJA DE ESCONDERSE ──
+  //
+  // Iba detrás de `socios.cantidad > 0`, con el mismo criterio que Equipo:
+  // catorce filas de las que cuatro no aplican es peor que diez que sí.
+  //
+  // Pero con Socios ese criterio se muerde la cola: PARA VER SOCIOS HABÍA QUE
+  // TENER SOCIOS. El único camino a `/socios/nuevo` desde el móvil era el
+  // buscador global o escribir la URL a mano, así que quien nunca hubiera
+  // entrado desde un computador no sabía que la función existe. En escritorio
+  // no pasaba: la barra lateral la pinta siempre.
+  //
+  // «Quién hizo qué» no tiene ese problema y se queda como estaba: si hay un
+  // solo usuario, la pantalla que abre está vacía por definición y no hay nada
+  // que hacer para llenarla desde ahí.
   const hayEquipo = usuarios > 1
 
   const herramientas = [
@@ -147,7 +165,11 @@ export default function PantallaMas({
     { icono: 'gastos',     nombre: 'Gastos',              cifra: gastosMes, tono: 'ambar', destino: '/gastos' },
     { icono: 'cobradores', nombre: 'Cobradores',          cifra: cobradoresSinRegistrar, tono: 'mal', destino: '/cobradores' },
     { icono: 'perdidos',   nombre: 'Perdidos',            cifra: perdidos, destino: '/clavos' },
-    haySocios && { icono: 'socios', nombre: 'Socios',        cifra: socios.resumen, destino: '/socios' },
+    // `socios.resumen` NUNCA EXISTIÓ: `adaptarMas` solo produce `{ cantidad }`,
+    // así que la fila salía sin cifra incluso cuando aparecía. Ahora dice
+    // cuántos hay, y cuando no hay ninguno lo dice también — que es
+    // precisamente cuando la fila sirve para algo.
+    { icono: 'socios', nombre: 'Socios', cifra: textoSocios(socios?.cantidad), destino: '/socios' },
     hayEquipo && { icono: 'quien',  nombre: 'Quién hizo qué', cifra: null, destino: '/actividad' },
   ].filter(Boolean)
 
