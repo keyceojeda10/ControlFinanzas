@@ -14,6 +14,7 @@ import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonPrestamoDetalle }     from '@/components/ui/Skeleton'
 import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
+import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
@@ -140,6 +141,13 @@ export default function PrestamoDetallePage({ params }) {
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalIntereses, setModalIntereses] = useState(false)
+  // El selector es CONTROLADO con un objeto: `metodoPago` dice efectivo o
+  // transferencia y `metodoPagoId` dice a que cuenta entro. Confundirlos
+  // descuadra la caja por cuenta.
+  const [interesMetodo,  setInteresMetodo]  = useState({ metodoPago: 'efectivo', metodoPagoId: null })
+  const [metodosPagoOrg, setMetodosPagoOrg] = useState([])
+  const [interesError,   setInteresError]   = useState('')
+  const [pagandoInteres, setPagandoInteres] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
@@ -456,6 +464,15 @@ export default function PrestamoDetallePage({ params }) {
   // React rompe la pantalla entera — salio con el triangulo rojo de error.
   // Por eso lee del ESTADO (`prestamo?.…`) y no de los valores derivados, que se
   // calculan mas abajo.
+  // Las cuentas de la organizacion, para la hoja de intereses. VA AQUI POR LO
+  // MISMO QUE `useCabecera`: es un hook, y detras del `if (loading) return` el
+  // orden cambia entre renders. Se pidio despues de montar y ya me tiro la
+  // pantalla una vez.
+  useEffect(() => {
+    if (!modalIntereses || metodosPagoOrg.length) return
+    fetch('/api/metodos-pago').then((r) => (r.ok ? r.json() : [])).then(setMetodosPagoOrg).catch(() => {})
+  }, [modalIntereses, metodosPagoOrg.length])
+
   useCabecera({
     titulo: prestamo?.cliente?.nombre,
     subtitulo: prestamo ? (
@@ -759,6 +776,44 @@ export default function PrestamoDetallePage({ params }) {
   // corrio todo el interes, asi que cerrarlo hoy cuesta exactamente lo que
   // debe: la linea repetiria la cifra de arriba sin decir nada, y dos veces el
   // mismo numero en un bloque de plata se lee como un error.
+  // EL INTERES VENCIDO Y SIN PAGAR. Estaba calculado dentro del `onClick` del
+  // boton que abria el modal, asi que solo existia en el instante de pulsarlo.
+  // La hoja necesita el mismo numero para enseñarlo y para mandarlo.
+  const interesMonto = Math.round(
+    (prestamo?.cuotasAmortizacion ?? [])
+      .filter((f) => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
+      .reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0),
+  )
+
+  const pagarIntereses = async () => {
+    if (!(interesMonto > 0)) return
+    setPagandoInteres(true)
+    setInteresError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          montoPagado: interesMonto,
+          tipo: 'intereses',
+          metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
+          ...(interesMetodo?.metodoPagoId ? { metodoPagoId: interesMetodo.metodoPagoId } : {}),
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setInteresError(d.error || 'No se pudo registrar el pago')
+        return
+      }
+      setPrestamo(await res.json())
+      setModalIntereses(false)
+    } catch {
+      setInteresError('No se pudo registrar el pago')
+    } finally {
+      setPagandoInteres(false)
+    }
+  }
+
   const hayCierre = cierre && cierre.interesPerdonado > 0
   const cierreTexto = hayCierre ? formatMoney(Math.round(cierre.restanteHoy ?? 0)) : null
   const cierrePerdonaTexto = hayCierre
@@ -2054,17 +2109,63 @@ export default function PrestamoDetallePage({ params }) {
         />
       </HojaInferior>
 
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalIntereses}
-        onClose={() => setModalIntereses(false)}
-        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="intereses"
-      />
+      {/* -- PAGAR INTERESES, EN SU HOJA --
+          Era el ULTIMO camino que saltaba al formulario de 1.315 lineas: se
+          pulsaba «Pagar intereses · $X» en el menu rediseñado y encima aparecia
+          la pantalla anterior entera, con sus siete pestañas, para escribir un
+          numero que la propia pantalla ya sabia.
+
+          Aqui viene con el monto puesto y lo unico que queda es confirmar. El
+          contrato con la API es el mismo: POST /pagos con `tipo: 'intereses'`. */}
+      <HojaInferior
+        abierta={modalIntereses}
+        onCerrar={() => { setModalIntereses(false); setInteresError('') }}
+        titulo="Pagar los intereses"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalIntereses(false); setInteresError('') }}
+            onAceptar={pagarIntereses}
+            textoAceptar={interesMonto > 0 ? `Cobrar ${formatMoney(interesMonto)}` : 'Cobrar'}
+            deshabilitado={!(interesMonto > 0) || pagandoInteres}
+            aceptando={pagandoInteres}
+            error={interesError}
+          />
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '2px 0 6px' }}>
+          <div style={{
+            background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+            display: 'flex', flexDirection: 'column', gap: 5, flex: 'none',
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: '#A3A8B2',
+            }}>Interés vencido y sin pagar</span>
+            <span className="cf-fig" style={{
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 30, fontWeight: 600, letterSpacing: '-.03em', color: '#F5B824',
+            }}>{formatMoney(interesMonto)}</span>
+          </div>
+
+          {/* QUE HACE Y QUE NO. Pagar interes SI baja el saldo —es menos plata
+              por pagar en total— pero NO baja el capital, que es sobre lo que
+              corre el interes del mes siguiente. Sin decirlo, se cobra tres
+              meses seguidos y el capital sigue clavado, y parece un fallo. */}
+          <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)', margin: 0 }}>
+            Cubre el interés que ya corrió. <strong>El capital no baja</strong>
+            {prestamo?.capitalRestante > 0
+              ? `: sigue en ${formatMoney(Math.round(prestamo.capitalRestante))}, y el mes que viene vuelve a generar interés.`
+              : ' — el mes que viene vuelve a generar interés.'}
+          </p>
+
+          <MetodoPagoSelector
+            metodosPago={metodosPagoOrg}
+            value={interesMetodo}
+            onSelect={(v) => setInteresMetodo(v)}
+          />
+        </div>
+      </HojaInferior>
 
       {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}
       {/* ── T19-04 · CERRAR ANTICIPADO ─────────────────────────────────────
