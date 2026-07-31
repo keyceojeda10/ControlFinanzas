@@ -254,6 +254,14 @@ export default function ClientesPage() {
       // prestarle, y hasta ahora no habia forma de encontrarlo sin recorrer la
       // lista entera a mano.
       opciones: [{ valor: '', nombre: 'Todos' }, { valor: 'si', nombre: 'Ya terminó de pagar' }] },
+    // ── EL CONMUTADOR QUE NUNCA SE PUDO TOCAR ──
+    // `vista`, `cambiarVista` y `ClienteCardCompacto` llevaban aqui desde
+    // siempre y NINGUN control los cambiaba: `cambiarVista` no se llamaba desde
+    // ningun sitio, asi que la rama compacta era codigo inalcanzable. Prestamos
+    // si lo cablea, con este mismo grupo. Es el que faltaba.
+    { id: 'vista', titulo: 'Tamaño de las tarjetas', valor: vista === 'compacta' ? 'compacta' : '',
+      onCambiar: (v) => cambiarVista(v === 'compacta' ? 'compacta' : 'lista'),
+      opciones: [{ valor: '', nombre: 'Completas' }, { valor: 'compacta', nombre: 'Compactas' }] },
     ...(grupos.length > 0 ? [{
       id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
       onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
@@ -355,6 +363,7 @@ export default function ClientesPage() {
         params.set('sinRuta', '1')
       }
       // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
+      if (calculados.estado) params.set('estado', calculados.estado)
       if (calculados.mora) params.set('mora', String(calculados.mora))
       if (calculados.pagaHoy) params.set('pagaHoy', '1')
       if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
@@ -435,9 +444,9 @@ export default function ClientesPage() {
   // Carga de clientes con debounce
   useEffect(() => {
     const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro,
-      { soft: refreshKey > 0, calculados: { mora: moraMin, pagaHoy, sinPrestamo } }), 280)
+      { soft: refreshKey > 0, calculados: { estado, mora: moraMin, pagaHoy, sinPrestamo } }), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey, moraMin, pagaHoy, sinPrestamo])
+  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {
@@ -570,7 +579,24 @@ export default function ClientesPage() {
     }
   }
 
-  const moraCount = clientes.filter((c) => c.estado === 'mora').length
+  // ── LOS CONTEOS DE LOS CHIPS, SOBRE LA CARTERA ENTERA ──
+  // Se contaban sobre `clientes`, que son los 50 de la pagina. Ahora los da el
+  // servidor con una pasada completa. Mientras no lleguen se enseñan sin
+  // numero: un «· 0» que todavia no es cierto hace descartar el filtro.
+  const [conteos, setConteos] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    const p = new URLSearchParams({ soloConteos: '1' })
+    if (buscar) p.set('buscar', buscar)
+    if (rutaIdFiltro) p.set('rutaId', rutaIdFiltro)
+    if (grupoFiltro) p.set('grupo', grupoFiltro)
+    fetch(`/api/clientes?${p}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo && d) setConteos(d) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [buscar, rutaIdFiltro, grupoFiltro, refreshKey])
+  const moraCount = conteos?.mora ?? 0
   const filtrosActivos = (estado ? 1 : 0) + (grupoFiltro ? 1 : 0) + (rutaIdFiltro ? 1 : 0)
   const tieneBusqueda = !!buscar.trim()
   const grupoActivoLabel = grupoFiltro === '_none'
@@ -691,10 +717,8 @@ export default function ClientesPage() {
             // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
             // cierto se lee como "no hay ninguno" y hace descartar el filtro
             // antes de que llegue el dato.
-            conteo: loading ? undefined
-              : value === '' ? total
-              : value === 'mora' ? moraCount
-              : clientes.filter((c) => c.estado === value).length,
+            // Del servidor, no de la pagina. Sin ellos, sin numero.
+            conteo: conteos ? (value === '' ? conteos.total : conteos[value] ?? 0) : undefined,
           }))}
         />
       </div>
@@ -721,14 +745,15 @@ export default function ClientesPage() {
 
       {/* Lista */}
       {!loading && clientes.length > 0 && (() => {
-        // OJO: el estado del cliente (al dia / mora / cancelado) se calcula en
-        // el servidor con calcularEstadoCliente(), no es una columna, asi que
-        // no se puede filtrar en el `where` de Prisma. Este filtro corre sobre
-        // la PAGINA ACTUAL (50 registros), no sobre la cartera entera: por eso
-        // el dashboard puede decir "18 en mora" y aca aparecer 4.
-        // Mientras no exista el filtro server-side, al menos se avisa en vez de
-        // dar un numero falso por bueno.
-        const filtrados = estado ? clientes.filter((c) => c.estado === estado) : clientes
+        // EL FILTRO DE ESTADO YA LO HACE EL SERVIDOR. Corria aqui, sobre la
+        // PAGINA de 50, asi que con 200 clientes «En mora» enseñaba los que
+        // hubiera entre los primeros 50 y daba a entender que no habia mas —
+        // el panel decia «18 en mora» y esta lista 4.
+        //
+        // `calcularEstadoCliente()` no es una columna y no entra al `where` de
+        // Prisma, asi que va por el mismo camino que mora y «le toca hoy»: la
+        // API trae la cartera entera, calcula, filtra y pagina despues.
+        const filtrados = clientes
         // Las tarjetas del rediseño: superficie SIEMPRE blanca y el estado en un
         // riel de 4px. Lo anterior teñía la tarjeta entera de rosa o ámbar, y
         // con media cartera en mora eso es un muro donde nada destaca porque

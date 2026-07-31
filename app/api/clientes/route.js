@@ -80,7 +80,16 @@ export async function GET(request) {
   const moraMin = Number(searchParams.get('mora') || 0) || 0
   const pagaHoy = searchParams.get('pagaHoy') === '1'
   const sinPrestamo = searchParams.get('sinPrestamo') === '1'
-  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo
+  // `estado` (al dia / mora / cancelado) es de la misma familia: lo calcula
+  // `calcularEstadoCliente()` DESPUES de traer las filas, no es una columna.
+  // Filtrarlo en el navegador sobre la pagina de 50 es justo lo que hacia la
+  // pantalla, y por eso el panel podia decir «18 en mora» y la lista enseñar 4.
+  const estadoFiltro = searchParams.get('estado')?.trim() ?? ''
+  // Los CONTEOS de los chips tienen el mismo problema: se contaban sobre la
+  // pagina. Con `soloConteos=1` se hace la pasada completa y se devuelven solo
+  // los numeros, sin la lista — una peticion barata que da cifras ciertas.
+  const soloConteos = searchParams.get('soloConteos') === '1'
+  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo || !!estadoFiltro || soloConteos
 
   const condiciones = [
     { organizationId },
@@ -255,10 +264,21 @@ export async function GET(request) {
   for (const c of resultado) delete c._actividadAt
 
   // Los filtros que necesitan el calculo hecho.
+  // Los conteos por estado, sobre la cartera ENTERA. Solo se calculan cuando ya
+  // se ha hecho la pasada completa, asi que no cuestan nada extra.
+  if (soloConteos) {
+    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0 }
+    for (const c of resultado) {
+      if (conteos[c.estado] !== undefined) conteos[c.estado] += 1
+    }
+    return Response.json(conteos)
+  }
+
   let filtrado = resultado
   const hoyISO = new Date().toISOString().slice(0, 10)
   if (filtraCalculado) {
     filtrado = resultado.filter((c) => {
+      if (estadoFiltro && c.estado !== estadoFiltro) return false
       // «Le toca pagar hoy»: la fecha del proximo cobro mas cercano es hoy o ya
       // paso. Incluye los atrasados a proposito — a esos tambien les toca, y
       // dejarlos fuera seria justo esconder a los que hay que ir a ver.
