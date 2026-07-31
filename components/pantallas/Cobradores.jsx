@@ -80,6 +80,8 @@ export function Cobradores({
   visiblesSinRuta = 2,
   onVolver, onAbrir, onAsignar, onCrear, onRanking,
   crearTexto = 'Crear cobrador',
+  vacioTitulo = 'Todavía no tienes cobradores',
+  vacioNota = 'Un cobrador entra con su propia clave, ve solo su ruta y registra los cobros desde la calle.',
   // La cabecera es de esta pantalla, no de la pagina. `cabecera={false}` queda
   // por si algun sitio la mete dentro de otra que ya tiene titulo — sin eso
   // saldrian DOS «Cobradores» seguidos, que es lo que me paso al montar caja.
@@ -151,6 +153,29 @@ export function Cobradores({
         padding: cabecera ? '0 20px 96px' : 0,
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
+        {/* ── SIN NINGUNA CUENTA TODAVIA ──
+            El estado vacio vivia FUERA, en la pagina, y el componente entero
+            iba detras de `cobradores.length > 0`. Con cero cuentas —que es como
+            empieza todo el mundo— no se montaba: ni cabecera, ni «Crear
+            cobrador», ni nada. La pantalla se quedaba literalmente sin titulo.
+
+            Aqui dentro, la cabecera y el boton son los mismos tenga cuentas o
+            no, que es lo unico que garantiza que no haya dos versiones de la
+            pantalla que se puedan desincronizar. */}
+        {cobrando.length === 0 && sinRuta.length === 0 && (
+          <div style={{
+            padding: '34px 8px', textAlign: 'center',
+            display: 'flex', flexDirection: 'column', gap: 6,
+          }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>
+              {vacioTitulo}
+            </span>
+            <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-3)' }}>
+              {vacioNota}
+            </span>
+          </div>
+        )}
+
         {cobrando.length > 0 && <Separador>Cobrando hoy</Separador>}
 
         {cobrando.map((c) => (

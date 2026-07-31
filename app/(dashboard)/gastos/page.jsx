@@ -171,7 +171,6 @@ export default function GastosPage() {
             Lo que se sale del capital
           </span>
         </div>
-        {(
           <button type="button" onClick={() => setAbrirReportar(true)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px',
             borderRadius: 12, flex: 'none', cursor: 'pointer', border: 0,
@@ -182,7 +181,6 @@ export default function GastosPage() {
               strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             Anotar gasto
           </button>
-        )}
       </div>
 
       <ReportarGasto
@@ -202,7 +200,6 @@ export default function GastosPage() {
           Y que el fondo del negocio viva dentro de «Gastos» no se sostiene: los
           gastos son lo que SALE del capital, no el capital. Se queda solo en su
           pantalla; abajo hay una fila que lleva a ella. */}
-      {(
         <>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
             {ESTADOS.map((e) => (
@@ -369,7 +366,6 @@ export default function GastosPage() {
             </div>
           )}
         </>
-      )}
 
       {/* Para quien llegaba al capital por la pestaña que estaba aquí. */}
       <button

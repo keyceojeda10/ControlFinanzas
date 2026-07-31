@@ -12,7 +12,6 @@ import { Button }              from '@/components/ui/Button'
 import { Card }                from '@/components/ui/Card'
 import CobradorCard            from '@/components/cobradores/CobradorCard'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import MonedaCF                from '@/components/ui/MonedaCF'
 import { useCountry } from '@/hooks/useCountry'
 import { obtenerCobradoresOffline } from '@/lib/offline'
 
@@ -250,19 +249,6 @@ function CobradoresPageInner() {
         </div>
       )}
 
-      {!loading && cobradores.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4">
-            <MonedaCF pose="vacia" size={100} />
-          </div>
-          <p className="text-sm font-medium text-[var(--cf-ink)]">Sin cobradores aun</p>
-          <p className="text-xs text-[var(--cf-ink-3)] mt-1">Crea el primer cobrador para asignarle una ruta</p>
-          <Link href="/cobradores/nuevo" className="mt-4">
-            <Button size="sm">Crear cobrador</Button>
-          </Link>
-        </div>
-      )}
-
       {/* Toggle modo trabajo / ordenar (solo owner, con 2+ cobradores) */}
       {!loading && cobradores.length > 1 && esOwner && (
         <div className="flex items-center justify-between mb-3">
@@ -320,7 +306,7 @@ function CobradoresPageInner() {
           La cabecera la pinta el componente: trae las dos cifras juntas
           —«9 cuentas · 4 con ruta asignada»— que son las que hacen evidente el
           hueco. Cualquiera de las dos sola no dice nada. */}
-      {!loading && cobradores.length > 0 && !modoOrdenar && (() => {
+      {!loading && !modoOrdenar && (() => {
         const grupos = agrupaCobradores(cobradores, formatMoney)
         return (
           <Cobradores
