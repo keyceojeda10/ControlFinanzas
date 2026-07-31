@@ -56,6 +56,13 @@ export function Renovar({
   entregaEtiqueta = 'Le entregas en efectivo', entrega,
   gananciaEtiqueta = 'Ganancia del nuevo', ganancia,
   onRenovar, renovando, nota,
+  // ── LA RANURA DE LAS CONDICIONES ──
+  // La lamina dibuja el DINERO: cuanto debe, cuanto sera el total y cuanto sale
+  // del bolsillo. Pero renovar tambien fija tasa, plazo, frecuencia, fecha y
+  // seguro, y eso ya existe y funciona. Va aqui, entre el bloque negro y el
+  // boton, para que la cifra de la entrega siga siendo lo ultimo que se lee
+  // antes de pulsar.
+  children,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
@@ -177,6 +184,8 @@ export function Renovar({
           )}
         </div>
       )}
+
+      {children}
 
       {/* EL BOTÓN REPITE LA CIFRA. Con un «Renovar» a secas habría que mirar
           arriba otra vez antes de pulsar, con el cliente delante. */}
