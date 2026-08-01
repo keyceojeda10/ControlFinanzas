@@ -218,6 +218,18 @@ export default function ClientesPage() {
   const carteraVacia = !loading && !error && clientes.length === 0 &&
     !buscar && !estado && !grupoFiltro && !rutaIdFiltro
   const [rutas,        setRutas]       = useState([])
+  // Si hay sitio para la tabla. En un efecto, no leyendo `matchMedia` al
+  // pintar: eso hace que el servidor diga una cosa y el cliente otra y React
+  // tire el arbol entero. Ya paso tres veces en este rediseño.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+
   const [vista, setVista] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY) || 'lista'
     return 'lista'
@@ -259,9 +271,15 @@ export default function ClientesPage() {
     // siempre y NINGUN control los cambiaba: `cambiarVista` no se llamaba desde
     // ningun sitio, asi que la rama compacta era codigo inalcanzable. Prestamos
     // si lo cablea, con este mismo grupo. Es el que faltaba.
-    { id: 'vista', titulo: 'Tamaño de las tarjetas', valor: vista === 'compacta' ? 'compacta' : '',
-      onCambiar: (v) => cambiarVista(v === 'compacta' ? 'compacta' : 'lista'),
-      opciones: [{ valor: '', nombre: 'Completas' }, { valor: 'compacta', nombre: 'Compactas' }] },
+    { id: 'vista', titulo: 'Cómo se ven', valor: vista === 'lista' ? '' : vista,
+      onCambiar: (v) => cambiarVista(v || 'lista'),
+      opciones: [
+        { valor: '', nombre: 'Completas' },
+        { valor: 'compacta', nombre: 'Compactas' },
+        // Solo tiene sentido con ancho: siete columnas en 390px no son una
+        // tabla, son un acordeon horizontal.
+        ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla' }] : []),
+      ] },
     ...(grupos.length > 0 ? [{
       id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
       onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
@@ -762,6 +780,96 @@ export default function ClientesPage() {
         // Las acciones en línea (WhatsApp, cobrar) salen de la tarjeta: se toca
         // para abrir la ficha, y ahí viven. Una lista es para mirar.
         const adaptados = adaptarClientes(filtrados, country)
+
+        // ── T07-01 · LA TABLA, SOLO EN 1440 ──
+        //
+        // En un telefono la tarjeta gana: hay sitio para una columna y la
+        // informacion se lee de arriba abajo. Sentado es al reves — lo que se
+        // hace con esta pantalla es COMPARAR, y comparar el atraso de nueve
+        // clientes cuesta un vistazo si estan en la misma columna y cuesta
+        // recorrer nueve tarjetas si no.
+        //
+        // Las mismas cifras que la tarjeta, sin quitar ninguna: deuda, atraso,
+        // cumple, pagado y proximo cobro. Y el riel de estado se conserva como
+        // una barra de color a la izquierda de la fila, que es lo que permite
+        // barrer la columna sin leer.
+        // LA FILA SE ARMA CON LO QUE DEVUELVE EL ADAPTADOR, no con los campos
+        // crudos del cliente. Primer intento: la escribi leyendo
+        // `c.saldoPendiente`, `c.montoParaPonerseAlDia` y `c.porcentajePagado`,
+        // que NO son los nombres que trae la lista —son `saldoPendienteTotal`,
+        // `montoEnMora` y `porcentajePagadoPromedio`— y toda la tabla salio con
+        // «$0» y «—» sin dar un solo error.
+        //
+        // Armarla desde `adaptados[i]` no solo lo arregla: garantiza que la
+        // tabla y la tarjeta digan LO MISMO. Dos caminos para la misma cifra es
+        // como se acaban contradiciendo.
+        const dameCifra = (a, etiqueta) => a?.cifras?.find((x) => x.etiqueta === etiqueta) ?? null
+
+        const filaTabla = (c, a, i) => {
+          const atraso = dameCifra(a, 'Atraso')
+          const cumple = dameCifra(a, 'Cumple')
+          const pagado = dameCifra(a, 'Pagado')
+          const prox   = dameCifra(a, 'Próx. cobro')
+          const color = (cif) => cif?.tono === 'contra' ? 'var(--cf-red-dark)'
+            : cif?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => { window.location.href = `/clientes/${c.id}` }}
+              className="grid items-center w-full text-left px-4 py-3"
+              style={{
+                gridTemplateColumns: '1.7fr 1fr 130px 130px 90px 90px 130px',
+                gap: 12,
+                background: 'var(--cf-card)',
+                border: 0,
+                borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                // El riel de estado de la tarjeta, aqui como barra a la
+                // izquierda: es lo que deja barrer la columna sin leer.
+                borderLeft: `3px solid ${a?.estado === 'mora' ? 'var(--cf-red)' : a?.estado === 'aldia' ? 'var(--cf-green)' : 'var(--cf-gold)'}`,
+                font: 'inherit', cursor: 'pointer',
+              }}
+            >
+              <span className="min-w-0 flex items-center gap-2.5">
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 34, height: 34, borderRadius: 999, flex: 'none',
+                  background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
+                }}>{a?.iniciales}</span>
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                  <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
+                </span>
+              </span>
+              <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>{a?.detalle ?? '—'}</span>
+              <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
+              <span className="cf-fig text-[14px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
+              <span className="cf-fig text-[13px] text-right" style={{ color: color(cumple) }}>{cumple?.valor ?? '—'}</span>
+              <span className="cf-fig text-[13px] text-right" style={{ color: 'var(--cf-ink-2)' }}>{pagado?.valor ?? '—'}</span>
+              <span className="text-[13px] text-right truncate" style={{ color: color(prox) }}>{prox?.valor ?? '—'}</span>
+            </button>
+          )
+        }
+
+        if (vista === 'tabla' && !modoAsignar) {
+          return filtrados.length > 0 ? (
+            <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+              <div className="grid items-center px-4 py-2.5"
+                style={{
+                  gridTemplateColumns: '1.7fr 1fr 130px 130px 90px 90px 130px', gap: 12,
+                  background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)',
+                  paddingLeft: 19,
+                }}>
+                {['Cliente', 'Préstamos', 'Deuda', 'Atraso', 'Cumple', 'Pagado', 'Próx. cobro'].map((h, i) => (
+                  <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 ? 'text-right' : ''}`}
+                    style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
+                ))}
+              </div>
+              {filtrados.map((c, i) => filaTabla(c, adaptados[i], i))}
+            </div>
+          ) : null
+        }
+
         return filtrados.length > 0 ? (
           <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
             {filtrados.map((c, i) => (
