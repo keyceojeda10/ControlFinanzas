@@ -43,6 +43,34 @@ export default function DashboardError({ error, reset }) {
     else reset?.()
   }, [sinRed, reset])
 
+  // ── QUE EL FALLO DEJE RASTRO ──
+  //
+  // Hasta ahora, cuando esta pantalla aparecía en el móvil de un cliente no
+  // quedaba constancia en NINGUNA parte: PM2 solo ve el servidor, y no hay
+  // Sentry ni nada parecido. Por eso «Cannot access 'O'» lleva semanas
+  // rompiendo pantallas sin que se pueda arreglar — sin archivo ni línea solo
+  // se puede adivinar.
+  //
+  // Se manda una vez por fallo, y sin red no se intenta: en la calle el
+  // cobrador no tiene señal y lo último que hace falta es una petición más.
+  useEffect(() => {
+    if (sinRed || !error) return
+    try {
+      fetch('/api/errores-cliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          mensaje: error.message,
+          stack: error.stack,
+          digest: error.digest,
+          ruta: window.location.pathname + window.location.search,
+          navegador: navigator.userAgent,
+        }),
+      }).catch(() => {})
+    } catch {}
+  }, [error, sinRed])
+
   // Sin red: una sola recarga automática para que el service worker sirva el
   // HTML cacheado y la pantalla pueda leer de IndexedDB. La guarda de sesión
   // evita el bucle.
