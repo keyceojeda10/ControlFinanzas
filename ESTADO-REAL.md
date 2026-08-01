@@ -251,3 +251,45 @@ enseñar una cifra de plata equivocada en la ficha de una persona.
 Cuando se haga: sale de la misma cascada que `calcularCapitalRestante`, y se
 prueba contra un cliente con pagos de los tres tipos (completo, parcial y abono
 a capital) antes de enseñarlo.
+
+---
+
+## T16-01 · crear préstamo sin wizard — medido, no empezado
+
+La lámina lo dice literal: **«sin wizard: los tres pasos caben en una pantalla y
+el panel derecho se recalcula al escribir. Subir el interés de 20 a 25 mueve la
+cuota, la ganancia y las ocho filas mientras se decide — que es exactamente lo
+que el dueño hace hoy con una calculadora al lado.»**
+
+**No se empezó a propósito.** Es la pantalla que crea préstamos y lleva la
+aritmética del dinero dentro; a medio hacer es peligrosa, no fea.
+
+### Lo que ya está y no hay que construir
+
+| Qué | Dónde |
+|---|---|
+| El cálculo en vivo | `prestamos/nuevo/page.jsx:431` — `const calculo = useMemo(...)` |
+| El estado del wizard | línea 245 — `const [paso, setPaso] = useState(0)` |
+| La validación por paso | línea 519 — `if (paso === 0) …` |
+
+Son 1.879 líneas y tres pasos: 0 cliente · 1 condiciones · 2 revisar.
+
+### El camino más corto, y por qué
+
+**No disolver el wizard.** En móvil los tres pasos son correctos: en 390px no
+caben, y el paso a paso es lo que evita el formulario infinito. La lámina es de
+1440.
+
+En `lg`: los tres bloques apilados en la columna izquierda —sin la fila de
+puntos ni los botones de «siguiente»— y el resumen del paso 2 sacado a una
+**columna derecha pegajosa** que ya se recalcula sola, porque `calculo` es un
+`useMemo` de los campos. La barra de acción se queda con «Revisar y crear».
+
+Dos cosas que hay que respetar:
+
+1. **La validación es POR PASO.** Con todo visible hay que juntarla en una sola
+   comprobación antes de crear, o se podrá enviar con el paso 1 a medias.
+2. **`cuotaInsuficiente`** (línea 509) ya avisa cuando la cuota no cubre el
+   interés. Ese aviso tiene que quedar EN EL PANEL DERECHO, no al final: es la
+   señal de que el préstamo se va a alargar solo, y el dueño la tiene que ver
+   mientras mueve la tasa, no después de confirmar.
