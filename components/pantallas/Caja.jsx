@@ -64,8 +64,9 @@ function Rotulo({ children, filete = false, valor, tonoValor }) {
 
 /* ── Extracto ──────────────────────────────────────────────────────────── */
 
-function LineaExtracto({ concepto, valor, signo }) {
-  const color = signo === '+' ? 'var(--cf-green-dark)'
+function LineaExtracto({ concepto, valor, signo, sub = false }) {
+  const color = sub ? 'var(--cf-ink-3)'
+              : signo === '+' ? 'var(--cf-green-dark)'
               : signo === '−' ? 'var(--cf-red-dark)'
               : 'var(--cf-ink-3)'
   return (
@@ -74,10 +75,15 @@ function LineaExtracto({ concepto, valor, signo }) {
     // en cinco cosas distintas. La unica raya es la de ANTES DEL SALDO, y esa si
     // significa algo: cierra la suma.
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flex: 'none' }}>
-      <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: 'var(--cf-ink-2)' }}>
+      <span style={{
+        flex: 1, minWidth: 0,
+        fontSize: sub ? 13 : 14,
+        paddingLeft: sub ? 14 : 0,
+        color: sub ? 'var(--cf-ink-3)' : 'var(--cf-ink-2)',
+      }}>
         {concepto}
       </span>
-      <span className="cf-fig" style={{ fontSize: 16, color, flex: 'none' }}>
+      <span className="cf-fig" style={{ fontSize: sub ? 13 : 16, color, flex: 'none' }}>
         {signo && `${signo} `}{valor}
       </span>
     </div>
@@ -87,7 +93,8 @@ function LineaExtracto({ concepto, valor, signo }) {
 export function CajaDia({
   fecha,
   rangos = [], rangoActivo, onRango,
-  baseInicial, cobrado, prestado, gastos, ajustes, saldo,
+  baseInicial, cobrado, cobradoDigital, prestado, gastos, ajustes, saldo,
+  descuadre = null, onVerDescuadre,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
   // `height: 100%` es para cuando la pantalla ES esta —el area de dentro
@@ -180,10 +187,55 @@ export function CajaDia({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
             <LineaExtracto concepto="Base inicial" valor={baseInicial} />
             <LineaExtracto concepto="Cobrado hoy"  valor={cobrado}  signo="+" />
+            {/* En qué se cobró. Una caja física no contiene Nequi, y el 12% del
+                recaudo de los negocios grandes entra por transferencia: sin
+                esta línea el fajo de la noche no cuadra nunca y el cobrador
+                carga con un faltante que no es suyo. Solo se pinta si de verdad
+                hubo transferencias. */}
+            {cobradoDigital ? (
+              <LineaExtracto sub concepto="de eso, por transferencia" valor={cobradoDigital} />
+            ) : null}
             <LineaExtracto concepto="Prestado hoy" valor={prestado} signo="−" />
             <LineaExtracto concepto="Gastos"       valor={gastos}   signo="−" />
-            <LineaExtracto concepto="Ajustes"      valor={ajustes} />
+            {/* «Ajustes» ERA EL TAPÓN.
+                Se calculaba como exactamente lo que faltaba para que la banda
+                cuadrara, así que cuadraba siempre y cualquier error de las
+                otras cuatro líneas desaparecía aquí dentro sin dejar rastro.
+                Ahora esta línea son las correcciones REALES del día —las que
+                alguien asentó, con su motivo— y solo aparece si las hubo. */}
+            {ajustes ? <LineaExtracto concepto="Correcciones" valor={ajustes} /> : null}
           </div>
+
+          {/* ── LO QUE NO CUADRA, DICHO ────────────────────────────────────
+              Un cero es una afirmación; un residuo mudo es una mentira. Si el
+              libro no coincide consigo mismo, la pantalla lo dice y ofrece
+              bajar a los movimientos del día. Medido en el cliente de 10
+              cobradores: 53 de 57 días con descuadre, y la banda vieja decía
+              «cuadra» todos. */}
+          {descuadre ? (
+            <button
+              type="button"
+              onClick={onVerDescuadre}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                marginTop: 14, padding: '12px 14px', borderRadius: 12,
+                border: '1px solid color-mix(in srgb, var(--cf-red) 30%, transparent)',
+                background: 'color-mix(in srgb, var(--cf-red) 8%, transparent)',
+                textAlign: 'left', cursor: onVerDescuadre ? 'pointer' : 'default', flex: 'none',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flex: 'none' }}>
+                <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                  stroke="var(--cf-red-dark)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 13, lineHeight: 1.4, color: 'var(--cf-red-dark)' }}>
+                {descuadre.texto}
+              </span>
+              {onVerDescuadre && (
+                <span className="cf-fig" style={{ fontSize: 13, color: 'var(--cf-red-dark)', flex: 'none' }}>Ver ›</span>
+              )}
+            </button>
+          ) : null}
 
           {/* EL SALDO VA SOBRE BLANCO, cerrando el extracto. NO en un bloque
               oscuro: ese era una invencion mia.

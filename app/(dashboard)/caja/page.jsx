@@ -493,7 +493,28 @@ export default function CajaPage() {
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
-  const ajustesDelDia = Math.round(stats.ajustesOperativosDia ?? stats.ajustesManualDia ?? 0)
+  // ── LO QUE DE VERDAD SE CORRIGIO, Y LO QUE NO CUADRA ──
+  //
+  // `ajustesOperativosDia` era el TAPON: se calculaba como exactamente lo que
+  // faltaba para que la banda cerrara, asi que cerraba siempre. Ahora la linea
+  // son las correcciones REALES del libro —las que alguien asento, con motivo—
+  // y el descuadre se dice aparte en vez de esconderse dentro.
+  const conc = stats.conciliacion || null
+  const ajustesDelDia = conc
+    ? Math.round(conc.libro.ajustes || 0)
+    : Math.round(stats.ajustesManualDia ?? 0)
+
+  const descuadre = (() => {
+    if (!conc) return null
+    const d = conc.diferencias || {}
+    const partes = []
+    if (d.recaudo) partes.push(`${formatMoney(Math.abs(d.recaudo))} ${d.recaudo > 0 ? 'asentados de mas' : 'cobrados que el libro no asento'}`)
+    if (d.gastos) partes.push(`${formatMoney(Math.abs(d.gastos))} de gastos que no cuadran`)
+    if (d.desembolsos) partes.push(`${formatMoney(Math.abs(d.desembolsos))} de prestamos que no cuadran`)
+    if (d.sinExplicar) partes.push(`${formatMoney(Math.abs(d.sinExplicar))} sin explicacion`)
+    if (!partes.length) return null
+    return { texto: `Hoy la cuenta no cierra: ${partes.join(' · ')}.`, diferencias: d }
+  })()
   const segurosDia = stats.segurosCobradosDia || { monto: 0, cantidad: 0 }
   const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
@@ -1220,6 +1241,8 @@ export default function CajaPage() {
         fecha={fechaLarga}
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
+        cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
+        descuadre={descuadre}
         prestado={formatMoney(prestadoHoy)}
         gastos={formatMoney(gastosHoy)}
         ajustes={formatMoney(ajustesDelDia)}
