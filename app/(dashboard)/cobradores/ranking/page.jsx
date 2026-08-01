@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 const MEDALS = {
   1: { color: 'var(--cf-gold)', label: '1°' },
@@ -154,7 +155,7 @@ function RankingCard({ cobrador }) {
             <MetricItem label="Días trabajados" value={m.diasTrabajados ?? 0} />
             <MetricItem label="Clientes activos" value={m.clientesActivos ?? 0} />
             <MetricItem
-              label="Clientes en mora"
+              label={rotulo('clientesEnMora')}
               value={m.clientesMora ?? 0}
               sub={m.tasaMora != null ? `${m.tasaMora.toFixed(1)}%` : undefined}
             />

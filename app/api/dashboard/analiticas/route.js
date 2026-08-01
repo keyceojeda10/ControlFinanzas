@@ -353,7 +353,16 @@ export async function GET() {
   //
   // El dato correcto ya se calculaba en tendenciaMensual (interesGanado, el
   // pedazo de interes de cada pago); solo que esta tarjeta y el ROI no lo usaban.
-  const interesGanadoMesActual = Number(interesMap[mesActualKey]?.interesGanado || 0)
+  // ⚠ Sale de `tendenciaMensual`, NO de `interesMap`.
+  //
+  // `interesMap` es el reparto proporcional en crudo, SIN la correccion de los
+  // prestamos con tabla de amortizacion. `tendenciaMensual` si la lleva.
+  //
+  // Usar el crudo aqui es lo que hacia que la pantalla enseñara dos ganancias
+  // del mismo mes, una encima de la otra: «Ganancia neta» (esta, sin corregir)
+  // y «Utilidad neta» (la de abajo, corregida). Las dos con rotulo propio, para
+  // que pareciera que eran cosas distintas.
+  const interesGanadoMesActual = tendenciaMensual.find(t => t.mes === mesActualKey)?.interesGanado || 0
   const gananciaNetaMes = calcularGananciaNeta({ interesCobrado: interesGanadoMesActual, gastos: gastosMesActual })
   const roiMensual = capitalEnCalle > 0 ? (gananciaNetaMes / capitalEnCalle * 100) : 0
 
@@ -452,7 +461,10 @@ export async function GET() {
     rentabilidad: {
       interesGanadoMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.interesGanado || 0,
       capitalRecuperadoMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0,
-      utilidadMes: tendenciaMensual.find(t => t.mes === mesActualKey)?.utilidad || 0,
+      // La MISMA cifra que `resumen.gananciaNetaMes`, escrita asi para que se
+      // vea que lo es. Eran dos numeros distintos con dos rotulos distintos en
+      // la misma pantalla; ahora son uno con un rotulo, el del diccionario.
+      utilidadMes: gananciaNetaMes,
       rotacionCapital: capitalEnCalle > 0
         ? Math.round(((tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0) / capitalEnCalle) * 1000) / 10
         : 0,

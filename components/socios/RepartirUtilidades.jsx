@@ -16,6 +16,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { soloDecimal } from '@/lib/i18n'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 export default function RepartirUtilidades({ open, onClose, onListo }) {
   const { formatMoney } = useCountry()
@@ -108,7 +109,7 @@ export default function RepartirUtilidades({ open, onClose, onListo }) {
                   <span className="font-mono-display" style={{ color: 'var(--cf-red-dark)' }}>−{formatMoney(datos.sugerido.gastosMes)}</span>
                 </div>
                 <div className="flex justify-between pt-1 font-semibold" style={{ borderTop: '1px solid var(--cf-border)' }}>
-                  <span>Utilidad neta</span>
+                  <span>{rotulo('gananciaMes')}</span>
                   <span className="font-mono-display" style={{ color: datos.sugerido.utilidadNeta >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
                     {formatMoney(datos.sugerido.utilidadNeta)}
                   </span>

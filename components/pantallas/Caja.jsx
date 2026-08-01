@@ -20,6 +20,7 @@
 //     línea con "4 cobradores sin cobros hoy".
 
 import { Tarjeta, BarraAccion, BotonPrimario, BotonSecundario, Chip, Pastilla } from '@/components/cf/primitivos'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 // ⚠️ CAJA ES PANTALLA DE NAVEGACIÓN: lleva pastilla. Y `02-ARMAZON.md` §E dice
 // que la barra de acción anclada ocupa el sitio de la pastilla SOLO CUANDO LA
@@ -803,7 +804,7 @@ export function TuDinero({
           )}
           {gastosDelMes && (
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-              <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Gastos del mes</span>
+              <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>{rotulo('gastosMes')}</span>
               <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: 'var(--cf-red-dark)', flex: 'none' }}>
                 − {gastosDelMes}
               </span>

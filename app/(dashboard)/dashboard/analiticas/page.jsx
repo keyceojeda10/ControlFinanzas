@@ -5,6 +5,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[10px] bg-[var(--cf-fill)] ${className}`} />
@@ -196,9 +197,9 @@ export default function AnaliticasPage() {
             </p>
             <div className="grid grid-cols-3 gap-4 mt-4">
               {[
-                ['Ganancia neta', resumen.gananciaNetaMes, true],
+                [rotulo('gananciaMes'), resumen.gananciaNetaMes, true],
                 ['Recaudado', resumen.recaudadoMes, false],
-                ['Capital en la calle', resumen.capitalEnCalle, false],
+                [rotulo('capitalEnCalle'), resumen.capitalEnCalle, false],
               ].map(([rotulo, valor, verde]) => (
                 <div key={rotulo}>
                   <p className="text-[9px] font-bold uppercase tracking-[.09em]" style={{ color: '#8A8E98' }}>{rotulo}</p>
@@ -263,7 +264,7 @@ export default function AnaliticasPage() {
                   </div>
                 )}
                 <div className="mt-2 pt-2 border-t border-[var(--cf-border)] flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-[var(--cf-ink-2)]">Utilidad neta</span>
+                  <span className="text-[11px] font-semibold text-[var(--cf-ink-2)]">{rotulo('gananciaMes')}</span>
                   <span className={`text-[15px] font-mono font-bold ${rentabilidad.utilidadMes >= 0 ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                     {fmtShort(rentabilidad.utilidadMes)}
                   </span>

@@ -38,6 +38,7 @@ import RutaEscritorio                from '@/components/pantallas/RutaEscritorio
 import { Recibo }                    from '@/components/pantallas/Recibo'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -1686,7 +1687,7 @@ export default function RutaDetallePage({ params }) {
           { texto: 'Pendiente por cobrar', valor: formatMoney(ruta.carteraTotal ?? 0) },
           { texto: 'Prestado (capital)', valor: formatMoney(ruta.capitalPendiente ?? 0) },
           { texto: 'Atraso acumulado', valor: formatMoney((ruta.clientes ?? []).reduce((n, c) => n + (c.montoParaPonerseAlDia ?? 0), 0)), tono: 'mora' },
-          { texto: 'Clientes en mora', valor: `${ruta.enMora ?? 0} de ${ruta.clientes?.length ?? 0}`, tono: (ruta.enMora ?? 0) > 0 ? 'mora' : undefined },
+          { texto: rotulo('clientesEnMora'), valor: `${ruta.enMora ?? 0} de ${ruta.clientes?.length ?? 0}`, tono: (ruta.enMora ?? 0) > 0 ? 'mora' : undefined },
         ]}
         cierreTexto={ruta.cierre
           ? 'El cierre de hoy ya está registrado.'
@@ -2573,7 +2574,7 @@ export default function RutaDetallePage({ params }) {
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Clientes en mora</p>
+                      <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{rotulo('clientesEnMora')}</p>
                       <p className="text-[14px] font-bold font-mono-display" style={{ color: ruta.enMora > 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
                         {ruta.enMora}
                       </p>

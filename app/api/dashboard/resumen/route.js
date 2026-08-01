@@ -204,9 +204,15 @@ export async function GET() {
     }),
 
     // Gastos del mes. Solo para owner/superadmin.
+    //
+    // Solo los APROBADOS. Sin este filtro se sumaban tambien los RECHAZADOS
+    // ($247.000 en produccion) y los pendientes ($49.000): plata que no salio,
+    // bajando la ganancia. Analiticas, capital y «mas» ya filtraban asi, con lo
+    // que «gastos del mes» daba dos cifras segun la pantalla.
     esCobrador ? Promise.resolve(null) : prisma.gastoMenor.aggregate({
       where: {
         organizationId: orgId,
+        estado: 'aprobado',
         fecha: { gte: inicioMes, lte: finMes },
       },
       _sum: { monto: true },
@@ -266,9 +272,14 @@ export async function GET() {
     }),
 
     // Gastos de hoy. Solo owner.
+    //
+    // Aqui SI cuenta el pendiente, y es a proposito: es la caja del dia y el
+    // cobrador ya saco esa plata de su bolsillo aunque el dueño no la haya
+    // revisado. El rechazado no cuenta en ningun sitio: nunca salio.
     esCobrador ? Promise.resolve(null) : prisma.gastoMenor.aggregate({
       where: {
         organizationId: orgId,
+        estado: { in: ['pendiente', 'aprobado'] },
         fecha: { gte: inicioDiaUTC, lte: finDiaUTC },
       },
       _sum: { monto: true },

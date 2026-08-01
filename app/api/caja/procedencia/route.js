@@ -17,7 +17,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { explicar } from '@/lib/dinero/procedencia'
+import { explicar } from '@/lib/dinero/definiciones'
 import { afectaCaja, esIngreso } from '@/lib/dinero/conciliacion'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 

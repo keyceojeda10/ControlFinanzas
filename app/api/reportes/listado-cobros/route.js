@@ -6,6 +6,7 @@ import { calcularSaldoPendiente, calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import PDFDocument          from 'pdfkit'
 import { PassThrough }      from 'stream'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -199,7 +200,7 @@ export async function GET(req) {
   const cards = [
     { label: 'Cuota diaria total', value: fmt(totalCuotas), color: COLOR_GREEN },
     { label: 'Saldo pendiente', value: fmt(totalSaldos), color: COLOR_INK },
-    { label: 'Clientes en mora', value: String(clientesConMora), color: clientesConMora > 0 ? COLOR_RED : COLOR_GREEN },
+    { label: rotulo('clientesEnMora'), value: String(clientesConMora), color: clientesConMora > 0 ? COLOR_RED : COLOR_GREEN },
   ]
 
   cards.forEach((c, i) => {

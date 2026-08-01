@@ -19,14 +19,24 @@ function generarTip(data) {
     }
   }
 
-  // Tip de recaudo vs meta
-  if (cobros?.hoy > 0 && prestamos?.cuotaDiariaTotal > 0) {
-    const pct = Math.round((cobros.hoy / prestamos.cuotaDiariaTotal) * 100)
+  // Tip de recaudo vs meta.
+  //
+  // ⚠ LA META ES `esperadoHoy`, NO `cuotaDiariaTotal`.
+  //
+  // `cuotaDiariaTotal` es la suma de las cuotas de TODA la cartera sin mirar a
+  // quien le toca hoy — la propia pantalla la rotula «es un techo, no lo que
+  // toca cobrar hoy». Usarla aqui hacia que el panel dijera 48% y este consejo,
+  // tres centimetros mas abajo, dijera 9% sobre el mismo dia. En una cartera
+  // semanal el techo es siete veces la meta real.
+  const metaHoy = prestamos?.esperadoHoy ?? 0
+  if (cobros?.hoy > 0 && metaHoy > 0) {
+    const pct = Math.round((cobros.hoy / metaHoy) * 100)
     if (pct >= 100) {
-      return `Excelente día: ya alcanzaste el ${pct}% de tu meta diaria. ${cobros.cantidadHoy} pagos registrados.`
+      return `Excelente día: ya alcanzaste el ${pct}% de lo que tocaba cobrar hoy. ${cobros.cantidadHoy} pagos registrados.`
     }
     if (pct < 50 && new Date().getHours() > 14) {
-      return `Llevas ${pct}% de tu meta diaria — quedan ${prestamos.cuotaDiariaTotal - cobros.hoy > 0 ? `$${Math.round(prestamos.cuotaDiariaTotal - cobros.hoy).toLocaleString('es-CO')}` : ''} por cobrar hoy.`
+      const falta = metaHoy - cobros.hoy
+      return `Llevas ${pct}% de lo que tocaba cobrar hoy${falta > 0 ? ` — faltan $${Math.round(falta).toLocaleString('es-CO')}` : ''}.`
     }
   }
 

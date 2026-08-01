@@ -592,7 +592,7 @@ export async function GET(request, { params }) {
   // no da y no hay forma de saber por que — que es justo lo que pasaba con las
   // cinco cifras sueltas en cajitas de la version anterior.
   //
-  // Cada `id` es el del catalogo de `lib/dinero/procedencia.js`, para que la
+  // Cada `id` es el del catalogo de `lib/dinero/definiciones.js`, para que la
   // pantalla haga el renglon tocable sin traducir nada.
   // La arma `lib/dinero/conciliacion.js`, no esta ruta. La sumaba aqui a mano y
   // la apertura —que se pinta SIN signo— se multiplicaba por cero y se borraba

@@ -14,6 +14,7 @@ import { Reportes }             from '@/components/pantallas/Reportes'
 import { ComoVaEntrando, SegurosCobrados, CobrosDelMes } from '@/components/pantallas/ReportesDetalle'
 import { aGrafica, aSeguros, aCobrosMes } from '@/lib/adaptadores/reportes-detalle'
 import { abreviarMillones }     from '@/lib/adaptadores/ruta'
+import { rotulo } from '@/lib/dinero/definiciones'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
@@ -494,7 +495,7 @@ export default function ReportesPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-[16px] px-4 py-3"
             style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Capital en la calle</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>{rotulo('capitalEnCalle')}</p>
             <p className="cf-fig text-[18px] mt-1" style={{ color: 'var(--cf-ink)' }}>{formatMoney(resumen.prestamos.capitalEnCalle)}</p>
             <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>tu plata, sin intereses</p>
           </div>
