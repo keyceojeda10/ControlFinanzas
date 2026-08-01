@@ -432,7 +432,8 @@ export async function GET(request, { params }) {
   //
   // Lo que entro por transferencia NO esta aqui: ya esta en la cuenta bancaria,
   // el cobrador no lo carga encima.
-  const efectivoEnMano = saldoAperturaTotal + cobradoEfectivo - prestadoDia - gastosDia
+  // En neto, por lo mismo que la cuenta: el absorbido nunca fue efectivo.
+  const efectivoEnMano = saldoAperturaTotal + (cobradoEfectivo - ajusteBruto) - (prestadoDia - ajusteBruto) - gastosDia
 
   // Con `capitalEsEfectivo` el negocio entiende que el cobrador carga TODA la
   // bolsa de la ruta, no solo lo del dia. Es otra pregunta y por eso es otra
@@ -596,11 +597,31 @@ export async function GET(request, { params }) {
   // La arma `lib/dinero/conciliacion.js`, no esta ruta. La sumaba aqui a mano y
   // la apertura —que se pinta SIN signo— se multiplicaba por cero y se borraba
   // de la cuenta: «726.000 + 161.000 = 161.000» en pantalla. Tres veces.
+  // ⚠ LA CUENTA VA SIEMPRE EN NETO, aunque el negocio mire en bruto.
+  //
+  // Con `renovacionesEnCobrado` el absorbido de las renovaciones se suma A LOS
+  // DOS LADOS —cobrado y prestado— porque asi piensa el prestamista de gota a
+  // gota: «recogi la cartulina y preste una nueva». Es una vista legitima y por
+  // eso existe.
+  //
+  // Pero horneada dentro de dos lineas etiquetadas «en efectivo» es una
+  // mentira que se cancela sola. Medido el 27 de julio: la cuenta decia «Prestó
+  // en efectivo $1.725.000» mientras el detalle, tres lineas mas abajo, decia
+  // «Efectivo que salio de su mano $1.356.000». Y «Cobró en efectivo
+  // $2.175.000» estaba inflado en los mismos $369.000. El total salia bien
+  // porque los dos errores se anulaban.
+  //
+  // Numeros que se cancelan entre si para que el total de, siendo cada uno
+  // falso, es exactamente lo que veniamos a quitar. La vista bruta ya vive —y
+  // bien explicada— en la tarjeta «Lo que prestó hoy».
+  const cobradoEfectivoNeto = cobradoEfectivo - ajusteBruto
+  const prestadoNeto = prestadoDia - ajusteBruto
+
   const { lineas: cuenta, suma: cuentaSuma } = cuentaDelDia({
     apertura: saldoAperturaTotal,
-    entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivo }],
+    entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto }],
     salidas: [
-      { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoDia },
+      { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoNeto },
       { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
     ],
   })
