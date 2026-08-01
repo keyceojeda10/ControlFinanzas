@@ -203,14 +203,22 @@ export default function AnaliticasPage() {
                 {fmt(Math.round(resumen.roiMensual * 10000))} neto
               </strong>{' '}al mes.
             </p>
-            <div className="grid grid-cols-3 gap-4 mt-4">
+            {/* La variable se llama `etiqueta`, no `rotulo`: con ese nombre
+                SOMBREABA la función `rotulo()` importada dentro del map. Aquí
+                funcionaba de casualidad —el array se construye fuera— pero es
+                una mina para el siguiente que añada una fila. */}
+            <div className="grid grid-cols-3 gap-4 mt-4 items-end">
               {[
                 [rotulo('gananciaMes'), resumen.gananciaNetaMes, true],
                 ['Recaudado', resumen.recaudadoMes, false],
                 [rotulo('capitalEnCalle'), resumen.capitalEnCalle, false],
-              ].map(([rotulo, valor, verde]) => (
-                <div key={rotulo}>
-                  <p className="text-[9px] font-bold uppercase tracking-[.09em]" style={{ color: '#8A8E98' }}>{rotulo}</p>
+              ].map(([etiqueta, valor, verde]) => (
+                <div key={etiqueta}>
+                  {/* Dos líneas reservadas: los rótulos salen del diccionario y
+                      pueden ser de cualquier largo. Sin esto, «Recaudado» ocupa
+                      una línea y su cifra queda a otra altura que las demás. */}
+                  <p className="text-[9px] font-bold uppercase tracking-[.09em]"
+                     style={{ color: '#8A8E98', minHeight: '2.2em' }}>{etiqueta}</p>
                   <p className="cf-fig text-[15px] lg:text-[19px] mt-1 truncate" style={{
                     color: verde && valor < 0 ? '#F0575C' : '#F3F3F6',
                   }}>
