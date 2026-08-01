@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useOffline } from '@/components/providers/OfflineProvider'
+import { useOffline } from '@/components/providers/offline-context'
 import ConflictResolverModal from '@/components/offline/ConflictResolverModal'
 
 // Drawer lateral que lista todos los items pendientes y fallidos con acciones.

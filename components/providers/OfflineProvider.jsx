@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, createContext, useContext, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
+import { OfflineContext, useOffline } from '@/components/providers/offline-context'
 import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
 import { ultimoEstadoConexion, hayInternetReal, invalidarCacheConexion } from '@/lib/connectivity'
 import { setMutationCallback } from '@/lib/fetch-timeout'
 
-const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0, openSyncDrawer: () => {} })
-
-export function useOffline() {
-  return useContext(OfflineContext)
-}
+// El contexto vive aparte para no cerrar el ciclo con `SyncDrawer`, que tambien
+// lo necesita. Se reexporta `useOffline` porque media app lo importa desde aqui
+// y cambiar treinta ficheros para mover un hook es mas riesgo que valor.
+export { useOffline }
 
 const MUTATION_SYNC_DELAY  = 3000  // 3s after a mutation
 const MIN_AUTO_SYNC_GAP_MS = 60_000 // gap mínimo entre syncs completos (era 20s, subido a 60s)
