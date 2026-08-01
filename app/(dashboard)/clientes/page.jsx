@@ -189,6 +189,16 @@ export default function ClientesPage() {
   const [loading,  setLoading]    = useState(true)
   const [error,    setError]      = useState('')
   const [page,     setPage]       = useState(1)
+  // ── QUIEN SE LE PARECE (T23-00) ──
+  // La busqueda del servidor es exacta por trozos, asi que «marta quinter» no
+  // encuentra a «Martha Quintero»: sobra una hache y falta una o. Aqui se
+  // comparan las INICIALES DE CADA PALABRA y los primeros caracteres contra los
+  // clientes que ya estan cargados en memoria — no es una busqueda difusa de
+  // verdad, es lo suficiente para el error de tecleo, que es el caso real.
+  //
+  // Se hace en el cliente a proposito: sin pedirle nada mas al servidor y sin
+  // tocar el endpoint, que es lo que convertiria esto en una tanda entera.
+  const [ultimosCargados, setUltimosCargados] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [total,    setTotal]      = useState(0)
   const [grupos,   setGrupos]     = useState([])
@@ -234,6 +244,27 @@ export default function ClientesPage() {
     if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY) || 'lista'
     return 'lista'
   })
+
+  // Los tres mas parecidos a lo que se escribio. `null` si no hay ninguno
+  // razonable: tres sugerencias al azar son peor que ninguna.
+  const parecidos = (() => {
+    const q = (buscar ?? '').trim().toLowerCase()
+    if (q.length < 3 || clientes.length > 0) return []
+    const trozos = q.split(/\s+/).filter(Boolean)
+    return ultimosCargados
+      .map((c) => {
+        const nombre = (c.nombre ?? '').toLowerCase()
+        const palabras = nombre.split(/\s+/)
+        // Cuantos trozos de lo escrito arrancan alguna palabra del nombre.
+        const aciertos = trozos.filter((t) => palabras.some((w) =>
+          w.startsWith(t.slice(0, Math.max(3, t.length - 2))))).length
+        return { c, aciertos }
+      })
+      .filter((x) => x.aciertos > 0)
+      .sort((a, b) => b.aciertos - a.aciertos)
+      .slice(0, 3)
+      .map((x) => x.c)
+  })()
 
   const cambiarVista = (v) => {
     setVista(v)
@@ -392,6 +423,7 @@ export default function ClientesPage() {
       const data = await res.json()
       if (data.offline) throw new Error('offline')
       setClientes(data.clientes)
+      if (data.clientes?.length) setUltimosCargados(data.clientes)
       setTotal(data.total)
       setTotalPages(data.totalPages)
       // Cache for offline
@@ -952,9 +984,86 @@ export default function ClientesPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin resultados</p>
-              <p className="text-xs text-[var(--cf-ink-3)] mt-1">No se encontró ningún cliente con "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
+              {/* ── T23-00 · «BUSCAR AHI TAMBIEN» ──
+                  Decia «Sin resultados · No se encontro ningun cliente con X» y
+                  ofrecia limpiar la busqueda. Es un callejon: quien busca a
+                  alguien y no lo encuentra no quiere borrar lo que escribio,
+                  quiere saber DONDE MAS mirar.
+
+                  Tres salidas, en el orden en que sirven: quien se le parece,
+                  donde mas puede estar, y crearlo con ese nombre. */}
+              <p className="text-[19px] lg:text-[22px] font-semibold" style={{
+                fontFamily: 'var(--font-space-grotesk), system-ui',
+                letterSpacing: '-.02em', color: 'var(--cf-ink)', margin: 0,
+              }}>Ningún cliente se llama así</p>
+              {/* DONDE SE BUSCO, dicho. Sin esto no se sabe si la cedula cuenta,
+                  y se acaba probando la misma busqueda de cuatro formas. */}
+              <p className="text-[13px] mt-1.5" style={{ color: 'var(--cf-ink-3)', maxWidth: '46ch' }}>
+                Buscamos «{buscar}» en nombre, cédula, teléfono y dirección
+                {total > 0 ? ` de tus ${total} clientes` : ''}.
+              </p>
+
+              {parecidos.length > 0 && (
+                <div className="w-full max-w-xl mt-5 rounded-[14px] overflow-hidden text-left"
+                  style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[.09em] px-4 py-3"
+                    style={{ color: 'var(--cf-ink-3)', margin: 0 }}>¿Buscabas a alguno de estos?</p>
+                  {parecidos.map((c, i) => (
+                    <button key={c.id} type="button"
+                      onClick={() => { window.location.href = `/clientes/${c.id}` }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-left"
+                      style={{
+                        background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
+                        borderTop: i === 0 ? '1px solid var(--cf-hairline)' : '1px solid var(--cf-hairline)',
+                      }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 34, height: 34, borderRadius: 999, flex: 'none',
+                        background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
+                      }}>{(c.nombre ?? '?').split(' ').slice(0, 2).map((x) => x[0]).join('')}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</span>
+                        <span className="block text-[11.5px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
+                          {[c.cedula ? `CC ${c.cedula}` : null, c.ruta?.nombre].filter(Boolean).join(' · ')}
+                        </span>
+                      </span>
+                      <span className="text-[13px] font-bold shrink-0" style={{ color: 'var(--cf-gold-dark)' }}>Abrir</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="w-full max-w-xl grid gap-3 mt-3 sm:grid-cols-2 text-left">
+                <div className="rounded-[14px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                  <p className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)', margin: 0 }}>Puede estar en otro estado</p>
+                  <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                    Esta búsqueda no mira los cancelados ni los inactivos.
+                  </p>
+                  <button type="button" onClick={() => setEstado('')}
+                    className="mt-3 h-10 px-4 rounded-[11px] text-[13.5px] font-semibold"
+                    style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}>
+                    Buscar ahí también
+                  </button>
+                </div>
+
+                {puedeCrearClientes && (
+                  <div className="rounded-[14px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                    <p className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)', margin: 0 }}>O créalo ahora</p>
+                    <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                      Empezamos con el nombre que escribiste.
+                    </p>
+                    {/* EL NOMBRE VIAJA. Sin esto hay que volver a teclearlo en el
+                        formulario, que es justo lo que se acaba de hacer. */}
+                    <a href={`/clientes/nuevo?nombre=${encodeURIComponent(buscar)}`}
+                      className="inline-flex items-center mt-3 h-10 px-4 rounded-[11px] text-[13.5px] font-bold"
+                      style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+                      Crear «{buscar}»
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={() => setBuscar('')} className="mt-4 text-xs" style={{ color: 'var(--cf-ink-3)' }}>
                 Limpiar búsqueda
               </button>
             </>
