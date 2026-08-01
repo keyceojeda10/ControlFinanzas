@@ -94,6 +94,18 @@ export default function CajaPage() {
   const [guardandoAjuste, setGuardandoAjuste] = useState(false)
   const [errorAjuste, setErrorAjuste] = useState('')
   const [cobradorExpandido, setCobradorExpandido] = useState({})
+
+  // ⚠ ARRIBA DEL TODO, CON LOS DEMAS HOOKS.
+  //
+  // Los puse mas abajo, junto al codigo que los usa, que se lee mucho mejor. Y
+  // resulta que en la linea 470 hay un `if (loading) return`: en el primer
+  // render se saltaban y en el segundo se ejecutaban. React lo rechaza con el
+  // error #310 y la pantalla entera se cae. Compilaba perfecto y ninguna
+  // prueba lo vio; salio al ABRIR la caja.
+  //
+  // Que cifra se esta explicando ahora mismo. `null` = la hoja cerrada.
+  const router = useRouter()
+  const [cifraExplicada, setCifraExplicada] = useState(null)
   const [exitoAjuste, setExitoAjuste] = useState(false)
   const [gastosPendientes, setGastosPendientes] = useState(0)
   const [cajaTab, setCajaTab] = useState(tabParam === 'gastos' ? 'gastos' : 'cobros')
@@ -502,9 +514,6 @@ export default function CajaPage() {
   // son las correcciones REALES del libro —las que alguien asento, con motivo—
   // y el descuadre se dice aparte en vez de esconderse dentro.
   // Que cifra se esta explicando ahora mismo. `null` = la hoja cerrada.
-  const router = useRouter()
-  const [cifraExplicada, setCifraExplicada] = useState(null)
-
   const conc = stats.conciliacion || null
   const ajustesDelDia = conc
     ? Math.round(conc.libro.ajustes || 0)
