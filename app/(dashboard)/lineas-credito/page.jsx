@@ -27,6 +27,10 @@ export default function LineasCreditoPage() {
   const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const router = useRouter()
   const [lineas, setLineas] = useState([])
+  // Cuál se está viendo en el panel de la derecha. Sin valor cae a la primera,
+  // para que el 1440 nunca salga con media pantalla en blanco —que es justo lo
+  // que la lámina viene a arreglar.
+  const [seleccionada, setSeleccionada] = useState(null)
   const [buscar, setBuscar] = useState('')
   const [estado, setEstado] = useState('activa')
   const [loading, setLoading] = useState(true)
@@ -155,17 +159,133 @@ export default function LineasCreditoPage() {
           )}
         </div>
       ) : (
-        <StaggeredList className="space-y-3">
-          {lineas.map(linea => (
-            <LineaCreditoCard key={linea.id} linea={linea} />
-          ))}
-        </StaggeredList>
+        /* ── LISTA Y DETALLE EN LA MISMA PANTALLA (T32-02) ──
+           La lámina: «Hoy la lista dedica un 1440 entero a una sola tarjeta y
+           el resto es blanco; hay que hacer clic para ver algo. Con pocos
+           elementos lo correcto es lista y detalle en la misma pantalla.»
+           Comprobado con una línea real: era exactamente eso.
+
+           En móvil no cambia nada: la tarjeta sigue llevando a su ficha. */
+        <div className="lg:grid lg:gap-4 lg:items-start" style={{ gridTemplateColumns: 'minmax(0,1fr) 380px' }}>
+          <StaggeredList className="space-y-3">
+            {lineas.map(linea => (
+              <LineaCreditoCard
+                key={linea.id}
+                linea={linea}
+                seleccionada={linea.id === (seleccionada ?? lineas[0]?.id)}
+                onSeleccionar={() => setSeleccionada(linea.id)}
+              />
+            ))}
+          </StaggeredList>
+
+          <PanelLinea linea={lineas.find(l => l.id === (seleccionada ?? lineas[0]?.id))} />
+        </div>
       )}
     </div>
   )
 }
 
-function LineaCreditoCard({ linea }) {
+/* ── EL PANEL DE LA DERECHA ────────────────────────────────────────────────
+   Solo cifras YA CALCULADAS por `calcularSaldoLinea` en el servidor. Aquí no se
+   calcula interés ni proyección: una cifra de dinero inventada en el cliente es
+   la forma más fácil de que dos pantallas se contradigan.
+
+   El día de corte sube de tamaño porque la lámina lo llama el producto: «en un
+   cupo rotativo la fecha de corte es el producto y hoy está en gris de 12px». */
+function PanelLinea({ linea }) {
+  if (!linea) return null
+
+  const movimientos = [
+    ...(linea.desembolsos || []).map(d => ({
+      id: `d${d.id}`, fecha: d.createdAt, tipo: 'Le dio plata',
+      interes: null, capital: -Math.round(d.monto),
+    })),
+    ...(linea.pagosLinea || []).map(p => ({
+      id: `p${p.id}`, fecha: p.createdAt, tipo: 'Le pagó',
+      interes: Math.round(p.montoAInteres || 0), capital: Math.round(p.montoACapital || 0),
+    })),
+  ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+
+  return (
+    <aside className="hidden lg:block sticky top-4 rounded-[16px] p-4"
+      style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+      <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+        Corte
+      </p>
+      <p className="text-[19px] font-bold mt-0.5" style={{ color: 'var(--cf-ink)' }}>
+        Día {linea.diaCorte} de cada mes
+      </p>
+
+      <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid var(--cf-border)' }}>
+        {[
+          ['Debe hoy', linea.saldoTotal],
+          ['De eso, capital', linea.capitalUsado],
+          ['De eso, intereses', linea.interesesPendientes],
+          ['Le queda de cupo', linea.cupoDisponible],
+        ].map(([etiqueta, valor]) => (
+          <div key={etiqueta} className="flex items-center justify-between gap-3">
+            <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>{etiqueta}</span>
+            <span className="cf-fig text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+              {formatMoney(valor ?? 0)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Las dos columnas que la lámina pide: «cuánto fue a interés y cuánto a
+          capital», que es con lo que se discute un cobro. */}
+      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mt-4 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+        Movimientos
+      </p>
+      {movimientos.length === 0 ? (
+        <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Todavía no hay.</p>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="grid gap-2 text-[9.5px] font-extrabold uppercase tracking-[.06em]"
+            style={{ gridTemplateColumns: '1fr 68px 78px', color: 'var(--cf-ink-3)' }}>
+            <span>Qué pasó</span>
+            <span style={{ textAlign: 'right' }}>A interés</span>
+            <span style={{ textAlign: 'right' }}>A capital</span>
+          </div>
+          {movimientos.slice(0, 6).map(m => (
+            <div key={m.id} className="grid gap-2 items-baseline"
+              style={{ gridTemplateColumns: '1fr 68px 78px' }}>
+              <span className="text-[12px] truncate" style={{ color: 'var(--cf-ink)' }}>
+                {m.tipo}
+                <span className="text-[10px] ml-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                  {new Date(m.fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                </span>
+              </span>
+              <span className="cf-fig text-[12px]" style={{ textAlign: 'right', color: 'var(--cf-ink-3)' }}>
+                {m.interes === null ? '—' : formatMoney(m.interes)}
+              </span>
+              <span className="cf-fig text-[12px] font-semibold" style={{
+                textAlign: 'right',
+                color: m.capital < 0 ? 'var(--cf-ink-2)' : 'var(--cf-green-dark)',
+              }}>
+                {/* El signo DELANTE del símbolo. `formatMoney(-8000000)` da
+                    «$-8.000.000», que se lee mal y no es como lo pinta la caja.
+                    Se formatea el valor absoluto y el menos se pone aparte. */}
+                {m.capital < 0 ? '−' : ''}{formatMoney(Math.abs(m.capital))}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Link href={`/lineas-credito/${linea.id}`}
+        className="block text-center text-[12px] font-bold mt-4 rounded-[10px] py-2"
+        style={{
+          color: 'var(--cf-gold-dark)',
+          background: 'color-mix(in srgb, var(--cf-gold) 10%, transparent)',
+        }}>
+        Abrir la línea
+      </Link>
+    </aside>
+  )
+}
+
+function LineaCreditoCard({ linea, seleccionada, onSeleccionar }) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
   const porcentajeUsado = linea.cupoMaximo > 0
@@ -225,6 +345,18 @@ function LineaCreditoCard({ linea }) {
     <Card
       as={Link}
       href={`/lineas-credito/${linea.id}`}
+      // ── EN ESCRITORIO SELECCIONA, NO NAVEGA ──
+      // El detalle está AL LADO: irse a otra pantalla seria perder la lista que
+      // la lamina quiere tener a la vista. En movil no hay panel, asi que el
+      // enlace hace lo de siempre —y sigue siendo un <a> de verdad, con lo que
+      // «abrir en pestaña nueva» tambien funciona en los dos casos.
+      onClick={(e) => {
+        if (onSeleccionar && window.matchMedia('(min-width: 1024px)').matches) {
+          e.preventDefault()
+          onSeleccionar()
+        }
+      }}
+      style={seleccionada ? { outline: '2px solid var(--cf-gold)', outlineOffset: 2 } : undefined}
       padding={false}
       className="block px-4 py-4 group relative overflow-hidden"
       style={{
