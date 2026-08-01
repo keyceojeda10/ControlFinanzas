@@ -5,28 +5,12 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
-import { tienePeriodoEsperadoHoy, tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
+import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
+import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
-
-// Cuota que de verdad toca cobrar en el periodo actual.
-//
-// En los modos con tabla de amortizacion (lineal, solo_interes, lineal_dinamico,
-// saldo) `cuotaDiaria` es la cuota pactada, que NO es lo que se cobra este
-// periodo: en el balloon, por ejemplo, casi todos los periodos son solo interes.
-// Por eso hay que leer la fila vigente de la tabla.
-//
-// Se usa en los dos calculos de "esperado" de este archivo: la meta global
-// (calcularEsperadoReal) y el esperado por cobrador. Estaba en uso en ambos sin
-// existir, lo que tumbaba /api/caja con "cuotaDelPeriodo is not defined" cada vez
-// que algun prestamo tenia cuota esperada hoy — que es justo cuando la pantalla
-// importa. Los cobradores sin cobros programados no lo notaban: el operador
-// ternario nunca llegaba a evaluarlo.
-const cuotaDelPeriodo = (p) => (
-  tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : (p.cuotaDiaria || 0)
-)
 
 const fmtFechaLocal = (d, country = 'co') => {
   const absOffset = Math.abs(getUtcOffset(country))
@@ -56,7 +40,7 @@ const diasAtrasDesdeHoy = (fechaObjetivo, country = 'co') => {
 // Calcula el total esperado real desde los préstamos activos de las rutas.
 // Respeta la jerarquía de días sin cobro cliente→ruta→org: si HOY es día sin cobro
 // para ese cliente, su cuota no se espera (el cobrador no tiene por qué cobrarla).
-async function calcularEsperadoReal(organizationId, cobradorId = null) {
+async function calcularEsperadoReal(organizationId, cobradorId = null, fecha = null) {
   // Se parte de los CLIENTES, no de las rutas.
   //
   // Antes esto arrancaba en prisma.ruta.findMany e iteraba ruta.clientes, asi
@@ -82,24 +66,12 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
         prestamos: {
           // El clavo no genera cuota esperada (es el lado negativo): se excluye de la meta.
           where: { estado: 'activo', esClavo: false },
-          select: {
-            cuotaDiaria: true,
-            frecuencia: true,
-            fechaInicio: true,
-            diasPlazo: true,
-            diaCobroSemana: true,
-            diaCobroMes: true,
-            diaCobroMes2: true,
-            // La cuota de un prestamo con tabla NO es cuotaDiaria: esa es la
-            // PRIMERA cuota. En Decreciente es la mas alta de todas y en Globo
-            // es solo el interes, asi que el mes del balloon quedaba enormemente
-            // subestimado. La ruta ya usaba la cuota real; la caja no.
-            modoInteres: true,
-            cuotasAmortizacion: {
-              orderBy: { numeroPeriodo: 'asc' },
-              select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true },
-            },
-          },
+          // El `select` sale del propio modulo. Cada uno de los cinco
+          // llamadores tenia el suyo escrito a mano, y es asi como empezaron a
+          // divergir: al que se le olvidaba `modoInteres` y
+          // `cuotasAmortizacion` caia a `cuotaDiaria`, que en Decreciente es
+          // la cuota MAS ALTA y en Globo es solo el interes.
+          select: SELECT_PRESTAMO,
         },
       },
     }),
@@ -116,18 +88,13 @@ async function calcularEsperadoReal(organizationId, cobradorId = null) {
     }),
   ])
 
-  // Meta del dia: solo cuenta cuotas de prestamos cuyo ciclo de cobro toca
-  // hoy (segun frecuencia + dia ancla). Antes sumaba TODAS las cuotas activas,
-  // lo que inflaba la meta con cuotas semanales/mensuales que no se cobraban hoy.
-  return clientes.reduce((total, c) => {
-    if (!c.prestamos.length) return total
-    const diasExcluidos = obtenerDiasSinCobro(c, c.ruta, org)
-    const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
-    return total + c.prestamos.reduce(
-      (b, p) => (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivos) ? b + cuotaDelPeriodo(p) : b),
-      0,
-    )
-  }, 0)
+  // Meta del dia: solo cuenta cuotas de prestamos cuyo ciclo de cobro toca esa
+  // fecha (segun frecuencia + dia ancla). La cuenta la hace `lib/dinero/esperado.js`,
+  // que es la MISMA que usan el cuadre, el cierre automatico y la ficha de ruta.
+  //
+  // `fecha` es nueva y no es un adorno: el cierre de caja admite hasta 7 dias
+  // atras, y hasta ahora guardaba el esperado de HOY para el dia que fuera.
+  return esperadoDeCartera({ clientes, org, festivos }, fecha ?? new Date()).esperado
 }
 
 // Calcula desembolsos realizados en el día para reflejar el saldo real de caja.
@@ -573,7 +540,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   const recogida = pagosDia.reduce((a, p) => a + p.montoPagado, 0)
 
   // Calcular esperado real desde las cuotas diarias de préstamos activos
-  const esperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId))
+  const esperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId, fechaStr))
 
   // Obtener gastos del día
   const whereGastosDia = {
@@ -883,22 +850,7 @@ export async function GET(request) {
               prestamos: {
                 // El clavo no aporta cuota esperada al cobrador (es el lado negativo).
                 where: { estado: 'activo', esClavo: false },
-                select: {
-                  cuotaDiaria: true,
-                  frecuencia: true,
-                  fechaInicio: true,
-                  diasPlazo: true,
-                  diaCobroSemana: true,
-                  diaCobroMes: true,
-                  diaCobroMes2: true,
-                  // Ver cuotaDelPeriodo: en los modos con tabla, cuotaDiaria es
-                  // solo la primera cuota, no la que toca cobrar hoy.
-                  modoInteres: true,
-                  cuotasAmortizacion: {
-                    orderBy: { numeroPeriodo: 'asc' },
-                    select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true },
-                  },
-                },
+                select: SELECT_PRESTAMO,
               },
             },
           },
@@ -925,19 +877,15 @@ export async function GET(request) {
       return acc
     }, {})
 
+    // La tarjeta de cada cobrador pregunta lo mismo que la banda de arriba, y
+    // hasta ahora lo calculaba por su cuenta partiendo de RUTAS — asi que un
+    // cliente sin ruta era invisible aqui y visible alla, y las dos cifras de
+    // la misma pantalla no cuadraban. Ahora las dos preguntan al mismo sitio.
     const esperadoPorCobrador = rutasActivas.reduce((acc, ruta) => {
       if (!ruta.cobradorId) return acc
-      const esperadoRuta = ruta.clientes.reduce((totalCliente, cliente) => {
-        const diasExcluidos = obtenerDiasSinCobro(cliente, ruta, orgCfg)
-        const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivosOrg)
-        return totalCliente + cliente.prestamos.reduce((totalPrestamo, p) => {
-          return tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, festivosOrg)
-            ? totalPrestamo + cuotaDelPeriodo(p)
-            : totalPrestamo
-        }, 0)
-      }, 0)
-
-      acc[ruta.cobradorId] = Math.round((acc[ruta.cobradorId] || 0) + esperadoRuta)
+      const clientes = ruta.clientes.map((c) => ({ ...c, ruta: { diasSinCobro: ruta.diasSinCobro } }))
+      const { esperado } = esperadoDeCartera({ clientes, org: orgCfg, festivos: festivosOrg }, fechaBase)
+      acc[ruta.cobradorId] = Math.round((acc[ruta.cobradorId] || 0) + esperado)
       return acc
     }, {})
 
@@ -1228,7 +1176,13 @@ export async function POST(request) {
     return Response.json({ error: 'El total recogido no puede ser negativo' }, { status: 400 })
   }
 
-  const totalEsperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId))
+  // El esperado del DIA QUE SE CIERRA, no el de hoy.
+  //
+  // El cierre admite hasta 7 dias atras (`maxDiasAtrasPermitidos` arriba), y
+  // hasta ahora guardaba la meta de hoy para el dia que fuera: cerrar el sabado
+  // la caja del lunes escribia el esperado del sabado. La diferencia que
+  // quedaba grabada no comparaba nada.
+  const totalEsperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId, fechaColombia))
 
   // Obtener gastos del día
   const gastosDia = await prisma.gastoMenor.aggregate({

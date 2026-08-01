@@ -1,33 +1,53 @@
 // app/api/caja/cierre-auto/route.js - Cierre automático de caja (cron)
 
 import { prisma } from '@/lib/prisma'
-import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
-function esDiaSinCobro(fecha, diasExcluidos, offsetHoras = -5) {
-  if (!diasExcluidos || diasExcluidos.length === 0) return false
-  const col = new Date(fecha.getTime() - Math.abs(offsetHoras) * 60 * 60 * 1000)
-  return diasExcluidos.includes(col.getUTCDay())
-}
-
-// Calcula el total esperado del día para un cobrador. Respeta diasSinCobro
-// (cliente > ruta > org) para la fecha del cierre, no la fecha actual.
+/**
+ * El esperado del día del cobrador, para la FECHA que se cierra.
+ *
+ * ── QUE HABIA AQUI ────────────────────────────────────────────────────────
+ *
+ * Una sexta version propia de «cuanto tocaba cobrar», con cinco defectos que
+ * se sumaban, y este cron es el que crea la mayoria de los cierres: de los
+ * 1.130 con `totalEsperado = 0` de la plataforma, 689 salieron de aqui.
+ *
+ *   · `findFirst` de UNA ruta — un cobrador con dos rutas perdia la segunda,
+ *     y si no tenia ninguna activa devolvia 0 y se acabo (197 filas asi).
+ *   · Sumaba TODAS las cuotas activas sin preguntar si el ciclo tocaba ese
+ *     dia. En una cartera semanal eso infla la meta por siete.
+ *   · `estado: 'activo'` sin `esClavo: false`: contaba como meta lo que ya se
+ *     dio por perdido.
+ *   · `cuotaDiaria` en vez de la cuota del periodo — en Decreciente esa es la
+ *     mas alta de todas y en Globo es solo el interes.
+ *   · Ignoraba los festivos, que el resto de la app si descuenta.
+ *
+ * Ahora pregunta a `lib/dinero/esperado.js`, que es la misma respuesta que dan
+ * la caja, el cuadre y la ficha de ruta. Y la fecha ya no es decorativa: este
+ * cron corre pasada la medianoche para cerrar el dia ANTERIOR, y hasta ahora
+ * recibia la respuesta de HOY porque la funcion del nucleo estaba cableada a
+ * `inicioDiaColombia()` sin argumento.
+ */
 async function calcularEsperado(organizationId, cobradorId, fechaCierre) {
-  const [ruta, org] = await Promise.all([
-    prisma.ruta.findFirst({
-      where: { organizationId, cobradorId, activo: true },
+  const [clientes, org, festivos] = await Promise.all([
+    // Se parte de CLIENTES y no de rutas. Aqui el filtro por ruta es correcto
+    // —un cliente sin ruta no es de ningun cobrador— pero asi no se pierde al
+    // cobrador que tiene mas de una.
+    prisma.cliente.findMany({
+      where: {
+        organizationId,
+        estado: { notIn: ['eliminado'] },
+        ruta: { cobradorId, activo: true },
+      },
       select: {
         diasSinCobro: true,
-        clientes: {
-          select: {
-            diasSinCobro: true,
-            prestamos: {
-              where: { estado: 'activo' },
-              select: { cuotaDiaria: true },
-            },
-          },
+        ruta: { select: { diasSinCobro: true } },
+        prestamos: {
+          where: { estado: 'activo', esClavo: false },
+          select: SELECT_PRESTAMO,
         },
       },
     }),
@@ -35,14 +55,10 @@ async function calcularEsperado(organizationId, cobradorId, fechaCierre) {
       where: { id: organizationId },
       select: { diasSinCobro: true },
     }),
+    prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
   ])
 
-  if (!ruta) return 0
-  return ruta.clientes.reduce((total, c) => {
-    const dias = obtenerDiasSinCobro(c, ruta, org)
-    if (esDiaSinCobro(fechaCierre, dias)) return total
-    return total + c.prestamos.reduce((a, p) => a + p.cuotaDiaria, 0)
-  }, 0)
+  return esperadoDeCartera({ clientes, org, festivos }, fechaCierre).esperado
 }
 
 // Suma recaudo real del dia (excluye recargos/descuentos).

@@ -10,8 +10,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
-import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -34,37 +33,57 @@ async function recaudadoPorCobradorDia(organizationId, inicio, fin) {
   return map
 }
 
-// Esperado del día por cobrador (cuotas que tocaba cobrar hoy en sus rutas).
-async function esperadoPorCobradorDia(organizationId, country) {
-  const [rutas, org] = await Promise.all([
-    prisma.ruta.findMany({
-      where: { organizationId, activo: true },
+/**
+ * Esperado por cobrador PARA LA FECHA que se está cuadrando.
+ *
+ * ── QUE HABIA AQUI ────────────────────────────────────────────────────────
+ *
+ * Otra version propia de «cuanto tocaba cobrar»: partia de RUTAS (asi que el
+ * cobrador sin ruta activa desaparecia), pasaba `[]` de festivos —o sea que
+ * los ignoraba mientras el panel si los descuenta—, y usaba `cuotaDiaria` en
+ * vez de la cuota real del periodo.
+ *
+ * Y sobre todo: preguntaba por HOY aunque el cuadre acepta cualquier fecha.
+ * El admin que cuadra el lunes la caja del sabado recibia el esperado del
+ * lunes.
+ */
+async function esperadoPorCobradorDia(organizationId, fecha) {
+  const [cobradores, org, festivos] = await Promise.all([
+    prisma.user.findMany({
+      where: { organizationId, rol: 'cobrador', activo: true },
       select: {
-        cobradorId: true,
-        diasSinCobro: true,
-        clientes: {
+        id: true,
+        rutas: {
+          where: { activo: true },
           select: {
             diasSinCobro: true,
-            prestamos: {
-              where: { estado: 'activo', esClavo: false },
-              select: { cuotaDiaria: true, frecuencia: true, fechaInicio: true, diasPlazo: true, diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true },
+            clientes: {
+              where: { estado: { notIn: ['eliminado'] } },
+              select: {
+                diasSinCobro: true,
+                prestamos: {
+                  where: { estado: 'activo', esClavo: false },
+                  select: SELECT_PRESTAMO,
+                },
+              },
             },
           },
         },
       },
     }),
     prisma.organization.findUnique({ where: { id: organizationId }, select: { diasSinCobro: true } }),
+    prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
   ])
 
   const map = {}
-  for (const ruta of rutas) {
-    if (!ruta.cobradorId) continue
-    const esperadoRuta = ruta.clientes.reduce((tot, c) => {
-      const diasExcluidos = obtenerDiasSinCobro(c, ruta, org)
-      const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo([])
-      return tot + c.prestamos.reduce((a, p) => a + (tienePeriodoEsperadoHoy(p, hoySinCobro, diasExcluidos, []) ? p.cuotaDiaria : 0), 0)
-    }, 0)
-    map[ruta.cobradorId] = Math.round((map[ruta.cobradorId] || 0) + esperadoRuta)
+  for (const c of cobradores) {
+    // Se aplanan las rutas del cobrador a una lista de clientes, cada uno con
+    // SU ruta: asi un cobrador con dos rutas suma las dos, que es lo que antes
+    // se perdia.
+    const clientes = c.rutas.flatMap((r) =>
+      r.clientes.map((cl) => ({ ...cl, ruta: { diasSinCobro: r.diasSinCobro } })),
+    )
+    map[c.id] = esperadoDeCartera({ clientes, org, festivos }, fecha).esperado
   }
   return map
 }
@@ -93,7 +112,7 @@ export async function GET(request) {
       orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
     }),
     recaudadoPorCobradorDia(organizationId, inicio, fin),
-    esperadoPorCobradorDia(organizationId, country),
+    esperadoPorCobradorDia(organizationId, fecha),
     prisma.cierreCaja.findMany({ where: { organizationId, fecha: { gte: inicio, lt: fin } } }),
     prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true } }),
     // Solo gastos PENDIENTES: los aprobados ya descontaron del saldoCapital de
@@ -168,7 +187,12 @@ export async function POST(request) {
   const fecha = typeof body.fecha === 'string' && FECHA_REGEX.test(body.fecha) ? body.fecha : getLocalDateStr(country)
   const { inicio, fin } = getLocalDayRange(fecha, country)
 
-  const orgConfig = await prisma.organization.findUnique({ where: { id: organizationId }, select: { capitalEsEfectivo: true } })
+  // El esperado se pide UNA vez para toda la organizacion y para LA FECHA que
+  // se cuadra, no una por cobrador dentro del bucle.
+  const [orgConfig, esperadoMap] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: organizationId }, select: { capitalEsEfectivo: true } }),
+    esperadoPorCobradorDia(organizationId, fecha),
+  ])
 
   // Soporta confirmación individual { cobradorId, efectivoRecibido, nota } o en lote { confirmaciones: [...] }.
   const lista = Array.isArray(body.confirmaciones) && body.confirmaciones.length
@@ -200,16 +224,22 @@ export async function POST(request) {
     })
     const gastosCobrador = Math.round(gastosAgg._sum?.monto || 0)
 
-    let recaudadoSistema
-    if (orgConfig?.capitalEsEfectivo && capitalCobrador > 0) {
-      recaudadoSistema = capitalCobrador - gastosCobrador
-    } else {
-      const recaudadoAgg = await prisma.pago.aggregate({
-        where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] }, prestamo: { estado: { not: 'cancelado' } } },
-        _sum: { montoPagado: true },
-      })
-      recaudadoSistema = Math.round(recaudadoAgg._sum?.montoPagado || 0)
-    }
+    // Lo que de verdad entro ese dia. Se calcula SIEMPRE, aparte de
+    // `recaudadoSistema`, porque son dos preguntas distintas y confundirlas es
+    // lo que rompio el cierre de este cliente (ver abajo).
+    const recaudadoAgg = await prisma.pago.aggregate({
+      where: { organizationId, cobradorId, fechaPago: { gte: inicio, lt: fin }, tipo: { notIn: ['recargo', 'descuento'] }, prestamo: { estado: { not: 'cancelado' } } },
+      _sum: { montoPagado: true },
+    })
+    const recaudadoDia = Math.round(recaudadoAgg._sum?.montoPagado || 0)
+
+    // Con `capitalEsEfectivo`, lo que se coteja contra el fajo NO es el cobro
+    // del dia sino la bolsa de la ruta: el cobrador entrega todo lo que lleva
+    // encima, no solo lo de hoy. Es una pregunta legitima y distinta, y por eso
+    // vive en su propia variable.
+    const recaudadoSistema = orgConfig?.capitalEsEfectivo && capitalCobrador > 0
+      ? capitalCobrador - gastosCobrador
+      : recaudadoDia
     const diferenciaRecibido = efectivoRecibido - recaudadoSistema
 
     const cierreExistente = await prisma.cierreCaja.findFirst({ where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } } })
@@ -226,15 +256,29 @@ export async function POST(request) {
     if (cierreExistente) {
       cierre = await prisma.cierreCaja.update({ where: { id: cierreExistente.id }, data: dataConfirmacion })
     } else {
-      // El admin cuadra aunque el cobrador no haya cerrado: creamos el cierre con los datos del sistema.
+      // El admin cuadra aunque el cobrador no haya cerrado: se crea el cierre
+      // con los datos del sistema.
+      //
+      // ── AQUI ESTABAN LOS CEROS ──────────────────────────────────────────
+      //
+      // Esto escribia `totalEsperado: 0` y `diferencia: 0` LITERALES. No era
+      // un calculo que diera cero: era un cero escrito a mano. De los 2.728
+      // cierres de la plataforma, 1.130 (41%) tienen el esperado en cero, y
+      // 320 salieron de aqui. Los «cierres exactos» de esos negocios no eran
+      // exactos: es que nunca compararon nada.
+      //
+      // Y `totalRecogido` guardaba `recaudadoSistema`, que con
+      // `capitalEsEfectivo` es la BOLSA DE LA RUTA —un saldo acumulado— y no
+      // el cobro del dia. El dueño leia un stock creyendo que era un flujo.
+      const totalEsperado = esperadoMap[cobradorId] || 0
       cierre = await prisma.cierreCaja.create({
         data: {
           organizationId,
           cobradorId,
           fecha: new Date(fecha + 'T00:00:00-05:00'),
-          totalEsperado: 0,
-          totalRecogido: recaudadoSistema,
-          diferencia: 0,
+          totalEsperado: Math.round(totalEsperado),
+          totalRecogido: recaudadoDia,
+          diferencia: Math.round(recaudadoDia - totalEsperado),
           ...dataConfirmacion,
         },
       })

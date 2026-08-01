@@ -10,7 +10,6 @@ import {
   calcularProximoCobro,
   formatFechaCobro,
   tieneCobroPendienteHoy,
-  tienePeriodoEsperadoHoy,
   calcularCuotasEnMora,
   calcularCuotasPendientes,
   calcularMontoEnMora,
@@ -20,6 +19,7 @@ import {
   tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { tocaCobrarEn, cuotaDelPeriodo, inicioDia } from '@/lib/dinero/esperado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { distanciaMetros } from '@/lib/geo'
 // Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
@@ -232,6 +232,9 @@ export async function GET(request, { params }) {
   const pagoIdsRuta = []
   const prestamoIdsRuta = []
 
+  // El dia por el que se pregunta, una sola vez para todo el recorrido.
+  const hoyLocal = inicioDia()
+
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
     // ya que la vista de ruta no tiene acceso al campo diasSinCobro del prestamo)
@@ -353,7 +356,7 @@ export async function GET(request, { params }) {
       // para que el UI muestre saldo/cuota, pero no suma a cartera ni mora.
       if (p.esClavo) {
         const saldoClavo = calcularSaldoPendiente(p)
-        const cuotaClavo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+        const cuotaClavo = cuotaDelPeriodo(p)
         const proximaCuotaClavo = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         cuotaCliente += cuotaClavo
         const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
@@ -387,11 +390,12 @@ export async function GET(request, { params }) {
       // Resolver diasSinCobro por préstamo individual (incluye campo propio del préstamo)
       const diasExcluidosPrestamo = obtenerDiasSinCobro(c, ruta, org, p)
 
-      const cuotaDelPeriodo = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
-      cuotaCliente  += cuotaDelPeriodo
-      esperadoHoy   += tienePeriodoEsperadoHoy(p, _hoySinCobro, diasExcluidosPrestamo, festivos)
-        ? cuotaDelPeriodo
-        : 0
+      // La cuota y el «toca hoy» salen del modulo comun. Esta era la unica de
+      // las cinco implementaciones que respetaba el override por prestamo, y
+      // por eso el modulo lo respeta tambien: aqui no se pierde nada.
+      const cuota = cuotaDelPeriodo(p)
+      cuotaCliente  += cuota
+      esperadoHoy   += tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos) ? cuota : 0
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado
@@ -415,7 +419,7 @@ export async function GET(request, { params }) {
         cuotasPagadasCliente += pagadasP
         cuotasVencidasCliente += pagadasP + cuotasMoraPrestamo
       }
-      const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
+      const cuotaReal = cuotaDelPeriodo(p)
       const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
       const extraInfo = detectarCuotaExtra(p, proximaCuota)
       prestamosActivos.push({
