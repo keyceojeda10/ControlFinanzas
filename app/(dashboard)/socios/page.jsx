@@ -31,13 +31,17 @@ import { formatMoney } from '@/lib/i18n'
 import { ListaSocios } from '@/components/pantallas/SociosReparto'
 import { PilaEsqueletos } from '@/components/cf/primitivos2'
 import { EstadoVacio } from '@/components/cf/primitivos'
-import { loQuePusieron, cuentaDelSocio, cabeceraSocios } from '@/lib/adaptadores/socios'
+import { loQuePusieron, cuentaDelSocio, cabeceraSocios, tuParte } from '@/lib/adaptadores/socios'
 
 export default function SociosPage() {
   const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const router = useRouter()
   const [socios, setSocios] = useState([])
+  // El capital en calle NO viene de /api/socios: esa ruta devuelve un array
+  // pelado y otras dos pantallas lo consumen asi (`d.map`), de modo que
+  // cambiarle la forma las rompe en silencio. Se pide aparte.
+  const [enCalle, setEnCalle] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
@@ -50,6 +54,12 @@ export default function SociosPage() {
       const res = await fetch('/api/socios', { cache: 'no-store' })
       if (!res.ok) throw new Error('no')
       setSocios(await res.json())
+      // Si esto falla la pantalla sigue: «Tu parte» desaparece, que es mejor que
+      // enseñar una resta con un lado inventado.
+      fetch('/api/capital/resumen', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => setEnCalle(d?.cartera?.capitalEnCalle ?? null))
+        .catch(() => {})
     } catch {
       setError('No se pudieron cargar los socios.')
     } finally {
@@ -113,6 +123,13 @@ export default function SociosPage() {
       <ListaSocios
         cabecera={cabeceraSocios(socios)}
         puesto={puesto}
+        tuParte={enCalle === null ? null : tuParte(
+          // `puesto.total` es el TEXTO ya formateado («$14.000.000»); el número
+          // vive en `numeros.total`. Restar el texto daba NaN → 0, y entonces
+          // «Tu parte» no se pintaba: un fallo que se ve como una decisión.
+          { capitalEnCalle: enCalle, puestoPorSocios: puesto.numeros.total },
+          fmt,
+        )}
         sociosTitulo="Cada socio"
         socios={paraAdaptador.map((s) => cuentaDelSocio(
           { ...s, porcentaje: porId[s.id]?.porcentaje },

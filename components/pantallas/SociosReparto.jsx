@@ -208,9 +208,52 @@ export function TarjetaSocio({
 
 /* ── La lista ─────────────────────────────────────────────────────────────── */
 
+/* ── T45-04 · «TU PARTE» ───────────────────────────────────────────────────
+   La lámina no la trata como un adorno, la trata como la causa:
+
+     «Sin ese dato, el dueño no sabe si los $1.240.000 que va a repartir son
+      toda su ganancia o una parte, y esa duda es la que hace que nadie use el
+      módulo.»
+
+   La pantalla decía cuánto pusieron los socios y se callaba cuánto puso él. Con
+   los dos al lado, repartir deja de ser un salto de fe. */
+function TuParte({ propio, enCalle, deSocios, nota }) {
+  const pct = enCalle > 0 ? Math.max(0, Math.min(100, (deSocios / enCalle) * 100)) : 0
+  return (
+    <section style={{
+      flex: 'none', padding: '15px 17px', borderRadius: 'var(--cf-r-card)',
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <Rotulo>Tu parte</Rotulo>
+        <span style={{ fontSize: 11.5, color: 'var(--cf-ink-3)' }}>capital propio</span>
+      </div>
+      <p className="cf-fig" style={{
+        margin: '6px 0 0', fontSize: 26, fontWeight: 800,
+        letterSpacing: '-.02em', color: 'var(--cf-ink)',
+      }}>
+        {propio}
+      </p>
+
+      {/* Cuánto de lo que hay en la calle es de los socios y cuánto es suyo. */}
+      <div style={{
+        display: 'flex', height: 7, borderRadius: 999, overflow: 'hidden', marginTop: 12,
+        background: 'var(--cf-surface)',
+      }}>
+        <div style={{ width: `${pct}%`, background: 'var(--cf-gold)', flex: 'none' }} />
+        <div style={{ width: `${100 - pct}%`, background: 'var(--cf-green-dark)', flex: 'none' }} />
+      </div>
+
+      <p style={{ margin: '10px 0 0', fontSize: 12, lineHeight: 1.5, color: 'var(--cf-ink-3)' }}>
+        {nota}
+      </p>
+    </section>
+  )
+}
+
 export function ListaSocios({
   cabecera, onAtras, onNuevo,
-  puesto, pendiente, onRepartir,
+  puesto, tuParte, pendiente, onRepartir,
   sociosTitulo, socios = [], onSocio,
 }) {
   return (
@@ -260,6 +303,7 @@ export function ListaSocios({
         display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {puesto && <LoQuePusieron {...puesto} />}
+        {tuParte && <TuParte {...tuParte} />}
         {pendiente && <GananciaSinRepartir {...pendiente} onRepartir={onRepartir} />}
 
         {socios.length > 0 && (

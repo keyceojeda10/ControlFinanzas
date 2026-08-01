@@ -366,3 +366,23 @@ respuesta y que el chat sepa pintarla.
 Se deja anotado en vez de aproximarlo: sacar nombres de un texto con una
 expresión regular para fingir tarjetas es exactamente el patrón que ya nos costó
 una cifra mal en `lib/adaptadores/actividad.js`.
+
+### T45-04 · socios: qué entró y qué falta, con la causa
+
+**Entró «Tu parte»**, que la lámina no trata como adorno sino como la causa de
+que el módulo no se use: sin saber cuánto puso él, el dueño no sabe si lo que va
+a repartir es toda su ganancia o una parte.
+
+**Falta la tabla de cinco columnas** —puso · le toca · ha ganado · le has dado ·
+le debes— y la acción primaria «Repartir $X». No es trabajo de diseño; son dos
+datos:
+
+| Columna | Estado |
+|---|---|
+| puso · le toca | ya están |
+| **ha ganado** | `interesesCobrados` YA viene por socio en `/api/socios`. Es cablear. |
+| le has dado | ya está (`totalRetiros`) |
+| **le debes** | **BLOQUEADA**: necesita el tipo de movimiento `reparto`, que no existe. `cuentaDelSocio` ya devuelve `null` a propósito — un `$0` ahí se lee como «no le debo nada» cuando lo cierto es que todavía no se ha repartido. |
+
+`ListaSocios` ya acepta `pendiente` y `onRepartir` y nadie se los pasa: el día
+que exista el movimiento de reparto, la acción primaria es cablear, no construir.
