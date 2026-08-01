@@ -322,3 +322,29 @@ Antes de montarlo hay que **añadirle `ciudad` a `TuNegocio`** —cabe en la
 segunda rejilla, junto a WhatsApp— y comprobar que el guardado solo la incluye.
 Lo demás del cambio es ganancia: país, formato y tema hoy no se ven en ninguna
 parte de configuración.
+
+### T09-01 · dónde va el cambio (medido, un solo sitio)
+
+`configuracion/page.jsx` tiene **dos componentes**, y eso cambia el trabajo:
+
+- **El panel viejo**, líneas **501-553** — «Datos del negocio»: nombre, teléfono,
+  país con enlace a soporte, ciudad y «Guardar cambios».
+- **El armazón del rediseño**, desde la ~1300, que monta los paneles viejos
+  DENTRO de cada sección. Su comentario en la línea 1456 lo dice literal:
+  *«según se vaya rehaciendo cada panel, se cambia su línea aquí y ya está»*.
+
+Y ese armazón **ya tiene preparado todo lo que `TuNegocio` pide**:
+
+| Prop | De dónde sale | Línea |
+|---|---|---|
+| `tema` / `onTema` | `tema`, `cambiarTema` | 1362, 1446 |
+| país y moneda | `paisCfg` | 1424 |
+| `inicial` | `org` | ya cargado |
+
+`cambiarTema` además pasa por `setThemeGlobal` del proveedor a propósito —
+escribir `localStorage` a mano cambia el tema en disco y deja la pantalla igual
+hasta recargar.
+
+**Así que el cambio es de una línea en el armazón, no de reescribir la
+sección.** Con `ciudad` y `enlacePais` ya añadidos al componente
+(commit `bfd1ca6c`), montarlo ya no le quita nada al formulario de hoy.
