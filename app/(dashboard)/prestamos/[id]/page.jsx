@@ -1901,6 +1901,9 @@ export default function PrestamoDetallePage({ params }) {
         <MenuGestion
           cabecera={false}
           grupos={gruposGestion}
+          consejo={diasMora >= 15 && cuotaDiaria > 0
+            ? `Con ${diasMora} días de atraso, lo que suele funcionar es bajar la cuota antes que el recargo. Un cliente que no puede pagar ${formatMoney(Math.round(cuotaDiaria))} tampoco va a pagar ${formatMoney(Math.round(cuotaDiaria * 2))}.`
+            : null}
           onAccion={(a) => { setModalGestionPrestamo(false); a.hacer?.() }}
         />
       </HojaInferior>

@@ -67,6 +67,16 @@ function Fila({ nombre, valor, peligro, onIr, primera }) {
 export function MenuGestion({
   titulo = 'Gestionar préstamo', detalle,
   grupos = [], onAccion,
+  // ── T21-01 · EL CONSEJO DEL PIE ──
+  // La lámina cierra con una frase que no es decoración: «con 36 días de
+  // atraso, lo que suele funcionar es BAJAR LA CUOTA antes que el recargo. Un
+  // cliente que no puede pagar $14.500 tampoco va a pagar $29.500».
+  //
+  // Es la única parte de este menú que evita una decisión cara. El recargo es
+  // lo primero que se toca cuando alguien se atrasa, y es justo lo que vuelve
+  // incobrable el préstamo. Lo calcula quien monta el menú, que es quien sabe
+  // los días de mora y la cuota; aquí solo se pinta, y solo si llega.
+  consejo,
   // Dentro de una hoja que YA tiene cabecera y asa, las suyas sobran: saldrian
   // dos titulos seguidos. Es lo que me paso al montar caja y cobradores.
   cabecera = true,
@@ -116,6 +126,22 @@ export function MenuGestion({
             </div>
           </div>
         ))}
+
+        {consejo && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, flex: 'none',
+            padding: '14px 16px', borderRadius: 14,
+            background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)',
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ flex: 'none', marginTop: 1 }}>
+              <path d="M12 9v4M12 17h.01" />
+              <path d="M10.3 3.8L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" />
+            </svg>
+            <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-gold-text)' }}>{consejo}</span>
+          </div>
+        )}
       </div>
     </div>
   )
