@@ -94,7 +94,7 @@ export default function FiltroPeriodo({ value, onChange }) {
           max={hoyLocal()}
           onChange={(e) => onChange({ modo: 'hoy', fecha: e.target.value, desde: null, hasta: null })}
           style={{
-            width: '100%', height: 48, padding: '0 14px', borderRadius: 14,
+            width: '100%', maxWidth: 260, height: 48, padding: '0 14px', borderRadius: 14,
             background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
             font: 'inherit', fontSize: 15, color: 'var(--cf-ink)', outline: 'none',
           }}
@@ -102,7 +102,7 @@ export default function FiltroPeriodo({ value, onChange }) {
       )}
 
       {modo === 'rango' && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" style={{ maxWidth: 420 }}>
           <input
             type="date"
             value={value?.desde || ''}
