@@ -1,131 +1,215 @@
 #!/bin/bash
-# ============================================================
-# Backup automático de Control Finanzas a Google Drive
-# Ejecutar con cron: 0 3 * * * /home/control-finanzas/scripts/backup-gdrive.sh
-# ============================================================
+# ═══════════════════════════════════════════════════════════════════════════
+# RESPALDO DE CONTROL FINANZAS
+#
+# ── POR QUE ESTA REESCRITO ────────────────────────────────────────────────
+#
+# La version anterior era correcta y aun asi el negocio estuvo 140 noches sin
+# un solo respaldo. El 14 de marzo de 2026 corrio bien —la base tenia 11
+# organizaciones— y esa misma tarde el archivo perdio el permiso de ejecucion.
+# Desde entonces cron lo intento cada madrugada y escribio «Permission denied»
+# en /home/backups/cron.log, que nadie lee. El otro log, backup.log, se quedo
+# congelado en el ultimo exito, asi que quien lo mirara veia «Backup completado
+# exitosamente» y se quedaba tranquilo.
+#
+# Mientras tanto el negocio paso de 11 organizaciones a 398, y de 13 prestamos
+# a 8.398.
+#
+# El fallo no fue del script: fue que NADIE PODIA SABER que estaba caido. Por
+# eso los cambios de abajo son casi todos de deteccion, no de respaldo.
+#
+# ── QUE CAMBIA ────────────────────────────────────────────────────────────
+#
+# 1. AVISA POR TELEGRAM. Cualquier fallo, en cualquier linea (`trap ERR`), no
+#    solo los dos que la version vieja comprobaba a mano. El aviso viejo iba a
+#    un endpoint con `X-Backup-Secret`, y esa clave ya no esta en el .env: la
+#    alerta no podia llegar aunque saltara.
+# 2. COMPRUEBA QUE EL VOLCADO SIRVE, con tres pruebas que se suman:
+#    a) el marcador `-- Dump completed` que escribe mysqldump al terminar bien,
+#    b) un piso absoluto contra el tamaño real de la base en information_schema,
+#    c) una comparacion con el ultimo volcado bueno: si encoge de golpe, para.
+# 3. GUARDA COPIA LOCAL. La version vieja borraba el archivo despues de subirlo
+#    (paso 10), asi que la UNICA copia vivia en Google Drive. Si la autorizacion
+#    de rclone caduca, te quedas sin nada y sin enterarte.
+# 4. EXIGE CIFRADO. El paquete incluye una copia de `.env`, o sea TODOS los
+#    secretos de produccion. Subir eso sin cifrar a la nube no es un respaldo,
+#    es una filtracion. Antes, si faltaba la clave, avisaba y subia igual.
+# 5. DEJA UNA MARCA DE ULTIMO EXITO (`ULTIMO-EXITO`) para que el vigilante
+#    —el otro cron— pueda gritar si el respaldo deja de correr. Un script no
+#    puede avisar de que no se esta ejecutando; hace falta alguien fuera.
+#
+# ── DONDE VIVE ────────────────────────────────────────────────────────────
+#
+# La copia que corre esta en /opt/cf-backup/backup.sh, FUERA del arbol de git,
+# para que ningun despliegue ni ningun `git checkout` la pueda romper. Esta de
+# aqui es la fuente: si se cambia, hay que copiarla alli.
+#
+#   cron:  0 3 * * * /bin/bash /opt/cf-backup/backup.sh
+#
+# Se invoca con `bash` a proposito: asi el permiso de ejecucion deja de ser un
+# punto unico de fallo.
+# ═══════════════════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
-# ─── CONFIGURACIÓN ──────────────────────────────────────────
 APP_DIR="/home/control-finanzas"
-BACKUP_DIR="/home/backups"
+BACKUP_DIR="/home/backups/cf"
+ESTADO_DIR="/opt/cf-backup"
 GDRIVE_REMOTE="gdrive:ControlFinanzas/backups"
-RETENTION_DAYS=30
-DATE=$(date +%Y-%m-%d_%H-%M-%S)
-BACKUP_NAME="cf-backup-${DATE}"
-BACKUP_PATH="${BACKUP_DIR}/${BACKUP_NAME}"
-LOG_FILE="/home/backups/backup.log"
+RETENCION_LOCAL_DIAS=7
+RETENCION_DRIVE_DIAS=60
+FECHA=$(date +%Y-%m-%d_%H-%M-%S)
+NOMBRE="cf-backup-${FECHA}"
+TRABAJO="${BACKUP_DIR}/.trabajo-${FECHA}"
+LOG="${BACKUP_DIR}/backup.log"
+MARCA_EXITO="${ESTADO_DIR}/ULTIMO-EXITO"
+TAMANO_PREVIO="${ESTADO_DIR}/ULTIMO-TAMANO"
 
-# Cargar variables de entorno
+mkdir -p "$BACKUP_DIR" "$ESTADO_DIR"
+
 set -a
+# shellcheck disable=SC1091
 source "${APP_DIR}/.env"
 set +a
 
-# Limpiar comillas del DATABASE_URL
-DATABASE_URL=$(echo "$DATABASE_URL" | tr -d '"' | tr -d "'")
-
-# Extraer nombre de la base de datos del DATABASE_URL
+DATABASE_URL=$(echo "${DATABASE_URL:-}" | tr -d '"' | tr -d "'")
 DB_NAME=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^/]*/\([^?]*\).*|\1|p')
-# Usar root local (el script corre como root en el VPS via cron)
 
-# ─── FUNCIONES ──────────────────────────────────────────────
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+# ─── Aviso y registro ──────────────────────────────────────────────────────
+
+registrar() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG"; }
+
+avisar() {
+    local texto="$1"
+    if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+        curl -sS --max-time 20 -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${texto}" >/dev/null 2>&1 || true
+    fi
 }
 
-send_alert() {
-    # Enviar alerta por email si el backup falla
-    local subject="$1"
-    local body="$2"
-    curl -s -X POST "https://app.control-finanzas.com/api/admin/backup-alert" \
-        -H "Content-Type: application/json" \
-        -H "X-Backup-Secret: ${BACKUP_SECRET:-}" \
-        -d "{\"subject\": \"${subject}\", \"body\": \"${body}\"}" \
-        2>/dev/null || true
+# Cualquier linea que falle pasa por aqui. La version vieja solo comprobaba la
+# subida y la verificacion; un fallo del mysqldump moria en silencio.
+al_fallar() {
+    local linea="$1"
+    registrar "FALLO en la linea ${linea}"
+    avisar "🔴 RESPALDO FALLIDO — Control Finanzas
+
+Murio en la linea ${linea} del script.
+Intento: ${NOMBRE}
+Servidor: $(hostname)
+
+Revisa: tail -40 ${LOG}"
+    rm -rf "$TRABAJO"
 }
+trap 'al_fallar $LINENO' ERR
 
-cleanup() {
-    rm -rf "$BACKUP_PATH" "${BACKUP_PATH}.tar.gz.gpg" 2>/dev/null || true
-}
-trap cleanup EXIT
+registrar "═══ Iniciando ${NOMBRE} ═══"
 
-# ─── INICIO ─────────────────────────────────────────────────
-log "═══ Iniciando backup: ${BACKUP_NAME} ═══"
+if [ -z "$DB_NAME" ]; then
+    registrar "No se pudo sacar el nombre de la base del DATABASE_URL"
+    exit 1
+fi
 
-mkdir -p "$BACKUP_DIR" "$BACKUP_PATH"
+# El paquete lleva el .env dentro. Sin clave de cifrado NO se sube: preferimos
+# quedarnos sin respaldo de hoy antes que dejar los secretos en la nube.
+if [ -z "${BACKUP_ENCRYPTION_KEY:-}" ]; then
+    registrar "Falta BACKUP_ENCRYPTION_KEY en el .env — el paquete lleva secretos dentro"
+    avisar "🔴 RESPALDO FALLIDO — falta BACKUP_ENCRYPTION_KEY en el .env. No se sube nada sin cifrar."
+    exit 1
+fi
 
-# 1. Dump de la base de datos
-log "Exportando base de datos MySQL..."
+# ─── 1 · Volcado ───────────────────────────────────────────────────────────
+
+mkdir -p "$TRABAJO"
+registrar "Volcando ${DB_NAME}..."
+
 mysqldump \
     --single-transaction \
-    --routines \
-    --triggers \
+    --routines --triggers --events \
     --quick \
     --lock-tables=false \
-    "$DB_NAME" > "${BACKUP_PATH}/database.sql"
+    "$DB_NAME" > "${TRABAJO}/database.sql"
 
-DB_SIZE=$(du -sh "${BACKUP_PATH}/database.sql" | cut -f1)
-log "Database dump: ${DB_SIZE}"
+BYTES=$(stat -c%s "${TRABAJO}/database.sql")
+registrar "Volcado: $(numfmt --to=iec "$BYTES")"
 
-# 2. Backup del .env (encriptado)
-cp "${APP_DIR}/.env" "${BACKUP_PATH}/env-backup"
-log "Variables de entorno copiadas"
+# ─── 2 · Las tres comprobaciones ───────────────────────────────────────────
 
-# 3. Backup del schema de Prisma (para referencia de estructura)
-cp "${APP_DIR}/prisma/schema.prisma" "${BACKUP_PATH}/schema.prisma"
-log "Schema Prisma copiado"
-
-# 4. Comprimir
-log "Comprimiendo backup..."
-cd "$BACKUP_DIR"
-tar -czf "${BACKUP_NAME}.tar.gz" "$BACKUP_NAME"
-ARCHIVE_SIZE=$(du -sh "${BACKUP_NAME}.tar.gz" | cut -f1)
-log "Archivo comprimido: ${ARCHIVE_SIZE}"
-
-# 5. Encriptar con GPG (si hay clave configurada)
-if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
-    log "Encriptando backup..."
-    gpg --batch --yes --passphrase "$BACKUP_ENCRYPTION_KEY" \
-        --symmetric --cipher-algo AES256 \
-        "${BACKUP_NAME}.tar.gz"
-    UPLOAD_FILE="${BACKUP_NAME}.tar.gz.gpg"
-    rm "${BACKUP_NAME}.tar.gz"
-else
-    UPLOAD_FILE="${BACKUP_NAME}.tar.gz"
-    log "AVISO: Backup sin encriptar (BACKUP_ENCRYPTION_KEY no configurada)"
-fi
-
-# 6. Subir a Google Drive con rclone
-log "Subiendo a Google Drive..."
-if rclone copy "${BACKUP_DIR}/${UPLOAD_FILE}" "$GDRIVE_REMOTE" --progress 2>&1 | tee -a "$LOG_FILE"; then
-    log "Backup subido exitosamente a Google Drive"
-else
-    log "ERROR: Fallo al subir a Google Drive"
-    send_alert "BACKUP FALLIDO" "No se pudo subir el backup ${BACKUP_NAME} a Google Drive"
+# (a) mysqldump escribe esta linea SOLO si llego al final. Sin ella, el archivo
+#     esta truncado aunque tenga buen tamaño.
+if ! tail -5 "${TRABAJO}/database.sql" | grep -q "^-- Dump completed"; then
+    registrar "El volcado no termina en '-- Dump completed': esta truncado"
     exit 1
 fi
 
-# 7. Verificar que el archivo existe en Drive
-if rclone ls "$GDRIVE_REMOTE/${UPLOAD_FILE}" > /dev/null 2>&1; then
-    log "Verificación OK: archivo existe en Google Drive"
-else
-    log "ERROR: Archivo no encontrado en Google Drive después de subir"
-    send_alert "BACKUP FALLIDO" "Verificación fallida para ${BACKUP_NAME}"
+# (b) Piso absoluto contra el tamaño real de la base. Un volcado sano pesa un
+#     orden parecido a los datos; uno de 64 KB sobre una base de 240 MB no
+#     pasa de aqui.
+DATOS_MB=$(mysql -N -e "SELECT COALESCE(ROUND(SUM(data_length)/1048576),1) FROM information_schema.tables WHERE table_schema='${DB_NAME}';" 2>/dev/null || echo 1)
+PISO=$(( DATOS_MB * 1048576 / 4 ))
+if [ "$BYTES" -lt "$PISO" ]; then
+    registrar "Volcado sospechosamente pequeño: $(numfmt --to=iec "$BYTES") sobre una base de ${DATOS_MB} MB"
     exit 1
 fi
 
-# 8. Limpiar backups locales antiguos
-log "Limpiando backups locales antiguos (>${RETENTION_DAYS} días)..."
-find "$BACKUP_DIR" -name "cf-backup-*" -type f -mtime +${RETENTION_DAYS} -delete 2>/dev/null || true
+# (c) Contra el ultimo volcado bueno. Si de un dia para otro encoge a menos de
+#     la mitad, algo se rompio aunque las otras dos pasen.
+if [ -f "$TAMANO_PREVIO" ]; then
+    PREVIO=$(cat "$TAMANO_PREVIO")
+    if [ "$PREVIO" -gt 0 ] && [ "$BYTES" -lt $(( PREVIO / 2 )) ]; then
+        registrar "El volcado encogio a la mitad: antes $(numfmt --to=iec "$PREVIO"), hoy $(numfmt --to=iec "$BYTES")"
+        exit 1
+    fi
+fi
 
-# 9. Limpiar backups remotos antiguos
-log "Limpiando backups remotos antiguos (>${RETENTION_DAYS} días)..."
-rclone delete "$GDRIVE_REMOTE" --min-age "${RETENTION_DAYS}d" 2>/dev/null || true
+# ─── 3 · Empaquetar y cifrar ───────────────────────────────────────────────
 
-# 10. Limpiar directorio temporal
-rm -rf "$BACKUP_PATH"
-rm -f "${BACKUP_DIR}/${UPLOAD_FILE}"
+cp "${APP_DIR}/.env" "${TRABAJO}/env-backup"
+cp "${APP_DIR}/prisma/schema.prisma" "${TRABAJO}/schema.prisma"
 
-log "═══ Backup completado exitosamente ═══"
-log "Archivo: ${UPLOAD_FILE} (${ARCHIVE_SIZE})"
-log ""
+registrar "Comprimiendo..."
+tar -czf "${BACKUP_DIR}/${NOMBRE}.tar.gz" -C "$BACKUP_DIR" "$(basename "$TRABAJO")"
+
+registrar "Cifrando..."
+gpg --batch --yes --passphrase "$BACKUP_ENCRYPTION_KEY" \
+    --symmetric --cipher-algo AES256 \
+    "${BACKUP_DIR}/${NOMBRE}.tar.gz"
+rm -f "${BACKUP_DIR}/${NOMBRE}.tar.gz"
+rm -rf "$TRABAJO"
+
+ARCHIVO="${NOMBRE}.tar.gz.gpg"
+PESO=$(stat -c%s "${BACKUP_DIR}/${ARCHIVO}")
+registrar "Paquete: ${ARCHIVO} ($(numfmt --to=iec "$PESO"))"
+
+# ─── 4 · Subir y verificar ─────────────────────────────────────────────────
+
+registrar "Subiendo a Google Drive..."
+rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE" --stats-one-line 2>&1 | tee -a "$LOG"
+
+# No basta con que rclone diga que subio: se comprueba que el archivo esta
+# alli Y que pesa lo mismo.
+REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
+if [ "${REMOTO:-0}" != "$PESO" ]; then
+    registrar "En Drive pesa '${REMOTO:-nada}' y aqui ${PESO}"
+    exit 1
+fi
+registrar "Verificado en Drive: mismo tamaño"
+
+# ─── 5 · Retencion ─────────────────────────────────────────────────────────
+# La copia local se QUEDA. La version vieja la borraba, asi que la unica copia
+# vivia en Drive: si caducaba la autorizacion, no quedaba nada.
+
+find "$BACKUP_DIR" -name "cf-backup-*.gpg" -type f -mtime "+${RETENCION_LOCAL_DIAS}" -delete 2>/dev/null || true
+rclone delete "$GDRIVE_REMOTE" --min-age "${RETENCION_DRIVE_DIAS}d" 2>/dev/null || true
+
+LOCALES=$(find "$BACKUP_DIR" -name "cf-backup-*.gpg" -type f | wc -l)
+
+# ─── 6 · Marca de exito, para el vigilante ─────────────────────────────────
+
+date +%s > "$MARCA_EXITO"
+echo "$BYTES" > "$TAMANO_PREVIO"
+
+registrar "═══ Listo: ${ARCHIVO} · ${LOCALES} copias locales ═══"
+registrar ""
