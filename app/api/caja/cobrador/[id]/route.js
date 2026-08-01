@@ -97,6 +97,12 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // nuevo (incluye el saldo viejo absorbido, que nunca salio de la caja);
       // asumir montoPrestado inflaba la salida. En prestamo nuevo si es el monto.
       monto: mov?.monto ?? montoOverride ?? (p.renovadoDeId ? 0 : p.montoPrestado),
+      // `monto` es el EFECTIVO que salio; `valor` es el tamaño de la cartulina.
+      // En un prestamo nuevo son iguales; en una renovacion el valor incluye el
+      // saldo viejo absorbido, que nunca salio de la caja. Se llevan los dos para
+      // poder resumir el dia sin que falte nada (ver prestadoDetalle en el GET).
+      valor: p.montoPrestado || 0,
+      esRenovacion: !!p.renovadoDeId,
       cliente: p.cliente?.nombre || null,
       clienteCedula: p.cliente?.cedula || null,
       rutaId: p.cliente?.ruta?.id || mov?.rutaId || null,
@@ -501,6 +507,40 @@ export async function GET(request, { params }) {
     enCobrado: brutoRenovaciones,
   }
 
+  // Resumen COMPLETO de lo que presto el cobrador hoy.
+  //
+  // Antes lo unico que resumia el dia era la caja de renovaciones, que solo se
+  // pintaba si habia renovaciones CON saldo absorbido — un prestamo nuevo no la
+  // generaba nunca. El dueño de la cartera mas grande lo leyo como el total del
+  // dia y reporto que "los prestamos nuevos no se suman": a un cobrador suyo le
+  // faltaba la mitad ($1.000.000 de $2.000.000). El numero de la tarjeta estaba
+  // bien; lo que faltaba era el resumen.
+  //
+  // Se deriva de `desembolsos`, la MISMA lista que produce prestadoDia, para que
+  // el resumen y la tarjeta no puedan contradecirse.
+  const sum = (arr, campo) => Math.round(arr.reduce((a, x) => a + (x[campo] || 0), 0))
+  const itemsNuevos = desembolsos.filter((d) => !d.esRenovacion)
+  const itemsRenov  = desembolsos.filter((d) => d.esRenovacion)
+  const valorNuevos = sum(itemsNuevos, 'valor')
+  const valorRenovaciones = sum(itemsRenov, 'valor')
+  const efectivoTotal = sum(desembolsos, 'monto')
+  const prestadoDetalle = {
+    nuevos:       { cantidad: itemsNuevos.length, valor: valorNuevos, efectivo: sum(itemsNuevos, 'monto') },
+    renovaciones: {
+      cantidad: itemsRenov.length,
+      valor: valorRenovaciones,
+      efectivo: sum(itemsRenov, 'monto'),
+      absorbido: Math.max(0, valorRenovaciones - sum(itemsRenov, 'monto')),
+    },
+    // Lo que valen las cartulinas que entrego hoy, nuevas y renovadas.
+    valorTotal: valorNuevos + valorRenovaciones,
+    // Lo que de verdad salio de su mano.
+    efectivoTotal,
+    // Que de los dos esta mostrando la tarjeta "Prestado", para poder decirlo en
+    // la UI en vez de dejar al prestamista adivinando por que no cuadran.
+    tarjetaMuestra: brutoRenovaciones ? 'valor' : 'efectivo',
+  }
+
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
     fecha: esRango ? null : fechaBase,
@@ -523,6 +563,7 @@ export async function GET(request, { params }) {
       gastosPendientesCantidad: gastos.filter((g) => g.estado === 'pendiente').length,
       saldoApertura: saldoAperturaTotal,
     },
+    prestadoDetalle,
     gestion: {
       clientesNuevos,
       prestamosNuevos,

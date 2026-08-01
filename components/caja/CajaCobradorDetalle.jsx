@@ -34,7 +34,7 @@ export default function CajaCobradorDetalle({ data }) {
   const gastos = data?.gastos || []
   const g = data?.gestion || null
   const desgloseMetodo = data?.desgloseMetodoPago || []
-  const renov = data?.renovaciones || null
+  const pd = data?.prestadoDetalle || null
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
@@ -59,36 +59,79 @@ export default function CajaCobradorDetalle({ data }) {
         ]}
       />
 
-      {/* Renovaciones del dia: explica por que "Prestado" no es igual a lo renovado.
-          El saldo absorbido (la cartulina) no salio en efectivo, asi que no entra al
-          efectivo del dia — pero el prestamista necesita verlo para cuadrar. */}
-      {renov && renov.cantidad > 0 && renov.absorbido > 0 && (
+      {/* Resumen completo de lo prestado en el dia.
+          Reemplaza a la vieja caja "Renovaciones de hoy", que solo aparecia si habia
+          renovaciones con saldo absorbido: los prestamos nuevos no salian en ningun
+          resumen y el dueño concluia que no se estaban contando. Ahora se listan las
+          dos clases y el total cuadra con la tarjeta "Prestado". */}
+      {pd && (pd.nuevos.cantidad > 0 || pd.renovaciones.cantidad > 0) && (
         <div
           className="rounded-[12px] p-3"
           style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--color-text-muted)' }}>
-            Renovaciones de hoy ({renov.cantidad})
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+            Lo que prestó hoy
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Valor renovado</p>
-              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(renov.valorTotal)}</p>
+
+          <div className="space-y-1.5">
+            {pd.nuevos.cantidad > 0 && (
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  {pd.nuevos.cantidad} préstamo{pd.nuevos.cantidad === 1 ? '' : 's'} nuevo{pd.nuevos.cantidad === 1 ? '' : 's'}
+                </span>
+                <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                  {formatMoney(pd.nuevos.valor)}
+                </span>
+              </div>
+            )}
+
+            {pd.renovaciones.cantidad > 0 && (
+              <>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                    {pd.renovaciones.cantidad} renovaci{pd.renovaciones.cantidad === 1 ? 'ón' : 'ones'}
+                  </span>
+                  <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                    {formatMoney(pd.renovaciones.valor)}
+                  </span>
+                </div>
+                {pd.renovaciones.absorbido > 0 && (
+                  <div className="flex items-baseline justify-between gap-2 pl-3">
+                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                      de eso, saldo que ya le debían
+                    </span>
+                    <span className="text-[11px] font-mono-display" style={{ color: 'var(--color-info)' }}>
+                      {formatMoney(pd.renovaciones.absorbido)}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="mt-2.5 pt-2.5 space-y-1.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Total prestado</span>
+              <span className="text-[15px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>
+                {formatMoney(pd.valorTotal)}
+              </span>
             </div>
-            <div>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Saldo absorbido</p>
-              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-info)' }}>{formatMoney(renov.absorbido)}</p>
-            </div>
-            <div>
-              <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Entregado en mano</p>
-              <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>{formatMoney(renov.entregadoEnMano)}</p>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Efectivo que salió de su mano</span>
+              <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
+                {formatMoney(pd.efectivoTotal)}
+              </span>
             </div>
           </div>
-          <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
-            {renov.enCobrado
-              ? 'El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo. Está sumado en "Cobrado" y en "Prestado" a la vez, así que el efectivo del día no cambia.'
-              : 'El saldo absorbido es lo que el cliente ya debía y quedó dentro del nuevo préstamo: no entró ni salió efectivo, por eso no suma en "Cobrado" ni en "Prestado".'}
-          </p>
+
+          {pd.valorTotal !== pd.efectivoTotal && (
+            <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+              La diferencia de {formatMoney(pd.valorTotal - pd.efectivoTotal)} es saldo que los clientes ya debían y
+              quedó dentro de la cartulina nueva: no salió efectivo por esa parte.
+              {' '}La tarjeta <strong>Prestado</strong> de arriba muestra{' '}
+              {pd.tarjetaMuestra === 'valor' ? 'el total prestado' : 'solo el efectivo'}.
+            </p>
+          )}
         </div>
       )}
 
