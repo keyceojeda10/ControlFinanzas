@@ -22,9 +22,14 @@ const CONTROL = {
   outline: 'none', fontSize: 15, color: 'var(--cf-ink)', width: '100%',
 }
 
-export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onGuardar }) {
+export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onGuardar, enlacePais }) {
   const [nombre, setNombre] = useState(inicial.nombre ?? '')
   const [telefono, setTelefono] = useState(inicial.telefono ?? '')
+  // La lámina no dibuja «Ciudad», pero el formulario anterior SÍ la tenía y la
+  // mandaba en el mismo PATCH. Sin esto, montar esta sección borra un dato que
+  // hoy se puede escribir —y en silencio, porque nada falla: simplemente deja
+  // de viajar—. La lámina enseña la sección, no autoriza a perder un campo.
+  const [ciudad, setCiudad] = useState(inicial.ciudad ?? '')
   const [estado, setEstado] = useState(null)
   const primera = useRef(true)
   const t = useRef(null)
@@ -49,9 +54,11 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
     clearTimeout(t.current)
     // Más espera que en los desplegables: aquí se ESCRIBE, y guardar en cada
     // tecla manda medio nombre del negocio al servidor.
-    t.current = setTimeout(() => guardar({ nombre: nombre.trim(), telefono: telefono.trim() }), 800)
+    t.current = setTimeout(() => guardar({
+      nombre: nombre.trim(), telefono: telefono.trim(), ciudad: ciudad.trim(),
+    }), 800)
     return () => clearTimeout(t.current)
-  }, [nombre, telefono, guardar])
+  }, [nombre, telefono, ciudad, guardar])
 
   useEffect(() => {
     if (estado !== 'guardado') return
@@ -92,6 +99,13 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
             style={CONTROL}
           />
         </label>
+        <label>
+          <span style={ROTULO}>Ciudad</span>
+          <input
+            value={ciudad} onChange={(e) => setCiudad(e.target.value)}
+            placeholder="Ej: Bogotá" style={CONTROL}
+          />
+        </label>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginTop: 14 }}>
@@ -100,8 +114,25 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
           {/* NO se edita aquí. Cambiar el país cambia la moneda de toda la
               cartera, y eso no puede pasar por tocar un desplegable sin más:
               se pide por soporte. Se enseña para que se pueda comprobar. */}
-          <div style={{ ...CONTROL, display: 'flex', alignItems: 'center', color: 'var(--cf-ink-2)' }}>
-            {inicial.paisNombre ?? '—'}
+          <div style={{ ...CONTROL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, color: 'var(--cf-ink-2)' }}>
+            <span>{inicial.paisNombre ?? '—'}</span>
+            {/* La salida tiene que estar A LA VISTA. Decir «se pide por soporte»
+                sin dar por dónde deja al dueño sin camino: el formulario
+                anterior sí llevaba el enlace y perderlo convierte un dato
+                cambiable en uno atascado. */}
+            {enlacePais && (
+              <a
+                href={enlacePais} target="_blank" rel="noopener noreferrer"
+                style={{
+                  fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 8,
+                  whiteSpace: 'nowrap', color: 'var(--cf-gold)',
+                  background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
+                }}
+              >
+                Cambiar
+              </a>
+            )}
           </div>
         </label>
 
