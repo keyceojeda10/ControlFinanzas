@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
+import { cuentaDelDia } from '@/lib/dinero/conciliacion'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -592,12 +593,17 @@ export async function GET(request, { params }) {
   //
   // Cada `id` es el del catalogo de `lib/dinero/procedencia.js`, para que la
   // pantalla haga el renglon tocable sin traducir nada.
-  const cuenta = [
-    { id: 'apertura', rotulo: 'Con lo que salió', monto: saldoAperturaTotal, signo: 0 },
-    { id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivo, signo: 1 },
-    { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoDia, signo: -1 },
-    { id: 'gastos', rotulo: 'Gastó', monto: gastosDia, signo: -1 },
-  ].filter((l) => l.monto !== 0 || l.id === 'apertura')
+  // La arma `lib/dinero/conciliacion.js`, no esta ruta. La sumaba aqui a mano y
+  // la apertura —que se pinta SIN signo— se multiplicaba por cero y se borraba
+  // de la cuenta: «726.000 + 161.000 = 161.000» en pantalla. Tres veces.
+  const { lineas: cuenta, suma: cuentaSuma } = cuentaDelDia({
+    apertura: saldoAperturaTotal,
+    entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivo }],
+    salidas: [
+      { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoDia },
+      { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
+    ],
+  })
 
   // Lo que hizo hoy: SIEMPRE cantidad y valor juntos. «10 renovaciones» sin el
   // valor no dice nada, y «$2.400.000 en renovaciones» sin cuantas tampoco.
@@ -619,7 +625,7 @@ export async function GET(request, { params }) {
     // La cuenta del dia y lo que hizo, ya ordenados. La pantalla los pinta, no
     // los arma: armarlos alli es como se acaba con lineas que no suman.
     cuenta,
-    cuentaSuma: cuenta.reduce((a, l) => a + l.signo * l.monto, 0),
+    cuentaSuma,
     hizo,
     fecha: esRango ? null : fechaBase,
     esRango,
