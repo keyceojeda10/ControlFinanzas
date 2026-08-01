@@ -356,13 +356,17 @@ function LineaCreditoCard({ linea, seleccionada, onSeleccionar }) {
           onSeleccionar()
         }
       }}
-      style={seleccionada ? { outline: '2px solid var(--cf-gold)', outlineOffset: 2 } : undefined}
       padding={false}
       className="block px-4 py-4 group relative overflow-hidden"
+      // UN SOLO `style`. Habia dos y el segundo pisaba al primero, asi que el
+      // resalte de la tarjeta elegida NO SE PINTABA NUNCA. No lo vio el servidor
+      // de desarrollo, ni las pruebas, ni el barrido de rutas: lo caza el
+      // `build`, que es el unico que compila de verdad.
       style={{
         background: P.grad,
         border: `1px solid ${P.border}`,
         boxShadow: P.shadow,
+        ...(seleccionada ? { outline: '2px solid var(--cf-gold)', outlineOffset: 2 } : null),
       }}
     >
       <CardWaves tint={P.waves} />
