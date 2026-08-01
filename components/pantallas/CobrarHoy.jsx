@@ -310,9 +310,11 @@ export default function CobrarHoy({
         grupos.map((g) => (
           <div key={g.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
             <CabezaGrupo nombre={g.nombre} pendientes={g.pendientes} total={g.total} />
-            {g.filas.map((f) => (
-              <FilaCobro key={f.id} {...f} onClick={() => onCobrar?.(f)} />
-            ))}
+            <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
+              {g.filas.map((f) => (
+                <FilaCobro key={f.id} {...f} onClick={() => onCobrar?.(f)} />
+              ))}
+            </div>
           </div>
         ))
       )}

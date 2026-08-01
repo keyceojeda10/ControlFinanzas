@@ -284,7 +284,7 @@ export default function CobrosHoyPage() {
   }
 
   if (authLoading || loading) return (
-    <div className="max-w-2xl mx-auto space-y-3 px-1">
+    <div className="max-w-2xl lg:max-w-[1180px] mx-auto space-y-3 px-1">
       <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--cf-card)' }} />
       <div className="rounded-[16px] h-16 animate-pulse" style={{ background: 'var(--cf-card)' }} />
       {[...Array(4)].map((_, i) => (
