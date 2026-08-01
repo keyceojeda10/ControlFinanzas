@@ -191,9 +191,17 @@ export default function AnaliticasPage() {
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
+            {/* La base es un MILLÓN, no cien pesos.
+                Decía «Por cada $100 en la calle, ganas $X» con X = el ROI, que
+                es un PORCENTAJE pintado como pesos. Con un 0,2% mensual la
+                frase salía «ganas $0 neto»: aritméticamente son 20 centavos, y
+                redondeados a pesos le decían al dueño que no gana nada.
+                Con base un millón el número se lee. */}
             <p className="text-[14px] lg:text-[15px]" style={{ color: '#F3F3F6', margin: 0 }}>
-              Por cada {fmt(100)} en la calle, ganas{' '}
-              <strong style={{ color: 'var(--cf-gold-light)' }}>{fmt(resumen.roiMensual)} neto</strong>.
+              Por cada {fmt(1000000)} en la calle, ganas{' '}
+              <strong style={{ color: 'var(--cf-gold-light)' }}>
+                {fmt(Math.round(resumen.roiMensual * 10000))} neto
+              </strong>{' '}al mes.
             </p>
             <div className="grid grid-cols-3 gap-4 mt-4">
               {[
