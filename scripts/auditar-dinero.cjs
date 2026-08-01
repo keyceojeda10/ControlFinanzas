@@ -68,6 +68,11 @@ const MODOS_CONOCIDOS = [
 
 const PAGINA = 2000
 
+// Por encima de esto, un «descuento» ya no es un descuento a un cliente: es un
+// tapon para forzar el cuadre de la caja. Se cuenta aparte para que un solo
+// asiento no ahogue la cifra de las otras 397 organizaciones.
+const UMBRAL_TAPON = 50_000_000
+
 // ────────────────────────────────────────────────────────────────────────────
 // Argumentos
 // ────────────────────────────────────────────────────────────────────────────
@@ -144,7 +149,7 @@ function organizacionVacia(id, nombre) {
     cartera: { totalAPagar: 0, totalPagado: 0, porCobrar: 0 },
     porModo: {},
     renovaciones: { cantidad: 0, valorNominal: 0, efectivoAsentado: 0, sinAsiento: 0 },
-    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0 },
+    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, tapones: 0, taponesMonto: 0 },
     danos: {
       cuotasDesincronizadas: 0,
       cuotasDesincronizadasMonto: 0,
@@ -246,16 +251,24 @@ async function medir(opts) {
     }
   }
 
-  // ── 4. Efectivo fantasma: ajustes que vienen de un pago ──
-  // Solo dos cosas asientan `ajuste` con referenciaTipo='pago': el descuento
-  // (pagos/route.js:639) y el interes perdonado en la liquidacion (:655). Ni
-  // uno ni otro es plata que salio de la caja, y los dos la bajan.
+  // ── 4. Efectivo fantasma: descuento e interes perdonado ──
+  //
+  // Los dos se asientan como EGRESO de capital (pagos/route.js:639 y :655) y
+  // ninguno de los dos es plata que salio de la caja: bajan la cartera, no la
+  // bolsa. Como `disponibleHoy = Capital.saldo`, la resta es permanente.
+  //
+  // ⚠ EL FILTRO POR `referenciaTipo` NO SIRVE, y lo aprendi equivocandome.
+  // La primera version cogia todo `ajuste` con referenciaTipo='pago' y daba
+  // $2.611 millones — mas que TODO el capital en la calle. Ahi dentro venian
+  // 823 «Reverso recaudo» y 432 «Reverso pago anulado», que son legitimos:
+  // plata que entro y luego se anulo, y que SI debe salir de la caja.
+  // Hay que mirar la descripcion, y netear los reversos de descuento.
   {
     let saltar = 0
     for (;;) {
       const filas = await prisma.movimientoCapital.findMany({
         where: { tipo: 'ajuste', referenciaTipo: 'pago', ...(opts.org ? { organizationId: opts.org } : {}) },
-        select: { organizationId: true, monto: true, saldoAnterior: true, saldoNuevo: true },
+        select: { organizationId: true, monto: true, descripcion: true, saldoAnterior: true, saldoNuevo: true },
         orderBy: { id: 'asc' },
         take: PAGINA,
         skip: saltar,
@@ -264,11 +277,29 @@ async function medir(opts) {
       for (const f of filas) {
         const o = acc.get(f.organizationId)
         if (!o) continue
-        o.efectivoFantasma.cantidad += 1
-        o.efectivoFantasma.monto += Number(f.monto) || 0
-        // Si el saldo NO bajo, el asiento no hizo daño: se cuenta aparte para
-        // no exagerar la cifra que despues hay que devolverle al prestamista.
-        if (Number(f.saldoNuevo) >= Number(f.saldoAnterior)) o.efectivoFantasma.noBajaronSaldo += 1
+        const d = f.descripcion || ''
+        const monto = Number(f.monto) || 0
+        const esReverso = /^Reverso descuento/i.test(d)
+        const esFantasma = /^Descuento aplicado/i.test(d) || /perdonado/i.test(d)
+        if (!esReverso && !esFantasma) continue
+
+        if (esReverso) {
+          o.efectivoFantasma.reversado += monto
+        } else {
+          o.efectivoFantasma.cantidad += 1
+          o.efectivoFantasma.monto += monto
+          // Si el saldo NO bajo, el asiento no hizo daño.
+          if (Number(f.saldoNuevo) >= Number(f.saldoAnterior)) o.efectivoFantasma.noBajaronSaldo += 1
+          // Un «descuento» mas grande que cualquier prestamo real no es un
+          // descuento: es alguien forzando el cuadre. Se aisla para que no
+          // ahogue la cifra de los demas. Paso de verdad el 7 jul 2026: un
+          // negocio asento $1.178.647.000 con el motivo «(CUADRE)» y se dejo
+          // la caja en -$1.142.705.070.
+          if (monto >= UMBRAL_TAPON) {
+            o.efectivoFantasma.tapones += 1
+            o.efectivoFantasma.taponesMonto += monto
+          }
+        }
       }
       saltar += filas.length
       if (filas.length < PAGINA) break
@@ -393,7 +424,15 @@ async function medir(opts) {
         efectivoAsentado: Math.round(o.renovaciones.efectivoAsentado),
         inflado: Math.round(o.renovaciones.valorNominal - o.renovaciones.efectivoAsentado),
       },
-      efectivoFantasma: { ...o.efectivoFantasma, monto: Math.round(o.efectivoFantasma.monto) },
+      efectivoFantasma: {
+        ...o.efectivoFantasma,
+        monto: Math.round(o.efectivoFantasma.monto),
+        reversado: Math.round(o.efectivoFantasma.reversado),
+        taponesMonto: Math.round(o.efectivoFantasma.taponesMonto),
+        // Lo que de verdad hay que devolverle al prestamista: sin los tapones
+        // (que son otra historia) y sin lo que ya se reverso.
+        neto: Math.round(o.efectivoFantasma.monto - o.efectivoFantasma.taponesMonto - o.efectivoFantasma.reversado),
+      },
       danos: {
         ...o.danos,
         cuotasDesincronizadasMonto: Math.round(o.danos.cuotasDesincronizadasMonto),
@@ -418,7 +457,7 @@ function totalizar(orgs) {
     capitalEnLaCalle: { cascada: 0, proporcional: 0, montoPrestado: 0, deltaCascadaVsProporcional: 0, deltaViejaVsProporcional: 0 },
     cartera: { totalAPagar: 0, totalPagado: 0, porCobrar: 0 },
     renovaciones: { cantidad: 0, valorNominal: 0, efectivoAsentado: 0, sinAsiento: 0, inflado: 0 },
-    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0 },
+    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, tapones: 0, taponesMonto: 0, neto: 0 },
     danos: {},
     porModo: {},
   }
@@ -462,13 +501,22 @@ function informe(foto, opts) {
   L.push('')
 
   L.push('── 2 · EFECTIVO FANTASMA (descuentos e interes perdonado) ──')
-  L.push(`   asientos ................. ${t.efectivoFantasma.cantidad}`)
-  L.push(`   plata restada de la caja . ${plata(t.efectivoFantasma.monto)}`)
-  if (t.efectivoFantasma.noBajaronSaldo) {
-    L.push(`   de esos, no bajaron saldo  ${t.efectivoFantasma.noBajaronSaldo}`)
+  const ef = t.efectivoFantasma
+  L.push(`   asientos ................. ${ef.cantidad}`)
+  L.push(`   restado de la caja ....... ${plata(ef.monto)}`)
+  L.push(`   menos lo ya reversado .... ${plata(ef.reversado)}`)
+  if (ef.tapones) {
+    L.push(`   menos ${ef.tapones} TAPON(ES) ......... ${plata(ef.taponesMonto)}  ← ver abajo`)
   }
+  L.push(`   ► fantasma neto .......... ${plata(ef.neto)}`)
   L.push('   Ninguno de estos pesos salio nunca de la caja: bajan la cartera,')
   L.push('   no la bolsa. Y la resta es permanente.')
+  if (ef.tapones) {
+    L.push('')
+    L.push(`   ⚠ ${ef.tapones} «descuento(s)» de mas de ${plata(UMBRAL_TAPON)}. Eso no es un descuento a un`)
+    L.push('     cliente: es alguien forzando el cuadre de su caja a martillazos porque')
+    L.push('     la app no le deja ver donde esta el descuadre. Es el sintoma, no la causa.')
+  }
   L.push('')
 
   L.push('── 3 · RENOVACIONES: cuanto infla sumar montoPrestado crudo ──')
