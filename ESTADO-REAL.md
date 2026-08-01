@@ -386,3 +386,40 @@ datos:
 
 `ListaSocios` ya acepta `pendiente` y `onRepartir` y nadie se los pasa: el día
 que exista el movimiento de reparto, la acción primaria es cablear, no construir.
+
+## E2 · caja y líneas de crédito — medido, con dos bloqueos reales
+
+### T06-05 · caja en escritorio
+
+La lámina resume la queja: *«En 1440px la caja actual gasta todo el ancho en un
+"$0" y cinco mosaicos, y deja los movimientos en un desplegable»*. Pide tres
+cosas: el saldo y su desglose en UNA banda, los movimientos como TABLA con hora ·
+concepto · cliente · cobrador, y **el cierre de cobradores a la derecha** — *«que
+es lo que el dueño mira a las siete de la tarde»*.
+
+Medido en `app/(dashboard)/caja/page.jsx` (2.000+ líneas):
+
+| Dónde | Qué |
+|---|---|
+| línea 989 | `max-w-2xl lg:max-w-5xl mx-auto space-y-4` — la vista del dueño. Se ensancha pero **sigue siendo una columna**. |
+| línea 643 | `max-w-xl mx-auto` — 576px fijos, la otra vista. |
+| línea 1522 | `cobradores.map(...)` — el cierre por cobrador, **en otra pestaña** («Cuadre»). |
+| línea 744 | `{cantidadPagosFiltrados > 0 && pagosDiaCard}` — la tabla de movimientos ya existe y **solo se pinta si hay pagos**. |
+
+**Dos bloqueos, ninguno de diseño:**
+
+1. **No es cotejable con los datos de hoy.** La demo tiene 0 pagos, así que la
+   tabla de movimientos —lo que la lámina quiere sacar del desplegable— no se
+   pinta. Para juzgarla hay que registrar un cobro primero. No se construye a
+   ciegas una pantalla que mueve plata.
+2. **El cierre de cobradores vive en otra pestaña.** Traerlo a la derecha de la
+   caja del día no es mover un bloque: es repartir el estado de las pestañas.
+
+El camino corto cuando se retome: partir el cuerpo de la línea 989 en dos
+columnas en `lg` —izquierda el saldo, las acciones y los movimientos; derecha el
+capital por ruta y el cierre— y **registrar un cobro antes de mirar**.
+
+### T32-02 · líneas de crédito en 1440
+
+**Sigue sin poder cotejarse: 0 filas en la demo.** Es el mismo bloqueo que ya
+estaba anotado; no ha cambiado. Sembrar una línea de crédito es el paso previo.
