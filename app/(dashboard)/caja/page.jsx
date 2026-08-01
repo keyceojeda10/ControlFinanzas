@@ -527,9 +527,17 @@ export default function CajaPage() {
       : null
     const quien = p.cobradorNombre || p.registradoPor || null
     const donde = p.rutaNombre || null
+    const cliente = p.clienteNombre || p.cliente?.nombre || 'Cliente'
     return {
-      concepto: `Cobro · ${p.clienteNombre || p.cliente?.nombre || 'Cliente'}`,
+      concepto: `Cobro · ${cliente}`,
       detalle: [hora, quien, donde].filter(Boolean).join(' · '),
+      // ── LAS PIEZAS SUELTAS, PARA LA TABLA DE 1440 (T06-05) ──
+      // La lámina pide los movimientos como tabla con hora · concepto · cliente
+      // · cobrador. `detalle` las junta en una sola línea, que es lo correcto en
+      // el teléfono y lo que impide hacer columnas sentado. Van las dos formas:
+      // el móvil sigue leyendo `detalle` y el escritorio arma sus columnas.
+      hora, cliente, cobrador: quien, ruta: donde,
+      tipo: 'Cobro',
       monto: formatMoney(Math.round(Number(p.montoPagado || 0))),
       entra: true,
     }

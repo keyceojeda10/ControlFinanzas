@@ -239,11 +239,68 @@ export function CajaDia({
             </span>
           </div>
 
+          {/* ── LA CABECERA DE LA TABLA, SOLO SENTADO (T06-05) ──
+              El `display` va SOLO en la clase, nunca en línea: una clase
+              responsive pierde siempre contra un estilo en línea. */}
+          {movimientos.length > 0 && movimientos[0]?.hora && (
+            <div
+              className="hidden lg:grid"
+              style={{
+                gridTemplateColumns: '18px 84px 1fr 1fr 110px', gap: 13, flex: 'none',
+                alignItems: 'center', padding: '9px 20px',
+                borderTop: '1px solid var(--cf-hairline)',
+                fontSize: 10, fontWeight: 800, letterSpacing: '.07em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              }}
+            >
+              <span />
+              <span>Hora</span>
+              <span>Concepto</span>
+              <span>Cobrador</span>
+              <span style={{ textAlign: 'right' }}>Monto</span>
+            </div>
+          )}
+
           {movimientos.map((m, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 13, flex: 'none',
-              padding: '13px 20px', borderTop: '1px solid var(--cf-hairline)',
-            }}>
+            <div key={`t${i}`}
+              className="hidden lg:grid"
+              style={{
+                gridTemplateColumns: '18px 84px 1fr 1fr 110px', gap: 13, flex: 'none',
+                alignItems: 'center', padding: '12px 20px',
+                borderTop: '1px solid var(--cf-hairline)',
+              }}
+            >
+              <span aria-hidden style={{
+                width: 7, height: 7, borderRadius: 999,
+                background: m.entra ? 'var(--cf-green)' : 'var(--cf-red)',
+              }} />
+              <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', whiteSpace: 'nowrap' }}>{m.hora ?? '—'}</span>
+              <span style={{
+                fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{m.concepto}</span>
+              <span style={{
+                fontSize: 12.5, color: 'var(--cf-ink-3)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{[m.cobrador, m.ruta].filter(Boolean).join(' · ') || '—'}</span>
+              <span className="cf-fig" style={{
+                fontSize: 15, textAlign: 'right',
+                color: m.entra ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+              }}>{m.entra ? '+' : '−'}{m.monto}</span>
+            </div>
+          ))}
+
+          {movimientos.map((m, i) => (
+            <div key={i}
+              // `flex` en la CLASE, no en línea: con `display:'flex'` inline el
+              // `lg:hidden` no puede ganar y la fila de móvil saldría TAMBIÉN en
+              // escritorio, debajo de la tabla. Es el mismo fallo que ya me costó
+              // tres veces en un día, y por eso hay una prueba que lo caza.
+              className="flex lg:hidden"
+              style={{
+                alignItems: 'center', gap: 13, flex: 'none',
+                padding: '13px 20px', borderTop: '1px solid var(--cf-hairline)',
+              }}>
               {/* EL PUNTO DE COLOR, que faltaba. Dice si el movimiento suma o
                   resta ANTES de leer el monto, y con catorce filas eso es la
                   diferencia entre recorrer la lista y leerla. El signo del monto
@@ -281,7 +338,12 @@ export function CajaDia({
               background: 'none', border: 0, borderTop: '1px solid var(--cf-hairline)',
               fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)', textAlign: 'center',
               fontFamily: 'var(--font-manrope), system-ui',
-            }}>Ver los {totalMovimientos} movimientos</button>
+            }}>
+              {/* Con uno solo decía «Ver los 1 movimientos». Es la primera fila
+                  que ve un negocio que arranca, y arrancar leyendo un error de
+                  concordancia no ayuda a confiar en las cifras de al lado. */}
+              {totalMovimientos === 1 ? 'Ver el movimiento' : `Ver los ${totalMovimientos} movimientos`}
+            </button>
           )}
         </Tarjeta>
 
