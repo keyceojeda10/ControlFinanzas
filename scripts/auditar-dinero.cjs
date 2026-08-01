@@ -149,7 +149,7 @@ function organizacionVacia(id, nombre) {
     cartera: { totalAPagar: 0, totalPagado: 0, porCobrar: 0 },
     porModo: {},
     renovaciones: { cantidad: 0, valorNominal: 0, efectivoAsentado: 0, sinAsiento: 0 },
-    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, tapones: 0, taponesMonto: 0 },
+    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, reversadoTapon: 0, tapones: 0, taponesMonto: 0 },
     danos: {
       cuotasDesincronizadas: 0,
       cuotasDesincronizadasMonto: 0,
@@ -284,7 +284,11 @@ async function medir(opts) {
         if (!esReverso && !esFantasma) continue
 
         if (esReverso) {
-          o.efectivoFantasma.reversado += monto
+          // El reverso de un tapon se cuenta aparte: si no, al netear se
+          // restaria dos veces (una como tapon y otra como reverso) y el
+          // fantasma sale negativo. Cada cosa contra su pareja.
+          if (monto >= UMBRAL_TAPON) o.efectivoFantasma.reversadoTapon += monto
+          else o.efectivoFantasma.reversado += monto
         } else {
           o.efectivoFantasma.cantidad += 1
           o.efectivoFantasma.monto += monto
@@ -428,10 +432,11 @@ async function medir(opts) {
         ...o.efectivoFantasma,
         monto: Math.round(o.efectivoFantasma.monto),
         reversado: Math.round(o.efectivoFantasma.reversado),
+        reversadoTapon: Math.round(o.efectivoFantasma.reversadoTapon),
         taponesMonto: Math.round(o.efectivoFantasma.taponesMonto),
         // Lo que de verdad hay que devolverle al prestamista: sin los tapones
         // (que son otra historia) y sin lo que ya se reverso.
-        neto: Math.round(o.efectivoFantasma.monto - o.efectivoFantasma.taponesMonto - o.efectivoFantasma.reversado),
+        neto: Math.round((o.efectivoFantasma.monto - o.efectivoFantasma.taponesMonto) - o.efectivoFantasma.reversado),
       },
       danos: {
         ...o.danos,
@@ -457,7 +462,7 @@ function totalizar(orgs) {
     capitalEnLaCalle: { cascada: 0, proporcional: 0, montoPrestado: 0, deltaCascadaVsProporcional: 0, deltaViejaVsProporcional: 0 },
     cartera: { totalAPagar: 0, totalPagado: 0, porCobrar: 0 },
     renovaciones: { cantidad: 0, valorNominal: 0, efectivoAsentado: 0, sinAsiento: 0, inflado: 0 },
-    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, tapones: 0, taponesMonto: 0, neto: 0 },
+    efectivoFantasma: { cantidad: 0, monto: 0, noBajaronSaldo: 0, reversado: 0, reversadoTapon: 0, tapones: 0, taponesMonto: 0, neto: 0 },
     danos: {},
     porModo: {},
   }
