@@ -102,12 +102,43 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
           </span>
         )}
       </div>
+      {/* ── T11-03 · EN 1440 EL HISTORIAL ES UNA TABLA ──
+          En el telefono cada pago son dos lineas y la segunda va comprimida:
+          «efectivo · quedo en $300.000». Sentado sobra ancho para que cada dato
+          tenga su columna, y eso es lo que la lamina pide.
+
+          NO SE INVENTA NINGUNA COLUMNA. La lamina dibuja tambien COBRADOR, y ese
+          dato no llega hasta aqui —quien monta la ficha pasa `detalle` ya
+          compuesto—. Poner la cabecera sin el contenido seria una columna vacia
+          en todas las filas, que es peor que no tenerla.
+
+          La cabecera solo con ancho: cinco rotulos sobre 390px dejan las
+          columnas en dos caracteres. */}
+      <div className="hidden lg:grid" style={{
+        gridTemplateColumns: '150px 1fr 150px 130px', gap: 12,
+        padding: '9px 19px', background: 'var(--cf-surface)',
+        borderTop: '1px solid var(--cf-hairline)',
+      }}>
+        {['Fecha', 'Cómo pagó', 'Monto', 'Le quedó'].map((h, i) => (
+          <span key={h} className={i >= 2 ? 'text-right' : ''} style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>{h}</span>
+        ))}
+      </div>
+
       {pagos.map((p, i) => (
-        <div key={i} style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '11px 19px',
-          borderTop: '1px solid var(--cf-hairline)', flex: 'none', minHeight: 52,
-        }}>
-          <span style={{ flex: 1, minWidth: 0 }}>
+        <div key={i}
+          className="flex items-center lg:grid lg:items-center"
+          style={{
+            gap: 12, padding: '11px 19px',
+            gridTemplateColumns: '150px 1fr 150px 130px',
+            borderTop: '1px solid var(--cf-hairline)', flex: 'none', minHeight: 52,
+          }}>
+          {/* `lg:contents` disuelve este envoltorio en la rejilla: en movil
+              agrupa fecha y detalle en una columna, y con ancho cada uno pasa a
+              ser su propia celda sin duplicar el marcado. */}
+          <span className="lg:contents" style={{ flex: 1, minWidth: 0 }}>
             <span className="cf-num" style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink)' }}>
               {p.fecha}
             </span>
@@ -115,12 +146,21 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
                 Leia `p.medio` y `p.saldo` por separado, y quien la monta pasa
                 `detalle` — asi que la segunda linea salia VACIA. Se acepta
                 `detalle` y se dejan los dos campos viejos como respaldo. */}
-            <span className="cf-num" style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+            <span className="cf-num block lg:hidden" style={{ fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
               {p.detalle ?? <>{p.medio}{p.saldo && <> · quedó en {p.saldo}</>}</>}
             </span>
+            <span className="cf-num hidden lg:block" style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>
+              {p.comoPago ?? p.medio ?? p.detalle}
+            </span>
           </span>
-          <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-green-dark)', flex: 'none' }}>
+          <span className="cf-fig lg:text-right" style={{ fontSize: 15, color: 'var(--cf-green-dark)', flex: 'none' }}>
             {p.monto}
+          </span>
+          {/* «LE QUEDÓ» EN SU COLUMNA. Es la palabra que usa el prestamista
+              cuando el cliente reclama, y para eso se abre esta pantalla; en el
+              telefono va escondida dentro del detalle de la segunda linea. */}
+          <span className="cf-fig hidden lg:block text-right" style={{ fontSize: 14, color: 'var(--cf-ink-2)' }}>
+            {p.saldo ?? '—'}
           </span>
         </div>
       ))}

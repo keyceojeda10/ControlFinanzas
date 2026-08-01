@@ -665,6 +665,13 @@ export default function PrestamoDetallePage({ params }) {
           p.tipo && p.tipo !== 'completo' ? p.tipo : null,
           `quedó en ${formatMoney(saldo)}`,
         ].filter(Boolean).join(' · '),
+        // Suelto ademas del texto: en 1440 tiene columna propia.
+        saldo: formatMoney(saldo),
+        // Y sin el saldo dentro, para no decirlo dos veces cuando hay columna.
+        comoPago: [
+          p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+        ].filter(Boolean).join(' · '),
         monto: formatMoney(monto),
       })
       saldo += monto
