@@ -293,3 +293,32 @@ Dos cosas que hay que respetar:
    interés. Ese aviso tiene que quedar EN EL PANEL DERECHO, no al final: es la
    señal de que el préstamo se va a alargar solo, y el dueño la tiene que ver
    mientras mueve la tasa, no después de confirmar.
+
+---
+
+## T09-01 · configuración — cotejado campo por campo, NO cambiado
+
+`TuNegocio` está **importado en la línea 5 de `configuracion/page.jsx` y no se
+renderiza en ningún sitio**. Importación muerta. El formulario que se ve es el
+anterior.
+
+Cotejo de los dos, campo por campo:
+
+| Campo | El de hoy | `TuNegocio` |
+|---|---|---|
+| Nombre del negocio | sí | sí |
+| WhatsApp | sí | sí |
+| **Ciudad** | **sí** (línea 547, va en el `body` de la línea 462) | **NO EXISTE** |
+| País y moneda | no | sí, de solo lectura |
+| Formato de los montos | no | sí, de solo lectura |
+| Tema | no | sí, tres opciones |
+| Cómo guarda | botón «Guardar cambios» | solo, al dejar el campo |
+
+**Cambiarlo tal cual borra «Ciudad» de la pantalla** y deja de mandarla en el
+`PATCH`. No es una diferencia de diseño: es un dato que se deja de poder
+escribir.
+
+Antes de montarlo hay que **añadirle `ciudad` a `TuNegocio`** —cabe en la
+segunda rejilla, junto a WhatsApp— y comprobar que el guardado solo la incluye.
+Lo demás del cambio es ganancia: país, formato y tema hoy no se ven en ninguna
+parte de configuración.
