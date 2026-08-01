@@ -14,6 +14,8 @@ import { adaptarPanel, porRutaHoy } from '@/lib/adaptadores/panel'
 import CacheAge from '@/components/offline/CacheAge'
 
 // Carga diferida — solo se descargan si el usuario los necesita
+import TraerCartera from '@/components/pantallas/TraerCartera'
+
 const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
 const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
@@ -1571,6 +1573,49 @@ export default function DashboardPage() {
           onMinimize={() => {
             onboarding.minimize()
           }}
+        />
+      </div>
+    )
+  }
+
+  // ── T22-00 · MIENTRAS NO HAYA CARTERA, EL PANEL ES TRAERLA ──
+  //
+  // Esto no es una pantalla de bienvenida: es el arreglo del cuello de botella.
+  // Medido sobre la base real, los clientes cargados predicen el pago —con 0 la
+  // conversion es 0%, entre 51 y 150 es el 74%— y el 75% de las organizaciones
+  // se queda atascada en cinco clientes o menos.
+  //
+  // La causa es que el asistente es DE UN SOLO TIRO: se cierra (paso 99) y no
+  // vuelve nunca. Quien lo termina sin cargar nada aterriza en un panel vacio y
+  // ahi se queda. Una pantalla de arranque mas bonita no arregla eso; que VUELVA
+  // cada vez que entra hasta que tenga cartera, si.
+  //
+  // Y no estorba: no tapa nada, es el CONTENIDO del panel, que de todas formas
+  // esta vacio. El «puedes cerrar esto y volver cuando quieras» deja de ser una
+  // promesa y pasa a ser verdad.
+  //
+  // Solo al dueño: al cobrador no le toca subir la cartera, y ademas el servidor
+  // le manda `finanzas: null`.
+  if (esOwner && !loading && data && (data.clientes?.total ?? 0) === 0) {
+    return (
+      <div className="max-w-3xl lg:max-w-6xl mx-auto">
+        <TraerCartera
+          nombre={session?.user?.nombre || session?.user?.name}
+          // LA FOTO, que es el camino rapido: el migrador lee la cartulina.
+          onFoto={() => { window.location.href = '/migrador' }}
+          onExcel={() => { window.location.href = '/carga-masiva' }}
+          onCero={() => { window.location.href = '/prestamos/nuevo' }}
+          onEscribirnos={() => { window.location.href = '/soporte/nuevo' }}
+          // SOLO LO QUE SE PUEDE COMPROBAR. La lamina dibuja tambien «como
+          // prestas» en verde, pero aqui no hay forma de saber si de verdad lo
+          // configuro, y marcarle como hecho algo que no hizo es peor que no
+          // enseñarlo. Los tres de abajo son ciertos: esta dentro (cuenta), esta
+          // en esta pantalla (cartera), y no ha cobrado nada (0 clientes).
+          pasos={[
+            { texto: 'Crear tu cuenta', hecho: true },
+            { texto: 'Traer tu cartera', actual: true },
+            { texto: 'Salir a cobrar' },
+          ]}
         />
       </div>
     )
