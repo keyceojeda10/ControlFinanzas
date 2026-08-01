@@ -535,9 +535,12 @@ export default function ReportesPage() {
             <p className="text-[12px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Rendimiento de cobradores</p>
           </div>
 
-          {/* Top 3 podio si hay >= 2 */}
+          {/* Top 3 podio si hay >= 2.
+              SOLO EN MOVIL. En 1440 debajo va la tabla entera con las mismas
+              cifras y en columnas: el podio seria decir dos veces quien va
+              primero, una de ellas con medallas. */}
           {topCobradores.length >= 2 && (
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="grid grid-cols-3 gap-2 mb-4 lg:hidden">
               {[1, 0, 2].map((idx) => {
                 const c = topCobradores[idx]
                 if (!c) return <div key={idx} />
@@ -567,8 +570,71 @@ export default function ReportesPage() {
             </div>
           )}
 
-          {/* Lista completa con barras */}
-          <div className="space-y-2.5">
+          {/* ── T32-01 · LA TABLA, EN 1440 ──
+              Las tarjetas apiladas son de telefono: una encima de otra, cada
+              cifra con su rotulo repetido, y a 1.400px de ancho eso es una
+              columna estrecha con medio metro de vacio al lado.
+
+              Sentado, lo que se hace con esto es COMPARAR — quien recogio menos
+              de lo esperado, quien entrego menos de lo que recogio— y comparar
+              cifras que estan en la misma columna cuesta un vistazo; hacerlo
+              entre tarjetas cuesta recorrerlas.
+
+              Las mismas cifras, sin quitar ninguna. */}
+          <div data-tabla-cobradores="1" className="hidden lg:block rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+            <div className="grid items-center px-4 py-2.5"
+              style={{ gridTemplateColumns: '1fr 130px 130px 140px 70px', background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)' }}>
+              {['Cobrador', 'Esperado', 'Recogió', 'Le entregó', ''].map((h, i) => (
+                <span key={h || i} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i === 0 ? '' : 'text-right'}`}
+                  style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
+              ))}
+            </div>
+            {cobsData.map((c, i) => {
+              const totalGastos = c.totalGastos || 0
+              const totalDesembolsado = c.totalDesembolsado || 0
+              const saldoRealCaja = c.saldoRealCaja ?? ((c.totalRecogido || 0) - totalGastos - totalDesembolsado)
+              const eficColor = c.eficiencia >= 95 ? 'var(--cf-green-dark)' : c.eficiencia >= 80 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
+              // SIN RUTA se dice EN ROJO, como en la lamina: un cobrador sin
+              // ruta no puede cobrar, y eso no es un detalle del renglon.
+              const sinRuta = !c.ruta || c.ruta === 'Sin ruta'
+              return (
+                <div key={c.id} className="grid items-center px-4 py-3"
+                  style={{
+                    gridTemplateColumns: '1fr 130px 130px 140px 70px',
+                    borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                    background: 'var(--cf-card)',
+                  }}>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
+                    <p className="text-[11px]" style={{ color: sinRuta ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                      {sinRuta ? 'sin ruta' : c.ruta} · {c.diasTrabajados} {c.diasTrabajados === 1 ? 'día' : 'días'}
+                    </p>
+                  </div>
+                  <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink-2)' }}>
+                    {formatMoney(c.totalEsperado || 0)}
+                  </span>
+                  {/* EN ROJO EL CERO. «Recogio $0» sobre «esperado $16,5M» es la
+                      unica cifra de esta tabla que hay que ver desde lejos. */}
+                  <span className="cf-fig text-[14px] text-right" style={{
+                    color: (c.totalRecogido || 0) === 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+                  }}>
+                    {formatMoney(c.totalRecogido || 0)}
+                  </span>
+                  <span className="cf-fig text-[14px] text-right" style={{
+                    color: saldoRealCaja < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+                  }}>
+                    {saldoRealCaja < 0 ? '−' : ''}{formatMoney(Math.abs(saldoRealCaja))}
+                  </span>
+                  <span className="cf-fig text-[12px] font-bold text-right" style={{ color: eficColor }}>
+                    {c.eficiencia}%
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Lista completa con barras — la version de telefono */}
+          <div className="space-y-2.5 lg:hidden">
             {cobsData.map((c) => {
               const totalGastos = c.totalGastos || 0
               const totalDesembolsado = c.totalDesembolsado || 0
