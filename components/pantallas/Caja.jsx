@@ -94,6 +94,7 @@ export function CajaDia({
   fecha,
   rangos = [], rangoActivo, onRango,
   baseInicial, cobrado, cobradoDigital, prestado, gastos, ajustes, saldo,
+  lineas = null,
   descuadre = null, onVerDescuadre,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
@@ -185,25 +186,51 @@ export function CajaDia({
               para el patrimonio, y esto es el efectivo del día. Son dos
               preguntas distintas y por eso pueden dar signos distintos. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-            <LineaExtracto concepto="Base inicial" valor={baseInicial} />
-            <LineaExtracto concepto="Cobrado hoy"  valor={cobrado}  signo="+" />
-            {/* En qué se cobró. Una caja física no contiene Nequi, y el 12% del
-                recaudo de los negocios grandes entra por transferencia: sin
-                esta línea el fajo de la noche no cuadra nunca y el cobrador
-                carga con un faltante que no es suyo. Solo se pinta si de verdad
-                hubo transferencias. */}
-            {cobradoDigital ? (
-              <LineaExtracto sub concepto="de eso, por transferencia" valor={cobradoDigital} />
-            ) : null}
-            <LineaExtracto concepto="Prestado hoy" valor={prestado} signo="−" />
-            <LineaExtracto concepto="Gastos"       valor={gastos}   signo="−" />
-            {/* «Ajustes» ERA EL TAPÓN.
-                Se calculaba como exactamente lo que faltaba para que la banda
-                cuadrara, así que cuadraba siempre y cualquier error de las
-                otras cuatro líneas desaparecía aquí dentro sin dejar rastro.
-                Ahora esta línea son las correcciones REALES del día —las que
-                alguien asentó, con su motivo— y solo aparece si las hubo. */}
-            {ajustes ? <LineaExtracto concepto="Correcciones" valor={ajustes} /> : null}
+            {/* ── LAS LÍNEAS VIENEN COMPUESTAS, NO SE ARMAN AQUÍ ──────────
+                Cuando las armaba esta pantalla NO sumaban el saldo: «Prestado
+                hoy» leía el valor nominal de los préstamos mientras el saldo
+                venía del libro, que solo cuenta el efectivo que salió de
+                verdad. En pantalla faltaban $693.800 y el aviso confesaba
+                $200 — la banda vieja con otra cara.
+
+                `lineasDeLaBanda` las compone desde el MISMO libro que calcula
+                el descuadre: o suman, o se dice que no.
+
+                Y solo aparecen las líneas que EXISTEN. Antes se pintaba
+                «Correcciones $0» aunque no hubiera ninguna, porque la guarda
+                comparaba el texto «$0», que siempre es verdadero. Una línea en
+                cero ocupa sitio y sugiere que ahí pasó algo. */}
+            {/* `flatMap` y no un Fragment con key: este archivo NO importa
+                React, así que `React.Fragment` compilaría y reventaría al abrir
+                la pantalla. Devolver un array plano de elementos con su propia
+                key hace lo mismo sin depender de nada. */}
+            {lineas ? lineas.flatMap((l) => {
+              const filas = [
+                <LineaExtracto
+                  key={l.id}
+                  concepto={l.rotulo}
+                  valor={l.texto}
+                  signo={l.signo === 1 ? '+' : l.signo === -1 ? '−' : undefined}
+                />,
+              ]
+              // En qué se cobró. Una caja física no contiene Nequi, y el 12%
+              // del recaudo de los negocios grandes entra por transferencia:
+              // sin esta línea el fajo de la noche no cuadra nunca y el
+              // cobrador carga con un faltante que no es suyo.
+              if (l.id === 'recaudo' && cobradoDigital) {
+                filas.push(
+                  <LineaExtracto key="recaudo-digital" sub concepto="de eso, por transferencia" valor={cobradoDigital} />,
+                )
+              }
+              return filas
+            }) : (
+              <>
+                <LineaExtracto concepto="Base inicial" valor={baseInicial} />
+                <LineaExtracto concepto="Cobrado hoy"  valor={cobrado}  signo="+" />
+                <LineaExtracto concepto="Prestado hoy" valor={prestado} signo="−" />
+                <LineaExtracto concepto="Gastos"       valor={gastos}   signo="−" />
+              </>
+            )}
           </div>
 
           {/* ── LO QUE NO CUADRA, DICHO ────────────────────────────────────

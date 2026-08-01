@@ -1,6 +1,7 @@
 'use client'
 // app/(dashboard)/caja/page.jsx - Caja del día
 
+import { lineasDeLaBanda } from '@/lib/dinero/conciliacion'
 import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -504,14 +505,31 @@ export default function CajaPage() {
     ? Math.round(conc.libro.ajustes || 0)
     : Math.round(stats.ajustesManualDia ?? 0)
 
+  // ── LAS LINEAS SALEN DEL MODULO, NO DE LA PAGINA ──
+  //
+  // La primera version las pintaba aqui a mano y el resultado NO sumaba el
+  // saldo: «Prestado hoy» seguia leyendo `montoPrestado` crudo ($7.800.000)
+  // mientras la conciliacion usaba el efectivo que de verdad salio
+  // ($7.079.000). En pantalla faltaban $693.800 y el aviso solo confesaba
+  // $200. Eso es la banda vieja con otra cara.
+  //
+  // `lineasDeLaBanda` las compone desde el MISMO libro que calcula el
+  // descuadre: o suman, o la propia funcion dice que no.
+  const banda = conc ? lineasDeLaBanda(conc) : null
+
   const descuadre = (() => {
     if (!conc) return null
     const d = conc.diferencias || {}
     const partes = []
-    if (d.recaudo) partes.push(`${formatMoney(Math.abs(d.recaudo))} ${d.recaudo > 0 ? 'asentados de mas' : 'cobrados que el libro no asento'}`)
+    if (d.recaudo) partes.push(`${formatMoney(Math.abs(d.recaudo))} ${d.recaudo > 0 ? 'asentados de más' : 'cobrados que el libro no asentó'}`)
     if (d.gastos) partes.push(`${formatMoney(Math.abs(d.gastos))} de gastos que no cuadran`)
-    if (d.desembolsos) partes.push(`${formatMoney(Math.abs(d.desembolsos))} de prestamos que no cuadran`)
-    if (d.sinExplicar) partes.push(`${formatMoney(Math.abs(d.sinExplicar))} sin explicacion`)
+    if (d.desembolsos) partes.push(`${formatMoney(Math.abs(d.desembolsos))} de préstamos que no cuadran`)
+    if (d.sinExplicar) partes.push(`${formatMoney(Math.abs(d.sinExplicar))} sin explicación`)
+    // Y si las lineas no llegan al saldo se dice tambien: es lo que el usuario
+    // ve con sus propios ojos al sumarlas.
+    if (banda && !banda.cuadra) {
+      partes.push(`las líneas suman ${formatMoney(banda.suma)} y el saldo dice ${formatMoney(banda.saldo)}`)
+    }
     if (!partes.length) return null
     return { texto: `Hoy la cuenta no cierra: ${partes.join(' · ')}.`, diferencias: d }
   })()
@@ -1242,6 +1260,7 @@ export default function CajaPage() {
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
         cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
+        lineas={banda ? banda.lineas.map((l) => ({ ...l, texto: formatMoney(l.monto) })) : null}
         descuadre={descuadre}
         prestado={formatMoney(prestadoHoy)}
         gastos={formatMoney(gastosHoy)}
