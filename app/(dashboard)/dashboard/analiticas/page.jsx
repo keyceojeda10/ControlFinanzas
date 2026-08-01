@@ -103,11 +103,25 @@ export default function AnaliticasPage() {
   }, [country])
 
   useEffect(() => {
-    fetch('/api/dashboard/analiticas')
+    // ── UNA PETICION ABORTADA NO ES UN ERROR ──
+    // La pantalla enseñaba «signal is aborted without reason» EN ROJO, en
+    // ingles y con el texto crudo del navegador. Pasa cada vez que se sale de
+    // aqui antes de que termine de cargar —que es a menudo— y lo que ve el
+    // dueño es su analitica rota por una frase que no significa nada para el.
+    //
+    // Con `AbortController`: al desmontar se cancela, y ese caso se ignora.
+    // Ademas el mensaje de los errores de verdad se escribe aqui, en castellano
+    // y diciendo que hacer; `e.message` puede ser cualquier cosa del navegador.
+    const ctrl = new AbortController()
+    fetch('/api/dashboard/analiticas', { signal: ctrl.signal })
       .then(r => { if (!r.ok) throw new Error('Error cargando datos'); return r.json() })
-      .then(setData)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+      .then((d) => { setData(d); setLoading(false) })
+      .catch((e) => {
+        if (e?.name === 'AbortError') return   // salimos de la pantalla, no es un fallo
+        setError('No pudimos cargar tus números. Revisa la conexión y vuelve a intentarlo.')
+        setLoading(false)
+      })
+    return () => ctrl.abort()
   }, [])
 
   if (loading) {
@@ -134,7 +148,7 @@ export default function AnaliticasPage() {
   const alertasVisibles = showAllAlertas ? alertas : alertas.slice(0, 5)
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto pb-24 space-y-4 lg:space-y-5">
+    <div className="p-4 lg:p-8 max-w-5xl lg:max-w-[1180px] mx-auto pb-24 space-y-4 lg:space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         {/* Titulo en la cabecera. Se queda el boton de descargar, que es la
@@ -152,43 +166,54 @@ export default function AnaliticasPage() {
         </button>
       </div>
 
-      {/* === ROI headline === */}
-      <Card>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Rendimiento de tu capital</p>
-        <div className="flex items-baseline gap-2 mt-1">
-          <span className="text-[32px] lg:text-[44px] font-mono font-bold tracking-tight" style={{ color: resumen.roiMensual >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-            {resumen.roiMensual}%
-          </span>
-          <span className="text-[12px] text-[var(--cf-ink-3)]">mensual</span>
-          <Badge value={resumen.cambioRecaudado} />
+      {/* === T31-02 · LO QUE RINDE TU CAPITAL, EN NEGRO ===
+          Era una tarjeta blanca mas entre siete tarjetas blancas: la cifra que
+          contesta «¿esto da o no da?» pesaba lo mismo que el resto. En carbon,
+          y con las tres cifras que la sostienen en la misma fila, es lo primero
+          que se lee al entrar — que es el trabajo de esta pantalla. */}
+      <div style={{
+        background: '#15161A', borderRadius: 'var(--cf-r-hero)',
+        padding: '22px 26px', color: '#F3F3F6',
+      }}>
+        <div className="flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-9">
+          <div style={{ flex: 'none' }}>
+            <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: '#A3A8B2' }}>
+              Lo que rinde tu capital
+            </p>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="cf-fig text-[40px] lg:text-[52px]" style={{
+                letterSpacing: '-.04em', lineHeight: 1,
+                color: resumen.roiMensual >= 0 ? '#2FBE6A' : '#F0575C',
+              }}>{resumen.roiMensual}%</span>
+              <span className="text-[13px]" style={{ color: '#A3A8B2' }}>al mes</span>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p className="text-[14px] lg:text-[15px]" style={{ color: '#F3F3F6', margin: 0 }}>
+              Por cada {fmt(100)} en la calle, ganas{' '}
+              <strong style={{ color: 'var(--cf-gold-light)' }}>{fmt(resumen.roiMensual)} neto</strong>.
+            </p>
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              {[
+                ['Ganancia neta', resumen.gananciaNetaMes, true],
+                ['Recaudado', resumen.recaudadoMes, false],
+                ['Capital en la calle', resumen.capitalEnCalle, false],
+              ].map(([rotulo, valor, verde]) => (
+                <div key={rotulo}>
+                  <p className="text-[9px] font-bold uppercase tracking-[.09em]" style={{ color: '#8A8E98' }}>{rotulo}</p>
+                  <p className="cf-fig text-[15px] lg:text-[19px] mt-1 truncate" style={{
+                    color: verde && valor < 0 ? '#F0575C' : '#F3F3F6',
+                  }}>
+                    <span className="hidden sm:inline">{fmt(valor)}</span>
+                    <span className="sm:hidden">{fmtShort(valor)}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-[11px] text-[var(--cf-ink-3)] mt-1">
-          Por cada {fmt(100)} en la calle, ganas {fmt(resumen.roiMensual)} neto
-        </p>
-        <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-[var(--cf-border)]">
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Ganancia neta</p>
-            <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate" style={{ color: resumen.gananciaNetaMes >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-              <span className="hidden sm:inline">{fmt(resumen.gananciaNetaMes)}</span>
-              <span className="sm:hidden">{fmtShort(resumen.gananciaNetaMes)}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Recaudado</p>
-            <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate">
-              <span className="hidden sm:inline">{fmt(resumen.recaudadoMes)}</span>
-              <span className="sm:hidden">{fmtShort(resumen.recaudadoMes)}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Capital</p>
-            <p className="text-[14px] lg:text-[18px] font-mono font-bold mt-0.5 truncate">
-              <span className="hidden sm:inline">{fmt(resumen.capitalEnCalle)}</span>
-              <span className="sm:hidden">{fmtShort(resumen.capitalEnCalle)}</span>
-            </p>
-          </div>
-        </div>
-      </Card>
+      </div>
 
       {/* === Desglose de rentabilidad === */}
       {rentabilidad && (
