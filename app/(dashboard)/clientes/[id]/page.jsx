@@ -1,6 +1,7 @@
 'use client'
 // app/(dashboard)/clientes/[id]/page.jsx - Detalle del cliente
 
+import { ComoPaga } from '@/components/pantallas/FichaCliente'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -53,6 +54,16 @@ export default function ClienteDetallePage({ params }) {
   const { lastSyncedAt } = useOffline()
 
   const [cliente, setCliente]   = useState(null)
+  // ── «COMO PAGA»: LOS DOCE MESES (C10 · T15-01) ──
+  // La pieza que la lamina llama la que justifica la pantalla, y que llevaba
+  // semanas bloqueada porque el dato no existia. Ya existe:
+  // `/api/clientes/[id]/comportamiento`.
+  //
+  // Se pide APARTE y no se bloquea la ficha con ella: recorre doce meses de
+  // pagos y es la peticion mas cara de esta pantalla. Si falla o tarda, la
+  // ficha se ve igual y el bloque simplemente no aparece — antes tampoco
+  // estaba.
+  const [comportamiento, setComportamiento] = useState(null)
 
   // Deja constancia para «Últimos que abriste» del buscador (T34-03). Se anota
   // AQUI y no en el armazón porque la ruta sola trae el id: el nombre y el
@@ -165,6 +176,10 @@ export default function ClienteDetallePage({ params }) {
 
     try {
       const res = await fetch(`/api/clientes/${id}`)
+      fetch(`/api/clientes/${id}/comportamiento`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => setComportamiento(d))
+        .catch(() => {})
       if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.offline) throw new Error('offline')
@@ -626,6 +641,14 @@ export default function ClienteDetallePage({ params }) {
             setCliente(prev => ({ ...prev, montoMaximoPrestamo: nuevoTope }))
           } : null}
         />
+      )}
+
+      {/* Doce barras y LA FRASE QUE LAS LEE. Sin la frase son doce barras: el
+          ojo se queda con el ultimo mes y saca la conclusion equivocada. Va
+          ANTES de los prestamos porque es lo que se mira para decidir si
+          prestarle otra vez. */}
+      {comportamiento?.meses?.some((m) => m.cumplio !== null) && (
+        <ComoPaga meses={comportamiento.meses} lectura={comportamiento.lectura} />
       )}
 
       {/* Préstamos activos */}

@@ -27,7 +27,11 @@ const COLOR = {
 /* Doce meses, uno por barra. La altura es cuánto pagó; el color, cómo lo pagó.
    Altura EXPLÍCITA en px: una barra con `height:%` dentro de un contenedor
    flex:1 desaparece si el contenedor colapsa (04-CRITERIOS §G). */
-function ComoPaga({ meses = [], lectura }) {
+// Se EXPORTA para poder montarla sola. La ficha entera no se monta en
+// `clientes/[id]`: esa pantalla tiene cartulina, tip, score, contacto, portal,
+// tope y lineas de credito, y cambiarla por estas 156 lineas quitaria todo eso.
+// Lo que aqui hace falta es la pieza que la ficha AÑADE.
+export function ComoPaga({ meses = [], lectura }) {
   return (
     <Tarjeta>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
