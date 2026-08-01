@@ -348,3 +348,21 @@ hasta recargar.
 **Así que el cambio es de una línea en el armazón, no de reescribir la
 sección.** Con `ciudad` y `enlacePais` ya añadidos al componente
 (commit `bfd1ca6c`), montarlo ya no le quita nada al formulario de hoy.
+
+### T43-04 · lo que queda fuera, y por qué
+
+La columna de 396px está. Lo que **no** está es la segunda mitad de la lámina:
+
+> *«cuando la respuesta es una lista de clientes, Lucas devuelve las mismas
+> tarjetas con riel de estado que hay en la lista de clientes, no texto con
+> nombres»*
+
+Eso no es diseño, es contrato: hoy el asistente contesta con texto. Para pintar
+tarjetas tiene que devolver los clientes **estructurados** —id, nombre, atraso,
+saldo— y no una frase que los nombre. `app/api/asistente/route.js` ya trabaja
+con herramientas, así que el sitio existe; falta decidir la forma de la
+respuesta y que el chat sepa pintarla.
+
+Se deja anotado en vez de aproximarlo: sacar nombres de un texto con una
+expresión regular para fingir tarjetas es exactamente el patrón que ya nos costó
+una cifra mal en `lib/adaptadores/actividad.js`.

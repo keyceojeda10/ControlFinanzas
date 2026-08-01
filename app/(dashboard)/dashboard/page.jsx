@@ -15,6 +15,7 @@ import CacheAge from '@/components/offline/CacheAge'
 
 // Carga diferida — solo se descargan si el usuario los necesita
 import TraerCartera from '@/components/pantallas/TraerCartera'
+import AsistenteChat from '@/components/asistente/AsistenteChat'
 
 const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
@@ -1362,6 +1363,20 @@ export default function DashboardPage() {
   // tirando hacia abajo, y un boton mas en una pantalla estrecha sobra.
   const [refrescando, setRefrescando] = useState(false)
 
+  // ── LUCAS AL LADO, NO ENCIMA (T43-04) ──
+  // La lámina: «En escritorio Lucas no es una hoja que tapa la pantalla: es una
+  // columna de 396px al lado. Así el dueño ve su patrimonio y la respuesta a la
+  // vez... Taparle el panel para contestarle sería quitarle el contexto que le
+  // da sentido a la respuesta.»
+  //
+  // Hoy preguntarle obliga a IRSE del panel a /asistente, que es la misma
+  // pérdida de contexto en su version peor: no tapa los números, los quita.
+  //
+  // Se abre a peticion y no siempre: dejarla fija le come 396px al panel a todo
+  // el mundo, incluido quien no usa el asistente. La lamina pide que NO TAPE,
+  // no que este siempre puesta.
+  const [lucas, setLucas] = useState(false)
+
     const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
   const [capitalData, setCapitalData] = useState(null)
@@ -1622,7 +1637,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
+    <div className={lucas ? 'xl:flex xl:gap-5 xl:items-start' : undefined}>
+    <div className={`max-w-3xl lg:max-w-6xl mx-auto space-y-5${lucas ? ' xl:mx-0 xl:flex-1 xl:min-w-0' : ''}`}>
       {/* Banner: wizard minimizado — click to resume */}
       {onboarding.showWizard && onboarding.wizardMinimized && esOwner && (
         <button
@@ -1821,6 +1837,28 @@ export default function DashboardPage() {
                 </svg>
                 {refrescando ? 'Actualizando…' : 'Actualizar'}
               </button>
+              {/* Solo desde `xl`: la columna mide 396px y por debajo de eso no
+                  cabe sin comerse el panel, que es justo lo que la lámina
+                  quiere evitar. En móvil Lucas sigue en el FAB y en «Más».
+                  El display va SOLO en la clase, nunca en línea. */}
+              {esOwner && !lucas && (
+                <button
+                  type="button"
+                  onClick={() => setLucas(true)}
+                  className="hidden xl:inline-flex items-center gap-2"
+                  style={{
+                    height: 44, padding: '0 18px', borderRadius: 14, cursor: 'pointer',
+                    background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                    font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+                  </svg>
+                  Preguntar a Lucas
+                </button>
+              )}
               {puedeCrearPrestamos && (
                 <button
                   type="button"
@@ -2344,6 +2382,18 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+    </div>
+
+    {/* La columna de Lucas. `hidden xl:block` y no un `display` en línea: una
+        clase responsive pierde siempre contra un estilo en línea, y ya me costó
+        tres veces el mismo día. */}
+    {lucas && (
+      <aside className="hidden xl:block w-[396px] shrink-0 sticky top-4" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="h-full rounded-[16px] overflow-hidden" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+          <AsistenteChat onClose={() => setLucas(false)} />
+        </div>
+      </aside>
+    )}
     </div>
   )
 }
