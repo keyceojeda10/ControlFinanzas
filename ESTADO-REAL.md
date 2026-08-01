@@ -517,3 +517,29 @@ mercancía, cuota manual y firma.
 
 Lo que sí se hizo de esas dos láminas es traer lo que **añaden**: el panel de
 ganancia en vivo de T16-01.
+
+### T15-01 · ficha de cliente en escritorio — qué falta y de qué tipo es
+
+Con el endpoint de comportamiento montado, la pieza principal está hecha:
+
+| Pieza de la lámina | Estado |
+|---|---|
+| Las 12 barras de los últimos doce meses | **hecho** (`ComoPaga`, verificado en el servidor de prueba) |
+| La frase que las lee, junto a «prestarle otra vez» | **hecho** (`lectura` del endpoint) |
+| **Notas con autor y fecha** | **falta, y NO es diseño** |
+| «Ver todo el historial» de movimientos | falta (hoy hay una acción «Historial») |
+
+**Las notas necesitan tabla nueva.** La lámina las pinta así:
+
+> *«Trabaja en la plaza, mejor buscarlo antes de las 9.» — Carlos · 4 jul*
+> *«Dijo que le pagan el 30, que pasemos ese día.» — Pepito · 19 jul*
+
+Es decir: varias notas, cada una con **quién** la escribió y **cuándo**. Y lo
+que hay hoy es `Cliente.notas`, **un solo String**. `NotaSeguimiento` no sirve:
+es del panel de administración —cuelga de la organización y del admin, no del
+cliente ni del cobrador.
+
+Hace falta algo como `NotaCliente { id, clienteId, autorId, contenido, createdAt }`,
+su migración, su endpoint y su UI. **Es una funcionalidad nueva, no el rediseño
+de una que exista** — y la migración acaba corriendo contra 397 organizaciones
+reales, así que conviene empezarla en frío y no al final de una sesión larga.
