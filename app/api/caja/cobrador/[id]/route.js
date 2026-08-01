@@ -315,6 +315,9 @@ export async function GET(request, { params }) {
       rutaId: r.id,
       nombre: r.nombre,
       saldoCapital: Math.round(r.saldoCapital || 0),
+      // Sin capital habilitado el saldo de la ruta no significa nada (la bolsa es
+      // global). Se envia para que la UI no alerte por un cero que no es un saldo.
+      capitalHabilitado: !!r.capitalHabilitado,
       prestadoDia: 0,
       cobradoDia: 0,
       segurosDia: 0,

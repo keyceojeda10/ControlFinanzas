@@ -686,7 +686,15 @@ export default function CajaPage() {
                 {capitalRutas.rutas.map(r => (
                   <div key={r.id} className="flex items-center justify-between">
                     <span className="text-[12px] text-[var(--color-text-muted)] truncate">{r.nombre}</span>
-                    <span className="text-sm font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(r.saldoCapital)}</span>
+                    {/* Rojo si la ruta quedo en negativo, igual que en el detalle de
+                        ruta y en Capital. Aqui era el unico sitio donde un saldo
+                        negativo se pintaba del mismo color que uno sano. */}
+                    <span
+                      className="text-sm font-bold font-mono-display"
+                      style={{ color: (r.saldoCapital ?? 0) < 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}
+                    >
+                      {formatMoney(r.saldoCapital)}
+                    </span>
                   </div>
                 ))}
               </div>

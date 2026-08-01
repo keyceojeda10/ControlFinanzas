@@ -35,6 +35,9 @@ export default function CajaCobradorDetalle({ data }) {
   const g = data?.gestion || null
   const desgloseMetodo = data?.desgloseMetodoPago || []
   const pd = data?.prestadoDetalle || null
+  const rutasNegativas = (data?.porRuta || []).filter(
+    (r) => r.rutaId && r.capitalHabilitado && (r.saldoCapital ?? 0) < 0
+  )
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
@@ -196,6 +199,38 @@ export default function CajaCobradorDetalle({ data }) {
       {porRuta.length > 0 && (
         <Card>
           <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Por ruta</h2>
+
+          {/* Capital de ruta en negativo. Una sub-bolsa no puede tener menos de
+              cero pesos fisicos: si esta negativa es que salio plata que nunca se
+              registro como entrada. Pasaba en silencio — cuatro rutas de la
+              plataforma acumulaban -$94.5 millones sin una sola señal. */}
+          {rutasNegativas.length > 0 && (
+            <div
+              className="rounded-[12px] p-3 mb-3"
+              style={{
+                background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card))',
+                border: '1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-border))',
+              }}
+            >
+              <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--color-danger)' }}>
+                {rutasNegativas.length === 1
+                  ? `La ruta ${rutasNegativas[0].nombre} está en negativo`
+                  : `${rutasNegativas.length} rutas están en negativo`}
+              </p>
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+                De esta{rutasNegativas.length === 1 ? '' : 's'} ruta{rutasNegativas.length === 1 ? '' : 's'} salió{' '}
+                <strong style={{ color: 'var(--color-danger)' }}>
+                  {formatMoney(Math.abs(rutasNegativas.reduce((a, r) => a + (r.saldoCapital || 0), 0)))}
+                </strong>{' '}
+                más de lo que entró. Casi siempre es porque le entregó plata al cobrador sin
+                registrarla como inyección de capital a la ruta.
+              </p>
+              <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                Si esa plata sí se la entregó, regístrela en <strong>Capital → Inyectar a la ruta</strong> y
+                el saldo queda al día. Si no, revise los retiros y gastos de la ruta.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             {porRuta.map((ruta) => (
               <div key={ruta.rutaId || 'otros'} className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
@@ -203,7 +238,15 @@ export default function CajaCobradorDetalle({ data }) {
                   <span className="text-sm font-semibold text-[var(--color-text-primary)]">{ruta.nombre}</span>
                   {ruta.rutaId && (
                     <span className="text-[11px] text-[var(--color-text-muted)]">
-                      Disponible: <span className="font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.saldoCapital)}</span>
+                      Disponible:{' '}
+                      {/* En rojo si quedo negativo: antes salia del mismo color que
+                          cualquier otra cifra y un "-$85.865.000" pasaba inadvertido. */}
+                      <span
+                        className="font-semibold font-mono-display"
+                        style={{ color: (ruta.saldoCapital ?? 0) < 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}
+                      >
+                        {formatMoney(ruta.saldoCapital)}
+                      </span>
                     </span>
                   )}
                 </div>
