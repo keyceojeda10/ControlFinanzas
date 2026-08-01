@@ -206,3 +206,48 @@ digan lo mismo.
   repetir una prueba de cobro.
 - `.auditoria/envejecer.mjs` — mueve hacia atrás el inicio de un préstamo para
   que genere interés vencido.
+
+---
+
+## Decidido: el histórico de 12 meses, sí. «Te ha dejado», no.
+
+T15-01 (ficha de cliente en escritorio) y `FichaCliente` (C10) esperan lo mismo:
+un histórico de comportamiento. Esto es lo que hay que construir y lo que no.
+
+### SÍ · `GET /api/clientes/[id]/comportamiento`
+
+Devuelve doce meses, del más viejo al más reciente:
+
+```
+[{ mes: '2025-08', aTiempo: 18, tarde: 4, noPago: 0 }, …]
+```
+
+**Por qué esto primero.** Contesta la única pregunta que la app hoy no contesta
+—«¿este cliente paga?»— y que ahora hay que inferir leyendo una lista de pagos.
+Desbloquea DOS pantallas de una vez.
+
+**No necesita datos nuevos.** Los `Pago` con `fechaPago` ya están, y la lógica
+que decide si una cuota fue a tiempo, tarde o no se pagó ya existe en
+`calcularDiasMora` y en la tabla de amortización. Es ensamblar lo que hay.
+
+Tres cosas que hay que respetar al escribirlo:
+
+1. **El calendario es el de `fechas_un_solo_calendario`**: convenio T05:00Z,
+   aritmética en UTC. Producción corre en UTC y el dev en Bogotá — los bugs de
+   fecha son invisibles en local.
+2. **Los días sin cobro no cuentan como «no pagó».** Un domingo marcado no
+   genera mora, así que tampoco puede pintarse rojo.
+3. **Un mes sin cuotas vencidas no es un mes malo**: se devuelve con los tres en
+   cero y la gráfica lo deja vacío, no rojo. Un cliente nuevo no puede salir
+   como el peor de la lista.
+
+### NO (todavía) · «Te ha dejado $X de ganancia»
+
+Es interés cobrado, no recaudado —ver `ganancia_no_es_recaudado`, que ya infló
+las analíticas 7,9x una vez— y a nivel de cliente exige recorrer la cascada de
+pagos préstamo por préstamo. Menos valor que el histórico y más riesgo de
+enseñar una cifra de plata equivocada en la ficha de una persona.
+
+Cuando se haga: sale de la misma cascada que `calcularCapitalRestante`, y se
+prueba contra un cliente con pagos de los tres tipos (completo, parcial y abono
+a capital) antes de enseñarlo.
