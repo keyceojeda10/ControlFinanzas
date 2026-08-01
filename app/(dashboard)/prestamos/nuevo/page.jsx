@@ -710,6 +710,112 @@ function NuevoPrestamo() {
         onChange={(idx) => { if (idx <= paso) setPaso(idx) }}
       />
 
+      {/* ── LA CUENTA AL LADO, MIENTRAS SE DECIDE (T16-01) ──
+          La lámina: «el panel derecho se recalcula al escribir. Subir el interés
+          de 20 a 25 mueve la cuota, la ganancia y las ocho filas mientras se
+          decide — que es exactamente lo que el dueño hace hoy con una
+          calculadora al lado.»
+
+          Hoy la cuota solo aparece al pulsar «Continuar», ya en el paso de
+          revisar: se elige a ciegas y se comprueba después. El cálculo YA existe
+          y se rehace en cada tecla; lo único que faltaba era enseñarlo.
+
+          Va `fixed` a propósito: el cuerpo del asistente está centrado en 672px
+          y desde `xl` sobran ~300px a cada lado, así que la columna cabe SIN
+          tocar la estructura de los tres pasos —que son mil líneas y mueven
+          plata—. Por debajo de `xl` no se pinta y no estorba. */}
+      {paso === 1 && (
+        <aside
+          className="hidden xl:block fixed right-4 top-24 w-[280px] rounded-[16px] p-4"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+        >
+          <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+            Con estas condiciones
+          </p>
+
+          {!calculo ? (
+            <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+              Escribe el monto, la tasa y el plazo y aquí verás cuánto ganas y
+              cómo queda el calendario.
+            </p>
+          ) : (
+            <>
+              {/* LA CUOTA NO SE REPITE AQUI.
+                  La banda verde de abajo es `fixed` y ya se recalcula al
+                  escribir —eso lo cerro T01-06—. Ponerla otra vez seria la misma
+                  cifra dos veces en la misma pantalla. Este panel es para lo que
+                  la banda NO puede decir. */}
+              <div className="mt-2 space-y-1.5">
+                {[
+                  ['Le entregas', Number(monto) || 0],
+                  ['Te devuelve', calculo.totalAPagar],
+                  ['Ganas', calculo.totalInteres],
+                ].map(([etiqueta, valor]) => (
+                  <div key={etiqueta} className="flex items-center justify-between gap-3">
+                    <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>{etiqueta}</span>
+                    <span className="cf-fig text-[13px] font-bold" style={{
+                      color: etiqueta === 'Ganas' ? 'var(--cf-green-dark)' : 'var(--cf-ink)',
+                    }}>
+                      {formatMoney(Math.round(valor || 0))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* ESTE AVISO VA AQUÍ, NO AL FINAL.
+                  Dice que la cuota no cubre el interés y que el préstamo se va a
+                  alargar solo. Es una decisión que se toma MOVIENDO la tasa o la
+                  cuota, así que tiene que verse mientras se mueven —no después
+                  de confirmar. */}
+              {cuotaInsuficiente && (
+                <p className="text-[11px] font-semibold mt-3 rounded-[10px] px-2.5 py-2 leading-snug"
+                  style={{
+                    color: 'var(--cf-red-dark)',
+                    background: 'var(--cf-red-pill-bg)',
+                    border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)',
+                  }}>
+                  Con esta cuota no alcanza a cubrir el interés: el préstamo se
+                  alargaría solo. Sube la cuota o baja la tasa.
+                </p>
+              )}
+
+              {/* Las primeras filas del calendario. No es la tabla entera —para
+                  eso está el paso de revisar—: es ver que el reparto entre
+                  capital e interés es el que se espera ANTES de seguir. La
+                  lámina lo pide junto a la ganancia: «mueve la cuota, la
+                  ganancia y las ocho filas mientras se decide». */}
+              {Array.isArray(calculo.tablaAmortizacion) && calculo.tablaAmortizacion.length > 0 && (
+                <>
+                  <div className="grid gap-2 text-[9.5px] font-extrabold uppercase tracking-[.06em] mt-4 mb-1"
+                    style={{ gridTemplateColumns: '22px 1fr 1fr', color: 'var(--cf-ink-3)' }}>
+                    <span>#</span>
+                    <span style={{ textAlign: 'right' }}>Interés</span>
+                    <span style={{ textAlign: 'right' }}>Capital</span>
+                  </div>
+                  {calculo.tablaAmortizacion.slice(0, 6).map((f) => (
+                    <div key={f.numeroPeriodo} className="grid gap-2"
+                      style={{ gridTemplateColumns: '22px 1fr 1fr' }}>
+                      <span className="cf-num text-[11.5px]" style={{ color: 'var(--cf-ink-3)' }}>{f.numeroPeriodo}</span>
+                      <span className="cf-fig text-[11.5px]" style={{ textAlign: 'right', color: 'var(--cf-ink-3)' }}>
+                        {formatMoney(Math.round(f.interes || 0))}
+                      </span>
+                      <span className="cf-fig text-[11.5px] font-semibold" style={{ textAlign: 'right', color: 'var(--cf-ink)' }}>
+                        {formatMoney(Math.round(f.capital || 0))}
+                      </span>
+                    </div>
+                  ))}
+                  {calculo.tablaAmortizacion.length > 6 && (
+                    <p className="text-[10.5px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                      y {calculo.tablaAmortizacion.length - 6} cobros más
+                    </p>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </aside>
+      )}
+
       {error && (
         <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
           style={{ background: 'var(--cf-red-pill-bg)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
