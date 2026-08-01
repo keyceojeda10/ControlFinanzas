@@ -6,6 +6,8 @@ import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
 import TraerCartera from '@/components/pantallas/TraerCartera'
+import { ListoParaCobrar } from '@/components/pantallas/Onboarding'
+import { formatMoney } from '@/lib/i18n'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
 import WizardPlan from './wizard/WizardPlan'
@@ -253,17 +255,48 @@ export default function OnboardingWizard({
         />
       )}
 
-      {step === 3 && flujo && (
-        <WizardExito
-          clientes={importResult?.clientesCreados ?? 0}
-          prestamos={importResult?.prestamosCreados ?? 0}
-          cartera={importResult?.cartera ?? 0}
-          cobrosHoy={importResult?.cobrosHoy ?? 0}
-          faltantes={importResult?.faltantes ?? []}
-          onVerCobros={() => { window.location.href = '/cobros-hoy' }}
-          onFinish={handleFinish}
-        />
-      )}
+      {/* ── T22-00 · EL CIERRE DEL ARCO ──
+          La pantalla de la cartera vacia prometia «cuando termines vas a ver»
+          con las cifras en gris y a cero. Esta es la misma promesa CUMPLIDA: la
+          cartera en oro sobre carbon, que es la cifra que convence, y debajo lo
+          que de verdad se cargo.
+
+          Y el paso siguiente es EL COBRO, no «finalizar». Quien acaba de subir
+          su cartera a las diez de la noche no sale a cobrar hoy, pero quien la
+          sube a las siete de la manana si — y el boton tiene que llevarlo ahi,
+          no a un panel que todavia no sabe leer. */}
+      {step === 3 && flujo && (() => {
+        const clientes  = importResult?.clientesCreados  ?? 0
+        const prestamos = importResult?.prestamosCreados ?? 0
+        const cobrosHoy = importResult?.cobrosHoy ?? 0
+        const faltantes = importResult?.faltantes ?? []
+        return (
+          <ListoParaCobrar
+            titulo="Ya tienes tu cartera adentro"
+            subtitulo={prestamos > 0
+              ? `${prestamos} ${prestamos === 1 ? 'préstamo' : 'préstamos'} de ${clientes} ${clientes === 1 ? 'cliente' : 'clientes'}`
+              : null}
+            cartera={importResult?.cartera ? formatMoney(Math.round(importResult.cartera)) : null}
+            cifras={[
+              { etiqueta: 'Clientes', valor: String(clientes) },
+              { etiqueta: 'Préstamos', valor: String(prestamos) },
+              // «A cobrar hoy» solo si de verdad toca alguno: un «0 de 0» al
+              // final de la carga se lee como que algo salio mal.
+              ...(cobrosHoy > 0 ? [{ etiqueta: 'A cobrar hoy', valor: String(cobrosHoy) }] : []),
+            ]}
+            // LO QUE FALTA, «CUANDO PUEDAS». No es una lista de errores: es lo
+            // que la lectura no pudo sacar y se puede completar despues. Sin ese
+            // «cuando puedas», una cartera cargada al 95% se siente fallida.
+            falta={faltantes}
+            faltaNota={faltantes.length > 0
+              ? 'La app funciona igual sin esto. Lo puedes completar cuando lo tengas a mano.'
+              : null}
+            cobrosHoy={cobrosHoy}
+            onVerCobros={() => { window.location.href = '/cobros-hoy' }}
+            onPanel={handleFinish}
+          />
+        )
+      })()}
 
       {step < 3 && <WizardAyuda />}
     </div>
