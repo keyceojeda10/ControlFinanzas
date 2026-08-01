@@ -18,8 +18,28 @@ function applyTheme(resolved) {
   h.style.colorScheme = resolved
   // Inline background para evitar flash cuando la hoja de estilos no esta lista
   // (offline / SW fallback). Se limpia cuando hay CSS cargado.
-  const bg = resolved === 'light' ? '#f5f7fb' : '#060609'
-  const fg = resolved === 'light' ? '#1a1a2e' : '#f0f0f5'
+  //
+  // ⚠ ESTOS CUATRO VALORES SON LA PALETA, Y ESTABAN EN LA ANTERIOR.
+  //
+  // Decian `#f5f7fb` / `#1a1a2e`: un fondo gris AZULADO y una tinta azul-negra,
+  // que son del diseño de antes. El sistema nuevo usa hueso CALIDO (#F4F4F1) y
+  // carbon (#15161A) — `app/tokens-2026.css:18` y `:33`.
+  //
+  // Y no era un detalle de la primera decima de segundo: se escriben como
+  // estilo EN LINEA sobre `<html>` y `<body>`, y un estilo en linea le gana a la
+  // hoja de estilos. O sea que el fondo de toda la app y el color heredado eran
+  // los viejos para siempre, dijeran lo que dijeran los tokens. De ahi que las
+  // separaciones que heredan `currentColor` salieran como lineas NEGRAS opacas
+  // en vez del `rgba(20,20,28,.06)` que manda la receta.
+  //
+  // Medido en pantalla antes de tocarlo: fondo `rgb(245,247,251)` en 2 bloques y
+  // separador `rgb(26,26,46)` en 4 elementos.
+  //
+  // Si cambian los tokens, cambian aqui. Son los unicos cuatro colores del
+  // sistema que no pueden leerse de la hoja de estilos, justamente porque esto
+  // corre cuando puede que no haya hoja de estilos.
+  const bg = resolved === 'light' ? '#F4F4F1' : '#15161A'
+  const fg = resolved === 'light' ? '#15161A' : '#F3F3F6'
   h.style.backgroundColor = bg
   h.style.color = fg
   if (document.body) {

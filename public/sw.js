@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v761'
+const CACHE_NAME   = 'cf-v762'
 const API_CACHE    = 'cf-api-v90'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
@@ -31,7 +31,7 @@ const OFFLINE_FALLBACK_HTML = `<!DOCTYPE html>
 </script>
 <style>
   :root{--bg:#060609;--surface:#0d0d12;--text:#f0f0f5;--muted:#9a9ab0;--border:rgba(255,255,255,0.08);--accent:#f5c518;--warn-bg:rgba(245,197,24,0.1);--warn:#f5c518;}
-  html[data-theme="light"]{--bg:#f5f7fb;--surface:#ffffff;--text:#1a1a2e;--muted:#5a5a72;--border:rgba(20,20,40,0.08);--warn-bg:rgba(245,197,24,0.15);}
+  html[data-theme="light"]{--bg:#F4F4F1;--surface:#FFFFFF;--text:#15161A;--muted:#63676F;--border:rgba(20,20,28,0.08);--warn-bg:rgba(245,197,24,0.15);}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
