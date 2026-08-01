@@ -492,7 +492,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
     </div>
   )
 
-  const { org, suscripcion, diasRestantes } = data ?? {}
+  const { org, suscripcion, diasRestantes, clientes } = data ?? {}
   const vencida   = diasRestantes !== null && diasRestantes !== undefined && diasRestantes <= 0
   const porVencer = diasRestantes !== null && diasRestantes !== undefined && diasRestantes > 0 && diasRestantes <= 7
 
@@ -752,6 +752,53 @@ function TabOrganizacion({ bloques, tema, onTema }) {
       )}
 
       {/* Mensajes de WhatsApp */}
+      {/* ── LA ADVERTENCIA QUE EVITA EL SILENCIO (T38-02) ──
+          Va PRIMERA en la sección, antes que cualquier ajuste. Se activan los
+          avisos por WhatsApp y a quien no tiene número guardado no le llega
+          nada: sin error, sin rebote, sin rastro. Es el fallo que parece que
+          funciona, y por eso hay que verlo antes de encender nada.
+
+          El enlace lleva a la lista ya filtrada (`sinTelefono=1` en
+          /api/clientes) — una cifra sin el «quiénes son» deja al dueño
+          buscándolos uno por uno. */}
+      {quiere('whatsapp') && clientes?.sinTelefono > 0 && (
+      <Card>
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--cf-gold)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+              Antes de mandar avisos solos
+            </p>
+            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="cf-fig font-bold" style={{ color: 'var(--cf-ink-2)' }}>
+                {clientes.sinTelefono}
+              </span>{' '}
+              de tus <span className="cf-fig">{clientes.total}</span>{' '}
+              {clientes.sinTelefono === 1
+                ? 'clientes no tiene número guardado. A él no le va a llegar nada.'
+                : 'clientes no tienen número guardado. A ellos no les va a llegar nada.'}
+            </p>
+            {/* `Link`, no `router.push`: en ESTE componente no hay `router`
+                —se declara en el armazón de abajo, no aquí— y usarlo habría
+                reventado la sección entera al pintarla. */}
+            <Link
+              href="/clientes?sinTelefono=1"
+              className="inline-block text-xs font-semibold mt-2 rounded-[8px] px-2.5 py-1 transition-all"
+              style={{
+                color: 'var(--cf-gold)',
+                background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
+              }}
+            >
+              Ver quiénes son
+            </Link>
+          </div>
+        </div>
+      </Card>
+      )}
+
       {quiere('whatsapp') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">

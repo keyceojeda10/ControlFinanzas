@@ -156,6 +156,48 @@ const COLORES_GRUPO = [
   'var(--cf-ink-2)', 'var(--cf-ink-2)', '#ec4899', '#84cc16',
 ]
 
+// Los filtros que llegan por la URL desde un aviso de otra pantalla. No están
+// en la hoja de filtros ni en las pastillas, así que sin este cartel la lista
+// sale recortada y nada dice por qué.
+const FILTROS_URL = {
+  sinRuta: 'Viendo solo los que no tienen ruta asignada',
+  sinTelefono: 'Viendo solo los que no tienen número guardado',
+}
+
+function AvisoFiltroUrl() {
+  const [puesto, setPuesto] = useState(null)
+
+  // De window.location y no del hook, por lo mismo que el cargador: aquí lo que
+  // importa es lo que hay en la barra AHORA.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    setPuesto(Object.keys(FILTROS_URL).find((k) => p.get(k) === '1') ?? null)
+  }, [])
+
+  if (!puesto) return null
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5 mb-3"
+      style={{
+        background: 'color-mix(in srgb, var(--cf-gold) 10%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
+      }}
+    >
+      <span className="text-xs font-medium" style={{ color: 'var(--cf-ink-2)' }}>
+        {FILTROS_URL[puesto]}
+      </span>
+      <a
+        href="/clientes"
+        className="text-xs font-semibold shrink-0"
+        style={{ color: 'var(--cf-gold)' }}
+      >
+        Ver todos
+      </a>
+    </div>
+  )
+}
+
 export default function ClientesPage() {
   const router = useRouter()
   const { esOwner, puedeCrearClientes, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
@@ -410,6 +452,12 @@ export default function ClientesPage() {
       // que hacia que los filtros por URL no se aplicaran).
       if (new URLSearchParams(window.location.search).get('sinRuta') === '1') {
         params.set('sinRuta', '1')
+      }
+      // Igual que el anterior, y por la misma razon: viene del aviso «N clientes
+      // no tienen numero» de Avisos por WhatsApp. Tambien de window.location,
+      // porque este loader tiene dependencias vacias y el hook se congelaria.
+      if (new URLSearchParams(window.location.search).get('sinTelefono') === '1') {
+        params.set('sinTelefono', '1')
       }
       // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
       if (calculados.estado) params.set('estado', calculados.estado)
@@ -698,6 +746,14 @@ export default function ClientesPage() {
           buscador, TRES filas de chips (estado, frecuencia, modo), un desplegable
           de rutas y un conmutador de vista. Unos 380px antes del primer cliente.
           Los filtros secundarios pasan a la hoja de "Más filtros". */}
+      {/* ── QUE SE VEA QUE HAY UN FILTRO DE URL PUESTO ──
+          Se llega aquí desde un aviso —«N clientes sin ruta», «N sin número»— y
+          la lista sale recortada mientras las pastillas siguen diciendo el total
+          de la cartera. «Todos 10» encima de una sola fila se lee como que
+          faltan nueve, no como que hay un filtro puesto. Y no había forma de
+          quitarlo salvo borrar el parámetro a mano de la barra de direcciones. */}
+      <AvisoFiltroUrl />
+
       <div className="flex flex-col gap-3 mb-3">
         {/* ── El encabezado de T02-05 ──
             «Clientes» y a la derecha «31 · 20 en mora», con la mora en rojo.

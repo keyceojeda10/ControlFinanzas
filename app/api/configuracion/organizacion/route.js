@@ -88,7 +88,25 @@ export async function GET() {
     select: { id: true, plan: true, estado: true, fechaInicio: true, fechaVencimiento: true, montoCOP: true, createdAt: true },
   })
 
-  return NextResponse.json({ org, suscripcion: sub, diasRestantes, historial })
+  // ── CUÁNTOS SE QUEDARÍAN SIN RECIBIR NADA (T38-02) ──
+  // La lámina lo llama «la advertencia que evita el silencio»: se activa el
+  // envío automático de recordatorios y a los clientes sin número guardado no
+  // les llega nada — sin error, sin aviso, sin rastro. Es el fallo peor de
+  // todos, el que parece que funciona.
+  const [clientesTotal, clientesSinTelefono] = await Promise.all([
+    prisma.cliente.count({ where: { organizationId: orgId, eliminadoEn: null } }),
+    prisma.cliente.count({
+      where: {
+        organizationId: orgId, eliminadoEn: null,
+        OR: [{ telefono: null }, { telefono: '' }],
+      },
+    }),
+  ])
+
+  return NextResponse.json({
+    org, suscripcion: sub, diasRestantes, historial,
+    clientes: { total: clientesTotal, sinTelefono: clientesSinTelefono },
+  })
 }
 
 export async function PATCH(req) {

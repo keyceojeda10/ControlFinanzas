@@ -101,6 +101,14 @@ export async function GET(request) {
     { estado: { notIn: ['eliminado'] } },
   ]
   if (soloSinRuta) condiciones.push({ rutaId: null })
+
+  // Clientes sin numero guardado. Existe por el mismo motivo que `sinRuta`: el
+  // aviso de «N clientes no tienen numero» de Avisos por WhatsApp tiene que
+  // poder llevar a QUIENES son. Sin esto el aviso da una cifra y deja al dueño
+  // buscandolos uno por uno en toda la cartera.
+  if (searchParams.get('sinTelefono') === '1') {
+    condiciones.push({ OR: [{ telefono: null }, { telefono: '' }] })
+  }
   if (Object.keys(filtroRuta).length) condiciones.push(filtroRuta)
   if (Object.keys(filtroBuscar).length) condiciones.push(filtroBuscar)
   if (Object.keys(filtroGrupo).length) condiciones.push(filtroGrupo)
