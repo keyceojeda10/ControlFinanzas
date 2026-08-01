@@ -423,3 +423,20 @@ capital por ruta y el cierre— y **registrar un cobro antes de mirar**.
 
 **Sigue sin poder cotejarse: 0 filas en la demo.** Es el mismo bloqueo que ya
 estaba anotado; no ha cambiado. Sembrar una línea de crédito es el paso previo.
+
+### Sistémico · `await req.json()` sin guarda
+
+Medido: **92 rutas de API** hacen `await req.json()` y **solo 9** lo protegen con
+`.catch()`. Con un cuerpo vacío o roto eso lanza `SyntaxError` y sale como un
+**500**, no como un 400 con el motivo. Se comprobó de verdad en el desembolso de
+una línea de crédito.
+
+Para el cliente es lo peor de los dos mundos: recibe un error sin mensaje y
+—porque el `.json()` de la respuesta también falla— enseña «Error de red», que
+es falso: la red funcionó.
+
+Arregladas las **5 de líneas de crédito**, que son las que se probaron rotas y
+mueven plata. Las otras 87 se dejan medidas y NO se tocan en bloque: un cambio
+masivo a mano sobre rutas que escriben es exactamente lo que ya salió mal con
+los imports de React. Conviene un barrido dirigido, ruta por ruta, empezando por
+las que escriben dinero.

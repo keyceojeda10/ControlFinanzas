@@ -82,7 +82,7 @@ export async function POST(request, { params }) {
     // ── Validar input ───────────────────────────────────────────────────────
     let body = {}
     try {
-      body = await request.json()
+      body = await request.json().catch(() => ({}))
     } catch {
       // body vacio es valido: se usa fechaCorte = now()
     }

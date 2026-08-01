@@ -67,7 +67,17 @@ export async function POST(request, { params }) {
 
   try {
     // ── Validar input ───────────────────────────────────────────────────────
-    const body      = await request.json()
+    // ── EL CUERPO PUEDE LLEGAR VACIO, Y NO PUEDE TUMBAR LA RUTA ──
+    // `await request.json()` sin guarda lanza `SyntaxError: Unexpected end of
+    // JSON input` con un cuerpo vacio o roto, y eso sale como un 500. En un
+    // endpoint que mueve plata eso es lo peor de los dos mundos: el cliente
+    // recibe un error sin mensaje y ensena «Error de red» —que es falso, la red
+    // funciono— mientras el servidor no dice que le faltaba.
+    //
+    // Cayendo a `{}` la validacion de campos que ya existe debajo hace su
+    // trabajo y devuelve un 400 con el motivo. Medido: paso de verdad al
+    // registrar un desembolso.
+    const body      = await request.json().catch(() => ({}))
     const monto     = Number(body?.monto)
     const metodoPago = body?.metodoPago?.trim() || null
     const nota      = body?.nota?.trim() || null
