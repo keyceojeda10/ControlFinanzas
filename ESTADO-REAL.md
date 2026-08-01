@@ -127,3 +127,82 @@ done
 # El pie de una lámina dice qué corrige — SIEMPRE leerlo antes de construir
 tail -8 "CF Diseño 2026/Nuevo/PAQUETE-FINAL/pantallas/T04-09-*.dc.html"
 ```
+
+---
+
+## Escritorio (1440) — lo medido el 31 jul
+
+Catorce pantallas miradas a 1440 con captura. Lo que sigue NO es opinión: es lo
+que se ve, con el archivo donde está.
+
+### Hecho y cotejado
+
+| Lámina | Qué era | Dónde |
+|---|---|---|
+| T02-07 panel | una columna estirada de 1.400px | `pantallas/Panel.jsx` |
+| T31-01 mi plata | `<select>` del sistema con 4 cosas mezcladas | `capital/CapitalTab.jsx` |
+| T31-02 negocio | **la pantalla no cargaba** | `dashboard/analiticas` |
+| T32-03 quién hizo qué | 13 filas idénticas | `adaptadores/actividad.js` |
+| T32-01 reportes | tarjetas apiladas → tabla | `reportes/page.jsx` |
+| T07-01 clientes | tarjetas → tabla (3ª vista) | `clientes/page.jsx` |
+| T14-01 préstamos | tarjetas → tabla (3ª vista) | `prestamos/page.jsx` |
+| T11-03 historial | dos líneas comprimidas → tabla | `pantallas/FichaPrestamo.jsx` |
+| T12-03 amortización | resumen arriba → a la derecha | `pantallas/TablaAmortizacion.jsx` |
+| T23-01 error | callaba que los cobros están a salvo | `(dashboard)/error.jsx` |
+| T23-00 sin resultados | solo ofrecía «limpiar búsqueda» | `clientes/page.jsx` |
+| caja | selector de fecha de 1.000px | `caja/FiltroPeriodo.jsx` |
+| configuración | campos de 1.200px | `configuracion/page.jsx` |
+
+### Pendiente, con el motivo
+
+- **T22-00 · arranque con cartera vacía.** NO es «escribirnos», como decía el
+  plan. Es el embudo de activación —foto de la libreta / Excel / de cero— y es
+  la pantalla que más plata mueve del producto. Sesión propia.
+- **T11-03 · la columna derecha de la ficha de préstamo.** `prestamos/[id]` es
+  una lista plana con `space-y-4`: la rejilla obliga a marcar la columna en cada
+  hijo, si no se descoloca la pantalla entera.
+- **T14-02 · rutas.** BLOQUEADA por datos: la lámina pide cartera y kilómetros
+  por ruta y `/api/rutas` no los manda. La propia pantalla lo confiesa: «la
+  cartera y el capital de cada ruta están adentro, en su detalle». Probé una
+  rejilla de dos columnas y trunca el nombre —a 1440 solo hay ~1.040px útiles—;
+  revertida.
+- **E6 · configuración.** `TuNegocio` está IMPORTADO en `configuracion/page.jsx`
+  y no se renderiza: importación muerta, y lo que se ve es el formulario
+  anterior. Cablearlo exige comparar campo por campo (el nuevo guarda solo, el
+  viejo tiene «Guardar cambios», País y Ciudad).
+- **T16-01 · crear préstamo.** La lámina dice «SIN WIZARD: los tres pasos caben
+  en una pantalla y el panel derecho se recalcula al escribir». Hoy siguen los
+  3 pasos. Es reestructurar, no ajustar.
+- **Líneas de crédito** no se pudo cotejar: la cartera de prueba tiene 0.
+
+### Dos cercos nuevos, y por qué
+
+- `tokens-existen.test.js` — un `var(--cf-*)` inventado NO da error: se resuelve
+  a nada. Me dejó dos capas a pantalla completa transparentes. Encontró 2 más al
+  primer intento.
+- `display-en-linea.test.js` — `style={{display:'flex'}}` gana sobre `lg:grid`,
+  así que la clase responsive no se aplica y la pantalla sale con la disposición
+  del móvil a 1440. Lo hice TRES veces en un día.
+
+### El patrón de mis fallos, para que no se repita
+
+Casi todos fueron **leer un campo con el nombre equivocado**: `data.pago`,
+`datos.sparkline7d`, `c.saldoPendiente`, `Vence` en vez de «próximo cobro».
+Ninguno da error: devuelven `undefined`, la pantalla sale con `$0` o un guion, y
+las pruebas pasan. **Construir las vistas nuevas sobre la salida del adaptador,
+no sobre el objeto crudo** — además garantiza que dos pantallas del mismo dato
+digan lo mismo.
+
+### Herramientas nuevas de auditoría
+
+- `.auditoria/trozo.mjs <ruta> <selector> <png> [ancho] [clave=valor…]` —
+  fotografía UN elemento. Recortar por coordenadas de una captura larga no
+  funciona: `getBoundingClientRect` es relativa a la ventana. Siembra
+  localStorage y cierra el aviso de novedades.
+- `.auditoria/pulsa.mjs` — ahora escribe (`escribe:3000000`) y exige que el
+  objetivo sea VISIBLE (la tabla de escritorio vive en el DOM también en móvil y
+  se llevaba los clics).
+- `scripts/descobrar-hoy.mjs` — borra los cobros de hoy en local para poder
+  repetir una prueba de cobro.
+- `.auditoria/envejecer.mjs` — mueve hacia atrás el inicio de un préstamo para
+  que genere interés vencido.
