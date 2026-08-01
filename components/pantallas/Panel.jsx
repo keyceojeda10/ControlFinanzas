@@ -112,17 +112,25 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
         ))}
       </div>
 
-      {/* LOS SIETE DIAS. Solo en 1440: en un telefono el hero ya ocupa media
-          pantalla y siete barras mas lo empujan todo fuera de la primera vista.
-          Sentado sobra sitio, y son las que contestan «¿hoy es un buen dia o es
-          un dia normal?» — que la cifra sola no contesta.
+      {/* LOS SIETE DIAS. Contestan «¿hoy es un buen día o es un día normal?»,
+          que la cifra sola no contesta. El de hoy va en carbón y los seis
+          anteriores en dorado quemado: sin esa diferencia la barra de hoy se
+          pierde entre las otras seis.
 
-          El de hoy va en carbon y los seis anteriores en dorado quemado: sin esa
-          diferencia la barra de hoy se pierde entre las otras seis. */}
+          ⚠ ANTES ESTO ERA `hidden lg:flex`: las siete barras solo se pintaban en
+          escritorio, porque se construyeron contra T02-07, que es la lámina de
+          1440. En el teléfono —que es donde el dueño mira— el historial de la
+          semana no existía.
+
+          El dueño lo pidió por su nombre: «cuánto está cobrando en el día, con
+          un pequeño historial de una semana; eso era lo que teníamos antes y
+          funcionaba bien». Una lámina de escritorio no decide qué ve el que va
+          en la calle. En móvil van más bajas (44px) para no empujar las dos
+          tarjetas blancas fuera de la primera pantalla. */}
       {semana && tope > 0 && (
         <div
-          className="hidden lg:flex"
-          style={{ gap: 8, alignItems: 'flex-end', height: 62, flex: 'none' }}
+          className="flex h-[44px] lg:h-[62px]"
+          style={{ gap: 8, alignItems: 'flex-end', flex: 'none' }}
           aria-hidden
         >
           {semana.map((n, i) => (
