@@ -21,6 +21,7 @@ import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
 import { esMensajeAutomatico } from '@/lib/bot/filtros'
+import { accionTrasThrottle, MAX_REBOTES_THROTTLE } from '@/lib/bot-v2/cadencia'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -202,6 +203,29 @@ async function devolverIntentoSiThrottle(wamid, errorEntrega) {
   // Solo tiene sentido en leads todavia en juego.
   if (!['contactado', 'interesado'].includes(lead.estado)) return
 
+  // Cuantas veces Meta ya rechazo un mensaje a ESTA persona por throttle. El
+  // rebote de ahora ya esta guardado, asi que cuenta.
+  const rebotes = await prisma.botConversacion.count({
+    where: {
+      botLeadId: lead.id,
+      estadoEntrega: 'fallido',
+      OR: [...CODIGOS_THROTTLE].map((c) => ({ errorEntrega: { startsWith: String(c) } })),
+    },
+  })
+
+  if (accionTrasThrottle(rebotes) === 'dejar-de-insistir') {
+    // Meta ya lo dijo dos veces: a esta persona no le llegan mensajes de
+    // marketing. Se dejan de programar seguimientos PROACTIVOS, pero botActivo
+    // queda true — si algun dia escribe, el bot le contesta normal (esa via es
+    // respuesta dentro de la ventana de 24h, no plantilla, y no la limita Meta).
+    await prisma.botLead.update({
+      where: { id: lead.id },
+      data: { proximoSeguimiento: null, botActivo: true },
+    })
+    console.warn(`[WA Cloud] Throttle ${codigo} en ${lead.nombre}: ${rebotes}º rebote, se deja de insistir (sigue atendido si escribe)`)
+    return
+  }
+
   const intentos = Math.max(0, (lead.intentosSeguimiento || 0) - 1)
   await prisma.botLead.update({
     where: { id: lead.id },
@@ -212,7 +236,7 @@ async function devolverIntentoSiThrottle(wamid, errorEntrega) {
       proximoSeguimiento: new Date(Date.now() + 24 * 3600000),
     },
   })
-  console.warn(`[WA Cloud] Throttle ${codigo} en ${lead.nombre}: intento devuelto (${lead.intentosSeguimiento} -> ${intentos}), reintento en 24h`)
+  console.warn(`[WA Cloud] Throttle ${codigo} en ${lead.nombre}: intento devuelto (${lead.intentosSeguimiento} -> ${intentos}), reintento en 24h (rebote ${rebotes}/${MAX_REBOTES_THROTTLE})`)
 }
 
 let ultimaAlertaFallos = 0
