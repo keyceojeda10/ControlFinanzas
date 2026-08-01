@@ -11,7 +11,7 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
-import { adaptarPrestamos, tresCifras }       from '@/lib/adaptadores/prestamos'
+import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
 import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
@@ -264,6 +264,17 @@ export default function PrestamosPage() {
   // Leer localStorage EN EL INICIALIZADOR desajusta la hidratación: el servidor
   // pone 'lista' y el primer render del cliente puede poner 'compacta', así que
   // React tira el árbol y lo repinta. Tiene que ser un efecto.
+  // En un efecto, no leyendo `matchMedia` al pintar: eso hace que el servidor
+  // diga una cosa y el cliente otra y React tire el arbol entero.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+
   const [vistaP, setVistaP] = useState('lista')
   useEffect(() => {
     try {
@@ -340,9 +351,14 @@ export default function PrestamosPage() {
         try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
       },
       opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
-    { id: 'vista', titulo: 'Tamaño de las tarjetas', valor: vistaP === 'compacta' ? 'compacta' : '',
-      onCambiar: (v) => cambiarVistaP(v === 'compacta' ? 'compacta' : 'lista'),
-      opciones: [{ valor: '', nombre: 'Completas' }, { valor: 'compacta', nombre: 'Compactas' }] },
+    { id: 'vista', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
+      onCambiar: (v) => cambiarVistaP(v || 'lista'),
+      opciones: [
+        { valor: '', nombre: 'Completas' },
+        { valor: 'compacta', nombre: 'Compactas' },
+        // Siete columnas en 390px no son una tabla, son un acordeon horizontal.
+        ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla' }] : []),
+      ] },
   ]
 
   const nFiltros = contarFiltros(gruposFiltro)
@@ -645,8 +661,83 @@ export default function PrestamosPage() {
         </div>
       )}
 
+      {/* ── T14-01 · LA TABLA, SOLO EN 1440 ──
+          Va FUERA de la lista, no dentro: `StaggeredList` es `grid-cols-2` en
+          `lg`, asi que meterla ahi la convertia en UNA CELDA — media anchura,
+          columnas aplastadas y el fundido de entrada encima. Una tabla no es un
+          elemento de la lista: es la lista. */}
+      {!loading && prestamosVisibles.length > 0 && !agrupar && vistaP === 'tabla' && (() => {
+        const adaptados = adaptarPrestamos(prestamosVisibles, country)
+
+
+            // ── T14-01 · LA TABLA, SOLO EN 1440 ──
+            // Igual que en clientes: sentado lo que se hace es COMPARAR, y las
+            // tarjetas obligan a recorrer. Las columnas son las de la lamina —
+            // CLIENTE · MODALIDAD · PRESTADO · SALDO · CUMPLE · PROX. COBRO ·
+            // ESTADO— y salen del ADAPTADOR, no del objeto crudo: asi la tabla
+            // y la tarjeta dicen lo mismo. Leerlo del crudo ya me dejo una
+            // tabla entera de «$0» en clientes.
+              const dame = (a, etq) => a?.cifras?.find((x) => x.etiqueta === etq) ?? null
+              const color = (c) => c?.tono === 'contra' ? 'var(--cf-red-dark)'
+                : c?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
+              const COLS = '1.7fr 1.1fr 130px 130px 90px 120px 110px'
+        return (
+                <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+                  <div className="grid items-center px-4 py-2.5"
+                    style={{ gridTemplateColumns: COLS, gap: 12, paddingLeft: 19,
+                      background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)' }}>
+                    {['Cliente', 'Modalidad', 'Prestado', 'Saldo', 'Atraso', 'Próximo cobro', 'Estado'].map((h, i) => (
+                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 && i <= 4 ? 'text-right' : ''}`}
+                        style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
+                    ))}
+                  </div>
+                  {prestamosVisibles.map((p, i) => {
+                    const a = adaptados[i]
+                    const atraso = dame(a, 'Atraso')
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                        className="grid items-center w-full text-left px-4 py-3"
+                        style={{
+                          gridTemplateColumns: COLS, gap: 12,
+                          background: 'var(--cf-card)', border: 0,
+                          borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                          borderLeft: `3px solid ${a?.estado === 'mora' ? 'var(--cf-red)' : a?.estado === 'aldia' ? 'var(--cf-green)' : 'var(--cf-gold)'}`,
+                          font: 'inherit', cursor: 'pointer',
+                        }}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                          <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
+                        </span>
+                        <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>{a?.detalle ?? '—'}</span>
+                        {/* PRESTADO es el capital que salio; SALDO lo que falta.
+                            La tarjeta los pone uno encima de otro («$553.658 / de
+                            $779.000»); aqui son dos columnas, que es lo que
+                            permite sumarlas con la vista. */}
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink-2)' }}>
+                          {formatMoney(Math.round(p.montoPrestado ?? 0), country)}
+                        </span>
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
+                        <span className="cf-fig text-[13px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
+                        <span className="text-[13px] truncate" style={{
+                          color: a?.estado === 'mora' ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
+                        }}>{fechaCorta(p.proximoCobro) ?? '—'}</span>
+                        <span className="text-[12px] font-bold truncate" style={{
+                          color: a?.estado === 'mora' ? 'var(--cf-red-dark)'
+                            : a?.estado === 'aldia' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
+                        }}>{a?.etiquetaEstado}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+      })()}
+
       {/* Lista plana: orden cronologico puro (default) */}
-      {!loading && prestamosVisibles.length > 0 && !agrupar && (
+      {!loading && prestamosVisibles.length > 0 && !agrupar && vistaP !== 'tabla' && (
         <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
           {/* La MISMA tarjeta que un cliente: un prestamo en lista no estrena
               tarjeta. Inventar una segunda obligaria a aprender dos objetos que
