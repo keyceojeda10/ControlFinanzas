@@ -3,7 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 
@@ -115,8 +115,14 @@ export async function GET() {
         proximoCobroManual: true,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
-          select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+          // `capital` lo necesita calcularCapitalRestante en los modos con tabla.
+          select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
         },
+        // SOLO los abonos a capital. calcularCapitalRestante los excluye de la
+        // cascada interes-primero, y son un puñado por prestamo. Traer todos los
+        // pagos aqui costaria caro en las carteras grandes y no se usan para nada
+        // mas en esta ruta. Medido: +5ms en la org mas pesada (970 activos).
+        pagos: { where: { tipo: 'capital' }, select: { montoPagado: true, tipo: true } },
         cliente: {
           select: {
             id: true,
@@ -341,7 +347,14 @@ export async function GET() {
   const clientesMora = new Set()
   let carteraActiva = 0
   let saldoPorCobrar = 0
-  let capitalPrestado = 0
+  // Capital que sigue AFUERA, no el que salio algun dia. Antes esto sumaba
+  // `montoPrestado` de cada prestamo activo, o sea el monto original, y nunca
+  // bajaba cuando el cliente abonaba: decia "cuanto hay en la calle" mostrando
+  // cuanto SALIO a la calle. Medido en produccion, inflaba 15,2% en las 12
+  // carteras mas grandes (hasta 37% en una) — $210 millones de mas en total.
+  // Dos clientes lo reportaron el mismo dia, uno con el diagnostico exacto:
+  // "no descuenta lo que ya le he colocado como pagado".
+  let capitalEnCalle = 0
   let cuotaDiariaTotal = 0
   // Meta REAL del dia: solo las cuotas que de verdad vencen HOY segun la
   // frecuencia de cada prestamo, descontando dias sin cobro y festivos.
@@ -397,7 +410,9 @@ export async function GET() {
     carteraActiva += p.totalAPagar ?? 0
     // Saldo por cobrar = saldo pendiente real (totalAPagar - pagado, sin recargos/descuentos).
     saldoPorCobrar += calcularSaldoPendiente(p)
-    capitalPrestado += p.montoPrestado ?? 0
+    // calcularCapitalRestante devuelve null si el prestamo no tiene monto util;
+    // ahi el capital vivo es lo mejor que tenemos: el monto prestado.
+    capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
     // Misma regla que usa /api/rutas para su esperadoHoy, para que el hero y el
@@ -574,7 +589,10 @@ export async function GET() {
       completados:     prestamosCompletados,
       carteraActiva:   carteraActiva,
       saldoPorCobrar:  saldoPorCobrar,
-      capitalPrestado: capitalPrestado,
+      // Nombre nuevo a proposito: la clave vieja `capitalPrestado` describia el
+      // numero viejo. Renombrar obliga a que cualquier consumidor se entere del
+      // cambio de significado en vez de heredarlo en silencio.
+      capitalEnCalle: capitalEnCalle,
       cuotaDiariaTotal: cuotaDiariaTotal,
       // Lo que de verdad toca cobrar hoy. Es la meta del hero; cuotaDiariaTotal
       // se queda como "suma de cuotas de la cartera" en el bloque Operacion.

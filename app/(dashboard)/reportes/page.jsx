@@ -485,6 +485,28 @@ export default function ReportesPage() {
         {...aGrafica(ingresos)}
       />
 
+      {/* ── EL CAPITAL, QUE NO ES LA CARTERA ──
+          Viene de `main`: el panel decia cuanto SALIO a la calle, no cuanto
+          sigue afuera. Son dos cifras distintas y la segunda es la que dice de
+          cuanto dispone el negocio. Se conserva entera; solo cambian los tokens
+          por los del rediseño. */}
+      {resumen && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-[16px] px-4 py-3"
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Capital en la calle</p>
+            <p className="cf-fig text-[18px] mt-1" style={{ color: 'var(--cf-ink)' }}>{formatMoney(resumen.prestamos.capitalEnCalle)}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>tu plata, sin intereses</p>
+          </div>
+          <div className="rounded-[16px] px-4 py-3"
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>Completados</p>
+            <p className="cf-fig text-[18px] mt-1" style={{ color: 'var(--cf-ink)' }}>{resumen.prestamos.completados}</p>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>préstamos finalizados</p>
+          </div>
+        </div>
+      )}
+
       {/* La cartera por ruta subió dentro de <Reportes>: estaba dos pantallas
           más abajo que las cifras que explica. El aviso de plan se queda, que es
           lo único que esta tarjeta añadía cuando no se tiene. */}

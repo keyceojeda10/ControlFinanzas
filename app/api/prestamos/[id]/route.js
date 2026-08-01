@@ -811,9 +811,10 @@ export async function PATCH(request, { params }) {
     const calc = calcularPrestamo({
       montoPrestado: montoParaCalculo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
-      // Plazo REAL del calculo, no el pedido: con cuota manual se auto-extiende.
-      // Ver el comentario extenso en renovar/route.js.
-      diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
+      // El plazo PEDIDO es la entrada del calculo. El plazo REAL (que con cuota
+      // manual se auto-extiende) sale del resultado y se guarda mas abajo en
+      // dataUpdate. Leer `calc` aca dentro es leerlo antes de existir.
+      diasPlazo:     diasPlazoUsar,
       fechaInicio:   fechaInicioUsar,
       frecuencia:    frecuenciaUsar,
       modoInteres:   modoInteresUsar,

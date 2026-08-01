@@ -694,10 +694,10 @@ export default function CajaPage() {
             {/* Capital puro colocado, sin intereses. La cifra de arriba incluye
                 el interes que aun no ha cobrado; esta es la plata que realmente
                 salio de su bolsillo y esta en la calle. */}
-            {typeof capitalOrganizacion.capitalPrestado === 'number' && (
+            {typeof capitalOrganizacion.capitalEnCalle === 'number' && (
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--cf-border)]">
-                <span className="text-[10px] text-[var(--cf-ink-3)] uppercase">De eso, capital prestado (sin intereses)</span>
-                <span className="text-sm font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(capitalOrganizacion.capitalPrestado)}</span>
+                <span className="text-[10px] text-[var(--cf-ink-3)] uppercase">De eso, tu capital en la calle (sin intereses)</span>
+                <span className="text-sm font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(capitalOrganizacion.capitalEnCalle)}</span>
               </div>
             )}
           </Card>
@@ -720,7 +720,16 @@ export default function CajaPage() {
                 {capitalRutas.rutas.map(r => (
                   <div key={r.id} className="flex items-center justify-between">
                     <span className="text-[12px] text-[var(--cf-ink-3)] truncate">{r.nombre}</span>
-                    <span className="text-sm font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(r.saldoCapital)}</span>
+                    {/* Rojo si la ruta quedo en negativo, igual que en el detalle
+                        de ruta y en Capital. Aqui era el unico sitio donde un
+                        saldo negativo se pintaba del mismo color que uno sano.
+                        Viene de `main`; solo cambian los tokens. */}
+                    <span
+                      className="text-sm font-bold font-mono-display"
+                      style={{ color: (r.saldoCapital ?? 0) < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}
+                    >
+                      {formatMoney(r.saldoCapital)}
+                    </span>
                   </div>
                 ))}
               </div>
