@@ -2241,7 +2241,6 @@ export default function DashboardPage() {
           style={{
             background: 'var(--cf-card)',
             border: '1px solid var(--cf-border)',
-            boxShadow: '0 4px 14px color-mix(in srgb, var(--cf-red-dark) 12%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -2321,7 +2320,6 @@ export default function DashboardPage() {
           style={{
             background: 'var(--cf-card)',
             border: '1px solid var(--cf-border)',
-            boxShadow: '0 4px 12px color-mix(in srgb, var(--cf-border) 60%, transparent)',
           }}
         >
           <div className="flex items-center justify-between mb-3">
