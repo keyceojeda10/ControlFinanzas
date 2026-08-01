@@ -56,6 +56,7 @@ export async function GET() {
     organization,
     clientesPorMes,
     totalClientes,
+    capitalNoRecuperado,
     prestamosTotal,
     desgloseInteresMensual,
     rentabilidadRutas,
@@ -109,7 +110,7 @@ export async function GET() {
         id: true, montoPrestado: true, totalAPagar: true, totalPagado: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
-        cliente: { select: { id: true, nombre: true } },
+        cliente: { select: { id: true, nombre: true, rutaId: true } },
         // `interes` y los abonos a capital NO estaban aqui, y sin ellos
         // `capitalEnCalle()` calcula de menos sin avisar: los prestamos con
         // tabla darian interes 0 y los abonos explicitos no bajarian el capital.
@@ -128,6 +129,20 @@ export async function GET() {
       GROUP BY mes ORDER BY mes
     `,
     prisma.cliente.count({ where: { organizationId } }),
+    // CAPITAL QUE NO VOLVIO. Prestamos cerrados (o en curso) por debajo de lo
+    // prestado: la diferencia es plata del prestamista que ya nadie va a traer.
+    //
+    // Existe como cifra propia porque hasta hoy se disolvia dentro del interes:
+    // el reparto la registraba como «interes negativo» y bajaba la ganancia de
+    // meses en los que no habia pasado nada malo. Se saco de ahi (ver
+    // lib/dinero/reparto.js) y tiene que poder verse por su nombre, o se
+    // habria cambiado ocultar una perdida por ocultar otra.
+    prisma.$queryRaw`
+      SELECT COUNT(*) as prestamos, SUM(montoPrestado - totalAPagar) as monto
+      FROM Prestamo
+      WHERE organizationId = ${organizationId}
+        AND totalAPagar > 0 AND totalAPagar < montoPrestado
+    `,
     prisma.$queryRaw`
       SELECT clienteId, COUNT(*) as total
       FROM Prestamo WHERE organizationId = ${organizationId} AND esClavo = false
@@ -185,6 +200,11 @@ export async function GET() {
         id: true,
         montoPrestado: true,
         totalAPagar: true,
+        // La correccion por ruta se suma sobre una base SQL que solo cuenta
+        // ACTIVOS no clavos. Sin estos dos campos se corregia con prestamos
+        // completados y clavos que no estaban en la cifra corregida.
+        estado: true,
+        esClavo: true,
         cliente: { select: { rutaId: true } },
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
@@ -238,8 +258,12 @@ export async function GET() {
       const delta = segunTabla - segunProporcion
       acumulado += pago.montoPagado
 
-      const rutaId = prestamo.cliente?.rutaId || null
-      correccionTablaPorRuta[rutaId] = (correccionTablaPorRuta[rutaId] || 0) + delta
+      // Solo los que la consulta de rutas cuenta. Corregir una cifra con
+      // prestamos que no estan dentro de ella la deja peor que sin corregir.
+      if (prestamo.estado === 'activo' && !prestamo.esClavo) {
+        const rutaId = prestamo.cliente?.rutaId || null
+        correccionTablaPorRuta[rutaId] = (correccionTablaPorRuta[rutaId] || 0) + delta
+      }
 
       // El desglose mensual solo cubre la ventana de la pantalla; la ruta usa
       // el acumulado de vida del prestamo, igual que hace la consulta SQL.
@@ -307,6 +331,14 @@ export async function GET() {
   // sobre la cartera real: $277.067.809 por la vieja contra $201.988.571 por
   // esta, un 37,2% de mas en un solo negocio.
   const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + capitalEnCalleDe(p), 0)
+
+  // El mismo capital, partido por ruta. La suma de las rutas da exactamente el
+  // total de arriba, que es lo minimo que se le puede pedir a un desglose.
+  const capitalPorRuta = new Map()
+  for (const p of prestamosActivosDetalle) {
+    const rutaId = p.cliente?.rutaId || null
+    capitalPorRuta.set(rutaId, (capitalPorRuta.get(rutaId) || 0) + capitalEnCalleDe(p))
+  }
   const porCobrarTotal = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
 
@@ -379,6 +411,13 @@ export async function GET() {
       porCobrar: porCobrarTotal,
       interesEnCartera,
       cambioRecaudado: pctChange(recaudadoMes, recaudadoMesAnterior),
+      // Plata prestada que ya se sabe que no vuelve: prestamos cuyo total a
+      // pagar quedo por debajo de lo prestado. Antes bajaba la ganancia
+      // disfrazada de «interes negativo»; ahora es una cifra con su nombre.
+      capitalNoRecuperado: {
+        monto: Math.round(Number(capitalNoRecuperado?.[0]?.monto || 0)),
+        prestamos: Number(capitalNoRecuperado?.[0]?.prestamos || 0),
+      },
     },
     proyeccion: {
       proyectado: Math.round(proyeccionMes),
@@ -418,13 +457,16 @@ export async function GET() {
         ? Math.round(((tendenciaMensual.find(t => t.mes === mesActualKey)?.capitalRecuperado || 0) / capitalEnCalle) * 1000) / 10
         : 0,
       porRuta: rentabilidadRutas.map(r => {
+        // El capital de la ruta sale de los prestamos, no de `Σ montoPrestado`
+        // del SQL: es el denominador del ROI y con la formula vieja lo hundia.
+        // Mismo universo que la consulta (activos, no clavos).
         // La consulta SQL repartio proporcionalmente; aca se aplica la
         // correccion de los prestamos con tabla. El ROI se recalcula con el
         // total corregido, no con el parcial.
         const interesGanado = Math.round(
           Number(r.interesGanado || 0) + (correccionTablaPorRuta[r.rutaId] || 0),
         )
-        const capitalDesplegado = Number(r.capitalDesplegado || 0)
+        const capitalDesplegado = capitalPorRuta.get(r.rutaId || null) || 0
         return {
           rutaId: r.rutaId,
           nombre: r.rutaNombre || 'Sin ruta',

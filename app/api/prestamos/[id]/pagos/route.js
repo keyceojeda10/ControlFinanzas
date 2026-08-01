@@ -9,6 +9,7 @@ import {
   calcularPorcentajePagado,
   calcularEstadoCliente,
   calcularCapitalRestante,
+  capitalVivoSegunTabla,
   calcularProximoCobro,
   calcularCuotasPendientes,
   calcularCuotasEnMora,
@@ -182,7 +183,9 @@ export async function POST(request, { params }) {
 
   // Validación específica para abono a capital
   if (tipo === 'capital') {
-    const capitalRestante = calcularCapitalRestante(prestamo)
+    // El tope es el capital que dice la tabla, sin descontar abonos anteriores
+    // dos veces. Ver `capitalVivoSegunTabla`.
+    const capitalRestante = capitalVivoSegunTabla(prestamo)
     if (montoFinal > capitalRestante) {
       return Response.json({
         error: `El abono a capital no puede superar el capital restante: $${Math.round(capitalRestante).toLocaleString('es-CO')}`,
@@ -285,7 +288,7 @@ export async function POST(request, { params }) {
       }
     }
     if (tipo === 'capital') {
-      const capitalRestanteLocked = calcularCapitalRestante(prestamoLocked)
+      const capitalRestanteLocked = capitalVivoSegunTabla(prestamoLocked)
       if (montoFinal > capitalRestanteLocked) {
         montoFinal = capitalRestanteLocked
       }
@@ -346,11 +349,12 @@ export async function POST(request, { params }) {
 
       if (filasFuturas.length > 0) {
         // El abono a capital baja el capital DIRECTO por el monto abonado.
-        // calcularCapitalRestante da el capital vivo ANTES de este abono (ya
-        // refleja abonos anteriores y excluye los abonos de la cascada); le
-        // restamos este abono. Antes se usaba tal cual y repartia el abono
-        // primero en intereses, asi que casi no bajaba el capital.
-        const capitalAntesDelAbono = calcularCapitalRestante(prestamoActualizado)
+        // `capitalVivoSegunTabla` da el capital vivo ANTES de este abono (los
+        // abonos anteriores ya estan horneados en la tabla) y AQUI se le resta
+        // este. Con `calcularCapitalRestante` —que es la cifra de reporte, con
+        // los abonos ya descontados— se restarian DOS VECES y el globo se
+        // encogeria de mas: deuda perdonada sin que nadie lo decida.
+        const capitalAntesDelAbono = capitalVivoSegunTabla(prestamoActualizado)
         const saldoCapitalRestante = Math.max(0, capitalAntesDelAbono - montoFinal)
         const ultimaPagada = filasPagadas[filasPagadas.length - 1]
         const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
