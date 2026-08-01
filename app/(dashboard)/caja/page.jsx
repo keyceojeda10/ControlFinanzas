@@ -2,9 +2,10 @@
 // app/(dashboard)/caja/page.jsx - Caja del día
 
 import { lineasDeLaBanda } from '@/lib/dinero/conciliacion'
+import DeDondeSale from '@/components/dinero/DeDondeSale'
 import { formatMoney } from '@/lib/i18n'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth }             from '@/hooks/useAuth'
 import { useOffline }          from '@/components/providers/OfflineProvider'
@@ -500,6 +501,10 @@ export default function CajaPage() {
   // faltaba para que la banda cerrara, asi que cerraba siempre. Ahora la linea
   // son las correcciones REALES del libro —las que alguien asento, con motivo—
   // y el descuadre se dice aparte en vez de esconderse dentro.
+  // Que cifra se esta explicando ahora mismo. `null` = la hoja cerrada.
+  const router = useRouter()
+  const [cifraExplicada, setCifraExplicada] = useState(null)
+
   const conc = stats.conciliacion || null
   const ajustesDelDia = conc
     ? Math.round(conc.libro.ajustes || 0)
@@ -1262,6 +1267,7 @@ export default function CajaPage() {
         cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
         lineas={banda ? banda.lineas.map((l) => ({ ...l, texto: formatMoney(l.monto) })) : null}
         descuadre={descuadre}
+        onExplicar={setCifraExplicada}
         prestado={formatMoney(prestadoHoy)}
         gastos={formatMoney(gastosHoy)}
         ajustes={formatMoney(ajustesDelDia)}
@@ -1938,6 +1944,21 @@ export default function CajaPage() {
           </a>
         </div>
       </Modal>
+
+      {/* ── DE DÓNDE SALE CADA CIFRA ──────────────────────────────────────
+          Se toca un renglón de la cuenta y se abre: la pregunta que contesta,
+          qué entra y qué no, y los movimientos concretos.
+
+          Va aquí, al final del árbol, no dentro de la tarjeta de la caja: es
+          una hoja que tapa la pantalla, y montarla dentro de un contenedor con
+          `overflow` la recorta. */}
+      <DeDondeSale
+        cifra={cifraExplicada}
+        fecha={fechaSeleccionada}
+
+        onCerrar={() => setCifraExplicada(null)}
+        onIr={(ruta) => { setCifraExplicada(null); router.push(ruta) }}
+      />
     </div>
   )
 }

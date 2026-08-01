@@ -64,7 +64,7 @@ function Rotulo({ children, filete = false, valor, tonoValor }) {
 
 /* ── Extracto ──────────────────────────────────────────────────────────── */
 
-function LineaExtracto({ concepto, valor, signo, sub = false }) {
+function LineaExtracto({ concepto, valor, signo, sub = false, onTocar }) {
   const color = sub ? 'var(--cf-ink-3)'
               : signo === '+' ? 'var(--cf-green-dark)'
               : signo === '−' ? 'var(--cf-red-dark)'
@@ -74,7 +74,7 @@ function LineaExtracto({ concepto, valor, signo, sub = false }) {
     // cinco lineas de UNA MISMA cuenta, y una raya entre cada dos las convierte
     // en cinco cosas distintas. La unica raya es la de ANTES DEL SALDO, y esa si
     // significa algo: cierra la suma.
-    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flex: 'none' }}>
+    <Renglon onTocar={onTocar}>
       <span style={{
         flex: 1, minWidth: 0,
         fontSize: sub ? 13 : 14,
@@ -86,7 +86,28 @@ function LineaExtracto({ concepto, valor, signo, sub = false }) {
       <span className="cf-fig" style={{ fontSize: sub ? 13 : 16, color, flex: 'none' }}>
         {signo && `${signo} `}{valor}
       </span>
-    </div>
+      {onTocar && (
+        <span aria-hidden style={{ fontSize: 12, color: 'var(--cf-ink-4)', flex: 'none', marginLeft: -4 }}>?</span>
+      )}
+    </Renglon>
+  )
+}
+
+// El renglon es un BOTON solo cuando hay algo que explicar. Un `div` con
+// `onClick` no lo alcanza el teclado ni lo anuncia un lector de pantalla, y
+// esto es la pantalla del dinero: tiene que poder usarla todo el mundo.
+//
+// La pista de que se puede tocar es el signo de interrogacion al final del
+// renglon. Sin subrayado ni color de enlace: son cinco lineas de UNA cuenta, y
+// pintarlas como enlaces las convierte en cinco cosas sueltas.
+function Renglon({ onTocar, children }) {
+  const caja = { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flex: 'none' }
+  if (!onTocar) return <div style={caja}>{children}</div>
+  return (
+    <button type="button" onClick={onTocar} style={{
+      ...caja, width: '100%', padding: 0, background: 'none', border: 'none',
+      textAlign: 'left', cursor: 'pointer', font: 'inherit',
+    }}>{children}</button>
   )
 }
 
@@ -95,6 +116,7 @@ export function CajaDia({
   rangos = [], rangoActivo, onRango,
   baseInicial, cobrado, cobradoDigital, prestado, gastos, ajustes, saldo,
   lineas = null,
+  onExplicar,
   descuadre = null, onVerDescuadre,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
@@ -211,6 +233,7 @@ export function CajaDia({
                   concepto={l.rotulo}
                   valor={l.texto}
                   signo={l.signo === 1 ? '+' : l.signo === -1 ? '−' : undefined}
+                  onTocar={onExplicar ? () => onExplicar(l.id) : undefined}
                 />,
               ]
               // En qué se cobró. Una caja física no contiene Nequi, y el 12%
@@ -219,7 +242,12 @@ export function CajaDia({
               // cobrador carga con un faltante que no es suyo.
               if (l.id === 'recaudo' && cobradoDigital) {
                 filas.push(
-                  <LineaExtracto key="recaudo-digital" sub concepto="de eso, por transferencia" valor={cobradoDigital} />,
+                  <LineaExtracto
+                    key="recaudo-digital" sub
+                    concepto="de eso, por transferencia"
+                    valor={cobradoDigital}
+                    onTocar={onExplicar ? () => onExplicar('recaudoDigital') : undefined}
+                  />,
                 )
               }
               return filas
