@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { ACCIONES } from '@/lib/activity-log-types'
+import { agruparRepetidos, textoDeFila, paraRevisar, resumenDelDia, quienTrabajo } from '@/lib/adaptadores/actividad'
+import { formatMoney } from '@/lib/i18n'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 const ICONOS = {
@@ -357,13 +359,19 @@ export default function ActividadPage() {
                 <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: 'var(--cf-border)' }} />
 
                 <div className="space-y-0.5">
-                  {grupo.items.map((item) => {
+                  {/* ── T32-03 · LAS REPETICIONES, EN UNA FILA ──
+                      Trece renglones seguidos diciendo «Carlos Andres registro
+                      pago» no informan de nada: lo que hay que saber es que se
+                      registraron trece, y en cuanto tiempo. La lamina lo pone en
+                      una linea: «Registro 4 pagos en un minuto». */}
+                  {agruparRepetidos(grupo.items).map((fila) => {
+                    const item = fila.items[0]
                     const config = ACCIONES[item.accion] || { label: item.accion, color: 'var(--cf-ink-3)' }
                     const icon = getIcon(item.accion)
                     const esDestructiva = item.accion?.startsWith('eliminar') || item.accion === 'anular_pago'
 
                     return (
-                      <div key={item.id} className="relative flex items-start gap-2.5 py-2">
+                      <div key={fila.id} className="relative flex items-start gap-2.5 py-2">
                         {/* Dot en la linea */}
                         <div
                           className="absolute -left-5 top-3 w-[9px] h-[9px] rounded-full border-2 shrink-0"
@@ -384,11 +392,19 @@ export default function ActividadPage() {
                         {/* Contenido */}
                         <div className="flex-1 min-w-0 pt-0.5">
                           <p className="text-[12px] leading-snug" style={{ color: 'var(--cf-ink)' }}>
-                            <span className="font-semibold">{item.user?.nombre || 'Sistema'}</span>
+                            <span className="font-semibold">{fila.usuario || 'Sistema'}</span>
                             {' '}
-                            <span style={{ color: 'var(--cf-ink-3)' }}>{config.label?.toLowerCase()}</span>
+                            <span style={{ color: fila.cuantos > 1 ? 'var(--cf-ink)' : 'var(--cf-ink-3)', fontWeight: fila.cuantos > 1 ? 600 : 400 }}>
+                              {textoDeFila(fila, config.label)}
+                            </span>
                           </p>
-                          {item.detalle && (
+                          {fila.cuantos > 1 ? (
+                            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                              {fila.monto > 0
+                                ? `Suman ${formatMoney(fila.monto)}`
+                                : `${fila.cuantos} sucesos seguidos`}
+                            </p>
+                          ) : item.detalle && (
                             <p
                               className="text-[11px] mt-0.5 leading-snug"
                               style={{ color: esDestructiva ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}
@@ -399,8 +415,18 @@ export default function ActividadPage() {
                         </div>
 
                         {/* Hora */}
+                        {/* EL MONTO, que no estaba. La lamina le da su columna:
+                            «+$71.000» de una tanda de cuatro pagos dice mas que
+                            los cuatro renglones sueltos. */}
+                        {fila.monto !== 0 && (
+                          <span className="cf-fig text-[12px] shrink-0 pt-0.5" style={{
+                            color: fila.monto > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                          }}>
+                            {fila.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(fila.monto))}
+                          </span>
+                        )}
                         <span className="text-[10px] shrink-0 pt-1 tabular-nums" style={{ color: 'var(--cf-ink-3)' }}>
-                          {formatHora(item.createdAt)}
+                          {fila.horaTexto}
                         </span>
                       </div>
                     )
