@@ -609,7 +609,6 @@ export async function GET(request, { params }) {
     { id: 'prestamosNuevos', rotulo: 'Préstamos nuevos', cantidad: prestadoDetalle.nuevos.cantidad, monto: prestadoDetalle.nuevos.efectivo },
     { id: 'renovaciones', rotulo: 'Renovaciones', cantidad: prestadoDetalle.renovaciones.cantidad, monto: prestadoDetalle.renovaciones.efectivo, nota: prestadoDetalle.renovaciones.absorbido ? `${prestadoDetalle.renovaciones.absorbido} absorbidos del saldo viejo` : null },
     { id: 'clientesNuevos', rotulo: 'Clientes nuevos', cantidad: clientesNuevos, monto: null },
-    { id: 'recaudoDigital', rotulo: 'Cobrado por transferencia', cantidad: null, monto: cobradoDigital },
     { id: 'seguros', rotulo: 'Seguros', cantidad: segurosHoy.length, monto: Math.round(segurosDiaTotal) },
     { id: 'recargos', rotulo: 'Recargos', cantidad: recargosCantidad, monto: recargosMontoTotal },
     { id: 'gastos', rotulo: 'Gastos', cantidad: gastos.length, monto: gastosDia },

@@ -90,34 +90,51 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           ))}
         </div>
 
+        {/* ⚠ EL RESULTADO DE ESTA CUENTA ES LA SUMA DE ESTAS LÍNEAS. PUNTO.
+            La primera versión ponía aquí `dineroEnMano`, que con
+            `capitalEsEfectivo` es la BOLSA ENTERA de la ruta — otra pregunta.
+            En pantalla se leía «726.000 + 161.000 = 1.132.000», que no da. Es
+            exactamente el pecado de la banda vieja: la respuesta de otra
+            pregunta puesta al final de esta cuenta. */}
         <div className="flex items-baseline justify-between gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
           <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-            {esCapitalEfectivo ? 'Debería tener en la mano' : 'Le queda en efectivo'}
+            Le queda del día
           </span>
           <span className="cf-fig text-[22px] font-bold" style={{
-            color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+            color: (data?.cuentaSuma ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
           }}>
-            {formatMoney(r.dineroEnMano ?? 0)}
+            {formatMoney(data?.cuentaSuma ?? 0)}
           </span>
         </div>
 
-        {/* SOLO EFECTIVO, y se dice. Lo que entró por Nequi ya está en la
-            cuenta bancaria: contarlo aquí le inventa al cobrador un faltante
-            que no es suyo. */}
         <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-          {esCapitalEfectivo
-            ? 'Toda la bolsa de sus rutas, no solo lo de hoy. Solo efectivo.'
-            : 'Solo efectivo. Lo que entró por transferencia ya está en la cuenta.'}
+          Solo efectivo. Lo que entró por transferencia ya está en la cuenta.
         </p>
-
-        {/* El descuadre entre las líneas y la respuesta, si lo hay. Un residuo
-            mudo es una mentira. */}
-        {data?.cuentaSuma != null && !esCapitalEfectivo && data.cuentaSuma !== (r.dineroEnMano ?? 0) && (
-          <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-red-dark)' }}>
-            Las líneas suman {formatMoney(data.cuentaSuma)} y abajo dice {formatMoney(r.dineroEnMano ?? 0)}.
-          </p>
-        )}
       </div>
+
+      {/* ── LA OTRA PREGUNTA, EN SU PROPIO SITIO ──────────────────────────
+          Con `capitalEsEfectivo` el negocio entiende que el cobrador carga
+          TODA la bolsa de su ruta, no solo lo que movió hoy. Es una pregunta
+          distinta y por eso es una tarjeta distinta: mezclarla con la cuenta
+          del día es lo que hacía que los números no dieran. */}
+      {esCapitalEfectivo && (
+        <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+              Debería tener en la mano
+            </span>
+            <span className="cf-fig text-[22px] font-bold" style={{
+              color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+            }}>
+              {formatMoney(r.dineroEnMano ?? 0)}
+            </span>
+          </div>
+          <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+            Toda la bolsa de sus rutas, no solo lo de hoy: {formatMoney(r.capitalRutasTotal ?? 0)} de capital
+            {(r.gastosPendientesMonto ?? 0) > 0 ? `, menos ${formatMoney(r.gastosPendientesMonto)} de gastos sin aprobar` : ''}.
+          </p>
+        </div>
+      )}
 
       {/* Resumen completo de lo prestado en el dia.
           Reemplaza a la vieja caja "Renovaciones de hoy", que solo aparecia si habia
