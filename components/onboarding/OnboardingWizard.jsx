@@ -5,6 +5,7 @@ import WizardProgress   from './wizard/WizardProgress'
 import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
 import WizardCartulina  from './wizard/WizardCartulina'
+import TraerCartera from '@/components/pantallas/TraerCartera'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
 import WizardPlan from './wizard/WizardPlan'
@@ -205,16 +206,36 @@ export default function OnboardingWizard({
 
       {/* «Hoy el migrador pregunta manual o foto EN CADA CLIENTE. Aquí se
           decide una vez.» Por eso va antes de la cartulina, no dentro. */}
+      {/* ── T22-00 · LA MISMA PANTALLA QUE AL ATERRIZAR ──
+          `WizardMetodoCarga` hacia ESTA MISMA PREGUNTA —foto, Excel o de cero—
+          asi que se preguntaba dos veces: una aqui dentro y otra al salir del
+          asistente con la cartera en cero. Ahora es la misma pantalla en los dos
+          sitios, con las mismas palabras y el mismo orden.
+
+          Y aqui gana algo que dentro del asistente no habia: la columna derecha.
+          «Cuando termines vas a ver» enseña el panel que va a tener, y «lo que
+          ya hiciste» dice que capital y plan ya estan — que es cierto, porque
+          para llegar a este paso hay que haberlos pasado.
+
+          Foto y Excel SE QUEDAN DENTRO del asistente: quien sale de un flujo de
+          tres minutos para aterrizar en otra pantalla no vuelve. Solo «empezar
+          de cero» sale, porque ahi el trabajo es crear el primer prestamo. */}
       {step === 2 && flujo && vioPlan && !metodo && (
-        <WizardMetodoCarga
-          onElegir={(via) => {
-            // Foto y Excel se quedan DENTRO: quien sale de un flujo de tres
-            // minutos para aterrizar en otra pantalla no vuelve.
-            if (via === 'foto' || via === 'excel') { setMetodo(via); return }
+        <TraerCartera
+          nombre={nombre}
+          onFoto={() => setMetodo('foto')}
+          onExcel={() => setMetodo('excel')}
+          onCero={() => {
             persistStep(2, flujo)
             window.location.href = '/clientes/nuevo'
           }}
-          onSaltar={handleCartulinaSkip}
+          pasos={[
+            { texto: 'Crear tu cuenta', hecho: true },
+            // Ciertos: para estar en el paso 2 hay que haber pasado por los dos.
+            { texto: 'Cuánto vas a prestar', hecho: true },
+            { texto: 'Traer tu cartera', actual: true },
+            { texto: 'Salir a cobrar' },
+          ]}
         />
       )}
 
