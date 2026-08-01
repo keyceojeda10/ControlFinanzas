@@ -99,10 +99,24 @@ export default function TablaAmortizacion({
   const dueñaDelAlto = conBarra
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      ...(dueñaDelAlto ? { height: '100%' } : {}),
-    }}>
+    // ── T12-03 · EN 1440, EL RESUMEN A LA DERECHA ──
+    // En el telefono el resumen va ARRIBA porque es la referencia contra la que
+    // se lee cada cuota y no puede irse con el scroll. Sentado no hace falta
+    // sacrificar el sitio de la primera fila: cabe al lado, y las cuotas
+    // empiezan en la primera linea de la pantalla.
+    //
+    // El orden del DOM no cambia —resumen primero, cuotas despues— porque en
+    // movil ese orden es el correcto. La rejilla las coloca.
+    //
+    // OJO: el `display` va POR CLASE en las dos disposiciones. Ponerlo en el
+    // `style` gana sobre la clase y `lg:grid` no llegaria a aplicarse; lo hice
+    // tres veces en esta tanda y ahora lo prohibe `display-en-linea.test.js`.
+    <div
+      className="flex flex-col lg:grid lg:gap-4 lg:items-start"
+      style={{
+        gridTemplateColumns: 'minmax(0,1fr) 340px',
+        ...(dueñaDelAlto ? { height: '100%' } : {}),
+      }}>
 
       {/* EL RESUMEN NO SCROLLEA. Va en la zona fija, pegado a la cabecera: es el
           reparto del préstamo ENTERO, y si se va con el scroll se pierde la
@@ -113,7 +127,7 @@ export default function TablaAmortizacion({
           cuando la lamina las quiere en x20 con 350. Es el margen doble, y van
           tres: el panel (310 en x40), cobrar hoy (302 en x44) y esta. La regla:
           el relleno lateral lo pone el armazon, el componente NO. */}
-      <div style={{ flex: 'none', padding: '6px 0 12px' }}>
+      <div className="lg:col-start-2 lg:row-start-1" style={{ flex: 'none', padding: '6px 0 12px' }}>
         <div style={{
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
@@ -174,8 +188,8 @@ export default function TablaAmortizacion({
       </div>
 
       {/* ── Las cuotas ─────────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', gap: 10,
+      <div className="flex flex-col lg:col-start-1 lg:row-start-1" style={{
+        gap: 10,
         padding: `0 0 ${conBarra ? 20 : 0}px`,
         ...(dueñaDelAlto ? { flex: 1, minHeight: 0, overflowY: 'auto' } : { flex: 'none' }),
       }}>
