@@ -74,7 +74,7 @@ function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   // Fondo blanco + borde sutil (tarjeta)
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, W, H)
-  ctx.strokeStyle = '#e5e7eb'
+  ctx.strokeStyle = 'var(--cf-border)'
   ctx.lineWidth = 2
   ctx.strokeRect(1, 1, W - 2, H - 2)
 
@@ -158,7 +158,7 @@ export default function BotonCompartirRecibo({ cliente, prestamo, pago, orgNombr
     <button
       type="button"
       onClick={handleClick}
-      className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]"
+      className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]"
     >
       {SHARE_ICON}
       {label}

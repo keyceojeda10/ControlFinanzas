@@ -1,23 +1,22 @@
-// app/(dashboard)/loading.jsx - Skeleton de carga entre páginas del dashboard
+// app/(dashboard)/loading.jsx — el esqueleto entre pantallas del dashboard.
+//
+// ── T05-06 ──
+//
+// Era un esqueleto propio: cuatro tarjetas en rejilla y dos bloques, con un
+// degradado dorado al 2% que no aparece en ninguna lámina. Y sobre todo, NO SE
+// PARECÍA A LO QUE VENÍA DESPUÉS: se anunciaban cuatro tarjetas iguales y
+// llegaba un bloque negro con una lista. Eso hace que la pantalla «salte» al
+// cargar, que es justo lo que un esqueleto existe para evitar.
+//
+// `PanelCargando` dibuja la forma real del panel: el bloque grande arriba, la
+// tira de cifras y las filas. Llevaba construido y sin usar.
+
+import { PanelCargando } from '@/components/pantallas/Cargando'
 
 export default function DashboardLoading() {
   return (
-    <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-4" role="status" aria-live="polite">
-      {/* Header skeleton */}
-      <div className="h-7 w-40 bg-[var(--color-border)] rounded-[12px]" />
-
-      {/* Cards row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 border border-[var(--color-border)] rounded-[20px]" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 2%, transparent) 0%, var(--color-bg-card) 50%, var(--color-bg-surface) 100%)' }} />
-        ))}
-      </div>
-
-      {/* Main card */}
-      <div className="h-48 border border-[var(--color-border)] rounded-[20px]" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 2%, transparent) 0%, var(--color-bg-card) 50%, var(--color-bg-surface) 100%)' }} />
-
-      {/* Secondary card */}
-      <div className="h-32 border border-[var(--color-border)] rounded-[20px]" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 2%, transparent) 0%, var(--color-bg-card) 50%, var(--color-bg-surface) 100%)' }} />
+    <div role="status" aria-live="polite">
+      <PanelCargando sinMargen />
     </div>
   )
 }

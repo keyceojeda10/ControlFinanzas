@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 7</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">MOVIL</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Recibo</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">14:13</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:24px 24px 0;display:flex;flex-direction:column;gap:20px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:999px;background:#12a150;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+              </span>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:23px;font-weight:600;letter-spacing:-.02em;">Pago registrado</span>
+                <span style="font-size:13px;color:#63676f;font-variant-numeric:tabular-nums;">martes 28 de julio · 2:12 p. m.</span>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding-bottom:16px;border-bottom:1px dashed rgba(20,20,28,.16);">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Recibió</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$27.500</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                <span style="font-size:13px;color:#4a4e57;">Cliente</span>
+                <span style="font-size:14px;font-weight:700;">Steven Olmos</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                <span style="font-size:13px;color:#4a4e57;">Saldo pendiente</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$103.000</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                <span style="font-size:13px;color:#4a4e57;">Próximo cobro</span>
+                <span style="font-size:14px;font-weight:700;">mié 29 de julio</span>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;padding-top:16px;border-top:1px dashed rgba(20,20,28,.16);">
+                <span style="font-size:13px;color:#4a4e57;">Recibo</span>
+                <span style="font-family:ui-monospace,monospace;font-size:13px;font-weight:600;">CF-2026-04871</span>
+              </div>
+              <span style="font-size:11px;line-height:1.45;color:#63676f;text-align:center;">Recibido por Pepito · Control Finanzas</span>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 24px 24px;display:flex;flex-direction:column;gap:10px;">
+            <button style="height:54px;border:none;border-radius:14px;background:#25d366;color:#fff;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z"></path></svg>
+              Enviar por WhatsApp
+            </button>
+            <div style="display:flex;gap:10px;">
+              <button style="flex:1;height:48px;border:1px solid rgba(20,20,28,.1);border-radius:14px;background:#fff;color:#15161a;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Guardar imagen</button>
+              <button style="flex:1;height:48px;border:1px solid rgba(20,20,28,.1);border-radius:14px;background:#fff;color:#15161a;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Imprimir</button>
+            </div>
+            <button style="height:44px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Siguiente cobro</button>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">04 · Recibo</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">No estaba capturado —solo aparece después de escribir un pago— así que va propuesto. Con borde troquelado y número de recibo, porque el deudor lo va a guardar como comprobante. Verde WhatsApp para el envío, que es la excepción de marca externa permitida, y dorado solo para seguir la ruta.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

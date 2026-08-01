@@ -38,16 +38,16 @@ export default function QrRedirectPage({ params }) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--color-danger-dim)' }}>
-          <svg className="w-8 h-8" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--cf-red-pill-bg)' }}>
+          <svg className="w-8 h-8" style={{ color: 'var(--cf-red-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{error}</p>
+        <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>{error}</p>
         <button
           onClick={() => router.push('/clientes')}
           className="h-10 px-5 rounded-xl text-sm font-medium"
-          style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+          style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
         >
           Ir a clientes
         </button>
@@ -57,8 +57,8 @@ export default function QrRedirectPage({ params }) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-      <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }} />
-      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>Cargando cliente...</p>
+      <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--cf-gold)', borderTopColor: 'transparent' }} />
+      <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>Cargando cliente...</p>
     </div>
   )
 }

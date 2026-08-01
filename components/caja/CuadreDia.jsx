@@ -1,4 +1,7 @@
 'use client'
+
+import { Cuadre } from '@/components/pantallas/Caja'
+import { diferenciaDeCuadre, causasDeDescuadre } from '@/lib/adaptadores/cuadre'
 // components/caja/CuadreDia.jsx
 // Cuadre del día (solo owner): el admin verifica y confirma el efectivo que recibe de
 // cada cobrador. Banner global + lista por cobrador (semáforos, problemas primero) +
@@ -13,10 +16,10 @@ import { Button } from '@/components/ui/Button'
 
 // Config visual por estado (sin emojis: punto de color + label).
 const ESTADO = {
-  cuadrado:  { label: 'Cuadró',   color: 'var(--color-success)', orden: 3 },
-  sobrante:  { label: 'Sobrante', color: 'var(--color-warning)', orden: 1 },
-  faltante:  { label: 'Faltante', color: 'var(--color-danger)',  orden: 0 },
-  pendiente: { label: 'Pendiente', color: 'var(--color-text-muted)', orden: 2 },
+  cuadrado:  { label: 'Cuadró',   color: 'var(--cf-green-dark)', orden: 3 },
+  sobrante:  { label: 'Sobrante', color: 'var(--cf-gold-dark)', orden: 1 },
+  faltante:  { label: 'Faltante', color: 'var(--cf-red-dark)',  orden: 0 },
+  pendiente: { label: 'Pendiente', color: 'var(--cf-ink-3)', orden: 2 },
 }
 
 const fmtHora = (d) => d ? new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' }) : ''
@@ -103,7 +106,7 @@ export default function CuadreDia({ fecha }) {
     } catch { /* noop */ } finally { setGuardando(false) }
   }
 
-  if (loading) return <Card><p className="text-sm text-[var(--color-text-muted)]">Cargando cuadre…</p></Card>
+  if (loading) return <Card><p className="text-sm text-[var(--cf-ink-3)]">Cargando cuadre…</p></Card>
   if (!data || data.filas.length === 0) return null
 
   const difModal = modal ? Math.round(Number(montoRecibido || 0) - modal.recaudadoSistema) : 0
@@ -113,20 +116,20 @@ export default function CuadreDia({ fecha }) {
       {/* Banner global */}
       <Card>
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Cuadre del día</p>
-          <span className="text-[11px] text-[var(--color-text-muted)]">
-            <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--color-success)' : 'var(--color-accent)' }}>{g.cuadraron}/{g.total}</span> cuadraron
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuadre del día</p>
+          <span className="text-[11px] text-[var(--cf-ink-3)]">
+            <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>{g.cuadraron}/{g.total}</span> cuadraron
           </span>
         </div>
-        <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">Total recibido hoy</p>
-        <p className="text-2xl font-bold font-mono-display text-[var(--color-success)]">
+        <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Total recibido hoy</p>
+        <p className="text-2xl font-bold font-mono-display text-[var(--cf-green-dark)]">
           {formatMoney(g.totalRecibido)}
-          <span className="text-xs font-normal text-[var(--color-text-muted)]"> / {formatMoney(g.totalRecaudadoSistema)} sistema</span>
+          <span className="text-xs font-normal text-[var(--cf-ink-3)]"> / {formatMoney(g.totalRecaudadoSistema)} sistema</span>
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px]">
-          {g.pendientes > 0 && <span className="text-[var(--color-text-muted)]">{g.pendientes} pendiente{g.pendientes === 1 ? '' : 's'}</span>}
-          {g.conDiferencia > 0 && <span className="text-[var(--color-danger)]">{g.conDiferencia} con diferencia</span>}
-          {g.faltanteTotal < 0 && <span className="text-[var(--color-danger)]">Faltante total: {formatMoney(g.faltanteTotal)}</span>}
+          {g.pendientes > 0 && <span className="text-[var(--cf-ink-3)]">{g.pendientes} pendiente{g.pendientes === 1 ? '' : 's'}</span>}
+          {g.conDiferencia > 0 && <span className="text-[var(--cf-red-dark)]">{g.conDiferencia} con diferencia</span>}
+          {g.faltanteTotal < 0 && <span className="text-[var(--cf-red-dark)]">Faltante total: {formatMoney(g.faltanteTotal)}</span>}
         </div>
         {/* El boton aparece segun `exactos` (los que declararon lo mismo que el
             sistema), no segun `g.pendientes` (los que faltan por confirmar).
@@ -136,24 +139,24 @@ export default function CuadreDia({ fecha }) {
             type="button"
             onClick={confirmarExactos}
             disabled={guardando}
-            className="mt-3 w-full h-9 rounded-[10px] text-xs font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
+            className="mt-3 w-full h-9 rounded-[10px] text-xs font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] disabled:opacity-50 transition-colors"
           >
             Confirmar {exactos.length} que entregó{exactos.length === 1 ? '' : 'aron'} lo mismo que dice el sistema
           </button>
         )}
         {g.pendientes > exactos.length && (
-          <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">
+          <p className="mt-2 text-[11px] text-[var(--cf-ink-3)]">
             {g.pendientes - exactos.length} cobrador{g.pendientes - exactos.length === 1 ? '' : 'es'} no coincide{g.pendientes - exactos.length === 1 ? '' : 'n'} con el sistema: cuéntale{g.pendientes - exactos.length === 1 ? '' : 's'} el efectivo y confirma abajo.
           </p>
         )}
       </Card>
 
       {/* Filtros */}
-      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>
+      <div className="flex gap-1 p-1 rounded-[12px]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
         {[{ k: 'todos', l: 'Todos' }, { k: 'pendientes', l: 'Pendientes' }, { k: 'diferencia', l: 'Con diferencia' }].map((t) => (
           <button key={t.k} type="button" onClick={() => setFiltro(t.k)}
             className="flex-1 py-1.5 text-[11px] font-semibold rounded-[8px] transition-all"
-            style={filtro === t.k ? { background: 'var(--color-bg-card)', color: 'var(--color-accent)' } : { color: 'var(--color-text-muted)' }}>
+            style={filtro === t.k ? { background: 'var(--cf-card)', color: 'var(--cf-gold)' } : { color: 'var(--cf-ink-3)' }}>
             {t.l}
           </button>
         ))}
@@ -165,48 +168,48 @@ export default function CuadreDia({ fecha }) {
           const est = ESTADO[f.estado] || ESTADO.pendiente
           const confirmado = f.estado !== 'pendiente'
           return (
-            <div key={f.cobradorId} className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3">
+            <div key={f.cobradorId} className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: est.color, boxShadow: `0 0 8px ${est.color}` }} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{f.nombre}</p>
-                    <p className="text-[11px] text-[var(--color-text-muted)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
+                    <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{f.nombre}</p>
+                    <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
                   </div>
                 </div>
                 {!confirmado ? (
                   <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-semibold text-[#1a1a2e] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] rounded-[8px] px-3 py-1.5 transition-colors">
+                    className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
                     Confirmar
                   </button>
                 ) : (
                   <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-medium text-[var(--color-accent)] hover:underline px-2 py-1">
+                    className="shrink-0 text-[11px] font-medium text-[var(--cf-gold)] hover:underline px-2 py-1">
                     Editar
                   </button>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2.5">
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Sistema</p>
-                  <p className="text-[13px] font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(f.recaudadoSistema)}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
+                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(f.recaudadoSistema)}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Recibido</p>
-                  <p className="text-[13px] font-bold font-mono-display text-[var(--color-text-primary)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
+                  <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)]">Diferencia</p>
-                  <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--color-text-muted)' : f.diferencia === 0 ? 'var(--color-success)' : f.diferencia < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
+                  <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--cf-ink-3)' : f.diferencia === 0 ? 'var(--cf-green-dark)' : f.diferencia < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
                     {f.diferencia == null ? '—' : `${f.diferencia > 0 ? '+' : ''}${formatMoney(f.diferencia)}`}
                   </p>
                 </div>
               </div>
-              {f.notaCuadre && <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5 italic">“{f.notaCuadre}”</p>}
+              {f.notaCuadre && <p className="text-[11px] text-[var(--cf-ink-3)] mt-1.5 italic">“{f.notaCuadre}”</p>}
             </div>
           )
         })}
-        {filas.length === 0 && <p className="text-sm text-[var(--color-text-muted)] text-center py-4">Sin cobradores en este filtro.</p>}
+        {filas.length === 0 && <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">Sin cobradores en este filtro.</p>}
       </div>
 
       {/* Modal confirmar recibo */}
@@ -222,30 +225,60 @@ export default function CuadreDia({ fecha }) {
         }
       >
         {modal && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--color-text-muted)]">Dinero en mano (sistema)</span>
-              <span className="font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(modal.recaudadoSistema)}</span>
-            </div>
-            <div>
-              <label className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Efectivo que recibiste</label>
-              <MoneyInput value={montoRecibido} onChange={(e) => setMontoRecibido(e.target.value)} placeholder="0" />
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* EL CUERPO DEL MODAL PASA A `Cuadre` (T33).
+                Lo que cambia, y por qué importa en el momento en que una persona
+                le entrega dinero a otra:
+
+                · LAS CAUSAS SON BOTONES, no un «motivo (opcional)» en blanco. Un
+                  campo vacío se deja vacío: el administrador tiene ocho cobradores
+                  esperando. Con las cuatro causas reales a un toque, la diferencia
+                  queda explicada — y una diferencia explicada es la que después se
+                  puede buscar.
+                · LAS CAUSAS CAMBIAN DE LADO: un faltante y un sobrante no se
+                  explican igual. Faltar suele ser un gasto sin registrar; sobrar,
+                  un cobro sin anotar.
+                · LA DIFERENCIA TRAE SU PROPORCIÓN («4% de lo recaudado»), que es
+                  lo que dice si buscar un error de conteo o un billete perdido.
+
+                El endpoint, el guardado y `nota` no se tocan: la causa elegida
+                escribe en `nota`, que es lo que ya viajaba. */}
+            <Cuadre
+              segunLaApp={formatMoney(modal.recaudadoSistema)}
+              contado={montoRecibido}
+              /* SOLO DÍGITOS. `MoneyInput` entregaba el valor ya limpio; el campo
+                 de `Cuadre` no limpia nada, y `confirmar` hace `Number(...)`. Si
+                 alguien teclea «1.200.000» —que es como se escribe aquí— eso da
+                 NaN y viaja al endpoint como el efectivo recibido. Es el momento
+                 en que una persona le entrega dinero a otra: no puede depender de
+                 si escribió los puntos. */
+              onContado={(v) => setMontoRecibido(String(v ?? '').replace(/\D/g, ''))}
+              diferencia={diferenciaDeCuadre(
+                { sistema: modal.recaudadoSistema, contado: montoRecibido },
+                formatMoney,
+              )}
+              causas={difModal !== 0 ? causasDeDescuadre(difModal > 0 ? 'sobra' : 'falta') : []}
+              onCausa={(c) => setNota(c.texto)}
+            />
+
+            {/* La causa elegida se ve y se puede matizar a mano: «un gasto que no
+                se registró» es el titular, y a veces hace falta decir cuál. */}
             {difModal !== 0 && (
-              <>
-                <div className="flex items-center justify-between text-sm rounded-[10px] px-3 py-2"
-                  style={{ background: difModal < 0 ? 'var(--color-danger-dim)' : 'var(--color-warning-dim)' }}>
-                  <span style={{ color: difModal < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>{difModal < 0 ? 'Faltante' : 'Sobrante'}</span>
-                  <span className="font-bold font-mono-display" style={{ color: difModal < 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>{difModal > 0 ? '+' : ''}{formatMoney(difModal)}</span>
-                </div>
-                <div>
-                  <label className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">Motivo (opcional)</label>
-                  <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej. gasto no registrado, faltante…"
-                    className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]" />
-                </div>
-              </>
+              <input
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Puedes añadir un detalle…"
+                style={{
+                  width: '100%', height: 44, padding: '0 14px', borderRadius: 14,
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 14, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
             )}
-            <p className="text-[11px] text-[var(--color-text-muted)]">La diferencia se registra como ajuste de caja para no descuadrar el capital.</p>
+
+            <p style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: 0 }}>
+              La diferencia se registra como ajuste de caja para no descuadrar el capital.
+            </p>
           </div>
         )}
       </Modal>

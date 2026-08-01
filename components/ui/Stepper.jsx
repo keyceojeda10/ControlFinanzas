@@ -5,7 +5,7 @@
 // El paso activo destaca con accent, los completados con relleno verde,
 // los futuros vacios. Onclick opcional para saltar.
 
-export default function Stepper({ steps, activeIndex, onChange, completedIndices }) {
+export default function Stepper({ steps, activeIndex, onChange, completedIndices, contador = true }) {
   const completed = new Set(completedIndices ?? [])
 
   return (
@@ -16,7 +16,7 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
         <div
           className="absolute left-2 right-2 h-px"
           style={{
-            background: 'var(--color-border)',
+            background: 'var(--cf-border)',
             top: '50%',
             transform: 'translateY(-50%)',
             zIndex: 0,
@@ -27,7 +27,7 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
           <div
             className="absolute h-px"
             style={{
-              background: 'color-mix(in srgb, var(--color-success) 60%, transparent)',
+              background: 'color-mix(in srgb, var(--cf-green-dark) 60%, transparent)',
               top: '50%',
               transform: 'translateY(-50%)',
               left: '0.5rem',
@@ -52,17 +52,17 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
               className="relative z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all"
               style={{
                 background: isActive
-                  ? 'var(--color-accent)'
+                  ? 'var(--cf-gold)'
                   : isCompleted
-                    ? 'var(--color-success)'
-                    : 'var(--color-bg-surface)',
+                    ? 'var(--cf-green-dark)'
+                    : 'var(--cf-surface)',
                 border: isActive
-                  ? '2px solid var(--color-accent)'
+                  ? '2px solid var(--cf-gold)'
                   : isCompleted
-                    ? '2px solid var(--color-success)'
-                    : '1.5px solid var(--color-border)',
+                    ? '2px solid var(--cf-green-dark)'
+                    : '1.5px solid var(--cf-border)',
                 cursor: clickable ? 'pointer' : 'default',
-                boxShadow: isActive ? '0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent)' : 'none',
+                boxShadow: isActive ? '0 0 0 4px color-mix(in srgb, var(--cf-gold) 18%, transparent)' : 'none',
               }}
             >
               {isCompleted ? (
@@ -72,7 +72,7 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
               ) : (
                 <span
                   className="text-[11px] font-bold"
-                  style={{ color: isActive ? '#0a0a0a' : 'var(--color-text-muted)' }}
+                  style={{ color: isActive ? 'var(--cf-ink)' : 'var(--cf-ink-3)' }}
                 >
                   {idx + 1}
                 </span>
@@ -84,15 +84,22 @@ export default function Stepper({ steps, activeIndex, onChange, completedIndices
 
       {/* Texto del paso activo, centrado y completo (no truncar) */}
       <div className="mt-3 text-center">
-        <p
-          className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          Paso {activeIndex + 1} de {steps.length}
-        </p>
+        {/* EL CONTADOR ES OPCIONAL porque hay pantallas con DOS niveles de paso.
+            En «nuevo prestamo» el usuario leia «PASO 2 DE 3» y justo debajo
+            «Paso 1 de 5»: dos contadores contradiciendose en la misma pantalla.
+            Manda el de dentro, que es el que avanza al pulsar «Continuar»; los
+            tres circulos se quedan como capitulos. */}
+        {contador && (
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: 'var(--cf-ink-3)' }}
+          >
+            Paso {activeIndex + 1} de {steps.length}
+          </p>
+        )}
         <p
           className="text-base font-bold mt-0.5"
-          style={{ color: 'var(--color-text-primary)' }}
+          style={{ color: 'var(--cf-ink)' }}
         >
           {steps[activeIndex]?.label}
         </p>

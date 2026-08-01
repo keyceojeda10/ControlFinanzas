@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 2</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">ESCRITORIO</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Panel (escritorio)</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="width:1440px;height:900px;background:#f4f4f1;border-radius:18px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;color:#15161a;">
+          <div style="width:240px;flex:none;background:#fff;border-right:1px solid rgba(20,20,28,.08);display:flex;flex-direction:column;">
+            <div style="flex:none;padding:16px 16px 12px;border-bottom:1px solid rgba(20,20,28,.07);display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:11px;background:#e7a400;border:2px solid #f5c518;flex:none;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:#3a2900;">$</span>
+                </span>
+                <span style="display:flex;flex-direction:column;line-height:1.12;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:-.01em;">Control</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:-.01em;color:#b07d00;">Finanzas</span>
+                </span>
+              </div>
+              <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">mar, 28 de jul · 7:12 a. m.</span>
+              <div style="display:flex;align-items:center;gap:9px;height:38px;padding:0 12px;border-radius:14px;background:#f3f3ef;border:1px solid rgba(20,20,28,.07);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e929a" stroke-width="2" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg>
+                <span style="font-size:13px;color:#8e929a;flex:1;">Buscar…</span>
+                <span style="display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:6px;background:#fff;border:1px solid rgba(20,20,28,.1);font-family:ui-monospace,monospace;font-size:10px;font-weight:600;color:#63676f;flex:none;">Ctrl+K</span>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;padding:10px 12px;display:flex;flex-direction:column;gap:2px;">
+              <div style="position:relative;display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;background:#fdf3d6;color:#7a5800;font-size:14px;font-weight:700;overflow:hidden;">
+                <span style="position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:999px;background:#e7a400;"></span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1H5a1 1 0 01-1-1z"></path></svg>Dashboard
+              </div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="8.5"></circle><path d="M8.5 12.5l2.5 2.5 4.5-5"></path></svg>Cobrar hoy</div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z"></path><path d="M9 5v12M15 7v12"></path></svg>Rutas</div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v9M14.4 9.6c-.5-.7-1.4-1.1-2.4-1.1-1.4 0-2.4.8-2.4 1.9 0 1.2 1 1.7 2.4 2 1.4.3 2.4.8 2.4 2 0 1.1-1 1.9-2.4 1.9-1 0-1.9-.4-2.4-1.1"></path></svg>Préstamos</div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="6" width="18" height="12" rx="2.5"></rect><path d="M3 10.5h18"></path></svg>Líneas de crédito</div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"></path></svg>Clientes</div>
+              <div style="display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;border-radius:14px;color:#4a4e57;font-size:14px;font-weight:600;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3" y="7" width="18" height="12" rx="2.5"></rect><path d="M16.5 13h.01"></path></svg>Caja</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;height:38px;padding:14px 12px 0;margin-top:6px;border-top:1px solid rgba(20,20,28,.07);">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#b07d00;">Más herramientas</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M6 9l6 6 6-6"></path></svg>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;height:38px;padding:14px 12px 0;margin-top:6px;border-top:1px solid rgba(20,20,28,.07);">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Cuenta</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M6 9l6 6 6-6"></path></svg>
+              </div>
+            </div>
+            <div style="flex:none;padding:12px;border-top:1px solid rgba(20,20,28,.07);display:flex;flex-direction:column;gap:9px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;border:1px solid rgba(20,20,28,.08);">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px;background:#2f6fed;color:#fff;font-size:11px;font-weight:700;flex:none;">CC</span>
+                <span style="display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.25;">
+                  <span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Carlos C.</span>
+                  <span style="font-size:11px;color:#63676f;">Admin</span>
+                </span>
+                <span style="display:flex;gap:8px;flex:none;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1112 0v5l2 2H4l2-2z"></path><path d="M10 20h4"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14.5A8 8 0 019.5 5 7.5 7.5 0 1019 14.5z"></path></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H5v14h5"></path><path d="M14 12h6M17 9l3 3-3 3"></path></svg>
+                </span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 10px;border-radius:999px;background:rgba(18,161,80,.12);border:1px solid rgba(18,161,80,.25);flex:none;">
+                  <span style="width:6px;height:6px;border-radius:999px;background:#12a150;"></span>
+                  <span style="font-size:11px;font-weight:700;color:#0d7a3c;">Online</span>
+                </span>
+                <span style="font-size:11px;color:#63676f;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Sincronizado hace segundos</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+            <div style="flex:none;padding:30px 40px 20px;display:flex;align-items:flex-end;justify-content:space-between;">
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:30px;letter-spacing:-.025em;">Buenos días, Carlos</h1>
+                <div style="display:flex;align-items:center;gap:9px;">
+                  <span style="width:7px;height:7px;border-radius:999px;background:#12a150;"></span>
+                  <span style="font-size:13px;color:#63676f;">Resumen de tu cartera · actualizado hace segundos</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 15px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.1);font-size:14px;font-weight:600;color:#4a4e57;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 11-2.3-5.6"></path><path d="M20 5v4h-4"></path></svg>
+                  Actualizar
+                </span>
+                <button style="height:40px;padding:0 18px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Nuevo préstamo</button>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;padding:0 40px 28px;display:flex;flex-direction:column;gap:18px;">
+              <div style="display:flex;gap:18px;">
+                <div style="flex:1.55;border-radius:18px;padding:24px 26px;display:flex;flex-direction:column;gap:20px;background:linear-gradient(135deg,#f5c518 0%,#e7a400 58%,#d49500 100%);">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+                    <div style="display:flex;flex-direction:column;gap:7px;">
+                      <span style="font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#7a5800;">Recaudado hoy</span>
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:50px;font-weight:600;letter-spacing:-.035em;color:#3a2900;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$412.000</span>
+                      <span style="font-size:14px;font-weight:600;color:#7a5800;font-variant-numeric:tabular-nums;">de $872.867 esperados · 9 de 20 cobros</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;">
+                      <span style="display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:11px;background:rgba(58,41,0,.14);font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:#3a2900;font-variant-numeric:tabular-nums;">47%</span>
+                      <span style="font-size:12px;font-weight:600;color:#7a5800;font-variant-numeric:tabular-nums;">ayer $79.000</span>
+                    </div>
+                  </div>
+                  <div style="height:10px;border-radius:999px;background:rgba(58,41,0,.16);overflow:hidden;">
+                    <span style="display:block;width:47%;height:10px;border-radius:999px;background:#3a2900;"></span>
+                  </div>
+                  <div style="display:flex;align-items:flex-end;gap:5px;height:70px;">
+                    <span style="flex:1;height:38%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:64%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:50%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:72%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:44%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:58%;border-radius:5px 5px 0 0;background:rgba(58,41,0,.22);"></span>
+                    <span style="flex:1;height:47%;border-radius:5px 5px 0 0;background:#3a2900;"></span>
+                  </div>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:14px;">
+                  <div style="flex:1;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:7px;justify-content:center;">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Saldo en caja</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$2.520.280</span>
+                    <span style="font-size:13px;color:#63676f;">Disponible para prestar ahora</span>
+                  </div>
+                  <div style="flex:1;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:7px;justify-content:center;">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Clientes en mora</span>
+                    <div style="display:flex;align-items:baseline;gap:9px;">
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:600;letter-spacing:-.03em;color:#e5484d;font-variant-numeric:tabular-nums lining-nums;line-height:1;">20</span>
+                      <span style="font-size:15px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums;">de 25 activos</span>
+                    </div>
+                    <span style="font-size:13px;color:#63676f;font-variant-numeric:tabular-nums;">$3.148.000 expuestos · 80%</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;display:flex;gap:18px;">
+                <div style="flex:1.55;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Necesita tu atención</span>
+                    <span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">4</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:13px;padding:15px 22px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="width:8px;height:8px;border-radius:999px;background:#e5484d;flex:none;"></span>
+                    <span style="font-size:14px;font-weight:600;flex:1;">13 préstamos con más de 30 días de mora</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">$1.84M</span>
+                    <a href="#2a" style="font-size:13px;font-weight:700;">Ver</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:13px;padding:15px 22px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="width:8px;height:8px;border-radius:999px;background:#e7a400;flex:none;"></span>
+                    <span style="font-size:14px;font-weight:600;flex:1;">41 préstamos sin pagos hace más de 7 días</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">$4.02M</span>
+                    <a href="#2a" style="font-size:13px;font-weight:700;">Ver</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:13px;padding:15px 22px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="width:8px;height:8px;border-radius:999px;background:#12a150;flex:none;"></span>
+                    <span style="font-size:14px;font-weight:600;flex:1;">5 préstamos listos para renovar</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">$2.10M</span>
+                    <a href="#2a" style="font-size:13px;font-weight:700;">Ver</a>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:13px;padding:15px 22px;border-top:1px solid rgba(20,20,28,.06);">
+                    <span style="width:8px;height:8px;border-radius:999px;background:#e7a400;flex:none;"></span>
+                    <span style="font-size:14px;font-weight:600;flex:1;">1 cliente sin ruta asignada</span>
+                    <span style="font-size:13px;color:#63676f;">Deisy Ramírez</span>
+                    <a href="#2a" style="font-size:13px;font-weight:700;">Ver</a>
+                  </div>
+                </div>
+                <div style="flex:1;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;gap:16px;">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                    <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Por ruta hoy</span>
+                    <span style="font-size:12px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums;">4 rutas</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:5px;">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                      <span style="font-size:14px;font-weight:600;">Ruta norte</span>
+                      <span style="font-size:13px;font-weight:700;color:#12a150;font-variant-numeric:tabular-nums;">78%</span>
+                    </div>
+                    <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;"><span style="display:block;width:78%;height:6px;border-radius:999px;background:#12a150;"></span></div>
+                    <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">$118.300 de $151.700</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:5px;">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                      <span style="font-size:14px;font-weight:600;">Ruta sur</span>
+                      <span style="font-size:13px;font-weight:700;color:#b07d00;font-variant-numeric:tabular-nums;">34%</span>
+                    </div>
+                    <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;"><span style="display:block;width:34%;height:6px;border-radius:999px;background:#e7a400;"></span></div>
+                    <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">$20.400 de $60.000</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:5px;">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                      <span style="font-size:14px;font-weight:600;">Ruta goty 1</span>
+                      <span style="font-size:13px;font-weight:700;color:#63676f;font-variant-numeric:tabular-nums;">0%</span>
+                    </div>
+                    <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;"><span style="display:block;width:2%;height:6px;border-radius:999px;background:#9aa0a8;"></span></div>
+                    <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">$0 de $214.900</span>
+                  </div>
+                  <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:13px 15px;border-radius:14px;background:#f3f3ef;">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="2" stroke-linecap="round" style="flex:none;"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+                    <span style="font-size:12px;line-height:1.4;color:#4a4e57;">Cobras tú mismo, así que las rutas son tu orden de recorrido — no equipos.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">07 · Panel (escritorio)</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">El hero conserva el gradiente —permitido solo en ≥1024px— y suma la semana en barras. Las tarjetas de mora y caja pasan a blanco con la cifra en color, en vez de dos bloques teñidos de rosa y verde agua. Cada línea de “necesita tu atención” ahora trae el dinero en juego, que es lo que decide en qué se actúa primero.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

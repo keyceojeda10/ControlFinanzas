@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function PortalLayout({ children }) {
   return (
-    <div className="min-h-screen bg-[var(--color-bg-base)]">
+    <div className="min-h-screen bg-[var(--cf-surface)]">
       {children}
     </div>
   )

@@ -10,8 +10,14 @@ import { guardarEnCache, leerDeCache, obtenerPrestamosOffline } from '@/lib/offl
 import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
+import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
+import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
+import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
+import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
+import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
-import ModalWhatsAppTemplates                 from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
 import MonedaCF                               from '@/components/ui/MonedaCF'
@@ -32,9 +38,15 @@ const IconPagar = (
 
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
-  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--color-warning)', ownerOnly: true },
+  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
-  { value: 'mora',       label: 'En mora',  color: 'var(--color-danger)' },
+  { value: 'mora',       label: 'En mora',  color: 'var(--cf-red-dark)' },
+  // «Renovar»: al dia y por encima del 80% pagado. Lo pide T02-06 como cuarto
+  // chip, y es donde esta el crecimiento del negocio — prestarle de nuevo a
+  // quien ya casi termino de pagar. No es un estado en la base: lo resuelve el
+  // endpoint con `listosRenovar=1`, con el MISMO umbral que usa el panel para
+  // contarlos, para que el numero de la fila y el largo de la lista coincidan.
+  { value: 'renovar',    label: 'Renovar' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -63,11 +75,11 @@ const LIMIT = 50
 
 const VISTA_KEY_P = 'cf-prestamos-vista'
 
-const P_COLOR_OK   = 'var(--color-accent)'
-const P_COLOR_HOT  = '#f97316'
-const P_COLOR_CRIT = 'var(--color-danger)'
-const P_COLOR_DONE = 'var(--color-success)'
-const P_COLOR_OFF  = 'var(--color-text-muted)'
+const P_COLOR_OK   = 'var(--cf-gold)'
+const P_COLOR_HOT  = 'var(--cf-gold-dark)'
+const P_COLOR_CRIT = 'var(--cf-red-dark)'
+const P_COLOR_DONE = 'var(--cf-green-dark)'
+const P_COLOR_OFF  = 'var(--cf-ink-3)'
 
 const MODO_TAG = {
   fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
@@ -115,7 +127,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           fontSize={10}
           style={p.cliente?.fotoUrl ? { border: `1.5px solid ${color}` } : undefined}
         />
-        <p className="text-[12px] font-semibold text-[var(--color-text-primary)] leading-tight flex-1 min-w-0 truncate">
+        <p className="text-[12px] font-semibold text-[var(--cf-ink)] leading-tight flex-1 min-w-0 truncate">
           {p.cliente?.nombre}
         </p>
       </div>
@@ -133,20 +145,20 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           {p.modoInteres && MODO_TAG[p.modoInteres] && (
             <span
               className="text-[7px] font-semibold px-1.5 py-px rounded-full shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-purple) 10%, transparent)', color: 'var(--color-purple)', border: '1px solid color-mix(in srgb, var(--color-purple) 20%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
             >
               {MODO_TAG[p.modoInteres]}
             </span>
           )}
         </div>
-        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--color-text-primary)' }}>
+        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--cf-ink)' }}>
           {formatMoney(p.saldoPendiente)}
         </span>
       </div>
 
       {/* Row 3: progress */}
       <div>
-        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+        <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
           <div
             className="h-full rounded-full"
             style={{
@@ -158,7 +170,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           />
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <p className="text-[9px] text-[var(--color-text-muted)]">
+          <p className="text-[9px] text-[var(--cf-ink-3)]">
             <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
           </p>
           {esNuevo && <NuevoChip />}
@@ -194,6 +206,9 @@ export default function PrestamosPage() {
   const [rutaId,    setRutaId]    = useState(() => searchParams?.get('rutaId') || '')
   const [renovacion, setRenovacion] = useState(() => searchParams?.get('renovacion') || '')
   const [sinPagosDias, setSinPagosDias] = useState(() => searchParams?.get('sinPagosDias') || '')
+  // Llega del panel: «N prestamos con mas de 30 dias de mora». El enlace existia
+  // y no filtraba nada porque ni la pagina ni el endpoint lo entendian.
+  const [diasMoraMin, setDiasMoraMin] = useState(() => searchParams?.get('diasMoraMin') || '')
 
   // TODOS los filtros viven en la URL, no solo estado y frecuencia.
   //
@@ -209,7 +224,12 @@ export default function PrestamosPage() {
   const paramsPrevios = useRef(null)
   useEffect(() => {
     const g = (k) => searchParams?.get(k) || ''
-    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias']
+    // `diasMoraMin` y `listosRenovar` llegan de los enlaces del panel. Se
+    // traducen al chip que les corresponde para que la pantalla se abra con el
+    // filtro puesto Y visible: un filtro activo que no se ve hace que la lista
+    // parezca corta sin motivo.
+    if (searchParams?.get('listosRenovar') === '1') setEstado('renovar')
+    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias', 'diasMoraMin']
       .map(g).join('|')
     if (clave !== paramsPrevios.current) {
       paramsPrevios.current = clave
@@ -219,6 +239,7 @@ export default function PrestamosPage() {
       setRenovacion(g('renovacion'))
       setModoInteres(g('modoInteres'))
       setSinPagosDias(g('sinPagosDias'))
+      setDiasMoraMin(g('diasMoraMin'))
     }
   }, [searchParams])
   const [loading,   setLoading]   = useState(true)
@@ -227,11 +248,40 @@ export default function PrestamosPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [total,     setTotal]     = useState(0)
   const [rutas,     setRutas]     = useState([])
+  // La tercera cifra de T02-06. No se puede derivar de la lista: es del resumen
+  // del dia. Si no llega, la tarjeta NO se pinta — un «$0 cobrado este mes» se
+  // lee como «no cobre nada», que es otra cosa.
+  const [cobradoMes, setCobradoMes] = useState(null)
+  useEffect(() => {
+    let vivo = true
+    fetch(`/api/dashboard/resumen?t=${Date.now()}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { if (vivo && d?.cobros?.mes != null) setCobradoMes(d.cobros.mes) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [])
   const [showFiltros, setShowFiltros] = useState(false)
-  const [vistaP, setVistaP] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY_P) || 'lista'
-    return 'lista'
-  })
+  // Leer localStorage EN EL INICIALIZADOR desajusta la hidratación: el servidor
+  // pone 'lista' y el primer render del cliente puede poner 'compacta', así que
+  // React tira el árbol y lo repinta. Tiene que ser un efecto.
+  // En un efecto, no leyendo `matchMedia` al pintar: eso hace que el servidor
+  // diga una cosa y el cliente otra y React tire el arbol entero.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+
+  const [vistaP, setVistaP] = useState('lista')
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VISTA_KEY_P)
+      if (v) setVistaP(v)
+    } catch {}
+  }, [])
 
   const cambiarVistaP = (v) => {
     setVistaP(v)
@@ -263,6 +313,60 @@ export default function PrestamosPage() {
   // Toggle "Agrupar por cliente". Persiste en localStorage para no resetear
   // la preferencia al cambiar de pagina.
   const [agrupar, setAgrupar] = useState(false)
+
+  const montado = useMontado()
+  const [hojaFiltros, setHojaFiltros] = useState(false)
+
+  // Los filtros que salieron de la cabecera. "Agrupar" y la vista van aquí
+  // también: no son filtros, pero son decisiones de cómo mirar la lista, y
+  // ocupaban otros 85px arriba para algo que se cambia una vez al mes.
+  const gruposFiltro = [
+    { id: 'frecuencia', titulo: 'Cada cuánto cobra', valor: frecuencia,
+      onCambiar: (v) => { setFrecuencia(v); setPage(1) },
+      // Con el título encima, «Toda frecuencia» sobra: ahí va «Cualquiera».
+      opciones: FRECUENCIAS.map(({ value, label }) => ({ valor: value, nombre: value === '' ? 'Cualquiera' : label })) },
+    { id: 'modo', titulo: 'Cómo se cobra el interés', valor: modoInteres,
+      onCambiar: (v) => { setModoInteres(v); setPage(1) },
+      opciones: MODOS_INTERES.map(({ value, label }) => ({ valor: value, nombre: label })) },
+    { id: 'ruta', titulo: 'Ruta', valor: rutaId,
+      onCambiar: (v) => { setRutaId(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todas las rutas' },
+        ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
+    { id: 'diasMora', titulo: 'Dias de mora', valor: diasMoraMin,
+      onCambiar: (v) => { setDiasMoraMin(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Mas de 7' },
+        { valor: '15', nombre: 'Mas de 15' }, { valor: '30', nombre: 'Mas de 30' }] },
+    { id: 'sinPagos', titulo: 'No me han pagado', valor: sinPagosDias,
+      onCambiar: (v) => { setSinPagosDias(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todos' }, { valor: '7', nombre: 'Hace +7 días' },
+        { valor: '15', nombre: 'Hace +15 días' }, { valor: '30', nombre: 'Hace +30 días' }] },
+    { id: 'renovacion', titulo: 'Nuevos o renovados', valor: renovacion,
+      onCambiar: (v) => { setRenovacion(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Todos' }, { valor: 'si', nombre: 'Le presté de nuevo' },
+        { valor: 'no', nombre: 'Primera vez' }] },
+    { id: 'agrupar', titulo: 'Cómo verlo', valor: agrupar ? 'cliente' : '',
+      onCambiar: (v) => {
+        const next = v === 'cliente'
+        setAgrupar(next)
+        try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
+      },
+      opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
+    { id: 'vista', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
+      onCambiar: (v) => cambiarVistaP(v || 'lista'),
+      opciones: [
+        { valor: '', nombre: 'Completas' },
+        { valor: 'compacta', nombre: 'Compactas' },
+        // Siete columnas en 390px no son una tabla, son un acordeon horizontal.
+        ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla' }] : []),
+      ] },
+  ]
+
+  const nFiltros = contarFiltros(gruposFiltro)
+
+  const limpiarFiltros = () => {
+    setFrecuencia(''); setModoInteres(''); setRutaId('')
+    setSinPagosDias(''); setRenovacion(''); setDiasMoraMin(''); setAgrupar(false); setPage(1)
+  }
   useEffect(() => {
     try {
       const v = localStorage.getItem('cf:prestamos:agrupar')
@@ -333,9 +437,14 @@ export default function PrestamosPage() {
       // "mora" no es un estado en BD: pedimos activos y que el server filtre por
       // mora con soloMora=1. Antes se filtraba aca, sobre la pagina ya recortada,
       // asi que los morosos de la pagina 2 en adelante no se veian nunca.
-      const apiEstado = est === 'mora' ? 'activo' : est
+      // Ni «mora» ni «renovar» son estados en la base: se piden los activos y el
+      // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
+      // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
+      const derivado = est === 'mora' || est === 'renovar'
+      const apiEstado = derivado ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
       if (est === 'mora') params.set('soloMora', '1')
+      if (est === 'renovar') params.set('listosRenovar', '1')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
@@ -344,6 +453,7 @@ export default function PrestamosPage() {
       // Antes se leia de window.location porque el filtro no era estado. Ahora
       // llega por filtrosExtra como los demas.
       if (sinPagos) params.set('sinPagosDias', sinPagos)
+      if (diasMoraMin) params.set('diasMoraMin', diasMoraMin)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -455,297 +565,91 @@ export default function PrestamosPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Préstamos</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-            <span className="font-mono-display">{loading ? '...' : `${total} préstamo${total !== 1 ? 's' : ''}${frecuencia ? ' ' + (FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()) : ''}`}</span>
-            {/* En el filtro "En mora" el total de arriba ya es el conteo: no se repite.
-                Fuera de el, solo se muestra el numero cuando es exacto; si la lista
-                esta paginada seria una cuenta corta, asi que se ofrece el atajo al
-                filtro en vez de una cifra que subestima la mora real. */}
-            {!frecuencia && estado !== 'mora' && enMoraCount > 0 && conteoMoraExacto && (
-              <span className="ml-2 text-[var(--color-danger)]">· <span className="font-mono-display">{enMoraCount}</span> en mora</span>
-            )}
-            {!frecuencia && estado !== 'mora' && !conteoMoraExacto && (
-              <button
-                type="button"
-                onClick={() => setEstado('mora')}
-                className="ml-2 text-[var(--color-danger)] underline underline-offset-2"
-              >
-                · ver préstamos en mora
-              </button>
-            )}
-          </p>
-          <Link
-            href="/prestamos/simulador"
-            className="h-7 px-2.5 mt-1.5 inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[10px] font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-all shrink-0"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" />
-            </svg>
-            Simulador
-          </Link>
+      {/* ── Cabecera de trabajo ──
+          Antes de aquí había: título, subtítulo, botón dorado con texto, chip
+          de Simulador, CUATRO filas de chips (estado, frecuencia, modo, ruta),
+          un desplegable de rutas, "No me han pagado", "Filtros avanzados",
+          buscador, "Agrupar" y un conmutador de vista. Más de mil píxeles antes
+          del primer préstamo, en un teléfono de 844: se scrollea una pantalla
+          entera para ver un solo préstamo.
+
+          Y tres colores de chip compitiendo —dorado el estado, azul la
+          frecuencia, morado el modo— cuando la regla es que lo único que brilla
+          es la plata.
+
+          Queda lo de todos los días: buscar y el estado. Lo demás vive en la
+          hoja de "Más filtros", con su número puesto encima para que un filtro
+          escondido no se convierta en un filtro olvidado. */}
+      <div className="flex flex-col gap-3 mb-3">
+        {/* ── El encabezado de T02-06 ──
+            «Prestamos» y a la derecha «68 activos». Faltaba entero, igual que en
+            clientes: la cabecera del armazon es la de navegacion y no lleva
+            titulo, asi que la pantalla no decia ni como se llama. */}
+        <EncabezadoLista
+          titulo="Préstamos" total={total != null ? `${total} activos` : null}
+          crearTexto="Nuevo préstamo"
+          onCrear={puedeCrearPrestamos ? () => router.push('/prestamos/nuevo') : null}
+        />
+
+        {/* LAS TRES CIFRAS. Responden lo que la lista NO puede: recorriendo 68
+            tarjetas no se sabe cuanto hay en total en la calle ni cuanto esta
+            atascado. Se suman sobre la pagina visible cuando no hay totales del
+            servidor — `parcial` lo marca para no dar por total lo que no lo es. */}
+        <TresCifras {...tresCifras(prestamosVisibles, country, { cobradoMes })} />
+
+        <div className="flex items-center gap-2">
+          {/* El buscador de la lamina: radio 14, alto 46. Lo tenia como pildora,
+              que es la forma del buscador de la BARRA LATERAL. Y al lado habia un
+              + dorado con el FAB de la pastilla justo debajo: dos botones de
+              crear en la misma pantalla. Se va el de arriba. */}
+          <div className="flex-1 min-w-0">
+            <BuscadorLista
+              valor={buscar}
+              onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
+              placeholder="Nombre o cédula"
+            />
+          </div>
+          <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
-        {!authLoading && puedeCrearPrestamos && (
-          <Link href="/prestamos/nuevo" className="shrink-0">
-            <Button
-              size="sm"
-              className="whitespace-nowrap"
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              }
-            >
-              Nuevo préstamo
-            </Button>
-          </Link>
-        )}
+
+        {/* El estado se queda arriba porque es el que se toca todos los días.
+            Con su conteo: sin el número hay que aplicar el filtro para saber si
+            había algo detrás. */}
+        <BarraFiltros
+          activo={estado}
+          onCambiar={(v) => { setEstado(v); setPage(1) }}
+          // `montado &&`: esOwner sale de la sesión, que en el servidor no
+          // existe. Sin esperar al montaje, el servidor pinta menos chips que
+          // el cliente y React repinta el árbol entero.
+          filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
+            id: value,
+            nombre: label,
+            conteo: loading ? undefined
+              : value === estado ? total
+              : value === 'mora' && conteoMoraExacto ? enMoraCount
+              : undefined,
+          }))}
+        />
       </div>
 
-      {/* Filtro de estado */}
-      <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-none pb-0.5">
-        {ESTADOS.filter(e => !e.ownerOnly || esOwner).map(({ value, label, color }) => {
-          const isActive = estado === value
-          const accent = color ?? 'var(--color-accent)'
-          return (
-            <button
-              key={value}
-              onClick={() => setEstado(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Filtro de frecuencia de cobro */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
-        {FRECUENCIAS.map(({ value, label }) => {
-          const isActive = frecuencia === value
-          const accent = 'var(--color-info)'
-          return (
-            <button
-              key={value || 'todas'}
-              onClick={() => setFrecuencia(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Filtro por modo de interes */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto scrollbar-none pb-0.5">
-        {MODOS_INTERES.map(({ value, label }) => {
-          const isActive = modoInteres === value
-          const accent = 'var(--color-purple)'
-          return (
-            <button
-              key={value || 'todos-modo'}
-              onClick={() => setModoInteres(value)}
-              className="shrink-0 px-3.5 py-1.5 text-[11px] font-semibold rounded-full transition-all"
-              style={isActive ? {
-                background: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                color: accent,
-                border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
-              } : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Ruta y "atrasados": salen del acordeon.
-          El filtro por ruta estaba enterrado bajo "Filtros avanzados", cerrado
-          por defecto — a dos toques de distancia — y el de dias sin pagar no
-          tenia control ninguno: solo se llegaba por accidente si el dashboard
-          te enlazaba. Son las dos preguntas mas frecuentes de una cartera
-          ("como va la ruta de Pedro", "quien no me paga hace rato"). */}
-      {esOwner && (rutas.length > 0 || sinPagosDias) && (
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          {rutas.length > 0 && (
-            <select
-              value={rutaId}
-              onChange={e => setRutaId(e.target.value)}
-              className="h-8 px-2 rounded-full border text-[11px] focus:outline-none transition-all max-w-[190px] truncate"
-              style={rutaId
-                ? { color: 'var(--color-accent)', background: 'var(--color-accent-soft)', borderColor: 'color-mix(in srgb, var(--color-accent) 30%, transparent)' }
-                : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
-            >
-              <option value="">Todas las rutas</option>
-              {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.cobrador ? ` — ${r.cobrador}` : ''}</option>)}
-            </select>
-          )}
-          <button
-            type="button"
-            onClick={() => setSinPagosDias(sinPagosDias ? '' : '7')}
-            className="h-8 px-3 rounded-full border text-[11px] font-medium transition-all"
-            style={sinPagosDias
-              ? { color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--color-danger) 30%, transparent)' }
-              : { color: 'var(--color-text-muted)', background: 'var(--color-bg-card)', borderColor: 'var(--color-border)' }}
-          >
-            {sinPagosDias ? `Sin pagar hace +${sinPagosDias}d` : 'No me han pagado'}
-          </button>
-          {sinPagosDias && (
-            <select
-              value={sinPagosDias}
-              onChange={e => setSinPagosDias(e.target.value)}
-              className="h-8 px-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-card)] text-[11px] text-[var(--color-text-muted)] focus:outline-none"
-            >
-              <option value="3">hace 3 días</option>
-              <option value="7">hace 7 días</option>
-              <option value="15">hace 15 días</option>
-              <option value="30">hace 30 días</option>
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Filtros avanzados (solo owner) */}
-      {esOwner && (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowFiltros(!showFiltros)}
-            className="flex items-center gap-1.5 mb-3 text-[11px] font-semibold transition-colors"
-            style={{ color: renovacion ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filtros avanzados
-            {renovacion && (
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--color-accent)', color: '#fff' }}>
-                1
-              </span>
-            )}
-            <svg className={`w-3 h-3 transition-transform ${showFiltros ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          {showFiltros && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {/* El select de ruta salio de aca: ahora esta siempre visible
-                  arriba. Aca solo queda lo que de verdad se consulta poco. */}
-              <select
-                value={renovacion}
-                onChange={e => setRenovacion(e.target.value)}
-                className="h-9 px-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[11px] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all truncate"
-              >
-                <option value="">Nuevos y renovados</option>
-                <option value="si">Le presté de nuevo</option>
-                <option value="no">Primera vez</option>
-              </select>
-              {(rutaId || renovacion || modoInteres || sinPagosDias) && (
-                <button
-                  onClick={() => { setRutaId(''); setRenovacion(''); setModoInteres(''); setSinPagosDias('') }}
-                  className="text-[10px] font-medium py-1 rounded-lg transition-colors"
-                  style={{ color: 'var(--color-danger)' }}
-                >
-                  Limpiar filtros
-                </button>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Buscador + toggle agrupar + toggle vista */}
-      <div className="flex items-center gap-2 mb-5">
-        <div className="relative flex-1">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-4 h-4 text-[var(--color-text-muted)] pointer-events-none"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="search"
-            value={buscar}
-            onChange={(e) => setBuscar(e.target.value)}
-            placeholder="Buscar…"
-            className="w-full h-10 pl-9 pr-4 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all"
-          />
-          {buscar && (
-            <button
-              onClick={() => setBuscar('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={toggleAgrupar}
-          aria-pressed={agrupar}
-          title={agrupar ? 'Mostrar lista cronologica' : 'Agrupar todos los préstamos de cada cliente'}
-          className="shrink-0 h-10 px-3 rounded-[12px] border text-xs font-medium inline-flex items-center gap-1.5 transition-all"
-          style={agrupar
-            ? { color: 'var(--color-accent)', borderColor: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)' }
-            : { color: 'var(--color-text-muted)', borderColor: 'var(--color-border)', background: 'var(--color-bg-surface)' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM5 9a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM7 13a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" />
-          </svg>
-          Agrupar
-        </button>
-        <div className="flex rounded-[12px] overflow-hidden shrink-0 h-10 border" style={{ borderColor: 'var(--color-border)' }}>
-          <button
-            onClick={() => cambiarVistaP('lista')}
-            className="w-9 h-full flex items-center justify-center transition-colors"
-            style={{
-              background: vistaP === 'lista' ? 'var(--color-accent)' : 'var(--color-bg-surface)',
-              color: vistaP === 'lista' ? '#000' : 'var(--color-text-muted)',
-            }}
-            aria-label="Vista lista"
-          >
-            {IconListaP}
-          </button>
-          <button
-            onClick={() => cambiarVistaP('compacta')}
-            className="w-9 h-full flex items-center justify-center transition-colors"
-            style={{
-              background: vistaP === 'compacta' ? 'var(--color-accent)' : 'var(--color-bg-surface)',
-              color: vistaP === 'compacta' ? '#000' : 'var(--color-text-muted)',
-            }}
-            aria-label="Vista compacta"
-          >
-            {IconGridP}
-          </button>
-        </div>
-      </div>
+      <HojaFiltros
+        abierta={hojaFiltros}
+        onCerrar={() => setHojaFiltros(false)}
+        onLimpiar={limpiarFiltros}
+        grupos={gruposFiltro}
+      />
 
       {/* Offline indicator */}
       {isOffline && (
-        <div className="bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse shrink-0" />
+        <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-gold)] animate-pulse shrink-0" />
           Datos guardados — sin conexión
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div className="bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3 mb-4">
+        <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3 mb-4">
           {error}
         </div>
       )}
@@ -757,40 +661,105 @@ export default function PrestamosPage() {
         </div>
       )}
 
+      {/* ── T14-01 · LA TABLA, SOLO EN 1440 ──
+          Va FUERA de la lista, no dentro: `StaggeredList` es `grid-cols-2` en
+          `lg`, asi que meterla ahi la convertia en UNA CELDA — media anchura,
+          columnas aplastadas y el fundido de entrada encima. Una tabla no es un
+          elemento de la lista: es la lista. */}
+      {!loading && prestamosVisibles.length > 0 && !agrupar && vistaP === 'tabla' && (() => {
+        const adaptados = adaptarPrestamos(prestamosVisibles, country)
+
+
+            // ── T14-01 · LA TABLA, SOLO EN 1440 ──
+            // Igual que en clientes: sentado lo que se hace es COMPARAR, y las
+            // tarjetas obligan a recorrer. Las columnas son las de la lamina —
+            // CLIENTE · MODALIDAD · PRESTADO · SALDO · CUMPLE · PROX. COBRO ·
+            // ESTADO— y salen del ADAPTADOR, no del objeto crudo: asi la tabla
+            // y la tarjeta dicen lo mismo. Leerlo del crudo ya me dejo una
+            // tabla entera de «$0» en clientes.
+              const dame = (a, etq) => a?.cifras?.find((x) => x.etiqueta === etq) ?? null
+              const color = (c) => c?.tono === 'contra' ? 'var(--cf-red-dark)'
+                : c?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
+              const COLS = '1.7fr 1.1fr 130px 130px 90px 120px 110px'
+        return (
+                <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+                  <div className="grid items-center px-4 py-2.5"
+                    style={{ gridTemplateColumns: COLS, gap: 12, paddingLeft: 19,
+                      background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)' }}>
+                    {['Cliente', 'Modalidad', 'Prestado', 'Saldo', 'Atraso', 'Próximo cobro', 'Estado'].map((h, i) => (
+                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 && i <= 4 ? 'text-right' : ''}`}
+                        style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
+                    ))}
+                  </div>
+                  {prestamosVisibles.map((p, i) => {
+                    const a = adaptados[i]
+                    const atraso = dame(a, 'Atraso')
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                        className="grid items-center w-full text-left px-4 py-3"
+                        style={{
+                          gridTemplateColumns: COLS, gap: 12,
+                          background: 'var(--cf-card)', border: 0,
+                          borderTop: i === 0 ? 'none' : '1px solid var(--cf-hairline)',
+                          borderLeft: `3px solid ${a?.estado === 'mora' ? 'var(--cf-red)' : a?.estado === 'aldia' ? 'var(--cf-green)' : 'var(--cf-gold)'}`,
+                          font: 'inherit', cursor: 'pointer',
+                        }}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                          <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
+                        </span>
+                        <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>{a?.detalle ?? '—'}</span>
+                        {/* PRESTADO es el capital que salio; SALDO lo que falta.
+                            La tarjeta los pone uno encima de otro («$553.658 / de
+                            $779.000»); aqui son dos columnas, que es lo que
+                            permite sumarlas con la vista. */}
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink-2)' }}>
+                          {formatMoney(Math.round(p.montoPrestado ?? 0), country)}
+                        </span>
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
+                        <span className="cf-fig text-[13px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
+                        <span className="text-[13px] truncate" style={{
+                          color: a?.estado === 'mora' ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
+                        }}>{fechaCorta(p.proximoCobro) ?? '—'}</span>
+                        <span className="text-[12px] font-bold truncate" style={{
+                          color: a?.estado === 'mora' ? 'var(--cf-red-dark)'
+                            : a?.estado === 'aldia' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
+                        }}>{a?.etiquetaEstado}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+      })()}
+
       {/* Lista plana: orden cronologico puro (default) */}
-      {!loading && prestamosVisibles.length > 0 && !agrupar && (
-        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0'}>
-          {prestamosVisibles.map((p) => {
-            if (vistaP === 'compacta') {
-              return (
+      {!loading && prestamosVisibles.length > 0 && !agrupar && vistaP !== 'tabla' && (
+        <StaggeredList className={vistaP === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
+          {/* La MISMA tarjeta que un cliente: un prestamo en lista no estrena
+              tarjeta. Inventar una segunda obligaria a aprender dos objetos que
+              se leen igual y significan lo mismo — alguien que te debe.
+              Lo unico propio es la linea de contexto: la cuota y cada cuanto,
+              en vez de la direccion. */}
+          {(() => {
+            const adaptados = adaptarPrestamos(prestamosVisibles, country)
+            return prestamosVisibles.map((p, i) => (
+              vistaP === 'compacta' ? (
                 <BadgeNuevo key={p.id} fecha={p.createdAt}>
                   <PrestamoCardCompacto prestamo={p} esNuevo={isHoy(p.createdAt, country)} />
                 </BadgeNuevo>
+              ) : (
+                <TarjetaCliente
+                  key={p.id}
+                  {...adaptados[i]}
+                  onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                />
               )
-            }
-            const cardActions = []
-            if (p.cliente?.telefono) {
-              cardActions.push({
-                icon: IconWA,
-                label: 'WhatsApp',
-                color: '#25D366',
-                onClick: () => setWaContext({ cliente: p.cliente, prestamo: p }),
-              })
-            }
-            if (p.estado === 'activo') {
-              cardActions.push({
-                icon: IconPagar,
-                label: 'Registrar pago',
-                color: 'var(--color-success)',
-                onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
-              })
-            }
-            return (
-              <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                <PrestamoCard prestamo={p} actions={cardActions} esNuevo={isHoy(p.createdAt, country)} />
-              </BadgeNuevo>
-            )
-          })}
+            ))
+          })()}
         </StaggeredList>
       )}
 
@@ -823,19 +792,19 @@ export default function PrestamosPage() {
                   {tieneVarios && (
                     <div
                       className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg"
-                      style={{ background: 'color-mix(in srgb, var(--color-text-primary) 4%, transparent)' }}
+                      style={{ background: 'color-mix(in srgb, var(--cf-ink) 4%, transparent)' }}
                     >
                       <span
                         className="text-[11px] font-extrabold uppercase tracking-[.07em] truncate"
-                        style={{ color: 'var(--color-text-primary)' }}
+                        style={{ color: 'var(--cf-ink)' }}
                       >
                         {cliente.nombre}
                       </span>
                       <span
                         className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap font-mono-display"
                         style={{
-                          background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                          color: 'var(--color-accent)',
+                          background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                          color: 'var(--cf-gold)',
                         }}
                       >
                         {prestCliente.length}
@@ -844,18 +813,18 @@ export default function PrestamosPage() {
                         <span
                           className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-full whitespace-nowrap"
                           style={{
-                            background: 'color-mix(in srgb, var(--color-success) 14%, transparent)',
-                            color: 'var(--color-success)',
-                            border: '1px solid color-mix(in srgb, var(--color-success) 35%, transparent)',
+                            background: 'color-mix(in srgb, var(--cf-green-dark) 14%, transparent)',
+                            color: 'var(--cf-green-dark)',
+                            border: '1px solid color-mix(in srgb, var(--cf-green-dark) 35%, transparent)',
                           }}
                         >
-                          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--color-success)' }} />
+                          <span className="w-1 h-1 rounded-full" style={{ background: 'var(--cf-green-dark)' }} />
                           Nuevo
                         </span>
                       )}
                       <span
                         className="ml-auto text-[10px] font-mono-display whitespace-nowrap"
-                        style={{ color: 'var(--color-text-muted)' }}
+                        style={{ color: 'var(--cf-ink-3)' }}
                       >
                         {formatMoney(Math.round(saldoTotal), country)}
                       </span>
@@ -863,7 +832,7 @@ export default function PrestamosPage() {
                   )}
                   <div
                     className={tieneVarios ? 'space-y-2.5 pl-2 ml-1 border-l' : 'space-y-2.5'}
-                    style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--color-border) 60%, transparent)' } : undefined}
+                    style={tieneVarios ? { borderColor: 'color-mix(in srgb, var(--cf-border) 60%, transparent)' } : undefined}
                   >
                     {prestCliente.map((p) => {
                       if (vistaP === 'compacta') {
@@ -886,7 +855,7 @@ export default function PrestamosPage() {
                         cardActions.push({
                           icon: IconPagar,
                           label: 'Registrar pago',
-                          color: 'var(--color-success)',
+                          color: 'var(--cf-green-dark)',
                           onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
                         })
                       }
@@ -910,11 +879,11 @@ export default function PrestamosPage() {
           <div className="mb-4">
             <MonedaCF pose="vacia" size={100} />
           </div>
-          <p className="text-sm font-medium text-[var(--color-text-primary)]">
+          <p className="text-sm font-medium text-[var(--cf-ink)]">
             No hay préstamos {FRECUENCIAS.find((f) => f.value === frecuencia)?.label.toLowerCase()}
           </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            <button onClick={() => setFrecuencia('')} className="text-[var(--color-info)] hover:underline">
+          <p className="text-xs text-[var(--cf-ink-3)] mt-1">
+            <button onClick={() => setFrecuencia('')} className="text-[var(--cf-ink-2)] hover:underline">
               Ver toda frecuencia
             </button>
           </p>
@@ -929,20 +898,20 @@ export default function PrestamosPage() {
           </div>
           {buscar ? (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Sin resultados</p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">No hay préstamos para "{buscar}"</p>
-              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--color-accent)] hover:underline">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin resultados</p>
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">No hay préstamos para "{buscar}"</p>
+              <button onClick={() => setBuscar('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
                 Limpiar búsqueda
               </button>
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+              <p className="text-sm font-medium text-[var(--cf-ink)]">
                 {estado === 'activo' ? 'No hay préstamos activos' : estado === 'mora' ? 'No hay préstamos en mora' : 'Sin préstamos'}
               </p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                 {estado !== '' && (
-                  <button onClick={() => setEstado('')} className="text-[var(--color-accent)] hover:underline">
+                  <button onClick={() => setEstado('')} className="text-[var(--cf-gold)] hover:underline">
                     Ver todos los estados
                   </button>
                 )}
@@ -963,17 +932,17 @@ export default function PrestamosPage() {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Anterior
           </button>
-          <span className="text-xs text-[var(--color-text-muted)]">
+          <span className="text-xs text-[var(--cf-ink-3)]">
             Página <span className="font-mono-display">{page}</span> de <span className="font-mono-display">{totalPages}</span>
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:bg-[var(--cf-fill)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
           </button>
@@ -981,7 +950,7 @@ export default function PrestamosPage() {
       )}
 
       {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={!!waContext}
         onClose={() => setWaContext(null)}
         cliente={waContext?.cliente}

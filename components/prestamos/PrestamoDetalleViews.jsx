@@ -22,12 +22,12 @@ const fmtFechaCorta = (d) => d
 
 // ─── Mood color (igual que cards rediseñadas) ────────────────────
 export function moodColorFromPrestamo(p) {
-  if (!p) return 'var(--color-accent)'
-  if (p.estado === 'completado') return 'var(--color-success)'
-  if (p.estado === 'cancelado') return 'var(--color-text-muted)'
-  if ((p.diasMora ?? 0) > 7) return 'var(--color-danger)'
-  if ((p.diasMora ?? 0) > 0) return '#f97316'
-  return 'var(--color-accent)'
+  if (!p) return 'var(--cf-gold)'
+  if (p.estado === 'completado') return 'var(--cf-green-dark)'
+  if (p.estado === 'cancelado') return 'var(--cf-ink-3)'
+  if ((p.diasMora ?? 0) > 7) return 'var(--cf-red-dark)'
+  if ((p.diasMora ?? 0) > 0) return 'var(--cf-gold-dark)'
+  return 'var(--cf-gold)'
 }
 
 // ─── Hook count-up ───────────────────────────────────────────────
@@ -59,7 +59,7 @@ export function useCountUp(target, duration = 800) {
 }
 
 // ─── Sparkline pequeño para historial de pagos ───────────────────
-function MiniSparkline({ data, color = 'var(--color-success)', height = 32 }) {
+function MiniSparkline({ data, color = 'var(--cf-green-dark)', height = 32 }) {
   const reactId = useId()
   if (!data || data.length === 0) return null
   const w = 120
@@ -97,7 +97,7 @@ function DonutPagado({ pct, color, size = 76 }) {
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size}>
         <g transform={`rotate(-90 ${size / 2} ${size / 2})`}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-hover)" strokeWidth="6" />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--cf-fill)" strokeWidth="6" />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -134,8 +134,8 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
     <div
       className="cf-hero-card relative rounded-[20px] overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, ${accent} 8%, var(--color-bg-card)) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 25%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 14%, var(--cf-card)) 0%, var(--cf-card) 50%, color-mix(in srgb, ${accent} 8%, var(--cf-card)) 100%)`,
+        border: `1px solid color-mix(in srgb, ${color} 25%, var(--cf-border))`,
         boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
       }}
     >
@@ -153,7 +153,7 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: 'var(--cf-ink-2)' }}>
             Saldo pendiente
           </p>
         </div>
@@ -170,14 +170,14 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
             >
               {formatMoney(Math.round(animSaldo))}
             </p>
-            <p className="text-[12px] mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-[12px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
               de {formatMoney(totalAPagar)} totales
             </p>
             {prestamo.capitalRestante != null && prestamo.capitalRestante !== saldo && (
               <div
                 className="mt-3 flex items-center gap-3 px-3.5 py-2.5 rounded-[12px]"
                 style={{
-                  background: `color-mix(in srgb, ${color} 8%, var(--color-bg-surface))`,
+                  background: `color-mix(in srgb, ${color} 8%, var(--cf-surface))`,
                   border: `1px solid color-mix(in srgb, ${color} 20%, transparent)`,
                 }}
               >
@@ -185,10 +185,10 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--color-text-secondary)' }}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--cf-ink-2)' }}>
                     Capital adeudado
                   </p>
-                  <p className="text-[16px] font-mono-display font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[16px] font-mono-display font-bold leading-tight mt-0.5" style={{ color: 'var(--cf-ink)' }}>
                     {formatMoney(prestamo.capitalRestante)}
                   </p>
                 </div>
@@ -217,14 +217,14 @@ export function PrestamoHeroCard({ prestamo, narrativa, sparklineData }) {
         <div className="sm:hidden mt-4 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${color} 15%, transparent)` }}>
           <DonutPagado pct={pctPagado} color={color} size={64} />
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>Ha pagado</p>
-            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(totalPagado)}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--cf-ink-2)' }}>Ha pagado</p>
+            <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--cf-ink)' }}>{formatMoney(totalPagado)}</p>
           </div>
         </div>
 
         {sparklineData && sparklineData.length > 0 && (
           <div className="mt-4">
-            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Pagos últimos 14 días</p>
+            <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--cf-ink-3)' }}>Pagos últimos 14 días</p>
             <MiniSparkline data={sparklineData} color={color} height={36} />
           </div>
         )}
@@ -241,8 +241,8 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
     <div
       className="rounded-[16px] px-4 py-3.5"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
       <div className="flex items-center gap-3">
@@ -258,16 +258,16 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
         <div className="flex-1 min-w-0">
           <Link
             href={cliente?.id ? `/clientes/${cliente.id}` : '#'}
-            className="text-base font-bold leading-tight truncate block hover:text-[var(--color-accent)] transition-colors"
-            style={{ color: 'var(--color-text-primary)' }}
+            className="text-base font-bold leading-tight truncate block hover:text-[var(--cf-gold)] transition-colors"
+            style={{ color: 'var(--cf-ink)' }}
           >
             {cliente?.nombre || 'Cliente'}
           </Link>
           {cliente?.cedula && !cliente.cedula.startsWith('SIN-') && (
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>CC {cliente.cedula}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>CC {cliente.cedula}</p>
           )}
           {statsCliente && (
-            <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-secondary)' }}>{statsCliente}</p>
+            <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>{statsCliente}</p>
           )}
         </div>
 
@@ -289,7 +289,7 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
           <Link
             href={cliente?.id ? `/clientes/${cliente.id}` : '#'}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-            style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }}
+            style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
             title="Ver perfil"
             aria-label="Ver perfil"
           >
@@ -332,8 +332,8 @@ export function BotonPagoPersonalidad({ enMora, frecuenciaLabel, monto, onClick 
       style={{
         color: '#ffffff',
         background: isUrgente
-          ? 'linear-gradient(135deg, var(--color-danger), color-mix(in srgb, var(--color-danger) 82%, black))'
-          : 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 82%, black))',
+          ? 'linear-gradient(135deg, var(--cf-red-dark), color-mix(in srgb, var(--cf-red-dark) 82%, black))'
+          : 'linear-gradient(135deg, var(--cf-green-dark), color-mix(in srgb, var(--cf-green-dark) 82%, black))',
         boxShadow: isUrgente
           ? '0 2px 8px rgba(239, 68, 68, 0.2)'
           : '0 2px 8px rgba(16, 185, 129, 0.2)',
@@ -413,7 +413,7 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
   // Cuotas pagadas
   if (cuotasPagadas > 0) {
     stats.push({
-      color: 'var(--color-success)',
+      color: 'var(--cf-green-dark)',
       icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>,
       text: `${cuotasPagadas} cuota${cuotasPagadas === 1 ? '' : 's'} pagada${cuotasPagadas === 1 ? '' : 's'}`,
     })
@@ -426,26 +426,28 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
     const diasRestantes = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24))
     if (diasRestantes > 0 && diasRestantes <= 30) {
       stats.push({
-        color: 'var(--color-accent)',
+        color: 'var(--cf-gold)',
         icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
         text: `Termina en ${diasRestantes} día${diasRestantes === 1 ? '' : 's'}`,
       })
     }
   }
 
-  // Mora
-  if (diasMora > 0) {
-    stats.push({
-      color: diasMora > 7 ? 'var(--color-danger)' : '#f97316',
-      icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-      text: `${diasMora} día${diasMora === 1 ? '' : 's'} en mora`,
-    })
-  }
+  // LA MORA NO VUELVE A DECIRSE AQUI.
+  //
+  // En la ficha de un prestamo atrasado, «62 dias en mora» salia CINCO VECES en
+  // la misma pantalla: la franja roja de arriba, la pastilla del cliente, la
+  // columna «EN MORA» de las cifras, el consejo de la IA y este chip. Cinco
+  // formas de decir lo mismo no lo dicen mas fuerte: hacen que ninguna se lea.
+  //
+  // Se quedan las dos del rediseño —la pastilla dice el ESTADO, la columna dice
+  // la PLATA— y la franja de arriba, que es la unica que trae el agregado
+  // («62 cuotas vencidas · $204.000»). Este chip no añadia nada.
 
   // Casi terminado
   if (porcentajePagado >= 90 && porcentajePagado < 100) {
     stats.push({
-      color: 'var(--color-purple)',
+      color: 'var(--cf-ink-2)',
       icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
       text: '¡Casi terminado!',
     })
@@ -454,7 +456,7 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
   // Cliente recurrente
   if (prestamoNumeroCliente && prestamoNumeroCliente > 1) {
     stats.push({
-      color: 'var(--color-teal)',
+      color: 'var(--cf-ink-2)',
       icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
       text: `Préstamo #${prestamoNumeroCliente} con este cliente`,
     })
@@ -476,8 +478,8 @@ export function ChipsAccionesSecundarias({ acciones }) {
           onClick={a.onClick}
           className="group relative h-12 px-3 rounded-[12px] flex items-center gap-2 transition-all active:scale-[0.98] overflow-hidden"
           style={{
-            background: `linear-gradient(135deg, color-mix(in srgb, ${a.color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-            border: `1px solid color-mix(in srgb, ${a.color} 22%, var(--color-border))`,
+            background: `linear-gradient(135deg, color-mix(in srgb, ${a.color} 8%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+            border: `1px solid color-mix(in srgb, ${a.color} 22%, var(--cf-border))`,
           }}
         >
           {/* Icono con fondo cuadrado del color */}
@@ -496,7 +498,7 @@ export function ChipsAccionesSecundarias({ acciones }) {
               {a.label}
             </span>
             {a.sublabel && (
-              <span className="text-[10px] leading-tight truncate w-full text-left" style={{ color: 'var(--color-text-muted)' }}>
+              <span className="text-[10px] leading-tight truncate w-full text-left" style={{ color: 'var(--cf-ink-3)' }}>
                 {a.sublabel}
               </span>
             )}
@@ -523,11 +525,11 @@ export function GrillaDatosSecciones({ secciones }) {
           <div
             key={sec.titulo}
             className="rounded-[16px] overflow-hidden flex flex-col"
-            style={{ border: '1px solid var(--color-border)', gap: '1px', background: 'var(--color-border)' }}
+            style={{ border: '1px solid var(--cf-border)', gap: '1px', background: 'var(--cf-border)' }}
           >
             <div
               className="flex items-center gap-1.5 px-4 py-2"
-              style={{ background: `color-mix(in srgb, ${sec.color} 6%, var(--color-bg-card))` }}
+              style={{ background: `color-mix(in srgb, ${sec.color} 6%, var(--cf-card))` }}
             >
               <div
                 className="w-5 h-5 rounded-[5px] flex items-center justify-center"
@@ -543,15 +545,15 @@ export function GrillaDatosSecciones({ secciones }) {
             {heroItems.length > 0 && (
               <div
                 className={`grid ${heroItems.length > 1 ? 'grid-cols-2' : ''}`}
-                style={{ gap: '1px', background: 'var(--color-border)' }}
+                style={{ gap: '1px', background: 'var(--cf-border)' }}
               >
                 {heroItems.map((it) => (
-                  <div key={it.label} className="px-4 py-3" style={{ background: 'var(--color-bg-card)' }}>
-                    <p className="text-[10px] mb-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
-                    <p className="text-lg font-bold font-mono-display leading-tight" style={{ color: it.color || 'var(--color-text-primary)' }}>
+                  <div key={it.label} className="px-4 py-3" style={{ background: 'var(--cf-card)' }}>
+                    <p className="text-[10px] mb-0.5" style={{ color: 'var(--cf-ink-3)' }}>{it.label}</p>
+                    <p className="text-lg font-bold font-mono-display leading-tight" style={{ color: it.color || 'var(--cf-ink)' }}>
                       {it.value}
                     </p>
-                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{it.sub}</p>}
                   </div>
                 ))}
               </div>
@@ -560,19 +562,19 @@ export function GrillaDatosSecciones({ secciones }) {
             {regularItems.length > 0 && (
               <div
                 className="grid grid-cols-2"
-                style={{ gap: '1px', background: 'var(--color-border)' }}
+                style={{ gap: '1px', background: 'var(--cf-border)' }}
               >
                 {regularItems.map((it) => (
-                  <div key={it.label} className="px-3 py-2.5" style={{ background: 'var(--color-bg-card)' }}>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{it.label}</p>
-                    <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--color-text-primary)' }}>
+                  <div key={it.label} className="px-3 py-2.5" style={{ background: 'var(--cf-card)' }}>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{it.label}</p>
+                    <p className="text-[13px] font-semibold mt-0.5 font-mono-display" style={{ color: it.color || 'var(--cf-ink)' }}>
                       {it.value}
                     </p>
-                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{it.sub}</p>}
+                    {it.sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{it.sub}</p>}
                   </div>
                 ))}
                 {regularItems.length % 2 === 1 && (
-                  <div style={{ background: 'var(--color-bg-card)' }} />
+                  <div style={{ background: 'var(--cf-card)' }} />
                 )}
               </div>
             )}
@@ -584,7 +586,7 @@ export function GrillaDatosSecciones({ secciones }) {
 }
 
 // ─── 7. Línea de tiempo del préstamo ─────────────────────────────
-export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, color = 'var(--color-accent)' }) {
+export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, color = 'var(--cf-gold)' }) {
   // Calcular pcts de forma segura (sin useHooks dentro de condicionales)
   const inicio = fechaInicio ? new Date(fechaInicio) : null
   const fin = fechaFin ? new Date(fechaFin) : null
@@ -604,14 +606,14 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
   const atrasado = animPago < animTiempo - 5
 
   return (
-    <div className="rounded-[20px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--color-border))` }}>
+    <div className="rounded-[20px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--cf-border))` }}>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
           Línea de tiempo
         </p>
         {diasRestantes > 0 && (
-          <span className="text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>
-            Faltan <span className="font-mono-display font-semibold" style={{ color: 'var(--color-text-primary)' }}>{diasRestantes}</span> día{diasRestantes === 1 ? '' : 's'}
+          <span className="text-[10px]" style={{ color: 'var(--cf-ink-2)' }}>
+            Faltan <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink)' }}>{diasRestantes}</span> día{diasRestantes === 1 ? '' : 's'}
           </span>
         )}
       </div>
@@ -619,11 +621,11 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
       {/* Track con dos barras superpuestas: tiempo (gris) + pagos (color) */}
       <div className="relative h-6 mb-1">
         {/* Track de fondo */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ background: 'var(--color-bg-hover)' }} />
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ background: 'var(--cf-fill)' }} />
         {/* Tiempo transcurrido (gris claro) */}
         <div
           className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full"
-          style={{ width: `${animTiempo}%`, background: 'color-mix(in srgb, var(--color-text-muted) 40%, transparent)' }}
+          style={{ width: `${animTiempo}%`, background: 'color-mix(in srgb, var(--cf-ink-3) 40%, transparent)' }}
         />
         {/* Pagos (color del estado) */}
         <div
@@ -638,7 +640,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full"
           style={{
             left: `${animTiempo}%`,
-            background: 'var(--color-bg-card)',
+            background: 'var(--cf-card)',
             border: `2px solid ${color}`,
             boxShadow: `0 0 4px color-mix(in srgb, ${color} 30%, transparent)`,
           }}
@@ -654,20 +656,20 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
       </div>
 
       {/* Etiquetas de inicio/fin */}
-      <div className="flex items-center justify-between text-[10px] mt-3" style={{ color: 'var(--color-text-muted)' }}>
+      <div className="flex items-center justify-between text-[10px] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
         <div>
           <p className="text-[10px] uppercase tracking-wider">Inicio</p>
-          <p className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{fmtFechaCorta(fechaInicio)}</p>
+          <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaInicio)}</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider">Vencimiento</p>
-          <p className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>{fmtFechaCorta(fechaFin)}</p>
+          <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaFin)}</p>
         </div>
       </div>
 
       {/* Mensaje de estado de progreso */}
       {adelantado && (
-        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--color-success) 12%, transparent)', color: 'var(--color-success)' }}>
+        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)', color: 'var(--cf-green-dark)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
           </svg>
@@ -675,7 +677,7 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
         </div>
       )}
       {atrasado && (
-        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--color-warning) 12%, transparent)', color: 'var(--color-warning)' }}>
+        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)', color: 'var(--cf-gold-dark)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -689,12 +691,12 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
 // ─── 8. Mini card de un pago en el historial ─────────────────────
 export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) {
   const tipoColors = {
-    completo:    { bg: 'var(--color-success)', label: 'Completo' },
-    parcial:     { bg: 'var(--color-accent)',  label: 'Parcial' },
-    capital:     { bg: 'var(--color-purple)',  label: 'A Capital' },
-    recargo:     { bg: 'var(--color-danger)',  label: 'Recargo' },
-    descuento:   { bg: 'var(--color-info)',    label: 'Descuento' },
-    intereses:   { bg: '#f97316',              label: 'Intereses' },
+    completo:    { bg: 'var(--cf-green-dark)', label: 'Completo' },
+    parcial:     { bg: 'var(--cf-gold)',  label: 'Parcial' },
+    capital:     { bg: 'var(--cf-ink-2)',  label: 'A Capital' },
+    recargo:     { bg: 'var(--cf-red-dark)',  label: 'Recargo' },
+    descuento:   { bg: 'var(--cf-ink-2)',    label: 'Descuento' },
+    intereses:   { bg: 'var(--cf-gold-dark)',              label: 'Intereses' },
     liquidacion: { bg: '#6366f1',              label: 'Liquidación' },
   }
   const tipoInfo = tipoColors[pago.tipo] || tipoColors.parcial
@@ -704,8 +706,8 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
     <div
       className="rounded-[12px] p-3 transition-all hover:scale-[1.005]"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 10%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 22%, var(--color-border))`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 10%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+        border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 22%, var(--cf-border))`,
       }}
     >
       <div className="flex items-center gap-3">
@@ -745,27 +747,27 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
               {tipoInfo.label}
             </span>
             {pago.cuotaNumero && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-secondary)' }}>
+              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-2)' }}>
                 Cuota {pago.cuotaNumero}
               </span>
             )}
             {isOffline && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-warning)' }}>
+              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--cf-gold-dark)' }}>
                 offline
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span>{fmtFecha(pago.fechaPago)}</span>
             {pago.metodoPago && (() => {
               const platInfo = pago.metodoPago === 'transferencia' ? getPlataformaInfo(pago.plataforma) : null
-              const badgeColor = platInfo?.color || (pago.metodoPago === 'transferencia' ? 'var(--color-info)' : 'var(--color-success)')
+              const badgeColor = platInfo?.color || (pago.metodoPago === 'transferencia' ? 'var(--cf-ink-2)' : 'var(--cf-green-dark)')
               const badgeBg = platInfo?.bg || (pago.metodoPago === 'transferencia'
-                ? 'color-mix(in srgb, var(--color-info) 12%, transparent)'
-                : 'color-mix(in srgb, var(--color-success) 12%, transparent)')
+                ? 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)'
+                : 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)')
               return (
                 <span
                   className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
@@ -781,7 +783,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
             })()}
           </div>
           {pago.nota && (
-            <p className="text-[10px] mt-1 italic truncate" style={{ color: 'var(--color-text-secondary)' }} title={pago.nota}>
+            <p className="text-[10px] mt-1 italic truncate" style={{ color: 'var(--cf-ink-2)' }} title={pago.nota}>
               {pago.nota}
             </p>
           )}
@@ -790,7 +792,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
         <div className="text-right shrink-0">
           <p
             className="text-[15px] font-bold font-mono-display leading-none"
-            style={{ color: pago.tipo === 'descuento' ? 'var(--color-info)' : tipoInfo.bg }}
+            style={{ color: pago.tipo === 'descuento' ? 'var(--cf-ink-2)' : tipoInfo.bg }}
           >
             {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatMoney(pago.montoPagado)}
           </p>
@@ -798,7 +800,7 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
       </div>
 
       {pago.fotoUrl && (
-        <div className="mt-2 rounded-[8px] overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="mt-2 rounded-[8px] overflow-hidden border" style={{ borderColor: 'var(--cf-border)' }}>
           <a href={pago.fotoUrl} target="_blank" rel="noopener noreferrer">
             <img src={pago.fotoUrl} alt="Evidencia de cobro" className="w-full h-24 object-cover" loading="lazy" />
           </a>
@@ -822,17 +824,17 @@ export function ComparativoPrestamosCliente({ totalPrestamosCliente, prestamoNum
   return (
     <div
       className="rounded-[20px] px-3 py-2.5 flex items-start gap-2"
-      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)', border: '1px solid color-mix(in srgb, var(--color-teal) 18%, var(--color-border))' }}
+      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 18%, var(--cf-border))' }}
     >
-      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--color-teal) 15%, transparent)', color: 'var(--color-teal)' }}>
+      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[11px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Cliente recurrente</p>
+        <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Cliente recurrente</p>
         {items.map((it, i) => (
-          <p key={i} className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{it}</p>
+          <p key={i} className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>{it}</p>
         ))}
       </div>
     </div>

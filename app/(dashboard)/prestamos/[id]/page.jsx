@@ -2,7 +2,7 @@
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
 import { useState, useEffect, useRef, useCallback, use } from 'react'
-import { useRouter }                  from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
@@ -14,6 +14,7 @@ import { Modal }                      from '@/components/ui/Modal'
 import { SkeletonPrestamoDetalle }     from '@/components/ui/Skeleton'
 import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
+import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
@@ -25,7 +26,7 @@ import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import BotonCompartirRecibo          from '@/components/ui/BotonCompartirRecibo'
 import OfflineBadge                   from '@/components/offline/OfflineBadge'
-import ModalWhatsAppTemplates         from '@/components/ui/ModalWhatsAppTemplates'
+import HojaWhatsApp         from '@/components/whatsapp/HojaWhatsApp'
 import FirmaDigital                   from '@/components/prestamos/FirmaDigital'
 import {
   PrestamoHeroCard,
@@ -40,14 +41,23 @@ import {
   ComparativoPrestamosCliente,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
 import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
+import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
+import { adaptarTabla } from '@/lib/adaptadores/tabla'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
+import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento} from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
+import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
+import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
+import { useCabecera } from '@/components/armazon/Armazon'
+import { MenuGestion } from '@/components/pantallas/MenuGestion'
+import { anotarReciente } from '@/lib/recientes'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -71,35 +81,36 @@ const tipoPagoBadge = {
   liquidacion:{ variant: 'green',  label: 'Liquidación' },
 }
 
-function GestionBtn({ label, desc, color, icon, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-start gap-2.5 p-2.5 rounded-[12px] text-left transition-all active:scale-[0.97]"
-      style={{ background: `rgba(${color},0.06)`, border: `1px solid rgba(${color},0.2)` }}
-    >
-      <div className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
-        style={{ background: `rgba(${color},0.12)`, color: `rgb(${color})` }}>
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-        </svg>
-      </div>
-      <div className="min-w-0">
-        <p className="text-[12px] font-semibold" style={{ color: `rgb(${color})` }}>{label}</p>
-        <p className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{desc}</p>
-      </div>
-    </button>
-  )
-}
 
 export default function PrestamoDetallePage({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
+  // `?editar=<modo>` viene de la hoja de comparar calendarios, que vive en la ruta
+  // de la tabla y no puede abrir un modal de esta pagina. El parametro es el
+  // puente: sin el, «elegir este calendario» era un enlace a
+  // /prestamos/[id]/editar, ruta que NO EXISTE y que habria escrito yo mismo —el
+  // mismo enlace muerto que ya me pasó con ?diasMoraMin=30.
+  const parametros         = useSearchParams()
+  const modoPedido         = parametros.get('editar')
   const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
+
+  // Deja constancia para «Últimos que abriste» del buscador (T34-03). Se anota
+  // AQUI y no en el armazón porque la ruta sola trae el id: el nombre y el
+  // estado solo los sabe esta pantalla.
+  useEffect(() => {
+    if (!prestamo?.cliente?.nombre) return
+    anotarReciente({
+      tipo: 'prestamo', id: prestamo.id, nombre: prestamo.cliente.nombre,
+      detalle: prestamo.saldoPendiente > 0
+        ? `debe $${Math.round(prestamo.saldoPendiente).toLocaleString('es-CO')}` : 'saldado',
+      estado: prestamo.diasAtraso > 0 ? 'rojo' : undefined,
+    })
+  }, [prestamo])
+
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
   const [modalPago,    setModalPago]    = useState(false)
@@ -120,9 +131,23 @@ export default function PrestamoDetallePage({ params }) {
   const [editandoFecha, setEditandoFecha] = useState(null) // pagoId cuya fecha se edita
   const [filtroFecha,  setFiltroFecha]  = useState('')    // YYYY-MM-DD opcional para filtrar historial
   const [rutaNav,      setRutaNav]     = useState(null)
+  // ── EL AJUSTE (recargo / descuento) ──
+  // Un solo juego de estado para las dos hojas: nunca estan abiertas a la vez,
+  // y duplicarlo era garantizar que una se quedara con el monto de la otra.
+  const [ajusteMonto, setAjusteMonto] = useState('')
+  const [ajusteNota, setAjusteNota] = useState('')
+  const [ajustando, setAjustando] = useState(false)
+  const [ajusteError, setAjusteError] = useState('')
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalIntereses, setModalIntereses] = useState(false)
+  // El selector es CONTROLADO con un objeto: `metodoPago` dice efectivo o
+  // transferencia y `metodoPagoId` dice a que cuenta entro. Confundirlos
+  // descuadra la caja por cuenta.
+  const [interesMetodo,  setInteresMetodo]  = useState({ metodoPago: 'efectivo', metodoPagoId: null })
+  const [metodosPagoOrg, setMetodosPagoOrg] = useState([])
+  const [interesError,   setInteresError]   = useState('')
+  const [pagandoInteres, setPagandoInteres] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
@@ -150,6 +175,17 @@ export default function PrestamoDetallePage({ params }) {
   const [moratorioEnviando, setMoratorioEnviando] = useState(false)
   const [moratorioError, setMoratorioError] = useState('')
   const [modalLiquidacion, setModalLiquidacion] = useState(false)
+  // ── LO QUE DEBE SI CANCELA HOY ──
+  //
+  // Se pide al ABRIR LA FICHA, no al abrir el menú de gestión. Es la primera
+  // pregunta que hace un cliente que llegó con plata —«¿cuánto por cerrarlo
+  // ya?»— y hasta ahora la respuesta estaba a dos toques y solo para quien
+  // tuviera permiso de descuentos.
+  //
+  // Va en su propio estado, aparte de `liqData`: ese lo maneja el modal y lo
+  // limpia al abrirlo, así que compartirlo dejaría la cifra de la ficha en
+  // blanco cada vez que alguien entra al menú.
+  const [cierreHoy, setCierreHoy] = useState(null)
   const [liqData, setLiqData] = useState(null)        // calculo del backend
   const [liqModalidad, setLiqModalidad] = useState('mesCompleto') // mesCompleto | proporcional
   const [liqMonto, setLiqMonto] = useState(0)          // monto editable del cierre
@@ -158,7 +194,14 @@ export default function PrestamoDetallePage({ params }) {
   const [liqEnviando, setLiqEnviando] = useState(false)
   const [liqError, setLiqError] = useState('')
   const [statsCliente, setStatsCliente] = useState(null) // { totalPrestamos, completados, numeroEsteDe }
-  const [historialOpen, setHistorialOpen] = useState(true)
+  // CERRADO, como decia el comentario de mas abajo y NO hacia el codigo.
+  //
+  // Abierto por defecto, la pantalla enseñaba LA MISMA LISTA DE PAGOS DOS VECES:
+  // «Cada pago que ha hecho» del rediseño, con el saldo en que quedo cada uno, y
+  // debajo esta con las mismas filas. Esta se queda porque es la unica que deja
+  // compartir el recibo y borrar un pago mal metido — pero es la de GESTIONAR, no
+  // la de consultar, y se abre cuando hace falta.
+  const [historialOpen, setHistorialOpen] = useState(false)
   const [camposReciboCliente, setCamposReciboCliente] = useState(null)
   const [guardandoCamposRecibo, setGuardandoCamposRecibo] = useState(false)
   const [modalRecibo, setModalRecibo] = useState(null)
@@ -296,6 +339,20 @@ export default function PrestamoDetallePage({ params }) {
     }
   }
 
+  useEffect(() => {
+    // Solo para préstamos vivos: el endpoint responde 400 si no está activo, y
+    // en uno cerrado la pregunta no tiene sentido.
+    if (!prestamo || prestamo.estado !== 'activo') { setCierreHoy(null); return }
+    let vivo = true
+    fetch(`/api/prestamos/${id}/liquidacion`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo) setCierreHoy(d) })
+      // Si falla, NO se enseña nada. Es plata: un hueco es mejor que una cifra
+      // que no se sabe de dónde salió.
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [prestamo?.id, prestamo?.estado, prestamo?.totalPagado, id])
+
   function seleccionarModalidad(mod) {
     setLiqModalidad(mod)
     if (liqData?.[mod]) setLiqMonto(liqData[mod].restanteHoy)
@@ -395,6 +452,51 @@ export default function PrestamoDetallePage({ params }) {
   }
 
   // ─── Loading ────────────────────────────────────────────────────
+  // ── La cabecera de detalle de T41-01 ──
+  //
+  // «Steven Olmos» y debajo «$20.000 diarios · 36 dias de atraso». La cabecera
+  // decia solo «‹ Prestamos»: el nombre vivia en una tarjeta DENTRO del
+  // contenido, asi que al bajar por la ficha se perdia de quien es el prestamo. En
+  // una pantalla que se abre para discutir con alguien, el nombre va fijo arriba.
+  //
+  // VA AQUI, ANTES DE LOS RETURNS TEMPRANOS. `useCabecera` es un hook: puesto
+  // despues del `if (loading) return`, el orden de hooks cambia entre renders y
+  // React rompe la pantalla entera — salio con el triangulo rojo de error.
+  // Por eso lee del ESTADO (`prestamo?.…`) y no de los valores derivados, que se
+  // calculan mas abajo.
+  // Las cuentas de la organizacion, para la hoja de intereses. VA AQUI POR LO
+  // MISMO QUE `useCabecera`: es un hook, y detras del `if (loading) return` el
+  // orden cambia entre renders. Se pidio despues de montar y ya me tiro la
+  // pantalla una vez.
+  useEffect(() => {
+    if (!modalIntereses || metodosPagoOrg.length) return
+    fetch('/api/metodos-pago').then((r) => (r.ok ? r.json() : [])).then(setMetodosPagoOrg).catch(() => {})
+  }, [modalIntereses, metodosPagoOrg.length])
+
+  useCabecera({
+    titulo: prestamo?.cliente?.nombre,
+    subtitulo: prestamo ? (
+      // En `unico` NO hay cuota ni frecuencia que contar, asi que el subtitulo se
+      // quedaba VACIO: la cabecera solo decia el nombre. T41-02 pone «un solo
+      // pago · faltan 9 dias», que es lo que distingue esta ficha de las otras de
+      // un vistazo — y los dias que faltan son la unica cuenta que corre aca.
+      prestamo.modoInteres === 'unico'
+        ? ['un solo pago', (() => {
+            if (!prestamo.fechaFin) return null
+            const d = Math.ceil((new Date(prestamo.fechaFin) - Date.now()) / 86400000)
+            if (d > 0) return `faltan ${d} día${d === 1 ? '' : 's'}`
+            if (d === 0) return 'vence hoy'
+            return `venció hace ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`
+          })()].filter(Boolean).join(' · ')
+        : [
+            prestamo.cuotaDiaria > 0
+              ? `${formatMoney(Math.round(prestamo.cuotaDiaria))} ${({ diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[prestamo.frecuencia] ?? '')}`.trim()
+              : null,
+            prestamo.diasMora > 0 ? `${prestamo.diasMora} día${prestamo.diasMora === 1 ? '' : 's'} de atraso` : 'al día',
+          ].filter(Boolean).join(' · ') || null
+    ) : null,
+  })
+
   if (loading) {
     return <SkeletonPrestamoDetalle />
   }
@@ -403,8 +505,8 @@ export default function PrestamoDetallePage({ params }) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center max-w-2xl mx-auto">
         <div className="mb-4"><MonedaCF pose="busca" size={100} /></div>
-        <p className="text-sm font-medium text-[var(--color-text-primary)]">No pudimos cargar el préstamo</p>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">Revisa tu conexión e intenta de nuevo</p>
+        <p className="text-sm font-medium text-[var(--cf-ink)]">No pudimos cargar el préstamo</p>
+        <p className="text-xs text-[var(--cf-ink-3)] mt-1">Revisa tu conexión e intenta de nuevo</p>
         <div className="flex gap-3 mt-4">
           <Button size="sm" onClick={() => fetchPrestamo()}>Reintentar</Button>
           <Button size="sm" variant="ghost" onClick={() => router.back()}>Volver</Button>
@@ -446,6 +548,136 @@ export default function PrestamoDetallePage({ params }) {
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
+
+  // ── Lo que pide la ficha de T41-01 ──
+  //
+  // «LE FALTAN 24 cuotas». Se deriva del saldo y la cuota, que es exacto en los
+  // modos SIN tabla —la cuota no cambia— y es el 93,7% de la cartera. En los que
+  // tienen tabla se cuentan las filas pendientes, que es el numero de verdad.
+  const cuotasFaltantesTexto = (() => {
+    if (cuotasAmortizacion.length > 0) {
+      const pend = cuotasAmortizacion.filter((c) => (c.pagado || 0) < c.cuotaTotal).length
+      return `${pend} cuota${pend === 1 ? '' : 's'}`
+    }
+    if (!(cuotaDiaria > 0) || !(saldoPendiente > 0)) return '—'
+    const n = Math.ceil(saldoPendiente / cuotaDiaria)
+    return `${n} cuota${n === 1 ? '' : 's'}`
+  })()
+
+  // «30 cuotas diarias». El numero de cuotas del PLAZO PACTADO, no las que
+  // quedan: es la segunda linea de «como se pacto», y ahi se cuenta el trato
+  // completo. Los numeros feos se dejan feos: «39 semanas» no se redondea a 40,
+  // porque el dueño va a cobrar 39 veces y un plazo redondeado es un plazo
+  // mentiroso.
+  const plazoPactadoTexto = (() => {
+    const porPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[frecuencia] ?? 1
+    const n = cuotasAmortizacion.length > 0
+      ? cuotasAmortizacion.length
+      : (diasPlazo > 0 ? Math.round(diasPlazo / porPeriodo) : 0)
+    if (!n) return null
+    const adj = { diario: 'diarias', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[frecuencia] ?? ''
+    return `${n} cuotas ${adj}`.trim()
+  })()
+
+  // Los ultimos pagos, con el SALDO QUE LE QUEDO despues de cada uno. Esa es la
+  // palabra que usa el prestamista cuando el cliente reclama, y para eso se abre
+  // la ficha. Se calcula hacia atras desde el saldo actual: sumando el pago se
+  // recupera el saldo que habia justo despues del anterior.
+  // ── Lo propio de cada variante (T41-02, T42-01, T42-02) ──
+  //
+  // `unico` (18,6%): no tiene cuotas, asi que el bloque oscuro cuenta DIAS en vez
+  // de plata pagada. Y hace falta «empezo el», porque sin cuotas que marquen el
+  // tiempo no hay forma de saber si el trato es de la semana pasada o de hace
+  // tres meses — y eso cambia cuanto se puede insistir.
+  const esUnicoModo = modoInteres === 'unico'
+  const fechaVencTexto = fechaFin
+    ? new Date(fechaFin).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+    : null
+  const diasParaVencerTexto = (() => {
+    if (!fechaFin) return null
+    const dias = Math.ceil((new Date(fechaFin) - Date.now()) / 86400000)
+    if (dias > 0) return `en ${dias} día${dias === 1 ? '' : 's'}`
+    if (dias === 0) return 'vence hoy'
+    return `venció hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`
+  })()
+  const empezoElTexto = fechaInicio ? (() => {
+    const d = new Date(fechaInicio)
+    const dias = Math.floor((Date.now() - d) / 86400000)
+    const fecha = d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+    return dias > 0 ? `${fecha} · hace ${dias} día${dias === 1 ? '' : 's'}` : fecha
+  })() : null
+
+  // `manual` (10,6%): la cuota la puso el dueño a mano y el plazo salio de esa
+  // decision. Se dice CON la cifra, porque el verbo ya reconoce que la eligio el.
+  const cuotaQuePusisteTexto = modoInteres === 'manual' && cuotaDiaria > 0
+    ? formatMoney(Math.round(cuotaDiaria))
+    : null
+
+  // `proporcional` (9,8%): el UNICO modo sin tabla donde el porcentaje si se
+  // muestra, y con su explicacion al lado. En `fijo` y `unico` el dueño pacto un
+  // total redondo y traducirlo a tasa le diria algo que nunca penso; aca el total
+  // NO es redondo —salio de una regla de tres— y sin ver el 20% sobre los dias
+  // esa cifra parece arbitraria.
+  const tasaProporcional = modoInteres === 'proporcional' && tasaInteres > 0
+    ? { tasa: `${formatearTasa(tasaInteres)}%`, explicacion: `al mes, repartido sobre ${diasPlazo} días — de ahí sale el total` }
+    : null
+
+  // El pie del historial DICE EL ATRASO EN PALABRAS. Lo pide T42-02: «le vence
+  // una cuota hace 3 dias» en vez de dejar el numero solo. Y solo cuando el
+  // atraso es CORTO sobre su propio ciclo: si ya es mora grave, el rojo de arriba
+  // lo dice de sobra y esta frase suavizaria.
+  const notaDelHistorial = (!esUnicoModo && diasMora > 0 && !moraEsGrave({ diasMora, frecuencia }))
+    ? `Le vence una cuota hace ${diasMora} día${diasMora === 1 ? '' : 's'}.`
+    : null
+
+  // La tabla, recortada a las 4 primeras como en la lamina: mas abajo no cabe sin
+  // que la ficha se vuelva un scroll infinito, y el aviso «Ves 4 de las 6» lleva a
+  // la pantalla completa. El recorte va DECLARADO —`totalCuotas` sigue siendo el
+  // total— para que la suma de lo visible mas lo declarado cuadre con el total de
+  // arriba; si no, un «total $1.699.999» sobre cuatro filas que suman $1.266.668
+  // deja al dueño creyendo que ya vio la tabla entera.
+  const tablaParaFicha = (() => {
+    if (!tieneTablaAmortizacion(prestamo)) return null
+    const t = adaptarTabla(prestamo)
+    const visibles = t.cuotas.slice(0, 4)
+    const ocultas = t.cuotas.length - visibles.length
+    return {
+      ...t,
+      cuotas: visibles,
+      montoOculto: ocultas > 0
+        ? formatMoney(Math.round(cuotasAmortizacion.slice(4).reduce((a, c) => a + (c.cuotaTotal || 0), 0)))
+        : null,
+    }
+  })()
+
+  const pagosParaFicha = (() => {
+    const orden = [...pagos]
+      .filter((p) => !['recargo', 'descuento'].includes(p.tipo))
+      .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
+    let saldo = Math.round(saldoPendiente || 0)
+    const filas = []
+    for (const p of orden.slice(0, 3)) {
+      const monto = Math.round(p.montoPagado || 0)
+      filas.push({
+        fecha: new Date(p.fechaPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
+        detalle: [
+          p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+          `quedó en ${formatMoney(saldo)}`,
+        ].filter(Boolean).join(' · '),
+        // Suelto ademas del texto: en 1440 tiene columna propia.
+        saldo: formatMoney(saldo),
+        // Y sin el saldo dentro, para no decirlo dos veces cuando hay columna.
+        comoPago: [
+          p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+        ].filter(Boolean).join(' · '),
+        monto: formatMoney(monto),
+      })
+      saldo += monto
+    }
+    return filas
+  })()
 
   // Sparkline 14 dias: monto cobrado por dia (excluye recargos/descuentos)
   const sparkline14d = (() => {
@@ -534,6 +766,195 @@ export default function PrestamoDetallePage({ params }) {
   })()
   const puedeEditar = esOwner || esDeHoy
 
+  // ── LO QUE VE CADA FILA DE «GESTIONAR EL PRÉSTAMO» ──
+  //
+  // Cada acción trae su VALOR ACTUAL. Es la diferencia con el menú anterior:
+  // antes había que abrir «Día de cobro» para enterarse de cuál era.
+  //
+  // Las condiciones son las mismas de antes, una por una: sin permiso la fila
+  // no se pinta, en vez de pintarse y fallar al pulsarla.
+  // ── LOS DOS TEXTOS DEL CIERRE ──
+  //
+  // Manda `proporcional`: es la modalidad que perdona mas interes, la que el
+  // cliente esperaria si pregunta «cuanto por cerrarlo hoy». La del mes
+  // completo se elige dentro de la hoja, si se quiere.
+  const cierre = cierreHoy?.proporcional ?? cierreHoy?.mesCompleto ?? null
+  // SOLO SE ENSEÑA SI HAY ALGO QUE AHORRAR. En un prestamo pasado de plazo ya
+  // corrio todo el interes, asi que cerrarlo hoy cuesta exactamente lo que
+  // debe: la linea repetiria la cifra de arriba sin decir nada, y dos veces el
+  // mismo numero en un bloque de plata se lee como un error.
+  // EL INTERES VENCIDO Y SIN PAGAR. Estaba calculado dentro del `onClick` del
+  // boton que abria el modal, asi que solo existia en el instante de pulsarlo.
+  // La hoja necesita el mismo numero para enseñarlo y para mandarlo.
+  const interesMonto = Math.round(
+    (prestamo?.cuotasAmortizacion ?? [])
+      .filter((f) => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
+      .reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0),
+  )
+
+  const pagarIntereses = async () => {
+    if (!(interesMonto > 0)) return
+    setPagandoInteres(true)
+    setInteresError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          montoPagado: interesMonto,
+          tipo: 'intereses',
+          metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
+          ...(interesMetodo?.metodoPagoId ? { metodoPagoId: interesMetodo.metodoPagoId } : {}),
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setInteresError(d.error || 'No se pudo registrar el pago')
+        return
+      }
+      setPrestamo(await res.json())
+      setModalIntereses(false)
+    } catch {
+      setInteresError('No se pudo registrar el pago')
+    } finally {
+      setPagandoInteres(false)
+    }
+  }
+
+  const hayCierre = cierre && cierre.interesPerdonado > 0
+  const cierreTexto = hayCierre ? formatMoney(Math.round(cierre.restanteHoy ?? 0)) : null
+  const cierrePerdonaTexto = hayCierre
+    ? `se ahorra ${formatMoney(Math.round(cierre.interesPerdonado))} de interés`
+    : null
+
+  // ⚠ VA AQUI Y NO ARRIBA: `atajosAjuste` lee `cuotaDiaria`, que se define en
+  // el bloque de derivados de mas arriba. Puesto antes reventaba con «Cannot
+  // access 'cuotaDiaria' before initialization» — el mismo fallo que ya ha
+  // aparecido tres veces en este rediseño por insertar bloques a ojo.
+  const ajusteNum = Math.max(0, Math.round(Number(String(ajusteMonto).replace(/\./g, '').replace(',', '.')) || 0))
+
+  // Los atajos del ajuste: fracciones de la cuota, que es la unidad en que se
+  // piensa un recargo por mora. Sin esto habria que teclear siempre.
+  const atajosAjuste = (() => {
+    const c = Math.round(Number(cuotaDiaria) || 0)
+    if (!(c > 0)) return []
+    return [
+      { id: 'media', etiqueta: formatMoney(Math.round(c / 2 / 100) * 100), monto: Math.round(c / 2 / 100) * 100 },
+      { id: 'una', etiqueta: formatMoney(c), monto: c },
+      { id: 'dos', etiqueta: formatMoney(c * 2), monto: c * 2 },
+    ]
+  })()
+
+  /**
+   * Manda el ajuste. MISMO CONTRATO que el formulario anterior: POST /pagos con
+   * `tipo` y `nota`. Lo unico que cambia es la pantalla desde la que se manda.
+   *
+   * La nota es OBLIGATORIA en los dos casos, igual que antes: un recargo sin
+   * motivo es una subida de deuda que nadie sabe explicar tres meses despues,
+   * y un descuento sin motivo es plata que se fue sin rastro.
+   */
+  const aplicarAjuste = async (tipo) => {
+    if (!(ajusteNum > 0) || !ajusteNota.trim() || ajustando) return
+    setAjustando(true)
+    setAjusteError('')
+    try {
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ montoPagado: ajusteNum, tipo, nota: ajusteNota.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setAjusteError(data?.error || 'No se pudo aplicar')
+        return
+      }
+      if (data?.prestamo) {
+        setPrestamo(data.prestamo)
+        if (data.prestamo.estado === 'completado') setCompletado(true)
+      }
+      setModalRecargo(false)
+      setModalDescuento(false)
+      setAjusteMonto('')
+      setAjusteNota('')
+    } catch {
+      setAjusteError('Sin conexión. El ajuste no quedó aplicado.')
+    } finally {
+      setAjustando(false)
+    }
+  }
+
+
+  const detalleGestion = [
+    cliente?.nombre,
+    frecuencia && tasaInteres != null ? `${frecuenciaLabel} ${tasaInteres}%` : null,
+    cuotasAmortizacion.length > 0 ? `cuota ${cuotasPagadas} de ${cuotasAmortizacion.length}` : null,
+  ].filter(Boolean).join(' · ')
+
+  const gruposGestion = (() => {
+    const g = []
+
+    const cobra = []
+    if (puedeGestionarPrestamos) {
+      cobra.push({ id: 'recargo', nombre: 'Recargo por mora', hacer: () => setModalRecargo(true) })
+    }
+    if (puedeAplicarDescuentos) {
+      cobra.push({ id: 'descuento', nombre: 'Descuento', hacer: () => setModalDescuento(true) })
+    }
+    if (puedeGestionarPrestamos) {
+      cobra.push({
+        id: 'plazo', nombre: 'Modificar el plazo',
+        valor: diasPlazo ? `${diasPlazo} días` : null,
+        hacer: () => setModalPlazo(true),
+      })
+    }
+    if (cobra.length) g.push({ titulo: 'Cambia lo que se cobra', acciones: cobra })
+
+    const cuando = []
+    if (puedeGestionarPrestamos) {
+      // «Día de cobro» solo existe si NO es diario: en diario no hay día que elegir.
+      if (frecuencia && frecuencia !== 'diario') {
+        cuando.push({ id: 'dia', nombre: 'Día de cobro', valor: frecuenciaLabel, hacer: () => setModalDiaCobro(true) })
+      }
+      cuando.push({
+        id: 'proximo', nombre: 'Próximo cobro',
+        valor: proximoCobro ? fmtFecha(proximoCobro) : null,
+        hacer: () => setModalProximoCobro(true),
+      })
+      cuando.push({
+        id: 'sincobro', nombre: 'Días sin cobro',
+        hacer: () => {
+          try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
+          setModalDiasSinCobro(true)
+        },
+      })
+    }
+    if (cuando.length) g.push({ titulo: 'Cambia cuándo se cobra', acciones: cuando })
+
+    const cierra = []
+    if ((puedeGestionarPrestamos || esOwner) && puedeEditar) {
+      cierra.push({ id: 'editar', nombre: 'Editar el préstamo', hacer: () => setModalEditar(true) })
+    }
+    if (puedeGestionarPrestamos) {
+      cierra.push({
+        id: 'renovar', nombre: 'Renovar el préstamo',
+        valor: porcentajePagado > 0 ? `${Math.round(porcentajePagado)}% pagado` : null,
+        hacer: () => setModalRenovar(true),
+      })
+    }
+    if (puedeAplicarDescuentos) {
+      cierra.push({ id: 'anticipado', nombre: 'Cerrar anticipado', valor: cierreTexto, hacer: () => abrirLiquidacion() })
+    }
+    if (puedeGestionarPrestamos) {
+      cierra.push(esClavo
+        ? { id: 'recuperar', nombre: 'Sacar de perdidos', hacer: () => quitarClavo() }
+        : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
+    }
+    if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
+
+    return g
+  })()
+
+
   const abrirPagoNormal = () => {
     setPresetPago(null)
     setModalPago(true)
@@ -564,28 +985,34 @@ export default function PrestamoDetallePage({ params }) {
     ? {
         label: cobroVencido ? 'Debió cobrarse' : 'Próximo cobro',
         value: formatFechaCobroRelativa(proximoCobro),
-        color: cobroVencido ? 'var(--color-danger)' : 'var(--color-accent)',
+        color: cobroVencido ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
       }
     : null
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
-      {/* Back */}
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Préstamos
-      </button>
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-28 lg:pb-4">
 
-      {/* ── BADGE TARJETA CLAVO ──────────────────────────────────── */}
+      {/* ── UNA SOLA FRANJA ROJA ──
+          Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62
+          cuotas vencidas · $204.000». Las dos ciertas, pero dos muros rojos
+          seguidos no alarman el doble: se leen como uno solo y mal. Cuando el
+          préstamo está dado por perdido, esa es LA noticia, y la mora entra
+          dentro como el detalle que la sostiene. */}
       {esClavo && (
-        <div className="flex items-center gap-2 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[12px] px-3 py-2 text-xs font-semibold text-[var(--color-danger)]">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-danger)]" />
-          Préstamo perdido — apartado de tus números normales
+        <div className="flex items-start gap-2.5 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
+          <span className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] shrink-0 mt-1.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--cf-red-dark)]">
+              Préstamo perdido — apartado de tus números normales
+            </p>
+            {enMora && (
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cf-red-dark)', opacity: .85 }}>
+                {diasMora} días en mora
+                {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
+                {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -594,7 +1021,7 @@ export default function PrestamoDetallePage({ params }) {
         <Link
           href={`/prestamos/${renovadoDeId}`}
           className="flex items-center gap-2 bg-[rgba(139,92,246,0.10)] border border-[rgba(139,92,246,0.25)] rounded-[12px] px-3 py-2 text-xs"
-          style={{ color: 'var(--color-purple)' }}
+          style={{ color: 'var(--cf-ink-2)' }}
         >
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -606,21 +1033,21 @@ export default function PrestamoDetallePage({ params }) {
       {/* ── CELEBRACIÓN ──────────────────────────────────────────── */}
       {completado && (
         <div className="bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[20px] cf-card-shadow p-4 text-center">
-          <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--color-success) 20%, transparent)' }}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-success)' }}>
+          <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 20%, transparent)' }}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-green-dark)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-[var(--color-success)] font-bold">Préstamo completado</p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">El cliente terminó de pagar</p>
+          <p className="text-[var(--cf-green-dark)] font-bold">Préstamo completado</p>
+          <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">El cliente terminó de pagar</p>
         </div>
       )}
 
-      {/* ── ALERTA MORA ──────────────────────────────────────────── */}
-      {enMora && estaActivo && !completado && (
+      {/* La franja de mora NO se pinta si ya está dentro de la del clavo. */}
+      {enMora && estaActivo && !completado && !esClavo && (
         <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
-          <div className="w-2 h-2 rounded-full bg-[var(--color-danger)] animate-pulse shrink-0" />
-          <p className="text-sm text-[var(--color-danger)] font-semibold">
+          <div className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] animate-pulse shrink-0" />
+          <p className="text-sm text-[var(--cf-red-dark)] font-semibold">
             {diasMora} días en mora
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
             {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
@@ -632,14 +1059,14 @@ export default function PrestamoDetallePage({ params }) {
       {moratorio?.aplicable && estaActivo && !completado && esOwner && (
         <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] rounded-[20px] cf-card-shadow p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-[var(--color-warning)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--cf-gold-dark)] shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-warning)]">
+              <p className="text-sm font-semibold text-[var(--cf-gold-dark)]">
                 Interés moratorio: {formatMoney(moratorio.montoMoratorio)}
               </p>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
+              <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                 {moratorio.diasMoraEfectivos} dias efectivos de mora sobre {formatMoney(moratorio.montoBase)} en mora
               </p>
             </div>
@@ -651,7 +1078,7 @@ export default function PrestamoDetallePage({ params }) {
               setMoratorioError('')
               setModalMoratorio(true)
             }}
-            className="w-full h-10 rounded-[12px] text-sm font-semibold text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
+            className="w-full h-10 rounded-[12px] text-sm font-semibold text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.3)] hover:bg-[rgba(245,158,11,0.18)] transition-all"
           >
             Aplicar como recargo
           </button>
@@ -662,10 +1089,10 @@ export default function PrestamoDetallePage({ params }) {
       {exito && !completado && (
         <div className="space-y-2">
           <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
-            <svg className="w-5 h-5 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm text-[var(--color-success)] font-medium">Pago registrado exitosamente</p>
+            <p className="text-sm text-[var(--cf-green-dark)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
             <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -727,7 +1154,7 @@ export default function PrestamoDetallePage({ params }) {
         if (isLast || !nextCliente) return (
           <button
             onClick={() => { sessionStorage.removeItem('cf-ruta-nav'); const u = `/rutas/${rutaNav.rutaId}`; navigator.onLine ? router.push(u) : (window.location.href = u) }}
-            className="w-full py-3.5 rounded-[12px] bg-[var(--color-success)] text-[var(--color-text-primary)] text-sm font-semibold active:scale-[0.98] transition-all"
+            className="w-full py-3.5 rounded-[12px] bg-[var(--cf-green-dark)] text-[var(--cf-ink)] text-sm font-semibold active:scale-[0.98] transition-all"
           >
             Ruta finalizada · Volver a {rutaNav.rutaNombre}
           </button>
@@ -737,7 +1164,7 @@ export default function PrestamoDetallePage({ params }) {
           <button
             onClick={navigateNext}
             className="w-full py-3.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
-            style={{ background: 'linear-gradient(135deg, var(--color-accent), #f0b800)', color: '#0a0a0a' }}
+            style={{ background: 'linear-gradient(135deg, var(--cf-gold), var(--cf-gold))', color: 'var(--cf-ink)' }}
           >
             Siguiente → {nextCliente.nombre}
           </button>
@@ -776,7 +1203,7 @@ export default function PrestamoDetallePage({ params }) {
           {/* Icono circular fijo a la izquierda */}
           <span
             className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-3"
-            style={{ background: 'rgba(34, 197, 94, 0.25)', color: 'var(--color-success)' }}
+            style={{ background: 'rgba(34, 197, 94, 0.25)', color: 'var(--cf-green-dark)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -784,10 +1211,10 @@ export default function PrestamoDetallePage({ params }) {
           </span>
           {/* Texto en 2 lineas */}
           <span className="flex-1 flex flex-col items-start min-w-0 text-left leading-tight">
-            <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--color-success)' }}>
+            <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--cf-green-dark)' }}>
               Pago {frecuenciaLabel} registrado
             </span>
-            <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--color-success)' }}>
+            <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>
               {formatMoney(cuotaDiaria)}
             </span>
           </span>
@@ -801,14 +1228,14 @@ export default function PrestamoDetallePage({ params }) {
             ...(mostrarAtajosCobro ? [{
               label: 'Cobros',
               sublabel: hayMontoMora ? `Mora ${formatMoney(montoEnMora)}` : 'Abonos y atajos',
-              color: hayMontoMora ? 'var(--color-danger)' : 'var(--color-accent)',
+              color: hayMontoMora ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
               onClick: () => setModalAtajosCobro(true),
             }] : []),
             ...(mostrarGestionPrestamo ? [{
               label: 'Gestión',
               sublabel: 'Renovar, plazo, ajustes',
-              color: 'var(--color-purple)',
+              color: 'var(--cf-ink-2)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" /></svg>,
               onClick: () => setModalGestionPrestamo(true),
             }] : []),
@@ -816,11 +1243,73 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── 1. HERO CARD: SALDO PENDIENTE EN GRANDE + DONUT + SPARKLINE ── */}
-      <PrestamoHeroCard
-        prestamo={prestamo}
-        narrativa={narrativaSaldo}
-        sparklineData={esOwner && sparkline14d.some(v => v > 0) ? sparkline14d : null}
+      {/* ── LA FICHA DE T41-01 ──
+          Sustituye al hero con donut y sparkline, y a la grilla de datos en tres
+          secciones. La lamina se llama «Ficha fijo — el 54,7% de la cartera» y
+          trae tres decisiones que no son de estilo:
+
+          1 · EN EL LUGAR DEL DESGLOSE VA EL HISTORIAL DE PAGOS, no un calendario
+              proyectado. En un prestamo `fijo` el calendario es una sola frase
+              —«$20.000 diarios durante 30 dias»— y ya esta arriba; dibujar 30
+              filas identicas es relleno. El historial es lo que el cliente
+              discute y lo unico que no se puede deducir de memoria.
+
+          2 · EL INTERES SE MUESTRA UNA SOLA VEZ, en «como se pacto», escrito como
+              lo diria el prestamista: «le preste $500.000, me paga $600.000 · tu
+              ganancia $100.000». NUNCA por pago — el sistema sabe el interes
+              TOTAL, no cuanto de cada pago fue interes, e inventar ese reparto es
+              justo el tipo de dato que hace que alguien deje de confiar en la app.
+
+          3 · Dice «LE FALTA PAGAR», no «saldo pendiente». Aca no hay
+              amortizacion, asi que no hay razon para hablar como un banco.
+
+          LO QUE LA LAMINA NO TIENE y aqui se queda mas abajo: la linea de tiempo,
+          el comparativo de prestamos del cliente, los chips de stats y el tip de
+          IA. No los borro — son cosas que el dueño puede estar usando, y quitar
+          features no es rediseñar. Si sobran, se van cuando lo digas. */}
+      <FichaPrestamo
+        sinMargen
+        cierreHoy={cierreTexto}
+        cierrePerdona={cierrePerdonaTexto}
+        onCerrarHoy={puedeAplicarDescuentos ? () => abrirLiquidacion() : null}
+        modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
+        faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
+        pagado={formatMoney(totalPagadoReal)}
+        totalAPagar={formatMoney(Math.round(totalAPagar || 0))}
+        porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}
+        cuota={formatMoney(Math.round(cuotaDiaria || 0))}
+        enMora={hayMontoMora ? formatMoney(Math.round(montoEnMora)) : '$0'}
+        cuotasFaltantes={cuotasFaltantesTexto}
+        prestado={formatMoney(montoPrestadoRedondeado)}
+        ganancia={formatMoney(Math.max(0, Math.round((totalAPagar || 0) - montoPrestadoRedondeado)))}
+        plazoTexto={plazoPactadoTexto}
+        fechaVencimiento={fechaVencTexto}
+        diasParaVencer={diasParaVencerTexto}
+        empezoEl={empezoElTexto}
+        cuotaQuePusiste={cuotaQuePusisteTexto}
+        tasaTexto={tasaProporcional}
+        notaHistorial={notaDelHistorial}
+        pagos={pagosParaFicha}
+        totalPagos={pagos.length}
+        // SIN `onRegistrar` NI `onGestionar`: la pagina ya tiene su propia pila de
+        // acciones arriba —el boton rojo «PAGAR AHORA · VENCIDO» con el monto, y
+        // los chips «Cobros» y «Gestion»— y son mas informativas que un
+        // «Registrar pago» neutro: el rojo con la cifra dice que esta vencido y
+        // cuanto, sin tener que leer nada mas.
+        //
+        // La lamina pone las suyas abajo porque dibuja la pantalla SIN esa pila.
+        // Tener las dos es peor que cualquiera de las dos: cuatro botones de
+        // cobrar en una pantalla de cobrar. Si prefieres las de la lamina y que
+        // se vaya la pila de arriba, es cambiar estas dos lineas.
+        onRegistrar={undefined}
+        onVerTodos={pagos.length > pagosParaFicha.length ? () => {
+          // Abre el historial completo que YA vive mas abajo en la pantalla, y
+          // lleva la vista hasta el. No se inventa una pantalla nueva.
+          setHistorialOpen(true)
+          setTimeout(() => {
+            document.getElementById('cf-historial-pagos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 60)
+        } : undefined}
       />
 
       {/* Banner aprobación — solo owner y préstamos pendientes */}
@@ -828,14 +1317,14 @@ export default function PrestamoDetallePage({ params }) {
         <Card>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
                 Pendiente de tu aprobacion
               </p>
             </div>
-            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
               {creadoPor?.nombre ?? 'Un cobrador'} solicita crear este prestamo de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. El dinero no se ha desembolsado todavia.
             </p>
             <div className="flex gap-2">
@@ -891,10 +1380,10 @@ export default function PrestamoDetallePage({ params }) {
       {esCobrador && estado === 'pendiente_aprobacion' && (
         <Card>
           <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
               Este prestamo esta pendiente de aprobacion por el administrador.
             </p>
           </div>
@@ -926,103 +1415,39 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── 6. GRILLA DE DATOS EN 3 SECCIONES ─────────────────────── */}
-      <GrillaDatosSecciones
-        secciones={[
-          {
-            titulo: 'Crédito',
-            color: 'var(--color-accent)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            ),
-            items: [
-              ...(nombreProducto ? [{ label: 'Producto', value: nombreProducto }] : []),
-              { label: nombreProducto ? 'Valor artículo' : 'Prestado', value: formatMoney(montoPrestado), hero: true },
-              { label: 'Total a pagar', value: formatMoney(totalAPagar), hero: true },
-              ...(nombreProducto ? [] : [{ label: 'Tasa', value: `${tasaInteres}%` }]),
-              { label: 'Plazo', value: `${diasPlazo} días` },
-              { label: 'Tipo de interés', value: (({
-                fijo: 'Cuota fija (clásico)',
-                unico: 'Interés único',
-                saldo: 'Sobre saldo',
-                lineal: 'Decreciente (lineal)',
-                lineal_dinamico: 'Decreciente dinámico',
-                solo_interes: 'Solo interés (globo)',
-                manual: 'Cuota manual',
-                proporcional: 'Proporcional',
-              })[modoInteres] || modoInteres || 'Clásico') + (interesAdelantado ? ' (adelantado)' : '') },
-              ...(prestamo.socio ? [{ label: 'Socio', value: prestamo.socio.nombre }] : []),
-            ],
-          },
-          {
-            titulo: 'Pagos',
-            color: 'var(--color-success)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ),
-            items: [
-              { label: `Cuota ${frecuenciaLabel}`, value: formatMoney(cuotaDiaria), hero: true,
-                ...(modoInteres === 'solo_interes' && cuotasAmortizacion.length > 0
-                  ? { sub: `Última cuota: ${formatMoney(cuotasAmortizacion[cuotasAmortizacion.length - 1]?.cuotaTotal || 0)}` }
-                  : {}) },
-              { label: 'Cuotas pendientes', value: `${cuotasPendientes}`, hero: true },
-              ...(cobroInfo ? [{ label: cobroInfo.label, value: cobroInfo.value, color: cobroInfo.color }] : []),
-              {
-                label: diasMora > 0 ? 'Días en mora' : 'Estado',
-                value: diasMora > 0 ? `${diasMora} días${cuotasEnMora > 0 ? ` · ${cuotasEnMora}c` : ''}` : 'Al día',
-                color: diasMora > 0 ? 'var(--color-danger)' : 'var(--color-success)',
-              },
-            ],
-          },
-          {
-            titulo: 'Fechas',
-            color: 'var(--color-info)',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            ),
-            items: [
-              { label: 'Inicio', value: fmtFecha(fechaInicio) },
-              { label: 'Vencimiento', value: fmtFecha(fechaFin) },
-              ...(creadoPor?.nombre ? [{ label: 'Creado por', value: creadoPor.nombre }] : []),
-            ],
-          },
-          ...(seguro ? [{
-            titulo: 'Seguro',
-            color: '#6366f1',
-            icon: (
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-              </svg>
-            ),
-            items: [
-              { label: 'Cobro de seguro', value: montoSeguro ? formatMoney(montoSeguro) : 'Si', color: '#6366f1' },
-            ],
-          }] : []),
-        ]}
-      />
+      {/* La grilla de datos en tres secciones se fue: lo que decia —credito,
+          plazo, cobro— ya lo dice «como se pacto» en una frase, y lo que no cabia
+          ahi no responde ninguna pregunta que se haga mirando un prestamo. Era el
+          desglose que T41-01 sustituye por el historial. */}
 
-      {/* ── TABLA DE AMORTIZACION (lineal / globo / sobre saldo) ──── */}
-      {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && cuotasAmortizacion.length > 0 && (
-        <Card>
-          <TablaAmortizacion
-            tabla={cuotasAmortizacion}
-            frecuencia={frecuencia}
-            modoInteres={modoInteres}
-            mostrarPagado
-            onPagarCuota={estaActivo && !completado ? (fila) => {
-              const faltante = Math.max(0, fila.cuotaTotal - (fila.pagado || 0))
-              if (faltante <= 0) return
-              setPresetPago({ monto: Math.round(faltante), tipo: 'completo' })
-              setModalPago(true)
-            } : undefined}
-          />
-        </Card>
+      {/* ── LA TABLA (T12-01) ──────────────────────────────────────
+          Solo los 4 modos que TIENEN calendario: `lineal`, `lineal_dinamico`,
+          `solo_interes` y `saldo`, el 6,2% de la cartera. En los otros cuatro no
+          hay tabla guardada y dibujar treinta filas identicas seria inventar un
+          desglose que el sistema no tiene.
+
+          Es la tabla NUEVA, la de barras partidas. La vieja era una lista de
+          acordeones, que es literalmente lo que la lamina dice que deja de ser.
+
+          Sin `onCompartir`/`onImprimir`: aqui NO va la barra de accion, porque la
+          ficha ya tiene la suya. Compartir e imprimir viven en /prestamos/[id]/tabla,
+          que es su propia pantalla porque una tabla que se le manda al cliente
+          necesita cabecera propia y no puede ser un trozo de otra pagina.
+
+          Lo que si se conserva es pulsar la cuota para dejar el pago listo: eso lo
+          tenia el montaje viejo, es funcion real, y rehacer la pantalla no es
+          excusa para perderla. */}
+      {tablaParaFicha && (
+        <TablaAmortizacion
+          {...tablaParaFicha}
+          onTocarCuota={estaActivo && !completado ? (c) => {
+            const faltante = Math.max(0, c.faltanteNum || 0)
+            if (faltante <= 0) return
+            setPresetPago({ monto: Math.round(faltante), tipo: 'completo' })
+            setModalPago(true)
+          } : undefined}
+          onVerTodas={() => router.push(`/prestamos/${prestamo.id}/tabla`)}
+        />
       )}
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
@@ -1067,19 +1492,21 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
-      {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ──────────── */}
+      {/* ── HISTORIAL DE PAGOS (colapsado por defecto) ────────────
+          `id` para que «Ver los N pagos» de la ficha pueda traer aqui. */}
+      <div id="cf-historial-pagos" />
       <Card>
         <button
           type="button"
           onClick={() => setHistorialOpen(v => !v)}
           className="w-full flex items-center justify-between gap-2 focus-visible:outline-none"
         >
-          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">
-            Historial de pagos ({pagos.length})
+          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">
+            Gestionar los pagos ({pagos.length})
           </p>
           <svg
             className="w-4 h-4 shrink-0 transition-transform duration-200"
-            style={{ color: 'var(--color-text-muted)', transform: historialOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            style={{ color: 'var(--cf-ink-3)', transform: historialOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1088,7 +1515,7 @@ export default function PrestamoDetallePage({ params }) {
 
         {historialOpen && <div className="mt-3">
           <div className="flex items-center justify-between gap-2 mb-3">
-          <p className="text-xs text-[var(--color-text-muted)]">
+          <p className="text-xs text-[var(--cf-ink-3)]">
             {filtroFecha ? `${pagos.filter(p => {
               const d = new Date(new Date(p.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
               return d === filtroFecha
@@ -1096,13 +1523,13 @@ export default function PrestamoDetallePage({ params }) {
           </p>
           <div className="flex items-center gap-1">
             <label
-              className="relative h-8 flex items-center gap-1.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-2 cursor-pointer hover:border-[var(--color-info)] transition-colors"
+              className="relative h-8 flex items-center gap-1.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-2 cursor-pointer hover:border-[var(--cf-ink-2)] transition-colors"
               title="Filtrar por fecha"
             >
-              <svg className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span className="text-[11px] text-[var(--color-text-primary)] whitespace-nowrap">
+              <span className="text-[11px] text-[var(--cf-ink)] whitespace-nowrap">
                 {filtroFecha || 'Fecha'}
               </span>
               <input
@@ -1116,7 +1543,7 @@ export default function PrestamoDetallePage({ params }) {
               <button
                 type="button"
                 onClick={() => setFiltroFecha('')}
-                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] px-2 py-1"
+                className="text-[10px] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] px-2 py-1"
               >
                 Limpiar
               </button>
@@ -1140,7 +1567,7 @@ export default function PrestamoDetallePage({ params }) {
               })
             : pagos
           return pagosFiltrados.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-4">
+            <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">
               {filtroFecha ? 'Sin pagos en esta fecha' : 'Sin pagos registrados'}
             </p>
           ) : (
@@ -1151,15 +1578,15 @@ export default function PrestamoDetallePage({ params }) {
               return (
                 <PagoMiniCard key={pago.id} pago={pago} isOffline={pago.id?.startsWith?.('offline-')}>
                   {/* Botones de accion (comprobante, editar fecha, anular) */}
-                  <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-border)' }}>
                     {!esAjuste && (
                       <button
                         onClick={() => setComprobante(comprobanteAbierto ? null : pago.id)}
                         className={[
                           'flex items-center gap-1 px-2 h-7 rounded-[8px] text-[10px] font-medium transition-colors',
                           comprobanteAbierto
-                            ? 'text-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]'
-                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.08)]',
+                            ? 'text-[var(--cf-gold)] bg-[rgba(245,197,24,0.1)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.08)]',
                         ].join(' ')}
                         title="Enviar comprobante"
                       >
@@ -1170,7 +1597,7 @@ export default function PrestamoDetallePage({ params }) {
                       </button>
                     )}
                     {pago.tipo === 'capital' && tasaInteres > 0 && (
-                      <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--color-purple)' }}>
+                      <span className="text-[10px] px-2 py-1 rounded-[6px] font-mono-display" style={{ background: 'rgba(168, 85, 247, 0.1)', color: 'var(--cf-ink-2)' }}>
                         -{formatMoney(Math.round(pago.montoPagado * tasaInteres / 100))} int.
                       </span>
                     )}
@@ -1181,8 +1608,8 @@ export default function PrestamoDetallePage({ params }) {
                         className={[
                           'w-9 h-9 flex items-center justify-center rounded-[8px] transition-colors',
                           editandoFecha === pago.id
-                            ? 'text-[var(--color-info)] bg-[rgba(59,130,246,0.1)]'
-                            : 'text-[var(--color-text-muted)] hover:text-[var(--color-info)] hover:bg-[rgba(59,130,246,0.08)]',
+                            ? 'text-[var(--cf-ink-2)] bg-[rgba(59,130,246,0.1)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink-2)] hover:bg-[rgba(59,130,246,0.08)]',
                         ].join(' ')}
                         title="Editar fecha"
                       >
@@ -1198,7 +1625,7 @@ export default function PrestamoDetallePage({ params }) {
                           setConfirmAnularPago({ pagoId: pago.id, monto: pago.montoPagado })
                         }}
                         disabled={anulando === pago.id}
-                        className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-dim)] transition-colors disabled:opacity-50"
+                        className="w-9 h-9 flex items-center justify-center rounded-[8px] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[var(--cf-red-pill-bg)] transition-colors disabled:opacity-50"
                         title="Anular pago"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1235,7 +1662,7 @@ export default function PrestamoDetallePage({ params }) {
                         <input
                           type="date"
                           defaultValue={new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
-                          className="h-9 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-info)] transition-colors"
+                          className="h-9 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-ink-2)] transition-colors"
                           id={`fecha-pago-${pago.id}`}
                         />
                         <button
@@ -1257,13 +1684,13 @@ export default function PrestamoDetallePage({ params }) {
                               setError('No se pudo cambiar la fecha.')
                             }
                           }}
-                          className="h-9 px-3 rounded-[12px] text-xs font-medium text-[var(--color-text-primary)] bg-[var(--color-info)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
+                          className="h-9 px-3 rounded-[12px] text-xs font-medium text-[var(--cf-ink)] bg-[var(--cf-ink-2)] hover:bg-[#2563eb] transition-colors active:scale-[0.97]"
                         >
                           Guardar
                         </button>
                         <button
                           onClick={() => setEditandoFecha(null)}
-                          className="h-9 px-2 rounded-[12px] text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                          className="h-9 px-2 rounded-[12px] text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
                         >
                           Cancelar
                         </button>
@@ -1288,7 +1715,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
                 setConfirmCancel(true)
               }}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--color-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
+              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--cf-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -1297,16 +1724,16 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           ) : (
             <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[20px] cf-card-shadow p-4 space-y-3">
-              <p className="text-sm text-[var(--color-danger)] font-semibold">¿Cancelar este préstamo?</p>
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-sm text-[var(--cf-red-dark)] font-semibold">¿Cancelar este préstamo?</p>
+              <p className="text-xs text-[var(--cf-ink-3)]">
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
               </p>
 
               {hayCobrosRegistrados && (
                 <div className="space-y-2">
-                  <p className="text-[11px] text-[var(--color-text-secondary)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
+                  <p className="text-[11px] text-[var(--cf-ink-2)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1316,12 +1743,12 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
+                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
+                      <p className="text-[11px] text-[var(--cf-ink-3)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1331,8 +1758,8 @@ export default function PrestamoDetallePage({ params }) {
                       className="mt-0.5"
                     />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)]">Calculado como prestado menos cobrado real.</p>
+                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
+                      <p className="text-[11px] text-[var(--cf-ink-3)]">Calculado como prestado menos cobrado real.</p>
                     </div>
                   </label>
                 </div>
@@ -1341,7 +1768,7 @@ export default function PrestamoDetallePage({ params }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] border border-[var(--color-border)] hover:bg-[var(--color-bg-surface)] transition-colors"
+                  className="flex-1 h-10 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:bg-[var(--cf-surface)] transition-colors"
                 >
                   No, volver
                 </button>
@@ -1374,7 +1801,7 @@ export default function PrestamoDetallePage({ params }) {
                     }
                   }}
                   disabled={cancelando}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-bold text-[var(--color-text-primary)] bg-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_85%,black)] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-10 rounded-[12px] text-sm font-bold text-[var(--cf-ink)] bg-[var(--cf-red-dark)] hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_85%,black)] disabled:opacity-50 transition-colors"
                 >
                   {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
                 </button>
@@ -1397,7 +1824,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoEnMora)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.25)] hover:bg-[rgba(239,68,68,0.15)] transition-all"
             >
               Pagar mora
               {cuotasEnMora > 0 ? ` (${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'})` : ''}
@@ -1412,7 +1839,7 @@ export default function PrestamoDetallePage({ params }) {
                 setModalAtajosCobro(false)
                 abrirPagoConMonto(montoParaPonerseAlDia)
               }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold)] bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.3)] hover:bg-[rgba(245,197,24,0.15)] transition-all"
             >
               Ponerse al día · {formatMoney(montoParaPonerseAlDia)}
             </button>
@@ -1428,7 +1855,7 @@ export default function PrestamoDetallePage({ params }) {
                   setModalAtajosCobro(false)
                   setModalIntereses(true)
                 }}
-                className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-warning)] bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] hover:bg-[rgba(245,158,11,0.15)] transition-all"
+                className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.25)] hover:bg-[rgba(245,158,11,0.15)] transition-all"
               >
                 Pagar intereses · {formatMoney(interesesPend)}
               </button>
@@ -1440,166 +1867,121 @@ export default function PrestamoDetallePage({ params }) {
               setModalAtajosCobro(false)
               abrirPagoNormal()
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.25)] hover:bg-[rgba(34,197,94,0.15)] transition-all"
           >
             Hacer abono extraordinario
           </button>
         </div>
       </Modal>
 
-      {/* Modal: gestión del préstamo (según permisos) */}
-      <Modal
-        open={modalGestionPrestamo}
-        onClose={() => setModalGestionPrestamo(false)}
-        title="Gestión del préstamo"
+      {/* ── T05-01 · GESTIÓN DEL PRÉSTAMO ─────────────────────────────
+          Aquí había un `<Modal>` con nueve botones en mosaico de dos columnas,
+          cada uno teñido de un color distinto: morado renovar, azul el plazo,
+          ámbar el próximo cobro, naranja el recargo, verde el descuento. El
+          color no significaba nada —no hay forma de saber por qué renovar es
+          morado— y con nueve mosaicos hay que leerlos todos para encontrar uno.
+
+          Comparado con `main`, este bloque solo había cambiado en siete sitios,
+          y los siete eran renombres de variable de color. El usuario lo dijo
+          exacto: «está completamente igual a como estaba antes».
+
+          Ahora son filas agrupadas por QUÉ CAMBIA cada una —lo que se cobra,
+          cuándo se cobra, o el préstamo entero— y cada fila trae SU VALOR
+          ACTUAL a la derecha. Antes había que abrir «Día de cobro» para saber
+          cuál era el día de cobro, y salir sin tocar nada si ya estaba bien.
+
+          El rojo se queda para una sola fila, la de mover a perdidos: no es un
+          aviso genérico, es la única acción que reconoce una pérdida. */}
+      <HojaInferior
+        abierta={modalGestionPrestamo}
+        onCerrar={() => setModalGestionPrestamo(false)}
+        titulo="Gestionar el préstamo"
+        subtitulo={detalleGestion}
       >
-        <div className="space-y-4">
-          {(puedeGestionarPrestamos || esOwner) && puedeEditar && (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); setModalEditar(true) }}
-              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-hover)] border-2 border-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.1)] transition-all flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Editar préstamo
-            </button>
-          )}
+        <MenuGestion
+          cabecera={false}
+          grupos={gruposGestion}
+          consejo={diasMora >= 15 && cuotaDiaria > 0
+            ? `Con ${diasMora} días de atraso, lo que suele funcionar es bajar la cuota antes que el recargo. Un cliente que no puede pagar ${formatMoney(Math.round(cuotaDiaria))} tampoco va a pagar ${formatMoney(Math.round(cuotaDiaria * 2))}.`
+            : null}
+          onAccion={(a) => { setModalGestionPrestamo(false); a.hacer?.() }}
+        />
+      </HojaInferior>
 
-          {puedeGestionarPrestamos && (
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Plazo y calendario
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <GestionBtn
-                  label="Renovar"
-                  desc="Prestar más al cliente"
-                  color="168,85,247"
-                  icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  onClick={() => { setModalGestionPrestamo(false); setModalRenovar(true) }}
-                />
-                <GestionBtn
-                  label="Modificar plazo"
-                  desc="Cambiar duración o fecha"
-                  color="59,130,246"
-                  icon="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalPlazo(true) }}
-                />
-                {prestamo?.frecuencia && prestamo.frecuencia !== 'diario' && (
-                  <GestionBtn
-                    label="Día de cobro"
-                    desc="Fijar día de la semana"
-                    color="245,197,24"
-                    icon="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"
-                    onClick={() => { setModalGestionPrestamo(false); setModalDiaCobro(true) }}
-                  />
-                )}
-                <GestionBtn
-                  label="Próximo cobro"
-                  desc="Cambiar fecha manual"
-                  color="139,92,246"
-                  icon="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalProximoCobro(true) }}
-                />
-                <GestionBtn
-                  label="Días sin cobro"
-                  desc="Excluir días de la semana"
-                  color="160,160,160"
-                  onClick={() => {
-                    try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
-                    setModalGestionPrestamo(false)
-                    setModalDscPrestamo(true)
-                  }}
-                  icon="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                />
-              </div>
-            </div>
-          )}
-
-          {puedeGestionarPrestamos && (
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                Ajustes de saldo
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <GestionBtn
-                  label="Recargo"
-                  desc="Agregar castigo o multa"
-                  color="249,115,22"
-                  icon="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                  onClick={() => { setModalGestionPrestamo(false); setModalRecargo(true) }}
-                />
-                {puedeAplicarDescuentos && (
-                  <GestionBtn
-                    label="Descuento"
-                    desc="Reducir saldo pendiente"
-                    color="34,197,94"
-                    icon="M9 14.25l3-3m0 0l3 3m-3-3v8.25M3 11.25a4.502 4.502 0 018.206-2.913 4.5 4.5 0 015.588 5.163"
-                    onClick={() => { setModalGestionPrestamo(false); setModalDescuento(true) }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {puedeAplicarDescuentos && (
-            <button
-              onClick={() => { setModalGestionPrestamo(false); abrirLiquidacion() }}
-              className="w-full h-11 rounded-[12px] font-medium text-sm transition-all flex items-center justify-center gap-2"
-              style={{ color: 'var(--color-accent)', background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)' }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Cerrar préstamo anticipado
-            </button>
-          )}
-
-          <div className="pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
-            {esClavo ? (
-              <button
-                onClick={() => { setModalGestionPrestamo(false); quitarClavo() }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-success)] bg-[rgba(34,197,94,0.06)] hover:bg-[rgba(34,197,94,0.12)] transition-all"
-              >
-                Quitar de préstamos perdidos
-              </button>
-            ) : (
-              <button
-                onClick={() => { setModalGestionPrestamo(false); setModalClavo(true) }}
-                className="w-full h-10 rounded-[12px] font-medium text-sm text-[var(--color-danger)] bg-[rgba(239,68,68,0.06)] hover:bg-[rgba(239,68,68,0.12)] transition-all"
-              >
-                Mover a préstamos perdidos
-              </button>
-            )}
-          </div>
-        </div>
-      </Modal>
 
       {/* Modal: confirmar mover a préstamos perdidos */}
-      <Modal open={modalClavo} onClose={() => setModalClavo(false)} title="Mover a préstamos perdidos">
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            Este préstamo saldrá de tus números normales (cartera, saldos, dashboard) y pasará a la sección de préstamos perdidos. Podrás seguir registrando pagos si el cliente abona.
-          </p>
-          <label className="flex items-start gap-2 cursor-pointer rounded-[12px] border border-[var(--color-border)] p-3">
-            <input type="checkbox" checked={clavoPerdida} onChange={e => setClavoPerdida(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[var(--color-danger)]" />
-            <span className="text-sm text-[var(--color-text-primary)]">
-              Registrar el capital prestado como dinero en riesgo
-              <span className="block text-[11px] text-[var(--color-text-muted)] mt-0.5">
-                Resta de tu capital el dinero que aún no has recuperado de este préstamo. Si no lo marcas, solo se aparta de la cartera sin tocar tu caja.
+      {/* ── T13-03 · MOVER A PERDIDOS ──────────────────────────────────────
+          LA ÚNICA PANTALLA DEL SISTEMA DONDE EL DORADO NO VA EN LA ACCIÓN
+          PRINCIPAL: aquí la acción destacada es «seguir cobrando» y «dar por
+          perdido» queda en rojo de contorno. `PieGestion peligro` invierte los pesos.
+
+          SE CONSERVA LA CASILLA de «registrar como dinero en riesgo», que la lámina
+          no dibuja y que decide si el capital se resta de verdad o el préstamo solo
+          se aparta. Y ahora su consecuencia SE VE: la fila de pérdida del bloque
+          negro sale solo cuando está marcada, que es cuando de verdad hay pérdida.
+
+          PENDIENTE-BACKEND · el motivo. La lámina dice que «alimenta la estadística
+          de por qué se pierde plata», pero el endpoint solo acepta
+          `{ esClavo, clavoPerdida }` y no hay columna donde guardarlo. No se dibuja:
+          un selector que se mueve y no se guarda es el patrón que ya lleva ocho
+          apariciones en este rediseño. */}
+      {modalClavo && (() => {
+        const datos = adaptarPerdidos(prestamo, null, null, null) ?? {}
+        return (
+          <HojaInferior
+            abierta={modalClavo}
+            onCerrar={() => setModalClavo(false)}
+            titulo="Mover a perdidos"
+            subtitulo={[
+              cliente?.nombre,
+              diasMora > 0 ? `${diasMora} ${diasMora === 1 ? 'día' : 'días'} sin pagar` : null,
+            ].filter(Boolean).join(' · ') || null}
+            accion={
+              <PieGestion
+                peligro
+                textoCancelar="Seguir cobrando"
+                onCancelar={() => setModalClavo(false)}
+                textoAceptar="Dar por perdido"
+                onAceptar={confirmarClavo}
+                aceptando={clavoEnviando}
+                error={clavoError}
+              />
+            }
+          >
+            <MoverAPerdidos
+              {...datos}
+              // La pérdida del mes solo si se marca: sin marcar, el préstamo se
+              // aparta de los números pero el capital no se resta.
+              perdidaEtiqueta={clavoPerdida ? datos.perdidaEtiqueta : null}
+              perdidaValor={clavoPerdida ? datos.perdidaValor : null}
+            />
+
+            {/* La casilla, con su consecuencia escrita. Va DESPUÉS del bloque negro a
+                propósito: primero se ve qué pasa, después se decide cuánto duele. */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 11, flex: 'none',
+              padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            }}>
+              <input
+                type="checkbox"
+                checked={clavoPerdida}
+                onChange={(e) => setClavoPerdida(e.target.checked)}
+                style={{ width: 18, height: 18, marginTop: 1, flex: 'none', accentColor: 'var(--cf-red)' }}
+              />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  Registrarlo como dinero perdido
+                </span>
+                <span style={{ display: 'block', fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', marginTop: 3 }}>
+                  Resta de tu capital lo que no recuperaste. Sin marcar, el préstamo
+                  solo sale de tus números y el capital se queda como está.
+                </span>
               </span>
-            </span>
-          </label>
-          {clavoError && <p className="text-sm text-[var(--color-danger)]">{clavoError}</p>}
-          <div className="flex gap-3">
-            <button onClick={() => setModalClavo(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
-            <button onClick={confirmarClavo} disabled={clavoEnviando} className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-danger-text,#fff)] bg-[var(--color-danger)] disabled:opacity-40">
-              {clavoEnviando ? 'Moviendo...' : 'Mover a perdidos'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+            </label>
+          </HojaInferior>
+        )
+      })()}
 
       {/* Modal: días sin cobro del préstamo */}
       <Modal
@@ -1630,14 +2012,14 @@ export default function PrestamoDetallePage({ params }) {
         }
       >
         <div className="space-y-3">
-          <p className="text-xs text-[var(--color-text-secondary)] leading-snug">
+          <p className="text-xs text-[var(--cf-ink-2)] leading-snug">
             Este préstamo no generará mora en los días seleccionados. Vacío = hereda la configuración del cliente, ruta u organización.
           </p>
           <DiasSinCobroSelector value={dscDias} onChange={setDscDias} />
           {dscDias.length > 0 && (
             <button
               onClick={() => setDscDias([])}
-              className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] transition-colors"
             >
               Limpiar (heredar de cliente/ruta/org)
             </button>
@@ -1660,140 +2042,257 @@ export default function PrestamoDetallePage({ params }) {
         prestamo={prestamo}
         rutaNav={rutaNav}
         presetPago={presetPago}
+        // ── LOS DOS ATAJOS NUEVOS ──
+        // Sustituyen a «Mitad» y «Todo». «Mitad» era la mitad del SALDO —con
+        // cuota $17.334 y saldo $553.658 escribía $276.829, que no se cobra en
+        // ninguna visita— y «Todo» ponía el saldo entero, con TODO el interés
+        // futuro dentro, cuando el sistema sabe perdonarlo.
+        //
+        // Los dos datos ya vivían en esta página; solo no llegaban al modal.
+        montoAlDia={montoParaPonerseAlDia}
+        cancelarHoy={hayCierre ? Math.round(cierre.restanteHoy ?? 0) : 0}
       />
 
-      {/* Modales de ajuste: usan el mismo RegistrarPago con tabInicial.
-          Antes habia un AjusteSaldo separado — se unifico para evitar UX divergente. */}
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalRecargo}
-        onClose={() => setModalRecargo(false)}
-        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="recargo"
-      />
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalDescuento}
-        onClose={() => setModalDescuento(false)}
-        onSuccess={(prestamoActualizado) => {
-          setPrestamo(prestamoActualizado)
-          if (prestamoActualizado.estado === 'completado') setCompletado(true)
-        }}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="descuento"
-      />
+      {/* ── RECARGO Y DESCUENTO, EN SU HOJA ──
+          Abrian `RegistrarPago` con `tabInicial`, o sea el formulario ANTERIOR
+          de 1.315 lineas: se pulsaba una fila del menu rediseñado y encima
+          aparecia la pantalla vieja. El usuario lo describio exacto: «cuando se
+          le dan las opciones como abonar a intereses o descuentos, recargos, se
+          pone el otro modal».
 
-      <RegistrarPago
-        prestamoId={id}
-        cuotaDiaria={cuotaDiaria}
-        saldoPendiente={saldoPendiente}
-        open={modalIntereses}
-        onClose={() => setModalIntereses(false)}
-        onSuccess={(prestamoActualizado) => setPrestamo(prestamoActualizado)}
-        cliente={cliente}
-        prestamo={prestamo}
-        tabInicial="intereses"
-      />
+          Las hojas ya estaban construidas y cotejadas en Gestion.jsx, sin
+          montar. Lo unico que hacia falta era enchufarlas — el contrato con la
+          API es el mismo POST /pagos con `tipo` y `nota`. */}
+      <HojaInferior
+        abierta={modalRecargo}
+        onCerrar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
+        titulo="Recargo por mora"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
+            onAceptar={() => aplicarAjuste('recargo')}
+            textoAceptar={ajusteNum > 0 ? `Aplicar ${formatMoney(ajusteNum)}` : 'Aplicar'}
+            deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
+            aceptando={ajustando}
+            error={ajusteError}
+          />
+        }
+      >
+        <Recargo
+          monto={ajusteMonto}
+          onMonto={setAjusteMonto}
+          atajos={atajosAjuste}
+          atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
+          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          motivo={ajusteNota}
+          onMotivo={setAjusteNota}
+          {...(adaptarRecargo({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
+        />
+      </HojaInferior>
 
-      {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}
-      <Modal open={modalLiquidacion} onClose={() => setModalLiquidacion(false)} title="Liquidación anticipada">
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--color-text-muted)]">
-            El cliente paga todo hoy. Solo se cobra capital + interés de los meses transcurridos; se perdona el interés futuro.
+      <HojaInferior
+        abierta={modalDescuento}
+        onCerrar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
+        titulo="Descuento"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
+            onAceptar={() => aplicarAjuste('descuento')}
+            textoAceptar={ajusteNum > 0 ? `Perdonar ${formatMoney(ajusteNum)}` : 'Perdonar'}
+            deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
+            aceptando={ajustando}
+            error={ajusteError}
+          />
+        }
+      >
+        <Descuento
+          monto={ajusteMonto}
+          onMonto={setAjusteMonto}
+          atajos={atajosAjuste}
+          atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
+          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          motivo={ajusteNota}
+          onMotivo={setAjusteNota}
+          {...(adaptarDescuento({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
+        />
+      </HojaInferior>
+
+      {/* -- PAGAR INTERESES, EN SU HOJA --
+          Era el ULTIMO camino que saltaba al formulario de 1.315 lineas: se
+          pulsaba «Pagar intereses · $X» en el menu rediseñado y encima aparecia
+          la pantalla anterior entera, con sus siete pestañas, para escribir un
+          numero que la propia pantalla ya sabia.
+
+          Aqui viene con el monto puesto y lo unico que queda es confirmar. El
+          contrato con la API es el mismo: POST /pagos con `tipo: 'intereses'`. */}
+      <HojaInferior
+        abierta={modalIntereses}
+        onCerrar={() => { setModalIntereses(false); setInteresError('') }}
+        titulo="Pagar los intereses"
+        subtitulo={cliente?.nombre}
+        accion={
+          <PieGestion
+            onCancelar={() => { setModalIntereses(false); setInteresError('') }}
+            onAceptar={pagarIntereses}
+            textoAceptar={interesMonto > 0 ? `Cobrar ${formatMoney(interesMonto)}` : 'Cobrar'}
+            deshabilitado={!(interesMonto > 0) || pagandoInteres}
+            aceptando={pagandoInteres}
+            error={interesError}
+          />
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '2px 0 6px' }}>
+          <div style={{
+            background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '18px 20px',
+            display: 'flex', flexDirection: 'column', gap: 5, flex: 'none',
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: '#A3A8B2',
+            }}>Interés vencido y sin pagar</span>
+            <span className="cf-fig" style={{
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 30, fontWeight: 600, letterSpacing: '-.03em', color: '#F5B824',
+            }}>{formatMoney(interesMonto)}</span>
+          </div>
+
+          {/* QUE HACE Y QUE NO. Pagar interes SI baja el saldo —es menos plata
+              por pagar en total— pero NO baja el capital, que es sobre lo que
+              corre el interes del mes siguiente. Sin decirlo, se cobra tres
+              meses seguidos y el capital sigue clavado, y parece un fallo. */}
+          <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)', margin: 0 }}>
+            Cubre el interés que ya corrió. <strong>El capital no baja</strong>
+            {prestamo?.capitalRestante > 0
+              ? `: sigue en ${formatMoney(Math.round(prestamo.capitalRestante))}, y el mes que viene vuelve a generar interés.`
+              : ' — el mes que viene vuelve a generar interés.'}
           </p>
 
-          {liqCargando && <p className="text-sm text-[var(--color-text-muted)]">Calculando...</p>}
-
-          {liqData && !liqCargando && (
-            <>
-              {liqData.aproximado && (
-                <div className="text-[12px] text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] rounded-[12px] px-3 py-2">
-                  Este préstamo es modo {liqData.modo}; el cálculo es aproximado. Ajusta el monto final según lo pactado.
-                </div>
-              )}
-
-              {/* Selector de modalidad */}
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'mesCompleto', label: 'Mes completo' },
-                  { id: 'proporcional', label: 'Proporcional (días)' },
-                ].map(m => {
-                  const d = liqData[m.id]
-                  const activo = liqModalidad === m.id
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => seleccionarModalidad(m.id)}
-                      className={`rounded-[12px] px-3 py-2.5 text-left border transition-all ${activo ? 'border-[var(--color-accent)] bg-[rgba(245,197,24,0.1)]' : 'border-[var(--color-border)] bg-[var(--color-bg-card)]'}`}
-                    >
-                      <p className="text-[11px] text-[var(--color-text-muted)]">{m.label}</p>
-                      <p className="text-base font-bold text-[var(--color-text-primary)] font-mono-display">${(d?.restanteHoy ?? 0).toLocaleString('es-CO')}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{(d?.mesesTranscurridos ?? 0)} mes(es) · perdona ${ (d?.interesPerdonado ?? 0).toLocaleString('es-CO')}</p>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Desglose */}
-              <div className="rounded-[12px] bg-[var(--color-bg-hover)] px-3 py-2.5 text-[13px] space-y-1">
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Capital{liqData.capitalRestante != null ? ' restante' : ''}</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.capitalRestante ?? liqData.capital ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Interés devengado</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData[liqModalidad]?.interesDevengado ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Ya pagó</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.totalPagadoReal ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between border-t border-[var(--color-border)] pt-1 mt-1"><span className="text-[var(--color-text-muted)]">Saldo actual (pactado)</span><span className="text-[var(--color-text-primary)] font-mono-display">${(liqData.saldoActual ?? 0).toLocaleString('es-CO')}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--color-success)]">Interés que se perdona</span><span className="text-[var(--color-success)] font-semibold font-mono-display">${(liqData[liqModalidad]?.interesPerdonado ?? 0).toLocaleString('es-CO')}</span></div>
-              </div>
-
-              {/* Monto final editable */}
-              <div>
-                <label className="text-[12px] text-[var(--color-text-muted)]">Monto para cerrar hoy (editable)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={liqMonto ? liqMonto.toLocaleString('es-CO') : ''}
-                  onChange={e => {
-                    const n = Number((e.target.value || '').replace(/\D/g, ''))
-                    setLiqMonto(Number.isFinite(n) ? n : 0)
-                  }}
-                  placeholder="Escribe el monto a cobrar"
-                  className="w-full mt-1 px-3 py-2.5 rounded-[12px] bg-[var(--color-bg-base)] text-lg font-bold text-[var(--color-text-primary)] font-mono-display placeholder:text-[var(--color-text-muted)] placeholder:font-normal placeholder:text-sm outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
-                />
-              </div>
-
-              {/* Nota */}
-              <div>
-                <label className="text-[12px] text-[var(--color-text-muted)]">Motivo / nota (obligatorio)</label>
-                <input
-                  type="text"
-                  value={liqNota}
-                  onChange={e => setLiqNota(e.target.value)}
-                  placeholder="Ej: pago anticipado pactado con el cliente"
-                  className="w-full mt-1 px-3 py-2 rounded-[12px] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] outline-none border border-[var(--color-border)] focus:border-[var(--color-accent)]"
-                />
-              </div>
-            </>
-          )}
-
-          {liqError && <p className="text-sm text-[var(--color-danger)]">{liqError}</p>}
-
-          <div className="flex gap-2 pt-1">
-            <button onClick={() => setModalLiquidacion(false)} className="flex-1 h-11 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] bg-[var(--color-bg-hover)]">Cancelar</button>
-            <button
-              onClick={confirmarLiquidacion}
-              disabled={liqEnviando || liqCargando || !liqData}
-              className="flex-1 h-11 rounded-[12px] text-sm font-bold text-[var(--color-accent-text)] bg-[var(--color-accent)] disabled:opacity-40"
-            >
-              {liqEnviando ? 'Cerrando...' : 'Cerrar préstamo'}
-            </button>
-          </div>
+          <MetodoPagoSelector
+            metodosPago={metodosPagoOrg}
+            value={interesMetodo}
+            onSelect={(v) => setInteresMetodo(v)}
+          />
         </div>
-      </Modal>
+      </HojaInferior>
+
+      {/* Modal: Liquidación anticipada (cierre por pago total antes del plazo) */}
+      {/* ── T19-04 · CERRAR ANTICIPADO ─────────────────────────────────────
+          El cliente paga todo hoy. Solo se cobra capital más el interés de lo que ya
+          corrió; el interés futuro se perdona.
+
+          LAS TRES OPCIONES SON LAS QUE EL MODELO CALCULA, no las de la lámina. La
+          lámina dice «solo el capital que debe», y esa cifra lleva interés devengado
+          dentro: ponerle ese nombre sería mentir sobre plata en la pantalla donde se
+          cierra un préstamo. Se enseñan prorrateado por días, mes completo y todo lo
+          pactado, de la que más perdona a la que menos, y cada una dice cuánto
+          perdona. Ver la nota de `adaptarCerrar`.
+
+          SE CONSERVA el motivo obligatorio y el monto editable, que es lo que
+          permite «un punto medio» de la lámina sin inventar una cuarta modalidad. */}
+      {modalLiquidacion && (() => {
+        const comp = adaptarCerrar(liqData)
+        const resumen = resumenCerrar(liqData, liqModalidad) ?? {}
+        // Cuando el dueño teclea un monto propio, ninguna de las tres queda marcada:
+        // marcar una que no coincide con la cifra sería decirle que eligió algo que no
+        // eligió.
+        const coincide = comp?.opciones.find((o) => o.monto === Math.round(liqMonto || 0))
+        return (
+          <HojaInferior
+            abierta={modalLiquidacion}
+            onCerrar={() => setModalLiquidacion(false)}
+            titulo="Quiere pagar todo hoy"
+            subtitulo={[
+              cliente?.nombre,
+              cuotasPendientes > 0 ? `le faltan ${cuotasPendientes} cuotas` : null,
+            ].filter(Boolean).join(' · ') || null}
+            accion={
+              <PieGestion
+                onCancelar={() => setModalLiquidacion(false)}
+                onAceptar={confirmarLiquidacion}
+                textoAceptar={liqMonto > 0 ? `Cerrar por ${formatMoney(Math.round(liqMonto))}` : 'Cerrar'}
+                aceptando={liqEnviando}
+                deshabilitado={liqMonto < 0 || !liqNota.trim()}
+                error={liqError || (!liqNota.trim() && liqMonto > 0
+                  ? 'Escribe el motivo: queda en el historial.' : null)}
+              />
+            }
+          >
+            {liqCargando && (
+              <p style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>Calculando…</p>
+            )}
+
+            {/* El aviso de cálculo APROXIMADO. Va arriba y en ámbar: cerrar por una
+                cifra aproximada sin avisar es cómo se generan las discusiones que
+                acaban en el préstamo reabierto. */}
+            {comp?.aproximado && (
+              <div style={{
+                flex: 'none', display: 'flex', gap: 11, alignItems: 'flex-start',
+                padding: '13px 16px', borderRadius: 14,
+                background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+              }}>
+                <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--cf-gold-text-2)' }}>
+                  Este préstamo es modo <strong>{comp.modo}</strong>: el cálculo es
+                  aproximado. Ajusta el monto a lo que pactaste.
+                </span>
+              </div>
+            )}
+
+            {comp && (
+              <CerrarAnticipado
+                opciones={comp.opciones}
+                opcion={coincide?.id ?? null}
+                onOpcion={(o) => {
+                  if (o.monto == null) return
+                  // «todo lo pactado» no es una modalidad del cálculo: es el saldo tal
+                  // cual. Se guarda la modalidad más cercana para que el servidor no
+                  // reciba un valor que no conoce.
+                  if (o.id !== 'todo') setLiqModalidad(o.id)
+                  setLiqMonto(o.monto)
+                }}
+                {...resumen}
+              />
+            )}
+
+            {/* El monto a mano, que es «un punto medio» de la lámina. Y el motivo,
+                obligatorio, que ya lo era. */}
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              }}>O pon el monto que pactaste</span>
+              <input
+                type="text" inputMode="decimal"
+                value={liqMonto ? String(Math.round(liqMonto)) : ''}
+                onChange={(e) => setLiqMonto(Number(String(e.target.value).replace(/\D/g, '')) || 0)}
+                style={{
+                  height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 16, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
+            </label>
+
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+              }}>Motivo (queda en el historial)</span>
+              <input
+                value={liqNota}
+                onChange={(e) => setLiqNota(e.target.value)}
+                placeholder="Pago anticipado pactado"
+                style={{
+                  height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 16, color: 'var(--cf-ink)', outline: 'none',
+                }}
+              />
+            </label>
+          </HojaInferior>
+        )
+      })()}
 
       {/* Modal de renovación */}
       <RenovarPrestamo
@@ -1836,14 +2335,24 @@ export default function PrestamoDetallePage({ params }) {
       {/* Modal editar préstamo */}
       <EditarPrestamo
         prestamo={prestamo}
-        open={modalEditar}
-        onClose={() => setModalEditar(false)}
-        onSuccess={() => { setModalEditar(false); fetchPrestamo() }}
+        modoInicial={modoPedido || undefined}
+        open={modalEditar || Boolean(modoPedido)}
+        onClose={() => {
+          setModalEditar(false)
+          // Y se limpia el parametro: si se queda, cerrar el modal y volver atras
+          // lo vuelve a abrir, y el dueño no puede salir de la pantalla.
+          if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)
+        }}
+        onSuccess={() => {
+          setModalEditar(false)
+          if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)
+          fetchPrestamo()
+        }}
         socios={sociosLista}
       />
 
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}
-      <ModalWhatsAppTemplates
+      <HojaWhatsApp
         open={modalWA}
         onClose={() => { setModalWA(false); setWaSugerida(null) }}
         cliente={cliente}
@@ -1863,34 +2372,34 @@ export default function PrestamoDetallePage({ params }) {
       >
         <div className="space-y-4">
           <div className="bg-[rgba(245,158,11,0.06)] border border-[rgba(245,158,11,0.2)] rounded-[12px] p-3">
-            <p className="text-xs text-[var(--color-text-muted)]">
+            <p className="text-xs text-[var(--cf-ink-3)]">
               Calculado: {formatMoney(moratorio?.montoMoratorio ?? 0)} ({moratorio?.diasMoraEfectivos ?? 0} dias sobre {formatMoney(moratorio?.montoBase ?? 0)})
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Monto a aplicar</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Monto a aplicar</label>
             <input
               type="number"
               min="0"
               value={moratorioMonto}
               onChange={(e) => setMoratorioMonto(Number(e.target.value) || 0)}
-              className="w-full h-11 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-lg font-semibold font-mono-display text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-lg font-semibold font-mono-display text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
             />
-            <p className="text-[10px] text-[var(--color-text-muted)]">
+            <p className="text-[10px] text-[var(--cf-ink-3)]">
               Puedes editar el monto. El sistema sugiere {formatMoney(moratorio?.montoMoratorio ?? 0)}.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nota (opcional)</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nota (opcional)</label>
             <input
               type="text"
               value={moratorioNota}
               onChange={(e) => setMoratorioNota(e.target.value)}
-              className="w-full h-10 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all"
+              className="w-full h-10 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all"
             />
           </div>
           {moratorioError && (
-            <p className="text-xs text-[var(--color-danger)]">{moratorioError}</p>
+            <p className="text-xs text-[var(--cf-red-dark)]">{moratorioError}</p>
           )}
           <button
             disabled={moratorioEnviando || moratorioMonto <= 0}
@@ -1919,7 +2428,7 @@ export default function PrestamoDetallePage({ params }) {
                 setMoratorioEnviando(false)
               }
             }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--color-accent-text)] bg-[var(--color-warning)] hover:opacity-90 disabled:opacity-50 transition-all"
+            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-ink)] bg-[var(--cf-gold-dark)] hover:opacity-90 disabled:opacity-50 transition-all"
           >
             {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
           </button>
@@ -1959,7 +2468,7 @@ function BotonAbrirRecibo({ onClick, label = 'Imprimir', small }) {
       onClick={onClick}
       className={[
         'flex items-center justify-center gap-2 rounded-[12px] font-medium transition-all cursor-pointer w-full',
-        'bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-accent)]',
+        'bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]',
         small ? 'px-3 h-8 text-xs' : 'px-4 h-10 text-sm',
       ].join(' ')}
     >
@@ -1994,7 +2503,7 @@ function ModalCamposRecibo({ tipo, pago, cliente, prestamo, orgNombre, ocultarSa
           <ChecklistCamposRecibo campos={camposLocal} onChange={handleChange} />
         )}
 
-        <div className="pt-2 border-t border-[var(--color-border)] flex gap-2">
+        <div className="pt-2 border-t border-[var(--cf-border)] flex gap-2">
           {tipo !== 'historial' && (
             <BotonCompartirRecibo
               cliente={cliente}

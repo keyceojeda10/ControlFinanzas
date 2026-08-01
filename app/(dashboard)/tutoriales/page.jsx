@@ -1,18 +1,20 @@
 'use client'
-// app/(dashboard)/tutoriales/page.jsx — Tutoriales para clientes
+// app/(dashboard)/tutoriales/page.jsx — Tutoriales para clientes.
+//
+// EL TÍTULO LO PONE EL ARMAZÓN, NO LA PÁGINA. Tenía su propio <h1> «Tutoriales»
+// debajo del que ya dibuja la cabecera: dos títulos iguales, uno encima de otro.
+// Es el mismo defecto que ya apareció en cobradores y en la ficha del préstamo,
+// y por eso existe `useCabecera` — para que la página DIGA qué pone la cabecera
+// en vez de dibujarse una propia.
 
 import TutorialesList from '@/components/TutorialesList'
+import { useCabecera } from '@/components/armazon/Armazon'
 
 export default function TutorialesPage() {
-  return (
-    <div className="max-w-3xl lg:max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Tutoriales</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
-          Aprende a usar cada función del sistema paso a paso
-        </p>
-      </div>
-      <TutorialesList showCopyButton={false} />
-    </div>
-  )
+  useCabecera({
+    titulo: 'Tutoriales',
+    subtitulo: 'Aprende a usar cada función del sistema paso a paso',
+  })
+
+  return <TutorialesList showCopyButton={false} />
 }

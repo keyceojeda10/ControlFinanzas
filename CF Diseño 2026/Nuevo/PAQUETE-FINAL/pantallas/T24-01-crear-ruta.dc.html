@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 24</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">MOVIL</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Crear ruta</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">8:12</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;padding:6px 20px 14px;display:flex;align-items:center;gap:12px;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M15 5l-7 7 7 7"></path></svg>
+            <span style="flex:1;font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:600;letter-spacing:-.02em;">Nueva ruta</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:0 20px;display:flex;flex-direction:column;gap:14px;">
+            <div style="flex:none;display:flex;flex-direction:column;gap:8px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Cómo se llama</span>
+              <div style="display:flex;align-items:center;height:56px;padding:0 16px;border-radius:14px;background:#fff;border:1.5px solid #e7a400;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                <span style="font-size:17px;font-weight:600;">Bolivariana</span>
+              </div>
+              <span style="font-size:12px;color:#63676f;">Ponle el nombre del barrio; es como la va a buscar el cobrador.</span>
+            </div>
+            <div style="flex:none;display:flex;flex-direction:column;gap:9px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Quién la recorre</span>
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;background:#fff;border:1.5px solid #e7a400;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;flex:none;">C1</span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:15px;font-weight:700;">Carlos 1</span>
+                    <span style="font-size:12px;color:#63676f;">sin ruta asignada</span>
+                  </div>
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#e7a400;flex:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+                  </span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.08);">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;flex:none;">CC</span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:15px;font-weight:700;">Yo mismo</span>
+                    <span style="font-size:12px;color:#63676f;">Carlos Castro</span>
+                  </div>
+                  <span style="width:22px;height:22px;border-radius:999px;border:1.5px solid rgba(20,20,28,.18);flex:none;"></span>
+                </div>
+              </div>
+              <span style="font-size:12px;color:#63676f;">Te quedan 4 cobradores sin ruta.</span>
+            </div>
+            <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:9px;">
+              <div style="display:flex;align-items:center;gap:9px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Qué clientes van</span>
+                <span style="flex:1;"></span>
+                <span style="font-size:12px;font-weight:700;color:#b07d00;">3 escogidos</span>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="flex:none;display:flex;align-items:center;gap:11px;height:48px;padding:0 16px;border-bottom:1px solid rgba(20,20,28,.07);background:#f3f3ef;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e929a" stroke-width="2" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></svg>
+                  <span style="font-size:14px;color:#8e929a;flex:1;">Buscar entre tus 31 clientes…</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#e7a400;flex:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+                  </span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:14px;font-weight:700;">Steven Olmos</span>
+                    <span style="font-size:11px;color:#63676f;">Cl 8 # 31-05 · hoy en Ruta 2</span>
+                  </div>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#e7a400;flex:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+                  </span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:14px;font-weight:700;">Carlos Chaparro</span>
+                    <span style="font-size:11px;color:#63676f;">Cra 12 # 4-18 · hoy en Ruta #1</span>
+                  </div>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;gap:12px;padding:9px 16px;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#e7a400;flex:none;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+                  </span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:14px;font-weight:700;">Deisy Ramírez</span>
+                    <span style="font-size:11px;color:#63676f;">Cra 45 # 12-30 · sin ruta</span>
+                  </div>
+                </div>
+                <div style="flex:1;min-height:0;"></div>
+              </div>
+              <div style="flex:none;display:flex;gap:10px;align-items:flex-start;padding:13px 16px;border-radius:14px;background:rgba(231,164,0,.09);border:1px solid rgba(231,164,0,.28);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.1" stroke-linecap="round" style="flex:none;margin-top:1px;"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17h.01"></path></svg>
+                <span style="font-size:12px;line-height:1.45;color:#7a5800;">Dos de estos clientes ya tienen ruta. Al guardarlos aquí salen de la de Pepito y la de Carlos.</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 20px 22px;background:#fff;border-top:1px solid rgba(20,20,28,.09);">
+            <button style="width:100%;height:54px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:17px;font-weight:700;cursor:pointer;">Crear la ruta con 3 clientes</button>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">01 · Crear ruta</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Tres decisiones y nada más: nombre, quién la recorre y quiénes van. Cada cliente muestra <strong>en qué ruta está hoy</strong>, y el aviso ámbar dice la consecuencia que nadie prevé — moverlos aquí los saca de la ruta de Pepito. La lista de cobradores empieza por los que no tienen ruta, que es el hallazgo #4 atacado desde el otro lado.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

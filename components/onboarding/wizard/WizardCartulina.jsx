@@ -146,10 +146,10 @@ export default function WizardCartulina({ onComplete, onSkip }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
-        <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, serif" }}>
+        <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--cf-ink)', fontFamily: "Georgia, serif" }}>
           Sube una foto de tu cartulina
         </h2>
-        <p className="text-[13px] max-w-[280px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[13px] max-w-[280px] mx-auto leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
           La IA lee los datos y crea el cliente con su prestamo automaticamente. Cartulina, cuaderno, libreta... lo que uses.
         </p>
       </div>
@@ -178,7 +178,7 @@ export default function WizardCartulina({ onComplete, onSkip }) {
               type="button"
               onClick={() => inputRef.current?.click()}
               className="w-full flex items-center justify-center gap-3 h-12 rounded-[14px] text-[14px] font-medium transition-all active:scale-[0.98] cursor-pointer"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
+              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
               </svg>
@@ -187,10 +187,10 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px] mt-2"
               style={{ background: 'rgba(245,197,24,0.05)', border: '1px solid rgba(245,197,24,0.12)' }}>
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--cf-gold)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
                 Puedes subir varias fotos a la vez. Hasta 5 por tanda.
               </p>
             </div>
@@ -199,12 +199,12 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
         {/* Cargando */}
         {estado === 'cargando' && (
-          <div className="rounded-[14px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-5">
+          <div className="rounded-[14px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-5">
             {previews.length > 0 && (
               <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
                 {previews.map((url, i) => (
                   <img key={i} src={url} alt={`Foto ${i + 1}`}
-                    className="h-24 w-auto rounded-[10px] object-cover shrink-0 border border-[var(--color-border)] opacity-60" />
+                    className="h-24 w-auto rounded-[10px] object-cover shrink-0 border border-[var(--cf-border)] opacity-60" />
                 ))}
               </div>
             )}
@@ -214,8 +214,8 @@ export default function WizardCartulina({ onComplete, onSkip }) {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               <div>
-                <p className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Leyendo la cartulina...</p>
-                <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>La IA esta extrayendo nombre, montos y cuotas</p>
+                <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Leyendo la cartulina...</p>
+                <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>La IA esta extrayendo nombre, montos y cuotas</p>
               </div>
             </div>
           </div>
@@ -224,27 +224,27 @@ export default function WizardCartulina({ onComplete, onSkip }) {
         {/* Resultados listos */}
         {estado === 'listo' && resultados.length > 0 && (
           <div className="space-y-3">
-            <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--color-success)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_5%,transparent)] p-4">
+            <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--cf-green-dark)_25%,transparent)] bg-[color-mix(in_srgb,var(--cf-green-dark)_5%,transparent)] p-4">
               <div className="flex items-center gap-2 mb-3">
-                <svg className="w-5 h-5 text-[var(--color-success)]" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-[var(--cf-green-dark)]" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
-                <p className="text-[14px] font-semibold" style={{ color: 'var(--color-success)' }}>
+                <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-green-dark)' }}>
                   {resultados.length === 1 ? '1 cliente encontrado' : `${resultados.length} clientes encontrados`}
                 </p>
               </div>
 
               {resultados.map((r, i) => (
-                <div key={i} className="flex items-center gap-3 py-2" style={{ borderTop: i > 0 ? '1px solid var(--color-border)' : 'none' }}>
+                <div key={i} className="flex items-center gap-3 py-2" style={{ borderTop: i > 0 ? '1px solid var(--cf-border)' : 'none' }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[12px] font-bold"
-                    style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--color-accent)' }}>
+                    style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--cf-gold)' }}>
                     {(r.nombre || '?')[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+                    <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>
                       {r.nombre || 'Sin nombre'}
                     </p>
-                    <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                       {r.montoPrestado ? `$${Number(r.montoPrestado).toLocaleString()}` : 'Sin monto'}
                       {r.numeroCuotas ? ` · ${r.numeroCuotas} cuotas` : ''}
                       {r.tasaInteres ? ` · ${r.tasaInteres}%` : ''}
@@ -258,12 +258,12 @@ export default function WizardCartulina({ onComplete, onSkip }) {
               onClick={crearDesdeResultados}
               disabled={enviando}
               className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
-              style={{ background: 'var(--color-accent)', color: '#111' }}>
+              style={{ background: 'var(--cf-gold)', color: '#111' }}>
               {enviando ? 'Creando...' : `Importar ${resultados.length === 1 ? 'este cliente' : `${resultados.length} clientes`}`}
             </button>
 
             <button onClick={reintentar} className="w-full text-[12px] text-center py-2 cursor-pointer transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}>
+              style={{ color: 'var(--cf-ink-3)' }}>
               Subir otra foto
             </button>
           </div>
@@ -271,12 +271,12 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
         {/* Sin resultados */}
         {estado === 'listo' && resultados.length === 0 && (
-          <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--color-warning)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_5%,transparent)] p-4 text-center">
-            <p className="text-[14px] font-medium mb-2" style={{ color: 'var(--color-warning)' }}>No encontramos datos claros</p>
-            <p className="text-[12px] mb-3" style={{ color: 'var(--color-text-muted)' }}>Intenta con una foto mas nítida o con mejor luz.</p>
+          <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--cf-gold-dark)_25%,transparent)] bg-[color-mix(in_srgb,var(--cf-gold-dark)_5%,transparent)] p-4 text-center">
+            <p className="text-[14px] font-medium mb-2" style={{ color: 'var(--cf-gold-dark)' }}>No encontramos datos claros</p>
+            <p className="text-[12px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>Intenta con una foto mas nítida o con mejor luz.</p>
             <button onClick={reintentar}
               className="text-[13px] font-medium underline underline-offset-2 cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}>
+              style={{ color: 'var(--cf-ink-2)' }}>
               Intentar de nuevo
             </button>
           </div>
@@ -284,11 +284,11 @@ export default function WizardCartulina({ onComplete, onSkip }) {
 
         {/* Error */}
         {estado === 'error' && (
-          <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_5%,transparent)] p-4 text-center">
-            <p className="text-[14px] font-medium mb-2" style={{ color: 'var(--color-danger)' }}>{mensajeError}</p>
+          <div className="rounded-[14px] border border-[color-mix(in_srgb,var(--cf-red-dark)_25%,transparent)] bg-[color-mix(in_srgb,var(--cf-red-dark)_5%,transparent)] p-4 text-center">
+            <p className="text-[14px] font-medium mb-2" style={{ color: 'var(--cf-red-dark)' }}>{mensajeError}</p>
             <button onClick={reintentar}
               className="text-[13px] font-medium underline underline-offset-2 cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}>
+              style={{ color: 'var(--cf-ink-2)' }}>
               Intentar de nuevo
             </button>
           </div>
@@ -300,7 +300,7 @@ export default function WizardCartulina({ onComplete, onSkip }) {
         <div className="pt-4 pb-2">
           <button onClick={onSkip}
             className="w-full text-[12px] text-center py-2 cursor-pointer transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}>
+            style={{ color: 'var(--cf-ink-3)' }}>
             No tengo cartulinas, quiero registrar manualmente
           </button>
         </div>

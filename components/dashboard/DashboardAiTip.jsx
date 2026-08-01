@@ -55,20 +55,20 @@ export default function DashboardAiTip({ data }) {
     <div
       className="rounded-[12px] px-4 py-3 flex items-start gap-3"
       style={{
-        background: 'color-mix(in srgb, var(--color-accent) 5%, transparent)',
-        border: '1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border))',
+        background: 'color-mix(in srgb, var(--cf-gold) 5%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--cf-gold) 22%, var(--cf-border))',
       }}
     >
-      <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-accent)' }}>
+      <svg className="w-4 h-4 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--cf-gold)' }}>
         <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
       </svg>
-      <p className="text-xs flex-1 leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+      <p className="text-xs flex-1 leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
         {tip}
       </p>
       <button
         onClick={() => setDismissed(true)}
         className="shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors"
-        style={{ color: 'var(--color-text-muted)' }}
+        style={{ color: 'var(--cf-ink-3)' }}
         aria-label="Cerrar tip"
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

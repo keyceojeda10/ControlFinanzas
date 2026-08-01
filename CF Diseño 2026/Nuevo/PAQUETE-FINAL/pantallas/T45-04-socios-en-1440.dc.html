@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 45</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">ESCRITORIO</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Socios en 1440</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="width:1440px;height:700px;background:#f4f4f1;border-radius:18px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;padding:24px 34px 16px;background:#fff;border-bottom:1px solid rgba(20,20,28,.08);display:flex;align-items:flex-end;justify-content:space-between;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Más herramientas · socios</span>
+              <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.025em;">Quién puso plata en tu negocio</h1>
+              <span style="font-size:13px;color:#63676f;">La ganancia se reparte por lo que puso cada uno.</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.1);font-size:14px;font-weight:600;color:#4a4e57;">Nuevo socio</span>
+              <button style="height:40px;padding:0 18px;border:none;border-radius:13px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Repartir $1.240.000</button>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;padding:22px 34px 24px;display:flex;gap:20px;">
+            <div style="flex:1.8;min-width:0;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#15161a;border-radius:20px;padding:24px 28px;display:flex;align-items:center;gap:34px;">
+                <div style="flex:none;display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Tus socios pusieron</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;letter-spacing:-.04em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$12.000.000</span>
+                  <span style="font-size:13px;color:#8a8e98;font-variant-numeric:tabular-nums;">les debes <strong style="color:#f5b824;">$1.380.000</strong> de repartos sin pagar</span>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px;">
+                  <div style="display:flex;height:14px;border-radius:999px;overflow:hidden;">
+                    <span style="width:66.7%;background:#f5b824;"></span>
+                    <span style="width:33.3%;background:#2fbe6a;"></span>
+                  </div>
+                  <div style="display:flex;gap:28px;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span style="width:10px;height:10px;border-radius:3px;background:#f5b824;flex:none;"></span>
+                      <span style="font-size:13px;color:#a3a8b2;">Carlos Andrés</span>
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums;">66,7%</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span style="width:10px;height:10px;border-radius:3px;background:#2fbe6a;flex:none;"></span>
+                      <span style="font-size:13px;color:#a3a8b2;">Marta Ruiz</span>
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums;">33,3%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="flex:none;display:flex;align-items:center;height:44px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.08);background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;">Socio</span>
+                  <span style="width:112px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Puso</span>
+                  <span style="width:84px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le toca</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Ha ganado</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le has dado</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le debes</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">CA</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Carlos Andrés</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">desde marzo · su plata en 18 préstamos</span>
+                    </span>
+                  </span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$8.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">66,7%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$1.980.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$1.200.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$780.000</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">MR</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Marta Ruiz</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">desde mayo · su plata en 9 préstamos</span>
+                    </span>
+                  </span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$4.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">33,3%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$900.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$300.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$600.000</span>
+                </div>
+                <div style="flex:1;min-height:0;"></div>
+                <div style="flex:none;display:flex;align-items:center;height:56px;padding:0 24px;background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:13px;font-weight:700;">Total</span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$12.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">100%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$2.880.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$1.500.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$1.380.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="width:330px;flex:none;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#fff;border:1.5px solid #e7a400;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Ganancia sin repartir</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$1.240.000</span>
+                <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">desde el 30 de junio · 28 días</span>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                  <span style="font-size:13px;color:#4a4e57;">A Carlos</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$826.667</span>
+                </div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-size:13px;color:#4a4e57;">A Marta</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$413.333</span>
+                </div>
+              </div>
+              <div style="flex:none;background:#fff;border:1px solid rgba(231,164,0,.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.2" stroke-linecap="round" style="flex:none;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>
+                  <span style="font-size:14px;font-weight:700;color:#7a5800;">Un socio no entra a la app</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">No tiene usuario ni clave. Mándale su cuenta por WhatsApp desde su ficha cuando te la pida.</span>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Tu parte</span>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-size:13px;color:#4a4e57;">Capital propio</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$15.6M</span>
+                </div>
+                <span style="font-size:12px;line-height:1.45;color:#4a4e57;">Los socios pusieron $12M de los $27.6M que tienes en la calle. El resto es tuyo y su ganancia no se reparte.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">04 · Socios en 1440</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Cinco columnas y <strong>todas cuadran en el total</strong>: puso · le toca · ha ganado · le has dado · le debes. $2.880.000 − $1.500.000 = $1.380.000. Con socios reales, esa tabla es la que se imprime cuando hay discusión.<br><br>La acción primaria del encabezado no es “nuevo socio”: es <strong>“repartir $1.240.000”</strong>, con la cifra dentro. Crear socios se hace dos veces en la vida; repartir, todos los meses.<br><br>Y la tarjeta que cierra el modelo: <strong>“tu parte”</strong>. Los socios pusieron $12M de los $27.6M en la calle — el resto es del dueño y su ganancia no se reparte. Sin ese dato, el dueño no sabe si los $1.240.000 que va a repartir son toda su ganancia o una parte, y esa duda es la que hace que nadie use el módulo.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

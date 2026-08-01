@@ -14,7 +14,7 @@ export default function ProgressRing({ progreso = 0, size = 56, stroke = 4 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#2a2a2a"
+          stroke="var(--cf-ink-2)"
           strokeWidth={stroke}
         />
         {/* Progress circle */}
@@ -23,7 +23,7 @@ export default function ProgressRing({ progreso = 0, size = 56, stroke = 4 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--color-accent)"
+          stroke="var(--cf-gold)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -33,7 +33,7 @@ export default function ProgressRing({ progreso = 0, size = 56, stroke = 4 }) {
       </svg>
       {/* Percentage text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-[var(--color-text-primary)]">{progreso}%</span>
+        <span className="text-xs font-bold text-[var(--cf-ink)]">{progreso}%</span>
       </div>
     </div>
   )

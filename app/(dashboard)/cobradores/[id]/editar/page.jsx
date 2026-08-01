@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/[id]/editar/page.jsx
 
 import { useState, useEffect, use } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter }                from 'next/navigation'
 import { useAuth }                  from '@/hooks/useAuth'
 import { Input }                    from '@/components/ui/Input'
@@ -9,12 +10,12 @@ import { Button }                   from '@/components/ui/Button'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import { obtenerCobradoresOffline } from '@/lib/offline'
 
-const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
+const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }) => (
   <div
     className="cf-card-shadow rounded-[20px] p-4"
     style={{
-      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-      border: '1px solid var(--color-border)',
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+      border: '1px solid var(--cf-border)',
     }}
   >
     <div className="flex items-center justify-between gap-2 mb-3">
@@ -35,6 +36,8 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
 )
 
 export default function EditarCobrador({ params }) {
+  useCabecera({ titulo: 'Editar cobrador' })
+
   const { id } = use(params)
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
@@ -161,8 +164,8 @@ export default function EditarCobrador({ params }) {
     return (
       <div className="max-w-md mx-auto">
         <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-[var(--color-bg-surface)] rounded w-40" />
-          <div className="h-48 bg-[var(--color-bg-surface)] rounded-[20px]" />
+          <div className="h-6 bg-[var(--cf-surface)] rounded w-40" />
+          <div className="h-48 bg-[var(--cf-surface)] rounded-[20px]" />
         </div>
       </div>
     )
@@ -171,40 +174,30 @@ export default function EditarCobrador({ params }) {
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-5">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 22%, transparent), color-mix(in srgb, var(--color-purple) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--color-purple) 30%, transparent)',
-              color: 'var(--color-purple)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 22%, transparent), color-mix(in srgb, var(--cf-ink-2) 12%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--cf-ink-2) 30%, transparent)',
+              color: 'var(--cf-ink-2)',
             }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
             </svg>
           </div>
-          <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Editar cobrador</h1>
+          {/* Titulo en la cabecera del armazon. */}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
         {exito && (
-          <div className="flex items-center gap-2 bg-[var(--color-success-dim)] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] text-[var(--color-success)] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--cf-green-pill-bg)] border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] text-[var(--cf-green-dark)] text-sm rounded-[12px] px-4 py-3">
             Cambios guardados correctamente
           </div>
         )}
@@ -212,7 +205,7 @@ export default function EditarCobrador({ params }) {
         {/* Datos personales */}
         <SectionCard
           title="Datos personales"
-          color="var(--color-purple)"
+          color="var(--cf-ink-2)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
         >
           <div className="space-y-3">
@@ -232,7 +225,7 @@ export default function EditarCobrador({ params }) {
                 onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
                 autoComplete="tel"
               />
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
                 Útil para enviarle las credenciales por WhatsApp.
               </p>
             </div>
@@ -242,7 +235,7 @@ export default function EditarCobrador({ params }) {
         {/* Acceso al sistema */}
         <SectionCard
           title="Acceso al sistema"
-          color="var(--color-success)"
+          color="var(--cf-green-dark)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
         >
           <div className="space-y-3">
@@ -260,7 +253,7 @@ export default function EditarCobrador({ params }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
                 Solo llena este campo si quieres cambiar la contraseña del cobrador.
               </p>
             </div>
@@ -269,16 +262,16 @@ export default function EditarCobrador({ params }) {
 
         {/* Compartir credenciales después de cambiar contraseña */}
         {credencialesGuardadas && (
-          <div className="border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] rounded-[12px] p-4"
-            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 50%, color-mix(in srgb, var(--color-success) 3%, var(--color-bg-card)) 100%)' }}
+          <div className="border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] rounded-[12px] p-4"
+            style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 6%, var(--cf-card)) 0%, var(--cf-card) 50%, color-mix(in srgb, var(--cf-green-dark) 3%, var(--cf-card)) 100%)' }}
           >
             <div className="flex items-center gap-2 mb-3">
-              <svg className="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Contraseña actualizada</p>
+              <p className="text-sm font-semibold text-[var(--cf-ink)]">Contraseña actualizada</p>
             </div>
-            <p className="text-[10px] text-[var(--color-text-muted)] mb-3">
+            <p className="text-[10px] text-[var(--cf-ink-3)] mb-3">
               Envía las nuevas credenciales al cobrador. La contraseña no se mostrará de nuevo.
             </p>
             <CompartirCredenciales
@@ -294,7 +287,7 @@ export default function EditarCobrador({ params }) {
         {/* Permisos */}
         <SectionCard
           title="Permisos del cobrador"
-          color="var(--color-accent)"
+          color="var(--cf-gold)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
         >
           <div className="space-y-3">
@@ -314,8 +307,8 @@ export default function EditarCobrador({ params }) {
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[var(--color-text-primary)]">{p.label}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">{p.desc}</p>
+                  <p className="text-sm text-[var(--cf-ink)]">{p.label}</p>
+                  <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug">{p.desc}</p>
                 </div>
                 <button
                   type="button"
@@ -333,7 +326,7 @@ export default function EditarCobrador({ params }) {
                   disabled={p.key === 'gestionarPrestamos' && !permisos.crearPrestamos}
                   className={[
                     'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                    permisos[p.key] ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
+                    permisos[p.key] ? 'bg-[var(--cf-gold)]' : 'bg-[var(--cf-fill)]',
                     p.key === 'gestionarPrestamos' && !permisos.crearPrestamos ? 'opacity-50 cursor-not-allowed' : '',
                   ].join(' ')}
                 >
@@ -345,7 +338,7 @@ export default function EditarCobrador({ params }) {
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-[var(--color-text-muted)] mt-2">
+          <p className="text-[9px] text-[var(--cf-ink-3)] mt-2">
             Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
           </p>
         </SectionCard>

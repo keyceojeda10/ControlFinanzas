@@ -6,11 +6,13 @@ import { prisma }           from '@/lib/prisma'
 import {
   calcularDiasMora,
   calcularSaldoPendiente,
+  calcularCapitalRestante,
   calcularProximoCobro,
   formatFechaCobro,
   tieneCobroPendienteHoy,
   tienePeriodoEsperadoHoy,
   calcularCuotasEnMora,
+  calcularCuotasPendientes,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
   obtenerCuotaPeriodoActual,
@@ -20,6 +22,9 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { distanciaMetros } from '@/lib/geo'
+// Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
+// usa el optimizador de orden; aquí da el «3,4 km» de la cabecera (T27-02).
+import { totalDistance } from '@/lib/routeOptimizer'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -147,6 +152,8 @@ export async function GET(request, { params }) {
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
   let recaudadoHoy = 0
+  let recaudadoEfectivoHoy = 0   // ver el desglose por medio, más abajo
+  let recaudadoDigitalHoy = 0
   let pendientesHoy = 0
   let clientesConCobroHoy = 0
   let clientesPagaronHoy = 0
@@ -154,6 +161,69 @@ export async function GET(request, { params }) {
   let carteraTotal = 0      // saldo pendiente total (principal + intereses que faltan)
   let capitalTotal = 0      // monto original prestado (sin intereses)
   let totalAPagarRuta = 0   // suma de totalAPagar (principal + intereses) — denominador correcto para % cobrado
+
+  // CAPITAL QUE TODAVÍA ESTÁ EN LA CALLE, no el que se prestó algún día.
+  //
+  // Hace falta para partir la cartera de la ruta en «lo puesto» y «lo que queda
+  // por ganar» (T27-02). Con `capitalTotal` no se puede: es el monto ORIGINAL, así
+  // que en cuanto un cliente abona, `carteraTotal - capitalTotal` sale NEGATIVO y
+  // la ruta que más cobra es la que peor se ve.
+  //
+  //   presté 1.000.000 · total pactado 1.200.000 · ya pagó 300.000
+  //   → saldo pendiente 900.000 · capitalTotal 1.000.000 → «por ganar» −100.000
+  //
+  // `calcularCapitalRestante` reparte cada pago entre interés y capital con la
+  // misma cascada que usa la ficha, y excluye los abonos tipo 'capital' de esa
+  // cascada. Así `capitalPendiente + porGanar = carteraTotal` siempre.
+  let capitalPendiente = 0
+
+  // ── LO QUE SALIO DE LA CARTERA HOY EN ESTA RUTA (T04-03) ──
+  //
+  // Se lee de `MovimientoCapital`, que es el libro unico del sistema y ya lleva
+  // `rutaId` y `metodoPago`. No se recalcula desde prestamos ni gastos: hacerlo
+  // por otro camino es como se acaban teniendo dos cifras que no cuadran.
+  //
+  // SOLO EFECTIVO. Lo que salio por transferencia no esta en el fajo que el
+  // cobrador entrega de noche, asi que restarlo descuadraria el cierre.
+  // ── EL MES DE LA RUTA (T24-03) ──
+  // Lo que entro, lo que salio a prestar y la diferencia. `FichaRuta` responde
+  // «¿me rinde meter plata aqui?», y sin el mes esa pregunta no se puede
+  // contestar: el dia suelto no dice nada de una ruta.
+  const inicioMes = new Date(Date.UTC(_hoy.getUTCFullYear(), _hoy.getUTCMonth(), 1))
+  const movimientosMes = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      rutaId: id,
+      tipo: { in: ['recaudo', 'desembolso'] },
+      createdAt: { gte: inicioMes },
+    },
+    select: { tipo: true, monto: true },
+  })
+  let entroMes = 0
+  let salioAPrestarMes = 0
+  for (const m of movimientosMes) {
+    if (m.tipo === 'recaudo') entroMes += m.monto
+    else salioAPrestarMes += m.monto
+  }
+
+  const movimientosHoy = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      rutaId: id,
+      tipo: { in: ['desembolso', 'gasto'] },
+      createdAt: { gte: _hoy, lt: _manana },
+    },
+    select: { tipo: true, monto: true, metodoPago: true },
+  })
+  let desembolsadoEfectivoHoy = 0
+  let gastosEfectivoHoy = 0
+  for (const m of movimientosHoy) {
+    // `null` cuenta como efectivo: es el modo por defecto y el de todo lo
+    // historico, anterior a que existiera la columna.
+    if (m.metodoPago === 'transferencia') continue
+    if (m.tipo === 'desembolso') desembolsadoEfectivoHoy += m.monto
+    else gastosEfectivoHoy += m.monto
+  }
 
   // Pines del mapa: pagos del dia con coords, color por distancia con su cliente.
   const cobrosGeoHoy = []
@@ -173,6 +243,11 @@ export async function GET(request, { params }) {
     let cuotasEnMoraCliente = 0
     let montoEnMoraCliente = 0
     let montoParaAlDiaCliente = 0
+    // CUMPLIMIENTO del cliente: de las cuotas que YA debian estar pagadas,
+    // cuantas lo estan. Misma definicion que en /api/clientes — si se cambia
+    // alli, se cambia aqui. Es la columna «Cumple» de la tabla de T04-09.
+    let cuotasVencidasCliente = 0
+    let cuotasPagadasCliente = 0
     const prestamosActivos = []
     let ultimaFechaPago = null
     let frecuencia   = 'diario'
@@ -206,9 +281,23 @@ export async function GET(request, { params }) {
       // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
       const pagosHoy = p.pagos
       for (const pg of pagosHoy) pagoIdsRuta.push(pg.id)
-      const montoPagadoHoy = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo)).reduce((a, pg) => a + pg.montoPagado, 0)
+      const cobrosReales = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      const montoPagadoHoy = cobrosReales.reduce((a, pg) => a + pg.montoPagado, 0)
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
+
+      // EN QUÉ SE COBRÓ, separado. Es lo que hace posible cuadrar la caja de la
+      // noche: sin esto el cobrador entrega un fajo de efectivo y nadie sabe
+      // cuánto de lo recaudado llegó por transferencia y no tiene que aparecer.
+      //
+      // `metodoPago` es 'efectivo' | 'transferencia' y es distinto de
+      // `metodoPagoId`, que apunta a la cuenta concreta de la organización.
+      // Confundirlos rompe la vista por cuenta. Lo que no dice nada cuenta como
+      // efectivo, que es el modo por defecto de un cobro en la calle.
+      for (const pg of cobrosReales) {
+        if (pg.metodoPago === 'transferencia') recaudadoDigitalHoy += pg.montoPagado
+        else recaudadoEfectivoHoy += pg.montoPagado
+      }
 
       // Detalle de pagos reales de hoy (auditoria): un item por pago, mas reciente
       // primero. Incluye distancia al cliente cuando el pago trae coords (para
@@ -307,6 +396,9 @@ export async function GET(request, { params }) {
       carteraTotal    += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado
       totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
+      // Nunca por encima del saldo: si un préstamo tiene recargos, el capital
+      // restante no puede pasarse de lo que queda por cobrar.
+      capitalPendiente += Math.min(calcularCapitalRestante(p), saldoPendientePrestamo)
       const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
       const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
       const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidosPrestamo, festivos)
@@ -315,6 +407,14 @@ export async function GET(request, { params }) {
       cuotasEnMoraCliente += cuotasMoraPrestamo
       montoEnMoraCliente += montoMoraPrestamo
       montoParaAlDiaCliente += montoAlDiaPrestamo
+      {
+        const totalCuotasP = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadasP = Math.max(0, totalCuotasP - calcularCuotasPendientes(p))
+        cuotasPagadasCliente += pagadasP
+        cuotasVencidasCliente += pagadasP + cuotasMoraPrestamo
+      }
       const cuotaReal = tieneTablaAmortizacion(p) ? obtenerCuotaPeriodoActual(p) : p.cuotaDiaria
       const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
       const extraInfo = detectarCuotaExtra(p, proximaCuota)
@@ -403,6 +503,11 @@ export async function GET(request, { params }) {
       cuotasEnMora: cuotasEnMoraCliente,
       montoEnMora: Math.round(montoEnMoraCliente),
       montoParaPonerseAlDia: Math.round(montoParaAlDiaCliente),
+      // `null` mientras no le haya vencido nada: un 0% en un cliente recien
+      // prestado lo pinta como el peor de la ruta, y es al reves.
+      cumplimiento: cuotasVencidasCliente > 0
+        ? Math.round((cuotasPagadasCliente / cuotasVencidasCliente) * 100)
+        : null,
       diasDesdeUltimoPago,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
@@ -480,12 +585,49 @@ export async function GET(request, { params }) {
       capitalHabilitado: !!ruta.capitalHabilitado,
       carteraTotal: Math.round(carteraTotal),
       capitalTotal: Math.round(capitalTotal),
+      capitalPendiente: Math.round(capitalPendiente),
     } : {}),
     cobrador:    ruta.cobrador,
     gruposCobro,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),
+    recaudadoEfectivoHoy: Math.round(recaudadoEfectivoHoy),
+    recaudadoDigitalHoy: Math.round(recaudadoDigitalHoy),
+    // ── LO QUE SALIO DE LA CARTERA HOY, EN ESTA RUTA ──
+    //
+    // El cierre del dia no es «cuanto recogiste»: es cuanto recogiste MENOS lo
+    // que entregaste en prestamos y MENOS lo que gastaste. Hasta ahora la
+    // pantalla pedia un total a secas y el cobrador tenia que hacer esa resta
+    // de cabeza, de noche y con el fajo en la mano.
+    //
+    // Solo EFECTIVO: lo que salio por transferencia no esta en el fajo que hay
+    // que entregar, asi que restarlo descuadraria el cierre al reves.
+    desembolsadoEfectivoHoy: Math.round(desembolsadoEfectivoHoy),
+    gastosEfectivoHoy: Math.round(gastosEfectivoHoy),
+    entroMes: Math.round(entroMes),
+    salioAPrestarMes: Math.round(salioAPrestarMes),
+    // ── «3,4 km» EN LA CABECERA (T27-02) ──
+    //
+    // Lo que se camina hoy, en el orden del recorrido. Es lo que decide si la
+    // ruta cabe en una mañana, y hasta ahora no estaba en ninguna pantalla.
+    //
+    // `totalDistance` ya existía en lib/routeOptimizer.js — la usa el
+    // optimizador de orden. Se le pasan solo los clientes CON coordenadas: los
+    // que no las tienen se saltan en vez de contar como (0,0), que metería
+    // miles de kilómetros de ida y vuelta al golfo de Guinea.
+    //
+    // NO se reordena aquí: la consulta ya sale `orderBy ordenRuta asc` (y
+    // `ordenRuta` ni siquiera viaja en el objeto mapeado, así que ordenar por
+    // él sería ordenar por `undefined` y dejar la lista como estaba... o no,
+    // según el navegador).
+    //
+    // `null` con menos de dos puntos: no hay tramo que medir, y un «0,0 km» se
+    // lee como que la ruta entera está en el mismo portal.
+    distanciaMetros: (() => {
+      const conCoords = clientesEnriquecidos.filter((c) => c.latitud != null && c.longitud != null)
+      return conCoords.length >= 2 ? Math.round(totalDistance(conCoords)) : null
+    })(),
     pendientesHoy,
     clientesConCobroHoy,
     clientesPagaronHoy,

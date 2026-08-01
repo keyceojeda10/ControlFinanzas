@@ -48,6 +48,14 @@ export async function GET(request, { params }) {
             fechaPago: true,
             tipo: true,
             cuotaNumero: true,
+            // ── EL MEDIO DE PAGO, QUE FALTABA ──
+            // La pantalla del cobrador lo enseña y la del cliente no, asi que
+            // no se podian comparar. Y comparar es justo para lo que el cliente
+            // entra al portal: a comprobar que su pago quedo registrado. Sin el
+            // medio, «$14.500 el 19 de julio» no distingue el que dio en
+            // efectivo del que mando por Nequi.
+            metodoPago: true,
+            metodoPagoRef: { select: { nombre: true } },
           },
           orderBy: { fechaPago: 'desc' },
         },

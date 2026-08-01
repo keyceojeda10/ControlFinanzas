@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:44px;padding:72px 64px 40px;">
+
+  <div style="display:flex;flex-direction:column;gap:20px;max-width:1000px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:11px;font-weight:700;letter-spacing:.06em;">TURNO 45</span>
+      <span style="font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Socios · el modelo como debería ser</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:44px;line-height:1.05;letter-spacing:-.025em;color:#15161a;max-width:20ch;">Un solo modelo: se reparte por lo que puso cada uno</h1>
+    <p style="margin:0;font-size:15px;line-height:1.55;color:#4a4e57;max-width:66ch;text-wrap:pretty;">Tienes razón: mejor decidir que documentar el enredo. <strong>El reparto es por porcentaje del capital.</strong> Y el <span style="font-family:ui-monospace,monospace;font-size:13px;">socioId</span> del préstamo no se borra — <strong>cambia de trabajo</strong>: deja de decidir quién gana y pasa a decir <em>dónde está la plata de cada socio</em>. Los 27 préstamos asignados siguen sirviendo, para otra cosa.</p>
+  </div>
+
+  <div id="45a" style="display:flex;flex-direction:column;gap:26px;padding:32px;border-radius:22px;background:#f0f0eb;border:1px solid rgba(20,20,28,.07);">
+    <div style="display:flex;align-items:flex-start;gap:16px;">
+      <span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:26px;padding:0 9px;border-radius:11px;background:#e7a400;color:#3a2900;font-size:12px;font-weight:700;letter-spacing:.04em;">45a</span>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <h2 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Lista · repartir la ganancia · la cuenta del socio · 1440</h2>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:#4a4e57;max-width:78ch;text-wrap:pretty;">Reemplaza al turno 44. Ahí diseñé contra los dos modelos; aquí contra uno.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;">
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">22:14</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;height:56px;padding:0 16px 0 18px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#15161a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+            </span>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.02em;">Socios</span>
+              <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">2 activos · reparten por lo que pusieron</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#fff;border:1px solid rgba(20,20,28,.11);font-size:13px;font-weight:700;color:#15161a;flex:none;">Nuevo</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:8px 20px 0;display:flex;flex-direction:column;gap:11px;">
+            <div style="flex:none;background:#15161a;border-radius:20px;padding:19px 21px;display:flex;flex-direction:column;gap:14px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Tus socios pusieron</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.035em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$12.000.000</span>
+              <div style="display:flex;height:11px;border-radius:999px;overflow:hidden;">
+                <span style="width:66.7%;background:#f5b824;"></span>
+                <span style="width:33.3%;background:#2fbe6a;"></span>
+              </div>
+              <div style="display:flex;gap:14px;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:9px;height:9px;border-radius:3px;background:#f5b824;flex:none;"></span>
+                  <span style="font-size:12px;color:#a3a8b2;font-variant-numeric:tabular-nums;">Carlos <strong style="color:#f3f3f6;">66,7%</strong></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <span style="width:9px;height:9px;border-radius:3px;background:#2fbe6a;flex:none;"></span>
+                  <span style="font-size:12px;color:#a3a8b2;font-variant-numeric:tabular-nums;">Marta <strong style="color:#f3f3f6;">33,3%</strong></span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1.5px solid #e7a400;border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+              <div style="display:flex;align-items:flex-end;justify-content:space-between;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Ganancia sin repartir</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$1.240.000</span>
+                </div>
+                <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">desde el 30 de junio</span>
+              </div>
+              <button style="width:100%;height:48px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Repartir la ganancia</button>
+            </div>
+            <div style="flex:none;display:flex;align-items:center;gap:9px;padding:0 2px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Los 2 socios</span>
+              <span style="flex:1;height:1px;background:rgba(20,20,28,.09);"></span>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:15px 18px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:36px;min-width:36px;height:36px;min-height:36px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:13px;font-weight:700;color:#4a4e57;">CA</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Carlos Andrés</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">puso $8.000.000 · 66,7%</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Le has dado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$1.200.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Le debes</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$780.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:15px 18px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:36px;min-width:36px;height:36px;min-height:36px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:13px;font-weight:700;color:#4a4e57;">MR</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Marta Ruiz</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">puso $4.000.000 · 33,3%</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Le has dado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$300.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Le debes</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$600.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;"></div>
+          </div>
+          <div style="position:absolute;left:16px;right:16px;bottom:18px;display:flex;align-items:center;gap:12px;">
+            <div style="flex:1;height:62px;border-radius:999px;background:#fff;border:1px solid rgba(20,20,28,.08);box-shadow:0 6px 20px rgba(20,20,28,.10);display:flex;align-items:center;justify-content:space-around;padding:0 6px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1H5a1 1 0 01-1-1z"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v9M14.4 9.6c-.5-.7-1.4-1.1-2.4-1.1-1.4 0-2.4.8-2.4 1.9 0 1.2 1 1.7 2.4 2 1.4.3 2.4.8 2.4 2 0 1.1-1 1.9-2.4 1.9-1 0-1.9-.4-2.4-1.1"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z"></path><path d="M9 5v12M15 7v12"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:999px;background:#fdf3d6;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"></rect></svg></span>
+            </div>
+            <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:62px;min-width:62px;height:62px;min-height:62px;aspect-ratio:1;border-radius:999px;background:#15161a;box-shadow:0 6px 20px rgba(20,20,28,.28);">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5b824" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </span>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">01 · Lista de socios</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">El bloque negro trae <strong>una barra partida con los dos porcentajes</strong>: eso es la sociedad en una imagen, y ya no hace falta una tarjeta plegable que explique el modelo — el modelo <em>se ve</em>.<br><br>Debajo, la tarjeta dorada con la única acción que este módulo necesita de verdad: <strong>“ganancia sin repartir: $1.240.000”</strong> con su fecha de corte. Eso convierte Socios de una pantalla de consulta en una pantalla con trabajo pendiente, que es lo que un dueño con socios tiene todos los meses.<br><br>Y las dos cifras por socio son <strong>“le has dado” y “le debes”</strong>. No “balance neto”, no “intereses”: la relación con un socio es una deuda, y el dueño necesita saber cuánto debe antes de que se la pidan. <strong>“Le debes” va en dorado</strong> porque es plata que va a salir.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;height:96px;position:relative;overflow:hidden;">
+            <div style="padding:12px 22px 6px;height:44px;display:flex;align-items:flex-end;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:700;">22:19</span>
+              <div style="display:flex;align-items:center;gap:5px;">
+                <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+                <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+              </div>
+            </div>
+            <div style="padding:8px 20px 0;display:flex;flex-direction:column;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.02em;">Socios</span>
+            </div>
+            <span style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(20,20,28,.45);"></span>
+          </div>
+          <div style="flex:1;background:#f4f4f1;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -12px 32px rgba(20,20,28,.18);">
+            <div style="flex:none;padding:10px 0 0;display:flex;flex-direction:column;">
+              <span style="width:38px;height:4px;border-radius:999px;background:rgba(20,20,28,.16);align-self:center;margin-bottom:14px;"></span>
+              <div style="display:flex;align-items:flex-start;gap:12px;padding:0 22px 14px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;">Repartir la ganancia</span>
+                  <span style="font-size:13px;color:#63676f;font-variant-numeric:tabular-nums;">del 30 de junio al 28 de julio</span>
+                </div>
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:3px;"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </div>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:0 22px;display:flex;flex-direction:column;gap:9px;">
+              <div style="flex:none;background:#15161a;border-radius:20px;padding:19px 21px;display:flex;flex-direction:column;gap:13px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Vas a repartir</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.035em;color:#f5b824;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$1.240.000</span>
+                <span style="font-size:13px;line-height:1.45;color:#a3a8b2;font-variant-numeric:tabular-nums;">De $8.838.907 que entró, quitando el capital que volvió y $10.000 de gastos.</span>
+              </div>
+              <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;">
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">CA</span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:15px;font-weight:700;">Carlos Andrés</span>
+                    <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">66,7% · puso $8.000.000</span>
+                  </div>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;flex:none;">$826.667</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">MR</span>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-size:15px;font-weight:700;">Marta Ruiz</span>
+                    <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">33,3% · puso $4.000.000</span>
+                  </div>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;flex:none;">$413.333</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.08);background:#f9f9f6;">
+                  <span style="flex:1;min-width:0;font-size:13px;font-weight:700;">Suman</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;flex:none;">$1.240.000</span>
+                </div>
+              </div>
+              <div style="flex:none;background:#15161a;border-radius:18px;padding:17px 19px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Antes → después</span>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:11px;color:#8a8e98;">Les debes</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#8a8e98;text-decoration:line-through;font-variant-numeric:tabular-nums lining-nums;">$1.380.000</span>
+                  </div>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#f5b824" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M5 12h14M14 7l5 5-5 5"></path></svg>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;align-items:flex-end;">
+                    <span style="font-size:11px;color:#8a8e98;">ahora</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$2.620.000</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:none;display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:#fff;border:1px solid rgba(20,20,28,.08);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="2" stroke-linecap="round" style="flex:none;margin-top:1px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+                <span style="font-size:12px;line-height:1.45;color:#4a4e57;">Repartir <strong>no saca plata de tu caja</strong>: queda anotado que se lo debes. Cuando le pagues, registras el retiro.</span>
+              </div>
+              <div style="flex:1;min-height:0;"></div>
+            </div>
+            <div style="flex:none;padding:13px 22px 24px;background:#fff;border-top:1px solid rgba(20,20,28,.09);display:flex;flex-direction:column;gap:9px;">
+              <button style="width:100%;height:52px;border:none;border-radius:14px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;">Repartir $1.240.000</button>
+              <span style="font-size:13px;font-weight:600;color:#63676f;text-align:center;">Cambiar el período</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">02 · Repartir la ganancia <span style="color:#b07d00;">— el corazón del módulo</span></span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Este es el acto que da sentido a todo lo demás, y en las capturas es un botón sin pantalla. <strong>El reparto es un hecho con fecha, no un cálculo en vivo.</strong> Se declara por período, queda registrado, y a partir de ahí es una deuda concreta.<br><br>El héroe dice <strong>de dónde sale la cifra</strong>: “de $8.838.907 que entró, quitando el capital que volvió y $10.000 de gastos”. Sin esa línea, $1.240.000 es un número que el dueño no puede defender cuando un socio pregunte.<br><br><strong>La suma se muestra y cuadra</strong> — $826.667 + $413.333 = $1.240.000 — porque un reparto que no cuadra al peso es una discusión familiar.<br><br>Y la nota que evita el error más caro: <strong>repartir no saca plata de la caja</strong>. Deja anotado que se le debe. Un dueño que crea que al repartir ya pagó, va a pagar dos veces.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">22:24</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;height:56px;padding:0 16px 0 18px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#15161a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+            </span>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Carlos Andrés</span>
+              <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">socio desde marzo · 66,7%</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="5.5" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="12" cy="18.5" r="1.2"></circle></svg>
+            </span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:8px 20px 0;display:flex;flex-direction:column;gap:11px;">
+            <div style="flex:none;background:#15161a;border-radius:20px;padding:19px 21px;display:flex;flex-direction:column;gap:14px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Le debes</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.035em;color:#f5b824;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$780.000</span>
+              <div style="display:flex;gap:8px;padding-top:13px;border-top:1px solid rgba(255,255,255,.09);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Puso</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$8.000.000</span>
+                </div>
+                <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Ha ganado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#2fbe6a;font-variant-numeric:tabular-nums lining-nums;">$1.980.000</span>
+                </div>
+                <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Le has dado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$1.200.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;display:flex;gap:9px;">
+              <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:14px;background:#e7a400;font-size:14px;font-weight:700;color:#3a2900;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z"></path></svg>
+                Mandarle su cuenta
+              </span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 15px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.11);font-size:14px;font-weight:600;color:#15161a;flex:none;">Pagarle</span>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:15px 18px;display:flex;flex-direction:column;gap:9px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Dónde está su plata</span>
+              <div style="display:flex;align-items:center;gap:11px;">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:14px;font-weight:600;">18 préstamos suyos</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">$7.2M en la calle · $420.000 en mora</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <span style="font-size:11px;line-height:1.4;color:#63676f;padding-top:9px;border-top:1px solid rgba(20,20,28,.07);">Sirve para saber dónde está su aporte. La ganancia se reparte por su 66,7%, no por estos préstamos.</span>
+            </div>
+            <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+              <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 11px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Su cuenta</span>
+                <span style="font-size:12px;font-weight:700;color:#b07d00;">Ver todo</span>
+              </div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                <span style="width:7px;height:7px;border-radius:999px;background:#12a150;flex:none;"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:14px;font-weight:600;">Reparto de junio</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">30 jun · 66,7% de $1.410.000</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;flex:none;">+$940.000</span>
+              </div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                <span style="width:7px;height:7px;border-radius:999px;background:#e7a400;flex:none;"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:14px;font-weight:600;">Le pagaste</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">12 jun · efectivo</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;flex:none;">−$1.200.000</span>
+              </div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                <span style="width:7px;height:7px;border-radius:999px;background:#2f6fed;flex:none;"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:14px;font-weight:600;">Puso plata</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">4 mar · primer aporte</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;flex:none;">$8.000.000</span>
+              </div>
+              <div style="flex:1;min-height:0;"></div>
+            </div>
+          </div>
+          <div style="flex:none;padding:13px 20px 22px;"></div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">03 · La cuenta del socio</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">El héroe es <strong>“le debes $780.000”</strong>, en dorado, porque es lo único que el dueño necesita decidir aquí. Y la tira responde su pregunta en tres cifras: <strong>puso · ha ganado · le has dado</strong>. Las tres cuadran entre sí: 1.980.000 − 1.200.000 = 780.000.<br><br><strong>Aquí es donde el <span style="font-family:ui-monospace,monospace;font-size:11px;">socioId</span> cambia de trabajo.</strong> “Dónde está su plata: 18 préstamos, $7.2M en la calle, $420.000 en mora” — con la nota que lo deja claro: <em>sirve para saber dónde está su aporte; la ganancia se reparte por su 66,7%, no por estos préstamos</em>. Los 27 préstamos ya asignados no se tiran: pasan a ser trazabilidad, que es información que un socio agradece.<br><br>Y el historial mezcla las tres cosas que le pasan a un socio —<strong>reparto, pago, aporte</strong>— con punto de color y su fórmula visible (“66,7% de $1.410.000”). Así el socio puede reconstruir su cuenta él mismo, que es lo que va a intentar hacer.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:18px;border-top:1px solid rgba(20,20,28,.09);">
+      <span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Escritorio 1440</span>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="width:1440px;height:700px;background:#f4f4f1;border-radius:18px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;padding:24px 34px 16px;background:#fff;border-bottom:1px solid rgba(20,20,28,.08);display:flex;align-items:flex-end;justify-content:space-between;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Más herramientas · socios</span>
+              <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.025em;">Quién puso plata en tu negocio</h1>
+              <span style="font-size:13px;color:#63676f;">La ganancia se reparte por lo que puso cada uno.</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="display:inline-flex;align-items:center;height:40px;padding:0 15px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.1);font-size:14px;font-weight:600;color:#4a4e57;">Nuevo socio</span>
+              <button style="height:40px;padding:0 18px;border:none;border-radius:13px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Repartir $1.240.000</button>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;padding:22px 34px 24px;display:flex;gap:20px;">
+            <div style="flex:1.8;min-width:0;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#15161a;border-radius:20px;padding:24px 28px;display:flex;align-items:center;gap:34px;">
+                <div style="flex:none;display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Tus socios pusieron</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;letter-spacing:-.04em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$12.000.000</span>
+                  <span style="font-size:13px;color:#8a8e98;font-variant-numeric:tabular-nums;">les debes <strong style="color:#f5b824;">$1.380.000</strong> de repartos sin pagar</span>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:11px;">
+                  <div style="display:flex;height:14px;border-radius:999px;overflow:hidden;">
+                    <span style="width:66.7%;background:#f5b824;"></span>
+                    <span style="width:33.3%;background:#2fbe6a;"></span>
+                  </div>
+                  <div style="display:flex;gap:28px;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span style="width:10px;height:10px;border-radius:3px;background:#f5b824;flex:none;"></span>
+                      <span style="font-size:13px;color:#a3a8b2;">Carlos Andrés</span>
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums;">66,7%</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span style="width:10px;height:10px;border-radius:3px;background:#2fbe6a;flex:none;"></span>
+                      <span style="font-size:13px;color:#a3a8b2;">Marta Ruiz</span>
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums;">33,3%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="flex:none;display:flex;align-items:center;height:44px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.08);background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;">Socio</span>
+                  <span style="width:112px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Puso</span>
+                  <span style="width:84px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le toca</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Ha ganado</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le has dado</span>
+                  <span style="width:124px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le debes</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">CA</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Carlos Andrés</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">desde marzo · su plata en 18 préstamos</span>
+                    </span>
+                  </span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$8.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">66,7%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$1.980.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$1.200.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$780.000</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">MR</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Marta Ruiz</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">desde mayo · su plata en 9 préstamos</span>
+                    </span>
+                  </span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$4.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">33,3%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$900.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$300.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$600.000</span>
+                </div>
+                <div style="flex:1;min-height:0;"></div>
+                <div style="flex:none;display:flex;align-items:center;height:56px;padding:0 24px;background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:13px;font-weight:700;">Total</span>
+                  <span style="width:112px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$12.000.000</span>
+                  <span style="width:84px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">100%</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$2.880.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$1.500.000</span>
+                  <span style="width:124px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#b07d00;font-variant-numeric:tabular-nums lining-nums;">$1.380.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="width:330px;flex:none;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#fff;border:1.5px solid #e7a400;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Ganancia sin repartir</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$1.240.000</span>
+                <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">desde el 30 de junio · 28 días</span>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                  <span style="font-size:13px;color:#4a4e57;">A Carlos</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$826.667</span>
+                </div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-size:13px;color:#4a4e57;">A Marta</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$413.333</span>
+                </div>
+              </div>
+              <div style="flex:none;background:#fff;border:1px solid rgba(231,164,0,.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.2" stroke-linecap="round" style="flex:none;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>
+                  <span style="font-size:14px;font-weight:700;color:#7a5800;">Un socio no entra a la app</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">No tiene usuario ni clave. Mándale su cuenta por WhatsApp desde su ficha cuando te la pida.</span>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Tu parte</span>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-size:13px;color:#4a4e57;">Capital propio</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$15.6M</span>
+                </div>
+                <span style="font-size:12px;line-height:1.45;color:#4a4e57;">Los socios pusieron $12M de los $27.6M que tienes en la calle. El resto es tuyo y su ganancia no se reparte.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">04 · Socios en 1440</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Cinco columnas y <strong>todas cuadran en el total</strong>: puso · le toca · ha ganado · le has dado · le debes. $2.880.000 − $1.500.000 = $1.380.000. Con socios reales, esa tabla es la que se imprime cuando hay discusión.<br><br>La acción primaria del encabezado no es “nuevo socio”: es <strong>“repartir $1.240.000”</strong>, con la cifra dentro. Crear socios se hace dos veces en la vida; repartir, todos los meses.<br><br>Y la tarjeta que cierra el modelo: <strong>“tu parte”</strong>. Los socios pusieron $12M de los $27.6M en la calle — el resto es del dueño y su ganancia no se reparte. Sin ese dato, el dueño no sabe si los $1.240.000 que va a repartir son toda su ganancia o una parte, y esa duda es la que hace que nadie use el módulo.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<section style="display:flex;flex-direction:column;gap:44px;padding:40px 64px 40px;">
+
+  <div style="display:flex;flex-direction:column;gap:20px;max-width:1000px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:11px;font-weight:700;letter-spacing:.06em;">TURNO 44</span>
+      <span style="font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Socios</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:44px;line-height:1.05;letter-spacing:-.025em;color:#15161a;max-width:22ch;">Dos formas de repartir, y la app no dice cuál manda</h1>
+    <p style="margin:0;font-size:15px;line-height:1.55;color:#4a4e57;max-width:66ch;text-wrap:pretty;">Ese es el problema de fondo, y ninguna captura lo resuelve. El reparto real es <strong>por préstamo asignado</strong>, pero encima hay una tarjeta de <strong>participación por %</strong> con su barra y su cifra — y la propia app admite en letra chica que ese % es “una referencia”. Un socio que ve <strong>66,7%</strong> en pantalla cree que le toca eso. Le toca lo que rindan <em>sus</em> préstamos, que casi nunca es lo mismo.</p>
+  </div>
+
+  <div id="44a" style="display:flex;flex-direction:column;gap:26px;padding:32px;border-radius:22px;background:#f0f0eb;border:1px solid rgba(20,20,28,.07);">
+    <div style="display:flex;align-items:flex-start;gap:16px;">
+      <span style="display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:26px;padding:0 9px;border-radius:11px;background:#e7a400;color:#3a2900;font-size:12px;font-weight:700;letter-spacing:.04em;">44a</span>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <h2 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Lista · ficha del socio · cambiar el reparto · 1440</h2>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:#4a4e57;max-width:78ch;text-wrap:pretty;">La pregunta del socio es <strong>“cuánto puse y cuánto llevo ganado”</strong>. Todo se subordina a eso.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;">
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">22:14</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;height:56px;padding:0 16px 0 18px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#15161a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+            </span>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.02em;">Socios</span>
+              <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">2 activos · reparto por préstamo</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#fff;border:1px solid rgba(20,20,28,.11);font-size:13px;font-weight:700;color:#15161a;flex:none;">Nuevo</span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:8px 20px 0;display:flex;flex-direction:column;gap:11px;">
+            <div style="flex:none;background:#15161a;border-radius:20px;padding:19px 21px;display:flex;flex-direction:column;gap:14px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Tus socios pusieron</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:600;letter-spacing:-.035em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$12.000.000</span>
+              <span style="font-size:13px;color:#a3a8b2;font-variant-numeric:tabular-nums;">y llevan ganado <strong style="color:#2fbe6a;">$1.952.000</strong></span>
+              <div style="display:flex;gap:8px;padding-top:13px;border-top:1px solid rgba(255,255,255,.09);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">En la calle</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#f5b824;font-variant-numeric:tabular-nums lining-nums;">$10.8M</span>
+                </div>
+                <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Sin prestar</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$1.2M</span>
+                </div>
+                <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Retiraron</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$300.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:15px 18px;display:flex;align-items:center;gap:13px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:36px;min-width:36px;height:36px;min-height:36px;aspect-ratio:1;border-radius:11px;background:#fdf3d6;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v9"></path><circle cx="12" cy="12" r="8.5"></circle></svg>
+              </span>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Cómo reparten</span>
+                <span style="font-size:14px;font-weight:700;">Cada uno gana lo de sus préstamos</span>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:#b07d00;flex:none;">Cambiar</span>
+            </div>
+            <div style="flex:none;display:flex;align-items:center;gap:9px;padding:0 2px;">
+              <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Los 2 socios</span>
+              <span style="flex:1;height:1px;background:rgba(20,20,28,.09);"></span>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:13px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:38px;min-width:38px;height:38px;min-height:38px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:14px;font-weight:700;color:#4a4e57;">CA</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Carlos Andrés</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">18 préstamos · $7.2M en la calle</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid rgba(20,20,28,.07);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Puso</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums;">$8.000.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Ha ganado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$1.340.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:13px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:38px;min-width:38px;height:38px;min-height:38px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:14px;font-weight:700;color:#4a4e57;">MR</span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Marta Ruiz</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">9 préstamos · $3.6M en la calle</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,28,.3)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M9 5l7 7-7 7"></path></svg>
+              </div>
+              <div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid rgba(20,20,28,.07);">
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Puso</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums;">$4.000.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Ha ganado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;letter-spacing:-.02em;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$612.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;"></div>
+          </div>
+          <div style="position:absolute;left:16px;right:16px;bottom:18px;display:flex;align-items:center;gap:12px;">
+            <div style="flex:1;height:62px;border-radius:999px;background:#fff;border:1px solid rgba(20,20,28,.08);box-shadow:0 6px 20px rgba(20,20,28,.10);display:flex;align-items:center;justify-content:space-around;padding:0 6px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1H5a1 1 0 01-1-1z"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"></circle><path d="M5 20c0-3.6 3.1-5.5 7-5.5s7 1.9 7 5.5"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v9M14.4 9.6c-.5-.7-1.4-1.1-2.4-1.1-1.4 0-2.4.8-2.4 1.9 0 1.2 1 1.7 2.4 2 1.4.3 2.4.8 2.4 2 0 1.1-1 1.9-2.4 1.9-1 0-1.9-.4-2.4-1.1"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5L3.5 7v12L9 17l6 2 5.5-2V5L15 7z"></path><path d="M9 5v12M15 7v12"></path></svg></span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:999px;background:#fdf3d6;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"></rect><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"></rect><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"></rect></svg></span>
+            </div>
+            <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:62px;min-width:62px;height:62px;min-height:62px;aspect-ratio:1;border-radius:999px;background:#15161a;box-shadow:0 6px 20px rgba(20,20,28,.28);">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f5b824" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </span>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">01 · Lista de socios</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;"><strong>Fuera las tarjetas de degradado dorado.</strong> En las capturas hay tres apiladas con cifras oscuras sobre dorado claro: el contraste es bajo, y el dorado deja de significar “esto es lo importante” cuando lo lleva todo. Vuelve el bloque negro, uno solo.<br><br>El héroe responde <strong>la pregunta del socio, no la del dueño</strong>: “tus socios pusieron $12.000.000 y llevan ganado $1.952.000”. Eso es lo único que un inversor quiere saber, y en las capturas está partido en “capital total”, “balance neto” e “intereses” sin decir cuál es cuál.<br><br>Y arriba de todo, la tarjeta que faltaba: <strong>“cómo reparten: cada uno gana lo de sus préstamos”</strong>. Con dos modelos conviviendo, la app tiene que declarar cuál está activo antes de mostrar una sola cifra. Debajo, cada socio con <strong>“puso” y “ha ganado”</strong> — dos cifras, no seis.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">22:16</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;height:56px;padding:0 16px 0 18px;display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#15161a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+            </span>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Carlos Andrés</span>
+              <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">socio desde marzo · CC 12.898.311</span>
+            </div>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;flex:none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="5.5" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="12" cy="18.5" r="1.2"></circle></svg>
+            </span>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:8px 20px 0;display:flex;flex-direction:column;gap:11px;">
+            <div style="flex:none;background:#15161a;border-radius:20px;padding:19px 21px;display:flex;flex-direction:column;gap:15px;">
+              <div style="display:flex;gap:14px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Puso</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:600;letter-spacing:-.03em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$8.000.000</span>
+                </div>
+                <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Ha ganado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:600;letter-spacing:-.03em;color:#2fbe6a;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$1.340.000</span>
+                </div>
+              </div>
+              <span style="font-size:13px;line-height:1.45;color:#a3a8b2;font-variant-numeric:tabular-nums;">Le rinde el <strong style="color:#f5b824;">16,8%</strong> de lo que puso, en 5 meses. No ha retirado nada.</span>
+            </div>
+            <div style="flex:none;display:flex;gap:9px;">
+              <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;border-radius:14px;background:#e7a400;font-size:14px;font-weight:700;color:#3a2900;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z"></path></svg>
+                Mandarle su cuenta
+              </span>
+              <span style="display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 16px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.11);font-size:14px;font-weight:600;color:#15161a;flex:none;">Aporte</span>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:15px 18px;display:flex;gap:8px;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">En la calle</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$7.2M</span>
+              </div>
+              <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Sin prestar</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$800.000</span>
+              </div>
+              <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">En mora</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#c23b40;font-variant-numeric:tabular-nums lining-nums;">$420.000</span>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+              <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 11px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Sus 18 préstamos</span>
+                <span style="font-size:12px;font-weight:700;color:#b07d00;">Ver todos</span>
+              </div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                <span style="width:3px;height:28px;border-radius:999px;background:#e5484d;flex:none;"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:14px;font-weight:700;">Steven Olmos</span>
+                  <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">36 días de atraso</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;flex:none;">$469.500</span>
+              </div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:11px 18px;border-top:1px solid rgba(20,20,28,.06);">
+                <span style="width:3px;height:28px;border-radius:999px;background:#12a150;flex:none;"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:14px;font-weight:700;">Elieser Ramos</span>
+                  <span style="font-size:11px;color:#0d7a3c;font-weight:600;">al día</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;flex:none;">$820.000</span>
+              </div>
+              <div style="flex:1;min-height:0;"></div>
+              <div style="flex:none;display:flex;align-items:center;gap:11px;padding:12px 18px;border-top:1px solid rgba(20,20,28,.06);background:#f9f9f6;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#63676f" stroke-width="2" stroke-linecap="round" style="flex:none;"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+                <span style="flex:1;min-width:0;font-size:12px;line-height:1.4;color:#4a4e57;">Gana lo que rindan estos 18. No un porcentaje del negocio.</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:13px 20px 22px;">
+            <span style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:14px;background:#fff;border:1px solid rgba(20,20,28,.11);font-size:14px;font-weight:600;color:#4a4e57;">Ver sus aportes y retiros</span>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">02 · La ficha del socio</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Las <strong>dos cifras de la pregunta van juntas en el bloque negro</strong>: puso / ha ganado. En la captura hay seis cifras compitiendo —balance neto, intereses cobrados, aportes, retiros, en calle, ROI— y ninguna contesta directo.<br><br>Debajo, la línea que un inversor entiende sin explicación: <strong>“le rinde el 16,8% de lo que puso, en 5 meses”</strong>. Eso es lo que la captura llamaba “ROI 2026”, y nadie que ponga plata en un negocio de barrio dice ROI.<br><br><strong>La acción dorada es “mandarle su cuenta”</strong>, y es el hueco funcional más grande de todo el módulo: un socio no entra a la app, no tiene sesión, no puede ver nada. Si el dueño no le puede mandar su estado por WhatsApp, el socio tiene que llamarlo cada vez. Ninguna captura lo ofrece.<br><br>Y sus préstamos llevan <strong>riel de estado</strong>, porque a un socio con $420.000 en mora eso le importa más que su ROI. Al pie, la nota que evita el malentendido de raíz: <em>gana lo que rindan estos 18, no un porcentaje del negocio</em>.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;height:96px;position:relative;overflow:hidden;">
+            <div style="padding:12px 22px 6px;height:44px;display:flex;align-items:flex-end;justify-content:space-between;">
+              <span style="font-size:12px;font-weight:700;">22:21</span>
+              <div style="display:flex;align-items:center;gap:5px;">
+                <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+                <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+              </div>
+            </div>
+            <div style="padding:8px 20px 0;display:flex;flex-direction:column;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.02em;">Socios</span>
+            </div>
+            <span style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(20,20,28,.45);"></span>
+          </div>
+          <div style="flex:1;background:#f4f4f1;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -12px 32px rgba(20,20,28,.18);">
+            <div style="flex:none;padding:10px 0 0;display:flex;flex-direction:column;">
+              <span style="width:38px;height:4px;border-radius:999px;background:rgba(20,20,28,.16);align-self:center;margin-bottom:14px;"></span>
+              <div style="display:flex;align-items:flex-start;gap:12px;padding:0 22px 14px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;letter-spacing:-.02em;">Cómo reparten la ganancia</span>
+                  <span style="font-size:13px;color:#63676f;">Cambiarlo afecta los 27 préstamos ya asignados</span>
+                </div>
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:3px;"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </div>
+            </div>
+            <div style="flex:1;overflow:hidden;padding:0 22px;display:flex;flex-direction:column;gap:11px;">
+              <div style="flex:none;background:#fff;border:1.5px solid #e7a400;border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:11px;box-shadow:0 0 0 3px rgba(231,164,0,.13);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:20px;min-width:20px;height:20px;min-height:20px;aspect-ratio:1;border-radius:999px;background:#e7a400;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3a2900" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>
+                  </span>
+                  <span style="flex:1;min-width:0;font-size:15px;font-weight:700;">Cada uno gana lo de sus préstamos</span>
+                  <span style="display:inline-flex;align-items:center;height:21px;padding:0 8px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;color:#63676f;flex:none;">AHORA</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">Al crear un préstamo eliges de quién es la plata. Ese socio se lleva todo el interés de ese préstamo.</span>
+                <div style="display:flex;gap:8px;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:11px;color:#63676f;">Carlos Andrés</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$1.340.000</span>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:11px;color:#63676f;">Marta Ruiz</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$612.000</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.09);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="width:20px;height:20px;border-radius:999px;border:1.5px solid rgba(20,20,28,.18);flex:none;"></span>
+                  <span style="flex:1;min-width:0;font-size:15px;font-weight:700;color:#4a4e57;">Por lo que puso cada uno</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">Toda la ganancia se reparte según el porcentaje que puso cada socio, sin importar de quién era cada préstamo.</span>
+                <div style="display:flex;gap:8px;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:11px;color:#63676f;">Carlos · 66,7%</span>
+                    <div style="display:flex;align-items:baseline;gap:6px;">
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$1.301.984</span>
+                      <span style="font-size:11px;font-weight:700;color:#c23b40;font-variant-numeric:tabular-nums;">−38.016</span>
+                    </div>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                    <span style="font-size:11px;color:#63676f;">Marta · 33,3%</span>
+                    <div style="display:flex;align-items:baseline;gap:6px;">
+                      <span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$650.016</span>
+                      <span style="font-size:11px;font-weight:700;color:#0d7a3c;font-variant-numeric:tabular-nums;">+38.016</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:none;display:flex;gap:11px;align-items:flex-start;padding:15px 17px;border-radius:16px;background:rgba(229,72,77,.07);border:1px solid rgba(229,72,77,.22);">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e5484d" stroke-width="2.2" stroke-linecap="round" style="flex:none;margin-top:1px;"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17h.01"></path></svg>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:14px;font-weight:700;color:#a8353a;">Los 27 préstamos ya asignados</span>
+                  <span style="font-size:12px;line-height:1.45;color:#a8353a;">Si cambias a porcentaje, esos préstamos <strong>siguen marcados con su socio</strong> pero el interés ya no va a él. Carlos recibiría $38.016 menos de lo que la app le viene mostrando desde marzo.</span>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;"></div>
+            </div>
+            <div style="flex:none;padding:13px 22px 24px;background:#fff;border-top:1px solid rgba(20,20,28,.09);display:flex;flex-direction:column;gap:9px;">
+              <button style="width:100%;height:52px;border:1px solid rgba(20,20,28,.12);border-radius:14px;background:#fff;color:#15161a;font-family:'Manrope',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Dejarlo como está</button>
+              <span style="font-size:13px;font-weight:600;color:#b07d00;text-align:center;">Cambiar a porcentaje desde el mes que entra</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">03 · Cambiar el reparto <span style="color:#b07d00;">— la decisión que faltaba</span></span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">Tu punto 4 se resuelve <strong>mostrando la plata</strong>, no explicando el modelo. Los dos modos se calculan sobre <em>los mismos</em> $1.952.000 ya ganados, y la diferencia sale sola: <strong>Carlos recibiría $38.016 menos y Marta $38.016 más</strong>. Un socio no entiende “metaSociedad”; entiende que le van a llegar treinta y ocho mil pesos menos.<br><br>La respuesta a “qué pasa con los préstamos ya asignados” se dice en rojo y completa: <strong>siguen marcados con su socio pero el interés ya no va a él</strong>. Y el aviso trae la frase incómoda que hay que decir: “de lo que la app le viene mostrando desde marzo”.<br><br>Dos decisiones más: la acción destacada es <strong>“dejarlo como está”</strong> —cuando cambiar reparte plata distinta entre personas reales, el diseño protege— y el cambio es <strong>“desde el mes que entra”</strong>, no retroactivo. Recalcular cinco meses de reparto ya comunicado a dos socios no es un cambio de configuración: es una pelea.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;padding-top:18px;border-top:1px solid rgba(20,20,28,.09);">
+      <span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Escritorio 1440 — la tabla de socios</span>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="width:1440px;height:720px;background:#f4f4f1;border-radius:18px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="flex:none;padding:24px 34px 16px;background:#fff;border-bottom:1px solid rgba(20,20,28,.08);display:flex;align-items:flex-end;justify-content:space-between;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#63676f;">Más herramientas · socios</span>
+              <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.025em;">Quién puso plata en tu negocio</h1>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 15px;border-radius:13px;background:#fff;border:1px solid rgba(20,20,28,.1);font-size:14px;font-weight:600;color:#4a4e57;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M8 12l4 4 4-4M5 20h14"></path></svg>
+                Bajar las cuentas
+              </span>
+              <button style="height:40px;padding:0 18px;border:none;border-radius:13px;background:#e7a400;color:#3a2900;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Nuevo socio</button>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;padding:22px 34px 24px;display:flex;gap:20px;">
+            <div style="flex:1.8;min-width:0;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#15161a;border-radius:20px;padding:24px 28px;display:flex;align-items:center;gap:34px;">
+                <div style="flex:none;display:flex;flex-direction:column;gap:5px;">
+                  <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a3a8b2;">Tus socios pusieron</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:40px;font-weight:600;letter-spacing:-.04em;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;line-height:1;">$12.000.000</span>
+                  <span style="font-size:13px;color:#8a8e98;font-variant-numeric:tabular-nums;">y llevan ganado <strong style="color:#2fbe6a;">$1.952.000</strong> · les rinde 16,3%</span>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;gap:10px;">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">En la calle</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#f5b824;font-variant-numeric:tabular-nums lining-nums;">$10.800.000</span>
+                  </div>
+                  <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Sin prestar</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$1.200.000</span>
+                  </div>
+                  <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Retiraron</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">$300.000</span>
+                  </div>
+                  <span style="width:1px;background:rgba(255,255,255,.09);"></span>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a8e98;">Préstamos</span>
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#f3f3f6;font-variant-numeric:tabular-nums lining-nums;">27</span>
+                  </div>
+                </div>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;">
+                <div style="flex:none;display:flex;align-items:center;height:44px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.08);background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;">Socio</span>
+                  <span style="width:130px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Puso</span>
+                  <span style="width:130px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Ha ganado</span>
+                  <span style="width:118px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">Le rinde</span>
+                  <span style="width:130px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">En la calle</span>
+                  <span style="width:104px;flex:none;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#63676f;text-align:right;">En mora</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">CA</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Carlos Andrés</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">18 préstamos · desde marzo</span>
+                    </span>
+                  </span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$8.000.000</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$1.340.000</span>
+                  <span style="width:118px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">16,8%</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$7.200.000</span>
+                  <span style="width:104px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#c23b40;font-variant-numeric:tabular-nums lining-nums;">$420.000</span>
+                </div>
+                <div style="flex:none;display:flex;align-items:center;height:58px;padding:0 24px;border-bottom:1px solid rgba(20,20,28,.06);">
+                  <span style="flex:1.4;min-width:0;display:flex;align-items:center;gap:12px;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px;min-width:34px;height:34px;min-height:34px;aspect-ratio:1;border-radius:999px;background:#f3f3ef;font-size:12px;font-weight:700;color:#4a4e57;">MR</span>
+                    <span style="display:flex;flex-direction:column;gap:1px;">
+                      <span style="font-size:14px;font-weight:700;">Marta Ruiz</span>
+                      <span style="font-size:11px;color:#63676f;font-variant-numeric:tabular-nums;">9 préstamos · desde mayo</span>
+                    </span>
+                  </span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$4.000.000</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$612.000</span>
+                  <span style="width:118px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">15,3%</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$3.600.000</span>
+                  <span style="width:104px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$0</span>
+                </div>
+                <div style="flex:1;min-height:0;"></div>
+                <div style="flex:none;display:flex;align-items:center;height:56px;padding:0 24px;background:#f3f3ef;">
+                  <span style="flex:1.4;font-size:13px;font-weight:700;">Total</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$12.000.000</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#0d7a3c;font-variant-numeric:tabular-nums lining-nums;">$1.952.000</span>
+                  <span style="width:118px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums;">16,3%</span>
+                  <span style="width:130px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#4a4e57;font-variant-numeric:tabular-nums lining-nums;">$10.800.000</span>
+                  <span style="width:104px;flex:none;text-align:right;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#c23b40;font-variant-numeric:tabular-nums lining-nums;">$420.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="width:330px;flex:none;display:flex;flex-direction:column;gap:16px;">
+              <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Cómo reparten</span>
+                <span style="font-size:15px;font-weight:700;">Cada uno gana lo de sus préstamos</span>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">Al crear un préstamo eliges de quién es la plata. Ese socio se lleva todo el interés de ese préstamo.</span>
+                <span style="font-size:13px;font-weight:700;color:#b07d00;padding-top:11px;border-top:1px solid rgba(20,20,28,.07);">Cambiar a reparto por porcentaje</span>
+              </div>
+              <div style="flex:none;background:#fff;border:1px solid rgba(231,164,0,.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:11px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#b07d00" stroke-width="2.2" stroke-linecap="round" style="flex:none;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>
+                  <span style="font-size:14px;font-weight:700;color:#7a5800;">Un socio no entra a la app</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;color:#4a4e57;">No tiene usuario ni clave: no puede ver sus números por su cuenta. Mándale su cuenta por WhatsApp cuando te la pida.</span>
+              </div>
+              <div style="flex:1;min-height:0;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#63676f;">Sin dueño asignado</span>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-size:13px;color:#4a4e57;">41 préstamos</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$14.3M</span>
+                </div>
+                <span style="font-size:12px;line-height:1.45;color:#4a4e57;">Son tuyos: la ganancia no se reparte con nadie. Si alguno era de un socio, asígnalo.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">04 · Socios en 1440</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">La tabla pone las <strong>seis columnas que hacen comparables a dos socios</strong> —puso, ha ganado, le rinde, en la calle, en mora— con su fila de total que cuadra. Ordenada por lo que puso.<br><br>A la derecha, tres tarjetas que responden preguntas que las capturas dejan abiertas: <strong>cómo reparten</strong> (declarado, con la salida a cambiarlo), <strong>“un socio no entra a la app”</strong> —dicho explícitamente, porque un dueño va a intentar darle acceso— y la que faltaba del todo: <strong>“sin dueño asignado: 41 préstamos, $14.3M”</strong>. Con reparto por préstamo, lo no asignado es del dueño; si eso no se ve, un préstamo que era de un socio se queda callado para siempre.<br><br>Y “bajar las cuentas” arriba: cuando hay socios reales, esa exportación es la que termina en manos del contador.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

@@ -123,6 +123,19 @@ export async function GET(req) {
   if (orden === 'mora') filas.sort((a, b) => b.mora - a.mora)
   else if (orden === 'saldo') filas.sort((a, b) => b.saldo - a.saldo)
 
+  // ── SOLO LA CUENTA ───────────────────────────────────────
+  // T33-02 enseña «van a salir 18 clientes · $16,2M» ANTES de pulsar bajar,
+  // porque hasta ahora se bajaba el PDF para ver que traia y, si no era eso,
+  // otra vez. La cuenta sale de AQUI —el mismo filtrado, el mismo bucle— y no
+  // de una consulta aparte: dos caminos distintos acaban dando dos numeros
+  // distintos, y entonces el aviso miente sobre lo que se va a bajar.
+  if (searchParams.get('solo') === 'cuenta') {
+    return Response.json({
+      clientes: filas.length,
+      saldo: totalSaldos,
+    })
+  }
+
   // ── Generate PDF ─────────────────────────────────────────
   const doc = new PDFDocument({ size: 'letter', margin: 40, bufferPages: true })
   const stream = new PassThrough()

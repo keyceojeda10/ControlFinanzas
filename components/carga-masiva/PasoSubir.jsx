@@ -99,16 +99,16 @@ export default function PasoSubir({ onDatos }) {
   return (
     <div className="space-y-4">
       {/* Explicacion */}
-      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4">
+      <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] p-4">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.12)] flex items-center justify-center shrink-0 mt-0.5">
-            <svg className="w-4 h-4 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Sube cualquier Excel o CSV</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+            <p className="text-sm font-semibold text-[var(--cf-ink)]">Sube cualquier Excel o CSV</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5 leading-snug">
               No necesitas una plantilla especial. Sube el archivo que ya tengas con tus clientes y el sistema detecta automaticamente las columnas.
             </p>
           </div>
@@ -123,8 +123,8 @@ export default function PasoSubir({ onDatos }) {
           className={[
             'py-2.5 rounded-[12px] border text-sm font-medium transition-all',
             modo === 'archivo'
-              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--color-accent)] text-[var(--color-accent)]'
-              : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
+              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--cf-gold)] text-[var(--cf-gold)]'
+              : 'bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)]',
           ].join(' ')}
         >
           Subir archivo
@@ -135,8 +135,8 @@ export default function PasoSubir({ onDatos }) {
           className={[
             'py-2.5 rounded-[12px] border text-sm font-medium transition-all',
             modo === 'pegar'
-              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--color-accent)] text-[var(--color-accent)]'
-              : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
+              ? 'bg-[rgba(245,197,24,0.12)] border-[var(--cf-gold)] text-[var(--cf-gold)]'
+              : 'bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)]',
           ].join(' ')}
         >
           Pegar datos
@@ -144,7 +144,7 @@ export default function PasoSubir({ onDatos }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
+        <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
           {error}
         </div>
       )}
@@ -152,7 +152,7 @@ export default function PasoSubir({ onDatos }) {
       {modo === 'archivo' ? (
         <div
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-accent)] rounded-[16px] p-8 text-center cursor-pointer transition-colors"
+          className="border-2 border-dashed border-[var(--cf-border)] hover:border-[var(--cf-gold)] rounded-[16px] p-8 text-center cursor-pointer transition-colors"
         >
           <input
             ref={fileRef}
@@ -161,21 +161,21 @@ export default function PasoSubir({ onDatos }) {
             onChange={handleArchivo}
             className="hidden"
           />
-          <svg className="w-10 h-10 text-[var(--color-text-muted)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-10 h-10 text-[var(--cf-ink-3)] mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
           {cargando ? (
-            <p className="text-sm text-[var(--color-accent)] font-medium">Leyendo archivo...</p>
+            <p className="text-sm text-[var(--cf-gold)] font-medium">Leyendo archivo...</p>
           ) : (
             <>
-              <p className="text-sm text-[var(--color-text-primary)] font-medium">Toca para seleccionar archivo</p>
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Excel (.xlsx, .xls) o CSV</p>
+              <p className="text-sm text-[var(--cf-ink)] font-medium">Toca para seleccionar archivo</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">Excel (.xlsx, .xls) o CSV</p>
             </>
           )}
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">
+          <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug">
             Pega datos directamente desde Excel o Google Sheets.
             La primera fila debe ser el encabezado con los nombres de las columnas.
           </p>
@@ -184,7 +184,7 @@ export default function PasoSubir({ onDatos }) {
             onChange={(e) => setTexto(e.target.value)}
             placeholder={'Nombre\tCedula\tTelefono\tMonto\tInteres\tPlazo\nJuan Perez\t1234567890\t3001234567\t500000\t20\t30'}
             rows={8}
-            className="w-full bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-3 text-xs text-[var(--color-text-primary)] font-mono placeholder-[#444444] focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all resize-none"
+            className="w-full bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] px-3 py-3 text-xs text-[var(--cf-ink)] font-mono placeholder-[#444444] focus:outline-none focus:border-[var(--cf-gold)] focus:ring-1 focus:ring-[color-mix(in_srgb,var(--cf-gold)_30%,transparent)] transition-all resize-none"
           />
           <Button onClick={handlePegar} className="w-full">
             Procesar datos
@@ -197,7 +197,7 @@ export default function PasoSubir({ onDatos }) {
         <a
           href="/api/carga-masiva/plantilla"
           download
-          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-[11px] text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] transition-colors"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

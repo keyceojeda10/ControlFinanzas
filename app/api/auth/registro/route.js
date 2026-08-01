@@ -5,6 +5,7 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, getClientIp } from '@/lib/rate-limit'
+import { DIAS_PRUEBA } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
@@ -114,6 +115,17 @@ export async function POST(req) {
 
     // Crear organización + owner + suscripción de prueba en transacción
     const resultado = await prisma.$transaction(async (tx) => {
+      // CUÁNDO SE ACABA LA PRUEBA, calculado UNA VEZ. Se escribe en dos columnas
+      // —`planDemoHasta` de la organización y el vencimiento de la suscripción— y
+      // se le dice al usuario por correo, así que tiene que ser el mismo valor.
+      //
+      // Antes eran dos cuentas distintas del mismo hecho: aquí `Date.now() + 14 *
+      // 24 * 3600 * 1000` y más abajo un `setDate(+14)`. Sumar milisegundos no es
+      // sumar días de calendario en los países con horario de verano (México,
+      // Chile, Paraguay), y encima el 14 estaba escrito a mano en los dos sitios.
+      const vencimiento = new Date()
+      vencimiento.setDate(vencimiento.getDate() + DIAS_PRUEBA)
+
       const org = await tx.organization.create({
         data: {
           nombre:        nombreOrganizacion.trim(),
@@ -122,7 +134,7 @@ export async function POST(req) {
           telefono:      telefonoLimpio,
           country,
           codigoReferido,
-          planDemoHasta: new Date(Date.now() + 14 * 24 * 3600 * 1000),
+          planDemoHasta: vencimiento,
           ...(orgReferidora ? { referidoPorId: orgReferidora.id } : {}),
         },
       })
@@ -147,10 +159,8 @@ export async function POST(req) {
         },
       })
 
-      // Suscripción de prueba: 14 días gratis
+      // Misma fecha que `planDemoHasta`, calculada arriba.
       const ahora = new Date()
-      const vencimiento = new Date(ahora)
-      vencimiento.setDate(vencimiento.getDate() + 14)
 
       await tx.suscripcion.create({
         data: {
@@ -176,14 +186,17 @@ export async function POST(req) {
     const { subject: svf, html: hvf } = emailVerificacion({ nombre: nombre.trim(), codigo: resultado.user.tokenVerificacion })
     enviarEmail({ to: emailNorm, subject: svf, html: hvf }).catch(e => console.error('[Email] Fallo envio:', e.message))
 
-    // Enviar email de bienvenida en background (no bloquea)
-    const vencimiento = new Date()
-    vencimiento.setDate(vencimiento.getDate() + 14)
+    // Enviar email de bienvenida en background (no bloquea).
+    //
+    // La fecha SALE DE LA TRANSACCIÓN, no de una cuenta nueva. Recalcularla aquí
+    // era la tercera copia del mismo cálculo, y la que el usuario lee: si la
+    // transacción tarda en cruzar la medianoche, el correo le prometía un día que
+    // no es el que quedó en la base.
     const { subject, html } = emailBienvenida({
       nombre:           nombre.trim(),
       email:            emailNorm,
       nombreOrg:        nombreOrganizacion.trim(),
-      fechaVencimiento: vencimiento,
+      fechaVencimiento: resultado.vencimiento,
     })
     enviarEmail({ to: emailNorm, subject, html }).catch(e => console.error('[Email] Fallo envio:', e.message))
 

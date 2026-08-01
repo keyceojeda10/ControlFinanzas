@@ -29,8 +29,8 @@ export default function CardActionMenu({ actions = [] }) {
     <div ref={ref} className="relative shrink-0 ml-1" onClick={stop} onMouseDown={stop}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--color-bg-hover)] active:scale-90 cursor-pointer"
-        style={{ color: 'var(--color-text-muted)' }}
+        className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:bg-[var(--cf-fill)] active:scale-90 cursor-pointer"
+        style={{ color: 'var(--cf-ink-3)' }}
         aria-label="Acciones rápidas"
       >
         <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
@@ -43,14 +43,14 @@ export default function CardActionMenu({ actions = [] }) {
       {open && (
         <div
           className="absolute right-0 top-full mt-1 min-w-[170px] rounded-[12px] overflow-hidden shadow-2xl p-1.5 z-50 glass-strong"
-          style={{ border: '1px solid var(--color-border)' }}
+          style={{ border: '1px solid var(--cf-border)' }}
         >
           {actions.map((a, i) => (
             <button
               key={i}
               onClick={(e) => { stop(e); setOpen(false); a.onClick?.(e) }}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors hover:bg-[var(--color-bg-hover)] active:scale-[0.97] cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium transition-colors hover:bg-[var(--cf-fill)] active:scale-[0.97] cursor-pointer"
+              style={{ color: 'var(--cf-ink-2)' }}
             >
               <span
                 className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"

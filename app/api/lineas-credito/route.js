@@ -133,7 +133,7 @@ export async function POST(request) {
 
     let body
     try {
-      body = await request.json()
+      body = await request.json().catch(() => ({}))
     } catch {
       return Response.json({ error: 'Cuerpo de solicitud inválido' }, { status: 400 })
     }

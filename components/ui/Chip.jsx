@@ -13,13 +13,13 @@ export default function Chip({ children, active = false, onClick, icon, classNam
         className,
       ].join(' ')}
       style={active ? {
-        background: 'var(--color-accent-soft)',
-        borderColor: 'color-mix(in srgb, var(--color-accent) 40%, transparent)',
-        color: 'var(--color-accent)',
+        background: 'var(--cf-gold-tint)',
+        borderColor: 'color-mix(in srgb, var(--cf-gold) 40%, transparent)',
+        color: 'var(--cf-gold)',
       } : {
-        background: 'var(--color-bg-surface)',
-        borderColor: 'var(--color-border-hover)',
-        color: 'var(--color-text-secondary)',
+        background: 'var(--cf-surface)',
+        borderColor: 'var(--cf-border-strong)',
+        color: 'var(--cf-ink-2)',
       }}
     >
       {icon && <span className="shrink-0 w-4 h-4">{icon}</span>}

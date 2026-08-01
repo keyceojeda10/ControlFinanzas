@@ -59,109 +59,116 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
     onComplete({ monto: 0, skipped: true })
   }
 
+  // Los atajos del diseño. SUMAN sobre lo que ya hay, no reemplazan: quien
+  // teclea 2 millones y toca +1M espera 3, no 1.
+  const ATAJOS = [500000, 1000000, 5000000]
+  const sumar = (n) => { setMonto(String(montoNum + n)); setError('') }
+
   return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-6">
-        <div className="w-14 h-14 rounded-[14px] flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--color-success)' }}>
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-              d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+    <form onSubmit={handleSubmit} className="max-w-lg mx-auto flex flex-col" style={{ gap: 20 }}>
+      <div>
+        <h2 style={{
+          fontFamily: 'var(--font-space-grotesk), system-ui',
+          fontSize: 22, fontWeight: 600, letterSpacing: '-.02em',
+          color: 'var(--cf-ink)', margin: 0, lineHeight: 1.2,
+        }}>
           ¿Con cuánto dinero arrancas?
         </h2>
-        <p className="text-[13px] max-w-[300px] mx-auto leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-          Registra el dinero que tienes disponible para prestar. Así la caja siempre te va a cuadrar.
+        <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', marginTop: 6, lineHeight: 1.45 }}>
+          El efectivo que tienes disponible para prestar hoy.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="flex items-center gap-2 text-sm rounded-[12px] px-4 py-3"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'var(--color-danger)' }}>
-            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </div>
+      {/* «EL MONTO ES LA PANTALLA»: 40px tabular. No es un campo más de un
+          formulario — es la única cifra que se pide aquí, y de ella depende que
+          la caja no arranque en negativo. */}
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <span style={{
+          fontSize: 10.5, fontWeight: 700, letterSpacing: '.09em',
+          textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+        }}>
+          Capital inicial · COP
+        </span>
+        <span style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          borderBottom: '2px solid ' + (error ? 'var(--cf-red)' : 'var(--cf-border-strong)'),
+          paddingBottom: 6,
+        }}>
+          <span className="cf-fig" style={{ fontSize: 30, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+            {currencySymbol || '$'}
+          </span>
+          <input
+            // type=text + inputMode, no type=number: <input type=number> rechaza
+            // el separador que no coincide con el idioma del teléfono, y el
+            // campo se queda vacío sin decir por qué.
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            value={montoNum ? montoNum.toLocaleString('es-CO') : ''}
+            onChange={handleChange}
+            placeholder="0"
+            style={{
+              flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'none',
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontVariantNumeric: 'tabular-nums',
+              fontSize: 40, fontWeight: 600, letterSpacing: '-.02em',
+              color: 'var(--cf-ink)', padding: 0,
+            }}
+          />
+        </span>
+      </label>
+
+      {/* Atajos de 44px: se tocan con el pulgar en la calle. El diseño lo dice
+          explícito —«no chips de 26px»— porque el tamaño ES la diferencia entre
+          que se usen y que no. */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {ATAJOS.map((n) => (
+          <button key={n} type="button" onClick={() => sumar(n)} style={{
+            height: 44, padding: '0 16px', borderRadius: 999, cursor: 'pointer',
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+          }}>
+            +{n >= 1000000 ? (n / 1000000) + 'M' : (n / 1000) + 'k'}
+          </button>
+        ))}
+        {montoNum > 0 && (
+          <button type="button" onClick={() => { setMonto(''); setError('') }} style={{
+            height: 44, padding: '0 16px', borderRadius: 999, cursor: 'pointer',
+            background: 'none', border: '1px solid var(--cf-border)',
+            fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-3)',
+          }}>
+            Borrar
+          </button>
         )}
+      </div>
 
-        <div className="rounded-[16px] p-5"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-          <label className="block text-[12px] font-semibold mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-            Capital disponible para prestar
-          </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[15px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {currencySymbol || '$'}
-            </span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={montoNum > 0 ? montoNum.toLocaleString('es-CO') : ''}
-              onChange={handleChange}
-              placeholder="0"
-              autoFocus
-              className="w-full h-14 rounded-[12px] pl-9 pr-4 text-[22px] font-bold font-mono-display transition-all outline-none"
-              style={{
-                background: 'var(--color-bg-surface)',
-                border: '1.5px solid var(--color-border)',
-                color: 'var(--color-text-primary)',
-              }}
-            />
-          </div>
-          {montoNum > 0 && (
-            <p className="text-[11px] mt-2 font-medium" style={{ color: 'var(--color-success)' }}>
-              {formatMoney(montoNum)} disponibles para prestar
-            </p>
-          )}
-        </div>
+      {error && (
+        <p style={{ fontSize: 12.5, color: 'var(--cf-red-darker)', margin: 0 }}>{error}</p>
+      )}
 
-        {alreadyDone ? (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
-            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-            </svg>
-            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Ya registraste tu capital. Si quieres cambiarlo, puedes hacerlo después desde la sección Capital.
-            </p>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-[10px]"
-            style={{ background: 'rgba(245,197,24,0.06)', border: '1px solid rgba(245,197,24,0.15)' }}>
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-            </svg>
-            <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Si no registras el capital, cada préstamo que crees se va a restar de $0 y la caja te va a salir en negativo.
-            </p>
-          </div>
-        )}
+      {/* La consecuencia, dicha ANTES de que pase. No es una advertencia
+          genérica: dice qué va a salir mal y dónde se arregla. */}
+      <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: 0, lineHeight: 1.5 }}>
+        Si lo dejas en cero, tu caja va a quedar en negativo el primer día que
+        prestes. Puedes corregirlo después en Caja.
+      </p>
 
-        <button
-          type="submit"
-          disabled={loading || montoNum <= 0}
-          className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          style={{ background: 'var(--color-accent)', color: '#111' }}>
-          {loading ? (
-            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          ) : alreadyDone ? 'Continuar' : 'Registrar capital'}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+        <button type="submit" disabled={loading} style={{
+          width: '100%', height: 'var(--cf-h-btn)', border: 0,
+          borderRadius: 'var(--cf-r-control)', cursor: loading ? 'default' : 'pointer',
+          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+          fontSize: 15, fontWeight: 700, opacity: loading ? 0.6 : 1,
+        }}>
+          {loading ? 'Guardando…' : 'Continuar'}
         </button>
-
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="w-full text-[11px] text-center transition-colors cursor-pointer py-1"
-          style={{ color: 'var(--color-text-muted)' }}>
-          Omitir por ahora
+        <button type="button" onClick={handleSkip} style={{
+          background: 'none', border: 0, cursor: 'pointer',
+          fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+        }}>
+          Lo registro después
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   )
 }

@@ -82,7 +82,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
           <button
             type="button"
             onClick={handleClick}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--cf-border)] text-sm font-medium text-[var(--cf-ink-3)] hover:border-[var(--cf-gold)] hover:text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
@@ -92,7 +92,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-[12px] border-2 border-dashed border-[var(--cf-border)] text-sm font-medium text-[var(--cf-ink-3)] hover:border-[var(--cf-gold)] hover:text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.04)] transition-all cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -105,7 +105,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
 
       {/* Estado cargando */}
       {estado === 'cargando' && (
-        <div className="w-full rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
+        <div className="w-full rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-surface)] p-4">
           {/* Previews */}
           {previews.length > 0 && (
             <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
@@ -114,19 +114,19 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
                   key={i}
                   src={url}
                   alt={`Cartulina ${i + 1}`}
-                  className="h-20 w-auto rounded-[8px] object-cover shrink-0 border border-[var(--color-border)] opacity-60"
+                  className="h-20 w-auto rounded-[8px] object-cover shrink-0 border border-[var(--cf-border)] opacity-60"
                 />
               ))}
             </div>
           )}
           <div className="flex items-center gap-3">
-            <svg className="animate-spin w-5 h-5 text-[var(--color-accent)] shrink-0" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin w-5 h-5 text-[var(--cf-gold)] shrink-0" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">Leyendo foto...</p>
-              <p className="text-[11px] text-[var(--color-text-muted)]">La IA está extrayendo los datos</p>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">Leyendo foto...</p>
+              <p className="text-[11px] text-[var(--cf-ink-3)]">La IA está extrayendo los datos</p>
             </div>
           </div>
         </div>
@@ -134,21 +134,21 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
 
       {/* Estado éxito */}
       {estado === 'exito' && (
-        <div className="w-full rounded-[12px] border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_6%,transparent)] p-3">
+        <div className="w-full rounded-[12px] border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] bg-[color-mix(in_srgb,var(--cf-green-dark)_6%,transparent)] p-3">
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-[var(--color-success)] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--color-success)]">Datos extraídos — revisa y confirma</p>
+              <p className="text-sm font-medium text-[var(--cf-green-dark)]">Datos extraídos — revisa y confirma</p>
               {advertencias.map((a, i) => (
-                <p key={i} className="text-[11px] text-[var(--color-warning)] mt-0.5">{a}</p>
+                <p key={i} className="text-[11px] text-[var(--cf-gold-dark)] mt-0.5">{a}</p>
               ))}
             </div>
             <button
               type="button"
               onClick={reintentar}
-              className="text-[11px] text-[var(--color-text-muted)] underline underline-offset-2 hover:text-[var(--color-text-primary)] shrink-0 transition-colors"
+              className="text-[11px] text-[var(--cf-ink-3)] underline underline-offset-2 hover:text-[var(--cf-ink)] shrink-0 transition-colors"
             >
               Subir otra
             </button>
@@ -158,18 +158,18 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
 
       {/* Estado error */}
       {estado === 'error' && (
-        <div className="w-full rounded-[12px] border border-[color-mix(in_srgb,var(--color-danger)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,transparent)] p-3">
+        <div className="w-full rounded-[12px] border border-[color-mix(in_srgb,var(--cf-red-dark)_25%,transparent)] bg-[color-mix(in_srgb,var(--cf-red-dark)_6%,transparent)] p-3">
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-[var(--color-danger)] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-[var(--cf-red-dark)] shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--color-danger)]">{mensajeError}</p>
+              <p className="text-sm font-medium text-[var(--cf-red-dark)]">{mensajeError}</p>
             </div>
             <button
               type="button"
               onClick={reintentar}
-              className="text-[11px] text-[var(--color-text-muted)] underline underline-offset-2 hover:text-[var(--color-text-primary)] shrink-0 transition-colors"
+              className="text-[11px] text-[var(--cf-ink-3)] underline underline-offset-2 hover:text-[var(--cf-ink)] shrink-0 transition-colors"
             >
               Intentar de nuevo
             </button>
@@ -179,7 +179,7 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
 
       {/* Hint */}
       {estado === 'idle' && (
-        <p className="text-[10px] text-[var(--color-text-muted)] text-center mt-1.5">
+        <p className="text-[10px] text-[var(--cf-ink-3)] text-center mt-1.5">
           Cartulina, cuaderno, libreta... hasta 5 fotos por cliente
         </p>
       )}

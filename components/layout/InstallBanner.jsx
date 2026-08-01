@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { isStandalone, getDeviceType, InstallGuideModal } from '@/components/layout/InstallButton'
+import FranjaAviso from '@/components/armazon/FranjaAviso'
 
 const DISMISS_KEY = 'cf-install-banner-dismissed'
 const DISMISS_MS = 7 * 24 * 60 * 60 * 1000
@@ -48,59 +49,27 @@ export default function InstallBanner() {
 
   return (
     <>
-      <div
-        className="rounded-[16px] p-4 flex items-start gap-3"
-        style={{
-          background: 'color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-card))',
-          border: '1px solid color-mix(in srgb, var(--color-accent) 20%, var(--color-border))',
-        }}
+      {/* ── De tarjeta de 240px a franja de una línea ──
+          Era publicidad de la propia app ocupando un tercio del teléfono EN LA
+          PANTALLA MÁS IMPORTANTE, por encima de las cifras del negocio. Un
+          promotor no puede tapar la respuesta que el dueño vino a buscar.
+
+          La lógica no cambia: sigue sin salir en modo instalado, sigue
+          aplazándose 7 días y sigue abriendo la guía si el navegador no ofrece
+          el diálogo nativo. Lo que cambia es cuánto sitio se toma para pedirlo. */}
+      <FranjaAviso
+        icono={
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v11m0 0l-4-4m4 4l4-4" />
+          </svg>
+        }
+        accion={isPhone ? 'Ver cómo' : 'Instalar'}
+        onAccion={handleInstall}
+        onCerrar={dismiss}
       >
-        <div
-          className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-          style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {isPhone ? 'Instala la app en tu celular' : 'Instala la app en tu computador'}
-          </p>
-          <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            Accede mas rapido desde tu {isPhone ? 'pantalla de inicio' : 'escritorio'} y usala sin internet
-          </p>
-
-          <div className="flex gap-2 mt-2.5">
-            <button
-              onClick={dismiss}
-              className="text-[11px] px-3 py-1.5 rounded-[8px] transition-colors"
-              style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}
-            >
-              Ahora no
-            </button>
-            <button
-              onClick={handleInstall}
-              className="text-[11px] font-semibold px-3 py-1.5 rounded-[8px] transition-colors"
-              style={{ color: 'var(--color-bg-base)', background: 'var(--color-accent)' }}
-            >
-              {isPhone ? 'Ver como instalar' : 'Instalar'}
-            </button>
-          </div>
-        </div>
-
-        <button
-          onClick={dismiss}
-          className="shrink-0 p-1 rounded-[8px] transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
-          aria-label="Cerrar"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+        Instálala y úsala sin internet
+      </FranjaAviso>
 
       {showGuide && <InstallGuideModal onClose={() => setShowGuide(false)} />}
     </>

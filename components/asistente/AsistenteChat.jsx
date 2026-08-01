@@ -4,6 +4,19 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
 
+import { Cabecera as CabeceraLucas, Vacio as VacioLucas } from '@/components/pantallas/Lucas'
+
+// ── T43-02/03/04 · LO QUE SE INJERTA Y LO QUE NO ──
+//
+// De `Lucas` se toman la CABECERA y el VACIO. El compositor NO: el de aqui
+// lleva `VoiceInput`, que es dictado de verdad contra la API, y el de la lamina
+// solo dibuja el boton. El publico de esta app teclea poco; perder el microfono
+// por ganar una pastilla habria sido un mal cambio.
+//
+// El vacio es el arreglo de fondo que señala la lamina: «la app promete "pideme
+// que haga algo" y luego SOLO OFRECE PREGUNTAS», asi que el dueño nunca
+// descubre que Lucas actua. Ahora son dos grupos.
+
 const SUGERENCIAS_DEFAULT = [
   '¿Cuánto estoy ganando realmente?',
   '¿Cuánto recaudé esta semana?',
@@ -11,6 +24,23 @@ const SUGERENCIAS_DEFAULT = [
   '¿Cuántos clientes están en mora?',
   '¿Tengo capital disponible para prestar más?',
 ]
+
+// Lo que Lucas PUEDE HACER, no lo que puede contestar. Fijas a proposito: son
+// las capacidades del asistente, no dependen de la cartera. La cifra real —«los
+// 13 en mora»— se le pega abajo cuando existe: sin ella es una promesa, con
+// ella es una tarea a medio hacer.
+const ACCIONES_BASE = [
+  { texto: 'Mándale un recordatorio a los que deben', icono: 'whatsapp' },
+  { texto: 'Ármame el reporte del mes', icono: 'reporte' },
+  { texto: 'Búscame un cliente por nombre o cédula', icono: 'gente' },
+]
+
+function generarAcciones(alertas) {
+  const n = alertas?.clientesMora ?? 0
+  return ACCIONES_BASE.map((a, i) => (i === 0 && n > 0
+    ? { ...a, texto: `Mándale un recordatorio a los ${n} en mora` }
+    : a))
+}
 
 function generarSugerencias(alertas) {
   if (!alertas) return SUGERENCIAS_DEFAULT
@@ -68,7 +98,11 @@ export default function AsistenteChat({ onClose }) {
 
   useEffect(() => {
     messagesRef.current = messages
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // SOLO SI HAY CONVERSACION. Sin mensajes, bajar al final arrastraba la
+    // pagina entera y metia el titulo del vacio —«Pregúntame lo que sea de tu
+    // negocio»— DEBAJO de la cabecera pegajosa. Se entraba a Lucas y lo primero
+    // que se leia era la segunda linea.
+    if (messages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   // Fetch uso + alertas al montar
@@ -215,6 +249,7 @@ export default function AsistenteChat({ onClose }) {
   }
 
   const sugerencias = generarSugerencias(usageInfo?.alertas)
+  const acciones   = generarAcciones(usageInfo?.alertas)
 
   // Determinar color del contador
   const restantes = usageInfo?.restantes ?? null
@@ -222,76 +257,58 @@ export default function AsistenteChat({ onClose }) {
   const sinMensajes = restantes !== null && restantes <= 0
   const pocasCuotas = restantes !== null && restantes > 0 && restantes <= 3
 
+  // OJO CON EL ORDEN: esto lee `restantes`, `limite`, `sinMensajes` y
+  // `pocasCuotas`. Estaba ARRIBA, junto a las sugerencias, y reventaba con
+  // «Cannot access 'restantes' before initialization» — la pantalla entera
+  // caia a la frontera de error. Un `const` no se puede leer antes de su linea.
+  const nuevaConversacion = () => {
+    setMessages([]); messagesRef.current = []; setError(''); setInput('')
+  }
+  const contadorPlan = restantes !== null && limite !== null && limite > 0 ? (
+    <span
+      className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+      style={{
+        flex: 'none', whiteSpace: 'nowrap',
+        background: pocasCuotas || sinMensajes
+          ? 'color-mix(in srgb, var(--cf-gold-dark) 15%, transparent)'
+          : 'var(--cf-fill)',
+        color: pocasCuotas || sinMensajes ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+        border: `1px solid ${pocasCuotas || sinMensajes ? 'color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)' : 'var(--cf-border)'}`,
+      }}
+    >
+      {sinMensajes ? '0 restantes' : `${restantes} de ${limite}`}
+    </span>
+  ) : null
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'var(--color-border)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-            style={{
-              background: 'var(--color-accent-soft)',
-              border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-            }}>
-            <svg style={{ width: '16px', height: '16px', display: 'block', color: 'var(--color-accent)' }}
-              viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>Lucas</p>
-            <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Asistente financiero</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Contador de mensajes */}
-          {restantes !== null && limite !== null && limite > 0 && (
-            <span
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-              style={{
-                background: pocasCuotas || sinMensajes
-                  ? 'color-mix(in srgb, var(--color-warning) 15%, transparent)'
-                  : 'var(--color-bg-hover)',
-                color: pocasCuotas || sinMensajes ? 'var(--color-warning)' : 'var(--color-text-muted)',
-                border: `1px solid ${pocasCuotas || sinMensajes ? 'color-mix(in srgb, var(--color-warning) 30%, transparent)' : 'var(--color-border)'}`,
-              }}
-            >
-              {sinMensajes ? '0 restantes' : `${restantes} de ${limite}`}
-            </span>
-          )}
-          <button
-            onClick={() => { setMessages([]); messagesRef.current = []; setError(''); setInput('') }}
-            title="Nueva conversación"
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
-            aria-label="Nueva conversación"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-          {onClose && (
-            <button onClick={onClose} className="p-1.5 rounded-lg transition-colors"
-              style={{ color: 'var(--color-text-muted)' }} aria-label="Cerrar asistente">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
+      {/* ── LA CABECERA VA EN EL ARMAZON, NO AQUI ──
+          Se monto la de `Lucas` y quedaron DOS: la del armazon fija arriba con
+          la flecha de volver, y la de Lucas debajo con el mismo nombre. Es el
+          patron del titulo duplicado que ya tiene su propia prueba.
+          Manda el armazon —es quien sabe volver— y las dos cosas que la
+          cabecera de Lucas aportaba, el contador del plan y «empezar de nuevo»,
+          se le pasan por `acciones`. En panel flotante (`onClose`) no hay
+          armazon, y ahi si se pinta la de Lucas. */}
+      {onClose && (
+        <CabeceraLucas
+          onEditar={nuevaConversacion}
+          onCerrar={onClose}
+          extra={contadorPlan}
+        />
+      )}
 
       {/* Plan error */}
       {planError && (
         <div className="mx-4 mt-4 p-3 rounded-[12px] text-sm"
           style={{
-            background: 'var(--color-accent-soft)',
-            border: '1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
+            background: 'var(--cf-gold-tint)',
+            border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
           }}>
-          <p className="font-semibold mb-1" style={{ color: 'var(--color-accent)' }}>Asistente IA no disponible</p>
-          <p style={{ color: 'var(--color-text-secondary)' }}>{planError}</p>
+          <p className="font-semibold mb-1" style={{ color: 'var(--cf-gold)' }}>Asistente IA no disponible</p>
+          <p style={{ color: 'var(--cf-ink-2)' }}>{planError}</p>
           <a href="/configuracion/plan" className="inline-block mt-2 text-xs font-bold px-3 py-1.5 rounded-lg"
-            style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}>
             Ver planes
           </a>
         </div>
@@ -300,26 +317,11 @@ export default function AsistenteChat({ onClose }) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && !planError && (
-          <div className="space-y-4">
-            <div className="text-center pt-4">
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                Hola, soy Lucas. Pregúntame sobre tu negocio o pídeme que haga algo.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {sugerencias.map((s) => (
-                <button key={s} onClick={() => sendMessage(s)}
-                  className="text-left text-sm px-3 py-2.5 rounded-[12px] transition-all active:scale-[0.98]"
-                  style={{
-                    background: 'var(--color-bg-hover)',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                  }}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          <VacioLucas
+            preguntas={sugerencias.map((t) => ({ texto: t, icono: 'pregunta' }))}
+            acciones={acciones}
+            onElegir={(t) => sendMessage(t)}
+          />
         )}
 
         {messages.map((msg, i) => {
@@ -353,8 +355,8 @@ export default function AsistenteChat({ onClose }) {
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mr-2 mt-0.5"
-                  style={{ background: 'var(--color-accent-soft)' }}>
-                  <svg style={{ width: '12px', height: '12px', display: 'block', color: 'var(--color-accent)' }}
+                  style={{ background: 'var(--cf-gold-tint)' }}>
+                  <svg style={{ width: '12px', height: '12px', display: 'block', color: 'var(--cf-gold)' }}
                     viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
                   </svg>
@@ -363,25 +365,25 @@ export default function AsistenteChat({ onClose }) {
               <div
                 className={`max-w-[80%] px-3.5 py-2.5 rounded-[12px] text-sm ${msg.role === 'user' ? 'rounded-br-[4px] whitespace-pre-wrap' : 'rounded-bl-[4px]'}`}
                 style={msg.role === 'user'
-                  ? { background: 'var(--color-accent)', color: '#0a0a0a' }
-                  : { background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }
+                  ? { background: 'var(--cf-gold)', color: 'var(--cf-ink)' }
+                  : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }
                 }>
                 {msg.content
                   ? (msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content)
                   : msg.statusText
                   ? (
                     <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
-                      <span className="text-xs italic" style={{ color: 'var(--color-text-muted)' }}>{msg.statusText}</span>
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--cf-ink-3)', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce shrink-0" style={{ background: 'var(--cf-ink-3)', animationDelay: '150ms' }} />
+                      <span className="text-xs italic" style={{ color: 'var(--cf-ink-3)' }}>{msg.statusText}</span>
                     </span>
                   )
                   : (msg.role === 'assistant' && loading && i === messages.length - 1
                     ? (
                       <span className="flex gap-1 items-center py-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '0ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '150ms' }} />
-                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: '300ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--cf-ink-3)', animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--cf-ink-3)', animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--cf-ink-3)', animationDelay: '300ms' }} />
                       </span>
                     ) : null
                   )
@@ -392,30 +394,30 @@ export default function AsistenteChat({ onClose }) {
         })}
 
         {error && (
-          <p className="text-center text-xs" style={{ color: 'var(--color-danger)' }}>{error}</p>
+          <p className="text-center text-xs" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
       {!planError && (
-        <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--cf-border)' }}>
           {sinMensajes ? (
             /* Banner de upgrade cuando se agotan los mensajes */
             <div className="rounded-[12px] px-4 py-3 text-center"
               style={{
-                background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-hover))',
-                border: '1px solid color-mix(in srgb, var(--color-warning) 30%, transparent)',
+                background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, var(--cf-fill))',
+                border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 30%, transparent)',
               }}>
-              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-warning)' }}>
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--cf-gold-dark)' }}>
                 Límite de mensajes alcanzado
               </p>
-              <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-xs mb-2" style={{ color: 'var(--cf-ink-2)' }}>
                 Actualiza tu plan para tener más consultas con Lucas.
               </p>
               <a href="/configuracion/plan"
                 className="inline-block text-xs font-bold px-4 py-1.5 rounded-lg"
-                style={{ background: 'var(--color-accent)', color: '#0a0a0a' }}>
+                style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}>
                 Ver planes
               </a>
             </div>
@@ -446,9 +448,9 @@ export default function AsistenteChat({ onClose }) {
                   disabled={loading}
                   className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
                   style={{
-                    background: 'var(--color-bg-hover)',
-                    border: '1px solid var(--color-border-hover)',
-                    color: 'var(--color-text-primary)',
+                    background: 'var(--cf-fill)',
+                    border: '1px solid var(--cf-border-strong)',
+                    color: 'var(--cf-ink)',
                     maxHeight: '100px',
                     lineHeight: '1.5',
                     display: voiceRecording ? 'none' : undefined,
@@ -457,8 +459,8 @@ export default function AsistenteChat({ onClose }) {
                 <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
                   style={{
-                    background: 'var(--color-accent)',
-                    color: '#0a0a0a',
+                    background: 'var(--cf-gold)',
+                    color: 'var(--cf-ink)',
                     display: voiceRecording ? 'none' : undefined,
                   }}
                   aria-label="Enviar">
@@ -467,7 +469,7 @@ export default function AsistenteChat({ onClose }) {
                   </svg>
                 </button>
               </div>
-              <p className="text-[10px] text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[10px] text-center mt-2" style={{ color: 'var(--cf-ink-3)' }}>
                 Lucas puede cometer errores — verifica datos importantes
               </p>
             </>

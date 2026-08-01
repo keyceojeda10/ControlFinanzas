@@ -1,29 +1,82 @@
 'use client'
 
+// components/prestamos/EditarProximoCobro.jsx — T19-01 «Aplazar el cobro».
+//
+// PIEL NUEVA, MOTOR IGUAL. El envío sigue siendo el de siempre —`modo:
+// 'proximoCobro'` sobre `/api/prestamos/[id]`— y la restauración de la fecha
+// automática también, que es la salida del bug de `proximoCobroManual` pisando el
+// día ancla.
+//
+// LO QUE SE AÑADE: el motivo se GUARDA. `VisitaReagendada` ya lo modela con cinco
+// valores —`no_estaba`, `negocio_cerrado`, `no_tenia_dinero`, `pidio_plazo`,
+// `otro`— y `/api/visitas` ya sabe crearla. Sin eso, «¿qué te dijo?» habría sido un
+// control que se mueve y no pasa nada, que es el patrón que ya lleva ocho
+// apariciones en este rediseño.
+//
+// Los motivos son LOS DEL MODELO, no los cuatro que dibuja la lámina. «Le pagan el
+// viernes» y «está enfermo» son ejemplos de mockup; el modelo tiene los cinco que
+// el negocio de verdad necesita distinguir, y «negocio cerrado» —que la lámina no
+// dibuja— es justo el que separa «no me quiso pagar» de «no pude cobrarle».
+//
+// Y si la visita no se puede guardar, EL APLAZAMIENTO SIGUE. La fecha es lo que
+// cambia el cobro de mañana; el motivo es estadística. Perder el aplazamiento por
+// no poder anotar el motivo sería cambiar lo importante por lo accesorio.
+
 import { useState, useEffect } from 'react'
-import { Modal }  from '@/components/ui/Modal'
-import { Button } from '@/components/ui/Button'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { AplazarCobro, PieGestion } from '@/components/pantallas/Gestion'
+import { adaptarAplazar, cuandosDeAplazar, fechaCorta } from '@/lib/adaptadores/gestion'
+
+/* Los cinco de `VisitaReagendada`, con la etiqueta en cristiano. El orden es el de
+   frecuencia real en la calle: no estaba primero, «otro» al final. */
+const MOTIVOS = [
+  { id: 'no_estaba', etiqueta: 'No estaba' },
+  { id: 'no_tenia_dinero', etiqueta: 'No tenía plata' },
+  { id: 'pidio_plazo', etiqueta: 'Pidió plazo' },
+  { id: 'negocio_cerrado', etiqueta: 'Negocio cerrado' },
+  { id: 'otro', etiqueta: 'Otro' },
+]
+
+/** `YYYY-MM-DD` en hora local, que es lo que el endpoint espera. `toISOString()`
+    sobre una fecha local resta el desfase y puede devolver el día anterior. */
+function aISO(d) {
+  const x = new Date(d)
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
+}
 
 export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose, onSuccess }) {
   const [fecha, setFecha] = useState('')
+  const [cuando, setCuando] = useState('tres')
+  const [motivo, setMotivo] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Las tres casillas se calculan al abrir y no en cada render: con `new Date()`
+  // dentro del cuerpo, «mañana» cambiaría de día si la hoja queda abierta a
+  // medianoche, y peor, las fechas se recalcularían en cada tecleo.
+  const [cuandos, setCuandos] = useState(() => cuandosDeAplazar())
 
   useEffect(() => {
     if (!open) return
     setError('')
-    if (prestamo?.proximoCobroManual) {
-      setFecha(new Date(prestamo.proximoCobroManual).toISOString().slice(0, 10))
-    } else {
-      const hoy = new Date(Date.now() - 5 * 60 * 60 * 1000)
-      setFecha(hoy.toISOString().slice(0, 10))
-    }
-  }, [open, prestamo?.proximoCobroManual])
+    setMotivo(null)
+    const opciones = cuandosDeAplazar()
+    setCuandos(opciones)
+    // Arranca en «en 3 días», que es la que la lámina trae marcada: aplazar un día
+    // suele significar volver a aplazar mañana.
+    setCuando('tres')
+    setFecha(aISO(opciones[1].fecha))
+  }, [open])
 
   const handleClose = () => { setError(''); onClose?.() }
 
+  const elegirCuando = (c) => {
+    setCuando(c.id)
+    if (c.fecha) setFecha(aISO(c.fecha))
+  }
+
   const handleSubmit = async () => {
-    if (!fecha) { setError('Selecciona una fecha'); return }
+    if (!fecha) { setError('Elige para cuándo'); return }
     setLoading(true)
     setError('')
     try {
@@ -32,10 +85,27 @@ export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modo: 'proximoCobro', proximoCobro: fecha }),
       })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Error al actualizar')
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'No se pudo aplazar')
+
+      // El motivo, si se eligió. En su propio `try`: si esto falla, el aplazamiento
+      // ya está hecho y no se deshace por no haber podido anotar la razón.
+      if (motivo && prestamo?.cliente?.id) {
+        try {
+          await fetch('/api/visitas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clienteId: prestamo.cliente.id,
+              prestamoId,
+              rutaId: prestamo?.cliente?.rutaId ?? undefined,
+              fechaOriginal: prestamo?.proximoCobro ?? new Date().toISOString(),
+              fechaReagendada: fecha,
+              motivo,
+            }),
+          })
+        } catch {}
       }
+
       onSuccess?.()
       handleClose()
     } catch (e) {
@@ -54,10 +124,7 @@ export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modo: 'proximoCobro', proximoCobro: null }),
       })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Error al restaurar')
-      }
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'No se pudo restaurar')
       onSuccess?.()
       handleClose()
     } catch (e) {
@@ -67,43 +134,77 @@ export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose
     }
   }
 
-  return (
-    <Modal open={open} onClose={handleClose} title="Cambiar fecha de cobro">
-      <div className="space-y-4">
-        <p className="text-xs text-[var(--color-text-muted)] leading-snug">
-          Cambia la fecha del próximo cobro manualmente. Al registrar un pago, la fecha vuelve a calcularse automáticamente.
-        </p>
+  const datos = adaptarAplazar(prestamo, fecha) ?? {}
+  const elegida = cuandos.find((c) => c.id === cuando)
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em]">
-            Próximo cobro
-          </label>
+  return (
+    <HojaInferior
+      abierta={open}
+      onCerrar={handleClose}
+      titulo="Aplazar el cobro"
+      subtitulo={[
+        prestamo?.cliente?.nombre,
+        Number(prestamo?.diasMora ?? 0) > 0
+          ? `lleva ${prestamo.diasMora} ${prestamo.diasMora === 1 ? 'día' : 'días'} de atraso`
+          : null,
+      ].filter(Boolean).join(' · ') || null}
+      accion={
+        <PieGestion
+          onCancelar={handleClose}
+          onAceptar={handleSubmit}
+          textoAceptar={datos.cobrasDespues ? `Aplazar al ${datos.cobrasDespues}` : 'Aplazar'}
+          aceptando={loading}
+          deshabilitado={!fecha}
+          error={error}
+        />
+      }
+    >
+      <AplazarCobro
+        cuandos={cuandos}
+        cuando={cuando}
+        onCuando={elegirCuando}
+        motivos={MOTIVOS}
+        motivo={motivo}
+        onMotivo={(m) => setMotivo(m.id === motivo ? null : m.id)}
+        {...datos}
+      />
+
+      {/* «Otra fecha»: el selector nativo, y solo cuando hace falta. Puesto siempre
+          serían dos controles para la misma cifra, que es lo que el contador de
+          T13-02 vino a arreglar. */}
+      {cuando === 'otra' && (
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>¿Qué día?</span>
           <input
             type="date"
             value={fecha}
+            min={aISO(new Date())}
             onChange={(e) => setFecha(e.target.value)}
-            className="h-10 px-3 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]"
+            style={{
+              height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              font: 'inherit', fontSize: 16, color: 'var(--cf-ink)', outline: 'none',
+            }}
           />
-        </div>
+        </label>
+      )}
 
-        {prestamo?.proximoCobroManual && (
-          <button
-            type="button"
-            onClick={handleRestaurar}
-            disabled={loading}
-            className="w-full text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors py-1"
-          >
-            Restaurar fecha automática
-          </button>
-        )}
-
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
-
-        <div className="flex gap-3 pt-2">
-          <Button variant="secondary" onClick={handleClose} className="flex-1">Cancelar</Button>
-          <Button onClick={handleSubmit} loading={loading} className="flex-1">Guardar</Button>
-        </div>
-      </div>
-    </Modal>
+      {/* LA SALIDA DEL BUG DE `proximoCobroManual`. Mientras ese campo esté puesto,
+          pisa el cálculo del día ancla: cambiar la frecuencia o el día de cobro no
+          mueve la fecha. Esto es lo que lo limpia, y por eso no se esconde. */}
+      {prestamo?.proximoCobroManual && (
+        <button type="button" onClick={handleRestaurar} disabled={loading} style={{
+          alignSelf: 'flex-start', padding: '0 2px', border: 0, background: 'none',
+          cursor: loading ? 'progress' : 'pointer', font: 'inherit', textAlign: 'left',
+          fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
+        }}>
+          Volver a la fecha que calcula el sistema
+          {prestamo?.proximoCobroManual ? ` (hoy está fijada al ${fechaCorta(prestamo.proximoCobroManual)})` : ''}
+        </button>
+      )}
+    </HojaInferior>
   )
 }

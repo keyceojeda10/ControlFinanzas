@@ -12,10 +12,10 @@ export function Card({ as: Component = 'div', children, className = '', padding 
         className,
       ].join(' ')}
       style={{
-        background: 'var(--color-bg-card)',
+        background: 'var(--cf-card)',
         border: glowColor
-          ? `1px solid color-mix(in srgb, ${glowColor} 25%, var(--color-border))`
-          : '1px solid var(--color-border)',
+          ? `1px solid color-mix(in srgb, ${glowColor} 25%, var(--cf-border))`
+          : '1px solid var(--cf-border)',
         ...propsStyle,
       }}
       {...restProps}
@@ -35,7 +35,7 @@ export function CardHeader({ children, className = '' }) {
 
 export function CardTitle({ children, className = '' }) {
   return (
-    <h3 className={`text-[15px] sm:text-[16px] font-extrabold tracking-[0.01em] ${className}`} style={{ color: 'var(--color-text-primary)' }}>
+    <h3 className={`text-[15px] sm:text-[16px] font-extrabold tracking-[0.01em] ${className}`} style={{ color: 'var(--cf-ink)' }}>
       {children}
     </h3>
   )

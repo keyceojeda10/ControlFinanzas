@@ -2,35 +2,30 @@
 // components/layout/NovedadesModal.jsx
 // Muestra UNA vez por versión las novedades del sistema. Persiste la última
 // versión vista en localStorage (cf:novedades:visto). Sin backend.
+//
+// ── T34-02 · LO QUE CAMBIA ─────────────────────────────────────────────────
+//
+// El panel era una lista de siete novedades con la misma jerarquía, y esa es
+// justo la queja de la lámina: «siete novedades con la misma jerarquía no se
+// leen: se cierran». `Novedades` pinta la PRIMERA en carbón, con lo que hace y
+// por qué sirve, y las demás en una línea.
+//
+// Y arreglaba un fallo de contraste real: los títulos iban en `text-[white]`
+// sobre `var(--cf-card)`, que en el tema claro es una tarjeta BLANCA. Era texto
+// blanco sobre blanco — invisible salvo en oscuro.
+//
+// El componente trae su propio armazón de hoja (asa, título, X y bordes
+// superiores), así que aquí solo queda el fondo y la lógica de versión.
 
 import { useEffect, useState } from 'react'
 import { NOVEDADES, NOVEDADES_VERSION } from '@/lib/novedades'
+import { Novedades } from '@/components/pantallas/Cargando'
 
 const LS_KEY = 'cf:novedades:visto'
 
-const ICONS = {
-  calculator: 'M9 7h6m-6 4h6m-2 5h2M5 3h14a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z',
-  printer: 'M6 9V2h12v7m-12 0h12m-12 0a2 2 0 00-2 2v5a2 2 0 002 2h1m11-9a2 2 0 012 2v5a2 2 0 01-2 2h-1m-10 0v4h8v-4m-8 0h8',
-  calendar: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-  filter: 'M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L14 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 018 21v-7.586L3.293 6.707A1 1 0 013 6V4z',
-  sparkles: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
-  upload: 'M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5',
-  camera: 'M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z',
-  pen: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z M19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10',
-  shield: 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z',
-  location: 'M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z',
-  route: 'M9 6.75V15m0 0l3-3m-3 3l-3-3M15 18.75V10.5m0 0l3 3m-3-3l-3 3',
-  document: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
-  check: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-  chart: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z',
-  search: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z',
-  dollar: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-  refresh: 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M21.015 4.356v4.992',
-  link: 'M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244',
-}
-
 export default function NovedadesModal() {
   const [abierto, setAbierto] = useState(false)
+  const [destacada, setDestacada] = useState(0)
 
   useEffect(() => {
     try {
@@ -48,10 +43,34 @@ export default function NovedadesModal() {
     setAbierto(false)
   }
 
+  // ── ESCAPE LO CIERRA ──
+  //
+  // No lo hacía, y es un `role="dialog" aria-modal="true"` que ocupa la pantalla
+  // entera con z-1100: mientras está puesto se come TODOS los clics de debajo.
+  // Tiene dos salidas —el fondo y «Entendido»— pero ninguna por teclado, así que
+  // quien navegue con teclado se queda encerrado, y en escritorio el reflejo es
+  // pulsar Escape antes que buscar el botón.
+  //
+  // Salió intentando automatizar un clic sobre la pantalla de cobrar hoy: el
+  // modal bloqueaba la prueba igual que bloquea a quien entra.
+  useEffect(() => {
+    if (!abierto) return
+    const alPulsar = (e) => { if (e.key === 'Escape') cerrar() }
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [abierto])
+
   if (!abierto) return null
 
   const entrada = NOVEDADES[0]
-  if (!entrada) return null
+  if (!entrada?.items?.length) return null
+
+  // Cuál se explica. La lámina destaca una y deja las demás en una línea, pero
+  // los renglones llevan flecha: si no llevan a ningún sitio, la flecha miente.
+  // Tocarlos la SUBE al bloque de carbón, así que las seis se pueden leer sin
+  // salir de la hoja.
+  const primera = entrada.items[destacada] ?? entrada.items[0]
+  const otras = entrada.items.map((it, i) => ({ ...it, i })).filter((it) => it.i !== destacada)
 
   return (
     <div
@@ -68,62 +87,29 @@ export default function NovedadesModal() {
         style={{ animation: 'cf-nov-fade 180ms ease-out' }}
       />
 
-      {/* Panel */}
       <div
-        className="relative w-full sm:max-w-md max-h-[88vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-card)]"
+        className="relative w-full sm:max-w-md max-h-[88vh]"
         style={{ animation: 'cf-nov-up 260ms cubic-bezier(0.22,1,0.36,1)' }}
       >
-        {/* Encabezado con acento */}
-        <div
-          className="px-5 pt-5 pb-4 border-b border-[var(--color-border)]"
-          style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 100%)' }}
-        >
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 18%, transparent)', color: 'var(--color-accent)' }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d={ICONS.sparkles} />
-              </svg>
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[white] leading-tight">¡Tenemos novedades!</h2>
-              <p className="text-[11px] text-[var(--color-text-muted)]">Esto es lo nuevo en Control Finanzas</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Lista de novedades */}
-        <div className="px-5 py-4 space-y-3">
-          {entrada.items.map((it, i) => (
-            <div key={i} className="flex gap-3">
-              <div
-                className="w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 mt-0.5"
-                style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-accent)' }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[it.icon] || ICONS.sparkles} />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[white] leading-snug">{it.titulo}</p>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mt-0.5">{it.texto}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Acción */}
-        <div className="px-5 pb-5 pt-1">
-          <button
-            onClick={cerrar}
-            className="w-full h-11 rounded-[12px] text-sm font-semibold transition-all"
-            style={{ background: 'var(--color-accent)', color: '#1a1a1a' }}
-          >
-            Entendido
-          </button>
-        </div>
+        <Novedades
+          titulo="¡Tenemos novedades!"
+          detalle={entrada.fecha
+            ? `Versión del ${new Date(`${entrada.fecha}T05:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`
+            : 'Esto es lo nuevo en Control Finanzas'}
+          onCerrar={cerrar}
+          destacada={{
+            etiqueta: 'Lo más útil',
+            titulo: primera.titulo,
+            texto: primera.texto,
+            // No hay un sitio al que llevar desde aquí: las novedades del
+            // registro no traen destino. La acción es enterarse y seguir.
+            accion: 'Entendido',
+          }}
+          onActivar={cerrar}
+          restoTitulo={otras.length === 1 ? 'Y una más' : `Las otras ${otras.length}, en una línea`}
+          resto={otras.map((it) => ({ id: `nov-${it.i}`, texto: it.titulo, i: it.i }))}
+          onNovedad={(n) => setDestacada(n.i)}
+        />
       </div>
 
       <style jsx global>{`

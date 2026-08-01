@@ -16,15 +16,15 @@ const fmtHora = (d) => {
 }
 
 const MOV_CONFIG = {
-  cobro:    { label: 'Cobro',    color: 'var(--color-success)', signo: '+' },
-  prestamo: { label: 'Préstamo', color: 'var(--color-warning)', signo: '-' },
-  gasto:    { label: 'Gasto',    color: 'var(--color-danger)',  signo: '-' },
+  cobro:    { label: 'Cobro',    color: 'var(--cf-green-dark)', signo: '+' },
+  prestamo: { label: 'Préstamo', color: 'var(--cf-gold-dark)', signo: '-' },
+  gasto:    { label: 'Gasto',    color: 'var(--cf-red-dark)',  signo: '-' },
 }
 
 const GASTO_ESTADO_COLORS = {
-  pendiente: 'var(--color-warning)',
-  aprobado:  'var(--color-success)',
-  rechazado: 'var(--color-danger)',
+  pendiente: 'var(--cf-gold-dark)',
+  aprobado:  'var(--cf-green-dark)',
+  rechazado: 'var(--cf-red-dark)',
 }
 
 export default function CajaCobradorDetalle({ data }) {
@@ -48,17 +48,17 @@ export default function CajaCobradorDetalle({ data }) {
           label: data?.esRango ? 'Efectivo del período' : (esCapitalEfectivo ? 'Dinero en mano' : 'Efectivo del día'),
           valor: r.dineroEnMano ?? 0,
           subtitulo: esCapitalEfectivo ? 'Capital en ruta − Gastos' : 'Cobrado + Seguros + Recargos − Prestado − Gastos',
-          color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-danger)',
+          color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
         }}
         cards={[
-          ...(r.saldoApertura != null ? [{ label: 'Inicio del dia', valor: r.saldoApertura, color: 'var(--color-text-muted)' }] : []),
-          ...(esCapitalEfectivo ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
-          { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--color-success)' },
-          { label: 'Prestado', valor: r.prestadoDia, color: 'var(--color-warning)', signo: '-' },
-          { label: 'Gastos', valor: r.gastosDia, color: 'var(--color-danger)', signo: '-' },
+          ...(r.saldoApertura != null ? [{ label: 'Inicio del dia', valor: r.saldoApertura, color: 'var(--cf-ink-3)' }] : []),
+          ...(esCapitalEfectivo ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--cf-ink-2)' }] : []),
+          { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--cf-green-dark)' },
+          { label: 'Prestado', valor: r.prestadoDia, color: 'var(--cf-gold-dark)', signo: '-' },
+          { label: 'Gastos', valor: r.gastosDia, color: 'var(--cf-red-dark)', signo: '-' },
           ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1', signo: '+' }] : []),
           ...((r.recargosCantidad || 0) > 0 ? [{ label: `Recargos (${r.recargosCantidad})`, valor: r.recargosMonto, color: '#f97316', signo: '+' }] : []),
-          ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--color-info)' }] : []),
+          ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--cf-ink-2)' }] : []),
         ]}
       />
 
@@ -70,19 +70,19 @@ export default function CajaCobradorDetalle({ data }) {
       {pd && (pd.nuevos.cantidad > 0 || pd.renovaciones.cantidad > 0) && (
         <div
           className="rounded-[12px] p-3"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
             Lo que prestó hoy
           </p>
 
           <div className="space-y-1.5">
             {pd.nuevos.cantidad > 0 && (
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
                   {pd.nuevos.cantidad} préstamo{pd.nuevos.cantidad === 1 ? '' : 's'} nuevo{pd.nuevos.cantidad === 1 ? '' : 's'}
                 </span>
-                <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
                   {formatMoney(pd.nuevos.valor)}
                 </span>
               </div>
@@ -91,19 +91,19 @@ export default function CajaCobradorDetalle({ data }) {
             {pd.renovaciones.cantidad > 0 && (
               <>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px]" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
                     {pd.renovaciones.cantidad} renovaci{pd.renovaciones.cantidad === 1 ? 'ón' : 'ones'}
                   </span>
-                  <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>
+                  <span className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
                     {formatMoney(pd.renovaciones.valor)}
                   </span>
                 </div>
                 {pd.renovaciones.absorbido > 0 && (
                   <div className="flex items-baseline justify-between gap-2 pl-3">
-                    <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                       de eso, saldo que ya le debían
                     </span>
-                    <span className="text-[11px] font-mono-display" style={{ color: 'var(--color-info)' }}>
+                    <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
                       {formatMoney(pd.renovaciones.absorbido)}
                     </span>
                   </div>
@@ -112,23 +112,23 @@ export default function CajaCobradorDetalle({ data }) {
             )}
           </div>
 
-          <div className="mt-2.5 pt-2.5 space-y-1.5" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="mt-2.5 pt-2.5 space-y-1.5" style={{ borderTop: '1px solid var(--cf-border)' }}>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[12px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Total prestado</span>
-              <span className="text-[15px] font-bold font-mono-display" style={{ color: 'var(--color-warning)' }}>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Total prestado</span>
+              <span className="text-[15px] font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>
                 {formatMoney(pd.valorTotal)}
               </span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Efectivo que salió de su mano</span>
-              <span className="text-[12px] font-mono-display" style={{ color: 'var(--color-text-secondary)' }}>
+              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Efectivo que salió de su mano</span>
+              <span className="text-[12px] font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
                 {formatMoney(pd.efectivoTotal)}
               </span>
             </div>
           </div>
 
           {pd.valorTotal !== pd.efectivoTotal && (
-            <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
               La diferencia de {formatMoney(pd.valorTotal - pd.efectivoTotal)} es saldo que los clientes ya debían y
               quedó dentro de la cartulina nueva: no salió efectivo por esa parte.
               {' '}La tarjeta <strong>Prestado</strong> de arriba muestra{' '}
@@ -146,19 +146,19 @@ export default function CajaCobradorDetalle({ data }) {
         <div
           className="flex items-start gap-2.5 p-3 rounded-[12px] border"
           style={{
-            background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card))',
-            borderColor: 'color-mix(in srgb, var(--color-warning) 25%, var(--color-border))',
+            background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, var(--cf-card))',
+            borderColor: 'color-mix(in srgb, var(--cf-gold-dark) 25%, var(--cf-border))',
           }}
         >
-          <svg className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--color-warning)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--cf-gold-dark)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
           <div>
-            <p className="text-[12px] font-semibold" style={{ color: 'var(--color-warning)' }}>
+            <p className="text-[12px] font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>
               {r.gastosPendientesCantidad} gasto{r.gastosPendientesCantidad > 1 ? 's' : ''} pendiente{r.gastosPendientesCantidad > 1 ? 's' : ''} por aprobar ({formatMoney(r.gastosPendientesMonto)})
             </p>
             {esCapitalEfectivo && (
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 El capital en ruta no refleja este gasto hasta que se apruebe
               </p>
             )}
@@ -169,27 +169,27 @@ export default function CajaCobradorDetalle({ data }) {
       {/* KPIs de gestion */}
       {g && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gestión de la ruta</h2>
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Gestión de la ruta</h2>
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border))' }}>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobros hoy</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-accent)] mt-0.5">{g.clientesCobrados}</p>
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold) 18%, var(--cf-border))' }}>
+              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Cobros hoy</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--cf-gold)] mt-0.5">{g.clientesCobrados}</p>
             </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-info) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-info) 16%, var(--color-border))' }}>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes activos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-text-primary)] mt-0.5">{g.clientesActivos}</p>
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 16%, var(--cf-border))' }}>
+              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Clientes activos</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--cf-ink)] mt-0.5">{g.clientesActivos}</p>
             </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-info) 18%, var(--color-border))' }}>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Clientes nuevos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-info)] mt-0.5">{g.clientesNuevos}</p>
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 18%, var(--cf-border))' }}>
+              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Clientes nuevos</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--cf-ink-2)] mt-0.5">{g.clientesNuevos}</p>
             </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--color-border))' }}>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestamos nuevos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-success)] mt-0.5">{g.prestamosNuevos}</p>
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 18%, var(--cf-border))' }}>
+              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Prestamos nuevos</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--cf-green-dark)] mt-0.5">{g.prestamosNuevos}</p>
             </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 18%, var(--color-border))' }}>
-              <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Renovaciones</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--color-warning)] mt-0.5">{g.renovaciones}</p>
+            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 18%, var(--cf-border))' }}>
+              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Renovaciones</p>
+              <p className="text-lg font-bold font-mono-display text-[var(--cf-gold-dark)] mt-0.5">{g.renovaciones}</p>
             </div>
           </div>
         </Card>
@@ -198,7 +198,7 @@ export default function CajaCobradorDetalle({ data }) {
       {/* Capital y movimiento por ruta */}
       {porRuta.length > 0 && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Por ruta</h2>
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Por ruta</h2>
 
           {/* Capital de ruta en negativo. Una sub-bolsa no puede tener menos de
               cero pesos fisicos: si esta negativa es que salio plata que nunca se
@@ -208,24 +208,24 @@ export default function CajaCobradorDetalle({ data }) {
             <div
               className="rounded-[12px] p-3 mb-3"
               style={{
-                background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card))',
-                border: '1px solid color-mix(in srgb, var(--color-danger) 25%, var(--color-border))',
+                background: 'color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card))',
+                border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, var(--cf-border))',
               }}
             >
-              <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--color-danger)' }}>
+              <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--cf-red-dark)' }}>
                 {rutasNegativas.length === 1
                   ? `La ruta ${rutasNegativas[0].nombre} está en negativo`
                   : `${rutasNegativas.length} rutas están en negativo`}
               </p>
-              <p className="text-[11px] leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
                 De esta{rutasNegativas.length === 1 ? '' : 's'} ruta{rutasNegativas.length === 1 ? '' : 's'} salió{' '}
-                <strong style={{ color: 'var(--color-danger)' }}>
+                <strong style={{ color: 'var(--cf-red-dark)' }}>
                   {formatMoney(Math.abs(rutasNegativas.reduce((a, r) => a + (r.saldoCapital || 0), 0)))}
                 </strong>{' '}
                 más de lo que entró. Casi siempre es porque le entregó plata al cobrador sin
                 registrarla como inyección de capital a la ruta.
               </p>
-              <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Si esa plata sí se la entregó, regístrela en <strong>Capital → Inyectar a la ruta</strong> y
                 el saldo queda al día. Si no, revise los retiros y gastos de la ruta.
               </p>
@@ -233,17 +233,17 @@ export default function CajaCobradorDetalle({ data }) {
           )}
           <div className="space-y-2">
             {porRuta.map((ruta) => (
-              <div key={ruta.rutaId || 'otros'} className="rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] p-3">
+              <div key={ruta.rutaId || 'otros'} className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-3">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">{ruta.nombre}</span>
+                  <span className="text-sm font-semibold text-[var(--cf-ink)]">{ruta.nombre}</span>
                   {ruta.rutaId && (
-                    <span className="text-[11px] text-[var(--color-text-muted)]">
+                    <span className="text-[11px] text-[var(--cf-ink-3)]">
                       Disponible:{' '}
                       {/* En rojo si quedo negativo: antes salia del mismo color que
                           cualquier otra cifra y un "-$85.865.000" pasaba inadvertido. */}
                       <span
                         className="font-semibold font-mono-display"
-                        style={{ color: (ruta.saldoCapital ?? 0) < 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}
+                        style={{ color: (ruta.saldoCapital ?? 0) < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}
                       >
                         {formatMoney(ruta.saldoCapital)}
                       </span>
@@ -252,24 +252,24 @@ export default function CajaCobradorDetalle({ data }) {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Prestado</p>
-                    <p className="text-sm font-semibold font-mono-display text-[var(--color-warning)]">{ruta.prestadoDia > 0 ? '-' : ''}{formatMoney(ruta.prestadoDia)}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Prestado</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--cf-gold-dark)]">{ruta.prestadoDia > 0 ? '-' : ''}{formatMoney(ruta.prestadoDia)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Cobrado</p>
-                    <p className="text-sm font-semibold font-mono-display text-[var(--color-success)]">{formatMoney(ruta.cobradoDia)}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Cobrado</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--cf-green-dark)]">{formatMoney(ruta.cobradoDia)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Seguros</p>
-                    <p className="text-sm font-semibold font-mono-display text-[var(--color-info)]">{formatMoney(ruta.segurosDia)}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Seguros</p>
+                    <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(ruta.segurosDia)}</p>
                   </div>
                 </div>
                 {ruta.rutaId && (() => {
                   const flujoRuta = ruta.cobradoDia + ruta.segurosDia - ruta.prestadoDia
                   return (
-                    <div className="mt-2 pt-2 border-t border-[var(--color-border)] flex items-center justify-between">
-                      <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Flujo del día</span>
-                      <span className="text-sm font-bold font-mono-display" style={{ color: flujoRuta >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                    <div className="mt-2 pt-2 border-t border-[var(--cf-border)] flex items-center justify-between">
+                      <span className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Flujo del día</span>
+                      <span className="text-sm font-bold font-mono-display" style={{ color: flujoRuta >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
                         {formatMoney(flujoRuta)}
                       </span>
                     </div>
@@ -280,14 +280,14 @@ export default function CajaCobradorDetalle({ data }) {
                     es el DIA; esto es el stock. Sin este dato, "Disponible: $X"
                     se leia como si fuera todo el dinero de la ruta. */}
                 {ruta.rutaId && typeof ruta.capitalEnCalle === 'number' && (
-                  <div className="mt-2 pt-2 border-t border-[var(--color-border)] grid grid-cols-2 gap-2">
+                  <div className="mt-2 pt-2 border-t border-[var(--cf-border)] grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">En la calle</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.capitalEnCalle)}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">En la calle</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink)]">{formatMoney(ruta.capitalEnCalle)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Con intereses</p>
-                      <p className="text-sm font-semibold font-mono-display text-[var(--color-text-primary)]">{formatMoney(ruta.conIntereses)}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Con intereses</p>
+                      <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink)]">{formatMoney(ruta.conIntereses)}</p>
                     </div>
                   </div>
                 )}
@@ -300,20 +300,20 @@ export default function CajaCobradorDetalle({ data }) {
       {/* Gastos del día */}
       {gastos.length > 0 && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Gastos del día</h2>
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Gastos del día</h2>
           <div className="space-y-1.5">
             {gastos.map((g, i) => {
-              const color = GASTO_ESTADO_COLORS[g.estado] || 'var(--color-warning)'
+              const color = GASTO_ESTADO_COLORS[g.estado] || 'var(--cf-gold-dark)'
               return (
-                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--cf-border)] last:border-0">
                   <div className="min-w-0">
-                    <p className="text-xs text-[var(--color-text-primary)] truncate">{g.description}</p>
+                    <p className="text-xs text-[var(--cf-ink)] truncate">{g.description}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[10px] font-semibold" style={{ color }}>{g.estado}</span>
-                      <span className="text-[10px] text-[var(--color-text-muted)]">{fmtHora(g.fecha)}</span>
+                      <span className="text-[10px] text-[var(--cf-ink-3)]">{fmtHora(g.fecha)}</span>
                     </div>
                   </div>
-                  <span className="text-sm font-semibold font-mono-display shrink-0 text-[var(--color-danger)]">-{formatMoney(g.monto)}</span>
+                  <span className="text-sm font-semibold font-mono-display shrink-0 text-[var(--cf-red-dark)]">-{formatMoney(g.monto)}</span>
                 </div>
               )
             })}
@@ -323,24 +323,24 @@ export default function CajaCobradorDetalle({ data }) {
 
       {/* Movimientos del día */}
       <Card>
-        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Movimientos del día</h2>
+        <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Movimientos del día</h2>
         {movimientos.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">Sin movimientos registrados este día.</p>
+          <p className="text-sm text-[var(--cf-ink-3)]">Sin movimientos registrados este día.</p>
         ) : (
           <div className="space-y-1.5">
             {movimientos.map((m, i) => {
               const cfg = MOV_CONFIG[m.tipo] || MOV_CONFIG.cobro
               return (
-                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--color-border)] last:border-0">
+                <div key={i} className="flex items-center justify-between gap-2 py-2 border-b border-[var(--cf-border)] last:border-0">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
-                      {m.esClavo && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-[var(--color-danger)]/15 text-[var(--color-danger)]">CLAVO</span>}
-                      <span className="text-[11px] text-[var(--color-text-muted)]">{fmtHora(m.fecha)}</span>
+                      {m.esClavo && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-[var(--cf-red-dark)]/15 text-[var(--cf-red-dark)]">CLAVO</span>}
+                      <span className="text-[11px] text-[var(--cf-ink-3)]">{fmtHora(m.fecha)}</span>
                     </div>
-                    <p className="text-xs text-[var(--color-text-primary)] truncate">
+                    <p className="text-xs text-[var(--cf-ink)] truncate">
                       {m.tipo === 'gasto' ? (m.concepto || 'Gasto menor') : (m.cliente || 'Cliente')}
-                      {m.rutaNombre ? <span className="text-[var(--color-text-muted)]"> · {m.rutaNombre}</span> : null}
+                      {m.rutaNombre ? <span className="text-[var(--cf-ink-3)]"> · {m.rutaNombre}</span> : null}
                     </p>
                   </div>
                   <span className="text-sm font-semibold font-mono-display shrink-0" style={{ color: cfg.color }}>

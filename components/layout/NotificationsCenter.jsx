@@ -375,12 +375,12 @@ export default function NotificationsCenter({ size = 'md' }) {
         ref={btnRef}
         onClick={togglePanel}
         aria-label="Notificaciones"
-        className={`relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-bg-hover)] ${size === 'sm' ? 'w-7 h-7' : 'w-9 h-9'} ${bellPulse ? 'cf-bell-pulse' : ''}`}
-        style={{ color: 'var(--color-text-muted)' }}
+        className={`relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--cf-fill)] ${size === 'sm' ? 'w-7 h-7' : 'w-9 h-9'} ${bellPulse ? 'cf-bell-pulse' : ''}`}
+        style={{ color: 'var(--cf-ink-3)' }}
       >
         <BellIcon className={size === 'sm' ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'} />
         {total > 0 && (
-          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: 'var(--color-accent)', color: '#1a1a2e' }}>
+          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}>
             {total}
           </span>
         )}
@@ -406,22 +406,22 @@ export default function NotificationsCenter({ size = 'md' }) {
           <div
             className="flex items-start gap-3 px-4 py-3 rounded-2xl shadow-2xl"
             style={{
-              background: 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
+              background: 'var(--cf-card)',
+              border: '1px solid var(--cf-border)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
             }}
           >
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--cf-gold-tint)', color: 'var(--cf-gold)' }}>
               {toastIcon}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{toast.title}</p>
-              <p className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{toast.message}</p>
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{toast.title}</p>
+              <p className="text-[11px] mt-0.5 line-clamp-2" style={{ color: 'var(--cf-ink-3)' }}>{toast.message}</p>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); dismissToast() }}
               className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full mt-0.5"
-              style={{ color: 'var(--color-text-muted)' }}
+              style={{ color: 'var(--cf-ink-3)' }}
               aria-label="Cerrar"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -436,18 +436,18 @@ export default function NotificationsCenter({ size = 'md' }) {
         <div
           className="fixed w-64 max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto rounded-[12px] shadow-2xl z-50 glass-strong"
           style={{
-            border: '1px solid var(--color-border)',
+            border: '1px solid var(--cf-border)',
             left: panelPos.left,
             ...(panelPos.bottom != null ? { bottom: panelPos.bottom } : { top: panelPos.top }),
           }}
         >
-          <div className="px-4 py-3 sticky top-0" style={{ background: 'var(--color-bg-card)', borderBottom: '1px solid var(--color-border)' }}>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Notificaciones</p>
+          <div className="px-4 py-3 sticky top-0" style={{ background: 'var(--cf-card)', borderBottom: '1px solid var(--cf-border)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Notificaciones</p>
           </div>
 
           {total === 0 && notifInApp.length === 0 && (
             <div className="px-4 py-6 text-center">
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Todo al día. No hay avisos pendientes.</p>
+              <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Todo al día. No hay avisos pendientes.</p>
             </div>
           )}
 
@@ -455,9 +455,9 @@ export default function NotificationsCenter({ size = 'md' }) {
             {notifInApp.length > 0 && (
               <>
                 {notifNoLeidas > 0 && (
-                  <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>{notifNoLeidas} sin leer</p>
-                    <button onClick={marcarTodasLeidas} className="text-[11px] font-medium" style={{ color: 'var(--color-accent)' }}>Marcar todas</button>
+                  <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+                    <p className="text-[11px] font-medium" style={{ color: 'var(--cf-ink-3)' }}>{notifNoLeidas} sin leer</p>
+                    <button onClick={marcarTodasLeidas} className="text-[11px] font-medium" style={{ color: 'var(--cf-gold)' }}>Marcar todas</button>
                   </div>
                 )}
                 {notifInApp.map((n) => (
@@ -476,20 +476,20 @@ export default function NotificationsCenter({ size = 'md' }) {
                       }
                     }}
                     className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cf-menu-item"
-                    style={{ borderBottom: '1px solid var(--color-border)', opacity: n.leida ? 0.6 : 1 }}
+                    style={{ borderBottom: '1px solid var(--cf-border)', opacity: n.leida ? 0.6 : 1 }}
                   >
-                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: n.leida ? 'var(--color-bg-hover)' : 'var(--color-accent-soft)' }}>
-                      <UserIcon className="w-4 h-4" style={{ color: n.leida ? 'var(--color-text-muted)' : 'var(--color-accent)' }} />
+                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: n.leida ? 'var(--cf-fill)' : 'var(--cf-gold-tint)' }}>
+                      <UserIcon className="w-4 h-4" style={{ color: n.leida ? 'var(--cf-ink-3)' : 'var(--cf-gold)' }} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{n.titulo}</p>
-                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{n.mensaje}</p>
-                      <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                      <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>{n.titulo}</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{n.mensaje}</p>
+                      <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
                         {new Date(n.createdAt).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                     {!n.leida && (
-                      <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: 'var(--color-accent)' }} />
+                      <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: 'var(--cf-gold)' }} />
                     )}
                   </button>
                 ))}
@@ -497,23 +497,23 @@ export default function NotificationsCenter({ size = 'md' }) {
             )}
 
             {showSolicitudesItem && solicitudes.map((s) => (
-              <div key={s.id} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-warning-dim)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
+              <div key={s.id} className="flex items-start gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--cf-gold-tint)' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--cf-gold-dark)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>
                     {s.cobrador?.nombre || 'Cobrador'} solicita reabrir su caja
                   </p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Para seguir registrando abonos hoy</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Para seguir registrando abonos hoy</p>
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => rechazarSolicitud(s.id)}
                       disabled={procesando === s.id}
                       className="text-[11px] px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
-                      style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}
+                      style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}
                     >
                       Rechazar
                     </button>
@@ -521,7 +521,7 @@ export default function NotificationsCenter({ size = 'md' }) {
                       onClick={() => aprobarSolicitud(s.id)}
                       disabled={procesando === s.id}
                       className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50"
-                      style={{ color: '#1a1a2e', background: 'var(--color-success)' }}
+                      style={{ color: 'var(--cf-ink)', background: 'var(--cf-green-dark)' }}
                     >
                       Aprobar
                     </button>
@@ -535,33 +535,33 @@ export default function NotificationsCenter({ size = 'md' }) {
                 onClick={() => { openSyncDrawer?.(); setOpen(false) }}
                 className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cf-menu-item"
               >
-                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: failedTotal > 0 ? 'var(--color-danger-dim)' : 'var(--color-warning-dim)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: failedTotal > 0 ? 'var(--color-danger)' : 'var(--color-warning)' }}>
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: failedTotal > 0 ? 'var(--cf-red-pill-bg)' : 'var(--cf-gold-tint)' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: failedTotal > 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>
                     {!isOnline ? 'Sin conexión' : failedTotal > 0 ? `${failedTotal} elementos fallidos` : `${pendingCount} pendientes por sincronizar`}
                   </p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Toca para ver el detalle de sincronizacion</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Toca para ver el detalle de sincronizacion</p>
                 </div>
               </button>
             )}
 
             {canInstall && (
               <div className="flex items-start gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)' }}>
-                  <DownloadIcon className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--cf-gold-tint)' }}>
+                  <DownloadIcon className="w-4 h-4" style={{ color: 'var(--cf-gold)' }} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Instala la app</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Accede más rápido y úsala sin internet</p>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>Instala la app</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Accede más rápido y úsala sin internet</p>
                   <div className="flex gap-2 mt-2">
-                    <button onClick={dismissInstall} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+                    <button onClick={dismissInstall} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
                       Ahora no
                     </button>
-                    <button onClick={handleInstall} className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors" style={{ color: '#1a1a2e', background: 'var(--color-accent)' }}>
+                    <button onClick={handleInstall} className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--cf-ink)', background: 'var(--cf-gold)' }}>
                       Instalar
                     </button>
                   </div>
@@ -571,17 +571,17 @@ export default function NotificationsCenter({ size = 'md' }) {
 
             {canPush && (
               <div className="flex items-start gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}>
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: 'var(--cf-gold-tint)', color: 'var(--cf-gold)' }}>
                   <BellIcon className="w-4 h-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Activar notificaciones</p>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Recibe alertas de pagos, mora y vencimientos</p>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>Activar notificaciones</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Recibe alertas de pagos, mora y vencimientos</p>
                   <div className="flex gap-2 mt-2">
-                    <button onClick={dismissPush} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)' }}>
+                    <button onClick={dismissPush} className="text-[11px] px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
                       Ahora no
                     </button>
-                    <button onClick={subscribePush} className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors" style={{ color: '#1a1a2e', background: 'var(--color-accent)' }}>
+                    <button onClick={subscribePush} className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors" style={{ color: 'var(--cf-ink)', background: 'var(--cf-gold)' }}>
                       Activar
                     </button>
                   </div>

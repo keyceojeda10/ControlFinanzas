@@ -4,8 +4,8 @@ import { formatMoney } from '@/lib/i18n'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 const COLORES = {
-  efectivo: 'var(--color-success)',
-  transferencia: 'var(--color-info)',
+  efectivo: 'var(--cf-green-dark)',
+  transferencia: 'var(--cf-ink-2)',
 }
 
 export default function DesgloseMetodoPago({ items }) {
@@ -18,12 +18,12 @@ export default function DesgloseMetodoPago({ items }) {
     <div
       className="mb-3 rounded-[12px] overflow-hidden"
       style={{
-        background: 'var(--color-bg-card)',
-        border: '1px solid var(--color-border)',
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
       {/* Barra apilada */}
-      <div className="flex h-2 mx-3 mt-3 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-alt)' }}>
+      <div className="flex h-2 mx-3 mt-3 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
         {items.map((item) => {
           const pct = total > 0 ? (item.monto / total) * 100 : 0
           if (pct <= 0) return null
@@ -59,14 +59,14 @@ export default function DesgloseMetodoPago({ items }) {
                       style={{ background: color }}
                     />
                 }
-                <span className="text-[12px] font-medium truncate" style={{ color: 'var(--color-text-secondary)' }}>
+                <span className="text-[12px] font-medium truncate" style={{ color: 'var(--cf-ink-2)' }}>
                   {item.label}
                 </span>
                 <span className="text-[10px] font-semibold shrink-0" style={{ color: rowColor }}>
                   {pct}%
                 </span>
               </div>
-              <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color: 'var(--color-text-primary)' }}>
+              <span className="text-[12px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-ink)' }}>
                 {formatMoney(item.monto)}
               </span>
             </div>

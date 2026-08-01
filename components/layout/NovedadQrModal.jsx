@@ -84,22 +84,22 @@ export default function NovedadQrModal() {
       />
 
       <div
-        className="relative w-full sm:max-w-md overflow-hidden rounded-t-[20px] sm:rounded-[20px] border border-[var(--color-border)] bg-[var(--color-bg-card)]"
+        className="relative w-full sm:max-w-md overflow-hidden rounded-t-[20px] sm:rounded-[20px] border border-[var(--cf-border)] bg-[var(--cf-card)]"
         style={{ animation: 'nqr-up 260ms cubic-bezier(0.22,1,0.36,1)' }}
       >
         {/* Header con gradiente */}
         <div
           className="relative px-5 pt-5 pb-6 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 14%, transparent) 0%, transparent 100%)' }}
+          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 14%, transparent) 0%, transparent 100%)' }}
         >
           {/* Close */}
           <button
             onClick={cerrar}
             className="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: 'color-mix(in srgb, var(--color-text-primary) 8%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-ink) 8%, transparent)' }}
             aria-label="Cerrar"
           >
-            <svg className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-4 h-4" style={{ color: 'var(--cf-ink-2)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -107,7 +107,7 @@ export default function NovedadQrModal() {
           {/* Icon */}
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 20%, transparent)', color: 'var(--color-accent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-gold) 20%, transparent)', color: 'var(--cf-gold)' }}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d={ICON_PATHS[current.icon]} />
@@ -117,19 +117,19 @@ export default function NovedadQrModal() {
           {/* Tag */}
           <span
             className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md mb-2"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)', color: 'var(--color-accent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}
           >
             {current.tag}
           </span>
 
-          <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-lg font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
             {current.titulo}
           </h2>
         </div>
 
         {/* Body */}
         <div className="px-5 py-4">
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
             {current.texto}
           </p>
         </div>
@@ -143,8 +143,8 @@ export default function NovedadQrModal() {
               style={{
                 width: i === step ? 20 : 6,
                 background: i === step
-                  ? 'var(--color-accent)'
-                  : 'color-mix(in srgb, var(--color-text-primary) 15%, transparent)',
+                  ? 'var(--cf-gold)'
+                  : 'color-mix(in srgb, var(--cf-ink) 15%, transparent)',
               }}
             />
           ))}
@@ -156,7 +156,7 @@ export default function NovedadQrModal() {
             <button
               onClick={() => setStep(s => s - 1)}
               className="h-11 px-4 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
-              style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+              style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -167,7 +167,7 @@ export default function NovedadQrModal() {
           <button
             onClick={isLast ? cerrar : () => setStep(s => s + 1)}
             className="flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5"
-            style={{ background: 'var(--color-accent)', color: '#18181b' }}
+            style={{ background: 'var(--cf-gold)', color: '#18181b' }}
           >
             {isLast ? 'Entendido' : 'Siguiente'}
             {!isLast && (

@@ -11,7 +11,7 @@ export default function EmptyState({ icon, pose = 'vacia', titulo, hint, action,
       {icon ? (
         <div
           className="w-16 h-16 rounded-[18px] flex items-center justify-center mb-1"
-          style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+          style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}
         >
           {icon}
         </div>
@@ -19,12 +19,12 @@ export default function EmptyState({ icon, pose = 'vacia', titulo, hint, action,
         <MonedaCF pose={pose} size={size} />
       )}
       {titulo && (
-        <p className="text-[15px] font-bold mt-3" style={{ color: 'var(--color-text-primary)' }}>
+        <p className="text-[15px] font-bold mt-3" style={{ color: 'var(--cf-ink)' }}>
           {titulo}
         </p>
       )}
       {hint && (
-        <p className="text-[12.5px] mt-1.5 max-w-[280px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[12.5px] mt-1.5 max-w-[280px] leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
           {hint}
         </p>
       )}

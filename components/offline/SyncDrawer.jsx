@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useOffline } from '@/components/providers/OfflineProvider'
+import { useOffline } from '@/components/providers/offline-context'
 import ConflictResolverModal from '@/components/offline/ConflictResolverModal'
 
 // Drawer lateral que lista todos los items pendientes y fallidos con acciones.
@@ -44,16 +44,16 @@ export default function SyncDrawer({ open, onClose }) {
   return (
     <div className="fixed inset-0 z-[10000] flex justify-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md h-full bg-[var(--color-bg-base)] border-l border-[var(--color-border)] shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-[var(--color-bg-base)] border-b border-[var(--color-border)] px-4 py-3 flex items-center justify-between">
+      <div className="relative w-full max-w-md h-full bg-[var(--cf-surface)] border-l border-[var(--cf-border)] shadow-2xl overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-[var(--cf-surface)] border-b border-[var(--cf-border)] px-4 py-3 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-[var(--color-text-primary)]">Sincronización</h2>
-            <p className="text-[11px] text-[var(--color-text-muted)]">
-              {isOnline ? 'Online' : 'Offline'}
-              {syncMeta?.syncedAt && ` - última descarga ${fmtDate(syncMeta.syncedAt)}`}
+            <h2 className="text-base font-bold text-[var(--cf-ink)]">Sincronización</h2>
+            <p className="text-[11px] text-[var(--cf-ink-3)]">
+              {isOnline ? 'Con señal' : 'Sin señal'}
+              {syncMeta?.syncedAt && ` · última descarga ${fmtDate(syncMeta.syncedAt)}`}
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[var(--color-bg-hover)] flex items-center justify-center">
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-[var(--cf-fill)] flex items-center justify-center">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -62,16 +62,16 @@ export default function SyncDrawer({ open, onClose }) {
 
         <div className="p-4 space-y-4">
           {/* Resumen + boton forzar sync */}
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3 flex items-center justify-between">
+          <div className="rounded-xl border border-[var(--cf-border)] bg-[var(--cf-card)] p-3 flex items-center justify-between">
             <div>
-              <p className="text-xs text-[var(--color-text-muted)]">Pendientes</p>
-              <p className="text-xl font-bold text-[var(--color-text-primary)]">{pendingCount}</p>
-              {failedTotal > 0 && <p className="text-[11px] text-[var(--color-danger)] mt-0.5">{failedTotal} fallidos</p>}
+              <p className="text-xs text-[var(--cf-ink-3)]">Pendientes</p>
+              <p className="text-xl font-bold text-[var(--cf-ink)]">{pendingCount}</p>
+              {failedTotal > 0 && <p className="text-[11px] text-[var(--cf-red-dark)] mt-0.5">{failedTotal} fallidos</p>}
             </div>
             <button
               onClick={() => manualSync?.()}
               disabled={!isOnline || bulkSyncing}
-              className="px-3 h-9 rounded-lg bg-[var(--color-accent)] text-black text-xs font-bold disabled:opacity-50"
+              className="px-3 h-9 rounded-lg bg-[var(--cf-gold)] text-black text-xs font-bold disabled:opacity-50"
             >
               {bulkSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
             </button>
@@ -79,28 +79,28 @@ export default function SyncDrawer({ open, onClose }) {
 
           {/* Conflictos (prioritario) */}
           {conflictos && conflictos.length > 0 && (
-            <div className="rounded-xl border-2 border-[var(--color-danger)] bg-[var(--color-danger)]/5 p-3">
+            <div className="rounded-xl border-2 border-[var(--cf-red-dark)] bg-[var(--cf-red-dark)]/5 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-[var(--color-danger)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[var(--cf-red-dark)]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
                 </svg>
-                <p className="text-[11px] uppercase tracking-wide text-[var(--color-danger)] font-bold">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--cf-red-dark)] font-bold">
                   Conflictos ({conflictos.length})
                 </p>
               </div>
-              <p className="text-[11px] text-[var(--color-text-muted)] mb-2">
+              <p className="text-[11px] text-[var(--cf-ink-3)] mb-2">
                 Alguien modificó estos registros mientras editabas offline. Revisa y decide.
               </p>
               <ul className="space-y-1.5">
                 {conflictos.map((m) => (
-                  <li key={m.id} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 flex items-center justify-between gap-2">
+                  <li key={m.id} className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 py-2 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{descripcionMutacion(m)}</p>
-                      <p className="text-[11px] text-[var(--color-text-muted)] truncate">{fmtDate(m.createdAt)}</p>
+                      <p className="text-xs font-medium text-[var(--cf-ink)] truncate">{descripcionMutacion(m)}</p>
+                      <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{fmtDate(m.createdAt)}</p>
                     </div>
                     <button
                       onClick={() => setConflictoActivo(m)}
-                      className="text-[11px] px-2.5 h-7 rounded-md bg-[var(--color-danger)] text-white font-semibold whitespace-nowrap"
+                      className="text-[11px] px-2.5 h-7 rounded-md bg-[var(--cf-red-dark)] text-white font-semibold whitespace-nowrap"
                     >
                       Resolver
                     </button>
@@ -134,8 +134,8 @@ export default function SyncDrawer({ open, onClose }) {
           {/* Fallidos por tipo */}
           {failedTotal > 0 && (
             <>
-              <div className="pt-2 border-t border-[var(--color-border)]">
-                <p className="text-[11px] uppercase tracking-wide text-[var(--color-danger)] font-semibold mb-2">Fallidos</p>
+              <div className="pt-2 border-t border-[var(--cf-border)]">
+                <p className="text-[11px] uppercase tracking-wide text-[var(--cf-red-dark)] font-semibold mb-2">Fallidos</p>
               </div>
 
               <Section title="Pagos fallidos" items={failedDetails?.pagos} render={(p) => ({
@@ -164,7 +164,7 @@ export default function SyncDrawer({ open, onClose }) {
           )}
 
           {pendingCount === 0 && failedTotal === 0 && (!conflictos || conflictos.length === 0) && (
-            <div className="text-center py-8 text-[var(--color-text-muted)] text-sm">
+            <div className="text-center py-8 text-[var(--cf-ink-3)] text-sm">
               {isOnline ? 'Todo sincronizado' : 'Sin cambios pendientes'}
             </div>
           )}
@@ -189,23 +189,23 @@ function Section({ title, items, render, onDiscard, onRetry, failed }) {
   if (!items || items.length === 0) return null
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)] font-semibold mb-2">{title} ({items.length})</p>
+      <p className="text-[11px] uppercase tracking-wide text-[var(--cf-ink-3)] font-semibold mb-2">{title} ({items.length})</p>
       <ul className="space-y-1.5">
         {items.map((it, idx) => {
           const { main, sub } = render(it)
           return (
-            <li key={it.id || it.tempId || idx} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 py-2 flex items-center justify-between gap-2">
+            <li key={it.id || it.tempId || idx} className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 py-2 flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{main}</p>
-                <p className={`text-[11px] truncate ${failed ? 'text-[var(--color-danger)]' : 'text-[var(--color-text-muted)]'}`}>{sub}</p>
+                <p className="text-xs font-medium text-[var(--cf-ink)] truncate">{main}</p>
+                <p className={`text-[11px] truncate ${failed ? 'text-[var(--cf-red-dark)]' : 'text-[var(--cf-ink-3)]'}`}>{sub}</p>
               </div>
               <div className="flex gap-1 flex-shrink-0">
                 {onRetry && (
-                  <button onClick={() => onRetry(it)} className="text-[11px] px-2 h-7 rounded-md bg-[var(--color-accent)] text-black font-semibold">
+                  <button onClick={() => onRetry(it)} className="text-[11px] px-2 h-7 rounded-md bg-[var(--cf-gold)] text-black font-semibold">
                     Reintentar
                   </button>
                 )}
-                <button onClick={() => onDiscard(it)} className="text-[11px] px-2 h-7 rounded-md border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-danger)]">
+                <button onClick={() => onDiscard(it)} className="text-[11px] px-2 h-7 rounded-md border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)]">
                   Descartar
                 </button>
               </div>

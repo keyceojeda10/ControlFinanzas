@@ -103,22 +103,22 @@ export default function CobradorOnboarding({ userId }) {
   if (!visible) return null
 
   return (
-    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden">
+    <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] overflow-hidden">
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-4 px-4 py-4 hover:bg-[var(--color-bg-hover)] transition-colors"
+        className="w-full flex items-center gap-4 px-4 py-4 hover:bg-[var(--cf-fill)] transition-colors"
       >
         <div className="w-10 h-10 rounded-full bg-[rgba(59,130,246,0.12)] border border-[rgba(59,130,246,0.25)] flex items-center justify-center shrink-0">
-          <svg className="w-5 h-5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[var(--cf-ink-2)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div className="flex-1 text-left min-w-0">
-          <p className="text-sm font-bold text-[var(--color-text-primary)]">Primeros pasos como cobrador</p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Aprende lo básico para empezar a cobrar</p>
+          <p className="text-sm font-bold text-[var(--cf-ink)]">Primeros pasos como cobrador</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">Aprende lo básico para empezar a cobrar</p>
         </div>
         <svg
-          className={`w-5 h-5 text-[var(--color-text-muted)] transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-[var(--cf-ink-3)] transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -126,7 +126,7 @@ export default function CobradorOnboarding({ userId }) {
       </button>
 
       {expanded && (
-        <div className="px-2 pb-3 border-t border-[var(--color-border)]">
+        <div className="px-2 pb-3 border-t border-[var(--cf-border)]">
           <div className="space-y-0.5 mt-2">
             {PASOS.map((paso, i) => {
               if (paso.isInstall) {
@@ -134,16 +134,16 @@ export default function CobradorOnboarding({ userId }) {
                   <button
                     key={i}
                     onClick={() => setShowInstallGuide(true)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--cf-fill)] transition-all group text-left"
                   >
-                    <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-info)] group-hover:text-[var(--color-info)] transition-colors">
+                    <div className="w-7 h-7 rounded-full border-2 border-[var(--cf-border-strong)] flex items-center justify-center shrink-0 text-[var(--cf-ink-3)] group-hover:border-[var(--cf-ink-2)] group-hover:text-[var(--cf-ink-2)] transition-colors">
                       {paso.icono}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-info)] transition-colors">{paso.titulo}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{paso.descripcion}</p>
+                      <p className="text-sm font-medium text-[var(--cf-ink)] group-hover:text-[var(--cf-ink-2)] transition-colors">{paso.titulo}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)]">{paso.descripcion}</p>
                     </div>
-                    <svg className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-info)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-[var(--cf-ink-3)] group-hover:text-[var(--cf-ink-2)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
@@ -153,16 +153,16 @@ export default function CobradorOnboarding({ userId }) {
                 <Link
                   key={i}
                   href={paso.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--color-bg-hover)] transition-all group"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-[10px] hover:bg-[var(--cf-fill)] transition-all group"
                 >
-                  <div className="w-7 h-7 rounded-full border-2 border-[var(--color-border-hover)] flex items-center justify-center shrink-0 text-[var(--color-text-muted)] group-hover:border-[var(--color-info)] group-hover:text-[var(--color-info)] transition-colors">
+                  <div className="w-7 h-7 rounded-full border-2 border-[var(--cf-border-strong)] flex items-center justify-center shrink-0 text-[var(--cf-ink-3)] group-hover:border-[var(--cf-ink-2)] group-hover:text-[var(--cf-ink-2)] transition-colors">
                     {paso.icono}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-info)] transition-colors">{paso.titulo}</p>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">{paso.descripcion}</p>
+                    <p className="text-sm font-medium text-[var(--cf-ink)] group-hover:text-[var(--cf-ink-2)] transition-colors">{paso.titulo}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)]">{paso.descripcion}</p>
                   </div>
-                  <svg className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-info)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[var(--cf-ink-3)] group-hover:text-[var(--cf-ink-2)] transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </Link>
@@ -174,7 +174,7 @@ export default function CobradorOnboarding({ userId }) {
           <div className="flex justify-center mt-3 mb-1">
             <button
               onClick={handleDismiss}
-              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors"
+              className="text-[10px] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink-3)] transition-colors"
             >
               Ya entendí, ocultar guía
             </button>

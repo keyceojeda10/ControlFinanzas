@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/nuevo/page.jsx
 
 import { useState, useEffect } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
@@ -11,12 +12,12 @@ import CompartirCredenciales   from '@/components/cobradores/CompartirCredencial
 const LIMITES = { starter: 1, basic: 1, growth: 2, standard: 5, professional: 10 }
 
 // Card de seccion premium (definida fuera para evitar perdida de focus)
-const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, accent }) => (
+const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }) => (
   <div
     className="rounded-[20px] p-4"
     style={{
-      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-      border: '1px solid var(--color-border)',
+      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+      border: '1px solid var(--cf-border)',
     }}
   >
     <div className="flex items-center justify-between gap-2 mb-3">
@@ -37,6 +38,8 @@ const SectionCard = ({ icon, title, color = 'var(--color-accent)', children, acc
 )
 
 export default function NuevoCobrador() {
+  useCabecera({ titulo: 'Nuevo cobrador' })
+
   const router = useRouter()
   const { session, esOwner, loading: authLoading } = useAuth()
 
@@ -133,34 +136,34 @@ export default function NuevoCobrador() {
     return (
       <div className="max-w-md mx-auto">
         <div
-          className="border border-[color-mix(in_srgb,var(--color-success)_30%,transparent)] rounded-[20px] p-6 text-center"
+          className="border border-[color-mix(in_srgb,var(--cf-green-dark)_30%,transparent)] rounded-[20px] p-6 text-center"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)',
-            boxShadow: '0 0 30px color-mix(in srgb, var(--color-success) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 4%, transparent) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, transparent) 100%)',
+            boxShadow: '0 0 30px color-mix(in srgb, var(--cf-green-dark) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)',
           }}
         >
-          <div className="w-12 h-12 rounded-full bg-[color-mix(in_srgb,var(--color-success)_12%,transparent)] flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 rounded-full bg-[color-mix(in_srgb,var(--cf-green-dark)_12%,transparent)] flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-[var(--color-text-primary)] mb-1">¡Cobrador creado!</h2>
-          <p className="text-xs text-[var(--color-text-muted)] mb-5">
+          <h2 className="text-base font-bold text-[var(--cf-ink)] mb-1">¡Cobrador creado!</h2>
+          <p className="text-xs text-[var(--cf-ink-3)] mb-5">
             Guarda estas credenciales — la contraseña no se mostrará de nuevo.
           </p>
 
-          <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4 text-left mb-4 space-y-2">
+          <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] p-4 text-left mb-4 space-y-2">
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Nombre</p>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">{creado.nombre}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Nombre</p>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">{creado.nombre}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Email</p>
-              <p className="text-sm font-medium text-[var(--color-text-primary)]">{creado.email}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Email</p>
+              <p className="text-sm font-medium text-[var(--cf-ink)]">{creado.email}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Contraseña temporal</p>
-              <p className="text-sm font-bold text-[var(--color-accent)] font-mono">{creado.password}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Contraseña temporal</p>
+              <p className="text-sm font-bold text-[var(--cf-gold)] font-mono">{creado.password}</p>
             </div>
           </div>
 
@@ -185,22 +188,12 @@ export default function NuevoCobrador() {
   return (
     <div className="max-w-md mx-auto">
       <div className="mb-5">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-purple) 22%, transparent), color-mix(in srgb, var(--color-purple) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--color-purple) 30%, transparent)',
-              color: 'var(--color-purple)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 22%, transparent), color-mix(in srgb, var(--cf-ink-2) 12%, transparent))',
+              border: '1px solid color-mix(in srgb, var(--cf-ink-2) 30%, transparent)',
+              color: 'var(--cf-ink-2)',
             }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
@@ -208,11 +201,12 @@ export default function NuevoCobrador() {
             </svg>
           </div>
           <div>
-            <h1 className="text-[25px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>Nuevo cobrador</h1>
+            {/* Titulo en la cabecera. Debajo se queda cuantos cobradores
+                quedan, que es la unica cifra que importa aqui. */}
             {restantes !== null && (
-              <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Puedes agregar{' '}
-                <span style={{ color: restantes > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                <span style={{ color: restantes > 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
                   {restantes} cobrador{restantes !== 1 ? 'es' : ''}
                 </span>{' '}
                 más (plan {plan})
@@ -224,31 +218,31 @@ export default function NuevoCobrador() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && !limitReached && (
-          <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-sm rounded-[12px] px-4 py-3">
+          <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
             {error}
           </div>
         )}
 
         {limitReached && puedeComprarExtra && (
-          <div className="bg-[color-mix(in_srgb,var(--color-warning)_8%,transparent)] border border-[color-mix(in_srgb,var(--color-warning)_25%,transparent)] rounded-[12px] p-4 space-y-3">
+          <div className="bg-[color-mix(in_srgb,var(--cf-gold-dark)_8%,transparent)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_25%,transparent)] rounded-[12px] p-4 space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)] flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-9 h-9 rounded-full bg-[color-mix(in_srgb,var(--cf-gold-dark)_15%,transparent)] flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                     d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[var(--color-text-primary)]">Límite alcanzado</p>
-                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--color-accent)] font-bold">$19.000/mes</span>.
+                <p className="text-sm font-semibold text-[var(--cf-ink)]">Límite alcanzado</p>
+                <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">
+                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--cf-gold)] font-bold">$19.000/mes</span>.
                 </p>
               </div>
             </div>
             <button
               onClick={comprarCobradorExtra}
               disabled={comprando}
-              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] text-[var(--cf-ink)] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {comprando ? (
                 <>
@@ -264,14 +258,14 @@ export default function NuevoCobrador() {
         )}
 
         {limitReached && !puedeComprarExtra && (
-          <div className="bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] border border-[color-mix(in_srgb,var(--color-danger)_20%,transparent)] rounded-[12px] p-4 text-center">
-            <p className="text-sm text-[var(--color-danger)] font-medium">Límite alcanzado</p>
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">
+          <div className="bg-[color-mix(in_srgb,var(--cf-red-dark)_8%,transparent)] border border-[color-mix(in_srgb,var(--cf-red-dark)_20%,transparent)] rounded-[12px] p-4 text-center">
+            <p className="text-sm text-[var(--cf-red-dark)] font-medium">Límite alcanzado</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-1">
               Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
             </p>
             <button
               onClick={() => router.push('/configuracion/plan')}
-              className="mt-3 text-sm text-[var(--color-accent)] hover:underline"
+              className="mt-3 text-sm text-[var(--cf-gold)] hover:underline"
             >
               Ver planes
             </button>
@@ -281,7 +275,7 @@ export default function NuevoCobrador() {
         {/* Datos personales */}
         <SectionCard
           title="Datos personales"
-          color="var(--color-purple)"
+          color="var(--cf-ink-2)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>}
         >
           <div className="space-y-3">
@@ -302,7 +296,7 @@ export default function NuevoCobrador() {
                 onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
                 autoComplete="tel"
               />
-              <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
                 Si lo agregas, podrás enviarle las credenciales directo por WhatsApp.
               </p>
             </div>
@@ -312,7 +306,7 @@ export default function NuevoCobrador() {
         {/* Acceso al sistema */}
         <SectionCard
           title="Acceso al sistema"
-          color="var(--color-success)"
+          color="var(--cf-green-dark)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>}
         >
           <div className="space-y-3">
@@ -329,7 +323,7 @@ export default function NuevoCobrador() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="text-[10px] text-[var(--color-text-muted)]">
+            <p className="text-[10px] text-[var(--cf-ink-3)]">
               El cobrador deberá usar estas credenciales para ingresar al sistema.
             </p>
           </div>
@@ -338,7 +332,7 @@ export default function NuevoCobrador() {
         {/* Permisos */}
         <SectionCard
           title="Permisos del cobrador"
-          color="var(--color-accent)"
+          color="var(--cf-gold)"
           icon={<svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
         >
           <div className="space-y-3">
@@ -358,8 +352,8 @@ export default function NuevoCobrador() {
             ].map((p) => (
               <div key={p.key} className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[var(--color-text-primary)]">{p.label}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)] leading-snug">{p.desc}</p>
+                  <p className="text-sm text-[var(--cf-ink)]">{p.label}</p>
+                  <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug">{p.desc}</p>
                 </div>
                 <button
                   type="button"
@@ -377,7 +371,7 @@ export default function NuevoCobrador() {
                   disabled={p.key === 'gestionarPrestamos' && !permisos.crearPrestamos}
                   className={[
                     'relative w-10 h-[22px] rounded-full transition-colors shrink-0 mt-0.5',
-                    permisos[p.key] ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-hover)]',
+                    permisos[p.key] ? 'bg-[var(--cf-gold)]' : 'bg-[var(--cf-fill)]',
                     p.key === 'gestionarPrestamos' && !permisos.crearPrestamos ? 'opacity-50 cursor-not-allowed' : '',
                   ].join(' ')}
                 >
@@ -389,10 +383,10 @@ export default function NuevoCobrador() {
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-[var(--color-text-muted)] mt-2">
+          <p className="text-[9px] text-[var(--cf-ink-3)] mt-2">
             Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
           </p>
-          <p className="text-[9px] text-[var(--color-text-muted)] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
+          <p className="text-[9px] text-[var(--cf-ink-3)] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
         </SectionCard>
 
         <div className="flex gap-3 pt-2">

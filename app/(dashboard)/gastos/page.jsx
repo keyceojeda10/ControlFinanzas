@@ -1,161 +1,138 @@
 'use client'
-// app/(dashboard)/gastos/page.jsx — Gastos unificados: Gastos del día + Capital
 
-import { formatMoney } from '@/lib/i18n'
+// app/(dashboard)/gastos/page.jsx — gastos de cobradores y capital.
+//
+// ══ UN GASTO PENDIENTE ES TRABAJO, NO UN REGISTRO ══════════════════════════
+//
+// No hay lámina de esta pantalla —el paquete solo dibuja T06-04, la hoja de
+// registrar un gasto—, así que se construye con las reglas del sistema y con la
+// pregunta que el dueño trae: ¿CUÁNTO ME VAN A SACAR DE LA CAJA HOY?
+//
+// Por eso el total pendiente va en bloque oscuro y arriba del todo: es plata que
+// va a salir en cuanto se pulse «Aprobar». Lo aprobado y lo rechazado son
+// historia y se consultan; lo pendiente es una bandeja de entrada.
+//
+// ══ EL COLOR SE QUITA, NO SE AÑADE ═════════════════════════════════════════
+//
+// La versión anterior teñía cada tarjeta del color de su estado —ámbar, verde,
+// rojo— DENTRO de una lista ya filtrada por ese mismo estado. Todas del mismo
+// color y todas con una pastilla repitiendo el nombre de la pestaña en la que
+// estás. Eso no informa: gasta la atención que necesita el monto.
+//
+// Aquí el estado lo dice la pestaña, y el color solo aparece en las dos acciones
+// que mueven plata.
+
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Card } from '@/components/ui/Card'
-import { SkeletonCard } from '@/components/ui/Skeleton'
-import CapitalTab from '@/components/capital/CapitalTab'
+import { useCountry } from '@/hooks/useCountry'
+import { formatMoney } from '@/lib/i18n'
 import ReportarGasto from '@/components/gastos/ReportarGasto'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Tarjeta, BloqueOscuro, Chip, EstadoVacio } from '@/components/cf/primitivos'
+import { PilaEsqueletos } from '@/components/cf/primitivos2'
 
-const ESTADO_COLORS = {
-  pendiente: 'bg-[var(--color-warning-dim)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)]',
-  aprobado: 'bg-[var(--color-success-dim)] text-[var(--color-success)] border-[color-mix(in_srgb,var(--color-success)_30%,transparent)]',
-  rechazado: 'bg-[var(--color-danger-dim)] text-[var(--color-danger)] border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)]',
-}
-
-const ESTADO_TABS = [
-  { key: 'pendiente', label: 'Pendientes' },
-  { key: 'aprobado', label: 'Aprobados' },
-  { key: 'rechazado', label: 'Rechazados' },
+const ESTADOS = [
+  { id: 'pendiente', etiqueta: 'Pendientes' },
+  { id: 'aprobado', etiqueta: 'Aprobados' },
+  { id: 'rechazado', etiqueta: 'Rechazados' },
 ]
 
-const PAGE_TABS = [
-  {
-    key: 'dia',
-    label: 'Gastos del día',
-    desc: 'Reportes de cobradores',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" />
-      </svg>
-    ),
+const VACIO = {
+  pendiente: {
+    titulo: 'No hay nada por aprobar',
+    explicacion: 'Cuando un cobrador reporte un gasto en la calle, aparece aquí para que lo apruebes o lo rechaces.',
   },
-  {
-    key: 'capital',
-    label: 'Capital',
-    desc: 'Saldo y movimientos',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-      </svg>
-    ),
+  aprobado: {
+    titulo: 'Todavía no has aprobado ningún gasto',
+    explicacion: 'Los gastos que apruebes salen del capital y quedan registrados aquí.',
   },
-]
-
-const TAB_COLORS = {
-  pendiente:  { color: 'var(--color-warning)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-  aprobado:   { color: 'var(--color-success)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> },
-  rechazado:  { color: 'var(--color-danger)', icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> },
+  rechazado: {
+    titulo: 'No has rechazado ningún gasto',
+    explicacion: 'Un gasto rechazado no toca el capital, pero queda para que el cobrador vea la respuesta.',
+  },
 }
 
-const getColombiaDateStr = () => {
-  const d = new Date(Date.now() - 5 * 60 * 60 * 1000)
-  return d.toISOString().slice(0, 10)
-}
+const hoyBogota = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-const fmtFecha = (iso) => {
+const cuando = (iso) => {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('es-CO', {
-    day: 'numeric', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
     timeZone: 'America/Bogota',
   })
 }
 
 export default function GastosPage() {
   const { esOwner, loading: authLoading } = useAuth()
-
+  const { country } = useCountry()
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const fmt = useCallback((v) => formatMoney(v, country), [country])
 
-  // Tab de página: 'dia' | 'capital'
-  const [pageTab, setPageTab] = useState(() => {
-    const t = searchParams?.get('tab')
-    return t === 'capital' ? 'capital' : 'dia'
-  })
-
-  // Tab de estado dentro de "Gastos del día"
-  const [estadoTab, setEstadoTab] = useState('pendiente')
-  const [showReportarGasto, setShowReportarGasto] = useState(false)
+  const [estado, setEstado] = useState('pendiente')
+  // `?anotar=1` abre la hoja al llegar: el menu del + tenia `/gastos/nuevo`, que
+  // no existe, porque anotar un gasto no es una pantalla sino una hoja de aqui.
+  const [abrirReportar, setAbrirReportar] = useState(false)
+  useEffect(() => {
+    if (searchParams?.get('anotar')) setAbrirReportar(true)
+  }, [searchParams])
   const [fecha, setFecha] = useState('')
   const [cobradorId, setCobradorId] = useState('')
   const [cobradores, setCobradores] = useState([])
   const [gastos, setGastos] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(null)
-  const [confirmEliminarGasto, setConfirmEliminarGasto] = useState(null)
-  const [bannerGastosVisible, setBannerGastosVisible] = useState(() => {
-    try { return localStorage.getItem('cf-banner-gastos') !== 'hidden' } catch { return true }
-  })
+  const [aBorrar, setABorrar] = useState(null)
 
-  const cerrarBannerGastos = () => {
-    setBannerGastosVisible(false)
-    try { localStorage.setItem('cf-banner-gastos', 'hidden') } catch {}
-  }
-
-  const fetchGastos = useCallback(async () => {
-    setLoading(true)
+  const traer = useCallback(async () => {
+    setCargando(true)
     try {
       const params = new URLSearchParams()
-      if (estadoTab) params.set('estado', estadoTab)
+      if (estado) params.set('estado', estado)
       if (fecha) params.set('fecha', fecha)
       if (cobradorId) params.set('cobrador', cobradorId)
-      const res = await fetch(`/api/gastos?${params}`)
-      if (!res.ok) { setGastos([]); return }
-      const data = await res.json()
-      setGastos(Array.isArray(data) ? data : [])
+      const res = await fetch(`/api/gastos?${params}`, { cache: 'no-store' })
+      setGastos(res.ok ? (await res.json()) || [] : [])
     } catch {
       setGastos([])
     } finally {
-      setLoading(false)
+      setCargando(false)
     }
-  }, [estadoTab, fecha, cobradorId])
+  }, [estado, fecha, cobradorId])
 
   useEffect(() => {
     if (!esOwner) return
-    fetch('/api/cobradores')
-      .then(r => r.ok ? r.json() : [])
-      .then(d => setCobradores(Array.isArray(d) ? d : []))
-      .catch(() => {})
+    fetch('/api/cobradores').then((r) => (r.ok ? r.json() : []))
+      .then((d) => setCobradores(Array.isArray(d) ? d : [])).catch(() => {})
   }, [esOwner])
 
-  useEffect(() => {
-    if (pageTab === 'dia') fetchGastos()
-  }, [fetchGastos, pageTab])
+  useEffect(() => { traer() }, [traer])
 
-  const totales = useMemo(() => {
-    const suma = gastos.reduce((a, g) => a + (g.monto || 0), 0)
-    return { cantidad: gastos.length, suma }
-  }, [gastos])
+  const total = useMemo(() => gastos.reduce((a, g) => a + (g.monto || 0), 0), [gastos])
 
-  const handleAccion = async (gasto, estado) => {
+  const decidir = async (gasto, nuevo) => {
     setProcesando(gasto.id)
     try {
       const res = await fetch(`/api/gastos/${gasto.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado }),
+        body: JSON.stringify({ estado: nuevo }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         alert(d.error || 'No se pudo actualizar')
         return
       }
-      fetchGastos()
+      traer()
     } finally {
       setProcesando(null)
     }
   }
 
-  const handleEliminar = async (gasto) => {
-    setConfirmEliminarGasto(gasto)
-  }
-
-  const _doEliminarGasto = async (gasto) => {
-    setConfirmEliminarGasto(null)
+  const borrar = async (gasto) => {
+    setABorrar(null)
     setProcesando(gasto.id)
     try {
       const res = await fetch(`/api/gastos/${gasto.id}`, { method: 'DELETE' })
@@ -164,310 +141,270 @@ export default function GastosPage() {
         alert(d.error || 'No se pudo eliminar')
         return
       }
-      fetchGastos()
+      traer()
     } finally {
       setProcesando(null)
     }
   }
 
-  if (authLoading) return <div className="p-4"><SkeletonCard /></div>
+  if (authLoading) return <PilaEsqueletos cuantos={3} alto={96} />
 
   if (!esOwner) {
     return (
-      <div className="p-4">
-        <Card>
-          <p className="text-sm text-[var(--color-text-muted)]">Solo el administrador puede gestionar gastos.</p>
-        </Card>
-      </div>
+      <p style={{ padding: 16, textAlign: 'center', color: 'var(--cf-ink-3)', fontSize: 14 }}>
+        Solo el administrador puede gestionar gastos.
+      </p>
     )
   }
 
+  const hayFiltro = Boolean(fecha || cobradorId)
+
   return (
-    <div className="max-w-3xl lg:max-w-6xl mx-auto p-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Gastos</h1>
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            Gastos de cobradores y control de capital
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          }}>Gastos</span>
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+            Lo que se sale del capital
+          </span>
         </div>
-        {pageTab === 'dia' && (
-          <button
-            type="button"
-            onClick={() => setShowReportarGasto(true)}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-[12px] text-xs font-semibold shrink-0 transition-all"
-            style={{
-              background: 'var(--color-accent)',
-              color: 'var(--color-accent-text)',
-            }}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Mi gasto
+          <button type="button" onClick={() => setAbrirReportar(true)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px',
+            borderRadius: 12, flex: 'none', cursor: 'pointer', border: 0,
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+            font: 'inherit', fontSize: 13.5, fontWeight: 700,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            Anotar gasto
           </button>
-        )}
       </div>
 
       <ReportarGasto
-        open={showReportarGasto}
-        onClose={() => setShowReportarGasto(false)}
-        onSuccess={() => { setShowReportarGasto(false); fetchGastos() }}
+        open={abrirReportar}
+        onClose={() => setAbrirReportar(false)}
+        onSuccess={() => { setAbrirReportar(false); traer() }}
         fecha={fecha || undefined}
         cobradores={cobradores}
       />
 
-      {/* Banner explicativo (colapsable) */}
-      {bannerGastosVisible && pageTab === 'dia' && (
-        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-warning) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-warning) 20%, var(--color-border))' }}>
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-warning)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25M6.75 12h.008v.008H6.75V12z" />
-          </svg>
-          <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--color-text-secondary)' }}>
-            Los gastos que reportan tus cobradores en campo — viáticos, papelería, imprevistos. Puedes aprobarlos o rechazarlos y el saldo de capital se actualiza automáticamente.
-          </p>
-          <button onClick={cerrarBannerGastos} className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(255,255,255,0.1)]" style={{ color: 'var(--color-text-muted)' }} title="Cerrar">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
-      {bannerGastosVisible && pageTab === 'capital' && (
-        <div className="rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--color-teal) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-teal) 20%, var(--color-border))' }}>
-          <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-teal)' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
-          </svg>
-          <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--color-text-secondary)' }}>
-            Tu fondo de préstamos. Aquí registras el dinero que metes o sacas del negocio. El saldo refleja cuánto tienes disponible para prestar en este momento.
-          </p>
-          <button onClick={cerrarBannerGastos} className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(255,255,255,0.1)]" style={{ color: 'var(--color-text-muted)' }} title="Cerrar">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
+      {/* ── «CAPITAL» ESTABA EN DOS SITIOS ──
+          Aquí había un segmentado «Gastos | Capital», y la pestaña Capital
+          pintaba `<CapitalTab />`… que es EXACTAMENTE lo mismo que pinta la
+          pantalla `/capital`, la que el menú llama «Mi plata». No era una vista
+          parecida: era el mismo componente importado dos veces.
 
-      {/* Tabs de página: Gastos del día | Capital */}
-      <div
-        className="flex gap-1 p-1 rounded-[12px]"
-        style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}
-      >
-        {PAGE_TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setPageTab(t.key)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-[10px] text-sm font-semibold transition-all"
-            style={{
-              background: pageTab === t.key ? 'var(--color-bg-card)' : 'transparent',
-              color: pageTab === t.key ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-              boxShadow: pageTab === t.key ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
-            }}
-          >
-            {t.icon}
-            <span className="hidden sm:inline">{t.label}</span>
-            <span className="sm:hidden">{t.label.split(' ')[0]}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Contenido según tab activo */}
-      {pageTab === 'capital' ? (
-        <CapitalTab />
-      ) : (
+          Y que el fondo del negocio viva dentro de «Gastos» no se sostiene: los
+          gastos son lo que SALE del capital, no el capital. Se queda solo en su
+          pantalla; abajo hay una fila que lleva a ella. */}
         <>
-          {/* Tabs de estado */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {ESTADO_TABS.map((t) => {
-              const tabInfo = TAB_COLORS[t.key]
-              const active = estadoTab === t.key
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setEstadoTab(t.key)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all"
-                  style={{
-                    background: active ? `color-mix(in srgb, ${tabInfo.color} 18%, transparent)` : 'var(--color-bg-card)',
-                    color: active ? tabInfo.color : 'var(--color-text-muted)',
-                    border: `1px solid ${active ? `color-mix(in srgb, ${tabInfo.color} 35%, transparent)` : 'var(--color-border)'}`,
-                  }}
-                >
-                  <span className="w-3 h-3" style={{ color: tabInfo.color }}>{tabInfo.icon}</span>
-                  {t.label}
-                </button>
-              )
-            })}
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+            {ESTADOS.map((e) => (
+              <Chip key={e.id} activo={estado === e.id} onClick={() => setEstado(e.id)}>
+                {e.etiqueta}
+              </Chip>
+            ))}
           </div>
 
-          {/* Hero del total + filtros */}
-          <div
-            className="rounded-[20px] px-4 py-4 cf-card-shadow"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 8%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-              border: `1px solid color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 22%, var(--color-border))`,
-              boxShadow: `0 4px 16px color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 12%, transparent)`,
-            }}
+          {/* LA CIFRA ES LO QUE VA A SALIR DE LA CAJA. En pendientes va en dorado
+              —es una decisión que falta por tomar—; en las otras dos es historia y
+              va en blanco. */}
+          <BloqueOscuro
+            etiqueta={`Total ${ESTADOS.find((e) => e.id === estado)?.etiqueta.toLowerCase()}`}
+            cifra={fmt(total)}
+            tono={estado === 'pendiente' ? 'ganancia' : 'neutro'}
           >
-            <div className="flex items-end justify-between gap-3 mb-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: TAB_COLORS[estadoTab].color }}>
-                  Total {ESTADO_TABS.find(t => t.key === estadoTab)?.label.toLowerCase()}
-                </p>
-                <p
-                  className="font-mono-display font-bold leading-none mt-1"
-                  style={{
-                    color: TAB_COLORS[estadoTab].color,
-                    fontSize: 'clamp(24px, 6vw, 32px)',
-                    textShadow: `0 0 24px color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 25%, transparent)`,
-                  }}
-                >
-                  {formatMoney(totales.suma)}
-                </p>
-                <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                  {totales.cantidad} {totales.cantidad === 1 ? 'gasto' : 'gastos'}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 pt-3" style={{ borderTop: `1px solid color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 15%, transparent)` }}>
-              <div className="flex items-center gap-1.5">
-                <label className="flex items-center gap-1.5 h-8 px-2 rounded-[8px] border cursor-pointer"
-                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-card)' }}>
-                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--color-text-muted)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-[11px]" style={{ color: fecha ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }}>
-                    {fecha ? new Date(fecha + 'T12:00:00-05:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' }) : 'Filtrar fecha'}
-                  </span>
-                  <input
-                    type="date"
-                    value={fecha}
-                    max={getColombiaDateStr()}
-                    onChange={(e) => setFecha(e.target.value)}
-                    className="sr-only"
-                  />
-                </label>
-                {fecha && (
-                  <button type="button" onClick={() => setFecha('')}
-                    className="text-[10px] px-2 py-1" style={{ color: 'var(--color-text-muted)' }}>
-                    Limpiar
-                  </button>
-                )}
-              </div>
-              {cobradores.length > 0 && (
+            <span style={{ fontSize: 13, color: '#A3A8B2' }} className="cf-num">
+              {gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'}
+              {hayFiltro ? ' · con filtro' : ''}
+            </span>
+          </BloqueOscuro>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <label style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 12px',
+              borderRadius: 11, cursor: 'pointer', flex: 'none',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                <path d="M8 3v4M16 3v4M4 11h16M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="cf-num" style={{
+                fontSize: 12.5, fontWeight: 600,
+                color: fecha ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
+              }}>
+                {fecha
+                  ? new Date(`${fecha}T12:00:00-05:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })
+                  : 'Cualquier fecha'}
+              </span>
+              <input type="date" value={fecha} max={hoyBogota()}
+                onChange={(e) => setFecha(e.target.value)}
+                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
+            </label>
+
+            {cobradores.length > 0 && (
+              <div style={{
+                position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 7,
+                height: 36, padding: '0 12px', borderRadius: 11, flex: 'none',
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              }}>
+                <span style={{
+                  fontSize: 12.5, fontWeight: 600,
+                  color: cobradorId ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
+                }}>
+                  {cobradores.find((c) => c.id === cobradorId)?.nombre ?? 'Todos'}
+                </span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
+                  strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                 <select value={cobradorId} onChange={(e) => setCobradorId(e.target.value)}
-                  className="h-8 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
-                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}>
+                  aria-label="Cobrador"
+                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', font: 'inherit' }}>
                   <option value="">Todos los cobradores</option>
-                  {cobradores.map((c) => (
-                    <option key={c.id} value={c.id}>{c.nombre}</option>
-                  ))}
+                  {cobradores.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                 </select>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Quitar el filtro tiene que costar un toque. Sin esto la lista sale
+                vacía y parece que no hay gastos. */}
+            {hayFiltro && (
+              <button type="button" onClick={() => { setFecha(''); setCobradorId('') }} style={{
+                background: 'none', border: 0, padding: '0 4px', cursor: 'pointer', flex: 'none',
+                font: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)',
+              }}>Quitar filtro</button>
+            )}
           </div>
 
-          {/* Lista de gastos */}
-          {loading ? (
-            <div className="space-y-3">{[1, 2, 3].map(i => <SkeletonCard key={i} />)}</div>
-          ) : gastos.length === 0 ? (
-            <div className="rounded-[20px] py-10 text-center cf-card-shadow"
-              style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
-              <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
-                style={{ background: `color-mix(in srgb, ${TAB_COLORS[estadoTab].color} 15%, transparent)`, color: TAB_COLORS[estadoTab].color }}>
-                <span className="w-6 h-6">{TAB_COLORS[estadoTab].icon}</span>
-              </div>
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                No hay gastos {ESTADO_TABS.find(t => t.key === estadoTab)?.label.toLowerCase()}
-              </p>
-            </div>
+          {cargando ? <PilaEsqueletos cuantos={3} alto={104} /> : gastos.length === 0 ? (
+            <EstadoVacio
+              titulo={hayFiltro ? 'Nada con ese filtro' : VACIO[estado].titulo}
+              explicacion={hayFiltro
+                ? 'Puede que el gasto esté en otra fecha o de otro cobrador.'
+                : VACIO[estado].explicacion}
+            />
           ) : (
-            <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-              {gastos.map((g) => {
-                const eInfo = TAB_COLORS[g.estado] || TAB_COLORS.pendiente
-                return (
-                  <div
-                    key={g.id}
-                    className="rounded-[12px] px-3 py-3 transition-all kpi-lift"
-                    style={{
-                      background: `linear-gradient(135deg, color-mix(in srgb, ${eInfo.color} 5%, var(--color-bg-card)) 0%, var(--color-bg-card) 100%)`,
-                      border: `1px solid color-mix(in srgb, ${eInfo.color} 18%, var(--color-border))`,
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: `color-mix(in srgb, ${eInfo.color} 18%, transparent)`, color: eInfo.color, border: `1px solid color-mix(in srgb, ${eInfo.color} 30%, transparent)` }}>
-                        <span className="w-5 h-5">{eInfo.icon}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-                          {g.description}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
-                          <span style={{ color: 'var(--color-purple)' }}>{g.cobradorNombre || 'Owner'}</span>
-                          <span>·</span>
-                          <span>{fmtFecha(g.fecha)}</span>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[15px] font-bold font-mono-display leading-none" style={{ color: eInfo.color }}>
-                          {formatMoney(g.monto)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-3 pt-2.5" style={{ borderTop: '1px solid var(--color-border)' }}>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: `color-mix(in srgb, ${eInfo.color} 15%, transparent)`, color: eInfo.color, border: `1px solid color-mix(in srgb, ${eInfo.color} 25%, transparent)` }}>
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: eInfo.color }} />
-                        {g.estado.charAt(0).toUpperCase() + g.estado.slice(1)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {gastos.map((g) => (
+                <Tarjeta key={g.id} style={{ gap: 0, padding: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '15px 17px' }}>
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{
+                        fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{g.description}</span>
+                      {/* QUIÉN Y CUÁNDO. Sin el nombre, aprobar es firmar a ciegas. */}
+                      <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                        {g.cobradorNombre || 'Tú'} · {cuando(g.fecha)}
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        {g.estado === 'pendiente' && (
-                          <>
-                            <button type="button" disabled={procesando === g.id} onClick={() => handleAccion(g, 'rechazado')}
-                              className="px-3 h-8 rounded-[8px] text-[11px] font-semibold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                              style={{ background: 'color-mix(in srgb, var(--color-danger) 12%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
-                              Rechazar
-                            </button>
-                            <button type="button" disabled={procesando === g.id} onClick={() => handleAccion(g, 'aprobado')}
-                              className="px-3 h-8 rounded-[8px] text-[11px] font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                              style={{ background: 'linear-gradient(135deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, black))', color: '#fff', boxShadow: '0 2px 8px color-mix(in srgb, var(--color-success) 35%, transparent)' }}>
-                              Aprobar
-                            </button>
-                          </>
-                        )}
-                        <button type="button" onClick={() => handleEliminar(g)} disabled={procesando === g.id} title="Eliminar gasto"
-                          className="w-8 h-8 flex items-center justify-center rounded-[8px] disabled:opacity-50 transition-colors"
-                          style={{ color: 'var(--color-text-muted)' }}>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
                     </div>
+                    <span className="cf-fig" style={{ fontSize: 17, flex: 'none', color: 'var(--cf-ink)' }}>
+                      {fmt(g.monto)}
+                    </span>
                   </div>
-                )
-              })}
+
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '11px 17px',
+                    borderTop: '1px solid var(--cf-hairline)',
+                  }}>
+                    {/* Borrar va a la izquierda y sin color: es una corrección de
+                        algo mal metido, no la acción de esta pantalla. */}
+                    <button type="button" onClick={() => setABorrar(g)} disabled={procesando === g.id}
+                      aria-label="Eliminar gasto" style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 34, height: 34, flex: 'none', borderRadius: 10,
+                        background: 'none', border: 0, padding: 0, cursor: 'pointer',
+                        opacity: procesando === g.id ? .4 : 1,
+                      }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13" />
+                      </svg>
+                    </button>
+
+                    <span style={{ flex: 1 }} />
+
+                    {g.estado === 'pendiente' ? (
+                      <>
+                        <button type="button" disabled={procesando === g.id}
+                          onClick={() => decidir(g, 'rechazado')} style={{
+                            height: 36, padding: '0 14px', borderRadius: 11, flex: 'none',
+                            cursor: 'pointer', background: 'var(--cf-card)',
+                            border: '1px solid var(--cf-border-strong)',
+                            font: 'inherit', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink-2)',
+                            opacity: procesando === g.id ? .4 : 1,
+                          }}>Rechazar</button>
+                        {/* APROBAR SACA LA PLATA. Es la única acción con color de
+                            toda la lista. */}
+                        <button type="button" disabled={procesando === g.id}
+                          onClick={() => decidir(g, 'aprobado')} style={{
+                            height: 36, padding: '0 16px', borderRadius: 11, flex: 'none',
+                            cursor: 'pointer', border: 0,
+                            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                            font: 'inherit', fontSize: 13.5, fontWeight: 700,
+                            opacity: procesando === g.id ? .4 : 1,
+                          }}>{procesando === g.id ? 'Un momento…' : 'Aprobar'}</button>
+                      </>
+                    ) : (
+                      // Ya decidido: se puede deshacer, y decirlo así —«Volver a
+                      // pendiente»— es más claro que un botón por estado.
+                      <button type="button" disabled={procesando === g.id}
+                        onClick={() => decidir(g, 'pendiente')} style={{
+                          height: 36, padding: '0 14px', borderRadius: 11, flex: 'none',
+                          cursor: 'pointer', background: 'var(--cf-card)',
+                          border: '1px solid var(--cf-border-strong)',
+                          font: 'inherit', fontSize: 13.5, fontWeight: 600, color: 'var(--cf-ink-2)',
+                          opacity: procesando === g.id ? .4 : 1,
+                        }}>Volver a pendiente</button>
+                    )}
+                  </div>
+                </Tarjeta>
+              ))}
             </div>
           )}
         </>
-      )}
+
+      {/* Para quien llegaba al capital por la pestaña que estaba aquí. */}
+      <button
+        type="button"
+        onClick={() => router.push('/capital')}
+        className="w-full flex items-center gap-3 rounded-[16px] px-4 py-3.5 text-left"
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+      >
+        <span className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+          style={{ background: 'var(--cf-fill)' }}>
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="var(--cf-ink-2)" strokeWidth={1.9}
+            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <path d="M4 20V9l8-5 8 5v11z" />
+          </svg>
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Mi plata</span>
+          <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+            El fondo del que sale todo esto
+          </span>
+        </span>
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" strokeWidth={2.2}
+          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
 
       <ConfirmModal
-        open={!!confirmEliminarGasto}
+        open={Boolean(aBorrar)}
         title="Eliminar gasto"
-        message={confirmEliminarGasto
-          ? (confirmEliminarGasto.estado === 'aprobado'
-            ? `Eliminar "${confirmEliminarGasto.description}" por ${formatMoney(confirmEliminarGasto.monto)}? Se revertirá el egreso en capital.`
-            : `Eliminar "${confirmEliminarGasto.description}" por ${formatMoney(confirmEliminarGasto.monto)}?`)
+        message={aBorrar
+          ? (aBorrar.estado === 'aprobado'
+            ? `Eliminar «${aBorrar.description}» por ${fmt(aBorrar.monto)}. Se devuelve al capital.`
+            : `Eliminar «${aBorrar.description}» por ${fmt(aBorrar.monto)}.`)
           : ''}
         confirmLabel="Eliminar"
         confirmColor="red"
-        onConfirm={() => _doEliminarGasto(confirmEliminarGasto)}
-        onCancel={() => setConfirmEliminarGasto(null)}
+        onConfirm={() => borrar(aBorrar)}
+        onCancel={() => setABorrar(null)}
       />
     </div>
   )

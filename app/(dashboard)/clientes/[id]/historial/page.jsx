@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/[id]/historial/page.jsx - Historial de pagos del cliente
 
 import { formatMoney } from '@/lib/i18n'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -11,6 +12,8 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import ListadoPagos from '@/components/pagos/ListadoPagos'
 
 export default function HistorialPage() {
+  useCabecera({ titulo: 'Historial de pagos', subtitulo: 'Todos los pagos de todos los préstamos' })
+
   const params = useParams()
   const router = useRouter()
   const { session, loading: authLoading } = useAuth()
@@ -70,32 +73,20 @@ export default function HistorialPage() {
 
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Volver al cliente
-      </button>
 
+      {/* Titulo y subtitulo en la cabecera del armazon. */}
       <div className="mb-4">
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Historial de Pagos</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
-          Todos los pagos de todos los préstamos
-        </p>
       </div>
 
       {/* Filtro por fecha + export */}
       <div className="flex items-center gap-2">
         <label
-          className="relative flex-1 h-9 flex items-center gap-2 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 cursor-pointer hover:border-[var(--color-info)] transition-colors"
+          className="relative flex-1 h-9 flex items-center gap-2 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 cursor-pointer hover:border-[var(--cf-ink-2)] transition-colors"
         >
-          <svg className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className="text-sm text-[var(--color-text-primary)]">
+          <span className="text-sm text-[var(--cf-ink)]">
             {filtroFecha || 'Filtrar por fecha'}
           </span>
           <input
@@ -109,7 +100,7 @@ export default function HistorialPage() {
           <button
             type="button"
             onClick={() => setFiltroFecha('')}
-            className="px-3 h-9 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)] rounded-[12px]"
+            className="px-3 h-9 text-xs text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] border border-[var(--cf-border)] rounded-[12px]"
           >
             Limpiar
           </button>
@@ -127,7 +118,7 @@ export default function HistorialPage() {
             }}
             title="Descargar CSV"
             aria-label="Descargar CSV"
-            className="h-9 w-9 flex items-center justify-center rounded-[12px] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="h-9 w-9 flex items-center justify-center rounded-[12px] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
@@ -139,15 +130,15 @@ export default function HistorialPage() {
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3">
         <Card style={{
-          background: `linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, var(--color-bg-card)) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, var(--color-bg-card)) 100%)`,
-          boxShadow: `0 0 30px color-mix(in srgb, var(--color-success) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
+          background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 4%, var(--cf-card)) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, var(--cf-card)) 100%)`,
+          boxShadow: `0 0 30px color-mix(in srgb, var(--cf-green-dark) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
         }}>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Total pagado</p>
-          <p className="text-xl font-bold text-[var(--color-text-primary)] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Total pagado</p>
+          <p className="text-xl font-bold text-[var(--cf-ink)] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Cantidad de pagos</p>
-          <p className="text-xl font-bold text-[var(--color-text-primary)] mt-1 font-mono-display">{totalPagos}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Cantidad de pagos</p>
+          <p className="text-xl font-bold text-[var(--cf-ink)] mt-1 font-mono-display">{totalPagos}</p>
         </Card>
       </div>
 

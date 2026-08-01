@@ -9,9 +9,8 @@ import { Input } from '@/components/ui/Input'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { SkeletonCard } from '@/components/ui/Skeleton'
-import CardWaves from '@/components/ui/CardWaves'
-import { useCardPalettes } from '@/components/ui/tarjetaCredito'
 import EmptyState from '@/components/ui/EmptyState'
+import { CuentaSocio } from '@/components/pantallas/Socios'
 import { formatMoney } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -20,7 +19,6 @@ export default function SocioDetallePage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
-  const { palettes } = useCardPalettes()
   const fmt = (v) => formatMoney(v, country)
 
   const [socio, setSocio] = useState(null)
@@ -149,7 +147,7 @@ export default function SocioDetallePage() {
   if (authLoading) return null
 
   if (!esOwner) {
-    return <div className="p-4 text-center" style={{ color: 'var(--color-text-muted)' }}>No tienes acceso.</div>
+    return <div className="p-4 text-center" style={{ color: 'var(--cf-ink-3)' }}>No tienes acceso.</div>
   }
 
   if (loading) {
@@ -161,19 +159,17 @@ export default function SocioDetallePage() {
       <div className="pb-28">
         <div
           className="cf-card-shadow rounded-[20px] p-6 text-center"
-          style={{ background: 'color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-card))', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+          style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
         >
-          <p className="font-semibold mb-2" style={{ color: 'var(--color-danger)' }}>{error || 'Socio no encontrado'}</p>
+          <p className="font-semibold mb-2" style={{ color: 'var(--cf-red-dark)' }}>{error || 'Socio no encontrado'}</p>
           <div className="flex items-center justify-center gap-4 mt-3">
-            <button onClick={cargar} className="text-sm underline" style={{ color: 'var(--color-danger)' }}>Reintentar</button>
-            <button onClick={() => router.back()} className="text-sm underline opacity-70" style={{ color: 'var(--color-text-muted)' }}>Volver</button>
+            <button onClick={cargar} className="text-sm underline" style={{ color: 'var(--cf-red-dark)' }}>Reintentar</button>
+            <button onClick={() => router.back()} className="text-sm underline opacity-70" style={{ color: 'var(--cf-ink-3)' }}>Volver</button>
           </div>
         </div>
       </div>
     )
   }
-
-  const P = socio.activo ? palettes.ok : palettes.off
 
   const prestamosConInteresAnio = socio.prestamos
     .map((p) => ({ ...p, interesAnio: p.interesesPorAnio?.[anioLiquidacion] || 0 }))
@@ -183,96 +179,66 @@ export default function SocioDetallePage() {
   const retirosAnio = (socio.aportes || []).filter(a => a.tipo === 'retiro' && new Date(a.fecha).getFullYear() === anioLiquidacion).reduce((a, b) => a + b.monto, 0)
   const roiAnio = aportesAnio > 0 ? Math.round((interesesAnio / aportesAnio) * 100) : (socio.totalAportes > 0 ? Math.round((interesesAnio / socio.totalAportes) * 100) : 0)
 
-  const balanceNeto = socio.balanceNeto ?? socio.totalAportes
   const capitalEnCalle = socio.prestamos.reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
-  const roiTotal = socio.totalAportes > 0 ? Math.round((socio.interesesCobrados / socio.totalAportes) * 100) : 0
+
+  // ── T45-03 · La cuenta del socio ──
+  //
+  // Fuera la tarjeta de crédito con «Balance neto». LA RELACIÓN CON UN SOCIO ES
+  // UNA DEUDA, NO UN BALANCE: «balance neto» junta lo que puso y lo que se le ha
+  // dado en un solo número y esconde justo el que hay que mirar antes de que lo
+  // pregunte. Ahora van las cuatro cifras separadas.
+  //
+  // «Le debes» todavía no se puede calcular: falta el tipo de movimiento
+  // «reparto» (PENDIENTE-BACKEND en lib/adaptadores/socios.js). Hasta que exista,
+  // la cifra héroe es LO QUE PUSO —que es un hecho— y no un cero inventado que se
+  // leería como «no le debo nada».
+  const movimientos = (socio.aportes ?? []).map((a) => ({
+    id: a.id,
+    tipo: a.tipo === 'retiro' ? 'pago' : 'aporte',
+    concepto: a.tipo === 'retiro' ? 'Le pagaste' : 'Puso',
+    detalle: [
+      new Date(a.fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }),
+      a.nota,
+    ].filter(Boolean).join(' · '),
+    monto: fmt(a.monto),
+  }))
+
+  const enMora = socio.prestamos.filter((p) => (p.diasMora ?? 0) > 0)
+    .reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
 
   return (
-    <div className="pb-28 space-y-4">
-      {/* Hero card */}
-      <div
-        className="relative rounded-[20px] overflow-hidden"
-        style={{ background: P.grad, border: `1px solid ${P.border}`, boxShadow: P.shadow }}
+    <div style={{ height: '100%', minHeight: 0 }}>
+      <CuentaSocio
+        leDebesEtiqueta="Su capital hoy"
+        leDebes={fmt(Math.max(0, socio.totalAportes - (socio.totalRetiros || 0)))}
+        puso={fmt(socio.totalAportes)}
+        haGanado={fmt(socio.interesesCobrados)}
+        leHasDado={fmt(socio.totalRetiros || 0)}
+        prestamos={socio.prestamos.length}
+        montoEnCalle={fmt(capitalEnCalle)}
+        montoEnMora={fmt(enMora)}
+        movimientos={movimientos}
+        onBorrarMovimiento={(m) => setConfirmEliminar(m.id)}
+        onVerPrestamos={() => router.push(`/prestamos?socio=${socio.id}`)}
+        onMandarCuenta={() => {
+          // Se abre WhatsApp con el texto: el socio NO entra a la app, y sin esto
+          // tiene que llamar al dueño cada vez que quiere saber cómo va.
+          const t = [
+            `Hola ${socio.nombre}, tu cuenta al día de hoy:`,
+            `Pusiste ${fmt(socio.totalAportes)}.`,
+            `Has ganado ${fmt(socio.interesesCobrados)} en intereses.`,
+            `Te he dado ${fmt(socio.totalRetiros || 0)}.`,
+            `Tu plata está en ${socio.prestamos.length} préstamos, ${fmt(capitalEnCalle)} en la calle.`,
+          ].join('\n')
+          const tel = String(socio.telefono ?? '').replace(/\D/g, '')
+          const num = tel.length > 10 ? tel : `57${tel}`
+          window.open(tel.length >= 7
+            ? `https://wa.me/${num}?text=${encodeURIComponent(t)}`
+            : `https://wa.me/?text=${encodeURIComponent(t)}`, '_blank')
+        }}
+        onPagar={() => { setTipoAporte('retiro'); setModalAporte(true) }}
       >
-        <CardWaves tint={P.waves} />
-        <div className="relative px-5 py-5 sm:px-6 sm:py-6">
-          {/* Nombre + contacto + badge */}
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="min-w-0">
-              <h1 className="text-[20px] font-bold truncate" style={{ color: P.ink }}>
-                {socio.nombre}
-              </h1>
-              <p className="text-[12px] mt-0.5" style={{ color: P.sub }}>
-                {socio.cedula && `CC ${socio.cedula}`}
-                {socio.cedula && socio.telefono && ' · '}
-                {socio.telefono && `Tel ${socio.telefono}`}
-                {!socio.cedula && !socio.telefono && 'Sin datos de contacto'}
-              </p>
-            </div>
-            <span
-              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0"
-              style={{
-                background: `color-mix(in srgb, ${P.accent} 14%, transparent)`,
-                color: P.accent,
-                border: `1px solid color-mix(in srgb, ${P.accent} 26%, transparent)`,
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: P.accent }} />
-              {socio.activo ? 'Activo' : 'Inactivo'}
-            </span>
-          </div>
-
-          {/* Balance neto + intereses */}
-          <div className="flex items-end justify-between gap-4 mb-4">
-            <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] mb-1" style={{ color: P.sub }}>
-                Balance neto
-              </p>
-              <p
-                className="font-mono-display font-bold leading-none tracking-tight truncate"
-                style={{ color: P.ink, fontSize: '24px' }}
-              >
-                {fmt(balanceNeto)}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] mb-1" style={{ color: P.sub }}>
-                Intereses cobrados
-              </p>
-              <p className="font-mono-display font-bold" style={{ color: P.accent, fontSize: '16px' }}>
-                {fmt(socio.interesesCobrados)}
-              </p>
-            </div>
-          </div>
-
-          {/* Grid secundario */}
-          <div className="relative pt-3 mt-1">
-            <div
-              className="absolute top-0 left-[6%] right-[6%] h-px"
-              style={{ background: `linear-gradient(90deg, transparent, ${P.accent}33, transparent)` }}
-            />
-            <div className="grid grid-cols-2 gap-y-2.5 gap-x-3">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Aportes</p>
-                <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>{fmt(socio.totalAportes)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Retiros</p>
-                <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>{fmt(socio.totalRetiros || 0)}</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>En calle</p>
-                <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>{fmt(capitalEnCalle)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>ROI {new Date().getFullYear()}</p>
-                <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.accent }}>{roiTotal}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <div className="pb-24 space-y-4">
       {/* Acciones (fuera del hero) */}
       <div className="flex justify-end">
         <Button
@@ -286,24 +252,24 @@ export default function SocioDetallePage() {
       {/* Liquidacion anual */}
       <div
         className="cf-card-shadow rounded-[20px] p-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
             Liquidacion {anioLiquidacion}
           </h2>
           <div className="flex gap-1">
             <button
               onClick={() => setAnioLiquidacion((a) => a - 1)}
               className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[13px]"
-              style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+              style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}
             >
               {'<'}
             </button>
             <button
               onClick={() => setAnioLiquidacion((a) => a + 1)}
               className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[13px]"
-              style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}
+              style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}
             >
               {'>'}
             </button>
@@ -311,24 +277,24 @@ export default function SocioDetallePage() {
         </div>
 
         {prestamosConInteresAnio.length === 0 && !aportesAnio && !retirosAnio ? (
-          <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>Sin movimientos en {anioLiquidacion}</p>
+          <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Sin movimientos en {anioLiquidacion}</p>
         ) : (
           <>
             {prestamosConInteresAnio.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--cf-border)' }}>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium truncate" style={{ color: 'var(--cf-ink)' }}>
                     {p.clienteNombre}
                   </p>
-                  <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {fmt(p.montoPrestado)} al {p.tasaInteres}%
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[13px] font-semibold" style={{ color: 'var(--color-success)' }}>
+                  <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-green-dark)' }}>
                     {fmt(p.interesAnio)}
                   </p>
-                  <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {p.estado === 'activo' ? 'Activo' : 'Completado'}
                   </p>
                 </div>
@@ -336,17 +302,17 @@ export default function SocioDetallePage() {
             ))}
 
             {(aportesAnio > 0 || retirosAnio > 0) && (
-              <div className="pt-2 mt-1 space-y-1" style={{ borderTop: '1px dashed var(--color-border)' }}>
+              <div className="pt-2 mt-1 space-y-1" style={{ borderTop: '1px dashed var(--cf-border)' }}>
                 {aportesAnio > 0 && (
                   <div className="flex justify-between text-[12px]">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Aportes en {anioLiquidacion}</span>
-                    <span className="font-medium" style={{ color: 'var(--color-accent)' }}>+{fmt(aportesAnio)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Aportes en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--cf-gold)' }}>+{fmt(aportesAnio)}</span>
                   </div>
                 )}
                 {retirosAnio > 0 && (
                   <div className="flex justify-between text-[12px]">
-                    <span style={{ color: 'var(--color-text-muted)' }}>Retiros en {anioLiquidacion}</span>
-                    <span className="font-medium" style={{ color: 'var(--color-danger)' }}>-{fmt(retirosAnio)}</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Retiros en {anioLiquidacion}</span>
+                    <span className="font-medium" style={{ color: 'var(--cf-red-dark)' }}>-{fmt(retirosAnio)}</span>
                   </div>
                 )}
               </div>
@@ -354,12 +320,12 @@ export default function SocioDetallePage() {
 
             <div className="pt-3 mt-1 space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Intereses {anioLiquidacion}</p>
-                <p className="text-[16px] font-bold" style={{ color: 'var(--color-success)' }}>{fmt(interesesAnio)}</p>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Intereses {anioLiquidacion}</p>
+                <p className="text-[16px] font-bold" style={{ color: 'var(--cf-green-dark)' }}>{fmt(interesesAnio)}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-[12px]" style={{ color: 'var(--color-text-muted)' }}>Rendimiento (ROI)</p>
-                <p className="text-[13px] font-semibold" style={{ color: roiAnio > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>{roiAnio}%</p>
+                <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Rendimiento (ROI)</p>
+                <p className="text-[13px] font-semibold" style={{ color: roiAnio > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{roiAnio}%</p>
               </div>
             </div>
           </>
@@ -369,9 +335,9 @@ export default function SocioDetallePage() {
       {/* Prestamos del socio */}
       <div
         className="cf-card-shadow rounded-[20px] p-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--color-text-primary)' }}>
+        <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--cf-ink)' }}>
           Prestamos ({socio.prestamos.length})
         </h2>
         {socio.prestamos.length === 0 ? (
@@ -387,19 +353,19 @@ export default function SocioDetallePage() {
               <div
                 key={p.id}
                 className="rounded-[12px] p-3"
-                style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                  <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>
                     {p.clienteNombre}
                   </p>
                   <span
                     className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
                     style={{
                       background: p.estado === 'activo'
-                        ? 'color-mix(in srgb, var(--color-success) 12%, transparent)'
-                        : 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)',
-                      color: p.estado === 'activo' ? 'var(--color-success)' : 'var(--color-text-muted)',
+                        ? 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)'
+                        : 'color-mix(in srgb, var(--cf-ink-3) 12%, transparent)',
+                      color: p.estado === 'activo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)',
                     }}
                   >
                     {p.estado}
@@ -407,16 +373,16 @@ export default function SocioDetallePage() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Capital</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{fmt(p.montoPrestado)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Capital</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-ink)' }}>{fmt(p.montoPrestado)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Cobrado</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-text-primary)' }}>{fmt(p.totalPagado)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Cobrado</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-ink)' }}>{fmt(p.totalPagado)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>Intereses</p>
-                    <p className="text-[12px] font-medium" style={{ color: 'var(--color-success)' }}>{fmt(p.interesesCobrados)}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Intereses</p>
+                    <p className="text-[12px] font-medium" style={{ color: 'var(--cf-green-dark)' }}>{fmt(p.interesesCobrados)}</p>
                   </div>
                 </div>
               </div>
@@ -425,91 +391,36 @@ export default function SocioDetallePage() {
         )}
       </div>
 
-      {/* Movimientos (aportes y retiros) */}
-      <div
-        className="cf-card-shadow rounded-[20px] p-4"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            Movimientos ({socio.aportes.length})
-          </h2>
-          {socio.aportes.length > 0 && (
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => { setTipoAporte('retiro'); setModalAporte(true) }}>Retiro</Button>
-              <Button onClick={() => { setTipoAporte('aporte'); setModalAporte(true) }}>Aporte</Button>
-            </div>
-          )}
-        </div>
-        {socio.aportes.length === 0 ? (
-          <EmptyState
-            pose="vacia"
-            titulo="Sin movimientos"
-            hint="Registra aportes o retiros de capital."
-            size={64}
-            action={<Button onClick={() => { setTipoAporte('aporte'); setModalAporte(true) }}>Registrar aporte</Button>}
-          />
-        ) : (
-          <div className="space-y-2">
-            {socio.aportes.map((a) => {
-              const esRetiro = a.tipo === 'retiro'
-              // 'utilidad' = ganancia repartida por % de participacion. Suma al
-              // balance igual que un aporte, pero no es plata que el socio puso:
-              // se etiqueta aparte para que no se confunda con capital nuevo.
-              const esUtilidad = a.tipo === 'utilidad'
-              const colorMov = esRetiro ? 'var(--color-danger)' : esUtilidad ? 'var(--color-purple)' : 'var(--color-success)'
-              const labelMov = esRetiro ? 'Retiro' : esUtilidad ? 'Utilidad' : 'Aporte'
-              return (
-                <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0"
-                      style={{
-                        background: `color-mix(in srgb, ${colorMov} 12%, transparent)`,
-                        color: colorMov,
-                      }}
-                    >
-                      {labelMov}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-medium" style={{ color: esRetiro ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>
-                        {esRetiro ? '-' : '+'}{fmt(a.monto)}
-                      </p>
-                      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                        {new Date(a.fecha).toLocaleDateString('es-CO')}
-                        {a.nota && ` — ${a.nota}`}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setConfirmEliminar(a.id)}
-                    className="text-[11px] px-2 py-1 rounded-[8px] shrink-0"
-                    style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 8%, transparent)' }}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        )}
+      {/* El bloque «Movimientos» viejo sale: lo cubre «Su cuenta» de arriba, con
+          la misma información y el mismo borrar. Dejar los dos sería enseñar la
+          lista de aportes dos veces en la misma pantalla.
+
+          Lo que SÍ se queda es registrar un aporte, que no estaba en la lámina y
+          es la mitad del trabajo con un socio. «Pagarle» ya está en la barra. */}
+      <div className="flex justify-end">
+        <Button onClick={() => { setTipoAporte('aporte'); setModalAporte(true) }}>
+          Registrar aporte
+        </Button>
       </div>
 
       {socio.notas && (
         <div
           className="cf-card-shadow rounded-[20px] p-4"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
-          <h2 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>Notas</h2>
-          <p className="text-[13px] whitespace-pre-wrap" style={{ color: 'var(--color-text-muted)' }}>{socio.notas}</p>
+          <h2 className="text-[14px] font-semibold mb-2" style={{ color: 'var(--cf-ink)' }}>Notas</h2>
+          <p className="text-[13px] whitespace-pre-wrap" style={{ color: 'var(--cf-ink-3)' }}>{socio.notas}</p>
         </div>
       )}
+
+      </div>
+      </CuentaSocio>
 
       {/* Modal registrar aporte/retiro */}
       <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
         <div className="space-y-4">
           {tipoAporte === 'retiro' && (
-            <p className="text-[12px] px-3 py-2 rounded-[12px]" style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)' }}>
+            <p className="text-[12px] px-3 py-2 rounded-[12px]" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)', color: 'var(--cf-gold-dark)' }}>
               El retiro se restara del capital disponible del negocio.
             </p>
           )}
@@ -546,13 +457,13 @@ export default function SocioDetallePage() {
           <Input label="Cédula" value={formEdit.cedula || ''} onChange={(e) => setFormEdit((f) => ({ ...f, cedula: e.target.value }))} />
           <Input label="Teléfono" value={formEdit.telefono || ''} onChange={(e) => setFormEdit((f) => ({ ...f, telefono: e.target.value }))} />
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--color-text-muted)' }}>Notas</label>
+            <label className="text-[11px] font-medium uppercase tracking-[0.05em]" style={{ color: 'var(--cf-ink-3)' }}>Notas</label>
             <textarea
               value={formEdit.notas || ''}
               onChange={(e) => setFormEdit((f) => ({ ...f, notas: e.target.value }))}
               rows={3}
               className="px-3 py-2 rounded-[12px] text-sm resize-none"
-              style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+              style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -565,16 +476,16 @@ export default function SocioDetallePage() {
       {/* Acciones */}
       <div
         className="cf-card-shadow rounded-[20px] p-4 space-y-3"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
-        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Acciones</h2>
+        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Acciones</h2>
         <div className="flex gap-3">
           <button
             onClick={toggleActivo}
             className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
-              background: socio.activo ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)' : 'color-mix(in srgb, var(--color-success) 10%, transparent)',
-              color: socio.activo ? 'var(--color-warning)' : 'var(--color-success)',
+              background: socio.activo ? 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)' : 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
+              color: socio.activo ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)',
             }}
           >
             {socio.activo ? 'Desactivar socio' : 'Reactivar socio'}
@@ -583,8 +494,8 @@ export default function SocioDetallePage() {
             onClick={() => setConfirmEliminarSocio(true)}
             className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
             style={{
-              background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
-              color: 'var(--color-danger)',
+              background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
+              color: 'var(--cf-red-dark)',
             }}
           >
             Eliminar socio

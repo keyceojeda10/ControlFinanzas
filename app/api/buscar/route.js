@@ -76,7 +76,7 @@ export async function GET(request) {
         montoPrestado: true,
         totalAPagar: true,
         estado: true,
-        cliente: { select: { nombre: true } },
+        cliente: { select: { id: true, nombre: true } },
         pagos: { select: { montoPagado: true, tipo: true } },
       },
       take: 5,
@@ -108,6 +108,10 @@ export async function GET(request) {
       .reduce((a, x) => a + x.montoPagado, 0)
     return {
       id: p.id,
+      // El id del cliente, para que el buscador pueda JUNTAR el prestamo con su
+      // dueño en una sola fila en vez de enseñar el mismo nombre dos veces.
+      // Por id y no por nombre: dos clientes pueden llamarse igual.
+      clienteId: p.cliente.id,
       clienteNombre: p.cliente.nombre,
       montoPrestado: p.montoPrestado,
       saldoPendiente: p.totalAPagar - totalPagado,

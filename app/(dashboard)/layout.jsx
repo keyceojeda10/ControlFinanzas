@@ -5,12 +5,14 @@ import { headers } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import Sidebar        from '@/components/layout/Sidebar'
-import Header         from '@/components/layout/Header'
-import MobileNavGroup from '@/components/layout/MobileNavGroup'
+import BarraLateral   from '@/components/armazon/BarraLateral'
+import { iniciales }  from '@/lib/armazon'
+import Armazon        from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
-import VerificarEmailBanner  from '@/components/layout/VerificarEmailBanner'
+import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
+import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
+import AvisoSinSenal from '@/components/armazon/AvisoSinSenal'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
@@ -50,38 +52,66 @@ async function bloquearSiVencida() {
 
 export default async function DashboardLayout({ children }) {
   await bloquearSiVencida()
+  // El nombre baja desde el servidor para que la cabecera no cambie entre el
+  // HTML y la hidratacion. Ver el comentario de Armazon.jsx.
+  const session = await getServerSession(authOptions)
+  const nombre = session?.user?.nombre ?? session?.user?.name ?? ''
   return (
-    <div className="flex min-h-screen lg:h-screen bg-[#060609]">
-      {/* Sidebar – visible solo en lg+ */}
-      <Sidebar />
+    <Armazon nombre={nombre} rol={session?.user?.rol ?? ''}>
+    <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
+      {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
+          cobrando en la calle. La regla de supresion es exclusiva de movil.
+
+          SE MONTABA SIN UNA SOLA PROP. Nombre, rol e iniciales tienen valor por
+          defecto vacio, asi que en escritorio el pie de la barra pintaba un
+          circulo azul sin letras y dos lineas de texto en blanco. Es el mismo
+          fallo del FAB muerto: el componente estaba bien, nadie lo conectaba.
+
+          Bajan del SERVIDOR, igual que en la cabecera movil: derivarlos de
+          useSession() en cliente hace que el servidor pinte «·» y el cliente
+          las iniciales — desajuste de hidratacion y parpadeo en cada carga. */}
+      <BarraLateral
+        nombre={nombre}
+        rol={session?.user?.rol ?? ''}
+        iniciales={iniciales(nombre)}
+      />
 
       {/* Área principal */}
       {/* mobile: flex-col sin overflow → body scrollea (evita GPU artifacts Android) */}
       {/* desktop: overflow-y-auto + h-dvh → scroll interno con sidebar fija */}
       <div className="flex-1 flex flex-col min-w-0 lg:overflow-y-auto">
-        {/* Header – visible solo en mobile */}
-        <Header />
 
-        {/* Aviso verificar email (periodo de gracia 24h) */}
-        <VerificarEmailBanner />
+        {/* ── UNA SOLA FRANJA ──
+            Los cuatro avisos siguen decidiendo por su cuenta si les toca; lo
+            que cambia es que ya no se apilan. La pila mira cuál de ellos pintó
+            algo, deja arriba al de más dinero en juego y cuenta el resto.
 
-        {/* Aviso vencimiento de suscripcion (solo <=7 dias o vencida) */}
-        <SuscripcionBanner />
+            El orden vive en lib/adaptadores/avisos.js con sus pruebas: primero
+            lo que impide cobrar, después lo que caduca, y al final lo cómodo.
+            Antes los cuatro se apilaban y lo primero que veía el dueño al abrir
+            era que le iban a cobrar la suscripción. */}
+        {/* ── SIN SEÑAL, ARRIBA DEL TODO (T05-05) ──
+            Va ANTES de la pila de avisos y no dentro: la pila enseña UNO solo y
+            ordena por urgencia, y quedarse sin red no compite con «te caduca la
+            suscripción» — es la condición bajo la que se lee todo lo demás. */}
+        <AvisoSinSenal />
 
-        {/* Aviso limites de plan excedidos */}
-        <LimitesPlanBanner />
+        <PilaAvisos>
+          <Ranura id="sinRuta"><SinRutaBanner /></Ranura>
+          <Ranura id="suscripcion"><SuscripcionBanner /></Ranura>
+          <Ranura id="limitePlan"><LimitesPlanBanner /></Ranura>
+          <Ranura id="verificarCorreo"><AvisoVerificarCorreo /></Ranura>
+        </PilaAvisos>
 
-        {/* Aviso cobrador sin ruta */}
-        <SinRutaBanner />
-
-        {/* Contenido de la página */}
-        <main className="flex-1 px-4 py-5 lg:px-6 lg:py-6 pb-24 lg:pb-6">
+        {/* El margen lateral lo pone el LAYOUT mientras conviven pantallas
+            viejas y nuevas: las viejas dependian de el y al quitarlo se pegaron
+            todas al borde. Las nuevas lo desactivan con `sinMargen`.
+            El padding-bottom sigue fuera: el contenido pasa POR DEBAJO de la
+            pastilla a proposito, y cada pantalla reserva su hueco final. */}
+        <main className="flex-1 px-5 py-5 lg:px-6 lg:py-6">
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
-
-      {/* BottomNav + AsistenteButton wired together */}
-      <MobileNavGroup />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
@@ -101,5 +131,6 @@ export default async function DashboardLayout({ children }) {
       {/* Analytics: page view tracking */}
       <Analytics />
     </div>
+    </Armazon>
   )
 }

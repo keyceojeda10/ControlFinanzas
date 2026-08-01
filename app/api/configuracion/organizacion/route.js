@@ -14,6 +14,9 @@ const ETIQUETA_CAMPO = {
   telefono: 'Teléfono',
   ciudad: 'Ciudad',
   diasSinCobro: 'Días sin cobro',
+  frecuenciaDefault: 'Frecuencia por defecto',
+  tasaDefault: 'Tasa por defecto (%)',
+  modoInteresDefault: 'Modo de interés por defecto',
   capitalEsEfectivo: 'Capital en ruta = efectivo en mano',
   renovacionesEnCobrado: 'Contar renovaciones en el cobrado',
   modoAbreviado: 'Modo abreviado de montos',
@@ -60,7 +63,7 @@ export async function GET() {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
+    select: { id: true, nombre: true, plan: true, telefono: true, ciudad: true, diasSinCobro: true, frecuenciaDefault: true, tasaDefault: true, modoInteresDefault: true, country: true, timezone: true, createdAt: true, activo: true, capitalEsEfectivo: true, renovacionesEnCobrado: true, modoAbreviado: true, ocultarSaldoWA: true, tasaMoratorio: true, diasGraciaMoratorio: true, requiereAprobacionPrestamos: true, portalDatosCompletos: true, camposRecibo: true, plantillasWA: true },
   })
 
   const sub = await prisma.suscripcion.findFirst({
@@ -85,7 +88,25 @@ export async function GET() {
     select: { id: true, plan: true, estado: true, fechaInicio: true, fechaVencimiento: true, montoCOP: true, createdAt: true },
   })
 
-  return NextResponse.json({ org, suscripcion: sub, diasRestantes, historial })
+  // ── CUÁNTOS SE QUEDARÍAN SIN RECIBIR NADA (T38-02) ──
+  // La lámina lo llama «la advertencia que evita el silencio»: se activa el
+  // envío automático de recordatorios y a los clientes sin número guardado no
+  // les llega nada — sin error, sin aviso, sin rastro. Es el fallo peor de
+  // todos, el que parece que funciona.
+  const [clientesTotal, clientesSinTelefono] = await Promise.all([
+    prisma.cliente.count({ where: { organizationId: orgId, eliminadoEn: null } }),
+    prisma.cliente.count({
+      where: {
+        organizationId: orgId, eliminadoEn: null,
+        OR: [{ telefono: null }, { telefono: '' }],
+      },
+    }),
+  ])
+
+  return NextResponse.json({
+    org, suscripcion: sub, diasRestantes, historial,
+    clientes: { total: clientesTotal, sinTelefono: clientesSinTelefono },
+  })
 }
 
 export async function PATCH(req) {
@@ -99,7 +120,7 @@ export async function PATCH(req) {
   // NOTA: `country` y `timezone` NO se aceptan desde este endpoint.
   // Cambios de pais solo pueden hacerse desde superadmin para evitar corrupcion
   // de calculos de mora/timezone y precios de planes en organizaciones con datos.
-  const { nombre, telefono, ciudad, diasSinCobro, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
+  const { nombre, telefono, ciudad, diasSinCobro, frecuenciaDefault, tasaDefault, modoInteresDefault, capitalEsEfectivo, renovacionesEnCobrado, modoAbreviado, ocultarSaldoWA, tasaMoratorio, diasGraciaMoratorio, requiereAprobacionPrestamos, portalDatosCompletos, camposRecibo, plantillasWA } = await req.json()
 
   if (nombre !== undefined && !nombre?.trim()) {
     return NextResponse.json({ error: 'El nombre es obligatorio' }, { status: 400 })
@@ -113,6 +134,34 @@ export async function PATCH(req) {
     return NextResponse.json({ error: e.message }, { status: 400 })
   }
 
+  // ── «Cómo prestas por defecto» ──
+  //
+  // Solo se aceptan valores que el sistema conoce de verdad. Guardar una
+  // frecuencia inventada no falla aquí: falla el día que alguien crea un
+  // préstamo y calcularPrestamo no sabe qué hacer con ella.
+  //
+  // `null` es un valor VÁLIDO y significa «vuelve al comportamiento de
+  // siempre». Por eso se distingue de `undefined`, que significa «no lo mandes
+  // a cambiar».
+  const FRECUENCIAS = ['diario', 'semanal', 'quincenal', 'mensual']
+  const MODOS = ['fijo', 'unico', 'solo_interes', 'saldo', 'manual', 'lineal', 'lineal_dinamico', 'proporcional']
+
+  if (frecuenciaDefault !== undefined && frecuenciaDefault !== null && !FRECUENCIAS.includes(frecuenciaDefault)) {
+    return NextResponse.json({ error: 'Esa frecuencia no existe' }, { status: 400 })
+  }
+  if (modoInteresDefault !== undefined && modoInteresDefault !== null && !MODOS.includes(modoInteresDefault)) {
+    return NextResponse.json({ error: 'Ese modo de interés no existe' }, { status: 400 })
+  }
+  if (tasaDefault !== undefined && tasaDefault !== null) {
+    const t = Number(tasaDefault)
+    // Sin tope superior a propósito: el gota a gota trabaja con tasas que en
+    // otro contexto parecerían absurdas, y no nos toca a nosotros decidir cuál
+    // es demasiado. Pero negativa no existe.
+    if (!Number.isFinite(t) || t < 0) {
+      return NextResponse.json({ error: 'La tasa no puede ser negativa' }, { status: 400 })
+    }
+  }
+
   // Estos flags cambian el SIGNIFICADO de cifras de portada — `renovacionesEnCobrado`
   // decide si "Cobrado" y "Prestado" incluyen el saldo absorbido de las renovaciones.
   // Se cambiaban sin dejar rastro: cuando el dueño de la cartera mas grande reporto
@@ -124,6 +173,11 @@ export async function PATCH(req) {
   })
 
   const datosActualizados = {
+    // `undefined` lo ignora Prisma; `null` SI se guarda y significa «vuelve
+    // al comportamiento de siempre». Por eso van sin guarda.
+    frecuenciaDefault,
+    tasaDefault: tasaDefault === undefined || tasaDefault === null ? tasaDefault : Number(tasaDefault),
+    modoInteresDefault,
     ...(nombre !== undefined && { nombre: nombre.trim() }),
     ...(telefono !== undefined && { telefono: telefono?.trim() || null }),
     ...(ciudad !== undefined && { ciudad: ciudad?.trim() || null }),

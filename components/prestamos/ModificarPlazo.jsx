@@ -2,6 +2,9 @@
 // components/prestamos/ModificarPlazo.jsx — Modal para extender o corregir fecha fin
 
 import { useState, useEffect, useMemo } from 'react'
+import HojaInferior from '@/components/cf/HojaInferior'
+import { ModificarPlazo as HojaPlazo, PieGestion } from '@/components/pantallas/Gestion'
+import { adaptarPlazo } from '@/lib/adaptadores/gestion'
 import { useCountry } from '@/hooks/useCountry'
 import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
@@ -191,12 +194,75 @@ export default function ModificarPlazo({
     onClose?.()
   }
 
+  // ── LA HOJA DE T13-02 ──────────────────────────────────────────────────────
+  //
+  // Solo para EXTENDER, que es lo que la lámina dibuja. «Corregir fin» y «corregir
+  // inicio» siguen por el formulario de abajo, que es el que sabe pedir una fecha:
+  // ahí no se está repartiendo el saldo en más cuotas, se está arreglando un dato
+  // mal metido, y un contador de cuotas no sirve para eso.
+  //
+  // EL CONTADOR SUSTITUYE al campo «días extra» más el selector de fecha, que se
+  // contradecían entre sí. Aquí el contador es la única fuente: la fecha se deriva
+  // de él y se manda al mismo endpoint de siempre.
+  if (modo === 'extender') {
+    const porPeriodo = diasPorPeriodo
+    const pendientes = Math.max(1, Number(prestamo?.cuotasPendientes ?? 1))
+    // Cuántas cuotas faltan HOY según lo que se lleva tecleado: el contador arranca
+    // en las que faltan y los `diasExtra` lo mueven.
+    const extra = Math.max(0, Number(diasExtra) || 0)
+    const cuotas = pendientes + Math.round(extra / porPeriodo)
+    const datos = adaptarPlazo(prestamo, cuotas) ?? {}
+
+    const mover = (delta) => {
+      const nuevas = Math.max(pendientes, cuotas + delta)
+      handleDiasChange(String((nuevas - pendientes) * porPeriodo))
+    }
+
+    return (
+      <HojaInferior
+        abierta={open}
+        onCerrar={handleClose}
+        titulo="Modificar el plazo"
+        subtitulo={[
+          prestamo?.cliente?.nombre,
+          `le quedan ${pendientes} ${pendientes === 1 ? 'cuota' : 'cuotas'}`,
+        ].filter(Boolean).join(' · ')}
+        accion={
+          <PieGestion
+            onCancelar={handleClose}
+            onAceptar={handleSubmit}
+            textoAceptar={cuotas > pendientes ? `Guardar ${cuotas} cuotas` : 'Guardar'}
+            aceptando={loading}
+            deshabilitado={cuotas <= pendientes}
+            error={error}
+          />
+        }
+      >
+        <HojaPlazo
+          intenciones={[
+            { id: 'extender', etiqueta: 'Extender plazo' },
+            { id: 'corregirFin', etiqueta: 'Corregir fin' },
+            { id: 'corregirInicio', etiqueta: 'Corregir inicio' },
+          ]}
+          intencion="extender"
+          onIntencion={(i) => setModo(i.id)}
+          cuotas={cuotas}
+          cuotasAntes={pendientes}
+          minimoCuotas={pendientes}
+          onMenos={() => mover(-1)}
+          onMas={() => mover(1)}
+          {...datos}
+        />
+      </HojaInferior>
+    )
+  }
+
   return (
     <Modal open={open} onClose={handleClose} title="Modificar plazo">
       <div className="space-y-4">
         {/* Toggle de modo */}
         <div>
-          <label className="block text-[11px] font-medium text-[var(--color-text-muted)] uppercase tracking-[0.05em] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em] mb-1.5">
             ¿Qué quieres hacer?
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -206,14 +272,14 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'extender'
-                  ? 'bg-[rgba(245,197,24,0.1)] border-[var(--color-accent)]'
-                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
+                  ? 'bg-[rgba(245,197,24,0.1)] border-[var(--cf-gold)]'
+                  : 'bg-transparent border-[var(--cf-border)] hover:bg-[var(--cf-surface)]',
               ].join(' ')}
             >
-              <div className={`text-xs font-semibold ${modo === 'extender' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'}`}>
+              <div className={`text-xs font-semibold ${modo === 'extender' ? 'text-[var(--cf-gold)]' : 'text-[var(--cf-ink)]'}`}>
                 Extender plazo
               </div>
-              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+              <div className="text-[10px] text-[var(--cf-ink-3)] mt-0.5 leading-tight">
                 Dar más tiempo. Recalcula cuota.
               </div>
             </button>
@@ -223,14 +289,14 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'corregir'
-                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--color-info)]'
-                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
+                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--cf-ink-2)]'
+                  : 'bg-transparent border-[var(--cf-border)] hover:bg-[var(--cf-surface)]',
               ].join(' ')}
             >
-              <div className={`text-xs font-semibold ${modo === 'corregir' ? 'text-[var(--color-info)]' : 'text-[var(--color-text-primary)]'}`}>
+              <div className={`text-xs font-semibold ${modo === 'corregir' ? 'text-[var(--cf-ink-2)]' : 'text-[var(--cf-ink)]'}`}>
                 Corregir fin
               </div>
-              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+              <div className="text-[10px] text-[var(--cf-ink-3)] mt-0.5 leading-tight">
                 Error en fecha fin. No toca cuota.
               </div>
             </button>
@@ -240,14 +306,14 @@ export default function ModificarPlazo({
               className={[
                 'h-auto py-2.5 px-3 rounded-[10px] border text-left transition-all cursor-pointer',
                 modo === 'corregirInicio'
-                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--color-info)]'
-                  : 'bg-transparent border-[var(--color-border)] hover:bg-[var(--color-bg-surface)]',
+                  ? 'bg-[rgba(59,130,246,0.1)] border-[var(--cf-ink-2)]'
+                  : 'bg-transparent border-[var(--cf-border)] hover:bg-[var(--cf-surface)]',
               ].join(' ')}
             >
-              <div className={`text-xs font-semibold ${modo === 'corregirInicio' ? 'text-[var(--color-info)]' : 'text-[var(--color-text-primary)]'}`}>
+              <div className={`text-xs font-semibold ${modo === 'corregirInicio' ? 'text-[var(--cf-ink-2)]' : 'text-[var(--cf-ink)]'}`}>
                 Corregir inicio
               </div>
-              <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+              <div className="text-[10px] text-[var(--cf-ink-3)] mt-0.5 leading-tight">
                 Error en fecha inicio. Mueve el fin igual.
               </div>
             </button>
@@ -255,28 +321,28 @@ export default function ModificarPlazo({
         </div>
 
         {/* Resumen actual */}
-        <div className="px-3 py-2.5 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] space-y-1">
+        <div className="px-3 py-2.5 rounded-[10px] bg-[var(--cf-card)] border border-[var(--cf-border)] space-y-1">
           {modo === 'corregirInicio' && (
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[var(--color-text-muted)]">Fecha inicio actual</span>
-              <span className="text-xs text-[var(--color-text-primary)] font-mono-display">
+              <span className="text-[10px] text-[var(--cf-ink-3)]">Fecha inicio actual</span>
+              <span className="text-xs text-[var(--cf-ink)] font-mono-display">
                 {fechaInicio ? new Date(fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               </span>
             </div>
           )}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Fecha fin actual</span>
-            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">
+            <span className="text-[10px] text-[var(--cf-ink-3)]">Fecha fin actual</span>
+            <span className="text-xs text-[var(--cf-ink)] font-mono-display">
               {fechaFinActual ? new Date(fechaFinActual).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Cuota {frecuencia}</span>
-            <span className="text-xs text-[var(--color-text-primary)] font-mono-display">{formatMoney(cuotaActual)}</span>
+            <span className="text-[10px] text-[var(--cf-ink-3)]">Cuota {frecuencia}</span>
+            <span className="text-xs text-[var(--cf-ink)] font-mono-display">{formatMoney(cuotaActual)}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Plazo actual</span>
-            <span className="text-xs text-[var(--color-text-primary)]">{diasPlazoActual} días</span>
+            <span className="text-[10px] text-[var(--cf-ink-3)]">Plazo actual</span>
+            <span className="text-xs text-[var(--cf-ink)]">{diasPlazoActual} días</span>
           </div>
         </div>
 
@@ -311,12 +377,12 @@ export default function ModificarPlazo({
         {modo === 'corregirInicio' && previewInicio && (
           <div className="rounded-[12px] border p-3 space-y-1.5" style={{ background: 'rgba(59,130,246,0.06)', borderColor: 'rgba(59,130,246,0.25)' }}>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[var(--color-text-muted)]">Nueva fecha fin</span>
-              <span className="text-xs font-semibold text-[var(--color-text-primary)] font-mono-display">
+              <span className="text-[10px] text-[var(--cf-ink-3)]">Nueva fecha fin</span>
+              <span className="text-xs font-semibold text-[var(--cf-ink)] font-mono-display">
                 {new Date(previewInicio.nuevaFin + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
-            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug pt-1">
+            <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug pt-1">
               Se corre el inicio {previewInicio.delta > 0 ? `+${previewInicio.delta}` : previewInicio.delta} días y el fin se mueve igual. La cuota, el total y los pagos no cambian.
             </p>
           </div>
@@ -332,39 +398,39 @@ export default function ModificarPlazo({
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-[var(--color-text-muted)]">Nuevo plazo</span>
-              <span className="text-xs font-semibold text-[var(--color-text-primary)]">{preview.nuevoDiasPlazo} días</span>
+              <span className="text-[10px] text-[var(--cf-ink-3)]">Nuevo plazo</span>
+              <span className="text-xs font-semibold text-[var(--cf-ink)]">{preview.nuevoDiasPlazo} días</span>
             </div>
             {modo === 'extender' && preview.nuevaCuota != null && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[var(--color-text-muted)]">Nueva cuota {frecuencia}</span>
-                  <span className="text-xs font-bold text-[var(--color-accent)] font-mono-display">
+                  <span className="text-[10px] text-[var(--cf-ink-3)]">Nueva cuota {frecuencia}</span>
+                  <span className="text-xs font-bold text-[var(--cf-gold)] font-mono-display">
                     {formatMoney(preview.nuevaCuota)}
                     {preview.cuotaDelta !== 0 && (
-                      <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+                      <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                         ({preview.cuotaDelta > 0 ? '+' : ''}{formatMoney(Math.abs(preview.cuotaDelta))})
                       </span>
                     )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-[var(--color-text-muted)]">Total a pagar</span>
-                  <span className="text-xs font-semibold text-[var(--color-text-primary)] font-mono-display">
+                  <span className="text-[10px] text-[var(--cf-ink-3)]">Total a pagar</span>
+                  <span className="text-xs font-semibold text-[var(--cf-ink)] font-mono-display">
                     {formatMoney(preview.nuevoTotal)}
                   </span>
                 </div>
               </>
             )}
             {modo === 'corregir' && (
-              <p className="text-[10px] text-[var(--color-text-muted)] leading-snug pt-1">
+              <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug pt-1">
                 Solo se actualizará la fecha. La cuota, el total y los pagos no cambian.
               </p>
             )}
           </div>
         )}
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+        {error && <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">

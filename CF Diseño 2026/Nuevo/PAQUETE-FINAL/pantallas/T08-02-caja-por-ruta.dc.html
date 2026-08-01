@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#e6e6e1; font-family:'Manrope',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#b07d00; text-decoration:none; }
+  a:hover { color:#8a6100; text-decoration:underline; }
+  * { box-sizing:border-box; }
+</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:20px;padding:40px;">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:820px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:10px;font-weight:700;letter-spacing:.06em;">TURNO 8</span>
+      <span style="display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f3ef;border:1px solid rgba(20,20,28,.08);font-size:10px;font-weight:700;letter-spacing:.06em;color:#63676f;">MOVIL</span>
+    </div>
+    <h1 style="margin:0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;letter-spacing:-.02em;color:#15161a;">Caja · por ruta</h1>
+  </div>
+      <div style="display:flex;flex-direction:column;width:390px;">
+        <div style="position:relative;width:390px;height:844px;background:#f4f4f1;border-radius:30px;border:1px solid rgba(20,20,28,.13);overflow:hidden;display:flex;flex-direction:column;color:#15161a;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;padding:12px 22px 6px;height:44px;flex:none;">
+            <span style="font-size:12px;font-weight:700;">19:22</span>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <span style="width:16px;height:9px;border-radius:2px;background:#15161a;"></span>
+              <span style="width:22px;height:10px;border-radius:3px;border:1px solid rgba(20,20,28,.4);"></span>
+            </div>
+          </div>
+          <div style="flex:none;padding:6px 20px 12px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4a4e57" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M15 5l-7 7 7 7"></path></svg>
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:600;letter-spacing:-.02em;">Caja por ruta</span>
+                <span style="font-size:12px;color:#63676f;">martes 28 de julio</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px;">
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#fff;border:1px solid rgba(20,20,28,.08);font-size:12px;font-weight:600;color:#4a4e57;flex:none;">Caja del día</span>
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#15161a;color:#f4f4f1;font-size:12px;font-weight:700;flex:none;">Por ruta</span>
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#fff;border:1px solid rgba(20,20,28,.08);font-size:12px;font-weight:600;color:#4a4e57;flex:none;">Cuentas</span>
+              <span style="display:inline-flex;align-items:center;height:34px;padding:0 13px;border-radius:11px;background:#fff;border:1px solid rgba(20,20,28,.08);font-size:12px;font-weight:600;color:#4a4e57;flex:none;">Cuadre</span>
+            </div>
+          </div>
+          <div style="flex:1;overflow:hidden;padding:0 20px 20px;display:flex;flex-direction:column;gap:12px;">
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:18px 20px;display:flex;gap:8px;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Efectivo</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums lining-nums;">$285.500</span>
+              </div>
+              <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Digital</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.025em;color:#5b4fd0;font-variant-numeric:tabular-nums lining-nums;">$126.500</span>
+              </div>
+              <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Total</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums lining-nums;">$412.000</span>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Ruta norte</span>
+                  <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">Carmen · 6 de 8 cobros</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums lining-nums;flex:none;">$118.300</span>
+              </div>
+              <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;display:flex;">
+                <span style="width:62%;height:6px;background:#12a150;"></span>
+                <span style="width:16%;height:6px;background:#7a6cf0;"></span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Efectivo</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$94.300</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Digital</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#5b4fd0;font-variant-numeric:tabular-nums lining-nums;">$24.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Esperado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$151.700</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Prestado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#c23b40;font-variant-numeric:tabular-nums lining-nums;">$0</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Ruta 2</span>
+                  <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">Pepito · 4 de 5 cobros</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;letter-spacing:-.025em;font-variant-numeric:tabular-nums lining-nums;flex:none;">$61.500</span>
+              </div>
+              <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;display:flex;">
+                <span style="width:55%;height:6px;background:#12a150;"></span>
+                <span style="width:28%;height:6px;background:#7a6cf0;"></span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Efectivo</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums lining-nums;">$41.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Digital</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#5b4fd0;font-variant-numeric:tabular-nums lining-nums;">$20.500</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Esperado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$74.500</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Prestado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#c23b40;font-variant-numeric:tabular-nums lining-nums;">$200.000</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                  <span style="font-size:16px;font-weight:700;letter-spacing:-.015em;">Ruta #1</span>
+                  <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">Carlos · 0 de 2 cobros</span>
+                </div>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:600;letter-spacing:-.025em;color:#63676f;font-variant-numeric:tabular-nums lining-nums;flex:none;">$0</span>
+              </div>
+              <div style="height:6px;border-radius:999px;background:#f3f3ef;overflow:hidden;display:flex;">
+                <span style="width:2%;height:6px;background:#9aa0a8;"></span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Efectivo</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$0</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Digital</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$0</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Esperado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$79.000</span>
+                </div>
+                <span style="width:1px;background:rgba(20,20,28,.07);"></span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#63676f;">Prestado</span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;">$0</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:none;background:#fff;border:1px solid rgba(20,20,28,.08);border-radius:18px;padding:16px 20px;display:flex;align-items:center;gap:12px;">
+              <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+                <span style="font-size:15px;font-weight:700;letter-spacing:-.015em;color:#63676f;">Ruta sur</span>
+                <span style="font-size:12px;color:#63676f;font-variant-numeric:tabular-nums;">Andrés · sin cobros hoy</span>
+              </div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#63676f;font-variant-numeric:tabular-nums lining-nums;flex:none;">$0</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;font-weight:700;color:#15161a;">02 · Caja · por ruta</span>
+          <span style="font-size:12px;line-height:1.45;color:#63676f;">La pestaña que faltaba. Cada ruta con lo recaudado partido en efectivo y digital —la barra lleva los dos tramos— más lo esperado y lo prestado en la calle. Sin el medio de pago de la pantalla 01 esta vista no puede existir: hoy todo sería efectivo.</span>
+        </div>
+      </div>
+</section>
+</x-dc>
+<script data-dc-script type="text/plain"></script>
+</body>
+</html>

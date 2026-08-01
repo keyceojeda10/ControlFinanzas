@@ -1,10 +1,60 @@
 'use client'
 
+// ── T34-03 · LA BUSQUEDA GLOBAL ──
+//
+// Lo que cambia respecto al buscador anterior, y por que:
+//
+// 1. LA BUSQUEDA VACIA YA NO REPITE EL CAMPO. Antes, con el campo en blanco,
+//    arriba decia «buscar clientes, rutas, caja, configuracion» y debajo «busca
+//    clientes, prestamos, rutas, caja, gastos, configuracion…». Dos listas que
+//    ni siquiera coincidian, ocupando la pantalla entera para no decir nada.
+//    Ahora enseña los ultimos que abriste, los cinco saltos que mas se usan, y
+//    la accion que trae aqui a la mitad de la gente: prestarle a alguien nuevo.
+//
+// 2. EL CAMPO PIDE LO QUE SE TECLEA: «nombre, cedula o telefono». En este
+//    negocio se busca por cedula tanto como por nombre.
+//
+// 3. LOS RESULTADOS VAN EN UNA SOLA LISTA. Antes iban en tres grupos con su
+//    rotulo cada uno, y con dos resultados por grupo son tres titulos para
+//    cinco filas. Al que busca «Steven» le da igual si Steven es un cliente o
+//    un prestamo: quiere llegar a Steven.
+//
+// 4. EL ARO DEL AVATAR TRAE EL ESTADO. Quien busca a alguien casi siempre
+//    quiere saber como va, no solo entrar.
+//
+// Se conserva entero lo que ya funcionaba y no es diseño: la consulta a
+// `/api/buscar` con su rebote, el respaldo contra la copia local cuando no hay
+// internet, el catalogo de comandos y el manejo de teclado.
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { obtenerComandos, filtrarComandos } from '@/lib/searchCommands'
 import { obtenerClientesOffline, obtenerRutasOffline } from '@/lib/offline'
+import { aFilasBusqueda } from '@/lib/adaptadores/busqueda'
+import { leerRecientes } from '@/lib/recientes'
+import { BusquedaGlobal } from '@/components/pantallas/Estados'
+
+/* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
+   menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
+   no puede ver, para no ofrecerle una puerta que da a un 403. */
+const ATAJOS = [
+  { id: 'cobrar', texto: 'Cobrar hoy', href: '/cobros-hoy', d: 'M8.5 12.5l2.5 2.5 4.5-5', extra: <circle cx="12" cy="12" r="8.5" /> },
+  { id: 'caja', texto: 'Caja', href: '/caja', d: '', extra: <rect x="3" y="7" width="18" height="12" rx="2.5" /> },
+  { id: 'capital', texto: 'Mi plata', href: '/capital', d: 'M4 20V9l8-5 8 5v11z', soloDueno: true },
+  { id: 'gastos', texto: 'Gastos', href: '/gastos', d: 'M6 4h12v16H6zM9 9h6M9 13h4' },
+  { id: 'config', texto: 'Configuración', href: '/configuracion', d: 'M12 3v3M12 18v3M3 12h3M18 12h3', extra: <circle cx="12" cy="12" r="3" />, soloDueno: true },
+]
+
+function IconoAtajo({ d, extra }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
+      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+      {extra}
+      {d && <path d={d} />}
+    </svg>
+  )
+}
 
 export default function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -12,7 +62,7 @@ export default function GlobalSearch() {
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState(0)
-  const inputRef = useRef(null)
+  const [recientes, setRecientes] = useState([])
   const router = useRouter()
   const debounceRef = useRef(null)
   const { esCobrador, ...auth } = useAuth()
@@ -32,6 +82,14 @@ export default function GlobalSearch() {
     [comandos, query]
   )
 
+  // La lupa de la cabecera y de la barra lateral. Ctrl+K no existe en un
+  // telefono, asi que sin esto la busqueda no se podia abrir desde el movil.
+  useEffect(() => {
+    const abrir = () => setOpen(true)
+    window.addEventListener('cf:abrir-buscador', abrir)
+    return () => window.removeEventListener('cf:abrir-buscador', abrir)
+  }, [])
+
   // Ctrl+K / Cmd+K to open
   useEffect(() => {
     const handler = (e) => {
@@ -45,14 +103,24 @@ export default function GlobalSearch() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // Focus input when opened
+  // Al abrir: campo limpio y los recientes releidos. Se leen AQUI y no al
+  // montar porque entre una apertura y otra el usuario abrio cosas, y una lista
+  // de recientes congelada al arrancar la app seria mentira a los diez minutos.
   useEffect(() => {
-    if (open) {
-      setQuery('')
-      setResults(null)
-      setSelected(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
+    if (!open) return
+    setQuery('')
+    setResults(null)
+    setSelected(0)
+    setRecientes(leerRecientes())
+  }, [open])
+
+  // Con el buscador abierto, el fondo no se mueve. Sin esto, en movil se
+  // arrastra la pagina de detras y al cerrar apareces en otro sitio.
+  useEffect(() => {
+    if (!open) return
+    const previo = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previo }
   }, [open])
 
   const buscarOffline = useCallback(async (q) => {
@@ -62,13 +130,15 @@ export default function GlobalSearch() {
     const clientesMatch = (clientes || [])
       .filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.toLowerCase().includes(ql) || c.telefono?.includes(q))
       .slice(0, 8)
-      .map(c => ({ id: c.id, nombre: c.nombre, cedula: c.cedula, tipo: 'cliente' }))
+      .map(c => ({ id: c.id, nombre: c.nombre, cedula: c.cedula, telefono: c.telefono, tipo: 'cliente' }))
     const prestamosMatch = []
     for (const c of (clientes || [])) {
       for (const p of (c.prestamos || [])) {
         if (prestamosMatch.length >= 5) break
         if (c.nombre?.toLowerCase().includes(ql)) {
-          prestamosMatch.push({ id: p.id, clienteNombre: c.nombre, monto: p.montoPrestado, tipo: 'prestamo' })
+          // `clienteId` tambien sin internet, o el adaptador no puede juntar el
+          // prestamo con su dueño y el mismo nombre sale dos veces.
+          prestamosMatch.push({ id: p.id, clienteId: c.id, clienteNombre: c.nombre, saldoPendiente: p.saldoPendiente, tipo: 'prestamo' })
         }
       }
     }
@@ -101,234 +171,107 @@ export default function GlobalSearch() {
     setLoading(false)
   }, [buscarOffline])
 
-  const handleChange = (e) => {
-    const val = e.target.value
+  const onTexto = (val) => {
     setQuery(val)
     setSelected(0)
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => search(val), 300)
   }
 
-  // Orden de comandos para render: navegacion primero, luego acciones.
-  const comandosNav = comandosFiltrados.filter((c) => !c.accion)
-  const comandosAccion = comandosFiltrados.filter((c) => c.accion)
-
-  // Build flat list of navigable items en el MISMO orden que el render, para
-  // que los indices de navegacion con teclado coincidan exactamente.
-  const allItems = []
-  comandosNav.forEach((c) => allItems.push({ href: c.href }))
-  comandosAccion.forEach((c) => allItems.push({ href: c.href }))
-  if (results) {
-    results.clientes?.forEach((c) => allItems.push({ href: `/clientes/${c.id}` }))
-    results.prestamos?.forEach((p) => allItems.push({ href: `/prestamos/${p.id}` }))
-    results.rutas?.forEach((r) => allItems.push({ href: `/rutas/${r.id}` }))
-  }
-
-  // Keyboard navigation
-  const handleKeyDown = (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelected((prev) => Math.min(prev + 1, allItems.length - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelected((prev) => Math.max(prev - 1, 0))
-    } else if (e.key === 'Enter' && allItems[selected]) {
-      e.preventDefault()
-      navigate(allItems[selected].href)
-    }
-  }
-
-  const navigate = (href) => {
+  const ir = useCallback((href) => {
+    if (!href) return
     setOpen(false)
     router.push(href)
-  }
+  }, [router])
+
+  // Los resultados de verdad y los destinos del catalogo, en UNA lista.
+  //
+  // LA GENTE VA PRIMERO, y los destinos como mucho tres. Al reves —que es como
+  // estaba— escribir una letra devolvia ocho destinos y ningun cliente: la API
+  // no contesta hasta la segunda letra, asi que la pantalla se llenaba de
+  // «Analiticas, Apariencia, Dashboard, Cobrar hoy…» por contener una «a».
+  // Y con dos letras, buscar a Carlos lo dejaba debajo de «cartera» y «carga
+  // masiva». Este buscador es para llegar a una PERSONA; los destinos son un
+  // extra que no puede mandar sobre lo que se vino a buscar.
+  const filas = useMemo(() => {
+    const texto = query.trim()
+    if (texto.length === 0) return []
+    const gente = aFilasBusqueda(results)
+    // Desde dos letras, igual que la API: con una sola, «a» los trae todos.
+    const destinos = texto.length < 2 ? [] : comandosFiltrados.slice(0, 3).map((c) => ({
+      id: `cmd-${c.id}`,
+      tipo: 'comando',
+      nombre: c.label,
+      detalle: c.sub,
+      iniciales: '›',
+      href: c.href,
+    }))
+    return [...gente, ...destinos]
+  }, [comandosFiltrados, results, query])
+
+  // Teclado: solo tiene sentido con teclado, o sea en escritorio.
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelected((p) => Math.min(p + 1, filas.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelected((p) => Math.max(p - 1, 0))
+      } else if (e.key === 'Enter' && filas[selected]) {
+        e.preventDefault()
+        ir(filas[selected].href)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open, filas, selected, ir])
 
   if (!open) return null
 
-  const ICON_COLORS = {
-    comando: 'var(--color-info)',
-    accion: 'var(--color-accent)',
-    cliente: 'var(--color-accent)',
-    prestamo: 'var(--color-success)',
-    ruta: 'var(--color-purple)',
-  }
+  const atajos = ATAJOS
+    .filter((a) => !(a.soloDueno && esCobrador))
+    .map((a) => ({ ...a, icono: <IconoAtajo d={a.d} extra={a.extra} /> }))
 
-  // Offsets de cada seccion (sin mutar durante el render): cada seccion empieza
-  // donde termina la anterior, siguiendo el mismo orden que allItems.
-  const cli = results?.clientes || []
-  const pre = results?.prestamos || []
-  const rut = results?.rutas || []
-  const OFF_NAV = 0
-  const OFF_ACCION = OFF_NAV + comandosNav.length
-  const OFF_CLI = OFF_ACCION + comandosAccion.length
-  const OFF_PRE = OFF_CLI + cli.length
-  const OFF_RUT = OFF_PRE + pre.length
-
-  const hayAlgo = allItems.length > 0
-  const colorDe = (k) => ICON_COLORS[k] || 'var(--color-text-muted)'
+  const escribiendo = query.trim().length > 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh]">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-start sm:justify-center sm:pt-[10vh]">
       <div className="absolute inset-0 bg-black/72 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
-      <div className="relative w-full max-w-lg mx-3 sm:mx-4 rounded-[16px] shadow-2xl overflow-hidden"
-        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.25)' }}>
-        {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-          </svg>
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, rutas, caja, configuración..."
-            className="flex-1 bg-transparent text-sm outline-none"
-            style={{ color: 'var(--color-text-primary)' }}
-          />
-          {query && (
-            <button onClick={() => { setQuery(''); setResults(null); setSelected(0) }} className="p-1 rounded-md" style={{ color: 'var(--color-text-muted)' }}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-          <kbd className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md font-mono" style={{ color: 'var(--color-text-muted)', background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>ESC</kbd>
-        </div>
-
-        {/* Results */}
-        <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto py-1.5">
-          {/* Comandos: navegacion */}
-          {comandosNav.length > 0 && (
-            <div>
-              <SectionLabel color="var(--color-info)">Ir a</SectionLabel>
-              {comandosNav.map((c, i) => (
-                <ResultRow key={c.id} item={c} idx={OFF_NAV + i} color={colorDe('comando')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
-              ))}
-            </div>
-          )}
-
-          {/* Comandos: acciones */}
-          {comandosAccion.length > 0 && (
-            <div>
-              <SectionLabel color="var(--color-accent)">Acciones</SectionLabel>
-              {comandosAccion.map((c, i) => (
-                <ResultRow key={c.id} item={c} idx={OFF_ACCION + i} color={colorDe('accion')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
-              ))}
-            </div>
-          )}
-
-          {/* API: loading */}
-          {loading && (
-            <div className="flex justify-center py-6">
-              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
-            </div>
-          )}
-
-          {/* API: clientes */}
-          {results?.clientes?.length > 0 && (
-            <div>
-              <SectionLabel color="var(--color-accent)">Clientes</SectionLabel>
-              {results.clientes.map((c, i) => {
-                const cedSub = c.cedula && !c.cedula.startsWith('SIN-') ? c.cedula : ''
-                const item = { id: `cli-${c.id}`, label: c.nombre, sub: `${cedSub}${c.telefono ? `${cedSub ? ' · ' : ''}${c.telefono}` : ''}`, href: `/clientes/${c.id}`, icon: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0' }
-                return <ResultRow key={item.id} item={item} idx={OFF_CLI + i} color={colorDe('cliente')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
-              })}
-            </div>
-          )}
-
-          {/* API: prestamos */}
-          {results?.prestamos?.length > 0 && (
-            <div>
-              <SectionLabel color="var(--color-success)">Préstamos</SectionLabel>
-              {results.prestamos.map((p, i) => {
-                const item = { id: `pre-${p.id}`, label: p.clienteNombre, sub: `$${Math.round(p.saldoPendiente).toLocaleString('es-CO')} pendiente`, href: `/prestamos/${p.id}`, estado: p.estado, icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
-                return <ResultRow key={item.id} item={item} idx={OFF_PRE + i} color={colorDe('prestamo')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
-              })}
-            </div>
-          )}
-
-          {/* API: rutas */}
-          {results?.rutas?.length > 0 && (
-            <div>
-              <SectionLabel color="var(--color-purple)">Rutas</SectionLabel>
-              {results.rutas.map((r, i) => {
-                const item = { id: `rut-${r.id}`, label: r.nombre, sub: `${r._count?.clientes || 0} clientes`, href: `/rutas/${r.id}`, icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
-                return <ResultRow key={item.id} item={item} idx={OFF_RUT + i} color={colorDe('ruta')} selected={selected} onSelect={setSelected} onNavigate={navigate} />
-              })}
-            </div>
-          )}
-
-          {/* Sin resultados */}
-          {!loading && query.trim().length >= 1 && !hayAlgo && (
-            <div className="py-8 text-center">
-              <svg className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Sin resultados para "{query}"</p>
-            </div>
-          )}
-
-          {/* Estado inicial (sin query) */}
-          {query.trim().length === 0 && (
-            <div className="py-10 text-center">
-              <svg className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-border-hover)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Busca clientes, préstamos, rutas, caja, gastos, configuración…</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer — solo desktop */}
-        <div className="hidden sm:flex items-center justify-between px-4 py-2 text-[10px]" style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-          <div className="flex items-center gap-3">
-            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&uarr;</kbd> <kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>&darr;</kbd> navegar</span>
-            <span><kbd className="px-1 py-0.5 rounded-md font-mono" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border)' }}>Enter</kbd> abrir</span>
-          </div>
-        </div>
+      {/* En movil es una hoja que sube y tapa casi todo, como la lamina: con el
+          teclado abierto una tarjeta flotante deja 200px utiles y el primer
+          resultado ya no se ve. Los 56px de arriba son la cabecera de la app
+          asomando bajo el velo — dicen que esto va ENCIMA de donde estabas, y
+          de paso dan sitio para cerrar tocando fuera.
+          En escritorio sigue siendo una tarjeta centrada. */}
+      <div
+        className="relative w-full mt-14 sm:mt-0 sm:max-w-lg sm:mx-4 sm:rounded-[16px] overflow-hidden sm:max-h-[76vh] flex"
+        style={{ background: 'var(--cf-surface)', boxShadow: '0 -12px 32px rgba(20,20,28,.2)' }}
+      >
+        <BusquedaGlobal
+          texto={query}
+          onTexto={onTexto}
+          onCerrar={() => setOpen(false)}
+          recientes={recientes}
+          atajos={atajos}
+          onAtajo={(a) => ir(a.href)}
+          onAbrir={(f) => ir(f.href)}
+          resultados={filas}
+          vacio={
+            loading ? 'Buscando…'
+              : escribiendo ? `Nada con «${query.trim()}». Prueba con la cédula o el teléfono.`
+                : null
+          }
+          accion={auth.puedeCrearPrestamos === false ? null : {
+            texto: 'Prestarle a alguien nuevo',
+            nota: 'crear cliente y préstamo de una vez',
+            onIr: () => ir('/prestamos/nuevo'),
+          }}
+          pie={recientes.length === 0 ? 'Escribe un nombre, una cédula o un teléfono' : null}
+        />
       </div>
     </div>
-  )
-}
-
-// ── Componentes de modulo (no definir dentro del render) ──
-
-function SectionLabel({ color, children }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-2 mt-1">
-      <div className="w-1 h-3 rounded-full" style={{ background: color }} />
-      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{children}</p>
-    </div>
-  )
-}
-
-function ResultRow({ item, idx, color, selected, onSelect, onNavigate }) {
-  return (
-    <button
-      className={[
-        'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all rounded-lg min-h-[46px] focus-visible:outline-none',
-        idx === selected ? 'bg-[var(--color-accent-soft)]' : 'hover:bg-[var(--color-bg-hover)]',
-      ].join(' ')}
-      onClick={() => onNavigate(item.href)}
-      onMouseEnter={() => onSelect(idx)}
-    >
-      <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}>
-        <svg className="w-4 h-4" style={{ color }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d={item.icon || 'M9 12.75L11.25 15 15 9.75'} />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: 'var(--color-text-primary)' }}>{item.label}</p>
-        {item.sub && <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>{item.sub}</p>}
-      </div>
-      {item.estado && (
-        <span className={[
-          'text-[10px] px-2 py-0.5 rounded-full font-medium',
-          item.estado === 'activo' ? 'bg-[rgba(34,197,94,0.14)] text-[#59e3a4]' : 'bg-[rgba(148,163,184,0.14)] text-[#c7c7d2]',
-        ].join(' ')}>{item.estado}</span>
-      )}
-    </button>
   )
 }

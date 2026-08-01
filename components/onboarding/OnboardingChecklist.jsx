@@ -22,23 +22,23 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
   return (
     <>
     <Confetti active={showConfetti} />
-    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden onboarding-fadein">
+    <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] overflow-hidden onboarding-fadein">
       {/* Header - always visible */}
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-4 px-4 py-4 hover:bg-[var(--color-bg-hover)] transition-colors"
+        className="w-full flex items-center gap-4 px-4 py-4 hover:bg-[var(--cf-fill)] transition-colors"
       >
         <ProgressRing progreso={progreso} size={52} stroke={3.5} />
         <div className="flex-1 text-left min-w-0">
-          <p className="text-sm font-bold text-[var(--color-text-primary)]">Configura tu negocio</p>
-          <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+          <p className="text-sm font-bold text-[var(--cf-ink)]">Configura tu negocio</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
             {completadas === 0
               ? 'Completa estas misiones para dominar el sistema'
               : `${completadas} de ${total} completadas`}
           </p>
         </div>
         <svg
-          className={`w-5 h-5 text-[var(--color-text-muted)] transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-[var(--cf-ink-3)] transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -47,12 +47,12 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
 
       {/* Missions list */}
       {expanded && (
-        <div className="px-2 pb-3 border-t border-[var(--color-border)]">
+        <div className="px-2 pb-3 border-t border-[var(--cf-border)]">
           {/* Progress bar */}
           <div className="mx-2 mt-3 mb-2">
-            <div className="h-1.5 bg-[var(--color-bg-hover)] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[var(--cf-fill)] rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[#f0b800] transition-all duration-700 ease-out"
+                className="h-full rounded-full bg-gradient-to-r from-[var(--cf-gold)] to-[var(--cf-gold)] transition-all duration-700 ease-out"
                 style={{ width: `${progreso}%` }}
               />
             </div>
@@ -68,7 +68,7 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
           <div className="flex justify-center mt-3 mb-1">
             <button
               onClick={onDismiss}
-              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)] transition-colors"
+              className="text-[10px] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink-3)] transition-colors"
             >
               Ya conozco el sistema, ocultar guía
             </button>

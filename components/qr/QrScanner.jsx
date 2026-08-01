@@ -215,7 +215,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
             />
             {mode === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                <svg className="animate-spin w-8 h-8" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-8 h-8" style={{ color: 'var(--cf-gold)' }} fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -224,8 +224,8 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
             )}
             {mode === 'live' && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-48 h-48 border-2 rounded-2xl" style={{ borderColor: 'var(--color-accent)' }}>
-                  <div className="w-full h-0.5 animate-scan-line" style={{ background: 'var(--color-accent)', opacity: 0.7 }} />
+                <div className="w-48 h-48 border-2 rounded-2xl" style={{ borderColor: 'var(--cf-gold)' }}>
+                  <div className="w-full h-0.5 animate-scan-line" style={{ background: 'var(--cf-gold)', opacity: 0.7 }} />
                 </div>
               </div>
             )}
@@ -233,7 +233,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
         )}
 
         {mode === 'live' && (
-          <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-sm text-center" style={{ color: 'var(--cf-ink-2)' }}>
             Apunta la camara al QR del cliente
           </p>
         )}
@@ -242,20 +242,20 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
           <>
             {processing ? (
               <div className="flex flex-col items-center gap-3 py-8">
-                <svg className="animate-spin w-10 h-10" style={{ color: 'var(--color-accent)' }} fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin w-10 h-10" style={{ color: 'var(--cf-gold)' }} fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Leyendo QR...</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--cf-ink)' }}>Leyendo QR...</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 py-4 w-full">
                 {error && (
-                  <p className="text-sm text-center mb-1" style={{ color: 'var(--color-danger)' }}>{error}</p>
+                  <p className="text-sm text-center mb-1" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>
                 )}
 
                 <div className="w-full rounded-xl p-3" style={{ background: 'rgba(245,158,11,0.08)' }}>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
                     No se pudo iniciar el escaner. Si Chrome te pide permiso de camara, acepta para poder escanear.
                   </p>
                 </div>
@@ -263,7 +263,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                 <div className="flex gap-2 w-full">
                   <label
                     className="flex-1 h-10 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
-                    style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+                    style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -274,7 +274,7 @@ export default function QrScanner({ open, onClose, onClientDetected }) {
                   </label>
                   <label
                     className="flex-1 h-10 rounded-xl text-xs font-medium flex items-center justify-center gap-2 cursor-pointer"
-                    style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }}
+                    style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />

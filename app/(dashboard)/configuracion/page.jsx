@@ -1,9 +1,16 @@
 'use client'
 
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import Configuracion from '@/components/pantallas/Configuracion'
+import TuNegocio from '@/components/pantallas/config/TuNegocio'
+import ComoPrestas from '@/components/pantallas/config/ComoPrestas'
+import PlanYPagos from '@/components/pantallas/config/PlanYPagos'
+import { IndiceConfiguracion } from '@/components/pantallas/config/movil'
+import { useCabecera } from '@/components/armazon/Armazon'
+import { valoresIndice, filasIndice, seccionesConfig } from '@/lib/adaptadores/configuracion'
 import { useState, useEffect, Suspense } from 'react'
 import Link                    from 'next/link'
-import { useSearchParams }     from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { Button }              from '@/components/ui/Button'
@@ -33,9 +40,9 @@ const PLAN_NAMES = Object.fromEntries(Object.entries(PLANES_CONFIG).map(([k, v])
 
 function Alerta({ tipo = 'success', children }) {
   const styles = {
-    success: { background: 'var(--color-success-dim)', borderColor: 'var(--color-success-border)', color: 'var(--color-success)' },
-    error:   { background: 'var(--color-danger-dim)',  borderColor: 'var(--color-danger-border)',  color: 'var(--color-danger)' },
-    warning: { background: 'var(--color-warning-dim)', borderColor: 'var(--color-warning-border)', color: 'var(--color-warning)' },
+    success: { background: 'var(--cf-green-pill-bg)', borderColor: 'var(--cf-green)', color: 'var(--cf-green-dark)' },
+    error:   { background: 'var(--cf-red-pill-bg)',  borderColor: 'var(--cf-red-border)',  color: 'var(--cf-red-dark)' },
+    warning: { background: 'var(--cf-gold-tint)', borderColor: 'var(--cf-gold-border)', color: 'var(--cf-gold-dark)' },
   }
   return (
     <div className="border rounded-[12px] px-4 py-3 text-sm" style={styles[tipo] ?? styles.success}>
@@ -45,7 +52,7 @@ function Alerta({ tipo = 'success', children }) {
 }
 
 const inputClass =
-  'cf-input w-full h-11 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-hover)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'cf-input w-full max-w-[560px] h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
@@ -176,19 +183,19 @@ function TabPerfil() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Información personal</p>
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Información personal</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nombre</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nombre</label>
             <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Email</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Email</label>
             <input type="email" value={perfil?.email ?? ''} readOnly disabled className={inputClass} />
-            <p className="text-[10px] text-[var(--color-text-muted)]">El email no se puede cambiar</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">El email no se puede cambiar</p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Número de WhatsApp</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Número de WhatsApp</label>
             <input
               type="tel"
               value={telefono}
@@ -196,13 +203,13 @@ function TabPerfil() {
               placeholder="Ej: 3001234567"
               className={inputClass}
             />
-            <p className="text-[10px] text-[var(--color-text-muted)]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
           </div>
           {msgTel && <Alerta tipo={msgTel.tipo}>{msgTel.texto}</Alerta>}
           <Button onClick={guardarTelefono} loading={guardandoTel} size="sm">Guardar WhatsApp</Button>
-          <div className="pt-2" style={{ borderTop: '1px solid var(--color-border)' }} />
+          <div className="pt-2" style={{ borderTop: '1px solid var(--cf-border)' }} />
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Rol</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Rol</label>
             <div className="flex items-center gap-2">
               <Badge variant={session?.user?.rol === 'owner' ? 'blue' : 'gray'}>
                 {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? 'Usuario'}
@@ -215,8 +222,8 @@ function TabPerfil() {
       </Card>
 
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-3">Avatar de perfil</p>
-        <p className="text-[11px] text-[var(--color-text-muted)] mb-4">
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-3">Avatar de perfil</p>
+        <p className="text-[11px] text-[var(--cf-ink-3)] mb-4">
           Se mostrará en el menú y en el sidebar.
         </p>
 
@@ -224,8 +231,8 @@ function TabPerfil() {
         <div className="flex items-center gap-3">
           <Avatar nombre={nombre || perfil?.nombre} avatarId={avatarSeleccionado} size={56} fontSize={20} />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{nombre || perfil?.nombre}</p>
-            <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{nombre || perfil?.nombre}</p>
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--cf-ink-3)' }}>
               {avatarSeleccionado ? AVATARS.find(a => a.id === avatarSeleccionado)?.nombre ?? 'Avatar seleccionado' : 'Usando iniciales del nombre'}
             </p>
           </div>
@@ -233,7 +240,7 @@ function TabPerfil() {
             <button
               onClick={() => setAvatarPickerOpen(true)}
               className="text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
-              style={{ color: 'var(--color-accent)', background: 'var(--color-accent-soft)', border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)' }}
+              style={{ color: 'var(--cf-gold)', background: 'var(--cf-gold-tint)', border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)' }}
             >
               Cambiar
             </button>
@@ -242,7 +249,7 @@ function TabPerfil() {
                 onClick={() => guardarAvatar(null)}
                 disabled={guardandoAvatar}
                 className="text-[11px] px-3 py-1.5 rounded-full transition-colors font-medium"
-                style={{ color: 'var(--color-danger)', background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 20%, transparent)' }}
+                style={{ color: 'var(--cf-red-dark)', background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 20%, transparent)' }}
               >
                 Quitar
               </button>
@@ -259,7 +266,7 @@ function TabPerfil() {
             if (!catAvatars.length) return null
             return (
               <div key={cat.id}>
-                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--color-text-muted)] mb-2.5">{cat.nombre}</p>
+                <p className="text-[11px] font-extrabold uppercase tracking-[.07em] text-[var(--cf-ink-3)] mb-2.5">{cat.nombre}</p>
                 <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5">
                   {catAvatars.map((av) => {
                     const selected = avatarSeleccionado === av.id
@@ -271,7 +278,7 @@ function TabPerfil() {
                         className="group relative rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95"
                         style={{
                           aspectRatio: '1',
-                          boxShadow: selected ? '0 0 0 3px var(--color-accent), 0 0 0 5px color-mix(in srgb, var(--color-accent) 20%, transparent)' : 'none',
+                          boxShadow: selected ? '0 0 0 3px var(--cf-gold), 0 0 0 5px color-mix(in srgb, var(--cf-gold) 20%, transparent)' : 'none',
                           transform: selected ? 'scale(1.08)' : undefined,
                         }}
                         title={av.nombre}
@@ -279,8 +286,8 @@ function TabPerfil() {
                         <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: av.svg }} />
                         {selected && (
                           <div className="absolute inset-0 flex items-end justify-center pb-1">
-                            <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="var(--color-accent-text)" strokeWidth={2.5} viewBox="0 0 24 24">
+                            <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--cf-gold)' }}>
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="var(--cf-gold-ink)" strokeWidth={2.5} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
@@ -297,18 +304,18 @@ function TabPerfil() {
       </Modal>
 
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Cambiar contraseña</p>
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Cambiar contraseña</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Contraseña actual</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Contraseña actual</label>
             <input type="password" value={pwActual} onChange={(e) => setPwActual(e.target.value)} placeholder="Tu contraseña actual" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nueva contraseña</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nueva contraseña</label>
             <input type="password" value={pwNuevo} onChange={(e) => setPwNuevo(e.target.value)} placeholder="Mínimo 6 caracteres" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Confirmar nueva contraseña</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Confirmar nueva contraseña</label>
             <input type="password" value={pwConfirmar} onChange={(e) => setPwConfirmar(e.target.value)} placeholder="Repite la nueva contraseña" className={inputClass} />
           </div>
           {msgPw && <Alerta tipo={msgPw.tipo}>{msgPw.texto}</Alerta>}
@@ -323,7 +330,21 @@ function TabPerfil() {
 // TAB 2 — MI ORGANIZACIÓN
 // ══════════════════════════════════════════════════════════════
 
-function TabOrganizacion() {
+function TabOrganizacion({ bloques, tema, onTema }) {
+  // ── UN MEGA-PANEL PARTIDO EN BLOQUES ──
+  //
+  // `TabOrganizacion` llevaba dentro TRECE tarjetas: los datos del negocio, los
+  // dias sin cobro, cuatro interruptores de comportamiento, los intereses
+  // moratorios, los mensajes de WhatsApp, los campos del recibo, los festivos, el
+  // plan y la zona de peligro. Todo eso caia en «Tu negocio», asi que esa seccion
+  // eran 3.912 pixeles y las demas quedaban vacias — el menu parecia navegar y en
+  // realidad no habia a donde ir.
+  //
+  // Ahora cada tarjeta declara A QUE SECCION pertenece y el panel pinta solo las
+  // suyas. `bloques` sin valor las pinta todas, que es el comportamiento de
+  // antes: ningun sitio que lo use hoy se rompe.
+  const quiere = (clave) => !bloques || bloques.includes(clave)
+
   const { updateSession } = useAuth()
   const [data,     setData]     = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -471,85 +492,68 @@ function TabOrganizacion() {
     </div>
   )
 
-  const { org, suscripcion, diasRestantes } = data ?? {}
+  const { org, suscripcion, diasRestantes, clientes } = data ?? {}
   const vencida   = diasRestantes !== null && diasRestantes !== undefined && diasRestantes <= 0
   const porVencer = diasRestantes !== null && diasRestantes !== undefined && diasRestantes > 0 && diasRestantes <= 7
 
   return (
     <div className="space-y-5">
-      <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Datos del negocio</p>
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Nombre del negocio</label>
-            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Teléfono</label>
-            <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3001234567" className={inputClass} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">País</label>
-            <div
-              className="flex items-center justify-between rounded-[12px] px-3 py-2.5"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 003 12c0-1.605.42-3.113 1.157-4.418" />
-                </svg>
-                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                  {COUNTRIES[country]?.name ?? 'Colombia'}
-                </span>
-              </div>
-              <a
-                href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el país de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] transition-all whitespace-nowrap"
-                style={{
-                  background: 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-                  color: 'var(--color-accent)',
-                  border: '1px solid color-mix(in srgb, var(--color-accent) 25%, transparent)',
-                }}
-              >
-                Cambiar país
-              </a>
-            </div>
-            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
-              Para cambiar el país asociado a tu cuenta debes contactar a soporte.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Ciudad</label>
-            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogotá" className={inputClass} />
-          </div>
-          {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
-          <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
-        </div>
-      </Card>
+      {/* ── «Datos del negocio» → TuNegocio (T09-01) ──
+          Sustituye al formulario anterior, que era el que se veia: `TuNegocio`
+          estaba importado arriba y no se renderizaba en ningun sitio.
 
+          Se conservan los dos datos que el componente NO tenia y el formulario
+          viejo si —`ciudad` y el enlace para cambiar de pais—, porque la lamina
+          enseña la seccion pero no autoriza a perder un campo.
+
+          Los otros tres bloques de `negocio` (dias sin cobro, el de abajo y
+          MetodoPagoAdmin) NO se tocan: siguen igual detras de este. */}
+      {quiere('negocio') && (
+        <TuNegocio
+          sinTitulo
+          inicial={{
+            nombre, telefono, ciudad,
+            paisNombre: COUNTRIES[country]?.name ?? 'Colombia',
+            ejemploMonto: formatMoney(1500000, country),
+          }}
+          tema={tema}
+          onTema={onTema}
+          enlacePais={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el pais de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
+          onGuardar={(org) => {
+            // El componente ya guarda solo; esto solo refresca lo que la
+            // pantalla tiene en la mano, para que el resto de bloques no se
+            // queden con el nombre anterior.
+            if (org?.nombre !== undefined) setNombre(org.nombre ?? '')
+            if (org?.telefono !== undefined) setTelefono(org.telefono ?? '')
+            if (org?.ciudad !== undefined) setCiudad(org.ciudad ?? '')
+          }}
+        />
+      )}
+
+      {quiere('negocio') && (
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-3">Días sin cobro</p>
-        <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mb-3">
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-3">Días sin cobro</p>
+        <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mb-3">
           Los días que marques no generarán mora para ningún cliente. Puedes configurar días diferentes por ruta o por cliente.
         </p>
         <DiasSinCobroSelector value={diasSinCobro} onChange={setDiasSinCobro} />
         {diasSinCobro.length > 0 && (
-          <p className="text-[10px] text-[var(--color-warning)] mt-2">
+          <p className="text-[10px] text-[var(--cf-gold-dark)] mt-2">
             {diasSinCobro.length === 1 ? '1 día' : `${diasSinCobro.length} días`} sin cobro configurados para toda la organización
           </p>
         )}
         {msgDSC && <Alerta tipo={msgDSC.tipo}>{msgDSC.texto}</Alerta>}
         <Button onClick={guardarDSC} loading={guardandoDSC} size="sm" className="mt-3">Guardar días sin cobro</Button>
       </Card>
+      )}
 
       {/* Toggle capital = efectivo en mano */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Capital en ruta = efectivo en mano</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Capital en ruta = efectivo en mano</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Activa si entregas el capital de la ruta como plata física al cobrador. El sistema usará ese valor para calcular el dinero en mano y el cuadre de caja.
             </p>
           </div>
@@ -567,13 +571,15 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle vista bruta de renovaciones en la caja */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Contar renovaciones en el cobrado</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Contar renovaciones en el cobrado</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Al renovar, el saldo que el cliente ya debía se absorbe en el préstamo nuevo. Activa esto si quieres verlo sumado en <strong>Cobrado</strong> y en <strong>Prestado</strong> a la vez, como si el cliente hubiera pagado la cartulina vieja. El efectivo del día es el mismo en ambos casos; solo cambia si ese movimiento se ve o no.
             </p>
           </div>
@@ -591,13 +597,15 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle modo abreviado de montos */}
+      {quiere('negocio') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Modo abreviado de montos</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Modo abreviado de montos</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Escribe montos sin los ultimos tres ceros. Por ejemplo, 100 se convierte en 100.000 y 1.500 en 1.500.000.
             </p>
           </div>
@@ -618,13 +626,15 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle aprobación de préstamos */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Aprobar prestamos del cobrador</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Aprobar prestamos del cobrador</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Cuando un cobrador crea un prestamo, queda pendiente hasta que lo apruebes. Sin esta opcion, los prestamos se activan de inmediato.
             </p>
           </div>
@@ -642,13 +652,15 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Toggle portal de clientes — datos completos */}
+      {quiere('portal') && (
       <Card>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Portal: mostrar datos completos</p>
-            <p className="text-[11px] text-[var(--color-text-muted)] leading-snug mt-1">
+            <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Portal: mostrar datos completos</p>
+            <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug mt-1">
               Cuando el cliente ingresa al portal, ve monto prestado, total a pagar, tasa de interes y demas detalles financieros. Si desactivas esto, solo vera saldo, cuota y fecha de pago.
             </p>
           </div>
@@ -666,21 +678,23 @@ function TabOrganizacion() {
           />
         </div>
       </Card>
+      )}
 
       {/* Intereses moratorios */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-[var(--color-warning)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-gold-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h3 className="font-medium text-white text-sm">Intereses moratorios</h3>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        <p className="text-xs text-[var(--cf-ink-3)] mb-4">
           Cuando un cliente lleva varios dias sin pagar, el sistema calcula un interes adicional. Tu decides si aplicarlo o no desde cada prestamo.
         </p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Tasa moratorio mensual (%)</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Tasa moratorio mensual (%)</label>
             <input
               type="text"
               inputMode="decimal"
@@ -689,12 +703,12 @@ function TabOrganizacion() {
               placeholder="0 = desactivado"
               className={inputClass}
             />
-            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug px-0.5">
               Porcentaje mensual sobre el monto en mora. Ej: 3 = 3% mensual. Dejalo en 0 para desactivar.
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--color-text-muted)]">Dias de gracia</label>
+            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Dias de gracia</label>
             <input
               type="number"
               min="0"
@@ -704,7 +718,7 @@ function TabOrganizacion() {
               onChange={(e) => setDiasGraciaMoratorio(e.target.value)}
               className={inputClass}
             />
-            <p className="text-[10px] text-[var(--color-text-muted)] leading-snug px-0.5">
+            <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug px-0.5">
               Dias que deben pasar en mora antes de que se empiece a calcular el interes moratorio.
             </p>
           </div>
@@ -735,8 +749,57 @@ function TabOrganizacion() {
           </Button>
         </div>
       </Card>
+      )}
 
       {/* Mensajes de WhatsApp */}
+      {/* ── LA ADVERTENCIA QUE EVITA EL SILENCIO (T38-02) ──
+          Va PRIMERA en la sección, antes que cualquier ajuste. Se activan los
+          avisos por WhatsApp y a quien no tiene número guardado no le llega
+          nada: sin error, sin rebote, sin rastro. Es el fallo que parece que
+          funciona, y por eso hay que verlo antes de encender nada.
+
+          El enlace lleva a la lista ya filtrada (`sinTelefono=1` en
+          /api/clientes) — una cifra sin el «quiénes son» deja al dueño
+          buscándolos uno por uno. */}
+      {quiere('whatsapp') && clientes?.sinTelefono > 0 && (
+      <Card>
+        <div className="flex items-start gap-3">
+          <svg className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--cf-gold)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+              Antes de mandar avisos solos
+            </p>
+            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="cf-fig font-bold" style={{ color: 'var(--cf-ink-2)' }}>
+                {clientes.sinTelefono}
+              </span>{' '}
+              de tus <span className="cf-fig">{clientes.total}</span>{' '}
+              {clientes.sinTelefono === 1
+                ? 'clientes no tiene número guardado. A él no le va a llegar nada.'
+                : 'clientes no tienen número guardado. A ellos no les va a llegar nada.'}
+            </p>
+            {/* `Link`, no `router.push`: en ESTE componente no hay `router`
+                —se declara en el armazón de abajo, no aquí— y usarlo habría
+                reventado la sección entera al pintarla. */}
+            <Link
+              href="/clientes?sinTelefono=1"
+              className="inline-block text-xs font-semibold mt-2 rounded-[8px] px-2.5 py-1 transition-all"
+              style={{
+                color: 'var(--cf-gold)',
+                background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
+              }}
+            >
+              Ver quiénes son
+            </Link>
+          </div>
+        </div>
+      </Card>
+      )}
+
+      {quiere('whatsapp') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
           <svg className="w-4 h-4 text-[#25d366] shrink-0" fill="currentColor" viewBox="0 0 24 24">
@@ -744,7 +807,7 @@ function TabOrganizacion() {
           </svg>
           <h3 className="font-medium text-white text-sm">Mensajes de WhatsApp</h3>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        <p className="text-xs text-[var(--cf-ink-3)] mb-4">
           Configura que informacion se incluye en los mensajes que se envian a los clientes por WhatsApp.
         </p>
         <Toggle
@@ -766,16 +829,18 @@ function TabOrganizacion() {
           }}
         />
       </Card>
+      )}
 
       {/* Campos personalizados en recibos — plantilla por defecto */}
+      {quiere('whatsapp') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           <h3 className="font-medium text-white text-sm">Campos del recibo (plantilla)</h3>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        <p className="text-xs text-[var(--cf-ink-3)] mb-4">
           Plantilla por defecto para todos los clientes. Puedes personalizar los campos de cada cliente desde la página del préstamo.
         </p>
 
@@ -789,16 +854,18 @@ function TabOrganizacion() {
 
         {msgCampos && <div className="mt-3"><Alerta tipo={msgCampos.tipo}>{msgCampos.texto}</Alerta></div>}
       </Card>
+      )}
 
       {/* Festivos */}
+      {quiere('prestas') && (
       <Card>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <h3 className="font-medium text-white text-sm">Festivos y días sin cobro específicos</h3>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        <p className="text-xs text-[var(--cf-ink-3)] mb-4">
           Fechas concretas en las que no se realiza cobro. No generan mora ese día.
         </p>
         <FestivosManager
@@ -808,78 +875,39 @@ function TabOrganizacion() {
           loading={festivosLoading}
         />
       </Card>
+      )}
 
-      <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Plan y suscripción</p>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[var(--color-text-muted)]">Plan actual</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={planBadge[org?.plan ?? 'starter']}>
-                  {PLAN_NAMES[org?.plan ?? 'starter']}
-                </Badge>
-                <span className="text-xs text-[var(--color-text-muted)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
-              </div>
-            </div>
-            <Link
-              href="/configuracion/plan"
-              className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)] transition-all"
-            >
-              Cambiar plan
-            </Link>
-          </div>
-
-          {suscripcion && (
-            <div className="pt-3 border-t border-[var(--color-border)] space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-[var(--color-text-muted)]">Vencimiento</span>
-                <span className="text-[var(--color-text-muted)]">
-                  {new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO', {
-                    day: 'numeric', month: 'long', year: 'numeric',
-                  })}
-                </span>
-              </div>
-              {vencida && (
-                <Alerta tipo="error">
-                  Tu suscripción venció hace {Math.abs(diasRestantes)} día{Math.abs(diasRestantes) !== 1 ? 's' : ''}.
-                  {' '}<Link href="/configuracion/plan" className="underline font-medium">Renueva ahora</Link>
-                </Alerta>
-              )}
-              {porVencer && (
-                <Alerta tipo="warning">
-                  Tu suscripción vence en {diasRestantes} día{diasRestantes !== 1 ? 's' : ''}.
-                  {' '}<Link href="/configuracion/plan" className="underline font-medium">Renueva ahora</Link>
-                </Alerta>
-              )}
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Medios de transferencia */}
-      <MetodoPagoAdmin />
+      {/* LA TERCERA TARJETA DE PLAN, FUERA.
+          Repetia el nombre del plan, el precio y el vencimiento —que ya estan en
+          la de arriba— y su boton «Cambiar plan» va al mismo sitio que «Ver
+          planes». Tres tarjetas seguidas contando lo mismo con tres tipografias
+          distintas es lo que hacia que la seccion pareciera un desorden. */}
+      {/* Los medios de transferencia van con «Tu negocio»: son las cuentas a las
+          que TE pagan, no un ajuste de cobro ni de seguridad. Sin envolverlo se
+          colaba en las tres secciones a la vez. */}
+      {quiere('negocio') && <MetodoPagoAdmin />}
 
       {/* Zona de peligro */}
-      <Card style={{ border: '1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-border))' }}>
+      {quiere('peligro') && (
+      <Card style={{ border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, var(--cf-border))' }}>
         <div className="flex items-center gap-2 mb-1">
-          <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--color-danger)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--cf-red-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
-          <h3 className="font-medium text-sm" style={{ color: 'var(--color-danger)' }}>Zona de peligro</h3>
+          <h3 className="font-medium text-sm" style={{ color: 'var(--cf-red-dark)' }}>Zona de peligro</h3>
         </div>
-        <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-xs mb-4" style={{ color: 'var(--cf-ink-3)' }}>
           Descarga un respaldo completo de tu cuenta o reinicia todos los datos para empezar de cero.
         </p>
 
         <div className="space-y-3">
           <div
             className="flex items-center justify-between gap-3 p-3 rounded-[12px]"
-            style={{ background: 'color-mix(in srgb, var(--color-accent) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}
           >
             <div className="min-w-0">
-              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-primary)' }}>Descargar respaldo</p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>Descargar respaldo</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Descarga toda la informacion de tu cuenta en un archivo JSON.
               </p>
             </div>
@@ -914,11 +942,11 @@ function TabOrganizacion() {
 
           <div
             className="flex items-center justify-between gap-3 p-3 rounded-[12px]"
-            style={{ background: 'color-mix(in srgb, var(--color-danger) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 15%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 15%, transparent)' }}
           >
             <div className="min-w-0">
-              <p className="text-[13px] font-medium" style={{ color: 'var(--color-danger)' }}>Reiniciar mi cuenta</p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[13px] font-medium" style={{ color: 'var(--cf-red-dark)' }}>Reiniciar mi cuenta</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 Elimina todos los clientes, prestamos, pagos, rutas, socios y cobradores. Tu cuenta y suscripcion se mantienen.
               </p>
             </div>
@@ -934,6 +962,7 @@ function TabOrganizacion() {
           {msgReinicio && <Alerta tipo={msgReinicio.tipo}>{msgReinicio.texto}</Alerta>}
         </div>
       </Card>
+      )}
 
       <ConfirmModal
         open={confirmReinicio}
@@ -991,10 +1020,10 @@ function TabSuscripcion() {
 
   const { org, suscripcion, diasRestantes, historial } = data ?? {}
 
-  const barColor = diasRestantes === null || diasRestantes === undefined ? 'var(--color-text-muted)'
-    : diasRestantes > 15 ? 'var(--color-success)'
-    : diasRestantes > 7  ? 'var(--color-warning)'
-    : 'var(--color-danger)'
+  const barColor = diasRestantes === null || diasRestantes === undefined ? 'var(--cf-ink-3)'
+    : diasRestantes > 15 ? 'var(--cf-green-dark)'
+    : diasRestantes > 7  ? 'var(--cf-gold-dark)'
+    : 'var(--cf-red-dark)'
 
   const barPct = (diasRestantes == null) ? 0 : Math.max(0, Math.min(100, (diasRestantes / 30) * 100))
 
@@ -1002,44 +1031,35 @@ function TabSuscripcion() {
     <div className="space-y-5">
       <Card
         style={{
-          background: `linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-accent) 2%, transparent) 100%)`,
-          boxShadow: `0 0 30px color-mix(in srgb, var(--color-accent) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
+          background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 4%, transparent) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-gold) 2%, transparent) 100%)`,
+          boxShadow: `0 0 30px color-mix(in srgb, var(--cf-gold) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
         }}
       >
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
-          <div>
-            <p className="text-xs text-[var(--color-text-muted)] mb-1">Plan actual</p>
-            <div className="flex items-center gap-2">
-              <Badge variant={planBadge[org?.plan ?? 'starter']}>
-                {PLAN_NAMES[org?.plan ?? 'starter']}
-              </Badge>
-              <span className="text-xs text-[var(--color-text-muted)]"><span className="font-mono-display">{formatMoney(PRECIOS[org?.plan ?? 'starter'])}</span>/mes</span>
-            </div>
-          </div>
-          <Link
-            href="/configuracion/plan"
-            className="inline-flex items-center justify-center h-10 px-5 rounded-[12px] text-sm font-semibold bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all shrink-0"
-          >
-            Renovar / Cambiar
-          </Link>
-        </div>
+        {/* EL NOMBRE DEL PLAN, EL PRECIO Y EL BOTON YA ESTAN ARRIBA, en la
+            tarjeta del rediseño. Aqui se repetian con otra tipografia y otro
+            boton que va al mismo sitio: dos tarjetas contando lo mismo, y la de
+            arriba salia con rayas porque nunca recibio la fecha. Esta se queda
+            con LO QUE NO ESTA ARRIBA: las fechas exactas y cuanto falta. */}
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">
+          Detalle de la suscripción
+        </p>
 
         {suscripcion ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <p className="text-[var(--color-text-muted)]">Inicio</p>
-                <p className="text-[var(--color-text-muted)] mt-0.5">{new Date(suscripcion.fechaInicio).toLocaleDateString('es-CO')}</p>
+                <p className="text-[var(--cf-ink-3)]">Inicio</p>
+                <p className="text-[var(--cf-ink-3)] mt-0.5">{new Date(suscripcion.fechaInicio).toLocaleDateString('es-CO')}</p>
               </div>
               <div>
-                <p className="text-[var(--color-text-muted)]">Vencimiento</p>
-                <p className="text-[var(--color-text-muted)] mt-0.5">{new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO')}</p>
+                <p className="text-[var(--cf-ink-3)]">Vencimiento</p>
+                <p className="text-[var(--cf-ink-3)] mt-0.5">{new Date(suscripcion.fechaVencimiento).toLocaleDateString('es-CO')}</p>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
-                <span className="text-[var(--color-text-muted)]">Tiempo restante</span>
+                <span className="text-[var(--cf-ink-3)]">Tiempo restante</span>
                 <span className="font-medium" style={{ color: barColor }}>
                   {diasRestantes != null
                     ? diasRestantes > 0
@@ -1048,7 +1068,7 @@ function TabSuscripcion() {
                     : '—'}
                 </span>
               </div>
-              <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--cf-border)] rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${barPct}%`, background: barColor }} />
               </div>
             </div>
@@ -1067,23 +1087,23 @@ function TabSuscripcion() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-[var(--color-text-muted)]">No hay información de suscripción disponible.</p>
+          <p className="text-sm text-[var(--cf-ink-3)]">No hay información de suscripción disponible.</p>
         )}
       </Card>
 
       {historial?.length > 0 && (
         <Card>
-          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Historial de suscripciones</p>
+          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Historial de suscripciones</p>
           <div className="space-y-0">
-            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[var(--color-text-muted)] font-medium uppercase pb-2 border-b border-[var(--color-border)]">
+            <div className="hidden sm:grid grid-cols-4 gap-2 text-[10px] text-[var(--cf-ink-3)] font-medium uppercase pb-2 border-b border-[var(--cf-border)]">
               <span>Período</span>
               <span className="text-center">Plan</span>
               <span className="text-center">Estado</span>
               <span className="text-right">Monto</span>
             </div>
             {historial.map((h) => (
-              <div key={h.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[var(--color-border)] last:border-0 items-center">
-                <p className="text-xs text-[var(--color-text-muted)]">
+              <div key={h.id} className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-2.5 border-b border-[var(--cf-border)] last:border-0 items-center">
+                <p className="text-xs text-[var(--cf-ink-3)]">
                   {new Date(h.fechaInicio).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })}
                   {' → '}
                   {new Date(h.fechaVencimiento).toLocaleDateString('es-CO', { month: 'short', year: '2-digit' })}
@@ -1094,7 +1114,7 @@ function TabSuscripcion() {
                     {h.estado}
                   </Badge>
                 </div>
-                <p className="text-xs text-[var(--color-text-muted)] text-right">
+                <p className="text-xs text-[var(--cf-ink-3)] text-right">
                   {h.montoCOP > 0 ? <span className="font-mono-display">{formatMoney(h.montoCOP)}</span> : 'Gratis'}
                 </p>
               </div>
@@ -1149,17 +1169,17 @@ function TabReferidos() {
   return (
     <div className="space-y-5">
       <Card>
-        <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em] mb-4">Tu link de referido</p>
+        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Tu link de referido</p>
         <div className="space-y-4">
-          <div className="bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
-            <p className="text-xs text-[var(--color-text-muted)] mb-1">Código</p>
-            <p className="text-lg font-bold font-mono text-[var(--color-accent)]">{codigo ?? 'Sin código'}</p>
+          <div className="bg-[var(--cf-fill)] border border-[var(--cf-border)] rounded-[12px] px-4 py-3">
+            <p className="text-xs text-[var(--cf-ink-3)] mb-1">Código</p>
+            <p className="text-lg font-bold font-mono text-[var(--cf-gold)]">{codigo ?? 'Sin código'}</p>
           </div>
 
           {link && (
-            <div className="bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-[12px] px-4 py-3">
-              <p className="text-xs text-[var(--color-text-muted)] mb-1">Link de registro</p>
-              <p className="text-xs text-[var(--color-text-muted)] break-all">{link}</p>
+            <div className="bg-[var(--cf-fill)] border border-[var(--cf-border)] rounded-[12px] px-4 py-3">
+              <p className="text-xs text-[var(--cf-ink-3)] mb-1">Link de registro</p>
+              <p className="text-xs text-[var(--cf-ink-3)] break-all">{link}</p>
             </div>
           )}
 
@@ -1173,25 +1193,25 @@ function TabReferidos() {
           </div>
 
           <div className="bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)] rounded-[12px] px-4 py-3">
-            <p className="text-sm text-[var(--color-success)] font-medium">Por cada referido que pague su primer plan, ganas 1 mes gratis en tu suscripción.</p>
+            <p className="text-sm text-[var(--cf-green-dark)] font-medium">Por cada referido que pague su primer plan, ganas 1 mes gratis en tu suscripción.</p>
           </div>
         </div>
       </Card>
 
       <Card>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[11px] font-extrabold text-[var(--color-text-muted)] uppercase tracking-[.07em]">Referidos</p>
+          <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em]">Referidos</p>
           <Badge variant="green">{referidos.length}</Badge>
         </div>
         {referidos.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">Aún no tienes referidos. Comparte tu link para empezar a ganar meses gratis.</p>
+          <p className="text-sm text-[var(--cf-ink-3)]">Aún no tienes referidos. Comparte tu link para empezar a ganar meses gratis.</p>
         ) : (
           <div className="space-y-0">
             {referidos.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-[var(--color-border)] last:border-0">
+              <div key={r.id} className="flex items-center justify-between py-2.5 border-b border-[var(--cf-border)] last:border-0">
                 <div>
                   <p className="text-sm font-medium text-white">{r.nombre}</p>
-                  <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
+                  <p className="text-[10px] text-[var(--cf-ink-3)]">{new Date(r.createdAt).toLocaleDateString('es-CO')}</p>
                 </div>
                 <Badge variant={r.pagado ? 'green' : 'gray'}>{r.pagado ? '+30 días' : 'Pendiente'}</Badge>
               </div>
@@ -1274,18 +1294,18 @@ function TabNotificaciones() {
     <Card>
       <div className="p-5 space-y-4">
         <h2 className="text-sm font-semibold text-white">Notificaciones push</h2>
-        <p className="text-xs text-[var(--color-text-muted)]">
+        <p className="text-xs text-[var(--cf-ink-3)]">
           Recibe alertas cuando un cobrador registra pagos, clientes entran en mora o tu suscripción está por vencer.
         </p>
 
         {status === 'unsupported' && (
-          <p className="text-xs text-[var(--color-warning)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
+          <p className="text-xs text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
             Tu navegador no soporta notificaciones push. Usa Chrome, Edge o Firefox.
           </p>
         )}
 
         {status === 'denied' && (
-          <p className="text-xs text-[var(--color-danger)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
+          <p className="text-xs text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
             Las notificaciones fueron bloqueadas. Habilítalas desde la configuración de tu navegador.
           </p>
         )}
@@ -1294,7 +1314,7 @@ function TabNotificaciones() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-white">{status === 'subscribed' ? 'Activadas' : 'Desactivadas'}</p>
-              <p className="text-[10px] text-[var(--color-text-muted)]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
             </div>
             <Toggle checked={status === 'subscribed'} onChange={toggle} disabled={working} />
           </div>
@@ -1302,8 +1322,8 @@ function TabNotificaciones() {
 
         {status === 'loading' && (
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin" />
-            <span className="text-xs text-[var(--color-text-muted)]">Verificando...</span>
+            <div className="w-4 h-4 border-2 border-[var(--cf-border)] border-t-[var(--cf-gold)] rounded-full animate-spin" />
+            <span className="text-xs text-[var(--cf-ink-3)]">Verificando...</span>
           </div>
         )}
       </div>
@@ -1316,6 +1336,7 @@ function TabNotificaciones() {
 // ══════════════════════════════════════════════════════════════
 function ConfiguracionContent() {
   const { session, esOwner } = useAuth()
+  const { setTheme: setThemeGlobal } = useTheme()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [tab, setTab] = useState(tabParam || 'perfil')
@@ -1326,47 +1347,354 @@ function ConfiguracionContent() {
 
   const rol = session?.user?.rol ?? 'cobrador'
 
+  // ── Nombres como piensa el dueño, no como se llama el módulo ──
+  //
+  // «Ocho secciones nombradas como el dueño piensa —cómo prestas, avisos por
+  // WhatsApp, tus datos— en vez de por módulo técnico» (nota del diseño en
+  // «01 · Configuración»). Organización, Suscripción y Notificaciones son
+  // nombres de tablas: ningún prestamista habla así de su negocio.
+  //
+  // «Plan y pagos» y no «Suscripción» es el cambio que más se nota: suscripción
+  // es lo que la app le cobra a él; plan y pagos es lo que él viene a mirar.
+  //
+  // Las CLAVES no se tocan a propósito — el contenido de cada pestaña cuelga de
+  // ellas y renombrarlas rompería la página sin ganar nada.
+  //
+  // El orden y la regla de ocultar viven en lib/adaptadores/configuracion.js,
+  // con sus pruebas. Aquí se aplica sobre las pestañas que ya existen.
+  //
+  // ⚠ FALTAN DOS de las ocho del diseño, y necesitan panel propio, no un
+  // renombre: «Cómo prestas» —los valores que prellenan el formulario de nuevo
+  // préstamo— y «Seguridad y datos». Anotadas para la siguiente tanda.
   const tabs = [
-    { key: 'perfil',       label: 'Mi perfil',    visible: true },
-    { key: 'organizacion', label: 'Organización', visible: rol === 'owner' },
-    { key: 'suscripcion',  label: 'Suscripción',  visible: rol === 'owner' },
-    { key: 'referidos',    label: 'Referidos',     visible: rol === 'owner' },
-    { key: 'notificaciones', label: 'Notificaciones', visible: true },
-    { key: 'apariencia',     label: 'Apariencia',     visible: true },
+    { key: 'organizacion',   label: 'Tu negocio',          visible: rol === 'owner' },
+    { key: 'notificaciones', label: 'Avisos por WhatsApp', visible: true },
+    { key: 'suscripcion',    label: 'Plan y pagos',        visible: rol === 'owner' },
+    { key: 'perfil',         label: 'Tus datos',           visible: true },
+    { key: 'apariencia',     label: 'Apariencia',          visible: true },
+    // Referidos no está entre las ocho del diseño. Se queda porque existe y
+    // funciona, pero va al final: no es algo que se venga a configurar.
+    { key: 'referidos',      label: 'Referidos',           visible: rol === 'owner' },
   ].filter((t) => t.visible)
 
+  // La cabecera y los paneles nuevos necesitan la organización y el uso del
+  // plan. Los paneles viejos siguen trayéndose lo suyo por su cuenta: no se
+  // tocan, y duplicar una petición es más barato que reescribirlos hoy.
+  const [org, setOrg] = useState(null)
+  const [uso, setUso] = useState(null)
+  const [diasParaRenovar, setDiasParaRenovar] = useState(null)
+  const [vencimiento, setVencimiento] = useState(null)
+  const [tema, setTema] = useState('system')
+  useEffect(() => {
+    let vivo = true
+    fetch('/api/configuracion/organizacion', { cache: 'no-store' }).then((r) => r.json())
+      .then((d) => {
+        if (!vivo) return
+        setOrg(d?.org ?? null)
+        // Ya venía en la misma respuesta y se estaba tirando. Es el valor de la
+        // fila «Plan y pagos» del índice.
+        setDiasParaRenovar(Number.isFinite(d?.diasRestantes) ? d.diasRestantes : null)
+        // «renueva el 12 de agosto» dice mas que «en 13 días»: la fecha se
+        // apunta en la cabeza, el contador hay que volver a mirarlo mañana.
+        setVencimiento(d?.suscripcion?.fechaVencimiento
+          ? new Date(d.suscripcion.fechaVencimiento).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+          : null)
+      }).catch(() => {})
+    fetch('/api/plan/uso', { cache: 'no-store' }).then((r) => r.json())
+      .then((d) => { if (vivo) setUso(d ?? null) }).catch(() => {})
+    try { setTema(localStorage.getItem('theme') || 'system') } catch {}
+    return () => { vivo = false }
+  }, [])
+
+  // La detección del ancho va en un EFECTO, no en el primer render: leer
+  // matchMedia al pintar hace que el servidor diga una cosa y el cliente otra, y
+  // React tira el árbol entero.
+  const [anchaPantalla, setAnchaPantalla] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const leer = () => setAnchaPantalla(mq.matches)
+    leer()
+    mq.addEventListener('change', leer)
+    return () => mq.removeEventListener('change', leer)
+  }, [])
+
+  const router = useRouter()
+
+  // LA SECCION SE LEE DESPUES DE MONTAR, no en el primer render.
+  //
+  // El servidor no ve `?s=` y renderiza la seccion por defecto; el cliente si lo
+  // ve. Que los dos primeros renders pinten lo mismo es lo correcto, y es el
+  // mismo patron que el ancho de pantalla tres lineas mas abajo.
+  //
+  // ⚠ CORRECCION DE UNA MEDICION MIA: culpe a este parametro de un
+  // «Hydration failed» que NO ES SUYO. Compare una carga sin el parametro contra
+  // ocho con el, y lo que cambiaba no era el parametro sino el numero de carga:
+  // la PRIMERA carga de cualquier ruta da cero avisos y la segunda en adelante da
+  // uno — /dashboard incluido, que no toque. Es de toda la app y viene del tema
+  // guardado en localStorage, que el servidor no puede saber. Queda anotado
+  // aparte; esto no lo arregla y no pretende arreglarlo.
+  const [montado, setMontado] = useState(false)
+  useEffect(() => { setMontado(true) }, [])
+  const seccionParam = montado ? searchParams.get('s') : null
+  const cobradores = Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)
+
+  // La flecha de la cabecera: dentro de una seccion vuelve al INDICE; en el
+  // indice sale de configuracion. Sin esto salia siempre, y desde una seccion eso
+  // se siente como perder el sitio.
+  useCabecera({
+    titulo: 'Configuración',
+    onVolver: seccionParam ? () => router.push('/configuracion') : undefined,
+  })
+
+  const paisCfg = COUNTRIES[org?.country] ?? null
+  const valores = valoresIndice({
+    org, uso, cobradores, diasParaRenovar,
+    pais: paisCfg ? { nombre: paisCfg.name, moneda: paisCfg.currency } : null,
+  })
+  const filas = filasIndice({ rol, cobradores }, valores)
+
+  // La nota del negocio: plan y consumo de clientes, los dos leídos del API.
+  // Nunca escritos a mano — en el intento anterior puse «hasta 20 clientes»
+  // cuando el plan Inicial son 100, y eso vende el producto cinco veces peor.
+  const notaNegocio = [
+    org?.plan ? `Plan ${PLAN_NAMES[org.plan] ?? org.plan}` : null,
+    valores.clientesNota,
+  ].filter(Boolean).join(' · ') || null
+
+  const inicialesNegocio = (org?.nombre ?? '')
+    .trim().split(/\s+/).filter(Boolean).slice(0, 2)
+    .map((p) => p[0]).join('').toUpperCase() || '$'
+
+  // Por `setTheme` del proveedor, no escribiendo en localStorage a mano: el
+  // proveedor es quien pone el atributo en <html>, y escribiendo la clave por
+  // fuera el tema cambia en disco pero la pantalla se queda igual hasta recargar.
+  const cambiarTema = (t) => { setTema(t); setThemeGlobal(t) }
+
+  // ── El armazón del rediseño, con los paneles viejos DENTRO ──
+  //
+  // Los paneles que todavía no se han rehecho (TabOrganizacion, TabSuscripcion,
+  // TabNotificaciones, TabPerfil…) NO se tocan ni se sustituyen por huecos: se
+  // meten en la sección que les corresponde. Montar el armazón nuevo dejando
+  // cinco pantallas que hoy funcionan como cajas de «sin construir» sería un
+  // retroceso, no un avance.
+  //
+  // Según se vaya rehaciendo cada panel, se cambia su línea aquí y ya está.
+  // ── CADA BLOQUE A SU SECCION ──
+  //
+  // Antes «Tu negocio» se llevaba las trece tarjetas y tres secciones —Portal,
+  // Seguridad y media Como prestas— eran una nota diciendo «sin rehacer
+  // todavia». El menu prometia ocho sitios y solo uno tenia algo.
+  const panel = (id) => {
+    switch (id) {
+      // Los datos que identifican el negocio, y nada mas.
+      case 'negocio':
+        return esOwner ? <TabOrganizacion bloques={['negocio']} tema={tema} onTema={cambiarTema} /> : null
+
+      // Los valores por defecto del prestamo MAS lo que cambia como se cobra:
+      // moratorios, festivos, si la renovacion cuenta como cobrado y si el
+      // cobrador necesita aprobacion. Todo eso vivia en «Tu negocio».
+      case 'comoPrestas':
+        return (
+          <>
+            {/* ── EL `key` NO ES DECORATIVO ──
+                `ComoPrestas` siembra su estado con `useState(inicial.…)`, que
+                solo mira el valor la PRIMERA vez. El armazón lo monta antes de
+                que llegue `org` —no tiene guarda de carga, al revés que
+                `TabOrganizacion`—, así que se sembraba en vacío y los valores
+                que llegaban después no entraban nunca.
+
+                Se veía como que la configuración no se guardaba: el dueño
+                elegía «Diario · 20% · Cuota fija», se guardaba de verdad en la
+                base, y al recargar la pantalla decía «Sin preferencia». Los
+                préstamos nuevos SÍ salían con esos valores; era la pantalla la
+                que mentía, que es peor que no guardar —lleva a ponerlo otra vez.
+
+                Cambiar la `key` cuando llegan los datos rehace el componente con
+                la semilla correcta. */}
+            <ComoPrestas
+              key={org?.id ?? 'cargando'}
+              inicial={{
+                frecuenciaDefault: org?.frecuenciaDefault ?? '',
+                tasaDefault: org?.tasaDefault ?? null,
+                modoInteresDefault: org?.modoInteresDefault ?? '',
+                diasSinCobro: org?.diasSinCobro ?? '[]',
+              }}
+              pais={org?.country}
+            />
+            {esOwner && <TabOrganizacion bloques={['prestas']} />}
+          </>
+        )
+
+      case 'plan':
+        return (
+          <>
+            <PlanYPagos
+              plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
+              precio={org?.plan ? formatMoney(PRECIOS[org.plan]) : null}
+              // `renueva` existia en el componente y NUNCA se pasaba, asi que la
+              // fecha —que es la mitad de lo que uno viene a mirar aqui— salia
+              // vacia mientras la tarjeta vieja de abajo si la tenia.
+              // El componente ya escribe «renueva el », asi que aqui va SOLO la
+              // fecha. Con «en 13 días» salia «renueva el en 13 días».
+              renueva={org?.plan && Number.isFinite(diasParaRenovar) && vencimiento
+                ? vencimiento
+                : undefined}
+              clientes={uso?.clientes?.usado}
+              limite={uso?.clientes?.limite}
+              onVerPlanes={() => { window.location.href = '/configuracion/plan' }}
+            />
+            {esOwner && <TabSuscripcion />}
+            {esOwner && <TabReferidos />}
+          </>
+        )
+
+      // Ya no es un remite: el interruptor del portal estaba escondido dentro de
+      // «Tu negocio».
+      case 'portal':
+        return esOwner
+          ? <TabOrganizacion bloques={['portal']} />
+          : <Remite nombre="Portal del cliente" nota="Lo que ve tu cliente cuando entra con su cédula." destino="/configuracion" accion="Solo el administrador" />
+
+      case 'whatsapp':
+        return (
+          <>
+            <TabNotificaciones />
+            {esOwner && <TabOrganizacion bloques={['whatsapp']} />}
+          </>
+        )
+
+      // Tampoco es un remite: la zona de peligro estaba al final de «Tu negocio»,
+      // debajo de todo lo demas, que es el peor sitio para poner lo irreversible.
+      case 'seguridad':
+        return esOwner
+          ? <TabOrganizacion bloques={['peligro']} />
+          : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />
+
+      case 'datos':
+        return (
+          <>
+            <TabPerfil />
+            {/* Solo en escritorio: en móvil vive en el índice, junto al tema. */}
+            {anchaPantalla && <InstallSection />}
+          </>
+        )
+
+      case 'equipo':    return <Remite nombre="Equipo" nota="Los cobradores y sus permisos se manejan en su propia pantalla." destino="/cobradores" accion="Ir a Cobradores" />
+
+      default: return null
+    }
+  }
+
+  // ── EN MÓVIL, EL ÍNDICE LLEVA A PANTALLAS; EN PC, TODO APILADO ──
+  //
+  // Son DOS diseños distintos y hasta ahora se estaba pintando solo el de PC en
+  // los dos anchos. En un teléfono eso daba UNA PÁGINA DE 15.510 PÍXELES —nueve
+  // pantallas seguidas— con los ocho nombres arriba haciendo de anclas. Se
+  // pulsaba «Seguridad» y saltaba a un punto de un rollo interminable, sin forma
+  // de volver ni de saber dónde acababa una sección y empezaba otra.
+  //
+  // T10-01 es un ÍNDICE y T10-02..07 son SEIS PANTALLAS. En PC sí van apiladas a
+  // la derecha con el menú a la izquierda —«configuración es tarea de PC»— y eso
+  // es lo que `Configuracion` ya hacía bien.
+  //
+  // La sección abierta va en la URL (`?s=`), no en un estado: así el botón de
+  // atrás del teléfono sale de la sección en vez de sacarte de configuración, y
+  // un enlace a «Cómo prestas» abre «Cómo prestas».
+  const visibles = seccionesConfig({ rol, cobradores })
+  const abierta = visibles.find((s) => s.id === seccionParam) ?? null
+
+  if (!anchaPantalla) {
+    if (abierta) {
+      return (
+        /* SIN FLECHA PROPIA. La cabecera del armazon ya pinta una, y salian dos
+           seguidas con destinos distintos: la de arriba salia de configuracion y
+           la de abajo volvia al indice. Ahora hay una sola y va al indice, que es
+           lo que espera quien entro desde ahi. */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+          <span style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          }}>{abierta.nombre}</span>
+          {panel(abierta.id)}
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
+        <IndiceConfiguracion
+          negocio={org?.nombre ?? 'Tu negocio'}
+          negocioNota={notaNegocio}
+          iniciales={inicialesNegocio}
+          filas={filas.map((f) => ({ ...f, onIr: () => router.push(`/configuracion?s=${f.id}`) }))}
+          tema={tema}
+          temas={[
+            { id: 'light', etiqueta: 'Claro' },
+            { id: 'dark', etiqueta: 'Oscuro' },
+            { id: 'system', etiqueta: 'Auto' },
+          ]}
+          onTema={cambiarTema}
+        />
+
+        {/* ── INSTALAR VA CON EL TEMA, NO CON «TUS DATOS» ──
+            Estaba al final de «Tus datos», que es nombre, correo y contraseña:
+            instalar la app NO ES UN DATO TUYO, y ahí no lo encuentra nadie.
+
+            El tema y la instalación son las dos cosas que se ajustan DE ESTE
+            TELÉFONO, no del negocio — las ocho secciones de arriba son el
+            negocio, y estas dos son cómo lo ves en este aparato. Por eso van
+            juntas, fuera de la lista.
+
+            En el FAB no: ese menú es «¿qué vas a hacer?», cosas que se hacen a
+            diario y mueven plata. Instalar se hace UNA VEZ, y ponerlo ahí se lo
+            pone delante todos los días a quien ya la instaló. */}
+        <InstallSection />
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Configuración</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestiona tu perfil y tu organización</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-[var(--color-border)] overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={[
-              'px-4 py-2.5 text-sm font-medium transition-all border-b-2 -mb-px whitespace-nowrap',
-              tab === t.key
-                ? 'text-[var(--color-accent)] border-[var(--color-accent)]'
-                : 'text-[var(--color-text-muted)] border-transparent hover:text-[var(--color-text-muted)]',
-            ].join(' ')}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'perfil'       && <TabPerfil />}
-      {tab === 'organizacion' && esOwner && <TabOrganizacion />}
-      {tab === 'suscripcion'  && esOwner && <TabSuscripcion />}
-      {tab === 'referidos'    && esOwner && <TabReferidos />}
-      {tab === 'notificaciones' && <TabNotificaciones />}
-      {tab === 'apariencia'     && <TabApariencia />}
+    <div className="max-w-2xl lg:max-w-6xl mx-auto">
+      {/* LA MISMA SECCION EN LOS DOS ANCHOS, y en la URL.
+          Antes el escritorio apilaba las ocho y el menu llevaba a un ancla; ahora
+          navega, igual que el movil. `?s=` es la misma clave, asi que un enlace a
+          «Como prestas» abre «Como prestas» venga de donde venga, y el boton de
+          atras sale de la seccion en vez de sacarte de configuracion. */}
+      <Configuracion
+        rol={rol}
+        cobradores={cobradores}
+        negocio={org?.nombre}
+        plan={org?.plan ? PLAN_NAMES[org.plan] ?? org.plan : null}
+        clientes={uso?.clientes?.usado}
+        limiteClientes={uso?.clientes?.limite}
+        activa={abierta?.id ?? visibles[0]?.id}
+        onSeccion={(id) => router.push(`/configuracion?s=${id}`)}
+      >
+        {(id) => panel(id)}
+      </Configuracion>
     </div>
+  )
+}
+
+/** Sección aún sin rehacer: dice dónde está su contenido hoy, no un hueco. */
+function Remite({ nombre, nota, destino, accion }) {
+  return (
+    <section style={{
+      padding: '20px 22px', borderRadius: 'var(--cf-r-card)',
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+    }}>
+      <span style={{
+        display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
+        textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+      }}>{nombre}</span>
+      <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '8px 0 0', lineHeight: 1.5 }}>{nota}</p>
+      <a href={destino} style={{
+        display: 'inline-flex', alignItems: 'center', height: 38, padding: '0 15px',
+        marginTop: 12, borderRadius: 'var(--cf-r-control)',
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+        fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)', textDecoration: 'none',
+      }}>{accion}</a>
+    </section>
   )
 }
 
@@ -1399,44 +1727,44 @@ function InstallSection() {
     <Card>
       <div className="p-5 space-y-4">
         <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Instalar la app</h3>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-            Instala Control Finanzas como aplicacion en tu dispositivo para acceder mas rapido y usarla sin internet.
+          <h3 className="text-base font-semibold" style={{ color: 'var(--cf-ink)' }}>Instalar la app</h3>
+          <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-2)' }}>
+            Instálala en tu teléfono para abrirla de un toque y usarla sin internet.
           </p>
         </div>
 
         {installed ? (
           <div
             className="flex items-center gap-3 p-3 rounded-[12px]"
-            style={{ background: 'color-mix(in srgb, var(--color-success) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)' }}
+            style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 20%, transparent)' }}
           >
-            <svg className="w-5 h-5 shrink-0" fill="none" stroke="var(--color-success)" viewBox="0 0 24 24" strokeWidth={1.8}>
+            <svg className="w-5 h-5 shrink-0" fill="none" stroke="var(--cf-green-dark)" viewBox="0 0 24 24" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-[13px]" style={{ color: 'var(--color-success)' }}>La app ya esta instalada en este dispositivo</p>
+            <p className="text-[13px]" style={{ color: 'var(--cf-green-dark)' }}>Ya está instalada en este teléfono</p>
           </div>
         ) : (
           <button
             onClick={handleInstall}
             className="flex items-center gap-3 w-full p-3 rounded-[12px] text-left transition-all active:scale-[0.99]"
             style={{
-              background: 'color-mix(in srgb, var(--color-accent) 8%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)',
+              background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--cf-gold) 20%, transparent)',
             }}
           >
             <div
               className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--color-accent) 15%, transparent)' }}
+              style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}
             >
-              <svg className="w-4.5 h-4.5" fill="none" stroke="var(--color-accent)" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <svg className="w-4.5 h-4.5" fill="none" stroke="var(--cf-gold)" viewBox="0 0 24 24" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-semibold" style={{ color: 'var(--color-accent)' }}>Instalar en este dispositivo</p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Te mostramos los pasos segun tu navegador</p>
+              <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-gold)' }}>Instalar en este dispositivo</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Te mostramos los pasos segun tu navegador</p>
             </div>
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -1454,19 +1782,18 @@ function TabApariencia() {
       <Card>
         <div className="p-5 space-y-4">
           <div>
-            <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Tema de la aplicación</h3>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--cf-ink)' }}>Tema de la aplicación</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-2)' }}>
               Elige como se ve Control Finanzas. El modo sistema sigue la preferencia de tu dispositivo.
             </p>
           </div>
           <ThemeToggle variant="segmented" />
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            Modo actual: <strong style={{ color: 'var(--color-text-primary)' }}>{theme}</strong>
+          <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
+            Modo actual: <strong style={{ color: 'var(--cf-ink)' }}>{theme}</strong>
             {theme === 'system' && ` (resuelto a ${resolvedTheme})`}
           </p>
         </div>
       </Card>
-      <InstallSection />
     </div>
   )
 }

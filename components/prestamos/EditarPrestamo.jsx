@@ -13,6 +13,8 @@ import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { CorregirPrestamo } from '@/components/pantallas/Gestion'
+import { adaptarCorregir } from '@/lib/adaptadores/gestion'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -28,7 +30,11 @@ const diasAperiodos = (dias, freq) => {
 }
 const periodosADias = (periodos, freq) => periodos * (DIAS_POR_PERIODO[freq] || 1)
 
-export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [] }) {
+// `modoInicial` es de donde viene la comparacion de calendarios (T12-02): la hoja
+// enseña que en «Sobre saldo» el cliente pagaria menos, y al elegirlo abre este
+// modal YA en ese modo. Sin el, elegir un calendario dejaba al dueño en un modal
+// con el modo viejo puesto y teniendo que acordarse de cual habia elegido.
+export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [], modoInicial }) {
   // Los hooks SIEMPRE se llaman (regla de React). Si no hay préstamo el modal no se abre.
   const p = prestamo || {}
   const hayPagos = (p.pagos || []).filter(
@@ -43,7 +49,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
   const [fechaInicio,  setFechaInicio]  = useState(
     p.fechaInicio ? new Date(p.fechaInicio).toISOString().slice(0, 10) : hoyISO()
   )
-  const [modoInteres,  setModoInteres]  = useState(p.modoInteres || 'fijo')
+  const [modoInteres,  setModoInteres]  = useState(modoInicial || p.modoInteres || 'fijo')
   const [cuotaManual,  setCuotaManual]  = useState(
     (p.modoInteres === 'manual' || p.modoInteres === 'saldo') && p.cuotaManual
       ? String(Math.round(p.cuotaManual))
@@ -124,11 +130,23 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
     finally { setGuardando(false) }
   }
 
+  // ── T19-05 · LA CABECERA DE «CORREGIR EL PRÉSTAMO» ────────────────────────
+  //
+  // Con pagos encima, esta pantalla NO es un formulario de renegociar: los campos de
+  // cálculo están bloqueados a propósito porque tocarlos inflaba la deuda. Lo que la
+  // lámina aporta y aquí faltaba es decir CUÁNTOS pagos hay y qué pasa con cada
+  // campo, en vez de un aviso genérico que se lee una vez y se olvida.
+  //
+  // El resumen va DENTRO del modal existente, no en una hoja aparte: el formulario
+  // de abajo sigue siendo el que guarda, y partirlo en dos pantallas para cambiar
+  // cómo se ve sería mover el riesgo de sitio.
+  const resumenCorregir = adaptarCorregir(prestamo)
+
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Editar préstamo"
+      title="Corregir el préstamo"
       size="lg"
       footer={
         <>
@@ -138,19 +156,21 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
       }
     >
       <div className="space-y-4 pb-2">
-        {hayPagos && (
-          <div className="rounded-[10px] px-3 py-2.5 text-[12px] leading-snug"
-            style={{ background: 'color-mix(in srgb, var(--color-warning) 10%, transparent)', color: 'var(--color-warning)', border: '1px solid color-mix(in srgb, var(--color-warning) 25%, transparent)' }}>
-            Este préstamo ya tiene pagos, así que solo puedes corregir datos que no cambian el cálculo (seguro, producto, socio). Para cambiar monto, tasa o plazo: usa <strong>abono a capital</strong>, <strong>renovar</strong>, o cancela y crea uno nuevo.
-          </div>
-        )}
+        {/* T19-05: la consecuencia CAMPO POR CAMPO, con el numero real de pagos.
+            Sustituye al aviso generico, que decia lo mismo para los tres campos y no
+            distinguia el que si se puede tocar —la fecha de inicio— de los dos que
+            estan bloqueados. */}
+        <CorregirPrestamo
+          aviso={resumenCorregir.aviso}
+          peligrosos={resumenCorregir.peligrosos}
+        />
 
         {/* Campos de cálculo: solo si NO hay pagos. Con pagos, cambiarlos
             recalculaba mal (re-cobraba interés) e inflaba la deuda. */}
         {!hayPagos && (<>
         {/* Monto */}
         <div>
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Monto prestado</label>
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Monto prestado</label>
           <MoneyInput
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
@@ -162,7 +182,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         {/* Tasa e interés */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Tasa de interés (%)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Tasa de interés (%)</label>
             <Input
               type="text"
               inputMode="decimal"
@@ -172,13 +192,13 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Fecha de inicio</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Fecha de inicio</label>
             <input
               type="date"
               value={fechaInicio}
               onChange={(e) => setFechaInicio(e.target.value)}
               max={hoyISO()}
-              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]"
+              className="w-full h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
             />
           </div>
         </div>
@@ -194,7 +214,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         />
         {modoInteres === 'manual' && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Cuota fija</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuota fija</label>
             <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Cuota por período" />
           </div>
         )}
@@ -206,7 +226,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
               onChange={(e) => setCuotaManual(e.target.value)}
               placeholder="Dejar vacío para calcular automático"
             />
-            <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-[10px] mt-1 px-1" style={{ color: 'var(--cf-ink-3)' }}>
               Opcional: define la cuota en vez de calcularla con la fórmula francesa.
             </p>
           </div>
@@ -226,7 +246,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         {/* Plazo y frecuencia */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Plazo (períodos)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Plazo (períodos)</label>
             <Input
               type="number"
               value={periodos}
@@ -236,11 +256,11 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Frecuencia de cobro</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Frecuencia de cobro</label>
             <select
               value={frecuencia}
               onChange={(e) => { setFrecuencia(e.target.value); setDiaCobroSem(''); setDiaCobroMes('') }}
-              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]"
+              className="w-full h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
             >
               <option value="diario">Diario</option>
               <option value="semanal">Semanal</option>
@@ -253,11 +273,11 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         {/* Día ancla */}
         {(frecuencia === 'semanal' || frecuencia === 'quincenal') && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Día de cobro (opcional)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Día de cobro (opcional)</label>
             <select
               value={diaCobroSem}
               onChange={(e) => setDiaCobroSem(e.target.value)}
-              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]"
+              className="w-full h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
             >
               <option value="">Sin día fijo</option>
               {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i) => (
@@ -268,7 +288,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         )}
         {frecuencia === 'mensual' && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Día del mes (opcional)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Día del mes (opcional)</label>
             <Input
               type="number"
               value={diaCobroMes}
@@ -290,7 +310,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
             onChange={(e) => setSeguro(e.target.checked)}
             className="w-4 h-4 rounded"
           />
-          <label htmlFor="seguro-editar" className="text-sm text-[var(--color-text-primary)]">Incluir seguro</label>
+          <label htmlFor="seguro-editar" className="text-sm text-[var(--cf-ink)]">Incluir seguro</label>
         </div>
         {seguro && (
           <MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="Monto del seguro" />
@@ -299,7 +319,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         {/* Nombre producto (si es mercancía) */}
         {p.nombreProducto != null && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Nombre del producto</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Nombre del producto</label>
             <Input value={nombreProd} onChange={(e) => setNombreProd(e.target.value)} placeholder="Ej: Televisor" />
           </div>
         )}
@@ -307,11 +327,11 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         {/* Socio */}
         {socios.length > 0 && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Socio (opcional)</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Socio (opcional)</label>
             <select
               value={socioId}
               onChange={(e) => setSocioId(e.target.value)}
-              className="w-full h-10 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg-card)] px-3 text-sm text-[var(--color-text-primary)]"
+              className="w-full h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
             >
               <option value="">Sin socio</option>
               {socios.map((s) => (
@@ -323,24 +343,24 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
 
         {/* Resumen en vivo — solo cuando se editan campos de cálculo (sin pagos) */}
         {!hayPagos && resumen && (
-          <div className="rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] p-3 space-y-1.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">Resumen nuevo</p>
+          <div className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3 space-y-1.5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Resumen nuevo</p>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)]">Cuota</p>
-                <p className="font-bold font-mono-display text-[var(--color-accent)]">{formatMoney(resumen.cuotaDiaria)}</p>
+                <p className="text-[10px] text-[var(--cf-ink-3)]">Cuota</p>
+                <p className="font-bold font-mono-display text-[var(--cf-gold)]">{formatMoney(resumen.cuotaDiaria)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)]">Total a pagar</p>
-                <p className="font-bold font-mono-display text-[var(--color-text-primary)]">{formatMoney(resumen.totalAPagar)}</p>
+                <p className="text-[10px] text-[var(--cf-ink-3)]">Total a pagar</p>
+                <p className="font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(resumen.totalAPagar)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)]">Períodos</p>
-                <p className="font-semibold text-[var(--color-text-primary)]">{resumen.numPeriodos} {frecuencia}</p>
+                <p className="text-[10px] text-[var(--cf-ink-3)]">Períodos</p>
+                <p className="font-semibold text-[var(--cf-ink)]">{resumen.numPeriodos} {frecuencia}</p>
               </div>
               <div>
-                <p className="text-[10px] text-[var(--color-text-muted)]">Fecha fin</p>
-                <p className="font-semibold text-[var(--color-text-primary)]">
+                <p className="text-[10px] text-[var(--cf-ink-3)]">Fecha fin</p>
+                <p className="font-semibold text-[var(--cf-ink)]">
                   {resumen.fechaFin ? new Date(resumen.fechaFin).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' }) : '—'}
                 </p>
               </div>
@@ -349,7 +369,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
         )}
 
         {error && (
-          <p className="text-sm text-[var(--color-danger)] bg-[var(--color-danger-dim)] rounded-[10px] px-3 py-2">{error}</p>
+          <p className="text-sm text-[var(--cf-red-dark)] bg-[var(--cf-red-pill-bg)] rounded-[10px] px-3 py-2">{error}</p>
         )}
       </div>
     </Modal>

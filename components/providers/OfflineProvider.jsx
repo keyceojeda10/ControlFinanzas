@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, createContext, useContext, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
+import { OfflineContext, useOffline } from '@/components/providers/offline-context'
 import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
 import { ultimoEstadoConexion, hayInternetReal, invalidarCacheConexion } from '@/lib/connectivity'
 import { setMutationCallback } from '@/lib/fetch-timeout'
 
-const OfflineContext = createContext({ isOnline: true, pendingCount: 0, syncing: false, syncMeta: null, lastSyncedAt: 0, openSyncDrawer: () => {} })
-
-export function useOffline() {
-  return useContext(OfflineContext)
-}
+// El contexto vive aparte para no cerrar el ciclo con `SyncDrawer`, que tambien
+// lo necesita. Se reexporta `useOffline` porque media app lo importa desde aqui
+// y cambiar treinta ficheros para mover un hook es mas riesgo que valor.
+export { useOffline }
 
 const MUTATION_SYNC_DELAY  = 3000  // 3s after a mutation
 const MIN_AUTO_SYNC_GAP_MS = 60_000 // gap mínimo entre syncs completos (era 20s, subido a 60s)
@@ -259,10 +259,57 @@ export default function OfflineProvider({ children }) {
     }
   }, [syncPendingThenFull])
 
-  // Register service worker + warmup de rutas dashboard principales
+  // ── EL SERVICE WORKER NO VA EN DESARROLLO ──
+  //
+  // Se registraba SIEMPRE, y en local eso no ayuda: estorba. Next reparte el
+  // codigo en trozos con el nombre cambiado en cada compilacion, asi que en
+  // cuanto se borra `.next` —o se recompila fuerte— el trozo que el service
+  // worker tiene guardado apunta a un modulo que ya no existe. El componente
+  // sale `undefined` y la pantalla revienta con «Element type is invalid».
+  //
+  // Es lo que le paso al usuario: veia pantallas ARREGLADAS HACE UNA HORA con
+  // su version vieja, y `/prestamos` rota, con el codigo perfecto. Y yo no lo
+  // podia ver porque todas mis capturas bloquean el service worker.
+  //
+  // En produccion si hace falta —es lo que deja cobrar sin señal—, y ahi los
+  // nombres de los trozos no cambian hasta el siguiente despliegue.
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
+
+    if (process.env.NODE_ENV !== 'production') {
+      // Y se quita el que ya estuviera puesto de antes, con sus cajones: sin
+      // esto, quien ya lo tenia registrado seguiria viendo lo viejo para
+      // siempre aunque el codigo nuevo ya no lo registre.
+      navigator.serviceWorker.getRegistrations()
+        .then((rs) => rs.forEach((r) => r.unregister()))
+        .catch(() => {})
+      if (typeof caches !== 'undefined') {
+        caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {})
+      }
+      return
+    }
+
     navigator.serviceWorker.register('/sw.js').catch(() => {})
+
+    // ── Y QUE LA APP SE ENTERE DE QUE HAY VERSION NUEVA ──
+    //
+    // `sw.js` ya hace `skipWaiting()` y `clients.claim()`, asi que el service
+    // worker nuevo toma el mando enseguida. Pero el JavaScript que YA esta
+    // corriendo en la pestaña sigue siendo el viejo hasta que se cierren todas
+    // — o sea, en una app que se deja abierta, para siempre. Cada version
+    // nueva se quedaba a medio camino: chunks nuevos servidos a una pagina
+    // vieja, que es la otra mitad del «Element type is invalid».
+    //
+    // `controllerchange` avisa justo en ese momento. Se recarga una vez, con
+    // guarda: sin ella, si algo vuelve a disparar el evento, la pagina entra
+    // en bucle de recargas y no se puede ni cerrar.
+    let recargando = false
+    const alCambiar = () => {
+      if (recargando) return
+      recargando = true
+      window.location.reload()
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', alCambiar)
 
     // Warmup: la primera vez (por sesion) precachear las listas principales
     // para que si el usuario se queda sin red sin haber navegado, tenga
@@ -284,6 +331,10 @@ export default function OfflineProvider({ children }) {
       // Esperar un tick — si el SW no controla aun esta pagina, reintentar una vez
       setTimeout(warmup, 800)
       setTimeout(warmup, 4000)
+    }
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', alCambiar)
     }
   }, [])
 
@@ -505,16 +556,16 @@ export default function OfflineProvider({ children }) {
       {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0 || failedTotal > 0) && (
         <button
           onClick={() => setDrawerOpen(true)}
-          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--color-bg-surface)] border text-[var(--color-text-primary)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--color-danger)] animate-pulse' : 'border-[var(--color-border)]'}`}
+          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--cf-surface)] border text-[var(--cf-ink)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--cf-red-dark)] animate-pulse' : 'border-[var(--cf-border)]'}`}
           aria-label="Estado de sincronización"
         >
           {bulkSyncing ? (
-            <svg className="w-3 h-3 animate-spin text-[var(--color-info)]" fill="none" viewBox="0 0 24 24">
+            <svg className="w-3 h-3 animate-spin text-[var(--cf-ink-2)]" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <span className={`w-2 h-2 rounded-full ${(conflictos.length > 0 || failedTotal > 0) ? 'bg-[var(--color-danger)]' : !isOnline ? 'bg-[var(--color-warning)] animate-pulse' : 'bg-[var(--color-info)]'}`} />
+            <span className={`w-2 h-2 rounded-full ${(conflictos.length > 0 || failedTotal > 0) ? 'bg-[var(--cf-red-dark)]' : !isOnline ? 'bg-[var(--cf-gold-dark)] animate-pulse' : 'bg-[var(--cf-ink-2)]'}`} />
           )}
           <span>
             {conflictos.length > 0
@@ -522,16 +573,16 @@ export default function OfflineProvider({ children }) {
               : failedTotal > 0
                 ? `${failedTotal} sin guardar`
                 : !isOnline
-                  ? (pendingCount > 0 ? `Offline - ${pendingCount}` : 'Offline')
-                  : bulkSyncing ? 'Sync...' : `${pendingCount} pendientes`}
+                  ? (pendingCount > 0 ? `Sin señal · ${pendingCount} por subir` : 'Sin señal')
+                  : bulkSyncing ? 'Subiendo…' : `${pendingCount} por subir`}
           </span>
         </button>
       )}
 
       {/* Custom toast (cliente/prestamo guardado offline, etc) */}
       {customToast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-accent)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
-          <svg className="w-4 h-4 text-[var(--color-accent)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--cf-surface)] border border-[var(--cf-gold)] text-[var(--cf-ink)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
+          <svg className="w-4 h-4 text-[var(--cf-gold)] shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           <span>{customToast}</span>
@@ -540,12 +591,12 @@ export default function OfflineProvider({ children }) {
 
       {/* Sync result toast */}
       {syncResult && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] text-xs px-4 py-2.5 rounded-[12px] shadow-xl flex items-center gap-2 max-w-[90vw]">
           {syncResult.synced > 0 && (
-            <span className="text-[var(--color-success)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
+            <span className="text-[var(--cf-green-dark)]">{syncResult.synced} cambio{syncResult.synced > 1 ? 's' : ''} sincronizado{syncResult.synced > 1 ? 's' : ''}</span>
           )}
           {syncResult.failed > 0 && (
-            <span className="text-[var(--color-danger)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
+            <span className="text-[var(--cf-red-dark)]">{syncResult.failed} fallido{syncResult.failed > 1 ? 's' : ''}</span>
           )}
         </div>
       )}

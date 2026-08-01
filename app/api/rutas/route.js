@@ -7,7 +7,7 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
-import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
 const hoy = (country = 'co') => {
@@ -90,19 +90,45 @@ export async function GET(request) {
     let recaudadoHoy   = 0
     let capitalTotal   = 0  // prestado SIN intereses
     let totalAPagarRuta = 0 // prestado CON intereses
+    // Lo que pide T27-01 y no habia: «Pepito · 1 de 5 cobros», la pastilla de
+    // atrasados, y el «proximo jue 30» de una ruta sin cobros hoy.
+    //
+    // Se cuenta por CLIENTE, no por prestamo: un cliente con tres prestamos que
+    // vencen hoy es UNA visita, y «3 de 5 cobros» diciendo tres visitas cuando
+    // es una manda al cobrador con la cuenta mal.
+    let cobrosHoy    = 0
+    let cobradosHoy  = 0
+    let atrasados    = 0
+    let enMora       = 0
+    let proximoCobro = null
 
     for (const cliente of r.clientes) {
       const diasExcluidos = obtenerDiasSinCobro(cliente, r, org)
       const hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
+
+      let tocaHoy = false
+      let pagoHoyCliente = false
+      let moraCliente = 0
 
       for (const prestamo of cliente.prestamos) {
         // Meta: solo cuotas que TOCABA cobrar hoy (segun ciclo de frecuencia
         // y dia ancla). Antes sumaba todas las cuotas activas y inflaba la cifra.
         if (prestamo.estado === 'activo' && !prestamo.esClavo && tienePeriodoEsperadoHoy(prestamo, hoySinCobro, diasExcluidos, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
+          tocaHoy = true
         }
         // Recaudado hoy: incluye pagos de prestamos completados hoy (el pago final cierra)
-        recaudadoHoy += prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
+        const cobradoDeEste = prestamo.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, p) => a + p.montoPagado, 0)
+        recaudadoHoy += cobradoDeEste
+        if (cobradoDeEste > 0) pagoHoyCliente = true
+
+        if (prestamo.estado === 'activo' && !prestamo.esClavo) {
+          moraCliente = Math.max(moraCliente, calcularDiasMora(prestamo, diasExcluidos, festivos))
+          // El proximo cobro de la RUTA es el mas cercano de sus prestamos: es
+          // cuando el cobrador tiene que volver a pasar por aca.
+          const prox = calcularProximoCobro(prestamo, diasExcluidos, festivos)
+          if (prox && (!proximoCobro || new Date(prox) < new Date(proximoCobro))) proximoCobro = prox
+        }
 
         // Capital en la calle. MISMA regla que el detalle de ruta (solo activos,
         // sin clavos) para que las dos pantallas muestren el mismo numero: en
@@ -112,6 +138,13 @@ export async function GET(request) {
           totalAPagarRuta += prestamo.totalAPagar ?? prestamo.montoPrestado ?? 0
         }
       }
+
+      if (tocaHoy) cobrosHoy += 1
+      if (tocaHoy && pagoHoyCliente) cobradosHoy += 1
+      // Dos umbrales, el mismo del resto del sistema: por encima de 7 dias ya es
+      // mora, por debajo es atraso. La pastilla dice uno o el otro, no los dos.
+      if (moraCliente > 7) enMora += 1
+      else if (moraCliente > 0) atrasados += 1
     }
 
     return {
@@ -121,6 +154,14 @@ export async function GET(request) {
       cantidadClientes: r.clientes.length,
       esperadoHoy:     Math.round(esperadoHoy),
       recaudadoHoy:    Math.round(recaudadoHoy),
+      cobrosHoy,
+      cobradosHoy,
+      atrasados,
+      enMora,
+      // ISO: la fecha se formatea en el CLIENTE. Hecho aca saldria en la zona del
+      // servidor, que en produccion es UTC, y «proximo jue 30» se equivocaria de
+      // dia en las cinco primeras horas de cada dia colombiano.
+      proximoCobro,
       ...(puedeVerCapital ? {
         capitalTotal:    Math.round(capitalTotal),
         totalAPagarRuta: Math.round(totalAPagarRuta),

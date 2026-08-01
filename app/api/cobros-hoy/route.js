@@ -14,6 +14,9 @@ import {
   obtenerProximaCuotaTabla,
   tieneTablaAmortizacion,
   cuotaProximoCobro,
+  // La tira de cifras de T03-01.
+  calcularCuotasPendientes,
+  calcularCuotasEnMora,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
@@ -93,6 +96,11 @@ export async function GET() {
       nombre: true,
       cedula: true,
       direccion: true,
+      // `referencia` TAMBIEN: son dos campos distintos del cliente y en la
+      // practica unos tienen uno y otros el otro. Sin este, la fila de T02-02
+      // sale sin el «donde», que en una pantalla para caminar es lo que hace
+      // falta. Y no cuesta nada: es un VarChar(100) de la misma fila.
+      referencia: true,
       diasSinCobro: true,
       ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
       prestamos: {
@@ -115,6 +123,9 @@ export async function GET() {
           modoInteres: true,
           capitalExtra: true,
           proximoCobroManual: true,
+          // «Ult. pago 21 jun», la cuarta columna de la tira de T03-01. Es la
+          // que dice si el cliente esta frio o si se le vio la semana pasada.
+          ultimoPagoAt: true,
           cuotasAmortizacion: {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
             orderBy: { numeroPeriodo: 'asc' },
@@ -148,8 +159,23 @@ export async function GET() {
       let pagadoHoy = 0
       let mora = 0
       let montoParaAlDia = 0
+      // La tira de cifras de T03-01: Atraso · Cumple · Cuota · Ult. pago.
+      // El atraso en plata es `montoParaAlDia`, que ya estaba. Estas tres no.
+      let cuotasVencidas = 0
+      let cuotasPagadasSum = 0
+      let cuotaDeMayorMora = null
+      let ultimoPagoISO = null
       let cobroPendienteHoy = false
       const prestamosActivos = []
+      // La HORA del ultimo cobro de hoy y el SALDO total del cliente.
+      //
+      // T02-02 no borra al cobrado: lo deja tachado en su sitio diciendo
+      // «Cobrado 9:06 a. m.». `fechaPago` ya se leia de la base para sumar; solo
+      // no se devolvia. Y el saldo hacia falta para el «debe $160.000» de la
+      // derecha, que es lo que distingue una cuota de $12.000 sobre una deuda de
+      // $160.000 de la misma cuota sobre una de $20.000.
+      let ultimoCobroHoy = null
+      let saldoCliente = 0
 
       for (const p of c.prestamos) {
         // p.pagos ya viene filtrado por hoy desde la query (where fechaPago gte/lt)
@@ -159,6 +185,10 @@ export async function GET() {
           .reduce((a, pg) => a + pg.montoPagado, 0)
         pagadoHoy += montoPagadoHoy
         recaudadoHoyTotal += montoPagadoHoy
+        for (const pg of pagosHoy) {
+          if (['recargo', 'descuento'].includes(pg.tipo)) continue
+          if (!ultimoCobroHoy || pg.fechaPago > ultimoCobroHoy) ultimoCobroHoy = pg.fechaPago
+        }
 
         if (p.estado !== 'activo') continue
         if (p.esClavo) {
@@ -167,6 +197,11 @@ export async function GET() {
           const proximaCuotaClavo = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
           const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
           cuotaCliente += cuotaClavo
+          // El clavo TAMBIEN cuenta en lo que el cliente debe. Se le sigue
+          // cobrando —su cuota ya entra en `cuotaCliente` dos lineas arriba— asi
+          // que dejarlo fuera del saldo diria «debe $80.000» cobrandole sobre
+          // $160.000. Un clavo es plata dificil, no plata que no existe.
+          saldoCliente += saldoClavo
           prestamosActivos.push({
             id: p.id,
             cuotaDiaria: Math.round(cuotaClavo),
@@ -189,10 +224,35 @@ export async function GET() {
         esperadoHoyTotal += cuotaReal
 
         const saldo = calcularSaldoPendiente(p)
+        // Lo que el cliente debe EN TOTAL, sumando sus prestamos activos. Es el
+        // «debe $160.000» de la derecha en T02-02.
+        saldoCliente += saldo
         const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
         const alDia = calcularMontoParaPonerseAlDia(p, diasExcluidosPrestamo, festivos)
         mora = Math.max(mora, moraPrestamo)
         montoParaAlDia += alDia
+
+        // ── LA TIRA DE CIFRAS DE T03-01: Atraso · Cumple · Cuota · Ult. pago ──
+        // El atraso en plata ya lo da `montoParaAlDia`. Faltaban las otras tres.
+        //
+        // CUMPLIMIENTO: de las cuotas que YA debian estar pagadas, cuantas lo
+        // estan. Misma definicion que en /api/clientes — si se cambia alli, se
+        // cambia aqui.
+        const totalCuotas = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadasP = Math.max(0, totalCuotas - calcularCuotasPendientes(p))
+        cuotasPagadasSum += pagadasP
+        cuotasVencidas += pagadasP + calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
+        // «Cuota 13/24». Se queda con la del prestamo mas atrasado, que es el
+        // que manda la visita: con dos prestamos, el numero de uno solo mentiria.
+        if (totalCuotas > 0 && moraPrestamo >= (cuotaDeMayorMora?.mora ?? -1)) {
+          cuotaDeMayorMora = { mora: moraPrestamo, texto: `${Math.min(totalCuotas, pagadasP + 1)}/${totalCuotas}` }
+        }
+        if (p.ultimoPagoAt) {
+          const t = new Date(p.ultimoPagoAt).getTime()
+          if (!ultimoPagoISO || t > new Date(ultimoPagoISO).getTime()) ultimoPagoISO = p.ultimoPagoAt
+        }
 
         const proximaCuota = tieneTablaAmortizacion(p) ? obtenerProximaCuotaTabla(p) : null
         const extraInfo = detectarCuotaExtra(p, proximaCuota)
@@ -226,13 +286,25 @@ export async function GET() {
         nombre: c.nombre,
         cedula: c.cedula,
         direccion: c.direccion,
+        referencia: c.referencia,
         rutaId: ruta?.id ?? null,
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
         pagoHoy: yaPageHoy,
+        // ISO: la hora se formatea en el CLIENTE. Hecho aca saldria en la zona
+        // del servidor, y en produccion eso es UTC: «Cobrado 14:06» cuando el
+        // cobrador lo hizo a las 9:06.
+        cobradoA: ultimoCobroHoy ? ultimoCobroHoy.toISOString() : null,
+        montoCobradoHoy: Math.round(pagadoHoy),
+        saldoTotal: Math.round(saldoCliente),
         cobroPendienteHoy: pendienteHoyCliente,
         diasMora: mora,
         montoParaPonerseAlDia: Math.round(montoParaAlDia),
+        // La tira de T03-01. `null` cuando no hay nada vencido todavia: un 0%
+        // en un cliente recien prestado lo pinta como el peor de la ruta.
+        cumplimiento: cuotasVencidas > 0 ? Math.round((cuotasPagadasSum / cuotasVencidas) * 100) : null,
+        cuotaTexto: cuotaDeMayorMora?.texto ?? null,
+        ultimoPagoAt: ultimoPagoISO,
         hoySinCobro: _hoySinCobro,
         prestamoActivo: prestamosActivos[0]?.id ?? null,
         prestamosActivos,

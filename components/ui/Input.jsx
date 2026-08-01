@@ -3,11 +3,11 @@
 import { forwardRef, useId } from 'react'
 
 const labelCls = 'text-[12.5px] font-bold tracking-[0.01em]'
-const labelStyle = { color: 'var(--color-text-secondary)' }
+const labelStyle = { color: 'var(--cf-ink-2)' }
 const fieldStyle = {
-  background: 'var(--color-bg-hover)',
-  borderColor: 'var(--color-border)',
-  color: 'var(--color-text-primary)',
+  background: 'var(--cf-fill)',
+  borderColor: 'var(--cf-border)',
+  color: 'var(--cf-ink)',
 }
 
 export const Input = forwardRef(function Input(
@@ -37,7 +37,7 @@ export const Input = forwardRef(function Input(
       )}
       <div className="relative flex items-center">
         {prefix && (
-          <span className="absolute left-3 text-sm pointer-events-none select-none" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="absolute left-3 text-sm pointer-events-none select-none" style={{ color: 'var(--cf-ink-3)' }}>
             {prefix}
           </span>
         )}
@@ -49,7 +49,7 @@ export const Input = forwardRef(function Input(
           onChange={handleChange}
           className={[
             'cf-input w-full h-11 rounded-[12px] border text-sm transition-all duration-200',
-            'focus:outline-none focus:border-[var(--color-accent)]',
+            'focus:outline-none focus:border-[var(--cf-gold)]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             prefix ? 'pl-8' : 'pl-3',
             suffix ? 'pr-8' : 'pr-3',
@@ -60,12 +60,12 @@ export const Input = forwardRef(function Input(
           {...props}
         />
         {suffix && (
-          <span className="absolute right-3 text-sm pointer-events-none select-none" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="absolute right-3 text-sm pointer-events-none select-none" style={{ color: 'var(--cf-ink-3)' }}>
             {suffix}
           </span>
         )}
       </div>
-      {error && <p className="text-xs" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {error && <p className="text-xs" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
     </div>
   )
 })
@@ -85,7 +85,7 @@ export const Select = forwardRef(function Select(
         id={fieldId}
         className={[
           'cf-input w-full h-11 rounded-[12px] border text-sm px-3',
-          'focus:outline-none focus:border-[var(--color-accent)]',
+          'focus:outline-none focus:border-[var(--cf-gold)]',
           'transition-all duration-200 cursor-pointer',
           error ? 'cf-input-error' : '',
           className,
@@ -95,7 +95,7 @@ export const Select = forwardRef(function Select(
       >
         {children}
       </select>
-      {error && <p className="text-xs" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {error && <p className="text-xs" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
     </div>
   )
 })
@@ -115,7 +115,7 @@ export const Textarea = forwardRef(function Textarea(
         id={fieldId}
         className={[
           'cf-input w-full rounded-[12px] border text-sm px-3 py-2.5',
-          'focus:outline-none focus:border-[var(--color-accent)]',
+          'focus:outline-none focus:border-[var(--cf-gold)]',
           'transition-all duration-200 resize-none',
           error ? 'cf-input-error' : '',
           className,
@@ -123,7 +123,7 @@ export const Textarea = forwardRef(function Textarea(
         style={fieldStyle}
         {...props}
       />
-      {error && <p className="text-xs" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+      {error && <p className="text-xs" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
     </div>
   )
 })

@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/ranking/page.jsx - Ranking / scorecard de cobradores
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
@@ -9,20 +10,20 @@ import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
 
 const MEDALS = {
-  1: { color: 'var(--color-accent)', label: '1°' },
+  1: { color: 'var(--cf-gold)', label: '1°' },
   2: { color: '#94a3b8', label: '2°' },
   3: { color: '#cd7f32', label: '3°' },
 }
 
 function scoreColor(score) {
-  if (score >= 80) return 'var(--color-success)'
-  if (score >= 60) return 'var(--color-warning)'
-  return 'var(--color-danger)'
+  if (score >= 80) return 'var(--cf-green-dark)'
+  if (score >= 60) return 'var(--cf-gold-dark)'
+  return 'var(--cf-red-dark)'
 }
 
 function ProgressBar({ value, color }) {
   return (
-    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--color-bg-hover)' }}>
+    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
       <div
         className="h-full rounded-full transition-all"
         style={{ width: `${Math.min(100, Math.max(0, value))}%`, background: color }}
@@ -43,8 +44,8 @@ function PodiumCard({ cobrador, order }) {
       <div
         className="rounded-[20px] w-full flex flex-col items-center text-center px-3 py-4"
         style={{
-          background: `linear-gradient(180deg, color-mix(in srgb, ${medal.color} 14%, var(--color-bg-card)) 0%, var(--color-bg-card) 60%)`,
-          border: `1px solid color-mix(in srgb, ${medal.color} 30%, var(--color-border))`,
+          background: `linear-gradient(180deg, color-mix(in srgb, ${medal.color} 14%, var(--cf-card)) 0%, var(--cf-card) 60%)`,
+          border: `1px solid color-mix(in srgb, ${medal.color} 30%, var(--cf-border))`,
           boxShadow: isFirst ? `0 6px 24px color-mix(in srgb, ${medal.color} 25%, transparent)` : 'none',
           minHeight: isFirst ? '190px' : '160px',
         }}
@@ -60,10 +61,10 @@ function PodiumCard({ cobrador, order }) {
           {medal.label}
         </div>
         <Avatar nombre={cobrador.nombre} avatarId={cobrador.avatarId} size={isFirst ? 56 : 48} />
-        <p className="text-sm font-semibold mt-2 truncate max-w-full" style={{ color: 'var(--color-text-primary)' }}>
+        <p className="text-sm font-semibold mt-2 truncate max-w-full" style={{ color: 'var(--cf-ink)' }}>
           {cobrador.nombre}
         </p>
-        <p className="text-[11px] truncate max-w-full" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[11px] truncate max-w-full" style={{ color: 'var(--cf-ink-3)' }}>
           {cobrador.rutas?.join(', ') || 'Sin ruta'}
         </p>
         <p
@@ -72,7 +73,7 @@ function PodiumCard({ cobrador, order }) {
         >
           {cobrador.score}
         </p>
-        <p className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
           {cobrador.metrics?.eficiencia?.toFixed(1)}% eficiencia
         </p>
       </div>
@@ -82,10 +83,10 @@ function PodiumCard({ cobrador, order }) {
 
 function MetricItem({ label, value, sub }) {
   return (
-    <div className="rounded-[12px] px-3 py-2" style={{ background: 'var(--color-bg-hover)' }}>
-      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
-      <p className="text-sm font-semibold font-mono-display" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
-      {sub && <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
+    <div className="rounded-[12px] px-3 py-2" style={{ background: 'var(--cf-fill)' }}>
+      <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>{label}</p>
+      <p className="text-sm font-semibold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{value}</p>
+      {sub && <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{sub}</p>}
     </div>
   )
 }
@@ -98,20 +99,20 @@ function RankingCard({ cobrador }) {
   return (
     <div
       className="cf-card-shadow rounded-[20px] overflow-hidden"
-      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
+      style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
     >
       <div className="flex items-center gap-3 p-4">
         <Link href={`/cobradores/${cobrador.id}`} className="flex items-center gap-3 flex-1 min-w-0 active:scale-[0.98] transition-transform">
           <span
             className="text-base font-bold font-mono-display w-6 text-center shrink-0"
-            style={{ color: MEDALS[cobrador.rank]?.color ?? 'var(--color-text-muted)' }}
+            style={{ color: MEDALS[cobrador.rank]?.color ?? 'var(--cf-ink-3)' }}
           >
             {cobrador.rank}
           </span>
           <Avatar nombre={cobrador.nombre} avatarId={cobrador.avatarId} size={40} />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{cobrador.nombre}</p>
-            <p className="text-[11px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{cobrador.nombre}</p>
+            <p className="text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
               {cobrador.rutas?.join(', ') || 'Sin ruta'}
             </p>
           </div>
@@ -123,8 +124,8 @@ function RankingCard({ cobrador }) {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-label={open ? 'Ocultar detalle' : 'Ver detalle'}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-secondary)' }}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]"
+            style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}
           >
             <svg
               className="w-4 h-4 transition-transform"
@@ -141,8 +142,8 @@ function RankingCard({ cobrador }) {
         <div className="px-4 pb-4 pt-0 space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Eficiencia</span>
-              <span className="text-[11px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{m.eficiencia?.toFixed(1)}%</span>
+              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Eficiencia</span>
+              <span className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.eficiencia?.toFixed(1)}%</span>
             </div>
             <ProgressBar value={m.eficiencia ?? 0} color={color} />
           </div>
@@ -173,7 +174,7 @@ function RankingSkeleton() {
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-3 items-end">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-[20px] p-4" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', minHeight: i === 1 ? '190px' : '160px' }}>
+          <div key={i} className="rounded-[20px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', minHeight: i === 1 ? '190px' : '160px' }}>
             <div className="skeleton-shimmer w-8 h-8 rounded-full mx-auto mb-3" />
             <div className="skeleton-shimmer w-12 h-12 rounded-full mx-auto mb-3" />
             <div className="skeleton-shimmer h-3 w-16 mx-auto mb-2 rounded-[6px]" />
@@ -183,7 +184,7 @@ function RankingSkeleton() {
       </div>
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-[20px] p-4 flex items-center gap-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+          <div key={i} className="rounded-[20px] p-4 flex items-center gap-3" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
             <div className="skeleton-shimmer w-6 h-6 rounded-[6px]" />
             <div className="skeleton-shimmer w-10 h-10 rounded-full" />
             <div className="flex-1 space-y-2">
@@ -199,6 +200,8 @@ function RankingSkeleton() {
 }
 
 export default function RankingCobradoresPage() {
+  useCabecera({ titulo: 'Ranking de cobradores' })
+
   const { esOwner, loading: authLoading } = useAuth()
   const [cobradores, setCobradores] = useState([])
   const [periodo, setPeriodo] = useState(null)
@@ -231,10 +234,10 @@ export default function RankingCobradoresPage() {
       <div className="max-w-xl mx-auto">
         <div className="flex flex-col items-center justify-center text-center py-16 px-6">
           <MonedaCF pose="vacia" size={92} />
-          <p className="text-sm font-semibold mt-3" style={{ color: 'var(--color-text-primary)' }}>
+          <p className="text-sm font-semibold mt-3" style={{ color: 'var(--cf-ink)' }}>
             Acceso restringido
           </p>
-          <p className="text-xs mt-1 max-w-[280px]" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs mt-1 max-w-[280px]" style={{ color: 'var(--cf-ink-3)' }}>
             Solo el propietario de la cuenta puede ver el ranking de cobradores.
           </p>
         </div>
@@ -252,36 +255,25 @@ export default function RankingCobradoresPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto pb-6">
-      <div className="mb-6">
-        <Link
-          href="/cobradores"
-          className="inline-flex items-center gap-1.5 text-sm mb-3 transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Cobradores
-        </Link>
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Ranking de cobradores</h1>
-        {periodoLabel && (
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{periodoLabel}</p>
-        )}
-      </div>
+      {/* El titulo lo pone el armazon. Se queda el PERIODO, que cambia con el
+          filtro y es lo unico que la cabecera no puede saber. */}
+      {periodoLabel && (
+        <p className="text-sm mb-6" style={{ color: 'var(--cf-ink-3)' }}>{periodoLabel}</p>
+      )}
 
       {loading && <RankingSkeleton />}
 
       {!loading && error && (
         <div
           className="cf-card-shadow rounded-[20px] p-6 text-center"
-          style={{ background: 'var(--color-danger-dim)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)' }}
+          style={{ background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}
         >
-          <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-danger)' }}>{error}</p>
+          <p className="text-sm font-semibold mb-3" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>
           <button
             type="button"
             onClick={cargar}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -294,16 +286,16 @@ export default function RankingCobradoresPage() {
       {!loading && !error && cobradores.length === 0 && (
         <div className="flex flex-col items-center justify-center text-center py-16 px-6">
           <MonedaCF pose="vacia" size={92} />
-          <p className="text-sm font-semibold mt-3" style={{ color: 'var(--color-text-primary)' }}>
+          <p className="text-sm font-semibold mt-3" style={{ color: 'var(--cf-ink)' }}>
             No hay cobradores registrados
           </p>
-          <p className="text-xs mt-1 max-w-[280px]" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-xs mt-1 max-w-[280px]" style={{ color: 'var(--cf-ink-3)' }}>
             Cuando registres cobradores y empiecen a recaudar pagos, verás su desempeño aquí.
           </p>
           <Link
             href="/cobradores/nuevo"
             className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-[12px] text-sm font-semibold transition-colors"
-            style={{ background: 'var(--color-accent)', color: 'var(--color-accent-text)' }}
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
           >
             Crear cobrador
           </Link>

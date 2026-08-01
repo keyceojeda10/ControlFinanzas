@@ -97,6 +97,21 @@ model Organization {
   waActivacionSent  Boolean        @default(false)
   waPreVencSent     Boolean        @default(false)
   diasSinCobro      String?
+
+  // ── «Cómo prestas por defecto» (Configuración) ──
+  //
+  // Lo que PRELLENA el formulario de nuevo préstamo. La advertencia del diseño
+  // es parte del contrato: «cambiarlos aquí NO toca los préstamos que ya
+  // existen». Nada que lea estos campos puede modificar un Prestamo creado.
+  //
+  // Nulos a propósito, no con `@default`: null significa «este negocio no ha
+  // dicho cómo presta» y el formulario usa lo suyo de siempre. Un default en la
+  // columna haría que 337 organizaciones existentes pareciera que eligieron
+  // «diario al 20%» cuando ninguna lo hizo.
+  frecuenciaDefault   String?      // diario | semanal | quincenal | mensual
+  tasaDefault         Float?       // el % , con la semántica que fije modoInteresDefault
+  modoInteresDefault  String?      // fijo | unico | solo_interes | saldo | ...
+
   capitalEstricto   Boolean        @default(false)
   capitalEsEfectivo Boolean        @default(false)
   // Vista BRUTA de renovaciones en la caja. Al renovar, el saldo viejo que se

@@ -45,19 +45,19 @@ export default function SocioCard({ socio }) {
       hoverable
       className="block px-4 py-3.5 group relative overflow-hidden"
       style={{
-        background: `color-mix(in srgb, ${P.accent} 8%, var(--color-bg-card))`,
-        border: `1px solid color-mix(in srgb, ${P.accent} 22%, var(--color-border))`,
+        background: `color-mix(in srgb, ${P.accent} 8%, var(--cf-card))`,
+        border: `1px solid color-mix(in srgb, ${P.accent} 22%, var(--cf-border))`,
       }}
     >
       <div className="relative">
         {/* Seccion superior: identidad del socio */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-[14px] font-semibold truncate leading-tight" style={{ color: 'var(--cf-ink)' }}>
               {socio.nombre}
             </p>
             {socio.cedula && (
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                 CC {socio.cedula}
               </p>
             )}

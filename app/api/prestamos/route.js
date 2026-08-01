@@ -6,10 +6,13 @@ import { prisma }              from '@/lib/prisma'
 import {
   calcularPrestamo,
   calcularDiasMora,
+  calcularMontoEnMora,
   calcularSaldoPendiente,
   calcularPorcentajePagado,
   calcularCapitalRestante,
   calcularProximoCobro,
+  calcularCuotasPendientes,
+  tieneTablaAmortizacion,
   pagoHoy,
   prestamoDevuelveMenosDeLoPrestado,
   mensajePrestamoConPerdida,
@@ -46,6 +49,16 @@ export async function GET(request) {
   // Prestamos activos sin pagos hace N dias. Existe para que la alerta
   // "N prestamos sin pagos hace mas de 7 dias" del dashboard tenga a donde
   // llevar: antes enlazaba a /prestamos pelado y caias al listado completo.
+  // Dos filtros que YO ya enlazaba desde el panel («N prestamos con mas de 30
+  // dias de mora» y «N listos para renovar») y que el endpoint NO entendia: los
+  // enlaces existian y no filtraban nada. Cuarta vez el patron del control
+  // muerto, esta vez de mi propia mano y en la misma sesion.
+  const diasMoraMinRaw = Number(searchParams.get('diasMoraMin'))
+  const diasMoraMin = Number.isFinite(diasMoraMinRaw) && diasMoraMinRaw > 0
+    ? Math.min(diasMoraMinRaw, 3650)
+    : null
+  const listosRenovar = searchParams.get('listosRenovar') === '1'
+
   const sinPagosDiasRaw = Number(searchParams.get('sinPagosDias'))
   const sinPagosDias = Number.isFinite(sinPagosDiasRaw) && sinPagosDiasRaw > 0
     ? Math.min(sinPagosDiasRaw, 365)
@@ -192,6 +205,24 @@ export async function GET(request) {
     porcentajePagado: calcularPorcentajePagado(p),
     capitalRestante:  calcularCapitalRestante(p),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
+    // ── LA TIRA DE CIFRAS DE T03-04 ──
+    // «ATRASO» en PLATA, no en dias. La tarjeta ya dice «36d» en la pastilla; lo
+    // que el dueño decide con ello es cuanto le deben de mas, y eso son pesos.
+    // Se calcula aca porque `calcularMontoEnMora` necesita los dias excluidos y
+    // los festivos de la organizacion, que el navegador no tiene.
+    montoEnMora:      calcularMontoEnMora(p, diasExcluidos, festivos),
+    // «cuota 13 de 24», que es lo que T02-06 pone en la linea de contexto.
+    //
+    // Se calcula ACA y no en el adaptador porque `calcularCuotasPendientes` sabe
+    // distinguir los modos CON tabla de amortizacion de los que no: en los que
+    // la tienen, la cuota varia y dividir el total por la cuota da un numero
+    // equivocado. Es el 6,2% de la cartera, pero es justo donde el error no se
+    // notaria al mirar.
+    cuotasPendientes: calcularCuotasPendientes(p),
+    totalCuotas:      tieneTablaAmortizacion(p)
+      ? p.cuotasAmortizacion.length
+      : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0),
+    esClavo:          p.esClavo,
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
   }})
@@ -200,20 +231,46 @@ export async function GET(request) {
   // El cliente que quiera ver los prestamos agrupados por persona usa el filtro
   // "Agrupar por cliente" en el frontend, que reordena ahi.
 
-  // Filtro de mora: ya calculado por prestamo, se aplica aqui y recien despues
-  // se pagina, para que el total y la lista cubran TODA la cartera y no una pagina.
-  if (soloMora) {
-    const enMora = resultado.filter((p) => p.diasMora > 0)
+  // Filtros que dependen de algo YA CALCULADO en JS —dias de mora, porcentaje
+  // pagado— asi que no pueden ir en el `where` de Prisma. Se aplican aqui y
+  // recien despues se pagina, para que el total y la lista cubran TODA la cartera
+  // y no la pagina que toco cargar.
+  //
+  // `listosRenovar`: al dia Y por encima del 80% pagado. Es el mejor momento
+  // para prestar de nuevo, y de ahi sale el crecimiento del negocio. Mismo
+  // umbral que usa el panel para contarlos, para que el numero de la fila y el
+  // largo de la lista coincidan.
+  const RENOVAR_DESDE = 80
+  const criterio = soloMora ? ((p) => p.diasMora > 0)
+    // MAS DE N, no «N o mas». Todas las etiquetas del producto dicen «mas de 30
+    // dias» —la fila del panel, las opciones de la hoja— y el contador del panel
+    // usa `> 30`. Con `>=` la lista traia 3 donde la fila decia 2: el mismo
+    // numero con dos umbrales, que es el defecto que ya corregi una vez en los
+    // avisos (7 dias contra 15). Un solo criterio, escrito donde se aplica.
+    // Y SIN CLAVOS. El contador del panel excluye `esClavo` y la lista no, asi
+    // que la fila decia 2 y la lista traia 3. Un clavo esta por definicion en
+    // mora larga, ya se clasifico como perdido y vive en su propia pantalla:
+    // volver a alarmar sobre algo ya decidido es ruido, y encima hace que el
+    // numero de la fila no cuadre con lo que se abre al tocarla.
+    //
+    // Solo se excluye de ESTE filtro. En la lista normal los clavos siguen
+    // estando: se les sigue cobrando.
+    : diasMoraMin != null ? ((p) => p.diasMora > diasMoraMin && !p.esClavo)
+    : listosRenovar ? ((p) => p.estado === 'activo' && p.diasMora === 0 && p.porcentajePagado >= RENOVAR_DESDE)
+    : null
+
+  if (criterio) {
+    const filtrados = resultado.filter(criterio)
     if (page != null) {
       const desde = (page - 1) * limit
       return Response.json({
-        prestamos: enMora.slice(desde, desde + limit),
-        total: enMora.length,
+        prestamos: filtrados.slice(desde, desde + limit),
+        total: filtrados.length,
         page,
-        totalPages: Math.max(1, Math.ceil(enMora.length / limit)),
+        totalPages: Math.max(1, Math.ceil(filtrados.length / limit)),
       })
     }
-    return Response.json(enMora)
+    return Response.json(filtrados)
   }
 
   // If paginated, return object with total; otherwise array for backward compat

@@ -120,20 +120,20 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
     >
       <div className="space-y-5">
         {clienteNombre && (
-          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
             {clienteNombre}
           </p>
         )}
 
         {error && (
-          <div className="text-xs rounded-[8px] px-3 py-2" style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)', border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)' }}>
+          <div className="text-xs rounded-[8px] px-3 py-2" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)', color: 'var(--cf-red-dark)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)' }}>
             {error}
           </div>
         )}
 
         {/* Motivo */}
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
             Motivo
           </label>
           <div className="space-y-1.5">
@@ -144,15 +144,15 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
                 onClick={() => { setMotivo(m.value); setError('') }}
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-left text-[13px] transition-colors"
                 style={{
-                  background: motivo === m.value ? 'rgba(245,197,24,0.08)' : 'var(--color-bg-base)',
-                  border: `1px solid ${motivo === m.value ? 'rgba(245,197,24,0.35)' : 'var(--color-border)'}`,
-                  color: motivo === m.value ? 'var(--color-accent)' : 'var(--color-text-primary)',
+                  background: motivo === m.value ? 'rgba(245,197,24,0.08)' : 'var(--cf-surface)',
+                  border: `1px solid ${motivo === m.value ? 'rgba(245,197,24,0.35)' : 'var(--cf-border)'}`,
+                  color: motivo === m.value ? 'var(--cf-gold)' : 'var(--cf-ink)',
                 }}
               >
                 <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center" style={{
-                  border: `2px solid ${motivo === m.value ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                  border: `2px solid ${motivo === m.value ? 'var(--cf-gold)' : 'var(--cf-border)'}`,
                 }}>
-                  {motivo === m.value && <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />}
+                  {motivo === m.value && <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
                 </span>
                 {m.label}
               </button>
@@ -163,7 +163,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
         {/* Detalle (solo para "otro") */}
         {motivo === 'otro' && (
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
               Detalle
             </label>
             <textarea
@@ -178,7 +178,7 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
 
         {/* Fecha */}
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          <label className="text-[10px] font-semibold uppercase tracking-wider block mb-2" style={{ color: 'var(--cf-ink-3)' }}>
             Reagendar para
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -189,9 +189,9 @@ export default function ReagendarVisitaModal({ open, onClose, clienteId, cliente
                 onClick={() => { setFechaOpcion(o.value); setError('') }}
                 className="px-3 py-2.5 rounded-[10px] text-[12px] font-medium text-center transition-colors"
                 style={{
-                  background: fechaOpcion === o.value ? 'rgba(245,197,24,0.08)' : 'var(--color-bg-base)',
-                  border: `1px solid ${fechaOpcion === o.value ? 'rgba(245,197,24,0.35)' : 'var(--color-border)'}`,
-                  color: fechaOpcion === o.value ? 'var(--color-accent)' : 'var(--color-text-primary)',
+                  background: fechaOpcion === o.value ? 'rgba(245,197,24,0.08)' : 'var(--cf-surface)',
+                  border: `1px solid ${fechaOpcion === o.value ? 'rgba(245,197,24,0.35)' : 'var(--cf-border)'}`,
+                  color: fechaOpcion === o.value ? 'var(--cf-gold)' : 'var(--cf-ink)',
                 }}
               >
                 {o.label}

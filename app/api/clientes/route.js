@@ -3,7 +3,12 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual } from '@/lib/calculos'
+import {
+  LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente,
+  calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual,
+  // La tira de cifras de T03-03: el atraso en plata y el cumplimiento.
+  calcularMontoEnMora, calcularCuotasEnMora, calcularCuotasPendientes, tieneTablaAmortizacion,
+} from '@/lib/calculos'
 import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -63,11 +68,47 @@ export async function GET(request) {
   // caias al listado completo, sin forma de saber cuales eran.
   const soloSinRuta = searchParams.get('sinRuta') === '1'
 
+  // ── FILTROS QUE NO SE PUEDEN HACER EN SQL ──
+  //
+  // La mora de un cliente no es una columna: depende de sus prestamos, de los
+  // dias sin cobro de su ruta, de los festivos y del calendario de cada uno. Se
+  // calcula abajo, DESPUES de traer las filas.
+  //
+  // Y ahi esta el problema: la paginacion la hace la base ANTES de ese calculo,
+  // asi que filtrar por mora sobre la pagina ya cortada solo mira 50 clientes y
+  // MIENTE — con 200 en cartera, «en mora» enseñaria los que hubiera entre los
+  // primeros 50 y diria que no hay mas.
+  //
+  // Cuando se pide uno de estos, se trae la cartera entera, se calcula, se
+  // filtra y se pagina aqui. Es mas caro, pero es el unico resultado cierto.
+  // Cuando NO se pide —el caso de todos los dias— no cambia nada.
+  const moraMin = Number(searchParams.get('mora') || 0) || 0
+  const pagaHoy = searchParams.get('pagaHoy') === '1'
+  const sinPrestamo = searchParams.get('sinPrestamo') === '1'
+  // `estado` (al dia / mora / cancelado) es de la misma familia: lo calcula
+  // `calcularEstadoCliente()` DESPUES de traer las filas, no es una columna.
+  // Filtrarlo en el navegador sobre la pagina de 50 es justo lo que hacia la
+  // pantalla, y por eso el panel podia decir «18 en mora» y la lista enseñar 4.
+  const estadoFiltro = searchParams.get('estado')?.trim() ?? ''
+  // Los CONTEOS de los chips tienen el mismo problema: se contaban sobre la
+  // pagina. Con `soloConteos=1` se hace la pasada completa y se devuelven solo
+  // los numeros, sin la lista — una peticion barata que da cifras ciertas.
+  const soloConteos = searchParams.get('soloConteos') === '1'
+  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo || !!estadoFiltro || soloConteos
+
   const condiciones = [
     { organizationId },
     { estado: { notIn: ['eliminado'] } },
   ]
   if (soloSinRuta) condiciones.push({ rutaId: null })
+
+  // Clientes sin numero guardado. Existe por el mismo motivo que `sinRuta`: el
+  // aviso de «N clientes no tienen numero» de Avisos por WhatsApp tiene que
+  // poder llevar a QUIENES son. Sin esto el aviso da una cifra y deja al dueño
+  // buscandolos uno por uno en toda la cartera.
+  if (searchParams.get('sinTelefono') === '1') {
+    condiciones.push({ OR: [{ telefono: null }, { telefono: '' }] })
+  }
   if (Object.keys(filtroRuta).length) condiciones.push(filtroRuta)
   if (Object.keys(filtroBuscar).length) condiciones.push(filtroBuscar)
   if (Object.keys(filtroGrupo).length) condiciones.push(filtroGrupo)
@@ -125,7 +166,8 @@ export async function GET(request) {
       ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true } } }),
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
-    ...(page != null && { take: limit, skip: (page - 1) * limit }),
+    // Sin `take/skip` cuando hay filtro calculado: se corta despues, ya filtrado.
+    ...(page != null && !filtraCalculado && { take: limit, skip: (page - 1) * limit }),
   })
 
   const [org, festivos] = await Promise.all([
@@ -162,6 +204,13 @@ export async function GET(request) {
     let diasMoraMax = 0
     let pagoHoy = false
     let proximoCobroMin = null
+    // ── LA TIRA DE CIFRAS DE T03-03 ──
+    // El atraso EN PLATA (la pastilla ya dice los dias) y el cumplimiento. Los
+    // dos se acumulan aca porque necesitan los dias excluidos y los festivos de
+    // la organizacion, que el navegador no tiene.
+    let montoEnMoraTotal = 0
+    let cuotasVencidas = 0     // las que ya debian estar pagadas
+    let cuotasPagadasSum = 0
 
     for (const p of c.prestamos) {
       try { saldoTotal += calcularSaldoPendiente(p) } catch (e) {
@@ -183,6 +232,27 @@ export async function GET(request) {
       } catch (e) {
         console.error(`[clientes] calcularProximoCobro falló para préstamo ${p.id}:`, e.message)
       }
+      try {
+        montoEnMoraTotal += calcularMontoEnMora(p, diasExcluidos, festivos)
+        // CUMPLIMIENTO = de las cuotas que YA debian estar pagadas, cuantas lo
+        // estan. Las pagadas salen de `totalCuotas - cuotasPendientes`; las que
+        // ya vencieron son esas mismas mas las que estan en mora.
+        //
+        // ATENCION: esta definicion la puse yo. La lamina T03-03 pinta «Cumple
+        // 31%» y no dice como se calcula, y no hay ninguna funcion de
+        // cumplimiento en el repo. Es la unica lectura sensata de la palabra
+        // —de lo que ya tocaba, cuanto pago— pero si el diseñador queria otra
+        // cosa, se cambia AQUI y en ningun otro sitio.
+        const total = tieneTablaAmortizacion(p)
+          ? p.cuotasAmortizacion.length
+          : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
+        const pagadas = Math.max(0, total - calcularCuotasPendientes(p))
+        const enMora = calcularCuotasEnMora(p, diasExcluidos, festivos)
+        cuotasPagadasSum += pagadas
+        cuotasVencidas += pagadas + enMora
+      } catch (e) {
+        console.error(`[clientes] la tira de cifras fallo para prestamo ${p.id}:`, e.message)
+      }
     }
 
     const porcentajePagadoPromedio = totalAPagarSum > 0
@@ -201,6 +271,11 @@ export async function GET(request) {
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
+      montoEnMora:      montoEnMoraTotal,
+      // Sin nada vencido todavia no hay nada que cumplir: `null`, no 0%. Un 0%
+      // en un cliente que acaba de recibir el prestamo lo pinta como el peor de
+      // la lista, y es justo al reves.
+      cumplimiento:     cuotasVencidas > 0 ? Math.round((cuotasPagadasSum / cuotasVencidas) * 100) : null,
       lineasCreditoActivas: c.lineasCredito?.length ?? 0,
       creadoPor:        c.creadoPor ?? null,
       createdAt:        c.createdAt,
@@ -219,6 +294,9 @@ export async function GET(request) {
       diasMoraMax,
       pagoHoy,
       porcentajePagadoPromedio,
+      // La fecha cruda, ademas de la etiqueta: el filtro «le toca hoy» no puede
+      // leer «mañana» ni «hace 3 dias».
+      proximoCobro: proximoCobroMin,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
       tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
     }
@@ -231,12 +309,58 @@ export async function GET(request) {
   })
   for (const c of resultado) delete c._actividadAt
 
+  // Los filtros que necesitan el calculo hecho.
+  // Los conteos por estado, sobre la cartera ENTERA. Solo se calculan cuando ya
+  // se ha hecho la pasada completa, asi que no cuestan nada extra.
+  if (soloConteos) {
+    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0 }
+    for (const c of resultado) {
+      if (conteos[c.estado] !== undefined) conteos[c.estado] += 1
+    }
+    return Response.json(conteos)
+  }
+
+  let filtrado = resultado
+  const hoyISO = new Date().toISOString().slice(0, 10)
+  if (filtraCalculado) {
+    filtrado = resultado.filter((c) => {
+      if (estadoFiltro && c.estado !== estadoFiltro) return false
+      // «Le toca pagar hoy»: la fecha del proximo cobro mas cercano es hoy o ya
+      // paso. Incluye los atrasados a proposito — a esos tambien les toca, y
+      // dejarlos fuera seria justo esconder a los que hay que ir a ver.
+      //
+      // Se compara la fecha en texto (AAAA-MM-DD) y no con `Date`: los cobros se
+      // guardan a las 05:00Z por el convenio de la casa, asi que el trozo de
+      // fecha del ISO ES el dia que toca, mire desde donde se mire.
+      if (pagaHoy) {
+        const dia = c.proximoCobro ? new Date(c.proximoCobro).toISOString().slice(0, 10) : null
+        if (!dia || dia > hoyISO) return false
+      }
+      if (moraMin > 0 && Number(c.diasMoraMax ?? 0) < moraMin) return false
+      // «Sin prestamo activo»: el cliente que esta en la cartera y no debe nada.
+      // Es al que hay que volver a prestarle, y hasta ahora no habia forma de
+      // encontrarlo sin recorrer la lista entera a mano.
+      if (sinPrestamo && Number(c.prestamosActivos ?? 0) > 0) return false
+      return true
+    })
+  }
+
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {
+    if (filtraCalculado) {
+      // El total es el de LO FILTRADO, no el de la cartera: si dice 200 y
+      // enseña 3, el usuario cree que se perdieron 197.
+      const total = filtrado.length
+      const desde = (page - 1) * limit
+      return Response.json({
+        clientes: filtrado.slice(desde, desde + limit),
+        total, page, totalPages: Math.ceil(total / limit),
+      })
+    }
     const total = await prisma.cliente.count({ where: whereClause })
-    return Response.json({ clientes: resultado, total, page, totalPages: Math.ceil(total / limit) })
+    return Response.json({ clientes: filtrado, total, page, totalPages: Math.ceil(total / limit) })
   }
-  return Response.json(resultado)
+  return Response.json(filtrado)
   } catch (err) {
     console.error('[GET /api/clientes]', err)
     return Response.json({ error: 'Error interno del servidor' }, { status: 500 })
@@ -285,7 +409,10 @@ export async function POST(request) {
   }
 
   const body = await request.json()
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
+  // `cedula` con `let`: cuando no viene se le pone el marcador «SIN-…» unas
+  // lineas mas abajo, y con `const` eso seria un error en ejecucion.
+  const { nombre, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
+  let { cedula } = body
 
   let diasSinCobroVal
   try {
@@ -295,9 +422,18 @@ export async function POST(request) {
   }
 
   // Validaciones básicas
-  if (!nombre?.trim())   return Response.json({ error: 'El nombre es requerido' },  { status: 400 })
-  if (!cedula?.trim())   return Response.json({ error: 'La cédula es requerida' },  { status: 400 })
-  if (!telefono?.trim()) return Response.json({ error: 'El teléfono es requerido' }, { status: 400 })
+  // ── SOLO EL NOMBRE (T07-03) ──
+  // Exigia los tres. La carga masiva desde Excel ya aceptaba clientes sin
+  // telefono, asi que se podian importar doscientos sin numero y no se podia
+  // crear uno a mano. Y pedir datos en la calle es lo que frena la carga.
+  //
+  // La cedula sigue siendo la clave con la que se busca y se evita el
+  // duplicado, asi que cuando no viene se genera el mismo marcador «SIN-…» que
+  // ya usaba la casilla «no tiene cedula» y la importacion de cuadernos.
+  if (!nombre?.trim()) return Response.json({ error: 'El nombre es requerido' }, { status: 400 })
+  if (!cedula?.trim()) {
+    cedula = `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  }
 
   const esSinCedula = cedula.trim().startsWith('SIN-')
   const country = session.user.country ?? 'co'

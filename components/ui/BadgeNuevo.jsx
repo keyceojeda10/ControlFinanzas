@@ -20,8 +20,8 @@ export default function BadgeNuevo({ fecha, children, className = '' }) {
         style={{
           background: 'transparent',
           boxShadow:
-            '0 0 10px color-mix(in srgb, var(--color-success) 35%, transparent),' +
-            ' inset 0 0 6px color-mix(in srgb, var(--color-success) 10%, transparent)',
+            '0 0 10px color-mix(in srgb, var(--cf-green-dark) 35%, transparent),' +
+            ' inset 0 0 6px color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
           animationDuration: '2.4s',
         }}
       />
@@ -35,15 +35,15 @@ export function NuevoChip() {
     <span
       className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-px rounded-full shrink-0"
       style={{
-        color: 'var(--color-success)',
-        background: 'color-mix(in srgb, var(--color-success) 12%, transparent)',
-        border: '1px solid color-mix(in srgb, var(--color-success) 30%, transparent)',
+        color: 'var(--cf-green-dark)',
+        background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--cf-green-dark) 30%, transparent)',
       }}
     >
       <span
         aria-hidden="true"
         className="w-1 h-1 rounded-full"
-        style={{ background: 'var(--color-success)' }}
+        style={{ background: 'var(--cf-green-dark)' }}
       />
       Nuevo
     </span>

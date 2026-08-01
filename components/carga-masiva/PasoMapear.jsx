@@ -76,29 +76,29 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
   return (
     <div className="space-y-4">
       {/* Resumen de deteccion */}
-      <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] p-4">
+      <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] p-4">
         <div className="flex items-start gap-3">
           <div className={[
             'w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5',
             detectadas >= 2 ? 'bg-[rgba(34,197,94,0.12)]' : 'bg-[rgba(245,158,11,0.12)]',
           ].join(' ')}>
             {detectadas >= 2 ? (
-              <svg className="w-4 h-4 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--cf-green-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             ) : (
-              <svg className="w-4 h-4 text-[var(--color-warning)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--cf-gold-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+            <p className="text-sm font-semibold text-[var(--cf-ink)]">
               {detectadas >= 2
                 ? `Detectamos ${detectadas} de ${total} columnas`
                 : 'Necesitamos tu ayuda con las columnas'}
             </p>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5 leading-snug">
+            <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5 leading-snug">
               {detectadas >= 2
                 ? 'Revisa que cada columna de tu archivo este asignada al campo correcto. Puedes cambiar cualquiera.'
                 : 'No pudimos identificar las columnas automaticamente. Selecciona a que campo corresponde cada una.'}
@@ -109,7 +109,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
 
       {/* Mapeo de columnas */}
       <div className="space-y-2">
-        <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide px-1">
+        <p className="text-[10px] font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide px-1">
           Columnas de tu archivo
         </p>
         {headers.map((header) => {
@@ -119,30 +119,30 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
 
           return (
             <div key={header}
-              className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[12px] px-3 py-2.5"
+              className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] px-3 py-2.5"
             >
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-[var(--color-text-primary)] truncate">
+                  <p className="text-[13px] font-medium text-[var(--cf-ink)] truncate">
                     {header}
                   </p>
                   {ejemplo && (
-                    <p className="text-[10px] text-[var(--color-text-muted)] truncate mt-0.5">
+                    <p className="text-[10px] text-[var(--cf-ink-3)] truncate mt-0.5">
                       ej: {ejemplo}
                     </p>
                   )}
                 </div>
-                <svg className="w-4 h-4 shrink-0 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0 text-[var(--cf-ink-3)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
                 <select
                   value={campoAsignado}
                   onChange={(e) => handleCambiarMapeo(header, e.target.value)}
                   className={[
-                    'w-[140px] h-8 px-2 rounded-[8px] border text-[12px] font-medium focus:outline-none focus:border-[var(--color-accent)] transition-colors',
+                    'w-[140px] h-8 px-2 rounded-[8px] border text-[12px] font-medium focus:outline-none focus:border-[var(--cf-gold)] transition-colors',
                     campoAsignado
-                      ? 'bg-[rgba(245,197,24,0.08)] border-[rgba(245,197,24,0.25)] text-[var(--color-accent)]'
-                      : 'bg-[var(--color-bg-base)] border-[var(--color-border)] text-[var(--color-text-muted)]',
+                      ? 'bg-[rgba(245,197,24,0.08)] border-[rgba(245,197,24,0.25)] text-[var(--cf-gold)]'
+                      : 'bg-[var(--cf-surface)] border-[var(--cf-border)] text-[var(--cf-ink-3)]',
                   ].join(' ')}
                 >
                   <option value="">— Ignorar —</option>
@@ -162,14 +162,14 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
       {analisisMontos && (
         <div className="bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.25)] rounded-[12px] p-4 space-y-3">
           <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-[var(--color-accent)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-[var(--cf-gold)] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+              <p className="text-sm font-semibold text-[var(--cf-ink)]">
                 Los montos parecen estar en miles
               </p>
-              <p className="text-[11px] text-[var(--color-text-muted)] mt-1 leading-snug">
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-1 leading-snug">
                 El capital promedio en tu archivo es {formatMoney(analisisMontos.mediana)}, lo cual es muy bajo para prestamos reales.
                 Muchas apps guardan los valores en miles.
               </p>
@@ -190,23 +190,23 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
                 className={[
                   'rounded-[10px] border px-2 py-2.5 text-center transition-all',
                   multiplicador === opt.val
-                    ? 'bg-[rgba(245,197,24,0.15)] border-[var(--color-accent)] ring-1 ring-[rgba(245,197,24,0.3)]'
-                    : 'bg-[var(--color-bg-card)] border-[var(--color-border)] hover:border-[var(--color-border-hover)]',
+                    ? 'bg-[rgba(245,197,24,0.15)] border-[var(--cf-gold)] ring-1 ring-[rgba(245,197,24,0.3)]'
+                    : 'bg-[var(--cf-card)] border-[var(--cf-border)] hover:border-[var(--cf-border-strong)]',
                 ].join(' ')}
               >
                 <p className={[
                   'text-sm font-bold',
-                  multiplicador === opt.val ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]',
+                  multiplicador === opt.val ? 'text-[var(--cf-gold)]' : 'text-[var(--cf-ink)]',
                 ].join(' ')}>
                   {opt.label}
                 </p>
-                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{opt.desc}</p>
+                <p className="text-[10px] text-[var(--cf-ink-3)] mt-0.5">{opt.desc}</p>
               </button>
             ))}
           </div>
 
           {multiplicador > 1 && (
-            <div className="flex items-center gap-2 text-[11px] text-[var(--color-success)]">
+            <div className="flex items-center gap-2 text-[11px] text-[var(--cf-green-dark)]">
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -215,7 +215,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
           )}
 
           <div>
-            <label className="text-[10px] text-[var(--color-text-muted)]">Multiplicador personalizado:</label>
+            <label className="text-[10px] text-[var(--cf-ink-3)]">Multiplicador personalizado:</label>
             <input
               type="number"
               value={multiplicador}
@@ -224,7 +224,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
                 setMultiplicador(Math.max(1, v))
               }}
               min={1}
-              className="w-full mt-1 h-9 px-3 rounded-[8px] border border-[var(--color-border)] bg-[var(--color-bg-base)] text-sm text-[var(--color-text-primary)] font-mono-display focus:outline-none focus:border-[var(--color-accent)]"
+              className="w-full mt-1 h-9 px-3 rounded-[8px] border border-[var(--cf-border)] bg-[var(--cf-surface)] text-sm text-[var(--cf-ink)] font-mono-display focus:outline-none focus:border-[var(--cf-gold)]"
             />
           </div>
         </div>
@@ -233,15 +233,15 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
       {/* Preview de datos con mapeo aplicado */}
       {puedeAvanzar && previewFilas.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wide px-1">
+          <p className="text-[10px] font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide px-1">
             Vista previa ({previewFilas.length} de {filas.length} filas)
           </p>
-          <div className="overflow-x-auto rounded-[12px] border border-[var(--color-border)]">
+          <div className="overflow-x-auto rounded-[12px] border border-[var(--cf-border)]">
             <table className="w-full text-[11px]">
               <thead>
-                <tr className="bg-[var(--color-bg-surface)]">
+                <tr className="bg-[var(--cf-surface)]">
                   {Object.entries(mapeo).filter(([, c]) => c).map(([, campo]) => (
-                    <th key={campo} className="px-2 py-1.5 text-left text-[var(--color-text-muted)] font-semibold whitespace-nowrap">
+                    <th key={campo} className="px-2 py-1.5 text-left text-[var(--cf-ink-3)] font-semibold whitespace-nowrap">
                       {CAMPOS_LABELS[campo]}
                     </th>
                   ))}
@@ -249,7 +249,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
               </thead>
               <tbody>
                 {previewFilas.map((fila, i) => (
-                  <tr key={i} className="border-t border-[var(--color-border)]">
+                  <tr key={i} className="border-t border-[var(--cf-border)]">
                     {Object.entries(mapeo).filter(([, c]) => c).map(([headerOrig, campo]) => {
                       let val = String(fila[headerOrig] ?? '').slice(0, 25) || '—'
                       const esMonetario = ['montoPrestado', 'saldoActual', 'abonadoHasta'].includes(campo)
@@ -258,7 +258,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
                         if (num > 0) val = formatMoney(num * multiplicador)
                       }
                       return (
-                        <td key={headerOrig} className="px-2 py-1.5 text-[var(--color-text-primary)] whitespace-nowrap max-w-[120px] truncate">
+                        <td key={headerOrig} className="px-2 py-1.5 text-[var(--cf-ink)] whitespace-nowrap max-w-[120px] truncate">
                           {val}
                         </td>
                       )
@@ -273,7 +273,7 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
 
       {/* Alerta si falta nombre o cedula */}
       {!puedeAvanzar && (
-        <div className="flex items-center gap-2 bg-[var(--color-danger-dim)] border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] text-[var(--color-danger)] text-[12px] rounded-[12px] px-4 py-3">
+        <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-[12px] rounded-[12px] px-4 py-3">
           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
@@ -285,14 +285,14 @@ export default function PasoMapear({ headers, filas, onConfirmar, onVolver }) {
       <div className="flex gap-3 pt-2">
         <button
           onClick={onVolver}
-          className="flex-1 h-11 rounded-[12px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:bg-[var(--color-bg-hover)]"
+          className="flex-1 h-11 rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-[var(--cf-ink)] text-sm font-medium transition-colors hover:bg-[var(--cf-fill)]"
         >
           Volver
         </button>
         <button
           onClick={() => onConfirmar(mapeo, multiplicador)}
           disabled={!puedeAvanzar}
-          className="flex-1 h-11 rounded-[12px] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-[var(--color-text-primary)] text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 h-11 rounded-[12px] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] text-[var(--cf-ink)] text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Continuar
         </button>

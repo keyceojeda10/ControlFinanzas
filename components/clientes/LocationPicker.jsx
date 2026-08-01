@@ -17,14 +17,14 @@ const createIcon = () => {
     className: '',
     html: `<div style="
       width:32px;height:32px;
-      background:var(--color-accent);
-      border:3px solid #0a0a0a;
+      background:var(--cf-gold);
+      border:3px solid var(--cf-ink);
       border-radius:50% 50% 50% 0;
       transform:rotate(-45deg);
       box-shadow:0 2px 8px rgba(0,0,0,0.4);
     "><div style="
       width:10px;height:10px;
-      background:#0a0a0a;
+      background:var(--cf-ink);
       border-radius:50%;
       position:absolute;
       top:50%;left:50%;
@@ -115,8 +115,8 @@ function MiniMap({ lat, lng, onLocationChange }) {
   return (
     <div
       ref={mapRef}
-      className="w-full h-[200px] rounded-xl overflow-hidden border border-[var(--color-border)]"
-      style={{ background: '#111111' }}
+      className="w-full h-[200px] rounded-xl overflow-hidden border border-[var(--cf-border)]"
+      style={{ background: 'var(--cf-ink)' }}
     />
   )
 }
@@ -165,7 +165,7 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
           type="button"
           onClick={handleGPS}
           disabled={gpsLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--color-warning-dim)] border border-[color-mix(in_srgb,var(--color-warning)_30%,transparent)] text-[var(--color-warning)] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50 active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50 active:scale-95"
         >
           {gpsLoading ? (
             <>
@@ -189,7 +189,7 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
         <button
           type="button"
           onClick={() => setShowMap((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] text-xs font-medium hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)] transition-all active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] text-xs font-medium hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)] transition-all active:scale-95"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -201,7 +201,7 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
           <button
             type="button"
             onClick={handleClear}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] text-[var(--color-text-muted)] text-xs hover:text-[var(--color-danger)] transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-[10px] text-[var(--cf-ink-3)] text-xs hover:text-[var(--cf-red-dark)] transition-colors"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -214,8 +214,8 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
       {/* Indicador de ubicación capturada */}
       {hasLocation && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-[10px] bg-[rgba(34,197,94,0.08)] border border-[rgba(34,197,94,0.15)]">
-          <svg className="w-3.5 h-3.5 text-[var(--color-success)] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-          <span className="text-[11px] text-[var(--color-success)] font-medium">
+          <svg className="w-3.5 h-3.5 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+          <span className="text-[11px] text-[var(--cf-green-dark)] font-medium">
             Ubicación capturada — {latitud.toFixed(5)}, {longitud.toFixed(5)}
           </span>
         </div>
@@ -223,14 +223,14 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
 
       {/* Error GPS */}
       {gpsError && (
-        <p className="text-[11px] text-[var(--color-danger)]">{gpsError}</p>
+        <p className="text-[11px] text-[var(--cf-red-dark)]">{gpsError}</p>
       )}
 
       {/* Mapa */}
       {showMap && (
         <div className="relative">
           <MiniMap lat={latitud} lng={longitud} onLocationChange={onLocationChange} />
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Toca el mapa para poner el pin o arrástralo para ajustar</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">Toca el mapa para poner el pin o arrástralo para ajustar</p>
         </div>
       )}
     </div>

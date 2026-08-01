@@ -1,7 +1,7 @@
 'use client'
 
 const CHECK_ICON = (
-  <svg className="w-3 h-3 text-[var(--color-text-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-3 h-3 text-[var(--cf-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
   </svg>
 )
@@ -14,9 +14,9 @@ export default function WizardProgress({ step, totalSteps = 3 }) {
   return (
     <div className="mb-8">
       {/* Progress bar */}
-      <div className="h-1 bg-[var(--color-bg-hover)] rounded-full overflow-hidden mb-5">
+      <div className="h-1 bg-[var(--cf-fill)] rounded-full overflow-hidden mb-5">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[#f0b800] transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-[var(--cf-gold)] to-[var(--cf-gold)] transition-all duration-700 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -34,10 +34,10 @@ export default function WizardProgress({ step, totalSteps = 3 }) {
                   className={[
                     'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300',
                     isCompleted
-                      ? 'bg-[var(--color-success)] text-[var(--color-text-primary)]'
+                      ? 'bg-[var(--cf-green-dark)] text-[var(--cf-ink)]'
                       : isActive
-                      ? 'bg-[var(--color-accent)] text-[#111111]'
-                      : 'border-2 border-[var(--color-border-hover)] text-[var(--color-text-muted)]',
+                      ? 'bg-[var(--cf-gold)] text-[var(--cf-ink)]'
+                      : 'border-2 border-[var(--cf-border-strong)] text-[var(--cf-ink-3)]',
                   ].join(' ')}
                 >
                   {isCompleted ? CHECK_ICON : i + 1}
@@ -47,7 +47,7 @@ export default function WizardProgress({ step, totalSteps = 3 }) {
                   <div
                     className={[
                       'w-12 h-0.5 transition-all duration-500',
-                      i < activeIndex ? 'bg-[var(--color-success)]' : 'bg-[var(--color-bg-hover)]',
+                      i < activeIndex ? 'bg-[var(--cf-green-dark)]' : 'bg-[var(--cf-fill)]',
                     ].join(' ')}
                   />
                 )}

@@ -68,23 +68,23 @@ export default function BottomSheet({ open, onClose, title, children, footer, cl
           className,
         ].join(' ')}
         style={{
-          background: 'var(--color-bg-surface)',
-          border: '1px solid var(--color-border)',
+          background: 'var(--cf-surface)',
+          border: '1px solid var(--cf-border)',
           borderBottom: 'none',
         }}
       >
         <div className="flex flex-col items-center pt-3 pb-2 shrink-0">
-          <div className="w-9 h-1 rounded-full" style={{ background: 'var(--color-text-muted)', opacity: 0.35 }} />
+          <div className="w-9 h-1 rounded-full" style={{ background: 'var(--cf-ink-3)', opacity: 0.35 }} />
         </div>
 
         {title && (
           <div className="flex items-center justify-between px-5 pb-3 shrink-0">
-            <h2 className="text-[16px] font-bold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
+            <h2 className="text-[16px] font-bold" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
             <button
               onClick={onClose}
               aria-label="Cerrar"
               className="w-9 h-9 flex items-center justify-center rounded-[10px] cursor-pointer transition-colors"
-              style={{ color: 'var(--color-text-muted)' }}
+              style={{ color: 'var(--cf-ink-3)' }}
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M4 4l8 8M12 4l-8 8" />
@@ -93,10 +93,13 @@ export default function BottomSheet({ open, onClose, title, children, footer, cl
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        {/* `pt-1` cuando hay titulo: la cabecera cierra con `pb-3` y el contenido
+            arrancaba justo ahi, sin respirar. Es el mismo fallo que tenia
+            HojaInferior, y el usuario lo vio en las dos. */}
+        <div className={`flex-1 overflow-y-auto px-5 pb-5 ${title ? 'pt-1' : ''}`}>{children}</div>
 
         {footer && (
-          <div className="shrink-0 px-5 py-4 flex items-center gap-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="shrink-0 px-5 py-4 flex items-center gap-3" style={{ borderTop: '1px solid var(--cf-border)' }}>
             {footer}
           </div>
         )}

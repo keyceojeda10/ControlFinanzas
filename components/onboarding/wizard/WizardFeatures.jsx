@@ -18,7 +18,7 @@ const CAPS = [
   },
   {
     id: 'whatsapp',
-    color: 'var(--color-success)',
+    color: 'var(--cf-green-dark)',
     bg: 'rgba(34,197,94,0.1)',
     tag: 'Automatizado',
     titulo: 'Alertas automáticas por WhatsApp',
@@ -33,7 +33,7 @@ const CAPS = [
   },
   {
     id: 'rutas',
-    color: 'var(--color-info)',
+    color: 'var(--cf-ink-2)',
     bg: 'rgba(59,130,246,0.1)',
     tag: 'Tiempo real',
     titulo: 'Rutas de cobro con GPS',
@@ -47,7 +47,7 @@ const CAPS = [
   },
   {
     id: 'metodos',
-    color: 'var(--color-accent)',
+    color: 'var(--cf-gold)',
     bg: 'rgba(245,197,24,0.1)',
     tag: 'Flexible',
     titulo: 'Múltiples métodos de interés',
@@ -61,7 +61,7 @@ const CAPS = [
   },
   {
     id: 'reportes',
-    color: '#f97316',
+    color: 'var(--cf-gold-dark)',
     bg: 'rgba(249,115,22,0.1)',
     tag: 'Sin Excel',
     titulo: 'Reportes y cierre de caja',
@@ -80,10 +80,10 @@ export default function WizardFeatures({ onNext }) {
     <div className="max-w-md mx-auto flex flex-col" style={{ minHeight: '80vh' }}>
 
       <div className="text-center mb-6">
-        <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--color-text-primary)', fontFamily: "Georgia, serif" }}>
-          Esto es lo que <em style={{ color: 'var(--color-accent)', fontStyle: 'italic' }}>también</em> puedes hacer
+        <h2 className="text-[22px] font-bold mb-2" style={{ color: 'var(--cf-ink)', fontFamily: "Georgia, serif" }}>
+          Esto es lo que <em style={{ color: 'var(--cf-gold)', fontStyle: 'italic' }}>también</em> puedes hacer
         </h2>
-        <p className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>
           Control Finanzas va mucho más allá de llevar clientes y préstamos.
         </p>
       </div>
@@ -92,7 +92,7 @@ export default function WizardFeatures({ onNext }) {
         {CAPS.map((c) => (
           <div key={c.id}
             className="rounded-[12px] p-4"
-            style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
             <div className="flex items-start gap-3">
               <div className="w-11 h-11 rounded-[11px] flex items-center justify-center shrink-0"
                 style={{ background: c.bg, color: c.color }}>
@@ -100,11 +100,11 @@ export default function WizardFeatures({ onNext }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>{c.titulo}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{c.titulo}</p>
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
                     style={{ background: c.bg, color: c.color }}>{c.tag}</span>
                 </div>
-                <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{c.detalle}</p>
+                <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>{c.detalle}</p>
                 <div className="flex items-center gap-1">
                   <svg className="w-3 h-3 shrink-0" fill="none" stroke={c.color} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -121,7 +121,7 @@ export default function WizardFeatures({ onNext }) {
         <button
           onClick={onNext}
           className="w-full h-12 rounded-[12px] text-base font-bold transition-all active:scale-[0.98] cursor-pointer"
-          style={{ background: 'var(--color-accent)', color: '#111' }}>
+          style={{ background: 'var(--cf-gold)', color: '#111' }}>
           Continuar al resumen
         </button>
       </div>

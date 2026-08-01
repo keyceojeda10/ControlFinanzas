@@ -81,16 +81,16 @@ export default function CompletarTelefonoModal() {
         <div className="flex justify-center mb-4">
           <div className="relative">
             <div className="absolute inset-0 rounded-full blur-xl opacity-50"
-              style={{ background: 'radial-gradient(circle, var(--color-accent) 0%, transparent 70%)' }}
+              style={{ background: 'radial-gradient(circle, var(--cf-gold) 0%, transparent 70%)' }}
             />
             <div className="relative w-12 h-12 rounded-[12px] flex items-center justify-center"
               style={{
-                background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 30%, transparent), color-mix(in srgb, var(--color-accent) 10%, transparent))',
-                border: '1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 30%, transparent), color-mix(in srgb, var(--cf-gold) 10%, transparent))',
+                border: '1px solid color-mix(in srgb, var(--cf-gold) 35%, transparent)',
               }}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-                style={{ color: 'var(--color-accent)' }}
+                style={{ color: 'var(--cf-gold)' }}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
               </svg>
@@ -106,16 +106,16 @@ export default function CompletarTelefonoModal() {
         <p className="text-sm text-center mb-5"
           style={{ color: 'rgba(255,255,255,0.65)' }}
         >
-          Solo lo usamos para contactarte por <strong style={{ color: 'var(--color-success)' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
+          Solo lo usamos para contactarte por <strong style={{ color: 'var(--cf-green-dark)' }}>WhatsApp</strong> con avisos de pago, soporte rápido y novedades importantes de tu cuenta.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
             <div className="flex items-center gap-2 text-sm rounded-[10px] px-3 py-2.5"
               style={{
-                background: 'var(--color-danger-dim)',
-                border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)',
-                color: 'var(--color-danger)',
+                background: 'var(--cf-red-pill-bg)',
+                border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)',
+                color: 'var(--cf-red-dark)',
               }}
             >
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -158,7 +158,7 @@ export default function CompletarTelefonoModal() {
             disabled={loading}
             className="group relative w-full h-11 rounded-[12px] overflow-hidden font-bold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #f59e0b))',
+              background: 'linear-gradient(135deg, var(--cf-gold), color-mix(in srgb, var(--cf-gold) 75%, var(--cf-gold-dark)))',
               color: '#3a2900',
               boxShadow: '0 4px 14px rgba(245,197,24,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
             }}

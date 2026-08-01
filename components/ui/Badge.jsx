@@ -1,13 +1,13 @@
 // components/ui/Badge.jsx
 
 const variants = {
-  blue:   { bg: 'var(--color-info-dim)',    fg: 'var(--color-info)',    bd: 'var(--color-info)' },
-  green:  { bg: 'var(--color-success-dim)', fg: 'var(--color-success)', bd: 'var(--color-success)' },
-  yellow: { bg: 'var(--color-accent-soft)', fg: 'var(--color-accent)',  bd: 'var(--color-accent)' },
-  red:    { bg: 'var(--color-danger-dim)',  fg: 'var(--color-danger)',  bd: 'var(--color-danger)' },
-  purple: { bg: 'var(--color-purple-dim)',  fg: 'var(--color-purple)',  bd: 'var(--color-purple)' },
-  teal:   { bg: 'var(--color-teal-dim)',    fg: 'var(--color-teal)',    bd: 'var(--color-teal)' },
-  gray:   { bg: 'var(--color-bg-hover)',    fg: 'var(--color-text-secondary)', bd: 'var(--color-border)' },
+  blue:   { bg: 'var(--cf-fill)',    fg: 'var(--cf-ink-2)',    bd: 'var(--cf-ink-2)' },
+  green:  { bg: 'var(--cf-green-pill-bg)', fg: 'var(--cf-green-dark)', bd: 'var(--cf-green-dark)' },
+  yellow: { bg: 'var(--cf-gold-tint)', fg: 'var(--cf-gold)',  bd: 'var(--cf-gold)' },
+  red:    { bg: 'var(--cf-red-pill-bg)',  fg: 'var(--cf-red-dark)',  bd: 'var(--cf-red-dark)' },
+  purple: { bg: 'var(--cf-fill)',  fg: 'var(--cf-ink-2)',  bd: 'var(--cf-ink-2)' },
+  teal:   { bg: 'var(--cf-fill)',    fg: 'var(--cf-ink-2)',    bd: 'var(--cf-ink-2)' },
+  gray:   { bg: 'var(--cf-fill)',    fg: 'var(--cf-ink-2)', bd: 'var(--cf-border)' },
 }
 
 export function Badge({ children, variant = 'blue', className = '' }) {
@@ -50,12 +50,12 @@ export function StatusPill({ children, variant = 'green', dot = true, className 
 
 export function StatusDot({ variant = 'green' }) {
   const colorMap = {
-    green:  'var(--color-success)',
-    yellow: 'var(--color-warning)',
-    red:    'var(--color-danger)',
-    blue:   'var(--color-info)',
-    teal:   'var(--color-teal)',
-    gray:   'var(--color-text-muted)',
+    green:  'var(--cf-green-dark)',
+    yellow: 'var(--cf-gold-dark)',
+    red:    'var(--cf-red-dark)',
+    blue:   'var(--cf-ink-2)',
+    teal:   'var(--cf-ink-2)',
+    gray:   'var(--cf-ink-3)',
   }
   return (
     <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorMap[variant] ?? colorMap.gray }} />

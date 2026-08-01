@@ -6,9 +6,9 @@
 //   busca    — ojo grande + burbuja ? (sin resultados de busqueda)
 //   guia     — guino + flecha (CTAs, onboarding)
 
-const GOLD     = 'var(--color-accent)'
+const GOLD     = 'var(--cf-gold)'
 const GOLD_DARK = '#d4a90e'
-const INK      = '#1a1a2e'
+const INK      = 'var(--cf-ink)'
 const BLUSH    = '#ff6b8a'
 
 export default function MonedaCF({ pose = 'feliz', size = 96, className = '' }) {

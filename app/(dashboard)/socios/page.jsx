@@ -1,178 +1,149 @@
 'use client'
 
+// app/(dashboard)/socios/page.jsx — T45-01 la lista de socios.
+//
+// ══ MONTADO, NO REESCRITO ══════════════════════════════════════════════════
+//
+// Los componentes (`ListaSocios`, `LoQuePusieron`, `GananciaSinRepartir`,
+// `TarjetaSocio`) y su adaptador estaban construidos y probados desde el bloque
+// de socios, y esta ruta seguía pintando la versión vieja. Aquí solo se conecta:
+// se traen los datos del API, se pasan por el adaptador, y se pinta.
+//
+// ══ LO QUE EL API DA Y LO QUE NO ═══════════════════════════════════════════
+//
+// `/api/socios` devuelve por socio: totalAportes, capitalAportado, totalRetiros,
+// utilidadesAsignadas, capitalEnCalle e interesesCobrados.
+//
+// LO PUESTO es capitalAportado menos retiros — NO totalAportes. `totalAportes`
+// incluye las utilidades reinvertidas, y meterlas subiría el porcentaje del socio
+// al que ya se le debe más, que es justo al revés de lo que tiene que pasar.
+//
+// LO REPARTIDO no existe: falta el tipo de movimiento «reparto» en el esquema
+// (ver PENDIENTE-BACKEND en lib/adaptadores/socios.js). Por eso «Le debes» llega
+// `undefined` y la columna no se pinta. Un «$0» ahí se leería como «no le debo
+// nada», y lo cierto es que todavía no se ha repartido nunca.
+
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/Button'
-import { SkeletonCard } from '@/components/ui/Skeleton'
-import EmptyState from '@/components/ui/EmptyState'
-import CardWaves from '@/components/ui/CardWaves'
-import { useCardPalettes } from '@/components/ui/tarjetaCredito'
-import SocioCard from '@/components/socios/SocioCard'
-import ParticipacionSocios from '@/components/socios/ParticipacionSocios'
-import { formatMoney } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
+import { formatMoney } from '@/lib/i18n'
+import { ListaSocios } from '@/components/pantallas/SociosReparto'
+import { PilaEsqueletos } from '@/components/cf/primitivos2'
+import { EstadoVacio } from '@/components/cf/primitivos'
+import { loQuePusieron, cuentaDelSocio, cabeceraSocios, tuParte } from '@/lib/adaptadores/socios'
 
 export default function SociosPage() {
   const { esOwner, loading: authLoading } = useAuth()
   const { country } = useCountry()
-  const { palettes } = useCardPalettes()
+  const router = useRouter()
   const [socios, setSocios] = useState([])
-  const [loading, setLoading] = useState(true)
+  // El capital en calle NO viene de /api/socios: esa ruta devuelve un array
+  // pelado y otras dos pantallas lo consumen asi (`d.map`), de modo que
+  // cambiarle la forma las rompe en silencio. Se pide aparte.
+  const [enCalle, setEnCalle] = useState(null)
+  const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
-  const fmt = (v) => formatMoney(v, country)
+  const fmt = useCallback((v) => formatMoney(v, country), [country])
 
   const cargar = useCallback(async () => {
     try {
-      setLoading(true)
+      setCargando(true)
       setError('')
-      const res = await fetch('/api/socios')
-      if (!res.ok) throw new Error('Error al cargar socios')
-      const data = await res.json()
-      setSocios(data)
+      const res = await fetch('/api/socios', { cache: 'no-store' })
+      if (!res.ok) throw new Error('no')
+      setSocios(await res.json())
+      // Si esto falla la pantalla sigue: «Tu parte» desaparece, que es mejor que
+      // enseñar una resta con un lado inventado.
+      fetch('/api/capital/resumen', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => setEnCalle(d?.cartera?.capitalEnCalle ?? null))
+        .catch(() => {})
     } catch {
-      setError('No se pudieron cargar los socios. Intenta de nuevo.')
+      setError('No se pudieron cargar los socios.')
     } finally {
-      setLoading(false)
+      setCargando(false)
     }
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
 
-  if (authLoading) return <div className="space-y-3 pb-28">{[1, 2, 3].map((i) => <SkeletonCard key={i} />)}</div>
+  if (authLoading || cargando) return <PilaEsqueletos cuantos={3} alto={116} />
 
   if (!esOwner) {
     return (
-      <div className="p-4 text-center" style={{ color: 'var(--color-text-muted)' }}>
-        No tienes acceso a esta seccion.
-      </div>
+      <p style={{ padding: 16, textAlign: 'center', color: 'var(--cf-ink-3)', fontSize: 14 }}>
+        No tienes acceso a esta sección.
+      </p>
     )
   }
 
-  const totalAportes = socios.reduce((acc, s) => acc + s.totalAportes, 0)
-  const totalRetiros = socios.reduce((acc, s) => acc + (s.totalRetiros || 0), 0)
-  const capitalTotal = totalAportes - totalRetiros
-  const totalEnCalle = socios.reduce((acc, s) => acc + s.capitalEnCalle, 0)
-  const totalIntereses = socios.reduce((acc, s) => acc + s.interesesCobrados, 0)
+  if (error) {
+    return (
+      <EstadoVacio
+        titulo="No se pudieron cargar los socios"
+        explicacion="Puede ser la conexión. Vuelve a intentarlo."
+        accion={<button type="button" onClick={cargar} style={BOTON}>Reintentar</button>}
+      />
+    )
+  }
 
-  const hayContenido = !loading && !error
-  const hayDatos = hayContenido && socios.length > 0
+  if (socios.length === 0) {
+    return (
+      <EstadoVacio
+        titulo="Todavía no hay socios"
+        explicacion="Un socio es alguien que pone capital en el negocio. Cuando lo registres, aquí verás cuánto puso cada uno y qué le corresponde."
+        accion={
+          <button type="button" onClick={() => router.push('/socios/nuevo')} style={BOTON}>
+            Registrar el primero
+          </button>
+        }
+      />
+    )
+  }
 
-  const P = palettes.ok
+  // `puesto` = capital que puso de su bolsillo, sin utilidades reinvertidas.
+  //
+  // Ordenados por lo puesto, de mayor a menor: es el orden en que se lee la barra
+  // de arriba, y el que responde «¿de quién es la mayor parte de este negocio?»
+  // sin comparar porcentajes uno a uno. Por fecha de alta no dice nada.
+  const paraAdaptador = socios.map((s) => ({
+    ...s,
+    puesto: Math.max(0, (s.capitalAportado ?? s.totalAportes ?? 0) - (s.totalRetiros ?? 0)),
+    pagado: s.totalRetiros ?? 0,
+    // `repartido` se deja fuera a propósito: el tipo de movimiento no existe.
+  })).sort((a, b) => b.puesto - a.puesto)
+
+  const puesto = loQuePusieron(paraAdaptador, fmt)
+  const porId = Object.fromEntries(puesto.socios.map((s) => [s.id, s]))
 
   return (
-    <div className="pb-28">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-          Socios
-        </h1>
-        {hayDatos && (
-          <Link href="/socios/nuevo">
-            <Button>Nuevo socio</Button>
-          </Link>
+    <div style={{ height: '100%', minHeight: 0 }}>
+      <ListaSocios
+        cabecera={cabeceraSocios(socios)}
+        puesto={puesto}
+        tuParte={enCalle === null ? null : tuParte(
+          // `puesto.total` es el TEXTO ya formateado («$14.000.000»); el número
+          // vive en `numeros.total`. Restar el texto daba NaN → 0, y entonces
+          // «Tu parte» no se pintaba: un fallo que se ve como una decisión.
+          { capitalEnCalle: enCalle, puestoPorSocios: puesto.numeros.total },
+          fmt,
         )}
-      </div>
-
-      {loading && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {!loading && error && (
-        <div
-          className="cf-card-shadow rounded-[20px] p-6 text-center"
-          style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}
-        >
-          <p className="text-[13px] mb-3" style={{ color: 'var(--color-danger)' }}>
-            {error}
-          </p>
-          <Button variant="secondary" onClick={cargar}>Reintentar</Button>
-        </div>
-      )}
-
-      {hayContenido && (
-        <>
-          {hayDatos && (
-            <div
-              className="relative rounded-[20px] overflow-hidden mb-4"
-              style={{
-                background: P.grad,
-                border: `1px solid ${P.border}`,
-                boxShadow: P.shadow,
-              }}
-            >
-              <CardWaves tint={P.waves} />
-              {P.sheen && P.sheen !== 'none' && (
-                <div className="absolute inset-0 pointer-events-none" style={{ background: P.sheen }} />
-              )}
-
-              <div className="relative p-4">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
-                  Capital total
-                </p>
-                <p
-                  className="font-mono-display font-bold leading-none tracking-tight mt-1.5"
-                  style={{ color: P.ink, fontSize: 'clamp(28px, 8vw, 34px)' }}
-                >
-                  {fmt(capitalTotal)}
-                </p>
-                <p className="text-[11px] mt-1.5" style={{ color: P.sub }}>
-                  Aportes {fmt(totalAportes)} · Retiros {fmt(totalRetiros)}
-                </p>
-
-                <div
-                  className="rounded-[14px] grid grid-cols-3 gap-2 mt-4 pt-3"
-                  style={{ borderTop: `1px solid ${P.track}` }}
-                >
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>
-                      En calle
-                    </p>
-                    <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
-                      {fmt(totalEnCalle)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>
-                      Intereses
-                    </p>
-                    <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: P.accent }}>
-                      {fmt(totalIntereses)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>
-                      Socios
-                    </p>
-                    <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
-                      {socios.length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {hayDatos && (
-            <ParticipacionSocios socios={socios} totalIntereses={totalIntereses} onCambio={cargar} />
-          )}
-
-          {socios.length === 0 ? (
-            <EmptyState
-              pose="guia"
-              titulo="No hay socios registrados"
-              hint="Los socios son inversores que aportan capital al negocio y reciben intereses."
-              action={<Link href="/socios/nuevo"><Button>Crear primer socio</Button></Link>}
-            />
-          ) : (
-            <div className="space-y-3">
-              {socios.map((s) => <SocioCard key={s.id} socio={s} />)}
-            </div>
-          )}
-        </>
-      )}
+        sociosTitulo="Cada socio"
+        socios={paraAdaptador.map((s) => cuentaDelSocio(
+          { ...s, porcentaje: porId[s.id]?.porcentaje },
+          fmt,
+        ))}
+        onSocio={(s) => router.push(`/socios/${s.id}`)}
+        onNuevo={() => router.push('/socios/nuevo')}
+      />
     </div>
   )
+}
+
+const BOTON = {
+  height: 46, padding: '0 20px', borderRadius: 14, border: 'none', cursor: 'pointer',
+  background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+  font: 'inherit', fontSize: 15, fontWeight: 700,
 }

@@ -25,7 +25,7 @@ export default function AuthInput({
     <div className="flex flex-col gap-1.5">
       {label && (
         <label htmlFor={id} className="text-[12.5px] font-bold uppercase tracking-[0.06em]"
-          style={{ color: 'var(--color-text-muted)' }}
+          style={{ color: 'var(--cf-ink-3)' }}
         >
           {label}
         </label>
@@ -33,7 +33,7 @@ export default function AuthInput({
       <div className="relative">
         {(iconPath || icon) && (
           <span className="cf-input-icon absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none flex items-center justify-center w-[18px] h-[18px]"
-            style={{ color: 'var(--color-text-secondary)' }}
+            style={{ color: 'var(--cf-ink-2)' }}
           >
             {iconPath ? (
               <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
@@ -54,9 +54,9 @@ export default function AuthInput({
           style={{
             paddingLeft:  (iconPath || icon) ? '40px' : '12px',
             paddingRight: (isPass && showPasswordToggle) ? '40px' : '12px',
-            background:   'var(--color-bg-card)',
-            border:       '1px solid var(--color-border)',
-            color:        'var(--color-text-primary)',
+            background:   'var(--cf-card)',
+            border:       '1px solid var(--cf-border)',
+            color:        'var(--cf-ink)',
           }}
           {...props}
         />
@@ -66,7 +66,7 @@ export default function AuthInput({
             onClick={() => setShowPass((v) => !v)}
             tabIndex={-1}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-[8px] flex items-center justify-center hover:bg-white/5 transition-colors"
-            style={{ color: 'var(--color-text-muted)' }}
+            style={{ color: 'var(--cf-ink-3)' }}
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? (

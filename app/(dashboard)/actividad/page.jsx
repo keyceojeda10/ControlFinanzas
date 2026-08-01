@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { ACCIONES } from '@/lib/activity-log-types'
+import { agruparRepetidos, textoDeFila, paraRevisar, resumenDelDia, quienTrabajo } from '@/lib/adaptadores/actividad'
+import { formatMoney } from '@/lib/i18n'
 import { leerDeCache, guardarEnCache } from '@/lib/offline'
 
 const ICONOS = {
@@ -117,6 +120,8 @@ const FILTROS_COMPLETOS = [
 ]
 
 export default function ActividadPage() {
+  useCabecera({ titulo: 'Actividad', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
+
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [cursor, setCursor] = useState(null)
@@ -206,13 +211,8 @@ export default function ActividadPage() {
 
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-5">
-        <h1 className="text-[25px] font-semibold" style={{ color: 'var(--color-text-primary)' }}>Actividad</h1>
-        <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-          Todo lo que pasa en tu negocio, en orden
-        </p>
-      </div>
+      {/* El titulo y el subtitulo los pone el armazon (`useCabecera` arriba):
+          aqui salian OTRA VEZ, justo debajo de la cabecera que ya los dice. */}
 
       {/* Filtros rapidos — chips */}
       <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-3" style={{ scrollbarWidth: 'none' }}>
@@ -222,8 +222,8 @@ export default function ActividadPage() {
             onClick={() => setFiltroTipo(filtroTipo === f.value ? '' : f.value)}
             className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
             style={filtroTipo === f.value
-              ? { background: 'var(--color-accent)', color: 'var(--color-accent-text)' }
-              : { background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}
+              ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+              : { background: 'var(--cf-fill)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }}
           >
             {f.label}
           </button>
@@ -232,9 +232,9 @@ export default function ActividadPage() {
           onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)}
           className="shrink-0 px-2.5 py-1.5 text-[11px] font-semibold rounded-full transition-all flex items-center gap-1"
           style={{
-            background: hayFiltrosAvanzados ? 'color-mix(in srgb, var(--color-accent) 15%, transparent)' : 'var(--color-bg-hover)',
-            color: hayFiltrosAvanzados ? 'var(--color-accent)' : 'var(--color-text-muted)',
-            border: `1px solid ${hayFiltrosAvanzados ? 'var(--color-accent)' : 'var(--color-border)'}`,
+            background: hayFiltrosAvanzados ? 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' : 'var(--cf-fill)',
+            color: hayFiltrosAvanzados ? 'var(--cf-gold)' : 'var(--cf-ink-3)',
+            border: `1px solid ${hayFiltrosAvanzados ? 'var(--cf-gold)' : 'var(--cf-border)'}`,
           }}
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -242,22 +242,22 @@ export default function ActividadPage() {
           </svg>
           Filtros
           {hayFiltrosAvanzados && (
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-accent)' }} />
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cf-gold)' }} />
           )}
         </button>
       </div>
 
       {/* Filtros avanzados — expandibles */}
       {mostrarFiltrosAvanzados && (
-        <div className="mb-4 p-3 rounded-[12px] space-y-2.5" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)' }}>
+        <div className="mb-4 p-3 rounded-[12px] space-y-2.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
           {!filtroActivoEnChips && (
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Tipo de accion</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Tipo de accion</label>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
                 className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
-                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               >
                 {FILTROS_COMPLETOS.map(f => (
                   <option key={f.value} value={f.value}>{f.label}</option>
@@ -267,12 +267,12 @@ export default function ActividadPage() {
           )}
           {usuarios.length > 0 && (
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Usuario</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Usuario</label>
               <select
                 value={filtroUsuario}
                 onChange={(e) => setFiltroUsuario(e.target.value)}
                 className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none"
-                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               >
                 <option value="">Todos</option>
                 {usuarios.map(u => (
@@ -283,23 +283,23 @@ export default function ActividadPage() {
           )}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Desde</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Desde</label>
               <input
                 type="date"
                 value={desde}
                 onChange={(e) => setDesde(e.target.value)}
                 className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
-                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               />
             </div>
             <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--color-text-muted)' }}>Hasta</label>
+              <label className="text-[10px] font-extrabold uppercase tracking-[.07em] block mb-1" style={{ color: 'var(--cf-ink-3)' }}>Hasta</label>
               <input
                 type="date"
                 value={hasta}
                 onChange={(e) => setHasta(e.target.value)}
                 className="w-full text-[12px] rounded-[8px] px-2.5 py-2 focus:outline-none [color-scheme:dark]"
-                style={{ background: 'var(--color-bg-base)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
               />
             </div>
           </div>
@@ -307,7 +307,7 @@ export default function ActividadPage() {
             <button
               onClick={() => { setFiltroUsuario(''); setDesde(''); setHasta('') }}
               className="text-[11px] font-semibold pt-1"
-              style={{ color: 'var(--color-accent)' }}
+              style={{ color: 'var(--cf-gold)' }}
             >
               Limpiar filtros
             </button>
@@ -320,24 +320,24 @@ export default function ActividadPage() {
         <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="flex items-center gap-3 animate-pulse">
-              <div className="w-8 h-8 rounded-[12px] shrink-0" style={{ background: 'var(--color-bg-hover)' }} />
+              <div className="w-8 h-8 rounded-[12px] shrink-0" style={{ background: 'var(--cf-fill)' }} />
               <div className="flex-1 space-y-1.5">
-                <div className="h-3 rounded" style={{ width: '60%', background: 'var(--color-bg-hover)' }} />
-                <div className="h-2 rounded" style={{ width: '35%', background: 'var(--color-bg-hover)' }} />
+                <div className="h-3 rounded" style={{ width: '60%', background: 'var(--cf-fill)' }} />
+                <div className="h-2 rounded" style={{ width: '35%', background: 'var(--cf-fill)' }} />
               </div>
-              <div className="h-2.5 w-10 rounded" style={{ background: 'var(--color-bg-hover)' }} />
+              <div className="h-2.5 w-10 rounded" style={{ background: 'var(--cf-fill)' }} />
             </div>
           ))}
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--color-bg-hover)' }}>
-            <svg className="w-7 h-7" fill="none" stroke="var(--color-text-muted)" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--cf-fill)' }}>
+            <svg className="w-7 h-7" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </div>
-          <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>No hay actividad</p>
-          <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--cf-ink)' }}>No hay actividad</p>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
             {filtroTipo || hayFiltrosAvanzados ? 'No hay resultados con estos filtros' : 'Las acciones apareceran aqui automaticamente'}
           </p>
         </div>
@@ -347,31 +347,37 @@ export default function ActividadPage() {
             <div key={grupo.key}>
               {/* Separador de dia */}
               <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-[.07em] shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-[10px] font-extrabold uppercase tracking-[.07em] shrink-0" style={{ color: 'var(--cf-ink-3)' }}>
                   {grupo.label}
                 </span>
-                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
               </div>
 
               {/* Timeline de items del dia */}
               <div className="relative pl-5">
                 {/* Linea vertical */}
-                <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: 'var(--color-border)' }} />
+                <div className="absolute left-[11px] top-2 bottom-2 w-px" style={{ background: 'var(--cf-border)' }} />
 
                 <div className="space-y-0.5">
-                  {grupo.items.map((item) => {
-                    const config = ACCIONES[item.accion] || { label: item.accion, color: 'var(--color-text-muted)' }
+                  {/* ── T32-03 · LAS REPETICIONES, EN UNA FILA ──
+                      Trece renglones seguidos diciendo «Carlos Andres registro
+                      pago» no informan de nada: lo que hay que saber es que se
+                      registraron trece, y en cuanto tiempo. La lamina lo pone en
+                      una linea: «Registro 4 pagos en un minuto». */}
+                  {agruparRepetidos(grupo.items).map((fila) => {
+                    const item = fila.items[0]
+                    const config = ACCIONES[item.accion] || { label: item.accion, color: 'var(--cf-ink-3)' }
                     const icon = getIcon(item.accion)
                     const esDestructiva = item.accion?.startsWith('eliminar') || item.accion === 'anular_pago'
 
                     return (
-                      <div key={item.id} className="relative flex items-start gap-2.5 py-2">
+                      <div key={fila.id} className="relative flex items-start gap-2.5 py-2">
                         {/* Dot en la linea */}
                         <div
                           className="absolute -left-5 top-3 w-[9px] h-[9px] rounded-full border-2 shrink-0"
                           style={{
                             borderColor: config.color,
-                            background: 'var(--color-bg-base)',
+                            background: 'var(--cf-surface)',
                           }}
                         />
 
@@ -385,15 +391,23 @@ export default function ActividadPage() {
 
                         {/* Contenido */}
                         <div className="flex-1 min-w-0 pt-0.5">
-                          <p className="text-[12px] leading-snug" style={{ color: 'var(--color-text-primary)' }}>
-                            <span className="font-semibold">{item.user?.nombre || 'Sistema'}</span>
+                          <p className="text-[12px] leading-snug" style={{ color: 'var(--cf-ink)' }}>
+                            <span className="font-semibold">{fila.usuario || 'Sistema'}</span>
                             {' '}
-                            <span style={{ color: 'var(--color-text-muted)' }}>{config.label?.toLowerCase()}</span>
+                            <span style={{ color: fila.cuantos > 1 ? 'var(--cf-ink)' : 'var(--cf-ink-3)', fontWeight: fila.cuantos > 1 ? 600 : 400 }}>
+                              {textoDeFila(fila, config.label)}
+                            </span>
                           </p>
-                          {item.detalle && (
+                          {fila.cuantos > 1 ? (
+                            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                              {fila.monto > 0
+                                ? `Suman ${formatMoney(fila.monto)}`
+                                : `${fila.cuantos} sucesos seguidos`}
+                            </p>
+                          ) : item.detalle && (
                             <p
                               className="text-[11px] mt-0.5 leading-snug"
-                              style={{ color: esDestructiva ? 'var(--color-danger)' : 'var(--color-text-muted)' }}
+                              style={{ color: esDestructiva ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}
                             >
                               {item.detalle}
                             </p>
@@ -401,8 +415,18 @@ export default function ActividadPage() {
                         </div>
 
                         {/* Hora */}
-                        <span className="text-[10px] shrink-0 pt-1 tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
-                          {formatHora(item.createdAt)}
+                        {/* EL MONTO, que no estaba. La lamina le da su columna:
+                            «+$71.000» de una tanda de cuatro pagos dice mas que
+                            los cuatro renglones sueltos. */}
+                        {fila.monto !== 0 && (
+                          <span className="cf-fig text-[12px] shrink-0 pt-0.5" style={{
+                            color: fila.monto > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                          }}>
+                            {fila.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(fila.monto))}
+                          </span>
+                        )}
+                        <span className="text-[10px] shrink-0 pt-1 tabular-nums" style={{ color: 'var(--cf-ink-3)' }}>
+                          {fila.horaTexto}
                         </span>
                       </div>
                     )
@@ -415,7 +439,7 @@ export default function ActividadPage() {
           {/* Loader infinite scroll */}
           {hasMore && (
             <div ref={loaderRef} className="flex justify-center py-4">
-              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--color-border)', borderTopColor: 'var(--color-accent)' }} />
+              <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--cf-border)', borderTopColor: 'var(--cf-gold)' }} />
             </div>
           )}
         </div>
