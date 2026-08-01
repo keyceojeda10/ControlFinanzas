@@ -52,7 +52,7 @@ function Alerta({ tipo = 'success', children }) {
 }
 
 const inputClass =
-  'cf-input w-full h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  'cf-input w-full max-w-[560px] h-11 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
 
 // ══════════════════════════════════════════════════════════════
 // TAB 1 — MI PERFIL
