@@ -440,3 +440,34 @@ mueven plata. Las otras 87 se dejan medidas y NO se tocan en bloque: un cambio
 masivo a mano sobre rutas que escriben es exactamente lo que ya salió mal con
 los imports de React. Conviene un barrido dirigido, ruta por ruta, empezando por
 las que escriben dinero.
+
+### T16-01 · lo que se hizo y lo que NO, con el motivo
+
+Al cotejarla se cayó una suposición mía: **la cuota NO estaba escondida**. La
+banda verde del paso 2 es `fixed` y se recalcula al escribir — eso lo cerró
+T01-06 en una sesión anterior. Repetir la cuota en un panel habría sido poner la
+misma cifra dos veces en la misma pantalla.
+
+Lo que sí faltaba de la lámina —«mueve la cuota, LA GANANCIA y LAS OCHO FILAS
+mientras se decide»— es la segunda mitad:
+
+| Pieza | Estado |
+|---|---|
+| La cuota en vivo | ya estaba (banda `fixed`, T01-06) |
+| **La ganancia en vivo** | **hecho**: le entregas · te devuelve · ganas |
+| **El aviso de cuota insuficiente donde se decide** | **hecho**: estaba al final del paso; ahora está en el panel, mientras se mueve la tasa |
+| Las filas del calendario | **solo en modo Decreciente** |
+
+**Por qué solo en Decreciente:** `calcularPrestamo` únicamente devuelve
+`tablaAmortizacion` para `modo === 'lineal'` (línea 649 de `lib/calculos.js`).
+En los demás modos no existe, y **no se calcula en el cliente**: repartir capital
+e interés por período en el navegador es exactamente cómo se consigue que dos
+pantallas digan cifras distintas del mismo préstamo. Cuando no hay tabla, el
+panel no pinta filas — no inventa ninguna.
+
+**Lo que sigue pendiente de la lámina:** «los tres pasos caben en una pantalla».
+El asistente sigue siendo de tres pasos. Disolverlo es reestructurar tres
+bloques de mil líneas en total sobre la pantalla que crea préstamos, y la
+validación es POR PASO (`puedeAvanzarPaso`, línea 517): con todo visible hay que
+juntarla en una sola comprobación antes de crear, o se podrá enviar con el paso
+de condiciones a medias.
