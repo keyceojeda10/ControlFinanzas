@@ -471,3 +471,49 @@ bloques de mil líneas en total sobre la pantalla que crea préstamos, y la
 validación es POR PASO (`puedeAvanzarPaso`, línea 517): con todo visible hay que
 juntarla en una sola comprobación antes de crear, o se podrá enviar con el paso
 de condiciones a medias.
+
+### C4 y C8 · lo que NO se monta, y por qué (medido)
+
+Tres componentes del banco quedan sin montar **a propósito**. No es trabajo
+pendiente: es la misma regla que salió en T09-01 y T38-02 — *cuando lo dibujado
+tiene menos que lo que ya funciona, manda lo que funciona*.
+
+#### `Arranque` (C4) — el asistente ya está rediseñado
+
+Exporta cuatro pantallas, y **dos ya están superadas** por lo que se montó el 1
+de agosto:
+
+| Export | Estado |
+|---|---|
+| `ArranqueMetodo` | lo sustituye `TraerCartera` (T22-00), montada |
+| `ArranqueCierre` | lo sustituye `ListoParaCobrar`, montada |
+| `ArranquePerfil` | su equivalente vivo es `WizardWelcome` |
+| `ArranqueCapital` | su equivalente vivo es `WizardCapital` |
+
+Y los pasos que hoy se pintan **ya están con los tokens del rediseño**:
+
+```
+WizardWelcome 12 · WizardCapital 16 · WizardPlan 24 · WizardExcel 9
+WizardCartulina 26 · WizardAyuda 1 · WizardProgress 7     tokens viejos: 0
+```
+
+`WizardCapital` (174 líneas) ya tiene todo lo que ofrece `ArranqueCapital`:
+monto, atajos, borrar, continuar **y el enlace de escape**. Cambiarlo sería
+churn visual sobre el flujo que decide si un negocio paga —0 clientes cargados =
+0% de conversión— a cambio de nada.
+
+⚠ Ojo: `WizardPerfil`, `WizardCliente`, `WizardCobrador`, `WizardFeatures`,
+`WizardPrestamo`, `WizardMetodoCarga` y `WizardExito` están **importados o
+presentes y NO se renderizan**. Son archivos muertos; borrarlos es tarea aparte
+y sin riesgo, pero conviene hacerlo mirando cada uno.
+
+#### `ClienteNuevo` y `CrearPrestamo` (C8)
+
+Ya estaba escrito en `ESTADO-REDISENO.md:84` y sigue siendo cierto: la lámina de
+cliente tiene **4 campos** y el formulario real tiene además referencia, notas,
+grupo, tope y portal. Montarla **quita campos**. Igual con `CrearPrestamo` (295
+líneas) contra el formulario real (1.909): montarlo perdería modos de interés,
+mercancía, cuota manual y firma.
+
+Lo que sí se hizo de esas dos láminas es traer lo que **añaden**: el panel de
+ganancia en vivo de T16-01.
