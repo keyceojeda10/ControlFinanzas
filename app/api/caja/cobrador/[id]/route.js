@@ -303,6 +303,20 @@ export async function GET(request, { params }) {
   const gastosPendientesDia = Math.round(
     gastos.filter((g) => g.estado === 'pendiente').reduce((a, g) => a + (g.monto || 0), 0)
   )
+  // ── EN QUE SE COBRO ──────────────────────────────────────────────────────
+  //
+  // Una caja fisica no contiene Nequi. En el cliente de 10 cobradores el 12%
+  // del recaudo entra por transferencia ($35.261.200 en 736 pagos) y la caja lo
+  // contaba como efectivo, asi que el fajo de la noche NO PODIA cuadrar nunca y
+  // el cobrador cargaba con un faltante que no era suyo.
+  //
+  // Lo que no dice nada cuenta como efectivo: es el modo por defecto de un
+  // cobro en la calle, y descartarlo perdia plata del desglose.
+  const cobradoDigital = Math.round(
+    cobros.filter((p) => p.metodoPago === 'transferencia').reduce((a, p) => a + (p.montoPagado || 0), 0)
+  )
+  const cobradoEfectivo = cobradoDia - cobradoDigital
+
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.filter(r => r.capitalHabilitado).reduce((a, r) => a + (r.saldoCapital || 0), 0))
   const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
@@ -395,16 +409,37 @@ export async function GET(request, { params }) {
     b.conIntereses   += p.totalAPagar ?? p.montoPrestado ?? 0
   }
 
-  // Efectivo del día incluye seguros y recargos (son plata física cobrada)
-  efectivoDia += Math.round(segurosDiaTotal) + recargosMontoTotal
+  // ⚠ AQUI SE INVENTABA PLATA.
+  //
+  // Habia un `efectivoDia += segurosDiaTotal + recargosMontoTotal` con el
+  // comentario «son plata fisica cobrada». No lo son, ninguno de los dos:
+  //
+  //   · El RECARGO sube lo que el cliente DEBE. No entra un peso. Por eso el
+  //     libro lo excluye del recaudo a proposito (pagos/route.js:620), y por eso
+  //     tampoco puede aparecer en el fajo de la noche.
+  //   · El SEGURO ya viene dentro del total del prestamo y se cobra repartido en
+  //     las cuotas. Sumarlo el dia de la creacion lo cuenta DOS VECES: una en la
+  //     cuota y otra aqui.
+  //
+  // El subtitulo de la pantalla lo declaraba sin darse cuenta: «Cobrado +
+  // Seguros + Recargos − Prestado − Gastos». Las dos primeras sumas sobran.
 
-  // Dinero en mano depende de cómo la org interpreta el capital en ruta.
-  // En modo capitalEsEfectivo el saldoCapital YA tiene restados los gastos
-  // aprobados, así que solo se restan los que siguen pendientes (evita el
-  // doble descuento que dejaba "dinero en mano" por debajo del "capital en ruta").
+  // ── LO QUE DEBERIA TENER EN LA MANO ──
+  //
+  // SOLO EFECTIVO, y como una cuenta que se puede seguir a mano:
+  // con lo que salio + lo cobrado en billetes − lo prestado − lo gastado.
+  //
+  // Lo que entro por transferencia NO esta aqui: ya esta en la cuenta bancaria,
+  // el cobrador no lo carga encima.
+  const efectivoEnMano = saldoAperturaTotal + cobradoEfectivo - prestadoDia - gastosDia
+
+  // Con `capitalEsEfectivo` el negocio entiende que el cobrador carga TODA la
+  // bolsa de la ruta, no solo lo del dia. Es otra pregunta y por eso es otra
+  // cifra; el saldoCapital ya tiene restados los gastos aprobados, asi que solo
+  // se restan los que siguen pendientes.
   const dineroEnMano = org?.capitalEsEfectivo
     ? capitalRutasTotal - gastosPendientesDia
-    : efectivoDia
+    : efectivoEnMano
 
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
@@ -510,6 +545,7 @@ export async function GET(request, { params }) {
     enCobrado: brutoRenovaciones,
   }
 
+
   // Resumen COMPLETO de lo que presto el cobrador hoy.
   //
   // Antes lo unico que resumia el dia era la caja de renovaciones, que solo se
@@ -544,8 +580,48 @@ export async function GET(request, { params }) {
     tarjetaMuestra: brutoRenovaciones ? 'valor' : 'efectivo',
   }
 
+  // ── LA CUENTA DEL DIA ────────────────────────────────────────────────────
+  //
+  // Las lineas en el orden en que se leen, con su signo, para poder seguirla a
+  // mano. Es LA especificacion que pidio el dueño: «que hasta un niño de
+  // primaria pueda sacar sus cuentas rapidas».
+  //
+  // La regla: TODO lo que suma o resta esta aqui. Si falta una linea, la cuenta
+  // no da y no hay forma de saber por que — que es justo lo que pasaba con las
+  // cinco cifras sueltas en cajitas de la version anterior.
+  //
+  // Cada `id` es el del catalogo de `lib/dinero/procedencia.js`, para que la
+  // pantalla haga el renglon tocable sin traducir nada.
+  const cuenta = [
+    { id: 'apertura', rotulo: 'Con lo que salió', monto: saldoAperturaTotal, signo: 0 },
+    { id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivo, signo: 1 },
+    { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoDia, signo: -1 },
+    { id: 'gastos', rotulo: 'Gastó', monto: gastosDia, signo: -1 },
+  ].filter((l) => l.monto !== 0 || l.id === 'apertura')
+
+  // Lo que hizo hoy: SIEMPRE cantidad y valor juntos. «10 renovaciones» sin el
+  // valor no dice nada, y «$2.400.000 en renovaciones» sin cuantas tampoco.
+  //
+  // Lo que esta en cero NO se filtra aqui: lo decide la pantalla, que es la que
+  // sabe si le sobra sitio. Pero viaja con su cero para que se pueda decir «hoy
+  // no hubo renovaciones» en una linea, en vez de con una tarjeta vacia.
+  const hizo = [
+    { id: 'prestamosNuevos', rotulo: 'Préstamos nuevos', cantidad: prestadoDetalle.nuevos.cantidad, monto: prestadoDetalle.nuevos.efectivo },
+    { id: 'renovaciones', rotulo: 'Renovaciones', cantidad: prestadoDetalle.renovaciones.cantidad, monto: prestadoDetalle.renovaciones.efectivo, nota: prestadoDetalle.renovaciones.absorbido ? `${prestadoDetalle.renovaciones.absorbido} absorbidos del saldo viejo` : null },
+    { id: 'clientesNuevos', rotulo: 'Clientes nuevos', cantidad: clientesNuevos, monto: null },
+    { id: 'recaudoDigital', rotulo: 'Cobrado por transferencia', cantidad: null, monto: cobradoDigital },
+    { id: 'seguros', rotulo: 'Seguros', cantidad: segurosHoy.length, monto: Math.round(segurosDiaTotal) },
+    { id: 'recargos', rotulo: 'Recargos', cantidad: recargosCantidad, monto: recargosMontoTotal },
+    { id: 'gastos', rotulo: 'Gastos', cantidad: gastos.length, monto: gastosDia },
+  ]
+
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
+    // La cuenta del dia y lo que hizo, ya ordenados. La pantalla los pinta, no
+    // los arma: armarlos alli es como se acaba con lineas que no suman.
+    cuenta,
+    cuentaSuma: cuenta.reduce((a, l) => a + l.signo * l.monto, 0),
+    hizo,
     fecha: esRango ? null : fechaBase,
     esRango,
     desde: esRango ? desdeParam : null,

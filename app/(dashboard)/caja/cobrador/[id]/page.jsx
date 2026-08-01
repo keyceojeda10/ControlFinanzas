@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/Badge'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import CajaCobradorDetalle from '@/components/caja/CajaCobradorDetalle'
+import DeDondeSale from '@/components/dinero/DeDondeSale'
 
 const fmtFecha = (d) => {
   if (!d) return '—'
@@ -32,6 +33,9 @@ export default function CajaCobradorPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // Arriba con los demas hooks, ANTES de cualquier return temprano: ponerlos
+  // junto al codigo que los usa costo un React error #310 en la otra caja.
+  const [cifraExplicada, setCifraExplicada] = useState(null)
 
   // ── LA CABECERA VA DESPUÉS DE `data`, NO ANTES ──
   //
@@ -118,7 +122,17 @@ export default function CajaCobradorPage() {
         </div>
       </div>
 
-      <CajaCobradorDetalle data={data} />
+      <CajaCobradorDetalle data={data} onExplicar={setCifraExplicada} />
+
+      {/* Se toca cualquier renglón de la cuenta y dice de dónde sale. La fecha
+          y el cobrador viajan para que las filas sean LAS DE ESA CAJA y no las
+          de la organización entera. */}
+      <DeDondeSale
+        cifra={cifraExplicada}
+        fecha={data?.fecha || undefined}
+        cobradorId={data?.cobrador?.id}
+        onCerrar={() => setCifraExplicada(null)}
+      />
     </div>
   )
 }

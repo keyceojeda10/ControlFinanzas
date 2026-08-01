@@ -1171,7 +1171,7 @@ export default function CajaPage() {
                 <p className="text-sm font-bold text-[var(--cf-ink)]">Caja de {cajaRutaData.cobrador?.nombre}</p>
                 {cajaRutaData.esRango ? null : (cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
               </div>
-              <CajaCobradorDetalle data={cajaRutaData} />
+              <CajaCobradorDetalle data={cajaRutaData} onExplicar={setCifraExplicada} />
               <Link
                 href={`/caja/cobrador/${cajaRutaCobradorId}?${periodo.modo === 'hoy' ? `fecha=${periodo.fecha || fechaSeleccionada}` : `desde=${periodo.desde}&hasta=${periodo.hasta}`}`}
                 className="block text-center text-xs font-semibold text-[var(--cf-gold)] hover:text-[var(--cf-gold-dark)] py-2 rounded-[12px] border border-[var(--cf-border)]"

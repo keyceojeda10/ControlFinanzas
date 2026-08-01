@@ -7,7 +7,6 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
-import CajaResumen from '@/components/caja/CajaResumen'
 import DesgloseMetodoPago from '@/components/caja/DesgloseMetodoPago'
 
 const fmtHora = (d) => {
@@ -27,7 +26,7 @@ const GASTO_ESTADO_COLORS = {
   rechazado: 'var(--cf-red-dark)',
 }
 
-export default function CajaCobradorDetalle({ data }) {
+export default function CajaCobradorDetalle({ data, onExplicar }) {
   const r = data?.resumen || {}
   const movimientos = data?.movimientos || []
   const porRuta = data?.porRuta || []
@@ -41,26 +40,84 @@ export default function CajaCobradorDetalle({ data }) {
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
+  // Lo que hizo, partido en dos: lo que pasó y lo que no.
+  //
+  // El cero NO se descarta —hace falta poder decir «hoy no hubo renovaciones»,
+  // que es informacion— pero deja de ocupar una tarjeta del mismo tamaño que
+  // las que sí traen algo.
+  const hizoTodo = data?.hizo || []
+  const hizoConAlgo = hizoTodo.filter((h) => (h.cantidad ?? 0) > 0 || (h.monto ?? 0) > 0)
+  const hizoEnCero = hizoTodo.filter((h) => !((h.cantidad ?? 0) > 0 || (h.monto ?? 0) > 0))
+
   return (
     <div className="space-y-4">
-      <CajaResumen
-        hero={{
-          label: data?.esRango ? 'Efectivo del período' : (esCapitalEfectivo ? 'Dinero en mano' : 'Efectivo del día'),
-          valor: r.dineroEnMano ?? 0,
-          subtitulo: esCapitalEfectivo ? 'Capital en ruta − Gastos' : 'Cobrado + Seguros + Recargos − Prestado − Gastos',
-          color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
-        }}
-        cards={[
-          ...(r.saldoApertura != null ? [{ label: 'Inicio del dia', valor: r.saldoApertura, color: 'var(--cf-ink-3)' }] : []),
-          ...(esCapitalEfectivo ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--cf-ink-2)' }] : []),
-          { label: 'Cobrado', valor: r.cobradoDia, color: 'var(--cf-green-dark)' },
-          { label: 'Prestado', valor: r.prestadoDia, color: 'var(--cf-gold-dark)', signo: '-' },
-          { label: 'Gastos', valor: r.gastosDia, color: 'var(--cf-red-dark)', signo: '-' },
-          ...((r.segurosDia || 0) > 0 ? [{ label: 'Seguros', valor: r.segurosDia, color: '#6366f1', signo: '+' }] : []),
-          ...((r.recargosCantidad || 0) > 0 ? [{ label: `Recargos (${r.recargosCantidad})`, valor: r.recargosMonto, color: '#f97316', signo: '+' }] : []),
-          ...(!esCapitalEfectivo && (r.capitalRutasTotal || 0) > 0 ? [{ label: 'Capital en ruta', valor: r.capitalRutasTotal, color: 'var(--cf-ink-2)' }] : []),
-        ]}
-      />
+      {/* ── LA CUENTA DEL DÍA ─────────────────────────────────────────────
+          Antes esto eran seis cajitas de colores con un número cada una:
+          «Inicio del día», «Capital en ruta», «Cobrado», «Prestado»,
+          «Gastos», «Seguros». La cuenta que las relacionaba SÍ existía —726 +
+          406 = 1.132— pero el usuario tenía que descubrir solo que se
+          relacionaban. Y encima el hero decía «Dinero en mano» sobre un número
+          que era idéntico a «Capital en ruta», o sea un saldo acumulado, con
+          $245.000 dentro que habían entrado por transferencia y que nadie
+          lleva encima.
+
+          Ahora es una resta, de arriba abajo, con la respuesta al final. Cada
+          renglón se toca y dice de dónde sale. */}
+      <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--cf-ink-3)' }}>
+          La cuenta del día
+        </p>
+
+        <div className="flex flex-col gap-3">
+          {(data?.cuenta || []).map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={onExplicar ? () => onExplicar(l.id) : undefined}
+              className="flex items-baseline justify-between gap-3 w-full text-left"
+              style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: onExplicar ? 'pointer' : 'default' }}
+            >
+              <span className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+                {l.rotulo}
+                {onExplicar && <span aria-hidden className="ml-1 text-[11px]" style={{ color: 'var(--cf-ink-4)' }}>?</span>}
+              </span>
+              <span className="cf-fig text-[15px]" style={{
+                color: l.signo === 1 ? 'var(--cf-green-dark)' : l.signo === -1 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)',
+              }}>
+                {l.signo === 1 ? '+ ' : l.signo === -1 ? '− ' : ''}{formatMoney(l.monto)}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-baseline justify-between gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+            {esCapitalEfectivo ? 'Debería tener en la mano' : 'Le queda en efectivo'}
+          </span>
+          <span className="cf-fig text-[22px] font-bold" style={{
+            color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+          }}>
+            {formatMoney(r.dineroEnMano ?? 0)}
+          </span>
+        </div>
+
+        {/* SOLO EFECTIVO, y se dice. Lo que entró por Nequi ya está en la
+            cuenta bancaria: contarlo aquí le inventa al cobrador un faltante
+            que no es suyo. */}
+        <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+          {esCapitalEfectivo
+            ? 'Toda la bolsa de sus rutas, no solo lo de hoy. Solo efectivo.'
+            : 'Solo efectivo. Lo que entró por transferencia ya está en la cuenta.'}
+        </p>
+
+        {/* El descuadre entre las líneas y la respuesta, si lo hay. Un residuo
+            mudo es una mentira. */}
+        {data?.cuentaSuma != null && !esCapitalEfectivo && data.cuentaSuma !== (r.dineroEnMano ?? 0) && (
+          <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-red-dark)' }}>
+            Las líneas suman {formatMoney(data.cuentaSuma)} y abajo dice {formatMoney(r.dineroEnMano ?? 0)}.
+          </p>
+        )}
+      </div>
 
       {/* Resumen completo de lo prestado en el dia.
           Reemplaza a la vieja caja "Renovaciones de hoy", que solo aparecia si habia
@@ -166,32 +223,60 @@ export default function CajaCobradorDetalle({ data }) {
         </div>
       )}
 
-      {/* KPIs de gestion */}
-      {g && (
+      {/* ── LO QUE HIZO HOY ───────────────────────────────────────────────
+          Antes: cinco recuadros de colores con un número suelto cada uno.
+          «RENOVACIONES 0» ocupaba lo mismo que «CLIENTES ACTIVOS 142», y
+          ninguno decía CUÁNTO. «10 renovaciones» sin el valor no dice nada, y
+          «$2.400.000 en renovaciones» sin cuántas tampoco.
+
+          Ahora: una fila por cosa, con su cantidad Y su valor. Y lo que está
+          en cero NO ocupa una tarjeta — se junta en una línea al pie, porque
+          cinco recuadros diciendo «no pasó nada» son ruido. */}
+      {(hizoConAlgo.length > 0 || hizoEnCero.length > 0) && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Gestión de la ruta</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold) 18%, var(--cf-border))' }}>
-              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Cobros hoy</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--cf-gold)] mt-0.5">{g.clientesCobrados}</p>
-            </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 16%, var(--cf-border))' }}>
-              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Clientes activos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--cf-ink)] mt-0.5">{g.clientesActivos}</p>
-            </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 18%, var(--cf-border))' }}>
-              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Clientes nuevos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--cf-ink-2)] mt-0.5">{g.clientesNuevos}</p>
-            </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-green-dark) 18%, var(--cf-border))' }}>
-              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Prestamos nuevos</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--cf-green-dark)] mt-0.5">{g.prestamosNuevos}</p>
-            </div>
-            <div className="rounded-[10px] p-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 10%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 18%, var(--cf-border))' }}>
-              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Renovaciones</p>
-              <p className="text-lg font-bold font-mono-display text-[var(--cf-gold-dark)] mt-0.5">{g.renovaciones}</p>
-            </div>
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-1">Lo que hizo hoy</h2>
+          <p className="text-[12px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
+            {g?.clientesCobrados ?? 0} de {g?.clientesActivos ?? 0} clientes le pagaron
+          </p>
+
+          <div className="flex flex-col">
+            {hizoConAlgo.map((h) => (
+              <button
+                key={h.id}
+                type="button"
+                onClick={onExplicar ? () => onExplicar(h.id) : undefined}
+                className="flex items-baseline justify-between gap-3 w-full text-left py-2"
+                style={{
+                  background: 'none', border: 'none', borderBottom: '1px solid var(--cf-hairline)',
+                  padding: '8px 0', font: 'inherit', cursor: onExplicar ? 'pointer' : 'default',
+                }}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm" style={{ color: 'var(--cf-ink)' }}>
+                    {h.cantidad != null && (
+                      <span className="cf-fig font-semibold mr-1.5">{h.cantidad}</span>
+                    )}
+                    {h.rotulo}
+                    {onExplicar && <span aria-hidden className="ml-1 text-[11px]" style={{ color: 'var(--cf-ink-4)' }}>?</span>}
+                  </span>
+                  {h.nota && (
+                    <span className="block text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{h.nota}</span>
+                  )}
+                </span>
+                {h.monto != null && (
+                  <span className="cf-fig text-sm flex-none" style={{ color: 'var(--cf-ink)' }}>
+                    {formatMoney(h.monto)}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+
+          {hizoEnCero.length > 0 && (
+            <p className="text-[12px] mt-2.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              Hoy no hubo {hizoEnCero.map((h) => h.rotulo.toLowerCase()).join(', ')}.
+            </p>
+          )}
         </Card>
       )}
 
