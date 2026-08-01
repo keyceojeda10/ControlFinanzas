@@ -22,11 +22,6 @@ const fmtFecha = (d) => {
 }
 
 export default function CajaCobradorPage() {
-  useCabecera({
-    titulo: data?.cobrador?.nombre ? `Caja de ${data.cobrador.nombre}` : 'Caja del cobrador',
-    subtitulo: data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha),
-  })
-
   const { id } = useParams()
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
@@ -37,6 +32,27 @@ export default function CajaCobradorPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // ── LA CABECERA VA DESPUÉS DE `data`, NO ANTES ──
+  //
+  // Estaba en la PRIMERA línea del componente leyendo `data?.cobrador?.nombre`,
+  // y `data` se declara aquí con `const`. Un `const` no se puede leer antes de
+  // su línea, así que la pantalla entera reventaba al pintarse:
+  //
+  //     Cannot access 'data' before initialization
+  //
+  // Minificado eso sale como «Cannot access 'O' before initialization», que es
+  // el error #84 de producción. Y nadie lo veía porque el barrido de rutas SIN
+  // ARGUMENTOS solo recorre las 32 fijas: las de detalle —esta entre ellas— hay
+  // que pedirlas con un id. Se comprobó pasándole uno real.
+  //
+  // Es la misma forma que ya cazamos en `carga-masiva` y en el asistente: una
+  // referencia que sube más arriba que su declaración. No la detecta el build ni
+  // ninguna prueba; sí la detecta `no-use-before-define`, que ahora corre en CI.
+  useCabecera({
+    titulo: data?.cobrador?.nombre ? `Caja de ${data.cobrador.nombre}` : 'Caja del cobrador',
+    subtitulo: data?.esRango ? `${data.desde} a ${data.hasta}` : fmtFecha(data?.fecha),
+  })
 
   const fetchData = useCallback(async () => {
     setLoading(true)

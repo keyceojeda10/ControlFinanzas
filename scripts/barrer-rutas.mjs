@@ -25,7 +25,32 @@
 import { chromium } from 'playwright'
 import fs from 'node:fs'
 
-const [cliente, ruta, cobrador] = process.argv.slice(2)
+// ── LOS IDS SE BUSCAN SOLOS ──
+//
+// Antes habia que pasarlos a mano, y sin ellos el barrido se saltaba TODAS las
+// rutas de detalle. Asi se colo durante semanas un error mortal en
+// `/caja/cobrador/[id]` —«Cannot access 'data' before initialization»— que en
+// produccion salia minificado como «Cannot access 'O'» y reventaba la pantalla
+// entera. El barrido decia «las 32 abren» y era verdad: nunca abrio la 33.
+//
+// Ahora, si no se pasan por argumento, se piden a la base local. Un barrido que
+// solo mira lo facil da una confianza que no ha ganado.
+let [cliente, ruta, cobrador] = process.argv.slice(2)
+if (!cliente || !ruta || !cobrador) {
+  try {
+    const { execFileSync } = await import('node:child_process')
+    const salida = execFileSync(process.execPath, ['scripts/ids-demo.mjs'], { encoding: 'utf8' })
+    // La ultima linea es el JSON: `ids-demo.mjs` puede imprimir avisos antes.
+    const trozos = salida.trim().split(String.fromCharCode(10))
+    const ids = JSON.parse(trozos[trozos.length - 1])
+    cliente = cliente || ids.cliente
+    ruta = ruta || ids.ruta
+    cobrador = cobrador || ids.cobrador
+    console.log(`ids de la base: cliente=${cliente ?? '—'} ruta=${ruta ?? '—'} cobrador=${cobrador ?? '—'}`)
+  } catch {
+    console.log('AVISO: sin ids, las rutas de detalle NO se prueban.')
+  }
+}
 
 const RUTAS = [
   '/dashboard', '/cobros-hoy', '/rutas', '/prestamos', '/clientes', '/caja',
