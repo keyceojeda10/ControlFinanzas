@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useCountry } from '@/hooks/useCountry'
+import { AntesDespues } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 
 const TIPO_LABELS = {
@@ -267,13 +268,26 @@ export default function CapitalTab() {
 
   return (
     <div className="space-y-5">
-      {/* Botón nuevo movimiento */}
-      <div className="flex justify-end">
+      {/* ── T31-01 · LAS DOS ENTRADAS, SEPARADAS ──
+          «Registrar movimiento» es lo de cada semana y va en dorado. «Cuadrar
+          el saldo» —el antiguo «ajuste manual»— sale del desplegable y tiene su
+          propia entrada, en gris y con su explicacion: reescribe el saldo sin
+          que haya entrado ni salido plata, y eso no es un movimiento mas. */}
+      <div className="flex justify-end items-center gap-2">
         <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-[var(--cf-gold)] text-[var(--cf-ink)] text-sm font-semibold rounded-[10px] hover:bg-[var(--cf-gold-dark)] transition-colors"
+          type="button"
+          onClick={() => { setModalTipo('ajuste'); setShowModal(true) }}
+          title="Corrige el saldo cuando el real no coincide con el de la app. Queda registrado quién lo hizo y por qué."
+          className="px-4 py-2 text-sm font-semibold rounded-[10px] transition-colors"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink-2)' }}
         >
-          + Movimiento
+          Cuadrar el saldo
+        </button>
+        <button
+          onClick={() => { setModalTipo('inyeccion'); setShowModal(true) }}
+          className="px-4 py-2 bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-sm font-semibold rounded-[10px] hover:opacity-90 transition-opacity"
+        >
+          Registrar movimiento
         </button>
       </div>
 
@@ -647,18 +661,89 @@ export default function CapitalTab() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] w-full max-w-md p-5">
-            <h2 className="text-lg font-bold text-[var(--cf-ink)] mb-4">Registrar movimiento</h2>
+            <h2 className="text-lg font-bold text-[var(--cf-ink)]">
+              {modalTipo === 'ajuste' ? 'Cuadrar el saldo'
+                : modalTipo === 'capital_inicial' ? 'Registrar capital inicial'
+                : 'Mover plata de tu fondo'}
+            </h2>
+            {/* CUANTO HAY AHORA, arriba del todo. Es contra esa cifra contra la
+                que se decide cuanto meter o sacar. */}
+            <p className="text-xs mb-4 mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+              Tienes {formatMoney(saldoCapital)} listos para prestar
+            </p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Tipo</label>
-                <select value={modalTipo} onChange={(e) => setModalTipo(e.target.value)}
-                  className="w-full bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink)] rounded-[10px] px-3 py-2.5 text-sm">
-                  <option value="capital_inicial">Capital inicial</option>
-                  <option value="inyeccion">Agregar dinero</option>
-                  <option value="retiro">Retirar dinero</option>
-                  <option value="ajuste">Ajuste manual</option>
-                </select>
-              </div>
+              {/* ── T31-01 · DOS TARJETAS, NO UN DESPLEGABLE ──
+                  Era un `<select>` del SISTEMA OPERATIVO con cuatro cosas
+                  distintas dentro. Se veia como Windows, no como la app, y
+                  ponia al mismo nivel «meter plata» —que se hace cada semana—
+                  con «ajuste manual», que reescribe el saldo.
+
+                  «Capital inicial» sale de aqui: se usa UNA VEZ en la vida y ya
+                  tiene su camino en el arranque, en la tarjeta de capital
+                  sugerido de mas arriba.
+
+                  «Ajuste manual» tambien sale, y tiene su propia entrada en la
+                  columna de la derecha, con la advertencia de que queda
+                  registrado. Mezclarlo con «agregar dinero» es como se pierde
+                  la trazabilidad de una caja. */}
+              {modalTipo !== 'capital_inicial' && modalTipo !== 'ajuste' && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { id: 'inyeccion', titulo: 'Meto plata', ayuda: 'Pones dinero tuyo en el fondo para prestar', signo: 'M12 5v14M5 12h14' },
+                    { id: 'retiro',    titulo: 'Saco plata', ayuda: 'Retiras dinero del fondo para ti',           signo: 'M5 12h14' },
+                  ].map((op) => {
+                    const activa = modalTipo === op.id
+                    return (
+                      <button
+                        key={op.id}
+                        type="button"
+                        onClick={() => setModalTipo(op.id)}
+                        className="text-left rounded-[14px] p-3.5 transition-all"
+                        style={{
+                          background: 'var(--cf-card)',
+                          border: activa ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
+                          boxShadow: activa ? '0 0 0 3px var(--cf-gold-focus)' : 'none',
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: 26, height: 26, borderRadius: 999, flex: 'none',
+                            background: activa ? 'var(--cf-gold)' : 'var(--cf-fill)',
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke={activa ? 'var(--cf-gold-ink)' : 'var(--cf-ink-3)'}
+                              strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                              <path d={op.signo} />
+                            </svg>
+                          </span>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>{op.titulo}</span>
+                        </span>
+                        <span style={{ display: 'block', fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+                          {op.ayuda}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Cuando se entra por «cuadrar el saldo», se dice que se esta
+                  haciendo y que queda anotado. No es un movimiento mas. */}
+              {modalTipo === 'ajuste' && (
+                <div className="rounded-[14px] p-3.5" style={{
+                  background: 'var(--cf-gold-tint)',
+                  border: '1px solid var(--cf-gold-border)',
+                }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-text)', margin: 0 }}>
+                    Estás cuadrando el saldo
+                  </p>
+                  <p style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-2)', margin: '4px 0 0' }}>
+                    Esto reescribe el saldo sin que haya entrado ni salido plata.
+                    Queda registrado quién lo hizo y por qué.
+                  </p>
+                </div>
+              )}
               {porRuta.filter(r => r.capitalHabilitado).length > 0 && modalTipo !== 'capital_inicial' && (
                 <div>
                   <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Ruta (opcional)</label>
@@ -691,9 +776,33 @@ export default function CapitalTab() {
                 </div>
               )}
               <div>
-                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Monto</label>
+                <label className="text-xs text-[var(--cf-ink-3)] mb-1 block">Cuánto</label>
                 <MoneyInput value={modalMonto} onChange={(e) => setModalMonto(e.target.value)} placeholder="0" />
               </div>
+
+              {/* ── EN QUE QUEDA EL SALDO ──
+                  El modal no lo decia. Se metian tres millones y habia que
+                  cerrarlo y mirar la cifra de arriba para saber en cuanto
+                  quedaba el fondo — con lo cual el movimiento se hacia a ciegas.
+                  `AntesDespues` es el mismo bloque que usa renovar. */}
+              {(() => {
+                const m = Math.round(Number(String(modalMonto).replace(/[^0-9]/g, '')) || 0)
+                if (!(m > 0)) return null
+                const sube = modalTipo === 'inyeccion' || (modalTipo === 'ajuste' && modalDireccion === 'ingreso')
+                const despues = sube ? saldoCapital + m : saldoCapital - m
+                return (
+                  <AntesDespues
+                    etiqueta="Antes → después"
+                    concepto="Listo para prestar"
+                    antes={formatMoney(saldoCapital)}
+                    despues={formatMoney(despues)}
+                    tono={despues < 0 ? 'empeora' : sube ? 'mejora' : 'neutro'}
+                    resumen={despues < 0
+                      ? `Te quedarías en negativo por ${formatMoney(Math.abs(despues))}.`
+                      : null}
+                  />
+                )
+              })()}
               {/* Absorber: solo al inyectar a una ruta que ya tiene prestamos activos */}
               {modalRutaId && modalTipo === 'inyeccion' && (() => {
                 const r = porRuta.find(x => x.rutaId === modalRutaId)
@@ -724,7 +833,14 @@ export default function CapitalTab() {
                 </button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2.5 bg-[var(--cf-gold)] text-[var(--cf-ink)] font-semibold rounded-[10px] text-sm hover:bg-[var(--cf-gold-dark)] disabled:opacity-50 transition-colors">
-                  {saving ? 'Guardando...' : 'Registrar'}
+                  {saving ? 'Guardando…' : (() => {
+                    const m = Math.round(Number(String(modalMonto).replace(/[^0-9]/g, '')) || 0)
+                    if (!(m > 0)) return 'Registrar'
+                    const verbo = modalTipo === 'ajuste' ? 'Cuadrar en'
+                      : modalTipo === 'retiro' ? 'Sacar'
+                      : 'Meter'
+                    return `${verbo} ${formatMoney(m)}`
+                  })()}
                 </button>
               </div>
             </form>
