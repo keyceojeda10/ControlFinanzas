@@ -142,6 +142,8 @@ export async function PATCH(req) {
     if (!Number.isFinite(t) || t < 0) {
       return NextResponse.json({ error: 'La tasa no puede ser negativa' }, { status: 400 })
     }
+  }
+
   // Estos flags cambian el SIGNIFICADO de cifras de portada — `renovacionesEnCobrado`
   // decide si "Cobrado" y "Prestado" incluyen el saldo absorbido de las renovaciones.
   // Se cambiaban sin dejar rastro: cuando el dueño de la cartera mas grande reporto
