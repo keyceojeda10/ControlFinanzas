@@ -16,6 +16,7 @@ import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
 import HojaInferior from '@/components/cf/HojaInferior'
 import Panel from '@/components/pantallas/Panel'
+import TraerCartera from '@/components/pantallas/TraerCartera'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
 import ListaClientes from '@/components/pantallas/ListaClientes'
 import ListaRutas from '@/components/pantallas/ListaRutas'
@@ -1740,6 +1741,27 @@ export default function Estilo() {
               { id: 'gastos', texto: 'Gastos', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><><path d="M6 4h12v16H6z" /><path d="M9 9h6M9 13h4" /></></svg> },
             ]}
             onAbrir={() => {}} onAtajo={() => {}}
+          />
+        </div>
+
+        {/* ── T22-00 · TRAER LA CARTERA ──
+            La pantalla que decide si un cliente paga: con 0 clientes cargados la
+            conversion es 0%, y el 75% de las organizaciones se atasca en 5 o
+            menos. Va en el banco a 1440 porque es donde se sube una cartera. */}
+        <div id="est-traer-cartera" style={{ ...MARCO, width: '100%', maxWidth: 1180, height: 'auto', padding: 24 }}>
+          <TraerCartera
+            nombre="Marcela"
+            onFoto={() => {}}
+            onWhatsApp={() => {}}
+            onExcel={() => {}}
+            onCero={() => {}}
+            onEscribirnos={() => {}}
+            pasos={[
+              { texto: 'Crear tu cuenta', hecho: true },
+              { texto: 'Cómo prestas', hecho: true },
+              { texto: 'Traer tu cartera', actual: true },
+              { texto: 'Salir a cobrar' },
+            ]}
           />
         </div>
 
