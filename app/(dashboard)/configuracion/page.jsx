@@ -330,7 +330,7 @@ function TabPerfil() {
 // TAB 2 — MI ORGANIZACIÓN
 // ══════════════════════════════════════════════════════════════
 
-function TabOrganizacion({ bloques }) {
+function TabOrganizacion({ bloques, tema, onTema }) {
   // ── UN MEGA-PANEL PARTIDO EN BLOQUES ──
   //
   // `TabOrganizacion` llevaba dentro TRECE tarjetas: los datos del negocio, los
@@ -498,58 +498,36 @@ function TabOrganizacion({ bloques }) {
 
   return (
     <div className="space-y-5">
+      {/* ── «Datos del negocio» → TuNegocio (T09-01) ──
+          Sustituye al formulario anterior, que era el que se veia: `TuNegocio`
+          estaba importado arriba y no se renderizaba en ningun sitio.
+
+          Se conservan los dos datos que el componente NO tenia y el formulario
+          viejo si —`ciudad` y el enlace para cambiar de pais—, porque la lamina
+          enseña la seccion pero no autoriza a perder un campo.
+
+          Los otros tres bloques de `negocio` (dias sin cobro, el de abajo y
+          MetodoPagoAdmin) NO se tocan: siguen igual detras de este. */}
       {quiere('negocio') && (
-      <Card>
-        <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Datos del negocio</p>
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nombre del negocio</label>
-            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Teléfono</label>
-            <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="Ej: 3001234567" className={inputClass} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">País</label>
-            <div
-              className="flex items-center justify-between rounded-[12px] px-3 py-2.5"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 003 12c0-1.605.42-3.113 1.157-4.418" />
-                </svg>
-                <span className="text-sm font-medium text-[var(--cf-ink)] truncate">
-                  {COUNTRIES[country]?.name ?? 'Colombia'}
-                </span>
-              </div>
-              <a
-                href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el país de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] font-medium px-2.5 py-1 rounded-[8px] transition-all whitespace-nowrap"
-                style={{
-                  background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
-                  color: 'var(--cf-gold)',
-                  border: '1px solid color-mix(in srgb, var(--cf-gold) 25%, transparent)',
-                }}
-              >
-                Cambiar país
-              </a>
-            </div>
-            <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug px-0.5">
-              Para cambiar el país asociado a tu cuenta debes contactar a soporte.
-            </p>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Ciudad</label>
-            <input type="text" value={ciudad} onChange={(e) => setCiudad(e.target.value)} placeholder="Ej: Bogotá" className={inputClass} />
-          </div>
-          {msg && <Alerta tipo={msg.tipo}>{msg.texto}</Alerta>}
-          <Button onClick={guardar} loading={guardando} size="sm">Guardar cambios</Button>
-        </div>
-      </Card>
+        <TuNegocio
+          sinTitulo
+          inicial={{
+            nombre, telefono, ciudad,
+            paisNombre: COUNTRIES[country]?.name ?? 'Colombia',
+            ejemploMonto: formatMoney(1500000, country),
+          }}
+          tema={tema}
+          onTema={onTema}
+          enlacePais={`https://wa.me/${WHATSAPP_SOPORTE}?text=${encodeURIComponent(`Hola, soy ${nombre || 'usuario'} y quiero cambiar el pais de mi cuenta. Actualmente esta en ${COUNTRIES[country]?.name ?? 'Colombia'}.`)}`}
+          onGuardar={(org) => {
+            // El componente ya guarda solo; esto solo refresca lo que la
+            // pantalla tiene en la mano, para que el resto de bloques no se
+            // queden con el nombre anterior.
+            if (org?.nombre !== undefined) setNombre(org.nombre ?? '')
+            if (org?.telefono !== undefined) setTelefono(org.telefono ?? '')
+            if (org?.ciudad !== undefined) setCiudad(org.ciudad ?? '')
+          }}
+        />
       )}
 
       {quiere('negocio') && (
@@ -1463,7 +1441,7 @@ function ConfiguracionContent() {
     switch (id) {
       // Los datos que identifican el negocio, y nada mas.
       case 'negocio':
-        return esOwner ? <TabOrganizacion bloques={['negocio']} /> : null
+        return esOwner ? <TabOrganizacion bloques={['negocio']} tema={tema} onTema={cambiarTema} /> : null
 
       // Los valores por defecto del prestamo MAS lo que cambia como se cobra:
       // moratorios, festivos, si la renovacion cuenta como cobrado y si el

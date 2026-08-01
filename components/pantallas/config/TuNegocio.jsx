@@ -22,7 +22,7 @@ const CONTROL = {
   outline: 'none', fontSize: 15, color: 'var(--cf-ink)', width: '100%',
 }
 
-export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onGuardar, enlacePais }) {
+export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onGuardar, enlacePais, sinTitulo }) {
   const [nombre, setNombre] = useState(inicial.nombre ?? '')
   const [telefono, setTelefono] = useState(inicial.telefono ?? '')
   // La lámina no dibuja «Ciudad», pero el formulario anterior SÍ la tenía y la
@@ -31,7 +31,11 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
   // de viajar—. La lámina enseña la sección, no autoriza a perder un campo.
   const [ciudad, setCiudad] = useState(inicial.ciudad ?? '')
   const [estado, setEstado] = useState(null)
-  const primera = useRef(true)
+  const ultimo = useRef(JSON.stringify({
+    nombre: (inicial.nombre ?? '').trim(),
+    telefono: (inicial.telefono ?? '').trim(),
+    ciudad: (inicial.ciudad ?? '').trim(),
+  }))
   const t = useRef(null)
 
   const guardar = useCallback(async (campos) => {
@@ -50,13 +54,23 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
   }, [onGuardar])
 
   useEffect(() => {
-    if (primera.current) { primera.current = false; return }
+    // ── SE COMPARA CONTRA LO ÚLTIMO GUARDADO, NO CONTRA «¿ES LA PRIMERA VEZ?» ──
+    // La guarda anterior (`primera.current`) no aguanta el doble montaje de
+    // React en desarrollo: el primer pase la consume y el segundo ya se cree
+    // un cambio del usuario. Resultado, la pantalla guardaba SOLA al abrirse
+    // —se veía «Guardado» sin tocar nada— y ese endpoint escribe en el registro
+    // de actividad: cada visita a configuración dejaba un cambio que nadie hizo.
+    //
+    // Comparando el contenido no hay forma de que un montaje cuente como edición.
+    const campos = {
+      nombre: nombre.trim(), telefono: telefono.trim(), ciudad: ciudad.trim(),
+    }
+    const firma = JSON.stringify(campos)
+    if (firma === ultimo.current) return
     clearTimeout(t.current)
     // Más espera que en los desplegables: aquí se ESCRIBE, y guardar en cada
     // tecla manda medio nombre del negocio al servidor.
-    t.current = setTimeout(() => guardar({
-      nombre: nombre.trim(), telefono: telefono.trim(), ciudad: ciudad.trim(),
-    }), 800)
+    t.current = setTimeout(() => { ultimo.current = firma; guardar(campos) }, 800)
     return () => clearTimeout(t.current)
   }, [nombre, telefono, ciudad, guardar])
 
@@ -74,10 +88,17 @@ export default function TuNegocio({ inicial = {}, paises = [], tema, onTema, onG
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
     }}>
       <div style={{
-        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-        gap: 14, marginBottom: 15,
+        display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 15,
+        // Sin rótulo la fila solo lleva el estado, y su sitio es la derecha.
+        justifyContent: sinTitulo ? 'flex-end' : 'space-between',
+        // Sin rótulo la fila se queda sin alto propio y el «Guardado» aparecería
+        // pegado al primer campo. Se le reserva el alto del rótulo.
+        minHeight: sinTitulo ? 16 : undefined,
       }}>
-        <span style={{ ...ROTULO, marginBottom: 0 }}>Tu negocio</span>
+        {/* El armazón de configuración YA pinta «Tu negocio» encima de la
+            tarjeta. Repetirlo dentro es el título duplicado que el plan avisaba
+            de comprobar mirando, porque no lo caza ninguna prueba. */}
+        {!sinTitulo && <span style={{ ...ROTULO, marginBottom: 0 }}>Tu negocio</span>}
         <span style={{ fontSize: 12.5, color: 'var(--cf-ink-3)' }}>
           {estado === 'guardando' ? 'Guardando…'
             : estado === 'guardado' ? <span style={{ color: 'var(--cf-green-dark)', fontWeight: 700 }}>Guardado</span>
