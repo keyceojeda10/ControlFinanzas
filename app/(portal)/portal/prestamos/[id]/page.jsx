@@ -45,7 +45,6 @@ export default function PortalPrestamoDetalle() {
   const [prestamo, setPrestamo] = useState(null)
   const [cliente, setCliente] = useState(null)
   const [cargando, setCargando] = useState(true)
-  const [todos, setTodos] = useState(false)
 
   const fmt = useCallback((v) => formatMoney(v, cliente?.country || 'co'), [cliente?.country])
 
@@ -89,7 +88,10 @@ export default function PortalPrestamoDetalle() {
     }, fmt)
     : null
 
-  const visibles = todos ? pagos : pagos.slice(0, 5)
+  // Aqui SIEMPRE cinco: el resto tiene su pantalla. `setTodos` desaparecio con
+  // el desplegable —dejar el estado suelto es la clase de resto que luego nadie
+  // se atreve a tocar porque no sabe si hace algo.
+  const visibles = pagos.slice(0, 5)
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', justifyContent: 'center' }}>
@@ -120,7 +122,13 @@ export default function PortalPrestamoDetalle() {
             fmt,
             (f) => new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
           )}
-          onTodos={!todos && pagos.length > 5 ? () => setTodos(true) : undefined}
+          // Lleva a la pantalla entera, ya no despliega cinco mas aqui. Quien
+          // pulsa esto es porque algo NO LE CUADRA, y entonces necesita la lista
+          // completa con el medio de pago al lado para poder compararla con la
+          // del cobrador.
+          onTodos={pagos.length > 5
+            ? () => router.push(`/portal/prestamos/${params.id}/historial`)
+            : undefined}
         />
       </div>
     </div>
