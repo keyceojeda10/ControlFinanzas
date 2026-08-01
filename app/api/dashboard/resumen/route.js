@@ -362,6 +362,19 @@ export async function GET() {
   // existia y nunca se calculaba— asi que la fila «N prestamos con mas de 30
   // dias de mora» de T02-01 no podia aparecer nunca.
   let mora30plus = 0
+  // ── LOS MONTOS DE CADA ALERTA (T02-07) ──
+  // La lamina pone la PLATA al lado de cada fila —«13 prestamos con mas de 30
+  // dias de mora · $1.84M»— y hasta ahora solo viajaba el conteo. Sin el monto,
+  // las tres filas parecen igual de urgentes: trece prestamos de $50.000 y tres
+  // de $2.000.000 se leen igual, y no lo son.
+  //
+  // Se suman en el MISMO bucle y con `saldoP`, que ya se calcula aqui abajo:
+  // hacerlo aparte obligaria a recorrer la cascada de pagos otra vez.
+  let mora30Monto = 0
+  let sinPagosMonto = 0
+  let sinPagos7 = 0
+  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  let renovarMonto = 0
   // A cuantos clientes toca cobrarles hoy. Ver la nota del `.add()` de abajo.
   const clientesConCobroHoy = new Set()
   const proximosACompletar = []
@@ -418,12 +431,26 @@ export async function GET() {
     }
 
     const saldoP = calcularSaldoPendiente(p)
+    // SIN PAGOS HACE +7 DIAS, contado y sumado EN EL MISMO SITIO.
+    // El conteo venia de un `count()` aparte cuyo filtro no es identico al de
+    // este bucle —aquel no excluye los clavos— asi que el numero y el monto
+    // habrian salido de dos reglas distintas. Eso es exactamente el fallo que
+    // llevo toda la tanda arreglando: dos preguntas parecidas que se contestan
+    // por caminos distintos y se contradicen. Excluir los clavos ademas es mas
+    // correcto: un clavo ya esta dado por perdido, no es un cliente abandonado.
+    if (!p.ultimoPagoAt || new Date(p.ultimoPagoAt) < hace7dias) {
+      sinPagos7 += 1
+      sinPagosMonto += saldoP
+    }
+    // El monto va DESPUES de `saldoP`, por lo mismo que el expuesto de abajo.
+    if (estaEnMora && diasMora > 30) mora30Monto += saldoP
     // El saldo expuesto se suma ACA y no arriba porque `saldoP` se calcula en
     // esta linea: hacerlo antes obligaria a llamar dos veces a
     // calcularSaldoPendiente(), que recorre la cascada de pagos del prestamo.
     if (estaEnMora) saldoEnMora += saldoP
     const pctPagado = p.totalAPagar > 0 ? Math.round(((p.totalPagado || 0) / p.totalAPagar) * 100) : 0
     if (pctPagado >= 80 && pctPagado < 100 && saldoP > 0) {
+      renovarMonto += saldoP
       const cuotasRest = p.cuotaDiaria > 0 ? Math.ceil(saldoP / p.cuotaDiaria) : 0
       proximosACompletar.push({
         prestamoId: p.id,
@@ -617,8 +644,12 @@ export async function GET() {
     },
     alertas: esCobrador ? null : {
       clientesSinRuta: clientesSinRutaCount ?? 0,
-      prestamosSinPagosLargo: clientesSinPagosLargo ?? 0,
+      prestamosSinPagosLargo: sinPagos7,
       mora30plus,
+      // Los tres montos que la lamina pone a la derecha de cada fila.
+      mora30Monto:   Math.round(mora30Monto),
+      sinPagosMonto: Math.round(sinPagosMonto),
+      renovarMonto:  Math.round(renovarMonto),
       // «5 prestamos listos para renovar»: los que van por encima del 80%. Ya se
       // calculaban para otra cosa; T02-01 les da su fila.
       listosParaRenovar: proximosACompletar.length,

@@ -1356,6 +1356,9 @@ function esResumenValido(d) {
 
 export default function DashboardPage() {
   const { session, loading: authLoading, esOwner, puedeCrearClientes, puedeCrearPrestamos } = useAuth()
+  // «Actualizar» de T02-07. Solo sale en 1440: en el telefono se recarga
+  // tirando hacia abajo, y un boton mas en una pantalla estrecha sobra.
+  const [refrescando, setRefrescando] = useState(false)
 
     const [data, setData] = useState(null)
   const [moraData, setMoraData] = useState(undefined)
@@ -1750,6 +1753,42 @@ export default function DashboardPage() {
             porRuta={porRutaHoy(rutasData, session?.user?.country)}
             sinMargen
             onIr={(destino) => { window.location.href = destino }}
+            // ── T02-07 · LAS DOS ACCIONES DE 1440 ──
+            // En el telefono estas dos viven en el FAB y en la pastilla, y ahi
+            // esta bien: la mano llega abajo. Sentado no hay FAB que valga —el
+            // raton esta arriba— y la lamina las pone a la derecha del saludo.
+            // Solo se pintan en `lg`; el componente las esconde en movil.
+            acciones={<>
+              <button
+                type="button"
+                onClick={() => { setRefrescando(true); loadDashboard().finally(() => setRefrescando(false)) }}
+                disabled={refrescando}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8, height: 44,
+                  padding: '0 18px', borderRadius: 14, cursor: refrescando ? 'progress' : 'pointer',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 11-3.2-6.9M21 3v5h-5" />
+                </svg>
+                {refrescando ? 'Actualizando…' : 'Actualizar'}
+              </button>
+              {puedeCrearPrestamos && (
+                <button
+                  type="button"
+                  onClick={() => { window.location.href = '/prestamos/nuevo' }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', height: 44,
+                    padding: '0 20px', borderRadius: 14, border: 0, cursor: 'pointer',
+                    background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                    font: 'inherit', fontSize: 14, fontWeight: 700,
+                  }}
+                >Nuevo préstamo</button>
+              )}
+            </>}
           />
 
           {/* La banda de suscripcion, AQUI. Ver la nota de arriba: antes abria

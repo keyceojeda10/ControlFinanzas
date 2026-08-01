@@ -42,7 +42,10 @@ import { Tarjeta } from '@/components/cf/primitivos'
    Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
    barra va en #3A2900 sobre una pista del mismo tono al 16%: sobre dorado, un
    relleno blanco no se ve. */
-function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer }) {
+function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana }) {
+  // La barra mas alta manda la escala. Con todo en cero no se pinta nada: siete
+  // barras planas no son un grafico, son ruido.
+  const tope = Math.max(...(semana ?? [0]))
   const pie = [
     `${cobrados} cobrado${cobrados === 1 ? '' : 's'}`,
     `${pendientes} pendiente${pendientes === 1 ? '' : 's'}`,
@@ -108,6 +111,33 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
           }}>{t}</span>
         ))}
       </div>
+
+      {/* LOS SIETE DIAS. Solo en 1440: en un telefono el hero ya ocupa media
+          pantalla y siete barras mas lo empujan todo fuera de la primera vista.
+          Sentado sobra sitio, y son las que contestan «¿hoy es un buen dia o es
+          un dia normal?» — que la cifra sola no contesta.
+
+          El de hoy va en carbon y los seis anteriores en dorado quemado: sin esa
+          diferencia la barra de hoy se pierde entre las otras seis. */}
+      {semana && tope > 0 && (
+        <div
+          className="hidden lg:flex"
+          style={{ gap: 8, alignItems: 'flex-end', height: 62, flex: 'none' }}
+          aria-hidden
+        >
+          {semana.map((n, i) => (
+            <span key={i} style={{
+              flex: 1, minWidth: 0,
+              // `flex: none` en el alto y un minimo de 6px: una barra de altura
+              // cero desaparece y el dia parece que no existe, cuando lo que
+              // pasa es que no se cobro nada — que es justo lo que hay que ver.
+              height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
+              borderRadius: '6px 6px 0 0',
+              background: i === semana.length - 1 ? 'var(--cf-gold-ink)' : 'rgba(58,41,0,.16)',
+            }} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -140,7 +170,21 @@ function TarjetaDato({ rotulo, children, pie }) {
    El punto de 7px dice la gravedad sin teñir la fila, y el chevrón dice que se
    entra. Antes llevaba un botón de texto «Ver →»: cuatro botones seguidos son
    cuatro decisiones, y la fila entera ya es el objetivo. */
-function FilaAtencion({ tono = 'atraso', texto, onIr }) {
+// EN CORTO. La lamina escribe «$1.84M», no «$1.840.000»: en una fila que ya
+// lleva una frase larga, la cifra exacta la alarga sin decir nada mas. Del
+// millon para arriba se abrevia; por debajo va entera, porque «$0.84M» no se
+// lee.
+function compacto(n) {
+  const v = Math.round(Number(n) || 0)
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2).replace('.', ',')}M`
+  return `$${v.toLocaleString('es-CO')}`
+}
+
+// `monto` es LA PLATA QUE HAY DETRAS de la alerta, y es lo que decide cual se
+// mira primero. Trece prestamos de $50.000 y tres de $2.000.000 se leian igual;
+// con la cifra al lado dejan de leerse igual. En movil se pinta debajo del
+// texto, que a 390 no caben las dos cosas en una linea.
+function FilaAtencion({ tono = 'atraso', texto, monto, onIr }) {
   const color = tono === 'mora' ? 'var(--cf-red)' : tono === 'ok' ? 'var(--cf-green)' : 'var(--cf-gold)'
   return (
     <button type="button" onClick={onIr} style={{
@@ -155,6 +199,11 @@ function FilaAtencion({ tono = 'atraso', texto, onIr }) {
       <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.35 }}>
         {texto}
       </span>
+      {monto > 0 && (
+        <span className="cf-fig" style={{
+          flex: 'none', fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
+        }}>{compacto(monto)}</span>
+      )}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-chevron)"
         strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
         <path d="M9 5l7 7-7 7" />
@@ -221,6 +270,11 @@ export default function Panel({
   // solo queda mal. De ahí la prueba de lib/__tests__/sin-margen.test.js.
   sinMargen = false,
   onIr,
+  // ── T02-07 · LAS ACCIONES DE LA FILA DEL TITULO ──
+  // En 1440 la lamina pone «Actualizar» y «Nuevo prestamo» A LA DERECHA DEL
+  // SALUDO. En movil no van ahi —para eso esta el FAB— asi que la pagina solo
+  // las pasa cuando hay sitio.
+  acciones,
 }) {
   return (
     <div style={{
@@ -230,28 +284,50 @@ export default function Panel({
 
       {/* 1 · El saludo va en el CUERPO, no en la cabecera. Lo manda T40-00-a:
              «el saludo baja al cuerpo, donde puede ser grande». */}
-      <div style={{ flex: 'none' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 22, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2,
-          color: 'var(--cf-ink)', margin: 0,
-        }}>{saludo}, {nombre}</h1>
-        {fecha && (
-          <span className="cf-num" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 2 }}>
-            {fecha}
-          </span>
+      <div
+        className="flex items-start justify-between gap-4"
+        style={{ flex: 'none' }}
+      >
+        <div style={{ minWidth: 0 }}>
+          {/* MAS GRANDE EN 1440. A 22px sobre 1.400 de ancho el saludo se pierde;
+              la lamina lo pone a 34. */}
+          <h1 className="text-[22px] lg:text-[34px]" style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontWeight: 600, letterSpacing: '-.025em', lineHeight: 1.15,
+            color: 'var(--cf-ink)', margin: 0,
+          }}>{saludo}, {nombre}</h1>
+          {fecha && (
+            <span className="cf-num lg:text-[13px]" style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+              {fecha}
+            </span>
+          )}
+        </div>
+        {acciones && (
+          <div className="hidden lg:flex items-center gap-2" style={{ flex: 'none' }}>{acciones}</div>
         )}
       </div>
 
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:items-start">
+
       {/* 2 · El hero dorado */}
-      {hero && <Hero {...hero} />}
+      {hero && (
+        <div className="lg:col-start-1 lg:row-start-1 flex flex-col">
+          <Hero {...hero} />
+        </div>
+      )}
 
       {/* 3 · Las dos tarjetas blancas.
              `caja` solo la ve el owner: al cobrador el servidor le manda
              `finanzas: null`, y un «$0 para prestar» le enseñaría un negocio
              quebrado. Sin ella, la de mora ocupa el ancho entero. */}
       {(caja || mora) && (
-        <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+        // EN 1440 SE APILAN. Una al lado de otra en una columna de 360 deja dos
+        // cifras de 21px con la mitad del aire que necesitan; la lamina las pone
+        // una encima de la otra, cada una con su tarjeta entera.
+        <div
+          className="lg:col-start-2 lg:row-start-1 lg:flex-col"
+          style={{ display: 'flex', gap: 10, flex: 'none' }}
+        >
           {caja && (
             <TarjetaDato rotulo="En caja" pie="Para prestar ahora">
               <span className="cf-fig" style={{
@@ -283,7 +359,7 @@ export default function Panel({
       {/* 4 · Necesita tu atención. Si no hay nada, no se pinta: una tarjeta
              vacía con el rótulo puesto dice que hay algo que mirar. */}
       {atencion.length > 0 && (
-        <div style={{
+        <div className="lg:col-start-1 lg:row-start-2" style={{
           background: 'var(--cf-card)',
           border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)',
@@ -311,7 +387,7 @@ export default function Panel({
 
       {/* 5 · Por ruta hoy */}
       {porRuta?.rutas?.length > 0 && (
-        <Tarjeta style={{ gap: 13, padding: 16 }}>
+        <Tarjeta className="lg:col-start-2 lg:row-start-2" style={{ gap: 13, padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
@@ -324,8 +400,16 @@ export default function Panel({
             </span>
           </div>
           {porRuta.rutas.map((r) => <FilaRuta key={r.id ?? r.nombre} {...r} />)}
+          {porRuta.nota && (
+            <span style={{
+              fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)',
+              paddingTop: 4,
+            }}>{porRuta.nota}</span>
+          )}
         </Tarjeta>
       )}
+
+      </div>
     </div>
   )
 }
