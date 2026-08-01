@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { interesGanado, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 
@@ -33,6 +34,14 @@ export async function GET(request) {
             modoInteres: true,
             fechaInicio: true,
             cliente: { select: { nombre: true } },
+            // Los dos hacen falta para `interesGanado` y `capitalEnCalle`: sin
+            // la tabla un decreciente reparte plano, y sin los abonos el
+            // capital no baja lo que el prestamista dijo que bajaba.
+            cuotasAmortizacion: {
+              orderBy: { numeroPeriodo: 'asc' },
+              select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
+            },
+            pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
           },
         },
       },
@@ -52,13 +61,13 @@ export async function GET(request) {
       const capitalAportado = s.aportes.filter((a) => a.tipo === 'aporte').reduce((acc, a) => acc + a.monto, 0)
       const utilidadesAsignadas = s.aportes.filter((a) => a.tipo === 'utilidad').reduce((acc, a) => acc + a.monto, 0)
       const prestamosActivos = s.prestamos.filter((p) => p.estado === 'activo')
-      const capitalEnCalle = prestamosActivos.reduce((acc, p) => acc + p.montoPrestado, 0)
+      // Lo que del socio sigue AFUERA, no lo que salio algun dia. Con
+      // `Σ montoPrestado` la tarjeta del socio decia que tenia en la calle plata
+      // que el cliente ya le habia devuelto.
+      const capitalEnCalle = prestamosActivos.reduce((acc, p) => acc + capitalEnCalleDe(p), 0)
 
-      let interesesTotales = 0
-      for (const p of s.prestamos) {
-        const fraccion = p.totalAPagar > 0 ? (p.totalAPagar - p.montoPrestado) / p.totalAPagar : 0
-        interesesTotales += Math.round((p.totalPagado || 0) * fraccion)
-      }
+      // Misma respuesta que la ficha del socio y que el reparto de utilidades.
+      const interesesTotales = s.prestamos.reduce((acc, p) => acc + interesGanado(p), 0)
 
       return {
         id: s.id,

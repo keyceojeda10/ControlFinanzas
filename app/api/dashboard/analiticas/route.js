@@ -1,8 +1,16 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma, Prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
+import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+
+// La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
+// mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
+// los casos borde — y por eso las tres pantallas contestaban distinto a la misma
+// pregunta. Ver lib/dinero/reparto.js.
+const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
+const REPARTO_VIDA = repartoSql({ pago: 'pr', prestamo: 'pr', monto: 'totalPagado' })
 
 // Modos que llevan tabla de amortizacion. En ellos el interes del periodo se
 // calcula sobre el saldo, asi que NO se puede repartir plano sobre cada peso
@@ -102,9 +110,14 @@ export async function GET() {
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         cliente: { select: { id: true, nombre: true } },
+        // `interes` y los abonos a capital NO estaban aqui, y sin ellos
+        // `capitalEnCalle()` calcula de menos sin avisar: los prestamos con
+        // tabla darian interes 0 y los abonos explicitos no bajarian el capital.
+        // Es plata mal contada por un campo que falta en un select.
         cuotasAmortizacion: {
-          select: { numeroPeriodo: true, cuotaTotal: true, pagado: true, fechaEsperada: true },
+          select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, fechaEsperada: true },
         },
+        pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
       },
     }),
     prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
@@ -123,14 +136,19 @@ export async function GET() {
     // Desglose interes/capital por mes, con reparto proporcional sobre TODOS los
     // prestamos. Para los que tienen tabla de amortizacion esa cifra se corrige
     // despues (ver `correccionTablaPorMes`).
+    //
+    // El filtro `pr.totalAPagar > 0` que habia aqui SE FUE a proposito: excluia
+    // 8 pagos por $793.000 de prestamos sin total, y esa plata no aparecia ni
+    // como interes ni como capital. Ahora entran y cuentan enteros como capital
+    // recuperado, que es lo que son.
     prisma.$queryRaw`
       SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
-        SUM(p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar) as interesGanado,
-        SUM(p.montoPagado * pr.montoPrestado / pr.totalAPagar) as capitalRecuperado
+        SUM(${Prisma.raw(REPARTO_PAGO.interes)}) as interesGanado,
+        SUM(${Prisma.raw(REPARTO_PAGO.capital)}) as capitalRecuperado
       FROM Pago p
       JOIN Prestamo pr ON p.prestamoId = pr.id
       WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
-        AND p.tipo NOT IN ('recargo', 'descuento') AND pr.totalAPagar > 0
+        AND p.tipo NOT IN ('recargo', 'descuento')
       GROUP BY mes ORDER BY mes
     `,
     // Rentabilidad por ruta — misma correccion que arriba.
@@ -139,7 +157,7 @@ export async function GET() {
         SUM(pr.montoPrestado) as capitalDesplegado,
         SUM(pr.totalAPagar - pr.totalPagado) as saldoPendiente,
         SUM(pr.totalAPagar - pr.montoPrestado) as interesTotal,
-        SUM(CASE WHEN pr.totalAPagar > 0 THEN pr.totalPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) as interesGanado,
+        SUM(${Prisma.raw(REPARTO_VIDA.interes)}) as interesGanado,
         COUNT(*) as prestamos
       FROM Prestamo pr
       JOIN Cliente c ON pr.clienteId = c.id
@@ -210,7 +228,9 @@ export async function GET() {
   for (const prestamo of prestamosConTabla) {
     const cuotas = prestamo.cuotasAmortizacion
     if (!cuotas.length) continue
-    const fraccionProporcional = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+    // La MISMA fraccion que usa el SQL de arriba. Tiene que salir de la misma
+    // funcion o la correccion resta contra una cifra que nadie calculo asi.
+    const fraccionProporcional = fraccionInteres(prestamo)
     let acumulado = 0
     for (const pago of prestamo.pagos) {
       const segunTabla = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
@@ -280,7 +300,13 @@ export async function GET() {
   const proyeccionMes = promedioDiario * diasHabilesTotalMes
 
   // Capital & ROI
-  const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + Number(p.montoPrestado), 0)
+  //
+  // «Capital en la calle» es LO QUE SIGUE AFUERA, no lo que salio algun dia.
+  // `Σ montoPrestado` era la tercera respuesta a esa pregunta —la mas inflada de
+  // las tres— y encima hace de DENOMINADOR del ROI, asi que lo hundia. Medido
+  // sobre la cartera real: $277.067.809 por la vieja contra $201.988.571 por
+  // esta, un 37,2% de mas en un solo negocio.
+  const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + capitalEnCalleDe(p), 0)
   const porCobrarTotal = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
 

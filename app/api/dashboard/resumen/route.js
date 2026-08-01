@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+import { fraccionInteres } from '@/lib/dinero/reparto'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -523,7 +524,7 @@ export async function GET() {
   const cobrosAyerCount = pagosAyer?._count ?? 0
 
   // Interes ganado este mes (proporcional). Solo owner.
-  // De cada pago, fraccion de interes = (totalAPagar - montoPrestado) / totalAPagar.
+  // La fraccion la define lib/dinero/reparto.js, no esta linea.
   // Funciona para prestamos y mercancia (ahi el "interes" es la ganancia
   // = precio venta - costo). El resto del pago es recuperacion de capital.
   //
@@ -538,21 +539,17 @@ export async function GET() {
     let interesHoy = 0
     let capitalHoy = 0
     for (const pago of (pagosMesDetalle || [])) {
-      const total = pago.prestamo?.totalAPagar ?? 0
-      const capital = pago.prestamo?.montoPrestado ?? 0
       const monto = pago.montoPagado ?? 0
       const esDeHoy = pago.fechaPago && pago.fechaPago >= inicioDiaUTC
-      if (total > 0 && total > capital) {
-        const interesDelPago = monto * ((total - capital) / total)
-        interesMes += interesDelPago
-        if (esDeHoy) {
-          interesHoy += interesDelPago
-          capitalHoy += monto - interesDelPago
-        }
-      } else if (esDeHoy) {
-        // Prestamo sin interes (o mercancia sin ganancia): todo el pago es
-        // recuperacion de capital.
-        capitalHoy += monto
+      // La fraccion sale del modulo, acotada a [0, 1]. La guarda que habia aqui
+      // (`total > capital`) mandaba a capital el pago entero cuando el prestamo
+      // se habia cerrado por debajo de lo prestado, mientras el SQL de
+      // analiticas le metia interes NEGATIVO a la misma pantalla.
+      const interesDelPago = monto * fraccionInteres(pago.prestamo)
+      interesMes += interesDelPago
+      if (esDeHoy) {
+        interesHoy += interesDelPago
+        capitalHoy += monto - interesDelPago
       }
     }
     interesGanadoMes = Math.round(interesMes)

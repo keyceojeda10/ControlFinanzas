@@ -3,6 +3,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { interesGanado, fraccionInteres } from '@/lib/dinero/reparto'
+import { tieneTablaAmortizacion, interesDelPagoSegunTabla } from '@/lib/calculos'
 
 export async function GET(request, { params }) {
   try {
@@ -30,6 +32,12 @@ export async function GET(request, { params }) {
               select: { montoPagado: true, tipo: true, fechaPago: true },
               orderBy: { fechaPago: 'desc' },
             },
+            // Sin la tabla, el interes de un decreciente sale repartido plano y
+            // esta pantalla contradice al reparto de utilidades, que si la lee.
+            cuotasAmortizacion: {
+              orderBy: { numeroPeriodo: 'asc' },
+              select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
+            },
           },
         },
       },
@@ -44,16 +52,31 @@ export async function GET(request, { params }) {
     const totalAportes = aportesArr.reduce((acc, a) => acc + a.monto, 0)
     const totalRetiros = retirosArr.reduce((acc, a) => acc + a.monto, 0)
 
+    // "Cuanto interes ha producido este socio" tenia TRES respuestas: esta, la de
+    // la lista (/api/socios) y la del reparto de utilidades — y solo la ultima
+    // leia la tabla de amortizacion. Las tres salen ya de lib/dinero/reparto.js.
     const prestamosConInteres = socio.prestamos.map((p) => {
-      const pagosNormales = (p.pagos ?? []).filter(pg => !['recargo', 'descuento', 'capital'].includes(pg.tipo))
-      const totalPagadoNormal = pagosNormales.reduce((a, pg) => a + (pg.montoPagado ?? 0), 0)
-      const fraccion = p.totalAPagar > 0 ? (p.totalAPagar - p.montoPrestado) / p.totalAPagar : 0
-      const interesesCobrados = Math.round(totalPagadoNormal * fraccion)
+      const interesesCobrados = interesGanado(p)
+
+      // El desglose por anio se recorre pago a pago. Con tabla, cada pago vale
+      // lo que la tabla le reconozca —el primer periodo pesa mucho mas que el
+      // ultimo—; sin tabla, su parte proporcional.
+      const conTabla = tieneTablaAmortizacion(p)
+      const fraccion = fraccionInteres(p)
+      const enOrden = (p.pagos ?? [])
+        .filter(pg => !['recargo', 'descuento', 'capital'].includes(pg.tipo))
+        .slice()
+        .sort((a, b) => new Date(a.fechaPago) - new Date(b.fechaPago))
 
       const interesesPorAnio = {}
-      for (const pg of pagosNormales) {
+      let acumulado = 0
+      for (const pg of enOrden) {
+        const monto = pg.montoPagado ?? 0
+        const intPago = conTabla
+          ? interesDelPagoSegunTabla(p.cuotasAmortizacion, acumulado, monto)
+          : Math.round(monto * fraccion)
+        acumulado += monto
         const anio = new Date(pg.fechaPago).getFullYear()
-        const intPago = Math.round((pg.montoPagado ?? 0) * fraccion)
         interesesPorAnio[anio] = (interesesPorAnio[anio] || 0) + intPago
       }
 

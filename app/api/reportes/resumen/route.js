@@ -7,6 +7,7 @@ import { calcularDiasMora, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { nivelReportes } from '@/lib/planes'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+import { fraccionInteres } from '@/lib/dinero/reparto'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -122,25 +123,18 @@ export async function GET(req) {
   ])
 
   // ── Interes ganado (proporcional) ───────────────────────────────
-  // De cada pago, la fraccion de interes = (totalAPagar - montoPrestado) / totalAPagar.
-  // El resto es recuperacion de capital. Funciona para prestamos y mercancia
-  // (ahi el "interes" es la ganancia = precio venta - costo). Es una estimacion
-  // cercana, consistente con como la app reparte interes/capital en otros lados.
+  // La fraccion de cada pago la define lib/dinero/reparto.js. Funciona para
+  // prestamos y mercancia (ahi el "interes" es la ganancia = precio venta -
+  // costo). Estaba escrita a mano aqui, con una guarda propia que en los
+  // prestamos cerrados por debajo de lo prestado contestaba distinto que
+  // analiticas sobre los mismos pagos.
   let interesGanado = 0
   let capitalRecuperado = 0
   for (const pago of pagosPeriodo) {
-    const total = pago.prestamo?.totalAPagar ?? 0
-    const capital = pago.prestamo?.montoPrestado ?? 0
     const monto = pago.montoPagado ?? 0
-    if (total > 0 && total > capital) {
-      const fraccionInteres = (total - capital) / total
-      const interesPago = monto * fraccionInteres
-      interesGanado += interesPago
-      capitalRecuperado += monto - interesPago
-    } else {
-      // Sin interes (o datos incompletos): todo cuenta como capital.
-      capitalRecuperado += monto
-    }
+    const interesPago = monto * fraccionInteres(pago.prestamo)
+    interesGanado += interesPago
+    capitalRecuperado += monto - interesPago
   }
 
   const clientesActivos = new Set()

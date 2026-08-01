@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -191,7 +192,7 @@ export async function GET() {
   const saldoPersistido = capital?.saldo ?? 0
   const diferenciaVsPersistido = saldoPersistido - saldoSugerido
 
-  const [carteraAgregada, carteraSinRuta] = await Promise.all([
+  const [carteraAgregada, carteraSinRuta, prestamosVivos] = await Promise.all([
     prisma.prestamo.aggregate({
       where: { organizationId, estado: 'activo', esClavo: false },
       _sum: { totalAPagar: true, totalPagado: true, montoPrestado: true },
@@ -202,9 +203,22 @@ export async function GET() {
       _sum: { totalAPagar: true, totalPagado: true },
       _count: true,
     }),
+    // «Capital en la calle» no se puede agregar en la base: depende de la tabla
+    // de amortizacion de cada prestamo y de sus abonos a capital. Se traen los
+    // activos con lo justo. `Σ montoPrestado` —lo que habia— no contesta esa
+    // pregunta: contesta «cuanto sali a prestar alguna vez», que sobre la
+    // cartera real es un 37,2% mas.
+    prisma.prestamo.findMany({
+      where: { organizationId, estado: 'activo', esClavo: false },
+      select: {
+        montoPrestado: true, totalAPagar: true, totalPagado: true, modoInteres: true,
+        cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
+        pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
+      },
+    }),
   ])
   const carteraTotal = Math.max(0, (carteraAgregada._sum.totalAPagar ?? 0) - (carteraAgregada._sum.totalPagado ?? 0))
-  const capitalEnCalle = carteraAgregada._sum.montoPrestado ?? 0
+  const capitalEnCalle = prestamosVivos.reduce((acc, p) => acc + capitalEnCalleDe(p), 0)
   const prestamosActivosTotal = carteraAgregada._count ?? 0
   const carteraSinRutaTotal = Math.max(0, (carteraSinRuta._sum.totalAPagar ?? 0) - (carteraSinRuta._sum.totalPagado ?? 0))
   const prestamosSinRuta = carteraSinRuta._count ?? 0

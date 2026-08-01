@@ -1,8 +1,13 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma, Prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
+import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+
+// La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
+// y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
+const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
 
 import PDFDocument from 'pdfkit'
 import { PassThrough } from 'stream'
@@ -64,10 +69,8 @@ export async function GET() {
       SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
         SUM(p.montoPagado) as total,
         COUNT(*) as cantidad,
-        SUM(CASE WHEN pr.totalAPagar > 0
-          THEN p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) as interesGanado,
-        SUM(CASE WHEN pr.totalAPagar > 0
-          THEN p.montoPagado * pr.montoPrestado / pr.totalAPagar ELSE 0 END) as capitalRecuperado
+        SUM(${Prisma.raw(REPARTO_PAGO.interes)}) as interesGanado,
+        SUM(${Prisma.raw(REPARTO_PAGO.capital)}) as capitalRecuperado
       FROM Pago p
       JOIN Prestamo pr ON pr.id = p.prestamoId
       WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
@@ -131,7 +134,9 @@ export async function GET() {
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         cliente: { select: { id: true, nombre: true } },
-        cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, pagado: true, fechaEsperada: true } },
+        // `interes` y los abonos a capital hacen falta para `capitalEnCalle()`.
+        cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, fechaEsperada: true } },
+        pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
       },
     }),
     prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
@@ -168,7 +173,9 @@ export async function GET() {
   const promedioDiario = diasHabiles > 0 ? recaudadoMes / diasHabiles : 0
   const proyeccionMes = promedioDiario * diasHabilesTotalMes
 
-  const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + Number(p.montoPrestado), 0)
+  // Lo que sigue AFUERA, no lo que salio algun dia. `Σ montoPrestado` era la
+  // version inflada, y aqui hace ademas de denominador del ROI.
+  const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + capitalEnCalleDe(p), 0)
   const porCobrar = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
   const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
 
@@ -179,7 +186,7 @@ export async function GET() {
   for (const prestamo of prestamosConTabla) {
     const cuotas = prestamo.cuotasAmortizacion
     if (!cuotas.length) continue
-    const fraccionProporcional = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+    const fraccionProporcional = fraccionInteres(prestamo)
     let acumulado = 0
     for (const pago of prestamo.pagos) {
       const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)

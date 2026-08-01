@@ -20,9 +20,15 @@
 
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma, Prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
+import { repartoSql, fraccionInteres } from '@/lib/dinero/reparto'
+
+// De este numero depende cuanta plata se le asigna a cada socio. La formula
+// tiene que ser LA MISMA que la de analiticas y la del PDF, no una copia que se
+// le parezca. Ver lib/dinero/reparto.js.
+const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { porcentajeParticipacion, repartirExacto } from '@/lib/socios'
 
@@ -89,8 +95,7 @@ export async function GET() {
       // Parte de INTERES de cada pago del mes: de cada pago solo cuenta la
       // fraccion que corresponde al interes, no el capital que vuelve.
       prisma.$queryRaw`
-        SELECT SUM(CASE WHEN pr.totalAPagar > 0
-          THEN p.montoPagado * (pr.totalAPagar - pr.montoPrestado) / pr.totalAPagar ELSE 0 END) AS interes
+        SELECT SUM(${Prisma.raw(REPARTO_PAGO.interes)}) AS interes
         FROM Pago p
         JOIN Prestamo pr ON pr.id = p.prestamoId
         WHERE p.organizationId = ${orgId}
@@ -136,7 +141,7 @@ export async function GET() {
     for (const prestamo of prestamosConTabla) {
       const cuotas = prestamo.cuotasAmortizacion
       if (!cuotas.length) continue
-      const fraccion = (prestamo.totalAPagar - prestamo.montoPrestado) / prestamo.totalAPagar
+      const fraccion = fraccionInteres(prestamo)
       let acumulado = 0
       for (const pago of prestamo.pagos) {
         const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
