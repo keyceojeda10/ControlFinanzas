@@ -633,12 +633,12 @@ export async function GET(request, { params }) {
   // sabe si le sobra sitio. Pero viaja con su cero para que se pueda decir «hoy
   // no hubo renovaciones» en una linea, en vez de con una tarjeta vacia.
   const hizo = [
-    { id: 'prestamosNuevos', rotulo: 'Préstamos nuevos', cantidad: prestadoDetalle.nuevos.cantidad, monto: prestadoDetalle.nuevos.efectivo },
-    { id: 'renovaciones', rotulo: 'Renovaciones', cantidad: prestadoDetalle.renovaciones.cantidad, monto: prestadoDetalle.renovaciones.efectivo, nota: prestadoDetalle.renovaciones.absorbido ? `${prestadoDetalle.renovaciones.absorbido} absorbidos del saldo viejo` : null },
-    { id: 'clientesNuevos', rotulo: 'Clientes nuevos', cantidad: clientesNuevos, monto: null },
-    { id: 'seguros', rotulo: 'Seguros', cantidad: segurosHoy.length, monto: Math.round(segurosDiaTotal) },
-    { id: 'recargos', rotulo: 'Recargos', cantidad: recargosCantidad, monto: recargosMontoTotal },
-    { id: 'gastos', rotulo: 'Gastos', cantidad: gastos.length, monto: gastosDia },
+    { id: 'prestamosNuevos', rotulo: 'Préstamos nuevos', uno: 'Préstamo nuevo', cantidad: prestadoDetalle.nuevos.cantidad, monto: prestadoDetalle.nuevos.efectivo },
+    { id: 'renovaciones', rotulo: 'Renovaciones', uno: 'Renovación', cantidad: prestadoDetalle.renovaciones.cantidad, monto: prestadoDetalle.renovaciones.efectivo, absorbido: prestadoDetalle.renovaciones.absorbido || 0 },
+    { id: 'clientesNuevos', rotulo: 'Clientes nuevos', uno: 'Cliente nuevo', cantidad: clientesNuevos, monto: null },
+    { id: 'seguros', rotulo: 'Seguros', uno: 'Seguro', cantidad: segurosHoy.length, monto: Math.round(segurosDiaTotal) },
+    { id: 'recargos', rotulo: 'Recargos', uno: 'Recargo', cantidad: recargosCantidad, monto: recargosMontoTotal },
+    { id: 'gastos', rotulo: 'Gastos', uno: 'Gasto', cantidad: gastos.length, monto: gastosDia },
   ]
 
   return Response.json({

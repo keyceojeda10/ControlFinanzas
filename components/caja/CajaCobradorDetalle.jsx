@@ -273,11 +273,17 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     {h.cantidad != null && (
                       <span className="cf-fig font-semibold mr-1.5">{h.cantidad}</span>
                     )}
-                    {h.rotulo}
+                    {h.cantidad === 1 && h.uno ? h.uno : h.rotulo}
                     {onExplicar && <span aria-hidden className="ml-1 text-[11px]" style={{ color: 'var(--cf-ink-4)' }}>?</span>}
                   </span>
-                  {h.nota && (
-                    <span className="block text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{h.nota}</span>
+                  {/* El formato de moneda es del PAÍS y vive aquí, no en la
+                      API. Componer el texto allí soltó un «369000» pelado en
+                      pantalla — un número sin formato hace que toda la cifra
+                      parezca poco fiable. */}
+                  {h.absorbido > 0 && (
+                    <span className="block text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                      {formatMoney(h.absorbido)} eran saldo que ya le debían
+                    </span>
                   )}
                 </span>
                 {h.monto != null && (
