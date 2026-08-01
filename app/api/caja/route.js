@@ -7,6 +7,7 @@ import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
+import { conciliar, resumirLibro, ALCANCE } from '@/lib/dinero/conciliacion'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -20,6 +21,19 @@ const fmtFechaLocal = (d, country = 'co') => {
     ? new Date(d + `T12:00:00${offsetStr}`)
     : new Date(d)
   return formatFechaCorta(fecha, country)
+}
+
+// Las rutas de un cobrador. Lo que el cobrador entiende por «lo mio» son sus
+// rutas, no solo lo que registro el: el dueño tambien cobra en sus rutas. Es la
+// misma regla que ya usa el detalle del cobrador, y la lista NO usaba — por eso
+// el mismo cobrador el mismo dia daba dos cifras distintas segun donde miraras.
+async function rutaIdsDe(organizationId, cobradorId) {
+  if (!cobradorId) return []
+  const rutas = await prisma.ruta.findMany({
+    where: { organizationId, cobradorId, activo: true },
+    select: { id: true },
+  })
+  return rutas.map((r) => r.id)
 }
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
@@ -532,12 +546,31 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     wherePagos.cobradorId = cobradorId
   }
 
-  const pagosDia = await prisma.pago.findMany({
+  // ── LO COBRADO, Y EN QUE SE COBRO ──
+  //
+  // Se pide agregado y separado por medio en la MISMA consulta. Antes se
+  // traian las filas y se sumaban en JS, que funciona hasta que un negocio
+  // tiene 300 pagos al dia — y el cliente de 10 cobradores los tiene.
+  //
+  // La separacion efectivo/transferencia no es un adorno: una caja fisica no
+  // contiene Nequi. En ese mismo cliente el 12% del recaudo entra por
+  // transferencia ($35.261.200 en 736 pagos) y la caja lo cuenta como efectivo,
+  // asi que el fajo de la noche no puede cuadrar nunca.
+  const pagosPorMedio = await prisma.pago.groupBy({
+    by: ['metodoPago'],
     where: { ...wherePagos, tipo: { notIn: ['recargo', 'descuento'] } },
-    select: { montoPagado: true }
+    _sum: { montoPagado: true },
   })
 
-  const recogida = pagosDia.reduce((a, p) => a + p.montoPagado, 0)
+  let recogida = 0, recogidaEfectivo = 0, recogidaDigital = 0
+  for (const g of pagosPorMedio) {
+    const monto = Math.round(g._sum?.montoPagado || 0)
+    recogida += monto
+    // Lo que no dice nada es efectivo: es el modo por defecto de un cobro en
+    // la calle, y descartarlo perdia plata del desglose.
+    if (g.metodoPago === 'transferencia') recogidaDigital += monto
+    else recogidaEfectivo += monto
+  }
 
   // Calcular esperado real desde las cuotas diarias de préstamos activos
   const esperado = Math.round(await calcularEsperadoReal(organizationId, cobradorId, fechaStr))
@@ -632,9 +665,54 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   // Calcular tasa de recaudo
   const tasaRecaudo = esperado > 0 ? Math.round((recogida / esperado) * 100) : 0
 
+  // ── LA CONCILIACION ──────────────────────────────────────────────────────
+  //
+  // `ajustesOperativosDia` de arriba es el residuo que hace cuadrar la banda
+  // SIEMPRE. Se conserva de momento para no romper la pantalla vieja, pero la
+  // cifra que hay que creer es esta: enfrenta el LIBRO contra las OPERACIONES
+  // y contra el efectivo contado, y cuando no cuadra LO DICE en vez de
+  // absorberlo.
+  //
+  // Corrida contra 60 dias del cliente de 10 cobradores: 53 con descuadre,
+  // 4 cuadrados. La banda vieja decia «cuadra» los 57.
+  const movimientosDia = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      createdAt: { gte: inicio, lt: fin },
+      ...(cobradorId ? { OR: [{ creadoPorId: cobradorId }, { rutaId: { in: await rutaIdsDe(organizationId, cobradorId) } }] } : {}),
+    },
+    select: {
+      tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true,
+      descripcion: true, metodoPago: true, createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  const conciliacion = conciliar({
+    alcance: cobradorId ? ALCANCE.COBRADOR : ALCANCE.ORGANIZACION,
+    libro: resumirLibro(movimientosDia),
+    operaciones: {
+      pagos: recogida,
+      pagosEfectivo: recogidaEfectivo,
+      pagosDigital: recogidaDigital,
+      gastos,
+      // EL EFECTIVO QUE DE VERDAD SALIO, no el valor nominal de los prestamos.
+      // `desembolsadoDia` suma `montoPrestado` crudo, asi que en una renovacion
+      // resta de la caja un dinero que nunca salio: el saldo viejo que se
+      // absorbe. Medido en produccion: 765 renovaciones, $132.339.683 de
+      // inflado. El calculo bueno ya existia en este archivo y la pantalla
+      // usaba el malo.
+      desembolsos: prestadoDetalle.efectivoEntregado,
+    },
+    esperado: { esperado, atrasado: 0 },
+  })
+
   return {
     esperado,
     recogida,
+    recogidaEfectivo,
+    recogidaDigital,
+    conciliacion,
     gastos,
     desembolsadoDia,
     // Dos cifras distintas del dia (se separan en renovaciones):
