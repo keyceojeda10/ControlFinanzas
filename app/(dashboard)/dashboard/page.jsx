@@ -547,9 +547,16 @@ function KpiCard({ label, value, valueRaw, format = 'cop', sub, color = 'var(--c
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative group kpi-lift cf-card-shadow ${hasInfo ? 'cursor-pointer' : ''}`}
+      /* LA RECETA DE LA TARJETA, de 03-COMPONENTES.md · 1 · Tarjeta estandar:
+         fondo plano, borde de 1px, radio 18, relleno 16x19 y SIN SOMBRA — «la
+         separacion la da el borde sobre el fondo hueso». Aqui habia un degradado
+         a 135 grados teñido con el color del KPI, sombra y elevacion al tocar:
+         nada de eso esta en el paquete de diseño, que no menciona un degradado
+         ni una sola vez. El color se queda donde si tiene que estar: en la
+         cifra y en el rotulo, no en la superficie. */
+      className={`rounded-[18px] px-[19px] py-4 relative group ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 45%, var(--cf-card) 75%, color-mix(in srgb, ${color} 6%, var(--cf-card)) 100%)`,
+        background: 'var(--cf-card)',
         border: '1px solid var(--cf-border)',
       }}
     >
@@ -753,11 +760,10 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       role={hasInfo ? 'button' : undefined}
       tabIndex={hasInfo ? 0 : undefined}
       onKeyDown={hasInfo ? (e) => { if (e.key === 'Enter' || e.key === ' ') openInfo(e) } : undefined}
-      className={`rounded-[16px] px-4 py-4 relative kpi-lift ${hasInfo ? 'cursor-pointer' : ''}`}
+      className={`rounded-[18px] px-[19px] py-4 relative ${hasInfo ? 'cursor-pointer' : ''}`}
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 50%, color-mix(in srgb, ${color} 6%, var(--cf-card)) 100%)`,
+        background: 'var(--cf-card)',
         border: '1px solid var(--cf-border)',
-        boxShadow: '0 4px 12px color-mix(in srgb, var(--cf-border) 60%, transparent)',
       }}
     >
       <div className="flex items-center gap-1.5 mb-1">
@@ -840,10 +846,10 @@ function QuickLink({ href, label, desc, color, dataTour }) {
     <Link
       href={href}
       data-tour={dataTour}
-      className="relative overflow-hidden rounded-[16px] px-4 py-4 transition-all duration-200 group flex items-center gap-3 active:scale-[0.98]"
+      className="relative overflow-hidden rounded-[18px] px-[19px] py-4 transition-all duration-200 group flex items-center gap-3 active:scale-[0.98]"
       style={{
-        background: `linear-gradient(145deg, color-mix(in srgb, ${color} 8%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${color} 18%, var(--cf-border))`,
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
       <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-[0.05] pointer-events-none" style={{ background: `radial-gradient(circle, ${color}, transparent 70%)` }} />
@@ -1310,8 +1316,8 @@ function BandaSuscripcion({ dias }) {
 
   const accentColor = urgente ? 'var(--cf-red-dark)' : 'var(--cf-gold)'
   const gradientBg = urgente
-    ? 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card)), color-mix(in srgb, var(--cf-gold-dark) 5%, var(--cf-card)))'
-    : 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 6%, var(--cf-card)), var(--cf-card))'
+    ? 'var(--cf-card)'
+    : 'var(--cf-card)'
 
   return (
     <a href="/configuracion/plan"
@@ -2231,9 +2237,9 @@ export default function DashboardPage() {
           eran 4 bloques y 32 filas, mas de dos pantallas de movil. */}
       {!vistaSimple && !loading && mounted && moraData !== undefined && moraData.total > 0 && (
         <div
-          className="rounded-[16px] px-4 py-4"
+          className="rounded-[18px] px-[19px] py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card)) 0%, var(--cf-card) 50%, var(--cf-card) 100%)',
+            background: 'var(--cf-card)',
             border: '1px solid var(--cf-border)',
             boxShadow: '0 4px 14px color-mix(in srgb, var(--cf-red-dark) 12%, transparent)',
           }}
@@ -2311,9 +2317,9 @@ export default function DashboardPage() {
       )}
       {(loading || !mounted) ? <Skeleton className="h-44" /> : data && data.ultimosPagos.length > 0 && (
         <div
-          className="rounded-[16px] px-4 py-4"
+          className="rounded-[18px] px-[19px] py-4"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card)) 0%, var(--cf-card) 50%, var(--cf-card) 100%)',
+            background: 'var(--cf-card)',
             border: '1px solid var(--cf-border)',
             boxShadow: '0 4px 12px color-mix(in srgb, var(--cf-border) 60%, transparent)',
           }}
