@@ -18,18 +18,36 @@ const PASOS = [
 ]
 
 export default function CargaMasivaPage() {
-  useCabecera({
-    titulo: 'Importar clientes',
-    subtitulo: 'Sube tu Excel o CSV y el sistema detecta las columnas',
-    onVolver: handleVolver,
-  })
-
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
 
   const [paso, setPaso] = useState(1)
   const [validando, setValidando] = useState(false)
   const [error, setError] = useState('')
+
+  // ── ESTO VA ANTES QUE `useCabecera`, NO DESPUES ──
+  // La pantalla no abria: «Cannot access 'handleVolver' before initialization».
+  // El hook estaba en la PRIMERA linea del componente pasandole esta funcion,
+  // que se declaraba noventa lineas mas abajo con `const`. Un `const` no se
+  // puede leer antes de su linea, asi que la pantalla entera caia a la frontera
+  // de error — importar el Excel era imposible.
+  //
+  // Es la misma forma que el «Cannot access 'O'» de produccion: una referencia
+  // que sube mas arriba que su declaracion. Y no la caza ninguna prueba.
+  const handleVolver = () => {
+    if (paso === 1) {
+      router.back()
+    } else {
+      setError('')
+      setPaso((p) => p - 1)
+    }
+  }
+
+  useCabecera({
+    titulo: 'Importar clientes',
+    subtitulo: 'Sube tu Excel o CSV y el sistema detecta las columnas',
+    onVolver: handleVolver,
+  })
 
   const [headersCrudos, setHeadersCrudos] = useState([])
   const [filasCrudas, setFilasCrudas] = useState([])
@@ -109,14 +127,6 @@ export default function CargaMasivaPage() {
     setError('')
   }
 
-  const handleVolver = () => {
-    if (paso === 1) {
-      router.back()
-    } else {
-      setError('')
-      setPaso(p => p - 1)
-    }
-  }
 
   if (authLoading) return null
   if (!esOwner) return null
