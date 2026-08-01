@@ -2142,7 +2142,12 @@ export default function DashboardPage() {
                 </svg>
               </button>
               {equipoOpen && (
-                <div className="divide-y" style={{ borderColor: 'var(--cf-border)', borderTop: '1px solid var(--cf-border)' }}>
+                /* `divide-[color]` EXPLICITO. En Tailwind 4 `divide-y` dibuja el
+                    borde ABAJO y el codigo pintaba `borderTopColor`: el color no
+                    llegaba y el borde caia a `currentColor`, o sea a la tinta.
+                    Eso son las lineas negras duras del historial. Resto de la
+                    migracion de v3 a v4. */
+                <div className="divide-y divide-[var(--cf-hairline)]" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
                   {equipoData.cobradores.map(c => {
                     const inactivo = c.minutesSinceActivity !== null && c.minutesSinceActivity > 120
                     const tiempoStr = c.minutesSinceActivity === null
@@ -2326,7 +2331,10 @@ export default function DashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-2)' }}>Últimos pagos</p>
             <Link href="/prestamos" className="text-[11px] hover:underline" style={{ color: 'var(--cf-gold)' }}>Ver todos →</Link>
           </div>
-          <div className="space-y-0 divide-y" style={{ borderColor: 'var(--cf-border)' }}>
+          {/* Ver la nota del otro `divide-y`: el color va en la clase, no en
+              un `borderTopColor` que Tailwind 4 no usa. `--cf-hairline` es el
+              pelo de separacion entre filas, mas suave que el borde de tarjeta. */}
+          <div className="space-y-0 divide-y divide-[var(--cf-hairline)]">
             {data.ultimosPagos.map((p) => (
               <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderTopColor: 'var(--cf-border)' }}>
                 <div className="min-w-0">
