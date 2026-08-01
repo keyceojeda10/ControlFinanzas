@@ -1449,13 +1449,30 @@ function ConfiguracionContent() {
       case 'comoPrestas':
         return (
           <>
+            {/* ── EL `key` NO ES DECORATIVO ──
+                `ComoPrestas` siembra su estado con `useState(inicial.…)`, que
+                solo mira el valor la PRIMERA vez. El armazón lo monta antes de
+                que llegue `org` —no tiene guarda de carga, al revés que
+                `TabOrganizacion`—, así que se sembraba en vacío y los valores
+                que llegaban después no entraban nunca.
+
+                Se veía como que la configuración no se guardaba: el dueño
+                elegía «Diario · 20% · Cuota fija», se guardaba de verdad en la
+                base, y al recargar la pantalla decía «Sin preferencia». Los
+                préstamos nuevos SÍ salían con esos valores; era la pantalla la
+                que mentía, que es peor que no guardar —lleva a ponerlo otra vez.
+
+                Cambiar la `key` cuando llegan los datos rehace el componente con
+                la semilla correcta. */}
             <ComoPrestas
+              key={org?.id ?? 'cargando'}
               inicial={{
                 frecuenciaDefault: org?.frecuenciaDefault ?? '',
                 tasaDefault: org?.tasaDefault ?? null,
                 modoInteresDefault: org?.modoInteresDefault ?? '',
                 diasSinCobro: org?.diasSinCobro ?? '[]',
               }}
+              pais={org?.country}
             />
             {esOwner && <TabOrganizacion bloques={['prestas']} />}
           </>
