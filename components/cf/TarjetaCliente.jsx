@@ -89,6 +89,9 @@ const MEDIDAS = {
 export default function TarjetaCliente({
   nombre,
   iniciales,
+  // La foto del cliente, si la subió. Va DENTRO del círculo de iniciales, no en
+  // vez de él: ver la nota de abajo, donde se pinta.
+  foto,
   // 'cliente' → con avatar. 'prestamo' → sin él: el dueño ya sabe de quién es,
   // y ese ancho se lo lleva la línea de condiciones, que es más larga.
   variante = 'cliente',
@@ -174,12 +177,39 @@ export default function TarjetaCliente({
         {conAvatar && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            /* `relative` porque la foto va encima en absoluto: sin esto se
+               anclaría a la tarjeta entera y saldría en una esquina. */
+            position: 'relative',
             width: 40, minWidth: 40, height: 40, aspectRatio: '1',
-            borderRadius: 999, flex: 'none',
+            borderRadius: 999, flex: 'none', overflow: 'hidden',
             /* Gris pelado. Ver la nota de arriba: el borde de color sobra. */
             background: 'var(--cf-fill)',
             fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
-          }}>{iniciales}</span>
+          }}>
+            {/* LA FOTO NUNCA SE PINTABA. El cliente la sube, la base la guarda
+                (163 clientes la tienen) y esta tarjeta enseñaba las iniciales
+                igual: no había un solo `<img>` en el archivo. El dueño lo
+                reportó — «la foto de perfil del cliente creado no está trayendo
+                la foto».
+
+                Las iniciales siguen DEBAJO, no como alternativa condicional: si
+                la URL está rota o el servidor no responde, la imagen se cae y lo
+                que queda es el círculo con las iniciales, que es exactamente lo
+                de antes. Un avatar vacío se lee como un cliente sin datos. */}
+            {foto && (
+              <img
+                src={foto}
+                alt=""
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = 'none' }}
+                style={{
+                  position: 'absolute', width: 40, height: 40,
+                  borderRadius: 999, objectFit: 'cover',
+                }}
+              />
+            )}
+            {iniciales}
+          </span>
         )}
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: m.huecoSub }}>

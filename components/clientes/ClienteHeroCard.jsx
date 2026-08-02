@@ -384,9 +384,20 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 {' · '}
                 {pctPagado}% pagado
               </p>
+              {/* ⚠ AQUÍ DECÍA «de $1.800.000» A SECAS, Y CON LA CIFRA GRANDE
+                  ARRIBA SE LEÍA «$1.800.000 de $1.800.000» — que suena a
+                  saldado cuando es un préstamo recién entregado. El dueño lo
+                  reportó: «dentro de la ficha del cliente también pasa la
+                  confusión esta».
+
+                  La cifra grande NO cambia: su rótulo dice «saldo total
+                  pendiente», así que es correcta y es la que se necesita. Lo que
+                  estaba mal era el par: este renglón mide una cosa (lo que
+                  falta) y la barra de debajo la contraria (lo pagado). Ahora los
+                  dos dicen lo PAGADO, que es lo que la barra pinta. */}
               {totalAPagar > 0 && (
                 <p className="text-[11px] font-mono-display" style={{ color: '#8A8E98' }}>
-                  de {formatMoney(totalAPagar)}
+                  {formatMoney(Math.max(0, totalAPagar - saldoTotal))} de {formatMoney(totalAPagar)}
                 </p>
               )}
             </div>
