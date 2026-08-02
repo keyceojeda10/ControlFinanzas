@@ -146,8 +146,23 @@ nunca dos sesiones sobre el mismo directorio.
       PARA; se aplica relanzando con `CF_APLICAR_ESQUEMA=1`. El original quedó
       en `/home/deploy-sistema.sh.antes-de-la-guarda`.
       ⚠ **Y encontró que producción NO está sincronizada**, con un
-      `ALTER TABLE Lead ALTER COLUMN updatedAt DROP DEFAULT` pendiente. Hay que
-      decidir si se aplica en el mismo despliegue o antes, por separado
+      `ALTER TABLE Lead ALTER COLUMN updatedAt DROP DEFAULT` pendiente.
+      **RESUELTO — es seguro y va CON el despliegue:**
+
+      | | |
+      |---|---|
+      | Esquema | `updatedAt DateTime @updatedAt` — lo pone Prisma en código, sin default |
+      | Producción | `NOT NULL DEFAULT current_timestamp(3)` — tiene default de más |
+
+      El riesgo sería que alguien insertara en `Lead` sin pasar por Prisma: hoy
+      el default lo salva, y sin él ese INSERT fallaría por NOT NULL.
+      **Comprobado: no existe ninguno.** Las 17 escrituras van por
+      `prisma.lead.create/upsert/update`, y `@updatedAt` siempre pone el valor.
+      El único SQL crudo con ese nombre es `SELECT COUNT(*) FROM BotLead`, que
+      es otra tabla y de lectura.
+
+      Se aplica con `CF_APLICAR_ESQUEMA=1 bash deploy-sistema.sh`, en el mismo
+      despliegue. No suelto: el sitio de un cambio de esquema es su release.
 - [ ] **#107 · Hidratación React #418** en el panel. Verificado que es previo a
       esta tanda; puede estar emparentado con #84
 
