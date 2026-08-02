@@ -420,9 +420,28 @@ export function CuentaSocio({
             flujo, `gap: 9`, el primario `flex: 1` y el secundario `flex: none`
             con relleno propio. Metidos aquí heredan el relleno del contenido y
             el ancho cuadra solo, sin tocar un píxel a mano. */}
+        {/* ⚠ `width: 'auto'` EN LOS DOS, Y NO ES OPCIONAL.
+            `BOTON_BASE` (primitivos.jsx:270) lleva `width: '100%'` porque estos
+            botones se diseñaron para ir SOLOS en una barra de acción. Puestos
+            lado a lado, el secundario con `flex: none` se quedaba el ancho
+            entero del contenedor y aplastaba al primario hasta partirle el
+            texto en tres renglones, mientras él se salía por la derecha.
+
+            Lo rompí yo al sacarlos de la `<BarraAccion>` y lo vio el dueño en
+            producción: «¿cómo se ve el botón de mandarle su cuenta y pagarle?
+            se dañaron». El build y las 1.908 pruebas pasaron igual.
+
+            `minWidth: 0` en el primario para que su texto pueda encoger dentro
+            del flex, y `nowrap` en el secundario para que «Pagarle» no se parta. */}
         <div style={{ display: 'flex', gap: 9, flex: 'none' }}>
-          <BotonPrimario style={{ flex: 1 }} onClick={onMandarCuenta}>Mandarle su cuenta</BotonPrimario>
-          <BotonSecundario style={{ flex: 'none', padding: '0 15px' }} onClick={onPagar}>Pagarle</BotonSecundario>
+          <BotonPrimario
+            style={{ flex: 1, width: 'auto', minWidth: 0 }}
+            onClick={onMandarCuenta}
+          >Mandarle su cuenta</BotonPrimario>
+          <BotonSecundario
+            style={{ flex: 'none', width: 'auto', padding: '0 15px', whiteSpace: 'nowrap' }}
+            onClick={onPagar}
+          >Pagarle</BotonSecundario>
         </div>
       </div>
     </div>
