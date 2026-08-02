@@ -36,6 +36,7 @@ import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
+import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -148,16 +149,51 @@ export async function POST(request, { params }) {
     return Response.json({ error: 'El tipo de pago no es válido' }, { status: 400 })
   }
 
+  // ── PAGO DE SOLO INTERÉS · DOS CAMINOS QUE NO SE PUEDEN MEZCLAR ───────────
+  //
+  // CON tabla: el interés vencido existe fila por fila. Ya estaba pactado, así
+  // que la deuda NO sube y el monto tiene tope. Es lo de siempre.
+  //
+  // SIN tabla (clásico y compañía, ~93% de la cartera): el interés viene DENTRO
+  // de `totalAPagar` desde el primer día y no hay un saldo de interés aparte que
+  // cobrar. Aquí «me pagó solo el interés» significa otra cosa: el cliente compra
+  // tiempo, el capital no se mueve y el interés es NUEVO. Por eso sube la deuda.
+  // Decidido con el dueño el 2 ago 2026.
+  //
+  // El monto lo pone el prestamista porque es lo que pactó con ESE cliente: el
+  // sistema no lo sabe y adivinarlo sería inventar una cifra en la pantalla que
+  // registra plata.
   if (tipo === 'intereses') {
-    if (!['lineal', 'solo_interes', 'lineal_dinamico'].includes(prestamo.modoInteres)) {
-      return Response.json({ error: 'Pago a intereses solo aplica para préstamos con tabla de amortización' }, { status: 400 })
+    if (elInteresSubeLaDeuda(prestamo)) {
+      // Tope de cordura: un dedazo no puede disparar la deuda. Nadie cobra de
+      // interés más de lo que prestó; si pasa de ahí es un error de tecleo.
+      const tope = Math.round(Number(prestamo.montoPrestado) || 0)
+      if (tope > 0 && montoFinal > tope) {
+        return Response.json({
+          error: `El interés no puede pasar de ${tope}, que es lo que prestaste. Revisa el monto.`,
+        }, { status: 400 })
+      }
+    } else {
+      const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
+      if (interesesPendientes <= 0) {
+        return Response.json({ error: 'No hay intereses pendientes para pagar' }, { status: 400 })
+      }
+      if (montoFinal > interesesPendientes) {
+        montoFinal = interesesPendientes
+      }
     }
-    const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
-    if (interesesPendientes <= 0) {
-      return Response.json({ error: 'No hay intereses pendientes para pagar' }, { status: 400 })
-    }
-    if (montoFinal > interesesPendientes) {
-      montoFinal = interesesPendientes
+  }
+
+  // El pago de solo interés SIN tabla sube `totalAPagar`, o sea sube la deuda de
+  // un cliente real. Eso pide el mismo permiso que el recargo, que es la otra
+  // operación que la sube. NO se le exige nota: el recargo es un ajuste que hay
+  // que justificar, y esto es un cobro corriente —el cliente entregó plata— que
+  // se hace en la puerta y con una mano.
+  if (tipo === 'intereses' && elInteresSubeLaDeuda(prestamo)) {
+    const autorizado = rol === 'owner'
+      || (rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(userId))
+    if (!autorizado) {
+      return Response.json({ error: 'No tienes permiso para registrar pagos de solo interés' }, { status: 403 })
     }
   }
 
@@ -466,6 +502,36 @@ export async function POST(request, { params }) {
 
     // 2c. Recargo: incrementar totalAPagar
     if (tipo === 'recargo') {
+      await tx.prestamo.update({
+        where: { id: prestamoId },
+        data: { totalAPagar: { increment: montoFinal } },
+      })
+      prestamoActualizado = await tx.prestamo.findUnique({
+        where: { id: prestamoId },
+        include: {
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+        },
+      })
+    }
+
+    // 2c-bis. Pago de solo interés SIN tabla: el interés es NUEVO, así que sube
+    // `totalAPagar` — exactamente el mismo movimiento que el recargo de arriba.
+    //
+    // Presté $500.000 a pagar $600.000. Me paga $100.000 de solo interés:
+    //   · `totalPagado` subió $100.000 (lo hizo `refrescarTotalesPrestamo`)
+    //   · `totalAPagar` sube $100.000 aquí
+    //   → el SALDO queda igual, el capital no se movió, y entró plata a la caja.
+    //
+    // Que el saldo no se mueva es el punto: el cliente compró tiempo, no bajó su
+    // deuda. Y por eso tampoco se toca `diasPlazo` ni `cuotaDiaria`: el préstamo
+    // se sigue cobrando hasta saldar, que es como ya funciona. Ver
+    // `plazo_no_es_tope`.
+    //
+    // Va ANTES del cálculo de `nuevoSaldo` de más abajo. Si fuera después, el
+    // saldo se leería con el pago ya restado pero sin el interés sumado, daría
+    // <= 0 en el último cobro y el préstamo se cerraría solo.
+    if (tipo === 'intereses' && elInteresSubeLaDeuda(prestamoActualizado)) {
       await tx.prestamo.update({
         where: { id: prestamoId },
         data: { totalAPagar: { increment: montoFinal } },

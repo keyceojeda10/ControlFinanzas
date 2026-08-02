@@ -30,6 +30,7 @@ import { Recargo, Descuento, PieGestion } from '@/components/pantallas/Gestion'
 import {
   adaptarRecargo, atajosDeRecargo, adaptarDescuento, atajosDeDescuento,
 } from '@/lib/adaptadores/gestion'
+import { elInteresSubeLaDeuda }                            from '@/lib/dinero/modos'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -732,15 +733,30 @@ export default function RegistrarPago({
     return `cuota ${total - pendientes + 1} de ${total}`
   })()
 
-  // «¿A qué se aplica?» — las tres de la lámina. «Interés» SOLO donde existe: en un
-  // préstamo de cuota fija el interés ya viene dentro del total y no hay nada que
-  // pagar por separado, así que el botón llevaría a un ajuste que no aplica.
+  // ¿En ESTE préstamo el pago de interés sube la deuda? Es la pregunta que
+  // separa «paga lo que ya debía» de «compra tiempo», y de ella cuelgan el
+  // texto de la hoja, la proyección del saldo y lo que hace el servidor.
+  //
+  // La hoja siempre recibe el préstamo con `cuotasAmortizacion` cargadas (la
+  // ficha las incluye), así que el guardia de `elInteresSubeLaDeuda` no salta.
+  const subeLaDeuda = elInteresSubeLaDeuda(prestamo ?? {})
+
+  // «¿A qué se aplica?» — las tres de la lámina.
+  //
+  // «Interés» SALE SIEMPRE desde el 2 ago 2026. Antes se escondía en cuota fija
+  // con este argumento: «el interés ya viene dentro del total y no hay nada que
+  // pagar por separado». La premisa era cierta y la conclusión no: en la calle el
+  // cliente SÍ le paga a veces solo el interés, y el modo clásico son 2.886 de los
+  // 5.134 préstamos vivos. El botón faltaba justo donde más se necesitaba.
+  //
+  // Lo que cambia es lo que SIGNIFICA, no si se puede:
+  //   · CON tabla → paga el interés que ya debía. La deuda no sube.
+  //   · SIN tabla → compra tiempo. El capital no baja y el total SUBE.
+  // Lo decide `elInteresSubeLaDeuda`, y la hoja lo explica antes de confirmar.
   const aplicacionesDePago = [
     { id: 'completo', etiqueta: 'Cuota' },
     { id: 'capital', etiqueta: 'Capital' },
-    ...(['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres)
-      ? [{ id: 'intereses', etiqueta: 'Interés' }]
-      : []),
+    { id: 'intereses', etiqueta: 'Interés' },
   ]
 
   // ── Vista formulario ──────────────────────────────────────────
@@ -794,6 +810,23 @@ export default function RegistrarPago({
       }
     }
     if (tipo === 'intereses') {
+      // Las dos cosas que puede significar «me pagó el interés» son DISTINTAS y
+      // el texto tiene que decir cuál es. Con la frase de la tabla en un préstamo
+      // clásico, el prestamista leería «cubre las cuotas vencidas» y lo que de
+      // verdad pasa es que la deuda SUBE. Eso no se puede descubrir después de
+      // guardar.
+      if (subeLaDeuda) {
+        const m = Math.round(Number(monto) || 0)
+        return {
+          titulo: 'Le compra tiempo',
+          texto: 'El capital NO baja: el cliente paga la ganancia y sigue debiendo lo mismo. '
+            + 'El préstamo se alarga y ese interés es tuyo.',
+          // El SALDO no se mueve —sube el total y baja lo pagado, en la misma
+          // cantidad— así que enseñarlo no dice nada. Lo que cambia, y es lo que
+          // el dueño quiere ver, es lo que se gana por la espera.
+          cifra: m > 0 ? { etiqueta: 'Tu ganancia sube', valor: formatMoney(m) } : null,
+        }
+      }
       return {
         titulo: 'Pago a intereses',
         texto: 'Cubre solo los intereses de las cuotas vencidas. El capital queda pendiente pero no genera mora adicional.',
@@ -919,6 +952,9 @@ export default function RegistrarPago({
       {
         monto: montoNum,
         tipo,
+        // Si el interés SUBE la deuda, el saldo no se mueve: entra la plata y a
+        // la vez crece el total. El adaptador no puede saberlo solo.
+        interesSubeLaDeuda: subeLaDeuda,
         metodoPago,
         nombreCuenta: elegido.nombreCuenta,
         // El próximo cobro se pinta TAL CUAL lo dio la API. No se recalcula aquí:
@@ -1230,7 +1266,10 @@ export default function RegistrarPago({
                 { key: 'parcial',  label: 'Parcial',   color: 'var(--cf-gold)' },
                 { key: 'capital',  label: 'A capital',  color: 'var(--cf-ink-2)' },
                 { key: 'recargo',  label: 'Recargo',   color: 'var(--cf-gold-dark)' },
-                ...(['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres) ? [{ key: 'intereses', label: 'Intereses', color: 'var(--cf-gold-dark)' }] : []),
+                // Sale en TODOS los modos, igual que en la hoja nueva. Esta lista
+                // decía tres modos y la de la hoja cuatro: en `saldo` la pastilla
+                // aparecía en un sitio y en el otro no.
+                { key: 'intereses', label: 'Intereses', color: 'var(--cf-gold-dark)' },
                 // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
                 ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--cf-green-dark)' }] : []),
               ].map(({ key, label, color }) => (

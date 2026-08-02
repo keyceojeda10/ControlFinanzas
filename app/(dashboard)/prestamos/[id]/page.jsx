@@ -1845,7 +1845,13 @@ export default function PrestamoDetallePage({ params }) {
             </button>
           )}
 
-          {['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres) && (() => {
+          {/* Este atajo se queda SOLO en los modos con tabla, a propósito. Enseña
+              una cifra exacta —«Pagar intereses · $12.400»— y esa cifra sólo
+              existe cuando hay filas que la digan. En modo clásico el monto lo
+              pacta el prestamista con cada cliente, así que el camino es abrir la
+              hoja y escribirlo; inventar aquí un número sería sugerir un cobro
+              que nadie acordó. El botón «Interés» de la hoja sí sale en todos. */}
+          {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres) && (() => {
             const interesesPend = prestamo?.cuotasAmortizacion
               ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
               ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
