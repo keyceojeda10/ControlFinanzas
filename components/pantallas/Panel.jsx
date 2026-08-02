@@ -61,20 +61,26 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
   ].filter(Boolean)
 
   return (
-    /* EL DORADO NO CRECE CON LA PANTALLA.
-       En un teléfono son 350px de ancho y funciona: la cifra llena el bloque. A
-       1440 el mismo bloque son 1.560px de oro macizo con «$0» solo en la esquina
-       izquierda y medio metro de amarillo vacío a la derecha — la pantalla entera
-       gritando por una cifra que cabe en dos dedos.
+    /* ⚠ AQUÍ HABÍA UN `maxWidth: 720`, Y SOBRABA.
+       Se puso cuando el hero ocupaba el ancho ENTERO de la pantalla: a 1440 eran
+       1.560px de oro macizo con la cifra en una esquina y medio metro de
+       amarillo vacío. El tope tenía sentido entonces.
 
-       Se le pone tope. El resto del ancho lo aprovechan las tarjetas de abajo,
-       que sí tienen dos columnas que llenar. */
+       Pero el hero ya vive dentro de la columna izquierda de la rejilla
+       `[1fr | 360px]`, que a 1440 mide 776px. El tope lo dejaba en 720 y el
+       dorado acababa 56px ANTES que las tarjetas blancas de su propia columna
+       —«Necesita tu atención» y «Tu plata puesta»—, con el borde derecho
+       desalineado. Medido: 720 de ancho, acabando en x=994 cuando la columna
+       llega a 1050.
+
+       Lo acota la rejilla, que es de quien es ese trabajo. Un tope escrito a
+       mano encima de una columna que ya acota es un desajuste esperando. */
     <div style={{
       background: 'var(--cf-gold)',
       borderRadius: 'var(--cf-r-card)',
       padding: '18px 20px',
       display: 'flex', flexDirection: 'column', gap: 14,
-      flex: 'none', maxWidth: 720,
+      flex: 'none',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
