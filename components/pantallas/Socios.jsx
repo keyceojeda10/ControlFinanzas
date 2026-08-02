@@ -289,7 +289,17 @@ export function CuentaSocio({
   // la caja y la pastilla tapaba el último renglón.
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+      {/* Sin relleno LATERAL: lo pone el armazón (`layout.jsx` con su `px-5`).
+          Con `--cf-pad-screen` propio eran 40 por lado y las tarjetas de dentro
+          salían ~17px más estrechas que el resto de la app.
+
+          Se me escapó al quitarle el scroll propio a esta pantalla: quité el
+          `overflowY` y el `height:100%` y dejé el padding. Y mi medidor no lo
+          cazó porque se queda con la caja MÁS ANCHA, que aquí es este
+          contenedor —353, correcto— mientras las tarjetas de dentro medían 319.
+          Lo vio el dueño: «arreglaste el ancho fuera de la tarjeta del socio,
+          pero dentro del socio todavía está angosto». */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px 0 16px' }}>
 
         {/* La relación con un socio es una DEUDA, no un balance. Por eso la
             cifra héroe es "le debes" y va en dorado. */}
