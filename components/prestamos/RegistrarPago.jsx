@@ -764,7 +764,10 @@ export default function RegistrarPago({
     tipo === 'recargo' ? 'Agregar recargo' :
     tipo === 'descuento' ? 'Aplicar descuento' :
     tipo === 'capital' ? 'Abono a capital' :
-    tipo === 'intereses' ? 'Pago a intereses' :
+    // «Pago a intereses» describe el caso CON tabla: paga el interés que ya
+    // debía. Sin tabla el título tiene que decir lo otro, que es lo que de
+    // verdad pasa — el capital no baja y el préstamo se alarga.
+    tipo === 'intereses' ? (subeLaDeuda ? 'Solo interés' : 'Pago a intereses') :
     'Registrar pago'
   const labelBoton =
     tipo === 'recargo' ? 'Aplicar recargo' :
