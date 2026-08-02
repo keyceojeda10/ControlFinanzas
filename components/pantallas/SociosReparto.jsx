@@ -257,8 +257,11 @@ export function ListaSocios({
   sociosTitulo, socios = [], onSocio,
 }) {
   return (
+    // Sin `height: 100%`: acotaba la pantalla al alto de la ventana, que es lo
+    // que obligaba a la caja de dentro a scrollear por su cuenta. Ver la nota
+    // de más abajo. Ahora crece con su contenido y scrollea el documento.
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
       <div style={{
@@ -298,8 +301,19 @@ export function ListaSocios({
         )}
       </div>
 
+      {/* ── AQUÍ SCROLLEA EL DOCUMENTO, NO ESTA CAJA ──
+          Llevaba `flex: 1, minHeight: 0, overflowY: 'auto'`, así que la pantalla
+          scrolleaba por dentro y terminaba donde termina la ventana. El hueco de
+          112px que el armazón reserva para la pastilla se pinta DESPUÉS de
+          `{children}`, o sea FUERA de esta caja: no llegaba, y la pastilla tapaba
+          el último renglón. Es la captura que mandó el dueño, con «Desactivar
+          socio» y «Eliminar socio» cortados debajo del menú.
+
+          Decidido: scrollea el documento. Sin `overflowY` propio el contenido
+          empuja la página, el hueco del armazón queda al final de verdad y la
+          pastilla deja de tapar nada. */}
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 20px 20px',
+        padding: '8px 20px 20px',
         display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {puesto && <LoQuePusieron {...puesto} />}
