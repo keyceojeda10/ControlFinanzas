@@ -1721,6 +1721,15 @@ export default function DashboardPage() {
               weekday: 'long', day: 'numeric', month: 'long',
             })}
             porRuta={porRutaHoy(rutasData, session?.user?.country)}
+            // LA RANURA QUE CIERRA EL HUECO DE 1440. Iba debajo de la rejilla, a
+            // ancho completo, y por eso la columna izquierda se quedaba con un
+            // vacio enorme: un bloque a ancho completo no empieza hasta que
+            // acaba la celda mas alta de la fila. Dentro de la columna, cuadra.
+            bajoAtencion={esOwner && data.finanzas ? (() => {
+              const pd = adaptarPanelDinero(data, rutasData)
+              const dinero = (n) => formatMoney(n, session?.user?.country)
+              return <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
+            })() : null}
             sinMargen
             onIr={(destino) => { window.location.href = destino }}
             // ── T02-07 · LAS DOS ACCIONES DE 1440 ──
@@ -1867,15 +1876,6 @@ export default function DashboardPage() {
 
               Patrimonio no se pierde: sigue bajo «ver todo». Lo que cambia es
               qué se ve sin tener que abrir nada. */}
-          {esOwner && data.finanzas && (() => {
-            // Se calcula junto a su uso: no hay otro punto del componente donde
-            // `data` y `rutasData` estén los dos disponibles sin inventar una
-            // variable a media página.
-            const pd = adaptarPanelDinero(data, rutasData)
-            const dinero = (n) => formatMoney(n, session?.user?.country)
-            return <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
-          })()}
-
           {/* Toggle "Mostrar mas / menos KPIs" — sutil, contextual */}
           <button
             onClick={toggleVista}

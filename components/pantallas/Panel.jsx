@@ -272,6 +272,23 @@ export default function Panel({
   mora,
   atencion = [],
   porRuta,
+  /* LA RANURA QUE CIERRA EL HUECO DE 1440.
+     Va DENTRO de la rejilla, tercera fila de la columna izquierda.
+
+     El dueño marcó en rojo un vacío enorme debajo de «Necesita tu atención». La
+     causa no era el alto de las tarjetas —achiqué «Por ruta hoy» de diez rutas
+     a cinco y el hueco solo se redujo—: es que debajo de esta rejilla van
+     bloques a ANCHO COMPLETO, y uno de esos no empieza hasta que acaba la celda
+     MÁS ALTA de la fila. Con la celda izquierda corta, el hueco es inevitable
+     mientras el contenido siga fuera.
+
+     Por eso entra como ranura y no como un bloque más de la página: tiene que
+     vivir en la columna, no debajo de ella. En móvil da igual —una sola
+     columna— y cae en su sitio por orden.
+
+     ⚠ `lg:items-stretch` NO es la alternativa: iguala los altos estirando una
+     tarjeta de tres renglones hasta 290px de blanco. */
+  bajoAtencion = null,
   // DOBLE MARGEN, y era visible: el hero medía 310px de ancho empezando en x40
   // cuando la lámina lo pone a 350 empezando en x20.
   //
@@ -406,7 +423,13 @@ export default function Panel({
 
       {/* 5 · Por ruta hoy */}
       {porRuta?.rutas?.length > 0 && (
-        <Tarjeta className="lg:col-start-2 lg:row-start-2" style={{ gap: 13, padding: 16 }}>
+        /* ABARCA LAS DOS FILAS de la columna derecha.
+            Con `row-start-2` a secas, la fila 2 medía lo que la tarjeta más
+            alta —esta— y la celda de al lado se quedaba corta con el hueco
+            debajo. Abarcando 2 y 3, la columna izquierda apila «Necesita tu
+            atención» y lo que venga después a su lado, y la rejilla cuadra sin
+            estirar nada. */
+        <Tarjeta className="lg:col-start-2 lg:row-start-2 lg:row-span-2" style={{ gap: 13, padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
@@ -453,6 +476,11 @@ export default function Panel({
             }}>{porRuta.nota}</span>
           )}
         </Tarjeta>
+      )}
+
+      {/* 6 · Lo que llena la columna izquierda. Ver la nota de `bajoAtencion`. */}
+      {bajoAtencion && (
+        <div className="lg:col-start-1 lg:row-start-3">{bajoAtencion}</div>
       )}
 
       </div>
