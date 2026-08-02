@@ -2397,6 +2397,18 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* EL HUECO DEL PIE. Medido en el teléfono, al final del scroll: la
+          pastilla empieza en y=852 y el contenido acababa en 932 — 80px del
+          final quedaban DETRÁS de ella.
+
+          El armazón no pone este relleno a propósito («el contenido pasa por
+          debajo de la pastilla, y cada pantalla reserva su hueco final», dice
+          `layout.jsx`), y el panel no lo reservaba. Son los 62 de la pastilla
+          más los 18 de separación al borde, más aire.
+
+          `lg:hidden` porque sentado no hay pastilla: el hueco sobraría. */}
+      <div className="h-[96px] lg:hidden" style={{ flex: 'none' }} aria-hidden />
     </div>
 
     {/* La columna de Lucas. `hidden xl:block` y no un `display` en línea: una
