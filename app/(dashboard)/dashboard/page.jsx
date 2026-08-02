@@ -1887,7 +1887,16 @@ export default function DashboardPage() {
               la pantalla y empujaba el hero fuera de la primera vista. */}
           {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
 
-          <DashboardAiTip data={data} />
+          {/* ⚠ `DashboardAiTip` SE FUE DE AQUI.
+              Repetia la mora que la tarjeta blanca ya dice tres centimetros mas
+              arriba —«655 de tus 972 clientes estan en mora (67%)»— y la
+              cabecera de `Panel.jsx` fija que «la mora se dice UNA vez».
+              Su otra rama, la del avance del dia, media contra
+              `cuotaDiariaTotal`: la suma de TODAS las cuotas de la cartera, que
+              la propia pantalla rotula «es un techo». La pantalla decia 48% y el
+              consejo 9%, del mismo dia.
+              Lo sustituye la nota de `PanelDinero`, que es determinista y sale
+              de las mismas cifras que el panel enseña. */}
 
 
           {/* El segundo «Necesita tu atención» se va: había DOS bloques con el
