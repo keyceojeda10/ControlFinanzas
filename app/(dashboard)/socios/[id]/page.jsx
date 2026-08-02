@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { useCabecera } from '@/components/armazon/Armazon'
+import HojaInferior from '@/components/cf/HojaInferior'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
@@ -26,6 +28,44 @@ export default function SocioDetallePage() {
   const [error, setError] = useState('')
 
   const [confirmEliminarSocio, setConfirmEliminarSocio] = useState(false)
+  // El menú «⋯» de la cabecera.
+  const [menuAbierto, setMenuAbierto] = useState(false)
+
+  // ── LAS ACCIONES DEL SOCIO VIVEN EN EL «⋯», NO EN UNA TARJETA ────────────
+  // Estaban en una caja redondeada al final de la pantalla, pegada a la de los
+  // botones. El dueño lo fotografió: «hay dos cajas, una cuadrada y una
+  // redondeada, todo eso está pegado ahí, eso está muy mal». Y T45-03 no dibuja
+  // ninguna caja de acciones.
+  //
+  // Decidido: al menú de los tres puntos, que es donde se esperan las acciones
+  // destructivas. NO se borran — desactivar y eliminar un socio son cosas que
+  // el dueño necesita poder hacer.
+  //
+  // ⚠ `useMemo` NO es opcional: `acciones` es JSX y cambia de identidad en cada
+  // render, así que sin memoizar re-registraría la cabecera en bucle. Lo avisa
+  // la propia documentación de `useCabecera`.
+  //
+  // ⚠ Y va AQUÍ, antes de cualquier `return` temprano. Un hook después de un
+  // return condicional es el React #310 que ya tiró una pantalla entera de este
+  // proyecto: se ve bien en el código y revienta al abrirla.
+  const acciones = useMemo(() => (
+    <button
+      type="button"
+      onClick={() => setMenuAbierto(true)}
+      aria-label="Más acciones"
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 34, height: 34, borderRadius: 999, flex: 'none',
+        background: 'transparent', border: 0, cursor: 'pointer',
+        color: 'var(--cf-ink)',
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" />
+      </svg>
+    </button>
+  ), [])
+  useCabecera({ titulo: socio?.nombre || 'Socio', acciones })
   const [loadingEliminar, setLoadingEliminar] = useState(false)
 
   const [modalAporte, setModalAporte] = useState(false)
@@ -473,27 +513,40 @@ export default function SocioDetallePage() {
         </div>
       </Modal>
 
-      {/* Acciones */}
-      <div
-        className="cf-card-shadow rounded-[20px] p-4 space-y-3"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+      {/* La caja «Acciones» que había aquí se fue al «⋯» de la cabecera. Ver la
+          nota junto a `acciones`, arriba. Las dos funciones son las mismas:
+          `toggleActivo` y `confirmEliminarSocio` no se han tocado. */}
+      <HojaInferior
+        abierta={menuAbierto}
+        onCerrar={() => setMenuAbierto(false)}
+        titulo={socio.nombre}
+        subtitulo="¿Qué quieres hacer con este socio?"
       >
-        <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Acciones</h2>
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 8px' }}>
           <button
-            onClick={toggleActivo}
-            className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
+            type="button"
+            onClick={() => { setMenuAbierto(false); toggleActivo() }}
             style={{
-              background: socio.activo ? 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)' : 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
+              display: 'flex', alignItems: 'center', width: '100%',
+              height: 52, padding: '0 16px', borderRadius: 14, border: 0, cursor: 'pointer',
+              fontSize: 15, fontWeight: 600, textAlign: 'left',
+              background: socio.activo
+                ? 'color-mix(in srgb, var(--cf-gold-dark) 10%, transparent)'
+                : 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
               color: socio.activo ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)',
             }}
           >
             {socio.activo ? 'Desactivar socio' : 'Reactivar socio'}
           </button>
+          {/* Eliminar va SEPARADA y en rojo: es la única de las dos que no se
+              puede deshacer. Sigue pasando por su confirmación. */}
           <button
-            onClick={() => setConfirmEliminarSocio(true)}
-            className="flex-1 py-2.5 rounded-[12px] text-[13px] font-medium transition-colors"
+            type="button"
+            onClick={() => { setMenuAbierto(false); setConfirmEliminarSocio(true) }}
             style={{
+              display: 'flex', alignItems: 'center', width: '100%',
+              height: 52, padding: '0 16px', borderRadius: 14, border: 0, cursor: 'pointer',
+              fontSize: 15, fontWeight: 600, textAlign: 'left',
               background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)',
               color: 'var(--cf-red-dark)',
             }}
@@ -501,7 +554,7 @@ export default function SocioDetallePage() {
             Eliminar socio
           </button>
         </div>
-      </div>
+      </HojaInferior>
 
       {/* Confirmar eliminar aporte */}
       <ConfirmModal
