@@ -395,14 +395,26 @@ export function CuentaSocio({
         </Tarjeta>
 
         {children}
-      </div>
 
-      {/* "Mandarle su cuenta" ES LA PRINCIPAL porque el socio no entra a la app.
-          Sin esto tiene que llamar al dueño cada vez que quiere saber cómo va. */}
-      <BarraAccion>
-        <BotonPrimario style={{ flex: 1.8 }} onClick={onMandarCuenta}>Mandarle su cuenta</BotonPrimario>
-        <BotonSecundario style={{ flex: 1 }} onClick={onPagar}>Pagarle</BotonSecundario>
-      </BarraAccion>
+        {/* ── LOS DOS BOTONES, COMO LOS DIBUJA T45-03 ──────────────────────
+            «Mandarle su cuenta» ES LA PRINCIPAL porque el socio no entra a la
+            app: sin esto tiene que llamar al dueño cada vez que quiere saber
+            cómo va.
+
+            ⚠ IBAN DENTRO DE UNA `<BarraAccion>`, FUERA DE ESTE DIV. Eso es lo
+            que el dueño fotografió: una caja cuadrada más ancha que todo lo de
+            arriba, porque al vivir fuera no compartía el relleno del contenido.
+            Dos sistemas de márgenes en la misma pantalla.
+
+            La lámina no dibuja ninguna caja: son dos botones sueltos en el
+            flujo, `gap: 9`, el primario `flex: 1` y el secundario `flex: none`
+            con relleno propio. Metidos aquí heredan el relleno del contenido y
+            el ancho cuadra solo, sin tocar un píxel a mano. */}
+        <div style={{ display: 'flex', gap: 9, flex: 'none' }}>
+          <BotonPrimario style={{ flex: 1 }} onClick={onMandarCuenta}>Mandarle su cuenta</BotonPrimario>
+          <BotonSecundario style={{ flex: 'none', padding: '0 15px' }} onClick={onPagar}>Pagarle</BotonSecundario>
+        </div>
+      </div>
     </div>
   )
 }
