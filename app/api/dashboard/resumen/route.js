@@ -398,7 +398,23 @@ export async function GET() {
   let mora30Monto = 0
   let sinPagosMonto = 0
   let sinPagos7 = 0
-  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  // ⚠ SIETE DÍAS DE CALENDARIO, NO 7×24 HORAS AL MILISEGUNDO.
+  //
+  // Decía `new Date(Date.now() - 7*86400000)`: una ventana que se arrastra con
+  // el reloj. Medido contra producción, en DIECINUEVE MINUTOS la cifra se movió
+  // sola porque los préstamos iban cruzando el borde:
+  //
+  //     PRESTA MIL        499 → 502 préstamos · $133.986.898 → $134.765.898
+  //     PRESTAMOS PEDRO    24 →  25 · $88.386.551 → $91.081.177
+  //
+  // Comprobado en la base: exactamente 3 y 1 préstamos con su último pago
+  // dentro de esos 19 minutos, y $779.000 y $2.694.626. Cuadraba al peso.
+  //
+  // Un dueño que recarga dos veces ve dos números distintos sin que haya pasado
+  // nada, y eso es de lo que más desconfianza genera. Anclado al inicio del día
+  // —el mismo `inicioDiaUTC` que ya usa el resto del archivo— la cifra solo
+  // cambia cuando cambia el día o cuando alguien paga.
+  const hace7dias = new Date(inicioDiaUTC.getTime() - 7 * 24 * 60 * 60 * 1000)
   let renovarMonto = 0
   // A cuantos clientes toca cobrarles hoy. Ver la nota del `.add()` de abajo.
   const clientesConCobroHoy = new Set()
