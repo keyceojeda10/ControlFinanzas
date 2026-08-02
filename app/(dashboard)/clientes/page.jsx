@@ -946,7 +946,13 @@ export default function ClientesPage() {
                 }}>{a?.iniciales}</span>
                 <span className="min-w-0">
                   <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
-                  <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
+                  {/* Cédula y teléfono, NO el `contexto` entero: ése termina en
+                      «· RUTA. #. 5 · creó JHOAN», que es exactamente lo que ya
+                      dicen las dos columnas siguientes. Repetido y encima
+                      cortado a la mitad. */}
+                  <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
+                    {[a?.piezas?.cedula, a?.piezas?.telefono].filter(Boolean).join(' · ') || '—'}
+                  </span>
                 </span>
               </span>
               {/* RUTA y CREÓ, cada una en su columna y con su icono — el mismo
@@ -972,7 +978,13 @@ export default function ClientesPage() {
             <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
               <div className="grid items-center px-4 py-2.5"
                 style={{
-                  gridTemplateColumns: '1.7fr 1fr 1fr 124px 124px 100px 90px 118px', gap: 12,
+                  // RUTA y CREÓ a ancho FIJO en vez de `1fr`: con tres columnas
+                // flexibles sobre 1142px, «Cliente» se quedaba en ~235 y la
+                // última columna se partía en dos renglones, así que cada fila
+                // medía el doble y cabían la mitad de clientes. Las cifras
+                // también van fijas: con `fr` bailan de sitio al pasar de página
+                // y dejan de poder compararse de un vistazo.
+                gridTemplateColumns: '1fr 124px 128px 120px 112px 92px 86px 104px', gap: 12,
                   background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)',
                   paddingLeft: 19,
                 }}>
