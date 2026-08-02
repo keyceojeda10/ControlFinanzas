@@ -266,16 +266,22 @@ export default function BarraLateral({
       {/* ── Zona superior ── */}
       <div style={{ padding: '16px 15px 13px', borderBottom: '1px solid var(--cf-divider)', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img
-            src="/logo-icon.svg"
-            alt="Control Finanzas"
-            width={32}
-            height={32}
-            /* Radio 11 acá, no 10: T39-05 lo dibuja un punto más redondo que el
-               de la cabecera móvil (T40-00-a dice 10). Es un píxel, pero es el
-               que hay escrito. */
-            style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 11 }}
-          />
+          {/* EL LOGO LLEVA AL PANEL. Era un `<img>` suelto: el dueño reportó
+              que «el icono de la aplicación no sirve para volver al inicio».
+              Tocar la marca es lo primero que intenta cualquiera que se siente
+              perdido, y aquí no hacía nada. */}
+          <Link href="/dashboard" aria-label="Ir al panel" style={{ display: 'flex', flex: 'none' }}>
+            <img
+              src="/logo-icon.svg"
+              alt="Control Finanzas"
+              width={32}
+              height={32}
+              /* Radio 11 acá, no 10: T39-05 lo dibuja un punto más redondo que
+                 el de la cabecera móvil (T40-00-a dice 10). Es un píxel, pero
+                 es el que hay escrito. */
+              style={{ flex: 'none', width: 32, minWidth: 32, height: 32, aspectRatio: '1', borderRadius: 11 }}
+            />
+          </Link>
           {/* 13px y line-height 1.12, literal de T39-05. Yo los tenía a 14, y a
               esa altura las dos líneas del logotipo pesan más que el nombre de
               la pantalla activa, que es lo que hay que leer. */}

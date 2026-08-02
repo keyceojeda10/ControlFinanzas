@@ -31,19 +31,27 @@ const ALTO = 56
    la fila se satura. */
 function Glifo() {
   return (
-    // El logo OFICIAL (/logo-icon.svg): tres barras ascendentes sobre el dorado.
-    // Antes iba un "$" dibujado a mano, que no es la marca de nadie.
-    <img
-      src="/logo-icon.svg"
-      alt="Control Finanzas"
-      width={32}
-      height={32}
-      style={{
-        flex: 'none',
-        width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
-        borderRadius: 10,
-      }}
-    />
+    /* EL LOGO LLEVA AL PANEL.
+       Era un `<img>` suelto, sin enlace. El dueño lo reportó: «el icono de la
+       aplicación no sirve para volver al inicio». Y tiene razón: en toda app
+       con la que ha convivido, tocar la marca vuelve al principio — es lo
+       primero que intenta cualquiera cuando se siente perdido.
+
+       El logo OFICIAL (/logo-icon.svg): tres barras ascendentes sobre el
+       dorado. Antes iba un «$» dibujado a mano, que no es la marca de nadie. */
+    <Link href="/dashboard" aria-label="Ir al panel" style={{ display: 'flex', flex: 'none' }}>
+      <img
+        src="/logo-icon.svg"
+        alt="Control Finanzas"
+        width={32}
+        height={32}
+        style={{
+          flex: 'none',
+          width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
+          borderRadius: 10,
+        }}
+      />
+    </Link>
   )
 }
 
