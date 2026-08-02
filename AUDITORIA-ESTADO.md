@@ -198,6 +198,9 @@ una vez; el pie ya no tapa 80px.
 
 - [ ] **G7 · El extracto por ruta** — que cuando la caja no cuadre se pueda bajar
       y encontrar el día
+- [x] ~~El aviso a los clientes~~ — borrador en `AVISO-CAMBIOS-CIFRAS.md`, con
+      las cifras medidas y el texto corto para WhatsApp. Falta ELEGIR a quien se
+      le manda: no todos se mueven igual (de -7% a -27% en capital).
 - [ ] **G8 · Migración y comunicación.** Regla: silencio para lo que el usuario
       no pudo apuntar a mano; **aviso** para caja del día, esperado, capital en la
       calle y ganancia del mes; **consentimiento** para todo lo que cambie lo que
