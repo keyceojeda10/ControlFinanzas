@@ -106,65 +106,22 @@ nunca dos sesiones sobre el mismo directorio.
 - [x] ~~`HeroCard`~~ — borrado, 111 líneas muertas
 - [ ] «Listos para renovar»: 20 tarjetas seguidas. El dueño quiere que se quede
       arriba, pero compitiendo con todo
-- [ ] **El panel a 1440 tiene un hueco y `PanelDinero` no se ve.** MEDIDO, no
-      supuesto: la armazón de escritorio está bien —barra lateral, dos
-      columnas, hero, tarjetas a la derecha, las siete barras— pero la columna
-      IZQUIERDA se corta tras «Necesita tu atención» y deja un vacío enorme
-      hasta el final de la página, que termina en «3 días restantes».
+- [x] ~~El hueco de la columna izquierda a 1440~~ — **RESUELTO.** La causa no
+      era el alto de las tarjetas sino la composición: debajo de la rejilla iban
+      bloques a ancho completo, y uno de esos no empieza hasta que acaba la
+      celda MÁS ALTA de la fila. Dos cambios que solo funcionan juntos:
+      «Por ruta hoy» pasa a `lg:row-span-2`, y `PanelDinero` entra por una
+      RANURA nueva (`bajoAtencion`) montada en `lg:col-start-1 lg:row-start-3`.
+- [x] ~~El ancho del hero~~ — tenía un `maxWidth: 720` escrito a mano que lo
+      dejaba 56px más corto que las tarjetas de su propia columna. Lo acota la
+      rejilla; el tope sobraba. Verificado: los cuatro bloques cierran en 1040.
+- [x] ~~El alto de «En caja» y «En mora»~~ — acababan 88px por encima del hero.
+      La rejilla lleva `items-start`; bastó `lg:self-stretch` en su contenedor,
+      porque las tarjetas ya traían `flex: 1`.
 
-      «Tu plata puesta», «Este mes» y la nota **no aparecen a 1440**, aunque a
-      430 sí. El contador de letras dice 2.779 a 1440 contra 2.618 a 430, así
-      que el contenido ESTÁ en el DOM: es disposición, no datos. Algo en la
-      rejilla de dos columnas lo deja fuera de la vista.
-
-      Reproducir con:
-      `MSYS_NO_PATHCONV=1 node .auditoria/mirar-espejo.mjs /dashboard sal.png 1440`
-
-      ⚠ Y una advertencia sobre mi propia lista: yo daba «el escritorio» por
-      pendiente entero. Al mirarlo, casi todo estaba hecho. **Mide antes de
-      creerte una lista, aunque la haya escrito yo.**
-
-- [ ] **EL HUECO DE LA COLUMNA IZQUIERDA A 1440 — la causa, ya diagnosticada.**
-
-      El dueño lo marcó en rojo sobre la captura: un zigzag sobre el vacío
-      debajo de «Necesita tu atención», y rayas verticales señalando que la
-      columna derecha acaba a otra altura.
-
-      **La causa NO es el alto de las tarjetas.** Acoté «Por ruta hoy» de diez
-      rutas a cinco y el hueco se redujo pero NO desapareció, porque el problema
-      es de composición:
-
-        `Panel.jsx` monta `lg:grid-cols-[minmax(0,1fr)_360px]` con
-        `lg:items-start` y posiciones FIJAS (`lg:col-start-N lg:row-start-M`):
-
-            fila 1   hero            │ en caja + en mora
-            fila 2   necesita atención│ por ruta hoy
-
-        Debajo de esa rejilla van bloques a ANCHO COMPLETO («3 días restantes»,
-        `PanelDinero`). Y un bloque a ancho completo no empieza hasta que acaba
-        la celda MÁS ALTA de la fila. Como la celda izquierda de la fila 2 es
-        corta, queda el hueco. Achicar la derecha solo lo achica.
-
-      **El arreglo: meter `PanelDinero` DENTRO de la columna izquierda**, como
-      fila 3 de la columna 1, en vez de a ancho completo debajo. Ahí la rejilla
-      cuadra sola.
-
-      ⚠ Requiere tocar DOS archivos a la vez: `PanelDinero` lo pinta la página
-      (`app/(dashboard)/dashboard/page.jsx`) y la rejilla vive en
-      `components/pantallas/Panel.jsx`. Hay que pasarlo como RANURA — igual que
-      `acciones`, que ya es una — y no intentarlo desde un solo lado.
-
-      Y `lg:items-stretch` NO es la solución: iguala los altos estirando una
-      tarjeta de tres filas hasta 290px de blanco, que se ve peor.
-- [ ] Los 5 bloques que cuelgan de `vistaSimple` siguen siendo componentes
-      definidos dentro de la propia página (`KpiCard`, `KpiGroup`, `QuickLink`,
-      `RecaudoCard`, `RoutesCard`, `ResumenDelDia`, `ProximosARenovar`). Ya
-      están sobre superficies correctas, así que esto es orden, no urgencia
-
-**Ya hecho en esta corriente:** `PanelDinero` contesta «cuánta plata tengo
-puesta» y «cuánto estoy ganando»; las siete barras de la semana ya se ven en el
-teléfono; las tarjetas cumplen la receta de `03-COMPONENTES.md`; la mora se dice
-una vez; el pie ya no tapa 80px.
+      ⚠ **Los tres los vio el dueño antes que yo, sobre capturas.** Yo di por
+      bueno el primer arreglo del hueco sin comprobarlo contra el problema real.
+      Mide, y cuando creas que está, míralo.
 
 ### A · Fórmulas
 
