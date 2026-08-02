@@ -76,8 +76,15 @@ export function Dato({ trazo, children, titulo, fuerte = false }) {
     <span
       title={titulo}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        minWidth: 0, whiteSpace: 'nowrap', flex: 'none',
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        // `minWidth: 0` + `shrink` y NO `flex:'none'`: con `none` cada dato
+        // exigía su ancho entero, ninguno cabía al lado de otro y los cuatro se
+        // apilaban en cuatro renglones. La tarjeta se estiraba, la pastilla de
+        // estado quedaba flotando en un hueco blanco y pasaban de caber tres
+        // clientes en pantalla a dos. Se vio en la captura, no en el código.
+        //
+        // Encogiendo, caben dos por renglón y el que no cabe recorta su texto.
+        minWidth: 0, flexShrink: 1,
       }}
     >
       <Icono trazo={trazo} />
@@ -85,7 +92,7 @@ export function Dato({ trazo, children, titulo, fuerte = false }) {
         fontSize: 12,
         fontWeight: fuerte ? 600 : 400,
         color: fuerte ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
-        overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{children}</span>
     </span>
   )
@@ -102,7 +109,7 @@ export function Metadatos({ children, style }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', flexWrap: 'wrap',
-      columnGap: 12, rowGap: 6, minWidth: 0, ...style,
+      columnGap: 10, rowGap: 5, minWidth: 0, ...style,
     }}>{children}</div>
   )
 }

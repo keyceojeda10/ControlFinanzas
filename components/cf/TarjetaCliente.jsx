@@ -253,8 +253,11 @@ export default function TarjetaCliente({
           {/* La pastilla y el contexto comparten esta línea. El contexto se
               encoge, la pastilla no: con un nombre de ruta largo se recorta la
               ruta, nunca los días de mora. */}
-          {(etiquetaEstado || contexto) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flexWrap: 'wrap', rowGap: 4 }}>
+          {(etiquetaEstado || contexto || piezas) && (
+            // `flex-start` y no `center`: cuando los metadatos ocupan dos
+            // renglones, centrar deja la pastilla flotando a media altura de un
+            // hueco blanco. Arriba queda a la altura del primer dato.
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, minWidth: 0, flexWrap: 'wrap', rowGap: 4 }}>
               {etiquetaEstado && (
                 // El pagado lleva pastilla NEUTRA (gris), no una de su color: no
                 // hay «color de terminado», hay ausencia de alarma.
