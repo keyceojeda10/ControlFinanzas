@@ -700,7 +700,12 @@ export default function PrestamosPage() {
               // todas fueran flexibles, los montos cambiarían de sitio al pasar
               // de página y dejarían de poder compararse de un vistazo — es el
               // aviso que lleva escrito el primitivo `Tabla`.
-              const COLS = '1.6fr 1fr 116px 116px 116px 108px 104px 108px 96px'
+              // MODALIDAD pide 170px fijos: con `1fr` se quedaba en ~95 y la
+              // pastilla salía «Diario 22…», que es esconder justo lo que el
+              // dueño pidió poder distinguir. Y las cifras van a ancho FIJO: si
+              // todas fueran flexibles, los montos cambiarían de sitio al pasar
+              // de página y dejarían de poder compararse de un vistazo.
+              const COLS = '1.5fr 170px 112px 108px 112px 104px 96px 104px 84px'
         return (
                 <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
                   <div className="grid items-center px-4 py-2.5"
@@ -746,8 +751,12 @@ export default function PrestamosPage() {
                             cortado por la mitad. */}
                         <span className="min-w-0">
                           <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
-                          <span className="flex items-center gap-2.5 min-w-0">
-                            <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
+                          {/* `flex-none` en la ruta: si las dos se encogen a la
+                              vez, las dos salen cortadas —«RUTA. #. …» y
+                              «MAURI…»— y ninguna sirve. La ruta es corta y cabe
+                              entera; el que cede es el nombre del cobrador. */}
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="flex-none"><Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato></span>
                             <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
                           </span>
                         </span>
