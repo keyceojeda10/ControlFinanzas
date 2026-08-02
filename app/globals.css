@@ -641,10 +641,21 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
   transition: border-color 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s cubic-bezier(0.22,1,0.36,1), background 0.18s ease;
 }
 
+/* Los 16px son para que iOS NO haga zoom al enfocar un campo: Safari amplía la
+   pagina si el texto mide menos, y de ahi no vuelve. Por eso va con `!important`.
+
+   Pero pisaba tambien a los campos que miden MAS de 16, que es justo lo que no
+   hacia falta: el monto de la hoja de pago pedia 38px y salia a 16 — mas pequeno
+   que el «$358.100» del resumen, que es una cifra secundaria. Era el «numeros muy
+   pequenos» que reporto el dueno, y en el codigo no se veia: solo aparece midiendo
+   en el navegador y solo por debajo de 1024px.
+
+   `.cf-campo-grande` es la salida para esos campos. Como ya miden mas de 16px,
+   iOS no amplia: la proteccion se mantiene donde hace falta. */
 @media (max-width: 1024px) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(.cf-campo-grande),
   select,
-  textarea {
+  textarea:not(.cf-campo-grande) {
     font-size: 16px !important;
   }
 }

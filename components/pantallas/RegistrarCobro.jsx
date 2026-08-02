@@ -173,10 +173,15 @@ function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }
           cobrador no lo distingue de «Banco Bogotá». Los nombres de la lámina son
           cortos porque son de mentira; las cuentas de verdad las nombra cada negocio
           y no caben en 62px. */}
+      {/* Parte por PALABRAS, no por letras. Con `break-word` a secas
+          «Bancolombia» —que es una sola palabra— salía cortada en «Bancolomb /
+          ia», que se lee peor que las dos cosas que este comentario evitaba. Con
+          el logo encima ya no hace falta romperla: si no cabe, se encoge. */}
       <span style={{
         fontSize: 11.5, fontWeight: activo ? 700 : 600, lineHeight: 1.15,
         color: activo ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
-        maxWidth: '100%', textAlign: 'center', wordBreak: 'break-word',
+        maxWidth: '100%', textAlign: 'center',
+        overflowWrap: 'break-word', hyphens: 'auto',
       }}>{nombre}</span>
     </button>
   )
@@ -227,7 +232,11 @@ export default function RegistrarCobro({
             inputMode="decimal"
             autoComplete="off"
             aria-label="Monto que recibiste"
-            className="cf-fig"
+            // `cf-campo-grande`: sin ella la regla de los 16px de iOS —que va con
+            // `!important`— pisaba el 38 de aquí abajo y el monto salía más
+            // pequeño que las cifras del resumen. Solo pasa por debajo de 1024px,
+            // que es donde mira el dueño.
+            className="cf-fig cf-campo-grande"
             style={{
               flex: 1, minWidth: 0, border: 0, background: 'none', padding: 0,
               outline: 'none', font: 'inherit',
