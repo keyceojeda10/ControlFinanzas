@@ -1737,6 +1737,9 @@ export default function DashboardPage() {
               weekday: 'long', day: 'numeric', month: 'long',
             })}
             porRuta={porRutaHoy(rutasData, session?.user?.country)}
+            // Para que la barra dorada pueda decir cuánto fue cada día al
+            // tocarla. El país sale de la sesión, que el componente no ve.
+            fmt={(n) => formatMoney(n, session?.user?.country)}
             // LA RANURA QUE CIERRA EL HUECO DE 1440. Iba debajo de la rejilla, a
             // ancho completo, y por eso la columna izquierda se quedaba con un
             // vacio enorme: un bloque a ancho completo no empieza hasta que

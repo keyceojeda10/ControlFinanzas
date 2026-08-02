@@ -36,8 +36,29 @@
 // Presentacional a propósito: recibe todo por props. Así se puede ver y ajustar
 // contra la lámina sin depender de la base de datos.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
+
+/* Los nombres de los siete días de la barra dorada.
+   La API manda siete números pelados, sin fecha, pero el ÚLTIMO es hoy: con eso
+   los días salen contando hacia atrás.
+
+   ⚠ Esto NO se puede calcular durante el render. El día depende del reloj del
+   navegador y el servidor pinta con el suyo —en Bogotá se equivocan las cinco
+   primeras horas del día—, así que saldría un desajuste de hidratación. Se llama
+   desde un efecto, ya montado. */
+function nombresDeDias(largo) {
+  const hoy = new Date()
+  return Array.from({ length: largo }, (_, i) => {
+    const atras = largo - 1 - i
+    if (atras === 0) return 'Hoy'
+    if (atras === 1) return 'Ayer'
+    const d = new Date(hoy)
+    d.setDate(d.getDate() - atras)
+    const nombre = d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric' })
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1)
+  })
+}
 
 /* Cuántas rutas se ven sin desplegar.
    Cinco no es un número redondo cualquiera: es lo que hace que esta tarjeta
@@ -50,10 +71,19 @@ const RUTAS_VISIBLES = 5
    Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
    barra va en #3A2900 sobre una pista del mismo tono al 16%: sobre dorado, un
    relleno blanco no se ve. */
-function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana }) {
+function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt }) {
   // La barra mas alta manda la escala. Con todo en cero no se pinta nada: siete
   // barras planas no son un grafico, son ruido.
   const tope = Math.max(...(semana ?? [0]))
+
+  // Qué barra está tocada, y cómo se llama cada día. Ver `nombresDeDias`.
+  const [diaAbierto, setDiaAbierto] = useState(null)
+  const [dias, setDias] = useState([])
+  useEffect(() => { setDias(nombresDeDias(semana?.length ?? 0)) }, [semana?.length])
+  // Mientras el efecto no ha corrido —y en el HTML del servidor— la etiqueta va
+  // en relativo, que es cierto sin mirar el reloj.
+  const diaDeLaSemana = (i, largo) => dias[i]
+    || (largo - 1 - i === 0 ? 'Hoy' : `hace ${largo - 1 - i} días`)
   const pie = [
     `${cobrados} cobrado${cobrados === 1 ? '' : 's'}`,
     `${pendientes} pendiente${pendientes === 1 ? '' : 's'}`,
@@ -142,23 +172,60 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
           en la calle. En móvil van más bajas (44px) para no empujar las dos
           tarjetas blancas fuera de la primera pantalla. */}
       {semana && tope > 0 && (
-        <div
-          className="flex h-[44px] lg:h-[62px]"
-          style={{ gap: 8, alignItems: 'flex-end', flex: 'none' }}
-          aria-hidden
-        >
-          {semana.map((n, i) => (
-            <span key={i} style={{
-              flex: 1, minWidth: 0,
-              // `flex: none` en el alto y un minimo de 6px: una barra de altura
-              // cero desaparece y el dia parece que no existe, cuando lo que
-              // pasa es que no se cobro nada — que es justo lo que hay que ver.
-              height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
-              borderRadius: '6px 6px 0 0',
-              background: i === semana.length - 1 ? 'var(--cf-gold-ink)' : 'rgba(58,41,0,.16)',
-            }} />
-          ))}
-        </div>
+        <>
+          {/* SE PUEDEN TOCAR. Antes eran `aria-hidden` y no respondían: siete
+              barras que enseñaban la forma de la semana pero no decían cuánto
+              fue cada día. El dueño lo pidió: «la caja amarilla donde está el
+              recaudo de los últimos 7 días no es interactiva, no se le puede
+              picar y ver los saldos».
+
+              La API manda siete números SIN fecha, pero el último es HOY, así
+              que el día sale contando hacia atrás. */}
+          <div
+            className="flex h-[44px] lg:h-[62px]"
+            style={{ gap: 8, alignItems: 'flex-end', flex: 'none' }}
+          >
+            {semana.map((n, i) => {
+              const esHoy = i === semana.length - 1
+              const elegido = diaAbierto === i
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setDiaAbierto(elegido ? null : i)}
+                  aria-label={`${diaDeLaSemana(i, semana.length)}: ${fmt ? fmt(n) : n}`}
+                  style={{
+                    flex: 1, minWidth: 0, padding: 0, border: 0, cursor: 'pointer',
+                    alignSelf: 'flex-end',
+                    // `flex: none` en el alto y un minimo de 6px: una barra de
+                    // altura cero desaparece y el dia parece que no existe,
+                    // cuando lo que pasa es que no se cobro nada — que es justo
+                    // lo que hay que ver.
+                    height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
+                    borderRadius: '6px 6px 0 0',
+                    background: esHoy ? 'var(--cf-gold-ink)' : 'rgba(58,41,0,.16)',
+                    // El elegido se marca con un borde, no cambiando su color:
+                    // el color ya significa «hoy» y no puede significar dos cosas.
+                    outline: elegido ? '2px solid var(--cf-gold-ink)' : 'none',
+                    outlineOffset: 2,
+                  }}
+                />
+              )
+            })}
+          </div>
+
+          {/* La respuesta va DEBAJO, no en un globo: el dedo tapa el globo justo
+              donde está la cifra. Y ocupa sitio siempre —aunque esté vacía— para
+              que la tarjeta no dé un salto al tocar. */}
+          <span className="cf-num" style={{
+            fontSize: 12, fontWeight: 600, minHeight: 16, flex: 'none',
+            color: 'var(--cf-gold-text)',
+          }}>
+            {diaAbierto === null
+              ? 'Toca una barra para ver el día'
+              : `${diaDeLaSemana(diaAbierto, semana.length)} · ${fmt ? fmt(semana[diaAbierto]) : semana[diaAbierto]}`}
+          </span>
+        </>
       )}
     </div>
   )
@@ -314,6 +381,11 @@ export default function Panel({
   // SALUDO. En movil no van ahi —para eso esta el FAB— asi que la pagina solo
   // las pasa cuando hay sitio.
   acciones,
+  /* El formateador de moneda, INYECTADO. No se importa `formatMoney` aquí
+     porque el formato depende del país de la sesión, que este componente no
+     conoce — la página sí. Lo usa la barra dorada para decir cuánto fue cada
+     día; sin él las barras siguen saliendo, solo que sin cifra. */
+  fmt,
 }) {
   // Cinco rutas visibles y el resto a un toque. Ver .
   const [verTodasRutas, setVerTodasRutas] = useState(false)
@@ -354,7 +426,7 @@ export default function Panel({
       {/* 2 · El hero dorado */}
       {hero && (
         <div className="lg:col-start-1 lg:row-start-1 flex flex-col">
-          <Hero {...hero} />
+          <Hero {...hero} fmt={fmt} />
         </div>
       )}
 
