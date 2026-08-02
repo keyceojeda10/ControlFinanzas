@@ -25,6 +25,19 @@
 // No toca datos: es sólo la definición de la columna. Las 1.289 filas se quedan
 // como están, con sus fechas.
 //
+// ── POR QUÉ NO SE ARREGLABA SOLO ───────────────────────────────────────────
+// El SQL que propone Prisma —`ALTER COLUMN ... DROP DEFAULT`— **no funciona en
+// este motor**. MariaDB 10.11 lo acepta SIN ERROR y deja la columna igual, así
+// que `CF_APLICAR_ESQUEMA=1` habría dicho «aplicado» y el desfase seguiría ahí
+// en el siguiente despliegue. Para siempre.
+//
+// Comprobado sobre una tabla de mentira (`scripts/probar-drop-default.mjs`):
+//   ALTER COLUMN `updatedAt` DROP DEFAULT      → Default=current_timestamp(3) ❌
+//   MODIFY COLUMN `updatedAt` DATETIME(3) NOT NULL → Default=NULL ✅
+//
+// Por eso aquí va `MODIFY COLUMN`, y por eso el script COMPRUEBA el resultado
+// en vez de fiarse de que la sentencia no reventó.
+//
 //   node --import ./scripts/alias-loader.mjs scripts/arreglar-lead-updatedat.mjs
 //   node --import ./scripts/alias-loader.mjs scripts/arreglar-lead-updatedat.mjs --aplicar
 
@@ -61,15 +74,23 @@ if (!antes.Default) {
   process.exit(0)
 }
 
+// El tipo y la nulabilidad se leen de la propia columna en vez de escribirlos a
+// mano: `MODIFY COLUMN` REDEFINE la columna entera, así que teclear aquí un
+// `DATETIME(3)` que no coincida con el vivo cambiaría el tipo de paso.
+const SQL = 'ALTER TABLE `Lead` MODIFY COLUMN `updatedAt` '
+  + `${antes.Type.toUpperCase()} ${antes.Null === 'NO' ? 'NOT NULL' : 'NULL'}`
+
 if (!APLICAR) {
   console.log('\nEsto es lo que se haría:')
-  console.log('   ALTER TABLE `Lead` ALTER COLUMN `updatedAt` DROP DEFAULT;')
+  console.log(`   ${SQL};`)
+  console.log('\n(NO el `ALTER COLUMN ... DROP DEFAULT` que propone Prisma: este')
+  console.log(' motor lo acepta sin error y no hace nada. Ver la cabecera.)')
   console.log('\nNo se ha tocado nada. Para aplicarlo, repetir con --aplicar')
   await cx.end()
   process.exit(0)
 }
 
-await cx.query('ALTER TABLE `Lead` ALTER COLUMN `updatedAt` DROP DEFAULT')
+await cx.query(SQL)
 
 const despues = await columna()
 const [[filasDespues]] = await cx.query('SELECT COUNT(*) n FROM Lead')
