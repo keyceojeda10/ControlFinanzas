@@ -48,10 +48,14 @@ export default function Mas() {
 
   useEffect(() => { traer() }, [traer])
 
+  // EL HUECO DEL PIE LO RESERVA EL ARMAZÓN (112px), NO LA PANTALLA.
+  //
+  // Aquí había un `paddingBottom: 96` propio —y el comentario decía «el hueco
+  // final lo reserva cada pantalla, no el layout», que era cierto ANTES—. Desde
+  // que el armazón lo pone para todas, los dos se sumaban: 208px de blanco al
+  // final. Es el «demasiado espacio» que reportó el dueño.
   return (
-    // El contenido pasa por debajo de la pastilla; el hueco final lo reserva
-    // cada pantalla, no el layout.
-    <div style={{ paddingBottom: 96 }}>
+    <div>
       {/* Discreto y sin robarle el sitio al menú: una línea con su reintento,
           no una pantalla de error que tape lo que sí funciona. */}
       {fallo && !cargando && (

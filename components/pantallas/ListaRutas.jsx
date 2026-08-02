@@ -225,7 +225,8 @@ export default function ListaRutas({
       padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
       // El hueco de abajo es para que la pastilla no tape la última tarjeta: el
       // contenido pasa POR DEBAJO de ella a propósito (regla §B del armazón).
-      paddingBottom: 96,
+      // El hueco del pie lo reserva el ARMAZON (112px). Estos 96 propios se
+      // sumaban a aquellos: 208px de blanco al final.
     }}>
       {/* El encabezado: «Rutas» con el botón de alcance, y debajo el resumen del
           día. El botón dice «Hoy» porque esta pantalla es SOLO de hoy — el

@@ -267,7 +267,8 @@ export default function CobrarHoy({
       padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
       // Hueco para la barra de acción fija. Sin él, la última fila queda debajo
       // del botón y no se puede tocar.
-      paddingBottom: 96,
+      // El hueco del pie lo reserva el ARMAZON (112px). Estos 96 propios se
+      // sumaban a aquellos: 208px de blanco al final.
     }}>
       {/* Los que no se han subido. Va arriba y en ámbar porque es lo único de
           esta pantalla que el cobrador no puede resolver caminando: si se queda
