@@ -129,9 +129,14 @@ export function ModoInteres({ modo, frecuencia, tasa }) {
   if (!modo && !frecuencia && !tasa) return null
   const texto = [frecuencia, tasa, etiquetaModo(modo)].filter(Boolean).join(' ')
   return (
-    <span style={{
+    <span title={texto} style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
-      minWidth: 0, whiteSpace: 'nowrap', flex: 'none',
+      // Se ENCOGE. En la tarjeta hay ancho de sobra, pero en una celda de tabla
+      // la pastilla se desbordaba encima de la columna de al lado —se veía
+      // «Semanal 20% Clásico» pisando el $1.000.000 de PRESTADO—. Encogiendo,
+      // recorta su texto y se queda dentro; el título lo dice entero al pasar
+      // por encima.
+      minWidth: 0, flexShrink: 1, maxWidth: '100%',
       height: 20, padding: '0 8px 0 6px', borderRadius: 999,
       background: 'var(--cf-gold-tint-2)',
       border: '1px solid var(--cf-gold-border)',
@@ -143,7 +148,7 @@ export function ModoInteres({ modo, frecuencia, tasa }) {
       </svg>
       <span className="cf-num" style={{
         fontSize: 11.5, fontWeight: 600, color: 'var(--cf-gold-text)',
-        overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{texto}</span>
     </span>
   )

@@ -739,9 +739,17 @@ export default function PrestamosPage() {
                           font: 'inherit', cursor: 'pointer',
                         }}
                       >
+                        {/* Debajo del nombre, la RUTA y quién lo creó — no el
+                            `contexto` entero: ése empieza por «Diario 22%
+                            Clásico», que es exactamente lo que ya dice la
+                            pastilla de la columna de al lado. Repetido, y encima
+                            cortado por la mitad. */}
                         <span className="min-w-0">
                           <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
-                          <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
+                          <span className="flex items-center gap-2.5 min-w-0">
+                            <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
+                            <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
+                          </span>
                         </span>
                         {/* La MISMA pastilla de modo que la tarjeta de móvil, con
                             su icono: el dueño pidió poder distinguir el modo
