@@ -284,9 +284,12 @@ export function CuentaSocio({
   // quitarle funciones al dueño, que es peor que dejarla vieja.
   onBorrarMovimiento, children,
 }) {
+  // Scrollea el DOCUMENTO. Ver la nota de `SociosReparto.jsx`: con el scroll
+  // propio, el hueco que el armazón reserva para la pastilla quedaba fuera de
+  // la caja y la pastilla tapaba el último renglón.
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
 
         {/* La relación con un socio es una DEUDA, no un balance. Por eso la
             cifra héroe es "le debes" y va en dorado. */}

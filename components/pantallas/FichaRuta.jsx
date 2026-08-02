@@ -43,9 +43,14 @@ export default function FichaRuta({
   // antes de que se vea.
   sinMargen = false,
 }) {
+  // SCROLLEA EL DOCUMENTO, NO ESTA PANTALLA. Llevaba `height: 100%` fuera y
+  // `flex:1 + minHeight:0 + overflowY:auto` dentro, así que terminaba donde
+  // termina la ventana: el hueco de 112px que el armazón reserva para la
+  // pastilla se pinta DESPUÉS de `{children}` —fuera de esta caja— y no
+  // llegaba nunca. La pastilla tapaba el último renglón.
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '8px 0 16px' : '8px var(--cf-pad-screen) 16px' }}>
 
         <BloqueOscuro etiqueta="Tienes puesto en esta ruta" cifra={puesto}>
           <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />

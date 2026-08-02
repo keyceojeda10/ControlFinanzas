@@ -270,14 +270,16 @@ export default function DetalleRuta({
   onSeguir,
 }) {
   return (
+    // Scrollea el DOCUMENTO. Ver `SociosReparto.jsx`: con scroll propio, el
+    // hueco de la pastilla quedaba fuera y tapaba el último renglón.
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
       <CabeceraRuta {...cabecera} onAtras={onAtras} onMas={onMas} />
 
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 20px',
+        padding: '0 20px 20px',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         {puesto && <LoPuestoAqui {...puesto} />}
