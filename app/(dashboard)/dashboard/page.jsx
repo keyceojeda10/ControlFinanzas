@@ -311,117 +311,17 @@ const HERO_SUB   = 'rgba(58, 41, 0, 0.62)'
 const HERO_TRACK = 'rgba(58, 41, 0, 0.16)'
 const HERO_GLOSS = 'linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.16) 45%, transparent 58%)'
 
-function HeroCard({ label, value, valueRaw, sub, color = 'var(--cf-green-dark)', accent = 'var(--cf-green-dark)', narrativa, sparklineData, metaDiaria, info }) {
-  const animatedNum = useCountUp(typeof valueRaw === 'number' ? valueRaw : 0, 900)
-  const [showInfo, setShowInfo] = useState(false)
-  const hasInfo = Boolean(info)
-  const display = typeof valueRaw === 'number' ? formatMoney(Math.round(animatedNum)) : value
-
-  return (
-    <div
-      className="cf-hero-card relative rounded-[20px] overflow-hidden kpi-lift elevation-2 h-full"
-      style={{
-        background: HERO_GRAD,
-        border: '1px solid rgba(180, 140, 10, 0.35)',
-        boxShadow: '0 14px 34px rgba(200, 160, 20, 0.30)',
-      }}
-    >
-      {/* Gloss sutil */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: HERO_GLOSS }} />
-      {/* Patron de puntos sutil */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.05]"
-        style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: HERO_INK }}
-      />
-
-      <div className="relative px-5 py-4 sm:px-6 sm:py-5">
-        {/* Header con label + boton info */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: HERO_INK }} />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: HERO_SUB }}>{label}</p>
-          {hasInfo && (
-            <button
-              onClick={(e) => { e.stopPropagation(); if (!showInfo) setShowInfo(true) }}
-              className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ml-auto cursor-pointer transition-transform hover:scale-110"
-              style={{ background: `color-mix(in srgb, ${HERO_INK} 12%, transparent)`, color: HERO_INK }}
-              aria-label="Ver información"
-            >
-              i
-            </button>
-          )}
-        </div>
-
-        {/* Layout responsive: numero + donut */}
-        <div className="flex items-end justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <p
-              className="font-mono-display font-bold leading-none tracking-tight truncate"
-              style={{
-                color: HERO_INK,
-                fontSize: 'clamp(32px, 9vw, 44px)',
-              }}
-            >
-              {display}
-            </p>
-            {sub && (
-              <p className="text-[12px] mt-1.5 font-medium" style={{ color: HERO_SUB }}>{sub}</p>
-            )}
-            {narrativa && (
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: `color-mix(in srgb, ${HERO_INK} 10%, transparent)`, color: HERO_INK, border: `1px solid color-mix(in srgb, ${HERO_INK} 18%, transparent)` }}>
-                <span>{narrativa}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Donut meta diaria a la derecha (si hay meta) */}
-          {metaDiaria && metaDiaria > 0 && (
-            <div className="shrink-0 hidden sm:block">
-              <DonutProgress
-                value={typeof valueRaw === 'number' ? valueRaw : 0}
-                max={metaDiaria}
-                color={HERO_INK}
-                trackColor={HERO_TRACK}
-                labelColor={HERO_SUB}
-                size={76}
-                strokeWidth={7}
-                label="Meta hoy"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Donut version movil (debajo del numero) */}
-        {metaDiaria && metaDiaria > 0 && (
-          <div className="sm:hidden mt-3 flex items-center gap-3 pt-3" style={{ borderTop: `1px solid ${HERO_TRACK}` }}>
-            <DonutProgress
-              value={typeof valueRaw === 'number' ? valueRaw : 0}
-              max={metaDiaria}
-              color={HERO_INK}
-              trackColor={HERO_TRACK}
-              labelColor={HERO_SUB}
-              size={56}
-              strokeWidth={5}
-            />
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: HERO_SUB }}>Meta diaria</p>
-              <p className="text-[14px] font-mono-display font-bold mt-0.5" style={{ color: HERO_INK }}>{formatMoney(metaDiaria)}</p>
-            </div>
-          </div>
-        )}
-
-        {sparklineData && sparklineData.length > 0 && (
-          <div className="mt-3">
-            <Sparkline data={sparklineData} color={HERO_INK} mutedColor={HERO_SUB} tooltipBg="rgba(50, 40, 10, 0.92)" tooltipText="var(--cf-gold)" ariaLabel="Tendencia últimos 7 días" />
-          </div>
-        )}
-
-        {hasInfo && showInfo && (
-          <KpiInfoPopover info={info} color={color} onClose={() => setShowInfo(false)} />
-        )}
-      </div>
-    </div>
-  )
-}
+// HeroCard SE BORRO. Era el hero dorado de la version anterior —111 lineas
+// con degradado, sombra y `kpi-lift`— y llevaba CERO usos desde que <Panel>
+// lo sustituyo: el comentario del montaje ya decia «sustituye al HeroCard SIN
+// PERDER NADA». Codigo muerto que ademas cargaba la estetica que se acaba de
+// quitar del resto de la pantalla: `elevation-2`, `kpi-lift` y sus propios
+// degradados.
+//
+// (Medido despues de borrarlo: los techos de la prueba del canon NO bajaron.
+// Sus sombras y degradados no coincidian con los patrones que esa prueba
+// vigila, asi que era deuda invisible para ella. Un motivo mas para que no
+// siguiera ahi.)
 
 // Donut de progreso animado: anillo SVG con porcentaje en el centro.
 function DonutProgress({ value = 0, max = 100, color = 'var(--cf-green-dark)', size = 90, strokeWidth = 9, label, sublabel, trackColor = 'var(--cf-fill)', labelColor = 'var(--cf-ink-2)' }) {
