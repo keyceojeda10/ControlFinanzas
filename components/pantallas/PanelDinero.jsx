@@ -38,41 +38,43 @@ import { Tarjeta } from '@/components/cf/primitivos'
 /* Una columna de la tira. `titulo` es el rótulo del diccionario, así que puede
    ser de cualquier largo: por eso el rótulo reserva dos líneas y las cifras
    quedan alineadas entre sí pase lo que pase. */
-function Cifra({ titulo, valor, tono = 'neutro', onTocar }) {
+/* ⚠ FILAS, NO COLUMNAS.
+   §14 dibuja una tira de hasta cuatro columnas y avisa: «con más, no se leen».
+   Con TRES tampoco, si las cifras son de nueve dígitos. Probado en el teléfono
+   contra el negocio real: salía «$201.582.321$245.497.198», pegadas, sin un
+   pixel de aire. La tira sirve para «12 cuotas · 62% · $48.000», no para
+   cientos de millones.
+
+   Fila con rótulo a la izquierda y cifra a la derecha, y la que es RESULTADO
+   abajo y más grande. Es el patrón de la cuenta del día de la caja por ruta,
+   donde el criterio era que se pudiera sumar a mano. */
+function Fila({ titulo, valor, tono = 'neutro', fuerte = false, onTocar, primera = false }) {
   const color = tono === 'favor' ? 'var(--cf-green-dark)'
     : tono === 'contra' ? 'var(--cf-red-dark)'
     : 'var(--cf-ink)'
 
+  const caja = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+    width: '100%', minHeight: 40, textAlign: 'left',
+    borderTop: primera ? 'none' : '1px solid var(--cf-hairline)',
+    paddingTop: primera ? 0 : 10,
+  }
+
   const cuerpo = (
     <>
-      <span style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase',
-        color: 'var(--cf-ink-3)', minHeight: '2.4em', display: 'block', textAlign: 'left',
-      }}>{titulo}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-2)', minWidth: 0 }}>{titulo}</span>
       <span className="cf-fig" style={{
-        fontSize: 17, fontWeight: 600, color, display: 'block', textAlign: 'left',
+        fontSize: fuerte ? 19 : 16, fontWeight: fuerte ? 700 : 600, color, flex: 'none',
       }}>{valor}</span>
     </>
   )
 
-  if (!onTocar) {
-    return <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>{cuerpo}</div>
-  }
+  if (!onTocar) return <div style={caja}>{cuerpo}</div>
   return (
-    <button
-      type="button"
-      onClick={onTocar}
-      style={{
-        flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4,
-        background: 'none', border: 0, padding: 0, cursor: 'pointer', textAlign: 'left',
-      }}
+    <button type="button" onClick={onTocar}
+      style={{ ...caja, background: 'none', borderLeft: 0, borderRight: 0, borderBottom: 0, cursor: 'pointer', paddingLeft: 0, paddingRight: 0 }}
     >{cuerpo}</button>
   )
-}
-
-/** El separador de 1px entre columnas que pide §14. */
-function Raya() {
-  return <span aria-hidden style={{ width: 1, alignSelf: 'stretch', background: 'var(--cf-hairline)', flex: 'none' }} />
 }
 
 export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
@@ -93,12 +95,10 @@ export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
           color: 'var(--cf-ink-3)',
         }}>Tu plata puesta</span>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <Cifra titulo={puesto.rotulos.miPlata} valor={fmt(puesto.miPlata)} onTocar={abrir(puesto.ids.miPlata)} />
-          <Raya />
-          <Cifra titulo={puesto.rotulos.conIntereses} valor={fmt(puesto.conIntereses)} onTocar={abrir(puesto.ids.conIntereses)} />
-          <Raya />
-          <Cifra titulo={puesto.rotulos.porGanar} valor={fmt(puesto.porGanar)} tono="favor" onTocar={abrir(puesto.ids.porGanar)} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Fila primera titulo={puesto.rotulos.miPlata} valor={fmt(puesto.miPlata)} onTocar={abrir(puesto.ids.miPlata)} />
+          <Fila titulo={puesto.rotulos.conIntereses} valor={fmt(puesto.conIntereses)} onTocar={abrir(puesto.ids.conIntereses)} />
+          <Fila titulo={puesto.rotulos.porGanar} valor={fmt(puesto.porGanar)} tono="favor" fuerte onTocar={abrir(puesto.ids.porGanar)} />
         </div>
 
         {/* La frase que une las tres. Sin ella son tres cifras; con ella es una
@@ -121,17 +121,25 @@ export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
           color: 'var(--cf-ink-3)',
         }}>Este mes</span>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <Cifra
+        {/* El orden es el de la RESTA, no el de la importancia: primero lo que
+            entró, luego lo que salió, y la ganancia abajo como resultado. Así se
+            puede comprobar a mano, que es el mismo criterio de la cuenta del día
+            de la caja. */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Fila primera titulo={ganando.rotulos.interes} valor={fmt(ganando.interes)} onTocar={abrir(ganando.ids.interes)} />
+          <Fila
+            titulo={ganando.rotulos.gastos}
+            valor={ganando.gastos > 0 ? `− ${fmt(ganando.gastos)}` : fmt(0)}
+            tono={ganando.gastos > 0 ? 'contra' : 'neutro'}
+            onTocar={abrir(ganando.ids.gastos)}
+          />
+          <Fila
             titulo={ganando.rotulos.ganancia}
             valor={fmt(ganando.ganancia)}
             tono={ganando.ganancia < 0 ? 'contra' : 'favor'}
+            fuerte
             onTocar={abrir(ganando.ids.ganancia)}
           />
-          <Raya />
-          <Cifra titulo={ganando.rotulos.interes} valor={fmt(ganando.interes)} onTocar={abrir(ganando.ids.interes)} />
-          <Raya />
-          <Cifra titulo={ganando.rotulos.gastos} valor={fmt(ganando.gastos)} tono={ganando.gastos > 0 ? 'contra' : 'neutro'} onTocar={abrir(ganando.ids.gastos)} />
         </div>
 
         <p style={{ fontSize: 12, color: 'var(--cf-ink-2)', margin: 0 }}>
