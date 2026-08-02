@@ -36,8 +36,8 @@ export function AntesDeFirmar({
   onConfirmar, onFirmar, onSinFirma,
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
 
         {/* Las dos cifras que importan, enfrentadas: lo que recibe hoy y lo que
             devuelve. En ese orden, que es el orden en que las va a oír. */}
@@ -246,8 +246,8 @@ export function PagareFirmado({
   onMandar, onDescargar, onImprimir, onVerPrestamo,
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '10px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '10px var(--cf-pad-screen) 16px' }}>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, flex: 'none', padding: '4px 0 6px' }}>
           <span style={{

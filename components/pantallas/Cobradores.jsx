@@ -322,7 +322,8 @@ export function CrearCobrador({
 }) {
   return (
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      // Sin `height: 100%`: scrollea el DOCUMENTO. Ver `SociosReparto.jsx`.
+      display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
       <div style={{ flex: 'none', padding: '6px 20px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -343,7 +344,9 @@ export function CrearCobrador({
       </div>
 
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 20px',
+        // Sin scroll propio: el hueco de la pastilla lo pone el armazón y solo
+        // llega si scrollea el documento. Ver `SociosReparto.jsx`.
+        padding: '0 20px 20px',
         display: 'flex', flexDirection: 'column', gap: 14,
       }}>
         <Entrada rotulo="Nombre" valor={nombre} foco
@@ -528,7 +531,8 @@ export function MiDia({
 }) {
   return (
     <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+      // Sin `height: 100%`: scrollea el DOCUMENTO. Ver `SociosReparto.jsx`.
+      display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
       <div style={{ flex: 'none', padding: '6px 20px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -550,7 +554,9 @@ export function MiDia({
       </div>
 
       <div style={{
-        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px 20px',
+        // Sin scroll propio: el hueco de la pastilla lo pone el armazón y solo
+        // llega si scrollea el documento. Ver `SociosReparto.jsx`.
+        padding: '0 20px 20px',
         display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {/* El bloque oscuro es SU cifra, no la del negocio: lo que él recogió.

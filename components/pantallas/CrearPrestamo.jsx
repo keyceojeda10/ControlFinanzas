@@ -52,8 +52,8 @@ export function CrearPrestamoMonto({
   onCambiarCliente, onAtajo, onTecla, onSeguir,
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14, padding: '10px var(--cf-pad-screen) 12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '10px var(--cf-pad-screen) 12px' }}>
 
         {/* A quién, arriba y cambiable: equivocarse de cliente es el error caro
             de esta pantalla y se descubre al final si no está a la vista. */}
@@ -195,8 +195,8 @@ export function CrearPrestamoCondiciones({
   const pct = total > 0 ? (capitalNum / total) * 100 : 0
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: '8px var(--cf-pad-screen) 16px' }}>
 
         <div style={{
           background: '#15161A', borderRadius: 'var(--cf-r-hero)', padding: '17px 21px 19px',
