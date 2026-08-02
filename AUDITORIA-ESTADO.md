@@ -179,7 +179,16 @@ cuotas siguen vencidas y el cliente sigue en mora hasta pagarlas.
 las cuotas ya vencidas, así que el atraso desaparece en silencio — nadie decidió
 eso, es un efecto lateral. Deben reprogramar solo las cuotas FUTURAS.
 
-**Afecta a 17 préstamos** con abono a capital y tabla. Ojo: los ya afectados no
+**El alcance, medido contra el espejo (no de memoria):**
+
+| | préstamos | saldo |
+|---|---|---|
+| Con abono a capital | 28 | $26.853.376 |
+| De esos, **con tabla** | 16 | $14.174.376 |
+| Y además **activos hoy** | **10** | **$12.054.126** |
+
+Se venía diciendo «17»; son **16 con tabla y solo 10 vivos**. Esos 10 son los
+únicos donde el arreglo cambia el comportamiento de aquí en adelante. Ojo: los ya afectados no
 se auto-corrigen; entran en la migración de G8, y como cambia lo que un cliente
 debe, va con **consentimiento**, préstamo por préstamo.
 
