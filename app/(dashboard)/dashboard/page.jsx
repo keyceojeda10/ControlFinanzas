@@ -1143,6 +1143,7 @@ function NecesitaAtencion({ alertas, moraData }) {
 
 function ProximosARenovar({ alertas }) {
   const lista = alertas?.proximosACompletar
+  const [verTodosRenovar, setVerTodosRenovar] = useState(false)
   if (!lista?.length) return null
 
   return (
@@ -1168,7 +1169,12 @@ function ProximosARenovar({ alertas }) {
         </span>
       </div>
       <div className="px-2 py-1">
-        {lista.map((p) => (
+        {/* CINCO, no veinte. Con la lista entera este bloque ocupaba media
+            pantalla y competia con todo lo de arriba, incluida la plata puesta.
+            El dueño lo quiso visible y visible se queda — pero visible no es lo
+            mismo que dominante. Vienen ordenados por lo que les falta, asi que
+            los cinco primeros son los que de verdad estan por caer. */}
+        {lista.slice(0, verTodosRenovar ? lista.length : 5).map((p) => (
           <Link
             key={p.prestamoId}
             href={`/prestamos/${p.prestamoId}`}
@@ -1200,6 +1206,16 @@ function ProximosARenovar({ alertas }) {
             </div>
           </Link>
         ))}
+        {!verTodosRenovar && lista.length > 5 && (
+          <button
+            type="button"
+            onClick={() => setVerTodosRenovar(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 mt-1 rounded-[999px] text-[12px] font-semibold transition-colors hover:bg-[var(--cf-fill)]"
+            style={{ background: 'var(--cf-fill)', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}
+          >
+            Ver los otros {lista.length - 5}
+          </button>
+        )}
       </div>
     </div>
   )
