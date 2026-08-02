@@ -12,7 +12,7 @@ import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
 import { BarraProgreso }                      from '@/components/cf/primitivos'
-import { ModoInteres, Dato, TRAZO }           from '@/components/cf/Metadatos'
+import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
@@ -290,18 +290,24 @@ export default function PrestamosPage() {
   //
   // Lo guardado gana: si alguien eligió tarjetas en PC, se respeta. Solo se
   // decide por el ancho cuando no hay preferencia.
+  // ⚠ POR TIPO DE PANTALLA, no una sola clave. Con una sola, quien ya tenía
+  // `'lista'` guardado de antes no veía nunca la tabla —el dueño lo reportó como
+  // «en la versión PC no veo la vista diferente»— y además elegir tarjetas en el
+  // móvil le quitaba la tabla al PC.
   const [vistaP, setVistaP] = useState('lista')
   useEffect(() => {
+    const clave = anchaPantalla ? `${VISTA_KEY_P}:pc` : VISTA_KEY_P
     try {
-      const v = localStorage.getItem(VISTA_KEY_P)
+      const v = localStorage.getItem(clave)
       if (v) { setVistaP(v); return }
     } catch {}
-    if (anchaPantalla) setVistaP('tabla')
+    setVistaP(anchaPantalla ? 'tabla' : 'lista')
   }, [anchaPantalla])
 
   const cambiarVistaP = (v) => {
     setVistaP(v)
-    localStorage.setItem(VISTA_KEY_P, v)
+    // En la clave del tipo de pantalla en el que se eligió.
+    localStorage.setItem(anchaPantalla ? `${VISTA_KEY_P}:pc` : VISTA_KEY_P, v)
   }
 
   const [isOffline, setIsOffline] = useState(false)
@@ -712,7 +718,12 @@ export default function PrestamosPage() {
               // esconder justo lo que el dueño quería distinguir. Las cifras van
               // a ancho FIJO: con `fr` bailan de sitio al pasar de página y
               // dejan de poder compararse de un vistazo.
-              const COLS = '1.6fr 168px 92px 104px 104px 96px 88px 96px 76px'
+              // «Creado por:» necesita más sitio que el «creó» de antes.
+              // NUEVE columnas, las mismas nueve de la cabecera. Contarlas es
+              // obligatorio: si sobra un dato, se va a un segundo renglón de la
+              // rejilla y la fila mide el doble — ya pasó en clientes y en el
+              // JSX se ve perfecto.
+              const COLS = '1.3fr 156px 158px 96px 96px 100px 88px 80px 92px'
         return (
                 <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
                   <div className="grid items-center px-4 py-2.5"
@@ -757,7 +768,10 @@ export default function PrestamosPage() {
                             pastilla de la columna de al lado. Repetido, y encima
                             cortado por la mitad. */}
                         <span className="min-w-0">
-                          <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                            <EtiquetaNuevo nuevo={a?.nuevo} />
+                          </span>
                           {/* Solo la RUTA debajo del nombre. El autor se fue a su
                               propia columna: los dos aquí dejaban el nombre en
                               «FERNANDO MEN…» y al cobrador en «J…», o sea que no
@@ -779,7 +793,7 @@ export default function PrestamosPage() {
                         {/* CREÓ, en su columna: el dueño lo pidió para las dos
                             pantallas y aquí competía con el nombre del cliente. */}
                         <span className="min-w-0 flex">
-                          <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
+                          <CreadoPor nombre={a?.piezas?.autor} />
                         </span>
                         {/* PRESTADO es el capital que salio; SALDO lo que falta.
                             La tarjeta los pone uno encima de otro («$553.658 / de

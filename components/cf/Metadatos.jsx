@@ -154,4 +154,53 @@ export function ModoInteres({ modo, frecuencia, tasa }) {
   )
 }
 
+/**
+ * QUIÉN LO CREÓ. «Creado por: JHOAN».
+ *
+ * Va en su propio componente y no como un `Dato` suelto porque el rótulo se
+ * escribía en TRES sitios —la tarjeta, la tabla de clientes y la de préstamos—
+ * y basta con que uno se quede atrás para que la misma app diga dos cosas. Es
+ * el mismo motivo por el que las etiquetas de los modos viven en un solo
+ * archivo: ese nombre llegó a tener seis versiones.
+ *
+ * El dueño lo pidió así, con dos puntos: «debería decir "creado por:"». «creó
+ * JHOAN» se lee como si JHOAN fuera el verbo de otra frase.
+ */
+export function CreadoPor({ nombre }) {
+  if (!nombre) return null
+  return (
+    <Dato trazo={TRAZO.autor} titulo={`Creado por ${nombre}`}>
+      {`Creado por: ${nombre}`}
+    </Dato>
+  )
+}
+
+/**
+ * «NUEVO» — creado en las últimas 24 horas.
+ *
+ * La misma pastilla que la tarjeta, para la tabla de escritorio. Aquí no cabe
+ * un punto de 7px al lado del nombre y esperar que alguien lo vea: en una tabla
+ * de quince filas, lo que distingue una fila es el color y la palabra.
+ */
+export function EtiquetaNuevo({ nuevo }) {
+  if (!nuevo) return null
+  return (
+    <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
+      height: 18, padding: '0 7px 0 5px', borderRadius: 999,
+      background: 'color-mix(in srgb, var(--cf-green) 14%, transparent)',
+      border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
+    }}>
+      <span aria-hidden style={{
+        width: 5, height: 5, borderRadius: 999, flex: 'none',
+        background: 'var(--cf-green-dark)',
+      }} />
+      <span style={{
+        fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em',
+        color: 'var(--cf-green-dark)', textTransform: 'uppercase',
+      }}>Nuevo</span>
+    </span>
+  )
+}
+
 export { TRAZO }

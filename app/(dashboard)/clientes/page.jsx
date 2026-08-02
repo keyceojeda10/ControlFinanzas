@@ -15,7 +15,7 @@ import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
-import { Dato, TRAZO } from '@/components/cf/Metadatos'
+import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
@@ -297,14 +297,25 @@ export default function ClientesPage() {
   // es exactamente lo que advierte el comentario de `anchaPantalla` doce líneas
   // más arriba y lo que la pantalla de préstamos ya hacía bien.
   //
-  // Lo guardado gana: si alguien eligió tarjetas en PC, se respeta.
+  // ⚠ LA PREFERENCIA SE GUARDA POR TIPO DE PANTALLA, NO UNA SOLA.
+  //
+  // Con una sola clave esto no funcionaba y el dueño lo reportó: «en la versión
+  // PC no veo la vista diferente». La causa: quien ya había tocado el filtro
+  // «Cómo se ven» tenía `'lista'` guardado de antes, `if (v)` lo respetaba y el
+  // defecto nuevo no llegaba a correr NUNCA. En un navegador limpio salía la
+  // tabla —por eso en mis capturas se veía bien— y en el suyo no.
+  //
+  // Y una sola clave es incorrecta de todas formas: son dos vistas para dos
+  // sitios. Elegir tarjetas en el móvil no puede decidir lo que se ve en el PC,
+  // que es justo lo que pidió el dueño («la de PC es una y la de móvil es otra»).
   const [vista, setVista] = useState('lista')
   useEffect(() => {
+    const clave = anchaPantalla ? `${VISTA_KEY}:pc` : VISTA_KEY
     try {
-      const v = localStorage.getItem(VISTA_KEY)
+      const v = localStorage.getItem(clave)
       if (v) { setVista(v); return }
     } catch {}
-    if (anchaPantalla) setVista('tabla')
+    setVista(anchaPantalla ? 'tabla' : 'lista')
   }, [anchaPantalla])
 
   // Los tres mas parecidos a lo que se escribio. `null` si no hay ninguno
@@ -330,7 +341,9 @@ export default function ClientesPage() {
 
   const cambiarVista = (v) => {
     setVista(v)
-    localStorage.setItem(VISTA_KEY, v)
+    // En la clave del tipo de pantalla en el que se eligió: cambiar a tarjetas
+    // en el móvil no puede quitar la tabla del PC.
+    localStorage.setItem(anchaPantalla ? `${VISTA_KEY}:pc` : VISTA_KEY, v)
   }
 
   const [isOffline, setIsOffline] = useState(false)
@@ -932,7 +945,7 @@ export default function ClientesPage() {
                 // dato —«vencido»— se iba a un segundo renglón de la rejilla:
                 // la fila pasaba de 62px a 91 y cabían la mitad de clientes. Se
                 // ve midiendo el DOM, no leyendo el JSX.
-                gridTemplateColumns: '1fr 124px 128px 120px 112px 92px 86px 104px',
+                gridTemplateColumns: '1fr 118px 176px 116px 108px 88px 82px 100px',
                 gap: 12,
                 background: 'var(--cf-card)',
                 border: 0,
@@ -950,7 +963,10 @@ export default function ClientesPage() {
                   background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
                 }}>{a?.iniciales}</span>
                 <span className="min-w-0">
-                  <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                    <EtiquetaNuevo nuevo={a?.nuevo} />
+                  </span>
                   {/* Cédula y teléfono, NO el `contexto` entero: ése termina en
                       «· RUTA. #. 5 · creó JHOAN», que es exactamente lo que ya
                       dicen las dos columnas siguientes. Repetido y encima
@@ -967,7 +983,7 @@ export default function ClientesPage() {
                 <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
               </span>
               <span className="min-w-0 flex">
-                <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
+                <CreadoPor nombre={a?.piezas?.autor} />
               </span>
               <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
               <span className="cf-fig text-[14px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
@@ -989,7 +1005,7 @@ export default function ClientesPage() {
                 // medía el doble y cabían la mitad de clientes. Las cifras
                 // también van fijas: con `fr` bailan de sitio al pasar de página
                 // y dejan de poder compararse de un vistazo.
-                gridTemplateColumns: '1fr 124px 128px 120px 112px 92px 86px 104px', gap: 12,
+                gridTemplateColumns: '1fr 118px 176px 116px 108px 88px 82px 100px', gap: 12,
                   background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)',
                   paddingLeft: 19,
                 }}>

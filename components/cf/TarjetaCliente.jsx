@@ -52,7 +52,7 @@
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
 import { BarraProgreso, Pastilla, TiraCifras } from './primitivos'
-import { Metadatos, Dato, ModoInteres, TRAZO } from './Metadatos'
+import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -221,11 +221,27 @@ export default function TarjetaCliente({
           {/* El nombre SOLO en su línea: nada le puede robar ancho. El punto de
               «nuevo» va con `flex: none` y 6px, así que no se lo quita. */}
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+            {/* «NUEVO» SE LEE, no se adivina. Era un punto verde de 7px sin
+                texto: en una lista de 1.315 clientes eso no se distingue de una
+                mota, y el dueño lo reportó como que no salía. Ahora es una
+                pastilla con su palabra. Va DELANTE del nombre porque es lo que
+                hace saltar la fila; el `flex:none` impide que le robe ancho. */}
             {nuevo && (
-              <span aria-label="Nuevo hoy" title="Creado hoy" style={{
-                width: 7, height: 7, borderRadius: 999, flex: 'none',
-                background: 'var(--cf-green)',
-              }} />
+              <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
+                height: 19, padding: '0 8px 0 6px', borderRadius: 999,
+                background: 'var(--cf-green-tint, color-mix(in srgb, var(--cf-green) 14%, transparent))',
+                border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
+              }}>
+                <span aria-hidden style={{
+                  width: 5, height: 5, borderRadius: 999, flex: 'none',
+                  background: 'var(--cf-green-dark)',
+                }} />
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                  color: 'var(--cf-green-dark)', textTransform: 'uppercase',
+                }}>Nuevo</span>
+              </span>
             )}
             {/* EL NOMBRE NO SE CORTA NUNCA. Iba con `nowrap` + puntos
                 suspensivos y los nombres largos salían partidos. El dueño:
@@ -333,9 +349,7 @@ export default function TarjetaCliente({
           <Dato trazo={TRAZO.cedula}>{piezas.cedula}</Dato>
           <Dato trazo={TRAZO.telefono}>{piezas.telefono}</Dato>
           <Dato trazo={TRAZO.ruta}>{piezas.ruta}</Dato>
-          <Dato trazo={TRAZO.autor} titulo="Quién lo creó">
-            {piezas.autor ? `creó ${piezas.autor}` : null}
-          </Dato>
+          <CreadoPor nombre={piezas.autor} />
           <Dato trazo={TRAZO.fecha}>
             {piezas.terminado ? `terminado ${piezas.terminado}` : null}
           </Dato>
