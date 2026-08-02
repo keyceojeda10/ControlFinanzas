@@ -280,23 +280,14 @@ export default function TarjetaCliente({
 
                   La cargué yo de más al añadir el modo de interés y el autor, y
                   esto es pagar esa cuenta en vez de esconderla. */}
-              {/* CON PIEZAS, cada dato lleva su icono y su aire; sin ellas se
-                  cae a la cadena de siempre. Las dos vías conviven porque hay
-                  pantallas que aún mandan solo el texto. */}
-              {piezas ? (
-                <Metadatos style={{ flex: 1 }}>
-                  <ModoInteres {...(piezas.modo ?? {})} />
-                  <Dato trazo={TRAZO.cedula}>{piezas.cedula}</Dato>
-                  <Dato trazo={TRAZO.telefono}>{piezas.telefono}</Dato>
-                  <Dato trazo={TRAZO.ruta}>{piezas.ruta}</Dato>
-                  <Dato trazo={TRAZO.autor} titulo="Quién lo creó">
-                    {piezas.autor ? `creó ${piezas.autor}` : null}
-                  </Dato>
-                  <Dato trazo={TRAZO.fecha}>
-                    {piezas.terminado ? `terminado ${piezas.terminado}` : null}
-                  </Dato>
-                </Metadatos>
-              ) : contexto && (
+              {/* SIN PIEZAS se pinta la cadena de siempre, aquí al lado de la
+                  pastilla. Con piezas, los metadatos NO van aquí: van debajo,
+                  a todo el ancho de la tarjeta. Medido en el espejo, esta
+                  posición les dejaba **109px** —la pastilla y el avatar se
+                  llevan el resto— y los cuatro datos piden 359: se apilaban de
+                  uno en uno y la cédula salía cortada aun sobrando sitio en la
+                  tarjeta. Ver el bloque de abajo. */}
+              {!piezas && contexto && (
                 <span className="cf-num" style={{
                   fontSize: 12, color: 'var(--cf-ink-3)',
                   minWidth: 0, overflowWrap: 'anywhere',
@@ -322,6 +313,34 @@ export default function TarjetaCliente({
           </div>
         )}
       </div>
+
+      {/* ── LOS METADATOS, A TODO EL ANCHO ──
+          Cédula, teléfono, ruta, modo de interés y quién lo creó, cada uno con
+          su icono. El dueño: «toda esa información sale, pero está muy apretada;
+          le podríamos dar un poco de aire y definirlas mejor».
+
+          VAN AQUÍ Y NO ARRIBA, y es una decisión medida: al lado de la pastilla
+          les quedaban **109px** de los 393 —el avatar y el monto se llevan el
+          resto— así que los cuatro datos, que piden 359, se apilaban de uno en
+          uno y la cédula salía cortada con media tarjeta vacía al lado. Aquí
+          tienen el ancho entero y caben en dos renglones.
+
+          El separador de arriba los despega del nombre sin gastar alto: son
+          datos de apoyo, no la cabecera. */}
+      {piezas && (
+        <Metadatos style={{ paddingTop: 2 }}>
+          <ModoInteres {...(piezas.modo ?? {})} />
+          <Dato trazo={TRAZO.cedula}>{piezas.cedula}</Dato>
+          <Dato trazo={TRAZO.telefono}>{piezas.telefono}</Dato>
+          <Dato trazo={TRAZO.ruta}>{piezas.ruta}</Dato>
+          <Dato trazo={TRAZO.autor} titulo="Quién lo creó">
+            {piezas.autor ? `creó ${piezas.autor}` : null}
+          </Dato>
+          <Dato trazo={TRAZO.fecha}>
+            {piezas.terminado ? `terminado ${piezas.terminado}` : null}
+          </Dato>
+        </Metadatos>
+      )}
 
       {/* ── La tira de cifras ──
           «Faltaba lo más básico: la cuota. Y la ganancia acumulada, que es la
