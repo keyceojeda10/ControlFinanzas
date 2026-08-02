@@ -98,15 +98,20 @@ nunca dos sesiones sobre el mismo directorio.
 
 ### B · Panel — G3.5 (empezar por aquí, es lo que se ve)
 
-- [ ] **El botón «Ver más métricas» y su lista de KPIs.** Es el grueso: ~400
-      líneas con 7 componentes definidos dentro de la propia página
-      (`KpiCard`, `KpiGroup`, `QuickLink`, `RecaudoCard`, `RoutesCard`,
-      `ResumenDelDia`, `ProximosARenovar`). Ya están sobre superficies correctas;
-      falta reorganizarlas por las preguntas
+- [x] ~~El botón «Ver más métricas»~~ — **NO había que rehacerlo.** Medido:
+      `vistaSimple` arranca en `true`, así que las cifras extra ya están
+      ocultas por defecto y el toggle gobierna cinco bloques. Eso es justo lo
+      que el plan pedía. Lo que estaba mal era el rótulo, ya cambiado a «Ver
+      todo lo demás / Dejar solo las respuestas»
+- [x] ~~`HeroCard`~~ — borrado, 111 líneas muertas
 - [ ] «Listos para renovar»: 20 tarjetas seguidas. El dueño quiere que se quede
       arriba, pero compitiendo con todo
-- [ ] El panel en **escritorio** — solo se ha mirado a 430px
-- [ ] `HeroCard` es código muerto con la estética vieja: cero usos
+- [ ] El panel en **escritorio** — solo se ha mirado a 430px. **Es lo único
+      grande que queda de esta corriente**
+- [ ] Los 5 bloques que cuelgan de `vistaSimple` siguen siendo componentes
+      definidos dentro de la propia página (`KpiCard`, `KpiGroup`, `QuickLink`,
+      `RecaudoCard`, `RoutesCard`, `ResumenDelDia`, `ProximosARenovar`). Ya
+      están sobre superficies correctas, así que esto es orden, no urgencia
 
 **Ya hecho en esta corriente:** `PanelDinero` contesta «cuánta plata tengo
 puesta» y «cuánto estoy ganando»; las siete barras de la semana ya se ven en el
@@ -131,9 +136,13 @@ una vez; el pie ya no tapa 80px.
 
 - [ ] **#84 · «Cannot access 'O'»** en la ficha de préstamo, **593 veces**.
       Instrumentado, esperando captura
-- [ ] **#95 · El deploy sigue adelante cuando la base falla.**
-      `db push || echo WARN` deja pasar un despliegue con el esquema sin
-      sincronizar
+- [x] ~~#95 · El deploy sigue adelante cuando la base falla~~ — **hecho.**
+      `scripts/deploy-sistema.sh` saca el SQL, y si hay diferencia la imprime y
+      PARA; se aplica relanzando con `CF_APLICAR_ESQUEMA=1`. El original quedó
+      en `/home/deploy-sistema.sh.antes-de-la-guarda`.
+      ⚠ **Y encontró que producción NO está sincronizada**, con un
+      `ALTER TABLE Lead ALTER COLUMN updatedAt DROP DEFAULT` pendiente. Hay que
+      decidir si se aplica en el mismo despliegue o antes, por separado
 - [ ] **#107 · Hidratación React #418** en el panel. Verificado que es previo a
       esta tanda; puede estar emparentado con #84
 
