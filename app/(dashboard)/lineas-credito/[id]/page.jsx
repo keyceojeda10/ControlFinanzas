@@ -50,12 +50,12 @@ export default function DetalleLineaPage({ params }) {
   const isDark = resolvedTheme === 'dark'
 
   if (authLoading || loading) {
-    return <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
+    return <div className="max-w-2xl mx-auto py-6 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
   }
 
   if (!linea) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center">
+      <div className="max-w-lg mx-auto py-16 text-center">
         <p className="text-sm text-[var(--cf-ink-3)]">Línea no encontrada</p>
         <Button onClick={() => router.push('/lineas-credito')} size="sm" className="mt-4">Volver</Button>
       </div>
@@ -107,8 +107,9 @@ export default function DetalleLineaPage({ params }) {
 
   const tieneMovimientos = (linea.desembolsos?.length || 0) + (linea.pagosLinea?.length || 0) + (linea.cortesLinea?.length || 0) > 0
 
+  // Sin `px-4`: el relleno lateral lo pone el armazon. Eran 36 por lado.
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto py-6 pb-28">
       {/* Hero card azul metalizado */}
       <div
         className="relative rounded-[20px] overflow-hidden mb-4"

@@ -82,7 +82,7 @@ export default function CajaCobradorPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="p-4 space-y-3 max-w-2xl mx-auto">
+      <div className="py-4 space-y-3 max-w-2xl mx-auto">
         <SkeletonCard />
         <SkeletonCard />
       </div>
@@ -91,7 +91,7 @@ export default function CajaCobradorPage() {
 
   if (!esOwner) {
     return (
-      <div className="p-4 max-w-2xl mx-auto">
+      <div className="py-4 max-w-2xl mx-auto">
         <p className="text-sm text-[var(--cf-ink-3)]">Solo el administrador puede ver la caja por cobrador.</p>
       </div>
     )
@@ -99,7 +99,7 @@ export default function CajaCobradorPage() {
 
   if (error) {
     return (
-      <div className="p-4 space-y-3 max-w-2xl mx-auto">
+      <div className="py-4 space-y-3 max-w-2xl mx-auto">
         <Link href="/caja" className="text-sm text-[var(--cf-gold)] flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           Volver a Caja
@@ -109,8 +109,10 @@ export default function CajaCobradorPage() {
     )
   }
 
+  // Sin `px-`: el relleno lateral lo pone el armazon (`layout.jsx`, `px-5`).
+  // Con el `p-4` de antes eran 36 por lado y las tarjetas median 321 desde x=36.
   return (
-    <div className="p-4 space-y-4 max-w-2xl lg:max-w-5xl mx-auto">
+    <div className="py-4 space-y-4 max-w-2xl lg:max-w-5xl mx-auto">
       {/* Header */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
