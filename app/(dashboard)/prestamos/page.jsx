@@ -11,6 +11,8 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
+import { BarraProgreso }                      from '@/components/cf/primitivos'
+import { ModoInteres }                        from '@/components/cf/Metadatos'
 import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
@@ -275,13 +277,27 @@ export default function PrestamosPage() {
     return () => mq.removeEventListener('change', leer)
   }, [])
 
+  // EN ESCRITORIO MANDA LA TABLA; en móvil, las tarjetas.
+  //
+  // El dueño: «la vista de PC es una y la vista de móvil es otra. La de PC es
+  // como una tabla y la de móvil son las fichas». Y el pie de T14-01 lo dice
+  // igual: «la tabla pasa a ser el modo por defecto; el mosaico queda como
+  // alterno en el mismo conmutador que ya existe».
+  //
+  // La tabla YA ESTABA construida, pero escondida tras Filtros → «Cómo se ven»
+  // → Tabla, o sea que había que ir a buscarla en cada dispositivo. Lo único
+  // que cambia aquí es cuál es el DEFECTO.
+  //
+  // Lo guardado gana: si alguien eligió tarjetas en PC, se respeta. Solo se
+  // decide por el ancho cuando no hay preferencia.
   const [vistaP, setVistaP] = useState('lista')
   useEffect(() => {
     try {
       const v = localStorage.getItem(VISTA_KEY_P)
-      if (v) setVistaP(v)
+      if (v) { setVistaP(v); return }
     } catch {}
-  }, [])
+    if (anchaPantalla) setVistaP('tabla')
+  }, [anchaPantalla])
 
   const cambiarVistaP = (v) => {
     setVistaP(v)
@@ -680,14 +696,29 @@ export default function PrestamosPage() {
               const dame = (a, etq) => a?.cifras?.find((x) => x.etiqueta === etq) ?? null
               const color = (c) => c?.tono === 'contra' ? 'var(--cf-red-dark)'
                 : c?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
-              const COLS = '1.7fr 1.1fr 130px 130px 90px 120px 110px'
+              // Cliente y modalidad se estiran; las cifras van a ancho FIJO. Si
+              // todas fueran flexibles, los montos cambiarían de sitio al pasar
+              // de página y dejarían de poder compararse de un vistazo — es el
+              // aviso que lleva escrito el primitivo `Tabla`.
+              const COLS = '1.6fr 1fr 116px 116px 116px 108px 104px 108px 96px'
         return (
                 <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
                   <div className="grid items-center px-4 py-2.5"
                     style={{ gridTemplateColumns: COLS, gap: 12, paddingLeft: 19,
                       background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)' }}>
-                    {['Cliente', 'Modalidad', 'Prestado', 'Saldo', 'Atraso', 'Próximo cobro', 'Estado'].map((h, i) => (
-                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 && i <= 4 ? 'text-right' : ''}`}
+                    {/* ⚠ «PAGADO», NO «SALDO». La celda enseña `a.monto`, que
+                        es LO PAGADO —el dueño lo cambió a propósito: antes un
+                        préstamo nuevo salía «$1.800.000 de $1.800.000» y se leía
+                        como que ya había pagado todo—. Pero el rótulo seguía
+                        diciendo «Saldo», así que un préstamo sin pagos mostraba
+                        «$0» bajo una columna que promete lo que DEBE. Comprobado
+                        contra la base: Fernando Méndez debe $124.000 y la tabla
+                        decía $0.
+                        Y se añade «Cumple», que es la columna que pide el pie de
+                        T14-01: «la que hace el trabajo, para ver de un vistazo
+                        quién paga y quién no». */}
+                    {['Cliente', 'Modalidad', 'Prestado', 'Pagado', 'Saldo', 'Cumple', 'Atraso', 'Próximo cobro', 'Estado'].map((h, i) => (
+                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 && i <= 6 ? 'text-right' : ''}`}
                         style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
                     ))}
                   </div>
@@ -712,7 +743,16 @@ export default function PrestamosPage() {
                           <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
                           <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
                         </span>
-                        <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>{a?.detalle ?? '—'}</span>
+                        {/* La MISMA pastilla de modo que la tarjeta de móvil, con
+                            su icono: el dueño pidió poder distinguir el modo
+                            «fácilmente», y eso no puede depender de en qué
+                            dispositivo se mire. Antes esta celda repetía el
+                            «de $124.000» que ya está en las columnas de plata. */}
+                        <span className="min-w-0 flex">
+                          {a?.piezas?.modo
+                            ? <ModoInteres {...a.piezas.modo} />
+                            : <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>—</span>}
+                        </span>
                         {/* PRESTADO es el capital que salio; SALDO lo que falta.
                             La tarjeta los pone uno encima de otro («$553.658 / de
                             $779.000»); aqui son dos columnas, que es lo que
@@ -720,7 +760,29 @@ export default function PrestamosPage() {
                         <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink-2)' }}>
                           {formatMoney(Math.round(p.montoPrestado ?? 0), country)}
                         </span>
-                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
+                        {/* PAGADO: lo que ya entró. Es `a.monto`, la misma cifra
+                            que la tarjeta pone arriba. */}
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink-2)' }}>{a?.monto}</span>
+                        {/* SALDO: lo que FALTA. Es la cifra por la que se decide
+                            si vale la pena ir hoy, y hasta ahora no estaba en
+                            ninguna columna de esta tabla. */}
+                        <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)', fontWeight: 600 }}>
+                          {formatMoney(Math.max(0, Math.round((p.totalAPagar ?? 0) - (p.totalPagado ?? 0))), country)}
+                        </span>
+                        {/* CUMPLE: barra + número, «la columna que hace el
+                            trabajo» según el pie de T14-01. El porcentaje ya
+                            venía del API; solo no se estaba pintando. */}
+                        <span className="flex items-center justify-end gap-2">
+                          <BarraProgreso
+                            porcentaje={a?.porcentaje ?? 0}
+                            tono={a?.estado === 'mora' ? 'mora' : a?.estado === 'atraso' ? 'atraso' : 'aldia'}
+                            alto={5}
+                            style={{ flex: 1, minWidth: 0 }}
+                          />
+                          <span className="cf-num text-[12px] font-bold" style={{ color: 'var(--cf-ink-2)', flex: 'none' }}>
+                            {a?.porcentaje ?? 0}%
+                          </span>
+                        </span>
                         <span className="cf-fig text-[13px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
                         <span className="text-[13px] truncate" style={{
                           color: a?.estado === 'mora' ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',

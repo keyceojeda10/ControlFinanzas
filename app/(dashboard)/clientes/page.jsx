@@ -15,6 +15,7 @@ import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import { Dato, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
@@ -282,10 +283,29 @@ export default function ClientesPage() {
     return () => mq.removeEventListener('change', leer)
   }, [])
 
-  const [vista, setVista] = useState(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem(VISTA_KEY) || 'lista'
-    return 'lista'
-  })
+  // EN ESCRITORIO MANDA LA TABLA; en móvil, las tarjetas.
+  //
+  // El dueño: «la vista de PC es una y la vista de móvil es otra. La de PC es
+  // como una tabla y la de móvil son las fichas». El pie de T07-01 lo dice
+  // igual: «la tabla pasa a ser el modo por defecto; el mosaico queda como
+  // alterno». La tabla ya estaba hecha, pero escondida tras Filtros → «Cómo se
+  // ven», o sea que había que ir a buscarla en cada dispositivo.
+  //
+  // Y se lee EN UN EFECTO, no en el inicializador. Leer `localStorage` al
+  // construir el estado desajusta la hidratación —el servidor pone 'lista' y el
+  // cliente puede poner 'tabla', así que React tira el árbol y lo repinta—, que
+  // es exactamente lo que advierte el comentario de `anchaPantalla` doce líneas
+  // más arriba y lo que la pantalla de préstamos ya hacía bien.
+  //
+  // Lo guardado gana: si alguien eligió tarjetas en PC, se respeta.
+  const [vista, setVista] = useState('lista')
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VISTA_KEY)
+      if (v) { setVista(v); return }
+    } catch {}
+    if (anchaPantalla) setVista('tabla')
+  }, [anchaPantalla])
 
   // Los tres mas parecidos a lo que se escribio. `null` si no hay ninguno
   // razonable: tres sugerencias al azar son peor que ninguna.
@@ -929,7 +949,15 @@ export default function ClientesPage() {
                   <span className="block text-[11px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{a?.contexto}</span>
                 </span>
               </span>
-              <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>{a?.detalle ?? '—'}</span>
+              {/* RUTA y CREÓ, cada una en su columna y con su icono — el mismo
+                  par que la tarjeta de móvil, para que la lectura no cambie
+                  entre dispositivos. */}
+              <span className="min-w-0 flex">
+                <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
+              </span>
+              <span className="min-w-0 flex">
+                <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
+              </span>
               <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>{a?.monto}</span>
               <span className="cf-fig text-[14px] text-right" style={{ color: color(atraso) }}>{atraso?.valor ?? '—'}</span>
               <span className="cf-fig text-[13px] text-right" style={{ color: color(cumple) }}>{cumple?.valor ?? '—'}</span>
@@ -944,12 +972,19 @@ export default function ClientesPage() {
             <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
               <div className="grid items-center px-4 py-2.5"
                 style={{
-                  gridTemplateColumns: '1.7fr 1fr 130px 130px 90px 90px 130px', gap: 12,
+                  gridTemplateColumns: '1.7fr 1fr 1fr 124px 124px 100px 90px 118px', gap: 12,
                   background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)',
                   paddingLeft: 19,
                 }}>
-                {['Cliente', 'Préstamos', 'Deuda', 'Atraso', 'Cumple', 'Pagado', 'Próx. cobro'].map((h, i) => (
-                  <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 ? 'text-right' : ''}`}
+                {/* RUTA y CREÓ en vez de «Préstamos»: la lámina T07-01 pone la
+                    ruta como columna, y el dueño pidió ver quién creó al cliente
+                    también en PC. El número de préstamos ya está bajo el nombre,
+                    así que gastaba una columna en repetirse. */}
+                {/* A la derecha SOLO las cifras (de «Deuda» en adelante). «Ruta»
+                    y «Creó» son texto: alineados a la derecha se leerían como si
+                    fueran números. */}
+                {['Cliente', 'Ruta', 'Creó', 'Deuda', 'Atraso', 'Cumple', 'Pagado', 'Próx. cobro'].map((h, i) => (
+                  <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 3 ? 'text-right' : ''}`}
                     style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
                 ))}
               </div>
