@@ -1,8 +1,9 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v775'
-// API_CACHE sube TAMBIEN: este release cambia CIFRAS (la ganancia del mes, por
-// los pagos de interes que antes se repartian). Sin subirlo, la PWA seguiria
-// sirviendo las cifras viejas desde el cache.
+const CACHE_NAME   = 'cf-v776'
+// API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor. Este
+// release cambia cómo se PINTAN —tabla en PC, fichas en móvil, metadatos con
+// icono— y ninguna cuenta, así que se queda: subirlo tiraría el cache de todas
+// las respuestas sin motivo y la app arrancaría lenta en la primera carga.
 const API_CACHE    = 'cf-api-v92'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
