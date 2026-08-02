@@ -313,7 +313,12 @@ export function ListaSocios({
           empuja la página, el hueco del armazón queda al final de verdad y la
           pastilla deja de tapar nada. */}
       <div style={{
-        padding: '8px 20px 20px',
+        // Sin relleno LATERAL: lo pone el armazón (`layout.jsx` con su `px-5`).
+        // Con estos 20 propios encima eran 40 por lado, y las tarjetas medían
+        // 313px empezando en x=40 cuando la zona útil va de 20 a 373. Medido
+        // con socios sembrados en el espejo: con el estado vacío no se veía,
+        // porque no había tarjetas que medir. El vertical sí es suyo.
+        padding: '8px 0 20px',
         display: 'flex', flexDirection: 'column', gap: 11,
       }}>
         {puesto && <LoQuePusieron {...puesto} />}
