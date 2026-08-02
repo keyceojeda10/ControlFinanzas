@@ -35,6 +35,7 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -343,9 +344,16 @@ export async function POST(request, { params }) {
     if (tipo === 'capital' && tieneTablaAmortizacion(prestamoActualizado)) {
       // Modo lineal: recalcular las cuotas futuras (no pagadas) sobre el nuevo
       // saldo de capital, manteniendo intacto lo ya pagado/devengado.
-      const filas = [...prestamoActualizado.cuotasAmortizacion].sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
-      const filasPagadas = filas.filter(f => (f.pagado || 0) >= f.cuotaTotal)
-      const filasFuturas = filas.filter(f => (f.pagado || 0) < f.cuotaTotal)
+      // ── G6 · EL ATRASO SE SIGUE DEBIENDO ──
+      // Aquí «futura» estaba definida como «sin pagar», no como «aún no
+      // vencida», así que una cuota ATRASADA entraba en el lote que se
+      // reprograma con fechas nuevas y el atraso desaparecía. Nadie lo decidió:
+      // era el efecto lateral de un filtro. Ver `lib/dinero/abono-capital.js`,
+      // donde vive la decisión con sus pruebas — partirlo aquí a secas rompe la
+      // invariante del capital en silencio.
+      const filas = [...prestamoActualizado.cuotasAmortizacion]
+      const { pagadas: filasPagadas, vencidas: filasVencidas, futuras: filasFuturas } =
+        partirFilasParaAbono(filas, Date.now())
 
       if (filasFuturas.length > 0) {
         // El abono a capital baja el capital DIRECTO por el monto abonado.
@@ -355,9 +363,23 @@ export async function POST(request, { params }) {
         // los abonos ya descontados— se restarian DOS VECES y el globo se
         // encogeria de mas: deuda perdonada sin que nadie lo decida.
         const capitalAntesDelAbono = capitalVivoSegunTabla(prestamoActualizado)
-        const saldoCapitalRestante = Math.max(0, capitalAntesDelAbono - montoFinal)
-        const ultimaPagada = filasPagadas[filasPagadas.length - 1]
-        const fechaBase = ultimaPagada ? new Date(ultimaPagada.fechaEsperada) : new Date(prestamo.fechaInicio)
+        // ⚠ AQUÍ ESTABA LA TRAMPA de G6, y es de las que no fallan: hay que
+        // RESTAR el capital que se quedan las vencidas. Si no, ese capital
+        // queda a la vez en su fila y repartido otra vez entre las futuras
+        // —contado dos veces— y `Σ capital + Σ abonos === montoPrestado` deja
+        // de cumplirse sin que nada avise. La prueba que lo enseña está en
+        // `abono-capital-no-borra-mora.test.js`: son $50.000 inventados en el
+        // caso de ejemplo.
+        const saldoCapitalRestante = capitalParaFuturas({
+          capitalAntesDelAbono, abono: montoFinal, vencidas: filasVencidas,
+        })
+        // La fecha base es la de la ÚLTIMA fila que no se reprograma, sea
+        // pagada o vencida. Con solo las pagadas, las futuras se recolocaban
+        // desde antes del atraso y se solapaban con las vencidas que acabamos
+        // de dejar quietas.
+        const previas = [...filasPagadas, ...filasVencidas].sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
+        const ultimaPrevia = previas[previas.length - 1]
+        const fechaBase = ultimaPrevia ? new Date(ultimaPrevia.fechaEsperada) : new Date(prestamo.fechaInicio)
         const diasPeriodo = obtenerDiasPorPeriodo(prestamoActualizado.frecuencia)
 
         // Cada modo con tabla tiene su propia forma de recalcular tras el abono:
@@ -397,7 +419,14 @@ export async function POST(request, { params }) {
         // totalAPagar = cuotas ya pagadas completas + abonos a capital (que ya no
         // estan en la tabla futura porque bajaron el capital) + lo que falta.
         // Sin sumar los abonos, el totalAPagar quedaba por debajo de lo ya pagado.
-        const totalPagadoEnPagadas = filasPagadas.reduce((a, f) => a + f.cuotaTotal, 0)
+        // Las VENCIDAS entran en el total igual que las pagadas: siguen en la
+        // tabla con su importe intacto y el cliente las sigue debiendo. Sin
+        // sumarlas, `totalAPagar` caería justo por el atraso — que es
+        // exactamente el perdón que este cambio viene a quitar, colado por la
+        // puerta de atrás.
+        const totalPagadoEnPagadas =
+          filasPagadas.reduce((a, f) => a + f.cuotaTotal, 0) +
+          filasVencidas.reduce((a, f) => a + f.cuotaTotal, 0)
         const abonosCapitalTotal = (prestamoActualizado.pagos ?? [])
           .filter(p => p.tipo === 'capital')
           .reduce((a, p) => a + (p.montoPagado ?? 0), 0)
