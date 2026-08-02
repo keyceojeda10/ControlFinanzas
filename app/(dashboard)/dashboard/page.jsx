@@ -2408,7 +2408,7 @@ export default function DashboardPage() {
           más los 18 de separación al borde, más aire.
 
           `lg:hidden` porque sentado no hay pastilla: el hueco sobraría. */}
-      <div className="h-[96px] lg:hidden" style={{ flex: 'none' }} aria-hidden />
+      <div className="h-[112px] lg:hidden" style={{ flex: 'none' }} aria-hidden />
     </div>
 
     {/* La columna de Lucas. `hidden xl:block` y no un `display` en línea: una
