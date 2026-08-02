@@ -165,14 +165,38 @@ nunca dos sesiones sobre el mismo directorio.
 
 ---
 
-## Las dos decisiones del dueño (bloquean G6)
+## Las dos decisiones del dueño — YA TOMADAS (1 ago 2026)
 
-1. **¿El abono a capital borra la mora?** Si un cliente debe 3 cuotas y entrega
-   $200.000 a capital, ¿se le perdona el atraso o lo sigue debiendo? **Hoy se le
-   perdona en silencio.** Afecta a 17 préstamos.
-2. **La curva de devengo en cuota única.** Hace falta para que «abono a interés»
-   signifique algo en modo `unico`, que hoy devenga todo el interés al prestar.
-   No cambia lo que el cliente debe; la curva es para medir y para abonar.
+### 1 · El abono a capital NO borra la mora
+
+**Decidido: el atraso se sigue debiendo.** Si un cliente debe 3 cuotas y entrega
+$200.000 a capital, el abono baja el capital y acorta el plazo, pero esas 3
+cuotas siguen vencidas y el cliente sigue en mora hasta pagarlas.
+
+> «Abonar a capital no es ponerse al día.»
+
+**Qué hay que cambiar:** hoy los tres `recalcular*DesdeSaldo` reprograman TAMBIÉN
+las cuotas ya vencidas, así que el atraso desaparece en silencio — nadie decidió
+eso, es un efecto lateral. Deben reprogramar solo las cuotas FUTURAS.
+
+**Afecta a 17 préstamos** con abono a capital y tabla. Ojo: los ya afectados no
+se auto-corrigen; entran en la migración de G8, y como cambia lo que un cliente
+debe, va con **consentimiento**, préstamo por préstamo.
+
+### 2 · Curva de devengo en cuota única: SÍ, solo para medir y abonar
+
+**Decidido: se construye, y lo pactado NO cambia.** Hoy el modo `unico` devenga
+todo el interés al prestar (`calculos.js:1889`), así que «a día 10 lleva
+devengado X» no se puede contestar y «abono a interés» no significa nada.
+
+La curva es para **medir y para abonar**, no para cobrar distinto:
+
+- El cliente debe exactamente lo mismo que antes.
+- La **liquidación anticipada NO cambia**: sigue sin perdonar interés en cuota
+  única. Esa era la tercera opción y se descartó expresamente, porque sí habría
+  cambiado lo que un cliente debe al cerrar antes.
+- Con la curva, el atraso se mide contra lo que ya debía haberse devengado, que
+  es lo que pedía «reportar si está atrasado de forma inteligente».
 
 ---
 
