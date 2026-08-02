@@ -927,7 +927,12 @@ export default function ClientesPage() {
               onClick={() => { window.location.href = `/clientes/${c.id}` }}
               className="grid items-center w-full text-left px-4 py-3"
               style={{
-                gridTemplateColumns: '1.7fr 1fr 130px 130px 90px 90px 130px',
+                // ⚠ LAS MISMAS COLUMNAS QUE LA CABECERA, O NO CUADRAN. Aquí
+                // quedaron siete cuando la cabecera ya tenía ocho, y el octavo
+                // dato —«vencido»— se iba a un segundo renglón de la rejilla:
+                // la fila pasaba de 62px a 91 y cabían la mitad de clientes. Se
+                // ve midiendo el DOM, no leyendo el JSX.
+                gridTemplateColumns: '1fr 124px 128px 120px 112px 92px 86px 104px',
                 gap: 12,
                 background: 'var(--cf-card)',
                 border: 0,
