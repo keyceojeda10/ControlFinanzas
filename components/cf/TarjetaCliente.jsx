@@ -222,10 +222,22 @@ export default function TarjetaCliente({
                 background: 'var(--cf-green)',
               }} />
             )}
+            {/* EL NOMBRE NO SE CORTA NUNCA. Iba con `nowrap` + puntos
+                suspensivos y los nombres largos salían partidos. El dueño:
+                «el nombre nunca se debe cortar, porque es para la fácil
+                identificación del cliente en esa ficha».
+
+                Y tiene razón por encima de la simetría: una tarjeta que mide
+                igual que las demás pero dice «Jannette Alexandra Rodrí…» no
+                sirve para lo único que hace falta al recorrer la lista, que es
+                saber a quién estás mirando. Pasa a dos renglones si hace falta.
+
+                `anywhere` y no `break-word` porque una cédula o un apellido
+                compuesto sin espacios se desbordaría igual. */}
             <span style={{
               fontSize: 16, fontWeight: 700, letterSpacing: '-.015em',
               color: 'var(--cf-ink)',
-              minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              minWidth: 0, overflowWrap: 'anywhere',
             }}>{nombre}</span>
           </span>
 
@@ -237,7 +249,7 @@ export default function TarjetaCliente({
               encoge, la pastilla no: con un nombre de ruta largo se recorta la
               ruta, nunca los días de mora. */}
           {(etiquetaEstado || contexto) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flexWrap: 'wrap', rowGap: 4 }}>
               {etiquetaEstado && (
                 // El pagado lleva pastilla NEUTRA (gris), no una de su color: no
                 // hay «color de terminado», hay ausencia de alarma.
@@ -245,10 +257,25 @@ export default function TarjetaCliente({
                   {etiquetaEstado}
                 </Pastilla>
               )}
+              {/* ⚠ ESTA LÍNEA YA NO SE RECORTA, Y ES UN CAMBIO DELIBERADO.
+                  Arriba está escrito por qué iba a una sola línea: las tarjetas
+                  cambiaban de alto según lo larga que fuera la dirección, y una
+                  lista de alturas distintas se recorre peor.
+
+                  Sigue siendo cierto, pero perdía contra lo otro. El dueño lo
+                  vio en pantalla: «CC 1003003897 · 300887515…» y «Mensual 20%
+                  Decr. dinámico · c…» — la cédula a medias, la ruta invisible y
+                  el cobrador tampoco. Información que la app tiene, que el
+                  usuario pidió, y que se estaba tirando por un píxel de
+                  simetría. Una tarjeta pareja que no dice a qué ruta pertenece
+                  el cliente no sirve para salir a cobrar.
+
+                  La cargué yo de más al añadir el modo de interés y el autor, y
+                  esto es pagar esa cuenta en vez de esconderla. */}
               {contexto && (
                 <span className="cf-num" style={{
                   fontSize: 12, color: 'var(--cf-ink-3)',
-                  minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  minWidth: 0, overflowWrap: 'anywhere',
                 }}>{contexto}</span>
               )}
             </div>

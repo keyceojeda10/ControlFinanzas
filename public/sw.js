@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v765'
+const CACHE_NAME   = 'cf-v766'
 const API_CACHE    = 'cf-api-v91'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
