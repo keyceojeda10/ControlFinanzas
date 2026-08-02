@@ -17,6 +17,8 @@ import CacheAge from '@/components/offline/CacheAge'
 import TraerCartera from '@/components/pantallas/TraerCartera'
 import AsistenteChat from '@/components/asistente/AsistenteChat'
 import { rotulo } from '@/lib/dinero/definiciones'
+import PanelDinero from '@/components/pantallas/PanelDinero'
+import { adaptarPanelDinero, notaDelPanel } from '@/lib/adaptadores/panel-dinero'
 
 const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
@@ -1944,35 +1946,26 @@ export default function DashboardPage() {
           </div>
           )}
 
-          {/* Patrimonio — cierra la pregunta "cuanta plata tengo", asi que se
-              queda visible tambien en la vista esencial. La tarjeta de "Saldo
-              disponible" que vivia aqui se elimino: era el MISMO numero que
-              "Saldo en caja" del strip de arriba, con otro nombre. Dos nombres
-              para una sola cifra hacen dudar de las dos. */}
-          {esOwner && data.finanzas && (
-            <KpiGroup title="Tu dinero" icon={Icons.dinero}>
-              <div className="grid grid-cols-1 gap-3">
-                {data.finanzas && (
-                  <KpiCard
-                    label="Patrimonio"
-                    value={formatMoney(data.finanzas.patrimonio)}
-                    valueRaw={data.finanzas.patrimonio}
-                    sub={`Caja + por cobrar`}
-                    color="var(--cf-green-dark)"
-                    info={{
-                      titulo: 'Patrimonio',
-                      que: 'Tu foto financiera completa hoy: cuánto vale tu negocio sumando la plata que tienes en caja y la que te deben.',
-                      comoSeCalcula: `Saldo en caja (${formatMoney(data.finanzas.cajaDisponible)}) + Por cobrar real (${formatMoney(data.prestamos.saldoPorCobrar)}) = ${formatMoney(data.finanzas.patrimonio)}. Los gastos no se restan aquí porque ya están descontados del saldo en caja.`,
-                      ejemplo: `Tu negocio vale ${formatMoney(data.finanzas.patrimonio)} hoy: lo que tienes en caja más lo que te deben tus clientes.`,
-                      cuandoCambia: 'Se mueve con CADA acción: pagos recibidos, préstamos nuevos, gastos, retiros, todo.',
-                      tip: 'Es el indicador más completo de cómo está tu negocio. Compáralo mes a mes para ver si estás creciendo.',
-                    }}
-                    icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" /></svg>}
-                  />
-                )}
-              </div>
-            </KpiGroup>
-          )}
+          {/* ── LAS DOS PREGUNTAS QUE EL PANEL NO CONTESTABA ───────────────
+              «¿Cuánta plata tengo puesta?» y «¿cuánto estoy ganando?».
+
+              Aquí había UNA tarjeta, Patrimonio, dentro de un `KpiGroup`
+              llamado «Tu dinero». Patrimonio es caja + por cobrar: contesta
+              «cuánto vale mi negocio», que no es ninguna de las dos. El dueño
+              pidió ver su plata puesta CON intereses y SIN ellos, porque la
+              diferencia entre las dos es lo que va a ganar — y eso no estaba
+              en ninguna pantalla.
+
+              Patrimonio no se pierde: sigue bajo «ver todo». Lo que cambia es
+              qué se ve sin tener que abrir nada. */}
+          {esOwner && data.finanzas && (() => {
+            // Se calcula junto a su uso: no hay otro punto del componente donde
+            // `data` y `rutasData` estén los dos disponibles sin inventar una
+            // variable a media página.
+            const pd = adaptarPanelDinero(data, rutasData)
+            const dinero = (n) => formatMoney(n, session?.user?.country)
+            return <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
+          })()}
 
           {/* Toggle "Mostrar mas / menos KPIs" — sutil, contextual */}
           <button
