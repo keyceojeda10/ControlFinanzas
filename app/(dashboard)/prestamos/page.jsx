@@ -723,7 +723,7 @@ export default function PrestamosPage() {
               // obligatorio: si sobra un dato, se va a un segundo renglón de la
               // rejilla y la fila mide el doble — ya pasó en clientes y en el
               // JSX se ve perfecto.
-              const COLS = '1.3fr 156px 158px 96px 96px 100px 88px 80px 92px'
+              const COLS = '1.6fr 150px 150px 92px 92px 96px 84px 76px 88px'
         return (
                 <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
                   <div className="grid items-center px-4 py-2.5"
