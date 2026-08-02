@@ -8,9 +8,15 @@
 // registro—, comprueba que `updatedAt` se llenó, lo modifica para ver que la
 // fecha se mueve sola, y lo borra.
 //
-//   node --import ./scripts/alias-loader.mjs scripts/probar-escritura-lead.mjs
+// Va por `@prisma/client` y no por `@/lib/prisma`: en el VPS el cliente
+// generado en `generated/prisma` es TypeScript sin compilar y Node no lo puede
+// importar desde un script suelto. El de `node_modules` es el mismo cliente.
+//
+//   node scripts/probar-escritura-lead.mjs
 
-import { prisma } from '@/lib/prisma'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 const marca = `PRUEBA-BORRAR-${Date.now()}`
 let creado = null
