@@ -705,7 +705,14 @@ export default function PrestamosPage() {
               // dueño pidió poder distinguir. Y las cifras van a ancho FIJO: si
               // todas fueran flexibles, los montos cambiarían de sitio al pasar
               // de página y dejarían de poder compararse de un vistazo.
-              const COLS = '1.5fr 170px 112px 108px 112px 104px 96px 104px 84px'
+              // El NOMBRE manda: es lo que se busca al recorrer la lista, y con
+              // el autor debajo se quedaba en «FERNANDO MEN…». Así que el autor
+              // sale de ahí y se va a su propia columna, como en clientes.
+              // MODALIDAD pide 170 fijos o la pastilla dice «Diario 22…», que es
+              // esconder justo lo que el dueño quería distinguir. Las cifras van
+              // a ancho FIJO: con `fr` bailan de sitio al pasar de página y
+              // dejan de poder compararse de un vistazo.
+              const COLS = '1.6fr 168px 92px 104px 104px 96px 88px 96px 76px'
         return (
                 <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
                   <div className="grid items-center px-4 py-2.5"
@@ -722,8 +729,8 @@ export default function PrestamosPage() {
                         Y se añade «Cumple», que es la columna que pide el pie de
                         T14-01: «la que hace el trabajo, para ver de un vistazo
                         quién paga y quién no». */}
-                    {['Cliente', 'Modalidad', 'Prestado', 'Pagado', 'Saldo', 'Cumple', 'Atraso', 'Próximo cobro', 'Estado'].map((h, i) => (
-                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 2 && i <= 6 ? 'text-right' : ''}`}
+                    {['Cliente', 'Modalidad', 'Creó', 'Prestado', 'Pagado', 'Saldo', 'Cumple', 'Atraso', 'Próximo cobro'].map((h, i) => (
+                      <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 3 && i <= 7 ? 'text-right' : ''}`}
                         style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
                     ))}
                   </div>
@@ -751,13 +758,12 @@ export default function PrestamosPage() {
                             cortado por la mitad. */}
                         <span className="min-w-0">
                           <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
-                          {/* `flex-none` en la ruta: si las dos se encogen a la
-                              vez, las dos salen cortadas —«RUTA. #. …» y
-                              «MAURI…»— y ninguna sirve. La ruta es corta y cabe
-                              entera; el que cede es el nombre del cobrador. */}
-                          <span className="flex items-center gap-2 min-w-0">
-                            <span className="flex-none"><Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato></span>
-                            <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
+                          {/* Solo la RUTA debajo del nombre. El autor se fue a su
+                              propia columna: los dos aquí dejaban el nombre en
+                              «FERNANDO MEN…» y al cobrador en «J…», o sea que no
+                              servía ninguno de los tres. */}
+                          <span className="flex items-center min-w-0">
+                            <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
                           </span>
                         </span>
                         {/* La MISMA pastilla de modo que la tarjeta de móvil, con
@@ -769,6 +775,11 @@ export default function PrestamosPage() {
                           {a?.piezas?.modo
                             ? <ModoInteres {...a.piezas.modo} />
                             : <span className="text-[13px] truncate" style={{ color: 'var(--cf-ink-2)' }}>—</span>}
+                        </span>
+                        {/* CREÓ, en su columna: el dueño lo pidió para las dos
+                            pantallas y aquí competía con el nombre del cliente. */}
+                        <span className="min-w-0 flex">
+                          <Dato trazo={TRAZO.autor} titulo="Quién lo creó">{a?.piezas?.autor}</Dato>
                         </span>
                         {/* PRESTADO es el capital que salio; SALDO lo que falta.
                             La tarjeta los pone uno encima de otro («$553.658 / de
@@ -804,10 +815,12 @@ export default function PrestamosPage() {
                         <span className="text-[13px] truncate" style={{
                           color: a?.estado === 'mora' ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
                         }}>{fechaCorta(p.proximoCobro) ?? '—'}</span>
-                        <span className="text-[12px] font-bold truncate" style={{
-                          color: a?.estado === 'mora' ? 'var(--cf-red-dark)'
-                            : a?.estado === 'aldia' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
-                        }}>{a?.etiquetaEstado}</span>
+                        {/* La columna «Estado» se fue: repetía lo que ya dicen el
+                            riel de color de la fila y la columna de atraso, y
+                            ese ancho lo necesitaban el nombre y la modalidad.
+                            El riel sigue: es el mismo portador de estado que la
+                            tarjeta de móvil, así que la lectura no cambia entre
+                            dispositivos (pie de T14-01). */}
                       </button>
                     )
                   })}
