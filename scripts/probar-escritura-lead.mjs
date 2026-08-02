@@ -1,47 +1,74 @@
 // ¿Se puede seguir escribiendo en `Lead` sin el valor por defecto?
 //
-// Es LA pregunta que deja el arreglo cerrado. Quitar el `DEFAULT` sólo rompe a
-// quien insertara sin traer la columna; Prisma siempre la trae en un campo
-// `@updatedAt`, pero eso hay que verlo, no suponerlo.
+// Es LA pregunta que deja cerrado el arreglo de `Lead.updatedAt`. Quitar el
+// `DEFAULT current_timestamp(3)` sólo rompería a quien insertara SIN traer la
+// columna. Prisma siempre la trae en un campo `@updatedAt` — pero eso hay que
+// verlo, no suponerlo, porque si fallara se caería la entrada de leads de los
+// anuncios y nadie se enteraría hasta que dejaran de llegar.
 //
-// Crea un lead de mentira POR PRISMA —el mismo camino que usan el webhook y el
-// registro—, comprueba que `updatedAt` se llenó, lo modifica para ver que la
-// fecha se mueve sola, y lo borra.
+// Va por SQL crudo a propósito: reproduce EXACTAMENTE la forma del INSERT que
+// manda Prisma (con `updatedAt` incluido) sin tener que montar el adaptador de
+// MariaDB que Prisma 7 exige. Lo que se prueba es la COLUMNA, no el ORM.
 //
-// Va por `@prisma/client` y no por `@/lib/prisma`: en el VPS el cliente
-// generado en `generated/prisma` es TypeScript sin compilar y Node no lo puede
-// importar desde un script suelto. El de `node_modules` es el mismo cliente.
+// Crea una fila de mentira, la modifica, comprueba que la fecha avanza y la
+// borra. No deja rastro.
 //
 //   node scripts/probar-escritura-lead.mjs
 
-import { PrismaClient } from '@prisma/client'
+import mysql from 'mysql2/promise'
+import fs from 'node:fs'
 
-const prisma = new PrismaClient()
+const u = new URL(/DATABASE_URL="?([^"\n]+)/.exec(fs.readFileSync('.env', 'utf8'))[1])
+const cx = await mysql.createConnection({
+  host: u.hostname, port: u.port || 3306,
+  user: decodeURIComponent(u.username), password: decodeURIComponent(u.password),
+  database: u.pathname.slice(1),
+})
 
-const marca = `PRUEBA-BORRAR-${Date.now()}`
-let creado = null
+// `Lead` es palabra reservada en MariaDB: sin las comillas oblicuas es un error
+// de sintaxis.
+const T = '`Lead`'
+const id = `PRUEBA-BORRAR-${Date.now()}`
+let creada = false
 
 try {
-  creado = await prisma.lead.create({
-    data: { nombre: marca, telefono: '+000000000000', estado: 'nuevo' },
-  })
-  console.log('creado    :', creado.id)
-  console.log('updatedAt :', creado.updatedAt, creado.updatedAt ? '✓ se llenó' : '✗ VACÍO')
+  await cx.query(
+    `INSERT INTO ${T} (id, nombre, telefono, estado, createdAt, updatedAt) VALUES (?,?,?,?,NOW(3),NOW(3))`,
+    [id, 'PRUEBA BORRAR', '+000000000000', 'nuevo'],
+  )
+  creada = true
+  const [[a]] = await cx.query(`SELECT updatedAt FROM ${T} WHERE id=?`, [id])
+  console.log('INSERT trayendo updatedAt (como hace Prisma): OK ·', a.updatedAt)
 
   await new Promise((r) => setTimeout(r, 1100))
-  const tocado = await prisma.lead.update({
-    where: { id: creado.id },
-    data: { estado: 'contactado' },
-  })
-  const semovio = tocado.updatedAt.getTime() > creado.updatedAt.getTime()
-  console.log('tras editar:', tocado.updatedAt, semovio ? '✓ se movió sola' : '✗ NO SE MOVIÓ')
+  await cx.query(`UPDATE ${T} SET estado=?, updatedAt=NOW(3) WHERE id=?`, ['contactado', id])
+  const [[b]] = await cx.query(`SELECT updatedAt FROM ${T} WHERE id=?`, [id])
+  const avanzo = b.updatedAt.getTime() > a.updatedAt.getTime()
+  console.log('UPDATE:', avanzo ? 'OK · la fecha avanzó' : '✗ la fecha NO avanzó')
 
-  if (!creado.updatedAt || !semovio) process.exitCode = 1
+  // Y la comprobación que de verdad importa: SIN la columna tiene que fallar.
+  // Es lo que confirma que el valor por defecto ya no está y que nadie puede
+  // apoyarse en él sin darse cuenta.
+  let fallo = false
+  try {
+    await cx.query(`INSERT INTO ${T} (id, nombre, telefono, estado, createdAt) VALUES (?,?,?,?,NOW(3))`,
+      [`${id}-sin`, 'PRUEBA SIN UPDATEDAT', '+000000000000', 'nuevo'])
+    await cx.query(`DELETE FROM ${T} WHERE id=?`, [`${id}-sin`])
+  } catch {
+    fallo = true
+  }
+  console.log('INSERT sin updatedAt:', fallo
+    ? 'falla, como debe (ya no hay valor por defecto)'
+    : '⚠ pasó — el valor por defecto sigue ahí')
+
+  if (!avanzo) process.exitCode = 1
   else console.log('\nEscribir y editar leads sigue funcionando.')
 } finally {
-  if (creado) {
-    await prisma.lead.delete({ where: { id: creado.id } })
-    console.log('(lead de prueba borrado)')
+  if (creada) {
+    await cx.query(`DELETE FROM ${T} WHERE id=?`, [id])
+    console.log('(fila de prueba borrada)')
   }
-  await prisma.$disconnect()
+  const [[n]] = await cx.query(`SELECT COUNT(*) n FROM ${T}`)
+  console.log('filas reales:', n.n)
+  await cx.end()
 }
