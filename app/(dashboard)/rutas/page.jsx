@@ -605,6 +605,19 @@ export default function RutasPage() {
               lado de "$1.500.000 prestado"— hacia que el ojo se quedara con el
               numero grande, que es el que no importa al salir a cobrar. */}
           <ListaRutas
+            // EL MARGEN LO PONE EL ARMAZÓN, NO EL COMPONENTE. Sin esta prop,
+            // `ListaRutas` sumaba sus 20px de `--cf-pad-screen` a los 20 que ya
+            // da `layout.jsx` con su `px-5`: 40 por lado, y las tarjetas salían
+            // 40px más estrechas que en el resto de la app.
+            //
+            // Medido a 393px antes de tocarlo: la tarjeta empezaba en x=40 y
+            // acababa en x=353 —313 de ancho— cuando la zona útil va de 20 a
+            // 373. El dueño lo vio sin medir: «las tarjetas están muy angostas,
+            // no están proporcionalmente en el ancho como las otras pantallas».
+            //
+            // Quinta vez el mismo patrón: prop declarada, prop no pasada, nada
+            // falla y solo queda mal. Lo caza `lib/__tests__/sin-margen.test.js`.
+            sinMargen
             rutas={adaptarRutas(rutas, country)}
             sinRuta={adaptarSinRuta(recom, country)}
             // «4 rutas · $34.500 de $207.500 hoy». El encabezado dice de un
