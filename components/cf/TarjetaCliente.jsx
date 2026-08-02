@@ -52,6 +52,7 @@
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
 import { BarraProgreso, Pastilla, TiraCifras } from './primitivos'
+import { Metadatos, Dato, ModoInteres, TRAZO } from './Metadatos'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -101,6 +102,10 @@ export default function TarjetaCliente({
   // hoy. Meterlo acá obligaría a la tarjeta a saber en qué pantalla está.
   etiquetaEstado,
   contexto,                // «Ana María · 3 préstamos»
+  // Lo MISMO que `contexto` pero en piezas, para pintarlo con icono y con aire
+  // en vez de una cadena gris separada por puntos. Lo componen los adaptadores
+  // (`piezasDe` / `piezasDeCliente`). Si no llega, se pinta `contexto`.
+  piezas,
   // ── DE HOY ──
   // Un punto verde al lado del nombre, no una pastilla: la pastilla de estado
   // ya está a la derecha y dos pastillas en la misma fila compiten. El punto
@@ -272,7 +277,23 @@ export default function TarjetaCliente({
 
                   La cargué yo de más al añadir el modo de interés y el autor, y
                   esto es pagar esa cuenta en vez de esconderla. */}
-              {contexto && (
+              {/* CON PIEZAS, cada dato lleva su icono y su aire; sin ellas se
+                  cae a la cadena de siempre. Las dos vías conviven porque hay
+                  pantallas que aún mandan solo el texto. */}
+              {piezas ? (
+                <Metadatos style={{ flex: 1 }}>
+                  <ModoInteres {...(piezas.modo ?? {})} />
+                  <Dato trazo={TRAZO.cedula}>{piezas.cedula}</Dato>
+                  <Dato trazo={TRAZO.telefono}>{piezas.telefono}</Dato>
+                  <Dato trazo={TRAZO.ruta}>{piezas.ruta}</Dato>
+                  <Dato trazo={TRAZO.autor} titulo="Quién lo creó">
+                    {piezas.autor ? `creó ${piezas.autor}` : null}
+                  </Dato>
+                  <Dato trazo={TRAZO.fecha}>
+                    {piezas.terminado ? `terminado ${piezas.terminado}` : null}
+                  </Dato>
+                </Metadatos>
+              ) : contexto && (
                 <span className="cf-num" style={{
                   fontSize: 12, color: 'var(--cf-ink-3)',
                   minWidth: 0, overflowWrap: 'anywhere',
