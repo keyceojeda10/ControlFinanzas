@@ -1885,12 +1885,21 @@ export default function DashboardPage() {
               border: '1px dashed var(--cf-border)',
               color: 'var(--cf-ink-2)',
             }}
-            title={vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}
+            // EL RÓTULO, no el mecanismo. Decía «Ver más métricas / Mostrar
+            // solo lo esencial»: la app admitiendo que no sabe cuáles de sus 47
+            // cifras importan, y llamando «métricas» a la plata de alguien.
+            //
+            // El plegado en sí está BIEN y se queda — el plan pedía justo eso,
+            // que el resto se pliegue bajo «ver todo» y NO se borre, porque
+            // alguna de esas cifras es la que alguien mira a diario y no
+            // sabemos cuál. Lo que cambia es cómo se llama: arriba están las
+            // respuestas, aquí abajo todo lo demás.
+            title={vistaSimple ? 'Ver todo lo demás' : 'Dejar solo las respuestas'}
           >
             <svg className={`w-3.5 h-3.5 transition-transform ${vistaSimple ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
-            <span className="text-[11px] font-medium">{vistaSimple ? 'Ver más métricas' : 'Mostrar solo lo esencial'}</span>
+            <span className="text-[11px] font-medium">{vistaSimple ? 'Ver todo lo demás' : 'Dejar solo las respuestas'}</span>
           </button>
 
           {/* Desktop: KPI groups side by side */}
