@@ -36,7 +36,15 @@
 // Presentacional a propósito: recibe todo por props. Así se puede ver y ajustar
 // contra la lámina sin depender de la base de datos.
 
+import { useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
+
+/* Cuántas rutas se ven sin desplegar.
+   Cinco no es un número redondo cualquiera: es lo que hace que esta tarjeta
+   mida parecido a «Necesita tu atención», que es su pareja en la fila de la
+   rejilla de 1440. Con diez, la columna de al lado quedaba con un hueco enorme
+   debajo — que es lo que se veía desproporcionado. */
+const RUTAS_VISIBLES = 5
 
 /* ══ El hero dorado ══
    Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
@@ -284,6 +292,9 @@ export default function Panel({
   // las pasa cuando hay sitio.
   acciones,
 }) {
+  // Cinco rutas visibles y el resto a un toque. Ver .
+  const [verTodasRutas, setVerTodasRutas] = useState(false)
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 12,
@@ -407,7 +418,34 @@ export default function Panel({
               {porRuta.recaudado} de {porRuta.meta}
             </span>
           </div>
-          {porRuta.rutas.map((r) => <FilaRuta key={r.id ?? r.nombre} {...r} />)}
+          {/* ⚠ SE MUESTRAN CINCO, NO LAS DIEZ.
+              Con diez rutas esta tarjeta medía el doble que «Necesita tu
+              atención», que es su pareja en la fila de la rejilla
+              (`[1fr | 360px]`, `items-start`), y la columna izquierda quedaba
+              con un hueco enorme debajo. Eso es lo que se ve desproporcionado
+              en 1440.
+
+              Y no es solo simetría: diez barras iguales seguidas son un muro,
+              no un desglose. Van las que peor van —el adaptador ya las ordena
+              así— que son a las que hay que llamar. El resto, a un toque.
+
+              El total de arriba sigue siendo el de TODAS: es la suma que tiene
+              que cuadrar, y recortarla haría que no cuadrase. */}
+          {porRuta.rutas.slice(0, verTodasRutas ? porRuta.rutas.length : RUTAS_VISIBLES).map((r) => <FilaRuta key={r.id ?? r.nombre} {...r} />)}
+          {!verTodasRutas && porRuta.rutas.length > RUTAS_VISIBLES && (
+            <button
+              type="button"
+              onClick={() => setVerTodasRutas(true)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                minHeight: 36, marginTop: 2, borderRadius: 'var(--cf-r-pill)',
+                background: 'var(--cf-fill)', border: 0, cursor: 'pointer',
+                fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-2)',
+              }}
+            >
+              Ver las otras {porRuta.rutas.length - RUTAS_VISIBLES}
+            </button>
+          )}
           {porRuta.nota && (
             <span style={{
               fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)',
