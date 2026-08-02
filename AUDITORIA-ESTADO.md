@@ -123,6 +123,39 @@ nunca dos sesiones sobre el mismo directorio.
       ⚠ Y una advertencia sobre mi propia lista: yo daba «el escritorio» por
       pendiente entero. Al mirarlo, casi todo estaba hecho. **Mide antes de
       creerte una lista, aunque la haya escrito yo.**
+
+- [ ] **EL HUECO DE LA COLUMNA IZQUIERDA A 1440 — la causa, ya diagnosticada.**
+
+      El dueño lo marcó en rojo sobre la captura: un zigzag sobre el vacío
+      debajo de «Necesita tu atención», y rayas verticales señalando que la
+      columna derecha acaba a otra altura.
+
+      **La causa NO es el alto de las tarjetas.** Acoté «Por ruta hoy» de diez
+      rutas a cinco y el hueco se redujo pero NO desapareció, porque el problema
+      es de composición:
+
+        `Panel.jsx` monta `lg:grid-cols-[minmax(0,1fr)_360px]` con
+        `lg:items-start` y posiciones FIJAS (`lg:col-start-N lg:row-start-M`):
+
+            fila 1   hero            │ en caja + en mora
+            fila 2   necesita atención│ por ruta hoy
+
+        Debajo de esa rejilla van bloques a ANCHO COMPLETO («3 días restantes»,
+        `PanelDinero`). Y un bloque a ancho completo no empieza hasta que acaba
+        la celda MÁS ALTA de la fila. Como la celda izquierda de la fila 2 es
+        corta, queda el hueco. Achicar la derecha solo lo achica.
+
+      **El arreglo: meter `PanelDinero` DENTRO de la columna izquierda**, como
+      fila 3 de la columna 1, en vez de a ancho completo debajo. Ahí la rejilla
+      cuadra sola.
+
+      ⚠ Requiere tocar DOS archivos a la vez: `PanelDinero` lo pinta la página
+      (`app/(dashboard)/dashboard/page.jsx`) y la rejilla vive en
+      `components/pantallas/Panel.jsx`. Hay que pasarlo como RANURA — igual que
+      `acciones`, que ya es una — y no intentarlo desde un solo lado.
+
+      Y `lg:items-stretch` NO es la solución: iguala los altos estirando una
+      tarjeta de tres filas hasta 290px de blanco, que se ve peor.
 - [ ] Los 5 bloques que cuelgan de `vistaSimple` siguen siendo componentes
       definidos dentro de la propia página (`KpiCard`, `KpiGroup`, `QuickLink`,
       `RecaudoCard`, `RoutesCard`, `ResumenDelDia`, `ProximosARenovar`). Ya
