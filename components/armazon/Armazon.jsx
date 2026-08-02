@@ -166,6 +166,24 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
 
       {children}
 
+      {/* ── EL HUECO DEL PIE, PARA TODA LA APP ───────────────────────────────
+          La pastilla flota fija sobre el contenido, así que sin este hueco se
+          come el final de la última tarjeta. El dueño lo reportó: «hay pantallas
+          donde el menú sticky tapa la información al final… falta un espacio
+          para que el menú no tape parte de la tarjeta».
+
+          Va AQUÍ y no en cada pantalla a propósito. Ya lo puse una vez en el
+          panel, pantalla por pantalla, y eso solo arregla la que se mira: el
+          resto sigue tapada hasta que alguien la reporte. El armazón es el único
+          que sabe si hay pastilla, así que es el único que puede reservarle el
+          sitio SIEMPRE que la haya y nunca cuando no.
+
+          112px = 62 de la pastilla + 18 de separación al borde + aire. Medido en
+          el panel: con 96 el último renglón aún rozaba.
+
+          `lg:hidden` porque sentado no hay pastilla y el hueco sobraría. */}
+      {armazon.pastilla && <div className="h-[112px] lg:hidden" style={{ flex: 'none' }} aria-hidden />}
+
       {/* La pastilla NO se oculta con CSS: no se monta. Un `display:none` deja
           los cinco destinos en el árbol y un lector de pantalla los sigue
           anunciando en una pantalla donde no se puede navegar. */}
