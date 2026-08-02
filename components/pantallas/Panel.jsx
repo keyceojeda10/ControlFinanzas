@@ -366,8 +366,15 @@ export default function Panel({
         // EN 1440 SE APILAN. Una al lado de otra en una columna de 360 deja dos
         // cifras de 21px con la mitad del aire que necesitan; la lamina las pone
         // una encima de la otra, cada una con su tarjeta entera.
+        /* `lg:self-stretch` — LAS DOS BLANCAS LLENAN EL ALTO DEL HERO.
+            La rejilla lleva `lg:items-start`, así que por defecto esta celda
+            mide lo que su contenido y acababa 88px por encima del dorado, con
+            un escalón entre las dos columnas.
+            Las tarjetas ya traen `flex: 1`, que en columna reparte el alto a
+            partes iguales: lo único que faltaba era que el contenedor ocupara
+            la fila entera. */
         <div
-          className="lg:col-start-2 lg:row-start-1 lg:flex-col"
+          className="lg:col-start-2 lg:row-start-1 lg:flex-col lg:self-stretch"
           style={{ display: 'flex', gap: 10, flex: 'none' }}
         >
           {caja && (
