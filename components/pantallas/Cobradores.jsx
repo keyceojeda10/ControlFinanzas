@@ -86,7 +86,14 @@ export function Cobradores({
   // por si algun sitio la mete dentro de otra que ya tiene titulo — sin eso
   // saldrian DOS «Cobradores» seguidos, que es lo que me paso al montar caja.
   cabecera = true, alto = '100%',
+  // El relleno lateral lo pone el ARMAZÓN (`layout.jsx` con su `px-5`), no este
+  // componente. Iba pegado a `cabecera`, que es otra pregunta: en `/cobradores`
+  // la cabecera SÍ va y el relleno NO, y al no poder separarlos las tarjetas
+  // salían a 313px empezando en x=40 —20 del armazón más 20 de aquí— cuando la
+  // zona útil es 353 desde x=20. Lo cazó el medidor de anchos, no una captura.
+  sinMargen = false,
 }) {
+  const padLateral = sinMargen ? '0' : '20px'
   // En el banco la pantalla mide 844 y el boton flota al fondo. En una ruta de
   // verdad la pagina crece con el contenido, y un `absolute` sin ancestro
   // posicionado se pega a la ventana o desaparece: ahi va en el flujo.
@@ -100,7 +107,7 @@ export function Cobradores({
       height: alto, minHeight: 0, display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
-      <div style={{ flex: 'none', padding: cabecera ? '6px 20px 14px' : '0 0 14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ flex: 'none', padding: cabecera ? `6px ${padLateral} 14px` : `0 ${padLateral} 14px`, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {cabecera && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {onVolver && (
@@ -150,7 +157,9 @@ export function Cobradores({
       <div style={{
         flex: alto === 'auto' ? 'none' : 1, minHeight: 0,
         overflowY: alto === 'auto' ? 'visible' : 'auto',
-        padding: cabecera ? '0 20px 96px' : 0,
+        // El hueco de abajo reserva sitio para la pastilla y NO depende del
+        // margen lateral: son dos cosas distintas y antes iban juntas.
+        padding: `0 ${padLateral} ${cabecera ? '96px' : '0'}`,
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         {/* ── SIN NINGUNA CUENTA TODAVIA ──

@@ -97,8 +97,9 @@ export default function NuevaLineaPage() {
     )
   }
 
+  // El relleno lateral lo pone el armazon; con `px-4` aqui eran 36 por lado.
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 pb-28">
+    <div className="max-w-lg mx-auto py-6 pb-28">
       {/* SIN FLECHA PROPIA Y SIN TITULO PROPIO: los dos los pone el armazon,
           y aqui salian OTRA VEZ debajo. La flecha ademas hacia dos cosas
           distintas —retroceder de paso o salir— sin decir cual, asi que ahora

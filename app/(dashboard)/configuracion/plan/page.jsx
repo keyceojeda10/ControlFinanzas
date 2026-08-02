@@ -197,7 +197,7 @@ export default function PlanPage() {
   // ── Loading state ──
   if (authLoading || loadEstado) {
     return (
-      <div className="max-w-lg mx-auto space-y-4 px-4 pt-6">
+      <div className="max-w-lg mx-auto space-y-4 pt-6">
         <SkeletonCard /><SkeletonCard />
       </div>
     )
@@ -206,7 +206,7 @@ export default function PlanPage() {
   const esTrial = estado?.estado !== 'activa' || (!tieneRecurrente && !estado?.mercadopagoId)
 
   return (
-    <div className="max-w-lg mx-auto px-4 pb-12 space-y-5">
+    <div className="max-w-lg mx-auto pb-12 space-y-5">
 
       {/* Titulo y subtitulo, en la cabecera del armazon: salian otra vez justo
           debajo de ella. El «plan» en cursiva dorada se pierde, y esta bien —

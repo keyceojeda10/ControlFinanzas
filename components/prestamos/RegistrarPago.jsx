@@ -118,7 +118,10 @@ export default function RegistrarPago({
     // tenia el pago, esto era `tabInicial !== 'pago'`, y al darles hoja a recargo y
     // descuento seguia mandandolos al formulario viejo: la hoja nueva no se veia
     // NUNCA. Lo caze abriendola en la app, no con una prueba.
-    setVerFormularioCompleto(!['pago', 'recargo', 'descuento'].includes(tabInicial))
+    // Y volvio a pasar con `capital` e `intereses`: entrar por el boton de
+    // «Abono a capital» abria el formulario viejo aunque la hoja ya supiera
+    // pintarlos. Cada tipo que gana hoja hay que anadirlo AQUI tambien.
+    setVerFormularioCompleto(!['pago', 'recargo', 'descuento', 'capital', 'intereses'].includes(tabInicial))
 
     if (tabInicial === 'recargo' || tabInicial === 'descuento') {
       setMonto('')
@@ -769,6 +772,37 @@ export default function RegistrarPago({
     excedentePago > 100 &&
     Math.round(Number(monto) || 0) < Math.round(saldoPendiente ?? 0)
 
+  // Lo que el formulario viejo explicaba en sus dos recuadros de color, para que
+  // baje a la hoja. Es la única pieza que capital e interés tenían y la hoja no:
+  // sin ella, «Capital» y «Cuota» se ven igual y nadie sabe qué cambia al elegir.
+  // El ahorro en intereses se calcula IGUAL que en el formulario (era su única
+  // cuenta propia); no se inventa nada nuevo.
+  const explicacionAplicacion = (() => {
+    if (tipo === 'capital') {
+      const m = Math.round(Number(monto) || 0)
+      let ahorro = null
+      if (m > 0 && prestamo?.tasaInteres > 0 && prestamo?.fechaInicio) {
+        const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000)
+        const diasTrans = Math.max(0, Math.floor((ahora - new Date(prestamo.fechaInicio)) / 86400000))
+        const diasRest = Math.max(0, (prestamo.diasPlazo || 0) - diasTrans)
+        ahorro = Math.round(m * (prestamo.tasaInteres / 100) * (diasRest / 30))
+      }
+      return {
+        titulo: 'Abono a capital',
+        texto: 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.',
+        cifra: ahorro > 0 ? { etiqueta: 'Ahorro en intereses', valor: formatMoney(ahorro) } : null,
+      }
+    }
+    if (tipo === 'intereses') {
+      return {
+        titulo: 'Pago a intereses',
+        texto: 'Cubre solo los intereses de las cuotas vencidas. El capital queda pendiente pero no genera mora adicional.',
+        cifra: null,
+      }
+    }
+    return null
+  })()
+
   // ── LAS HOJAS DE AJUSTE: T13-01 RECARGO Y T19-03 DESCUENTO ────────────────
   //
   // Mismo criterio que la hoja de pago: piel nueva, motor igual. El envío, la nota
@@ -845,11 +879,17 @@ export default function RegistrarPago({
 
   // ── LA HOJA DE T02-04 / T08-01 ─────────────────────────────────────────────
   //
-  // Es el camino del 90%: un pago normal. Los ajustes —recargo, descuento, abono a
-  // capital, pago a intereses, abono por días— siguen por el formulario de abajo,
-  // que es donde el pie de la lámina dice que van: «lo raro —recargo, descuento,
-  // abono por días— plegado».
+  // Es el camino del 90%: un pago normal. Lo RARO —recargo, descuento y abono por
+  // días— sigue detrás del enlace, que es lo que dice el pie de la lámina.
+  //
+  // CAPITAL E INTERÉS NO SON «LO RARO». La hoja los ofrece como botones de primera
+  // fila en «¿A qué se aplica?», y mandarlos al formulario viejo desmontaba la hoja
+  // debajo del dedo: el dueño lo reportó como «cambia por el modal viejo». Un botón
+  // de esta hoja tiene que resolverse EN esta hoja. Lo que el formulario viejo sabía
+  // hacer y aquí faltaba —explicar a dónde va la plata y dejar apuntar el motivo—
+  // baja con la hoja; el envío es el mismo `handleSubmit` de siempre.
   const esPagoNormal = tipo === 'completo' || tipo === 'parcial'
+    || tipo === 'capital' || tipo === 'intereses'
   if (esPagoNormal && !verFormularioCompleto) {
     const medios = mediosParaHoja(metodosPago, (nombre) => getPlataformaInfo(nombre)?.color)
     // Qué casilla está marcada. En la DB `metodoPago` solo dice
@@ -862,7 +902,16 @@ export default function RegistrarPago({
     // `montoAlDia` y `cancelarHoy` los manda la pagina: el primero lo calcula
     // el servidor con los festivos de la organizacion, el segundo viene del
     // endpoint de liquidacion. Si no llegan, esos dos atajos no salen.
-    const atajos = atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy })
+    //
+    // Y SOLO EN UN COBRO NORMAL. Los tres —«Cuota», «Al día», «Cancelar hoy»—
+    // responden a la pregunta de la cuota, y en un abono a capital ninguno
+    // significa nada: la gracia del abono es que el dueño elige cuánto. Ofrecer
+    // «Cuota» ahí sugiere una cifra que no es la del tipo elegido, y esta es la
+    // pantalla donde una cifra sugerida termina cobrada.
+    const conAtajos = tipo === 'completo' || tipo === 'parcial'
+    const atajos = conAtajos
+      ? atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy })
+      : []
     const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
 
     const { filas } = adaptarDespuesDelPago(
@@ -888,11 +937,20 @@ export default function RegistrarPago({
       <HojaInferior
         abierta={open}
         onCerrar={onClose}
-        titulo="Registrar pago"
+        // El título lo decide el tipo, que ya lo sabía `tituloModal`: con
+        // «Registrar pago» fijo, elegir «Capital» dejaba la hoja diciendo lo
+        // mismo que antes de elegir y no había forma de saber qué se iba a hacer.
+        titulo={tituloModal}
         subtitulo={[cliente?.nombre, contextoCuota].filter(Boolean).join(' · ') || null}
         accion={
           <PieRegistrarCobro
-            textoConfirmar={montoNum > 0 ? `Confirmar ${formatMoney(montoNum)}` : 'Confirmar'}
+            // En un cobro normal es «Confirmar $27.500», tal cual la lámina. En
+            // capital e interés el verbo importa —«Confirmar abono $50.000»—
+            // porque es lo único que distingue lo que está a punto de pasar.
+            textoConfirmar={(() => {
+              const verbo = tipo === 'capital' ? 'Confirmar abono' : 'Confirmar'
+              return montoNum > 0 ? `${verbo} ${formatMoney(montoNum)}` : verbo
+            })()}
             onConfirmar={handleSubmit}
             confirmando={loading}
             deshabilitado={!(montoNum > 0)}
@@ -914,12 +972,14 @@ export default function RegistrarPago({
           onAtajo={(a) => setMonto(String(a.monto))}
           aplicaciones={aplicacionesDePago}
           aplicacion={tipo}
-          onAplicacion={(a) => {
-            setTipo(a.id)
-            // Capital e interés SON ajustes: caen al formulario, que es el que sabe
-            // pedir la nota y avisar de a dónde va el excedente.
-            if (a.id !== 'completo' && a.id !== 'parcial') setVerFormularioCompleto(true)
-          }}
+          // La hoja NO se desmonta al cambiar de aplicación: las tres opciones
+          // que pinta se resuelven aquí dentro.
+          onAplicacion={(a) => setTipo(a.id)}
+          explicacion={explicacionAplicacion}
+          // La nota solo en capital e interés: en un cobro normal es un campo más
+          // que estorba en la pantalla que se opera de pie.
+          nota={nota}
+          onNota={explicacionAplicacion ? setNota : undefined}
           medios={medios}
           medio={medioElegido}
           onMedio={(m) => {

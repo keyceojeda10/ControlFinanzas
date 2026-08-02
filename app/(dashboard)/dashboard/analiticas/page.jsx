@@ -149,7 +149,7 @@ export default function AnaliticasPage() {
   const alertasVisibles = showAllAlertas ? alertas : alertas.slice(0, 5)
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl lg:max-w-[1180px] mx-auto pb-24 space-y-4 lg:space-y-5">
+    <div className="py-4 lg:p-8 max-w-5xl lg:max-w-[1180px] mx-auto pb-24 space-y-4 lg:space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         {/* Titulo en la cabecera. Se queda el boton de descargar, que es la

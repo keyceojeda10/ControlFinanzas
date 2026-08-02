@@ -63,8 +63,11 @@ export default function LineasCreditoPage() {
   const totalSaldo = lineas.reduce((s, l) => s + (l.saldoTotal || 0), 0)
   const totalCupo = lineas.reduce((s, l) => s + l.cupoMaximo, 0)
 
+  // Sin `px-4`: el relleno lateral lo pone el armazon (`layout.jsx` con su
+  // `px-5`) y sumarle 16 mas dejaba las tarjetas en 321px desde x=36 cuando la
+  // zona util es 353 desde x=20.
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-6 pb-28">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto py-6 pb-28">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         {/* El titulo lo pone el armazon; el CONTEO se queda, que es lo que

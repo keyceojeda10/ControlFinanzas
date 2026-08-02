@@ -46,9 +46,16 @@
 // modelo real `MetodoPago` es una lista POR ORGANIZACIÓN: cada negocio crea sus
 // cuentas y les pone el nombre que quiere, y el sistema atiende 12 países. Así que
 // las casillas se pintan con las cuentas REALES de la org —Efectivo siempre primero
-// y por defecto, «el 90% de los casos» según el pie— y con la inicial de cada
-// cuenta en el círculo. Con la lista fija de la lámina, un negocio de Perú vería
-// dos cuentas que no tiene y ninguna de las suyas.
+// y por defecto, «el 90% de los casos» según el pie—. Con la lista fija de la
+// lámina, un negocio de Perú vería dos cuentas que no tiene y ninguna de las suyas.
+//
+// El icono es el LOGO DE MARCA cuando la cuenta se llama como una que tenemos
+// dibujada (Nequi, Daviplata, Bancolombia) y la inicial de color cuando no. Los
+// dos caminos hacen falta: el logo porque se reconoce sin leer, y la inicial
+// porque «Yape» o «Banco Bogotá» no tienen logo y con un icono genérico las
+// cuatro casillas se verían iguales.
+
+import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
 //
 // ── LO QUE NO ESTÁ AQUÍ: «NO PAGÓ» ──────────────────────────────────────────
 //
@@ -130,8 +137,16 @@ function IconoEfectivo({ activo }) {
 }
 
 /* Una casilla de medio: icono arriba, nombre abajo, y el elegido con el mismo
-   anillo dorado que el campo de monto. */
-function Medio({ nombre, inicial, color, efectivo, activo, onClick }) {
+   anillo dorado que el campo de monto.
+
+   EL LOGO DE MARCA cuando existe (Nequi, Daviplata, Bancolombia), y la inicial
+   de color cuando no. La lámina T08-01 dibuja círculos con letra —«N», «D»—
+   porque son cuentas de mentira; con las de verdad el cobrador reconoce el logo
+   antes de leer, que es el punto de una fila que se opera de pie y con prisa.
+   El respaldo NO se quita: «Yape» o «Banco Bogotá» no tienen logo dibujado y
+   con un icono genérico las cuatro casillas se verían iguales. */
+function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }) {
+  const logo = plataforma ? <PlataformaIcon plataforma={plataforma} size={22} /> : null
   return (
     <button
       type="button"
@@ -145,7 +160,7 @@ function Medio({ nombre, inicial, color, efectivo, activo, onClick }) {
         boxShadow: activo ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
       }}
     >
-      {efectivo ? <IconoEfectivo activo={activo} /> : (
+      {efectivo ? <IconoEfectivo activo={activo} /> : logo || (
         <span aria-hidden style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           width: 22, height: 22, borderRadius: 999, flex: 'none',
@@ -175,8 +190,13 @@ export default function RegistrarCobro({
   monto = '', moneda = '$', onMonto,
   atajos = [], atajoActivo, onAtajo,
   aplicaciones = [], aplicacion, onAplicacion,
+  // `explicacion` = { titulo, texto, cifra: { etiqueta, valor } | null }. La
+  // compone quien monta la hoja: aquí no se sabe qué hace cada tipo de pago.
+  explicacion = null,
   medios = [], medio, onMedio,
   despues = [],
+  // La nota solo se pinta si le dan `onNota`: en un pago normal no va.
+  nota = '', onNota,
   onLoRaro, textoLoRaro = 'Recargo, descuento y abono por días',
 }) {
   return (
@@ -233,6 +253,34 @@ export default function RegistrarCobro({
         </div>
       )}
 
+      {/* ── 2b · QUÉ HACE LO QUE ACABAS DE ELEGIR ─────────────────────────
+          Solo aparece fuera de «Cuota»: cobrar la cuota no necesita explicación,
+          pero «Capital» e «Interés» mueven la plata a sitios distintos y antes eso
+          solo se decía en el formulario viejo. Sin esta línea las tres opciones se
+          ven iguales y la diferencia solo se descubre después de guardar. */}
+      {explicacion && (
+        <div style={{
+          flex: 'none', background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)', padding: '13px 15px',
+          display: 'flex', flexDirection: 'column', gap: 5,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+            {explicacion.titulo}
+          </span>
+          <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+            {explicacion.texto}
+          </span>
+          {explicacion.cifra && (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginTop: 2 }}>
+              <span style={{ fontSize: 12.5, color: 'var(--cf-ink-2)' }}>{explicacion.cifra.etiqueta}</span>
+              <span className="cf-fig" style={{
+                fontSize: 15, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-green-dark)',
+              }}>{explicacion.cifra.valor}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── 3 · ¿CÓMO TE PAGÓ? (T08-01, campo nuevo) ─────────────────────── */}
       {medios.length > 1 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
@@ -244,6 +292,7 @@ export default function RegistrarCobro({
                 nombre={m.nombre}
                 inicial={m.inicial}
                 color={m.color}
+                plataforma={m.plataforma}
                 efectivo={m.efectivo}
                 activo={m.id === medio}
                 onClick={() => onMedio?.(m)}
@@ -303,6 +352,30 @@ export default function RegistrarCobro({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── 4b · LA NOTA, CUANDO EL TIPO LA PIDE ──────────────────────────
+          En capital e interés el formulario viejo dejaba apuntar por qué, y eso
+          queda en el historial. NO es obligatoria —solo lo es en recargo y
+          descuento, que tienen su propia hoja—, así que va después del resumen y
+          sin anillo: quien no la necesita no la ve como un paso más. */}
+      {onNota && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+          <Rotulo>Nota (opcional)</Rotulo>
+          <input
+            value={nota}
+            onChange={(e) => onNota(e.target.value)}
+            type="text"
+            autoComplete="off"
+            placeholder="Para qué fue este abono"
+            aria-label="Nota"
+            style={{
+              height: 44, borderRadius: 14, padding: '0 14px', width: '100%',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+              outline: 'none', font: 'inherit', fontSize: 14, color: 'var(--cf-ink)',
+            }}
+          />
         </div>
       )}
 

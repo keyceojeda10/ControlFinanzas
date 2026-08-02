@@ -312,6 +312,7 @@ function CobradoresPageInner() {
         return (
           <Cobradores
             alto="auto"
+            sinMargen
             resumen={grupos.resumen}
             aviso={grupos.aviso}
             cobrando={grupos.cobrando}
