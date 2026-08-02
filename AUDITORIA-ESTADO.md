@@ -106,8 +106,23 @@ nunca dos sesiones sobre el mismo directorio.
 - [x] ~~`HeroCard`~~ — borrado, 111 líneas muertas
 - [ ] «Listos para renovar»: 20 tarjetas seguidas. El dueño quiere que se quede
       arriba, pero compitiendo con todo
-- [ ] El panel en **escritorio** — solo se ha mirado a 430px. **Es lo único
-      grande que queda de esta corriente**
+- [ ] **El panel a 1440 tiene un hueco y `PanelDinero` no se ve.** MEDIDO, no
+      supuesto: la armazón de escritorio está bien —barra lateral, dos
+      columnas, hero, tarjetas a la derecha, las siete barras— pero la columna
+      IZQUIERDA se corta tras «Necesita tu atención» y deja un vacío enorme
+      hasta el final de la página, que termina en «3 días restantes».
+
+      «Tu plata puesta», «Este mes» y la nota **no aparecen a 1440**, aunque a
+      430 sí. El contador de letras dice 2.779 a 1440 contra 2.618 a 430, así
+      que el contenido ESTÁ en el DOM: es disposición, no datos. Algo en la
+      rejilla de dos columnas lo deja fuera de la vista.
+
+      Reproducir con:
+      `MSYS_NO_PATHCONV=1 node .auditoria/mirar-espejo.mjs /dashboard sal.png 1440`
+
+      ⚠ Y una advertencia sobre mi propia lista: yo daba «el escritorio» por
+      pendiente entero. Al mirarlo, casi todo estaba hecho. **Mide antes de
+      creerte una lista, aunque la haya escrito yo.**
 - [ ] Los 5 bloques que cuelgan de `vistaSimple` siguen siendo componentes
       definidos dentro de la propia página (`KpiCard`, `KpiGroup`, `QuickLink`,
       `RecaudoCard`, `RoutesCard`, `ResumenDelDia`, `ProximosARenovar`). Ya
