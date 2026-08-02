@@ -26,8 +26,17 @@ export default function CapitalPage() {
     )
   }
 
+  // `p-4` pasó a `py-4`. Los 16px LATERALES iban encima de los 20 que ya pone
+  // el armazón (`layout.jsx` con su `px-5`): 36 por lado, y las tarjetas salían
+  // 32px más estrechas que en el resto de la app.
+  //
+  // Medido a 393px antes de tocarlo: tarjeta de 321px empezando en x=36, cuando
+  // la zona útil va de 20 a 373. El dueño lo vio sin medir: «lo mismo pasa en el
+  // apartado de mi plata, que es el capital».
+  //
+  // El relleno VERTICAL se queda: ése no lo pone el armazón.
   return (
-    <div className="max-w-3xl lg:max-w-6xl mx-auto p-4">
+    <div className="max-w-3xl lg:max-w-6xl mx-auto py-4">
       {/* Titulo y subtitulo, en la cabecera del armazon. */}
       {bannerVisible && (
         <div className="mb-4 rounded-[12px] px-3.5 py-2.5 flex items-start gap-2.5" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card))', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, var(--cf-border))' }}>
