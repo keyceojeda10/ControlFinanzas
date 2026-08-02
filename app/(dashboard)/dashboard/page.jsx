@@ -782,7 +782,7 @@ function RecaudoCard({ label, color, colorHex, monto, cantidad, cuotaDiaria, ext
       </div>
       <p className={`${tamMonto} font-bold font-mono-display whitespace-nowrap`} style={{ color }}>{textoMonto}</p>
       <div className="flex items-center gap-1.5 flex-wrap mt-1">
-        <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{cantidad} pagos {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
+        <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>{cantidad} {cantidad === 1 ? 'pago' : 'pagos'} {label.toLowerCase().includes('mes') ? 'en el mes' : 'registrados'}</p>
         {montoAyer !== undefined && montoAyer !== null && (
           <ComparativoChip actual={monto} anterior={montoAyer} />
         )}
@@ -1102,7 +1102,7 @@ function ResumenDelDia({ actividad, esOwner }) {
                 <div key={c.cobradorId || 'sin'} className="flex items-center justify-between text-[12px]">
                   <span style={{ color: 'var(--cf-ink-2)' }}>{c.nombre}</span>
                   <span className="font-mono-display" style={{ color: 'var(--cf-ink)' }}>
-                    <span style={{ color: 'var(--cf-ink-3)' }}>{c.pagos} pagos</span>
+                    <span style={{ color: 'var(--cf-ink-3)' }}>{c.pagos} {c.pagos === 1 ? 'pago' : 'pagos'}</span>
                     <span className="mx-1.5" style={{ color: 'var(--cf-ink-3)' }}>·</span>
                     <span style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.monto)}</span>
                   </span>
