@@ -65,7 +65,7 @@ const cuando = (iso) => {
 }
 
 export default function GastosPage() {
-  const { esOwner, loading: authLoading } = useAuth()
+  const { esOwner, puedeReportarGastos, loading: authLoading } = useAuth()
   const { country } = useCountry()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -149,10 +149,25 @@ export default function GastosPage() {
 
   if (authLoading) return <PilaEsqueletos cuantos={3} alto={96} />
 
-  if (!esOwner) {
+  // ── EL PERMISO MANDA, NO EL ROL ──
+  //
+  // Aquí decía `if (!esOwner) return «Solo el administrador puede gestionar
+  // gastos»`, y eso le cerraba la puerta a TODO cobrador — incluidos los que
+  // tienen «Reportar gastos menores» encendido, que son 37 de 38 en producción.
+  //
+  // El dueño lo reportó así: «tiene el permiso activo y el cobrador no puede
+  // agregar gastos». No era que el permiso no se guardara —está guardado— ni
+  // que el API lo rechazara —valida bien, contra la base—: es que la PANTALLA
+  // no lo miraba. Y el «Anotar un gasto» del menú «+» moría en este mismo
+  // `return`, porque `?anotar=1` se procesa después.
+  //
+  // El cobrador ve LO SUYO: el API ya filtra por `cobradorId` cuando el rol es
+  // cobrador, así que no se le enseña el gasto de nadie más. Aprobar y rechazar
+  // siguen siendo del dueño (`esOwner` más abajo).
+  if (!esOwner && !puedeReportarGastos) {
     return (
       <p style={{ padding: 16, textAlign: 'center', color: 'var(--cf-ink-3)', fontSize: 14 }}>
-        Solo el administrador puede gestionar gastos.
+        No tienes permiso para reportar gastos. Pídeselo al administrador.
       </p>
     )
   }
@@ -327,7 +342,18 @@ export default function GastosPage() {
 
                     <span style={{ flex: 1 }} />
 
-                    {g.estado === 'pendiente' ? (
+                    {/* ── APROBAR Y RECHAZAR SON DEL DUEÑO ──
+                        El cobrador ya entra aquí (tiene el permiso de reportar),
+                        así que sin esta guarda vería «Aprobar» sobre su propio
+                        gasto. El API lo rechazaría, pero un botón que falla es
+                        peor que uno que no está: se aprueba el gasto a sí mismo
+                        en la cabeza de quien lo pulsa. */}
+                    {!esOwner ? (
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+                        {g.estado === 'pendiente' ? 'Esperando al administrador'
+                          : g.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}
+                      </span>
+                    ) : g.estado === 'pendiente' ? (
                       <>
                         <button type="button" disabled={procesando === g.id}
                           onClick={() => decidir(g, 'rechazado')} style={{

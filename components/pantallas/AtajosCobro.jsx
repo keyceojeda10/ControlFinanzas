@@ -32,6 +32,8 @@
 
 import { useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 
 const MOTIVOS = [
   { id: 'no_tenia_dinero',  nombre: 'No tenía' },
@@ -97,6 +99,19 @@ export default function AtajosCobro({
   // Y cuál tiene abierto el teclado de «Otro monto», con lo tecleado.
   const [montoAbierto, setMontoAbierto] = useState(null)
   const [monto, setMonto] = useState('')
+
+  // ── EL MODO ABREVIADO, TAMBIÉN AQUÍ ──
+  // Con él encendido se escribe en MILES: «40» son $40.000. `MoneyInput` —el
+  // campo viejo— lo hace desde siempre, pero el rediseño puso un `<input>`
+  // propio en cada hoja nueva y la conversión se perdió EN SILENCIO: el
+  // interruptor seguía encendido en Configuración sin hacer nada.
+  //
+  // Se lee de la sesión y no de una prop a propósito: si dependiera de que
+  // quien monta la hoja se acuerde de pasarla, volvería a perderse en la
+  // siguiente pantalla.
+  const { modoAbreviado } = useAuth()
+  // Lo que se TECLEA, en crudo, para no reformatear mientras se escribe.
+  const montoReal = Number(montoCrudoConModo(monto, modoAbreviado)) || 0
 
   const activos = prestamos.filter((p) => Number(p.cuota) > 0 || Number(p.saldoPendiente) > 0)
   const debeTotal = activos.reduce((n, p) => n + Number(p.saldoPendiente ?? 0), 0)
@@ -222,8 +237,12 @@ export default function AtajosCobro({
                   type="text"
                   inputMode="decimal"
                   value={monto}
-                  onChange={(e) => setMonto(e.target.value.replace(/[^\d.,]/g, ''))}
-                  placeholder={`Cuota: ${formatMoney(cuota, pais)}`}
+                  onChange={(e) => setMonto(montoCrudo(e.target.value))}
+                  // Con el modo abreviado la pista tiene que estar EN MILES,
+                  // o dice «Cuota: $16.000» sobre un campo donde se teclea 16.
+                  placeholder={modoAbreviado
+                    ? `Cuota: ${montoParaMostrarConModo(String(Math.round(cuota)), true, pais)} (en miles)`
+                    : `Cuota: ${formatMoney(cuota, pais)}`}
                   style={{
                     height: 46, padding: '0 14px', width: '100%',
                     borderRadius: 'var(--cf-r-control)',
@@ -232,12 +251,22 @@ export default function AtajosCobro({
                     fontVariantNumeric: 'tabular-nums lining-nums',
                   }}
                 />
+                {/* En abreviado, «40» se cobra como $40.000 sin que se vea. Eso
+                    es plata: la cifra de verdad tiene que estar delante ANTES
+                    de pulsar «Cobrar», no descubrirse en el recibo. */}
+                {modoAbreviado && montoReal > 0 && (
+                  <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)' }}>
+                    Se cobra <strong style={{ color: 'var(--cf-ink)' }}>{formatMoney(montoReal, pais)}</strong>
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Boton
                     tono="principal"
-                    disabled={ocupado || !(Number(String(monto).replace(/\./g, '').replace(',', '.')) > 0)}
+                    disabled={ocupado || !(montoReal > 0)}
                     onClick={() => {
-                      const n = Number(String(monto).replace(/\./g, '').replace(',', '.'))
+                      // `montoReal` ya viene multiplicado si el modo abreviado
+                      // está encendido. Lo que se cobra son SIEMPRE pesos.
+                      const n = montoReal
                       setMontoAbierto(null); setMonto('')
                       if (n > 0) onOtroMonto?.(p, n)
                     }}
