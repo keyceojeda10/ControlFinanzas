@@ -12,12 +12,27 @@ import Avatar from '@/components/ui/Avatar'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
+//
+// ⚠ SON DOS COSAS DISTINTAS Y SE LEEN DISTINTO:
+//
+//  · Un PAGO es un INSTANTE: se guarda con la hora real del cobro (el 97% a
+//    horas variadas). Va en la zona de quien mira — leerlo en UTC pondría un
+//    cobro de las 7 de la noche en el día siguiente.
+//  · `fechaInicio`/`fechaFin` son FECHAS DE CALENDARIO calculadas en UTC
+//    (`fechaDePeriodo` usa `setUTCDate`). Hay que leerlas EN UTC: un
+//    `2026-03-02T00:00:00Z` visto desde Bogotá —UTC−5— es el 1 de marzo a las
+//    19:00, y la ficha decía «1 de mar» un préstamo que vence el 2.
+//
+// Es el mismo fallo que reportó un prestamista en el comprobante. Aquí había
+// una TERCERA copia del formateo, y la encontré recorriendo el DOM en el
+// navegador: arreglar el comprobante y la ficha no bastó porque esta pantalla
+// trae su propio helper. Ver `formatFechaCalendario` en lib/i18n.
 const fmtFecha = (d) => d
   ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
   : '—'
 
 const fmtFechaCorta = (d) => d
-  ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+  ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' })
   : '—'
 
 // ─── Mood color (igual que cards rediseñadas) ────────────────────
