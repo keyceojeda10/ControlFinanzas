@@ -129,7 +129,7 @@ function Etiquetas({ opciones = [], activo, onElegir }) {
             borderRadius: 14, cursor: 'pointer', font: 'inherit', flex: 'none',
             fontSize: 13, fontWeight: on ? 700 : 600,
             background: 'var(--cf-card)',
-            color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+            color: on ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
             border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
           }}>{o.etiqueta}</button>
         )
@@ -773,10 +773,10 @@ export function AplazarCobro({
                 border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
                 boxShadow: on ? '0 0 0 3px rgba(231,164,0,.13)' : 'none',
               }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: on ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)' }}>
                   {c.etiqueta}
                 </span>
-                <span className="cf-num" style={{ fontSize: 11, color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-3)' }}>
+                <span className="cf-num" style={{ fontSize: 11, color: on ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)' }}>
                   {c.nota}
                 </span>
               </button>
@@ -1067,7 +1067,7 @@ export function RegistrarGasto({
                   borderRadius: 14, cursor: 'pointer', font: 'inherit', flex: 'none',
                   fontSize: 14, fontWeight: on ? 700 : 600,
                   background: on ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
-                  color: on ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+                  color: on ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
                   border: on ? `1.5px solid ${ORO}` : '1px solid var(--cf-border)',
                 }}>{c.etiqueta}</button>
               )

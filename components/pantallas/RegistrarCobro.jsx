@@ -186,7 +186,10 @@ function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }
           el logo encima ya no hace falta romperla: si no cabe, se encoge. */}
       <span style={{
         fontSize: 11.5, fontWeight: activo ? 700 : 600, lineHeight: 1.15,
-        color: activo ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+        // `gold-dark`, no `gold-ink`: la tarjeta del medio de pago es CLARA en
+        // tema claro y OSCURA en oscuro, así que el marrón fijo desaparecía.
+        // «Efectivo» salía negro sobre negro en la captura del dueño.
+        color: activo ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
         maxWidth: '100%', textAlign: 'center',
         overflowWrap: 'break-word', hyphens: 'auto',
       }}>{nombre}</span>
