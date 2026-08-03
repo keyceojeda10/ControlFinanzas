@@ -658,6 +658,34 @@ export default function ClienteDetallePage({ params }) {
         </Card>
       )}
 
+      {/* ── «ENVIAR POR WHATSAPP», JUNTO AL CRÉDITO ──────────────────────
+          En la lista de acciones cae JUSTO DEBAJO de la barra flotante de
+          navegación: al abrir la ficha, la fila queda medio tapada. Lo vi en la
+          captura del espejo — al subir los préstamos, empujé la acción que más
+          usa al único sitio obstruido de la pantalla.
+          Aquí queda a la vista y donde de verdad la busca: acaba de mirar el
+          crédito y lo siguiente que hace es mandarlo. Sigue estando también en
+          la lista de abajo y en el icono de la tarjeta: esto añade un camino,
+          no reemplaza ninguno. */}
+      {cliente.telefono && prestamosActivos.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setModalWA(true)}
+          className="flex items-center justify-center gap-2 w-full h-11 rounded-[14px] font-semibold text-sm"
+          style={{
+            background: 'color-mix(in srgb, #25D366 12%, var(--cf-card))',
+            border: '1px solid color-mix(in srgb, #25D366 40%, transparent)',
+            color: 'var(--cf-ink)',
+          }}
+        >
+          <svg width="17" height="17" fill="#25D366" viewBox="0 0 24 24" aria-hidden>
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+            <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
+          </svg>
+          Enviar por WhatsApp
+        </button>
+      )}
+
       {/* Acciones rapidas como chips */}
       {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (
         <AccionesClienteChips
