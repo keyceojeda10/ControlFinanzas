@@ -420,13 +420,17 @@ async function calcularCapitalPorRuta(organizationId) {
   const [rutas, capital] = await Promise.all([
     prisma.ruta.findMany({
       where: { organizationId, activo: true },
-      select: { id: true, saldoCapital: true, capitalHabilitado: true },
+      // El NOMBRE viaja aquí a propósito: si la pantalla tuviera que sacarlo de
+      // `/api/rutas`, una fila se quedaría sin pintar cuando esa lista todavía
+      // no se ha cargado. Ya pasó: la pestaña salía vacía con capital dentro.
+      select: { id: true, nombre: true, saldoCapital: true, capitalHabilitado: true },
     }),
     prisma.capital.findFirst({ where: { organizationId }, select: { saldo: true } }),
   ])
 
   const porRuta = rutas.map((r) => ({
     rutaId: r.id,
+    nombre: r.nombre,
     saldoCapital: Math.round(r.saldoCapital || 0),
     capitalHabilitado: !!r.capitalHabilitado,
   }))

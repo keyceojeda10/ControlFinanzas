@@ -227,6 +227,33 @@ export default function CajaPage() {
     }
   }, [fechaSeleccionada])
 
+  // ── LAS RUTAS, AL ABRIR «POR RUTA» ─────────────────────────────────────
+  //
+  // `rutasDisponibles` solo se cargaba dentro de `abrirReporte()`, o sea al
+  // abrir el REPORTE — no al entrar en esta pestaña. Sin esa lista, la caja por
+  // ruta se queda sin los NOMBRES, y una fila sin nombre no se pinta: la
+  // pantalla salía «todavía no hay cobros ni préstamos» aunque hubiera capital.
+  //
+  // Explica también por qué «Esperado hoy» y el «4 de 5 cobros» aparecían solo
+  // a veces: dependían de que antes se hubiera abierto el reporte.
+  useEffect(() => {
+    if (cajaTab !== 'porruta' || rutasDisponibles.length > 0) return
+    let cancelado = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/rutas')
+        if (!res.ok || cancelado) return
+        const rutas = await res.json()
+        if (cancelado) return
+        setRutasDisponibles((rutas || []).map((r) => ({
+          id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre,
+          esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy,
+        })))
+      } catch {}
+    })()
+    return () => { cancelado = true }
+  }, [cajaTab, rutasDisponibles.length])
+
   // Pestaña "Caja por ruta": carga el detalle del cobrador seleccionado.
   useEffect(() => {
     if (cajaTab !== 'porruta' || !cajaRutaCobradorId) {
