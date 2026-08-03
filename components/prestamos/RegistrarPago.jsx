@@ -966,6 +966,18 @@ export default function RegistrarPago({
   // baja con la hoja; el envío es el mismo `handleSubmit` de siempre.
   const esPagoNormal = tipo === 'completo' || tipo === 'parcial'
     || tipo === 'capital' || tipo === 'intereses'
+  // ── EL ENLACE DICE LO QUE DE VERDAD ABRE ──
+  // Decía «Recargo, descuento y abono por días» y abría el FORMULARIO
+  // VIEJO, el de antes del rediseño. Reportado con captura: «abre el modal
+  // viejo, creo que eso está mal».
+  //
+  // El recargo y el descuento YA tienen sus hojas nuevas —se llega por
+  // «Gestión»—, así que nombrarlos aquí mandaba al sitio viejo por un camino
+  // que ya existe mejor. Lo que NO se rehízo es el ABONO POR DÍAS: su
+  // deslizador solo vive en ese formulario.
+  //
+  // El enlace se queda —quitarlo perdería el abono por días— pero deja de
+  // prometer recargo y descuento.
   if (esPagoNormal && !verFormularioCompleto) {
     const medios = mediosParaHoja(metodosPago, (nombre) => getPlataformaInfo(nombre)?.color)
     // Qué casilla está marcada. En la DB `metodoPago` solo dice
@@ -1068,6 +1080,7 @@ export default function RegistrarPago({
             setPlataforma(g.nombreCuenta || '')
           }}
           despues={filas}
+          textoLoRaro="Abonar por días"
           onLoRaro={() => setVerFormularioCompleto(true)}
         />
       </HojaInferior>
