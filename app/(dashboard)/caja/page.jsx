@@ -621,7 +621,13 @@ export default function CajaPage() {
   // La caja agrupada por RUTA (T08-02). Se calcula de los MISMOS `pagosDia` que
   // alimentan el resto de la pestaña: una segunda fuente para la misma pregunta
   // es la forma de que un día no cuadren entre ellas.
-  const filasPorRuta = agruparCajaPorRuta(pagosDelDia, rutasDisponibles)
+  // `prestadoPorRuta` lo manda `/api/caja` contado préstamo a préstamo (es lo
+  // ENTREGADO en mano, no el valor de la cartulina: en una renovación el monto
+  // nuevo absorbe el saldo viejo, que nunca salió de la caja). El cuarto
+  // argumento va detrás de `pais`, que esta pantalla no pasa.
+  const filasPorRuta = agruparCajaPorRuta(
+    pagosDelDia, rutasDisponibles, undefined, cajaData?.prestadoPorRuta || [],
+  )
   const totalesPorRuta = totalesCajaPorRuta(filasPorRuta)
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)

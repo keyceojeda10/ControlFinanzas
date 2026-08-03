@@ -385,6 +385,82 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
   }
 }
 
+// ── LO PRESTADO HOY, PARTIDO POR RUTA (T08-02) ─────────────────────────────
+//
+// La cuarta cifra que pedía la lámina de «Caja · por ruta» y que faltaba: «cada
+// ruta con lo recaudado... más lo esperado y lo prestado en la calle». La dejé
+// fuera cuando hice la pestaña porque `/api/rutas` no manda lo desembolsado y no
+// quise repartir un total a ojo entre rutas. Esto lo trae DE VERDAD, contado
+// préstamo a préstamo.
+//
+// La ruta sale del CLIENTE (`prestamo.cliente.ruta`), igual que en `pagosDia`:
+// un préstamo no tiene ruta, la tiene la persona a la que se le presta.
+//
+// ⚠ SE DEVUELVE `efectivoEntregado`, NO `montoPrestado`. En una renovación el
+// monto nuevo incluye el saldo viejo absorbido, que nunca salió de la caja:
+// renovar $160.000 a quien ya debía $160.000 no saca un peso a la calle. Es la
+// misma regla que `calcularDesembolsadoDia` y `calcularPrestadoDetalleDia`; si
+// aquí se pusiera el monto de la cartulina, esta pestaña diría una cifra y el
+// saldo de caja otra para el mismo día.
+//
+// Solo para MOSTRAR: no alimenta ningún saldo ni cuadre.
+async function calcularPrestadoPorRutaDia(organizationId, inicio, fin) {
+  const prestamos = await prisma.prestamo.findMany({
+    where: {
+      organizationId,
+      createdAt: { gte: inicio, lt: fin },
+      estado: { not: 'cancelado' },
+    },
+    select: {
+      id: true,
+      montoPrestado: true,
+      renovadoDeId: true,
+      cliente: { select: { ruta: { select: { id: true, nombre: true } } } },
+    },
+  })
+  if (prestamos.length === 0) return []
+
+  // El movimiento manda sobre `montoPrestado` porque en las renovaciones guarda
+  // lo que de verdad se entregó en mano. El más reciente gana, por si se editó.
+  const movs = await prisma.movimientoCapital.findMany({
+    where: {
+      organizationId,
+      tipo: 'desembolso',
+      createdAt: { gte: inicio, lt: fin },
+      referenciaTipo: 'prestamo',
+      referenciaId: { in: prestamos.map((p) => p.id) },
+    },
+    select: { referenciaId: true, monto: true, createdAt: true },
+  })
+  const entregadoPorPrestamo = new Map()
+  for (const m of movs) {
+    if (!m.referenciaId) continue
+    const prev = entregadoPorPrestamo.get(m.referenciaId)
+    if (!prev || m.createdAt > prev.createdAt) entregadoPorPrestamo.set(m.referenciaId, m)
+  }
+
+  const porRuta = new Map()
+  for (const p of prestamos) {
+    const mov = entregadoPorPrestamo.get(p.id)
+    // Sin movimiento: en un préstamo nuevo lo entregado ES el monto; en una
+    // renovación, cero.
+    const entregado = mov ? mov.monto : (p.renovadoDeId ? 0 : (p.montoPrestado || 0))
+    const id = p.cliente?.ruta?.id || '__sin_ruta__'
+    if (!porRuta.has(id)) {
+      porRuta.set(id, { rutaId: p.cliente?.ruta?.id || null, prestado: 0, cuantos: 0 })
+    }
+    const fila = porRuta.get(id)
+    fila.prestado += entregado
+    fila.cuantos += 1
+  }
+
+  return [...porRuta.values()].map((f) => ({
+    rutaId: f.rutaId,
+    prestado: Math.round(f.prestado),
+    cuantos: f.cuantos,
+  }))
+}
+
 // Suma el monto de seguros cobrados en el día (prestamos creados con seguro=true).
 // El seguro YA viene sumado al total del prestamo; aqui solo se totaliza como
 // referencia de "cuanto se gano en seguros" en el cierre del dia.
@@ -1026,10 +1102,18 @@ export async function GET(request) {
     }))
   }
 
+  // Lo prestado por ruta SOLO para el dueño: la pestaña «por ruta» es suya, y
+  // un cobrador no vería más que su propia ruta. Así no se paga la consulta en
+  // el móvil de quien no la usa.
+  const prestadoPorRuta = rol === 'owner'
+    ? await calcularPrestadoPorRutaDia(organizationId, inicio, fin)
+    : []
+
   const payload = {
     cierres,
     gastos,
     pagosDia,
+    prestadoPorRuta,
     resumenPagosDia: {
       cantidad: pagosDia.length,
       total: totalPagosDia,

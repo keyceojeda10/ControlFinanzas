@@ -62,8 +62,11 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         borderRadius: 'var(--cf-r-card)', padding: '26px 20px', textAlign: 'center',
       }}>
+        {/* «Ni cobros ni préstamos»: desde que la pestaña también cuenta lo
+            desembolsado, una ruta que hoy solo prestó SÍ sale. Decir solo «no
+            hay cobros» con préstamos hechos sería mentira. */}
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--cf-ink-3)' }}>
-          Todavía no hay cobros hoy en ninguna ruta.
+          Todavía no hay cobros ni préstamos hoy en ninguna ruta.
         </p>
       </div>
     )
@@ -104,6 +107,22 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
               Digital <strong style={{ color: '#F3F3F6' }}>{totales.digital}</strong>
             </span>
           </span>
+
+          {/* ⚠ LO PRESTADO NO ENTRA EN LA BARRA NI EN «RECAUDADO». Sale de la
+              caja, no entra: meterlo con efectivo y digital sumaría plata que
+              se fue con plata que llegó. Va en su renglón, debajo de la línea,
+              para leerlo CONTRA lo cobrado: «entró esto, salió aquello». */}
+          {totales.prestado && (
+            <span style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+              paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.10)',
+            }}>
+              <span style={{ fontSize: 12, color: '#A3A8B2' }}>Prestado hoy</span>
+              <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: '#F3F3F6' }}>
+                {totales.prestado}
+              </span>
+            </span>
+          )}
         </div>
       )}
 
@@ -149,12 +168,17 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
               <Punto color="var(--cf-green)">Digital <strong style={{ color: 'var(--cf-ink-2)' }}>{f.digital}</strong></Punto>
             </div>
 
-            {f.esperado && (
+            {/* «Prestado» es la cuarta cifra que pedía la lámina y que faltaba
+                por no tener el dato. Va junto a «Esperado hoy» porque las dos
+                son del día y se leen juntas: cuánto se esperaba cobrar y cuánto
+                salió a la calle. Lo cobrado ya está arriba, en grande. */}
+            {(f.esperado || f.prestado) && (
               <div style={{
-                display: 'flex', gap: 8, paddingTop: 10,
+                display: 'flex', gap: 18, paddingTop: 10,
                 borderTop: '1px solid var(--cf-hairline)',
               }}>
-                <Cifra etiqueta="Esperado hoy" valor={f.esperado} />
+                {f.esperado && <Cifra etiqueta="Esperado hoy" valor={f.esperado} />}
+                {f.prestado && <Cifra etiqueta="Prestado" valor={f.prestado} />}
               </div>
             )}
           </button>
