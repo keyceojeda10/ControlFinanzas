@@ -1644,7 +1644,49 @@ export default function RutaDetallePage({ params }) {
         resto de la app: sin medir la ventana no hay parpadeo al cargar ni dos
         arboles con estado distinto. Las dos vistas comparten handlers, asi que
         cobrar es el mismo cobro en las dos. */}
-    <div className="hidden lg:block">
+    {/* ── ORDENAR EL RECORRIDO, TAMBIEN SENTADO ──
+        «Reordenar recorrido» de la tabla llamaba a `setModoVista('ordenar')`,
+        pero la rama de PC solo miraba si era `'auditoria'`: cualquier otro
+        valor pintaba la tabla de siempre. O sea que el enlace estaba a la
+        vista, se pulsaba, y NO PASABA NADA.
+
+        Se monta el MISMO `OrdenRecorrido` que usa el movil —con su arrastre,
+        su rebote de un segundo y su cola offline—, no una segunda version para
+        escritorio: dos implementaciones del mismo orden acabarian discrepando. */}
+    {modoVista === 'ordenar' && (
+      <div className="hidden lg:block">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setModoVista('trabajo')}
+            style={{
+              background: 'none', border: 0, padding: 0, cursor: 'pointer',
+              font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
+            }}
+          >← Volver a los cobros</button>
+        </div>
+        <OrdenRecorrido
+          detalle={[
+            `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? 'parada' : 'paradas'}`,
+            ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+          ].filter(Boolean).join(' · ')}
+          paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
+            orden: i + 1,
+            nombre: c.nombre,
+            direccion: c.direccion,
+            diasMora: c.diasMora,
+            metros: c.distanciaMetros,
+          })))}
+          onReordenar={(desde, hasta) => {
+            const movidos = moverParada(clientesFiltrados, desde, hasta)
+            setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
+            guardarOrden(movidos)
+          }}
+        />
+      </div>
+    )}
+
+    <div className={modoVista === 'ordenar' ? 'hidden' : 'hidden lg:block'}>
       <RutaEscritorio
         nombre={ruta.nombre}
         subtitulo={[
@@ -1657,7 +1699,11 @@ export default function RutaDetallePage({ params }) {
         onVolver={() => router.push('/rutas')}
         acciones={[
           { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.open(`/api/rutas/${id}/hoja`, '_blank') },
-          { id: 'agregar', texto: 'Agregar cliente', onClick: () => setModalClientes(true) },
+          // ⚠ `abrirModalClientes`, NO `setModalClientes`: la que trae la lista
+          // es la primera (hace el fetch de `/api/clientes` y separa los que no
+          // tienen ruta). Con `setModalClientes` el modal abria VACIO y decia
+          // «Todos los clientes ya tienen ruta asignada», que era mentira.
+          { id: 'agregar', texto: 'Agregar cliente', onClick: () => abrirModalClientes() },
           ...((ruta.pendientesHoy ?? 0) > 0
             ? [{ id: 'recorrido', texto: `Empezar recorrido · ${ruta.pendientesHoy}`, principal: true, onClick: () => setEnRecorrido(true) }]
             : []),
@@ -3559,36 +3605,10 @@ export default function RutaDetallePage({ params }) {
         </div>
       )}
 
-      {hojaCobro}
-      {pantallaRecibo}
-
-      {/* Toast: deshacer pago */}
-      {undoPago && (
-        <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
-            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-          >
-            <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-sm text-[var(--cf-ink)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
-            <button
-              onClick={deshacerPago}
-              className="text-sm font-bold text-[var(--cf-gold)] hover:text-[var(--cf-gold)]/80 transition-colors shrink-0"
-            >
-              Deshacer
-            </button>
-            <button
-              onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
-              className="text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ⚠ `hojaCobro`, el recibo y el toast de «Deshacer» YA NO VAN AQUI:
+          se subieron FUERA del `lg:hidden`, al final del componente. Estaban
+          dentro, o sea dentro de un `display:none` en escritorio, asi que
+          «Cobrar» en la tabla de PC no abria NADA. Ver el comentario de alla. */}
 
       <ConfirmModal
         open={confirmEliminarRuta}
@@ -3612,6 +3632,52 @@ export default function RutaDetallePage({ params }) {
       />
     </div>
     </div>
+
+    {/* ── LO QUE VALE PARA LAS DOS VISTAS VA AQUI, FUERA DEL `lg:hidden` ──
+        La hoja de cobro, el recibo y el toast de «Deshacer» estaban DENTRO de
+        la rama de movil. En escritorio esa rama es `display:none`, asi que:
+
+          · «Cobrar» en la tabla de PC no abria nada. El handler corria
+            (`onCobrar` -> `abrirPagoRapido`), el estado cambiaba, y la hoja
+            se montaba dentro de un contenedor oculto. La accion principal de
+            la tabla de escritorio estaba muerta.
+          · Tras cobrar, el toast de «Deshacer» tampoco salia: en PC no habia
+            forma de echar atras un cobro mal hecho dentro de los 10 segundos.
+
+        El recibo se salvaba de casualidad porque va por `createPortal` a
+        `document.body`. Los otros dos no.
+
+        Aqui abajo los ven las dos vistas y siguen siendo el MISMO cobro: el
+        estado y los handlers son unicos, no hay dos arboles con vida propia. */}
+    {hojaCobro}
+    {pantallaRecibo}
+
+    {undoPago && (
+      <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-[12px] border border-[var(--cf-green)] bg-[var(--cf-card)] sm:min-w-[320px]"
+          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+        >
+          <svg className="w-4 h-4 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-sm text-[var(--cf-ink)] flex-1 truncate">Pago registrado — {undoPago.clienteNombre}</span>
+          <button
+            onClick={deshacerPago}
+            className="text-sm font-bold text-[var(--cf-gold)] hover:text-[var(--cf-gold)]/80 transition-colors shrink-0"
+          >
+            Deshacer
+          </button>
+          <button
+            onClick={() => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoPago(null) }}
+            className="text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] transition-colors shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    )}
     </>
   )
 }

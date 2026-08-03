@@ -20,6 +20,7 @@ import MonedaCF             from '@/components/ui/MonedaCF'
 import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
 import HojaInferior        from '@/components/cf/HojaInferior'
 import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
+import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import {
@@ -125,6 +126,10 @@ export default function RegistrarPago({
     try { localStorage.setItem('cf:recibo-al-confirmar', valor ? '1' : '0') } catch {}
   }
   const [diasAbonados, setDiasAbonados] = useState(null)
+  // La hoja de «Abonar por días». Antes este enlace mandaba al FORMULARIO VIEJO
+  // entero —con sus seis tipos de pago— porque el deslizador solo vivía allí.
+  // Ahora es una hoja propia que hace una sola cosa: convertir días en plata.
+  const [verAbonoDias, setVerAbonoDias] = useState(false)
   // Valor visual del slider — se anima entre cambios para que las transiciones
   // (boton mora, ponerse al dia) se sientan fluidas en vez de saltar de golpe.
   const [sliderVisual, setSliderVisual] = useState(1)
@@ -1024,7 +1029,58 @@ export default function RegistrarPago({
       },
     )
 
+    // ── LO QUE NECESITA LA HOJA DE «ABONAR POR DÍAS» ──
+    // `cuota × días`, con tope el saldo: pedir 30 días cuando quedan 12 no
+    // puede proponer más de lo que se debe.
+    const cuotaDia = Math.max(1, Math.round(cuotaDiaria ?? 1))
+    const techo = Math.round(saldoPendiente ?? 0)
+    const diasParaHoja = diasAbonados || 1
+    const montoDeLosDias = Math.min(cuotaDia * diasParaHoja, techo)
+
+    // Cuántos días representa un monto, para que el deslizador acompañe al
+    // atajo en vez de quedarse en 1 mientras el monto dice otra cosa.
+    const diasDeMonto = (m) => Math.min(30, Math.max(1, Math.round((Number(m) || 0) / cuotaDia)))
+
+    const atajosDeDias = [
+      Number(prestamo?.montoEnMora) > 0 && {
+        id: 'mora', tono: 'mora', montoExacto: true,
+        texto: Number(prestamo?.cuotasEnMora) > 0
+          ? `Pagar mora · ${prestamo.cuotasEnMora} ${prestamo.cuotasEnMora === 1 ? 'cuota' : 'cuotas'}`
+          : 'Pagar mora',
+        monto: Math.min(Math.round(prestamo.montoEnMora), techo),
+        dias: diasDeMonto(Math.min(Math.round(prestamo.montoEnMora), techo)),
+      },
+      Number(prestamo?.montoParaPonerseAlDia) > 0
+        && Number(prestamo?.montoParaPonerseAlDia) !== Number(prestamo?.montoEnMora) && {
+        id: 'aldia', montoExacto: true,
+        texto: 'Ponerse al día',
+        monto: Math.min(Math.round(prestamo.montoParaPonerseAlDia), techo),
+        dias: diasDeMonto(Math.min(Math.round(prestamo.montoParaPonerseAlDia), techo)),
+      },
+    ].filter(Boolean)
+
+    // Las próximas pendientes, solo en los modos que llevan tabla. El faltante
+    // de una cuota no suele ser un número redondo de días: por eso se pone tal
+    // cual en vez de pasarlo por el deslizador.
+    const cuotasPendientesHoja = (
+      ['lineal', 'lineal_dinamico', 'solo_interes'].includes(prestamo?.modoInteres)
+        && Array.isArray(prestamo?.cuotasAmortizacion)
+        ? [...prestamo.cuotasAmortizacion]
+            .sort((a, b) => a.numeroPeriodo - b.numeroPeriodo)
+            .filter((f) => (f.pagado || 0) < f.cuotaTotal)
+            .slice(0, 3)
+            .map((f) => ({
+              id: f.numeroPeriodo,
+              rotulo: `${({ diario: 'Día', semanal: 'Sem', quincenal: 'Qna', mensual: 'Mes' })[prestamo.frecuencia] || 'Per'} ${f.numeroPeriodo}`,
+              monto: Math.round(Math.max(0, f.cuotaTotal - (f.pagado || 0))),
+              vencida: Boolean(f.fechaEsperada && new Date(f.fechaEsperada) < new Date()),
+              globo: prestamo.modoInteres === 'solo_interes' && f.numeroPeriodo === prestamo.cuotasAmortizacion.length,
+            }))
+        : []
+    )
+
     return (
+      <>
       <HojaInferior
         abierta={open}
         onCerrar={onClose}
@@ -1081,9 +1137,63 @@ export default function RegistrarPago({
           }}
           despues={filas}
           textoLoRaro="Abonar por días"
-          onLoRaro={() => setVerFormularioCompleto(true)}
+          onLoRaro={() => setVerAbonoDias(true)}
         />
-      </HojaInferior>
+        </HojaInferior>
+
+        {/* ── ABONAR POR DÍAS ──
+            Va FUERA de la hoja de cobro y con su propia `HojaInferior`, no
+            dentro: dos hojas anidadas comparten el velo y el gesto de cerrar,
+            y cerrar la de arriba se llevaba la de abajo. Se apila encima. */}
+        <HojaInferior
+          abierta={verAbonoDias}
+          onCerrar={() => setVerAbonoDias(false)}
+          titulo="Abonar por días"
+          subtitulo={[cliente?.nombre, `cuota ${formatMoney(Math.round(cuotaDiaria ?? 0))}`].filter(Boolean).join(' · ')}
+          accion={
+            <PieRegistrarCobro
+              // La cifra del botón sale de `monto`, NO de recalcular los días:
+              // si se pulsó «Pagar mora» el monto es exacto ($47.300) y no un
+              // múltiplo de la cuota. Recalcular aquí lo pisaría.
+              textoConfirmar={montoNum > 0 ? `Poner ${formatMoney(montoNum)}` : 'Poner el monto'}
+              onConfirmar={() => {
+                // NO cobra: deja el monto puesto y devuelve a la hoja de cobro,
+                // que es donde se elige el medio y se confirma. Cobrar desde
+                // aquí saltaría la pregunta de «¿cómo te pagó?».
+                setTipo(montoNum >= (cuotaDiaria ?? 0) ? 'completo' : 'parcial')
+                setVerAbonoDias(false)
+              }}
+              deshabilitado={!(montoNum > 0)}
+            />
+          }
+        >
+          <AbonoPorDias
+            dias={diasParaHoja}
+            visual={sliderVisual}
+            // Lo que hay escrito, por lo mismo que el botón: tras «Pagar mora»
+            // la cifra es la de la mora, no `cuota × días`.
+            monto={montoNum > 0 ? montoNum : montoDeLosDias}
+            onDias={handleAbonoDias}
+            atajos={atajosDeDias}
+            // El monto del atajo es EXACTO (la mora son $47.300, no «7 días»).
+            // El deslizador se mueve solo para acompañar, pero manda la cifra:
+            // por eso se fija después de `handleAbonoDias`, que la redondearía
+            // a días enteros.
+            onAtajo={(a) => {
+              handleAbonoDias(a.dias)
+              fijarMonto(String(Math.round(a.monto)))
+              setSliderVisual(a.dias)
+            }}
+            cuotas={cuotasPendientesHoja}
+            onCuota={(c) => {
+              fijarMonto(String(Math.round(c.monto)))
+              setTipo(c.monto >= (cuotaDiaria ?? 0) ? 'completo' : 'parcial')
+              setDiasAbonados(null)
+              setVerAbonoDias(false)
+            }}
+          />
+        </HojaInferior>
+      </>
     )
   }
 
