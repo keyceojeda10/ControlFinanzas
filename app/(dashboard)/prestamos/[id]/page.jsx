@@ -590,8 +590,15 @@ export default function PrestamoDetallePage({ params }) {
   // tiempo no hay forma de saber si el trato es de la semana pasada o de hace
   // tres meses — y eso cambia cuanto se puede insistir.
   const esUnicoModo = modoInteres === 'unico'
+  // ⚠ EN UTC: `fechaFin` es una fecha de CALENDARIO, no un instante (se calcula
+  // con `setUTCDate`/`Date.UTC`). Sin fijarlo aquí, un `2026-03-02T00:00:00Z`
+  // se leía desde Bogotá —UTC−5— como el 1 de marzo a las 19:00, y la ficha
+  // decía un día menos. Es el mismo fallo del comprobante que reportó un
+  // prestamista. Ver `formatFechaCalendario` en lib/i18n.
   const fechaVencTexto = fechaFin
-    ? new Date(fechaFin).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+    ? new Date(fechaFin).toLocaleDateString('es-CO', {
+      weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+    })
     : null
   const diasParaVencerTexto = (() => {
     if (!fechaFin) return null

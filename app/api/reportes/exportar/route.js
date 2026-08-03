@@ -97,8 +97,13 @@ export async function GET(req) {
         p.cuotaDiaria,
         p.tasaInteres,
         p.diasPlazo,
-        new Date(p.fechaInicio).toLocaleDateString('es-CO'),
-        new Date(p.fechaFin).toLocaleDateString('es-CO'),
+        // ⚠ `timeZone: 'UTC'` EXPLÍCITO. Son fechas de CALENDARIO (se calculan
+        // con `setUTCDate`), y sin fijarlo se leen en la zona de QUIEN EJECUTA.
+        // Hoy sale bien de casualidad —el servidor va en UTC—, pero en cuanto
+        // corriera en otra zona el Excel restaría un día, como le pasó al
+        // comprobante. Que no dependa del huso de la máquina.
+        new Date(p.fechaInicio).toLocaleDateString('es-CO', { timeZone: 'UTC' }),
+        new Date(p.fechaFin).toLocaleDateString('es-CO', { timeZone: 'UTC' }),
         p.estado,
         pagado,
         saldo,
