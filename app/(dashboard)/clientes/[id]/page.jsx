@@ -522,135 +522,18 @@ export default function ClienteDetallePage({ params }) {
         <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
       </div>
 
-      {/* Acciones rapidas como chips */}
-      {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (
-        <AccionesClienteChips
-          acciones={[
-            ...(puedeCrearPrestamos ? [{
-              label: 'Nuevo préstamo',
-              color: 'var(--cf-green-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
-              onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
-            }] : []),
-            {
-              label: 'Reagendar visita',
-              color: 'var(--cf-gold-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-              onClick: () => setModalReagendar(true),
-            },
-            ...(puedeEditarClientes ? [{
-              // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
-              label: fijandoGPS
-                ? 'Capturando GPS...'
-                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
-              color: 'var(--cf-ink-2)',
-              icon: (
-                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                </svg>
-              ),
-              onClick: handleFijarUbicacion,
-              disabled: fijandoGPS,
-            }] : []),
-            ...(cliente.latitud != null && cliente.longitud != null ? [{
-              label: 'Cómo llegar',
-              color: '#4285f4',
-              icon: (
-                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                </svg>
-              ),
-              onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${cliente.latitud},${cliente.longitud}`, '_blank'),
-            }] : []),
-            {
-              label: 'Historial',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-              onClick: () => router.push(`/clientes/${id}/historial`),
-            },
-            {
-              label: 'QR',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
-              onClick: () => setModalQR(true),
-            },
-            ...(puedeEditarClientes ? [{
-              label: 'Editar',
-              color: 'var(--cf-ink-2)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
-              onClick: () => router.push(`/clientes/${id}/editar`),
-            }] : []),
-            ...(esOwner ? [{
-              label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
-              color: cliente.estado === 'inactivo' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
-              onClick: handleToggleInactivo,
-              disabled: actionLoading,
-            }] : []),
-            ...(esOwner ? [{
-              label: 'Eliminar',
-              // La unica accion que reconoce una perdida, y la unica con color.
-              peligro: true,
-              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
-              onClick: () => setShowConfirmDelete(true),
-              disabled: actionLoading,
-            }] : []),
-          ]}
-        />
-      )}
+      {/* ── LOS PRÉSTAMOS VAN ANTES QUE LAS ACCIONES ────────────────────
+          Estaban DEBAJO de la lista de acciones (siete filas: reagendar,
+          GPS, historial, QR, editar, inactivar, eliminar). Un cobrador lo
+          reportó en video: su cliente tenía dos créditos y «me toca ir y
+          buscar, pero buscar, buscar, para encontrar los otros 200».
 
-      {/* Festivo hoy (solo owner) */}
-      {esOwner && (
-        <button
-          onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
-          disabled={guardandoFestivo}
-          className={[
-            'flex items-center gap-1.5 h-8 rounded-[12px] border text-xs px-2.5 transition-all disabled:opacity-50',
-            festivoHoy
-              ? 'border-[var(--cf-green-dark)] text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)]'
-              : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:border-[var(--cf-green-dark)] hover:text-[var(--cf-green-dark)]',
-          ].join(' ')}
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-3zm-3 3h.008v.008H9V16.5zm0-3h.008v.008H9V13.5zm6 3h.008v.008H15V16.5zm0-3h.008v.008H15V13.5z" />
-          </svg>
-          {guardandoFestivo ? 'Guardando…' : festivoHoy ? 'Hoy es festivo — toca para quitar' : 'Festivo hoy'}
-        </button>
-      )}
+          Se entra a un cliente para ver SUS CRÉDITOS. Que «Fijar ubicación
+          (GPS)» estuviera antes que el préstamo por el que se entró es la
+          pantalla contradiciendo su propio motivo.
 
-      {/* Info de contacto */}
-      <InfoContactoCard cliente={cliente} />
-
-      {/* Portal del cliente — solo owner */}
-      {esOwner && (
-        <PortalClienteCard clienteId={id} organizationId={cliente.organizationId} cedula={cliente.cedula} />
-      )}
-
-      {/* Tope de préstamo — owner edita, cobrador solo ve */}
-      {(esOwner || cliente.montoMaximoPrestamo > 0) && (
-        <TopePrestamoCard
-          tope={cliente.montoMaximoPrestamo}
-          onSave={esOwner ? async (nuevoTope) => {
-            const res = await fetch(`/api/clientes/${id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ montoMaximoPrestamo: nuevoTope }),
-            })
-            if (!res.ok) throw new Error('Error al guardar')
-            setCliente(prev => ({ ...prev, montoMaximoPrestamo: nuevoTope }))
-          } : null}
-        />
-      )}
-
-      {/* Doce barras y LA FRASE QUE LAS LEE. Sin la frase son doce barras: el
-          ojo se queda con el ultimo mes y saca la conclusion equivocada. Va
-          ANTES de los prestamos porque es lo que se mira para decidir si
-          prestarle otra vez. */}
-      {comportamiento?.meses?.some((m) => m.cumplio !== null) && (
-        <ComoPaga meses={comportamiento.meses} lectura={comportamiento.lectura} />
-      )}
-
+          NO se quita ninguna acción ni cambia su orden entre ellas: solo
+          pasan a ir después. */}
       {/* Préstamos activos */}
       {prestamosActivos.length > 0 && (
         <div>
@@ -774,6 +657,159 @@ export default function ClienteDetallePage({ params }) {
           </div>
         </Card>
       )}
+
+      {/* Acciones rapidas como chips */}
+      {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (
+        <AccionesClienteChips
+          acciones={[
+            ...(puedeCrearPrestamos ? [{
+              label: 'Nuevo préstamo',
+              color: 'var(--cf-green-dark)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
+              onClick: () => router.push(`/prestamos/nuevo?clienteId=${cliente.id}`),
+            }] : []),
+            // ── «ENVIAR POR WHATSAPP», CON SU NOMBRE ─────────────────────
+            //
+            // Ya existía: es el círculo verde de la tarjeta de arriba. Pero es
+            // un ICONO PELADO, y debajo hay siete acciones CON LETRA. Un
+            // cobrador lo reportó en video: «no encuentro por dónde mandarle a
+            // WhatsApp... sé que están ahí, pero no llego fácilmente a ellas».
+            // En su grabación el botón se ve en pantalla mientras lo busca: su
+            // ojo lee la lista con nombres y el icono no se registra.
+            //
+            // Va SEGUNDA, detrás de «Nuevo préstamo», porque su ciclo es
+            // justamente ese: creo el crédito y lo mando. El icono se queda:
+            // quien ya lo aprendió no pierde su camino.
+            ...(cliente.telefono ? [{
+              label: 'Enviar por WhatsApp',
+              color: '#25D366',
+              icon: (
+                <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                  <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
+                </svg>
+              ),
+              onClick: () => setModalWA(true),
+            }] : []),
+            {
+              label: 'Reagendar visita',
+              color: 'var(--cf-gold-dark)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
+              onClick: () => setModalReagendar(true),
+            },
+            ...(puedeEditarClientes ? [{
+              // GPS aqui mismo, en campo. Sin tener que entrar a "Editar".
+              label: fijandoGPS
+                ? 'Capturando GPS...'
+                : (cliente.latitud != null && cliente.longitud != null ? 'Actualizar ubicación' : 'Fijar ubicación (GPS)'),
+              color: 'var(--cf-ink-2)',
+              icon: (
+                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+              ),
+              onClick: handleFijarUbicacion,
+              disabled: fijandoGPS,
+            }] : []),
+            ...(cliente.latitud != null && cliente.longitud != null ? [{
+              label: 'Cómo llegar',
+              color: '#4285f4',
+              icon: (
+                <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                </svg>
+              ),
+              onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${cliente.latitud},${cliente.longitud}`, '_blank'),
+            }] : []),
+            {
+              label: 'Historial',
+              color: 'var(--cf-ink-2)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+              onClick: () => router.push(`/clientes/${id}/historial`),
+            },
+            {
+              label: 'QR',
+              color: 'var(--cf-ink-2)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" /></svg>,
+              onClick: () => setModalQR(true),
+            },
+            ...(puedeEditarClientes ? [{
+              label: 'Editar',
+              color: 'var(--cf-ink-2)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" /></svg>,
+              onClick: () => router.push(`/clientes/${id}/editar`),
+            }] : []),
+            ...(esOwner ? [{
+              label: cliente.estado === 'inactivo' ? 'Activar' : 'Inactivar',
+              color: cliente.estado === 'inactivo' ? 'var(--cf-green-dark)' : 'var(--cf-gold-dark)',
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>,
+              onClick: handleToggleInactivo,
+              disabled: actionLoading,
+            }] : []),
+            ...(esOwner ? [{
+              label: 'Eliminar',
+              // La unica accion que reconoce una perdida, y la unica con color.
+              peligro: true,
+              icon: <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
+              onClick: () => setShowConfirmDelete(true),
+              disabled: actionLoading,
+            }] : []),
+          ]}
+        />
+      )}
+
+      {/* Festivo hoy (solo owner) */}
+      {esOwner && (
+        <button
+          onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
+          disabled={guardandoFestivo}
+          className={[
+            'flex items-center gap-1.5 h-8 rounded-[12px] border text-xs px-2.5 transition-all disabled:opacity-50',
+            festivoHoy
+              ? 'border-[var(--cf-green-dark)] text-[var(--cf-green-dark)] bg-[rgba(34,197,94,0.08)]'
+              : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:border-[var(--cf-green-dark)] hover:text-[var(--cf-green-dark)]',
+          ].join(' ')}
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V13.5zm0 3h.008v.008H12v-3zm-3 3h.008v.008H9V16.5zm0-3h.008v.008H9V13.5zm6 3h.008v.008H15V16.5zm0-3h.008v.008H15V13.5z" />
+          </svg>
+          {guardandoFestivo ? 'Guardando…' : festivoHoy ? 'Hoy es festivo — toca para quitar' : 'Festivo hoy'}
+        </button>
+      )}
+
+      {/* Info de contacto */}
+      <InfoContactoCard cliente={cliente} />
+
+      {/* Portal del cliente — solo owner */}
+      {esOwner && (
+        <PortalClienteCard clienteId={id} organizationId={cliente.organizationId} cedula={cliente.cedula} />
+      )}
+
+      {/* Tope de préstamo — owner edita, cobrador solo ve */}
+      {(esOwner || cliente.montoMaximoPrestamo > 0) && (
+        <TopePrestamoCard
+          tope={cliente.montoMaximoPrestamo}
+          onSave={esOwner ? async (nuevoTope) => {
+            const res = await fetch(`/api/clientes/${id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ montoMaximoPrestamo: nuevoTope }),
+            })
+            if (!res.ok) throw new Error('Error al guardar')
+            setCliente(prev => ({ ...prev, montoMaximoPrestamo: nuevoTope }))
+          } : null}
+        />
+      )}
+
+      {/* Doce barras y LA FRASE QUE LAS LEE. Sin la frase son doce barras: el
+          ojo se queda con el ultimo mes y saca la conclusion equivocada. Va
+          ANTES de los prestamos porque es lo que se mira para decidir si
+          prestarle otra vez. */}
+      {comportamiento?.meses?.some((m) => m.cumplio !== null) && (
+        <ComoPaga meses={comportamiento.meses} lectura={comportamiento.lectura} />
+      )}
+
 
       {/* Historial */}
       {historial.length > 0 && (
