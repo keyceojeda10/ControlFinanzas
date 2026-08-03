@@ -35,6 +35,71 @@ const ArmazonContext = createContext(null)
  * re-suscripción se dispara solo con los campos primitivos. Memoiza `acciones`
  * en la página (`useMemo`) si depende de algo que cambia.
  */
+/**
+ * VOLVER, EN ESCRITORIO.
+ *
+ * En PC no hay cabecera —`CabeceraMovil` es `flex lg:hidden`, y `02-ARMAZON.md
+ * §D` lo pide así: «no hay cabecera superior en escritorio, todo el armazón vive
+ * en una barra lateral»— pero eso dejaba las pantallas de DETALLE **sin salida**.
+ *
+ * El dueño lo reportó dos veces en la misma tanda: «no se puede volver atrás con
+ * un botón a la ruta, sino dándole al menú» y «si me meto en ver todas las
+ * cuotas, después no puedo salir, me toca ir a préstamos y ya me pierdo».
+ *
+ * La barra lateral NO sirve de salida: lleva a la sección, no al sitio del que
+ * viniste. Desde la tabla de cuotas te deja en la LISTA de préstamos, no en el
+ * préstamo que estabas mirando — que es exactamente lo que él describe.
+ *
+ * ⚠ SE MONTA DENTRO DE `<main>`, en `layout.jsx`. Pintarla dentro de `Armazon`
+ * la sacaba por encima de la barra lateral y a todo el ancho de la ventana: se
+ * vio en la captura, no en el código.
+ *
+ * Sale solo donde hay título de pantalla —o sea, donde `useCabecera` corrió—,
+ * que es justo el conjunto de pantallas a las que se llega desde otra.
+ */
+export function VolverEscritorio() {
+  const ctx = useContext(ArmazonContext)
+  const de = ctx?.dePantalla
+  if (!de?.titulo) return null
+
+  return (
+    <div className="hidden lg:flex" style={{
+      alignItems: 'center', gap: 10, marginBottom: 16, minWidth: 0,
+    }}>
+      <button
+        type="button"
+        // La pantalla decide a dónde vuelve; si no lo dice, el armazón usa su
+        // `volver` de siempre (retroceder, o subir de sección si no hay historia).
+        onClick={de.onVolver ?? ctx?.volver}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, flex: 'none',
+          height: 34, padding: '0 13px 0 9px', borderRadius: 12,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          cursor: 'pointer', font: 'inherit',
+          fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+        Volver
+      </button>
+      <span style={{
+        fontFamily: 'var(--font-space-grotesk), system-ui',
+        fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
+        color: 'var(--cf-ink)', flex: 'none',
+      }}>{de.titulo}</span>
+      {de.subtitulo && (
+        <span className="cf-num" style={{
+          fontSize: 13, color: 'var(--cf-ink-3)', minWidth: 0,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{de.subtitulo}</span>
+      )}
+    </div>
+  )
+}
+
 export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver, onCerrar } = {}) {
   const ctx = useContext(ArmazonContext)
   const registrar = ctx?.registrar
@@ -117,7 +182,11 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   }, [])
 
   const registrar = useMemo(() => (config) => setDePantalla(config), [])
-  const valor = useMemo(() => ({ registrar }), [registrar])
+  // `dePantalla` sale al contexto para que `VolverEscritorio` lo lea. Tiene que
+  // ir por contexto y no pintarse aquí: este componente envuelve TAMBIÉN a la
+  // barra lateral, así que lo que se pinte a este nivel sale por encima de ella
+  // y a todo el ancho. La barra de volver va dentro de `<main>`.
+  const valor = useMemo(() => ({ registrar, dePantalla, volver }), [registrar, dePantalla, volver])
 
   // El estado de conexión SE FUE de aquí. Vivía en este componente para pintar
   // el punto verde del avatar móvil, y T40-00-a —la cabecera elegida— quita ese
@@ -162,55 +231,6 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           onVolver={dePantalla?.onVolver ?? volver}
           onCerrar={dePantalla?.onCerrar ?? volver}
         />
-      )}
-
-      {/* ── VOLVER, EN ESCRITORIO ────────────────────────────────────────────
-          En PC no hay cabecera —`CabeceraMovil` es `flex lg:hidden`, y la lámina
-          §D lo pide así: el armazón vive en la barra lateral— pero eso dejaba
-          las pantallas de DETALLE sin salida. El dueño lo reportó dos veces: «no
-          se puede volver atrás con un botón a la ruta, sino dándole al menú» y
-          «si me meto en ver todas las cuotas, después no puedo salir».
-
-          La barra lateral no sirve de salida: te lleva a la sección, no al sitio
-          del que veniste. Desde la tabla de cuotas devuelve a la LISTA de
-          préstamos, no al préstamo que estabas mirando.
-
-          Solo donde hay título de pantalla —o sea, donde `useCabecera` corrió—,
-          que es exactamente el conjunto de pantallas que se abren desde otra. */}
-      {dePantalla?.titulo && (
-        <div className="hidden lg:flex" style={{
-          alignItems: 'center', gap: 10, flex: 'none', marginBottom: 14,
-        }}>
-          <button
-            type="button"
-            onClick={dePantalla?.onVolver ?? volver}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              height: 34, padding: '0 13px 0 9px', borderRadius: 12,
-              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-              cursor: 'pointer', font: 'inherit',
-              fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
-            Volver
-          </button>
-          <span style={{
-            fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
-            color: 'var(--cf-ink)', minWidth: 0,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>{dePantalla.titulo}</span>
-          {dePantalla?.subtitulo && (
-            <span className="cf-num" style={{
-              fontSize: 13, color: 'var(--cf-ink-3)', minWidth: 0,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>{dePantalla.subtitulo}</span>
-          )}
-        </div>
       )}
 
       {children}

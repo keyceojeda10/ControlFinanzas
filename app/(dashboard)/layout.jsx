@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import BarraLateral   from '@/components/armazon/BarraLateral'
 import { iniciales }  from '@/lib/armazon'
-import Armazon        from '@/components/armazon/Armazon'
+import Armazon, { VolverEscritorio } from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
@@ -109,6 +109,11 @@ export default async function DashboardLayout({ children }) {
             El padding-bottom sigue fuera: el contenido pasa POR DEBAJO de la
             pastilla a proposito, y cada pantalla reserva su hueco final. */}
         <main className="flex-1 px-5 py-5 lg:px-6 lg:py-6">
+          {/* La salida de las pantallas de detalle EN PC, donde no hay cabecera.
+              Va aquí dentro y no en `Armazon` porque aquél envuelve también a la
+              barra lateral: pintada allí salía por encima de ella y a todo el
+              ancho de la ventana. */}
+          <VolverEscritorio />
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
