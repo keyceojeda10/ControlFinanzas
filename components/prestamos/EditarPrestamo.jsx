@@ -12,7 +12,7 @@ import ResumenCalculo    from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
-import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { formatMoney, soloDecimal, formatFechaCalendario } from '@/lib/i18n'
 import { CorregirPrestamo } from '@/components/pantallas/Gestion'
 import { adaptarCorregir } from '@/lib/adaptadores/gestion'
 
@@ -361,7 +361,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
               <div>
                 <p className="text-[10px] text-[var(--cf-ink-3)]">Fecha fin</p>
                 <p className="font-semibold text-[var(--cf-ink)]">
-                  {resumen.fechaFin ? new Date(resumen.fechaFin).toLocaleDateString('es-CO', { day:'numeric', month:'short', year:'numeric' }) : '—'}
+                  {resumen.fechaFin ? formatFechaCalendario(resumen.fechaFin) : '—'}
                 </p>
               </div>
             </div>

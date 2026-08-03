@@ -326,14 +326,14 @@ export default function ModificarPlazo({
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-[var(--cf-ink-3)]">Fecha inicio actual</span>
               <span className="text-xs text-[var(--cf-ink)] font-mono-display">
-                {fechaInicio ? new Date(fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                {fechaInicio ? formatFechaCalendario(fechaInicio) : '—'}
               </span>
             </div>
           )}
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[var(--cf-ink-3)]">Fecha fin actual</span>
             <span className="text-xs text-[var(--cf-ink)] font-mono-display">
-              {fechaFinActual ? new Date(fechaFinActual).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+              {fechaFinActual ? formatFechaCalendario(fechaFinActual) : '—'}
             </span>
           </div>
           <div className="flex items-center justify-between">

@@ -4,16 +4,41 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Firma } from '@/components/pantallas/Pagare'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
 
-function formatFecha(d) {
+// ── ⚠ ESTAS FECHAS SE LEEN EN UTC, NO EN LA ZONA DEL TELÉFONO ─────────────
+//
+// Un prestamista lo reportó con el comprobante en la mano: «me dice que termina
+// el 30 de julio» cuando en la base termina el **31**.
+//
+// La causa: era `toLocaleDateString('es-CO', ...)` SIN `timeZone`, así que
+// usaba la del TELÉFONO. Y `fechaInicio`/`fechaFin` NO son instantes: son
+// FECHAS DE CALENDARIO que el sistema calcula en UTC (`fechaDePeriodo` usa
+// `setUTCDate` y `Date.UTC`). Un `2026-07-31T00:00:00Z` leído desde Bogotá
+// —UTC−5— cae el 30 a las 19:00, y se imprimía un día antes.
+//
+// ⚠ FORZAR `America/Bogota` NO LO ARREGLA: da el mismo 30. Lo probé, y la
+// prueba `fecha-fin-comprobante` lo dejó por escrito. Para una fecha de
+// calendario guardada en UTC, la única lectura correcta es **en UTC**.
+//
+// El tamaño del fallo, medido en producción: `fechaFin` está a las 00:00Z en
+// **7.418 de 8.696 préstamos (85%)**, mientras que `fechaInicio` está a las
+// 05:00Z en el 100%. Por eso él veía bien el inicio y mal el fin.
+//
+// `'es-CO'` no fijaba nada: el locale es el idioma, no el huso. Eso es lo que
+// hace el fallo invisible leyendo el código. Ver [[fechas_un_solo_calendario]].
+function formatFecha(d, pais = 'co') {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(d).toLocaleDateString(getLocale(pais), {
+    day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'UTC',
+  })
 }
 
 const FREQ_LABEL = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }
 
-async function generarComprobante(prestamo) {
+async function generarComprobante(prestamo, pais = 'co', tz = null) {
   const p = prestamo
   const cliente = p.cliente || {}
   const pagos = (p.pagos || []).filter(x => !['recargo', 'descuento'].includes(x.tipo))
@@ -95,8 +120,8 @@ async function generarComprobante(prestamo) {
     ['Total a pagar', formatMoney(p.totalAPagar)],
     ['Cuota', formatMoney(p.cuotaDiaria)],
     ['Frecuencia', FREQ_LABEL[p.frecuencia] || p.frecuencia],
-    ['Fecha inicio', formatFecha(p.fechaInicio)],
-    ['Fecha fin', formatFecha(p.fechaFin)],
+    ['Fecha inicio', formatFecha(p.fechaInicio, pais)],
+    ['Fecha fin', formatFecha(p.fechaFin, pais)],
     ['Total pagado', formatMoney(p.totalPagado ?? 0)],
     ['Saldo pendiente', formatMoney(p.saldoPendiente ?? 0)],
   ]
@@ -129,7 +154,11 @@ async function generarComprobante(prestamo) {
       y += lineH
       ctx.fillStyle = '#555555'
       ctx.font = '13px system-ui, sans-serif'
-      ctx.fillText(formatFecha(pago.fechaPago), 40, y)
+      // ⚠ EL PAGO NO ES UNA FECHA DE CALENDARIO, es un INSTANTE: se
+      // guarda con la hora real del cobro (97% a horas variadas). Ese sí va
+      // en la zona del negocio — leerlo en UTC pondría un cobro de las 7 de
+      // la noche en el día siguiente.
+      ctx.fillText(formatFechaCorta(pago.fechaPago, pais, tz), 40, y)
       ctx.fillStyle = 'var(--cf-ink)'
       ctx.font = 'bold 13px system-ui, sans-serif'
       ctx.textAlign = 'right'
@@ -171,6 +200,9 @@ async function generarComprobante(prestamo) {
 }
 
 export default function FirmaDigital({ prestamo, onSave }) {
+  // El pais y la zona salen de la sesion: sin ellos el comprobante se
+  // formatea con la zona del TELEFONO y resta un dia (ver `formatFecha`).
+  const { country: paisSesion, timezone: tzSesion } = useAuth()
   const prestamoId = prestamo?.id
   const firmaUrl = prestamo?.firmaUrl
 
@@ -297,7 +329,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
     if (!prestamo) return
     setDescargando(true)
     try {
-      const canvas = await generarComprobante(prestamo)
+      const canvas = await generarComprobante(prestamo, paisSesion, tzSesion)
       const link = document.createElement('a')
       link.download = `comprobante-prestamo-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.png`
       link.href = canvas.toDataURL('image/png')
