@@ -372,6 +372,12 @@ export default function RutaDetallePage({ params }) {
   // que es justo la cifra sobre la que responde («¿me rinde meter plata aqui?»).
   const [fichaCapital, setFichaCapital] = useState(false)
   const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
+  // «Solo hoy»: esconder a quien no toca cobrar hoy. Apagado por defecto —
+  // quitar clientes de la vista sin que nadie lo haya pedido es peor que
+  // mostrarlos de más—, pero se recuerda para quien lo enciende.
+  const [soloHoy, setSoloHoy] = useState(() => {
+    try { return localStorage.getItem('cf-ruta-soloHoy') === '1' } catch { return false }
+  })
   const [vistaPlana, setVistaPlana] = useState(() => {
     try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
   })
@@ -1317,6 +1323,19 @@ export default function RutaDetallePage({ params }) {
       const q = busquedaRuta.trim().toLowerCase()
       list = list.filter(c => c.nombre?.toLowerCase().includes(q) || c.cedula?.toLowerCase().includes(q))
     }
+    // «Solo hoy»: los que TOCAN hoy, más los que ya pagaron hoy. Estos últimos
+    // se quedan a propósito: son parte de la jornada y esconderlos haría dudar
+    // de si el cobro se registró. La misma cuenta que usa el agrupador, para
+    // que el filtro y las secciones no digan cosas distintas.
+    //
+    // Solo en «Cobros»: en «Ordenar» se está armando el recorrido con TODOS y
+    // en «Auditoría» se revisa la ruta entera.
+    if (soloHoy && modoVista === 'trabajo') {
+      list = list.filter((c) => {
+        const pendiente = Boolean(c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado'))
+        return pendiente || c.pagoHoy
+      })
+    }
     return list
   })()
 
@@ -1980,6 +1999,34 @@ export default function RutaDetallePage({ params }) {
                 </button>
               ))}
             </div>
+            {/* ── «SOLO HOY»: ESCONDER A QUIEN NO TOCA ─────────────────────
+                Reportado por un cobrador: «no me aparece la opción de quitar el
+                cliente de la ruta si no le toca hoy».
+                La lista YA se agrupa en «Por cobrar hoy / Ya pagaron / Próximos»,
+                pero agrupar no es filtrar: con 33 clientes y 24 por cobrar,
+                seguía pasando por todos. Y los dos iconos de al lado son
+                plana/agrupada, no un filtro — por eso decía que la opción «no
+                aparece»: no existía.
+                Se recuerda entre visitas: quien trabaja así lo quiere siempre. */}
+            {modoVista === 'trabajo' && (
+              <button
+                type="button"
+                onClick={() => setSoloHoy(v => {
+                  const nuevo = !v
+                  try { localStorage.setItem('cf-ruta-soloHoy', nuevo ? '1' : '0') } catch {}
+                  return nuevo
+                })}
+                className="shrink-0 h-8 px-2.5 rounded-[12px] border text-[12px] font-semibold transition-colors"
+                title={soloHoy ? 'Mostrando solo los de hoy' : 'Mostrar todos los clientes'}
+                style={{
+                  background: soloHoy ? 'var(--cf-gold-tint)' : 'transparent',
+                  borderColor: soloHoy ? 'var(--cf-gold-border)' : 'var(--cf-border)',
+                  color: soloHoy ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+                }}
+              >
+                Solo hoy
+              </button>
+            )}
             {modoVista === 'trabajo' && (
               <div className="flex rounded-[12px] border border-[var(--cf-border)] overflow-hidden shrink-0">
                 <button
@@ -3476,9 +3523,24 @@ export default function RutaDetallePage({ params }) {
       {/* Solo en «Cobros»: mientras se ordena o se audita, empezar el recorrido
           no es lo que se viene a hacer — y ahi el boton TAPABA la lista, que es
           justo lo que se esta manipulando. */}
+      {/* ── ⚠ POR ENCIMA DE LA PASTILLA, NO DEBAJO ────────────────────────
+          Estaba en `bottom: 92` con `zIndex: 40`, y la pastilla de navegación
+          va en `zIndex: 45`: le ganaba y le pintaba encima. En el teléfono se
+          veía «Empezar recorrido · 24» cortado por la mitad — con el botón
+          que arranca la jornada.
+
+          Las medidas, de los tokens: la pastilla se separa 18px del borde
+          (`--cf-nav-inset`) y mide 62 de alto (`--cf-h-nav`), así que ocupa
+          hasta los 80px. Los 92 de antes dejaban 12px de aire... pero el
+          z-index lo mandaba detrás igual.
+
+          Ahora se calcula desde los tokens en vez de un número a mano: si un
+          día la pastilla cambia de alto, esto se mueve con ella. */}
       {modoVista === 'trabajo' && (ruta?.pendientesHoy ?? 0) > 0 && (
         <div style={{
-          position: 'fixed', left: 0, right: 0, bottom: 92, zIndex: 40,
+          position: 'fixed', left: 0, right: 0,
+          bottom: 'calc(var(--cf-nav-inset) + var(--cf-h-nav) + env(safe-area-inset-bottom, 0px) + 12px)',
+          zIndex: 46,
           padding: '0 var(--cf-pad-screen)', pointerEvents: 'none',
         }}>
           <button
