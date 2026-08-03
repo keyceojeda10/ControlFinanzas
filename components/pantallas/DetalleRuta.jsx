@@ -56,9 +56,17 @@ export function LoPuestoAqui({
   carteraEtiqueta = 'Cartera de la ruta', cartera,
   columnas = [],
 }) {
+  // ── ⚠ EL BORDE NO ES ADORNO: EN OSCURO ES LO ÚNICO QUE DIBUJA LA CAJA ──
+  // Este bloque es carbón (#15161A) a propósito en los DOS temas. Pero en
+  // tema oscuro el fondo de la app ES #15161A: la tarjeta desaparecía, y se
+  // veían las cifras flotando sin caja. Lo vi en la captura del espejo — en
+  // el código las dos son «carbón» y parecen correctas.
+  // Con el filete que ya usa por dentro (blanco al 9%) el bloque recupera su
+  // contorno sin dejar de ser oscuro en claro.
   return (
     <div style={{
       flex: 'none', background: CARBON, borderRadius: 'var(--cf-r-card)',
+      border: `1px solid ${CARBON_FILETE}`,
       padding: '19px 21px', display: 'flex', flexDirection: 'column', gap: 14,
     }}>
       <Rotulo color={CARBON_TINTA_2}>{etiqueta}</Rotulo>

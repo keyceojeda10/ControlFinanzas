@@ -82,6 +82,9 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
       {totales?.hayAlgo && (
         <div style={{
           background: '#15161A', borderRadius: 'var(--cf-r-card)',
+          // El borde dibuja la caja en tema oscuro, donde el fondo de la app
+          // ES este mismo #15161A y el bloque desaparecía.
+          border: '1px solid rgba(255,255,255,.09)',
           padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12,
         }}>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

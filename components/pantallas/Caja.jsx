@@ -900,6 +900,8 @@ export function Cuentas({
     <>
       <div style={{
         flex: 'none', background: '#15161A', borderRadius: 'var(--cf-r-card)',
+        // En oscuro el fondo de la app es este mismo carbón: sin borde no hay caja.
+        border: '1px solid rgba(255,255,255,.09)',
         padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 15,
       }}>
         <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

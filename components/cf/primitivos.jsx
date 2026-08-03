@@ -62,6 +62,9 @@ export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', childre
   return (
     <div style={{
       background: '#15161A',
+      // Sin borde, en tema oscuro este bloque se funde con el fondo (que es
+      // este mismo carbón) y las cifras quedan flotando sin caja.
+      border: '1px solid rgba(255,255,255,.09)',
       borderRadius: 'var(--cf-r-hero)',
       padding: '19px 21px',
       display: 'flex', flexDirection: 'column', gap: 14,
@@ -173,7 +176,7 @@ export function AntesDespues({ etiqueta = 'Antes → después', concepto, antes,
   if (!cambia && filas.length === 0) return null
   const colorDespues = tono === 'mejora' ? '#2FBE6A' : tono === 'empeora' ? '#F0575C' : '#F3F3F6'
   return (
-    <div style={{ background: '#15161A', borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 'none' }}>
+    <div style={{ background: '#15161A', border: '1px solid rgba(255,255,255,.09)', borderRadius: 'var(--cf-r-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, flex: 'none' }}>
       {/* Sin rótulo cuando no se pasa. T06-04 dibuja el bloque con «Caja antes» y
           «después» a los lados y NADA encima: ahí el rótulo sería una tercera
           etiqueta diciendo lo que las otras dos ya dicen. */}

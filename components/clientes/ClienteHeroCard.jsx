@@ -229,7 +229,12 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
 
        Ahora es el bloque carbon del sistema, el mismo de caja, ruta y socios.
        El estado lo sigue diciendo la pastilla, con palabras. */
-    <div className="relative rounded-[20px] overflow-hidden" style={{ background: '#15161A' }}>
+    <div className="relative rounded-[20px] overflow-hidden" style={{
+      background: '#15161A',
+      // En tema oscuro el fondo de la app es este mismo carbón: sin borde la
+      // tarjeta del cliente se funde y el saldo queda flotando.
+      border: '1px solid rgba(255,255,255,.09)',
+    }}>
 
       <div className="relative px-5 py-5 sm:px-6 sm:py-6">
         {/* Top: avatar + nombre + cedula + chip estado + boton WA */}
