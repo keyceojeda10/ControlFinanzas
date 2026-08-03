@@ -931,7 +931,15 @@ export default function PrestamoDetallePage({ params }) {
         id: 'sincobro', nombre: 'Días sin cobro',
         hacer: () => {
           try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
-          setModalDiasSinCobro(true)
+          // ⚠ `setModalDscPrestamo`, que es el estado que de verdad abre la
+          // hoja (línea 164). Aquí decía `setModalDiasSinCobro`, que NO EXISTE:
+          // pulsar «Días sin cobro» tiraba un `ReferenceError` y la pantalla
+          // entera caía a la frontera de error — que es parte del «parpadeo»
+          // que reportó el dueño.
+          //
+          // No lo cazó ninguna prueba: una función inexistente dentro de un
+          // manejador no falla al compilar ni al importar, solo al PULSAR.
+          setModalDscPrestamo(true)
         },
       })
     }
