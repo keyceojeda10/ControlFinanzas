@@ -168,8 +168,17 @@ export default function CuadreDia({ fecha }) {
           const est = ESTADO[f.estado] || ESTADO.pendiente
           const confirmado = f.estado !== 'pendiente'
           return (
-            <div key={f.cobradorId} className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3">
-              <div className="flex items-center justify-between gap-2">
+            /* ── EN PC, UNA SOLA FILA ──
+               La tarjeta apila el nombre arriba y las tres cifras debajo, que es
+               lo correcto en 393px. Sentado, cada cobrador gastaba 1024px de
+               ancho para tres números y obligaba a bajar por diez tarjetas para
+               ver quién no cuadra.
+               `lg:flex` la pone en línea: nombre · sistema · recibido ·
+               diferencia · botón. Diez cobradores caben de un vistazo, que es la
+               pregunta de esta pestaña. */
+            <div key={f.cobradorId}
+              className="rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] p-3 lg:flex lg:items-center lg:gap-4 lg:py-2.5">
+              <div className="flex items-center justify-between gap-2 lg:flex-1 lg:min-w-0">
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: est.color, boxShadow: `0 0 8px ${est.color}` }} />
                   <div className="min-w-0">
@@ -177,35 +186,54 @@ export default function CuadreDia({ fecha }) {
                     <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
                   </div>
                 </div>
-                {!confirmado ? (
-                  <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
-                    Confirmar
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => abrirConfirmar(f)}
-                    className="shrink-0 text-[11px] font-medium text-[var(--cf-gold)] hover:underline px-2 py-1">
-                    Editar
-                  </button>
-                )}
+                {/* El botón se va al final de la FILA en PC: aquí dentro
+                    quedaría pegado al nombre, con las cifras a su derecha. */}
+                <span className="lg:hidden">
+                  {!confirmado ? (
+                    <button type="button" onClick={() => abrirConfirmar(f)}
+                      className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
+                      Confirmar
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => abrirConfirmar(f)}
+                      className="shrink-0 text-[11px] font-medium text-[var(--cf-gold)] hover:underline px-2 py-1">
+                      Editar
+                    </button>
+                  )}
+                </span>
               </div>
-              <div className="grid grid-cols-3 gap-2 mt-2.5">
-                <div>
+              <div className="grid grid-cols-3 gap-2 mt-2.5 lg:mt-0 lg:flex lg:gap-0 lg:flex-none">
+                <div className="lg:w-[140px] lg:text-right">
                   <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
                   <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(f.recaudadoSistema)}</p>
                 </div>
-                <div>
+                <div className="lg:w-[140px] lg:text-right">
                   <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
                   <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
                 </div>
-                <div>
+                <div className="lg:w-[140px] lg:text-right">
                   <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
                   <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--cf-ink-3)' : f.diferencia === 0 ? 'var(--cf-green-dark)' : f.diferencia < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
                     {f.diferencia == null ? '—' : `${f.diferencia > 0 ? '+' : ''}${formatMoney(f.diferencia)}`}
                   </p>
                 </div>
               </div>
-              {f.notaCuadre && <p className="text-[11px] text-[var(--cf-ink-3)] mt-1.5 italic">“{f.notaCuadre}”</p>}
+              {/* El botón, al final de la fila en PC. Es el mismo `abrirConfirmar`
+                  que el de móvil: una sola acción, dos sitios según el ancho. */}
+              <span className="hidden lg:flex lg:flex-none lg:justify-end lg:w-[110px]">
+                {!confirmado ? (
+                  <button type="button" onClick={() => abrirConfirmar(f)}
+                    className="text-[12px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[9px] px-3.5 py-2 transition-colors">
+                    Confirmar
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => abrirConfirmar(f)}
+                    className="text-[12px] font-medium text-[var(--cf-gold)] hover:underline px-2 py-1">
+                    Editar
+                  </button>
+                )}
+              </span>
+              {f.notaCuadre && <p className="text-[11px] text-[var(--cf-ink-3)] mt-1.5 italic lg:hidden">“{f.notaCuadre}”</p>}
             </div>
           )
         })}

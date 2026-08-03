@@ -936,6 +936,12 @@ export function Cuentas({
         )}
       </div>
 
+      {/* ── EN PC, DOS COLUMNAS ──
+          Cada cuenta gastaba los 1024px de ancho para un nombre y una cifra, así
+          que con cuatro cuentas había que bajar por media pantalla de aire para
+          verlas. Dos columnas las dejan de un vistazo, que es lo que se pregunta
+          aquí: cuánto hay en cada sitio. */}
+      <div className="contents lg:grid lg:grid-cols-2 lg:gap-3">
       {cuentas.map((c) => (
         <div key={c.id} style={{
           flex: 'none', position: 'relative', overflow: 'hidden',
@@ -997,6 +1003,7 @@ export function Cuentas({
           )}
         </div>
       ))}
+      </div>
 
       {/* «Mover plata» cubre el gesto real de consignar lo recogido: el cobrador
           trae efectivo y el dueño lo mete al banco. Sin esta acción, el efectivo
