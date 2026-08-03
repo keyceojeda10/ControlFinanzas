@@ -637,51 +637,36 @@ export default function PrestamosPage() {
               placeholder="Nombre o cédula"
             />
           </div>
-          {/* Solo en PC, igual que en clientes: en 393px los tres controles
-              dejaban el buscador en 162 y cortaban el «Nombre o cédula». En
-              móvil baja a la fila de los estados. */}
-          <span className="hidden lg:flex">
-            <ConmutadorVista
-              valor={vistaP === 'lista' ? '' : vistaP}
-              onCambiar={(v) => cambiarVistaP(v || 'lista')}
-              opciones={OPCIONES_VISTA}
-            />
-          </span>
+          {/* En las dos pantallas. Lo bajé a la fila de estados y quedó peor:
+              `BarraFiltros` se sale de su caja 20px por lado a propósito, así
+              que el conmutador se le montaba encima. Ver el comentario largo en
+              clientes. El hueco sale de que «Filtros» es solo icono en móvil. */}
+          <ConmutadorVista
+            valor={vistaP === 'lista' ? '' : vistaP}
+            onCambiar={(v) => cambiarVistaP(v || 'lista')}
+            opciones={OPCIONES_VISTA}
+          />
           <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 
         {/* El estado se queda arriba porque es el que se toca todos los días.
             Con su conteo: sin el número hay que aplicar el filtro para saber si
             había algo detrás. */}
-        {/* En móvil el conmutador va aquí: los estados ya se desplazan a lo
-            ancho, así que ceder un trozo fijo a la derecha no le quita nada al
-            buscador. Ver el comentario gemelo en clientes. */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="flex-1 min-w-0">
-            <BarraFiltros
-              activo={estado}
-              onCambiar={(v) => { setEstado(v); setPage(1) }}
-              // `montado &&`: esOwner sale de la sesión, que en el servidor no
-              // existe. Sin esperar al montaje, el servidor pinta menos chips que
-              // el cliente y React repinta el árbol entero.
-              filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
-                id: value,
-                nombre: label,
-                conteo: loading ? undefined
-                  : value === estado ? total
-                  : value === 'mora' && conteoMoraExacto ? enMoraCount
-                  : undefined,
-              }))}
-            />
-          </div>
-          <span className="flex lg:hidden">
-            <ConmutadorVista
-              valor={vistaP === 'lista' ? '' : vistaP}
-              onCambiar={(v) => cambiarVistaP(v || 'lista')}
-              opciones={OPCIONES_VISTA}
-            />
-          </span>
-        </div>
+        <BarraFiltros
+          activo={estado}
+          onCambiar={(v) => { setEstado(v); setPage(1) }}
+          // `montado &&`: esOwner sale de la sesión, que en el servidor no
+          // existe. Sin esperar al montaje, el servidor pinta menos chips que
+          // el cliente y React repinta el árbol entero.
+          filtros={ESTADOS.filter((e) => !e.ownerOnly || (montado && esOwner)).map(({ value, label }) => ({
+            id: value,
+            nombre: label,
+            conteo: loading ? undefined
+              : value === estado ? total
+              : value === 'mora' && conteoMoraExacto ? enMoraCount
+              : undefined,
+          }))}
+        />
       </div>
 
       <HojaFiltros

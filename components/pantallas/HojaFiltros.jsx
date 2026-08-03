@@ -42,6 +42,7 @@ export function BotonFiltros({ n = 0, onClick }) {
       type="button"
       onClick={onClick}
       aria-label={puestos ? `Más filtros, ${n} puestos` : 'Más filtros'}
+      className="cf-boton-filtros"
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 'none',
         // ⚠ ANCHO MÍNIMO FIJO. El rótulo cambia —«Filtros» sin nada puesto, el
@@ -50,7 +51,11 @@ export function BotonFiltros({ n = 0, onClick }) {
         // `flex-1` y se comía la diferencia, moviendo de paso el conmutador de
         // vista que va en medio. Con el mínimo, el botón no encoge al pasar a
         // número y nada se desplaza.
-        minWidth: 96,
+        //
+        // En móvil el mínimo es 54 —cuadrado— porque la palabra «Filtros» se
+        // esconde y queda solo el embudo: los 42px que sobran son los que le
+        // faltaban al buscador para no cortar «Nombre o cédula».
+        minWidth: 'var(--cf-min-filtros, 96px)',
         height: 'var(--cf-h-field)', padding: '0 14px', cursor: 'pointer',
         borderRadius: 999,
         background: puestos ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
@@ -63,7 +68,10 @@ export function BotonFiltros({ n = 0, onClick }) {
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 5h18l-7 8v5.5l-4 2V13z" />
       </svg>
-      {puestos ? n : 'Filtros'}
+      {/* El número SIEMPRE se ve —es el que dice que hay filtros puestos—; la
+          palabra «Filtros» solo en pantalla ancha. En móvil el embudo se
+          entiende solo y los 42px que libera son los que necesita el buscador. */}
+      {puestos ? n : <span className="hidden lg:inline">Filtros</span>}
     </button>
   )
 }

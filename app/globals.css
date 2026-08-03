@@ -658,6 +658,17 @@ html[data-theme="light"] input[type="range"]::-moz-range-track { background: #e2
   textarea:not(.cf-campo-grande) {
     font-size: 16px !important;
   }
+
+  /* EL BOTÓN DE FILTROS, CUADRADO EN MÓVIL.
+     La palabra «Filtros» se esconde por debajo de 1024 (ver `BotonFiltros`) y
+     sin bajar el mínimo el botón se quedaría con 96px de ancho para un embudo
+     de 16, robándole al buscador el sitio que necesita para no cortar «Nombre
+     o cédula». 54 = `--cf-h-field`, o sea cuadrado. */
+  .cf-boton-filtros {
+    --cf-min-filtros: var(--cf-h-field);
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 .cf-input:hover:not(:focus):not(:disabled) {
   border-color: rgba(255,255,255,0.18);
