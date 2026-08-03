@@ -488,6 +488,77 @@ export async function GET(request, { params }) {
     ? capitalRutasTotal - gastosPendientesDia
     : efectivoEnMano
 
+  // ── LA GESTIÓN, POR RUTA ─────────────────────────────────────────────────
+  //
+  // Las cuentas de arriba (`clientesNuevos`, `prestamosNuevos`…) suman TODAS las
+  // rutas del cobrador. El que lleva tres necesita saber cuál se movió, no el
+  // total: «2 clientes nuevos» no dice en cuál entraron.
+  //
+  // Se usa `groupBy` en vez de un `count` por ruta: con diez rutas serían diez
+  // viajes a la base para la pantalla que más se abre del día.
+  const [nuevosPorRuta, prestamosPorRuta, activosPorRuta] = rutaIds.length > 0
+    ? await Promise.all([
+      prisma.cliente.groupBy({
+        by: ['rutaId'],
+        where: { organizationId, rutaId: { in: rutaIds }, createdAt: { gte: inicio, lt: fin } },
+        _count: { _all: true },
+      }),
+      // Nuevos y renovaciones a la vez: `renovadoDeId` distingue unos de otros y
+      // así es una consulta en vez de dos.
+      prisma.prestamo.findMany({
+        where: {
+          organizationId,
+          createdAt: { gte: inicio, lt: fin },
+          estado: { not: 'cancelado' },
+          cliente: { rutaId: { in: rutaIds } },
+        },
+        select: { renovadoDeId: true, cliente: { select: { rutaId: true } } },
+      }),
+      prisma.cliente.groupBy({
+        by: ['rutaId'],
+        where: {
+          organizationId,
+          rutaId: { in: rutaIds },
+          prestamos: { some: { estado: 'activo', esClavo: false } },
+        },
+        _count: { _all: true },
+      }),
+    ])
+    : [[], [], []]
+
+  const gestionPorRuta = new Map(rutaIds.map((id) => [id, {
+    clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+    clientesActivos: 0, clientesCobrados: 0,
+  }]))
+  const gBucket = (id) => {
+    if (!id) return null
+    if (!gestionPorRuta.has(id)) {
+      gestionPorRuta.set(id, {
+        clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+        clientesActivos: 0, clientesCobrados: 0,
+      })
+    }
+    return gestionPorRuta.get(id)
+  }
+  for (const g of nuevosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesNuevos = g._count._all }
+  for (const g of activosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesActivos = g._count._all }
+  for (const p of prestamosPorRuta) {
+    const b = gBucket(p.cliente?.rutaId)
+    if (!b) continue
+    if (p.renovadoDeId) b.renovaciones += 1
+    else b.prestamosNuevos += 1
+  }
+  // Clientes DISTINTOS a los que se les cobró hoy, por ruta. No es lo mismo que
+  // el número de cobros: a un cliente se le puede cobrar dos veces.
+  const cobradosPorRuta = new Map()
+  for (const p of cobros) {
+    const rid = p.prestamo?.cliente?.ruta?.id
+    if (!rid) continue
+    if (!cobradosPorRuta.has(rid)) cobradosPorRuta.set(rid, new Set())
+    if (p.prestamo?.cliente?.id) cobradosPorRuta.get(rid).add(p.prestamo.cliente.id)
+  }
+  for (const [rid, set] of cobradosPorRuta) { const b = gBucket(rid); if (b) b.clientesCobrados = set.size }
+
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
     prestadoDia: Math.round(r.prestadoDia),
@@ -571,77 +642,6 @@ export async function GET(request, { params }) {
       distinct: ['prestamoId'],
     }),
   ])
-
-  // ── LA GESTIÓN, POR RUTA ─────────────────────────────────────────────────
-  //
-  // Las cuentas de arriba (`clientesNuevos`, `prestamosNuevos`…) suman TODAS las
-  // rutas del cobrador. El que lleva tres necesita saber cuál se movió, no el
-  // total: «2 clientes nuevos» no dice en cuál entraron.
-  //
-  // Se usa `groupBy` en vez de un `count` por ruta: con diez rutas serían diez
-  // viajes a la base para la pantalla que más se abre del día.
-  const [nuevosPorRuta, prestamosPorRuta, activosPorRuta] = rutaIds.length > 0
-    ? await Promise.all([
-      prisma.cliente.groupBy({
-        by: ['rutaId'],
-        where: { organizationId, rutaId: { in: rutaIds }, createdAt: { gte: inicio, lt: fin } },
-        _count: { _all: true },
-      }),
-      // Nuevos y renovaciones a la vez: `renovadoDeId` distingue unos de otros y
-      // así es una consulta en vez de dos.
-      prisma.prestamo.findMany({
-        where: {
-          organizationId,
-          createdAt: { gte: inicio, lt: fin },
-          estado: { not: 'cancelado' },
-          cliente: { rutaId: { in: rutaIds } },
-        },
-        select: { renovadoDeId: true, cliente: { select: { rutaId: true } } },
-      }),
-      prisma.cliente.groupBy({
-        by: ['rutaId'],
-        where: {
-          organizationId,
-          rutaId: { in: rutaIds },
-          prestamos: { some: { estado: 'activo', esClavo: false } },
-        },
-        _count: { _all: true },
-      }),
-    ])
-    : [[], [], []]
-
-  const gestionPorRuta = new Map(rutaIds.map((id) => [id, {
-    clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
-    clientesActivos: 0, clientesCobrados: 0,
-  }]))
-  const gBucket = (id) => {
-    if (!id) return null
-    if (!gestionPorRuta.has(id)) {
-      gestionPorRuta.set(id, {
-        clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
-        clientesActivos: 0, clientesCobrados: 0,
-      })
-    }
-    return gestionPorRuta.get(id)
-  }
-  for (const g of nuevosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesNuevos = g._count._all }
-  for (const g of activosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesActivos = g._count._all }
-  for (const p of prestamosPorRuta) {
-    const b = gBucket(p.cliente?.rutaId)
-    if (!b) continue
-    if (p.renovadoDeId) b.renovaciones += 1
-    else b.prestamosNuevos += 1
-  }
-  // Clientes DISTINTOS a los que se les cobró hoy, por ruta. No es lo mismo que
-  // el número de cobros: a un cliente se le puede cobrar dos veces.
-  const cobradosPorRuta = new Map()
-  for (const p of cobros) {
-    const rid = p.prestamo?.cliente?.ruta?.id
-    if (!rid) continue
-    if (!cobradosPorRuta.has(rid)) cobradosPorRuta.set(rid, new Set())
-    if (p.prestamo?.cliente?.id) cobradosPorRuta.get(rid).add(p.prestamo.cliente.id)
-  }
-  for (const [rid, set] of cobradosPorRuta) { const b = gBucket(rid); if (b) b.clientesCobrados = set.size }
 
   // Desglose por método de pago
   const desgloseMetodo = {}
