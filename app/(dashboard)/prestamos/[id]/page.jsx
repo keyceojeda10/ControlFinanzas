@@ -1244,8 +1244,11 @@ export default function PrestamoDetallePage({ params }) {
             // envío automático al crear (`?nuevo=1`) sigue igual; esto es para
             // volver a mandarlo, que es lo que él no encontraba.
             ...(cliente?.telefono ? [{
-              label: 'Enviar por WhatsApp',
-              sublabel: 'Crédito, recibo o recordatorio',
+              // «WhatsApp» a secas: en el chip, «Enviar por WhatsApp» se cortaba
+              // en «Enviar por Wh…». El icono verde ya dice de qué se trata, y
+              // el sublabel dice qué se manda.
+              label: 'WhatsApp',
+              sublabel: 'Enviar crédito o recibo',
               color: '#25D366',
               icon: (
                 <svg fill="currentColor" viewBox="0 0 24 24">
