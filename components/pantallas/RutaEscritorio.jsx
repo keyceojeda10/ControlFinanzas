@@ -131,6 +131,12 @@ export default function RutaEscritorio({
       {/* ── ENCABEZADO: miga, título y LAS ACCIONES ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {/* CON FLECHA, o no se ve que se pueda pulsar. Era un botón de verdad
+              —con su `onClick`— pero pintado como una etiqueta: 10,5px, gris,
+              mayúsculas y sin nada que lo distinga del texto de al lado. El
+              dueño lo reportó como que no había forma de volver a la ruta «sino
+              dándole al menú». La salida estaba; lo que faltaba era que
+              PARECIERA una salida. */}
           {migaVolver && (
             <button
               type="button"
@@ -138,10 +144,17 @@ export default function RutaEscritorio({
               style={{
                 alignSelf: 'flex-start', background: 'none', border: 0, padding: 0,
                 cursor: 'pointer', font: 'inherit',
+                display: 'inline-flex', alignItems: 'center', gap: 5,
                 fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em',
                 textTransform: 'uppercase', color: 'var(--cf-ink-3)',
               }}
-            >{migaVolver}</button>
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                <path d="M15 5l-7 7 7 7" />
+              </svg>
+              {migaVolver}
+            </button>
           )}
           <span style={{
             fontFamily: 'var(--font-space-grotesk), system-ui',
