@@ -1880,13 +1880,12 @@ function NuevoPrestamo() {
         </div>
       )}
 
-      {/* Footer fijo abajo */}
-      {/* ⚠ POR ENCIMA DE LA PASTILLA: iba en `bottom-0` con el mismo z-index
-          que la barra flotante, que se pinta después y lo tapaba. Es el mismo
-          fallo que reportaron en «editar cliente», donde el botón de guardar no
-          se podía pulsar. Aquí se comprobó de paso. */}
+      {/* Footer fijo abajo.
+          ⚠ VA PEGADO AL BORDE. Esta pantalla es `TAREA`: nunca tuvo pastilla,
+          así que subir la barra para esquivarla solo dejaba un hueco muerto.
+          El dueño lo vio de una: «se ve terrible». */}
       <div
-        className="fixed left-0 right-0 lg:left-60 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6 bottom-[calc(var(--cf-nav-inset)+var(--cf-h-nav)+env(safe-area-inset-bottom,0px))] lg:bottom-0"
+        className="fixed left-0 right-0 lg:left-60 bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',
