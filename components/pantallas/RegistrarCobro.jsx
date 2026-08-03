@@ -111,7 +111,14 @@ function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' })
                   : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }
                 : on
                   ? {
-                      background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-ink)',
+                      // ⚠ `--cf-gold-dark`, NO `--cf-gold-ink`.
+                      // `gold-ink` es marrón oscuro (#3A2900) y NO tiene variante
+                      // oscura: sirve sobre dorado SÓLIDO. Pero el fondo de aquí
+                      // es `gold-tint`, que en tema oscuro es un dorado al 14%
+                      // sobre carbón — o sea, oscuro. Marrón sobre oscuro no se
+                      // lee: el dueño mandó la captura con «Cuota» casi
+                      // invisible. `gold-dark` sí se aclara en oscuro (#F5B824).
+                      background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
                       border: `1px solid color-mix(in srgb, ${ORO} 35%, transparent)`,
                     }
                   : { background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }),

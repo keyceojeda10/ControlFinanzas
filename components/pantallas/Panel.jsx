@@ -71,6 +71,23 @@ const RUTAS_VISIBLES = 5
    Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
    barra va en #3A2900 sobre una pista del mismo tono al 16%: sobre dorado, un
    relleno blanco no se ve. */
+// ── ⚠ TEXTO SOBRE LA TARJETA DORADA ───────────────────────────────────────
+//
+// Esta tarjeta es dorada SIEMPRE, en claro y en oscuro. Así que su texto tiene
+// que ser oscuro SIEMPRE — y `--cf-gold-text` NO sirve: en tema oscuro vale
+// `#F5B824`, o sea el MISMO dorado del fondo. Las letras desaparecían.
+//
+// Lo reportó el dueño con las dos capturas al lado: en claro se leían
+// «RECAUDADO HOY», «de $998.534 · meta del día», «3 cobrados 16 pendientes» y
+// «Toca una barra»; en oscuro la tarjeta salía muda.
+//
+// `--cf-gold-ink` (#3A2900) está definido UNA sola vez, sin variante oscura,
+// justo porque es «texto SOBRE dorado. Nunca blanco». Ese es el que va aquí.
+//
+// La confusión está en el nombre: `--cf-gold-text` es para texto DORADO sobre
+// fondo neutro (por eso en oscuro se aclara), no para texto sobre dorado.
+const TINTA_SOBRE_ORO = 'var(--cf-gold-ink)'
+
 function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt }) {
   // La barra mas alta manda la escala. Con todo en cero no se pinta nada: siete
   // barras planas no son un grafico, son ruido.
@@ -116,7 +133,7 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase',
-            color: 'var(--cf-gold-text)',
+            color: TINTA_SOBRE_ORO,
           }}>Recaudado hoy</span>
           <span className="cf-fig" style={{
             fontSize: 38, letterSpacing: '-.03em', color: 'var(--cf-gold-ink)',
@@ -125,7 +142,7 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
               en una línea hace dudar de cuál de los dos es lo cobrado. */}
           {meta && (
             <span className="cf-num" style={{
-              fontSize: 13, fontWeight: 600, color: 'var(--cf-gold-text)',
+              fontSize: 13, fontWeight: 600, color: TINTA_SOBRE_ORO,
             }}>de {meta} · meta del día</span>
           )}
         </div>
@@ -151,7 +168,7 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
       <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
         {pie.map((t, i) => (
           <span key={i} className="cf-num" style={{
-            fontSize: 12, fontWeight: 600, color: 'var(--cf-gold-text)',
+            fontSize: 12, fontWeight: 600, color: TINTA_SOBRE_ORO,
           }}>{t}</span>
         ))}
       </div>
@@ -219,7 +236,7 @@ function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, a
               que la tarjeta no dé un salto al tocar. */}
           <span className="cf-num" style={{
             fontSize: 12, fontWeight: 600, minHeight: 16, flex: 'none',
-            color: 'var(--cf-gold-text)',
+            color: TINTA_SOBRE_ORO,
           }}>
             {diaAbierto === null
               ? 'Toca una barra para ver el día'

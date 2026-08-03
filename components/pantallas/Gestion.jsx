@@ -98,7 +98,9 @@ function Atajos({ opciones = [], activo, onElegir }) {
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             ...(on
               ? {
-                  background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-ink)',
+                  // `gold-dark`, no `gold-ink`: sobre `gold-tint` —que en oscuro es
+                  // un dorado al 14% sobre carbón— el marrón no se lee.
+                  background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
                   border: `1px solid color-mix(in srgb, ${ORO} 35%, transparent)`,
                 }
               : { background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }),
