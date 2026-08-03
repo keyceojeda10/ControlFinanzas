@@ -63,21 +63,27 @@ export default function HojaInferior({
   // cobrando.
   //
   // Cómo funciona: al abrir se mete una entrada de historia; el «atrás» la
-  // consume y `popstate` cierra la hoja en vez de salir de la página. Al cerrar
-  // por la X o por el fondo, esa entrada se retira para no dejar historia basura
-  // que obligue a pulsar «atrás» dos veces.
+  // consume y `popstate` cierra la hoja en vez de salir de la página.
+  // ⚠ NO SE LLAMA A `history.back()` AL CERRAR. Lo hacía, y rompió media
+  // pantalla de gestión: «Recargo», «Descuento», «Días sin cobro», «Cerrar
+  // anticipado» y «Mover a perdidos» no hacían nada.
+  //
+  // La secuencia: al pulsar una opción, el menú se cierra y ABRE otra hoja
+  // (`onAccion` hace `setModalGestion(false)` y luego `a.hacer()`). El `back()`
+  // del cierre es ASÍNCRONO —el navegador lo procesa en el siguiente ciclo— así
+  // que para cuando llega, la hoja nueva ya está abierta y se lleva la SUYA por
+  // delante. Se abría y se cerraba sola: desde fuera, un botón muerto.
+  //
+  // Y no hace falta: la entrada sobrante no molesta —el siguiente «atrás» la
+  // consume y el `popstate` no encuentra hoja abierta que cerrar—, mientras que
+  // retirarla a mano es justo lo que pisaba la hoja siguiente.
   useEffect(() => {
     if (!abierta || typeof window === 'undefined') return
-    let cerradaPorAtras = false
     window.history.pushState({ cfHoja: true }, '')
-    const alVolver = () => { cerradaPorAtras = true; onCerrar?.() }
+    const alVolver = () => { onCerrar?.() }
     window.addEventListener('popstate', alVolver)
     return () => {
       window.removeEventListener('popstate', alVolver)
-      // Si se cerró con la X, la entrada sigue puesta: se quita a mano. Si se
-      // cerró CON el atrás, ya la consumió el navegador y volver a llamar a
-      // `back()` sacaría al usuario de la pantalla — que es el fallo original.
-      if (!cerradaPorAtras && window.history.state?.cfHoja) window.history.back()
     }
   }, [abierta, onCerrar])
 
