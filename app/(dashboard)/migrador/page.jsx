@@ -607,6 +607,25 @@ export default function MigradorPage() {
   const [creados, setCreados] = useState([])
   const [editandoIdx, setEditandoIdx] = useState(null)
 
+  // A dónde vuelve ESTA pantalla, que no es «atrás»: del formulario al selector,
+  // y del selector a la lista si ya hay clientes creados. Salirse a medias
+  // pierde la migración entera.
+  //
+  // Va con `useCallback` y ANTES de `useCabecera` —que es un hook y corre en
+  // orden— porque la función vivía abajo del todo, junto al `return`. Usarla
+  // desde aquí sin moverla es un TDZ: revienta al montar la pantalla.
+  const volverDeLaMigracion = useCallback(() => {
+    if (vista === 'lista') { router.back(); return }
+    if (vista === 'selector') {
+      if (creados.length > 0) { setVista('lista') } else { router.back() }
+      return
+    }
+    // `setError` NO se llama aquí: se declara más abajo y usarlo desde este
+    // punto es otro TDZ. El error se limpia solo al entrar al formulario.
+    setEditandoIdx(null)
+    setVista('selector')
+  }, [vista, creados.length, router])
+
   // ── LA CABECERA, ARRIBA DEL TODO ──
   //
   // `useCabecera` es un HOOK: puesto donde se calculan `headerTitulo` y
@@ -627,6 +646,16 @@ export default function MigradorPage() {
       selector: creados.length > 0 ? 'Cómo quieres registrar este cliente' : 'Agrega tus clientes con foto o a mano, uno a uno',
       formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su préstamo',
     }[vista],
+    // El VOLVER de esta pantalla no es «atrás»: del formulario vuelve al
+    // selector, del selector a la lista si ya hay clientes creados. Sin pasarlo,
+    // el armazón usa su `router.back()` y se sale de la migración a medias.
+    //
+    // Iba en un botón PROPIO dentro de la página, así que en escritorio salían
+    // dos —el «‹ Volver» del armazón arriba y un «‹ Salir» debajo— y en móvil
+    // uno duplicaba la flecha de la cabecera. Es la misma trampa que ya avisa
+    // `Armazon.jsx`: «una flecha que no hace nada es peor que no tenerla», aquí
+    // en su versión de dos flechas que sí hacen cosas distintas.
+    onVolver: volverDeLaMigracion,
   })
   const [saving, setSaving] = useState(false)
   const [eliminandoIdx, setEliminandoIdx] = useState(null)
@@ -920,31 +949,16 @@ export default function MigradorPage() {
     formulario: 'Volver',
   }[vista]
 
-  const handleVolver = () => {
-    if (vista === 'lista') { router.back(); return }
-    if (vista === 'selector') {
-      if (creados.length > 0) { irA('lista') } else { router.back() }
-      return
-    }
-    if (vista === 'formulario') {
-      setEditandoIdx(null)
-      setError('')
-      irA('selector')
-    }
-  }
-
   return (
-    <div className="max-w-lg mx-auto pb-32">
+    <div className="max-w-lg lg:max-w-2xl mx-auto pb-32">
       {/* Header */}
       <div className="mb-5">
-        <button onClick={handleVolver}
-          className="flex items-center gap-1.5 text-sm mb-3 transition-colors"
-          style={{ color: 'var(--cf-ink-3)' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          {volverLabel}
-        </button>
+        {/* SIN BOTÓN DE VOLVER PROPIO: lo pone el armazón, que en móvil es la
+            flecha de la cabecera y en PC el «‹ Volver» de arriba. Aquí salían
+            DOS, uno debajo del otro, y el de la página se llamaba «Salir»
+            mientras el de arriba decía «Volver» — dos nombres para el mismo
+            gesto. Ahora el armazón recibe `onVolver` y hace lo correcto según
+            el paso. */}
         <div className="flex items-center justify-between">
           {/* El titulo cambia con la vista, y por eso vive en la cabecera del
               armazon: asi cambia EN LA CABECERA en vez de aparecer un segundo

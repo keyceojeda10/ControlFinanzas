@@ -131,8 +131,11 @@ export default function CargaMasivaPage() {
   if (authLoading) return null
   if (!esOwner) return null
 
+  // En PC sube de 576px a 896: los pasos de arriba dejan de amontonarse y la
+  // tabla de filas —el paso «Revisar»— cabe sin scroll horizontal, que es lo
+  // que la lámina T01-07 pide para 1440.
   return (
-    <div className="max-w-xl mx-auto pb-8">
+    <div className="max-w-xl lg:max-w-4xl mx-auto pb-8">
       {/* Header */}
       {/* SIN FLECHA PROPIA Y SIN TITULO PROPIO. Los dos los pone el armazon.
           La flecha ademas hacia dos cosas —«Volver» o «Paso anterior»— y ahora
