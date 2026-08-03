@@ -24,7 +24,7 @@ import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
-  montoCrudoConModo, montoParaMostrarConModo,
+  montoCrudo, montoParaMostrar, montoCrudoConModo, montoParaMostrarConModo,
 } from '@/lib/adaptadores/pago'
 import { Recargo, Descuento, PieGestion } from '@/components/pantallas/Gestion'
 import {
@@ -54,8 +54,6 @@ export default function RegistrarPago({
   // pero el rediseño puso aquí un campo propio y la conversión se perdió sin
   // avisar: el modo seguía encendido en configuración y no hacía nada. Lo
   // reportó un cobrador creyendo que se le había desactivado solo.
-  const verMonto = (v) => montoParaMostrarConModo(v, modoAbreviado, undefined)
-  const leerMonto = (v) => montoCrudoConModo(v, modoAbreviado)
   const camposRecibo = (Array.isArray(cliente?.camposRecibo) && cliente.camposRecibo.length > 0)
     ? cliente.camposRecibo
     : (Array.isArray(camposReciboOrg) && camposReciboOrg.length > 0 ? camposReciboOrg : getDefaultCampos())
@@ -63,6 +61,40 @@ export default function RegistrarPago({
   // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
   const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
   const [monto,        setMonto]        = useState(String(montoInicial))
+
+  // ── ⚠ EL CAMPO GUARDA LO QUE SE TECLEA, NO EL VALOR MULTIPLICADO ────────
+  //
+  // La primera versión guardaba en `monto` el valor YA multiplicado y lo
+  // volvía a dividir para pintarlo. Eso monta un bucle: cada tecla se
+  // multiplica otra vez sobre lo anterior. Tecleando «40500» salía
+  // **$40.500.000**, el pago no pasaba la validación y al cobrador se le
+  // «devolvía» la pantalla sin decir por qué. Lo reportó un cliente en vivo.
+  //
+  //   tecla 4 -> 4.000     tecla 5 -> 405.000
+  //   tecla 0 -> 40.000    tecla 0 -> 4.050.000    tecla 0 -> 40.500.000
+  //
+  // Ahora `montoTecleado` es LITERALMENTE lo que hay en el campo, y la
+  // multiplicación se hace UNA sola vez, al enviar (`montoReal`). Es como lo
+  // hace `MoneyInput`, que nunca tuvo este fallo.
+  //
+  // `monto` sigue en pesos reales porque los atajos («Cuota», «Todo», «Al
+  // día») lo fijan con la cifra de verdad; al tocarlos se refleja convertido.
+  const [montoTecleado, setMontoTecleado] = useState(null)
+  // Los atajos y los efectos fijan `monto` con la cifra REAL. Al hacerlo hay
+  // que olvidar lo tecleado, o el campo seguiría pintando el texto viejo.
+  const fijarMonto = (v) => { setMontoTecleado(null); setMonto(v) }
+  const verMonto = (v) => (
+    montoTecleado != null
+      ? montoParaMostrar(montoTecleado, undefined)
+      : montoParaMostrarConModo(v, modoAbreviado, undefined)
+  )
+  const leerMonto = (v) => {
+    const crudo = montoCrudo(v)
+    setMontoTecleado(crudo)
+    // Lo que se guarda SÍ va en pesos reales: es lo que se envía y lo que leen
+    // el resumen, los avisos de tope y la proyección de «después de este pago».
+    return montoCrudoConModo(crudo, modoAbreviado)
+  }
   const [tipo,         setTipo]         = useState('completo')
   const [metodoPago,   setMetodoPago]   = useState('efectivo')
   const [plataforma,   setPlataforma]   = useState('')
@@ -133,7 +165,7 @@ export default function RegistrarPago({
     setVerFormularioCompleto(!['pago', 'recargo', 'descuento', 'capital', 'intereses'].includes(tabInicial))
 
     if (tabInicial === 'recargo' || tabInicial === 'descuento') {
-      setMonto('')
+      fijarMonto('')
       setTipo(tabInicial)
       setNota('')
       setDiasAbonados(null)
@@ -142,7 +174,7 @@ export default function RegistrarPago({
       return
     }
     if (tabInicial === 'capital') {
-      setMonto('')
+      fijarMonto('')
       setTipo('capital')
       setNota('')
       setDiasAbonados(null)
@@ -169,7 +201,7 @@ export default function RegistrarPago({
       ? Math.min(Math.round(montoPreset), Math.round(saldoPendiente ?? 0))
       : montoBase
 
-    setMonto(String(montoFinal))
+    fijarMonto(String(montoFinal))
     setTipo(presetPago?.tipo ?? (montoFinal >= montoBase ? 'completo' : 'parcial'))
     const cuota = Math.max(1, Math.round(cuotaDiaria ?? 1))
     const diasCalc = montoPreset > 0 ? Math.min(30, Math.max(1, Math.round(montoFinal / cuota))) : null
@@ -390,7 +422,7 @@ export default function RegistrarPago({
 
   const handleAbonoDias = (dias) => {
     const montoAbono = Math.min(Math.round(cuotaDiaria * dias), Math.round(saldoPendiente ?? 0))
-    setMonto(String(montoAbono))
+    fijarMonto(String(montoAbono))
     setDiasAbonados(dias)
     setError('')
   }
@@ -900,7 +932,7 @@ export default function RegistrarPago({
             onMonto={(v) => setMonto(leerMonto(v))}
             atajos={atajos}
             atajoActivo={atajoActivo}
-            onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
+            onAtajo={(a) => { if (a.monto) fijarMonto(String(a.monto)) }}
             motivo={nota}
             onMotivo={setNota}
             {...(datos ?? {})}
@@ -911,7 +943,7 @@ export default function RegistrarPago({
             onMonto={(v) => setMonto(leerMonto(v))}
             atajos={atajos}
             atajoActivo={atajoActivo}
-            onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
+            onAtajo={(a) => { if (a.monto) fijarMonto(String(a.monto)) }}
             motivo={nota}
             onMotivo={setNota}
             {...(datos ?? {})}
@@ -1016,7 +1048,7 @@ export default function RegistrarPago({
           onMonto={(v) => setMonto(leerMonto(v))}
           atajos={atajos}
           atajoActivo={atajoActivo}
-          onAtajo={(a) => setMonto(String(a.monto))}
+          onAtajo={(a) => fijarMonto(String(a.monto))}
           aplicaciones={aplicacionesDePago}
           aplicacion={tipo}
           // La hoja NO se desmonta al cambiar de aplicación: las tres opciones
@@ -1094,7 +1126,7 @@ export default function RegistrarPago({
                     key={f.numeroPeriodo}
                     type="button"
                     onClick={() => {
-                      setMonto(String(faltante))
+                      fijarMonto(String(faltante))
                       setTipo(faltante >= (cuotaDiaria ?? 0) ? 'completo' : 'parcial')
                       setDiasAbonados(null)
                     }}
@@ -1140,7 +1172,7 @@ export default function RegistrarPago({
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoEnMora), Math.round(saldoPendiente ?? 0))
                   const dias = diasParaMonto(montoFinal)
-                  setMonto(String(montoFinal))
+                  fijarMonto(String(montoFinal))
                   setTipo('completo')
                   setDiasAbonados(dias)
                   setSliderVisual(dias)
@@ -1160,7 +1192,7 @@ export default function RegistrarPago({
                 onClick={() => {
                   const montoFinal = Math.min(Math.round(prestamo.montoParaPonerseAlDia), Math.round(saldoPendiente ?? 0))
                   const dias = diasParaMonto(montoFinal)
-                  setMonto(String(montoFinal))
+                  fijarMonto(String(montoFinal))
                   setTipo('completo')
                   setDiasAbonados(dias)
                   setSliderVisual(dias)
@@ -1261,7 +1293,7 @@ export default function RegistrarPago({
             label="Monto del pago *"
             value={monto}
             onChange={(e) => {
-              setMonto(e.target.value)
+              fijarMonto(e.target.value)
               setError('')
               // Si el usuario edita manualmente el monto, limpiar diasAbonados
               // para evitar que el backend recalcule monto = cuotaDiaria * dias.
@@ -1297,7 +1329,7 @@ export default function RegistrarPago({
                           ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
                         setMonto(String(Math.round(interesesPend)))
                       } else {
-                        setMonto('')
+                        fijarMonto('')
                       }
                     }
                   }}
