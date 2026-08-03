@@ -95,8 +95,13 @@ export function ConmutadorVista({ valor, onCambiar, opciones }) {
       aria-label="Cómo se ven"
       style={{
         display: 'inline-flex', alignItems: 'center', flex: 'none',
-        height: 'var(--cf-h-field)', padding: 3, gap: 3,
-        borderRadius: 999,
+        height: 'var(--cf-h-field)', padding: 4, gap: 2,
+        // Radio 14, no 999. La píldora redonda por fuera con pastillas redondas
+        // por dentro daba dos curvas peleadas y el botón activo se leía como un
+        // borrón; 14 es el radio de la caja del buscador que va al lado, así que
+        // las dos piezas de la fila tienen la misma esquina. Lo de dentro va a
+        // 10: metido, no concéntrico.
+        borderRadius: 14,
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
       }}
     >
@@ -112,10 +117,16 @@ export function ConmutadorVista({ valor, onCambiar, opciones }) {
             aria-pressed={activa}
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 34, height: '100%', cursor: 'pointer',
-              borderRadius: 999, border: 0,
-              background: activa ? 'var(--cf-gold-tint)' : 'transparent',
-              color: activa ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+              // 36 de ancho: el dedo necesita 36-44 y con 34 en una fila de tres
+              // el de en medio se falla. El alto lo da el padre menos el relleno.
+              width: 36, height: '100%', cursor: 'pointer',
+              borderRadius: 10, border: 0,
+              // La pastilla activa va con el dorado SÓLIDO de la marca, como la
+              // pastilla de estado de la fila de abajo. El tinte claro sobre
+              // tarjeta clara casi no se distinguía del apagado.
+              background: activa ? 'var(--cf-gold)' : 'transparent',
+              color: activa ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
+              transition: 'background .12s, color .12s',
             }}
           >
             {ICONO_VISTA[o.icono] ?? ICONO_VISTA.lista}

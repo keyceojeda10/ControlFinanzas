@@ -853,35 +853,53 @@ export default function ClientesPage() {
               placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
             />
           </div>
-          {/* EL CONMUTADOR DE VISTA, VISIBLE. Estaba solo dentro de la hoja de
-              filtros y el dueño lo pidió a la vista: «sácalo donde se vea».
-              En modo asignar no va — ahí se está eligiendo a quién mover, y
-              cambiar la forma de la lista a mitad de una selección la pierde. */}
+          {/* EN PC va aquí; en móvil NO —ver la fila de estados de abajo—.
+              Medido: a 393px la fila son 353 y con tres controles al buscador le
+              quedaban 162, menos de la mitad, con el «Nombre o cédula» cortado.
+              En PC hay 1142 y le sobran 914, por eso ahí sí cabe. */}
           {!modoAsignar && (
-            <ConmutadorVista
-              valor={vista === 'lista' ? '' : vista}
-              onCambiar={(v) => cambiarVista(v || 'lista')}
-              opciones={OPCIONES_VISTA}
-            />
+            <span className="hidden lg:flex">
+              <ConmutadorVista
+                valor={vista === 'lista' ? '' : vista}
+                onCambiar={(v) => cambiarVista(v || 'lista')}
+                opciones={OPCIONES_VISTA}
+              />
+            </span>
           )}
           <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 
-        {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
-            que aplicarlo para saber si había algo. */}
-        <BarraFiltros
-          activo={estado}
-          onCambiar={(v) => { setEstado(v); setPage(1) }}
-          filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
-            id: value,
-            nombre: label,
-            // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
-            // cierto se lee como "no hay ninguno" y hace descartar el filtro
-            // antes de que llegue el dato.
-            // Del servidor, no de la pagina. Sin ellos, sin numero.
-            conteo: conteos ? (value === '' ? conteos.total : conteos[value] ?? 0) : undefined,
-          }))}
-        />
+        {/* ── EN MÓVIL EL CONMUTADOR VIVE AQUÍ, NO ARRIBA ──
+            Los estados ya se desplazan a lo ancho, así que esta fila puede
+            ceder un trozo fijo a la derecha sin quitarle nada al buscador, que
+            recupera sus 353px enteros. El conmutador se queda quieto y las
+            pastillas pasan por debajo. */}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex-1 min-w-0">
+            <BarraFiltros
+              activo={estado}
+              onCambiar={(v) => { setEstado(v); setPage(1) }}
+              filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
+                id: value,
+                nombre: label,
+                // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
+                // cierto se lee como "no hay ninguno" y hace descartar el filtro
+                // antes de que llegue el dato.
+                // Del servidor, no de la pagina. Sin ellos, sin numero.
+                conteo: conteos ? (value === '' ? conteos.total : conteos[value] ?? 0) : undefined,
+              }))}
+            />
+          </div>
+          {!modoAsignar && (
+            <span className="flex lg:hidden">
+              <ConmutadorVista
+                valor={vista === 'lista' ? '' : vista}
+                onCambiar={(v) => cambiarVista(v || 'lista')}
+                opciones={OPCIONES_VISTA}
+              />
+            </span>
+          )}
+        </div>
       </div>
       </>
       )}
