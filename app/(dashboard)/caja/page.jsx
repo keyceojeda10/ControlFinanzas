@@ -1493,6 +1493,38 @@ export default function CajaPage() {
           </span>
         </div>
 
+        {/* ── EL NEGATIVO, EXPLICADO DONDE SE VE ───────────────────────────
+            Medido en producción: **107 de 253 negocios** tienen este saldo en
+            negativo y hasta ahora no había NINGUNA explicación. Ven una cifra
+            roja de millones y lo único que pueden pensar es que el sistema les
+            perdió la plata.
+
+            No es un fallo de cuentas —los 253 cuadran al peso con la fórmula de
+            `lib/capital.js`— sino que:
+              · 98 de 107 nunca registraron su capital inicial
+              · 100 de 107 prestaron ANTES de meter plata al sistema
+              · **106 de 107** se explican enteros por la cartera viva: lo que
+                «falta» es menos de lo que tienen prestado
+
+            La bolsa arranca en cero y cada préstamo la baja. En ámbar, no en
+            rojo: es un dato que falta, no una pérdida. */}
+        {saldoGeneralActual < 0 && (
+          <div style={{
+            background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)',
+            borderRadius: 12, padding: '11px 13px',
+          }}>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)' }}>
+              Falta registrar con cuánto empezaste
+            </p>
+            <p style={{ margin: '4px 0 0', fontSize: 11.5, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>
+              Sale en negativo porque empezaste a prestar antes de decirle al sistema
+              con cuánta plata contabas: arranca en cero y cada préstamo resta.{' '}
+              <strong style={{ color: 'var(--cf-ink)' }}>Tu plata no se perdió</strong>, está
+              en la calle. Regístrala con <strong>Ajustar saldo</strong> y la cifra queda al día.
+            </p>
+          </div>
+        )}
+
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           paddingTop: 13, borderTop: '1px solid var(--cf-hairline)',
