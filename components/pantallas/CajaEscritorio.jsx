@@ -39,11 +39,25 @@ function Linea({ etiqueta, valor, tono, onExplicar }) {
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
       <span
         onClick={onExplicar}
+        title={onExplicar ? 'De dónde sale esta cifra' : undefined}
         style={{
-          fontSize: 13, color: 'var(--cf-ink-2)', minWidth: 0,
+          display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0,
+          fontSize: 13, color: 'var(--cf-ink-2)',
           cursor: onExplicar ? 'pointer' : undefined,
         }}
-      >{etiqueta}{onExplicar ? ' ?' : ''}</span>
+      >
+        {etiqueta}
+        {/* El «?» en su círculo, no pegado al texto: suelto se lee como parte
+            del rótulo —«Gastos ?»— en vez de como algo que se pulsa. */}
+        {onExplicar && (
+          <span aria-hidden style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 15, height: 15, borderRadius: 999, flex: 'none',
+            border: '1px solid var(--cf-border-strong)',
+            fontSize: 9.5, fontWeight: 700, color: 'var(--cf-ink-3)',
+          }}>?</span>
+        )}
+      </span>
       <span className="cf-fig" style={{
         fontSize: 15, fontWeight: 600, flex: 'none',
         color: tono === 'entra' ? 'var(--cf-green-dark)'
@@ -144,13 +158,18 @@ export default function CajaEscritorio({
             }}>
               {/* Con `lineas` manda la página —es la banda que ya sabe explicar
                   cada cifra—; si no vienen, se arma con las de siempre. */}
+              {/* La banda REAL viene de `lineasDeLaBanda` y sus campos son
+                  `id`, `rotulo` y `signo` —no `etiqueta`/`clave`/`tono`, que fue
+                  lo que supuse y dejó la columna entera en «?»—. El signo ya
+                  dice si suma o resta, así que el color sale de ahí y no de un
+                  campo aparte. */}
               {lineas?.length ? lineas.map((l) => (
                 <Linea
-                  key={l.clave ?? l.etiqueta}
-                  etiqueta={l.etiqueta}
-                  valor={l.texto}
-                  tono={l.tono}
-                  onExplicar={onExplicar ? () => onExplicar(l.clave ?? l.etiqueta) : undefined}
+                  key={l.id}
+                  etiqueta={l.rotulo}
+                  valor={l.signo > 0 ? `+ ${l.texto}` : l.signo < 0 ? `− ${l.texto}` : l.texto}
+                  tono={l.signo > 0 ? 'entra' : l.signo < 0 ? 'sale' : undefined}
+                  onExplicar={onExplicar ? () => onExplicar(l.id) : undefined}
                 />
               )) : (
                 <>
