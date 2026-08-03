@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v777'
+const CACHE_NAME   = 'cf-v778'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor. Este
 // release cambia cómo se PINTAN —tabla en PC, fichas en móvil, metadatos con
 // icono— y ninguna cuenta, así que se queda: subirlo tiraría el cache de todas
