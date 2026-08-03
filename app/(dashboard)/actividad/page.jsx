@@ -55,11 +55,30 @@ const ICONOS = {
   ),
 }
 
+// ── CUANDO LA ACCION NO TIENE FRASE ────────────────────────────────────────
+//
+// Antes esto era `{ label: item.accion }`: el codigo crudo, tal cual, con sus
+// guiones bajos. El dueño leyo «registrar_aporte» en su propio historial.
+//
+// Ya estan las 48 en `activity-log-types.js`, asi que esto no deberia entrar
+// nunca. Pero entra el dia que alguien añada una accion en un endpoint y se
+// olvide del mapa — y ese dia debe salir «Registrar aporte», no el codigo.
+// Guiones bajos fuera y primera en mayuscula: se lee, aunque no sea perfecto.
+function FRASE_DE_RESERVA(accion) {
+  const texto = String(accion || '').replace(/_/g, ' ').trim()
+  return {
+    label: texto ? texto.charAt(0).toUpperCase() + texto.slice(1) : 'Actividad',
+    color: 'var(--cf-ink-3)',
+  }
+}
+
 function getIcon(accion) {
   const config = ACCIONES[accion]
-  if (!config) return null
-  const renderIcon = ICONOS[config.icon]
-  return renderIcon ? renderIcon(config.color) : null
+  // SIN ICONO QUEDABA UN CIRCULO GRIS VACIO — el dueño lo reporto junto con los
+  // nombres crudos. Toda fila lleva algo dentro: si la accion no esta mapeada, o
+  // su icono no existe, va el generico.
+  const renderIcon = ICONOS[config?.icon] || ICONOS.pencil
+  return renderIcon(config?.color || 'var(--cf-ink-3)')
 }
 
 function formatHora(fecha) {
@@ -366,9 +385,13 @@ export default function ActividadPage() {
                       una linea: «Registro 4 pagos en un minuto». */}
                   {agruparRepetidos(grupo.items).map((fila) => {
                     const item = fila.items[0]
-                    const config = ACCIONES[item.accion] || { label: item.accion, color: 'var(--cf-ink-3)' }
+                    const config = ACCIONES[item.accion] || FRASE_DE_RESERVA(item.accion)
                     const icon = getIcon(item.accion)
-                    const esDestructiva = item.accion?.startsWith('eliminar') || item.accion === 'anular_pago'
+                    // Lo destructivo lo dice el COLOR del mapa, no el nombre del
+                    // codigo. `startsWith('eliminar')` dejaba fuera «rechazo de
+                    // reapertura» y «no pudo anular el pago», que son justo las
+                    // que hay que ver en rojo.
+                    const esDestructiva = config.color === '#ef4444'
 
                     return (
                       <div key={fila.id} className="relative flex items-start gap-2.5 py-2">
