@@ -30,6 +30,8 @@ import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
 import { CajaDia, PestanasCaja } from '@/components/pantallas/Caja'
 import CajaEscritorio from '@/components/pantallas/CajaEscritorio'
+import CajaPorRuta from '@/components/caja/CajaPorRuta'
+import { agruparCajaPorRuta, totalesCajaPorRuta } from '@/lib/adaptadores/caja-por-ruta'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -162,7 +164,13 @@ export default function CajaPage() {
         const res = await fetch('/api/rutas')
         if (res.ok) {
           const rutas = await res.json()
-          setRutasDisponibles((rutas || []).map(r => ({ id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre })))
+          // `esperadoHoy` y `cobrosHoy` los tira este `map` desde siempre y los
+          // necesita la caja por ruta (T08-02) para decir «4 de 5 cobros» y lo
+          // que se esperaba. Ya venían en la respuesta; solo se descartaban.
+          setRutasDisponibles((rutas || []).map(r => ({
+            id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre,
+            esperadoHoy: r.esperadoHoy, cobrosHoy: r.cobrosHoy,
+          })))
         }
       } catch {}
     }
@@ -609,6 +617,12 @@ export default function CajaPage() {
   })
   // Lo que ve el teléfono: las tres primeras.
   const movimientosDelDia = movimientosTodos.slice(0, 3)
+
+  // La caja agrupada por RUTA (T08-02). Se calcula de los MISMOS `pagosDia` que
+  // alimentan el resto de la pestaña: una segunda fuente para la misma pregunta
+  // es la forma de que un día no cuadren entre ellas.
+  const filasPorRuta = agruparCajaPorRuta(pagosDelDia, rutasDisponibles)
+  const totalesPorRuta = totalesCajaPorRuta(filasPorRuta)
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
@@ -1133,6 +1147,25 @@ export default function CajaPage() {
 
       {cajaTab === 'porruta' && (
         <div className="space-y-4">
+          {/* ── T08-02 · LA CAJA POR RUTA ──
+              «La pestaña que faltaba. Cada ruta con lo recaudado partido en
+              efectivo y digital.»
+
+              Antes esto empezaba con un `<select>` y media pantalla en blanco
+              hasta elegir un cobrador: había que saber a quién buscar para ver
+              algo. Ahora se ven TODAS las rutas de una, y el selector se queda
+              debajo para el detalle de una persona, que es otra pregunta.
+
+              La partición efectivo/digital es el punto: al cerrar el día el
+              cobrador solo entrega el EFECTIVO —lo digital ya está en la
+              cuenta—, así que sin separarlo se le pide una cifra que incluye
+              plata que nunca tocó. */}
+          <CajaPorRuta
+            filas={filasPorRuta}
+            totales={totalesPorRuta}
+            onAbrirRuta={(f) => { window.location.href = `/rutas/${f.id}` }}
+          />
+
           {/* El selector de cobrador, con los tokens del rediseño. Dos cosas
               cambian ademas del color:
 

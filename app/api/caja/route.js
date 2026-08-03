@@ -838,7 +838,14 @@ export async function GET(request) {
         select: {
           id: true,
           cliente: {
-            select: { id: true, nombre: true, cedula: true },
+            // La RUTA del cliente: es lo que permite agrupar la caja por ruta
+            // (T08-02) sin una consulta más. Va por el cliente y no por el pago
+            // porque un pago no tiene ruta: la tiene la persona a la que se le
+            // cobra.
+            select: {
+              id: true, nombre: true, cedula: true,
+              ruta: { select: { id: true, nombre: true } },
+            },
           },
         },
       },
@@ -860,6 +867,8 @@ export async function GET(request) {
     clienteId: pago.prestamo?.cliente?.id || null,
     clienteNombre: pago.prestamo?.cliente?.nombre || 'Cliente',
     clienteCedula: pago.prestamo?.cliente?.cedula || null,
+    rutaId: pago.prestamo?.cliente?.ruta?.id || null,
+    rutaNombre: pago.prestamo?.cliente?.ruta?.nombre || null,
   }))
   const totalPagosDia = pagosDia.reduce((acc, pago) => acc + pago.montoPagado, 0)
 
