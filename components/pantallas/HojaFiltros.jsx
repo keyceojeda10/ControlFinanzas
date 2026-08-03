@@ -43,7 +43,14 @@ export function BotonFiltros({ n = 0, onClick }) {
       onClick={onClick}
       aria-label={puestos ? `Más filtros, ${n} puestos` : 'Más filtros'}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 7, flex: 'none',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, flex: 'none',
+        // ⚠ ANCHO MÍNIMO FIJO. El rótulo cambia —«Filtros» sin nada puesto, el
+        // número con algo— y esos dos textos NO miden igual, así que la fila
+        // entera se recolocaba al poner o quitar un filtro: el buscador es
+        // `flex-1` y se comía la diferencia, moviendo de paso el conmutador de
+        // vista que va en medio. Con el mínimo, el botón no encoge al pasar a
+        // número y nada se desplaza.
+        minWidth: 96,
         height: 'var(--cf-h-field)', padding: '0 14px', cursor: 'pointer',
         borderRadius: 999,
         background: puestos ? 'var(--cf-gold-tint)' : 'var(--cf-card)',

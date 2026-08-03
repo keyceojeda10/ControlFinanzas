@@ -389,7 +389,12 @@ export default function ClientesPage() {
     // siempre y NINGUN control los cambiaba: `cambiarVista` no se llamaba desde
     // ningun sitio, asi que la rama compacta era codigo inalcanzable. Prestamos
     // si lo cablea, con este mismo grupo. Es el que faltaba.
-    { id: 'vista', titulo: 'Cómo se ven', valor: vista === 'lista' ? '' : vista,
+    // `tipo: 'vistas'` NO es decorativo: sin él, `contarFiltros` lo cuenta como
+    // filtro puesto y el botón de al lado pasa de decir «Filtros» a decir «1»
+    // por elegir cuadrícula. Y como los dos rótulos NO miden igual, la fila
+    // entera se recolocaba al pulsar el conmutador. Elegir cómo se ve una lista
+    // no filtra nada: se ven los mismos clientes.
+    { id: 'vista', tipo: 'vistas', titulo: 'Cómo se ven', valor: vista === 'lista' ? '' : vista,
       onCambiar: (v) => cambiarVista(v || 'lista'),
       opciones: OPCIONES_VISTA },
     ...(grupos.length > 0 ? [{

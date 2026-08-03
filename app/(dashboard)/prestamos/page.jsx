@@ -381,7 +381,10 @@ export default function PrestamosPage() {
         try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
       },
       opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
-    { id: 'vista', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
+    // `tipo: 'vistas'` para que NO cuente como filtro: ver el comentario gemelo
+    // en clientes. Elegir cuadrícula ponía un «1» en el botón de al lado y
+    // movía la fila entera.
+    { id: 'vista', tipo: 'vistas', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
       onCambiar: (v) => cambiarVistaP(v || 'lista'),
       opciones: OPCIONES_VISTA },
   ]
