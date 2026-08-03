@@ -10,7 +10,10 @@ import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from 
 // los casos borde — y por eso las tres pantallas contestaban distinto a la misma
 // pregunta. Ver lib/dinero/reparto.js.
 const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
-const REPARTO_VIDA = repartoSql({ pago: 'pr', prestamo: 'pr', monto: 'totalPagado' })
+// `porFila: false`: aquí «el pago» es el PRÉSTAMO entero (`pr.totalPagado`), no
+// una fila de `Pago`, así que no hay `tipo` que preguntar. Sin esto el SQL pedía
+// `pr.tipo` y la pantalla entera moría con «Unknown column».
+const REPARTO_VIDA = repartoSql({ pago: 'pr', prestamo: 'pr', monto: 'totalPagado', porFila: false })
 
 // Modos que llevan tabla de amortizacion. En ellos el interes del periodo se
 // calcula sobre el saldo, asi que NO se puede repartir plano sobre cada peso
