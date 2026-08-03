@@ -162,12 +162,31 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
         }}>
           {loading ? 'Guardando…' : 'Continuar'}
         </button>
+        {/* ── SALTARSE ESTO TIENE UNA CONSECUENCIA, Y HAY QUE DECIRLA ──────
+            De 253 negocios en producción, **107 tienen el capital en negativo**
+            y **98 de ellos nunca registraron su capital inicial**: empezaron a
+            prestar desde aquí, la bolsa arrancó en cero y cada préstamo la fue
+            bajando. Meses después ven un número rojo enorme y lo único que
+            pueden pensar es que el sistema les perdió la plata.
+            (No hay ningún fallo de cuentas: los 253 cuadran al peso.)
+
+            El botón se queda —obligar a inventar una cifra sería peor—, pero
+            debajo se dice qué va a pasar. Un «lo registro después» a secas no
+            deja ver que el saldo va a salir en negativo hasta que lo registre. */}
         <button type="button" onClick={handleSkip} style={{
           background: 'none', border: 0, cursor: 'pointer',
           fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
         }}>
           Lo registro después
         </button>
+        <p style={{
+          margin: 0, fontSize: 11.5, lineHeight: 1.45, textAlign: 'center',
+          color: 'var(--cf-ink-3)', maxWidth: 380,
+        }}>
+          Si lo dejas para después, tu caja va a salir <strong>en negativo</strong> hasta
+          que lo registres: el sistema no sabe con cuánto empezaste y cada préstamo
+          resta. Lo puedes poner luego en <strong>Capital</strong>.
+        </p>
       </div>
     </form>
   )

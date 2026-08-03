@@ -346,34 +346,46 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
         <Card>
           <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Por ruta</h2>
 
-          {/* Capital de ruta en negativo. Una sub-bolsa no puede tener menos de
-              cero pesos fisicos: si esta negativa es que salio plata que nunca se
-              registro como entrada. Pasaba en silencio — cuatro rutas de la
-              plataforma acumulaban -$94.5 millones sin una sola señal. */}
+          {/* ── CAPITAL DE RUTA EN NEGATIVO: FALTA UN DATO, NO FALTA PLATA ──
+              Este aviso decía «salió X más de lo que entró», en rojo. Suena a
+              que se perdió dinero, y comprobado contra producción NO es eso:
+
+               · Los 253 negocios cuadran al peso con la fórmula del código.
+               · De los 107 con saldo negativo, **106 se explican enteros por la
+                 cartera viva**: lo que «falta» es menos de lo que está prestado.
+               · 98 de 107 nunca registraron su capital inicial.
+
+              La bolsa arranca en cero porque nadie declaró con cuánto empezó, y
+              cada préstamo la baja. El diagnóstico y el arreglo que ya traía
+              este aviso eran CORRECTOS —inyectar el capital de la ruta—; lo que
+              estaba mal era el tono y la frase de arriba, que acusaba.
+
+              En ámbar, no en rojo: es un dato que falta, no una pérdida. */}
           {rutasNegativas.length > 0 && (
             <div
               className="rounded-[12px] p-3 mb-3"
               style={{
-                background: 'color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card))',
-                border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, var(--cf-border))',
+                background: 'var(--cf-gold-tint)',
+                border: '1px solid var(--cf-gold-border)',
               }}
             >
-              <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--cf-red-dark)' }}>
+              <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--cf-gold-dark)' }}>
                 {rutasNegativas.length === 1
-                  ? `La ruta ${rutasNegativas[0].nombre} está en negativo`
-                  : `${rutasNegativas.length} rutas están en negativo`}
+                  ? `A la ruta ${rutasNegativas[0].nombre} le falta registrar su capital`
+                  : `A ${rutasNegativas.length} rutas les falta registrar su capital`}
               </p>
               <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
-                De esta{rutasNegativas.length === 1 ? '' : 's'} ruta{rutasNegativas.length === 1 ? '' : 's'} salió{' '}
-                <strong style={{ color: 'var(--cf-red-dark)' }}>
+                {rutasNegativas.length === 1 ? 'Aparece' : 'Aparecen'} con{' '}
+                <strong style={{ color: 'var(--cf-ink)' }}>
                   {formatMoney(Math.abs(rutasNegativas.reduce((a, r) => a + (r.saldoCapital || 0), 0)))}
                 </strong>{' '}
-                más de lo que entró. Casi siempre es porque le entregó plata al cobrador sin
-                registrarla como inyección de capital a la ruta.
+                en negativo porque se empezó a prestar antes de decir con cuánta plata
+                contaba{rutasNegativas.length === 1 ? '' : 'n'}: la bolsa arranca en cero y cada
+                préstamo la baja. <strong style={{ color: 'var(--cf-ink)' }}>La plata no se perdió</strong>,
+                está en la calle.
               </p>
               <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-                Si esa plata sí se la entregó, regístrela en <strong>Capital → Inyectar a la ruta</strong> y
-                el saldo queda al día. Si no, revise los retiros y gastos de la ruta.
+                Regístrela en <strong>Capital → Inyectar a la ruta</strong> y el saldo queda al día.
               </p>
             </div>
           )}

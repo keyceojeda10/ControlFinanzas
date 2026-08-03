@@ -182,18 +182,42 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
         </div>
       )}
 
-      {/* Una sub-bolsa no puede tener menos de cero pesos FÍSICOS: si está en
-          negativo, salió plata que nunca se registró como entrada. En la
-          plataforma hay 28 rutas así, y pasaba en silencio. */}
+      {/* ── ⚠ ESTE AVISO YO LO ESCRIBÍ MAL, Y ASUSTABA SIN MOTIVO ──────────
+          Decía «salió plata que no se registró como entrada», que se lee como
+          que falta dinero. Lo comprobé después contra producción y es FALSO:
+
+           · Los 253 negocios cuadran al peso con la fórmula de `lib/capital.js`
+             (mi primera medición dijo lo contrario, pero el error era mío:
+             sumaba todos los `ajuste` en positivo y el código decide el signo
+             comparando `saldoNuevo` con `saldoAnterior`).
+           · De los 107 negocios con saldo negativo, **106 se explican enteros
+             por la cartera viva**: lo que «falta» es menos de lo que tienen
+             prestado en la calle.
+           · 98 de 107 nunca registraron su capital inicial y 100 de 107
+             prestaron ANTES de meter plata al sistema.
+
+          O sea: no salió plata de más. Faltó declarar la de partida, la bolsa
+          arrancó en cero y cada préstamo la hundió. El aviso ahora dice eso y
+          cómo arreglarlo, en vez de dar a entender un robo.
+
+          En tono de aviso (ámbar), no de alarma (rojo): es un dato que falta,
+          no una pérdida. */}
       {totales?.rutasEnNegativo > 0 && (
         <div style={{
-          background: 'var(--cf-red-pill-bg)', borderRadius: 'var(--cf-r-card)',
-          border: '1px solid color-mix(in srgb, var(--cf-red-dark) 22%, transparent)',
-          padding: '10px 14px', fontSize: 12, color: 'var(--cf-red-dark)',
+          background: 'var(--cf-gold-tint)', borderRadius: 'var(--cf-r-card)',
+          border: '1px solid var(--cf-gold-border)',
+          padding: '11px 14px', fontSize: 12, color: 'var(--cf-ink-2)', lineHeight: 1.45,
         }}>
-          {totales.rutasEnNegativo === 1
-            ? 'Una ruta tiene el capital en negativo: salió plata que no se registró como entrada.'
-            : `${totales.rutasEnNegativo} rutas tienen el capital en negativo: salió plata que no se registró como entrada.`}
+          <strong style={{ color: 'var(--cf-gold-dark)' }}>
+            {totales.rutasEnNegativo === 1
+              ? 'Una ruta aparece con el capital en negativo.'
+              : `${totales.rutasEnNegativo} rutas aparecen con el capital en negativo.`}
+          </strong>
+          {' '}Casi siempre es porque se empezó a prestar antes de registrar con
+          cuánto capital contaba {totales.rutasEnNegativo === 1 ? 'esa ruta' : 'cada ruta'}:
+          la bolsa arranca en cero y cada préstamo la baja. La plata no se perdió,
+          está en la calle. Se arregla en{' '}
+          <strong style={{ color: 'var(--cf-ink)' }}>Capital → Inyectar a la ruta</strong>.
         </div>
       )}
 

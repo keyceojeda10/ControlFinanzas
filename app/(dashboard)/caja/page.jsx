@@ -825,6 +825,45 @@ export default function CajaPage() {
                 <span className="text-sm font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(capitalOrganizacion.capitalEnCalle)}</span>
               </div>
             )}
+
+            {/* ── «EN CAJA» EN NEGATIVO: FALTA EL CAPITAL INICIAL ──────────
+                Medido en producción: **107 de 253 negocios** tienen el saldo
+                negativo, y NO es un fallo de cuentas —los 253 cuadran al peso
+                con la fórmula de `lib/capital.js`—. Es que:
+
+                 · 98 de 107 nunca registraron su capital inicial
+                 · 100 de 107 prestaron ANTES de meter plata al sistema
+                 · **106 de 107** se explican enteros por la cartera viva: lo
+                   que «falta» es menos de lo que tienen prestado
+
+                La bolsa arranca en cero porque nadie declaró con cuánto empezó,
+                y cada préstamo la baja. Sin esta nota el dueño ve un número
+                rojo enorme sin ninguna explicación, y lo único que puede pensar
+                es que el sistema perdió su plata.
+
+                Se pinta SOLO cuando hay negativo: en el 58% que está bien no
+                sobra un aviso. */}
+            {(capitalOrganizacion.saldoCaja ?? 0) < 0 && (
+              <div className="mt-3 pt-3 rounded-[12px] p-3" style={{
+                background: 'var(--cf-gold-tint)',
+                border: '1px solid var(--cf-gold-border)',
+              }}>
+                <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--cf-gold-dark)' }}>
+                  Falta registrar con cuánto empezaste
+                </p>
+                <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+                  «En caja» sale en negativo porque empezaste a prestar antes de decirle
+                  al sistema con cuánta plata contabas: arranca en cero y cada préstamo
+                  la baja. <strong style={{ color: 'var(--cf-ink)' }}>Tu plata no se perdió</strong> —
+                  está en la calle{typeof capitalOrganizacion.capitalEnCalle === 'number'
+                    ? `, son ${formatMoney(capitalOrganizacion.capitalEnCalle)}`
+                    : ''}.
+                </p>
+                <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                  Regístralo en <strong>Capital → Inyectar capital</strong> y la cifra queda al día.
+                </p>
+              </div>
+            )}
           </Card>
         )}
 
