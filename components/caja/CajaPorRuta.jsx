@@ -64,7 +64,10 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
       }}>
         {/* «Ni cobros ni préstamos»: desde que la pestaña también cuenta lo
             desembolsado, una ruta que hoy solo prestó SÍ sale. Decir solo «no
-            hay cobros» con préstamos hechos sería mentira. */}
+            hay cobros» con préstamos hechos sería mentira.
+
+            Y una ruta con capital propio sale SIEMPRE, así que llegar aquí
+            significa que tampoco hay capital repartido por rutas. */}
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--cf-ink-3)' }}>
           Todavía no hay cobros ni préstamos hoy en ninguna ruta.
         </p>
