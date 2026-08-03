@@ -1505,7 +1505,10 @@ export default function PrestamoDetallePage({ params }) {
       {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
         <button
           type="button"
-          onClick={() => setModalWA(true)}
+          // El botón dice «resumen»: tiene que abrir el RESUMEN del crédito, no
+          // las cuatro familias de cobro. Sin el preseleccionado, un dueño pidió
+          // el resumen y le salía «un mensaje muy sencillo».
+          onClick={() => { setWaSugerida('credito_aprobado'); setModalWA(true) }}
           className="flex items-center justify-center gap-2 px-4 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer w-full bg-[#25d366] hover:bg-[#1da855] text-white"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
