@@ -40,14 +40,34 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
 
   const esCapitalEfectivo = r.capitalEsEfectivo
 
-  // Lo que hizo, partido en dos: lo que pasó y lo que no.
+  // ── EL CERO ES UN DATO, NO LA FALTA DE UN DATO ─────────────────────────
   //
-  // El cero NO se descarta —hace falta poder decir «hoy no hubo renovaciones»,
-  // que es informacion— pero deja de ocupar una tarjeta del mismo tamaño que
-  // las que sí traen algo.
+  // Aquí había un filtro que sacaba de la lista todo lo que estuviera en cero y
+  // lo juntaba en una línea gris al pie: «Hoy no hubo préstamos nuevos,
+  // renovaciones, clientes nuevos...». Lo escribí yo, razonando que cinco
+  // recuadros diciendo «no pasó nada» son ruido.
+  //
+  // Estaba equivocado, y lo reportó el cliente con más cobradores de la
+  // plataforma EN VIDEO: «al actualizarse la caja yo pierdo la información que
+  // tenía: los cuadritos donde me mostraba cantidad de clientes activos, los
+  // clientes que renovaba, los clientes nuevos. Eso ya no me aparece y necesito
+  // que me aparezca».
+  //
+  // Las dos cosas que no vi:
+  //
+  //  1. Optimicé para el día lleno y rompí el día VACÍO. Él abre la caja a las
+  //     8 de la mañana, cuando todo está en cero por definición — y justo ahí mi
+  //     diseño hacía desaparecer la sección entera. No se lee como «limpio», se
+  //     lee como que la pantalla perdió sus datos.
+  //
+  //  2. «0 clientes nuevos» SIGNIFICA algo: hoy no entró nadie. No es lo mismo
+  //     que no saberlo. Esconderlo no le ahorra ruido, le quita la respuesta.
+  //
+  // Así que se pintan TODAS, siempre, en el mismo orden. Lo que está en cero va
+  // apagado (tinta clara) en vez de desaparecer: se ve que el dato existe y que
+  // hoy vale cero. Lo bueno del rediseño se queda: cantidad Y valor juntos.
   const hizoTodo = data?.hizo || []
-  const hizoConAlgo = hizoTodo.filter((h) => (h.cantidad ?? 0) > 0 || (h.monto ?? 0) > 0)
-  const hizoEnCero = hizoTodo.filter((h) => !((h.cantidad ?? 0) > 0 || (h.monto ?? 0) > 0))
+  const enCero = (h) => !((h.cantidad ?? 0) > 0 || (h.monto ?? 0) > 0)
 
   return (
     <div className="space-y-4">
@@ -241,23 +261,41 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
       )}
 
       {/* ── LO QUE HIZO HOY ───────────────────────────────────────────────
-          Antes: cinco recuadros de colores con un número suelto cada uno.
-          «RENOVACIONES 0» ocupaba lo mismo que «CLIENTES ACTIVOS 142», y
-          ninguno decía CUÁNTO. «10 renovaciones» sin el valor no dice nada, y
-          «$2.400.000 en renovaciones» sin cuántas tampoco.
+          Una fila por cosa, con su cantidad Y su valor —«3 renovaciones ·
+          $800.000»—, que es lo que la versión vieja no tenía: un «RENOVACIONES
+          10» pelado no dice cuánta plata movió, y «$2.400.000» sin el número de
+          renovaciones tampoco dice nada.
 
-          Ahora: una fila por cosa, con su cantidad Y su valor. Y lo que está
-          en cero NO ocupa una tarjeta — se junta en una línea al pie, porque
-          cinco recuadros diciendo «no pasó nada» son ruido. */}
-      {(hizoConAlgo.length > 0 || hizoEnCero.length > 0) && (
+          Y se pintan TODAS, también las que están en cero (ver arriba). */}
+      {hizoTodo.length > 0 && (
         <Card>
-          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-1">Lo que hizo hoy</h2>
-          <p className="text-[12px] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
-            {g?.clientesCobrados ?? 0} de {g?.clientesActivos ?? 0} clientes le pagaron
-          </p>
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-3">Lo que hizo hoy</h2>
+
+          {/* ── LA CARTERA, ARRIBA Y SIEMPRE ─────────────────────────────
+              «Clientes activos» es lo PRIMERO que nombró el cliente en el
+              video, y yo lo tenía escondido dentro de la frase de apoyo
+              («0 de 145 clientes le pagaron»). No es actividad del día: es el
+              tamaño de su cartera, y no puede depender de que hoy haya habido
+              movimiento. Por eso va aquí, en cifra grande, con los cobros del
+              día al lado — que es la pareja que se lee junta: «cuántos de los
+              míos me pagaron hoy». */}
+          <div className="flex gap-3 mb-3">
+            {[
+              { rot: 'Cobros hoy', val: g?.clientesCobrados ?? 0 },
+              { rot: 'Clientes activos', val: g?.clientesActivos ?? 0 },
+            ].map((k) => (
+              <div key={k.rot} className="flex-1 min-w-0 rounded-[12px] px-3 py-2.5"
+                style={{ background: 'var(--cf-fill)' }}>
+                <span className="block text-[10px] font-bold uppercase tracking-[.07em]"
+                  style={{ color: 'var(--cf-ink-3)' }}>{k.rot}</span>
+                <span className="cf-fig block text-[20px] font-semibold mt-0.5"
+                  style={{ color: k.val > 0 ? 'var(--cf-ink)' : 'var(--cf-ink-3)' }}>{k.val}</span>
+              </div>
+            ))}
+          </div>
 
           <div className="flex flex-col">
-            {hizoConAlgo.map((h) => (
+            {hizoTodo.map((h) => (
               <button
                 key={h.id}
                 type="button"
@@ -269,7 +307,9 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                 }}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm" style={{ color: 'var(--cf-ink)' }}>
+                  {/* En cero va en tinta clara: el dato SE VE —y su cero también—
+                      pero no compite con lo que sí movió plata hoy. */}
+                  <span className="block text-sm" style={{ color: enCero(h) ? 'var(--cf-ink-3)' : 'var(--cf-ink)' }}>
                     {h.cantidad != null && (
                       <span className="cf-fig font-semibold mr-1.5">{h.cantidad}</span>
                     )}
@@ -286,20 +326,18 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     </span>
                   )}
                 </span>
+                {/* `monto: null` es «esto no se mide en plata» (clientes nuevos
+                    se cuentan, no se suman), y ahí la derecha va vacía a
+                    propósito. Un monto que SÍ existe pero vale cero se pinta
+                    «$0»: dejarlo en blanco haría dudar de si se calculó. */}
                 {h.monto != null && (
-                  <span className="cf-fig text-sm flex-none" style={{ color: 'var(--cf-ink)' }}>
+                  <span className="cf-fig text-sm flex-none" style={{ color: enCero(h) ? 'var(--cf-ink-3)' : 'var(--cf-ink)' }}>
                     {formatMoney(h.monto)}
                   </span>
                 )}
               </button>
             ))}
           </div>
-
-          {hizoEnCero.length > 0 && (
-            <p className="text-[12px] mt-2.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-              Hoy no hubo {hizoEnCero.map((h) => h.rotulo.toLowerCase()).join(', ')}.
-            </p>
-          )}
         </Card>
       )}
 
