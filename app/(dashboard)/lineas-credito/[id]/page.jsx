@@ -109,7 +109,7 @@ export default function DetalleLineaPage({ params }) {
 
   // Sin `px-4`: el relleno lateral lo pone el armazon. Eran 36 por lado.
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto py-6 pb-28">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto py-6">
       {/* Hero card azul metalizado */}
       <div
         className="relative rounded-[20px] overflow-hidden mb-4"

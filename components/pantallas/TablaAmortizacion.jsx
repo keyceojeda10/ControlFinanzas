@@ -296,8 +296,16 @@ export default function TablaAmortizacion({
                 color: onVerTodas ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
               }}
             >
-              Ves {cuotas.length} de las {totalCuotas}
-              {montoOculto ? ` · faltan ${totalCuotas - cuotas.length} por ${montoOculto}` : ''}
+              {/* SI ES BOTÓN, DICE LO QUE HACE. «Ves 4 de las 6» describe un
+                  estado, y el dueño lo reportó como confuso: no se entiende que
+                  se pueda pulsar ni qué pasa si lo pulsas. Cuando NO hay a dónde
+                  ir sigue siendo la declaración de lo truncado, que es la regla
+                  del proyecto: todo truncado se declara con su monto. */}
+              {onVerTodas ? (
+                `Ver las ${totalCuotas} cuotas`
+              ) : (
+                `Ves ${cuotas.length} de las ${totalCuotas}${montoOculto ? ` · faltan ${totalCuotas - cuotas.length} por ${montoOculto}` : ''}`
+              )}
             </Aviso>
           )
         })()}

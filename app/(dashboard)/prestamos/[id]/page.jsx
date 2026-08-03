@@ -989,8 +989,14 @@ export default function PrestamoDetallePage({ params }) {
       }
     : null
 
+  // ⚠ SIN `pb-28`. El hueco de la pastilla lo reserva el ARMAZÓN, que es el
+  // único que sabe si la hay: `Armazon.jsx:185` pinta un espaciador de 112px
+  // cuando toca. Poner aquí otros 112 los SUMABA, y el dueño lo fotografió:
+  // 164px de nada entre «Cancelar préstamo» y la pastilla.
+  // Medido con `.auditoria/hueco-real.mjs`. Ojo: `hueco-del-pie.mjs` daba «ok»
+  // —mide el último elemento con contenido, no el hueco que se ve—.
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-28 lg:pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
 
       {/* ── UNA SOLA FRANJA ROJA ──
           Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62

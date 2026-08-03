@@ -70,7 +70,7 @@ function Icono({ trazo, size = 13 }) {
  * no cabe, salta ENTERA a la línea de abajo, que es lo que hace el `flexWrap`
  * del contenedor.
  */
-export function Dato({ trazo, children, titulo, fuerte = false }) {
+export function Dato({ trazo, children, titulo, fuerte = false, apagado = false }) {
   if (children == null || children === '') return null
   return (
     <span
@@ -88,10 +88,14 @@ export function Dato({ trazo, children, titulo, fuerte = false }) {
       }}
     >
       <Icono trazo={trazo} />
+      {/* `apagado` es para las AUSENCIAS —«Sin ruta»—: se leen, pero no compiten
+          con los datos de verdad. En cursiva y en la tinta más clara, que es como
+          se distingue «no tiene» de «se llama así». */}
       <span className="cf-num" style={{
         fontSize: 12,
         fontWeight: fuerte ? 600 : 400,
-        color: fuerte ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
+        fontStyle: apagado ? 'italic' : undefined,
+        color: apagado ? 'var(--cf-ink-4)' : fuerte ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       }}>{children}</span>
     </span>

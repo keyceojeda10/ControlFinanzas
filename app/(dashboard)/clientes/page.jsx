@@ -980,7 +980,7 @@ export default function ClientesPage() {
                   par que la tarjeta de móvil, para que la lectura no cambie
                   entre dispositivos. */}
               <span className="min-w-0 flex">
-                <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
+                <Dato trazo={TRAZO.ruta} apagado={a?.piezas?.ruta === 'Sin ruta'}>{a?.piezas?.ruta}</Dato>
               </span>
               <span className="min-w-0 flex">
                 <CreadoPor nombre={a?.piezas?.autor} />

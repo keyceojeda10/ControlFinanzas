@@ -438,7 +438,7 @@ export default function ClienteDetallePage({ params }) {
   const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-5 pb-28 lg:pb-4">
+    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-5 pb-4">
 
       {/* Barra de navegación de ruta */}
       {rutaNav && (

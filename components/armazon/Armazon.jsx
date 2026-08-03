@@ -164,6 +164,55 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         />
       )}
 
+      {/* ── VOLVER, EN ESCRITORIO ────────────────────────────────────────────
+          En PC no hay cabecera —`CabeceraMovil` es `flex lg:hidden`, y la lámina
+          §D lo pide así: el armazón vive en la barra lateral— pero eso dejaba
+          las pantallas de DETALLE sin salida. El dueño lo reportó dos veces: «no
+          se puede volver atrás con un botón a la ruta, sino dándole al menú» y
+          «si me meto en ver todas las cuotas, después no puedo salir».
+
+          La barra lateral no sirve de salida: te lleva a la sección, no al sitio
+          del que veniste. Desde la tabla de cuotas devuelve a la LISTA de
+          préstamos, no al préstamo que estabas mirando.
+
+          Solo donde hay título de pantalla —o sea, donde `useCabecera` corrió—,
+          que es exactamente el conjunto de pantallas que se abren desde otra. */}
+      {dePantalla?.titulo && (
+        <div className="hidden lg:flex" style={{
+          alignItems: 'center', gap: 10, flex: 'none', marginBottom: 14,
+        }}>
+          <button
+            type="button"
+            onClick={dePantalla?.onVolver ?? volver}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              height: 34, padding: '0 13px 0 9px', borderRadius: 12,
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+              cursor: 'pointer', font: 'inherit',
+              fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+            Volver
+          </button>
+          <span style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
+            color: 'var(--cf-ink)', minWidth: 0,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{dePantalla.titulo}</span>
+          {dePantalla?.subtitulo && (
+            <span className="cf-num" style={{
+              fontSize: 13, color: 'var(--cf-ink-3)', minWidth: 0,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{dePantalla.subtitulo}</span>
+          )}
+        </div>
+      )}
+
       {children}
 
       {/* ── EL HUECO DEL PIE, PARA TODA LA APP ───────────────────────────────

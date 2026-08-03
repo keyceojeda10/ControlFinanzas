@@ -777,7 +777,7 @@ export default function PrestamosPage() {
                               «FERNANDO MEN…» y al cobrador en «J…», o sea que no
                               servía ninguno de los tres. */}
                           <span className="flex items-center min-w-0">
-                            <Dato trazo={TRAZO.ruta}>{a?.piezas?.ruta}</Dato>
+                            <Dato trazo={TRAZO.ruta} apagado={a?.piezas?.ruta === 'Sin ruta'}>{a?.piezas?.ruta}</Dato>
                           </span>
                         </span>
                         {/* La MISMA pastilla de modo que la tarjeta de móvil, con
