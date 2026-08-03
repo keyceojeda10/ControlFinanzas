@@ -29,6 +29,7 @@ import CuadreDia              from '@/components/caja/CuadreDia'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
 import { CajaDia, PestanasCaja } from '@/components/pantallas/Caja'
+import CajaEscritorio from '@/components/pantallas/CajaEscritorio'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -574,7 +575,18 @@ export default function CajaPage() {
   // de la lamina dice que hoy estan «escondidos tras un desplegable de
   // cobradores», y sin quien ni cuando un movimiento solo se puede creer, no
   // reclamar.
-  const movimientosDelDia = pagosDelDia.slice(0, 3).map((p) => {
+  // ── CUÁNTOS CABEN ────────────────────────────────────────────────────────
+  // En el teléfono son TRES: la tarjeta ya lleva el saldo y su desglose, y una
+  // lista larga empuja el «Cerrar el día» fuera de la pantalla.
+  //
+  // En 1440 la tabla es media pantalla y tres filas dejan un hueco enorme — el
+  // pie de T06-05 dice justo eso: «la caja actual gasta todo el ancho en un $0 y
+  // deja los movimientos en un desplegable». Se cortan en 25 y el pie declara
+  // cuántos faltan, que es la regla del proyecto: todo truncado se dice.
+  //
+  // El corte se hace en `movimientosTodos` y cada vista toma lo suyo, así que
+  // las dos leen exactamente los mismos datos.
+  const movimientosTodos = pagosDelDia.slice(0, 25).map((p) => {
     const hora = p.fechaPago
       ? new Date(p.fechaPago).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
       : null
@@ -595,6 +607,8 @@ export default function CajaPage() {
       entra: true,
     }
   })
+  // Lo que ve el teléfono: las tres primeras.
+  const movimientosDelDia = movimientosTodos.slice(0, 3)
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
@@ -1241,6 +1255,47 @@ export default function CajaPage() {
         </div>
       )}
 
+      {/* ── T06-05 · LA CAJA DEL DÍA EN ESCRITORIO ──
+          El pie de la lámina: «en 1440px la caja actual gasta todo el ancho en un
+          "$0" y cinco mosaicos, y deja los movimientos en un desplegable. Aquí el
+          saldo y su desglose comparten una sola banda, los movimientos son una
+          tabla, y el cierre de cobradores vive a la derecha — que es lo que el
+          dueño mira a las siete de la tarde».
+
+          El dueño lo dijo así: «los primeros contenedores de caja están muy
+          angostos con el resto de los elementos».
+
+          ⚠ MISMAS CIFRAS QUE EL MÓVIL. No se recalcula NADA aquí: recibe las
+          mismas variables ya formateadas que recibe `CajaDia`. Es la pantalla
+          donde se cuadra el día; dos vistas con dos cuentas propias es la forma
+          de que un día no cuadren entre ellas.
+
+          Se pinta por CSS —`hidden lg:block`— como el resto de la app. */}
+      {cajaTab === 'cobros' && periodo.modo === 'hoy' && (
+        <div className="hidden lg:block">
+          <CajaEscritorio
+            fecha={fechaLarga}
+            saldo={formatMoney(disponibleHoy)}
+            baseInicial={formatMoney(baseInicialDia)}
+            cobrado={formatMoney(cobradoHoy)}
+            cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
+            prestado={formatMoney(prestadoHoy)}
+            gastos={formatMoney(gastosHoy)}
+            ajustes={formatMoney(ajustesDelDia)}
+            lineas={banda ? banda.lineas.map((l) => ({ ...l, texto: formatMoney(l.monto) })) : null}
+            onExplicar={setCifraExplicada}
+            movimientos={movimientosTodos}
+            totalMovimientos={cantidadPagosDia}
+            onVerMovimientos={() => { window.location.href = '/actividad' }}
+            onGasto={puedeReportarGastos ? () => setShowGasto(true) : undefined}
+            onCerrarDia={() => {
+              document.getElementById('cf-cierre-del-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+            onReporte={() => setShowReporte(true)}
+          />
+        </div>
+      )}
+
       {cajaTab === 'cobros' && periodo.modo === 'hoy' && <>
       {/* ── EL EXTRACTO DE T06-01 ──
           Sustituye al bloque CajaResumen, que era la formula repartida en CINCO
@@ -1268,6 +1323,10 @@ export default function CajaPage() {
 
           LO QUE NO SE TOCA: el cierre del dia, los ajustes, los gastos, la
           reapertura, el desglose por cuenta y los modales. Solo lo que se ve. */}
+      {/* El extracto de móvil se apaga en PC: ahí manda la banda de T06-05, que
+          dice lo mismo pero en una sola fila. Los dos a la vez serían el saldo
+          repetido dos veces en la misma pantalla. */}
+      <div className="lg:hidden">
       <CajaDia
         alto="auto"
         fecha={fechaLarga}
@@ -1290,6 +1349,7 @@ export default function CajaPage() {
         }}
         onReporte={() => setShowReporte(true)}
       />
+      </div>
 
       {cantidadPagosFiltrados > 0 && pagosDiaCard}
 
