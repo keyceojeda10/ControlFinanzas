@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v793'
+const CACHE_NAME   = 'cf-v794'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release NO las cambia: el «Enviar por WhatsApp» y el orden de la ficha
