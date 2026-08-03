@@ -123,6 +123,74 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
               </span>
             </span>
           )}
+
+          {/* ── EL CAPITAL, Y POR QUÉ LAS RUTAS NO SUMAN EL TOTAL ────────
+              «En rutas $5.554.155 · sin asignar $8.803.600 · total $14.357.755».
+              Sin la línea del medio, la suma de las tarjetas de abajo parece que
+              le falta más de la mitad de la plata del negocio, y ahí es donde
+              alguien empieza a buscar un fallo que no existe. No es descuadre:
+              es plata que no vive en la calle de ningún cobrador. */}
+          {totales.capitalGlobal && (
+            <span style={{
+              display: 'flex', flexDirection: 'column', gap: 5,
+              paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.10)',
+            }}>
+              {[
+                { rot: 'Capital en las rutas', val: totales.capitalEnRutas },
+                { rot: 'Sin asignar a ruta', val: totales.capitalSinAsignar, flojo: true },
+                { rot: 'Capital del negocio', val: totales.capitalGlobal, fuerte: true },
+              ].map((l) => (
+                <span key={l.rot} style={{
+                  display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+                }}>
+                  <span style={{ fontSize: 12, color: l.fuerte ? '#F3F3F6' : '#A3A8B2' }}>{l.rot}</span>
+                  <span className="cf-fig" style={{
+                    fontSize: l.fuerte ? 15 : 13,
+                    fontWeight: l.fuerte ? 600 : 400,
+                    color: l.flojo && totales.capitalSinAsignarNegativo ? 'var(--cf-red)' : '#F3F3F6',
+                  }}>{l.val}</span>
+                </span>
+              ))}
+            </span>
+          )}
+
+          {/* Los gastos que NO se pudieron asignar a una ruta. Se dicen en vez
+              de repartirse: `GastoMenor` solo guarda el cobrador, y repartir el
+              gasto de quien lleva tres rutas entre las tres sería inventar. */}
+          {(totales.gastosAmbiguos || totales.gastosSinCobrador) && (
+            <span style={{
+              display: 'flex', flexDirection: 'column', gap: 3,
+              paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.10)',
+            }}>
+              {totales.gastosSinCobrador && (
+                <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#A3A8B2' }}>
+                  Gastos del negocio (sin ruta)
+                  <span className="cf-fig" style={{ color: '#F3F3F6' }}>{totales.gastosSinCobrador}</span>
+                </span>
+              )}
+              {totales.gastosAmbiguos && (
+                <span style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#A3A8B2' }}>
+                  Gastos de cobradores con varias rutas
+                  <span className="cf-fig" style={{ color: '#F3F3F6' }}>{totales.gastosAmbiguos}</span>
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Una sub-bolsa no puede tener menos de cero pesos FÍSICOS: si está en
+          negativo, salió plata que nunca se registró como entrada. En la
+          plataforma hay 28 rutas así, y pasaba en silencio. */}
+      {totales?.rutasEnNegativo > 0 && (
+        <div style={{
+          background: 'var(--cf-red-pill-bg)', borderRadius: 'var(--cf-r-card)',
+          border: '1px solid color-mix(in srgb, var(--cf-red-dark) 22%, transparent)',
+          padding: '10px 14px', fontSize: 12, color: 'var(--cf-red-dark)',
+        }}>
+          {totales.rutasEnNegativo === 1
+            ? 'Una ruta tiene el capital en negativo: salió plata que no se registró como entrada.'
+            : `${totales.rutasEnNegativo} rutas tienen el capital en negativo: salió plata que no se registró como entrada.`}
         </div>
       )}
 
@@ -168,10 +236,8 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
               <Punto color="var(--cf-green)">Digital <strong style={{ color: 'var(--cf-ink-2)' }}>{f.digital}</strong></Punto>
             </div>
 
-            {/* «Prestado» es la cuarta cifra que pedía la lámina y que faltaba
-                por no tener el dato. Va junto a «Esperado hoy» porque las dos
-                son del día y se leen juntas: cuánto se esperaba cobrar y cuánto
-                salió a la calle. Lo cobrado ya está arriba, en grande. */}
+            {/* Las cifras del DÍA: lo que se esperaba cobrar y lo que salió a
+                la calle. Lo cobrado ya está arriba, en grande. */}
             {(f.esperado || f.prestado) && (
               <div style={{
                 display: 'flex', gap: 18, paddingTop: 10,
@@ -179,6 +245,39 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
               }}>
                 {f.esperado && <Cifra etiqueta="Esperado hoy" valor={f.esperado} />}
                 {f.prestado && <Cifra etiqueta="Prestado" valor={f.prestado} />}
+              </div>
+            )}
+
+            {/* ── DINERO EN MANO: CAPITAL − GASTOS ─────────────────────────
+                La cifra que pidió el dueño como principal de la ruta. Va abajo
+                y con su resta A LA VISTA, no solo el resultado: «$3.096.800 de
+                capital − $47.000 de gastos» se puede seguir con un lápiz, y esa
+                es la única forma de que alguien detecte que no cuadra.
+
+                Solo sale si la ruta lleva CAPITAL PROPIO. Sin él su plata vive
+                en la bolsa global del negocio y un «$0» aquí se leería como
+                «esta ruta no tiene nada», que es distinto. */}
+            {f.enMano && (
+              <div style={{
+                paddingTop: 10, borderTop: '1px solid var(--cf-hairline)',
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                <span style={{
+                  display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10,
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)' }}>
+                    Dinero en mano
+                  </span>
+                  <span className="cf-fig" style={{
+                    fontSize: 17, fontWeight: 700,
+                    // En negativo va en rojo: una sub-bolsa no puede tener menos
+                    // de cero pesos físicos, así que es una señal, no un dato.
+                    color: f.enManoNegativo ? 'var(--cf-red-dark)' : 'var(--cf-green-dark)',
+                  }}>{f.enMano}</span>
+                </span>
+                <span style={{ fontSize: 11.5, color: 'var(--cf-ink-3)' }}>
+                  {f.capital} de capital − {f.gastos} de gastos
+                </span>
               </div>
             )}
           </button>

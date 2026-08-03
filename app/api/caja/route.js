@@ -403,6 +403,107 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
 // aquí se pusiera el monto de la cartulina, esta pestaña diría una cifra y el
 // saldo de caja otra para el mismo día.
 //
+// ── EL CAPITAL DE CADA RUTA ────────────────────────────────────────────────
+//
+// NO se calcula aquí: `Ruta.saldoCapital` ya existe y lo mantiene
+// `lib/capital.js` en cada movimiento. Reconstruirlo a mano desde
+// `MovimientoCapital` es un error que ya cometí midiendo — el
+// `ajusteArranqueRuta` cuenta para la RUTA (siempre como egreso) pero no para el
+// saldo global, y sin eso salen cifras absurdas (me dio $2.501 millones donde
+// había $14 millones).
+//
+// Se devuelve TAMBIÉN lo no asignado: el capital del negocio que no vive en la
+// calle de ningún cobrador. En el negocio del video son $8.803.600 de
+// $14.357.755, o sea que sin esa línea la suma de las rutas parecería que le
+// falta plata. No es un descuadre, es plata sin ruta — y hay que decirlo.
+async function calcularCapitalPorRuta(organizationId) {
+  const [rutas, capital] = await Promise.all([
+    prisma.ruta.findMany({
+      where: { organizationId, activo: true },
+      select: { id: true, saldoCapital: true, capitalHabilitado: true },
+    }),
+    prisma.capital.findFirst({ where: { organizationId }, select: { saldo: true } }),
+  ])
+
+  const porRuta = rutas.map((r) => ({
+    rutaId: r.id,
+    saldoCapital: Math.round(r.saldoCapital || 0),
+    capitalHabilitado: !!r.capitalHabilitado,
+  }))
+  const enRutas = porRuta.reduce((a, r) => a + r.saldoCapital, 0)
+  const global = Math.round(capital?.saldo || 0)
+
+  return {
+    porRuta,
+    global,
+    enRutas,
+    // Lo que queda fuera de las rutas. Puede ser negativo si las sub-bolsas
+    // suman más que el global; se muestra igual, que esconderlo es peor.
+    sinAsignar: global - enRutas,
+    // Una sub-bolsa no puede tener menos de cero pesos FÍSICOS: si está
+    // negativa, salió plata que nunca se registró como entrada.
+    negativas: porRuta.filter((r) => r.saldoCapital < 0).length,
+  }
+}
+
+// ── LOS GASTOS DEL DÍA, POR RUTA ───────────────────────────────────────────
+//
+// ⚠ `GastoMenor` NO TIENE `rutaId`. Solo `cobradorId`. Así que la ruta hay que
+// deducirla del cobrador, y eso SOLO es honesto cuando ese cobrador lleva UNA
+// ruta: si lleva tres, repartir su gasto entre ellas sería inventar, y esto es
+// la pantalla del dinero.
+//
+// Medido en producción (30 días) antes de escribir esto:
+//   · 31 cobradores llevan 1 ruta  → $10.280.000 asignables
+//   ·  2 llevan varias             → $0 en juego
+//   · en el negocio del video, los 9 llevan 1 ruta: 366 de 366 gastos
+//
+// O sea que en la práctica se asigna casi todo. Lo que no, NO se reparte: viaja
+// aparte (`ambiguos` y `sinCobrador`) para que la pantalla pueda enseñarlo en su
+// propia línea. Una cifra que no cuadra y se ve es un dato; una que no cuadra y
+// se esconde es un fallo esperando.
+async function calcularGastosPorRutaDia(organizationId, gastos) {
+  const conCobrador = (gastos || []).filter((g) => g.cobradorId)
+  if (conCobrador.length === 0) {
+    const sinCobrador = (gastos || []).reduce((a, g) => a + (g.monto || 0), 0)
+    return { porRuta: [], ambiguos: 0, sinCobrador: Math.round(sinCobrador) }
+  }
+
+  // Cuántas rutas activas lleva cada cobrador que gastó hoy.
+  const rutas = await prisma.ruta.findMany({
+    where: {
+      organizationId,
+      activo: true,
+      cobradorId: { in: [...new Set(conCobrador.map((g) => g.cobradorId))] },
+    },
+    select: { id: true, cobradorId: true },
+  })
+  const rutasDelCobrador = new Map()
+  for (const r of rutas) {
+    if (!rutasDelCobrador.has(r.cobradorId)) rutasDelCobrador.set(r.cobradorId, [])
+    rutasDelCobrador.get(r.cobradorId).push(r.id)
+  }
+
+  const porRuta = new Map()
+  let ambiguos = 0
+  let sinCobrador = 0
+  for (const g of gastos || []) {
+    const monto = Math.round(g.monto || 0)
+    if (!g.cobradorId) { sinCobrador += monto; continue }
+    const suyas = rutasDelCobrador.get(g.cobradorId) || []
+    // Una sola ruta: el gasto es de esa ruta, sin ambigüedad. Varias (o
+    // ninguna activa): no se reparte.
+    if (suyas.length !== 1) { ambiguos += monto; continue }
+    porRuta.set(suyas[0], (porRuta.get(suyas[0]) || 0) + monto)
+  }
+
+  return {
+    porRuta: [...porRuta.entries()].map(([rutaId, gastado]) => ({ rutaId, gastado })),
+    ambiguos: Math.round(ambiguos),
+    sinCobrador: Math.round(sinCobrador),
+  }
+}
+
 // Solo para MOSTRAR: no alimenta ningún saldo ni cuadre.
 async function calcularPrestadoPorRutaDia(organizationId, inicio, fin) {
   const prestamos = await prisma.prestamo.findMany({
@@ -1102,18 +1203,27 @@ export async function GET(request) {
     }))
   }
 
-  // Lo prestado por ruta SOLO para el dueño: la pestaña «por ruta» es suya, y
-  // un cobrador no vería más que su propia ruta. Así no se paga la consulta en
-  // el móvil de quien no la usa.
-  const prestadoPorRuta = rol === 'owner'
-    ? await calcularPrestadoPorRutaDia(organizationId, inicio, fin)
-    : []
+  // Las tres cifras por ruta, SOLO para el dueño: la pestaña «por ruta» es
+  // suya, y un cobrador no vería más que su propia ruta. Así no se pagan las
+  // consultas en el móvil de quien no las usa.
+  //
+  // En paralelo: son independientes entre sí y encadenarlas suma latencia a la
+  // pantalla que más se abre del día.
+  const [prestadoPorRuta, capitalPorRuta, gastosPorRuta] = rol === 'owner'
+    ? await Promise.all([
+      calcularPrestadoPorRutaDia(organizationId, inicio, fin),
+      calcularCapitalPorRuta(organizationId),
+      calcularGastosPorRutaDia(organizationId, gastos),
+    ])
+    : [[], null, null]
 
   const payload = {
     cierres,
     gastos,
     pagosDia,
     prestadoPorRuta,
+    capitalPorRuta,
+    gastosPorRuta,
     resumenPagosDia: {
       cantidad: pagosDia.length,
       total: totalPagosDia,

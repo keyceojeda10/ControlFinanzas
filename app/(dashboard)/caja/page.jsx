@@ -627,8 +627,11 @@ export default function CajaPage() {
   // argumento va detrás de `pais`, que esta pantalla no pasa.
   const filasPorRuta = agruparCajaPorRuta(
     pagosDelDia, rutasDisponibles, undefined, cajaData?.prestadoPorRuta || [],
+    cajaData?.capitalPorRuta || null, cajaData?.gastosPorRuta || null,
   )
-  const totalesPorRuta = totalesCajaPorRuta(filasPorRuta)
+  const totalesPorRuta = totalesCajaPorRuta(
+    filasPorRuta, undefined, cajaData?.capitalPorRuta || null, cajaData?.gastosPorRuta || null,
+  )
   const hoyColombia = getColombiaDateStr()
   const diasAtrasSeleccion = diasDesdeFechaColombia(hoyColombia, fechaSeleccionada)
   const esAyer = diasAtrasSeleccion === 1
