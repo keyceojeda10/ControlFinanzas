@@ -422,6 +422,42 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(ruta.segurosDia)}</p>
                   </div>
                 </div>
+                {/* ── DE LO COBRADO, CUÁNTO ES EFECTIVO ────────────────────
+                    Al cerrar el día el cobrador solo entrega el EFECTIVO: lo
+                    digital ya está en la cuenta. Sin partirlo se le pide un fajo
+                    que incluye plata que nunca tocó. Solo se pinta si hubo algo
+                    digital — en una ruta 100% efectivo la línea sobra. */}
+                {ruta.rutaId && (ruta.cobradoDigital ?? 0) > 0 && (
+                  <div className="mt-2 flex items-center gap-3 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                    <span>
+                      Efectivo{' '}
+                      <strong className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                        {formatMoney(ruta.cobradoEfectivo ?? 0)}
+                      </strong>
+                    </span>
+                    <span>
+                      Digital{' '}
+                      <strong className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                        {formatMoney(ruta.cobradoDigital ?? 0)}
+                      </strong>
+                    </span>
+                  </div>
+                )}
+
+                {/* Los recargos NO suman al cobrado: suben la deuda del cliente
+                    y nadie entrega un billete. Por eso van aparte y sin «+». */}
+                {ruta.rutaId && (ruta.recargosDia ?? 0) > 0 && (
+                  <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                    <span style={{ color: 'var(--cf-ink-3)' }}>
+                      {ruta.recargosCantidad} recargo{ruta.recargosCantidad === 1 ? '' : 's'}
+                      {' '}<span style={{ color: 'var(--cf-ink-4)' }}>(no es plata que entró)</span>
+                    </span>
+                    <span className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                      {formatMoney(ruta.recargosDia)}
+                    </span>
+                  </div>
+                )}
+
                 {ruta.rutaId && (() => {
                   const flujoRuta = ruta.cobradoDia + ruta.segurosDia - ruta.prestadoDia
                   return (
@@ -433,6 +469,44 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     </div>
                   )
                 })()}
+
+                {/* ── INICIO DEL DÍA → LO QUE QUEDA ────────────────────────
+                    La cuenta que se puede seguir con un lápiz: con lo que
+                    amaneció la ruta, más lo que entró, menos lo que salió.
+                    Solo con capital propio: sin él la sub-bolsa no significa
+                    nada porque la plata vive en la bolsa global del negocio. */}
+                {ruta.rutaId && ruta.capitalHabilitado && typeof ruta.saldoApertura === 'number' && (
+                  <div className="mt-1 flex items-center justify-between text-[11px]">
+                    <span style={{ color: 'var(--cf-ink-3)' }}>Empezó el día con</span>
+                    <span className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                      {formatMoney(ruta.saldoApertura)}
+                    </span>
+                  </div>
+                )}
+
+                {/* ── LA GESTIÓN DE ESTA RUTA ──────────────────────────────
+                    Los cuadros que el cobrador del video echaba de menos, pero
+                    de SU ruta y no sumados con las demás: con tres rutas, «2
+                    clientes nuevos» no dice en cuál entraron.
+                    Se pintan todos, también en cero: un cero informa —hoy no
+                    entró nadie— y esconderlo deja la tarjeta muda por la
+                    mañana. Ver `feedback_el_cero_es_un_dato`. */}
+                {ruta.rutaId && ruta.gestion && (
+                  <div className="mt-2 pt-2 border-t border-[var(--cf-border)] grid grid-cols-4 gap-2">
+                    {[
+                      { rot: 'Cobrados', val: ruta.gestion.clientesCobrados },
+                      { rot: 'Activos', val: ruta.gestion.clientesActivos },
+                      { rot: 'Nuevos', val: ruta.gestion.clientesNuevos },
+                      { rot: 'Renovó', val: ruta.gestion.renovaciones },
+                    ].map((k) => (
+                      <div key={k.rot}>
+                        <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>{k.rot}</p>
+                        <p className="text-sm font-semibold font-mono-display"
+                          style={{ color: k.val > 0 ? 'var(--cf-ink)' : 'var(--cf-ink-3)' }}>{k.val ?? 0}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Acumulado colocado en la ruta. Lo de arriba (prestado/cobrado)
                     es el DIA; esto es el stock. Sin este dato, "Disponible: $X"

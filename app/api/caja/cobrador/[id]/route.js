@@ -196,7 +196,10 @@ export async function GET(request, { params }) {
         prestamo: {
           select: {
             esClavo: true,
-            cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
+            // El `id` del cliente hace falta para contar CLIENTES DISTINTOS
+            // cobrados por ruta: sin él, dos pagos del mismo cliente cuentan
+            // como dos personas (y todos los `undefined` como una sola).
+            cliente: { select: { id: true, nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
           },
         },
       },
@@ -213,13 +216,18 @@ export async function GET(request, { params }) {
       select: { id: true },
     }),
     // Recargos del día: aplicados por el cobrador o en clientes de sus rutas
-    prisma.pago.aggregate({
+    // Las FILAS, no un `aggregate`: hacen falta con su ruta para poder
+    // repartirlos por ruta. El total se saca sumando aqui mismo, asi que no se
+    // paga una consulta de mas.
+    prisma.pago.findMany({
       where: {
         ...wherePagoCaja,
         tipo: 'recargo',
       },
-      _sum: { montoPagado: true },
-      _count: { id: true },
+      select: {
+        montoPagado: true,
+        prestamo: { select: { cliente: { select: { ruta: { select: { id: true } } } } } },
+      },
     }),
     // Movimientos del día por ruta para calcular delta neto y saldo de apertura
     rutaIds.length > 0
@@ -320,8 +328,10 @@ export async function GET(request, { params }) {
 
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.filter(r => r.capitalHabilitado).reduce((a, r) => a + (r.saldoCapital || 0), 0))
-  const recargosMontoTotal = Math.round(recargos._sum?.montoPagado || 0)
-  const recargosCantidad = recargos._count?.id || 0
+  // Ya no es un `aggregate`: se suman las filas (que ahora traen su ruta).
+  const recargosMontoTotal = Math.round(
+    recargos.reduce((a, r) => a + (r.montoPagado || 0), 0))
+  const recargosCantidad = recargos.length
 
   // Desglose por ruta: prestado / cobrado / seguros + saldoCapital de la ruta.
   // Los seguros se generan al crear el préstamo, así que se cuentan junto al desembolso.
@@ -333,9 +343,19 @@ export async function GET(request, { params }) {
       // Sin capital habilitado el saldo de la ruta no significa nada (la bolsa es
       // global). Se envia para que la UI no alerte por un cero que no es un saldo.
       capitalHabilitado: !!r.capitalHabilitado,
+      // ── EL INICIO DEL DIA, POR RUTA ──
+      // `deltaPorRuta` ya existia pero solo se usaba para sumar el total; aqui
+      // se guarda el de CADA ruta. Es el saldo de la sub-bolsa ANTES de los
+      // movimientos de hoy: sin el, la cuenta del dia de una ruta empieza en el
+      // aire y no se puede seguir con un lapiz.
+      saldoApertura: Math.round((r.saldoCapital || 0) - (deltaPorRuta.get(r.id) || 0)),
       prestadoDia: 0,
       cobradoDia: 0,
+      cobradoEfectivo: 0,
+      cobradoDigital: 0,
       segurosDia: 0,
+      recargosDia: 0,
+      recargosCantidad: 0,
       capitalEnCalle: 0, // acumulado colocado (stock), no el flujo del dia
       conIntereses: 0,
     }])
@@ -345,13 +365,38 @@ export async function GET(request, { params }) {
     // Movimientos de clientes fuera de las rutas del cobrador (ej. préstamo creado a
     // un cliente de otra ruta): se agrupan en "Otros" para no perderlos.
     if (!porRutaMap.has('__otros__')) {
-      porRutaMap.set('__otros__', { rutaId: null, nombre: 'Otros', saldoCapital: 0, prestadoDia: 0, cobradoDia: 0, segurosDia: 0, capitalEnCalle: 0, conIntereses: 0 })
+      // Los MISMOS campos que las rutas de verdad: si a esta le faltara alguno,
+      // la pantalla pintaria «undefined» justo en la fila que agrupa lo que no
+      // se supo clasificar — que es la que mas mira quien busca un descuadre.
+      porRutaMap.set('__otros__', {
+        rutaId: null, nombre: 'Otros', saldoCapital: 0, capitalHabilitado: false,
+        saldoApertura: 0, prestadoDia: 0, cobradoDia: 0, cobradoEfectivo: 0,
+        cobradoDigital: 0, segurosDia: 0, recargosDia: 0, recargosCantidad: 0,
+        capitalEnCalle: 0, conIntereses: 0,
+      })
     }
     return porRutaMap.get('__otros__')
   }
 
   for (const d of desembolsos) bucket(d.rutaId).prestadoDia += d.monto || 0
-  for (const p of cobros) bucket(p.prestamo?.cliente?.ruta?.id).cobradoDia += p.montoPagado || 0
+  for (const p of cobros) {
+    const b = bucket(p.prestamo?.cliente?.ruta?.id)
+    const monto = p.montoPagado || 0
+    b.cobradoDia += monto
+    // Efectivo y digital tambien POR RUTA: al cerrar, el cobrador solo entrega
+    // el efectivo —lo digital ya esta en la cuenta—, asi que sin partirlo se le
+    // pide un fajo que incluye plata que nunca toco. Mismo criterio que arriba:
+    // lo que no dice nada cuenta como efectivo.
+    if (p.metodoPago === 'transferencia') b.cobradoDigital += monto
+    else b.cobradoEfectivo += monto
+  }
+  // Los recargos van a su ruta, pero NO suman al cobrado: un recargo sube la
+  // deuda del cliente y nadie entrega un billete. Van en su propia cifra.
+  for (const r of recargos) {
+    const b = bucket(r.prestamo?.cliente?.ruta?.id)
+    b.recargosDia += r.montoPagado || 0
+    b.recargosCantidad += 1
+  }
 
   // Vista bruta: el saldo absorbido de cada renovacion suma a AMBOS lados en la
   // ruta del cliente, igual que en los totales (si no, la suma por ruta no cuadra
@@ -447,9 +492,15 @@ export async function GET(request, { params }) {
     ...r,
     prestadoDia: Math.round(r.prestadoDia),
     cobradoDia: Math.round(r.cobradoDia),
+    cobradoEfectivo: Math.round(r.cobradoEfectivo || 0),
+    cobradoDigital: Math.round(r.cobradoDigital || 0),
     segurosDia: Math.round(r.segurosDia),
+    recargosDia: Math.round(r.recargosDia || 0),
     capitalEnCalle: Math.round(r.capitalEnCalle),
     conIntereses: Math.round(r.conIntereses),
+    // La gestión de ESA ruta, no la suma de todas. El cobrador con tres rutas
+    // necesita saber en cuál entró el cliente nuevo.
+    gestion: r.rutaId ? (gestionPorRuta.get(r.rutaId) ?? null) : null,
   }))
 
   // Línea de movimientos del día: cobros + préstamos + gastos, ordenados por hora.
@@ -520,6 +571,77 @@ export async function GET(request, { params }) {
       distinct: ['prestamoId'],
     }),
   ])
+
+  // ── LA GESTIÓN, POR RUTA ─────────────────────────────────────────────────
+  //
+  // Las cuentas de arriba (`clientesNuevos`, `prestamosNuevos`…) suman TODAS las
+  // rutas del cobrador. El que lleva tres necesita saber cuál se movió, no el
+  // total: «2 clientes nuevos» no dice en cuál entraron.
+  //
+  // Se usa `groupBy` en vez de un `count` por ruta: con diez rutas serían diez
+  // viajes a la base para la pantalla que más se abre del día.
+  const [nuevosPorRuta, prestamosPorRuta, activosPorRuta] = rutaIds.length > 0
+    ? await Promise.all([
+      prisma.cliente.groupBy({
+        by: ['rutaId'],
+        where: { organizationId, rutaId: { in: rutaIds }, createdAt: { gte: inicio, lt: fin } },
+        _count: { _all: true },
+      }),
+      // Nuevos y renovaciones a la vez: `renovadoDeId` distingue unos de otros y
+      // así es una consulta en vez de dos.
+      prisma.prestamo.findMany({
+        where: {
+          organizationId,
+          createdAt: { gte: inicio, lt: fin },
+          estado: { not: 'cancelado' },
+          cliente: { rutaId: { in: rutaIds } },
+        },
+        select: { renovadoDeId: true, cliente: { select: { rutaId: true } } },
+      }),
+      prisma.cliente.groupBy({
+        by: ['rutaId'],
+        where: {
+          organizationId,
+          rutaId: { in: rutaIds },
+          prestamos: { some: { estado: 'activo', esClavo: false } },
+        },
+        _count: { _all: true },
+      }),
+    ])
+    : [[], [], []]
+
+  const gestionPorRuta = new Map(rutaIds.map((id) => [id, {
+    clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+    clientesActivos: 0, clientesCobrados: 0,
+  }]))
+  const gBucket = (id) => {
+    if (!id) return null
+    if (!gestionPorRuta.has(id)) {
+      gestionPorRuta.set(id, {
+        clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+        clientesActivos: 0, clientesCobrados: 0,
+      })
+    }
+    return gestionPorRuta.get(id)
+  }
+  for (const g of nuevosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesNuevos = g._count._all }
+  for (const g of activosPorRuta) { const b = gBucket(g.rutaId); if (b) b.clientesActivos = g._count._all }
+  for (const p of prestamosPorRuta) {
+    const b = gBucket(p.cliente?.rutaId)
+    if (!b) continue
+    if (p.renovadoDeId) b.renovaciones += 1
+    else b.prestamosNuevos += 1
+  }
+  // Clientes DISTINTOS a los que se les cobró hoy, por ruta. No es lo mismo que
+  // el número de cobros: a un cliente se le puede cobrar dos veces.
+  const cobradosPorRuta = new Map()
+  for (const p of cobros) {
+    const rid = p.prestamo?.cliente?.ruta?.id
+    if (!rid) continue
+    if (!cobradosPorRuta.has(rid)) cobradosPorRuta.set(rid, new Set())
+    if (p.prestamo?.cliente?.id) cobradosPorRuta.get(rid).add(p.prestamo.cliente.id)
+  }
+  for (const [rid, set] of cobradosPorRuta) { const b = gBucket(rid); if (b) b.clientesCobrados = set.size }
 
   // Desglose por método de pago
   const desgloseMetodo = {}
