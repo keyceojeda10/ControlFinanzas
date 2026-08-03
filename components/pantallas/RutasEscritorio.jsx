@@ -152,26 +152,30 @@ function TarjetaRuta({ ruta, onAbrir, onAsignar }) {
         </div>
       </div>
 
-      <BarraProgreso
-        porcentaje={ruta.porcentaje ?? 0}
-        tono={ruta.pastilla?.tono === 'mora' ? 'mora' : ruta.inactiva ? 'neutro' : 'aldia'}
-        alto={7}
-      />
-
-      {/* Las tres cifras del pie. Solo si hay algo que contar: en una ruta sin
-          cobros hoy serían tres ceros, que es ruido con forma de dato. */}
-      {(ruta.cobrosHoy || ruta.cumple) && (
-        <div style={{
-          display: 'flex', gap: 8, paddingTop: 12,
-          borderTop: '1px solid var(--cf-hairline)',
-        }}>
-          {ruta.cobrosHoy && <Cifra etiqueta="Cobros hoy" valor={ruta.cobrosHoy} />}
-          {ruta.cobrosHoy && ruta.cumple && <Filete />}
-          {ruta.cumple && <Cifra etiqueta="Cumple" valor={ruta.cumple.valor} tono={ruta.cumple.tono} />}
-          <Filete />
-          <Cifra etiqueta="Clientes" valor={String(ruta.clientes ?? 0)} />
-        </div>
+      {/* La barra SOLO cuando hay jornada que medir. En una ruta sin cobros hoy
+          es una barra al 0% que no dice «va mal», dice «no toca hoy» — y son
+          ocho de cada diez tarjetas. */}
+      {!ruta.inactiva && (
+        <BarraProgreso
+          porcentaje={ruta.porcentaje ?? 0}
+          tono={ruta.pastilla?.tono === 'mora' ? 'mora' : 'aldia'}
+          alto={7}
+        />
       )}
+
+      {/* La tira de cifras. En una ruta sin cobros hoy, «cobros» y «cumple»
+          serían dos ceros que solo dicen que hoy no toca, así que se queda con
+          los clientes, que es el dato que sí significa algo cualquier día. */}
+      <div style={{
+        display: 'flex', gap: 8, paddingTop: 12,
+        borderTop: '1px solid var(--cf-hairline)',
+      }}>
+        {ruta.cobrosHoy && <Cifra etiqueta="Cobros hoy" valor={ruta.cobrosHoy} />}
+        {ruta.cobrosHoy && <Filete />}
+        {ruta.cumple && <Cifra etiqueta="Cumple" valor={ruta.cumple.valor} tono={ruta.cumple.tono} />}
+        {ruta.cumple && <Filete />}
+        <Cifra etiqueta="Clientes" valor={String(ruta.clientes ?? 0)} />
+      </div>
     </button>
   )
 }
