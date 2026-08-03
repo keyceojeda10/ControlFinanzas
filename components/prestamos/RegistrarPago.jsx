@@ -24,7 +24,7 @@ import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
-  montoCrudo, montoParaMostrar,
+  montoCrudoConModo, montoParaMostrarConModo,
 } from '@/lib/adaptadores/pago'
 import { Recargo, Descuento, PieGestion } from '@/components/pantallas/Gestion'
 import {
@@ -47,7 +47,15 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
-  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg } = useAuth()
+  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
+
+  // ── EL MODO ABREVIADO, EN LA HOJA NUEVA ──
+  // Se escribe en miles: «40» son $40.000. `MoneyInput` lo hace desde siempre,
+  // pero el rediseño puso aquí un campo propio y la conversión se perdió sin
+  // avisar: el modo seguía encendido en configuración y no hacía nada. Lo
+  // reportó un cobrador creyendo que se le había desactivado solo.
+  const verMonto = (v) => montoParaMostrarConModo(v, modoAbreviado, undefined)
+  const leerMonto = (v) => montoCrudoConModo(v, modoAbreviado)
   const camposRecibo = (Array.isArray(cliente?.camposRecibo) && cliente.camposRecibo.length > 0)
     ? cliente.camposRecibo
     : (Array.isArray(camposReciboOrg) && camposReciboOrg.length > 0 ? camposReciboOrg : getDefaultCampos())
@@ -888,8 +896,8 @@ export default function RegistrarPago({
       >
         {esRecargo ? (
           <Recargo
-            monto={montoParaMostrar(monto)}
-            onMonto={(v) => setMonto(montoCrudo(v))}
+            monto={verMonto(monto)}
+            onMonto={(v) => setMonto(leerMonto(v))}
             atajos={atajos}
             atajoActivo={atajoActivo}
             onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
@@ -899,8 +907,8 @@ export default function RegistrarPago({
           />
         ) : (
           <Descuento
-            monto={montoParaMostrar(monto)}
-            onMonto={(v) => setMonto(montoCrudo(v))}
+            monto={verMonto(monto)}
+            onMonto={(v) => setMonto(leerMonto(v))}
             atajos={atajos}
             atajoActivo={atajoActivo}
             onAtajo={(a) => { if (a.monto) setMonto(String(a.monto)) }}
@@ -1004,8 +1012,8 @@ export default function RegistrarPago({
           // `Number(monto)`, y con puntos dentro eso daría NaN. El campo enseñaba
           // «20000», y con seis cifras seguidas —«1250000»— nadie distingue un
           // millón doscientos cincuenta mil de ciento veinticinco mil.
-          monto={montoParaMostrar(monto, undefined)}
-          onMonto={(v) => setMonto(montoCrudo(v))}
+          monto={verMonto(monto)}
+          onMonto={(v) => setMonto(leerMonto(v))}
           atajos={atajos}
           atajoActivo={atajoActivo}
           onAtajo={(a) => setMonto(String(a.monto))}

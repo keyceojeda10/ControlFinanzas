@@ -53,6 +53,34 @@ export default function HojaInferior({
     }
   }, [abierta, onCerrar])
 
+  // ── EL BOTÓN «ATRÁS» DEL TELÉFONO CIERRA LA HOJA ───────────────────────
+  //
+  // Reportado por un cobrador: «registro a un cliente y se me queda ahí, no me
+  // da arriba la flechita para salir atrás; si le doy con el celular se vuelve a
+  // salir afuera». Y es exacto: aquí solo se escuchaba `Escape` —una tecla, o
+  // sea SOLO en escritorio— así que en Android el «atrás» no encontraba nada que
+  // cerrar y se llevaba por delante la aplicación entera. En medio de una ruta,
+  // cobrando.
+  //
+  // Cómo funciona: al abrir se mete una entrada de historia; el «atrás» la
+  // consume y `popstate` cierra la hoja en vez de salir de la página. Al cerrar
+  // por la X o por el fondo, esa entrada se retira para no dejar historia basura
+  // que obligue a pulsar «atrás» dos veces.
+  useEffect(() => {
+    if (!abierta || typeof window === 'undefined') return
+    let cerradaPorAtras = false
+    window.history.pushState({ cfHoja: true }, '')
+    const alVolver = () => { cerradaPorAtras = true; onCerrar?.() }
+    window.addEventListener('popstate', alVolver)
+    return () => {
+      window.removeEventListener('popstate', alVolver)
+      // Si se cerró con la X, la entrada sigue puesta: se quita a mano. Si se
+      // cerró CON el atrás, ya la consumió el navegador y volver a llamar a
+      // `back()` sacaría al usuario de la pantalla — que es el fallo original.
+      if (!cerradaPorAtras && window.history.state?.cfHoja) window.history.back()
+    }
+  }, [abierta, onCerrar])
+
   if (!abierta) return null
 
   const contenido = (
