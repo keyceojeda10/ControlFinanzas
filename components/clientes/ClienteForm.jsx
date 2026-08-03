@@ -710,9 +710,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         </section>
       )}
 
-      {/* Footer fijo abajo: cancel/atras + siguiente/guardar */}
+      {/* ── ⚠ POR ENCIMA DE LA PASTILLA DE NAVEGACIÓN ─────────────────────
+          Iba en `bottom-0` con `z-[45]`, el MISMO z que la pastilla flotante —y
+          la pastilla se pinta después, así que ganaba—. En el teléfono el botón
+          «Guardar cambios» quedaba tapado y no se podía pulsar: se editaba el
+          cliente y no había forma de guardarlo. Reportado por un usuario.
+
+          En escritorio no pasaba (`lg:left-60`, ahí no hay pastilla), por eso
+          desde PC se veía bien.
+
+          El alto sale de los tokens (`--cf-nav-inset` + `--cf-h-nav`), no de un
+          número a mano: si la pastilla cambia de alto, esto se mueve con ella.
+          Y solo en móvil — en `lg:` la barra vuelve al borde. */}
       <div
-        className="fixed left-0 right-0 lg:left-60 bottom-0 z-[45] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
+        className="fixed left-0 right-0 lg:left-60 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6 bottom-[calc(var(--cf-nav-inset)+var(--cf-h-nav)+env(safe-area-inset-bottom,0px))] lg:bottom-0"
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',

@@ -87,8 +87,25 @@ html[data-theme="dark"] {
   --cf-fill:           rgba(255,255,255,.07);
   --cf-fill-2:         rgba(255,255,255,.10);
 
-  --cf-border:         rgba(255,255,255,.09);
-  --cf-border-strong:  rgba(255,255,255,.12);
+  /* ── ⚠ EN OSCURO LA TARJETA SE DISTINGUE POR EL BORDE, NO POR EL RELLENO ──
+     El dueño: «el borde está del mismo color que el fondo, entonces no se ve
+     como que fuese una caja en muchas partes» — en préstamos, clientes y las
+     fichas de cliente dentro de una ruta.
+
+     MEDIDO, no elegido a ojo:
+       claro   #FFFFFF sobre #F4F4F1 -> 1,10  (la tarjeta se ve por ser BLANCA)
+       oscuro  #1E1F24 sobre #15161A -> 1,10  (mismo salto, pero los dos oscuros)
+
+     O sea que en oscuro el relleno NO alcanza a dibujar la caja y el borde
+     tiene que hacer ese trabajo. Al 9% quedaba en 1,31 contra la tarjeta —casi
+     nada—; al 14% sube a 1,55, que se ve sin convertirse en una línea dura.
+     Eso es lo que pidió: «no un borde sólido feo, sino algo que distinga que
+     eso es una caja».
+
+     Solo se toca el tema OSCURO: en claro la tarjeta blanca ya se distingue
+     sola y subir el borde ahí la ensuciaría. */
+  --cf-border:         rgba(255,255,255,.14);
+  --cf-border-strong:  rgba(255,255,255,.20);
   --cf-border-soft:    rgba(255,255,255,.07);
   --cf-hairline:       rgba(255,255,255,.07);
   --cf-divider:        rgba(255,255,255,.08);
