@@ -140,20 +140,42 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
             }}>
               {[
                 { rot: 'Capital en las rutas', val: totales.capitalEnRutas },
-                { rot: 'Sin asignar a ruta', val: totales.capitalSinAsignar, flojo: true },
+                // ⚠ EN NEGATIVO SE DICE DE OTRA FORMA, NO EN ROJO.
+                //
+                // «Sin asignar a ruta −$29.166.797» se lee como un faltante, y
+                // NO lo es. Comprobado contra producción: pasa en 1 de los 6
+                // negocios que usan capital por ruta, y la causa es sana — los
+                // `ajusteArranqueRuta` restan del global pero NO de la sub-bolsa
+                // (absorben préstamos hechos antes de que la ruta tuviera
+                // capital), así que una ruta que ES el negocio entero acaba con
+                // más saldo que el global. La aritmética está bien; el rótulo
+                // era el que mentía.
+                ...(totales.capitalSinAsignarNegativo
+                  ? [{ rot: 'Las rutas suman más que el global', val: null, nota: true }]
+                  : [{ rot: 'Sin asignar a ruta', val: totales.capitalSinAsignar }]),
                 { rot: 'Capital del negocio', val: totales.capitalGlobal, fuerte: true },
               ].map((l) => (
                 <span key={l.rot} style={{
                   display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
                 }}>
-                  <span style={{ fontSize: 12, color: l.fuerte ? '#F3F3F6' : '#A3A8B2' }}>{l.rot}</span>
-                  <span className="cf-fig" style={{
-                    fontSize: l.fuerte ? 15 : 13,
-                    fontWeight: l.fuerte ? 600 : 400,
-                    color: l.flojo && totales.capitalSinAsignarNegativo ? 'var(--cf-red)' : '#F3F3F6',
-                  }}>{l.val}</span>
+                  <span style={{ fontSize: l.nota ? 11 : 12, color: '#A3A8B2', ...(l.fuerte ? { color: '#F3F3F6' } : {}) }}>
+                    {l.rot}
+                  </span>
+                  {l.val != null && (
+                    <span className="cf-fig" style={{
+                      fontSize: l.fuerte ? 15 : 13,
+                      fontWeight: l.fuerte ? 600 : 400,
+                      color: '#F3F3F6',
+                    }}>{l.val}</span>
+                  )}
                 </span>
               ))}
+              {totales.capitalSinAsignarNegativo && (
+                <span style={{ fontSize: 11, color: '#A3A8B2', lineHeight: 1.45 }}>
+                  Pasa cuando una ruta arrastra préstamos anteriores a su capital.
+                  No falta plata.
+                </span>
+              )}
             </span>
           )}
 
