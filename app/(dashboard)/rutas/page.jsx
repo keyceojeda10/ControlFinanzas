@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
+import RutasEscritorio from '@/components/pantallas/RutasEscritorio'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { adaptarRutas, adaptarSinRuta, resumenDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
@@ -379,6 +380,35 @@ export default function RutasPage() {
     input.click()
   }
 
+  // Los controles del encabezado, UNA sola vez: los usan la lista de móvil y la
+  // de escritorio. Escritos dos veces, el día que cambie uno se quedan distintos
+  // sin que nada falle — que es el patrón que ya lleva cinco apariciones aquí.
+  const accionesRutas = (
+    <>
+      {rutas.length > 1 && (
+        <button type="button" onClick={() => setModoOrdenar(true)} style={{
+          display: 'inline-flex', alignItems: 'center', flex: 'none',
+          height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', cursor: 'pointer',
+          fontFamily: 'var(--font-manrope), system-ui',
+        }}>Ordenar</button>
+      )}
+      {montado && esOwner && (
+        <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
+          width: 34, height: 34, borderRadius: 999,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+          color: 'var(--cf-ink)', cursor: 'pointer',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      )}
+    </>
+  )
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* La cabecera del armazón ya dice «Rutas»; repetirlo en un <h1> con
@@ -598,8 +628,38 @@ export default function RutasPage() {
           Se queda el de la lista, que es el que está junto a «Rutas». Cuando no
           hay ninguna, el estado vacío tiene su propio «Crear primera ruta». */}
 
+      {/* ── T14-02 · RUTAS EN ESCRITORIO ──
+          El dueño: «en el apartado de rutas no tiene una versión de PC, se ve
+          como se ve en móvil y se ve bastante feo». Y era peor que eso: había un
+          `lg:grid lg:grid-cols-2` envolviendo UN SOLO hijo, así que en 1440 la
+          lista entera se metía en la mitad izquierda y la derecha quedaba en
+          blanco. Dos columnas de mentira.
+
+          El pie de la lámina dice que rutas NO va como tabla —«son cuatro, y lo
+          que el dueño mira es el estado de cada una, no compararlas fila a
+          fila»— así que en PC son las mismas tarjetas en dos columnas, con el
+          estado completo: cartera, cobros de hoy y cumplimiento.
+
+          Se pinta por CSS —`hidden lg:block`— y no midiendo la ventana: sin eso
+          hay parpadeo al cargar y dos árboles con estado distinto. Las dos
+          vistas comparten los handlers, así que abrir una ruta es lo mismo en
+          las dos. */}
       {!loading && rutas.length > 0 && !modoOrdenar && (
-        <div className="lg:grid lg:grid-cols-2 lg:gap-4">
+        <div className="hidden lg:block">
+          <RutasEscritorio
+            rutas={adaptarRutas(rutas, country)}
+            sinRuta={adaptarSinRuta(recom, country)}
+            resumen={resumenDelDia(rutas, country)}
+            acciones={accionesRutas}
+            onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
+            onAsignar={(r) => { window.location.href = r?.id ? `/rutas/${r.id}` : '/clientes?filtro=sinruta' }}
+            onVerSinRuta={() => { window.location.href = '/clientes?filtro=sinruta' }}
+          />
+        </div>
+      )}
+
+      {!loading && rutas.length > 0 && !modoOrdenar && (
+        <div className="lg:hidden">
           {/* En la LISTA van solo las cifras de HOY; el acumulado de la ruta vive
               en el detalle. Mezclar las dos escalas —"$90.000 recaudado hoy" al
               lado de "$1.500.000 prestado"— hacia que el ojo se quedara con el
@@ -627,31 +687,7 @@ export default function RutasPage() {
             // el FAB de la pastilla NO ofrece «nueva ruta» todavia: quitarlo
             // dejaria la pantalla sin forma de crear una. Cuando MenuCrear se
             // rehaga contra su lamina (T43), la ruta entra ahi y este se va.
-            acciones={
-              <>
-                {rutas.length > 1 && (
-                  <button type="button" onClick={() => setModoOrdenar(true)} style={{
-                    display: 'inline-flex', alignItems: 'center', flex: 'none',
-                    height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
-                    background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-                    fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', cursor: 'pointer',
-                    fontFamily: 'var(--font-manrope), system-ui',
-                  }}>Ordenar</button>
-                )}
-                {montado && esOwner && (
-                  <button type="button" onClick={() => setShowForm(true)} aria-label="Nueva ruta" style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
-                    width: 34, height: 34, borderRadius: 999,
-                    background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
-                    color: 'var(--cf-ink)', cursor: 'pointer',
-                  }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </button>
-                )}
-              </>
-            }
+            acciones={accionesRutas}
             onAbrir={(r) => { window.location.href = `/rutas/${r.id}` }}
             onAsignar={(r) => {
               // Dos agujeros distintos: la ruta SIN COBRADOR se resuelve
