@@ -16,7 +16,7 @@ import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components
 import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
-import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import HojaFiltros, { BotonFiltros, ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
@@ -310,6 +310,14 @@ export default function PrestamosPage() {
     localStorage.setItem(anchaPantalla ? `${VISTA_KEY_P}:pc` : VISTA_KEY_P, v)
   }
 
+  // Una sola lista para el conmutador visible y para el grupo «Cómo se ven» de
+  // la hoja, que si no acaban diciendo cosas distintas. Igual que en clientes.
+  const OPCIONES_VISTA = [
+    { valor: '', nombre: 'Fichas completas', icono: 'lista' },
+    { valor: 'compacta', nombre: 'Cuadrícula', icono: 'cuadricula' },
+    ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla', icono: 'tabla' }] : []),
+  ]
+
   const [isOffline, setIsOffline] = useState(false)
   useEffect(() => {
     const goOnline = () => { setIsOffline(false) }
@@ -375,12 +383,7 @@ export default function PrestamosPage() {
       opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
     { id: 'vista', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
       onCambiar: (v) => cambiarVistaP(v || 'lista'),
-      opciones: [
-        { valor: '', nombre: 'Completas' },
-        { valor: 'compacta', nombre: 'Compactas' },
-        // Siete columnas en 390px no son una tabla, son un acordeon horizontal.
-        ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla' }] : []),
-      ] },
+      opciones: OPCIONES_VISTA },
   ]
 
   const nFiltros = contarFiltros(gruposFiltro)
@@ -631,6 +634,14 @@ export default function PrestamosPage() {
               placeholder="Nombre o cédula"
             />
           </div>
+          {/* A la vista, no enterrado en la hoja de filtros. Mismo sitio y misma
+              forma que en clientes: son dos pantallas hermanas y aprenderlas dos
+              veces es lo que se estaba evitando al unificar esta fila. */}
+          <ConmutadorVista
+            valor={vistaP === 'lista' ? '' : vistaP}
+            onCambiar={(v) => cambiarVistaP(v || 'lista')}
+            opciones={OPCIONES_VISTA}
+          />
           <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 

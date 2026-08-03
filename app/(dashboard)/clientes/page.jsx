@@ -19,7 +19,7 @@ import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
-import HojaFiltros, { BotonFiltros, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import HojaFiltros, { BotonFiltros, ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import MonedaCF          from '@/components/ui/MonedaCF'
@@ -346,6 +346,18 @@ export default function ClientesPage() {
     localStorage.setItem(anchaPantalla ? `${VISTA_KEY}:pc` : VISTA_KEY, v)
   }
 
+  // ── UNA SOLA LISTA PARA LOS DOS CONTROLES ──
+  // El conmutador de la fila del buscador y el grupo «Cómo se ven» de la hoja
+  // de filtros leen de aquí. Con dos listas, añadir una vista en un sitio y
+  // olvidarla en el otro deja dos controles que no dicen lo mismo.
+  //
+  // La tabla SOLO con ancho: ocho columnas en 393px no son una tabla.
+  const OPCIONES_VISTA = [
+    { valor: '', nombre: 'Fichas completas', icono: 'lista' },
+    { valor: 'compacta', nombre: 'Cuadrícula', icono: 'cuadricula' },
+    ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla', icono: 'tabla' }] : []),
+  ]
+
   const [isOffline, setIsOffline] = useState(false)
   const hasLoadedOnceRef = useRef(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -379,13 +391,7 @@ export default function ClientesPage() {
     // si lo cablea, con este mismo grupo. Es el que faltaba.
     { id: 'vista', titulo: 'Cómo se ven', valor: vista === 'lista' ? '' : vista,
       onCambiar: (v) => cambiarVista(v || 'lista'),
-      opciones: [
-        { valor: '', nombre: 'Completas' },
-        { valor: 'compacta', nombre: 'Compactas' },
-        // Solo tiene sentido con ancho: siete columnas en 390px no son una
-        // tabla, son un acordeon horizontal.
-        ...(anchaPantalla ? [{ valor: 'tabla', nombre: 'Tabla' }] : []),
-      ] },
+      opciones: OPCIONES_VISTA },
     ...(grupos.length > 0 ? [{
       id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
       onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
@@ -842,6 +848,17 @@ export default function ClientesPage() {
               placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
             />
           </div>
+          {/* EL CONMUTADOR DE VISTA, VISIBLE. Estaba solo dentro de la hoja de
+              filtros y el dueño lo pidió a la vista: «sácalo donde se vea».
+              En modo asignar no va — ahí se está eligiendo a quién mover, y
+              cambiar la forma de la lista a mitad de una selección la pierde. */}
+          {!modoAsignar && (
+            <ConmutadorVista
+              valor={vista === 'lista' ? '' : vista}
+              onCambiar={(v) => cambiarVista(v || 'lista')}
+              opciones={OPCIONES_VISTA}
+            />
+          )}
           <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 

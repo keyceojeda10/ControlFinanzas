@@ -62,6 +62,92 @@ export function BotonFiltros({ n = 0, onClick }) {
 }
 
 /**
+ * ── EL CONMUTADOR DE VISTA, A LA VISTA ─────────────────────────────────────
+ *
+ * Las tres vistas (fichas / cuadrícula / tabla) YA existían, pero el único modo
+ * de cambiarlas era Filtros → «Cómo se ven»: dos toques y un panel de distancia.
+ * El dueño pidió «que se vea», y tenía razón — un control que hay que ir a
+ * buscar es un control que no existe.
+ *
+ * Se queda TAMBIÉN dentro de la hoja de filtros. Son la misma preferencia y la
+ * hoja la lee del mismo sitio, así que no hay dos verdades: quien ya aprendió
+ * el camino viejo lo conserva.
+ *
+ * ⚠ LA TABLA SOLO CON ANCHO. Ocho columnas en 393px no son una tabla, son un
+ * acordeón horizontal; por eso `opciones` se filtra fuera y no se pinta a secas.
+ *
+ * Iconos, no texto: son tres y con rótulo («Completas · Compactas · Tabla») la
+ * fila del buscador se queda sin sitio en móvil. Cada uno lleva su `title` y su
+ * `aria-label`, que es lo que lo hace legible sin verlo.
+ */
+export function ConmutadorVista({ valor, onCambiar, opciones }) {
+  if (!opciones?.length) return null
+  return (
+    <div
+      role="group"
+      aria-label="Cómo se ven"
+      style={{
+        display: 'inline-flex', alignItems: 'center', flex: 'none',
+        height: 'var(--cf-h-field)', padding: 3, gap: 3,
+        borderRadius: 999,
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+      }}
+    >
+      {opciones.map((o) => {
+        const activa = valor === o.valor
+        return (
+          <button
+            key={o.valor || 'lista'}
+            type="button"
+            onClick={() => onCambiar?.(o.valor)}
+            title={o.nombre}
+            aria-label={o.nombre}
+            aria-pressed={activa}
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: '100%', cursor: 'pointer',
+              borderRadius: 999, border: 0,
+              background: activa ? 'var(--cf-gold-tint)' : 'transparent',
+              color: activa ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
+            }}
+          >
+            {ICONO_VISTA[o.icono] ?? ICONO_VISTA.lista}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Fichas completas, cuadrícula y tabla. Trazo 2 y 16px, como el embudo de
+// «Filtros» que va justo al lado.
+const ICONO_VISTA = {
+  lista: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="7" rx="2" />
+      <rect x="3" y="13" width="18" height="7" rx="2" />
+    </svg>
+  ),
+  cuadricula: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="8" height="8" rx="1.5" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" />
+    </svg>
+  ),
+  tabla: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18M9 9v11" />
+    </svg>
+  ),
+}
+
+/**
  * grupos: [{ id, titulo, valor, onCambiar, opciones: [{ valor, nombre }] }]
  * La opción con valor '' es «sin filtrar» y va siempre primera.
  */
