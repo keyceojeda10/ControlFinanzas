@@ -26,8 +26,56 @@ const GASTO_ESTADO_COLORS = {
   rechazado: 'var(--cf-red-dark)',
 }
 
+/* Un renglón de la cuenta: rótulo a la izquierda, cifra a la derecha, y su
+   explicación opcional debajo. Sin signo: el signo lo dice el grupo —«Entra» o
+   «Sale»—, que es justo lo que el dueño pedía poder ver de un vistazo en vez de
+   ir leyendo un «+» o un «−» por renglón. */
+function Renglon({ rotulo, monto, detalle, onExplicar }) {
+  return (
+    <div className="py-1">
+      <button
+        type="button"
+        onClick={onExplicar}
+        disabled={!onExplicar}
+        className="flex items-baseline justify-between gap-3 w-full text-left"
+        style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: onExplicar ? 'pointer' : 'default' }}
+      >
+        <span className="text-[13.5px]" style={{ color: 'var(--cf-ink-2)' }}>
+          {rotulo}
+          {onExplicar && <span aria-hidden className="ml-1 text-[11px]" style={{ color: 'var(--cf-ink-4)' }}>?</span>}
+        </span>
+        <span className="cf-fig text-[15px]" style={{ color: 'var(--cf-ink)' }}>{formatMoney(monto)}</span>
+      </button>
+      {detalle && (
+        <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{detalle}</p>
+      )}
+    </div>
+  )
+}
+
 export default function CajaCobradorDetalle({ data, onExplicar }) {
   const r = data?.resumen || {}
+  // ⚠ RESPALDO PARA LA RESPUESTA VIEJA DEL CACHE. `cuentaRuta` es nuevo: un
+  // teléfono que todavía sirva la respuesta guardada de antes no lo trae, y sin
+  // esto la tarjeta entera saldría en CEROS — peor que la pantalla vieja, y
+  // justo en la pantalla del dinero. Se reconstruye de lo que sí venía.
+  const cr = data?.cuentaRuta ?? (() => {
+    const lineas = data?.cuenta || []
+    const dea = (id) => lineas.find((l) => l.id === id)?.monto ?? 0
+    const apertura = dea('apertura')
+    const efectivo = dea('recaudoEfectivo')
+    const digital = data?.cobradoTotalHoy?.digital ?? 0
+    const prestado = dea('desembolsos')
+    const gastos = dea('gastos')
+    return {
+      apertura, cobradoEfectivo: efectivo, cobradoDigital: digital,
+      cobradoTotal: efectivo + digital, prestado, gastos,
+      quedaEnLaRuta: Math.round(apertura + efectivo + digital - prestado - gastos),
+      quedaEnEfectivo: data?.cuentaSuma ?? 0,
+    }
+  })()
+  const salioTotal = data?.cuentaSalio ?? Math.round((cr.prestado ?? 0) + (cr.gastos ?? 0))
+  const entraTotal = Math.round((cr.apertura ?? 0) + (cr.cobradoTotal ?? 0))
   const movimientos = data?.movimientos || []
   const porRuta = data?.porRuta || []
   const gastos = data?.gastos || []
@@ -71,139 +119,136 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
 
   return (
     <div className="space-y-4">
-      {/* ── LA CUENTA DEL DÍA ─────────────────────────────────────────────
-          Antes esto eran seis cajitas de colores con un número cada una:
-          «Inicio del día», «Capital en ruta», «Cobrado», «Prestado»,
-          «Gastos», «Seguros». La cuenta que las relacionaba SÍ existía —726 +
-          406 = 1.132— pero el usuario tenía que descubrir solo que se
-          relacionaban. Y encima el hero decía «Dinero en mano» sobre un número
-          que era idéntico a «Capital en ruta», o sea un saldo acumulado, con
-          $245.000 dentro que habían entrado por transferencia y que nadie
-          lleva encima.
+      {/* ── LA CUENTA DEL DÍA, AGRUPADA ─────────────────────────────────────
+          Rehecha con la estructura que dictó el dueño, con la calculadora en la
+          mano y tres videos:
 
-          Ahora es una resta, de arriba abajo, con la respuesta al final. Cada
-          renglón se toca y dice de dónde sale. */}
+            «hay que agrupar bien todas las sumas, agrupar bien todas las
+             restas, y visiblemente ver de dónde sale los números positivos y
+             los negativos… lo que pasa es que como quedó en TRES CUADROS
+             DIFERENTES, ahí fue donde estamos un poco enredados»
+
+          Su cuenta, dictada en el video, da EXACTA con nuestras cifras:
+            352.000 + 428.000 − 40.000 − 485.215 = 254.785
+
+          Antes esto eran cifras sueltas —«Cobró en efectivo» aquí, el total
+          cobrado en otra tarjeta, lo prestado en una tercera— y había que
+          sumarlas de cabeza para comprobar nada. Ahora: lo que ENTRA con su
+          desglose y su subtotal, lo que SALE con el suyo, y la resta.
+
+          ⚠ Y DA LAS DOS RESPUESTAS, que es lo que faltaba. Su fórmula usa el
+          cobro TOTAL y termina en el capital de la ruta ($254.785); la cuenta
+          del efectivo usa solo los billetes y termina en lo que entrega al
+          cerrar ($96.785). La diferencia son los $158.000 que entraron a la
+          cuenta. Ninguna está mal: son dos preguntas, y antes solo se veía una
+          con la otra suelta en otro cuadro. */}
       <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
         <p className="text-[11px] font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--cf-ink-3)' }}>
           La cuenta del día
         </p>
 
-        {/* ── LO QUE COBRÓ HOY, ENTERO ────────────────────────────────────
-            ⚠ ESTE NÚMERO NO ESTABA EN LA PANTALLA, y es el que el cobrador
-            tiene en la cabeza cuando llama por teléfono.
-
-            La resta de abajo solo cuenta EFECTIVO, y hace bien: es lo que hay
-            que entregar. Pero el que cobró $908.000 —$626.000 por Nequi— veía
-            «Cobró en efectivo $282.000» y ninguna cifra parecida a la suya.
-            El dueño: «no hay ningún valor que sea de ochocientos y pico mil de
-            pesos, por eso se enreda un montón».
-
-            Va ARRIBA y separado de la resta, no dentro: si entrara en la
-            cuenta, el sistema le pediría un fajo de billetes que nunca tuvo.
-            Solo se pinta cuando hubo algo digital — en una ruta 100% efectivo
-            el total y el efectivo son el mismo número y la línea sobraría. */}
-        {(data?.cobradoTotalHoy?.digital ?? 0) > 0 && (
-          <div
-            className="rounded-[12px] px-3 py-2.5 mb-3"
-            style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-                Cobró hoy
-              </span>
-              <span className="cf-fig text-[19px] font-bold" style={{ color: 'var(--cf-ink)' }}>
-                {formatMoney(data.cobradoTotalHoy.total)}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 mt-1 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
-              <span>
-                En efectivo{' '}
-                <strong className="cf-fig" style={{ color: 'var(--cf-green-dark)' }}>
-                  {formatMoney(data.cobradoTotalHoy.efectivo)}
-                </strong>
-              </span>
-              <span>
-                A la cuenta{' '}
-                <strong className="cf-fig" style={{ color: 'var(--cf-ink-2)' }}>
-                  {formatMoney(data.cobradoTotalHoy.digital)}
-                </strong>
-              </span>
-            </div>
+        {/* ENTRA */}
+        <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--cf-fill)' }}>
+          <p className="text-[10.5px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--cf-green-dark)' }}>
+            Entra
+          </p>
+          <Renglon
+            rotulo="Con lo que salió"
+            monto={cr.apertura ?? 0}
+            onExplicar={onExplicar ? () => onExplicar('apertura') : undefined}
+          />
+          <Renglon
+            rotulo="Cobró hoy"
+            monto={cr.cobradoTotal ?? 0}
+            onExplicar={onExplicar ? () => onExplicar('recaudoEfectivo') : undefined}
+            detalle={(cr.cobradoDigital ?? 0) > 0
+              ? `${formatMoney(cr.cobradoEfectivo)} en efectivo · ${formatMoney(cr.cobradoDigital)} a la cuenta`
+              : null}
+          />
+          <div className="flex items-baseline justify-between gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+            <span className="text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>Total que entra</span>
+            {/* ⚠ NO es `cuentaEntro` del adaptador: ese suma solo el EFECTIVO,
+                porque alimenta la resta de los billetes. Aquí arriba se enseña
+                el cobro TOTAL —con Nequi—, así que el subtotal tiene que ser el
+                de estas dos líneas o no cuadraría con lo que se ve. */}
+            <span className="cf-fig text-[17px] font-bold" style={{ color: 'var(--cf-green-dark)' }}>
+              {formatMoney(entraTotal)}
+            </span>
           </div>
-        )}
-
-        <div className="flex flex-col gap-3">
-          {(data?.cuenta || []).map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              onClick={onExplicar ? () => onExplicar(l.id) : undefined}
-              className="flex items-baseline justify-between gap-3 w-full text-left"
-              style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: onExplicar ? 'pointer' : 'default' }}
-            >
-              <span className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
-                {l.rotulo}
-                {onExplicar && <span aria-hidden className="ml-1 text-[11px]" style={{ color: 'var(--cf-ink-4)' }}>?</span>}
-              </span>
-              <span className="cf-fig text-[15px]" style={{
-                color: l.signo === 1 ? 'var(--cf-green-dark)' : l.signo === -1 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)',
-              }}>
-                {l.signo === 1 ? '+ ' : l.signo === -1 ? '− ' : ''}{formatMoney(l.monto)}
-              </span>
-            </button>
-          ))}
         </div>
 
-        {/* ⚠ EL RESULTADO DE ESTA CUENTA ES LA SUMA DE ESTAS LÍNEAS. PUNTO.
-            La primera versión ponía aquí `dineroEnMano`, que con
-            `capitalEsEfectivo` es la BOLSA ENTERA de la ruta — otra pregunta.
-            En pantalla se leía «726.000 + 161.000 = 1.132.000», que no da. Es
-            exactamente el pecado de la banda vieja: la respuesta de otra
-            pregunta puesta al final de esta cuenta. */}
-        <div className="flex items-baseline justify-between gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
-          <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-            Le queda del día
-          </span>
-          <span className="cf-fig text-[22px] font-bold" style={{
-            color: (data?.cuentaSuma ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
-          }}>
-            {formatMoney(data?.cuentaSuma ?? 0)}
-          </span>
+        {/* SALE */}
+        <div className="rounded-[12px] px-3 py-2.5 mt-2" style={{ background: 'var(--cf-fill)' }}>
+          <p className="text-[10.5px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--cf-red-dark)' }}>
+            Sale
+          </p>
+          <Renglon
+            rotulo="Prestó en efectivo"
+            monto={cr.prestado ?? 0}
+            onExplicar={onExplicar ? () => onExplicar('desembolsos') : undefined}
+          />
+          {(cr.gastos ?? 0) > 0 && (
+            <Renglon
+              rotulo="Gastó"
+              monto={cr.gastos}
+              onExplicar={onExplicar ? () => onExplicar('gastos') : undefined}
+            />
+          )}
+          <div className="flex items-baseline justify-between gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+            <span className="text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>Total que sale</span>
+            <span className="cf-fig text-[17px] font-bold" style={{ color: 'var(--cf-red-dark)' }}>
+              {formatMoney(salioTotal)}
+            </span>
+          </div>
         </div>
 
-        <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-          {/* Antes decía «lo que entró por transferencia ya está en la cuenta»
-              sin decir CUÁNTO, que es justo lo que hacía falta saber. Ahora la
-              cifra está arriba, así que aquí se dice de dónde a dónde va. */}
-          {(data?.cobradoTotalHoy?.digital ?? 0) > 0
-            ? `Solo efectivo. Los ${formatMoney(data.cobradoTotalHoy.digital)} que entraron a la cuenta no se entregan.`
-            : 'Solo efectivo. Lo que entró por transferencia ya está en la cuenta.'}
-        </p>
-      </div>
-
-      {/* ── LA OTRA PREGUNTA, EN SU PROPIO SITIO ──────────────────────────
-          Con `capitalEsEfectivo` el negocio entiende que el cobrador carga
-          TODA la bolsa de su ruta, no solo lo que movió hoy. Es una pregunta
-          distinta y por eso es una tarjeta distinta: mezclarla con la cuenta
-          del día es lo que hacía que los números no dieran. */}
-      {esCapitalEfectivo && (
-        <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+        {/* EL RESULTADO */}
+        <div className="mt-3 pt-3" style={{ borderTop: '2px solid var(--cf-border-strong)' }}>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-              Debería tener en la mano
+            <span className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>
+              Le queda en la ruta
             </span>
             <span className="cf-fig text-[22px] font-bold" style={{
-              color: (r.dineroEnMano ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+              color: (cr.quedaEnLaRuta ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
             }}>
-              {formatMoney(r.dineroEnMano ?? 0)}
+              {formatMoney(cr.quedaEnLaRuta ?? 0)}
             </span>
           </div>
-          <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-            Toda la bolsa de sus rutas, no solo lo de hoy: {formatMoney(r.capitalRutasTotal ?? 0)} de capital
-            {(r.gastosPendientesMonto ?? 0) > 0 ? `, menos ${formatMoney(r.gastosPendientesMonto)} de gastos sin aprobar` : ''}.
+          <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+            {formatMoney(entraTotal)} − {formatMoney(salioTotal)}
           </p>
+
+          {/* De lo que queda, cuánto lleva encima. Solo si hubo digital: sin
+              transferencias las dos cifras son la misma y repetirla es ruido. */}
+          {(cr.cobradoDigital ?? 0) > 0 && (
+            <div className="flex items-baseline justify-between gap-3 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+              <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                De eso, en billetes
+              </span>
+              <span className="cf-fig text-[16px] font-bold" style={{
+                color: (cr.quedaEnEfectivo ?? 0) >= 0 ? 'var(--cf-ink)' : 'var(--cf-red-dark)',
+              }}>
+                {formatMoney(cr.quedaEnEfectivo ?? 0)}
+              </span>
+            </div>
+          )}
+          {(cr.cobradoDigital ?? 0) > 0 && (
+            <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              Es lo que entrega al cerrar. Los {formatMoney(cr.cobradoDigital)} de
+              transferencias ya están en la cuenta.
+            </p>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* ── AQUÍ ESTABA «DEBERÍA TENER EN LA MANO», Y SE FUE ──────────────
+          Enseñaba `dineroEnMano`, que es el capital de la ruta: LA MISMA CIFRA
+          que ahora cierra la cuenta de arriba como «Le queda en la ruta»
+          ($254.785 en la #5, $494.167 en la #8 — comprobado contra la base).
+          Repetirla en su propia tarjeta era el tercero de los «tres cuadros
+          diferentes» que el dueño señaló como la causa del enredo: el mismo
+          número dos veces, con dos nombres, sin decir que era el mismo.
+          Ahora sale una vez, al final de la resta que la produce. */}
 
       {/* Resumen completo de lo prestado en el dia.
           Reemplaza a la vieja caja "Renovaciones de hoy", que solo aparecia si habia

@@ -747,7 +747,7 @@ export async function GET(request, { params }) {
   const cobradoEfectivoNeto = cobradoEfectivo - ajusteBruto
   const prestadoNeto = prestadoDia - ajusteBruto
 
-  const { lineas: cuenta, suma: cuentaSuma } = cuentaDelDia({
+  const { lineas: cuenta, suma: cuentaSuma, entro: cuentaEntro, salio: cuentaSalio } = cuentaDelDia({
     apertura: saldoAperturaTotal,
     entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto }],
     salidas: [
@@ -755,6 +755,44 @@ export async function GET(request, { params }) {
       { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
     ],
   })
+
+  // ── LA CUENTA DEL DUEÑO, LA OTRA MITAD ───────────────────────────────────
+  //
+  // ⚠ SU FÓRMULA Y LA NUESTRA RESPONDEN PREGUNTAS DISTINTAS, y ninguna de las
+  // dos está mal. Lo comprobé con sus cifras de la ruta #5:
+  //
+  //   con el cobro TOTAL:     352.000 + 428.000 − 40.000 − 485.215 = 254.785
+  //   con solo el EFECTIVO:   352.000 + 270.000 − 40.000 − 485.215 =  96.785
+  //
+  // La diferencia son los $158.000 que entraron por Nequi. La primera da el
+  // CAPITAL DE LA RUTA; la segunda, el EFECTIVO que lleva encima. Él llama a la
+  // primera «lo que debería tener en mano», pero ahí hay plata que está en la
+  // cuenta, no en su bolsillo.
+  //
+  // Así que la pantalla da LAS DOS, encadenadas, en vez de elegir una y dejar
+  // la otra suelta en otra tarjeta —que es de donde venía el enredo: «como
+  // quedó en tres cuadros diferentes, ahí fue donde estamos enredados»—.
+  const cuentaRuta = {
+    apertura: saldoAperturaTotal,
+    cobradoTotal: cobradoEfectivoNeto + cobradoDigital,
+    cobradoEfectivo: cobradoEfectivoNeto,
+    cobradoDigital,
+    prestado: prestadoNeto,
+    gastos: gastosDia,
+    // Lo que queda en la ruta contando lo que entró a la cuenta.
+    //
+    // Comprobado contra producción el 3 ago: da EXACTO el `saldoCapital` de la
+    // ruta en las dos que reportó (#5 $254.785 y #8 $494.167). Se resta
+    // `gastosDia` entero —aprobados y pendientes—: el aprobado ya bajó el
+    // capital, y el pendiente va a bajarlo, así que para «cuánto hay» los dos
+    // cuentan. La tarjeta vieja restaba solo los pendientes sobre el capital ya
+    // descontado, que es la misma cifra por otro camino.
+    quedaEnLaRuta: Math.round(
+      saldoAperturaTotal + cobradoEfectivoNeto + cobradoDigital - prestadoNeto - gastosDia
+    ),
+    // Y de eso, lo que lleva en billetes: la cifra que entrega al cerrar.
+    quedaEnEfectivo: cuentaSuma,
+  }
 
   // Lo que hizo hoy: SIEMPRE cantidad y valor juntos. «10 renovaciones» sin el
   // valor no dice nada, y «$2.400.000 en renovaciones» sin cuantas tampoco.
@@ -814,6 +852,9 @@ export async function GET(request, { params }) {
     // los arma: armarlos alli es como se acaba con lineas que no suman.
     cuenta,
     cuentaSuma,
+    cuentaEntro,
+    cuentaSalio,
+    cuentaRuta,
     cobradoTotalHoy,
     hizo,
     fecha: esRango ? null : fechaBase,

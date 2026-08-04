@@ -1,12 +1,12 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v804'
+const CACHE_NAME   = 'cf-v805'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release SÍ las cambia: `cobradoTotalHoy` pasa a la cifra NETA (sin el
-// saldo absorbido de las renovaciones). Sin subirlo, el teléfono seguiría
-// sirviendo la respuesta guardada y «Cobró hoy» mantendría el número inflado
-// —$817.785 donde el cobrador cobró $428.000—, que es justo lo que se corrige.
-const API_CACHE    = 'cf-api-v97'
+// Este release SÍ las cambia: la cuenta del día devuelve campos nuevos
+// (`cuentaRuta`, `cuentaEntro`, `cuentaSalio`) para poder agrupar en «Entra» y
+// «Sale» con su subtotal. Sin subirlo, el teléfono serviría la respuesta
+// guardada —sin esos campos— y la tarjeta saldría en ceros.
+const API_CACHE    = 'cf-api-v98'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
 const STATIC_CACHE = 'cf-static'
