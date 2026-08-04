@@ -3741,16 +3741,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         onCancel={() => setConfirmEliminarRuta(false)}
       />
 
-      {/* Modal: plantillas WhatsApp desde la ruta */}
-      <HojaWhatsApp
-        open={!!modalWA}
-        onClose={() => setModalWA(null)}
-        cliente={modalWA?.cliente}
-        prestamo={modalWA?.prestamo}
-        orgNombre={orgNombre}
-        ocultarSaldo={ocultarSaldoWA}
-        organizationId={organizationId}
-      />
     </div>
     </div>
 
@@ -3772,6 +3762,21 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         estado y los handlers son unicos, no hay dos arboles con vida propia. */}
     {hojaCobro}
     {pantallaRecibo}
+
+    {/* La hoja de plantillas estaba DENTRO del `lg:hidden`, igual que le pasó
+        a la hoja de cobro: en PC se montaba en un `display:none` y el botón de
+        WhatsApp de la tabla no abría nada. El estado cambiaba y no se veía.
+        Se descubrió pulsando en el espejo — leyendo el archivo no se nota,
+        porque el `<HojaWhatsApp>` sí está y sí recibe sus datos. */}
+    <HojaWhatsApp
+      open={!!modalWA}
+      onClose={() => setModalWA(null)}
+      cliente={modalWA?.cliente}
+      prestamo={modalWA?.prestamo}
+      orgNombre={orgNombre}
+      ocultarSaldo={ocultarSaldoWA}
+      organizationId={organizationId}
+    />
 
     {undoPago && (
       <div className="fixed bottom-24 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-6 sm:w-auto z-50 animate-slide-up">
