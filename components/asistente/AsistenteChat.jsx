@@ -102,7 +102,15 @@ export default function AsistenteChat({ onClose }) {
     // pagina entera y metia el titulo del vacio —«Pregúntame lo que sea de tu
     // negocio»— DEBAJO de la cabecera pegajosa. Se entraba a Lucas y lo primero
     // que se leia era la segunda linea.
-    if (messages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // ⚠ `block: 'nearest'` — SIN ESTO SE MUEVE LA PÁGINA ENTERA.
+    //
+    // `scrollIntoView` a secas desplaza TODOS los ancestros que scrolleen, no
+    // solo la lista de mensajes. El dueño lo describió exacto: «cuando Lucas
+    // contesta, todo el dashboard se desplaza un poco hacia abajo… no afecta la
+    // funcionalidad, pero se ve como un error». Con cada respuesta, otro
+    // empujón. Con `nearest` solo se mueve el contenedor del chat, que es el
+    // único que tiene que moverse.
+    if (messages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [messages])
 
   // Fetch uso + alertas al montar

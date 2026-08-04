@@ -45,10 +45,30 @@ export default function AsistentePage() {
   })
 
   return (
-    <div className="min-h-screen" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <div className="max-w-2xl mx-auto h-[calc(100vh-80px)] lg:h-[calc(100vh-40px)] flex flex-col">
-        <AsistenteChat key={reinicio} />
-      </div>
+    /* ── LA PANTALLA ENTERA ES EL CHAT ────────────────────────────────────
+       Antes: `min-h-screen` con un hijo de `h-[calc(100vh-80px)]`, o sea DOS
+       alturas distintas. El 80 era a ojo —no salía de ningún token— y con la
+       pastilla ya fuera sobraba, así que debajo del campo de escribir quedaba
+       un hueco enorme. El dueño mandó la captura: «hay un espacio grandísimo».
+
+       Ahora una sola caja que ocupa lo que hay, con `100dvh` en vez de `100vh`:
+       en el móvil, al abrir el teclado, `vh` sigue midiendo la pantalla
+       completa y el campo se va debajo del teclado. `dvh` sí encoge.
+
+       Y `max-w-3xl` en vez de `2xl`: aquí no hay barra lateral ni tarjetas al
+       costado —la pantalla es solo la conversación—, así que 42rem dejaba las
+       burbujas angostas con el resto en blanco. También lo reportó. */
+    <div
+      className="mx-auto w-full max-w-3xl flex flex-col"
+      style={{
+        // `--cf-h-header`, el token de verdad. Mi primera versión inventó
+        // `--cf-h-cabecera`, que no existe: el CSS lo resuelve al valor de
+        // respaldo y parece funcionar, así que un nombre mal escrito aquí no
+        // falla en ningún sitio — solo deja de seguir al token si este cambia.
+        height: 'calc(100dvh - var(--cf-h-header, 56px) - env(safe-area-inset-bottom, 0px))',
+      }}
+    >
+      <AsistenteChat key={reinicio} />
     </div>
   )
 }

@@ -1,11 +1,11 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v807'
+const CACHE_NAME   = 'cf-v808'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release SÍ las cambia: `cuentaRuta` trae ahora `prestadoEfectivo` y
-// `prestadoDigital` para partir lo prestado por método, y la resta del efectivo
-// descuenta solo el efectivo. Sin subirlo, el teléfono serviría la respuesta
-// guardada y seguiría descontando del fajo lo que salió por transferencia.
+// Este release NO las cambia: los cuatro arreglos de Lucas en el teléfono son
+// cosa de la PANTALLA. Comprobado con `git diff` sobre `app/api/`, que sale
+// vacío. Se queda en v99: subirlo sin motivo tira el cache de todas las
+// respuestas y la app arranca lenta en la primera carga.
 const API_CACHE    = 'cf-api-v99'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
