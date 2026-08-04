@@ -70,6 +70,9 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
     return {
       apertura, cobradoEfectivo: efectivo, cobradoDigital: digital,
       cobradoTotal: efectivo + digital, prestado, gastos,
+      // La respuesta vieja no separaba lo prestado: se asume todo efectivo,
+      // que es lo que hacía antes y lo que es cierto en el 99% de los casos.
+      prestadoEfectivo: prestado, prestadoDigital: 0,
       quedaEnLaRuta: Math.round(apertura + efectivo + digital - prestado - gastos),
       quedaEnEfectivo: data?.cuentaSuma ?? 0,
     }
@@ -158,13 +161,18 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             onExplicar={onExplicar ? () => onExplicar('apertura') : undefined}
           />
           <Renglon
-            rotulo="Cobró hoy"
-            monto={cr.cobradoTotal ?? 0}
+            rotulo="Cobró en efectivo"
+            monto={cr.cobradoEfectivo ?? 0}
             onExplicar={onExplicar ? () => onExplicar('recaudoEfectivo') : undefined}
-            detalle={(cr.cobradoDigital ?? 0) > 0
-              ? `${formatMoney(cr.cobradoEfectivo)} en efectivo · ${formatMoney(cr.cobradoDigital)} a la cuenta`
-              : null}
           />
+          {/* ⚠ DOS RENGLONES, NO UN TOTAL CON LETRA CHICA DEBAJO. El dueño lo
+              pidió así: «diferenciar cobros en efectivo, cobros en
+              transferencia». Como nota al pie hay que leerla; como renglón se
+              ve de un vistazo y se puede seguir con el dedo, que es justo lo
+              que él hacía con la calculadora. */}
+          {(cr.cobradoDigital ?? 0) > 0 && (
+            <Renglon rotulo="Cobró por transferencia" monto={cr.cobradoDigital} />
+          )}
           <div className="flex items-baseline justify-between gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
             <span className="text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>Total que entra</span>
             {/* ⚠ NO es `cuentaEntro` del adaptador: ese suma solo el EFECTIVO,
@@ -184,9 +192,15 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           </p>
           <Renglon
             rotulo="Prestó en efectivo"
-            monto={cr.prestado ?? 0}
+            monto={cr.prestadoEfectivo ?? cr.prestado ?? 0}
             onExplicar={onExplicar ? () => onExplicar('desembolsos') : undefined}
           />
+          {/* ⚠ LO PRESTADO POR TRANSFERENCIA NO SALE DEL FAJO. Sumarlo al
+              efectivo le pedía al cobrador un billete que nunca puso — el mismo
+              error del lado del cobro, al revés. En este negocio hay 6 casos. */}
+          {(cr.prestadoDigital ?? 0) > 0 && (
+            <Renglon rotulo="Prestó por transferencia" monto={cr.prestadoDigital} />
+          )}
           {(cr.gastos ?? 0) > 0 && (
             <Renglon
               rotulo="Gastó"

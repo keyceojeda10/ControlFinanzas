@@ -34,7 +34,12 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
           ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
         ],
       },
-      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true },
+      // `metodoPago`: un desembolso puede salir por transferencia, y entonces NO
+      // sale del bolsillo del cobrador. Sin este campo caía dentro de «Prestó en
+      // efectivo» y la cuenta le pedía un fajo que nunca tuvo — el mismo error
+      // que ya corregimos del lado del cobro, pero al revés. En este negocio hay
+      // 6 casos históricos; el 99% van sin método, que se lee como efectivo.
+      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true },
     }),
     // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
     // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
@@ -62,7 +67,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
     if (!m.referenciaId) continue
     const prev = montoRealPorPrestamo.get(m.referenciaId)
     if (!prev || m.createdAt > prev.fecha) {
-      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt })
+      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt, metodoPago: m.metodoPago })
     }
   }
 
@@ -108,6 +113,10 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       clienteCedula: p.cliente?.cedula || null,
       rutaId: p.cliente?.ruta?.id || mov?.rutaId || null,
       rutaNombre: p.cliente?.ruta?.nombre || null,
+      // Por dónde salió la plata. Sin movimiento no hay nada que decir, y lo
+      // que no dice nada cuenta como efectivo: es el modo por defecto de un
+      // desembolso en la calle, igual que en los cobros.
+      metodoPago: mov?.metodoPago ?? null,
       fecha: mov?.fecha || p.createdAt,
     })
   }
@@ -747,11 +756,26 @@ export async function GET(request, { params }) {
   const cobradoEfectivoNeto = cobradoEfectivo - ajusteBruto
   const prestadoNeto = prestadoDia - ajusteBruto
 
+  // ── POR DÓNDE SALIÓ LO PRESTADO ──────────────────────────────────────────
+  //
+  // El dueño lo pidió en su lista: «préstamos en efectivo, préstamos en
+  // transferencia». Y no es cosmético: un desembolso por Nequi NO sale del
+  // bolsillo del cobrador, así que sumarlo a «Prestó en efectivo» le pide un
+  // fajo que nunca tuvo. Es el mismo error del lado del cobro, al revés.
+  //
+  // El absorbido de renovaciones se descuenta del EFECTIVO, que es donde estaba
+  // sumado (`prestadoDia` lo incluye vía `ajusteBruto`).
+  const prestadoDigital = Math.round(
+    desembolsos.filter((d) => d.metodoPago === 'transferencia').reduce((a, d) => a + (d.monto || 0), 0)
+  )
+  const prestadoEfectivoNeto = prestadoNeto - prestadoDigital
+
   const { lineas: cuenta, suma: cuentaSuma, entro: cuentaEntro, salio: cuentaSalio } = cuentaDelDia({
     apertura: saldoAperturaTotal,
     entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto }],
     salidas: [
-      { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoNeto },
+      // Solo el efectivo: lo que salió por transferencia no toca el fajo.
+      { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoEfectivoNeto },
       { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
     ],
   })
@@ -778,6 +802,8 @@ export async function GET(request, { params }) {
     cobradoEfectivo: cobradoEfectivoNeto,
     cobradoDigital,
     prestado: prestadoNeto,
+    prestadoEfectivo: prestadoEfectivoNeto,
+    prestadoDigital,
     gastos: gastosDia,
     // Lo que queda en la ruta contando lo que entró a la cuenta.
     //
