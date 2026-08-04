@@ -146,11 +146,26 @@ export function BuscadorLista({ valor = '', onCambiar, placeholder = 'Nombre o c
   )
 }
 
-/** Tira de filtros con scroll horizontal. Los chips no se encogen. */
+/** Tira de filtros con scroll horizontal. Los chips no se encogen.
+ *
+ *  ⚠ EL FILTRO VA FUERA DEL SCROLL. Estaba DENTRO, como un chip más al final, y
+ *  el dueño lo cazó a la primera con una captura: «pasó lo que no quería, que
+ *  el filtro se desplazara junto con las opciones del menú horizontal; el
+ *  filtro no se puede mover porque si no por defecto sale escondido».
+ *
+ *  Tenía razón, y era el mismo aviso que yo mismo había escrito para el
+ *  conmutador de vista: con cuatro o cinco estados —«Todos, Al día, En mora,
+ *  Cancelados…»— la tira arranca desplazada y el último elemento nace fuera de
+ *  la pantalla. Un acceso que hay que descubrir deslizando es un acceso que no
+ *  existe.
+ *
+ *  Así que la fila es DOS piezas: los chips, que sí se desplazan, y el filtro
+ *  anclado a la derecha, que no se mueve nunca.
+ */
 export function BarraFiltros({ filtros = [], activo, onCambiar, onMasFiltros, hayMasFiltros = false }) {
-  return (
+  const chips = (
     <div style={{
-      display: 'flex', gap: 'var(--cf-gap-chips)', overflowX: 'auto', flex: 'none',
+      display: 'flex', gap: 'var(--cf-gap-chips)', overflowX: 'auto', flex: 1, minWidth: 0,
       padding: '2px var(--cf-pad-screen)', margin: '0 calc(-1 * var(--cf-pad-screen))',
       scrollbarWidth: 'none',
     }}>
@@ -159,15 +174,22 @@ export function BarraFiltros({ filtros = [], activo, onCambiar, onMasFiltros, ha
           {f.nombre}
         </Chip>
       ))}
+    </div>
+  )
 
-      {/* El cuarto chip: SOLO EL ICONO, y abre «Más filtros».
-          Está en la lámina al final de la tira, y es el sitio donde vive lo que
-          no cabe en la fila —frecuencia, modo de interés, ruta—. En la pantalla
-          vieja eran TRES filas de chips apiladas, unos 380px antes del primer
-          cliente. Se marca en dorado cuando hay algún filtro puesto ahí dentro,
-          porque un filtro activo que no se ve hace que la lista parezca corta
-          sin motivo. */}
-      {onMasFiltros && (
+  // Sin filtro, la tira es lo de siempre: un solo bloque que se desplaza.
+  if (!onMasFiltros) return chips
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cf-gap-chips)', flex: 'none' }}>
+      {chips}
+      {/* Anclado. Lleva su propio fondo porque los chips pasan por DEBAJO al
+          deslizar —la tira se sale de su caja 20px por lado a propósito, para
+          que las pastillas lleguen al borde— y sin fondo se verían encima. */}
+      <div style={{
+        flex: 'none', display: 'flex', alignItems: 'center',
+        paddingLeft: 6, background: 'var(--cf-surface)',
+      }}>
         <Chip onClick={onMasFiltros} activo={hayMasFiltros} aria-label="Más filtros"
           style={{ padding: '0 12px' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -175,7 +197,7 @@ export function BarraFiltros({ filtros = [], activo, onCambiar, onMasFiltros, ha
             <path d="M4 7h16M7 12h10M10 17h4" />
           </svg>
         </Chip>
-      )}
+      </div>
     </div>
   )
 }
