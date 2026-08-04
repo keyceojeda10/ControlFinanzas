@@ -2,12 +2,12 @@
 const CACHE_NAME   = 'cf-v802'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release NO las cambia: el «Enviar por WhatsApp» y el orden de la ficha
-// del cliente son cosa de la PANTALLA. Ningún endpoint devuelve un campo nuevo
-// (comprobado: `git diff` sobre `app/api/` sale vacío). Así que se queda:
-// subirlo tiraría el cache de todas las respuestas sin motivo y la app
-// arrancaría lenta en la primera carga, justo en el teléfono del cobrador.
-const API_CACHE    = 'cf-api-v95'
+// Este release SÍ las cambia: `/api/caja/cobrador/[id]` devuelve un campo nuevo
+// (`cobradoTotalHoy`) y la barra de métodos agrupa distinto. Sin subirlo, el
+// teléfono seguiría sirviendo la respuesta guardada —sin el total cobrado— y el
+// arreglo no se vería hasta que caducara el cache. Comprobado con
+// `git diff` sobre `app/api/`, que esta vez NO sale vacío.
+const API_CACHE    = 'cf-api-v96'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
 const STATIC_CACHE = 'cf-static'
