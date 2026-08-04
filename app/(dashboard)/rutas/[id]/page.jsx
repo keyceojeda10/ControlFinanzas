@@ -1708,9 +1708,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
         Se monta el MISMO `OrdenRecorrido` que usa el movil —con su arrastre,
         su rebote de un segundo y su cola offline—, no una segunda version para
-        escritorio: dos implementaciones del mismo orden acabarian discrepando. */}
+        escritorio: dos implementaciones del mismo orden acabarian discrepando.
+
+        ⚠ Y EN UNA COLUMNA CENTRADA, no a todo el ancho. Medido con el armazón
+        real: las filas salían a 1.134px para llevar «⠿ · 1 · Carlos Julián ·
+        410 m» — el nombre pegado a un extremo, la distancia al otro y un metro
+        de vacío en medio. Y arrastrar de una esquina a la otra en una fila de
+        metro y medio es peor que en una de 720: lo que cuesta es el recorrido
+        del ratón. Es la misma medida que usan las demás fichas de escritorio. */}
     {modoVista === 'ordenar' && (
-      <div className="hidden lg:block">
+      <div className="hidden lg:block max-w-[720px] mx-auto">
         <div className="mb-3 flex items-center justify-between gap-3">
           <button
             type="button"
@@ -2093,7 +2100,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
         {ruta.clientes?.length > 0 && (
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
+            <div className="flex gap-1 p-1 rounded-[12px] flex-1 min-w-0 shrink-0 basis-[58%]" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
               {[
                 { key: 'trabajo', label: 'Cobros' },
                 { key: 'ordenar', label: 'Ordenar' },
@@ -2129,15 +2136,25 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                   try { localStorage.setItem('cf-ruta-soloHoy', nuevo ? '1' : '0') } catch {}
                   return nuevo
                 })}
-                className="shrink-0 h-10 px-3 rounded-[12px] border text-[12px] font-semibold transition-colors"
+                className="shrink-0 h-10 px-2.5 rounded-[12px] border text-[12px] font-semibold transition-colors inline-flex items-center gap-1.5"
                 title={soloHoy ? 'Mostrando solo los de hoy' : 'Mostrar todos los clientes'}
+                aria-pressed={soloHoy}
                 style={{
                   background: soloHoy ? 'var(--cf-gold-tint)' : 'transparent',
                   borderColor: soloHoy ? 'var(--cf-gold-border)' : 'var(--cf-border)',
                   color: soloHoy ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
                 }}
               >
-                Solo hoy
+                {/* ⚠ «Hoy», no «Solo hoy». Con el segmentado de tres pestañas,
+                    este botón y los dos iconos de vista compitiendo por 393px,
+                    «Cobros · Ordenar · Auditoría» se apretaba hasta no leerse.
+                    El icono de reloj y el estado encendido/apagado dicen lo
+                    mismo que la palabra «solo», y el `title` lo explica. */}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+                </svg>
+                Hoy
               </button>
             )}
             {modoVista === 'trabajo' && (

@@ -346,6 +346,13 @@ export function OrdenRecorrido({
   // mover se busca cuál contiene el dedo. No hay animación de reordenado en vivo
   // —la fila se marca «soltando…» y la lista se reordena al soltar—: reordenar en
   // cada píxel con treinta filas va a tirones en un teléfono de gama baja.
+  /* ⚠ LOS MANEJADORES VAN EN EL ASA, NO EN EL CONTENEDOR.
+     `setPointerCapture` manda TODOS los eventos de ese puntero al elemento que
+     lo captura —el asa—, asi que ponerlos en el div raiz solo funcionaba
+     mientras el dedo no saliera de su area. En un telefono, arrastrar hacia
+     abajo lo saca enseguida: el asa recibia los `pointermove` y el contenedor
+     no, el arrastre se quedaba a medias y no pasaba nada al soltar.
+     Reportado: «la funcion de ordenar al arrastrar y soltar no funciona». */
   const empezar = (i) => (e) => {
     e.preventDefault()
     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -372,15 +379,24 @@ export function OrdenRecorrido({
     if (desde !== hasta) onReordenar?.(desde, hasta)
   }
 
+  /* Los cuatro gestos que van EN EL ASA, ya atados a su fila.
+     Va DESPUÉS de `mover` y `soltar` a propósito: es el mismo patrón —usar algo
+     declarado más abajo— que tiró producción esta tarde. Aquí no reventaría
+     porque se ejecuta al pintar y no al declararse, pero no se deja escrito de
+     una forma que la siguiente vez sí rompa. */
+  const gestos = (i) => ({
+    onPointerDown: empezar(i),
+    onPointerMove: mover,
+    onPointerUp: soltar,
+    onPointerCancel: soltar,
+  })
+
   return (
     <div
       style={{
         height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
         color: 'var(--cf-ink)',
       }}
-      onPointerMove={mover}
-      onPointerUp={soltar}
-      onPointerCancel={soltar}
     >
       <Cabecera
         titulo={titulo} detalle={detalle} onAtras={onAtras} tamano={20}
@@ -432,7 +448,7 @@ export function OrdenRecorrido({
                 }} />
               )}
 
-              <Asa activa={activa} onPointerDown={empezar(i)} />
+              <Asa activa={activa} {...gestos(i)} />
 
               {/* ══ EL NÚMERO SE TECLEA ══
                   Era un `span`: solo se podía reordenar arrastrando. El dueño:

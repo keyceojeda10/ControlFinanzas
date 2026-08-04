@@ -1533,7 +1533,7 @@ export default function Estilo() {
                 detalle="Ruta 2 · 5 paradas · 3,4 km"
                 onAtras={() => {}} onMapa={() => {}}
                 paradas={tramosDelRecorrido(PARADAS)}
-                onReordenar={() => {}}
+                onReordenar={(d,h) => { window.__reorden = [d,h] }}
                 propuesta={propuestaPorCercania({ actualMetros: 3400, propuestaMetros: 2600 })}
                 onProbar={() => {}}
                 sucio onDeshacer={() => {}}
