@@ -25,7 +25,10 @@
 
 import { useState, useMemo } from 'react'
 import { Plantillas } from '@/components/pantallas/Plantillas'
-import { FAMILIAS, PLANTILLAS, preparaPlantilla, enlaceWhatsApp } from '@/lib/adaptadores/plantillas'
+import { enlaceWhatsApp } from '@/lib/adaptadores/plantillas'
+import {
+  contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE,
+} from '@/lib/adaptadores/plantillas-wa'
 import { abrirWhatsApp } from '@/lib/whatsapp'
 import { formatMoney } from '@/lib/i18n'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
@@ -50,44 +53,43 @@ export default function HojaWhatsApp({
   // mandarlo aquí seria cambiarle el mensaje al que acaba de pagar.
   const [avanzado, setAvanzado] = useState(Boolean(pago || preselectedTemplateId))
 
-  const datos = useMemo(() => ({
-    nombre:   cliente?.nombre ?? null,
-    negocio:  orgNombre ?? 'Control Finanzas',
-    medio:    'transferencia',
-    cuota:    prestamo?.cuotaDiaria > 0 ? formatMoney(Math.round(prestamo.cuotaDiaria), pais) : null,
-    // `ocultarSaldo` es una preferencia del dueño y manda: hay quien no quiere
-    // que el saldo viaje por WhatsApp.
-    saldo:    !ocultarSaldo && prestamo?.saldoPendiente > 0
-      ? formatMoney(Math.round(prestamo.saldoPendiente), pais) : null,
-    atraso:   prestamo?.diasMora > 0
-      ? `${prestamo.diasMora} ${prestamo.diasMora === 1 ? 'día' : 'días'} de atraso` : null,
-    // `cuotasPagadas` no siempre viaja: la ruta manda el préstamo con
-    // totalPagado y cuotaDiaria, y la ficha con el campo ya calculado. Si no
-    // está, se deduce — sin esto la familia «Renovar» no se ofrecía nunca.
-    cuotasPagadas: (() => {
-      const n = prestamo?.cuotasPagadas ?? (prestamo?.cuotaDiaria > 0
-        ? Math.floor((prestamo.totalPagado ?? 0) / prestamo.cuotaDiaria) : 0)
-      return n > 0 ? `${n} ${n === 1 ? 'cuota pagada' : 'cuotas pagadas'}` : null
-    })(),
-    proximoCobro: fecha(prestamo?.proximoCobro),
-    portal:   cliente?.portalActivo && cliente?.id ? `${window.location.origin}/portal` : null,
-    // PENDIENTE: la familia «Acuerdo» necesita una fecha pactada que hoy no se
-    // guarda en ningún sitio. Sin ella las dos plantillas salen con un hueco, y
-    // por eso la familia no se ofrece — ver el filtro de abajo.
-    fechaAcuerdo: null,
-  }), [cliente, prestamo, orgNombre, ocultarSaldo, pais])
+  /* ══ EL CONTENIDO SALE DEL MOTOR DE SIEMPRE ══
+     Aquí se armaban unas plantillas nuevas, escritas de cero, de UNA LÍNEA:
+     «Hola X, hoy vence tu cuota de $366.667. Puedes pagar en efectivo o por
+     transferencia». Mientras, el motor de 14 plantillas —con secciones que se
+     encienden y apagan, campos extra y la configuración que el dueño ya había
+     dejado guardada— quedaba escondido detrás de un enlace de 12px.
 
-  const lista = useMemo(
-    () => (PLANTILLAS[familia] ?? []).map((p) => preparaPlantilla(p, datos)),
-    [familia, datos],
+     Reportado con las palabras de los clientes: «el modal nuevo está
+     prácticamente inservible, son mensajes vacíos sin ninguna información».
+     La misma plantilla en el motor trae saludo, la línea de pago CON FECHA, el
+     resumen con saldo y cuotas pendientes, cierre y firma.
+
+     Es el patrón que este proyecto ya tiene documentado: el rediseño pierde
+     funciones en silencio. La hoja se queda —leer el mensaje antes de mandarlo
+     es lo que aporta— pero el texto lo pone el motor. */
+  const ctx = useMemo(
+    () => contextoMotor({ cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo }),
+    [cliente, prestamo, orgNombre, ocultarSaldo, pago, camposRecibo],
   )
 
-  // Solo las familias que se pueden llenar. Una pestaña que al abrirse enseña
-  // un mensaje con huecos es peor que una pestaña que no está.
-  const familias = useMemo(() => FAMILIAS.filter((f) => {
-    const hay = (PLANTILLAS[f.id] ?? []).filter((p) => !p.libre)
-    return hay.some((p) => preparaPlantilla(p, datos)?.faltan.length === 0)
-  }), [datos])
+  const familias = useMemo(() => familiasConPlantillas(ctx, organizationId), [ctx, organizationId])
+
+  /* La familia que se enseña al abrir. `familia` arranca en 'cobro', pero a un
+     cliente muy atrasado `aplica()` puede dejar esa familia sin ninguna
+     plantilla: la hoja abriría en blanco justo en el caso en que más falta hace
+     escribirle. Si la elegida no tiene nada, manda la primera que sí. */
+  const familiaViva = familias.some((f) => f.id === familia)
+    ? familia
+    : (familias[0]?.id ?? familia)
+
+  const lista = useMemo(() => {
+    const p = plantillasDeFamilia(familiaViva, ctx, organizationId)
+    // «Mensaje libre» va siempre y al final: es la salida cuando ninguna
+    // plantilla sirve, no una plantilla más.
+    return [...p, PLANTILLA_LIBRE]
+  }, [familiaViva, ctx, organizationId])
+
 
   if (!open) return null
 
@@ -125,7 +127,20 @@ export default function HojaWhatsApp({
           WebkitBackdropFilter: 'blur(6px)',
         }}
       />
-      <div style={{ position: 'relative', marginTop: 'auto', maxHeight: '92vh', display: 'flex' }}>
+      {/* ══ EN PC ES UN MODAL, NO UNA HOJA PEGADA A LA ESQUINA ══
+          Esto era `marginTop: auto` + `display: flex` y nada más: en un teléfono
+          sale bien —hoja anclada abajo, a todo el ancho— pero en un monitor la
+          hoja no tiene ancho propio, así que se encogía contra el borde
+          IZQUIERDO. Reportado: «no sale como modal flotante, sale a un costado,
+          en la esquina superior izquierda, y se ve bastante raro».
+
+          Desde `sm:` se centra y se le da ancho de modal, como el resto de la
+          app. En móvil no cambia nada: sigue siendo la hoja de la lámina. */}
+      <div
+        className="relative flex mt-auto max-h-[92vh]
+                   sm:m-auto sm:w-full sm:max-w-[460px] sm:max-h-[86vh]
+                   sm:rounded-[var(--cf-r-sheet)] sm:overflow-hidden"
+      >
         <Plantillas
           cliente={cliente?.nombre ?? 'Cliente'}
           // LO QUE DEBE Y CUÁNTO LLEVA ATRASADO, que es lo que decide QUÉ
@@ -135,7 +150,10 @@ export default function HojaWhatsApp({
             prestamo?.diasMora > 0 ? `${prestamo.diasMora} días de atraso` : null,
           ].filter(Boolean).join(' · ') || (cliente?.telefono ?? null)}
           familias={familias}
-          familia={familia}
+          // `familiaViva`, no `familia`: si la elegida se quedó sin plantillas
+          // se está pintando otra, y marcar la pestaña vacía diría que la lista
+          // de abajo es suya.
+          familia={familiaViva}
           onFamilia={(f) => { setFamilia(f); setElegida(null) }}
           plantillas={lista}
           elegida={elegida ?? lista[0]?.id}
