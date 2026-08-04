@@ -75,6 +75,7 @@ import { Cobradores, CrearCobrador, MiDia } from '@/components/pantallas/Cobrado
 import { ClienteNuevo } from '@/components/pantallas/ClienteNuevo'
 import { Recibo } from '@/components/pantallas/Recibo'
 import { Plantillas } from '@/components/pantallas/Plantillas'
+import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
   contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE,
 } from '@/lib/adaptadores/plantillas-wa'
@@ -233,6 +234,7 @@ export default function Estilo() {
   // Interactivo a proposito: sin esto no se puede probar «mensaje libre»,
   // que es el caso que descuadraba el modal.
   const [waElegida, setWaElegida] = useState('historial')
+  const [waAbierta, setWaAbierta] = useState(false)
   return (
     <div style={{ background: 'var(--cf-surface)', minHeight: '100vh', padding: 30, fontFamily: 'var(--font-manrope), system-ui' }}>
       <h1 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 26, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)', margin: '0 0 4px' }}>
@@ -2001,14 +2003,24 @@ export default function Estilo() {
               enseñaba algo que ya no existe en la app: se podía mirar esta
               página, verla bien, y tener la pantalla real rota. Que es
               exactamente lo que pasó. */}
-          <Plantillas
-            cliente="Pepito" detalle="Debe $1.408.000 · 10 días de atraso"
-            familias={familiasConPlantillas(CTX_DEMO, 'demo')}
-            familia="cobro" onFamilia={() => {}}
-            plantillas={[...plantillasDeFamilia('cobro', CTX_DEMO, 'demo'), PLANTILLA_LIBRE]}
-            elegida={waElegida} onElegir={setWaElegida}
-            telefono="3200000000"
-            onEditarPlantillas={() => {}} onAbrir={() => {}} onCerrar={() => {}}
+          {/* ⚠ LA HOJA ENTERA, CON SU ENVOLTORIO. Montar `Plantillas` suelta
+              no reproduce lo que ve el usuario: el velo, el centrado y el
+              `flex` del envoltorio son de `HojaWhatsApp`, y ahí es donde
+              aparecieron los fallos de ancho. Un banco que monta media pieza
+              enseña algo que no existe. */}
+          <button type="button" onClick={() => setWaAbierta(true)}
+            style={{ height: 44, padding: '0 16px', borderRadius: 12, cursor: 'pointer',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              font: 'inherit', fontSize: 14, fontWeight: 700 }}>
+            Abrir la hoja de WhatsApp
+          </button>
+          <HojaWhatsApp
+            open={waAbierta}
+            onClose={() => setWaAbierta(false)}
+            cliente={{ nombre: 'Carlos Prueba 1', telefono: '3200000000' }}
+            prestamo={CTX_DEMO.prestamo}
+            orgNombre="Carlos prestamos"
+            organizationId="demo"
           />
         </div>
 

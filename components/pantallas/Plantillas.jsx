@@ -26,6 +26,11 @@ export function Plantillas({
   plantillas = [], elegida, onElegir,
   telefono,
   onEditarPlantillas, onAbrir, onCerrar,
+  // La personalizacion, servida desde arriba: el panel ya montado, el texto
+  // vivo y las dos acciones. La hoja no sabe de secciones ni de guardado; solo
+  // los pinta donde toca.
+  personalizando = false, onPersonalizar, panelSecciones = null,
+  textoEditable = null, onTextoEditable, copiado = false, onCopiar,
 }) {
   const [libre, setLibre] = useState('')
   const actual = plantillas.find((p) => p.id === elegida) ?? plantillas[0]
@@ -33,7 +38,17 @@ export function Plantillas({
   const puedeEnviar = Boolean(telefono) && (!esLibre || libre.trim().length > 0)
 
   return (
+    /* ⚠ `width: 100%` AQUI, EN LA RAIZ, o la hoja se encoge con su contenido.
+       Este div es hijo de un contenedor `flex` y no tenia ancho: su tamaño lo
+       decidia lo que hubiera dentro. Al elegir «mensaje libre» —una tarjeta
+       corta— pasaba de 393px a 294 en movil y de 424 a 293 en PC, recostandose
+       a un lado. Reportado DOS veces.
+       Lo encontre recorriendo la cadena de anchos desde el textarea hacia
+       arriba y buscando el primer elemento que mide menos que su padre. Antes
+       lo atribui al `box-sizing` del textarea y luego a otros dos divs de mas
+       abajo: las tres veces toque a ciegas y las tres el fallo siguio. */
     <div style={{
+      width: '100%', minWidth: 0,
       height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
@@ -45,7 +60,7 @@ export function Plantillas({
           Se movió al bloque de abajo, sobre fondo claro. Ver ahí. */}
 
       <div style={{
-        flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
+        flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column',
         background: 'var(--cf-surface)',
         borderRadius: 'var(--cf-r-sheet) var(--cf-r-sheet) 0 0',
         boxShadow: '0 -12px 32px rgba(20,20,28,.18)',
@@ -224,14 +239,20 @@ export function Plantillas({
               Va como BOTÓN, con el ancho de la hoja, y abre el panel con ESTA
               plantilla ya elegida — no en una lista donde hay que buscarla otra
               vez. */}
-          {onEditarPlantillas && (
+          {/* ══ PERSONALIZAR, AQUI MISMO ══
+              Este boton mandaba AL MODAL VIEJO. El dueño: «esa no es la idea;
+              todas esas opciones deben estar en el nuevo modal, el viejo no
+              deberia existir ya». Ahora el panel se despliega en la propia hoja
+              y el mensaje se puede editar y copiar sin salir. */}
+          {onPersonalizar && (
             <button
               type="button"
-              onClick={() => onEditarPlantillas(actual?.id)}
+              onClick={onPersonalizar}
               style={{
                 flex: 'none', width: '100%', height: 46, cursor: 'pointer', font: 'inherit',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                background: personalizando ? 'var(--cf-fill)' : 'var(--cf-card)',
+                border: '1px solid var(--cf-border-strong)',
                 borderRadius: 'var(--cf-r-control)',
                 fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink-2)',
               }}
@@ -240,8 +261,50 @@ export function Plantillas({
                 strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 21v-4L16.5 4.5a2.1 2.1 0 013 3L7 20l-3 1z" />
               </svg>
-              Personalizar este mensaje
+              {personalizando ? 'Listo' : 'Personalizar este mensaje'}
             </button>
+          )}
+
+          {/* El panel de secciones: las mismas casillas, el mismo «guardar» y
+              los mismos campos propios del modal de siempre — es LA MISMA
+              pieza, extraida a `PanelSecciones` para no tener dos. */}
+          {panelSecciones && <div style={{ flex: 'none' }}>{panelSecciones}</div>}
+
+          {/* EL MENSAJE, EDITABLE. Con el panel abierto la burbuja pasa a ser
+              un campo: se puede retocar una frase antes de mandarla sin
+              deshacer la plantilla entera. */}
+          {personalizando && textoEditable != null && (
+            <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+                  Mensaje · {textoEditable.length} caracteres
+                </span>
+                {onCopiar && (
+                  <button type="button" onClick={onCopiar} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px',
+                    borderRadius: 9, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700,
+                    background: copiado ? 'var(--cf-green-pill-bg)' : 'var(--cf-card)',
+                    border: `1px solid ${copiado ? 'var(--cf-green)' : 'var(--cf-border)'}`,
+                    color: copiado ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                  }}>
+                    {copiado ? 'Copiado' : 'Copiar'}
+                  </button>
+                )}
+              </div>
+              <textarea
+                value={textoEditable}
+                onChange={(e) => onTextoEditable?.(e.target.value)}
+                rows={8}
+                style={{
+                  boxSizing: 'border-box', width: '100%', resize: 'vertical',
+                  borderRadius: 12, padding: '11px 13px',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+                  font: 'inherit', fontSize: 13.5, lineHeight: 1.5, color: 'var(--cf-ink)',
+                  outline: 'none',
+                }}
+              />
+            </div>
           )}
         </div>
 
@@ -254,7 +317,14 @@ export function Plantillas({
           <button
             type="button"
             disabled={!puedeEnviar}
-            onClick={() => onAbrir?.({ plantilla: actual, texto: esLibre ? libre.trim() : actual?.texto })}
+            // ⚠ SE MANDA LO QUE SE ESTÁ VIENDO. Con `actual?.texto` a secas se
+            // enviaría el mensaje ORIGINAL aunque se hubieran apagado secciones
+            // o retocado el texto: la personalización sería decorativa y el
+            // dueño no se enteraría hasta que el cliente recibiera otra cosa.
+            onClick={() => onAbrir?.({
+              plantilla: actual,
+              texto: esLibre ? libre.trim() : (textoEditable ?? actual?.texto),
+            })}
             style={{
               width: '100%', height: 52, border: 'none', borderRadius: 14,
               background: puedeEnviar ? VERDE_WA : 'var(--cf-fill-2)',

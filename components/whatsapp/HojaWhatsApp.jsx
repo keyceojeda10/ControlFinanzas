@@ -23,13 +23,18 @@
 // «enviar resumen» y se abre WhatsApp con un mensaje que el cobrador NO HA
 // LEÍDO, en el chat de alguien que le debe plata.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Plantillas } from '@/components/pantallas/Plantillas'
 import { enlaceWhatsApp } from '@/lib/adaptadores/plantillas'
 import {
   contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE,
 } from '@/lib/adaptadores/plantillas-wa'
 import { abrirWhatsApp } from '@/lib/whatsapp'
+import PanelSecciones from '@/components/whatsapp/PanelSecciones'
+import {
+  PLANTILLAS as MOTOR, cargarConfigPlantillas, guardarConfigPlantillas,
+  sincronizarPlantillasDesdeDB, generarTextoPlantilla,
+} from '@/lib/whatsapp-plantillas'
 import { formatMoney } from '@/lib/i18n'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
 
@@ -56,6 +61,26 @@ export default function HojaWhatsApp({
   // mensaje» se abre CON LA QUE SE ESTÁ MIRANDO, no en una lista donde hay que
   // volver a buscarla.
   const [paraEditar, setParaEditar] = useState(null)
+
+  /* ══ LA PERSONALIZACIÓN, AQUÍ DENTRO ══
+     «Personalizar este mensaje» mandaba al modal viejo. El dueño: «esa no es la
+     idea; todas esas opciones deben estar en el nuevo modal, el viejo no
+     debería existir ya». Así que el panel de secciones, el texto editable, el
+     guardar y el copiar viven ahora en esta hoja. */
+  const [personalizando, setPersonalizando] = useState(false)
+  const [seccionesActivas, setSeccionesActivas] = useState(new Set())
+  const [extras, setExtras] = useState([])
+  const [textoEditado, setTextoEditado] = useState(null)   // null = sin tocar
+  const [guardado, setGuardado] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  // La configuración guardada del dueño. Se sincroniza con la base al abrir:
+  // sin esto, sus ajustes de otro dispositivo no se verían aquí.
+  const [config, setConfig] = useState(() => cargarConfigPlantillas(organizationId))
+  useEffect(() => {
+    if (!open) return
+    setConfig(cargarConfigPlantillas(organizationId))
+    sincronizarPlantillasDesdeDB(organizationId).then(setConfig).catch(() => {})
+  }, [open, organizationId])
 
   /* ══ EL CONTENIDO SALE DEL MOTOR DE SIEMPRE ══
      Aquí se armaban unas plantillas nuevas, escritas de cero, de UNA LÍNEA:
@@ -87,12 +112,123 @@ export default function HojaWhatsApp({
     ? familia
     : (familias[0]?.id ?? familia)
 
+  /* CUÁL SE ESTÁ MIRANDO DE VERDAD.
+     `elegida` arranca en `null` y la hoja pinta como marcada la PRIMERA de la
+     familia. Mirando solo `elegida`, al abrir no había plantilla del motor —y
+     sin ella no salía el botón de personalizar—: la hoja enseñaba una marcada y
+     por dentro creía que no había ninguna.
+
+     ⚠ El id se saca de `plantillasDeFamilia`, NO de `lista`: `lista` ya usa el
+     texto vivo, que sale de estas secciones. Derivarlo de ahí es un ciclo
+     —`Cannot access before initialization`— y el build lo cazó al prerenderizar. */
+  const idMirando = useMemo(() => {
+    if (elegida) return elegida
+    return plantillasDeFamilia(familiaViva, ctx, organizationId)[0]?.id ?? null
+  }, [elegida, familiaViva, ctx, organizationId])
+
+  const plantillaMotor = useMemo(
+    () => MOTOR.find((t) => t.id === idMirando) ?? null, [idMirando])
+
+  const secciones = useMemo(() => {
+    if (!plantillaMotor?.getSecciones) return null
+    try { return plantillaMotor.getSecciones(ctx) } catch { return null }
+  }, [plantillaMotor, ctx])
+
+  /* (nota original)
+     `elegida` arranca en `null` y la hoja pinta como marcada la PRIMERA de la
+     lista. Si aquí se mirara solo `elegida`, al abrir no habría plantilla del
+     motor —y sin ella no salía el botón de personalizar—: la hoja enseñaba una
+     marcada y por dentro creía que no había ninguna.
+     Se calcula abajo, cuando `lista` ya existe. */
+
+
+
+  /* Al cambiar de plantilla se cargan SUS secciones guardadas y se olvida lo
+     editado a mano: el texto tecleado para «recordatorio» no tiene sentido
+     dentro de «aviso de mora». */
+  useEffect(() => {
+    setTextoEditado(null)
+    setGuardado(false)
+    setCopiado(false)
+    if (!plantillaMotor?.getSecciones) {
+      setSeccionesActivas(new Set()); setExtras([]); return
+    }
+    const guardadas = config?.[plantillaMotor.id]
+    if (guardadas && Array.isArray(guardadas.secciones)) {
+      setSeccionesActivas(new Set(guardadas.secciones))
+      setExtras(guardadas.extras || [])
+      return
+    }
+    try {
+      const secs = plantillaMotor.getSecciones(ctx)
+      setSeccionesActivas(new Set(secs.filter((x) => x.default || x.locked).map((x) => x.key)))
+    } catch { setSeccionesActivas(new Set()) }
+    setExtras([])
+  }, [plantillaMotor, ctx, config])
+
+  /* El texto que se ve y se manda, con las secciones que estén encendidas.
+     Se arma igual que en el modal de siempre para que los dos digan LO MISMO:
+     si dijeran cosas distintas, el dueño no sabría cuál se envía. */
+  const textoConSecciones = useMemo(() => {
+    if (!plantillaMotor?.getSecciones) return null
+    try {
+      const secs = plantillaMotor.getSecciones(ctx)
+      let t = secs.filter((x) => x.locked || seccionesActivas.has(x.key)).map((x) => x.texto).join('').trim()
+      if (extras.length > 0) {
+        const firma = orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
+        const bloque = extras.map((e) => `${e.nombre}: ${e.valor}`).join('\n')
+        const i = t.lastIndexOf(firma)
+        // Los campos propios van ANTES de la firma, no detrás: la firma cierra
+        // el mensaje y lo que va después parece añadido por error.
+        t = i > 0 ? `${t.slice(0, i)}${bloque}\n\n${t.slice(i)}` : `${t}\n${bloque}`
+      }
+      return t
+    } catch { return null }
+  }, [plantillaMotor, ctx, seccionesActivas, extras, orgNombre])
+
+  /* ⚠ `PanelSecciones` LLAMA CON LA CLAVE, no con el Set nuevo.
+     Pasarle `setSeccionesActivas` directo guardaría la cadena «resumen» donde
+     debe haber un Set: el estado quedaría roto EN SILENCIO —sin error, sin
+     aviso— y a partir de ahí ninguna sección respondería. Se copia el
+     manejador del modal de siempre. */
+  const alternarSeccion = (clave) => {
+    setSeccionesActivas((prev) => {
+      const nuevo = new Set(prev)
+      if (nuevo.has(clave)) nuevo.delete(clave)
+      else nuevo.add(clave)
+      return nuevo
+    })
+    // Lo editado a mano se descarta al tocar una sección: si no, se apagaría el
+    // resumen y el texto seguiría enseñándolo.
+    setTextoEditado(null)
+    setGuardado(false)
+  }
+
+  const guardarSecciones = () => {
+    if (!plantillaMotor) return
+    const nueva = { ...config, [plantillaMotor.id]: { secciones: [...seccionesActivas], extras } }
+    guardarConfigPlantillas(organizationId, nueva)
+    setConfig(nueva)
+    setGuardado(true)
+    setTimeout(() => setGuardado(false), 2500)
+  }
+
   const lista = useMemo(() => {
     const p = plantillasDeFamilia(familiaViva, ctx, organizationId)
+    // La marcada se pinta con el texto VIVO: lo que sale de las secciones
+    // encendidas, o lo que se haya escrito a mano encima. Si no, se apagaría
+    // una sección y la burbuja seguiría enseñando el mensaje completo.
+    const conVivo = p.map((x) => {
+      if (x.id !== idMirando) return x
+      const t = textoEditado ?? textoConSecciones
+      if (t == null) return x
+      return { ...x, texto: t, trozos: [{ texto: t, dato: false }] }
+    })
     // «Mensaje libre» va siempre y al final: es la salida cuando ninguna
     // plantilla sirve, no una plantilla más.
-    return [...p, PLANTILLA_LIBRE]
-  }, [familiaViva, ctx, organizationId])
+    return [...conVivo, PLANTILLA_LIBRE]
+  }, [familiaViva, ctx, organizationId, idMirando, textoEditado, textoConSecciones])
+
 
 
   if (!open) return null
@@ -140,9 +276,18 @@ export default function HojaWhatsApp({
 
           Desde `sm:` se centra y se le da ancho de modal, como el resto de la
           app. En móvil no cambia nada: sigue siendo la hoja de la lámina. */}
+      {/* ⚠ `w-full` SIN PREFIJO, o la hoja se encoge con su contenido.
+          Estaba como `sm:w-full`: en escritorio bien, pero EN MÓVIL SIN ANCHO.
+          Este div es hijo de un contenedor `flex-col`, así que su ancho lo
+          decidía lo que hubiera dentro. Medido en el navegador: al elegir
+          «mensaje libre» —una tarjeta corta— pasaba de 393px a 294 en móvil y
+          de 424 a 293 en PC, recostándose a un lado. Reportado dos veces.
+          (Lo atribuí antes al `box-sizing` del textarea y luego a la hoja. Las
+          dos veces me equivoqué: la medida decía otra cosa y no la miré hasta
+          recorrer la cadena de anchos entera desde el contenido hacia arriba.) */}
       <div
-        className="relative flex mt-auto max-h-[92vh]
-                   sm:m-auto sm:w-full sm:max-w-[460px] sm:max-h-[86vh]
+        className="relative flex w-full mt-auto max-h-[92vh]
+                   sm:m-auto sm:max-w-[460px] sm:max-h-[86vh]
                    sm:rounded-[var(--cf-r-sheet)] sm:overflow-hidden"
       >
         <Plantillas
@@ -163,7 +308,31 @@ export default function HojaWhatsApp({
           elegida={elegida ?? lista[0]?.id}
           onElegir={setElegida}
           telefono={cliente?.telefono ?? null}
-          onEditarPlantillas={(id) => { setParaEditar(id ?? null); setAvanzado(true) }}
+          // ══ LA PERSONALIZACIÓN, DENTRO ══
+          personalizando={personalizando}
+          onPersonalizar={secciones ? () => setPersonalizando((v) => !v) : undefined}
+          panelSecciones={secciones && personalizando ? (
+            <PanelSecciones
+              secciones={secciones}
+              activas={seccionesActivas}
+              onChange={alternarSeccion}
+              guardado={guardado}
+              onGuardar={guardarSecciones}
+              extras={extras}
+              onExtrasChange={(nuevos) => { setExtras(nuevos); setTextoEditado(null); setGuardado(false) }}
+            />
+          ) : null}
+          textoEditable={textoEditado ?? textoConSecciones}
+          onTextoEditable={setTextoEditado}
+          copiado={copiado}
+          onCopiar={() => {
+            const t = textoEditado ?? textoConSecciones
+            if (!t) return
+            navigator.clipboard?.writeText(t).then(() => {
+              setCopiado(true)
+              setTimeout(() => setCopiado(false), 2000)
+            }).catch(() => {})
+          }}
           onCerrar={onClose}
           onAbrir={({ texto }) => {
             const enlace = enlaceWhatsApp(cliente?.telefono, texto)
