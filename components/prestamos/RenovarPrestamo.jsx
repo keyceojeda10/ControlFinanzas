@@ -7,6 +7,8 @@ import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
 import { calcularPrestamo } from '@/lib/calculos'
 import { soloDecimal } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -42,6 +44,14 @@ export default function RenovarPrestamo({
   const montoAnterior = prestamoAnterior?.montoPrestado ?? 0
 
   const [monto,       setMonto]       = useState('')
+  // ── EL MODO ABREVIADO EN LA RENOVACIÓN ─────────────────────────────────
+  // «40» son $40.000 con el interruptor puesto. `monto` guarda SIEMPRE pesos
+  // reales —de ahí sale el préstamo nuevo— y `montoTecleado` es lo que se ve.
+  // ⚠ Los atajos («Solo el saldo», «El doble») ponen cifras EXACTAS: van por
+  // `fijarMonto`, que olvida lo tecleado, no por la conversión.
+  const { modoAbreviado } = useAuth()
+  const [montoTecleado, setMontoTecleado] = useState(null)
+  const fijarMonto = (v) => { setMontoTecleado(null); setMonto(v) }
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
   const [plazoUnidades, setPlazoUnidades] = useState(
     prestamoAnterior?.diasPlazo
@@ -171,15 +181,19 @@ export default function RenovarPrestamo({
           saldoEtiqueta={modoUsaTabla ? 'Capital adeudado' : 'Saldo pendiente'}
           saldo={formatMoney(saldo)}
           saldoNota={`Se absorbe en el nuevo y el anterior queda como completado. Prestó ${formatMoney(montoAnterior)} · cuota ${formatMoney(cuotaAnterior)}.`}
-          total={monto}
-          onTotal={(v) => setMonto(soloDecimal(v))}
+          total={montoTecleado != null ? montoTecleado : montoParaMostrarConModo(monto, modoAbreviado, undefined)}
+          onTotal={(v) => {
+            const crudo = montoCrudo(v)
+            setMontoTecleado(crudo)
+            setMonto(montoCrudoConModo(crudo, modoAbreviado))
+          }}
           simbolo="$"
           atajos={saldo > 0 ? [
             { etiqueta: 'Solo el saldo', valor: String(Math.round(saldo)) },
             { etiqueta: `+ ${formatMoney(500000)}`, valor: String(Math.round(saldo + 500000)) },
             { etiqueta: 'El doble', valor: String(Math.round(saldo * 2)) },
           ] : []}
-          onAtajo={(v) => setMonto(v)}
+          onAtajo={(v) => fijarMonto(v)}
           incluye={`El total INCLUYE lo que ya debe (${formatMoney(saldo)}). Escribe el total, no lo nuevo.`}
           antesDespues={calculo && cuotaAnterior > 0 ? {
             etiqueta: 'La cuota, antes y después',

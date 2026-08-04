@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
 import { obtenerPrestamoOffline, resolverTempId }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
@@ -92,7 +93,7 @@ export default function PrestamoDetallePage({ params }) {
   // mismo enlace muerto que ya me pasó con ?diasMoraMin=30.
   const parametros         = useSearchParams()
   const modoPedido         = parametros.get('editar')
-  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -135,6 +136,28 @@ export default function PrestamoDetallePage({ params }) {
   // Un solo juego de estado para las dos hojas: nunca estan abiertas a la vez,
   // y duplicarlo era garantizar que una se quedara con el monto de la otra.
   const [ajusteMonto, setAjusteMonto] = useState('')
+
+  // ── EL MODO ABREVIADO, TAMBIÉN AQUÍ ──────────────────────────────────────
+  //
+  // Con él encendido se escribe en MILES: «40» son $40.000. Esta pantalla NO lo
+  // aplicaba en ninguno de sus tres campos de plata —recargo, descuento y el
+  // monto pactado de la liquidación—, así que un cobrador con el interruptor
+  // puesto tecleaba «40» para perdonar $40.000 y perdonaba $40.
+  //
+  // ⚠ LOS ATAJOS NO PASAN POR AQUÍ. Ponen la cifra EXACTA («ponerse al día son
+  // $47.300»), no un número de miles. Por eso `onAtajo` sigue llamando a
+  // `setAjusteMonto` directo: meterlo en la conversión lo multiplicaría por mil.
+  // Es el mismo reparto que ya funciona en `RegistrarPago`.
+  const [ajusteTecleado, setAjusteTecleado] = useState(null)
+  const verAjuste = (v) => (ajusteTecleado != null ? ajusteTecleado : montoParaMostrarConModo(v, modoAbreviado, undefined))
+  const leerAjuste = (v) => {
+    const crudo = montoCrudo(v)
+    setAjusteTecleado(crudo)
+    return montoCrudoConModo(crudo, modoAbreviado)
+  }
+  // Al fijar una cifra exacta (atajo) se olvida lo tecleado, o el campo seguiría
+  // pintando lo viejo encima del monto nuevo.
+  const fijarAjuste = (v) => { setAjusteTecleado(null); setAjusteMonto(v) }
   const [ajusteNota, setAjusteNota] = useState('')
   const [ajustando, setAjustando] = useState(false)
   const [ajusteError, setAjusteError] = useState('')
@@ -189,6 +212,11 @@ export default function PrestamoDetallePage({ params }) {
   const [liqData, setLiqData] = useState(null)        // calculo del backend
   const [liqModalidad, setLiqModalidad] = useState('mesCompleto') // mesCompleto | proporcional
   const [liqMonto, setLiqMonto] = useState(0)          // monto editable del cierre
+  // Lo TECLEADO, aparte. `liqMonto` guarda siempre pesos reales —es lo que
+  // viaja al servidor como el pago de liquidación— y esto es lo que se pinta
+  // mientras se escribe, para que en modo abreviado no se reformatee a cada
+  // tecla. Se limpia al elegir una de las opciones calculadas.
+  const [liqTecleado, setLiqTecleado] = useState(null)
   const [liqNota, setLiqNota] = useState('')
   const [liqCargando, setLiqCargando] = useState(false)
   const [liqEnviando, setLiqEnviando] = useState(false)
@@ -331,7 +359,7 @@ export default function PrestamoDetallePage({ params }) {
       setLiqData(data)
       // Por defecto, modalidad mes completo (la mas comun en gota a gota)
       setLiqModalidad('mesCompleto')
-      setLiqMonto(data.mesCompleto?.restanteHoy ?? 0)
+      setLiqTecleado(null); setLiqMonto(data.mesCompleto?.restanteHoy ?? 0)
     } catch {
       setLiqError('Error de red')
     } finally {
@@ -355,7 +383,7 @@ export default function PrestamoDetallePage({ params }) {
 
   function seleccionarModalidad(mod) {
     setLiqModalidad(mod)
-    if (liqData?.[mod]) setLiqMonto(liqData[mod].restanteHoy)
+    if (liqData?.[mod]) { setLiqTecleado(null); setLiqMonto(liqData[mod].restanteHoy) }
   }
 
   async function confirmarLiquidacion() {
@@ -2137,11 +2165,11 @@ export default function PrestamoDetallePage({ params }) {
         }
       >
         <Recargo
-          monto={ajusteMonto}
-          onMonto={setAjusteMonto}
+          monto={verAjuste(ajusteMonto)}
+          onMonto={(v) => setAjusteMonto(leerAjuste(v))}
           atajos={atajosAjuste}
           atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
-          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          onAtajo={(a) => fijarAjuste(String(a.monto))}
           motivo={ajusteNota}
           onMotivo={setAjusteNota}
           {...(adaptarRecargo({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
@@ -2165,11 +2193,11 @@ export default function PrestamoDetallePage({ params }) {
         }
       >
         <Descuento
-          monto={ajusteMonto}
-          onMonto={setAjusteMonto}
+          monto={verAjuste(ajusteMonto)}
+          onMonto={(v) => setAjusteMonto(leerAjuste(v))}
           atajos={atajosAjuste}
           atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
-          onAtajo={(a) => setAjusteMonto(String(a.monto))}
+          onAtajo={(a) => fijarAjuste(String(a.monto))}
           motivo={ajusteNota}
           onMotivo={setAjusteNota}
           {...(adaptarDescuento({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}
@@ -2306,7 +2334,7 @@ export default function PrestamoDetallePage({ params }) {
                   // cual. Se guarda la modalidad más cercana para que el servidor no
                   // reciba un valor que no conoce.
                   if (o.id !== 'todo') setLiqModalidad(o.id)
-                  setLiqMonto(o.monto)
+                  setLiqTecleado(null); setLiqMonto(o.monto)
                 }}
                 {...resumen}
               />
@@ -2321,8 +2349,12 @@ export default function PrestamoDetallePage({ params }) {
               }}>O pon el monto que pactaste</span>
               <input
                 type="text" inputMode="decimal"
-                value={liqMonto ? String(Math.round(liqMonto)) : ''}
-                onChange={(e) => setLiqMonto(Number(String(e.target.value).replace(/\D/g, '')) || 0)}
+                value={liqTecleado != null ? liqTecleado : (liqMonto ? montoParaMostrarConModo(String(Math.round(liqMonto)), modoAbreviado, undefined) : '')}
+                onChange={(e) => {
+                  const crudo = montoCrudo(e.target.value)
+                  setLiqTecleado(crudo)
+                  setLiqMonto(Number(montoCrudoConModo(crudo, modoAbreviado)) || 0)
+                }}
                 style={{
                   height: 52, padding: '0 16px', borderRadius: 14, width: '100%',
                   background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',

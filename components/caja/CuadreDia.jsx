@@ -12,6 +12,8 @@ import { formatMoney } from '@/lib/i18n'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import MoneyInput from '@/components/ui/MoneyInput'
+import { useAuth } from '@/hooks/useAuth'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { Button } from '@/components/ui/Button'
 
 // Config visual por estado (sin emojis: punto de color + label).
@@ -29,7 +31,20 @@ export default function CuadreDia({ fecha }) {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('todos') // 'todos' | 'pendientes' | 'diferencia'
   const [modal, setModal] = useState(null)       // fila en confirmación
+  // ── EL MODO ABREVIADO EN EL CUADRE ───────────────────────────────────────
+  //
+  // ⚠ ESTE ES EL CAMPO MÁS DELICADO DE LA APP: el efectivo que una persona le
+  // entrega a otra al cerrar el día. `Cuadre` es un componente del rediseño con
+  // su propio `<input>`, así que no heredaba nada de `MoneyInput` y el modo
+  // abreviado no se aplicaba: quien lo tiene encendido teclea «96» para
+  // registrar $96.000 y registraba $96. La diferencia se le carga al cobrador.
+  //
+  // `montoRecibido` guarda SIEMPRE pesos reales —es lo que viaja al servidor y
+  // lo que produce la diferencia del cuadre—; `tecleado` es solo lo que se ve
+  // mientras se escribe.
+  const { modoAbreviado } = useAuth()
   const [montoRecibido, setMontoRecibido] = useState('')
+  const [tecleado, setTecleado] = useState(null)
   const [nota, setNota] = useState('')
   const [guardando, setGuardando] = useState(false)
 
@@ -56,6 +71,9 @@ export default function CuadreDia({ fecha }) {
 
   const abrirConfirmar = (fila) => {
     setModal(fila)
+    // La cifra del sistema es EXACTA, no un número de miles: se olvida lo
+    // tecleado para que el campo la pinte ya convertida a lo que se ve.
+    setTecleado(null)
     setMontoRecibido(String(fila.recaudadoSistema || 0))
     setNota(fila.notaCuadre || '')
   }
@@ -273,14 +291,18 @@ export default function CuadreDia({ fecha }) {
                 escribe en `nota`, que es lo que ya viajaba. */}
             <Cuadre
               segunLaApp={formatMoney(modal.recaudadoSistema)}
-              contado={montoRecibido}
+              contado={tecleado != null ? tecleado : montoParaMostrarConModo(montoRecibido, modoAbreviado, undefined)}
               /* SOLO DÍGITOS. `MoneyInput` entregaba el valor ya limpio; el campo
                  de `Cuadre` no limpia nada, y `confirmar` hace `Number(...)`. Si
                  alguien teclea «1.200.000» —que es como se escribe aquí— eso da
                  NaN y viaja al endpoint como el efectivo recibido. Es el momento
                  en que una persona le entrega dinero a otra: no puede depender de
                  si escribió los puntos. */
-              onContado={(v) => setMontoRecibido(String(v ?? '').replace(/\D/g, ''))}
+              onContado={(v) => {
+                const crudo = montoCrudo(v)
+                setTecleado(crudo)
+                setMontoRecibido(montoCrudoConModo(crudo, modoAbreviado))
+              }}
               diferencia={diferenciaDeCuadre(
                 { sistema: modal.recaudadoSistema, contado: montoRecibido },
                 formatMoney,

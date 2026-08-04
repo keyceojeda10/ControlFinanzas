@@ -34,6 +34,8 @@ import { Toggle } from '@/components/ui/Toggle'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { useAuth } from '@/hooks/useAuth'
+import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -63,6 +65,13 @@ export default function SimuladorPage() {
   const router = useRouter()
 
   const [monto, setMonto] = useState('')
+  // ── EL MODO ABREVIADO EN EL SIMULADOR ──────────────────────────────────
+  // No escribe en la base, pero el botón «crear este préstamo» se lleva estas
+  // cifras. Si aquí «40» son 40 y en el formulario de préstamo son $40.000, el
+  // simulador enseña una cuota que luego no cuadra con la real.
+  const { modoAbreviado } = useAuth()
+  const [montoTecleado, setMontoTecleado] = useState(null)
+  const [cuotaTecleada, setCuotaTecleada] = useState(null)
   const [tasa, setTasa] = useState('20')
   const [frecuencia, setFrecuencia] = useState('diario')
   const [plazoUnidades, setPlazoUnidades] = useState('30')
@@ -165,7 +174,9 @@ export default function SimuladorPage() {
   // seguido es justo donde se cuela un cero de más — y aquí se le está diciendo
   // una cifra a un cliente en la cara. Se guarda el número pelado y solo se
   // PINTA con puntos.
-  const montoConPuntos = monto === '' ? '' : Number(monto).toLocaleString('es-CO')
+  const montoConPuntos = montoTecleado != null
+    ? montoTecleado
+    : (monto === '' ? '' : montoParaMostrarConModo(monto, modoAbreviado, undefined))
 
   // La cuota va con su rango cuando cambia a lo largo del préstamo: decir un
   // solo número en «interés que baja» sería mentirle al cliente en la cara.
@@ -192,7 +203,11 @@ export default function SimuladorPage() {
         ganasNum={calculo?.totalInteres || 0}
 
         monto={montoConPuntos}
-        onMonto={(v) => setMonto(String(v).replace(/\D/g, ''))}
+        onMonto={(v) => {
+          const crudo = montoCrudo(v)
+          setMontoTecleado(crudo)
+          setMonto(montoCrudoConModo(crudo, modoAbreviado))
+        }}
         interes={tasa}
         onInteres={(v) => setTasa(soloDecimal(v))}
         cobros={plazoUnidades}
@@ -238,8 +253,12 @@ export default function SimuladorPage() {
             </span>
             <input
               type="text" inputMode="decimal"
-              value={cuotaManual}
-              onChange={(e) => setCuotaManual(soloDecimal(e.target.value))}
+              value={cuotaTecleada != null ? cuotaTecleada : montoParaMostrarConModo(cuotaManual, modoAbreviado, undefined)}
+              onChange={(e) => {
+                const crudo = montoCrudo(e.target.value)
+                setCuotaTecleada(crudo)
+                setCuotaManual(montoCrudoConModo(crudo, modoAbreviado))
+              }}
               placeholder="Ej: 20.000"
               className="h-12 px-3.5 rounded-[14px] text-[16px] font-semibold outline-none"
               style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink)' }}
