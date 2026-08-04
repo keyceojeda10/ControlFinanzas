@@ -786,9 +786,25 @@ export async function GET(request, { params }) {
   // Va APARTE de `cuenta` a propósito: meterlo en la resta rompería la cuenta
   // del efectivo, que es la que dice cuánto tiene que entregar. Es contexto, no
   // un sumando.
+  // ⚠ SIN EL AJUSTE BRUTO. `cobradoDia` y `cobradoEfectivo` llevan dentro el
+  // saldo absorbido de las renovaciones (`ajusteBruto`), que NO es plata que
+  // alguien entregó: es deuda vieja que quedó dentro del préstamo nuevo.
+  //
+  // Mi primera versión de esta tarjeta usaba esas dos, y el resultado fue peor
+  // que el problema que venía a resolver: Jhoan cobró $428.000 y la pantalla
+  // decía «Cobró hoy $817.785», con $389.785 salidos de la nada. Diego cobró
+  // $824.000 y decía $878.167. Justo la cifra que el cobrador reporta por
+  // teléfono, y justo la que yo puse ahí para que coincidiera.
+  //
+  // Aquí van los PAGOS REALES: lo que entró en billetes más lo que entró a la
+  // cuenta, y nada más. El absorbido tiene su propio sitio, en «Lo que prestó
+  // hoy», donde sí significa algo.
+  // `cobradoEfectivoNeto` ya es esa cifra y es la que usa la resta de abajo:
+  // se reutiliza en vez de recalcularla, o serían dos definiciones de «el
+  // efectivo de hoy» que pueden separarse sin que nada avise.
   const cobradoTotalHoy = {
-    total: cobradoDia,
-    efectivo: cobradoEfectivo,
+    total: cobradoEfectivoNeto + cobradoDigital,
+    efectivo: cobradoEfectivoNeto,
     digital: cobradoDigital,
   }
 
