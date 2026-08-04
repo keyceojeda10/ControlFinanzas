@@ -3,7 +3,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, propuestaPorCercania } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania } from '@/lib/adaptadores/ruta'
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
@@ -1124,6 +1124,44 @@ export default function RutaDetallePage({ params }) {
   }
 
   // Debounced save — collapses rapid drag/click operations into one API call
+  /* Teclear la posición: mismo camino que arrastrar, pero con el número.
+     `moverParadaEnRuta` traduce el índice visible al de la ruta completa, así
+     que con un filtro puesto tampoco se pierde a nadie. */
+  const reordenarPorNumero = useCallback((desde, hasta) => {
+    const movidos = moverParadaEnRuta(ruta?.clientes ?? [], clientesFiltrados, desde, hasta)
+    setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
+    guardarOrden(movidos)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruta, clientesFiltrados])
+
+  /* Quitar de la ruta. NO borra al cliente ni su préstamo: le deja `rutaId` en
+     null, que es lo que hace el endpoint. Con confirmación porque quitar por
+     error a alguien le rompe el día al cobrador. */
+  const quitarDeLaRuta = useCallback(async (parada) => {
+    if (!parada?.id) return
+    const nombre = parada.nombre ?? 'este cliente'
+    if (!confirm(`¿Quitar a ${nombre} de la ruta?
+
+Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este recorrido.`)) return
+    try {
+      const res = await fetch(`/api/rutas/${id}/clientes`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteId: parada.id }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setOrdenError(d.error || 'No se pudo quitar de la ruta')
+        return
+      }
+      setRuta((prev) => (prev
+        ? { ...prev, clientes: (prev.clientes ?? []).filter((c) => c.id !== parada.id) }
+        : prev))
+    } catch {
+      setOrdenError('Sin conexión: no se pudo quitar de la ruta')
+    }
+  }, [id])
+
   const guardarOrden = useCallback((nuevosClientes) => {
     pendingOrderRef.current = nuevosClientes.map((c) => c.id)
     setOrdenError(null)
@@ -1689,10 +1727,20 @@ export default function RutaDetallePage({ params }) {
             metros: c.distanciaMetros,
           })))}
           onReordenar={(desde, hasta) => {
-            const movidos = moverParada(clientesFiltrados, desde, hasta)
+            // ⚠ SOBRE LA RUTA ENTERA, no sobre lo filtrado.
+            // Reordenar `clientesFiltrados` y guardarlo mandaba SOLO esos ids:
+            // el servidor les pone ordenRuta 0,1,2… y los que no salían se
+            // quedaban con números viejos que ahora chocan. Con «Solo hoy»
+            // puesto —un botón que está al lado de «Ordenar»— la ruta quedaba
+            // revuelta.
+            const movidos = moverParadaEnRuta(ruta?.clientes ?? [], clientesFiltrados, desde, hasta)
             setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
             guardarOrden(movidos)
           }}
+          estado={ordenError ?? (ordenOffline ? 'Guardado en el teléfono, se sube al volver la señal'
+            : ordenGuardado ? 'Guardado' : null)}
+          onPosicion={reordenarPorNumero}
+          onQuitar={quitarDeLaRuta}
         />
       </div>
     )}
@@ -2074,7 +2122,7 @@ export default function RutaDetallePage({ params }) {
                   try { localStorage.setItem('cf-ruta-soloHoy', nuevo ? '1' : '0') } catch {}
                   return nuevo
                 })}
-                className="shrink-0 h-8 px-2.5 rounded-[12px] border text-[12px] font-semibold transition-colors"
+                className="shrink-0 h-10 px-3 rounded-[12px] border text-[12px] font-semibold transition-colors"
                 title={soloHoy ? 'Mostrando solo los de hoy' : 'Mostrar todos los clientes'}
                 style={{
                   background: soloHoy ? 'var(--cf-gold-tint)' : 'transparent',
@@ -2090,7 +2138,7 @@ export default function RutaDetallePage({ params }) {
                 <button
                   type="button"
                   onClick={() => setVistaPlana(v => { if (v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'plana') } catch {} return true })}
-                  className="p-1.5 transition-colors"
+                  className="h-10 w-10 flex items-center justify-center transition-colors"
                   title="Lista completa"
                   style={{
                     background: vistaPlana ? 'var(--cf-fill-2)' : 'transparent',
@@ -2104,7 +2152,7 @@ export default function RutaDetallePage({ params }) {
                 <button
                   type="button"
                   onClick={() => setVistaPlana(v => { if (!v) return v; try { localStorage.setItem('cf-ruta-vistaPlana', 'agrupada') } catch {} return false })}
-                  className="p-1.5 transition-colors"
+                  className="h-10 w-10 flex items-center justify-center transition-colors"
                   title="Agrupados por estado"
                   style={{
                     background: !vistaPlana ? 'var(--cf-fill-2)' : 'transparent',
@@ -2585,10 +2633,20 @@ export default function RutaDetallePage({ params }) {
                   metros: c.distanciaMetros,
                 })))}
                 onReordenar={(desde, hasta) => {
-                  const movidos = moverParada(clientesFiltrados, desde, hasta)
+                  // ⚠ SOBRE LA RUTA ENTERA, no sobre lo filtrado.
+                  // Reordenar `clientesFiltrados` y guardarlo mandaba SOLO esos ids:
+                  // el servidor les pone ordenRuta 0,1,2… y los que no salían se
+                  // quedaban con números viejos que ahora chocan. Con «Solo hoy»
+                  // puesto —un botón que está al lado de «Ordenar»— la ruta quedaba
+                  // revuelta.
+                  const movidos = moverParadaEnRuta(ruta?.clientes ?? [], clientesFiltrados, desde, hasta)
                   setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
                   guardarOrden(movidos)
                 }}
+                estado={ordenError ?? (ordenOffline ? 'Guardado en el teléfono, se sube al volver la señal'
+                  : ordenGuardado ? 'Guardado' : null)}
+                onPosicion={reordenarPorNumero}
+                onQuitar={quitarDeLaRuta}
               />
             )
           }
