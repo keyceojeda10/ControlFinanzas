@@ -9,9 +9,8 @@ import MoneyInput from '@/components/ui/MoneyInput'
 import Avatar from '@/components/ui/Avatar'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { formatMoney } from '@/lib/i18n'
+import { calcularProximoCorte, textoProximoCorte } from '@/lib/lineas-credito'
 import { use } from 'react'
-import CardWaves from '@/components/ui/CardWaves'
-import { useTheme } from '@/lib/theme/ThemeProvider'
 
 export default function DetalleLineaPage({ params }) {
   const { id } = use(params)
@@ -43,12 +42,6 @@ export default function DetalleLineaPage({ params }) {
 
   useEffect(() => { cargar() }, [cargar])
 
-  // Los hooks van SIEMPRE antes de cualquier return temprano (regla de React).
-  // Estaba abajo y la pagina crasheaba con "Rendered more hooks than during the
-  // previous render" apenas terminaba de cargar.
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-
   if (authLoading || loading) {
     return <div className="max-w-2xl mx-auto py-6 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
   }
@@ -66,31 +59,31 @@ export default function DetalleLineaPage({ params }) {
     ? Math.round((linea.capitalUsado || 0) / linea.cupoMaximo * 100)
     : 0
 
-  const METAL = isDark
-    ? {
-        grad: 'linear-gradient(135deg, #0a1628 0%, #112244 25%, #1e3a6e 50%, #153060 75%, #0d1f3d 100%)',
-        ink: '#e0ecff',
-        sub: 'rgba(180, 210, 255, 0.65)',
-        accent: '#60a5fa',
-        track: 'rgba(96, 165, 250, 0.16)',
-        border: 'rgba(96, 165, 250, 0.35)',
-        shadow: '0 10px 28px rgba(0, 0, 0, 0.50)',
-        waves: 'rgba(100, 180, 255, 0.09)',
-        frost: 'rgba(140, 200, 255, 0.08)',
-        sheen: 'linear-gradient(105deg, transparent 30%, rgba(120,180,255,0.10) 45%, rgba(200,225,255,0.14) 50%, rgba(120,180,255,0.10) 55%, transparent 70%)',
-      }
-    : {
-        grad: 'linear-gradient(135deg, #1e40af 0%, #2563eb 25%, #3b82f6 50%, #2563eb 75%, #1e40af 100%)',
-        ink: '#ffffff',
-        sub: 'rgba(255, 255, 255, 0.72)',
-        accent: '#bfdbfe',
-        track: 'rgba(255, 255, 255, 0.18)',
-        border: 'rgba(255, 255, 255, 0.25)',
-        shadow: '0 8px 28px rgba(30, 64, 175, 0.30)',
-        waves: 'rgba(255, 255, 255, 0.08)',
-        frost: 'rgba(255, 255, 255, 0.06)',
-        sheen: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 55%, transparent 70%)',
-      }
+  /* ── T30-04 · DE AZUL METALIZADO A CARBÓN ──
+     Era el ÚNICO elemento de toda la app fuera de la marca: un degradado azul
+     con brillo, escarcha y orbe. Y el azul en este sistema significa PERSONA
+     —avatar, punto de ubicación—, nunca dinero, así que la tarjeta que enseña
+     el cupo estaba pintada del color equivocado.
+     En carbón con el dorado se distingue igual de los préstamos, que son
+     tarjetas blancas —es otro producto—, pero dentro del canon. */
+  const CARBON = {
+    fondo: '#15161A',
+    ink: '#F3F3F6',
+    sub: '#A3A8B2',
+    tenue: '#8A8E98',
+    oro: 'var(--cf-gold-light)',
+    verde: '#2FBE6A',
+    track: 'rgba(255,255,255,.12)',
+    linea: 'rgba(255,255,255,.09)',
+  }
+
+  const proximoCorte = calcularProximoCorte(linea.diaCorte)
+
+  /* El número grande es LO QUE PUEDE PEDIR, no lo que debe: es la pregunta que
+     trae al cliente al mostrador. Antes el cupo disponible era una de tres
+     cifras de 14px en fila, con el mismo peso que las otras dos. */
+  const disponible = linea.cupoDisponible || 0
+  const usado = linea.capitalUsado || 0
 
   const movimientos = [
     ...(linea.desembolsos || []).map(d => ({ ...d, tipo: 'desembolso' })),
@@ -110,146 +103,135 @@ export default function DetalleLineaPage({ params }) {
   // Sin `px-4`: el relleno lateral lo pone el armazon. Eran 36 por lado.
   return (
     <div className="max-w-2xl lg:max-w-5xl mx-auto py-6">
-      {/* Hero card azul metalizado */}
+      {/* === T30-04 · PUEDE PEDIR HASTA === */}
       <div
-        className="relative rounded-[20px] overflow-hidden mb-4"
-        style={{
-          background: METAL.grad,
-          border: `1px solid ${METAL.border}`,
-          boxShadow: METAL.shadow,
-        }}
+        className="rounded-[var(--cf-r-hero)] overflow-hidden mb-3"
+        style={{ background: CARBON.fondo, color: CARBON.ink }}
       >
-        <CardWaves tint={METAL.waves} />
-        {/* Brillo metalizado diagonal */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: METAL.sheen }}
-        />
-        {/* Escarcha: puntos brillantes dispersos */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: isDark
-              ? 'radial-gradient(1px 1px at 15% 25%, rgba(180,220,255,0.5), transparent), radial-gradient(1px 1px at 45% 65%, rgba(180,220,255,0.35), transparent), radial-gradient(1.5px 1.5px at 75% 15%, rgba(200,230,255,0.55), transparent), radial-gradient(1px 1px at 85% 75%, rgba(180,220,255,0.3), transparent), radial-gradient(1px 1px at 55% 40%, rgba(180,220,255,0.4), transparent), radial-gradient(1.5px 1.5px at 25% 80%, rgba(200,230,255,0.45), transparent)'
-              : 'radial-gradient(1px 1px at 15% 25%, rgba(255,255,255,0.7), transparent), radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,0.5), transparent), radial-gradient(1.5px 1.5px at 75% 15%, rgba(255,255,255,0.8), transparent), radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.45), transparent), radial-gradient(1px 1px at 55% 40%, rgba(255,255,255,0.6), transparent), radial-gradient(1.5px 1.5px at 25% 80%, rgba(255,255,255,0.65), transparent)',
-          }}
-        />
-        {/* Orbe luminoso */}
-        <div
-          className="absolute -top-16 -right-16 w-52 h-52 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${METAL.accent}30, transparent 65%)`, filter: 'blur(20px)' }}
-        />
-
-        <div className="relative px-5 py-5">
+        <div className="px-5 py-5">
           <div className="flex items-start gap-3 mb-4">
             <Avatar
               nombre={linea.cliente?.nombre}
               fotoUrl={linea.cliente?.fotoUrl}
               size={44}
               fontSize={15}
-              style={{ border: `2px solid color-mix(in srgb, ${METAL.ink} 25%, transparent)` }}
+              style={{ border: `2px solid rgba(255,255,255,.25)` }}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-bold leading-tight" style={{ color: METAL.ink }}>{linea.cliente?.nombre}</p>
-              <p className="text-[11px] mt-0.5" style={{ color: METAL.sub }}>CC {linea.cliente?.cedula} · Corte día {linea.diaCorte}</p>
+              <p className="text-[15px] font-bold leading-tight" style={{ color: CARBON.ink }}>{linea.cliente?.nombre}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: CARBON.sub }}>Línea de crédito · CC {linea.cliente?.cedula}</p>
             </div>
             <span
-              className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0"
+              className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full shrink-0"
               style={{
-                background: `color-mix(in srgb, ${METAL.accent} 14%, transparent)`,
-                color: METAL.accent,
-                border: `1px solid color-mix(in srgb, ${METAL.accent} 26%, transparent)`,
+                background: linea.estado === 'activa' ? 'rgba(47,190,106,.16)' : 'rgba(255,255,255,.1)',
+                color: linea.estado === 'activa' ? CARBON.verde : CARBON.sub,
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: METAL.accent }} />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: linea.estado === 'activa' ? CARBON.verde : CARBON.sub }} />
               {linea.estado.charAt(0).toUpperCase() + linea.estado.slice(1)}
             </span>
           </div>
 
-          {/* Cupo visual */}
-          <div className="grid grid-cols-3 gap-3 text-center mb-3">
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Cupo</p>
-              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.ink }}>{formatMoney(linea.cupoMaximo)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Usado</p>
-              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.ink }}>{formatMoney(linea.capitalUsado || 0)}</p>
-            </div>
-            <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.14em]" style={{ color: METAL.sub }}>Disponible</p>
-              <p className="text-sm font-mono-display font-bold mt-0.5" style={{ color: METAL.accent }}>{formatMoney(linea.cupoDisponible || 0)}</p>
-            </div>
+          {/* La cifra que trae al cliente al mostrador. Antes era una de tres de
+              14px en fila, con el mismo peso que «cupo» y «usado». */}
+          <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: CARBON.sub }}>
+            Puede pedir hasta
+          </p>
+          <div className="flex items-end gap-3 mt-1.5">
+            <span className="cf-fig text-[34px]" style={{ color: CARBON.oro, letterSpacing: '-.035em', lineHeight: 1 }}>
+              {formatMoney(disponible)}
+            </span>
+            <span className="text-[13px] pb-1" style={{ color: CARBON.tenue }}>
+              de {formatMoney(linea.cupoMaximo)}
+            </span>
           </div>
 
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-[10px] mb-1">
-              <span style={{ color: METAL.sub }}>Uso del cupo</span>
-              <span className="font-mono-display font-bold" style={{ color: porcentajeUsado > 80 ? 'var(--cf-red-dark)' : METAL.accent }}>{porcentajeUsado}%</span>
-            </div>
-            <div className="h-[5px] rounded-full overflow-hidden" style={{ background: METAL.track }}>
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.max(porcentajeUsado, 2)}%`,
-                  background: porcentajeUsado > 80
-                    ? 'var(--cf-red-dark)'
-                    : METAL.accent,
-                }}
-              />
-            </div>
+          <div className="h-[13px] rounded-full overflow-hidden mt-3.5" style={{ background: CARBON.track }}>
+            <div
+              className="h-full transition-all duration-500"
+              style={{
+                width: `${Math.max(porcentajeUsado, 2)}%`,
+                background: porcentajeUsado > 80 ? 'var(--cf-red)' : CARBON.oro,
+              }}
+            />
+          </div>
+
+          <div className="flex items-baseline justify-between mt-3 text-[12px]" style={{ color: CARBON.sub }}>
+            <span>
+              Ya usó <strong className="cf-fig" style={{ color: CARBON.ink }}>{formatMoney(usado)}</strong> · {porcentajeUsado}%
+            </span>
+            <span>{linea.tasaInteres}% mensual</span>
           </div>
 
           {(linea.interesesPendientes || 0) > 0 && (
             <div
-              className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-[12px] mb-2"
-              style={{ background: `color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)`, border: `1px solid color-mix(in srgb, var(--cf-gold-dark) 20%, transparent)` }}
+              className="flex items-center justify-between text-[12px] px-3 py-2 rounded-[12px] mt-3"
+              style={{ background: 'rgba(231,164,0,.14)' }}
             >
-              <span style={{ color: METAL.sub }}>Intereses pendientes</span>
-              <span className="font-mono-display font-bold text-[var(--cf-gold-dark)]">{formatMoney(linea.interesesPendientes)}</span>
+              <span style={{ color: CARBON.sub }}>Intereses pendientes</span>
+              <span className="cf-fig" style={{ color: CARBON.oro }}>{formatMoney(linea.interesesPendientes)}</span>
             </div>
           )}
 
-          <div
-            className="pt-2.5 mt-1"
-            style={{ borderTop: `1px solid ${METAL.track}` }}
-          >
-            <div className="flex items-center justify-between text-[11px] px-1">
-              <span style={{ color: METAL.sub }}>Tasa: {linea.tasaInteres}% mensual</span>
-              <span style={{ color: METAL.sub }}>
-                {linea.modoInteres === 'fijo_mensual' ? 'Interés fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Interés diario sobre saldo' : 'Interés al corte'}
-              </span>
-            </div>
-            <p className="text-[10px] px-1 mt-1.5 leading-relaxed" style={{ color: METAL.sub }}>
-              El cupo es el máximo que puede tener en uso. Cada vez que pide plata baja el disponible, y cada vez que paga sube de nuevo.
-            </p>
-          </div>
+          <p className="text-[11px] mt-3 pt-3 leading-relaxed" style={{ color: CARBON.tenue, borderTop: `1px solid ${CARBON.linea}` }}>
+            {linea.modoInteres === 'fijo_mensual' ? 'Interés fijo mensual' : linea.modoInteres === 'diario_saldo' ? 'Interés diario sobre saldo' : 'Interés al corte'}.
+            {' '}El cupo es el máximo que puede tener en uso: cada vez que pide plata baja el disponible, y cada vez que paga sube de nuevo.
+          </p>
         </div>
       </div>
 
-      {/* Acciones principales */}
+      {/* === T30-04 · EL CORTE, EN SEGUNDO LUGAR ===
+          En un cupo rotativo el corte es LA fecha que manda: es cuando se
+          liquida el interés del ciclo. Vivía en un gris de 12px al lado de la
+          cédula, escrito como «Corte día 30» —un número del mes, no una fecha—,
+          así que había que calcular de cabeza cuánto falta. */}
       {linea.estado !== 'cerrada' && (
-        <div className="flex gap-2 mb-3">
-          {linea.estado === 'activa' && (
-            <>
-              <Button onClick={() => setModalDesembolso(true)} className="flex-1" size="sm" variant="outline">
-                Desembolsar
-              </Button>
-              <Button onClick={() => setModalPago(true)} className="flex-1" size="sm">
-                Registrar pago
-              </Button>
-              {esOwner && (
-                <Button onClick={() => setModalCorte(true)} size="sm" variant="outline" className="shrink-0">
-                  Corte
-                </Button>
-              )}
-            </>
-          )}
-          {linea.estado === 'congelada' && (
-            <Button onClick={() => setModalPago(true)} className="flex-1" size="sm">
-              Registrar pago
+        <div
+          className="flex items-center gap-3.5 rounded-[var(--cf-r-card)] px-4 py-4 mb-3"
+          style={{
+            background: 'var(--cf-card)',
+            border: `1.5px solid ${proximoCorte.dias <= 2 ? 'var(--cf-gold)' : 'var(--cf-border)'}`,
+            boxShadow: proximoCorte.dias <= 2 ? '0 0 0 3px var(--cf-gold-focus)' : 'none',
+          }}
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--cf-ink-3)]">El corte es</p>
+            <p className="cf-fig text-[22px] mt-0.5" style={{ letterSpacing: '-.025em', lineHeight: 1.1 }}>
+              {textoProximoCorte(proximoCorte.dias)}
+            </p>
+            <p className="text-[12px] text-[var(--cf-ink-2)] mt-0.5">
+              {proximoCorte.fecha.toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: 'UTC' })}
+              {usado > 0 && ` · le va a quedar ${formatMoney(usado)}`}
+            </p>
+          </div>
+          {esOwner && (
+            <Button onClick={() => setModalCorte(true)} size="sm" className="shrink-0">
+              Ver corte
             </Button>
           )}
+        </div>
+      )}
+
+      {/* === T30-04 · DOS BOTONES, EN EL IDIOMA DEL PRESTAMISTA ===
+          Eran cinco, tres de ellos dorados compitiendo entre sí, y decían
+          «Desembolsar» y «Registrar pago» —el idioma del sistema, no el del
+          mostrador—. «Corte» sale de aquí: ya tiene su sitio arriba, en la
+          tarjeta que dice cuándo es. */}
+      {linea.estado !== 'cerrada' && (
+        <div className="flex gap-2.5 mb-3">
+          {linea.estado === 'activa' && (
+            <Button onClick={() => setModalDesembolso(true)} className="flex-1">
+              Le doy plata
+            </Button>
+          )}
+          <Button
+            onClick={() => setModalPago(true)}
+            className="flex-1"
+            variant={linea.estado === 'activa' ? 'outline' : 'primary'}
+          >
+            Me paga
+          </Button>
         </div>
       )}
 
@@ -330,7 +312,7 @@ export default function DetalleLineaPage({ params }) {
           <p className="text-[10px] text-[var(--cf-ink-3)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map((corte, idx) => (
-              <Card key={corte.id} className="p-3" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${METAL.accent} 5%, var(--cf-card)) 0%, var(--cf-card) 100%)`, border: `1px solid color-mix(in srgb, ${METAL.accent} 14%, var(--cf-border))` }}>
+              <Card key={corte.id} className="p-3" style={{ background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card)) 0%, var(--cf-card) 100%)`, border: `1px solid color-mix(in srgb, var(--cf-green-dark) 14%, var(--cf-border))` }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-[var(--cf-ink)]">
                     {corte.periodo}
@@ -382,14 +364,14 @@ export default function DetalleLineaPage({ params }) {
                 key={mov.id}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                 style={{
-                  background: `linear-gradient(135deg, color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : METAL.accent} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-                  border: `1px solid color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : METAL.accent} 16%, var(--cf-border))`,
+                  background: `linear-gradient(135deg, color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)'} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
+                  border: `1px solid color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)'} 16%, var(--cf-border))`,
                 }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
                   style={{
-                    background: mov.tipo === 'desembolso' ? 'color-mix(in srgb, var(--cf-gold-dark) 18%, transparent)' : `color-mix(in srgb, ${METAL.accent} 18%, transparent)`,
+                    background: mov.tipo === 'desembolso' ? 'color-mix(in srgb, var(--cf-gold-dark) 18%, transparent)' : `color-mix(in srgb, var(--cf-green-dark) 18%, transparent)`,
                   }}
                 >
                   {mov.tipo === 'desembolso' ? (
@@ -397,7 +379,7 @@ export default function DetalleLineaPage({ params }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5m0 14l-4-4m4 4l4-4" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4" style={{ color: METAL.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" style={{ color: 'var(--cf-green-dark)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14m0-14l-4 4m4-4l4 4" />
                     </svg>
                   )}
