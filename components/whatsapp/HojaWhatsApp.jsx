@@ -326,7 +326,14 @@ export default function HojaWhatsApp({
           telefono={cliente?.telefono ?? null}
           // ══ LA PERSONALIZACIÓN, DENTRO ══
           personalizando={personalizando}
-          onPersonalizar={secciones ? () => setPersonalizando((v) => !v) : undefined}
+          // ⚠ NO se ata a que haya secciones. 7 de las 14 plantillas tienen
+          // `getSecciones: null` a propósito —«visita» y «comprobante», las dos
+          // de COBRO, son mensajes cortos sin partes que apagar—, y atarlo a
+          // eso dejaba la familia que más se usa SIN forma de editar el texto:
+          // se abría la hoja y no había «Personalizar» por ningún lado.
+          // El editor de texto funciona siempre; el panel de secciones es lo
+          // único que depende de que la plantilla las tenga.
+          onPersonalizar={() => setPersonalizando((v) => !v)}
           panelSecciones={secciones && personalizando ? (
             <PanelSecciones
               secciones={secciones}
