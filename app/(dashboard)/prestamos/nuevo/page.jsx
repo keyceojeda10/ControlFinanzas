@@ -173,6 +173,20 @@ function NuevoPrestamo() {
   const [modoPreferido, setModoPreferido] = useState(null)
   const [interesAdelantado, setInteresAdelantado] = useState(false)
   const [capitalExtra, setCapitalExtra] = useState([])
+  // ── «TE QUEDAN $3.2M DISPONIBLES EN CAJA» (T16-00) ──
+  // La lámina lo pone debajo del monto, y es la pregunta que el prestamista se
+  // hace justo ahí: si presta esto, ¿con qué se queda?
+  //
+  // Solo para el dueño: `/api/capital` devuelve 403 a un cobrador, y el
+  // capital del negocio no es dato suyo.
+  const [saldoCaja, setSaldoCaja] = useState(null)
+  useEffect(() => {
+    if (!esOwner) return
+    fetch('/api/capital')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.capital?.saldo != null) setSaldoCaja(Number(d.capital.saldo)) })
+      .catch(() => {})
+  }, [esOwner])
   const [cuotaManual, setCuotaManual] = useState('')
   const cuotaManualActiva = modoInteres === 'manual'
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
@@ -1117,6 +1131,24 @@ function NuevoPrestamo() {
                     Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
                   </p>
                 )}
+                {/* ── LO QUE QUEDA EN CAJA DESPUÉS (T16-00) ──
+                    Es la pregunta que el prestamista se hace justo aquí: si
+                    presta esto, ¿con qué se queda? Antes había que salir a
+                    Capital, mirarlo y volver.
+
+                    En rojo si el préstamo lo deja en negativo — prestar más de
+                    lo que hay es una decisión válida (se repone), pero tiene
+                    que verse ANTES de darle a crear, no después en la caja. */}
+                {saldoCaja != null && Number(monto) > 0 && (() => {
+                  const queda = Math.round(saldoCaja - Number(monto))
+                  return (
+                    <p className="text-[11.5px] mt-2" style={{ color: queda < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                      {queda < 0
+                        ? `Te quedarías en ${formatMoney(queda)}: es más de lo que hay en caja.`
+                        : `Te quedan ${formatMoney(queda)} disponibles en caja después de este préstamo.`}
+                    </p>
+                  )
+                })()}
               </div>
 
               {modo === 'mercancia' && (

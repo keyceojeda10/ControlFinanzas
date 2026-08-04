@@ -266,8 +266,54 @@ export default function CapitalTab() {
   const calidadSugerida = sugerido?.calidad || 'baja'
   const colorCalidad = calidadSugerida === 'alta' ? 'var(--cf-green-dark)' : calidadSugerida === 'media' ? 'var(--cf-gold)' : 'var(--cf-red-dark)'
 
+  // ── «TODA TU PLATA» (T30-01) ──
+  // El pie de la lámina lo llama «el error de fondo»: la pantalla enseñaba solo
+  // lo que hay en caja, y el prestamista concluía que su negocio valía eso.
+  // Su plata es la suma de las dos: lo que tiene listo MÁS lo que está en la
+  // calle cobrándose. `capitalEnCalle` ya venía del endpoint
+  // (`/api/capital/resumen`), solo que no se pintaba en ninguna parte.
+  const enCalle = Math.round(Number(resumen?.cartera?.capitalEnCalle || 0))
+  const todaLaPlata = saldoCapital + enCalle
+  const pctListo = todaLaPlata > 0 ? Math.max(2, Math.round((saldoCapital / todaLaPlata) * 100)) : 0
+
   return (
     <div className="space-y-5">
+      {/* ── TODA TU PLATA (T30-01) ── */}
+      {todaLaPlata > 0 && (
+        <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-ink)', color: 'var(--cf-surface)' }}>
+          <span className="text-[10px] font-bold uppercase tracking-[.09em]" style={{ opacity: .65 }}>
+            Toda tu plata
+          </span>
+          <p className="cf-fig mt-1 mb-3" style={{ fontSize: 30, letterSpacing: '-.03em' }}>
+            {formatMoney(todaLaPlata)}
+          </p>
+          {/* La barra parte el total en sus dos mitades: sin ella, dos cifras
+              sueltas no dicen cuál pesa más. */}
+          <div className="h-[7px] rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,.14)' }}>
+            <span style={{ width: `${pctListo}%`, background: 'var(--cf-green)' }} />
+            <span style={{ flex: 1, background: 'var(--cf-gold)' }} />
+          </div>
+          <div className="mt-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-green)' }} />
+                Lista para prestar
+              </span>
+              <span className="cf-fig text-[13.5px] font-bold">{formatMoney(saldoCapital)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />
+                En la calle, cobrándose
+              </span>
+              <span className="cf-fig text-[13.5px] font-bold" style={{ color: 'var(--cf-gold)' }}>
+                {formatMoney(enCalle)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── T31-01 · LAS DOS ENTRADAS, SEPARADAS ──
           «Registrar movimiento» es lo de cada semana y va en dorado. «Cuadrar
           el saldo» —el antiguo «ajuste manual»— sale del desplegable y tiene su
