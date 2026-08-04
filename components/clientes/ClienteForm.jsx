@@ -717,7 +717,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           Subir la barra deja un hueco muerto debajo en las pantallas que nunca
           tuvieron pastilla. Ya pasó una vez. */}
       <div
-        className="fixed left-0 right-0 lg:left-60 bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
+        className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',

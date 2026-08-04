@@ -869,9 +869,27 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     orderBy: { createdAt: 'asc' },
   })
 
+  // ── EL DIA SIN MOVIMIENTOS ──
+  //
+  // Sin asientos no hay «primer asiento», y la apertura salia en CERO: la
+  // pantalla decia «con lo que amaneciste $0» mientras su propio titular, tres
+  // centimetros arriba, decia «saldo en caja $3.895.947». Con el resto de la
+  // cuenta tambien en cero, el desglose entero contradecia a su encabezado.
+  //
+  // El calculo correcto YA ESTABA en este archivo: `baseInicialDia` (linea
+  // ~812) cae en `saldoCapitalActual` justo cuando no hay primer movimiento.
+  // La conciliacion no lo usaba. Es el mismo patron de otras veces: la cifra
+  // buena existia al lado y la pantalla leia la mala.
+  //
+  // ⚠ SOLO CUANDO SE MIRA LA ORGANIZACION ENTERA. Filtrando por cobrador,
+  // `saldoCapitalActual` es el saldo de TODO el negocio, no el de su ruta:
+  // pasarlo ahi le pintaria al cobrador una apertura que no es suya. En ese
+  // caso se queda en null y la apertura vale cero, que es lo que habia.
+  const saldoPrevioDelDia = cobradorId ? null : baseInicialDia
+
   const conciliacion = conciliar({
     alcance: cobradorId ? ALCANCE.COBRADOR : ALCANCE.ORGANIZACION,
-    libro: resumirLibro(movimientosDia),
+    libro: resumirLibro(movimientosDia, saldoPrevioDelDia),
     operaciones: {
       pagos: recogida,
       pagosEfectivo: recogidaEfectivo,

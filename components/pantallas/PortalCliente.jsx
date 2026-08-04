@@ -46,17 +46,17 @@ function Rotulo({ children }) {
   )
 }
 
-function Moneda({ tamano = 52, letra = 24, radio = 999 }) {
+/* ── EL LOGO, NO UN SIGNO DE PESOS ──
+   Era un circulo dorado con un «$» de texto dentro. Esta es la primera pantalla
+   que ve alguien que NO es cliente nuestro: no eligio la app, no la instalo y
+   le acaba de llegar un enlace de su prestamista pidiendole el documento. Un
+   simbolo de moneda generico —el que usa cualquier pagina de prestamos rapidos—
+   es justo lo que no ayuda a que se fie del enlace.
+   `/logo-icon.svg` es el mismo archivo que ya usa la pantalla de registro. */
+function Moneda({ tamano = 52 }) {
   return (
-    <span aria-hidden style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      width: tamano, height: tamano, borderRadius: radio, flex: 'none',
-      background: 'var(--cf-gold)', border: '2px solid var(--cf-gold-light)',
-    }}>
-      <span style={{
-        fontFamily: 'var(--font-space-grotesk), system-ui',
-        fontSize: letra, fontWeight: 700, color: 'var(--cf-gold-ink)',
-      }}>$</span>
+    <span aria-hidden style={{ display: 'inline-flex', flex: 'none' }}>
+      <img src="/logo-icon.svg" alt="" width={tamano} height={tamano} />
     </span>
   )
 }
@@ -256,7 +256,10 @@ export function PortalPrestamo({
       <div style={{
         flex: 'none', padding: '6px 20px 14px', display: 'flex', alignItems: 'center', gap: 11,
       }}>
-        <Moneda tamano={30} letra={15} radio={11} />
+        {/* `letra` y `radio` se fueron con el «$»: el logo es un SVG, no una
+            letra dentro de un círculo. Dejarlos aquí haría creer que la
+            cabecera se pinta distinta que la portada, y no. */}
+        <Moneda tamano={30} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
           <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-.01em' }}>{cliente}</span>
           {cedula && (

@@ -1903,7 +1903,7 @@ function NuevoPrestamo() {
           que pide T01-06. */}
       {paso === 1 && calculo && (
         <div
-          className="fixed left-0 right-0 lg:left-60 z-[44] px-4 lg:px-6"
+          className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] z-[44] px-4 lg:px-6"
           style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
         >
           <div
@@ -1936,9 +1936,18 @@ function NuevoPrestamo() {
       {/* Footer fijo abajo.
           ⚠ VA PEGADO AL BORDE. Esta pantalla es `TAREA`: nunca tuvo pastilla,
           así que subir la barra para esquivarla solo dejaba un hueco muerto.
-          El dueño lo vio de una: «se ve terrible». */}
+          El dueño lo vio de una: «se ve terrible».
+
+          ⚠ Y EL BORDE IZQUIERDO SALE DEL TOKEN, NO DE UN NÚMERO FIJO.
+          El menú lateral mide `--cf-w-sidebar` = 250px y esto arrancaba en la
+          clase `left-60` de Tailwind, que son 240px clavados: la barra
+          SOBRESALÍA 10px por debajo del menú y, como lleva sombra hacia
+          arriba, esos 10px se veían como una franja gris pegada al menú.
+          Reportado con una flecha señalándola.
+          Con el token no se pueden volver a desincronizar: si alguien cambia
+          el ancho del menú, esta barra se mueve con él. */}
       <div
-        className="fixed left-0 right-0 lg:left-60 bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
+        className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',
