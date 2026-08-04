@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v812'
+const CACHE_NAME   = 'cf-v813'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release NO las cambia: los cuatro arreglos de Lucas en el teléfono son

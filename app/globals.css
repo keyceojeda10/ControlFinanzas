@@ -234,6 +234,37 @@ html[data-theme="light"] .skeleton-shimmer {
   background: linear-gradient(90deg, var(--color-bg-hover) 25%, rgba(0,0,0,0.04) 50%, var(--color-bg-hover) 75%);
   background-size: 600px 100%;
 }
+/* ── EL BRILLO DE LA PANTALLA DE CARGA ────────────────────────────────────
+   La de arriba (`.skeleton-shimmer`) usa `--color-bg-hover`, del sistema viejo.
+   Esta va con los tokens del rediseño, así que sigue el tema sola.
+
+   Sin animación, el esqueleto se lee como una pantalla rota: bloques grises
+   quietos que no dicen si algo está pasando. El dueño lo señaló — «no tiene
+   ninguna animación, algo que sea bonito».
+
+   `color-mix` en vez de un blanco fijo: sobre el hueso claro un blanco al 60%
+   no se ve, y sobre el carbón oscuro se ve como un fogonazo. */
+.cf-brillo {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--cf-card) 70%, transparent) 50%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 220px 100%;
+  animation: cfBrillo 1.4s ease-in-out infinite;
+}
+@keyframes cfBrillo {
+  0%   { background-position: -220px 0; }
+  100% { background-position: calc(100% + 220px) 0; }
+}
+/* Quien pide menos movimiento no ve el barrido: se queda el bloque quieto, que
+   sigue comunicando «esto se está cargando» por su forma. */
+@media (prefers-reduced-motion: reduce) {
+  .cf-brillo { animation: none; }
+}
+
 .progress-shimmer {
   background: linear-gradient(90deg, #34d399 0%, #f5c518 50%, #34d399 100%);
   background-size: 200% 100%;

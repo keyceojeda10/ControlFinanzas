@@ -12,9 +12,22 @@
 // Por eso no hay una sola pieza que valga para todo: hay una por forma, y
 // cada pantalla arma la suya con las que le tocan.
 //
-// Y NO SE ANIMA. Un brillo recorriendo ocho tarjetas en un teléfono de gama baja
-// cuesta cuadros justo cuando el hilo está ocupado pidiendo datos. La quietud
-// también dice «espera».
+// ── SE ANIMA, PERO BARATO (cambiado el 4 ago 2026) ─────────────────────────
+//
+// Aquí decía «Y NO SE ANIMA», con este motivo: «un brillo recorriendo ocho
+// tarjetas en un teléfono de gama baja cuesta cuadros justo cuando el hilo está
+// ocupado pidiendo datos. La quietud también dice espera».
+//
+// El motivo sigue siendo bueno, pero la conclusión no: el dueño miró la carga y
+// dijo «no tiene ninguna animación, algo que sea bonito… solamente sale así un
+// rato». Un esqueleto quieto no se lee como «espera», se lee como una pantalla
+// rota.
+//
+// Se anima SOLO `background-position`, que el navegador compone en la GPU y no
+// obliga a recalcular la disposición: es de lo más barato que se puede animar,
+// muy lejos de un `box-shadow` o un `filter` recorriendo tarjetas. Y con
+// `prefers-reduced-motion` se queda quieto, que era la otra mitad del argumento.
+// Ver `.cf-brillo` en `globals.css`.
 
 const CARBON = '#15161A'
 const CARBON_ORO = '#F5B824'
@@ -35,7 +48,7 @@ function Rotulo({ children }) {
    esqueleto se lee como una reja. */
 export function Hueco({ ancho, alto = 15, radio = 5, tenue, reparte }) {
   return (
-    <span aria-hidden style={{
+    <span aria-hidden className="cf-brillo" style={{
       display: 'block', height: alto, borderRadius: radio,
       // `reparte` es para los que van en fila y se reparten el ancho. Con un
       // width: '100%' cada uno pedia el ancho entero y la fila se desbordaba.
@@ -48,7 +61,7 @@ export function Hueco({ ancho, alto = 15, radio = 5, tenue, reparte }) {
 /* El bloque grande de arriba — patrimonio, cartera, lo que sea. */
 export function HuecoBloque({ alto = 150 }) {
   return (
-    <span aria-hidden style={{
+    <span aria-hidden className="cf-brillo" style={{
       display: 'block', height: alto, borderRadius: 'var(--cf-r-card)',
       background: 'var(--cf-fill-2)', flex: 'none',
     }} />
@@ -117,24 +130,37 @@ export function PanelCargando({ sinMargen = false }) {
       <div style={{
         flex: 'none', padding: sinMargen ? '6px 0 14px' : '6px 20px 14px', display: 'flex', flexDirection: 'column', gap: 14,
       }}>
+        {/* ⚠ AQUÍ HABÍA UN «$» DIBUJADO A MANO, y no es la marca de nadie.
+            Es el mismo error que ya se corrigió en la cabecera —el comentario
+            de `CabeceraMovil` lo dice con esas palabras— pero esta pantalla se
+            quedó con la versión vieja. El dueño lo vio en cuanto miró la carga:
+            «repite el logo, con un logo que no es el nuestro, un poco más feo».
+
+            Y encima salía DOS VECES: este y el de verdad en la cabecera, uno
+            debajo del otro. Ahora es el oficial, y uno solo. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 30, height: 30, borderRadius: 11, flex: 'none',
-            background: 'var(--cf-gold)', border: '2px solid var(--cf-gold-light)',
-          }}>
-            <span style={{
-              fontFamily: 'var(--font-space-grotesk), system-ui',
-              fontSize: 15, fontWeight: 700, color: 'var(--cf-gold-ink)',
-            }}>$</span>
-          </span>
+          <img
+            src="/logo-icon.svg"
+            alt=""
+            aria-hidden
+            width={30}
+            height={30}
+            style={{ width: 30, height: 30, flex: 'none', borderRadius: 9 }}
+          />
           <Hueco ancho={150} alto={17} radio={6} />
         </div>
         <HuecoBloque />
       </div>
 
+      {/* ⚠ EL MISMO MARGEN QUE ARRIBA. Aquí iba `padding: '0 20px'` FIJO
+          mientras la parte de arriba respeta `sinMargen`, así que con
+          `sinMargen` —que es como lo monta el dashboard— el bloque grande
+          llegaba al borde de la pantalla y las tarjetas de abajo quedaban 20px
+          metidas. Dos anchos en la misma pantalla. El dueño lo mandó con
+          captura: «la de arriba se ve del ancho correcto, pero la de abajo ya
+          se ve de otro ancho y se ve fea». */}
       <div style={{
-        flex: 1, minHeight: 0, overflow: 'hidden', padding: '0 20px',
+        flex: 1, minHeight: 0, overflow: 'hidden', padding: sinMargen ? '0' : '0 20px',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
         <HuecoDosCifras />
