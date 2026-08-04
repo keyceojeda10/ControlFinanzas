@@ -122,6 +122,7 @@ export default function RutaEscritorio({
   onQuitar,   // (fila) => saca al cliente de la ruta. Sin ella el botón no sale.
   filas = [],               // [{ id, orden, iniciales, nombre, donde, diasMora, cuotaHoy, atraso, cumple, debe, cobrada }]
   onCobrar, onFila,
+  onWhatsApp, // (fila) => abre la hoja de plantillas. Sin ella el botón no sale.
   // El carril derecho
   porCobrarHoy, recaudadoHoy, progreso = 0, conteoCobros,
   cartera = [],             // [{ texto, valor, tono }]
@@ -306,6 +307,31 @@ export default function RutaEscritorio({
                             whiteSpace: 'nowrap',
                           }}
                         >{f.cobrada ? 'Cobrado' : 'Cobrar'}</button>
+                        {/* ── ESCRIBIRLE, QUE EN PC TAMPOCO SE PODÍA ─────────
+                            La tarjeta de móvil lleva «Enviar WhatsApp» desde
+                            siempre; la tabla de escritorio no. El administrador
+                            que gestiona la cartera desde el computador tenía que
+                            sacar el teléfono para avisarle a un cliente.
+                            Abre la HOJA de plantillas, no un chat vacío. */}
+                        {onWhatsApp && (
+                          <button
+                            type="button"
+                            aria-label={`Enviar WhatsApp a ${f.nombre}`}
+                            title="Enviar WhatsApp"
+                            onClick={(e) => { e.stopPropagation(); onWhatsApp(f) }}
+                            style={{
+                              width: 32, height: 32, flex: 'none', cursor: 'pointer',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              borderRadius: 'var(--cf-r-control)', background: 'none',
+                              border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)',
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 11.5a8.4 8.4 0 01-9 8.4 8.5 8.5 0 01-4-1L3 21l2.1-5a8.4 8.4 0 01-1-4 8.5 8.5 0 018.4-9 8.5 8.5 0 018.5 8.5z" />
+                            </svg>
+                          </button>
+                        )}
                         {/* ── QUITAR DE LA RUTA, QUE EN PC NO SE PODÍA ────────
                             La función existe desde siempre (`quitarCliente` en
                             la página) pero solo la ofrecía el móvil, dentro del

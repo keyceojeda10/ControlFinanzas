@@ -1828,6 +1828,19 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           const c = ruta.clientes?.find((x) => x.id === f.id)
           if (c) abrirPagoRapido(c)
         }}
+        onWhatsApp={(f) => {
+          const c = ruta.clientes?.find((x) => x.id === f.id)
+          if (!c) return
+          const pr = c.prestamosActivos?.[0]
+          setModalWA({
+            cliente: c,
+            prestamo: pr ? {
+              ...pr,
+              estado: c.estado === 'completado' ? 'completado' : 'activo',
+              porcentajePagado: pr.totalAPagar > 0 ? Math.round((pr.totalPagado / pr.totalAPagar) * 100) : 0,
+            } : null,
+          })
+        }}
         onFila={(f) => {
           const c = ruta.clientes?.find((x) => x.id === f.id)
           if (c) abrirClienteDesdeRuta(c, 0)
