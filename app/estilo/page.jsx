@@ -1524,6 +1524,10 @@ export default function Estilo() {
               { id: 4, orden: 4, nombre: 'Luz Mery Ossa', direccion: 'Cra 7 # 51-08', tramoMetros: 410 },
               { id: 5, orden: 5, nombre: 'Nelson Aguirre', direccion: 'Cl 52 # 8-40', diasMora: 9, tramoMetros: 1_240 },
             ]
+            // ⚠ CON TODAS LAS ACCIONES. Montarlo sin `onPosicion` ni `onQuitar`
+            // enseñaba una pantalla que ya no existe: los dos son condicionales,
+            // así que el banco salía «bien» con las funciones ausentes. Mismo
+            // error que con las plantillas de WhatsApp.
             return (
               <OrdenRecorrido
                 detalle="Ruta 2 · 5 paradas · 3,4 km"
@@ -1532,7 +1536,10 @@ export default function Estilo() {
                 onReordenar={() => {}}
                 propuesta={propuestaPorCercania({ actualMetros: 3400, propuestaMetros: 2600 })}
                 onProbar={() => {}}
-                sucio onDeshacer={() => {}} onGuardar={() => {}}
+                sucio onDeshacer={() => {}}
+                estado="Guardado"
+                onPosicion={() => {}}
+                onQuitar={() => {}}
               />
             )
           })()}

@@ -1124,44 +1124,6 @@ export default function RutaDetallePage({ params }) {
   }
 
   // Debounced save — collapses rapid drag/click operations into one API call
-  /* Teclear la posición: mismo camino que arrastrar, pero con el número.
-     `moverParadaEnRuta` traduce el índice visible al de la ruta completa, así
-     que con un filtro puesto tampoco se pierde a nadie. */
-  const reordenarPorNumero = useCallback((desde, hasta) => {
-    const movidos = moverParadaEnRuta(ruta?.clientes ?? [], clientesFiltrados, desde, hasta)
-    setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
-    guardarOrden(movidos)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ruta, clientesFiltrados])
-
-  /* Quitar de la ruta. NO borra al cliente ni su préstamo: le deja `rutaId` en
-     null, que es lo que hace el endpoint. Con confirmación porque quitar por
-     error a alguien le rompe el día al cobrador. */
-  const quitarDeLaRuta = useCallback(async (parada) => {
-    if (!parada?.id) return
-    const nombre = parada.nombre ?? 'este cliente'
-    if (!confirm(`¿Quitar a ${nombre} de la ruta?
-
-Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este recorrido.`)) return
-    try {
-      const res = await fetch(`/api/rutas/${id}/clientes`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clienteId: parada.id }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setOrdenError(d.error || 'No se pudo quitar de la ruta')
-        return
-      }
-      setRuta((prev) => (prev
-        ? { ...prev, clientes: (prev.clientes ?? []).filter((c) => c.id !== parada.id) }
-        : prev))
-    } catch {
-      setOrdenError('Sin conexión: no se pudo quitar de la ruta')
-    }
-  }, [id])
-
   const guardarOrden = useCallback((nuevosClientes) => {
     pendingOrderRef.current = nuevosClientes.map((c) => c.id)
     setOrdenError(null)
@@ -1387,6 +1349,51 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     }
     return list
   })()
+
+  /* ⚠ ESTOS DOS VAN DESPUES DE `clientesFiltrados`, Y NO ES UN DETALLE.
+     Los puse ARRIBA, junto a `guardarOrden`, y usan `clientesFiltrados` —que se
+     declara aqui abajo—: un `const` leido antes de existir revienta al
+     renderizar con «Cannot access before initialization». La pagina de detalle
+     de ruta dejo de abrir EN PRODUCCION y los cobradores no pudieron trabajar.
+     `next build` COMPILO SIN QUEJARSE: el fallo solo aparece al ejecutar. */
+  /* Teclear la posición: mismo camino que arrastrar, pero con el número.
+     `moverParadaEnRuta` traduce el índice visible al de la ruta completa, así
+     que con un filtro puesto tampoco se pierde a nadie. */
+  const reordenarPorNumero = useCallback((desde, hasta) => {
+    const movidos = moverParadaEnRuta(ruta?.clientes ?? [], clientesFiltrados, desde, hasta)
+    setRuta((prev) => (prev ? { ...prev, clientes: movidos } : prev))
+    guardarOrden(movidos)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruta, clientesFiltrados])
+
+  /* Quitar de la ruta. NO borra al cliente ni su préstamo: le deja `rutaId` en
+     null, que es lo que hace el endpoint. Con confirmación porque quitar por
+     error a alguien le rompe el día al cobrador. */
+  const quitarDeLaRuta = useCallback(async (parada) => {
+    if (!parada?.id) return
+    const nombre = parada.nombre ?? 'este cliente'
+    if (!confirm(`¿Quitar a ${nombre} de la ruta?
+
+Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este recorrido.`)) return
+    try {
+      const res = await fetch(`/api/rutas/${id}/clientes`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteId: parada.id }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setOrdenError(d.error || 'No se pudo quitar de la ruta')
+        return
+      }
+      setRuta((prev) => (prev
+        ? { ...prev, clientes: (prev.clientes ?? []).filter((c) => c.id !== parada.id) }
+        : prev))
+    } catch {
+      setOrdenError('Sin conexión: no se pudo quitar de la ruta')
+    }
+  }, [id])
+
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
