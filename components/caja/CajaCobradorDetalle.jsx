@@ -202,41 +202,62 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           </div>
         </div>
 
-        {/* EL RESULTADO */}
+        {/* ── EL RESULTADO: LO QUE TIENE QUE ENTREGAR ─────────────────────
+            ⚠ ESTE ES EL DATO QUE SE PERSIGUE. Toda la pantalla existe para
+            responder una pregunta: cuánta plata pone el cobrador sobre la mesa
+            esta noche. Es lo que el administrador va a contar.
+
+            La primera versión lo puso DEBAJO, en 16px y gris, con «Le queda en
+            la ruta» arriba en grande y en verde. Y esa de arriba NO SE ENTREGA:
+            incluye lo que entró por transferencia, que ya está en el banco. O
+            sea que la cifra grande era la que no se cuenta y la chica la que
+            sí. Al revés de lo que hace falta.
+
+            Ahora manda la de entregar; el capital de la ruta queda debajo como
+            contexto, que es su papel. */}
         <div className="mt-3 pt-3" style={{ borderTop: '2px solid var(--cf-border-strong)' }}>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-bold" style={{ color: 'var(--cf-ink)' }}>
-              Le queda en la ruta
+            {/* ⚠ EN NEGATIVO NO ENTREGA: LE DEBEN A ÉL. Pasa de verdad —la
+                ruta #8 cerró en −$69.833 porque prestó más efectivo del que
+                llevaba— y «Tiene que entregar −$69.833» no se entiende. Se
+                cambia el rótulo y se enseña la cifra en positivo. */}
+            <span className="text-[15px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+              {(cr.quedaEnEfectivo ?? 0) >= 0 ? 'Tiene que entregar' : 'Hay que reponerle'}
             </span>
-            <span className="cf-fig text-[22px] font-bold" style={{
-              color: (cr.quedaEnLaRuta ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+            <span className="cf-fig text-[26px] font-bold" style={{
+              color: (cr.quedaEnEfectivo ?? 0) >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
             }}>
-              {formatMoney(cr.quedaEnLaRuta ?? 0)}
+              {formatMoney(Math.abs(cr.quedaEnEfectivo ?? 0))}
             </span>
           </div>
           <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-            {formatMoney(entraTotal)} − {formatMoney(salioTotal)}
+            {(cr.quedaEnEfectivo ?? 0) < 0
+              ? 'Prestó más efectivo del que llevaba: puso plata suya y hay que devolvérsela.'
+              : (cr.cobradoDigital ?? 0) > 0
+                ? `Solo billetes. Los ${formatMoney(cr.cobradoDigital)} que entraron por transferencia ya están en la cuenta.`
+                : 'El efectivo que lleva encima al cerrar el día.'}
           </p>
 
-          {/* De lo que queda, cuánto lleva encima. Solo si hubo digital: sin
-              transferencias las dos cifras son la misma y repetirla es ruido. */}
+          {/* El capital de la ruta: la otra pregunta, la que cierra la resta de
+              arriba. Va debajo porque no se entrega — es lo que la ruta tiene
+              puesto, contando lo que está en el banco. */}
           {(cr.cobradoDigital ?? 0) > 0 && (
-            <div className="flex items-baseline justify-between gap-3 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
-              <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
-                De eso, en billetes
-              </span>
-              <span className="cf-fig text-[16px] font-bold" style={{
-                color: (cr.quedaEnEfectivo ?? 0) >= 0 ? 'var(--cf-ink)' : 'var(--cf-red-dark)',
-              }}>
-                {formatMoney(cr.quedaEnEfectivo ?? 0)}
-              </span>
-            </div>
-          )}
-          {(cr.cobradoDigital ?? 0) > 0 && (
-            <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-              Es lo que entrega al cerrar. Los {formatMoney(cr.cobradoDigital)} de
-              transferencias ya están en la cuenta.
-            </p>
+            <>
+              <div className="flex items-baseline justify-between gap-3 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+                <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  Le queda en la ruta
+                </span>
+                <span className="cf-fig text-[16px] font-bold" style={{
+                  color: (cr.quedaEnLaRuta ?? 0) >= 0 ? 'var(--cf-ink)' : 'var(--cf-red-dark)',
+                }}>
+                  {formatMoney(cr.quedaEnLaRuta ?? 0)}
+                </span>
+              </div>
+              <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                {formatMoney(entraTotal)} − {formatMoney(salioTotal)}. Cuenta lo que está en la cuenta,
+                así que no se entrega entero.
+              </p>
+            </>
           )}
         </div>
       </div>
