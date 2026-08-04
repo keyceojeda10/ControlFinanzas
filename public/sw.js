@@ -2,10 +2,13 @@
 const CACHE_NAME   = 'cf-v815'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release SÍ las cambia: `/api/cobros-hoy` devuelve ahora `telefono`,
-// `latitud` y `longitud` para las acciones de la parada actual. Sin subirlo, el
-// teléfono serviría la respuesta guardada —sin esos campos— y el botón de
-// WhatsApp mandaría a todos a la ficha en vez de abrir el chat.
+// Este release SÍ las cambia, en DOS endpoints:
+//   · `/api/cobros-hoy` devuelve `telefono`, `latitud` y `longitud` para las
+//     acciones de la parada actual. Sin ellos, el botón de WhatsApp mandaría a
+//     todos a la ficha en vez de abrir el chat.
+//   · `/api/rutas` devuelve `atrasoRuta` para la cuarta cifra de la tarjeta.
+// Sin subirlo, el teléfono serviría la respuesta guardada —sin esos campos— y
+// las dos pantallas saldrían a medias.
 const API_CACHE    = 'cf-api-v100'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
