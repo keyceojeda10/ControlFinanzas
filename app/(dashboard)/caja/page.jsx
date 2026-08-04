@@ -906,6 +906,70 @@ export default function CajaPage() {
           diciendo «0 registros» justo debajo de «Movimientos de hoy · 0». */}
       {cantidadPagosFiltrados > 0 && pagosDiaCard}
 
+        {/* ══ SU DÍA, MIENTRAS VA ══
+            Reportado por un cobrador de PRESTA MIL: «la caja que teníamos antes
+            le mostraba cuánto lleva prestado, cuánto lleva cobrado, cuánto puso
+            de gastos y cuánto llevaba cobrado de seguros… ahí solamente nos
+            está mostrando cuánto lleva cobrado en el día».
+
+            Tenía razón, y las cifras NO se habían perdido: estaban dentro del
+            bloque de «Cierre registrado», que solo se pinta DESPUÉS de cerrar.
+            Su captura era de las 8:29 de la mañana. Comprobado contra su ruta
+            en producción: ese día llevaba $2.090.000 cobrados, $150.000
+            prestados y $10.000 de gastos — los tres datos existían y solo se
+            enseñaba uno.
+
+            Y es el dato que necesita mientras camina: si no sabe cuánto prestó,
+            no puede saber cuánto efectivo le queda encima.
+
+            Va aquí —entre los pagos y «entregar caja»— porque es la cuenta que
+            explica la cifra que va a entregar. Con el mismo reparto ENTRA/SALE
+            del resto de la app: el signo lo dice el grupo, no cada renglón. */}
+        {!cierreHoy && (
+          <Card>
+            <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-3">
+              Tu día hasta ahora
+            </p>
+            <div className="space-y-2">
+              {[
+                { id: 'recaudo', label: 'Lo que cobraste', valor: cobradoHoy, signo: 1 },
+                ...(segurosDia.monto > 0
+                  ? [{ id: 'seguros', label: `De eso, seguros${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
+                  : []),
+                { id: 'desembolsos', label: 'Lo que prestaste', valor: prestadoHoy, signo: -1 },
+                { id: 'gastos', label: 'Gastos', valor: gastosHoy, signo: -1 },
+              ].map(({ id, label, valor, signo }) => (
+                <div key={id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-[var(--cf-ink-3)] min-w-0 truncate">{label}</span>
+                  <span
+                    className="font-mono-display font-medium shrink-0"
+                    style={{
+                      color: signo === 1 ? 'var(--cf-green-dark)'
+                        : signo === -1 ? 'var(--cf-red-dark)'
+                        : 'var(--cf-ink-3)',
+                    }}
+                  >
+                    {signo === -1 && valor > 0 ? '−' : ''}{formatMoney(valor)}
+                  </span>
+                </div>
+              ))}
+              {/* «Los seguros ya van dentro de lo cobrado»: pintarlos como una
+                  línea más haría que el cobrador los reste o los sume otra vez
+                  al cuadrar de cabeza. Por eso van en gris y sin signo. */}
+              <div className="flex items-center justify-between gap-3 pt-2.5 mt-1 border-t border-[var(--cf-border)]">
+                <span className="text-sm font-semibold text-[var(--cf-ink-2)]">Te queda en la mano</span>
+                <span className="font-mono-display font-bold text-[15px]" style={{ color: 'var(--cf-ink)' }}>
+                  {formatMoney(cobradoHoy - prestadoHoy - gastosHoy)}
+                </span>
+              </div>
+              <p className="text-[11px] leading-snug text-[var(--cf-ink-3)]">
+                Sin contar lo que traías al empezar. Lo que tienes que entregar
+                sale abajo, en «entregar caja del día».
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* Cierre */}
         {cierreHoy && !modoAjusteCierre ? (
           <Card>
