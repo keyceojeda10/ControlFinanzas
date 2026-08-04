@@ -67,6 +67,20 @@ export default function RutasPage() {
   const [nombre,   setNombre]   = useState('')
   const [capitalRuta, setCapitalRuta] = useState('')
   const [origenCapital, setOrigenCapital] = useState('nuevo') // 'nuevo' | 'existente'
+  // ── QUIÉN LA RECORRE (T24-01) ──
+  // La lámina lo pide en el formulario, y el endpoint YA acepta `cobradorId`
+  // desde siempre: lo único que faltaba era ofrecerlo. Sin esto la ruta nace
+  // huérfana y hay que entrar a la ficha a asignarla — dos pasos para algo que
+  // se decide al crearla.
+  const [cobradorNuevo, setCobradorNuevo] = useState('')
+  const [cobradoresLista, setCobradoresLista] = useState([])
+  useEffect(() => {
+    if (!showForm || cobradoresLista.length) return
+    fetch('/api/cobradores')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => setCobradoresLista(Array.isArray(d) ? d : (d?.cobradores ?? [])))
+      .catch(() => {})
+  }, [showForm, cobradoresLista.length])
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
   const [isOffline, setIsOffline] = useState(false)
@@ -321,7 +335,7 @@ export default function RutasPage() {
       const res  = await fetch('/api/rutas', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nombre, ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta), origenCapital }) }),
+        body:    JSON.stringify({ nombre, ...(cobradorNuevo && { cobradorId: cobradorNuevo }), ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta), origenCapital }) }),
       })
       const data = await res.json()
       if (!res.ok) { setFormError(data.error ?? 'Error al crear la ruta'); return }
@@ -430,7 +444,7 @@ export default function RutasPage() {
           que estabas mirando. */}
       <HojaInferior
         abierta={showForm}
-        onCerrar={() => { setShowForm(false); setCapitalRuta('') }}
+        onCerrar={() => { setShowForm(false); setCapitalRuta(''); setCobradorNuevo('') }}
         titulo="Nueva ruta"
         subtitulo="Un grupo de clientes que cobra la misma persona"
       >
@@ -442,6 +456,38 @@ export default function RutasPage() {
             error={formError}
             autoFocus
           />
+          <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+            Ponle el nombre del barrio; es como la va a buscar el cobrador.
+          </p>
+
+          {/* ── QUIÉN LA RECORRE (T24-01) ──
+              El endpoint acepta `cobradorId` desde siempre; lo que faltaba era
+              ofrecerlo aquí. Sin esto la ruta nace huérfana y hay que entrar a
+              su ficha a asignarla: dos pasos para algo que se decide al
+              crearla. Es opcional — una ruta sin cobrador es un estado válido
+              y la lista lo pinta como tal. */}
+          {cobradoresLista.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
+                Quién la recorre
+              </span>
+              <select
+                value={cobradorNuevo}
+                onChange={(e) => setCobradorNuevo(e.target.value)}
+                className="w-full"
+                style={{
+                  height: 46, padding: '0 12px', borderRadius: 'var(--cf-r-control)',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  font: 'inherit', fontSize: 15, color: 'var(--cf-ink)',
+                }}
+              >
+                <option value="">Sin cobrador por ahora</option>
+                {cobradoresLista.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <MoneyInput
               label="Capital de la ruta (opcional)"

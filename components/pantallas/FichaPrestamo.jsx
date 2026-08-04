@@ -107,10 +107,13 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
           «efectivo · quedo en $300.000». Sentado sobra ancho para que cada dato
           tenga su columna, y eso es lo que la lamina pide.
 
-          NO SE INVENTA NINGUNA COLUMNA. La lamina dibuja tambien COBRADOR, y ese
-          dato no llega hasta aqui —quien monta la ficha pasa `detalle` ya
-          compuesto—. Poner la cabecera sin el contenido seria una columna vacia
-          en todas las filas, que es peor que no tenerla.
+          ⚠ ESTE COMENTARIO DECIA QUE EL COBRADOR «NO LLEGA HASTA AQUI», Y ES
+          FALSO. La API SI lo devuelve —`app/api/prestamos/[id]/route.js:41`
+          selecciona `cobrador: { id, nombre }` en cada pago—; lo que pasa es
+          que quien monta la ficha no lo pasa a estas filas. O sea que la
+          columna de la lamina se puede poner: son unas lineas en
+          `prestamos/[id]/page.jsx`, no una tarea de endpoint.
+          Se deja escrito para que el proximo no lo descarte por leer esto.
 
           La cabecera solo con ancho: cinco rotulos sobre 390px dejan las
           columnas en dos caracteres. */}
