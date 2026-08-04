@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { debeReabrirse, motivoReapertura } from '@/lib/onboarding-reapertura'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -10,14 +11,52 @@ export async function GET() {
   }
 
   const orgId = session.user.organizationId
+  // Se rellena si la guia se REABRE: viaja hasta la respuesta para que la
+  // pantalla pueda decir POR QUE ha vuelto.
+  let reapertura = null
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
     select: { onboardingStep: true, onboardingFlujo: true, createdAt: true, plan: true },
   })
 
+  // ══ LA GUÍA SABE VOLVER ══
+  //
+  // Esta puerta salía sin mirar nada: una vez en 99, el onboarding no volvía
+  // NUNCA. Medido contra producción: 165 cuentas tienen la guía cerrada con
+  // cinco clientes o menos, 150 de ellas llevan más de 30 días sin cobrar nada
+  // y 35 no han registrado NI UN PAGO en su vida. Un préstamo sin cobros no es
+  // haber arrancado: es haber probado el sistema una vez.
+  //
+  // ⚠ No se reabre a quien trabaja. Las 15 cuentas con pocos clientes que
+  // cobran cada semana son negocios pequeños que funcionan, y las 98 con más de
+  // cinco clientes no las toca el filtro.
   if ((org?.onboardingStep ?? 0) >= 99) {
-    return NextResponse.json({ completado: true, misiones: [] })
+    const [clientesActual, ultimo] = await Promise.all([
+      prisma.cliente.count({ where: { organizationId: orgId, estado: { notIn: ['eliminado'] } } }),
+      prisma.pago.findFirst({
+        where: { organizationId: orgId },
+        orderBy: { fechaPago: 'desc' },
+        select: { fechaPago: true },
+      }),
+    ])
+    const cuenta = {
+      onboardingStep: org.onboardingStep,
+      clientes: clientesActual,
+      ultimoPago: ultimo?.fechaPago ?? null,
+    }
+    if (!debeReabrirse(cuenta)) {
+      return NextResponse.json({ completado: true, misiones: [] })
+    }
+    // Se reabre de verdad: si solo se devolvieran las misiones sin bajar el
+    // paso, la siguiente petición volvería a salir por aquí y el usuario vería
+    // la guía aparecer y desaparecer.
+    await prisma.organization.update({
+      where: { id: orgId },
+      data: { onboardingStep: 0 },
+    }).catch(() => {})
+    org.onboardingStep = 0
+    reapertura = motivoReapertura(cuenta)
   }
 
   // Cuentas antiguas (>14 dias) que YA ARRANCARON: auto-completar.
@@ -28,7 +67,13 @@ export async function GET() {
   const diasDesdeCreacion = org?.createdAt
     ? (Date.now() - new Date(org.createdAt).getTime()) / (1000 * 60 * 60 * 24)
     : 0
-  if (diasDesdeCreacion > 14) {
+  //
+  // ⚠ Y NO SE APLICA A LO QUE SE ACABA DE REABRIR. Sin este `!reapertura`, la
+  // cuenta que se reabre dos bloques más arriba se volvería a cerrar AQUÍ
+  // MISMO, en la misma petición: cumple «>14 días» y «tiene un préstamo», que
+  // es justo por lo que se cerró la primera vez. La guía habría vuelto y
+  // desaparecido sin que nadie la viera.
+  if (!reapertura && diasDesdeCreacion > 14) {
     const tienePrestamos = await prisma.prestamo.count({
       where: { organizationId: orgId },
     })
@@ -131,8 +176,14 @@ export async function GET() {
   const completado = completadas === total
 
   // Auto-complete: core completo (cliente + prestamo + pago) => step 99
+  //
+  // ⚠ TAMPOCO SE APLICA A LO QUE SE ACABA DE REABRIR. Es la TERCERA puerta que
+  // cierra el onboarding, y una cuenta parada con un cliente, un préstamo y un
+  // pago de hace meses la cumple: sin este `!reapertura` se volvería a cerrar
+  // aquí, en la misma petición, y la reapertura no serviría de nada.
+  // Las tres puertas hay que abrirlas a la vez o no se abre ninguna.
   const coreCompleto = clientes > 0 && prestamos > 0 && pagos > 0
-  if (coreCompleto && (org?.onboardingStep ?? 0) < 99) {
+  if (!reapertura && coreCompleto && (org?.onboardingStep ?? 0) < 99) {
     await prisma.organization.update({
       where: { id: orgId },
       data: { onboardingStep: 99 },
@@ -145,7 +196,12 @@ export async function GET() {
   // NUNCA: con step<99 ganaba el wizard, y con step>=99 la respuesta salia
   // antes por completado).
   const currentStep = org?.onboardingStep ?? 0
-  const showWizard = currentStep >= 0 && currentStep < 50
+  // ⚠ AL REABRIR NO SE LANZA EL ASISTENTE. Se reabre poniendo el paso en 0, y
+  // con paso 0 el wizard se toma la pantalla entera: le saldría la bienvenida
+  // —«¿cómo prestas?», «tu capital inicial»— a alguien que lleva meses con la
+  // cuenta abierta. Lo que vuelve es la LISTA DE MISIONES, que se puede mirar
+  // de reojo y cerrar.
+  const showWizard = !reapertura && currentStep >= 0 && currentStep < 50
 
   let wizardInitialStep = Math.min(currentStep, 3)
 
@@ -159,6 +215,9 @@ export async function GET() {
     wizardInitialStep,
     flujo,
     plan: org?.plan ?? 'basic',
+    // Por qué ha vuelto la guía. Sin decirlo, reaparecer se lee como un fallo
+    // del sistema —«esto ya lo hice»—; con el motivo es una mano tendida.
+    reapertura,
   })
 }
 

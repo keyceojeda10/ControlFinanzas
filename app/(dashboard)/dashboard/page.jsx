@@ -1593,6 +1593,7 @@ export default function DashboardPage() {
           progreso={onboarding.progreso}
           onDismiss={onboarding.dismiss}
           onSpotlight={onboarding.showSpotlight}
+          reapertura={onboarding.reapertura}
         />
       )}
       {!authLoading && !esOwner && session?.user?.id && (

@@ -45,6 +45,8 @@ export function useOnboarding(esOwner) {
   const [completadas, setCompletadas] = useState(0)
   const [total, setTotal] = useState(5)
   const [progreso, setProgreso] = useState(0)
+  // Por que ha vuelto la guia, cuando vuelve. Lo manda el endpoint.
+  const [reapertura, setReapertura] = useState(null)
   const [completado, setCompletado] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -59,6 +61,7 @@ export function useOnboarding(esOwner) {
     try {
       const res = await fetch('/api/onboarding/progreso')
       const data = await res.json()
+      setReapertura(data.reapertura ?? null)
 
       if (data.completado) {
         setMisiones([])
@@ -176,6 +179,7 @@ export function useOnboarding(esOwner) {
 
   return {
     misiones,
+    reapertura,
     completadas,
     total,
     progreso,

@@ -5,7 +5,7 @@ import ProgressRing from './ProgressRing'
 import MissionItem from './MissionItem'
 import Confetti from './Confetti'
 
-export default function OnboardingChecklist({ misiones, completadas, total, progreso, onDismiss, onSpotlight }) {
+export default function OnboardingChecklist({ misiones, completadas, total, progreso, onDismiss, onSpotlight, reapertura = null }) {
   const [expanded, setExpanded] = useState(true)
   const [showConfetti, setShowConfetti] = useState(false)
   const [prevCompleted, setPrevCompleted] = useState(completadas)
@@ -30,11 +30,20 @@ export default function OnboardingChecklist({ misiones, completadas, total, prog
       >
         <ProgressRing progreso={progreso} size={52} stroke={3.5} />
         <div className="flex-1 text-left min-w-0">
-          <p className="text-sm font-bold text-[var(--cf-ink)]">Configura tu negocio</p>
+          <p className="text-sm font-bold text-[var(--cf-ink)]">
+            {reapertura ? 'Retomemos donde lo dejaste' : 'Configura tu negocio'}
+          </p>
+          {/* POR QUE HA VUELTO LA GUIA.
+              Reaparecer sin explicacion se lee como un fallo del sistema —«esto
+              ya lo hice»—. Con el motivo es una mano tendida: se le devuelve a
+              cuentas que llevan mas de un mes sin cobrar, o que no han cobrado
+              nunca. Medido: 150 de las 165 que la tenian cerrada. */}
           <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
-            {completadas === 0
-              ? 'Completa estas misiones para dominar el sistema'
-              : `${completadas} de ${total} completadas`}
+            {reapertura
+              ? reapertura.texto
+              : completadas === 0
+                ? 'Completa estas misiones para dominar el sistema'
+                : `${completadas} de ${total} completadas`}
           </p>
         </div>
         <svg
