@@ -11,15 +11,20 @@ import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import { obtenerRutasOffline, guardarEnCache, leerDeCache, guardarPagoPendiente, obtenerPagosPendientes } from '@/lib/offline'
 import CobrarHoy from '@/components/pantallas/CobrarHoy'
+import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import {
   adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion,
 } from '@/lib/adaptadores/cobros'
 import HojaFiltros from '@/components/pantallas/HojaFiltros'
 
 export default function CobrosHoyPage() {
-  const { user, loading: authLoading } = useAuth()
+  // `orgNombre` y `ocultarSaldoWA` son para la hoja de WhatsApp: la firma del
+  // mensaje y la preferencia de no mandar el saldo por chat.
+  const { user, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
+  // A quién se le va a escribir. La hoja de plantillas se monta abajo.
+  const [waCliente, setWaCliente] = useState(null)
   const [error, setError]         = useState('')
 
   const [modalPago, setModalPago]         = useState(null)
@@ -422,21 +427,49 @@ export default function CobrosHoyPage() {
             : [c?.direccion, c?.referencia].filter(Boolean).join(' ')
           if (destino) {
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino)}`, '_blank')
-          } else {
-            window.location.href = '/rutas'
+          } else if (c) {
+            // ⚠ SIN DIRECCIÓN NO SE MANDA A OTRA PANTALLA.
+            // Caía en `/rutas`, que no tiene nada que ver con el botón: el
+            // cobrador pulsaba «Mapa» y se encontraba en la lista de rutas, sin
+            // saber por qué. Reportado: «mandan a otras opciones del sistema
+            // completamente diferentes».
+            // Se dice lo que pasa y se ofrece lo único que lo arregla: ponerle
+            // la dirección, que es un dato del cliente.
+            if (confirm(`${c.nombre} no tiene dirección ni ubicación guardada, así que no hay a dónde llevarte.
+
+¿Quieres abrir su ficha para ponérsela?`)) {
+              window.location.href = `/clientes/${c.id}`
+            }
           }
         }}
         onWhatsApp={(fila) => {
+          // ⚠ ABRE LA HOJA DE PLANTILLAS, no un `wa.me` pelado.
+          // Antes se abría WhatsApp con el chat VACÍO: el cobrador tenía que
+          // escribir el mensaje a mano delante de alguien que le debe plata.
+          // Reportado: «el WhatsApp no manda ni siquiera a las plantillas».
+          // La misma hoja que la ficha del cliente, con sus cuatro familias.
           const c = clientes.find((x) => x.id === fila.id)
-          const tel = String(c?.telefono ?? '').replace(/\D/g, '')
-          // Sin teléfono no hay a quién escribirle: se abre la ficha, que es
-          // donde se le puede poner uno.
-          if (tel) window.open(`https://wa.me/${tel}`, '_blank')
-          else window.location.href = `/clientes/${fila.id}`
+          if (c) setWaCliente(c)
         }}
         onMas={(fila) => { window.location.href = `/clientes/${fila.id}` }}
       />
 
+
+      {/* ── La hoja de plantillas, la misma que la ficha del cliente ──
+          Se le pasa el préstamo con más saldo: es el que decide qué mensaje
+          toca —cuánto debe y cuántos días lleva de atraso—. Con varios activos,
+          escribir sobre el más pequeño diría lo que no es. */}
+      <HojaWhatsApp
+        open={!!waCliente}
+        onClose={() => setWaCliente(null)}
+        cliente={waCliente}
+        prestamo={(waCliente?.prestamosActivos ?? [])
+          .slice()
+          .sort((a, b) => (b.saldoPendiente ?? 0) - (a.saldoPendiente ?? 0))[0] ?? null}
+        orgNombre={orgNombre}
+        ocultarSaldo={ocultarSaldoWA}
+        organizationId={organizationId}
+      />
 
       {/* ── Modal: elegir método de pago ── */}
       <Modal open={!!modalPago} onClose={() => setModalPago(null)} title="Cobro rápido">

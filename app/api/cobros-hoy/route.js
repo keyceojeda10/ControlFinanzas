@@ -296,6 +296,14 @@ export async function GET() {
         cedula: c.cedula,
         direccion: c.direccion,
         referencia: c.referencia,
+        // ⚠ ESTOS TRES SE PEDÍAN AL `select` Y NO SE DEVOLVÍAN.
+        // Los dos botones de la tarjeta dependen de ellos, así que sin ellos
+        // caían SIEMPRE en su caso de fallo: WhatsApp abría un chat vacío sin
+        // número —o mandaba a la ficha del cliente— y «Mapa» acababa en la
+        // lista de rutas. Reportado: «no corresponden a nada de eso».
+        telefono: c.telefono,
+        latitud: c.latitud,
+        longitud: c.longitud,
         rutaId: ruta?.id ?? null,
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
