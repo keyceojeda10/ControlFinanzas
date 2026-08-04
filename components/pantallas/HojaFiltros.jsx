@@ -56,8 +56,15 @@ export function BotonFiltros({ n = 0, onClick }) {
         // esconde y queda solo el embudo: los 42px que sobran son los que le
         // faltaban al buscador para no cortar «Nombre o cédula».
         minWidth: 'var(--cf-min-filtros, 96px)',
-        height: 'var(--cf-h-field)', padding: '0 14px', cursor: 'pointer',
-        borderRadius: 999,
+        // ⚠ 46 Y RADIO 14, COMO EL BUSCADOR. Antes: `--cf-h-field` (54px) y
+        // `borderRadius: 999`. El buscador de al lado mide 46 y va a radio 14,
+        // así que en la misma fila había dos alturas y dos formas distintas —el
+        // dueño lo mandó con captura: «son de color y forma diferente, no
+        // combinan; el filtro ni se diga, es redondo».
+        //
+        // El icono se achica de 17 a 16 para que respire dentro de los 46.
+        height: 46, padding: '0 14px', cursor: 'pointer',
+        borderRadius: 'var(--cf-r-control)',
         background: puestos ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
         border: `1px solid ${puestos ? 'var(--cf-gold-border)' : 'var(--cf-border)'}`,
         color: puestos ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
@@ -103,7 +110,8 @@ export function ConmutadorVista({ valor, onCambiar, opciones }) {
       aria-label="Cómo se ven"
       style={{
         display: 'inline-flex', alignItems: 'center', flex: 'none',
-        height: 'var(--cf-h-field)', padding: 4, gap: 2,
+        // 46, la del buscador. Con `--cf-h-field` (54) sobresalía de la fila.
+        height: 46, padding: 4, gap: 2,
         // Radio 14, no 999. La píldora redonda por fuera con pastillas redondas
         // por dentro daba dos curvas peleadas y el botón activo se leía como un
         // borrón; 14 es el radio de la caja del buscador que va al lado, así que

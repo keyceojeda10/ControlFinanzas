@@ -16,7 +16,7 @@ import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components
 import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
-import HojaFiltros, { BotonFiltros, ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
@@ -646,7 +646,6 @@ export default function PrestamosPage() {
             onCambiar={(v) => cambiarVistaP(v || 'lista')}
             opciones={OPCIONES_VISTA}
           />
-          <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 
         {/* El estado se queda arriba porque es el que se toca todos los días.
@@ -655,6 +654,8 @@ export default function PrestamosPage() {
         <BarraFiltros
           activo={estado}
           onCambiar={(v) => { setEstado(v); setPage(1) }}
+          onMasFiltros={() => setHojaFiltros(true)}
+          hayMasFiltros={nFiltros > 0}
           // `montado &&`: esOwner sale de la sesión, que en el servidor no
           // existe. Sin esperar al montaje, el servidor pinta menos chips que
           // el cliente y React repinta el árbol entero.

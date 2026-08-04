@@ -19,7 +19,7 @@ import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
-import HojaFiltros, { BotonFiltros, ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
 import MonedaCF          from '@/components/ui/MonedaCF'
@@ -861,6 +861,19 @@ export default function ClientesPage() {
               detrás. Un degradado no lo arregla: el solape es de maquetación.
               Aquí no se monta con nada. El sitio que hacía falta sale de que
               «Filtros» pasa a ser solo icono en móvil (ver `BotonFiltros`). */}
+          {/* ── SOLO EL CONMUTADOR ARRIBA. EL FILTRO BAJA A LA TIRA ──────
+              El dueño, con la maqueta al lado: «quisiera dejar el filtro abajo,
+              junto al menú de Todos / Al día / En mora, para que la barra de
+              búsqueda se haga más grande, y las vistas arriba».
+
+              El filtro-chip del final de la tira YA EXISTÍA en `BarraFiltros`
+              (`onMasFiltros`) y es lo que dibuja la maqueta; simplemente estas
+              dos pantallas nunca se lo pasaban. Ahora sí.
+
+              ⚠ Y el conmutador se queda AQUÍ, no baja: `BarraFiltros` se
+              desplaza en horizontal, y una pieza que hay que poder pulsar
+              siempre no puede irse fuera de la pantalla al deslizar. Eso ya
+              pasó con el propio botón de filtros en la versión vieja. */}
           {!modoAsignar && (
             <ConmutadorVista
               valor={vista === 'lista' ? '' : vista}
@@ -868,7 +881,6 @@ export default function ClientesPage() {
               opciones={OPCIONES_VISTA}
             />
           )}
-          <BotonFiltros n={nFiltros} onClick={() => setHojaFiltros(true)} />
         </div>
 
         {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
@@ -876,6 +888,8 @@ export default function ClientesPage() {
         <BarraFiltros
           activo={estado}
           onCambiar={(v) => { setEstado(v); setPage(1) }}
+          onMasFiltros={() => setHojaFiltros(true)}
+          hayMasFiltros={nFiltros > 0}
           filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
             id: value,
             nombre: label,
