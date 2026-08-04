@@ -193,6 +193,13 @@ export async function GET(request, { params }) {
         fechaPago: true,
         metodoPago: true,
         plataforma: true,
+        // ⚠ LA CUENTA DE VERDAD. `plataforma` es TEXTO LIBRE y a veces viene
+        // vacío: un pago a Nequi con ese campo en blanco se pintaba como una
+        // cuenta aparte llamada «Transferencia». En la ruta #9 salía «Nequi
+        // $596.000» y «Transferencia $30.000» cuando los dos eran Nequi, o sea
+        // $626.000. No cambiaba ningún total, pero hace desconfiar de la
+        // pantalla entera. La FK sí sabe a qué cuenta entró.
+        metodoPagoRef: { select: { nombre: true } },
         prestamo: {
           select: {
             esClavo: true,
@@ -648,7 +655,8 @@ export async function GET(request, { params }) {
   for (const p of cobros) {
     const mp = p.metodoPago || 'otro'
     if (mp === 'transferencia') {
-      const pl = p.plataforma || 'Transferencia'
+      // La FK manda sobre el texto libre: ver el comentario del `select`.
+      const pl = p.metodoPagoRef?.nombre || p.plataforma || 'Transferencia'
       desgloseMetodo[pl] = (desgloseMetodo[pl] || { monto: 0, tipo: 'transferencia' })
       desgloseMetodo[pl].monto += Number(p.montoPagado || 0)
     } else if (mp === 'efectivo') {
@@ -763,12 +771,34 @@ export async function GET(request, { params }) {
     { id: 'gastos', rotulo: 'Gastos', uno: 'Gasto', cantidad: gastos.length, monto: gastosDia },
   ]
 
+  // ── LO QUE COBRÓ HOY, ENTERO ─────────────────────────────────────────────
+  //
+  // ⚠ ESTE ES EL NÚMERO QUE EL COBRADOR TIENE EN LA CABEZA, y hasta hoy NO
+  // ESTABA EN LA PANTALLA POR NINGÚN LADO.
+  //
+  // La cuenta del día solo enseña «Cobró en efectivo» —y hace bien, porque es
+  // una cuenta de EFECTIVO—, pero el cobrador reporta el total. En la ruta #9:
+  // él dijo $908.000 y la pantalla decía $282.000; los otros $626.000 entraron
+  // por Nequi y no aparecían en ninguna cifra. El dueño lo resumió así: «no hay
+  // ningún valor que sea de ochocientos y pico mil de pesos, por eso se enreda
+  // un montón».
+  //
+  // Va APARTE de `cuenta` a propósito: meterlo en la resta rompería la cuenta
+  // del efectivo, que es la que dice cuánto tiene que entregar. Es contexto, no
+  // un sumando.
+  const cobradoTotalHoy = {
+    total: cobradoDia,
+    efectivo: cobradoEfectivo,
+    digital: cobradoDigital,
+  }
+
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
     // La cuenta del dia y lo que hizo, ya ordenados. La pantalla los pinta, no
     // los arma: armarlos alli es como se acaba con lineas que no suman.
     cuenta,
     cuentaSuma,
+    cobradoTotalHoy,
     hizo,
     fecha: esRango ? null : fechaBase,
     esRango,

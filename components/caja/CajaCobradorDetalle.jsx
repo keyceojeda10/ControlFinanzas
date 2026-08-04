@@ -88,6 +88,50 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           La cuenta del día
         </p>
 
+        {/* ── LO QUE COBRÓ HOY, ENTERO ────────────────────────────────────
+            ⚠ ESTE NÚMERO NO ESTABA EN LA PANTALLA, y es el que el cobrador
+            tiene en la cabeza cuando llama por teléfono.
+
+            La resta de abajo solo cuenta EFECTIVO, y hace bien: es lo que hay
+            que entregar. Pero el que cobró $908.000 —$626.000 por Nequi— veía
+            «Cobró en efectivo $282.000» y ninguna cifra parecida a la suya.
+            El dueño: «no hay ningún valor que sea de ochocientos y pico mil de
+            pesos, por eso se enreda un montón».
+
+            Va ARRIBA y separado de la resta, no dentro: si entrara en la
+            cuenta, el sistema le pediría un fajo de billetes que nunca tuvo.
+            Solo se pinta cuando hubo algo digital — en una ruta 100% efectivo
+            el total y el efectivo son el mismo número y la línea sobraría. */}
+        {(data?.cobradoTotalHoy?.digital ?? 0) > 0 && (
+          <div
+            className="rounded-[12px] px-3 py-2.5 mb-3"
+            style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+                Cobró hoy
+              </span>
+              <span className="cf-fig text-[19px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                {formatMoney(data.cobradoTotalHoy.total)}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-1 text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+              <span>
+                En efectivo{' '}
+                <strong className="cf-fig" style={{ color: 'var(--cf-green-dark)' }}>
+                  {formatMoney(data.cobradoTotalHoy.efectivo)}
+                </strong>
+              </span>
+              <span>
+                A la cuenta{' '}
+                <strong className="cf-fig" style={{ color: 'var(--cf-ink-2)' }}>
+                  {formatMoney(data.cobradoTotalHoy.digital)}
+                </strong>
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3">
           {(data?.cuenta || []).map((l) => (
             <button
@@ -128,7 +172,12 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
         </div>
 
         <p className="text-[12px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-          Solo efectivo. Lo que entró por transferencia ya está en la cuenta.
+          {/* Antes decía «lo que entró por transferencia ya está en la cuenta»
+              sin decir CUÁNTO, que es justo lo que hacía falta saber. Ahora la
+              cifra está arriba, así que aquí se dice de dónde a dónde va. */}
+          {(data?.cobradoTotalHoy?.digital ?? 0) > 0
+            ? `Solo efectivo. Los ${formatMoney(data.cobradoTotalHoy.digital)} que entraron a la cuenta no se entregan.`
+            : 'Solo efectivo. Lo que entró por transferencia ya está en la cuenta.'}
         </p>
       </div>
 
