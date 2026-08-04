@@ -1391,6 +1391,9 @@ export default function CajaPage() {
             gastos={formatMoney(gastosHoy)}
             ajustes={formatMoney(ajustesDelDia)}
             lineas={banda ? banda.lineas.map((l) => ({ ...l, texto: formatMoney(l.monto) })) : null}
+            // Los subtotales de «Entra» y «Sale» se calculan dentro, y tienen
+            // que escribirse igual que los renglones que suman.
+            formatear={(n) => formatMoney(Math.round(n || 0))}
             onExplicar={setCifraExplicada}
             movimientos={movimientosTodos}
             totalMovimientos={cantidadPagosDia}

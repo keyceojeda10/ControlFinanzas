@@ -33,6 +33,37 @@
 // que mueve plata sigue en la página.
 
 /* Una línea del desglose: «Cobrado hoy — + $412.000». */
+/* ── UN GRUPO DE LA CUENTA: «Entra» o «Sale», con su subtotal ──────────────
+   El signo lo dice el grupo, no cada renglón. Antes cada línea llevaba su «+»
+   o su «−» y no había subtotales: para comprobar la cuenta había que sumar de
+   cabeza, que es exactamente lo que el dueño hacía con la calculadora. */
+function Grupo({ titulo, tono, total, children }) {
+  const color = tono === 'entra' ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)'
+  return (
+    <div style={{
+      background: 'var(--cf-fill)', borderRadius: 'var(--cf-r-control)',
+      padding: '10px 13px', display: 'flex', flexDirection: 'column', gap: 5,
+    }}>
+      <span style={{
+        fontSize: 10.5, fontWeight: 700, letterSpacing: '.09em',
+        textTransform: 'uppercase', color,
+      }}>{titulo}</span>
+      {children}
+      {total != null && (
+        <div style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          gap: 12, marginTop: 3, paddingTop: 7, borderTop: '1px solid var(--cf-hairline)',
+        }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+            Total que {titulo.toLowerCase()}
+          </span>
+          <span className="cf-num" style={{ fontSize: 15, fontWeight: 700, color }}>{total}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Linea({ etiqueta, valor, tono, onExplicar }) {
   if (valor == null) return null
   return (
@@ -100,6 +131,10 @@ export default function CajaEscritorio({
   // La banda del saldo
   saldo, baseInicial, cobrado, cobradoDigital, prestado, gastos, ajustes,
   lineas, descuadre, onExplicar,
+  // Cómo se escribe una cifra. La pantalla NO formatea —el padre le manda todo
+  // ya formateado— pero los subtotales de «Entra» y «Sale» son un cálculo
+  // nuevo, y tienen que salir escritos igual que los renglones que suman.
+  formatear = (n) => String(Math.round(n || 0)),
   // La tabla
   movimientos = [], totalMovimientos, onVerMovimientos,
   // Los controles del encabezado — los compone la página
@@ -163,21 +198,49 @@ export default function CajaEscritorio({
                   lo que supuse y dejó la columna entera en «?»—. El signo ya
                   dice si suma o resta, así que el color sale de ahí y no de un
                   campo aparte. */}
-              {lineas?.length ? lineas.map((l) => (
-                <Linea
-                  key={l.id}
-                  etiqueta={l.rotulo}
-                  valor={l.signo > 0 ? `+ ${l.texto}` : l.signo < 0 ? `− ${l.texto}` : l.texto}
-                  tono={l.signo > 0 ? 'entra' : l.signo < 0 ? 'sale' : undefined}
-                  onExplicar={onExplicar ? () => onExplicar(l.id) : undefined}
-                />
-              )) : (
+              {/* ── AGRUPADO EN «ENTRA» Y «SALE», COMO EN EL TELÉFONO ────────
+                  Esta pantalla se quedó con los renglones sueltos y un «+» o un
+                  «−» por línea, que es justo lo que el dueño describió con la
+                  calculadora en la mano: «hay que agrupar bien todas las sumas,
+                  agrupar bien todas las restas… estos dos números me toca a mí
+                  ponerme a sumarlos».
+
+                  Lo de móvil ya está así (`CajaCobradorDetalle`) y esta es la
+                  que él abre desde el computador. El signo lo dice el GRUPO, no
+                  cada renglón. */}
+              {lineas?.length ? (() => {
+                const entra = lineas.filter((l) => l.signo >= 0)
+                const sale = lineas.filter((l) => l.signo < 0)
+                const sumaTexto = (ls) => formatear(ls.reduce((a, l) => a + (l.monto || 0), 0))
+                return (
+                  <>
+                    <Grupo titulo="Entra" tono="entra" total={sumaTexto(entra)}>
+                      {entra.map((l) => (
+                        <Linea key={l.id} etiqueta={l.rotulo} valor={l.texto}
+                          onExplicar={onExplicar ? () => onExplicar(l.id) : undefined} />
+                      ))}
+                    </Grupo>
+                    <Grupo titulo="Sale" tono="sale" total={sumaTexto(sale)}>
+                      {sale.map((l) => (
+                        <Linea key={l.id} etiqueta={l.rotulo} valor={l.texto}
+                          onExplicar={onExplicar ? () => onExplicar(l.id) : undefined} />
+                      ))}
+                    </Grupo>
+                  </>
+                )
+              })() : (
                 <>
-                  <Linea etiqueta="Base inicial" valor={baseInicial} />
-                  <Linea etiqueta="Cobrado hoy" valor={cobrado} tono="entra" />
-                  {cobradoDigital && <Linea etiqueta="de eso, por transferencia" valor={cobradoDigital} />}
-                  <Linea etiqueta="Prestado hoy" valor={prestado} tono="sale" />
-                  <Linea etiqueta="Gastos" valor={gastos} tono="sale" />
+                  <Grupo titulo="Entra" tono="entra">
+                    <Linea etiqueta="Base inicial" valor={baseInicial} />
+                    <Linea etiqueta="Cobrado hoy" valor={cobrado} />
+                    {/* Como RENGLÓN, no como nota: es la cifra que el cobrador
+                        reporta y que no se entrega en billetes. */}
+                    {cobradoDigital && <Linea etiqueta="De eso, por transferencia" valor={cobradoDigital} />}
+                  </Grupo>
+                  <Grupo titulo="Sale" tono="sale">
+                    <Linea etiqueta="Prestado hoy" valor={prestado} />
+                    <Linea etiqueta="Gastos" valor={gastos} />
+                  </Grupo>
                   <Linea etiqueta="Ajustes" valor={ajustes} />
                 </>
               )}

@@ -119,6 +119,7 @@ export default function RutaEscritorio({
   acciones = [],            // [{ id, texto, onClick, principal }]
   chips = [], chipActivo, onChip,
   onReordenar,
+  onQuitar,   // (fila) => saca al cliente de la ruta. Sin ella el botón no sale.
   filas = [],               // [{ id, orden, iniciales, nombre, donde, diasMora, cuotaHoy, atraso, cumple, debe, cobrada }]
   onCobrar, onFila,
   // El carril derecho
@@ -290,20 +291,48 @@ export default function RutaEscritorio({
                       : f.cumpleNumero != null && f.cumpleNumero < 50 ? 'mora' : undefined}>{f.cumple}</Celda>
                     <Celda>{f.debe}</Celda>
                     <td style={{ ...COL, textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        disabled={f.cobrada}
-                        onClick={(e) => { e.stopPropagation(); onCobrar?.(f) }}
-                        style={{
-                          height: 32, padding: '0 15px',
-                          cursor: f.cobrada ? 'default' : 'pointer',
-                          borderRadius: 'var(--cf-r-control)',
-                          background: f.cobrada ? 'var(--cf-fill)' : 'var(--cf-card)',
-                          border: '1px solid var(--cf-border-strong)',
-                          fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink-2)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >{f.cobrada ? 'Cobrado' : 'Cobrar'}</button>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          disabled={f.cobrada}
+                          onClick={(e) => { e.stopPropagation(); onCobrar?.(f) }}
+                          style={{
+                            height: 32, padding: '0 15px',
+                            cursor: f.cobrada ? 'default' : 'pointer',
+                            borderRadius: 'var(--cf-r-control)',
+                            background: f.cobrada ? 'var(--cf-fill)' : 'var(--cf-card)',
+                            border: '1px solid var(--cf-border-strong)',
+                            fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink-2)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >{f.cobrada ? 'Cobrado' : 'Cobrar'}</button>
+                        {/* ── QUITAR DE LA RUTA, QUE EN PC NO SE PODÍA ────────
+                            La función existe desde siempre (`quitarCliente` en
+                            la página) pero solo la ofrecía el móvil, dentro del
+                            modo «Ordenar». Desde el computador NO HABÍA FORMA
+                            de sacar a un cliente de una ruta.
+                            Va en icono y apagado: es destructivo y no compite
+                            con «Cobrar», que es lo que se pulsa todo el día. */}
+                        {onQuitar && (
+                          <button
+                            type="button"
+                            aria-label={`Quitar a ${f.nombre} de la ruta`}
+                            title="Quitar de la ruta"
+                            onClick={(e) => { e.stopPropagation(); onQuitar(f) }}
+                            style={{
+                              width: 32, height: 32, flex: 'none', cursor: 'pointer',
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              borderRadius: 'var(--cf-r-control)', background: 'none',
+                              border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)',
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                              <path d="M6 6l12 12M18 6L6 18" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

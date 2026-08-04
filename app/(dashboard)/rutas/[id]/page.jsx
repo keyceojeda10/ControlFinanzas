@@ -1713,6 +1713,7 @@ export default function RutaDetallePage({ params }) {
         chipActivo={modoVista === 'auditoria' ? 'auditoria' : 'trabajo'}
         onChip={(v) => setModoVista(v)}
         onReordenar={() => setModoVista('ordenar')}
+        onQuitar={(f) => setConfirmQuitar({ id: f.id, nombre: f.nombre })}
         filas={(modoVista === 'auditoria'
           ? (ruta.clientes ?? [])
           : (ruta.clientes ?? []).filter((c) => c.cobroPendienteHoy || c.pagoHoy)
