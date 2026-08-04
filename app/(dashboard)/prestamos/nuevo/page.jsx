@@ -508,6 +508,27 @@ function NuevoPrestamo() {
   // ultima cuota). No se deja avanzar hasta corregirla.
   const cuotaInsuficiente = !!calculo?.cuotaInsuficiente
 
+  // ── EL AVISO ESPERA A QUE TERMINE DE ESCRIBIR ──
+  //
+  // `cuotaInsuficiente` es cierto desde la PRIMERA tecla: quien va a escribir
+  // «300.000» pasa por «3», «30», «300»… y con todos ellos la cuota no cubre el
+  // interes. Asi que el recuadro rojo «Con esa cuota la deuda nunca baja» salta
+  // mientras teclea, en un prestamo que va a quedar perfectamente bien.
+  //
+  // Lo grabo un dueño en video y me hizo diagnosticar mal: vi el aviso con
+  // «$ 3» en el campo y lo di por un fallo de calculo. No lo era —el aviso es
+  // correcto para esa cifra— pero acusa a quien todavia no ha terminado.
+  //
+  // ⚠ SOLO SE RETRASA EL AVISO, NO EL BLOQUEO. `puedeAvanzarPaso` sigue leyendo
+  // `cuotaInsuficiente` sin retardo: si de verdad la cuota no alcanza, el boton
+  // no se habilita ni por un instante. Lo que espera es el rojo en pantalla.
+  const [avisoCuotaVisible, setAvisoCuotaVisible] = useState(false)
+  useEffect(() => {
+    if (!cuotaInsuficiente) { setAvisoCuotaVisible(false); return }
+    const t = setTimeout(() => setAvisoCuotaVisible(true), 900)
+    return () => clearTimeout(t)
+  }, [cuotaInsuficiente, cuotaManual])
+
   // ── UNA SOLA COMPROBACION, NO CINCO ──
   //
   // Habia dos funciones: una por sub-paso y otra por paso. Con las condiciones
@@ -767,7 +788,7 @@ function NuevoPrestamo() {
                   alargar solo. Es una decisión que se toma MOVIENDO la tasa o la
                   cuota, así que tiene que verse mientras se mueven —no después
                   de confirmar. */}
-              {cuotaInsuficiente && (
+              {avisoCuotaVisible && (
                 <p className="text-[11px] font-semibold mt-3 rounded-[10px] px-2.5 py-2 leading-snug"
                   style={{
                     color: 'var(--cf-red-dark)',
@@ -1352,7 +1373,7 @@ function NuevoPrestamo() {
                   {/* La cuota no cubre ni el interes: el prestamo nunca se termina
                       de pagar. Se explica con los numeros exactos en vez de dejar
                       que el sistema arme una tabla imposible en silencio. */}
-                  {cuotaInsuficiente && (
+                  {avisoCuotaVisible && (
                     <div
                       className="mt-3 rounded-xl border p-3"
                       style={{

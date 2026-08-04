@@ -1,12 +1,12 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v802'
+const CACHE_NAME   = 'cf-v803'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release SÍ las cambia: `/api/caja/cobrador/[id]` devuelve un campo nuevo
-// (`cobradoTotalHoy`) y la barra de métodos agrupa distinto. Sin subirlo, el
-// teléfono seguiría sirviendo la respuesta guardada —sin el total cobrado— y el
-// arreglo no se vería hasta que caducara el cache. Comprobado con
-// `git diff` sobre `app/api/`, que esta vez NO sale vacío.
+// Este release NO las cambia: el aviso de «cuota insuficiente» que espera a que
+// se termine de escribir es cosa de la PANTALLA. Comprobado con `git diff`
+// sobre `app/api/`, que sale vacío. Se queda en v96 —el que subió con
+// `cobradoTotalHoy`—: subirlo sin motivo tira el cache de todas las respuestas
+// y la app arranca lenta en la primera carga, en el teléfono del cobrador.
 const API_CACHE    = 'cf-api-v96'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
