@@ -16,6 +16,27 @@
 
 import { useState } from 'react'
 
+/* Las dos acciones que viven DENTRO de la tarjeta del mensaje elegido.
+   Discretas a proposito: el boton que manda es «Abrir WhatsApp», abajo. Estas
+   son para antes de mandarlo. */
+function AccionDelMensaje({ onClick, texto, icono, activo = false, hecho = false }) {
+  return (
+    <button type="button" onClick={onClick} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      height: 34, padding: '0 12px', flex: 'none',
+      borderRadius: 'var(--cf-r-control)', cursor: 'pointer', font: 'inherit',
+      fontSize: 12.5, fontWeight: 700,
+      background: hecho ? 'var(--cf-green-pill-bg)' : activo ? 'var(--cf-fill)' : 'var(--cf-card)',
+      border: `1px solid ${hecho ? 'var(--cf-green)' : 'var(--cf-border-strong)'}`,
+      color: hecho ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{icono}</svg>
+      {texto}
+    </button>
+  )
+}
+
 const VERDE_WA = '#25D366'
 const BURBUJA = '#DCF8C6'
 const BURBUJA_DATO = '#C3ECAB'
@@ -66,12 +87,15 @@ export function Plantillas({
         boxShadow: '0 -12px 32px rgba(20,20,28,.18)',
         overflow: 'hidden',
       }}>
-        <div style={{ flex: 'none', padding: '10px 0 0', display: 'flex', flexDirection: 'column' }}>
+        {/* 14px arriba, no 10: el tirador quedaba pegado al borde de la hoja. */}
+        <div style={{ flex: 'none', padding: '14px 0 0', display: 'flex', flexDirection: 'column' }}>
           <span aria-hidden style={{
             width: 38, height: 4, borderRadius: 999, alignSelf: 'center', marginBottom: 14,
             background: 'var(--cf-border-strong)',
           }} />
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '0 22px 14px' }}>
+          {/* 18px debajo del nombre: con 14 el primer chip de familia quedaba
+              pegado al detalle del cliente. */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '0 22px 18px' }}>
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* EL NOMBRE DEL CLIENTE ES EL TÍTULO, no «Escribirle por
                   WhatsApp»: el icono verde y el botón de abajo ya dicen que
@@ -101,7 +125,10 @@ export function Plantillas({
         </div>
 
         <div style={{
-          flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 22px',
+          /* ⚠ 14px ABAJO. Sin ellos la última tarjeta acaba pegada al filete de
+             la barra de «Abrir WhatsApp» y se lee como si estuviera cortada.
+             Reportado: «sale muy pegado al otro botón, no hay un espacio ahí». */
+          flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 22px 14px',
           display: 'flex', flexDirection: 'column', gap: 12,
         }}>
           {/* Las familias son el orden del día: primero se cobra, luego se
@@ -163,6 +190,16 @@ export function Plantillas({
                   <>
                     <div style={{
                       background: BURBUJA, borderRadius: '14px 14px 14px 4px', padding: '13px 15px',
+                      /* ⚠ LA BURBUJA TIENE TOPE Y SCROLL PROPIO.
+                         Sin él, el recordatorio —con su resumen de cuatro
+                         líneas— medía 629px en un área de 636: ocupaba la
+                         pantalla entera y empujaba «Personalizar» y «Copiar»
+                         hasta los 944px, fuera de vista. Medido en el
+                         navegador. Poner las acciones junto al mensaje no
+                         servía de nada si el mensaje no cabe.
+                         Con tope, el mensaje se sigue leyendo entero
+                         —desplazándolo— y las acciones quedan siempre a mano. */
+                      maxHeight: '42vh', overflowY: 'auto',
                     }}>
                       {/* ⚠ `pre-wrap` O EL MENSAJE SALE COMO UN LADRILLO.
                           Las plantillas del motor estructuran con SALTOS DE
@@ -187,6 +224,36 @@ export function Plantillas({
                     <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
                       Lo resaltado se llena solo con los datos del cliente.
                     </span>
+
+                    {/* ══ LAS ACCIONES, JUNTO AL MENSAJE QUE AFECTAN ══
+                        «Personalizar» estaba al FINAL de la lista, después de
+                        todas las plantillas: había que bajar buscándolo. El
+                        dueño: «mucha gente no va a encontrar esa opción».
+                        Y «Copiar» no existía fuera del panel — no todo el mundo
+                        quiere abrir WhatsApp: hay quien pega el mensaje en otro
+                        chat o se lo manda a sí mismo.
+                        Las dos van aquí, dentro de la tarjeta elegida y debajo
+                        de su burbuja: donde se está mirando el mensaje. */}
+                    {(onPersonalizar || onCopiar) && (
+                      <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                        {onPersonalizar && (
+                          <AccionDelMensaje
+                            onClick={onPersonalizar}
+                            activo={personalizando}
+                            texto={personalizando ? 'Listo' : 'Personalizar'}
+                            icono={<path d="M4 21v-4L16.5 4.5a2.1 2.1 0 013 3L7 20l-3 1z" />}
+                          />
+                        )}
+                        {onCopiar && (
+                          <AccionDelMensaje
+                            onClick={onCopiar}
+                            hecho={copiado}
+                            texto={copiado ? 'Copiado' : 'Copiar'}
+                            icono={<><rect x="9" y="9" width="12" height="12" rx="2.2" /><path d="M5 15V5a2 2 0 012-2h10" /></>}
+                          />
+                        )}
+                      </div>
+                    )}
                     {/* Un hueco sin llenar se avisa ANTES de abrir WhatsApp: si no,
                         el mensaje sale raro y el cobrador no se entera. */}
                     {p.faltan?.length > 0 && (
@@ -239,31 +306,6 @@ export function Plantillas({
               Va como BOTÓN, con el ancho de la hoja, y abre el panel con ESTA
               plantilla ya elegida — no en una lista donde hay que buscarla otra
               vez. */}
-          {/* ══ PERSONALIZAR, AQUI MISMO ══
-              Este boton mandaba AL MODAL VIEJO. El dueño: «esa no es la idea;
-              todas esas opciones deben estar en el nuevo modal, el viejo no
-              deberia existir ya». Ahora el panel se despliega en la propia hoja
-              y el mensaje se puede editar y copiar sin salir. */}
-          {onPersonalizar && (
-            <button
-              type="button"
-              onClick={onPersonalizar}
-              style={{
-                flex: 'none', width: '100%', height: 46, cursor: 'pointer', font: 'inherit',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: personalizando ? 'var(--cf-fill)' : 'var(--cf-card)',
-                border: '1px solid var(--cf-border-strong)',
-                borderRadius: 'var(--cf-r-control)',
-                fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink-2)',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 21v-4L16.5 4.5a2.1 2.1 0 013 3L7 20l-3 1z" />
-              </svg>
-              {personalizando ? 'Listo' : 'Personalizar este mensaje'}
-            </button>
-          )}
 
           {/* El panel de secciones: las mismas casillas, el mismo «guardar» y
               los mismos campos propios del modal de siempre — es LA MISMA

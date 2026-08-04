@@ -57,6 +57,22 @@ export default function HojaWhatsApp({
   // familias de T11-01 son para ESCRIBIRLE al cliente, no para acusar recibo:
   // mandarlo aquí seria cambiarle el mensaje al que acaba de pagar.
   const [avanzado, setAvanzado] = useState(Boolean(pago || preselectedTemplateId))
+
+  /* ⚠ `useState` SOLO LEE SU VALOR INICIAL UNA VEZ, y aquí eso rompía el
+     mensaje de crédito aprobado.
+     La hoja se monta SIEMPRE con la ficha —`open` decide si se ve, no si
+     existe—, así que este `useState` corre en el primer render, cuando
+     `preselectedTemplateId` todavía es `null`. Al crear un préstamo la ficha lo
+     pone en `'credito_aprobado'` DESPUÉS, y `avanzado` se quedaba en `false`:
+     se abría la hoja normal con «recordatorio de pago».
+     Reportado por un cliente: «al crear un crédito al cliente le llega un
+     mensaje recordándole el pago siguiente... yo quiero el que decía crédito
+     aprobado con la descripción y a cuántas cuotas quedaba».
+     Con el efecto, la hoja reacciona al cambio en vez de quedarse con lo que
+     había al montarse. */
+  useEffect(() => {
+    if (pago || preselectedTemplateId) setAvanzado(true)
+  }, [pago, preselectedTemplateId])
   // Qué plantilla abrir en el panel completo. Al pulsar «Personalizar este
   // mensaje» se abre CON LA QUE SE ESTÁ MIRANDO, no en una lista donde hay que
   // volver a buscarla.
