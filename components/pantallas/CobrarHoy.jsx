@@ -218,8 +218,11 @@ function FilaCobro({
         <div style={{ display: 'flex', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
           {onWhatsApp && (
-            <AccionParada onClick={onWhatsApp} texto="WhatsApp" tono="verde">
-              <path d="M20.5 3.5A11.5 11.5 0 003.6 18.9L2.5 22.5l3.7-1.1A11.5 11.5 0 1020.5 3.5z" />
+            <AccionParada onClick={onWhatsApp} texto="WhatsApp" tono="verde" relleno>
+              {/* EL LOGO DE VERDAD. Lo que había era una burbuja de trazo
+                  dibujada a mano: no es el logo de WhatsApp, y encima el trazo
+                  tocaba el borde del viewBox y salía cortado. */}
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
             </AccionParada>
           )}
           {onMapa && (
@@ -241,7 +244,15 @@ function FilaCobro({
 
 /* Un botón de la parada actual. Alto 42 —el dedo necesita 44 y va dentro de una
    tarjeta que ya se puede pulsar entera—, y el de tres puntos cuadrado. */
-function AccionParada({ children, texto, tono, soloIcono, onClick, ...resto }) {
+/* `relleno` para los glifos de marca —el de WhatsApp es una SILUETA, no un
+   trazo—. Pintado con `stroke` salía como un contorno raro, y además RECORTADO:
+   ese dibujo llega justo al borde de su viewBox, así que el grosor de línea se
+   sale del lienzo y la parte de fuera se corta. Reportado en la captura.
+   El mapa y los tres puntos siguen siendo trazo, que es como se dibujan. */
+function AccionParada({ children, texto, tono, soloIcono, relleno, onClick, ...resto }) {
+  const pincel = relleno
+    ? { fill: 'currentColor', stroke: 'none' }
+    : { fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }
   return (
     <button
       type="button"
@@ -253,11 +264,13 @@ function AccionParada({ children, texto, tono, soloIcono, onClick, ...resto }) {
         background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         font: 'inherit', fontSize: 13, fontWeight: 700,
+        /* `--cf-green-dark`, el verde del sistema, NO `--cf-whatsapp` (#25D366):
+           ese es el verde de marca de ellos y sobre blanco no da contraste de
+           lectura para un texto de 13px. El icono ya identifica la app. */
         color: tono === 'verde' ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
       }}
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" {...pincel} style={{ flex: 'none' }}>
         {children}
       </svg>
       {texto}
@@ -399,12 +412,24 @@ export default function CobrarHoy({
 
       {/* ══ La barra de acción, fija abajo ══
           Va por encima de la pastilla de navegación a propósito: mientras se
-          cobra, «el siguiente» pesa más que cambiar de pantalla. */}
+          cobra, «el siguiente» pesa más que cambiar de pantalla.
+
+          ⚠ EN ESCRITORIO NO OCUPA TODO EL ANCHO.
+          Estaba clavada en `left: 16, right: 16`, que es lo correcto en un
+          teléfono de 393px —el pulgar tiene que alcanzarla sin mirar— pero en
+          un monitor de 1900 eso es un botón de metro y medio de ancho, encima
+          metido por debajo del menú lateral. Reportado: «sale a todo lo ancho
+          reventando todo el diseño».
+          En escritorio se ancla a la derecha, del ancho de una columna: es un
+          botón, no una banda.
+
+          El `left` va por CLASE y no en el `style`: un estilo en línea gana
+          siempre a la clase, así que un `left: 16` inline dejaría el
+          `lg:left-auto` sin efecto y la barra seguiría estirándose. */}
       {pendientes > 0 && (
-        <div style={{
-          position: 'fixed', left: 16, right: 16, bottom: 18, zIndex: 45,
-          display: 'flex', alignItems: 'center', gap: 12,
-        }}>
+        <div
+          className="fixed left-4 right-4 lg:left-auto lg:w-[380px] z-[45] flex items-center gap-3"
+          style={{ bottom: 18 }}>
           <BotonPrimario onClick={onEmpezar} style={{
             flex: 1, height: 62, borderRadius: 999, fontSize: 17,
             boxShadow: '0 6px 20px rgba(231,164,0,.32)',

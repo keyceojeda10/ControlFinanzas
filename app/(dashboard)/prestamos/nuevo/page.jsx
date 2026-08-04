@@ -1900,11 +1900,21 @@ function NuevoPrestamo() {
       {/* LA CUOTA, EN VIVO. Solo salia en el ultimo sub-paso: se ajustaba el
           monto, el interes y el plazo A CIEGAS y la cifra aparecia al final.
           Con todo en una pantalla se recalcula mientras se escribe, que es lo
-          que pide T01-06. */}
+          que pide T01-06.
+
+          ⚠ SE APOYA SOBRE LA BARRA DE BOTONES, Y ESA MIDE DISTINTO EN PC.
+          Estaba clavada a 68px, que es lo que mide la barra en el teléfono:
+          `pt-3`(12) + botón(44) + `pb-3`(12). En escritorio el relleno de abajo
+          es `lg:pb-6`(24), o sea 80px, así que la tira se metía 12px POR DEBAJO
+          y las cifras quedaban pegadas a los botones. Reportado en la captura.
+          Ahora hay dos alturas —una por tamaño de pantalla— con 10px de aire
+          para que las dos piezas se lean como dos.
+          Va por clase y no en el `style`: un `bottom` en línea no puede
+          cambiar en `lg:`, que es justo lo que hacía falta aquí. */}
       {paso === 1 && calculo && (
         <div
-          className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] z-[44] px-4 lg:px-6"
-          style={{ bottom: 'calc(68px + env(safe-area-inset-bottom))' }}
+          className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] z-[44] px-4 lg:px-6
+                     bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-[calc(90px+env(safe-area-inset-bottom))]"
         >
           <div
             className="max-w-2xl mx-auto rounded-t-[12px] px-4 py-3 flex items-center justify-between gap-4"
@@ -1912,7 +1922,7 @@ function NuevoPrestamo() {
               background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 12%, var(--cf-card)), var(--cf-card))',
               border: '1px solid color-mix(in srgb, var(--cf-green-dark) 30%, var(--cf-border))',
               borderBottom: 'none',
-              boxShadow: '0 -2px 10px rgba(0,0,0,0.2)',
+              boxShadow: 'none',
             }}
           >
             <div className="min-w-0">
@@ -1951,7 +1961,7 @@ function NuevoPrestamo() {
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',
-          boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
+          boxShadow: 'var(--cf-sh-sheet)',
         }}
       >
         <div className="max-w-2xl mx-auto flex items-center gap-3">

@@ -721,7 +721,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         style={{
           background: 'var(--cf-surface)',
           borderTop: '1px solid var(--cf-border)',
-          boxShadow: '0 -4px 12px rgba(0,0,0,0.25)',
+          boxShadow: 'var(--cf-sh-sheet)',
         }}
       >
         <div className="max-w-xl mx-auto flex items-center gap-3">
