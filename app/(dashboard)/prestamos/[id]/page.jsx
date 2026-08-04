@@ -703,10 +703,21 @@ export default function PrestamoDetallePage({ params }) {
         // Suelto ademas del texto: en 1440 tiene columna propia.
         saldo: formatMoney(saldo),
         // Y sin el saldo dentro, para no decirlo dos veces cuando hay columna.
+        // ── EL MEDIO DE VERDAD, NO «transferencia» a secas ──
+        // Se degradaba a mano a «efectivo»/«transferencia» cuando el nombre de
+        // la cuenta —Nequi, Daviplata— viene en el propio pago. La lámina
+        // T11-03 pone «Nequi» en su columna, y para el que revisa un cobro no
+        // es lo mismo: dice POR DÓNDE entró la plata.
         comoPago: [
-          p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
+          p.metodoPago === 'transferencia' ? (p.plataforma || 'transferencia') : 'efectivo',
           p.tipo && p.tipo !== 'completo' ? p.tipo : null,
         ].filter(Boolean).join(' · '),
+        // ── QUIÉN LO COBRÓ (T11-03) ──
+        // El comentario de `FichaPrestamo` decía que este dato «no llega hasta
+        // aquí» y era FALSO: la API lo devuelve en cada pago
+        // (`app/api/prestamos/[id]/route.js:41`). Con varios cobradores, saber
+        // quién recibió un pago es la mitad de una auditoría.
+        cobrador: p.cobrador?.nombre ?? null,
         monto: formatMoney(monto),
       })
       saldo += monto
@@ -1039,7 +1050,7 @@ export default function PrestamoDetallePage({ params }) {
   // Medido con `.auditoria/hueco-real.mjs`. Ojo: `hueco-del-pie.mjs` daba «ok»
   // —mide el último elemento con contenido, no el hueco que se ve—.
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-4 pb-4">
+    <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-4 pb-4">
 
       {/* ── UNA SOLA FRANJA ROJA ──
           Iban dos apiladas: «Préstamo perdido» y debajo «62 días en mora · 62
@@ -1219,6 +1230,22 @@ export default function PrestamoDetallePage({ params }) {
           </button>
         )
       })()}
+
+      {/* ── DOS COLUMNAS EN ESCRITORIO (T11-03) ─────────────────────────
+          A 1440 esto era una columna de tarjetas móviles apiladas: la tabla de
+          amortización y el historial quedaban a varias pantallas de scroll del
+          saldo, y media pantalla en blanco.
+
+          La lámina reparte por USO: a la izquierda lo que se opera —cobrar, el
+          estado del préstamo, su tabla, sus pagos—, a la derecha lo que se
+          consulta mientras se opera: quién es el cliente, sus documentos y la
+          firma. Lo de la izquierda es largo y lo de la derecha corto, así que
+          el carril no se estira.
+
+          En móvil sigue siendo una sola columna, en el mismo orden: `lg:grid`
+          no aplica por debajo de 1024. */}
+      <div className="lg:grid lg:grid-cols-[1.6fr_1fr] lg:gap-5 lg:items-start space-y-4 lg:space-y-0">
+        <div className="space-y-4 min-w-0">
 
       {/* ── 2. HEADER CLIENTE CON CONTEXTO ─────────────────────────── */}
       <HeaderClienteContexto
@@ -1526,6 +1553,11 @@ export default function PrestamoDetallePage({ params }) {
         />
       )}
 
+        </div>
+
+        {/* ── EL CARRIL DERECHO: lo que se consulta mientras se opera ── */}
+        <div className="space-y-4 min-w-0">
+
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
       {cliente?.telefono && estaActivo && enMora && !completado && (
         <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -1784,6 +1816,9 @@ export default function PrestamoDetallePage({ params }) {
         })()}
         </div>}
       </Card>
+
+        </div>
+      </div>
 
       {/* ── CANCELAR PRÉSTAMO (solo owner, solo activo) ──────────── */}
       {estaActivo && session?.user?.rol === 'owner' && !completado && (

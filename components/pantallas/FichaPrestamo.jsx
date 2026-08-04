@@ -117,13 +117,17 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
 
           La cabecera solo con ancho: cinco rotulos sobre 390px dejan las
           columnas en dos caracteres. */}
+      {/* ⚠ CINCO COLUMNAS AQUI Y CINCO EN LA FILA. Ya paso una vez en la lista
+          de clientes: la cabecera tenia una columna mas que las filas y en el
+          JSX se veia bien —solo aparece midiendo la rejilla en el navegador—.
+          Si se toca una, se toca la otra. */}
       <div className="hidden lg:grid" style={{
-        gridTemplateColumns: '150px 1fr 150px 130px', gap: 12,
+        gridTemplateColumns: '130px 1fr 120px 130px 130px', gap: 12,
         padding: '9px 19px', background: 'var(--cf-surface)',
         borderTop: '1px solid var(--cf-hairline)',
       }}>
-        {['Fecha', 'Cómo pagó', 'Monto', 'Le quedó'].map((h, i) => (
-          <span key={h} className={i >= 2 ? 'text-right' : ''} style={{
+        {['Fecha', 'Cómo pagó', 'Cobrador', 'Monto', 'Le quedó'].map((h, i) => (
+          <span key={h} className={i >= 3 ? 'text-right' : ''} style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '.09em',
             textTransform: 'uppercase', color: 'var(--cf-ink-3)',
           }}>{h}</span>
@@ -135,7 +139,7 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
           className="flex items-center lg:grid lg:items-center"
           style={{
             gap: 12, padding: '11px 19px',
-            gridTemplateColumns: '150px 1fr 150px 130px',
+            gridTemplateColumns: '130px 1fr 120px 130px 130px',
             borderTop: '1px solid var(--cf-hairline)', flex: 'none', minHeight: 52,
           }}>
           {/* `lg:contents` disuelve este envoltorio en la rejilla: en movil
@@ -156,6 +160,12 @@ function Historial({ pagos = [], total, montoOculto, onVerTodos, notaPie, esUnic
               {p.comoPago ?? p.medio ?? p.detalle}
             </span>
           </span>
+          {/* Quien lo cobro. Solo en escritorio: en el telefono no hay ancho y
+              el dato ya viaja en la segunda linea del detalle. */}
+          <span className="cf-num hidden lg:block" style={{
+            fontSize: 13, color: 'var(--cf-ink-2)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{p.cobrador ?? '—'}</span>
           <span className="cf-fig lg:text-right" style={{ fontSize: 15, color: 'var(--cf-green-dark)', flex: 'none' }}>
             {p.monto}
           </span>

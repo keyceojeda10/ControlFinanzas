@@ -438,7 +438,7 @@ export default function ClienteDetallePage({ params }) {
   const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
 
   return (
-    <div className="max-w-2xl lg:max-w-4xl mx-auto space-y-5 pb-4">
+    <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-5 pb-4">
 
       {/* Barra de navegación de ruta */}
       {rutaNav && (
@@ -521,6 +521,21 @@ export default function ClienteDetallePage({ params }) {
       <div className="flex">
         <ScoreCrediticio cedula={cliente.cedula} plan={plan} />
       </div>
+
+      {/* ── DOS COLUMNAS EN ESCRITORIO (T15-01) ─────────────────────────
+          A 1440 esto era una columna de tarjetas móviles apiladas: el
+          histograma de «cómo paga» quedaba a dos pantallas de scroll del
+          nombre del cliente, y la mitad derecha del monitor en blanco.
+
+          La lámina reparte por PREGUNTA, no por tamaño: a la izquierda lo que
+          se consulta —sus préstamos y cómo ha pagado—, a la derecha lo que se
+          usa para contactarlo y lo que se configura. Lo de la izquierda es
+          largo y lo de la derecha corto, así que el carril no se estira.
+
+          En móvil sigue siendo una sola columna, en el mismo orden de siempre:
+          `lg:grid` no aplica por debajo de 1024. */}
+      <div className="lg:grid lg:grid-cols-[1.55fr_1fr] lg:gap-5 lg:items-start space-y-5 lg:space-y-0">
+        <div className="space-y-5 min-w-0">
 
       {/* ── LOS PRÉSTAMOS VAN ANTES QUE LAS ACCIONES ────────────────────
           Estaban DEBAJO de la lista de acciones (siete filas: reagendar,
@@ -806,6 +821,11 @@ export default function ClienteDetallePage({ params }) {
         </button>
       )}
 
+        </div>
+
+        {/* ── EL CARRIL DERECHO ── */}
+        <div className="space-y-5 min-w-0">
+
       {/* Info de contacto */}
       <InfoContactoCard cliente={cliente} />
 
@@ -840,6 +860,9 @@ export default function ClienteDetallePage({ params }) {
 
 
       {/* Historial */}
+        </div>
+      </div>
+
       {historial.length > 0 && (
         <div>
           <h2 className="text-[11px] font-extrabold text-[var(--cf-ink-3)] mb-3 uppercase tracking-[.07em]">
