@@ -1140,6 +1140,35 @@ export default function ClientesPage() {
         <CarteraVacia puedeCrear={montado && !authLoading && puedeCrearClientes} />
       )}
 
+      {/* ══ LA CARTERA ARRANCADA PERO MÍNIMA ══
+          `carteraVacia` solo se cumple con CERO clientes, así que quien tiene
+          uno o dos no veía las vías de carga por ningún lado. Y ese es el grupo
+          grande de verdad — medido contra producción el 4 ago:
+
+            · 311 de 411 negocios tienen 5 clientes o menos.
+            · 165 de ellos YA NO VEN el onboarding: se cierra solo a los 14 días
+              con un préstamo, o al tener cliente + préstamo + pago. 138 de esos
+              tienen entre 1 y 5 clientes.
+            · 132 llevan más de 30 días sin cargar a nadie: no van despacio,
+              PARARON.
+
+          Así que la cuenta con dos clientes se quedaba sin guía y sin esta
+          pantalla: tierra de nadie. Va DEBAJO de su lista, no encima — sus dos
+          clientes son lo que vino a ver, y taparlos con un cartel de ayuda sería
+          repetir el error de esconder los KPIs en cero.
+
+          Se calla en cuanto pasa de 5: a partir de ahí ya sabe cargar. */}
+      {!loading && !error && !buscar && !estado && !grupoFiltro && !rutaIdFiltro
+        && total > 0 && total <= 5 && puedeCrearClientes && (
+        <div className="mt-4">
+          <CarteraVacia
+            puedeCrear={montado && !authLoading && puedeCrearClientes}
+            arrancada
+            cuantos={total}
+          />
+        </div>
+      )}
+
       {/* El filtro dejó la lista en cero — la cartera sí tiene clientes. */}
       {!loading && !error && clientes.length === 0 && (buscar || estado || grupoFiltro || rutaIdFiltro) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">

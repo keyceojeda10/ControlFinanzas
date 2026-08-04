@@ -295,9 +295,38 @@ export default function WizardCartulina({ onComplete, onSkip }) {
         )}
       </div>
 
-      {/* Saltar */}
+      {/* ══ LA TERCERA VÍA: EL ARCHIVO QUE YA TIENE ══
+          El asistente ofrecía DOS caminos —la foto o registrar a mano— pero la
+          pantalla de cartera vacía ofrece TRES, y la lámina pide que sean «los
+          mismos, con el mismo orden y las mismas palabras». Quien se saltó el
+          asistente veía después una opción que aquí no existía.
+
+          Medido contra producción antes de añadirla, porque una opción de más
+          en el primer paso también estorba:
+            · 39 de las 56 cuentas que arrancaron cargaron 10+ clientes EN UNA
+              HORA. Se arranca en sesiones, no de a uno.
+            · De las 311 atascadas en ≤5 clientes, NINGUNA ha hecho una sesión
+              así, y 132 llevan más de 30 días sin cargar a nadie: no van
+              despacio, pararon.
+          Quien llega con un Excel hecho y solo ve «foto» o «a mano» tiene que
+          empezar a teclear lo que ya tiene escrito. */}
       {(estado === 'idle' || estado === 'error') && (
-        <div className="pt-4 pb-2">
+        <div className="pt-3 pb-2 space-y-1">
+          <a
+            href="/carga-masiva"
+            className="w-full flex items-center justify-center gap-2 h-11 rounded-[14px] text-[13px] font-semibold cursor-pointer transition-colors"
+            style={{
+              background: 'var(--cf-fill)', color: 'var(--cf-ink-2)',
+              border: '1px solid var(--cf-border)', textDecoration: 'none',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
+              <path d="M14 3v5h5" /><path d="M8.5 12.5h7M8.5 16h7M12 12.5V16" />
+            </svg>
+            Tengo un Excel o CSV
+          </a>
           <button onClick={onSkip}
             className="w-full text-[12px] text-center py-2 cursor-pointer transition-colors"
             style={{ color: 'var(--cf-ink-3)' }}>

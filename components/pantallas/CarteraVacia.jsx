@@ -7,16 +7,23 @@
 // con 0 clientes convierte al 0%; una con 51-150, al 74%. Esta pantalla es el
 // cuello de botella del negocio entero.
 //
-// ⚠ OJO: la nota del diseño dice que esto «repite los tres métodos de carga del
-// onboarding, con el mismo orden y las mismas palabras». HOY NO ES CIERTO, y yo
-// lo di por hecho sin comprobarlo. El asistente real (WizardCartulina) ofrece
-// DOS caminos, no tres: «Sube una foto de tu cartulina» y «No tengo cartulinas,
-// quiero registrar manualmente». No hay Excel/CSV, aunque /carga-masiva exista.
+// LOS TRES MÉTODOS YA CUADRAN CON EL ASISTENTE.
 //
-// Así que quien se saltó el onboarding llega aquí y ve tres opciones donde vio
-// dos, con otros nombres. Hay que cuadrarlo en una de las dos direcciones:
-// añadir el Excel al asistente (que es lo que pide el diseño), o quitarlo de
-// aquí. Mientras no se decida, esto NO cumple la nota.
+// Este comentario decía que NO: el asistente ofrecía dos caminos —la foto y
+// registrar a mano— y aquí salían tres, así que quien se saltó el onboarding
+// veía después una opción que antes no existía. Se resolvió en la dirección que
+// pide el diseño: el Excel se AÑADIÓ al asistente (`WizardCartulina`), no se
+// quitó de aquí.
+//
+// Medido contra producción antes de decidir, porque una opción de más en el
+// primer paso también estorba:
+//   · 39 de las 56 cuentas que arrancaron cargaron 10+ clientes EN UNA HORA.
+//     Se arranca en sesiones, no de a uno cuando uno se acuerda.
+//   · De las 311 atascadas en ≤5 clientes, NINGUNA ha hecho una sesión así, y
+//     132 llevan más de 30 días sin cargar a nadie: no van despacio, pararon.
+//
+// ⚠ Si se toca el orden o las palabras de las tres vías, hay que tocarlas EN
+// LOS DOS SITIOS. Hay prueba que lo comprueba.
 //
 // La moneda va APAGADA Y DE CONTORNO. No hay nada que celebrar.
 
@@ -49,27 +56,53 @@ const VIAS = [
   },
 ]
 
-export default function CarteraVacia({ puedeCrear = true }) {
+/* `arrancada`: ya tiene uno o dos clientes, pero sigue lejos de una cartera.
+   No es la misma pantalla —ni el mismo tono—: decirle «tu cartera está vacía» a
+   quien acaba de cargar a su primer cliente es negarle lo que sí hizo. */
+export default function CarteraVacia({ puedeCrear = true, arrancada = false, cuantos = 0 }) {
   // Un cobrador sin permiso de crear no puede usar ninguna de las tres vías;
   // ofrecérselas es mandarlo a un error.
-  const vias = puedeCrear ? VIAS : []
+  // Con la cartera arrancada se cae «escribir el primero»: ya lo escribió, y
+  // seguir ofreciéndoselo es proponerle justo lo que le tiene atascado —cargar
+  // de a uno—. El botón de crear a mano sigue estando en la pantalla (el FAB).
+  const vias = !puedeCrear ? [] : arrancada ? VIAS.filter((v) => v.id !== 'mano') : VIAS
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--cf-gap-cards)', padding: '24px 0 0' }}>
-      {/* Apagada: en una pantalla vacía la mascota celebrando se lee como burla. */}
-      <span style={{ opacity: 0.42, filter: 'grayscale(0.35)' }}>
-        <MonedaCF pose="vacia" size={92} />
-      </span>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: 'var(--cf-gap-cards)',
+      padding: arrancada ? '20px 16px' : '24px 0 0',
+      ...(arrancada ? {
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)',
+      } : null),
+    }}>
+      {/* La moneda solo en la vacía de verdad: quien ya cargó clientes está
+          viendo su lista justo encima y no necesita una ilustración, necesita
+          los botones. */}
+      {!arrancada && (
+        /* Apagada: en una pantalla vacía la mascota celebrando se lee como burla. */
+        <span style={{ opacity: 0.42, filter: 'grayscale(0.35)' }}>
+          <MonedaCF pose="vacia" size={92} />
+        </span>
+      )}
 
-      <span style={{ textAlign: 'center', maxWidth: '34ch' }}>
+      <span style={{ textAlign: 'center', maxWidth: '38ch' }}>
         <span style={{
           display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          fontSize: arrancada ? 17 : 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
         }}>
-          Tu cartera está vacía
+          {arrancada
+            ? `Llevas ${cuantos} ${cuantos === 1 ? 'cliente' : 'clientes'}`
+            : 'Tu cartera está vacía'}
         </span>
         <span style={{ display: 'block', fontSize: 13.5, color: 'var(--cf-ink-2)', lineHeight: 1.5, marginTop: 6 }}>
-          Carga tus clientes y en tres minutos ves quién te debe y cuánto.
+          {arrancada
+            /* Sin cifras de conversión ni promesas: lo que le sirve es que el
+               resto de la cartera se puede subir de una vez, no de a uno. */
+            ? 'Sube el resto de una vez y ves toda tu cartera junta.'
+            : 'Carga tus clientes y en tres minutos ves quién te debe y cuánto.'}
         </span>
       </span>
 
