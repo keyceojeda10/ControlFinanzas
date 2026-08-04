@@ -2,11 +2,10 @@
 const CACHE_NAME   = 'cf-v804'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release NO las cambia: el aviso de «cuota insuficiente» que espera a que
-// se termine de escribir es cosa de la PANTALLA. Comprobado con `git diff`
-// sobre `app/api/`, que sale vacío. Se queda en v96 —el que subió con
-// `cobradoTotalHoy`—: subirlo sin motivo tira el cache de todas las respuestas
-// y la app arranca lenta en la primera carga, en el teléfono del cobrador.
+// Este release SÍ las cambia: `cobradoTotalHoy` pasa a la cifra NETA (sin el
+// saldo absorbido de las renovaciones). Sin subirlo, el teléfono seguiría
+// sirviendo la respuesta guardada y «Cobró hoy» mantendría el número inflado
+// —$817.785 donde el cobrador cobró $428.000—, que es justo lo que se corrige.
 const API_CACHE    = 'cf-api-v97'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
