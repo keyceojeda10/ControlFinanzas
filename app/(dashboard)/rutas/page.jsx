@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
 import RutasEscritorio from '@/components/pantallas/RutasEscritorio'
 import HojaInferior from '@/components/cf/HojaInferior'
-import { adaptarRutas, adaptarSinRuta, resumenDelDia } from '@/lib/adaptadores/rutas'
+import { adaptarRutas, adaptarSinRuta, resumenDelDia, bandaDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -683,6 +683,7 @@ export default function RutasPage() {
             // «4 rutas · $34.500 de $207.500 hoy». El encabezado dice de un
             // vistazo lo que la lista solo dice sumando tarjeta por tarjeta.
             resumen={resumenDelDia(rutas, country)}
+            banda={bandaDelDia(rutas, country)}
             // Los controles, en la MISMA fila del titulo. El «+» se queda porque
             // el FAB de la pastilla NO ofrece «nueva ruta» todavia: quitarlo
             // dejaria la pantalla sin forma de crear una. Cuando MenuCrear se

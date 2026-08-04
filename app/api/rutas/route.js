@@ -7,7 +7,7 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
-import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro } from '@/lib/calculos'
+import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
 const hoy = (country = 'co') => {
@@ -53,6 +53,13 @@ export async function GET(request) {
               esClavo: true,
               montoPrestado: true,
               totalAPagar: true,
+              // ── PARA LA CARTERA DE LA TARJETA (T04-01) ──
+              // La lámina pone cuatro cifras por ruta: hoy, cobros, CARTERA y
+              // ATRASO. La cartera es `totalAPagar − totalPagado`, y `pagos`
+              // aquí viene filtrado SOLO A HOY —para el recaudado del día—, así
+              // que no sirve para el acumulado. Es una columna de la misma
+              // fila, ya calculada por el sistema.
+              totalPagado: true,
               cuotaDiaria: true,
               frecuencia: true,
               fechaInicio: true,
@@ -100,6 +107,11 @@ export async function GET(request) {
     let cobradosHoy  = 0
     let atrasados    = 0
     let enMora       = 0
+    // ── LAS DOS CIFRAS DE LA TARJETA (T04-01) ──
+    // «Cada ruta trae lo que decide a cuál entrar: plata de hoy, cobros hechos,
+    // CARTERA y ATRASO acumulado», dice el pie de la lámina.
+    let carteraRuta  = 0
+    let atrasoRuta   = 0
     let proximoCobro = null
 
     for (const cliente of r.clientes) {
@@ -136,6 +148,14 @@ export async function GET(request) {
         if (prestamo.estado === 'activo' && !prestamo.esClavo) {
           capitalTotal    += prestamo.montoPrestado ?? 0
           totalAPagarRuta += prestamo.totalAPagar ?? prestamo.montoPrestado ?? 0
+          // Cartera = lo que falta por cobrar de este préstamo. NO es el
+          // capital: incluye el interés que todavía no ha entrado.
+          carteraRuta += Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
+          // Atraso: lo que le falta para ponerse al día. Se reutiliza la función
+          // del sistema en vez de escribir la resta aquí — es la misma cifra que
+          // enseñan la ficha del cliente y el detalle de la ruta, y dos fórmulas
+          // para lo mismo acaban discrepando.
+          atrasoRuta += calcularMontoParaPonerseAlDia(prestamo, diasExcluidos, festivos)
         }
       }
 
@@ -158,6 +178,8 @@ export async function GET(request) {
       cobradosHoy,
       atrasados,
       enMora,
+      carteraRuta: Math.round(carteraRuta),
+      atrasoRuta:  Math.round(atrasoRuta),
       // ISO: la fecha se formatea en el CLIENTE. Hecho aca saldria en la zona del
       // servidor, que en produccion es UTC, y «proximo jue 30» se equivocaria de
       // dia en las cinco primeras horas de cada dia colombiano.

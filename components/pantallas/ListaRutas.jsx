@@ -41,7 +41,7 @@ function colorRiel({ inactiva, porcentaje = 0 }) {
 }
 
 /* ══ 1 · La ruta con cobros hoy ══ */
-function RutaActiva({ nombre, subtitulo, pastilla, recaudado, falta, porcentaje = 0, onAbrir }) {
+function RutaActiva({ nombre, subtitulo, pastilla, recaudado, cobros, cartera, atraso, atrasoNumero = 0, porcentaje = 0, onAbrir }) {
   const p = pastilla ? COLOR_PASTILLA[pastilla.tono] : null
   return (
     <div onClick={onAbrir} role="button" tabIndex={0} style={{
@@ -80,35 +80,46 @@ function RutaActiva({ nombre, subtitulo, pastilla, recaudado, falta, porcentaje 
       {/* LAS DOS CIFRAS. La de la izquierda es lo que ya entró —lo que el
           cobrador lleva juntando— y va grande; la de la derecha es lo que queda,
           más pequeña y en gris porque es una consecuencia, no un logro. */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-            color: 'var(--cf-ink-3)',
-          }}>Recaudado hoy</span>
-          <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
-            {recaudado}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end', flex: 'none' }}>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-            color: 'var(--cf-ink-3)',
-          }}>Falta</span>
-          <span className="cf-fig" style={{ fontSize: 17, color: 'var(--cf-ink-2)' }}>{falta}</span>
-        </div>
-      </div>
+      {/* ── LAS CUATRO CIFRAS (T04-01) ──
+          «Cada ruta trae lo que decide a cuál entrar: plata de hoy, cobros
+          hechos, cartera y atraso acumulado», dice el pie de la lámina.
 
-      {/* 7px, y el mínimo de 2% para que el 0% se vea: una barra de ancho cero
-          desaparece y la ruta parece que no existe, cuando lo que pasa es que no
-          ha cobrado nada — que es justo lo que hay que ver. */}
-      <div style={{ height: 7, borderRadius: 999, background: 'var(--cf-fill)', overflow: 'hidden', flex: 'none' }}>
-        <span style={{
-          display: 'block', height: 7, borderRadius: 999,
-          width: `${Math.max(2, Math.min(100, porcentaje))}%`,
-          background: colorRiel({ porcentaje }),
-        }} />
+          Antes eran DOS —«Recaudado hoy» grande y «Falta» al lado— más una
+          barra. Con eso se sabía cómo va el día, pero no cuál de nueve rutas
+          abrir: para eso hacen falta la cartera (cuánto hay puesto ahí) y el
+          atraso (cuánto se está quedando por el camino). */}
+      <div style={{
+        display: 'flex', alignItems: 'stretch', gap: 0,
+        paddingTop: 12, borderTop: '1px solid var(--cf-hairline)',
+      }}>
+        <CifraRuta rotulo="Hoy" valor={recaudado} />
+        <CifraRuta rotulo="Cobros" valor={cobros} />
+        <CifraRuta rotulo="Cartera" valor={cartera} />
+        <CifraRuta rotulo="Atraso" valor={atraso} tono={atrasoNumero > 0 ? 'contra' : undefined} sinLinea />
       </div>
+    </div>
+  )
+}
+
+/* Una de las cuatro. Separadas por una línea fina en vez de por espacio: con
+   cuatro cifras seguidas y sin separador, «$1.2M» y «$344k» se leen como una
+   sola. La última no la lleva. */
+function CifraRuta({ rotulo, valor, tono, sinLinea }) {
+  return (
+    <div style={{
+      flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3,
+      paddingLeft: sinLinea ? 10 : 10, paddingRight: 10,
+      borderRight: sinLinea ? 'none' : '1px solid var(--cf-hairline)',
+    }}>
+      <span style={{
+        fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em',
+        textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+      }}>{rotulo}</span>
+      <span className="cf-fig" style={{
+        fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap',
+        overflow: 'hidden', textOverflow: 'ellipsis',
+        color: tono === 'contra' ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+      }}>{valor ?? '—'}</span>
     </div>
   )
 }
@@ -187,6 +198,8 @@ export default function ListaRutas({
   rutas = [],
   // «4 rutas · $34.500 de $207.500 hoy»
   resumen,
+  // La banda ámbar de T04-01: { esperado, recaudado, detalle }
+  banda,
   sinRuta,
   onAbrir,
   onAsignar,
@@ -246,10 +259,41 @@ export default function ListaRutas({
           }}>Hoy</span>
           {acciones}
         </div>
-        {resumen && (
-          <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{resumen}</span>
-        )}
+        {/* Con banda, el detalle va DENTRO de ella: repetir «4 rutas · 20
+            cobros» arriba y abajo es decir lo mismo dos veces. */}
+        {/* Con banda, aquí va su detalle —«4 rutas · 20 cobros hoy»—; sin
+            ella, el resumen de siempre. Nunca los dos: dicen lo mismo. */}
+        <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
+          {banda ? banda.detalle : resumen}
+        </span>
       </div>
+
+      {/* ── LA BANDA DEL DÍA (T04-01) ──
+          La meta y lo recaudado, en ámbar y a lo ancho. Antes iban dentro del
+          resumen de una línea, donde la cifra con la que el dueño abre la
+          pantalla por la mañana competía con el número de rutas. */}
+      {banda && (
+        <div style={{
+          flex: 'none', borderRadius: 'var(--cf-r-card)', padding: '14px 18px',
+          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+              opacity: .75,
+            }}>Esperado hoy</span>
+            <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em' }}>{banda.esperado}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end', flex: 'none' }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+              opacity: .75,
+            }}>Recaudado</span>
+            <span className="cf-fig" style={{ fontSize: 19 }}>{banda.recaudado}</span>
+          </div>
+        </div>
+      )}
 
       {activas.map((r) => <RutaActiva key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
       {tranquilas.map((r) => <RutaTranquila key={r.id} {...r} onAbrir={() => onAbrir?.(r)} />)}
