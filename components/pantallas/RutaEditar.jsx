@@ -563,8 +563,12 @@ export function OrdenRecorrido({
           era y hay que poder volver sin acordarse del orden anterior.
           En su sitio va el ESTADO, que es lo que hay que saber tras mover algo. */}
       <div style={{
-        flex: 'none', padding: '14px 0 22px', background: 'var(--cf-card)',
-        borderTop: '1px solid var(--cf-border)',
+        /* ⚠ SIN CAJA BLANCA NI FILETE. Cuando aquí vivían dos botones grandes,
+           el fondo propio los separaba del scroll. Ahora es una línea de estado
+           y un botón pequeño, y esa caja se veía como un recuadro CUADRADO
+           —radio 0 sobre fondo blanco— pegado bajo unas filas de radio 16.
+           Medido: filas 331px con radio 16, pie 331px con radio 0. */
+        flex: 'none', padding: '14px 2px 20px',
         display: 'flex', alignItems: 'center', gap: 12,
       }}>
         <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--cf-ink-3)' }}>
