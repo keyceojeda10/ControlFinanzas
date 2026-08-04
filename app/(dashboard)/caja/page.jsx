@@ -22,7 +22,6 @@ import ListaGastos            from '@/components/gastos/ListaGastos'
 import ListadoPagos           from '@/components/pagos/ListadoPagos'
 import CajaCobradorDetalle    from '@/components/caja/CajaCobradorDetalle'
 import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
-import CajaResumen            from '@/components/caja/CajaResumen'
 import DesgloseMetodoPago     from '@/components/caja/DesgloseMetodoPago'
 import DesglosePorCuenta      from '@/components/caja/DesglosePorCuenta'
 import CuadreDia              from '@/components/caja/CuadreDia'
@@ -1325,20 +1324,56 @@ export default function CajaPage() {
             <Card><p className="text-sm text-[var(--cf-ink-3)]">Cargando…</p></Card>
           ) : (
             <>
-              <CajaResumen
-                hero={{
-                  label: 'Efectivo del período',
-                  valor: rangoData.efectivoNeto,
-                  subtitulo: 'Cobrado − Prestado − Gastos',
-                  color: rangoData.efectivoNeto >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
-                }}
-                cards={[
-                  { label: 'Cobrado', valor: rangoData.cobrado, color: 'var(--cf-green-dark)' },
-                  { label: 'Prestado', valor: rangoData.prestado, color: 'var(--cf-gold-dark)', signo: '-' },
-                  { label: 'Gastos', valor: rangoData.gastos, color: 'var(--cf-red-dark)', signo: '-' },
-                  ...(rangoData.seguros?.monto > 0 ? [{ label: 'Seguros', valor: rangoData.seguros.monto, color: 'var(--cf-ink-2)', sub: `·${rangoData.seguros.cantidad}` }] : []),
+              {/* ── EL EXTRACTO, TAMBIÉN EN 7 Y 30 DÍAS (T06-01) ──
+                  El extracto sustituyó a los cinco mosaicos de colores… pero
+                  solo en «hoy»: el bloque de arriba está condicionado a
+                  `periodo.modo === 'hoy'`, así que al pulsar «7 días» reaparecía
+                  el diseño viejo entero —degradado, orbe y mosaicos—. Reportado
+                  con captura: «me sale con el diseño viejo».
+
+                  Se reusa `CajaDia` en vez de arreglar `CajaResumen`: si no,
+                  quedan dos formas de leer la misma cuenta y hay que mantener
+                  las dos a la par. `CajaResumen` se queda sin usuarios.
+
+                  ⚠ SIN APERTURA. En un día, «con lo que amaneciste» es el saldo
+                  con el que se empieza. En un rango de siete no significa nada
+                  —¿el de cuál de los siete?—, así que la cuenta del período son
+                  solo sus tres sumandos y su neto. Por eso este bloque construye
+                  sus líneas a mano y no reusa `lineasDeLaBanda`, que siempre
+                  antepone la apertura. */}
+              <CajaDia
+                alto="auto"
+                fecha={`${rangoData.cantidadPagos} ${rangoData.cantidadPagos === 1 ? 'pago' : 'pagos'} en el período`}
+                lineas={[
+                  { id: 'recaudo', rotulo: 'Lo que entró', signo: 1, monto: rangoData.cobrado, texto: formatMoney(rangoData.cobrado) },
+                  { id: 'desembolsos', rotulo: 'Lo que prestaste', signo: -1, monto: rangoData.prestado, texto: formatMoney(rangoData.prestado) },
+                  { id: 'gastos', rotulo: 'Gastos', signo: -1, monto: rangoData.gastos, texto: formatMoney(rangoData.gastos) },
                 ]}
+                onExplicar={setCifraExplicada}
+                saldo={formatMoney(rangoData.efectivoNeto)}
+                movimientos={[]}
+                totalMovimientos={rangoData.cantidadPagos}
               />
+
+              {/* Los seguros van APARTE, no como una línea más de la cuenta: no
+                  son plata que entre ni salga de la caja del período —el cobro
+                  del seguro ya está dentro de «lo que entró»—. Como cuarto
+                  mosaico daban a entender que sumaban o restaban aparte. */}
+              {rangoData.seguros?.monto > 0 && (
+                <Card>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Seguros</p>
+                      <p className="text-[12px] text-[var(--cf-ink-3)] mt-0.5">
+                        {rangoData.seguros.cantidad} {rangoData.seguros.cantidad === 1 ? 'cobro' : 'cobros'} · ya contados en lo que entró
+                      </p>
+                    </div>
+                    <span className="cf-fig text-[17px] shrink-0" style={{ color: 'var(--cf-ink-2)' }}>
+                      {formatMoney(rangoData.seguros.monto)}
+                    </span>
+                  </div>
+                </Card>
+              )}
 
               {/* Desglose por método de pago del período */}
               <DesgloseMetodoPago items={rangoData.desgloseMetodoPago} />
