@@ -333,10 +333,7 @@ export function OrdenRecorrido({
   paradas = [],
   onReordenar,
   propuesta, onProbar,
-  onDeshacer, onPosicion, onQuitar,
-  // El texto de estado —«Guardando…», «Guardado», el error— lo pone la pagina,
-  // que es quien sabe si la peticion salio.
-  estado = null,
+  onDeshacer, onGuardar, guardando,
   sucio,
 }) {
   const [arrastrando, setArrastrando] = useState(null)  // índice que se mueve
@@ -395,12 +392,7 @@ export function OrdenRecorrido({
       />
 
       <div style={{
-        /* ⚠ SIN RELLENO LATERAL PROPIO. Se auto-aplicaba 20px por lado y, montado
-           dentro de una pagina que YA tiene su margen, se sumaban: medido en el
-           navegador, las filas salian a 291px dentro de un contenedor de 333.
-           «Ordenar» se veia mas estrecho que «Cobros» y «Auditoria», que es lo
-           que reporto el dueño. El margen lo pone quien lo monta. */
-        flex: 1, minHeight: 0, overflowY: 'auto',
+        flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 20px',
         display: 'flex', flexDirection: 'column', gap: 10,
       }}>
         <Consejo texto={consejo} />
@@ -434,54 +426,13 @@ export function OrdenRecorrido({
 
               <Asa activa={activa} onPointerDown={empezar(i)} />
 
-              {/* ══ EL NÚMERO SE TECLEA ══
-                  Era un `span`: solo se podía reordenar arrastrando. El dueño:
-                  «antes uno picaba en el número, colocaba el que quisiera y lo
-                  podía hacer. Ya no se puede».
-                  Y arrastrar no sirve igual: mover el número 30 al 2 en un
-                  teléfono son treinta filas de scroll con el dedo puesto. */}
-              {onPosicion ? (
-                <input
-                  className="cf-num"
-                  type="text"
-                  inputMode="numeric"
-                  aria-label={`Posición de ${p.nombre}`}
-                  defaultValue={p.orden}
-                  key={`${p.id}-${p.orden}`}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const n = parseInt(e.target.value, 10)
-                    // Fuera de rango o sin cambio: se repinta el que tenía. Un
-                    // campo que se queda con un número imposible hace dudar de
-                    // si el orden se guardó.
-                    if (!Number.isInteger(n) || n < 1 || n > paradas.length || n === p.orden) {
-                      e.target.value = p.orden
-                      return
-                    }
-                    onPosicion(i, n - 1)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') e.currentTarget.blur()
-                    if (e.key === 'Escape') { e.currentTarget.value = p.orden; e.currentTarget.blur() }
-                  }}
-                  style={{
-                    width: 34, height: 30, borderRadius: 9, flex: 'none', textAlign: 'center',
-                    background: activa ? 'var(--cf-gold)' : 'var(--cf-fill)',
-                    border: '1px solid var(--cf-border)',
-                    fontSize: 13, fontWeight: 700, padding: 0, outline: 'none',
-                    color: activa ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
-                  }}
-                />
-              ) : (
-                <span className="cf-num" style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  width: 28, height: 28, borderRadius: 999, flex: 'none',
-                  background: activa ? 'var(--cf-gold)' : 'var(--cf-fill)',
-                  fontSize: 13, fontWeight: 700,
-                  color: activa ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
-                }}>{p.orden}</span>
-              )}
+              <span className="cf-num" style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 28, height: 28, borderRadius: 999, flex: 'none',
+                background: activa ? 'var(--cf-gold)' : 'var(--cf-fill)',
+                fontSize: 13, fontWeight: 700,
+                color: activa ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+              }}>{p.orden}</span>
 
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ fontSize: 15, fontWeight: 700 }}>{p.nombre}</span>
@@ -501,33 +452,6 @@ export function OrdenRecorrido({
                 <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)', flex: 'none' }}>
                   {p.tramo}
                 </span>
-              )}
-
-              {/* ══ QUITAR DE LA RUTA ══
-                  No existía en ningún sitio: el dueño lo buscó y no está. Un
-                  cliente que se muda o al que se deja de cobrar se queda en el
-                  recorrido para siempre, y el cobrador sigue pasando por su
-                  puerta.
-                  Va discreto y con confirmación: quitar por error a alguien de
-                  la ruta le rompe el día al cobrador. NO borra al cliente ni su
-                  préstamo — solo lo saca del recorrido. */}
-              {onQuitar && !activa && (
-                <button
-                  type="button"
-                  aria-label={`Quitar a ${p.nombre} de la ruta`}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onQuitar(p)}
-                  style={{
-                    flex: 'none', width: 32, height: 32, borderRadius: 9, cursor: 'pointer',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'none', border: 0, padding: 0,
-                  }}
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
-                    strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14" />
-                  </svg>
-                </button>
               )}
             </div>
           )
@@ -554,36 +478,35 @@ export function OrdenRecorrido({
         )}
       </div>
 
-      {/* ══ EL PIE: DESHACER Y EL ESTADO ══
-          «Guardar el orden» era un botón que NO HACÍA FALTA: el orden se guarda
-          solo al soltar la parada. Salía siempre apagado y el dueño lo reportó
-          como roto — con razón, un control que nunca se enciende parece
-          averiado.
-          «Deshacer» SÍ se queda: arrastrar se falla, el dedo suelta donde no
-          era y hay que poder volver sin acordarse del orden anterior.
-          En su sitio va el ESTADO, que es lo que hay que saber tras mover algo. */}
       <div style={{
-        flex: 'none', padding: '14px 0 22px', background: 'var(--cf-card)',
-        borderTop: '1px solid var(--cf-border)',
-        display: 'flex', alignItems: 'center', gap: 12,
+        flex: 'none', padding: '14px 20px 22px', background: 'var(--cf-card)',
+        borderTop: '1px solid var(--cf-border)', display: 'flex', gap: 10,
       }}>
-        <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--cf-ink-3)' }}>
-          {estado ?? 'El orden se guarda solo al soltar.'}
-        </span>
-        {onDeshacer && (
-          <button
-            type="button"
-            onClick={onDeshacer}
-            disabled={!sucio}
-            style={{
-              flex: 'none', height: 46, padding: '0 20px',
-              borderRadius: 'var(--cf-r-control)',
-              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
-              color: 'var(--cf-ink-2)', font: 'inherit', fontSize: 14, fontWeight: 700,
-              cursor: sucio ? 'pointer' : 'not-allowed', opacity: sucio ? 1 : 0.45,
-            }}
-          >Deshacer</button>
-        )}
+        {/* «Deshacer» existe porque arrastrar se falla: el dedo suelta donde no
+            era y hay que poder volver sin acordarse del orden anterior. */}
+        <button
+          type="button"
+          onClick={onDeshacer}
+          disabled={!sucio}
+          style={{
+            flex: 1, height: 52, borderRadius: 14,
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            color: 'var(--cf-ink-2)', font: 'inherit', fontSize: 15, fontWeight: 600,
+            cursor: sucio ? 'pointer' : 'not-allowed', opacity: sucio ? 1 : 0.5,
+          }}
+        >Deshacer</button>
+        <button
+          type="button"
+          onClick={onGuardar}
+          disabled={guardando || !sucio}
+          style={{
+            flex: 1.7, height: 52, borderRadius: 14, border: 'none',
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', font: 'inherit',
+            fontSize: 16, fontWeight: 700,
+            cursor: guardando || !sucio ? 'not-allowed' : 'pointer',
+            opacity: guardando || !sucio ? 0.55 : 1,
+          }}
+        >{guardando ? 'Guardando…' : 'Guardar el orden'}</button>
       </div>
     </div>
   )
