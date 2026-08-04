@@ -1506,7 +1506,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         telefono={ruta?.clientes?.find((c) => c.id === reciboCobro.clienteId)?.telefono ?? null}
         onWhatsApp={() => {
           const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
-          if (c?.telefono) setModalWA({ cliente: c, prestamo: null })
+          // Sin exigir teléfono: la hoja ya avisa y deja copiar el mensaje,
+          // que es más útil que no abrir nada.
+          if (c) setModalWA({ cliente: c, prestamo: c.prestamosActivos?.[0] ?? null })
         }}
         onSiguiente={() => {
           setReciboCobro(null)
@@ -1670,8 +1672,20 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           if (c) abrirPagoRapido(c)
         }}
         onAvisar={() => {
+          // ⚠ LA HOJA DE PLANTILLAS, no un `wa.me` pelado. Abría el chat VACÍO:
+          // el cobrador, en la puerta del cliente, tenía que escribir el aviso a
+          // mano. Es el mismo fallo que el botón de la tarjeta de cobrar hoy.
           const c = ruta?.clientes?.find((x) => x.id === recorrido.actual?.id)
-          if (c?.telefono) window.open(`https://wa.me/${String(c.telefono).replace(/\D/g, '')}`, '_blank')
+          if (!c) return
+          const pr = c.prestamosActivos?.[0]
+          setModalWA({
+            cliente: c,
+            prestamo: pr ? {
+              ...pr,
+              estado: c.estado === 'completado' ? 'completado' : 'activo',
+              porcentajePagado: pr.totalAPagar > 0 ? Math.round((pr.totalPagado / pr.totalAPagar) * 100) : 0,
+            } : null,
+          })
         }}
         onParada={(pa) => {
           const c = ruta?.clientes?.find((x) => x.id === pa?.id)

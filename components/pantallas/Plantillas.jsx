@@ -188,6 +188,12 @@ export function Plantillas({
                     muro; el resumen de una línea basta para elegir. */}
                 {marcada && !p.libre && (
                   <>
+                    {/* ⚠ AL PERSONALIZAR, EL CAMPO OCUPA EL SITIO DE LA BURBUJA.
+                        El editor salia al final de la lista, muy por debajo del
+                        mensaje: se pulsaba «Personalizar» y habia que bajar a
+                        buscarlo, sin ver a la vez lo que se estaba editando.
+                        Reportado: «tiene que salir junto con el mensaje». */}
+                    {!personalizando && (
                     <div style={{
                       background: BURBUJA, borderRadius: '14px 14px 14px 4px', padding: '13px 15px',
                       /* ⚠ LA BURBUJA TIENE TOPE Y SCROLL PROPIO.
@@ -221,9 +227,36 @@ export function Plantillas({
                         ))}
                       </span>
                     </div>
-                    <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-                      Lo resaltado se llena solo con los datos del cliente.
-                    </span>
+                    )}
+
+                    {/* EL MENSAJE, EDITABLE, EN EL MISMO SITIO. Se retoca una
+                        frase viendo el resultado, sin deshacer la plantilla. */}
+                    {personalizando && textoEditable != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
+                          textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
+                          Mensaje · {textoEditable.length} caracteres
+                        </span>
+                        <textarea
+                          value={textoEditable}
+                          onChange={(e) => onTextoEditable?.(e.target.value)}
+                          rows={10}
+                          style={{
+                            boxSizing: 'border-box', width: '100%', resize: 'vertical',
+                            borderRadius: '14px 14px 14px 4px', padding: '13px 15px',
+                            background: BURBUJA, border: '1px solid var(--cf-border)',
+                            font: 'inherit', fontSize: 14, lineHeight: 1.5, color: '#15161A',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {!personalizando && (
+                      <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                        Lo resaltado se llena solo con los datos del cliente.
+                      </span>
+                    )}
 
                     {/* ══ LAS ACCIONES, JUNTO AL MENSAJE QUE AFECTAN ══
                         «Personalizar» estaba al FINAL de la lista, después de
@@ -254,6 +287,13 @@ export function Plantillas({
                         )}
                       </div>
                     )}
+
+                    {/* El panel de secciones, DENTRO de la tarjeta y debajo de
+                        sus acciones. Estaba al final de la lista, separado del
+                        mensaje que configura. Es LA MISMA pieza que el modal de
+                        siempre —`PanelSecciones`—, no una copia. */}
+                    {personalizando && panelSecciones}
+
                     {/* Un hueco sin llenar se avisa ANTES de abrir WhatsApp: si no,
                         el mensaje sale raro y el cobrador no se entera. */}
                     {p.faltan?.length > 0 && (
@@ -296,58 +336,7 @@ export function Plantillas({
             )
           })}
 
-          {/* ══ PERSONALIZAR: ES LO QUE MÁS SE USA, NO UNA LETRA PEQUEÑA ══
-              Era un enlace de 12px al final del scroll que ponía «Editar las
-              plantillas», y ahí detrás está lo que el dueño de verdad usa:
-              encender y apagar secciones del mensaje, añadir campos propios y
-              guardar la configuración. Reportado: «las opciones para
-              personalizar no salen en el modal nuevo».
 
-              Va como BOTÓN, con el ancho de la hoja, y abre el panel con ESTA
-              plantilla ya elegida — no en una lista donde hay que buscarla otra
-              vez. */}
-
-          {/* El panel de secciones: las mismas casillas, el mismo «guardar» y
-              los mismos campos propios del modal de siempre — es LA MISMA
-              pieza, extraida a `PanelSecciones` para no tener dos. */}
-          {panelSecciones && <div style={{ flex: 'none' }}>{panelSecciones}</div>}
-
-          {/* EL MENSAJE, EDITABLE. Con el panel abierto la burbuja pasa a ser
-              un campo: se puede retocar una frase antes de mandarla sin
-              deshacer la plantilla entera. */}
-          {personalizando && textoEditable != null && (
-            <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
-                  textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-                  Mensaje · {textoEditable.length} caracteres
-                </span>
-                {onCopiar && (
-                  <button type="button" onClick={onCopiar} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5, height: 30, padding: '0 10px',
-                    borderRadius: 9, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700,
-                    background: copiado ? 'var(--cf-green-pill-bg)' : 'var(--cf-card)',
-                    border: `1px solid ${copiado ? 'var(--cf-green)' : 'var(--cf-border)'}`,
-                    color: copiado ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
-                  }}>
-                    {copiado ? 'Copiado' : 'Copiar'}
-                  </button>
-                )}
-              </div>
-              <textarea
-                value={textoEditable}
-                onChange={(e) => onTextoEditable?.(e.target.value)}
-                rows={8}
-                style={{
-                  boxSizing: 'border-box', width: '100%', resize: 'vertical',
-                  borderRadius: 12, padding: '11px 13px',
-                  background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-                  font: 'inherit', fontSize: 13.5, lineHeight: 1.5, color: 'var(--cf-ink)',
-                  outline: 'none',
-                }}
-              />
-            </div>
-          )}
         </div>
 
         <div style={{
