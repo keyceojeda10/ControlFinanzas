@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { AntesDespues } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
+import { porQueNegativa, esAlarma } from '@/lib/dinero/ruta-negativa'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -599,10 +600,45 @@ export default function CapitalTab() {
                     <p className="text-sm font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{r.nombre}</p>
                     {r.cobrador && <p className="text-[10px] truncate" style={{ color: 'var(--cf-ink-3)' }}>{r.cobrador}</p>}
                   </div>
-                  <p className="text-base font-bold font-mono-display shrink-0" style={{ color: r.saldoCapital >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
+                  {/* ⚠ EL ROJO ES PARA LO QUE VA MAL, y un negativo casi nunca
+                      lo está. Medido sobre las 28 rutas en negativo: 14 es el
+                      ajuste de arranque, 12 nunca recibieron capital y SOLO 3
+                      son sobregiro de verdad. Pintar las 28 igual es lo que
+                      hace que el dueño no distinga las 3 que sí importan. */}
+                  <p className="text-base font-bold font-mono-display shrink-0"
+                     style={{ color: r.saldoCapital >= 0 ? 'var(--cf-ink-2)'
+                       : esAlarma(r) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
                     {formatMoney(r.saldoCapital)}
                   </p>
                 </div>
+
+                {/* POR QUÉ ESTÁ EN NEGATIVO.
+                    Antes salía la cifra en rojo y nada más: el dueño lee que le
+                    falta plata, y no falta —el libro cuadra—. Sin la causa no
+                    puede hacer nada con el número; con ella, dos de los tres
+                    casos se arreglan registrando un dato. */}
+                {(() => {
+                  const porQue = porQueNegativa(r)
+                  if (!porQue) return null
+                  const alarma = porQue.causa === 'sobregiro'
+                  return (
+                    <div className="mt-2 rounded-[10px] px-2.5 py-2" style={{
+                      background: alarma ? 'var(--cf-red-bg)' : 'var(--cf-fill)',
+                      border: `1px solid ${alarma ? 'var(--cf-red-border)' : 'var(--cf-border)'}`,
+                    }}>
+                      <p className="text-[11px] font-bold" style={{
+                        color: alarma ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
+                      }}>{porQue.titulo}</p>
+                      <p className="text-[10.5px] leading-snug mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                        {porQue.detalle}
+                        {porQue.sinEso != null && (
+                          <> Sin ese descuento tendría <span className="font-semibold cf-fig"
+                            style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(porQue.sinEso)}</span>.</>
+                        )}
+                      </p>
+                    </div>
+                  )
+                })()}
                 <div className="grid grid-cols-3 gap-2 mt-2 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
                   <span>Agregado: <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(r.inyectado)}</span></span>
                   <span>Prestado: <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(r.prestado)}</span></span>
