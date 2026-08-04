@@ -37,21 +37,12 @@ export function Plantillas({
       height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
       color: 'var(--cf-ink)',
     }}>
-      {/* De quién es el chat, y por qué se le escribe. La hoja se abre encima de
-          la ficha y el nombre desaparece; sin esta franja se manda el mensaje sin
-          confirmar a quién. */}
-      <div style={{
-        flex: 'none', padding: '8px 20px 14px',
-        display: 'flex', flexDirection: 'column', gap: 8,
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 19, fontWeight: 600, letterSpacing: '-.02em',
-        }}>{cliente}</span>
-        {detalle && (
-          <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{detalle}</span>
-        )}
-      </div>
+      {/* ⚠ EL NOMBRE VA DENTRO DE LA HOJA, NO ENCIMA DEL VELO.
+          Estaba fuera, sobre el velo gris con desenfoque, heredando `--cf-ink`
+          —tinta oscura sobre gris oscuro—: en la captura del dueño «Pepito ·
+          Debe $1.408.000 · 10 días de atraso» no se leía, y ese detalle es lo
+          que decide QUÉ plantilla usar.
+          Se movió al bloque de abajo, sobre fondo claro. Ver ahí. */}
 
       <div style={{
         flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column',
@@ -67,12 +58,19 @@ export function Plantillas({
           }} />
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '0 22px 14px' }}>
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* EL NOMBRE DEL CLIENTE ES EL TÍTULO, no «Escribirle por
+                  WhatsApp»: el icono verde y el botón de abajo ya dicen que
+                  esto es WhatsApp. Lo que hay que confirmar antes de mandar un
+                  mensaje a alguien que debe plata es A QUIÉN se le escribe.
+                  Y el detalle —cuánto debe, cuánto lleva de atraso— es lo que
+                  decide qué plantilla usar. */}
               <span style={{
                 fontFamily: 'var(--font-space-grotesk), system-ui',
                 fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
-              }}>Escribirle por WhatsApp</span>
-              <span style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
-                Se abre WhatsApp con el mensaje listo
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{cliente}</span>
+              <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
+                {detalle || 'Se abre WhatsApp con el mensaje listo'}
               </span>
             </div>
             {onCerrar && (
@@ -151,7 +149,17 @@ export function Plantillas({
                     <div style={{
                       background: BURBUJA, borderRadius: '14px 14px 14px 4px', padding: '13px 15px',
                     }}>
-                      <span style={{ fontSize: 14, lineHeight: 1.5, color: '#15161A' }}>
+                      {/* ⚠ `pre-wrap` O EL MENSAJE SALE COMO UN LADRILLO.
+                          Las plantillas del motor estructuran con SALTOS DE
+                          LÍNEA: un rótulo «Resumen:» y debajo una línea por
+                          cada cifra. Sin
+                          esto el navegador los colapsa a espacios y todo queda
+                          en un párrafo corrido e ilegible — reportado con
+                          captura, y con razón. */}
+                      <span style={{
+                        fontSize: 14, lineHeight: 1.5, color: '#15161A',
+                        whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                      }}>
                         {(p.trozos ?? []).map((t, i) => t.dato ? (
                           <span key={i} style={{
                             background: BURBUJA_DATO, borderRadius: 4, padding: '0 3px',
@@ -181,6 +189,14 @@ export function Plantillas({
                     rows={3}
                     placeholder="Escribe el mensaje…"
                     style={{
+                      // ⚠ `boxSizing: border-box` O EL MODAL SE DESCUADRA.
+                      // Un `<textarea>` NO hereda el `box-sizing` del reset como
+                      // los `div`: con `width:100%` y relleno de 13px por lado,
+                      // acaba midiendo 100% + 28px y desborda su tarjeta. La hoja
+                      // entera se estrecha y se recuesta a la izquierda.
+                      // Reportado: «si se escoge mensaje libre se descuadra el
+                      // modal, sale más angosto y pegado al lado izquierdo».
+                      boxSizing: 'border-box',
                       width: '100%', resize: 'none', borderRadius: 12, padding: '11px 13px',
                       background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
                       font: 'inherit', fontSize: 14, lineHeight: 1.5, color: 'var(--cf-ink)',
@@ -198,12 +214,34 @@ export function Plantillas({
             )
           })}
 
+          {/* ══ PERSONALIZAR: ES LO QUE MÁS SE USA, NO UNA LETRA PEQUEÑA ══
+              Era un enlace de 12px al final del scroll que ponía «Editar las
+              plantillas», y ahí detrás está lo que el dueño de verdad usa:
+              encender y apagar secciones del mensaje, añadir campos propios y
+              guardar la configuración. Reportado: «las opciones para
+              personalizar no salen en el modal nuevo».
+
+              Va como BOTÓN, con el ancho de la hoja, y abre el panel con ESTA
+              plantilla ya elegida — no en una lista donde hay que buscarla otra
+              vez. */}
           {onEditarPlantillas && (
-            <button type="button" onClick={onEditarPlantillas} style={{
-              flex: 'none', alignSelf: 'flex-start', background: 'none', border: 0,
-              padding: 2, cursor: 'pointer', font: 'inherit',
-              fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
-            }}>Editar las plantillas</button>
+            <button
+              type="button"
+              onClick={() => onEditarPlantillas(actual?.id)}
+              style={{
+                flex: 'none', width: '100%', height: 46, cursor: 'pointer', font: 'inherit',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                borderRadius: 'var(--cf-r-control)',
+                fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink-2)',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 21v-4L16.5 4.5a2.1 2.1 0 013 3L7 20l-3 1z" />
+              </svg>
+              Personalizar este mensaje
+            </button>
           )}
         </div>
 

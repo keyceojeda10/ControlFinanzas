@@ -52,6 +52,10 @@ export default function HojaWhatsApp({
   // familias de T11-01 son para ESCRIBIRLE al cliente, no para acusar recibo:
   // mandarlo aquí seria cambiarle el mensaje al que acaba de pagar.
   const [avanzado, setAvanzado] = useState(Boolean(pago || preselectedTemplateId))
+  // Qué plantilla abrir en el panel completo. Al pulsar «Personalizar este
+  // mensaje» se abre CON LA QUE SE ESTÁ MIRANDO, no en una lista donde hay que
+  // volver a buscarla.
+  const [paraEditar, setParaEditar] = useState(null)
 
   /* ══ EL CONTENIDO SALE DEL MOTOR DE SIEMPRE ══
      Aquí se armaban unas plantillas nuevas, escritas de cero, de UNA LÍNEA:
@@ -97,7 +101,7 @@ export default function HojaWhatsApp({
     return (
       <ModalWhatsAppTemplates
         open
-        onClose={() => { setAvanzado(false); onClose?.() }}
+        onClose={() => { setAvanzado(false); setParaEditar(null); onClose?.() }}
         cliente={cliente}
         prestamo={prestamo}
         orgNombre={orgNombre}
@@ -105,7 +109,7 @@ export default function HojaWhatsApp({
         pago={pago}
         organizationId={organizationId}
         camposRecibo={camposRecibo}
-        preselectedTemplateId={preselectedTemplateId}
+        preselectedTemplateId={paraEditar ?? preselectedTemplateId}
       />
     )
   }
@@ -159,7 +163,7 @@ export default function HojaWhatsApp({
           elegida={elegida ?? lista[0]?.id}
           onElegir={setElegida}
           telefono={cliente?.telefono ?? null}
-          onEditarPlantillas={() => setAvanzado(true)}
+          onEditarPlantillas={(id) => { setParaEditar(id ?? null); setAvanzado(true) }}
           onCerrar={onClose}
           onAbrir={({ texto }) => {
             const enlace = enlaceWhatsApp(cliente?.telefono, texto)

@@ -75,6 +75,28 @@ import { Cobradores, CrearCobrador, MiDia } from '@/components/pantallas/Cobrado
 import { ClienteNuevo } from '@/components/pantallas/ClienteNuevo'
 import { Recibo } from '@/components/pantallas/Recibo'
 import { Plantillas } from '@/components/pantallas/Plantillas'
+import {
+  contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE,
+} from '@/lib/adaptadores/plantillas-wa'
+
+/* El cliente de la captura del dueño, para que este banco enseñe LO MISMO que
+   ve él: un préstamo con historial de pagos y diez días de atraso. */
+const CTX_DEMO = contextoMotor({
+  cliente: { nombre: 'Pepito', telefono: '3200000000' },
+  prestamo: {
+    estado: 'activo', diasMora: 10, cuotaDiaria: 20000,
+    montoPrestado: 1000000, totalAPagar: 1480000, totalPagado: 72000,
+    saldoPendiente: 1408000, frecuencia: 'diario', diasPlazo: 74,
+    fechaInicio: '2026-07-21T05:00:00.000Z', tasaInteres: 20,
+    pagos: [
+      { montoPagado: 20000, fechaPago: '2026-07-21T16:04:00.000Z', tipo: 'cuota' },
+      { montoPagado: 20000, fechaPago: '2026-07-29T13:42:00.000Z', tipo: 'cuota' },
+      { montoPagado: 20000, fechaPago: '2026-08-02T12:22:00.000Z', tipo: 'cuota' },
+      { montoPagado: 12000, fechaPago: '2026-08-03T19:02:00.000Z', tipo: 'cuota' },
+    ],
+  },
+  orgNombre: 'Carlos prestamos', ocultarSaldo: false,
+})
 import { MiHistorial } from '@/components/pantallas/MiHistorial'
 import { FAMILIAS, PLANTILLAS, preparaPlantilla } from '@/lib/adaptadores/plantillas'
 import {
@@ -208,6 +230,9 @@ export default function Estilo() {
   const [paso] = useState(3)
   const [hoja, setHoja] = useState(null)
   const [tema, setTema] = useState('light')
+  // Interactivo a proposito: sin esto no se puede probar «mensaje libre»,
+  // que es el caso que descuadraba el modal.
+  const [waElegida, setWaElegida] = useState('historial')
   return (
     <div style={{ background: 'var(--cf-surface)', minHeight: '100vh', padding: 30, fontFamily: 'var(--font-manrope), system-ui' }}>
       <h1 style={{ fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 26, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)', margin: '0 0 4px' }}>
@@ -1970,15 +1995,18 @@ export default function Estilo() {
         {/* T11-01. El mensaje se LEE antes de mandarlo, con lo rellenado
             resaltado. Hoy se abre WhatsApp con un texto que nadie ha visto. */}
         <div id="wa-plantillas" style={{ ...MARCO }}>
+          {/* ⚠ CON EL MOTOR DE VERDAD, no con plantillas de muestra.
+              Aquí se montaba `PLANTILLAS` de `adaptadores/plantillas` —las de
+              UNA LÍNEA que se reemplazaron— así que este banco de pruebas
+              enseñaba algo que ya no existe en la app: se podía mirar esta
+              página, verla bien, y tener la pantalla real rota. Que es
+              exactamente lo que pasó. */}
           <Plantillas
-            cliente="Steven Olmos" detalle="Debe $130.500 · 36 días de atraso"
-            familias={FAMILIAS} familia="cobro" onFamilia={() => {}}
-            plantillas={PLANTILLAS.cobro.map((p) => preparaPlantilla(p, {
-              nombre: 'Steven', cuota: '$14.500', medio: 'Nequi', negocio: 'Prestamos Castro',
-              saldo: '$130.500', cuotasPagadas: '22 de 30', proximoCobro: 'mié 29',
-              portal: 'cf.co/p/8x2k',
-            }))}
-            elegida="cuota-hoy" onElegir={() => {}}
+            cliente="Pepito" detalle="Debe $1.408.000 · 10 días de atraso"
+            familias={familiasConPlantillas(CTX_DEMO, 'demo')}
+            familia="cobro" onFamilia={() => {}}
+            plantillas={[...plantillasDeFamilia('cobro', CTX_DEMO, 'demo'), PLANTILLA_LIBRE]}
+            elegida={waElegida} onElegir={setWaElegida}
             telefono="3200000000"
             onEditarPlantillas={() => {}} onAbrir={() => {}} onCerrar={() => {}}
           />
