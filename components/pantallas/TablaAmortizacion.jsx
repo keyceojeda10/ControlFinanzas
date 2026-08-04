@@ -270,6 +270,32 @@ export default function TablaAmortizacion({
                   ganancia {c.ganancia}
                 </span>
               </div>
+
+              {/* ── EL SALDO DESPUÉS (T12-03) ──
+                  El pie de la lámina: «una columna que hoy no existe: el saldo
+                  después, que es lo que el cliente pregunta cuando reclama».
+                  Estaba en la base (`CuotaAmortizacion.saldoRestante`) y no
+                  salía del adaptador.
+
+                  Va en su propio renglón y no como cuarta columna: en un
+                  teléfono, cuatro cifras en una fila se cortan — es lo que ya
+                  pasó con las tarjetas de ruta. */}
+              {/* Sin filete: `tabla-cotejo` fija que cada cuota sea SU PROPIA
+                  tarjeta y no filas separadas por líneas dentro de una caja
+                  plana —con filetes, la cuota que toca no se puede destacar sin
+                  romper la caja—. El renglón se separa con aire, que consigue
+                  lo mismo sin contradecir esa decisión. */}
+              {c.saldo && (
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', gap: 10,
+                  marginTop: 2,
+                }}>
+                  <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>Le queda debiendo</span>
+                  <span className="cf-num" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                    {c.saldo}
+                  </span>
+                </div>
+              )}
             </Fila>
           )
         })}

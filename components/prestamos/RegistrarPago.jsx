@@ -608,6 +608,39 @@ export default function RegistrarPago({
             )}
           </div>
 
+          {/* ── «LLEVAS HOY $X DE $Y» (T15-03) ──
+              Es lo que el cobrador quiere saber justo después de cobrar: cuánto
+              le falta para cerrar el día. La lámina la pone aquí, debajo del
+              monto, y hasta ahora la pantalla no la tenía.
+
+              La cifra sale del contexto de ruta (`sessionStorage`), que es una
+              FOTO de cuando se entró al recorrido, así que el pago que se acaba
+              de hacer se suma aquí — si no, la barra se quedaría atrás justo en
+              el cobro que se está mirando.
+
+              Solo con recorrido en marcha y con meta: fuera de la ruta no hay
+              «hoy» que llevar, y sin meta la barra no significa nada. */}
+          {rutaNav?.esperadoHoy > 0 && !pagoGuardado.offline && !['recargo', 'descuento'].includes(tipo) && (() => {
+            const llevo = Math.round((rutaNav.recaudadoHoy ?? 0) + (pagoGuardado.montoPagado ?? 0))
+            const meta = Math.round(rutaNav.esperadoHoy)
+            const pct = Math.max(2, Math.min(100, Math.round((llevo / meta) * 100)))
+            return (
+              <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--cf-fill)' }}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>Llevas hoy</span>
+                  <span className="cf-fig text-[13.5px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                    {formatMoney(llevo)} de {formatMoney(meta)}
+                  </span>
+                </div>
+                <div className="mt-2 h-[7px] rounded-full overflow-hidden" style={{ background: 'var(--cf-card)' }}>
+                  <span className="block h-[7px] rounded-full" style={{
+                    width: `${pct}%`, background: 'var(--cf-gold)',
+                  }} />
+                </div>
+              </div>
+            )
+          })()}
+
           {prestamoWA && (
             <div
               className="rounded-[20px] px-4 py-3 space-y-1.5 text-sm"

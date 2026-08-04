@@ -438,6 +438,17 @@ export default function RutaDetallePage({ params }) {
       rutaNombre: ruta.nombre,
       clientes: ruta.clientes.map(normalizarNavCliente),
       currentIndex,
+      // ── «LLEVAS HOY $X DE $Y» (T15-03) ──
+      // La pantalla de «cobro hecho» la enseña justo después de cobrar, que es
+      // cuando el cobrador quiere saber cuánto le falta para cerrar el día.
+      // Viaja aquí porque `RegistrarPago` no tiene la ruta: recibe el contexto
+      // por `sessionStorage` y hasta ahora solo llevaba la lista de clientes.
+      //
+      // Es una FOTO del momento en que se entró al recorrido; el pago que se
+      // acaba de hacer se suma aparte en la pantalla, para no tener que volver
+      // a pedir la ruta entera.
+      recaudadoHoy: Math.round(ruta.recaudadoHoy ?? 0),
+      esperadoHoy: Math.round(ruta.esperadoHoy ?? 0),
     }))
   }
 
