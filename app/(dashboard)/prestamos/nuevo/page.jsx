@@ -731,8 +731,13 @@ function NuevoPrestamo() {
 
   const completedIndices = paso > 0 ? [0] : []
 
+  // El `pb` de abajo reserva el hueco de la franja de acción, que es `fixed` y
+  // no ocupa sitio en el flujo. Eran `pb-44`(176) de cuando la cuota flotaba en
+  // su propia caja aparte; ahora la franja es UNA pieza y mide ~134 con la
+  // cuota dentro. Se deja holgura: el último campo pegado al filete se lee como
+  // si estuviera cortado.
   return (
-    <div className="max-w-2xl mx-auto pb-44 lg:pb-36">
+    <div className="max-w-2xl mx-auto pb-40 lg:pb-36">
       {/* Stepper */}
       {/* Sin contador: el de dentro del paso 2 («Paso 1 de 5») es el que avanza
           al pulsar «Continuar». Con los dos, la pantalla decia «PASO 2 DE 3» y
@@ -1896,54 +1901,17 @@ function NuevoPrestamo() {
         )
       })()}
 
-      {/* Barra sticky de resumen en vivo — visible en sub-pasos 2+ del wizard */}
-      {/* LA CUOTA, EN VIVO. Solo salia en el ultimo sub-paso: se ajustaba el
-          monto, el interes y el plazo A CIEGAS y la cifra aparecia al final.
-          Con todo en una pantalla se recalcula mientras se escribe, que es lo
-          que pide T01-06.
+      {/* ══ T01-06 · LA FRANJA DE ACCIÓN: UNA SOLA PIEZA ══
+          La cuota en vivo y los botones eran DOS bloques flotantes, uno encima
+          del otro, cada uno con su fondo, su borde y su sombra. Encajarlos
+          costó dos rondas de arreglos —primero se solapaban, luego quedaron
+          demasiado separados— y las dos veces el fallo era el mismo: dos cajas
+          que hay que alinear a mano no se alinean nunca.
 
-          ⚠ SE APOYA SOBRE LA BARRA DE BOTONES, Y ESA MIDE DISTINTO EN PC.
-          Estaba clavada a 68px, que es lo que mide la barra en el teléfono:
-          `pt-3`(12) + botón(44) + `pb-3`(12). En escritorio el relleno de abajo
-          es `lg:pb-6`(24), o sea 80px, así que la tira se metía 12px POR DEBAJO
-          y las cifras quedaban pegadas a los botones. Reportado en la captura.
-          Ahora hay dos alturas —una por tamaño de pantalla— con 10px de aire
-          para que las dos piezas se lean como dos.
-          Va por clase y no en el `style`: un `bottom` en línea no puede
-          cambiar en `lg:`, que es justo lo que hacía falta aquí. */}
-      {paso === 1 && calculo && (
-        <div
-          className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] z-[44] px-4 lg:px-6
-                     bottom-[calc(78px+env(safe-area-inset-bottom))] lg:bottom-[calc(90px+env(safe-area-inset-bottom))]"
-        >
-          <div
-            className="max-w-2xl mx-auto rounded-t-[12px] px-4 py-3 flex items-center justify-between gap-4"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 12%, var(--cf-card)), var(--cf-card))',
-              border: '1px solid color-mix(in srgb, var(--cf-green-dark) 30%, var(--cf-border))',
-              borderBottom: 'none',
-              boxShadow: 'none',
-            }}
-          >
-            <div className="min-w-0">
-              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
-                {frecuencia === 'diario' ? 'Cuota diaria' : frecuencia === 'semanal' ? 'Cuota semanal' : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
-              </p>
-              <p className="text-lg font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--cf-green-dark)' }}>
-                {formatMoney(calculo.cuotaDiaria)}
-              </p>
-            </div>
-            <div className="text-right min-w-0">
-              <p className="text-[9px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</p>
-              <p className="text-base font-bold font-mono-display leading-tight truncate" style={{ color: 'var(--cf-ink)' }}>
-                {formatMoney(calculo.totalAPagar)}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+          La lámina las tiene en LA MISMA caja: un bloque blanco con un filete
+          arriba, la cuota dentro y el botón debajo. Sin hueco que ajustar,
+          sin sombra, y sin dos anchos que mantener a la par.
 
-      {/* Footer fijo abajo.
           ⚠ VA PEGADO AL BORDE. Esta pantalla es `TAREA`: nunca tuvo pastilla,
           así que subir la barra para esquivarla solo dejaba un hueco muerto.
           El dueño lo vio de una: «se ve terrible».
@@ -1951,19 +1919,42 @@ function NuevoPrestamo() {
           ⚠ Y EL BORDE IZQUIERDO SALE DEL TOKEN, NO DE UN NÚMERO FIJO.
           El menú lateral mide `--cf-w-sidebar` = 250px y esto arrancaba en la
           clase `left-60` de Tailwind, que son 240px clavados: la barra
-          SOBRESALÍA 10px por debajo del menú y, como lleva sombra hacia
+          SOBRESALÍA 10px por debajo del menú y, como llevaba sombra hacia
           arriba, esos 10px se veían como una franja gris pegada al menú.
-          Reportado con una flecha señalándola.
-          Con el token no se pueden volver a desincronizar: si alguien cambia
-          el ancho del menú, esta barra se mueve con él. */}
+          Con el token no se pueden volver a desincronizar. */}
       <div
-        className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
+        className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] bottom-0 z-[46] px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
-          background: 'var(--cf-surface)',
+          background: 'var(--cf-card)',
           borderTop: '1px solid var(--cf-border)',
-          boxShadow: 'var(--cf-sh-sheet)',
         }}
       >
+        {/* LA CUOTA, EN VIVO. Antes solo salía en el último sub-paso: se
+            ajustaba el monto, el interés y el plazo A CIEGAS y la cifra
+            aparecía al final. La lámina la pone aquí, grande —30px, no 13—,
+            porque es la cifra que se está buscando mientras se mueven los
+            controles de arriba. */}
+        {paso === 1 && calculo && (
+          <div className="max-w-2xl mx-auto flex items-end justify-between gap-4 mb-3.5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: 'var(--cf-ink-3)' }}>
+                {frecuencia === 'diario' ? 'Cuota diaria' : frecuencia === 'semanal' ? 'Cuota semanal' : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
+              </p>
+              <p className="cf-fig text-[26px] sm:text-[30px] leading-none truncate mt-1"
+                 style={{ letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+                {formatMoney(calculo.cuotaDiaria)}
+              </p>
+            </div>
+            <div className="text-right min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</p>
+              <p className="cf-fig text-[17px] leading-none truncate mt-1"
+                 style={{ letterSpacing: '-.02em', color: 'var(--cf-ink-2)' }}>
+                {formatMoney(calculo.totalAPagar)}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           {paso === 0 ? (
             <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading} className="flex-1">

@@ -153,22 +153,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     setErrores((prev) => ({ ...prev, [field]: '' }))
   }
 
-  // El paso 1 (Datos basicos) pide nombre, cedula y telefono — los 3 datos
-  // minimos para tener un cliente registrable. Pasos 2 y 3 son opcionales.
+  // ⚠ AQUÍ VIVÍA `camposRequeridosLlenos`, QUE EXIGÍA LOS TRES CAMPOS.
   //
-  // IMPORTANTE: hay dos niveles de validacion:
-  // - camposRequeridosLlenos(idx): solo chequea que los inputs NO esten vacios.
-  //   Esto controla si el boton "Continuar" esta habilitado.
-  // - validarPasoEstricto(idx): incluye validacion de formato (cedula, telefono).
-  //   Solo se ejecuta al hacer click en "Continuar", para que si el formato
-  //   falla el usuario vea el error en el campo y sepa por que no avanzo.
-  const camposRequeridosLlenos = (idx) => {
-    if (idx === 0) {
-      return !!form.nombre.trim() && (sinCedula || !!form.cedula.trim()) && !!form.telefono.trim()
-    }
-    return true
-  }
-
+  // Cuando se relajó la validación a «solo el nombre» (T07-03, justo abajo)
+  // esa función se quedó: ya no la llamaba nadie, pero su comentario decía que
+  // controlaba el botón «Continuar» y CONTRADECÍA al de tres líneas más abajo.
+  // Leyéndola, cualquiera —yo el primero— concluye que el botón sigue
+  // bloqueado hasta rellenar cédula y teléfono. No lo está: el único
+  // `disabled` del formulario es el de edición.
+  //
+  // Se borra en vez de dejarla «por si acaso»: una función muerta que dice lo
+  // contrario de la viva es peor que no tener nada.
   const validarPasoEstricto = (idx) => {
     const errs = {}
     if (idx === 0) {
@@ -760,10 +755,40 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               >
                 Crear préstamo ahora
               </button>
+              {/* ══ T07-03 · ENCADENAR OTRO, SIN VOLVER A LA LISTA ══
+                  Las dos salidas eran «crear préstamo» y «ver ficha», y las dos
+                  SACAN del formulario. Quien está cargando su cartera no quiere
+                  ninguna de las dos: quiere meter el siguiente. Tenía que ir a
+                  la lista y pulsar «nuevo» por cada cliente.
+                  Es la pantalla del negocio que arranca, y cargar clientes es
+                  justo lo que predice que la cuenta sobreviva: 311 de 411 están
+                  en cinco clientes o menos.
+                  LA RUTA SE CONSERVA: se cargan de una en una, y volver a
+                  elegirla veinte veces es la clase de fricción que hace
+                  abandonar a media carga. */}
+              <button
+                onClick={() => {
+                  setForm((prev) => ({
+                    ...prev,
+                    nombre: '', cedula: '', telefono: '', direccion: '',
+                    referencia: '', notas: '',
+                    latitud: null, longitud: null, montoMaximoPrestamo: '',
+                  }))
+                  setErrores({})
+                  setSinCedula(false)
+                  setPaso(0)
+                  setClienteCreado(null)
+                  window.scrollTo({ top: 0 })
+                }}
+                className="w-full h-12 rounded-xl font-semibold text-sm transition-all"
+                style={{ color: 'var(--cf-ink)', background: 'var(--cf-fill)' }}
+              >
+                Cargar otro cliente
+              </button>
               <button
                 onClick={() => router.push(`/clientes/${clienteCreado.id}`)}
                 className="w-full h-11 rounded-xl font-medium text-sm transition-all"
-                style={{ color: 'var(--cf-ink-2)', background: 'var(--cf-fill)' }}
+                style={{ color: 'var(--cf-ink-2)' }}
               >
                 Ver ficha del cliente
               </button>
