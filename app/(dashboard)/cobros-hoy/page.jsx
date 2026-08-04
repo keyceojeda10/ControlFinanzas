@@ -413,7 +413,28 @@ export default function CobrosHoyPage() {
           const primero = clientes.find((x) => x.cobroPendienteHoy)
           if (primero) abrirPago(primero)
         }}
-        onMapa={() => { window.location.href = '/rutas' }}
+        onMapa={(fila) => {
+          // Con fila: la parada actual, a su dirección. Sin ella: el botón del
+          // encabezado, que lleva al mapa de rutas.
+          const c = fila ? clientes.find((x) => x.id === fila.id) : null
+          const destino = c?.latitud && c?.longitud
+            ? `${c.latitud},${c.longitud}`
+            : [c?.direccion, c?.referencia].filter(Boolean).join(' ')
+          if (destino) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino)}`, '_blank')
+          } else {
+            window.location.href = '/rutas'
+          }
+        }}
+        onWhatsApp={(fila) => {
+          const c = clientes.find((x) => x.id === fila.id)
+          const tel = String(c?.telefono ?? '').replace(/\D/g, '')
+          // Sin teléfono no hay a quién escribirle: se abre la ficha, que es
+          // donde se le puede poner uno.
+          if (tel) window.open(`https://wa.me/${tel}`, '_blank')
+          else window.location.href = `/clientes/${fila.id}`
+        }}
+        onMas={(fila) => { window.location.href = `/clientes/${fila.id}` }}
       />
 
 

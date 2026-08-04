@@ -101,6 +101,15 @@ export async function GET() {
       // sale sin el «donde», que en una pantalla para caminar es lo que hace
       // falta. Y no cuesta nada: es un VarChar(100) de la misma fila.
       referencia: true,
+      // ── PARA LAS ACCIONES DE LA PARADA ACTUAL (T03-01) ──
+      // La lámina le pone WhatsApp y Mapa al primer cobro pendiente, y sin
+      // estos tres campos las dos acciones no pueden hacer nada: el botón de
+      // WhatsApp mandaría a TODOS a la ficha del cliente en vez de abrir el
+      // chat, y el mapa caería siempre en la dirección escrita aunque el
+      // cliente tenga su punto marcado. Son tres columnas de la misma fila.
+      telefono: true,
+      latitud: true,
+      longitud: true,
       diasSinCobro: true,
       ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
       prestamos: {

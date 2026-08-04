@@ -95,6 +95,12 @@ function CabezaGrupo({ nombre, pendientes, total }) {
 function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde,
   cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, onClick,
+  // ── LA PARADA ACTUAL (T03-01) ──
+  // La lámina le pone borde dorado y tres acciones al primer cobro pendiente:
+  // es donde está el cobrador AHORA. El resto quedan como están —una lista de
+  // veinte tarjetas con tres botones cada una es un muro— y sus acciones salen
+  // al tocarlas.
+  activa = false, onWhatsApp, onMapa, onMas,
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
   const p = PASTILLA[estado] || PASTILLA.aldia
@@ -107,7 +113,10 @@ function FilaCobro({
       style={{
         position: 'relative',
         background: 'var(--cf-card)',
-        border: '1px solid var(--cf-border)',
+        // El anillo dorado marca dónde está parado. Sin él, veinte tarjetas
+        // iguales y hay que acordarse de por cuál se iba.
+        border: activa && !cobrada ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
+        boxShadow: activa && !cobrada ? '0 0 0 3px var(--cf-gold-focus)' : undefined,
         borderRadius: 'var(--cf-r-card)',
         padding: '14px 16px 14px 19px',
         // COLUMNA, no fila. Antes era una sola fila —avatar, nombre, cuota— y
@@ -202,7 +211,57 @@ function FilaCobro({
           El adaptador no la manda en el cobrado: ya está tachado y con su hora,
           y enseñarle el atraso a alguien que acaba de pagar es ruido. */}
       <TiraCifras columnas={cifras} enTarjeta />
+
+      {/* Las tres acciones de la parada actual. Solo aquí: en las demás filas
+          serían sesenta botones en una pantalla que se opera caminando. */}
+      {activa && !cobrada && (onWhatsApp || onMapa || onMas) && (
+        <div style={{ display: 'flex', gap: 8, flex: 'none' }}
+          onClick={(e) => e.stopPropagation()}>
+          {onWhatsApp && (
+            <AccionParada onClick={onWhatsApp} texto="WhatsApp" tono="verde">
+              <path d="M20.5 3.5A11.5 11.5 0 003.6 18.9L2.5 22.5l3.7-1.1A11.5 11.5 0 1020.5 3.5z" />
+            </AccionParada>
+          )}
+          {onMapa && (
+            <AccionParada onClick={onMapa} texto="Mapa">
+              <path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z" />
+              <circle cx="12" cy="10" r="2.6" />
+            </AccionParada>
+          )}
+          {onMas && (
+            <AccionParada onClick={onMas} soloIcono aria-label="Más opciones">
+              <circle cx="12" cy="5" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="12" cy="19" r="1.4" />
+            </AccionParada>
+          )}
+        </div>
+      )}
     </div>
+  )
+}
+
+/* Un botón de la parada actual. Alto 42 —el dedo necesita 44 y va dentro de una
+   tarjeta que ya se puede pulsar entera—, y el de tres puntos cuadrado. */
+function AccionParada({ children, texto, tono, soloIcono, onClick, ...resto }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      {...resto}
+      style={{
+        height: 42, flex: soloIcono ? 'none' : 1, width: soloIcono ? 46 : undefined,
+        minWidth: 0, cursor: 'pointer', borderRadius: 'var(--cf-r-control)',
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+        font: 'inherit', fontSize: 13, fontWeight: 700,
+        color: tono === 'verde' ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+        {children}
+      </svg>
+      {texto}
+    </button>
   )
 }
 
@@ -256,10 +315,20 @@ export default function CobrarHoy({
   sinSubir = 0,
   onCobrar,
   onMapa,
+  // Acciones de la parada actual (T03-01). Cada una es opcional: sin ella, su
+  // botón no se pinta.
+  onWhatsApp,
+  onMas,
   onEmpezar,
   sinMargen = false,
 }) {
   const vacio = grupos.every((g) => g.filas.length === 0)
+
+  // ── CUÁL ES LA PARADA ACTUAL ──
+  // La PRIMERA sin cobrar de toda la lista, no la primera de cada grupo: el
+  // cobrador va de una en una, y con una ruta ya terminada su primera fila
+  // sigue siendo la de arriba pero ya no es donde está.
+  const idActual = grupos.flatMap((g) => g.filas).find((f) => !f.cobrada)?.id ?? null
 
   return (
     <div style={{
@@ -313,7 +382,15 @@ export default function CobrarHoy({
             <CabezaGrupo nombre={g.nombre} pendientes={g.pendientes} total={g.total} />
             <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
               {g.filas.map((f) => (
-                <FilaCobro key={f.id} {...f} onClick={() => onCobrar?.(f)} />
+                <FilaCobro
+                  key={f.id}
+                  {...f}
+                  activa={f.id === idActual}
+                  onClick={() => onCobrar?.(f)}
+                  onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
+                  onMapa={onMapa ? () => onMapa(f) : undefined}
+                  onMas={onMas ? () => onMas(f) : undefined}
+                />
               ))}
             </div>
           </div>

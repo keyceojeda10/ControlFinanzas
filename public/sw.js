@@ -1,12 +1,12 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v813'
+const CACHE_NAME   = 'cf-v814'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
-// Este release NO las cambia: los cuatro arreglos de Lucas en el teléfono son
-// cosa de la PANTALLA. Comprobado con `git diff` sobre `app/api/`, que sale
-// vacío. Se queda en v99: subirlo sin motivo tira el cache de todas las
-// respuestas y la app arranca lenta en la primera carga.
-const API_CACHE    = 'cf-api-v99'
+// Este release SÍ las cambia: `/api/cobros-hoy` devuelve ahora `telefono`,
+// `latitud` y `longitud` para las acciones de la parada actual. Sin subirlo, el
+// teléfono serviría la respuesta guardada —sin esos campos— y el botón de
+// WhatsApp mandaría a todos a la ficha en vez de abrir el chat.
+const API_CACHE    = 'cf-api-v100'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
 const STATIC_CACHE = 'cf-static'
