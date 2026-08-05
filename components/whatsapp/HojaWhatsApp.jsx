@@ -229,6 +229,15 @@ export default function HojaWhatsApp({
     setTimeout(() => setGuardado(false), 2500)
   }
 
+  /* El texto tal cual lo genera la plantilla, sin pasar por las secciones.
+     Para las 7 que no las tienen es el ÚNICO texto que existe, y sin él no hay
+     nada que editar. Se saca de la lista sin el texto vivo —si lo mirara,
+     dependería de sí mismo— y por eso se calcula aquí y no dentro de `lista`. */
+  const textoDePlantilla = useMemo(() => {
+    const p = plantillasDeFamilia(familiaViva, ctx, organizationId)
+    return p.find((x) => x.id === idMirando)?.texto ?? null
+  }, [familiaViva, ctx, organizationId, idMirando])
+
   const lista = useMemo(() => {
     const p = plantillasDeFamilia(familiaViva, ctx, organizationId)
     // La marcada se pinta con el texto VIVO: lo que sale de las secciones
@@ -345,7 +354,13 @@ export default function HojaWhatsApp({
               onExtrasChange={(nuevos) => { setExtras(nuevos); setTextoEditado(null); setGuardado(false) }}
             />
           ) : null}
-          textoEditable={textoEditado ?? textoConSecciones}
+          // ⚠ EL TERCER RESPALDO NO SOBRA: es el que salva a las 7 plantillas
+          // sin secciones. `textoConSecciones` devuelve `null` cuando no hay
+          // `getSecciones`, y con `textoEditable` nulo la tarjeta escondía la
+          // burbuja SIN poner el editor en su sitio: se pulsaba «Personalizar»
+          // y el mensaje DESAPARECÍA. El botón decía «Listo» sobre un hueco.
+          // Lo enseñó la captura del espejo; ninguna medida lo vio.
+          textoEditable={textoEditado ?? textoConSecciones ?? textoDePlantilla}
           onTextoEditable={setTextoEditado}
           copiado={copiado}
           onCopiar={() => {

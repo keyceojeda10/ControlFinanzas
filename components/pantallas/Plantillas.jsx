@@ -193,7 +193,14 @@ export function Plantillas({
                         mensaje: se pulsaba «Personalizar» y habia que bajar a
                         buscarlo, sin ver a la vez lo que se estaba editando.
                         Reportado: «tiene que salir junto con el mensaje». */}
-                    {!personalizando && (
+                    {/* ⚠ SE ESCONDE SOLO SI HAY EDITOR QUE PONER EN SU SITIO.
+                        Antes bastaba con `personalizando`, y cuando el texto
+                        editable llegaba nulo —las 7 plantillas sin secciones—
+                        se iba la burbuja y no venía nada: el mensaje se
+                        EVAPORABA y el botón decía «Listo» sobre un hueco.
+                        Que el editor salga es cosa de la hoja; que la burbuja
+                        no se vaya al vacío es cosa de aquí. */}
+                    {!(personalizando && textoEditable != null) && (
                     <div style={{
                       background: BURBUJA, borderRadius: '14px 14px 14px 4px', padding: '13px 15px',
                       /* ⚠ LA BURBUJA TIENE TOPE Y SCROLL PROPIO.
