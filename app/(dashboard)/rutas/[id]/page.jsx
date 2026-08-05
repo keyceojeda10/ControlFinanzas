@@ -1952,7 +1952,17 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
       {/* Tocar el bloque negro abre la ficha de capital (T24-03). Era una cifra
           sin salida: el dueño la miraba y no tenia donde ir a entenderla. */}
-      {(esOwner || puedeVerCapitalRuta) && (
+      {/* ══ ORDENANDO, LO DE COBRAR ESTORBA ══════════════════════════════
+          Al entrar en «Ordenar» seguían saliendo el capital de la ruta, lo
+          recaudado hoy y la fila de herramientas: 740px de cosas que no sirven
+          para ordenar. Medido en el navegador a 393px, la primera parada
+          arrancaba en y=817 de una pantalla de 852 — o sea, había que bajar
+          media pantalla para ver la lista que se viene a tocar.
+
+          En escritorio esto ya se resolvía (`modoVista === 'ordenar' ? 'hidden'`
+          en la rama de PC); en móvil se quedó sin hacer, que es justo donde el
+          cobrador ordena su ruta. */}
+      {modoVista !== 'ordenar' && (esOwner || puedeVerCapitalRuta) && (
       <div
         onClick={(esOwner || puedeVerCapitalRuta) ? () => setFichaCapital(true) : undefined}
         style={{ cursor: (esOwner || puedeVerCapitalRuta) ? 'pointer' : 'default' }}
@@ -1967,6 +1977,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       </div>
       )}
 
+      {modoVista !== 'ordenar' && (
       <LoDeHoy {...loDeHoy({
         esperadoHoy: ruta.esperadoHoy,
         recaudadoHoy: ruta.recaudadoHoy,
@@ -1985,6 +1996,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         recaudadoEfectivoHoy: ruta.recaudadoEfectivoHoy,
         recaudadoDigitalHoy: ruta.recaudadoDigitalHoy,
       }, (n) => formatMoney(n))} />
+      )}
 
       {/* Acciones rápidas.
           "Hoja para salir a cobrar" estaba de quinta en esta fila con scroll
@@ -1993,7 +2005,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           le robaba el primer lugar a "+ Agregar", que es lo que de verdad usa
           a diario quien administra rutas con cobradores. Un cliente lo
           reporto. Visible != protagonista. */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className={`flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${modoVista === 'ordenar' ? 'hidden' : ''}`}>
         {puedeGestionarRutas && (
           <button onClick={abrirModalClientes} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform">
             + Agregar
