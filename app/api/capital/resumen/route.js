@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { calcularDesembolsadoHistorico } from '@/lib/dinero/desembolsado'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -84,9 +85,10 @@ export async function GET() {
       where: { organizationId, tipo: 'ajuste', createdAt: { gte: inicioMes } },
       select: { monto: true, saldoAnterior: true, saldoNuevo: true, descripcion: true },
     }),
+    // Solo el CONTEO, que alimenta la cobertura. El dinero lo da
+    // `calcularDesembolsadoHistorico`: ver el comentario de `prestadoHistorico`.
     prisma.prestamo.aggregate({
       where: { organizationId, estado: { not: 'cancelado' } },
-      _sum: { montoPrestado: true },
       _count: true,
     }),
     prisma.pago.aggregate({
@@ -168,7 +170,15 @@ export async function GET() {
     ajustes: 0,
   })
 
-  const prestadoHistorico = prestamosHistoricos._sum?.montoPrestado ?? 0
+  /* ⚠ EL EFECTIVO QUE SALIÓ, NO EL VALOR DE LAS CARTULINAS.
+     Esto era `prestamosHistoricos._sum.montoPrestado`, y en cada renovación
+     restaba plata que nunca salió de la caja: el detector de descuadres era el
+     que descuadraba. Medido en producción: $180.770.300 de más en todo el
+     sistema sobre 825 renovaciones — $67.485.057 solo en PRESTA MIL, que es a
+     quien le decía que le sobraban millones que no le sobraban.
+     El `_count` de arriba sigue usándose para la cobertura, por eso el
+     aggregate se queda. */
+  const prestadoHistorico = await calcularDesembolsadoHistorico(organizationId)
   const cobradoHistorico = pagosHistoricos._sum?.montoPagado ?? 0
   const gastoHistorico = gastosHistoricos._sum?.monto ?? 0
   const baseManual = componentesManuales.capitalInicial + componentesManuales.inyecciones - componentesManuales.retiros + componentesManuales.ajustes
