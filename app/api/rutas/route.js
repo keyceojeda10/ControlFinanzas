@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { esId }             from '@/lib/ids'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
@@ -231,8 +232,10 @@ export async function POST(request) {
     )
   }
 
-  // Verificar cobrador si se envía
-  if (cobradorId) {
+  // Verificar cobrador si se envía. `esId` y no a secas: un número entraría al
+  // `where` y casaría con un cobrador cualquiera. Ver lib/ids.js.
+  if (cobradorId != null && cobradorId !== '') {
+    if (!esId(cobradorId)) return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
     const cobrador = await prisma.user.findFirst({
       where: { id: cobradorId, organizationId, rol: 'cobrador' },
     })

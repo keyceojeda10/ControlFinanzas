@@ -5,6 +5,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { esId }             from '@/lib/ids'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPush } from '@/lib/push'
 
@@ -16,7 +17,8 @@ export async function POST(request) {
 
   const { organizationId } = session.user
   const { cierreId } = await request.json()
-  if (!cierreId) return Response.json({ error: 'Falta cierreId' }, { status: 400 })
+  // `esId` y no `!cierreId`: un número casaría con cualquier cierre. Ver lib/ids.js.
+  if (!esId(cierreId)) return Response.json({ error: 'Falta cierreId' }, { status: 400 })
 
   const cierre = await prisma.cierreCaja.findFirst({
     where: { id: cierreId, organizationId },

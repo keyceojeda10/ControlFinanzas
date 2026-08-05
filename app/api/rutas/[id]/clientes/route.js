@@ -41,6 +41,11 @@ export async function POST(request, { params }) {
   if (!Array.isArray(clienteIds) || !clienteIds.length) {
     return Response.json({ error: 'clienteIds debe ser un array no vacío' }, { status: 400 })
   }
+  // Mismo motivo que en el DELETE: un número aquí casaría con cualquier cliente
+  // de la tabla, y este endpoint ASIGNA. Ver el comentario largo de más abajo.
+  if (!clienteIds.every((c) => typeof c === 'string' && c.trim())) {
+    return Response.json({ error: 'clienteIds debe traer identificadores de texto' }, { status: 400 })
+  }
 
   // Verificar que todos los clientes pertenecen a la organización
   const clientes = await prisma.cliente.findMany({
@@ -133,7 +138,18 @@ export async function DELETE(request, { params }) {
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
 
   const { clienteId } = await request.json()
-  if (!clienteId) return Response.json({ error: 'clienteId es requerido' }, { status: 400 })
+  // ⚠ TIENE QUE SER TEXTO, y no vale con `!clienteId`.
+  //
+  // Los ids son varchar. En MariaDB, comparar una columna de texto con un
+  // NÚMERO convierte cada texto a número, y «cmm79te91…» empieza por letra, o
+  // sea que vale 0. Resultado: `id = 0` casa con TODAS las filas de Cliente y
+  // el findFirst devuelve una cualquiera.
+  //
+  // Así se quitó de la ruta a quien no era: la pantalla mandaba el índice de la
+  // parada porque le faltaba el id, y el índice de la primera parada es 0.
+  if (typeof clienteId !== 'string' || !clienteId.trim()) {
+    return Response.json({ error: 'clienteId es requerido' }, { status: 400 })
+  }
 
   const cliente = await prisma.cliente.findFirst({
     where: { id: clienteId, organizationId, rutaId: id },

@@ -20,6 +20,11 @@ export async function PUT(request) {
   if (!Array.isArray(cobradorIds) || !cobradorIds.length) {
     return Response.json({ error: 'cobradorIds debe ser un array no vacío' }, { status: 400 })
   }
+  // Igual que en el reordenar de clientes: un número casaría con cobradores que
+  // no son, y aquí abajo se actualizan. Ver el comentario largo de aquel.
+  if (!cobradorIds.every((c) => typeof c === 'string' && c.trim())) {
+    return Response.json({ error: 'cobradorIds debe traer identificadores de texto' }, { status: 400 })
+  }
 
   // Verificar que todos los cobradores pertenecen a la organización.
   const cobradores = await prisma.user.findMany({

@@ -27,6 +27,14 @@ export async function PUT(request, { params }) {
   if (!Array.isArray(clienteIds) || !clienteIds.length) {
     return Response.json({ error: 'clienteIds debe ser un array no vacío' }, { status: 400 })
   }
+  // ⚠ TIENEN QUE SER TEXTO. Los ids son varchar y en MariaDB comparar texto con
+  // NÚMERO convierte cada texto a número: los cuid empiezan por letra, así que
+  // todos valen 0. Un `in: [0, 1, 2]` casa con filas que no son, y aquí abajo
+  // se ACTUALIZAN. El contador de más abajo no protege: devuelve de más, no de
+  // menos. Esta pantalla ya mandó índices una vez por un id que faltaba.
+  if (!clienteIds.every((c) => typeof c === 'string' && c.trim())) {
+    return Response.json({ error: 'clienteIds debe traer identificadores de texto' }, { status: 400 })
+  }
 
   // Verificar que todos los clientes pertenecen a esta ruta y organización
   const clientes = await prisma.cliente.findMany({

@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { esId }             from '@/lib/ids'
 import {
   calcularDiasMora,
   calcularSaldoPendiente,
@@ -672,8 +673,12 @@ export async function PATCH(request, { params }) {
 
   const { nombre, cobradorId, diasSinCobro, capitalHabilitado } = await request.json()
 
-  // Validar cobrador si se envía (mismo tenant y rol correcto)
+  // Validar cobrador si se envía (mismo tenant y rol correcto). El `esId` es
+  // porque un número casaría con un cobrador cualquiera: ver lib/ids.js.
   if (cobradorId !== undefined && cobradorId !== null && cobradorId !== '') {
+    if (!esId(cobradorId)) {
+      return Response.json({ error: 'Cobrador no válido' }, { status: 400 })
+    }
     const cobrador = await prisma.user.findFirst({
       where: { id: cobradorId, organizationId: session.user.organizationId, rol: 'cobrador' },
       select: { id: true },

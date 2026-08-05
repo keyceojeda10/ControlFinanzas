@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { esId }             from '@/lib/ids'
 import { calcularPrestamo, calcularEstadoCliente } from '@/lib/calculos'
 import { agruparPorCliente } from '@/lib/carga-masiva'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -33,8 +34,10 @@ export async function POST(request) {
       return Response.json({ error: 'Máximo 500 filas por importación' }, { status: 400 })
     }
 
-    // Validar que la ruta pertenezca a la organización del usuario
-    if (rutaId) {
+    // Validar que la ruta pertenezca a la organización del usuario. El `esId`
+    // es porque un número casaría con una ruta cualquiera: ver lib/ids.js.
+    if (rutaId != null && rutaId !== '') {
+      if (!esId(rutaId)) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
       const rutaValida = await prisma.ruta.findFirst({ where: { id: rutaId, organizationId }, select: { id: true } })
       if (!rutaValida) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
       if (!await rutaPermitida(organizationId, rutaId)) {
