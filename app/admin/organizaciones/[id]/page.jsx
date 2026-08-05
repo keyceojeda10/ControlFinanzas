@@ -28,6 +28,7 @@ export default function OrgDetallePage() {
   const [demoDias, setDemoDias] = useState('1')
   const [pagoDirecto, setPagoDirecto] = useState({ plan: 'starter', periodo: 'mensual', monto: '', extender: false })
   const [cobradoresInput, setCobradoresInput] = useState('')
+  const [clientesInput, setClientesInput] = useState('')
   const [extensionDias, setExtensionDias] = useState('')
   const [diaFijoPago, setDiaFijoPago] = useState('')
 
@@ -177,7 +178,7 @@ export default function OrgDetallePage() {
           <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
           <p className="text-base font-bold text-[white]">
             {org._count?.clientes ?? 0}
-            <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes}</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] font-normal"> / {limite.clientes > 9999 ? '∞' : limite.clientes + (org.clientesExtra ?? 0)}</span>
           </p>
         </div>
         <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center">
@@ -551,6 +552,59 @@ export default function OrgDetallePage() {
                 if (confirm(`¿Cambiar cobradores extra de ${org.cobradoresExtra ?? 0} a ${val} para "${org.nombre}"?`)) {
                   ejecutarAccion('cambiarCobradores', { cobradoresExtra: val })
                   setCobradoresInput('')
+                }
+              }}
+            >
+              Aplicar
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Clientes extra
+          Nació de dos cuentas del plan Inicial atascadas en 113 y 109 con un
+          tope de 100: no podían registrar ni uno más, y subirlas de plan no
+          siempre es la respuesta. Antes esto se tocaba a mano en la base. */}
+      <Card>
+        <p className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wide mb-4">Clientes extra</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-xs text-[var(--color-text-muted)]">Límite base del plan</p>
+              <p className="text-sm font-bold text-[white]">{limite.clientes > 9999 ? '∞' : limite.clientes} clientes</p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--color-text-muted)]">Clientes extra</p>
+              <p className="text-sm font-bold text-[var(--color-accent)]">{org.clientesExtra ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--color-text-muted)]">Total permitido</p>
+              <p className="text-sm font-bold text-[var(--color-success)]">{limite.clientes > 9999 ? '∞' : limite.clientes + (org.clientesExtra ?? 0)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--color-text-muted)]">Clientes actuales</p>
+              <p className="text-sm font-bold text-[white]">{org._count?.clientes ?? 0}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[var(--color-text-muted)]">Asignar clientes extra:</label>
+            <input
+              type="number"
+              min="0"
+              max="5000"
+              value={clientesInput}
+              onChange={(e) => setClientesInput(e.target.value)}
+              placeholder={String(org.clientesExtra ?? 0)}
+              className="w-24 h-9 px-3 rounded-[12px] border border-[var(--color-border)] bg-[var(--color-bg-card)] text-sm text-[white] focus:outline-none focus:border-[var(--color-accent)]"
+            />
+            <Button
+              size="sm"
+              loading={accionando === 'cambiarClientes'}
+              onClick={() => {
+                const val = clientesInput === '' ? org.clientesExtra ?? 0 : parseInt(clientesInput)
+                if (confirm(`¿Cambiar clientes extra de ${org.clientesExtra ?? 0} a ${val} para "${org.nombre}"?`)) {
+                  ejecutarAccion('cambiarClientes', { clientesExtra: val })
+                  setClientesInput('')
                 }
               }}
             >

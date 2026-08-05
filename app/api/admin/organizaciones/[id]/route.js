@@ -171,6 +171,34 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Cobradores extra actualizados a ${cantidad}` })
   }
 
+  /* Cupo de clientes por encima del plan.
+   *
+   * El caso que lo pidió: dos cuentas del plan Inicial estaban en 113 y 109
+   * clientes con un tope de 100, así que no podían registrar ni uno más. Subir
+   * de plan no siempre es la respuesta —a veces se les prometió más de lo que
+   * su plan da— y hasta ahora había que tocar la base a mano.
+   *
+   * El tope de 5.000 no es capricho: por encima de eso lo que toca es cambiar
+   * de plan, no seguir sumando cupo suelto.
+   */
+  if (accion === 'cambiarClientes') {
+    const cantidad = parseInt(body.clientesExtra)
+    if (isNaN(cantidad) || cantidad < 0 || cantidad > 5000) {
+      return NextResponse.json({ error: 'Cantidad debe ser entre 0 y 5000' }, { status: 400 })
+    }
+    const anterior = org.clientesExtra ?? 0
+    await prisma.organization.update({ where: { id }, data: { clientesExtra: cantidad } })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'cambiar_clientes',
+        detalle:        `Clientes extra: ${anterior} → ${cantidad} para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Clientes extra actualizados a ${cantidad}` })
+  }
+
   if (accion === 'resetearPassword' && body.userId) {
     const user = await prisma.user.findFirst({
       where: { id: body.userId, organizationId: id },
