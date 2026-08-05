@@ -215,6 +215,19 @@ export default function FirmaDigital({ prestamo, onSave }) {
     prestamo?.totalAPagar > 0 ? `devuelve ${formatMoney(prestamo.totalAPagar)}` : null,
     prestamo?.cuotaDiaria > 0 ? `cuota ${formatMoney(prestamo.cuotaDiaria)}` : null,
   ].filter(Boolean).join(' · ')
+  /* Desde cuándo falta. Sin esta fecha, «falta la firma» no dice si es de hoy
+     o de hace tres meses — y eso es lo que decide si urge.
+
+     ⚠ EN UTC, y usando `formatFecha` de este mismo archivo. `fechaInicio` es
+     una FECHA DE CALENDARIO guardada en UTC, no un instante: leerla en la zona
+     del teléfono resta un día. Está demostrado arriba con el caso del
+     comprobante —«me dice que termina el 30» cuando en la base era el 31— y con
+     su prueba. Mi primera versión de esta línea usaba `America/Bogota`, que es
+     exactamente lo que ese aviso dice que NO arregla nada. */
+  const desdeCuando = (prestamo?.fechaInicio || prestamo?.createdAt)
+    ? formatFecha(prestamo.fechaInicio || prestamo.createdAt, paisSesion)
+    : null
+
   const [modalVer, setModalVer] = useState(false)
   const [saving, setSaving] = useState(false)
   const [hasStrokes, setHasStrokes] = useState(false)
@@ -364,10 +377,26 @@ export default function FirmaDigital({ prestamo, onSave }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
             </svg>
           </div>
+          {/* ══ E02 · SI FALTA LA FIRMA, ES UN PENDIENTE ══════════════════
+              Decía «Firma del cliente» y debajo «Sin firma» en gris, las dos
+              cosas del mismo color y peso. Un pagaré sin firmar no es un dato
+              que falte: es algo que hay que hacer, y con esa letra gris se leía
+              como una casilla vacía más.
+              Firmado, se queda como estaba: ahí sí es un dato. */}
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
-            {!firmaUrl && (
-              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Sin firma</p>
+            {firmaUrl ? (
+              <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
+            ) : (
+              <>
+                <p className="text-[13.5px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                  Falta la firma del pagaré
+                </p>
+                {desdeCuando && (
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                    sin firma desde el {desdeCuando}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -391,15 +420,20 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={() => setModalFirmar(true)}
             className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
-            style={{
+            style={firmaUrl ? {
               background: 'rgba(255,255,255,0.06)',
               color: 'var(--cf-ink-2)',
+            } : {
+              // Sin firma es LA acción de esta tarjeta, no una más de tres.
+              background: 'var(--cf-gold)',
+              color: 'var(--cf-gold-ink)',
+              fontWeight: 700,
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
             </svg>
-            {firmaUrl ? 'Modificar' : 'Firmar'}
+            {firmaUrl ? 'Modificar' : 'Firmar ahora'}
           </button>
           <button
             type="button"
