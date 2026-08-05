@@ -353,6 +353,24 @@ export function OrdenRecorrido({
      abajo lo saca enseguida: el asa recibia los `pointermove` y el contenedor
      no, el arrastre se quedaba a medias y no pasaba nada al soltar.
      Reportado: «la funcion de ordenar al arrastrar y soltar no funciona». */
+  /* ⚠ EL ESTADO LO LEEN DESDE UN `ref`, NO DESDE `arrastrando`.
+   *
+   * Aquí estaba el fallo que el dueño reportó dos veces: `mover` y `soltar` se
+   * creaban en el render y capturaban el `arrastrando` DE ESE MOMENTO, que era
+   * `null`. Cuando `empezar` ponía el estado, los manejadores ya estaban
+   * atados al navegador con el valor viejo: `mover` salía por su primera línea
+   * y al soltar no había nada que reordenar. El arrastre no hacía nada.
+   *
+   * Ordenar cobradores y ordenar rutas —las dos que SÍ funcionan— resuelven
+   * esto mismo con `useRef`, porque un ref siempre da el valor de ahora. Es la
+   * lección que traigo de ahí; el resto es distinto porque este caso tiene asa
+   * y la lista puede venir filtrada.
+   *
+   * `arrastrando` se queda como estado APARTE, solo para pintar: la fila que se
+   * mueve se levanta y el destino se marca, y eso sí necesita re-render.
+   */
+  const gesto = useRef(null)   // { desde, hasta } — lo que leen los manejadores
+
   const empezar = (i) => (e) => {
     e.preventDefault()
     e.currentTarget.setPointerCapture?.(e.pointerId)
@@ -360,23 +378,25 @@ export function OrdenRecorrido({
       const el = document.querySelector(`[data-parada="${j}"]`)
       return el ? el.getBoundingClientRect() : null
     })
+    gesto.current = { desde: i, hasta: i }
     setArrastrando({ desde: i, hasta: i })
   }
 
   const mover = (e) => {
-    if (!arrastrando) return
+    if (!gesto.current) return
     const y = e.clientY
     const dentro = cajas.current.findIndex((r) => r && y >= r.top && y <= r.bottom)
-    if (dentro >= 0 && dentro !== arrastrando.hasta) {
-      setArrastrando((a) => ({ ...a, hasta: dentro }))
+    if (dentro >= 0 && dentro !== gesto.current.hasta) {
+      gesto.current = { ...gesto.current, hasta: dentro }
+      setArrastrando(gesto.current)
     }
   }
 
   const soltar = () => {
-    if (!arrastrando) return
-    const { desde, hasta } = arrastrando
+    const g = gesto.current
+    gesto.current = null
     setArrastrando(null)
-    if (desde !== hasta) onReordenar?.(desde, hasta)
+    if (g && g.desde !== g.hasta) onReordenar?.(g.desde, g.hasta)
   }
 
   /* Los cuatro gestos que van EN EL ASA, ya atados a su fila.
