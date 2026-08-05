@@ -227,6 +227,21 @@ export async function POST(request) {
     })
     const gastosCobrador = Math.round(gastosAgg._sum?.monto || 0)
 
+    // ⚠ LOS APROBADOS SON OTRA COSA, y hacen falta para el cierre.
+    //
+    // `gastosCobrador` de arriba son los PENDIENTES, y sirven para el saldo
+    // porque los aprobados ya bajaron el capital de la ruta. Pero el campo
+    // `totalGastos` del cierre guarda los APROBADOS —así lo hace el cierre
+    // normal en `caja/route.js`—, que es lo que de verdad salió ese día.
+    //
+    // Confundir las dos habría sido un error silencioso: los tipos encajan y
+    // las dos son «gastos del cobrador en el día».
+    const gastosAprobadosAgg = await prisma.gastoMenor.aggregate({
+      where: { organizationId, cobradorId, estado: 'aprobado', fecha: { gte: inicio, lt: fin } },
+      _sum: { monto: true },
+    })
+    const gastosAprobados = Math.round(gastosAprobadosAgg._sum?.monto || 0)
+
     // Lo que de verdad entro ese dia. Se calcula SIEMPRE, aparte de
     // `recaudadoSistema`, porque son dos preguntas distintas y confundirlas es
     // lo que rompio el cierre de este cliente (ver abajo).
@@ -268,15 +283,31 @@ export async function POST(request) {
       const desembolsoReal = faltaDesembolso
         ? Math.round(await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId))
         : 0
+      const ponDesembolso = faltaDesembolso && desembolsoReal > 0
+
+      // Y lo mismo con los gastos, por el mismo motivo: el `create` de abajo no
+      // los escribía y quedaban en su `@default(0)`. Medido en producción: 316
+      // cierres con gastos en cero habiendo gastado, $15.431.000 en total —
+      // todos del mismo cliente, el que reportó el descuadre.
+      const ponGastos = !cierreExistente.totalGastos && gastosAprobados > 0
+
+      // El saldo se recalcula UNA vez con las dos correcciones. Hacerlo en dos
+      // pasos dejaría la segunda pisando a la primera.
+      const operativoFinal = ponGastos
+        ? Math.round((cierreExistente.totalRecogido ?? 0) - gastosAprobados)
+        : Math.round(cierreExistente.saldoOperativo ?? 0)
+      const desembolsoFinal = ponDesembolso
+        ? desembolsoReal
+        : Math.round(cierreExistente.totalDesembolsado ?? 0)
+
       cierre = await prisma.cierreCaja.update({
         where: { id: cierreExistente.id },
         data: {
           ...dataConfirmacion,
-          ...(faltaDesembolso && desembolsoReal > 0
-            ? {
-              totalDesembolsado: desembolsoReal,
-              saldoRealCaja: Math.round((cierreExistente.saldoOperativo ?? 0) - desembolsoReal),
-            }
+          ...(ponDesembolso ? { totalDesembolsado: desembolsoReal } : {}),
+          ...(ponGastos ? { totalGastos: gastosAprobados, saldoOperativo: operativoFinal } : {}),
+          ...(ponDesembolso || ponGastos
+            ? { saldoRealCaja: Math.round(operativoFinal - desembolsoFinal) }
             : {}),
         },
       })
@@ -323,13 +354,21 @@ export async function POST(request) {
           totalEsperado: Math.round(totalEsperado),
           totalRecogido: recaudadoDia,
           totalDesembolsado: Math.round(totalDesembolsado),
-          // El gasto que ya bajó el capital de la ruta. Se calculó arriba para
-          // `recaudadoSistema`; aquí se reutiliza en vez de volver a pedirlo.
-          totalGastos: gastosCobrador,
+          // ⚠ LOS APROBADOS, NO LOS PENDIENTES.
+          //
+          // Mi primera versión de esta línea reutilizó `gastosCobrador`, que se
+          // calcula arriba para `recaudadoSistema` y son los PENDIENTES. Pero
+          // este campo guarda los aprobados —así lo hace el cierre normal en
+          // `caja/route.js`—, que es lo que de verdad salió ese día.
+          //
+          // Los tipos encajan y las dos variables son «gastos del cobrador en
+          // el día», así que habría pasado el build, los tests y el despliegue
+          // guardando la cifra equivocada en la pantalla del dinero.
+          totalGastos: gastosAprobados,
           // El saldo que queda en la caja del cobrador tras prestar y gastar,
           // con la misma fórmula que usa el cierre normal (`caja/route.js`).
-          saldoOperativo: Math.round(recaudadoDia - gastosCobrador),
-          saldoRealCaja: Math.round(recaudadoDia - gastosCobrador - totalDesembolsado),
+          saldoOperativo: Math.round(recaudadoDia - gastosAprobados),
+          saldoRealCaja: Math.round(recaudadoDia - gastosAprobados - totalDesembolsado),
           diferencia: Math.round(recaudadoDia - totalEsperado),
           ...dataConfirmacion,
         },
