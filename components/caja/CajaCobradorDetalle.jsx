@@ -77,8 +77,18 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
       quedaEnEfectivo: data?.cuentaSuma ?? 0,
     }
   })()
+  // ⚠ LOS DOS SUBTOTALES SALEN DEL API, no se rearman aquí.
+  //
+  // `entraTotal` se calculaba a mano sumando el cobro TOTAL —con Nequi— mientras
+  // `salioTotal` venía del API sin él: los dos bloques hablaban de plata
+  // distinta y la resta visible no daba el resultado de abajo. Ahora la
+  // transferencia entra y sale en la misma cuenta, así que los dos subtotales
+  // vienen de la misma fuente y la resta cuadra con el dedo.
+  //
+  // El respaldo mantiene el comportamiento viejo para una respuesta en caché,
+  // igual que hace `cr` unas líneas más arriba.
   const salioTotal = data?.cuentaSalio ?? Math.round((cr.prestado ?? 0) + (cr.gastos ?? 0))
-  const entraTotal = Math.round((cr.apertura ?? 0) + (cr.cobradoTotal ?? 0))
+  const entraTotal = data?.cuentaEntro ?? Math.round((cr.apertura ?? 0) + (cr.cobradoTotal ?? 0))
   const movimientos = data?.movimientos || []
   const porRuta = data?.porRuta || []
   const gastos = data?.gastos || []
@@ -207,6 +217,14 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               monto={cr.gastos}
               onExplicar={onExplicar ? () => onExplicar('gastos') : undefined}
             />
+          )}
+          {/* ⚠ EL CONTRAPESO DE LA TRANSFERENCIA. Arriba entra —el dueño lo
+              pidió como renglón— y aquí sale, porque esa plata nunca estuvo en
+              el bolsillo del cobrador: llega directa a la cuenta de la oficina.
+              Sin esta línea la resta que él sigue con el dedo daba $179.000 de
+              más y no coincidía con la cifra de abajo. */}
+          {(cr.cobradoDigital ?? 0) > 0 && (
+            <Renglon rotulo="Entró a la cuenta de la oficina" monto={cr.cobradoDigital} />
           )}
           <div className="flex items-baseline justify-between gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
             <span className="text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>Total que sale</span>

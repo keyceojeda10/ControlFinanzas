@@ -770,13 +770,44 @@ export async function GET(request, { params }) {
   )
   const prestadoEfectivoNeto = prestadoNeto - prestadoDigital
 
+  // ── LA TRANSFERENCIA ENTRA Y SALE, EN LA MISMA CUENTA ────────────────────
+  //
+  // Antes solo se enseñaba entrando. El bloque «ENTRA» sumaba el Nequi —el
+  // dueño lo pidió como renglón— pero nada lo sacaba, así que la resta que él
+  // hace con el dedo no daba el resultado que la pantalla marca abajo:
+  //
+  //   lo que él suma:  346.000 + 154.000 + 179.000 − 506.452 − 12.000 = 160.548
+  //   lo que vale:     346.000 + 154.000           − 506.452 − 12.000 = −18.452
+  //
+  // La diferencia son exactamente los $179.000 del Nequi. Las dos cifras
+  // estaban BIEN calculadas y las dos salían en pantalla, pero ninguna era la
+  // resta que se ve, y por eso desconfiaba de toda la pantalla.
+  //
+  // Sus palabras: «suma tanto, después resta los gastos y lo que se prestó, y
+  // abajo queda el restante que queda de base para el otro día... está
+  // molestando cuando los muchachos ponen una transferencia».
+  //
+  // Y describe por qué esa plata no es suya: «cuando el cliente transfiere,
+  // ellos colocan por transferencia; cuando llegan a entregar en la noche saben
+  // que ese dinero llegó a la cuenta de la oficina y el resto lo traen en
+  // efectivo».
+  //
+  // Así que se muestra saliendo, con ese nombre. El total no cambia: entra y
+  // sale la misma cifra y se cancela sola, que es la verdad de lo que pasó.
+  const cobradoDigitalNeto = Math.round(cobradoDigital)
+
   const { lineas: cuenta, suma: cuentaSuma, entro: cuentaEntro, salio: cuentaSalio } = cuentaDelDia({
     apertura: saldoAperturaTotal,
-    entradas: [{ id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto }],
+    entradas: [
+      { id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto },
+      { id: 'recaudoDigital', rotulo: 'Cobró por transferencia', monto: cobradoDigitalNeto },
+    ],
     salidas: [
       // Solo el efectivo: lo que salió por transferencia no toca el fajo.
       { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoEfectivoNeto },
       { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
+      // El contrapeso: nunca estuvo en su bolsillo, ya está en la oficina.
+      { id: 'aLaCuenta', rotulo: 'Entró a la cuenta de la oficina', monto: cobradoDigitalNeto },
     ],
   })
 
