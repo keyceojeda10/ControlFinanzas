@@ -8,6 +8,7 @@ import { prisma }           from '@/lib/prisma'
 import {
   calcularPrestamo, calcularSaldoPendiente, calcularCapitalRestante,
   prestamoDevuelveMenosDeLoPrestado, mensajePrestamoConPerdida,
+  tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
@@ -84,11 +85,39 @@ export async function POST(request, { params }) {
   }
 
   const saldoPendiente = calcularSaldoPendiente(original)
-  // Para prestamos con tabla (globo/lineal), el capital restante es la deuda
-  // real sin intereses futuros. Para la renovacion, el minimo es el capital
-  // adeudado (no el totalAPagar que incluye intereses no devengados).
+
+  /* ══ LO QUE SE LIQUIDA AL RENOVAR: LO QUE EL CLIENTE DEBE ═══════════════════
+   *
+   * ⚠ AQUÍ SE USABA `calcularCapitalRestante` PARA TODOS, y en los modos sin
+   * tabla eso entrega de más. Lo reportó el dueño de PRESTA MIL con dos casos
+   * del mismo día:
+   *
+   *   «acabo de hacer una renovación de cien mil, pero el cliente me debía
+   *    cincuenta mil. Acá me está mostrando cincuenta y ocho cuatrocientos,
+   *    cuando en realidad debería decir cincuenta»
+   *
+   * MARIA GÓMEZ, reconstruido de la base: le prestaron $150.000 a devolver
+   * $180.000 (cuota $6.000 × 30 días). Pagó $130.000, así que le faltan
+   * $50.000 — y eso es lo que el cobrador tiene en la cabeza y en la cartulina.
+   *
+   * El sistema repartía esos $130.000 proporcionalmente —16,67% a interés— y
+   * concluía que el capital pendiente eran $41.667. Con eso, al renovar por
+   * $100.000 le entregaba $58.333 en vez de $50.000: $8.333 de más POR CADA
+   * renovación, en efectivo, de la caja del cobrador.
+   *
+   * El reparto proporcional NO está mal —es correcto para saber cuánta plata
+   * propia sigue en la calle— pero responde otra pregunta. Al renovar, lo que
+   * se liquida es LA DEUDA: lo que el cliente pactó devolver y todavía no ha
+   * devuelto.
+   *
+   * CON TABLA sí manda el capital: ahí el interés futuro no está devengado y
+   * cobrarlo al renovar sería cobrar un interés que nunca corrió. Son el 6% de
+   * la cartera y el comentario original hablaba de ellos.
+   */
   const capitalRestante = calcularCapitalRestante(original)
-  const minimoRenovacion = capitalRestante != null ? capitalRestante : saldoPendiente
+  const minimoRenovacion = tieneTablaAmortizacion(original) && capitalRestante != null
+    ? capitalRestante
+    : saldoPendiente
 
   if (original.cliente.montoMaximoPrestamo && Number(montoPrestado) > original.cliente.montoMaximoPrestamo) {
     return Response.json({
