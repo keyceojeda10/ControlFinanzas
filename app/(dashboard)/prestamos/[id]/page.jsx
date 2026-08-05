@@ -1334,8 +1334,12 @@ export default function PrestamoDetallePage({ params }) {
               onClick: () => { setWaSugerida('credito_aprobado'); setModalWA(true) },
             }] : []),
             ...(mostrarAtajosCobro ? [{
-              label: 'Cobros',
+              // «Abonos», una palabra: «Cobros» y «Abonos y atajos» decían lo
+              // mismo dos veces, y el subtítulo era una lista, no una
+              // explicación. La mora pasa a ser un punto rojo sobre el icono.
+              label: 'Abonos',
               sublabel: hayMontoMora ? `Mora ${formatMoney(montoEnMora)}` : 'Abonos y atajos',
+              alerta: hayMontoMora,
               color: hayMontoMora ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
               onClick: () => setModalAtajosCobro(true),
@@ -1567,21 +1571,13 @@ export default function PrestamoDetallePage({ params }) {
       {cliente?.telefono && estaActivo && enMora && !completado && (
         <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
       )}
-      {cliente?.telefono && estaActivo && !enMora && !ultimoPago && (
-        <button
-          type="button"
-          // El botón dice «resumen»: tiene que abrir el RESUMEN del crédito, no
-          // las cuatro familias de cobro. Sin el preseleccionado, un dueño pidió
-          // el resumen y le salía «un mensaje muy sencillo».
-          onClick={() => { setWaSugerida('credito_aprobado'); setModalWA(true) }}
-          className="flex items-center justify-center gap-2 px-4 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer w-full bg-[#25d366] hover:bg-[#1da855] text-white"
-        >
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-          </svg>
-          Enviar resumen por WhatsApp
-        </button>
-      )}
+      {/* ⚠ AQUÍ HABÍA UN SEGUNDO «ENVIAR RESUMEN POR WHATSAPP» (E02).
+          Hacía lo MISMO que el chip «WhatsApp» de la columna izquierda —los dos
+          `setWaSugerida('credito_aprobado')`—, así que WhatsApp salía dos veces
+          en la misma pantalla con el mismo destino. De la lámina: «se queda uno
+          solo, en los cuatro botones».
+          El de mora, justo encima, NO se toca: manda otro mensaje y solo sale
+          cuando hay atraso. */}
 
       {/* ── FIRMA DIGITAL ──────────────────────────────────────── */}
       <FirmaDigital
