@@ -730,17 +730,17 @@ export default function RegistrarPago({
           )}
 
           {cliente?.telefono && prestamoWA && (
-            <div className="flex gap-2">
+            <div className="flex">
               <button
                 type="button"
-                onClick={() => {
-                  const tel = formatearTelefono(cliente.telefono)
-                  if (!tel) return
-                  const texto = generarTextoPlantilla('pago_confirmacion', {
-                    cliente, prestamo: prestamoWA, pago: pagoGuardado, orgNombre, ocultarSaldo: ocultarSaldoWA, camposRecibo: camposLocal,
-                  }, organizationId)
-                  abrirWhatsApp(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`)
-                }}
+                /* ⚠ ABRE LA HOJA, NO MANDA. Este es el botón que más se
+                   pulsa de toda la aplicación —sale justo después de cobrar— y
+                   disparaba el recibo sin que nadie lo leyera: el cobrador veía
+                   el mensaje ya dentro del chat del cliente, con las cifras
+                   puestas. «Personalizar» estaba escondido en el engranaje de
+                   al lado, que casi nadie encuentra.
+                   La hoja lo enseña, deja retocarlo y manda desde dentro. */
+                onClick={() => setModalWA(true)}
                 className="flex-1 flex items-center justify-center gap-2 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer"
                 style={{ background: '#25D366', color: '#fff' }}
               >
@@ -749,18 +749,12 @@ export default function RegistrarPago({
                 </svg>
                 Enviar por WhatsApp
               </button>
-              <button
-                type="button"
-                onClick={() => setModalWA(true)}
-                className="flex items-center justify-center w-10 h-10 rounded-[12px] transition-all cursor-pointer shrink-0"
-                style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}
-                title="Personalizar mensaje"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
+              {/* El engranaje de «Personalizar mensaje» vivía aquí, al lado,
+                  porque el botón verde mandaba de una. Ahora los dos abrían la
+                  misma hoja: era un botón para llegar dos veces al mismo sitio.
+                  La personalización no se pierde —está dentro de la hoja— y
+                  este rincón deja de tener un icono que no lleva a nada nuevo. */}
+
             </div>
           )}
 
@@ -793,7 +787,6 @@ export default function RegistrarPago({
             ocultarSaldo={ocultarSaldoWA}
             organizationId={organizationId}
             camposRecibo={camposLocal}
-            preselectedTemplateId="pago_confirmacion"
           />
         </div>
       </Modal>
