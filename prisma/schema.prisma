@@ -83,6 +83,10 @@ model Organization {
   descuento         Int            @default(0)
   cobradoresExtra   Int            @default(0)
   rutasExtra        Int            @default(0)
+  // Cupo de clientes por encima del plan, para casos puntuales: el mismo patrón
+  // que los dos de arriba. Sirve cuando a alguien se le prometió más de lo que
+  // su plan da y no se le quiere forzar a subir de plan.
+  clientesExtra     Int            @default(0)
   estadoContacto    EstadoContacto @default(nuevo)
   fuenteRegistro    String?
   planOriginal      Plan?

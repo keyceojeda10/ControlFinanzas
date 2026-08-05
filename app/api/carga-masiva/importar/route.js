@@ -64,7 +64,16 @@ export async function POST(request) {
     const cedulaToId = new Map(cedulasExistentesDB.map(c => [c.cedula, c.id]))
 
     const clientesNuevos = [...grupos.keys()].filter(c => !cedulaToId.has(c)).length
-    const limiteClientes = LIMITES_PLAN[plan] ?? 50
+    /* El cupo extra por cuenta cuenta también aquí: si no, quien lo tiene puede
+       crear clientes de uno en uno pero la importación se lo niega, y ese es el
+       camino por el que entran de verdad los clientes nuevos.
+       El plan sale de la BASE por el mismo motivo que en `api/clientes`: el del
+       JWT no se refresca sin volver a entrar. */
+    const orgCupo = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { plan: true, clientesExtra: true },
+    })
+    const limiteClientes = (LIMITES_PLAN[orgCupo?.plan || plan] ?? 50) + (orgCupo?.clientesExtra ?? 0)
     if (clientesActuales + clientesNuevos > limiteClientes) {
       return Response.json({
         error: `Excede el límite de tu plan (${limiteClientes} clientes). Tienes ${clientesActuales}, intentas agregar ${clientesNuevos} nuevos.`,

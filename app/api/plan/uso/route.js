@@ -35,7 +35,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { plan: true, cobradoresExtra: true, rutasExtra: true },
+      select: { plan: true, cobradoresExtra: true, rutasExtra: true, clientesExtra: true },
     }),
   ])
 
@@ -45,6 +45,8 @@ export async function GET() {
 
   const limiteRutas    = config.maxRutas    + (org?.rutasExtra ?? 0)
   const limiteUsuarios = config.maxUsuarios + (org?.cobradoresExtra ?? 0)
+  // Mismo patrón que los otros dos: el cupo extra se suma al del plan.
+  const limiteClientes = config.maxClientes + (org?.clientesExtra ?? 0)
 
   const [clientes, usuarios, rutas, rutasPermitidasSet, usuariosPermitidosSet] = await Promise.all([
     prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } }),
@@ -56,11 +58,11 @@ export async function GET() {
 
   const aiUsage = getAsistenteUsage(organizationId)
 
-  const excedeAlgo = clientes > config.maxClientes || usuarios > limiteUsuarios || rutas > limiteRutas
+  const excedeAlgo = clientes > limiteClientes || usuarios > limiteUsuarios || rutas > limiteRutas
 
   return Response.json({
     plan: planReal,
-    clientes:       { usado: clientes, limite: config.maxClientes },
+    clientes:       { usado: clientes, limite: limiteClientes },
     usuarios:       { usado: usuarios, limite: limiteUsuarios },
     rutas:          { usado: rutas,    limite: limiteRutas },
     lucasMensajes:  { usado: aiUsage.used, limite: config.aiMensajesDia },

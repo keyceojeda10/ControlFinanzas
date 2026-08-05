@@ -126,7 +126,7 @@ export default function CajaPage() {
     return () => window.removeEventListener('online', goOnline)
   }, [])
   const [filtroCobrador, setFiltroCobrador] = useState('')
-  // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'rango', fecha, desde, hasta }
+  // Filtro de periodo de la caja: { modo:'hoy'|'7d'|'30d'|'mes'|'rango', fecha, desde, hasta }
   const [periodo, setPeriodo] = useState({ modo: 'hoy', fecha: null, desde: null, hasta: null })
   // Datos del rango histórico acumulado (cuando modo != 'hoy')
   const [rangoData, setRangoData] = useState(null)
@@ -1238,8 +1238,6 @@ export default function CajaPage() {
         </div>
       )}
 
-      {/* Filtro de periodo */}
-      <FiltroPeriodo value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }} onChange={handlePeriodoChange} />
 
       {/* Las pestañas pasan al componente del rediseño (T20). Tres cambios que
           se ven: el activo es una pastilla BLANCA con sombra y no un texto en
@@ -1251,16 +1249,35 @@ export default function CajaPage() {
           Los ids de pestaña NO cambian: `cobros`, `porruta`, `cuentas` y
           `cuadre` siguen siendo los mismos que lee el resto del archivo y los
           que viajan en la URL (?tab=gastos). */}
-      <PestanasCaja
-        activa={cajaTab}
-        onCambiar={(p) => setCajaTab(p.id)}
-        pestanas={[
-          { id: 'cobros', etiqueta: 'Caja del día' },
-          { id: 'porruta', etiqueta: 'Por ruta' },
-          ...(esOwner ? [{ id: 'cuentas', etiqueta: 'Cuentas' }] : []),
-          ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ id: 'cuadre', etiqueta: 'Cuadre' }] : []),
-        ]}
-      />
+      {/* ══ E01 · UNA FILA, NO TRES BARRAS ══
+          Las pestañas son NAVEGACIÓN —qué sección de caja miras— y el periodo
+          es un FILTRO. Son cosas distintas y estaban en dos carriles grises
+          idénticos apilados, más el input de fecha: unos 150px de cromo antes
+          de ver un solo peso.
+          En pantalla ancha van en la misma línea, navegación a la izquierda y
+          filtro a la derecha. En móvil el filtro baja debajo: las cuatro
+          pestañas ya ocupan el ancho y apretarlo todo en 393px haría la
+          pastilla ilegible. */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 lg:gap-3">
+        <div className="min-w-0 lg:flex-1">
+          <PestanasCaja
+            activa={cajaTab}
+            onCambiar={(p) => setCajaTab(p.id)}
+            pestanas={[
+              { id: 'cobros', etiqueta: 'Caja del día' },
+              { id: 'porruta', etiqueta: 'Por ruta' },
+              ...(esOwner ? [{ id: 'cuentas', etiqueta: 'Cuentas' }] : []),
+              ...(esOwner && cobradoresParaFiltro.length > 0 ? [{ id: 'cuadre', etiqueta: 'Cuadre' }] : []),
+            ]}
+          />
+        </div>
+        <div className="min-w-0 lg:w-auto lg:shrink-0">
+          <FiltroPeriodo
+            value={{ ...periodo, fecha: periodo.fecha || fechaSeleccionada }}
+            onChange={handlePeriodoChange}
+          />
+        </div>
+      </div>
 
       {isOffline && (
         <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 flex items-center gap-2">

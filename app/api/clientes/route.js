@@ -396,13 +396,35 @@ export async function POST(request) {
 
   const { organizationId, plan } = session.user
 
-  // Validar límite del plan
-  const limite = LIMITES_PLAN[plan] ?? LIMITES_PLAN.basic
+  /* ══ EL LÍMITE DE CLIENTES, CON SU CUPO EXTRA ════════════════════════════
+   *
+   * ⚠ ESTE ES EL SITIO QUE DE VERDAD BLOQUEA. Los otros tres —`limites-plan`,
+   * `api/plan/uso` y la pantalla de plan— solo INFORMAN; aquí es donde se dice
+   * que no. Se me pasó al primer barrido porque tiene su propia lista
+   * (`LIMITES_PLAN`) en vez de leer `PLANES_CONFIG` como los demás.
+   *
+   * Dos cosas cambian:
+   *
+   * 1. Se suma `clientesExtra`, el cupo por cuenta. Es el mismo patrón que
+   *    `cobradoresExtra` y `rutasExtra`, y sirve cuando a alguien se le
+   *    prometió más de lo que su plan da sin forzarle a subir de plan.
+   *
+   * 2. El plan sale de la BASE, no del JWT. El plan del token no se refresca
+   *    sin volver a entrar —está documentado en este proyecto—, así que a quien
+   *    acababa de subir de plan se le seguía aplicando el viejo hasta que
+   *    cerrara sesión.
+   */
+  const orgLimites = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true, clientesExtra: true },
+  })
+  const planReal = orgLimites?.plan || plan
+  const limite = (LIMITES_PLAN[planReal] ?? LIMITES_PLAN.basic) + (orgLimites?.clientesExtra ?? 0)
   if (isFinite(limite)) {
     const total = await prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } })
     if (total >= limite) {
       return Response.json(
-        { error: `Tu plan ${plan} permite máximo ${limite} clientes. Considera actualizar.` },
+        { error: `Tu plan permite máximo ${limite} clientes. Considera actualizar.` },
         { status: 403 }
       )
     }
