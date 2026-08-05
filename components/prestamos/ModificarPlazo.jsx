@@ -10,6 +10,13 @@ import { Modal }    from '@/components/ui/Modal'
 import { Button }   from '@/components/ui/Button'
 import { Input }    from '@/components/ui/Input'
 import { encolarMutacion } from '@/lib/offline'
+// ⚠ SE USABA SIN IMPORTAR. Dos llamadas —las fechas de inicio y fin— y ninguna
+// importación: la pantalla reventaba al abrirse con «formatFechaCalendario is
+// not defined». Apareció en los logs de producción (`/prestamos/[id]`,
+// 5 ago 2026), no en el build: sin TypeScript, una función inexistente pasa
+// `next build` y los tests, y solo falla al renderizar. Es el mismo patrón que
+// tumbó producción con la TDZ hace dos días.
+import { formatFechaCalendario } from '@/lib/i18n'
 
 const toISODate = (d) => {
   const date = d instanceof Date ? d : new Date(d)
