@@ -130,7 +130,7 @@ async function correrFlujo({ cx, pags, modo, fecha, banderas }) {
     let respuesta = null
 
     if (!paso.soloLeer) {
-      const hecho = await ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas })
+      const hecho = await ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas, cx })
       peticion = hecho.peticion
       respuesta = hecho.respuesta
       if (hecho.abortar) {
@@ -260,7 +260,7 @@ function pintarElFajo(libro, vistas, fallos) {
 }
 
 // ── CADA TIPO DE OPERACIÓN ──────────────────────────────────────────────────
-async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
+async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas, cx }) {
   if (paso.tipo === 'prestamo') {
     const previsto = preverPrestamo({
       monto: paso.monto, tasa: paso.tasa, dias: paso.dias,
@@ -281,11 +281,43 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
     if (!r.ok) return { abortar: `${r.estado} ${JSON.stringify(r.datos)}`, peticion: { metodo: 'POST', ruta: '/api/prestamos', cuerpo }, respuesta: r }
 
     const id = r.datos?.prestamo?.id ?? r.datos?.id
-    ctx.prestamos[paso.cliente === 0 ? 'A' : 'B'] = { id, ...previsto, monto: paso.monto }
+    // El que se va a anular no se guarda: nadie lo va a renovar ni cobrar, y
+    // guardarlo como 'B' machacaría el préstamo bueno del paso 2.
+    if (!paso.seAnula) {
+      ctx.prestamos[paso.cliente === 0 ? 'A' : 'B'] = { id, ...previsto, monto: paso.monto }
+    }
 
     // ⚠ Un préstamo por TRANSFERENCIA no sale del fajo del cobrador. Sale del
     // negocio (y por eso baja el capital), pero él no entregó billetes.
     const salioDelFajo = paso.metodoPago !== 'transferencia'
+    /* Si el paso pide anularlo, se anula acto seguido y NO se anota nada: un
+       préstamo cancelado no sacó plata de la caja. Es el caso de JULIAN #7, que
+       creó y anuló tres y su pantalla los seguía contando. */
+    if (paso.seAnula) {
+      /* ⚠ SE PONE EL ESTADO, NO SE BORRA LA FILA.
+         El `DELETE` del API borra el registro entero, y entonces no queda nada
+         que contar. Lo que le pasó a JULIAN #7 es distinto: sus préstamos
+         quedaron EN ESTADO `cancelado`, con su fila y su movimiento de capital
+         intactos — y ahí es donde se colaban. Hay 418 así en el sistema, 36 de
+         PRESTA MIL, así que es un estado real y frecuente.
+         Se escribe por SQL porque hoy ningún endpoint lo pone. */
+      await cx.execute("UPDATE Prestamo SET estado='cancelado' WHERE id=?", [id])
+      /* ⚠ EL CAPITAL SÍ BAJÓ, Y ESTÁ BIEN.
+         Al crear el préstamo salió el desembolso del ledger. Anularlo por SQL
+         —como se hizo aquí— NO lo devuelve: el reverso lo genera el `DELETE`
+         del API (`prestamos/[id]/route.js:1013`), que además borra la fila.
+         Aquí se reproduce el estado `cancelado` con la fila viva, que es el
+         caso de JULIAN #7 y el que se colaba.
+
+         Lo que se comprueba es que «lo que prestó» del DÍA no lo cuente. Que
+         el capital quede bajo es consecuencia de anularlo a mano, no un fallo. */
+      anotar(libro, {
+        paso: paso.id, delta: { capital: -paso.monto },
+        porQue: 'anulado por fuera del API: la caja del día no lo cuenta, el capital no se revierte',
+      })
+      return { peticion: { metodo: 'POST', ruta: '/api/prestamos', cuerpo }, respuesta: r }
+    }
+
     anotar(libro, {
       paso: paso.id,
       delta: {

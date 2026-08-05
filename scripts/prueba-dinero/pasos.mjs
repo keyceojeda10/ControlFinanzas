@@ -26,6 +26,7 @@ export const MONTOS = {
   gasto: 6700,
   renovacion: 500000,
   renovacionDigital: 380000,  // la que se entrega por transferencia
+  prestamoAnulado: 291000,    // se crea y se anula: NO debe contar
 }
 
 /* Los pasos, en orden. Cada uno declara QUÉ pide y QUÉ espera que cambie.
@@ -101,7 +102,15 @@ export function construirPasos(modo) {
       porTransferencia: true, ...m,
     },
     {
-      id: 'P11', titulo: 'leer las tres vistas', actor: 'owner',
+      id: 'P11', titulo: 'préstamo que luego se ANULA', actor: 'owner',
+      // El caso de JULIAN #7: creó y anuló tres préstamos, y su caja seguía
+      // contándolos. La del administrador decía 150.000 y la suya 748.000.
+      // Un préstamo anulado no sacó plata: no puede figurar en «lo que prestó».
+      tipo: 'prestamo', cliente: 2, monto: MONTOS.prestamoAnulado,
+      metodoPago: 'efectivo', seAnula: true, ...m,
+    },
+    {
+      id: 'P12', titulo: 'leer las tres vistas', actor: 'owner',
       soloLeer: true,
     },
   ]
