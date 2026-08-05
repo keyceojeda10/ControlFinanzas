@@ -206,6 +206,7 @@ export default function FichaPrestamo({
   modo = 'fijo',              // fijo | manual | proporcional | unico
   // bloque oscuro
   faltaPagar,
+  capitalPendiente,   // lo mismo SIN intereses; null = no se sabe
   pagado, totalAPagar, porcentaje = 0,
   // unico
   fechaVencimiento, diasParaVencer, empezoEl,
@@ -297,6 +298,33 @@ export default function FichaPrestamo({
                 {porcentaje}%
               </span>
             </div>
+
+            {/* ══ LO MISMO, SIN INTERESES ═════════════════════════════════
+                La cifra grande de arriba es lo que el cliente debe SI PAGA
+                TODO: capital más el interés pactado. Pero el prestamista
+                pregunta mucho la otra —«¿cuánto de eso es mi plata?»— y hasta
+                ahora no estaba en ninguna pantalla: había que sacarla a mano.
+
+                Va aquí, pegada a la deuda y en letra menor, porque es la MISMA
+                pregunta con otra respuesta. En su propia tarjeta se leería como
+                un concepto distinto, y no lo es.
+
+                Sale de `calcularCapitalRestante`, que ya existía y es la que usa
+                la renovación para saber cuánto absorbe: una sola definición de
+                «capital que aún debe», no una segunda cuenta paralela. */}
+            {capitalPendiente != null && (
+              <div style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                gap: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.09)',
+              }}>
+                <span style={{ fontSize: 12.5, color: '#8A8E98' }}>
+                  De eso, sin intereses
+                </span>
+                <span className="cf-num" style={{ fontSize: 15, fontWeight: 700, color: '#F3F3F6', flex: 'none' }}>
+                  {capitalPendiente}
+                </span>
+              </div>
+            )}
 
             {/* La cifra va DENTRO del bloque oscuro, debajo de la deuda, porque
                 es la misma pregunta con otra respuesta: cuánto debe hoy. Fuera,

@@ -1386,6 +1386,13 @@ export default function PrestamoDetallePage({ params }) {
         onCerrarHoy={puedeAplicarDescuentos ? () => abrirLiquidacion() : null}
         modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
         faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
+        // Lo mismo SIN intereses: «¿cuánto de eso es mi plata?». El API ya lo
+        // calcula con `calcularCapitalRestante` —la misma que usa la renovación
+        // para saber cuánto absorbe—, así que aquí solo se pasa: no hay una
+        // segunda cuenta de «capital que aún debe».
+        capitalPendiente={prestamo?.capitalRestante != null
+          ? formatMoney(Math.round(prestamo.capitalRestante))
+          : null}
         pagado={formatMoney(totalPagadoReal)}
         totalAPagar={formatMoney(Math.round(totalAPagar || 0))}
         porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}
