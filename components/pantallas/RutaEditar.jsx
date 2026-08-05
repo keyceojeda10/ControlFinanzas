@@ -370,12 +370,25 @@ export function OrdenRecorrido({
    * mueve se levanta y el destino se marca, y eso sí necesita re-render.
    */
   const gesto = useRef(null)   // { desde, hasta } — lo que leen los manejadores
+  const lista = useRef(null)   // el contenedor de ESTA lista (hay dos montadas)
 
   const empezar = (i) => (e) => {
     e.preventDefault()
     e.currentTarget.setPointerCapture?.(e.pointerId)
+    /* ⚠ SE MIDE DENTRO DE ESTA LISTA, NO EN TODO EL DOCUMENTO.
+     *
+     * La página monta `OrdenRecorrido` DOS VECES: una para escritorio, dentro
+     * de un `hidden lg:block`, y otra para móvil. `document.querySelector`
+     * devuelve el PRIMERO del documento —el de escritorio—, que en un teléfono
+     * está oculto y mide 0×0. Así que en móvil `cajas` se llenaba de
+     * rectángulos vacíos, `mover` no encontraba nunca dónde soltar y el
+     * arrastre no hacía nada. En PC funcionaba, porque ahí el primero SÍ es el
+     * que se ve — por eso el fallo solo se veía en el teléfono, que es justo
+     * donde el cobrador ordena su ruta.
+     */
+    const raiz = lista.current ?? document
     cajas.current = paradas.map((_, j) => {
-      const el = document.querySelector(`[data-parada="${j}"]`)
+      const el = raiz.querySelector(`[data-parada="${j}"]`)
       return el ? el.getBoundingClientRect() : null
     })
     gesto.current = { desde: i, hasta: i }
@@ -430,7 +443,7 @@ export function OrdenRecorrido({
         )}
       />
 
-      <div style={{
+      <div ref={lista} style={{
         /* ⚠ SIN RELLENO LATERAL PROPIO. Se auto-aplicaba 20px por lado y, montado
            dentro de una pagina que YA tiene su margen, se sumaban: medido en el
            navegador, las filas salian a 291px dentro de un contenedor de 333.
