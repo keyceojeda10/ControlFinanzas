@@ -12,6 +12,9 @@ import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
+// La MISMA función que usan el cierre normal y el automático. Este archivo no
+// la tenía —estaba duplicada y privada en los otros dos— y por eso escribía 0.
+import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -254,7 +257,29 @@ export async function POST(request) {
 
     let cierre
     if (cierreExistente) {
-      cierre = await prisma.cierreCaja.update({ where: { id: cierreExistente.id }, data: dataConfirmacion })
+      // ⚠ SI EL CIERRE VIENE CON EL DESEMBOLSO EN CERO, se rellena aquí.
+      //
+      // El cuadre solo escribía la confirmación, así que un cierre creado antes
+      // de este arreglo se quedaba en cero para siempre aunque el admin lo
+      // cuadrara después. Solo se toca cuando está en cero Y de verdad hubo
+      // desembolsos: si el cobrador cerró con su cifra, esa manda — no se le
+      // pisa un dato que él revisó.
+      const faltaDesembolso = !cierreExistente.totalDesembolsado
+      const desembolsoReal = faltaDesembolso
+        ? Math.round(await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId))
+        : 0
+      cierre = await prisma.cierreCaja.update({
+        where: { id: cierreExistente.id },
+        data: {
+          ...dataConfirmacion,
+          ...(faltaDesembolso && desembolsoReal > 0
+            ? {
+              totalDesembolsado: desembolsoReal,
+              saldoRealCaja: Math.round((cierreExistente.saldoOperativo ?? 0) - desembolsoReal),
+            }
+            : {}),
+        },
+      })
     } else {
       // El admin cuadra aunque el cobrador no haya cerrado: se crea el cierre
       // con los datos del sistema.
@@ -270,7 +295,26 @@ export async function POST(request) {
       // Y `totalRecogido` guardaba `recaudadoSistema`, que con
       // `capitalEsEfectivo` es la BOLSA DE LA RUTA —un saldo acumulado— y no
       // el cobro del dia. El dueño leia un stock creyendo que era un flujo.
+      // ── Y AQUÍ QUEDABAN OTROS DOS ───────────────────────────────────────
+      //
+      // `totalDesembolsado` y `totalGastos` NO se escribían. No es que dieran
+      // cero: es que Prisma les ponía su `@default(0)` por no venir en el
+      // `data`. El cierre quedaba diciendo que el cobrador no prestó ni gastó
+      // NADA ese día.
+      //
+      // Medido en producción: 2.485 de 2.852 cierres (87%) con el desembolso
+      // en cero, y $425.397.087 prestados en 60 días que ningún cierre
+      // registró. Es lo que hacía que un cobrador entregara menos efectivo del
+      // que la caja esperaba sin que nada lo explicara: había prestado esa
+      // plata, pero el cierre no lo sabía.
+      //
+      // Salió de un reporte de la ruta #5 —«entregó $322.000» y la pantalla no
+      // decía esa cifra por ningún lado—, y el propio cliente había intuido
+      // que el descuadre aparecía «cuando se usan transferencias»: era la
+      // pista correcta por el motivo equivocado. En esa ruta faltaba un
+      // préstamo de $150.000, y luego resultó que faltaban en todas.
       const totalEsperado = esperadoMap[cobradorId] || 0
+      const totalDesembolsado = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
       cierre = await prisma.cierreCaja.create({
         data: {
           organizationId,
@@ -278,6 +322,14 @@ export async function POST(request) {
           fecha: new Date(fecha + 'T00:00:00-05:00'),
           totalEsperado: Math.round(totalEsperado),
           totalRecogido: recaudadoDia,
+          totalDesembolsado: Math.round(totalDesembolsado),
+          // El gasto que ya bajó el capital de la ruta. Se calculó arriba para
+          // `recaudadoSistema`; aquí se reutiliza en vez de volver a pedirlo.
+          totalGastos: gastosCobrador,
+          // El saldo que queda en la caja del cobrador tras prestar y gastar,
+          // con la misma fórmula que usa el cierre normal (`caja/route.js`).
+          saldoOperativo: Math.round(recaudadoDia - gastosCobrador),
+          saldoRealCaja: Math.round(recaudadoDia - gastosCobrador - totalDesembolsado),
           diferencia: Math.round(recaudadoDia - totalEsperado),
           ...dataConfirmacion,
         },

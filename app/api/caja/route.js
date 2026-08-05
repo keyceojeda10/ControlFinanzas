@@ -9,6 +9,10 @@ import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalResta
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 import { conciliar, resumirLibro, ALCANCE } from '@/lib/dinero/conciliacion'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
+// Una sola definición para los TRES sitios que cierran cajas. Ver el archivo:
+// estaba duplicada con los argumentos en orden distinto y el tercer sitio se
+// quedó sin ninguna, escribiendo 0.
+import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -112,127 +116,6 @@ async function calcularEsperadoReal(organizationId, cobradorId = null, fecha = n
 }
 
 // Calcula desembolsos realizados en el día para reflejar el saldo real de caja.
-async function calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId = null) {
-  const baseWherePrestamos = {
-    organizationId,
-    createdAt: { gte: inicio, lt: fin },
-    estado: { not: 'cancelado' },
-  }
-
-  // Vista global owner: total desembolsado de todos los préstamos del día.
-  if (!cobradorId) {
-    const desembolsosDia = await prisma.prestamo.aggregate({
-      where: baseWherePrestamos,
-      _sum: { montoPrestado: true },
-    })
-    return desembolsosDia._sum?.montoPrestado || 0
-  }
-
-  // Vista por cobrador: combinar (a) clientes de su ruta y (b) préstamos creados por su perfil.
-  // Para renovaciones, el MovimientoCapital tiene el monto real entregado en mano
-  // (no el montoPrestado completo), así que se prioriza el monto del movimiento.
-  // Buscar rutas del cobrador para incluir movimientos hechos por el owner en sus rutas
-  const rutasCobrador = await prisma.ruta.findMany({
-    where: { cobradorId, organizationId, activo: true },
-    select: { id: true },
-  })
-  const rutaIds = rutasCobrador.map(r => r.id)
-
-  const [prestamosRuta, movimientosDesembolso, actividadesCreador] = await Promise.all([
-    prisma.prestamo.findMany({
-      where: {
-        ...baseWherePrestamos,
-        cliente: { ruta: { cobradorId } },
-      },
-      select: { id: true, montoPrestado: true, renovadoDeId: true },
-    }),
-    // Movimientos de desembolso: por el cobrador O en sus rutas (incluye los del owner)
-    prisma.movimientoCapital.findMany({
-      where: {
-        organizationId,
-        tipo: 'desembolso',
-        createdAt: { gte: inicio, lt: fin },
-        referenciaTipo: 'prestamo',
-        OR: [
-          { creadoPorId: cobradorId },
-          ...(rutaIds.length > 0 ? [{ rutaId: { in: rutaIds } }] : []),
-        ],
-      },
-      select: { referenciaId: true, monto: true, createdAt: true },
-    }),
-    prisma.actividadLog.findMany({
-      where: {
-        organizationId,
-        userId: cobradorId,
-        accion: 'crear_prestamo',
-        createdAt: { gte: inicio, lt: fin },
-      },
-      select: { entidadId: true },
-    }),
-  ])
-
-  // Mapa de préstamo → monto real del movimiento (el más reciente gana si hubo edición)
-  const montoRealPorPrestamo = new Map()
-  for (const m of movimientosDesembolso) {
-    if (!m.referenciaId) continue
-    const prev = montoRealPorPrestamo.get(m.referenciaId)
-    if (!prev || m.createdAt > prev.createdAt) {
-      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, createdAt: m.createdAt })
-    }
-  }
-
-  const prestamoIdsActividad = actividadesCreador
-    .map((a) => a.entidadId)
-    .filter((id) => !!id)
-
-  const prestamosActividad = prestamoIdsActividad.length
-    ? await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        id: { in: prestamoIdsActividad },
-        createdAt: { gte: inicio, lt: fin },
-        estado: { not: 'cancelado' },
-      },
-      select: { id: true, montoPrestado: true, renovadoDeId: true },
-    })
-    : []
-
-  const idsContabilizados = new Set()
-  let total = 0
-
-  // Fallback cuando un prestamo no tiene MovimientoCapital: en un prestamo nuevo
-  // el efectivo entregado ES montoPrestado, pero en una RENOVACION el monto nuevo
-  // incluye el saldo viejo absorbido (que nunca salio de la caja). Asumir
-  // montoPrestado ahi inflaba la salida de caja por todo el saldo absorbido
-  // (renovar 160k por 160k mostraba -160.000 sin que saliera un peso).
-  const montoFallback = (p) => (p.renovadoDeId ? 0 : p.montoPrestado)
-
-  // Préstamos de la ruta: usar monto del movimiento si existe (correcto en renovaciones)
-  for (const p of prestamosRuta) {
-    if (idsContabilizados.has(p.id)) continue
-    idsContabilizados.add(p.id)
-    const mov = montoRealPorPrestamo.get(p.id)
-    total += mov ? mov.monto : montoFallback(p)
-  }
-
-  // Préstamos creados por el cobrador fuera de su ruta
-  for (const p of prestamosActividad) {
-    if (idsContabilizados.has(p.id)) continue
-    idsContabilizados.add(p.id)
-    const mov = montoRealPorPrestamo.get(p.id)
-    total += mov ? mov.monto : montoFallback(p)
-  }
-
-  // Movimientos del cobrador sin préstamo en ruta/actividad
-  for (const mov of movimientosDesembolso) {
-    if (!mov.referenciaId || idsContabilizados.has(mov.referenciaId)) continue
-    idsContabilizados.add(mov.referenciaId)
-    const real = montoRealPorPrestamo.get(mov.referenciaId)
-    total += real ? real.monto : mov.monto
-  }
-
-  return total
-}
 
 // Devuelve DOS cifras del dia que no son lo mismo y hoy se confundian:
 //

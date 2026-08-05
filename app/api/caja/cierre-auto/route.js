@@ -1,6 +1,10 @@
 // app/api/caja/cierre-auto/route.js - Cierre automático de caja (cron)
 
 import { prisma } from '@/lib/prisma'
+// ⚠ ESTE ARCHIVO TENÍA SU PROPIA COPIA con los argumentos en OTRO ORDEN
+// —(org, cobrador, inicio, fin)—. Al unificar hay que respetar la firma nueva:
+// (organizationId, inicio, fin, cobradorId).
+import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 
@@ -76,95 +80,6 @@ async function calcularRecogido(organizationId, cobradorId, fechaInicio, fechaFi
   return pagos._sum?.montoPagado || 0
 }
 
-async function calcularDesembolsadoDia(organizationId, cobradorId, fechaInicio, fechaFin) {
-  const [prestamosRuta, movimientosCreador, actividadesCreador] = await Promise.all([
-    prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        createdAt: { gte: fechaInicio, lte: fechaFin },
-        estado: { not: 'cancelado' },
-        cliente: { ruta: { cobradorId } },
-      },
-      select: { id: true, montoPrestado: true },
-    }),
-    prisma.movimientoCapital.findMany({
-      where: {
-        organizationId,
-        tipo: 'desembolso',
-        createdAt: { gte: fechaInicio, lte: fechaFin },
-        creadoPorId: cobradorId,
-        referenciaTipo: 'prestamo',
-      },
-      select: { referenciaId: true, monto: true },
-    }),
-    prisma.actividadLog.findMany({
-      where: {
-        organizationId,
-        userId: cobradorId,
-        accion: 'crear_prestamo',
-        createdAt: { gte: fechaInicio, lte: fechaFin },
-      },
-      select: { entidadId: true },
-    }),
-  ])
-
-  const prestamoIdsActividad = actividadesCreador
-    .map((a) => a.entidadId)
-    .filter((id) => !!id)
-
-  const prestamosActividad = prestamoIdsActividad.length
-    ? await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        id: { in: prestamoIdsActividad },
-        createdAt: { gte: fechaInicio, lte: fechaFin },
-        estado: { not: 'cancelado' },
-      },
-      select: { id: true, montoPrestado: true },
-    })
-    : []
-
-  const referenciasMovimiento = movimientosCreador
-    .map((mov) => mov.referenciaId)
-    .filter((id) => !!id)
-
-  const prestamosReferenciados = referenciasMovimiento.length
-    ? await prisma.prestamo.findMany({
-      where: {
-        organizationId,
-        id: { in: referenciasMovimiento },
-        createdAt: { gte: fechaInicio, lte: fechaFin },
-        estado: { not: 'cancelado' },
-      },
-      select: { id: true },
-    })
-    : []
-
-  const referenciasValidas = new Set(prestamosReferenciados.map((p) => p.id))
-
-  const idsContabilizados = new Set(prestamosRuta.map((p) => p.id))
-  let total = prestamosRuta.reduce((acc, p) => acc + p.montoPrestado, 0)
-
-  for (const p of prestamosActividad) {
-    if (!idsContabilizados.has(p.id)) {
-      total += p.montoPrestado
-      idsContabilizados.add(p.id)
-    }
-  }
-
-  for (const mov of movimientosCreador) {
-    if (!mov.referenciaId) {
-      continue
-    }
-    if (!referenciasValidas.has(mov.referenciaId)) continue
-    if (!idsContabilizados.has(mov.referenciaId)) {
-      total += mov.monto
-      idsContabilizados.add(mov.referenciaId)
-    }
-  }
-
-  return total
-}
 
 // Obtiene todos los cierres del día para una organización
 async function getCierresDelDia(organizationId, fecha) {
@@ -256,7 +171,7 @@ export async function POST(request) {
         })
 
         const totalGastos = gastosDia._sum?.monto || 0
-        const totalDesembolsado = await calcularDesembolsadoDia(org.id, cobrador.id, fechaCierre, fechaCierreFin)
+        const totalDesembolsado = await calcularDesembolsadoDia(org.id, fechaCierre, fechaCierreFin, cobrador.id)
         // Si el cobrador olvido cerrar, tomar el recaudo real del dia (no asumir 0).
         const totalRecogido = await calcularRecogido(org.id, cobrador.id, fechaCierre, fechaCierreFin)
         const saldoOperativo = totalRecogido - totalGastos
