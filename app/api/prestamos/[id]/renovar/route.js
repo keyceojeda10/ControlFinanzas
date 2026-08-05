@@ -145,7 +145,31 @@ export async function POST(request, { params }) {
   const { totalAPagar, cuotaDiaria, fechaFin } = calc
   const modoInteresFinal = calc.modoInteres
 
-  const diferencia = Number(montoPrestado) - minimoRenovacion // lo que recibe en mano
+  /* ══ LO QUE RECIBE EN MANO, EN BILLETES ══════════════════════════════════
+   *
+   * `minimoRenovacion` sale del reparto PROPORCIONAL: cada peso pagado lleva su
+   * parte de capital y de interés, así que el capital que aún debe casi nunca
+   * es redondo. Con un préstamo de $200.000 a 31 cuotas, el interés de $48.000
+   * es el 19,3548…% del total y el capital pendiente queda en $80.645.
+   *
+   * El cálculo está BIEN —comprobado contra producción, reproduce al peso las
+   * cifras guardadas— pero la consecuencia era que el cobrador tenía que
+   * entregar $119.355 en la calle. El dueño: «deberían de cerrar exacto sin
+   * esos dígitos».
+   *
+   * Se redondea al CENTENAR y hacia arriba: el cliente recibe un poco más, no
+   * menos. Sobre $119.355 son $45 de diferencia.
+   *
+   * ⚠ SOLO SE REDONDEA EL EFECTIVO. La deuda del cliente —`totalAPagar`, la
+   * cuota, el plazo— sale de `calc` y no se toca aquí: sigue siendo la del
+   * monto que pactaron. Lo único que cambia es cuántos billetes salen de la
+   * caja, y esa diferencia queda registrada en el capital de la ruta como
+   * cualquier otro desembolso.
+   */
+  const diferenciaExacta = Number(montoPrestado) - minimoRenovacion
+  const diferencia = diferenciaExacta > 0
+    ? Math.ceil(diferenciaExacta / 100) * 100
+    : diferenciaExacta
 
   const orgConfig = await prisma.organization.findUnique({
     where: { id: organizationId },

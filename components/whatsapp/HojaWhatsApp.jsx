@@ -27,7 +27,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Plantillas } from '@/components/pantallas/Plantillas'
 import { enlaceWhatsApp } from '@/lib/adaptadores/plantillas'
 import {
-  contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE,
+  contextoMotor, plantillasDeFamilia, familiasConPlantillas, PLANTILLA_LIBRE, familiaDe,
 } from '@/lib/adaptadores/plantillas-wa'
 import { abrirWhatsApp } from '@/lib/whatsapp'
 import PanelSecciones from '@/components/whatsapp/PanelSecciones'
@@ -62,32 +62,32 @@ export default function HojaWhatsApp({
   useEffect(() => {
     if (pago) { setFamilia('pago'); setElegida(null) }
   }, [pago])
-  // El motor de siempre, a un toque.
-  //
-  // ⚠ EL PAGO YA NO MANDA AL MODAL VIEJO. Antes sí: «el recibo es acusar
-  // recibo, no escribirle». Pero la familia «Pago» de esta hoja YA trae
-  // `pago_confirmacion` con sus mismas 5 secciones y el mismo detalle —solo
-  // pide que lleguen préstamo y pago, y ahora llegan—, así que la regla
-  // sobraba y dejaba el recibo en la pantalla que sobra.
-  // `preselectedTemplateId` sí sigue abriendo el motor completo: ese es el
-  // camino de «crédito aprobado», que pide una plantilla concreta.
-  const [avanzado, setAvanzado] = useState(Boolean(preselectedTemplateId))
+  /* ══ LA PLANTILLA PEDIDA POSICIONA LA HOJA, NO ABRE EL MODAL VIEJO ══
+     `preselectedTemplateId` encendía el modo avanzado, o sea la pantalla que el
+     dueño quiere retirar: «el modal anterior no debería de existir ya». Y lo
+     hacía por un motivo entendible —la hoja no sabía abrirse en una plantilla
+     concreta— que ya no se sostiene: `familiaDe` dice en qué pestaña vive, así
+     que se abre ahí y con ella marcada.
 
-  /* ⚠ `useState` SOLO LEE SU VALOR INICIAL UNA VEZ, y aquí eso rompía el
-     mensaje de crédito aprobado.
-     La hoja se monta SIEMPRE con la ficha —`open` decide si se ve, no si
-     existe—, así que este `useState` corre en el primer render, cuando
-     `preselectedTemplateId` todavía es `null`. Al crear un préstamo la ficha lo
-     pone en `'credito_aprobado'` DESPUÉS, y `avanzado` se quedaba en `false`:
-     se abría la hoja normal con «recordatorio de pago».
-     Reportado por un cliente: «al crear un crédito al cliente le llega un
-     mensaje recordándole el pago siguiente... yo quiero el que decía crédito
-     aprobado con la descripción y a cuántas cuotas quedaba».
-     Con el efecto, la hoja reacciona al cambio en vez de quedarse con lo que
-     había al montarse. */
+     Es el caso de «crédito aprobado» al crear un préstamo, que es donde el
+     dueño lo seguía viendo: «sigue saliendo el modal viejo».
+
+     ⚠ VA EN UN EFECTO, no en el valor inicial de `useState`. La hoja se monta
+     SIEMPRE con la ficha —`open` decide si se VE, no si existe—, así que el
+     primer render ocurre con `preselectedTemplateId` en `null`. Al crear un
+     préstamo la ficha lo pone DESPUÉS, y con `useState` se quedaba con lo que
+     había al montarse: por eso el cliente veía «recordatorio de pago» donde
+     esperaba «crédito aprobado». */
   useEffect(() => {
-    if (preselectedTemplateId) setAvanzado(true)
+    if (!preselectedTemplateId) return
+    const f = familiaDe(preselectedTemplateId)
+    if (f) setFamilia(f)
+    setElegida(preselectedTemplateId)
   }, [preselectedTemplateId])
+
+  // El motor de siempre, a un toque. Ya no se abre de entrada por ningún
+  // camino: se llega solo por «Editar las plantillas», que es su sitio.
+  const [avanzado, setAvanzado] = useState(false)
   // Qué plantilla abrir en el panel completo. Al pulsar «Personalizar este
   // mensaje» se abre CON LA QUE SE ESTÁ MIRANDO, no en una lista donde hay que
   // volver a buscarla.
