@@ -3,8 +3,8 @@
 // Hero card premium para detalle de cliente. Saldo total + avatar + chips
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
-import { formatMoney, formatearTelefonoIntl } from '@/lib/i18n'
-import { direccionIncompleta } from '@/lib/direcciones'
+import { formatMoney } from '@/lib/i18n'
+import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
@@ -220,6 +220,35 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
   const animSaldo = useCountUp(saldoTotal, 900)
   const tienePrestamos = prestamosActivos.length > 0
 
+  /* ══ LAS DOS CIFRAS DE LA TIRA QUE HAY QUE DERIVAR ═══════════════════════
+     Se declaran AQUÍ, antes del `return`, y no dentro del JSX: es el mismo
+     patrón que tumbó producción con la TDZ hace unos días.
+
+     Con varios préstamos activos se suman las cuotas —es lo que el cliente
+     paga— y el próximo cobro es el MÁS CERCANO, que es la fecha en la que hay
+     que ir a buscarlo. */
+  const cuotaVigente = tienePrestamos
+    ? prestamosActivos.reduce((a, p) => a + (p?.cuotaDiaria ?? 0), 0) || null
+    : null
+
+  const proximoCobroTexto = (() => {
+    const fechas = prestamosActivos
+      .map((p) => p?.proximoCobro)
+      .filter(Boolean)
+      .map((f) => new Date(f))
+      .filter((d) => !Number.isNaN(d.getTime()))
+    if (!fechas.length) return null
+    const cercana = new Date(Math.min(...fechas.map((d) => d.getTime())))
+    /* Sin año —«27 ago», que es como lo dice la lámina y como cabe en una
+       columna de cuatro— y leído en el huso de Colombia. Las fechas de este
+       proyecto se guardan con el convenio T05:00Z: leerlas en la hora local del
+       navegador corre el día entero en la franja de la medianoche, y eso ya
+       causó bugs invisibles en local porque dev corre en Bogotá y prod en UTC. */
+    return cercana.toLocaleDateString('es-CO', {
+      day: 'numeric', month: 'short', timeZone: 'America/Bogota',
+    }).replace('.', '')
+  })()
+
   return (
     /* EL FONDO DEJA DE TEÑIRSE SEGUN EL HUMOR DEL CLIENTE.
        Era un degradado del color de estado —rosa si debe, verde si va al dia—
@@ -316,8 +345,15 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
             }}>
               {cliente?.nombre}
             </h1>
+            {/* ⚠ EL TELÉFONO VA AQUÍ (E05). Estaban la cédula y la ruta, pero
+                el número había que ir a buscarlo abajo, en «Cómo ubicarlo». Es
+                el dato que más se mira de un cliente después del nombre, y en
+                una línea caben los tres. */}
             <p className="text-[11px] mt-0.5" style={{ color: '#8A8E98' }}>
               {cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `CC ${cliente.cedula}` : 'Sin documento'}
+              {cliente?.telefono && (
+                <> · <span style={{ color: '#A3A8B2' }}>{telefonoLegible(cliente.telefono)}</span></>
+              )}
               {cliente?.ruta && (
                 <> · <span style={{ color: '#A3A8B2' }}>{cliente.ruta.nombre}</span></>
               )}
@@ -413,6 +449,41 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 className="h-full rounded-full transition-[width] duration-700"
                 style={{ width: `${pctPagado}%`, background: '#2FBE6A' }}
               />
+            </div>
+
+            {/* ══ E05 · LA TIRA DE CUATRO CIFRAS ═══════════════════════════
+                Es la información con la que se decide si prestarle otra vez, y
+                hasta ahora había que BAJAR a buscarla: la cuota estaba en la
+                tarjeta del préstamo y el próximo cobro más abajo todavía.
+                Aquí arriba se lee de un vistazo, junto al saldo.
+
+                «Cómo paga» es el porcentaje pagado de lo que lleva pactado —no
+                una nota de comportamiento— y por eso dice el mismo número que
+                la barra de encima: son la misma verdad, una en cifra y otra en
+                trazo. */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2,
+              marginTop: 16, paddingTop: 14,
+              borderTop: '1px solid rgba(255,255,255,.09)',
+            }}>
+              {[
+                { rotulo: 'Le debe', valor: formatMoney(saldoTotal) },
+                { rotulo: 'Cuota', valor: cuotaVigente != null ? formatMoney(cuotaVigente) : '—' },
+                { rotulo: 'Próximo cobro', valor: proximoCobroTexto ?? '—' },
+                { rotulo: 'Cómo paga', valor: `${pctPagado}%` },
+              ].map((c) => (
+                <div key={c.rotulo} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <span style={{
+                    fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em',
+                    textTransform: 'uppercase', color: '#8A8E98',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{c.rotulo}</span>
+                  <span className="font-mono-display" style={{
+                    fontSize: 13.5, fontWeight: 700, color: '#F3F3F6',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{c.valor}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -547,7 +618,7 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
               <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8.1 9.6a16 16 0 006 6l1.2-1.1a2 2 0 012.1-.5c.8.3 1.7.5 2.6.6a2 2 0 011.7 2z" />
             </svg>
           )}
-          principal={formatearTelefonoIntl(tel)}
+          principal={telefonoLegible(tel)}
           secundario="su celular"
           acciones={(
             <span style={{ display: 'inline-flex', gap: 6, flex: 'none' }}>
