@@ -25,6 +25,7 @@ export const MONTOS = {
   recargo: 8300,
   gasto: 6700,
   renovacion: 500000,
+  renovacionDigital: 380000,  // la que se entrega por transferencia
 }
 
 /* Los pasos, en orden. Cada uno declara QUÉ pide y QUÉ espera que cambie.
@@ -92,7 +93,15 @@ export function construirPasos(modo) {
       tipo: 'renovacion', enPrestamo: 'A', monto: MONTOS.renovacion, ...m,
     },
     {
-      id: 'P10', titulo: 'leer las tres vistas', actor: 'owner',
+      id: 'P10', titulo: 'renovación del préstamo B POR TRANSFERENCIA', actor: 'owner',
+      // Hasta hoy la renovación no aceptaba método y todo se contaba como
+      // efectivo: renovar pagando por Nequi le pedía al cobrador un fajo que
+      // nunca tuvo. Este paso comprueba que la diferencia NO salga de su fajo.
+      tipo: 'renovacion', enPrestamo: 'B', monto: MONTOS.renovacionDigital,
+      porTransferencia: true, ...m,
+    },
+    {
+      id: 'P11', titulo: 'leer las tres vistas', actor: 'owner',
       soloLeer: true,
     },
   ]

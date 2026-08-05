@@ -39,7 +39,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // efectivo» y la cuenta le pedía un fajo que nunca tuvo — el mismo error
       // que ya corregimos del lado del cobro, pero al revés. En este negocio hay
       // 6 casos históricos; el 99% van sin método, que se lee como efectivo.
-      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true },
+      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true, metodoPagoId: true },
     }),
     // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
     // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
@@ -67,7 +67,10 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
     if (!m.referenciaId) continue
     const prev = montoRealPorPrestamo.get(m.referenciaId)
     if (!prev || m.createdAt > prev.fecha) {
-      montoRealPorPrestamo.set(m.referenciaId, { monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt, metodoPago: m.metodoPago })
+      montoRealPorPrestamo.set(m.referenciaId, {
+        monto: m.monto, rutaId: m.rutaId, fecha: m.createdAt,
+        metodoPago: m.metodoPago, metodoPagoId: m.metodoPagoId,
+      })
     }
   }
 
@@ -117,6 +120,9 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // que no dice nada cuenta como efectivo: es el modo por defecto de un
       // desembolso en la calle, igual que en los cobros.
       metodoPago: mov?.metodoPago ?? null,
+      // A QUÉ cuenta, no solo por qué vía: es lo que permite decir «Nequi» en
+      // vez de «Transferencia» en el desglose de abajo.
+      metodoPagoId: mov?.metodoPagoId ?? null,
       fecha: mov?.fecha || p.createdAt,
     })
   }
@@ -150,7 +156,7 @@ export async function GET(request, { params }) {
   const { fin }    = esRango ? getLocalDayRange(hastaParam, country) : getLocalDayRange(fechaBase, country)
 
   // Validar cobrador + leer config de la org en paralelo.
-  const [cobrador, org] = await Promise.all([
+  const [cobrador, org, cuentasOrg] = await Promise.all([
     prisma.user.findFirst({
       where: { id: cobradorId, organizationId, rol: 'cobrador' },
       select: { id: true, nombre: true },
@@ -159,7 +165,16 @@ export async function GET(request, { params }) {
       where: { id: organizationId },
       select: { capitalEsEfectivo: true, renovacionesEnCobrado: true },
     }),
+    // Las cuentas de la organización (Nequi, Bancolombia, Daviplata…), para
+    // poder nombrarlas en el desglose. Los COBROS ya traen el nombre por la
+    // relación `metodoPagoRef`, pero los DESEMBOLSOS salen de
+    // `MovimientoCapital`, que solo guarda el id.
+    prisma.metodoPago.findMany({
+      where: { organizationId },
+      select: { id: true, nombre: true },
+    }),
   ])
+  const metodosPorId = new Map(cuentasOrg.map((m) => [m.id, m.nombre]))
   if (!cobrador) {
     return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
   }
@@ -660,22 +675,93 @@ export async function GET(request, { params }) {
   ])
 
   // Desglose por método de pago
+  /* ── EN QUÉ CUENTA ESTÁ CADA PESO ─────────────────────────────────────────
+   *
+   * El dueño: «sería mucho más explicativo y sabría el usuario en qué cuenta
+   * está qué dinero: qué tanto está en Nequi, qué tanto en Bancolombia, qué
+   * tanto en Daviplata, y eso hace una suma total de transferencia».
+   *
+   * Dos arreglos sobre lo que había:
+   *
+   * 1. NADA SE PIERDE. Un método que no fuera 'efectivo' ni 'transferencia'
+   *    caía en `mp = 'otro'` y luego NINGUNA de las dos ramas lo recogía: el
+   *    cobro desaparecía del desglose sin dejar rastro. Hoy no hay ninguno en
+   *    producción, pero un desglose que se come plata en silencio es peor que
+   *    no tenerlo. Ahora va a «Sin registrar», visible.
+   *
+   * 2. TAMBIÉN LO QUE SALE. Antes solo se desglosaban los cobros. Si prestas
+   *    por Nequi, esa cuenta baja y el desglose no se enteraba: enseñaba lo que
+   *    entró a Nequi, no lo que hay en Nequi.
+   */
   const desgloseMetodo = {}
-  for (const p of cobros) {
-    const mp = p.metodoPago || 'otro'
-    if (mp === 'transferencia') {
-      // La FK manda sobre el texto libre: ver el comentario del `select`.
-      const pl = p.metodoPagoRef?.nombre || p.plataforma || 'Transferencia'
-      desgloseMetodo[pl] = (desgloseMetodo[pl] || { monto: 0, tipo: 'transferencia' })
-      desgloseMetodo[pl].monto += Number(p.montoPagado || 0)
-    } else if (mp === 'efectivo') {
-      desgloseMetodo['Efectivo'] = (desgloseMetodo['Efectivo'] || { monto: 0, tipo: 'efectivo' })
-      desgloseMetodo['Efectivo'].monto += Number(p.montoPagado || 0)
-    }
+  const bucketMetodo = (etiqueta, tipo) => {
+    if (!desgloseMetodo[etiqueta]) desgloseMetodo[etiqueta] = { entra: 0, sale: 0, tipo }
+    return desgloseMetodo[etiqueta]
   }
+  const etiquetaDe = (metodoPago, nombreCuenta) => {
+    if (metodoPago === 'transferencia') {
+      /* Sin cuenta identificada NO se inventa una fila «Transferencia» al lado
+         de «Nequi»: el dueño vería dos renglones y no sabría si son lo mismo.
+         Es el fallo que ya documentaba `caja-cobrado-total.test.js` («Nequi
+         $596.000 + Transferencia $30.000 siendo los dos Nequi»), y volvería a
+         aparecer aquí por la puerta de atrás.
+
+         Si SOLO hay una cuenta en la organización, lo sin identificar es de esa
+         cuenta con casi total seguridad. Si hay varias, se dice que no se sabe
+         en vez de adivinar: en producción hay 16 movimientos así. */
+      if (nombreCuenta) return [nombreCuenta, 'transferencia']
+      if (cuentasOrg.length === 1) return [cuentasOrg[0].nombre, 'transferencia']
+      return ['Transferencia sin cuenta', 'transferencia']
+    }
+    if (metodoPago === 'efectivo' || metodoPago == null) return ['Efectivo', 'efectivo']
+    // Cualquier otra cosa: se enseña, no se esconde.
+    return ['Sin registrar', 'otro']
+  }
+
+  for (const p of cobros) {
+    // La FK manda sobre el texto libre: ver el comentario del `select`.
+    const [etiqueta, tipo] = etiquetaDe(p.metodoPago, p.metodoPagoRef?.nombre || p.plataforma)
+    bucketMetodo(etiqueta, tipo).entra += Number(p.montoPagado || 0)
+  }
+  for (const d of desembolsos) {
+    // `desembolsos` lleva el método pero NO el nombre de la cuenta, así que se
+    // busca aquí. Sin esto, prestar por Nequi caía en un cajón genérico
+    // «Transferencia» separado de la línea «Nequi» de los cobros, y el dueño
+    // vería dos renglones de la misma cuenta.
+    const nombreCuenta = d.metodoPagoId
+      ? (metodosPorId.get(d.metodoPagoId) ?? null)
+      : null
+    const [etiqueta, tipo] = etiquetaDe(d.metodoPago, nombreCuenta)
+    bucketMetodo(etiqueta, tipo).sale += Number(d.monto || 0)
+  }
+  // `GastoMenor` no tiene columna de método: un gasto de calle siempre sale del
+  // fajo. Comprobado en `prisma/schema.prisma`.
+  for (const g of gastos) {
+    bucketMetodo('Efectivo', 'efectivo').sale += Number(g.monto || 0)
+  }
+
   const desgloseMetodoPago = Object.entries(desgloseMetodo)
-    .map(([label, v]) => ({ label, monto: Math.round(v.monto), tipo: v.tipo }))
-    .sort((a, b) => b.monto - a.monto)
+    .map(([label, v]) => ({
+      label,
+      // `monto` se queda con lo que ENTRÓ, que es lo que este campo significaba
+      // antes: quitarlo rompería la pantalla que ya lo pinta.
+      monto: Math.round(v.entra),
+      entra: Math.round(v.entra),
+      sale: Math.round(v.sale),
+      neto: Math.round(v.entra - v.sale),
+      tipo: v.tipo,
+    }))
+    .filter((x) => x.entra !== 0 || x.sale !== 0)
+    .sort((a, b) => b.entra - a.entra)
+
+  /* El total por transferencia, que es lo que el dueño pidió poder leer de un
+     vistazo sin sumar las cuentas a mano. */
+  const totalTransferencias = desgloseMetodoPago
+    .filter((x) => x.tipo === 'transferencia')
+    .reduce((a, x) => ({
+      entra: a.entra + x.entra, sale: a.sale + x.sale, neto: a.neto + x.neto,
+      cuentas: a.cuentas + 1,
+    }), { entra: 0, sale: 0, neto: 0, cuentas: 0 })
 
   const renovacionesInfo = {
     cantidad: renovacionesDia.length,
@@ -969,6 +1055,9 @@ export async function GET(request, { params }) {
     // Lo consume el bloque "Renovaciones de hoy" de CajaCobradorDetalle.
     renovaciones: renovacionesInfo,
     desgloseMetodoPago,
+    // La suma de todas las cuentas de transferencia, para no obligar al dueño a
+    // sumarlas de cabeza.
+    totalTransferencias,
     porRuta,
     movimientos,
     gastos: gastos.map((g) => ({

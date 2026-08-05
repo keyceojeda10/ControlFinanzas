@@ -26,14 +26,34 @@ export const IDS = {
   cobrador: 'zzpruebadinero00000cobrador',
   ruta: 'zzpruebadinero00000000ruta1',
   cliente: (n) => `zzpruebadinero000000cliente${n}`,
+  cuenta: 'zzpruebadinero00000000cuenta',
 }
 
 export async function conectar() {
-  const cx = await mysql.createConnection({
-    host: '127.0.0.1', port: 3307,
-    user: 'cf_test', password: 'cfTest2026_x7Qm',
-    database: BASE_ESPERADA,
-  })
+  /* El túnel SSH se cae solo cada tanto y la prueba moría a mitad con
+     «Connection lost», dejando basura y pareciendo un fallo del sistema.
+     Tres intentos con una espera corta: si el túnel está de verdad caído, el
+     mensaje lo dice claro en vez de un error de mysql2 que no ayuda. */
+  let cx = null
+  let ultimoError = null
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      cx = await mysql.createConnection({
+        host: '127.0.0.1', port: 3307,
+        user: 'cf_test', password: 'cfTest2026_x7Qm',
+        database: BASE_ESPERADA,
+      })
+      break
+    } catch (e) {
+      ultimoError = e
+      if (intento < 3) await new Promise((r) => setTimeout(r, 1500))
+    }
+  }
+  if (!cx) {
+    throw new Error(
+      `No se pudo conectar a la base del espejo (${ultimoError?.code ?? ultimoError?.message}).\n` +
+      '  ¿Está abierto el túnel?  ssh -N -L 3307:127.0.0.1:3306 root@69.62.87.141')
+  }
 
   // ── LAS TRES GUARDAS ──────────────────────────────────────────────────────
   const [[{ db }]] = await cx.query('SELECT DATABASE() db')
@@ -78,7 +98,7 @@ export function minutosParaElCambioDeDia(ahora = Date.now()) {
 // así que por SQL hay que barrer a mano y en orden.
 const TABLAS_EN_ORDEN = [
   'CuotaAmortizacion', 'Pago', 'MovimientoCapital', 'Prestamo',
-  'GastoMenor', 'CierreCaja', 'Cliente', 'Ruta', 'Capital',
+  'GastoMenor', 'CierreCaja', 'Cliente', 'Ruta', 'MetodoPago', 'Capital',
   'ActividadLog', 'User', 'Organization',
 ]
 
@@ -180,6 +200,14 @@ export async function montar(cx, banderas = {}) {
     `INSERT INTO Capital (id, organizationId, saldo, createdAt, updatedAt)
      VALUES (?, ?, 0, NOW(), NOW())`,
     [IDS.capital, IDS.org])
+
+  /* Una cuenta de transferencia, como las que tienen 351 organizaciones
+     (Nequi, Bancolombia, Daviplata). Sin ella no se puede probar que la plata
+     que entra o sale por transferencia NO toca el fajo del cobrador. */
+  await cx.execute(
+    `INSERT INTO MetodoPago (id, organizationId, nombre, orden, activo, esPredeterminado, createdAt)
+     VALUES (?, ?, 'Nequi', 1, 1, 0, NOW())`,
+    [IDS.cuenta, IDS.org])
 
   // Uno por modo de interés: así los cuatro flujos no se pisan entre sí.
   const clientes = []

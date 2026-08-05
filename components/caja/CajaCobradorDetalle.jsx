@@ -405,7 +405,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
       )}
 
       {/* Desglose por método de pago */}
-      <DesgloseMetodoPago items={desgloseMetodo} />
+      <DesgloseMetodoPago items={desgloseMetodo} totalTransferencias={data?.totalTransferencias} />
 
       {/* Alerta gastos pendientes */}
       {(r.gastosPendientesCantidad || 0) > 0 && (

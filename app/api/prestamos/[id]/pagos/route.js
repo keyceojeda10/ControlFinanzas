@@ -729,8 +729,22 @@ export async function POST(request, { params }) {
         referenciaTipo: 'pago',
         rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
-        metodoPago: metodoPago || null,
-        metodoPagoId: metodoPagoId || null,
+        /* ⚠ EL MISMO VALOR QUE LA FILA `Pago`, NO EL CRUDO DEL CUERPO.
+           Aquí iba `metodoPago || null` sin validar, mientras la fila `Pago`
+           guardaba `metodoValido` —que degrada a null cualquier cosa que no sea
+           efectivo/transferencia—. Un `metodoPago: 'nequi'` dejaba las dos
+           filas del MISMO cobro con datos distintos.
+
+           Hoy no descuadra ninguna cifra (las dos acaban contando como
+           efectivo) y en producción no hay ni un solo caso: los únicos valores
+           que existen son 'efectivo', 'transferencia' y null. Pero el desglose
+           por cuenta manda lo desconocido a «sin registrar», así que en cuanto
+           alguien mande un método raro la plata desaparecería de su cuenta.
+
+           Para decir Nequi o Bancolombia está `metodoPagoId`, que apunta a la
+           cuenta de verdad. `metodoPago` solo dice EN QUÉ FORMA entró. */
+        metodoPago: metodoValido,
+        metodoPagoId: metodoValido === 'transferencia' ? (metodoPagoId || null) : null,
       })
     }
 

@@ -117,7 +117,7 @@ async function correrFlujo({ cx, pags, modo, fecha, banderas }) {
   const m = MODOS[modo]
   const pasos = construirPasos(modo)
   const libro = libroNuevo()
-  const ctx = { prestamos: {}, gastoId: null }
+  const ctx = { prestamos: {}, gastoId: null, cuentaId: IDS.cuenta }
 
   for (const paso of pasos) {
     const pag = pags[paso.actor]
@@ -271,6 +271,11 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
       montoPrestado: paso.monto, tasaInteres: paso.tasa, diasPlazo: paso.dias,
       fechaInicio: fecha, frecuencia: paso.frecuencia, modoInteres: paso.modoInteres,
       metodoPago: paso.metodoPago,
+      // A QUÉ cuenta. Sin esto el desembolso cae en un cajón genérico
+      // «Transferencia», separado del renglón de la cuenta real: el dueño
+      // vería dos filas de lo mismo. Es el fallo que ya documentaba
+      // `caja-cobrado-total.test.js` para los cobros.
+      ...(paso.metodoPago === 'transferencia' && { metodoPagoId: ctx.cuentaId }),
     }
     const r = await llamar(pag, 'POST', '/api/prestamos', cuerpo)
     if (!r.ok) return { abortar: `${r.estado} ${JSON.stringify(r.datos)}`, peticion: { metodo: 'POST', ruta: '/api/prestamos', cuerpo }, respuesta: r }
@@ -300,6 +305,9 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
     const pres = ctx.prestamos[paso.enPrestamo]
     const cuerpo = { montoPagado: paso.monto, tipo: paso.tipoPago }
     if (paso.metodoPago) cuerpo.metodoPago = paso.metodoPago
+    // A QUÉ cuenta entró, no solo por qué vía: es lo que permite decir «Nequi»
+    // en vez de «Transferencia» y saber dónde está la plata.
+    if (paso.metodoPago === 'transferencia') cuerpo.metodoPagoId = ctx.cuentaId
     if (paso.nota) cuerpo.nota = paso.nota
 
     const r = await cobrar(pag, pres.id, cuerpo)
@@ -369,6 +377,9 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
     const cuerpo = {
       montoPrestado: paso.monto, tasaInteres: paso.tasa, diasPlazo: paso.dias,
       fechaInicio: fecha, frecuencia: paso.frecuencia, modoInteres: paso.modoInteres,
+      // Entregar la diferencia por transferencia: hasta hoy no se podía y todo
+      // se contaba como salido del fajo del cobrador.
+      ...(paso.porTransferencia && { metodoPago: 'transferencia', metodoPagoId: ctx.cuentaId }),
     }
     const ruta = `/api/prestamos/${pres.id}/renovar`
     const r = await llamar(pag, 'POST', ruta, cuerpo)
@@ -389,13 +400,14 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
       paso: paso.id,
       delta: {
         desembolsado: previsto.entregada,
-        // La renovación no acepta método de pago (`renovar/route.js` ni lo lee
-        // del cuerpo), así que hoy SIEMPRE se entrega en efectivo.
-        desembolsadoEfectivo: previsto.entregada,
+        // Si se entregó por transferencia, NO salió del fajo del cobrador.
+        desembolsadoEfectivo: paso.porTransferencia ? 0 : previsto.entregada,
         valorPrestado: paso.monto,
         capital: -previsto.entregada,
       },
-      porQue: 'al renovar sale de caja SOLO la diferencia; lo que debía se absorbe',
+      porQue: paso.porTransferencia
+        ? 'la diferencia salió por transferencia: del negocio sí, del fajo no'
+        : 'al renovar sale de caja SOLO la diferencia; lo que debía se absorbe',
     })
     return { peticion: { metodo: 'POST', ruta, cuerpo }, respuesta: r }
   }

@@ -2434,6 +2434,9 @@ export default function PrestamoDetallePage({ params }) {
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
+        // Ya estaban cargadas para la hoja de pago; sin pasarlas, la renovación
+        // no puede decir por dónde entregó y todo se cuenta como efectivo.
+        metodosPago={metodosPagoOrg}
         open={modalRenovar}
         onClose={() => setModalRenovar(false)}
       />

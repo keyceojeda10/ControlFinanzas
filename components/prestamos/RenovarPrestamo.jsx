@@ -9,6 +9,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
+import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -30,6 +31,9 @@ export default function RenovarPrestamo({
   prestamoAnterior,
   clienteNombre,
   montoMaximoPrestamo,
+  // Las cuentas de la organización (Nequi, Bancolombia, Daviplata…). La ficha
+  // del préstamo ya las carga: aquí solo se reciben.
+  metodosPago = [],
   open,
   onClose,
 }) {
@@ -51,6 +55,16 @@ export default function RenovarPrestamo({
   // `fijarMonto`, que olvida lo tecleado, no por la conversión.
   const { modoAbreviado } = useAuth()
   const [montoTecleado, setMontoTecleado] = useState(null)
+  /* POR DÓNDE SE ENTREGA LA DIFERENCIA.
+     `null` = efectivo, que es el caso normal en gota a gota. Si se elige una
+     cuenta, esa plata NO sale del fajo del cobrador y la caja tiene que saberlo:
+     hasta ahora la renovación no mandaba el método y todo se contaba como
+     efectivo, pidiéndole al cobrador un fajo que nunca tuvo.
+
+     Guarda el objeto entero que devuelve `MetodoPagoSelector`
+     —`{metodoPago, metodoPagoId, plataforma}`— porque ese es su contrato y
+     además es lo que hace falta para pintar el rótulo con el nombre real. */
+  const [cuentaEntrega, setCuentaEntrega] = useState(null)
   const fijarMonto = (v) => { setMontoTecleado(null); setMonto(v) }
   const [tasa,        setTasa]        = useState(String(prestamoAnterior?.tasaInteres ?? '20'))
   const [plazoUnidades, setPlazoUnidades] = useState(
@@ -128,6 +142,10 @@ export default function RenovarPrestamo({
           ...(modoHeredado === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
           ...(modoHeredado === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
+          // Por dónde sale la diferencia. Sin elegir nada = efectivo.
+          ...(cuentaEntrega?.metodoPago === 'transferencia' && {
+            metodoPago: 'transferencia', metodoPagoId: cuentaEntrega.metodoPagoId,
+          }),
         }),
       })
       if (!res.ok) {
@@ -202,7 +220,11 @@ export default function RenovarPrestamo({
             despues: formatMoney(calculo.cuotaDiaria),
             tono: calculo.cuotaDiaria > cuotaAnterior ? 'empeora' : 'mejora',
           } : null}
-          entregaEtiqueta="Le entregas en efectivo"
+          /* El rótulo sigue a la cuenta elegida: decir «en efectivo» cuando se
+             entregó por Nequi es lo que descuadraba el fajo del cobrador. */
+          entregaEtiqueta={cuentaEntrega?.metodoPago === 'transferencia'
+            ? `Le entregas por ${cuentaEntrega.plataforma ?? 'transferencia'}`
+            : 'Le entregas en efectivo'}
           entrega={montoNum > 0 ? formatMoney(enMano) : null}
           gananciaEtiqueta="Ganancia del nuevo"
           ganancia={calculo && calculo.totalAPagar > montoNum
@@ -210,6 +232,27 @@ export default function RenovarPrestamo({
           onRenovar={handleSubmit}
           renovando={loading}
         >
+
+        {/* ── POR DÓNDE SALE LA DIFERENCIA ──────────────────────────────────
+            Solo aparece si de verdad hay algo que entregar: renovar por lo
+            justo del saldo no mueve un peso, y un selector ahí sería ruido.
+
+            Sin esto la renovación no mandaba método y TODO se contaba como
+            efectivo: si el prestamista pagaba por Nequi, la cuenta del día le
+            pedía al cobrador un fajo que nunca tuvo. */}
+        {metodosPago.length > 0 && enMano > 0 && (
+          <div>
+            <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+              ¿Por dónde le entregas los {formatMoney(enMano)}?
+            </label>
+            <MetodoPagoSelector
+              metodosPago={metodosPago}
+              value={cuentaEntrega}
+              onSelect={setCuentaEntrega}
+              compact
+            />
+          </div>
+        )}
 
         {/* El aviso de que no llega al saldo se queda: es plata mal puesta. */}
         {montoNum > 0 && montoNum < saldo && (

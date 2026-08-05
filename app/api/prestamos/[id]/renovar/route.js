@@ -44,7 +44,20 @@ export async function POST(request, { params }) {
   const { id: prestamoId } = await params
 
   const body = await request.json()
-  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro, cuotaManual } = body
+  const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro, cuotaManual,
+    metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+
+  /* ⚠ POR DÓNDE SALE LA DIFERENCIA QUE SE ENTREGA.
+     La renovación ni leía este campo, así que su desembolso quedaba siempre sin
+     método y se leía como efectivo. Si el prestamista renovaba pagando por
+     Nequi, la cuenta del día le pedía al cobrador un fajo que nunca tuvo — el
+     mismo fallo que ya se corrigió en la tarjeta «lo que prestó hoy», pero en
+     el otro extremo.
+
+     Mismo criterio que al crear un préstamo (`app/api/prestamos/route.js:319`):
+     sin método se asume efectivo, que es el caso normal en gota a gota. */
+  const cuentaDesembolso = metodoPagoDesembolso === 'transferencia' ? 'transferencia' : 'efectivo'
+  const cuentaDesembolsoId = cuentaDesembolso === 'transferencia' ? (metodoPagoIdDesembolso || null) : null
 
   const freq = frecuencia || 'diario'
   // Modo de interes para la renovacion. Default 'fijo' (el modelo nuevo);
@@ -324,6 +337,10 @@ export async function POST(request, { params }) {
       referenciaTipo: 'prestamo',
       rutaId: original.cliente?.rutaId || null,
       creadoPorId: userId,
+      // Sin esto el movimiento quedaba con método `null`, que la caja lee como
+      // efectivo: ver el comentario largo de arriba.
+      metodoPago: cuentaDesembolso,
+      metodoPagoId: cuentaDesembolsoId,
     })
 
     // 6. Asegurar que el cliente queda activo
