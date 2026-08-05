@@ -699,23 +699,46 @@ export async function GET(request, { params }) {
   // Se deriva de `desembolsos`, la MISMA lista que produce prestadoDia, para que
   // el resumen y la tarjeta no puedan contradecirse.
   const sum = (arr, campo) => Math.round(arr.reduce((a, x) => a + (x[campo] || 0), 0))
+  /* ⚠ «DE SU MANO» ES SOLO EL EFECTIVO.
+     Lo que se desembolsa POR TRANSFERENCIA sale del negocio, pero el cobrador
+     no entregó un billete: no puede figurar en una cifra rotulada «lo que de
+     verdad salió de su mano».
+
+     Cazado con la prueba de flujo (scripts/prueba-dinero): prestando 347.000 en
+     efectivo y 213.000 por transferencia, la tarjeta decía 560.000 mientras la
+     línea «Prestó en efectivo», tres renglones más abajo, decía 347.000 — que
+     es la correcta. La misma pantalla se contradecía.
+
+     La línea de la cuenta YA descontaba lo digital (`prestadoDigital`, más
+     abajo); lo que faltaba era que la tarjeta usara el mismo criterio. */
+  const enEfectivo = (d) => d.metodoPago !== 'transferencia'
   const itemsNuevos = desembolsos.filter((d) => !d.esRenovacion)
   const itemsRenov  = desembolsos.filter((d) => d.esRenovacion)
   const valorNuevos = sum(itemsNuevos, 'valor')
   const valorRenovaciones = sum(itemsRenov, 'valor')
-  const efectivoTotal = sum(desembolsos, 'monto')
+  const efectivoTotal = sum(desembolsos.filter(enEfectivo), 'monto')
   const prestadoDetalle = {
-    nuevos:       { cantidad: itemsNuevos.length, valor: valorNuevos, efectivo: sum(itemsNuevos, 'monto') },
+    nuevos: {
+      cantidad: itemsNuevos.length,
+      valor: valorNuevos,
+      efectivo: sum(itemsNuevos.filter(enEfectivo), 'monto'),
+      // Lo que salió del negocio por transferencia: se enseña aparte para que
+      // el prestamista no eche en falta la diferencia.
+      transferencia: sum(itemsNuevos.filter((d) => !enEfectivo(d)), 'monto'),
+    },
     renovaciones: {
       cantidad: itemsRenov.length,
       valor: valorRenovaciones,
-      efectivo: sum(itemsRenov, 'monto'),
+      efectivo: sum(itemsRenov.filter(enEfectivo), 'monto'),
+      transferencia: sum(itemsRenov.filter((d) => !enEfectivo(d)), 'monto'),
       absorbido: Math.max(0, valorRenovaciones - sum(itemsRenov, 'monto')),
     },
     // Lo que valen las cartulinas que entrego hoy, nuevas y renovadas.
     valorTotal: valorNuevos + valorRenovaciones,
-    // Lo que de verdad salio de su mano.
+    // Lo que de verdad salio de su mano: SOLO efectivo.
     efectivoTotal,
+    // Y lo que salió del negocio sin pasar por su fajo.
+    transferenciaTotal: sum(desembolsos.filter((d) => !enEfectivo(d)), 'monto'),
     // Que de los dos esta mostrando la tarjeta "Prestado", para poder decirlo en
     // la UI en vez de dejar al prestamista adivinando por que no cuadran.
     tarjetaMuestra: brutoRenovaciones ? 'valor' : 'efectivo',

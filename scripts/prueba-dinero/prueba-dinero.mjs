@@ -22,7 +22,7 @@
 
 import { conectar, montar, limpiar, diaColombiano, minutosParaElCambioDeDia, IDS } from './montar.mjs'
 import { abrirActores, llamar, cobrar, leerLasTresVistas } from './api.mjs'
-import { libroNuevo, anotar, comparar, preverPrestamo, preverRenovacion } from './libro.mjs'
+import { libroNuevo, anotar, comparar, preverPrestamo, preverRenovacion, fajoEsperado } from './libro.mjs'
 import { construirPasos, MODOS, MONTOS } from './pasos.mjs'
 import { pintarDescuadre, pintarLasTresVistas, pintarPasoOk } from './informe.mjs'
 
@@ -169,10 +169,94 @@ async function correrFlujo({ cx, pags, modo, fecha, banderas }) {
     }
 
     console.log(pintarPasoOk(paso, comparacion))
+    // ── LA COMPROBACIÓN QUE DE VERDAD IMPORTA ────────────────────────────
+    // No que la caja cuadre consigo misma —eso lo hacía ya— sino que cuadre
+    // con la cuenta que hace el cobrador con los billetes en la mano.
+    const fallosDelFajo = comprobarElFajo(libro, vistas)
+    if (fallosDelFajo.length) {
+      console.log(pintarElFajo(libro, vistas, fallosDelFajo))
+      return { descuadre: { paso, motivo: 'el fajo no cuadra a mano' } }
+    }
+
     if (paso.id === 'P10') console.log(pintarLasTresVistas(vistas).join('\n'))
   }
 
   return { descuadre: null }
+}
+
+// ── ¿CUADRA EL FAJO? ────────────────────────────────────────────────────────
+//
+// La cuenta del cobrador con los billetes en la mano. Se comprueban las CINCO
+// líneas de su pantalla una por una, no solo la suma: el 27 de julio dos
+// errores que se anulaban dejaron el total bien y cada línea falsa.
+function comprobarElFajo(libro, vistas) {
+  const c = vistas.C
+  if (!c?.cuenta) return []
+
+  const linea = (id) => c.cuenta.find((l) => l.id === id)?.monto ?? null
+  const fallos = []
+  const revisar = (id, rotulo, esperado, porQue) => {
+    const obtenido = linea(id)
+    if (obtenido == null) return
+    if (Math.round(obtenido) !== Math.round(esperado)) {
+      fallos.push({ id, rotulo, esperado: Math.round(esperado), obtenido: Math.round(obtenido), porQue })
+    }
+  }
+
+  revisar('recaudoEfectivo', 'Cobró en efectivo', libro.recogidaEfectivo,
+    'solo los cobros que le entraron en billetes')
+  revisar('recaudoDigital', 'Cobró por transferencia', libro.recogidaDigital,
+    'los que entraron a la cuenta de la oficina')
+  revisar('desembolsos', 'Prestó en efectivo', libro.desembolsadoEfectivo,
+    'solo lo que salió de SU fajo; lo de transferencia no lo entregó él')
+  revisar('gastos', 'Gastó', libro.gastos, 'lo que pagó de su bolsillo')
+  revisar('aLaCuenta', 'Entró a la cuenta de la oficina', libro.recogidaDigital,
+    'el contrapeso de lo digital: nunca estuvo en su bolsillo')
+
+  // Y la suma, que es lo que él compara contra los billetes que tiene.
+  const esperadaSuma = fajoEsperado(libro)
+  if (c.cuentaSuma != null && Math.round(c.cuentaSuma) !== Math.round(esperadaSuma)) {
+    fallos.push({
+      id: 'SUMA', rotulo: 'Le queda en el fajo',
+      esperado: Math.round(esperadaSuma), obtenido: Math.round(c.cuentaSuma),
+      porQue: 'cobró en efectivo − prestó en efectivo − gastos',
+    })
+  }
+
+  // La tarjeta «lo que prestó hoy» dice cuánto salió de su mano: tiene que
+  // decir lo MISMO que la línea «Prestó en efectivo».
+  const efectivoTarjeta = c.prestadoDetalle?.efectivoTotal
+  if (efectivoTarjeta != null && Math.round(efectivoTarjeta) !== Math.round(libro.desembolsadoEfectivo)) {
+    fallos.push({
+      id: 'TARJETA', rotulo: '«Lo que prestó hoy» · efectivo',
+      esperado: Math.round(libro.desembolsadoEfectivo), obtenido: Math.round(efectivoTarjeta),
+      porQue: 'la tarjeta dice «lo que de verdad salió de su mano», y debe coincidir con la línea de arriba',
+    })
+  }
+
+  return fallos
+}
+
+function pintarElFajo(libro, vistas, fallos) {
+  const L = ['', '═'.repeat(72),
+    'EL FAJO DEL COBRADOR NO CUADRA A MANO',
+    '═'.repeat(72), '',
+    'La caja puede cuadrar consigo misma y aun así pedirle al cobrador un fajo',
+    'que no tiene. Esto compara con la cuenta de los billetes en la mano:', '',
+    '  lo que cobró EN EFECTIVO − lo que prestó EN EFECTIVO − gastos', '',
+    '                                    DEBERÍA      DICE       DIFERENCIA']
+  for (const f of fallos) {
+    L.push(`  ${f.rotulo.padEnd(32)}${String(pesos(f.esperado)).padStart(10)}${String(pesos(f.obtenido)).padStart(11)}${String(pesos(f.obtenido - f.esperado)).padStart(14)}`)
+    L.push(`    └ ${f.porQue}`)
+  }
+  L.push('')
+  L.push('LA CUENTA QUE SALE EN SU PANTALLA:')
+  for (const l of vistas.C?.cuenta ?? []) {
+    L.push(`  ${String(l.signo === 1 ? '+' : l.signo === -1 ? '−' : ' ').padStart(2)} ${String(l.rotulo).padEnd(34)}${String(pesos(l.monto)).padStart(11)}`)
+  }
+  L.push(`     ${'suma'.padEnd(34)}${String(pesos(vistas.C?.cuentaSuma)).padStart(11)}`)
+  L.push('')
+  return L.join('\n')
 }
 
 // ── CADA TIPO DE OPERACIÓN ──────────────────────────────────────────────────
@@ -194,10 +278,20 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
     const id = r.datos?.prestamo?.id ?? r.datos?.id
     ctx.prestamos[paso.cliente === 0 ? 'A' : 'B'] = { id, ...previsto, monto: paso.monto }
 
+    // ⚠ Un préstamo por TRANSFERENCIA no sale del fajo del cobrador. Sale del
+    // negocio (y por eso baja el capital), pero él no entregó billetes.
+    const salioDelFajo = paso.metodoPago !== 'transferencia'
     anotar(libro, {
       paso: paso.id,
-      delta: { desembolsado: paso.monto, valorPrestado: paso.monto, capital: -paso.monto },
-      porQue: 'prestar saca efectivo de la caja por el monto entregado',
+      delta: {
+        desembolsado: paso.monto,
+        desembolsadoEfectivo: salioDelFajo ? paso.monto : 0,
+        valorPrestado: paso.monto,
+        capital: -paso.monto,
+      },
+      porQue: salioDelFajo
+        ? 'prestar en efectivo saca billetes del fajo'
+        : 'prestar por transferencia sale del negocio, NO del fajo del cobrador',
     })
     return { peticion: { metodo: 'POST', ruta: '/api/prestamos', cuerpo }, respuesta: r }
   }
@@ -295,6 +389,9 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas }) {
       paso: paso.id,
       delta: {
         desembolsado: previsto.entregada,
+        // La renovación no acepta método de pago (`renovar/route.js` ni lo lee
+        // del cuerpo), así que hoy SIEMPRE se entrega en efectivo.
+        desembolsadoEfectivo: previsto.entregada,
         valorPrestado: paso.monto,
         capital: -previsto.entregada,
       },

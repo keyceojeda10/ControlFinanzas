@@ -31,16 +31,17 @@ export function libroNuevo() {
   return {
     recogidaEfectivo: 0,
     recogidaDigital: 0,
-    desembolsado: 0,    // efectivo que salió por préstamos
-    valorPrestado: 0,   // el valor de las cartulinas
-    gastos: 0,          // solo los APROBADOS
-    capital: 0,         // el saldo del ledger
+    desembolsado: 0,          // lo que salió por préstamos, por cualquier vía
+    desembolsadoEfectivo: 0,  // ⚠ SOLO lo que salió DEL FAJO del cobrador
+    valorPrestado: 0,         // el valor de las cartulinas
+    gastos: 0,                // solo los APROBADOS
+    capital: 0,               // el saldo del ledger
     asientos: [],
   }
 }
 
 export function anotar(libro, asiento) {
-  for (const clave of ['recogidaEfectivo', 'recogidaDigital', 'desembolsado', 'valorPrestado', 'gastos', 'capital']) {
+  for (const clave of ['recogidaEfectivo', 'recogidaDigital', 'desembolsado', 'desembolsadoEfectivo', 'valorPrestado', 'gastos', 'capital']) {
     libro[clave] += asiento.delta?.[clave] ?? 0
   }
   libro.asientos.push(asiento)
@@ -101,6 +102,27 @@ export function preverRenovacion({ montoNuevo, prestamoViejo }) {
   const entregada = exacta > 0 ? Math.ceil(exacta / 100) * 100 : exacta
 
   return { conTabla, absorbido, saldoPendiente: saldo, capitalRestante: capital, exacta, entregada }
+}
+
+/* ── EL FAJO DEL COBRADOR, CONTADO A MANO ──────────────────────────────────
+ *
+ * Esto es lo que de verdad pidió el dueño: no que la caja cuadre consigo misma
+ * —eso ya lo hacía— sino que cuadre «como debería cuadrarle al cliente y
+ * matemáticamente como debería ser».
+ *
+ * La cuenta es la del cobrador con los billetes en la mano:
+ *
+ *   lo que traía
+ *   + lo que cobró EN EFECTIVO
+ *   − lo que prestó EN EFECTIVO
+ *   − lo que gastó
+ *   = lo que le queda en el bolsillo
+ *
+ * Lo que se movió por transferencia NO toca el fajo: ni el cobro que entró a la
+ * cuenta de la oficina, ni el préstamo que se desembolsó por transferencia.
+ */
+export function fajoEsperado(libro) {
+  return libro.recogidaEfectivo - libro.desembolsadoEfectivo - libro.gastos
 }
 
 /* Compara el libro con lo que dice la caja. Devuelve SOLO los renglones que no

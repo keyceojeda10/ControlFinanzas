@@ -376,11 +376,28 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             </div>
           </div>
 
+          {/* ⚠ LA DIFERENCIA TIENE DOS CAUSAS Y ANTES SE EXPLICABA UNA SOLA.
+              Este texto decía que TODA la diferencia era «saldo que los clientes
+              ya debían». Pero desde que la cifra de arriba cuenta solo el
+              efectivo, parte puede ser un préstamo desembolsado POR
+              TRANSFERENCIA — que tampoco salió de su mano, pero por otro motivo
+              completamente distinto. Meterlas en la misma frase deja al
+              prestamista buscando una plata que no falta. */}
           {pd.valorTotal !== pd.efectivoTotal && (
             <p className="text-[10px] mt-2 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-              La diferencia de {formatMoney(pd.valorTotal - pd.efectivoTotal)} es saldo que los clientes ya debían y
-              quedó dentro de la cartulina nueva: no salió efectivo por esa parte.
-              {' '}La tarjeta <strong>Prestado</strong> de arriba muestra{' '}
+              {pd.transferenciaTotal > 0 && (
+                <>
+                  De lo prestado hoy, {formatMoney(pd.transferenciaTotal)} salió{' '}
+                  <strong>por transferencia</strong>: no pasó por su fajo.{' '}
+                </>
+              )}
+              {pd.valorTotal - pd.efectivoTotal - (pd.transferenciaTotal || 0) > 0 && (
+                <>
+                  Otros {formatMoney(pd.valorTotal - pd.efectivoTotal - (pd.transferenciaTotal || 0))} son saldo
+                  que los clientes ya debían y quedó dentro de la cartulina nueva.{' '}
+                </>
+              )}
+              La tarjeta <strong>Prestado</strong> de arriba muestra{' '}
               {pd.tarjetaMuestra === 'valor' ? 'el total prestado' : 'solo el efectivo'}.
             </p>
           )}
