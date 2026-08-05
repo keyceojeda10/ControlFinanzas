@@ -285,9 +285,17 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                   {formatMoney(cr.quedaEnLaRuta ?? 0)}
                 </span>
               </div>
+              {/* ⚠ ESTE PIE DESCRIBÍA OTRA RESTA.
+                  Decía «entraTotal − salioTotal», y esos dos subtotales son
+                  ahora la cuenta de los BILLETES: su resta da lo que hay que
+                  entregar, no lo que queda en la ruta. Se explicaba con una
+                  cuenta que da otra cifra distinta de la que está encima.
+                  Ahora dice de dónde sale de verdad: lo entregado más lo que
+                  se fue al banco, que es justo lo que la diferencia. */}
               <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-                {formatMoney(entraTotal)} − {formatMoney(salioTotal)}. Cuenta lo que está en la cuenta,
-                así que no se entrega entero.
+                {(cr.cobradoDigital ?? 0) > 0
+                  ? <>Lo de entregar más los {formatMoney(cr.cobradoDigital)} que entraron a la cuenta. Esa parte no la trae en billetes.</>
+                  : <>{formatMoney(entraTotal)} − {formatMoney(salioTotal)}.</>}
               </p>
             </>
           )}
