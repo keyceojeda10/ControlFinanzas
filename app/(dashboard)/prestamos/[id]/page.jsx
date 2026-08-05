@@ -23,6 +23,7 @@ import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobr
 import EditarProximoCobro             from '@/components/prestamos/EditarProximoCobro'
 import EditarPrestamo                 from '@/components/prestamos/EditarPrestamo'
 import BotonWhatsApp                  from '@/components/ui/BotonWhatsApp'
+import BotonAbrirHojaWA              from '@/components/ui/BotonAbrirHojaWA'
 import BotonCompartir                 from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo            from '@/components/ui/BotonImprimirRecibo'
 import BotonCompartirRecibo          from '@/components/ui/BotonCompartirRecibo'
@@ -184,6 +185,10 @@ export default function PrestamoDetallePage({ params }) {
   // aplica a un prestamo activo — aunque no exista ningun pago. El prestamista
   // creaba el credito, tocaba WhatsApp, y le salia un mensaje de pago inventado.
   const [waSugerida, setWaSugerida] = useState(null)
+  /* El pago que acompaña a la hoja cuando se abre desde un recibo. `null` en
+     los demás caminos: sin él la hoja abre en las familias normales, con él
+     abre directa en la confirmación del pago con su detalle. */
+  const [waPago, setWaPago] = useState(null)
   const [modalDscPrestamo, setModalDscPrestamo] = useState(false)
   const [dscDias, setDscDias] = useState([])
   // Tarjeta clavo
@@ -1155,7 +1160,7 @@ export default function PrestamoDetallePage({ params }) {
             <p className="text-sm text-[var(--cf-green-dark)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
           )}
           {ultimoPago && (
             <div className="flex gap-2">
@@ -1170,7 +1175,7 @@ export default function PrestamoDetallePage({ params }) {
       {!exito && ultimoPago && !completado && (
         <>
           {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
           )}
           <div className="flex gap-2">
             <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -1183,7 +1188,7 @@ export default function PrestamoDetallePage({ params }) {
       {completado && ultimoPago && (
         <>
           {cliente?.telefono && (
-            <BotonWhatsApp tipo="pago" cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
           )}
           <div className="flex gap-2">
             <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -2478,7 +2483,7 @@ export default function PrestamoDetallePage({ params }) {
       {/* Modal selector de plantillas WhatsApp (boton circular del header) */}
       <HojaWhatsApp
         open={modalWA}
-        onClose={() => { setModalWA(false); setWaSugerida(null) }}
+        onClose={() => { setModalWA(false); setWaSugerida(null); setWaPago(null) }}
         cliente={cliente}
         prestamo={prestamo}
         orgNombre={orgNombre}
@@ -2486,6 +2491,7 @@ export default function PrestamoDetallePage({ params }) {
         organizationId={session?.user?.organizationId}
         camposRecibo={camposRecibo}
         preselectedTemplateId={waSugerida}
+        pago={waPago}
       />
 
       {/* Modal: aplicar interes moratorio como recargo */}
