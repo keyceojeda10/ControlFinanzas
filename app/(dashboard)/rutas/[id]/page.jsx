@@ -1748,6 +1748,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
           ].filter(Boolean).join(' · ')}
           paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
+            /* ⚠ EL `id` NO ESTABA, y sin él «quitar de la ruta» no podía
+               funcionar: el botón manda `parada.id` al API y llegaba
+               `undefined`, así que el servidor respondía «cliente no encontrado
+               en esta ruta» y la pantalla enseñaba «No se pudo quitar de la
+               ruta» sin decir por qué.
+               `RutaEditar` además usa `key={p.id}`: React estaba pintando la
+               lista entera con claves vacías. */
+            id: c.id,
             orden: i + 1,
             nombre: c.nombre,
             direccion: c.direccion,
@@ -2689,6 +2697,10 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                   ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
                 ].filter(Boolean).join(' · ')}
                 paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
+                  // El `id`: sin él «quitar de la ruta» manda `undefined` y el
+                  // API responde que no encuentra al cliente. Ver la nota del
+                  // otro montaje, en la rama de escritorio.
+                  id: c.id,
                   orden: i + 1,
                   nombre: c.nombre,
                   direccion: c.direccion,
