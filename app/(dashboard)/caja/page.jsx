@@ -1497,8 +1497,15 @@ export default function CajaPage() {
           Se pinta por CSS —`hidden lg:block`— como el resto de la app. */}
       {cajaTab === 'cobros' && periodo.modo === 'hoy' && (
         <div className="hidden lg:block">
+          {/* ⚠ SIN LA FECHA: LA DICE LA PASTILLA DE ARRIBA (E01).
+          Con el selector nuevo, «miércoles, 5 de agosto» salía TRES veces en la
+          misma pantalla —la pastilla, este subtítulo y el de escritorio—. Es el
+          mismo problema que ya se resolvió aquí con los dos títulos: cada cosa
+          se dice una vez.
+          Cuando el periodo NO es un día suelto sí hace falta, porque entonces la
+          pastilla enseña el rango y no una fecha. */}
           <CajaEscritorio
-            fecha={fechaLarga}
+            fecha={periodo.modo === 'hoy' ? null : fechaLarga}
             saldo={formatMoney(disponibleHoy)}
             baseInicial={formatMoney(baseInicialDia)}
             cobrado={formatMoney(cobradoHoy)}
@@ -1554,9 +1561,16 @@ export default function CajaPage() {
           dice lo mismo pero en una sola fila. Los dos a la vez serían el saldo
           repetido dos veces en la misma pantalla. */}
       <div className="lg:hidden">
+      {/* ⚠ SIN LA FECHA: LA DICE LA PASTILLA DE ARRIBA (E01).
+          Con el selector nuevo, «miércoles, 5 de agosto» salía TRES veces en la
+          misma pantalla —la pastilla, este subtítulo y el de escritorio—. Es el
+          mismo problema que ya se resolvió aquí con los dos títulos: cada cosa
+          se dice una vez.
+          Cuando el periodo NO es un día suelto sí hace falta, porque entonces la
+          pastilla enseña el rango y no una fecha. */}
       <CajaDia
         alto="auto"
-        fecha={fechaLarga}
+        fecha={periodo.modo === 'hoy' ? null : fechaLarga}
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
         cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
