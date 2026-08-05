@@ -497,14 +497,20 @@ export default function PrestamoDetallePage({ params }) {
   // React rompe la pantalla entera — salio con el triangulo rojo de error.
   // Por eso lee del ESTADO (`prestamo?.…`) y no de los valores derivados, que se
   // calculan mas abajo.
-  // Las cuentas de la organizacion, para la hoja de intereses. VA AQUI POR LO
-  // MISMO QUE `useCabecera`: es un hook, y detras del `if (loading) return` el
-  // orden cambia entre renders. Se pidio despues de montar y ya me tiro la
-  // pantalla una vez.
+  // Las cuentas de la organizacion. VA AQUI POR LO MISMO QUE `useCabecera`: es
+  // un hook, y detras del `if (loading) return` el orden cambia entre renders.
+  // Se pidio despues de montar y ya me tiro la pantalla una vez.
+  //
+  // ⚠ TAMBIEN AL RENOVAR, no solo en la hoja de intereses.
+  // Solo se pedian con `modalIntereses`, asi que al abrir la renovacion la
+  // lista llegaba VACIA y el selector de «¿por donde le entregas?» no se
+  // pintaba: el arreglo del API estaba desplegado y en pantalla no habia nada
+  // que elegir. Reportado por el dueño: «aun las renovaciones no dejan escoger
+  // de que medio salen».
   useEffect(() => {
-    if (!modalIntereses || metodosPagoOrg.length) return
+    if ((!modalIntereses && !modalRenovar) || metodosPagoOrg.length) return
     fetch('/api/metodos-pago').then((r) => (r.ok ? r.json() : [])).then(setMetodosPagoOrg).catch(() => {})
-  }, [modalIntereses, metodosPagoOrg.length])
+  }, [modalIntereses, modalRenovar, metodosPagoOrg.length])
 
   useCabecera({
     titulo: prestamo?.cliente?.nombre,
