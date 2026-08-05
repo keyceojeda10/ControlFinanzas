@@ -22,8 +22,8 @@ import { formatMoney } from '@/lib/i18n'
 import { planTieneFotos }            from '@/lib/planes'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
-import AiTipBanner from '@/components/ui/AiTipBanner'
 import { generarTipCliente } from '@/lib/tips/clienteTips'
+import LucasSugiere from '@/components/clientes/LucasSugiere'
 import ReagendarVisitaModal from '@/components/visitas/ReagendarVisitaModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Modal } from '@/components/ui/Modal'
@@ -514,8 +514,19 @@ export default function ClienteDetallePage({ params }) {
         onFotoActualizada={(url) => setCliente(prev => ({ ...prev, fotoUrl: url }))}
       />
 
-      {/* Tip IA contextual */}
-      <AiTipBanner tip={generarTipCliente(cliente, prestamosActivos)} pageKey={`cliente-${cliente.id}`} />
+      {/* ══ E05 · Lucas, en vez del banner gris ══
+          Era un aviso con chispa y ✕ que decía una frase sin salida. Ahora
+          lleva el monto —el tope que TÚ le pusiste, no una cifra inventada— y
+          el botón para prestarlo. Con mora o con varios préstamos abiertos no
+          ofrece nada: avisa. */}
+      <LucasSugiere
+        sugerencia={generarTipCliente(cliente, prestamosActivos, {
+          completados: historial.filter((p) => p.estado === 'completado').length,
+          incumplidos: historial.filter((p) => p.estado === 'cancelado').length,
+        })}
+        onPrestar={(monto) => router.push(`/prestamos/nuevo?clienteId=${id}&monto=${monto}`)}
+        onOtroMonto={() => router.push(`/prestamos/nuevo?clienteId=${id}`)}
+      />
 
       {/* Score crediticio (si aplica al plan) */}
       <div className="flex">

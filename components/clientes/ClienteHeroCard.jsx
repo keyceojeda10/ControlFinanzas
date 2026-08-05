@@ -467,9 +467,14 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               borderTop: '1px solid rgba(255,255,255,.09)',
             }}>
               {[
+                /* ⚠ «PRÓXIMO COBRO» NO CABE EN UNA CUARTA PARTE DE 393px:
+                   salía «PRÓXIMO CO…». Se dice «Cobra el», que es la misma
+                   pregunta con dos palabras cortas — y con la fecha debajo se
+                   lee «Cobra el / 4 de ago» sin que falte nada. Medido en la
+                   captura, no en el código: ahí se veía correcto. */
                 { rotulo: 'Le debe', valor: formatMoney(saldoTotal) },
                 { rotulo: 'Cuota', valor: cuotaVigente != null ? formatMoney(cuotaVigente) : '—' },
-                { rotulo: 'Próximo cobro', valor: proximoCobroTexto ?? '—' },
+                { rotulo: 'Cobra el', valor: proximoCobroTexto ?? '—' },
                 { rotulo: 'Cómo paga', valor: `${pctPagado}%` },
               ].map((c) => (
                 <div key={c.rotulo} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
