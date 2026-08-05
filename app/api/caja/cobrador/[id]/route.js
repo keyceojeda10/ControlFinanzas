@@ -1031,6 +1031,24 @@ export async function GET(request, { params }) {
     resumen: {
       cobradoDia,
       prestadoDia,
+      /* ⚠ LAS MISMAS CIFRAS SIN LA VISTA BRUTA.
+         Con `renovacionesEnCobrado` (6 de 417 organizaciones, PRESTA MIL entre
+         ellas) el saldo absorbido se suma a `cobradoDia` Y a `prestadoDia`. Es
+         una vista legítima —«recogí la cartulina y presté una nueva»— pero hace
+         que esta pantalla enseñe cifras distintas de la caja del dueño, que no
+         conoce esa bandera: el mismo cobrador, el mismo día, dos números.
+
+         En la prueba de flujo: 683.300 aquí contra 79.900 allá, y 1.440.000
+         contra 836.600. La diferencia era exactamente 603.400 EN LOS DOS LADOS
+         — el absorbido, que se cancela en el total pero deja cada línea
+         distinta.
+
+         No se quita la vista bruta: se publica también la neta, para que quien
+         compare tenga con qué y no parezca un descuadre. `ajusteBruto` es 0
+         cuando la bandera está apagada, así que ahí las dos son iguales. */
+      cobradoDiaNeto: cobradoDia - ajusteBruto,
+      prestadoDiaNeto: prestadoDia - ajusteBruto,
+      absorbidoEnCobrado: ajusteBruto,
       segurosDia: Math.round(segurosDiaTotal),
       gastosDia,
       efectivoDia,

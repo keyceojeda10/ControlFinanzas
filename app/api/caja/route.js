@@ -607,7 +607,19 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     fechaPago: { gte: inicio, lt: fin },
   }
   if (cobradorId) {
-    wherePagos.cobradorId = cobradorId
+    /* ⚠ LO SUYO ES SU RUTA, NO SOLO LO QUE TECLEÓ ÉL.
+       Esto filtraba `cobradorId` a secas, así que un cobro que hiciera el dueño
+       en la ruta de Alex no salía aquí y sí en la ficha de Alex: la misma
+       persona, el mismo día, dos cifras. Medido: 132 pagos, $5.444.000 en 7
+       días, 5 cobradores.
+
+       `rutaIdsDe` existe justo para esto y su comentario ya describe el fallo.
+       Mismo criterio que `caja/cobrador/[id]/route.js:198-204`. */
+    const rutasDelCobrador = await rutaIdsDe(organizationId, cobradorId)
+    wherePagos.OR = [
+      { cobradorId },
+      ...(rutasDelCobrador.length ? [{ prestamo: { cliente: { rutaId: { in: rutasDelCobrador } } } }] : []),
+    ]
   }
 
   // ── LO COBRADO, Y EN QUE SE COBRO ──
@@ -897,11 +909,16 @@ export async function GET(request) {
     tipo: { notIn: ['recargo', 'descuento'] },
     prestamo: { estado: { not: 'cancelado' } },
   }
-  if (rol === 'cobrador') {
-    wherePagosDia.cobradorId = userId
-  }
-  if (rol === 'owner' && cobradorParam) {
-    wherePagosDia.cobradorId = cobradorParam
+  /* La LISTA tiene que traer los mismos pagos que el TOTAL de arriba, o el
+     cobrador ve una suma que no puede reconstruir sumando lo que le enseñan.
+     Mismo criterio: lo suyo es su ruta, no solo lo que tecleó él. */
+  const quienFiltra = rol === 'cobrador' ? userId : (rol === 'owner' ? cobradorParam : null)
+  if (quienFiltra) {
+    const rutasDelCobrador = await rutaIdsDe(organizationId, quienFiltra)
+    wherePagosDia.OR = [
+      { cobradorId: quienFiltra },
+      ...(rutasDelCobrador.length ? [{ prestamo: { cliente: { rutaId: { in: rutasDelCobrador } } } }] : []),
+    ]
   }
 
   const pagosDiaRaw = await prisma.pago.findMany({
@@ -997,16 +1014,34 @@ export async function GET(request) {
         select: { id: true, nombre: true, activo: true },
         orderBy: [{ orden: 'asc' }, { nombre: 'asc' }],
       }),
-      prisma.pago.groupBy({
-        by: ['cobradorId'],
+      /* ⚠ SE ATRIBUYE AL COBRADOR DE LA RUTA, NO SOLO A QUIEN LO REGISTRÓ.
+         Esto era un `groupBy(['cobradorId'])`: solo contaba los pagos que había
+         tecleado esa persona. Si el dueño cobraba en la ruta de Alex, la ficha
+         de Alex lo sumaba (usa `cobradorId O su ruta`) y este listado no: la
+         misma persona, el mismo día, dos cifras distintas.
+
+         Medido en producción: 132 pagos, $5.444.000 en 7 días, 5 cobradores.
+
+         Manda el criterio de la ficha —el de la ruta— porque es el que arregló
+         el caso de reasignar una ruta: sin él la caja mostraba el PRESTADO de
+         la ruta y «Cobrado $0» (ver el comentario de
+         `caja/cobrador/[id]/route.js:190-197`).
+
+         Se piden las filas y no un agregado porque hay que mirar dos cosas por
+         pago (quién lo hizo Y de qué ruta es el cliente), y un pago no puede
+         contarse dos veces si coinciden. */
+      prisma.pago.findMany({
         where: {
           organizationId,
           fechaPago: { gte: inicio, lt: fin },
           tipo: { notIn: ['recargo', 'descuento'] },
-          cobradorId: { not: null },
           prestamo: { estado: { not: 'cancelado' } },
         },
-        _sum: { montoPagado: true },
+        select: {
+          montoPagado: true,
+          cobradorId: true,
+          prestamo: { select: { cliente: { select: { ruta: { select: { cobradorId: true } } } } } },
+        },
       }),
       prisma.ruta.findMany({
         where: { organizationId, activo: true },
@@ -1040,11 +1075,21 @@ export async function GET(request) {
       }),
     ])
 
-    const recaudoPorCobrador = recaudosDiaRaw.reduce((acc, row) => {
-      if (!row.cobradorId) return acc
-      acc[row.cobradorId] = Math.round(row._sum?.montoPagado || 0)
+    /* Cada pago cuenta para quien lo registró Y para el cobrador de la ruta,
+       pero UNA SOLA VEZ si son el mismo —que es el caso normal—. Sumarlo dos
+       veces duplicaría la caja de casi todo el mundo. */
+    const recaudoPorCobrador = recaudosDiaRaw.reduce((acc, pago) => {
+      const monto = Number(pago.montoPagado || 0)
+      const deLaRuta = pago.prestamo?.cliente?.ruta?.cobradorId || null
+      const quienCobro = pago.cobradorId || null
+      for (const id of new Set([quienCobro, deLaRuta].filter(Boolean))) {
+        acc[id] = (acc[id] || 0) + monto
+      }
       return acc
     }, {})
+    for (const id of Object.keys(recaudoPorCobrador)) {
+      recaudoPorCobrador[id] = Math.round(recaudoPorCobrador[id])
+    }
 
     // La tarjeta de cada cobrador pregunta lo mismo que la banda de arriba, y
     // hasta ahora lo calculaba por su cuenta partiendo de RUTAS — asi que un
@@ -1069,8 +1114,22 @@ export async function GET(request) {
       const [prestadoDia, segurosDia, gastosAgg, rutasCobrador] = await Promise.all([
         calcularDesembolsadoDia(organizationId, inicio, fin, c.id),
         calcularSegurosDia(organizationId, inicio, fin, c.id),
+        /* ⚠ PENDIENTE + APROBADO, igual que las otras dos vistas.
+           Esta contaba SOLO los aprobados, así que un gasto sin aprobar hacía
+           que el listado del dueño y la ficha del cobrador dijeran cifras
+           distintas de la misma persona el mismo día. Medido en producción:
+           10 gastos sin aprobar en 7 días, $189.000, en 4 cobradores.
+
+           El criterio bueno es incluirlos: el cobrador ya se gastó esa plata
+           —no la lleva en el fajo— aunque el dueño no la haya revisado. Es lo
+           que hacen `getStatsDia` (`:643-648`) y la ficha
+           (`caja/cobrador/[id]/route.js:225`). */
         prisma.gastoMenor.aggregate({
-          where: { organizationId, cobradorId: c.id, estado: 'aprobado', fecha: { gte: inicio, lt: fin } },
+          where: {
+            organizationId, cobradorId: c.id,
+            estado: { in: ['pendiente', 'aprobado'] },
+            fecha: { gte: inicio, lt: fin },
+          },
           _sum: { monto: true },
         }),
         prisma.ruta.findMany({

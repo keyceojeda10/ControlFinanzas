@@ -81,10 +81,18 @@ export function pintarDescuadre({ paso, modo, comparacion, peticion, respuesta, 
    encargo aunque el total esté bien. */
 export function pintarLasTresVistas(v) {
   const L = ['', 'LOS TRES SITIOS QUE MIRAN AL MISMO COBRADOR:']
+  /* ⚠ DE (C) SE LEE LA CIFRA NETA.
+     Con `renovacionesEnCobrado` esa vista suma el saldo absorbido a lo cobrado
+     Y a lo prestado. Es su vista bruta a propósito; comparar la bruta contra la
+     neta de las otras dos daría una divergencia que no lo es. Cuando la bandera
+     está apagada, neta y bruta son la misma cifra. */
   const filas = [
     ['(A) /api/caja?cobradorId', v.A?.recogida, v.A?.gastos, v.A?.desembolsadoDia],
     ['(B) cobradores[] del dueño', v.B?.recaudadoDia, v.B?.gastosDia, v.B?.prestadoDia],
-    ['(C) /api/caja/cobrador/[id]', v.C?.resumen?.cobradoDia, v.C?.resumen?.gastosDia, v.C?.resumen?.prestadoDia],
+    ['(C) /api/caja/cobrador/[id]',
+      v.C?.resumen?.cobradoDiaNeto ?? v.C?.resumen?.cobradoDia,
+      v.C?.resumen?.gastosDia,
+      v.C?.resumen?.prestadoDiaNeto ?? v.C?.resumen?.prestadoDia],
   ]
   L.push('                              cobrado      gastos     prestado')
   for (const [nombre, cob, gas, pre] of filas) {
