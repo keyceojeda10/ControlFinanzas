@@ -3,7 +3,8 @@
 // Hero card premium para detalle de cliente. Saldo total + avatar + chips
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, formatearTelefonoIntl } from '@/lib/i18n'
+import { direccionIncompleta } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
@@ -433,73 +434,208 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
   )
 }
 
-// Card secundaria con info de contacto (tel, dir, ref, notas)
-export function InfoContactoCard({ cliente }) {
-  const items = []
-  if (cliente?.telefono) items.push({
-    label: 'Teléfono',
-    value: cliente.telefono,
-    icon: (
-      <svg fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-      </svg>
-    ),
-    color: 'var(--cf-green-dark)',
-  })
-  if (cliente?.direccion) items.push({
-    label: 'Dirección',
-    value: cliente.direccion,
-    icon: (
-      <svg fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-      </svg>
-    ),
-    color: 'var(--cf-ink-2)',
-  })
-  if (cliente?.referencia) items.push({
-    label: 'Referencia',
-    value: cliente.referencia,
-    icon: (
-      <svg fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-      </svg>
-    ),
-    color: 'var(--cf-ink-2)',
-  })
+/* ══ E04 · «CÓMO UBICARLO» ═══════════════════════════════════════════════════
+   ANTES ERAN TRES TARJETAS QUE NO HACÍAN NADA.
 
-  if (items.length === 0 && !cliente?.notas) return null
+   Cada dato —teléfono, dirección, referencia— ocupaba su tarjeta con fondo
+   propio, icono en caja y etiqueta en mayúsculas: 56px de alto para mostrar
+   diez caracteres. Y ninguno se podía tocar. El cobrador que abre esto quiere
+   LLAMAR o LLEGAR, y tenía que copiar el número a mano y escribir la dirección
+   en su mapa.
 
+   Ahora son tres filas con acciones: el teléfono llama y abre WhatsApp, la
+   dirección abre el mapa.
+
+   · Fuera el fondo verde del teléfono. En este sistema el verde es «al día», y
+     ahí se leía como si el teléfono estuviera bien y los otros dos mal.
+   · «Referencia» deja de ser una fila: no es un dato aparte, es parte de la
+     dirección. Va en su segunda línea, como se lo dirías a alguien.
+   · Las etiquetas en mayúsculas se van: un número de diez cifras con formato de
+     celular ya se ve que es un teléfono, y «TELÉFONO» encima le roba la mitad
+     del peso al dato.
+   · El teléfono se formatea: «300 887 5156», no «3008875156».
+
+   Y aparece lo que la tarjeta callaba: «Calle 9» NO es una dirección. Sin
+   número no se puede llegar ni sale en el mapa, y ese es el motivo real de que
+   un cobrador se pierda. */
+
+function FilaContacto({ icono, principal, secundario, acciones }) {
   return (
-    <div
-      className="rounded-[16px] p-3"
-      style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 16%, var(--cf-border))' }}
-    >
-      <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-2 px-1" style={{ color: 'var(--cf-ink-3)' }}>
-        Información de contacto
-      </p>
-      <div className="space-y-1.5">
-        {items.map((it, i) => (
-          <div key={i} className="flex items-center gap-2.5 px-2 py-1.5 rounded-[10px]" style={{ background: `color-mix(in srgb, ${it.color} 5%, var(--cf-surface))` }}>
-            <div
-              className="w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0"
-              style={{ background: `color-mix(in srgb, ${it.color} 15%, transparent)`, color: it.color }}
-            >
-              <span className="w-3.5 h-3.5">{it.icon}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>{it.label}</p>
-              <p className="text-[12px] truncate" style={{ color: 'var(--cf-ink)' }}>{it.value}</p>
-            </div>
-          </div>
-        ))}
-        {cliente?.notas && (
-          <div className="px-2 py-1.5 rounded-[10px]" style={{ background: 'var(--cf-surface)' }}>
-            <p className="text-[9px] uppercase tracking-wider mb-1" style={{ color: 'var(--cf-ink-3)' }}>Notas</p>
-            <p className="text-[12px] whitespace-pre-wrap" style={{ color: 'var(--cf-ink)' }}>{cliente.notas}</p>
-          </div>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, minHeight: 58,
+      padding: '10px 14px', borderRadius: 14,
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+    }}>
+      <span style={{
+        width: 18, height: 18, flex: 'none', display: 'inline-flex',
+        color: 'var(--cf-ink-3)',
+      }}>{icono}</span>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{
+          fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>{principal}</span>
+        {secundario && (
+          <span style={{
+            fontSize: 12, color: 'var(--cf-ink-3)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{secundario}</span>
         )}
       </div>
+      {acciones}
+    </div>
+  )
+}
+
+function BotonFila({ onClick, etiqueta, color, children, ancho }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={etiqueta}
+      title={etiqueta}
+      style={{
+        height: 38, width: ancho ? 'auto' : 38, flex: 'none', cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        padding: ancho ? '0 13px' : 0, borderRadius: 12,
+        background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+        color: color ?? 'var(--cf-ink-2)', font: 'inherit',
+        fontSize: 13, fontWeight: 700,
+      }}
+    >{children}</button>
+  )
+}
+
+export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) {
+  const tel = cliente?.telefono ? String(cliente.telefono).replace(/\D/g, '') : ''
+  const dir = cliente?.direccion?.trim()
+  const ref = cliente?.referencia?.trim()
+  const falta = dir ? direccionIncompleta(dir) : false
+
+  if (!tel && !dir && !cliente?.notas) return null
+
+  /* El mapa, con lo que haya. Si el cliente tiene coordenadas manda el punto
+     exacto —es lo que ya hacen la ruta y cobrar hoy—; si no, se manda la
+     dirección escrita y que el mapa la busque. */
+  const irAlMapa = () => {
+    const destino = (cliente?.latitud != null && cliente?.longitud != null)
+      ? `${cliente.latitud},${cliente.longitud}`
+      : encodeURIComponent([dir, ref].filter(Boolean).join(', '))
+    if (!destino) return
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destino}`, '_blank')
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, padding: '0 2px' }}>
+        <span style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: '.07em',
+          textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+        }}>Cómo ubicarlo</span>
+        {onEditar && (
+          <button type="button" onClick={onEditar} style={{
+            border: 0, background: 'none', padding: 0, cursor: 'pointer',
+            font: 'inherit', fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)',
+          }}>Editar</button>
+        )}
+      </div>
+
+      {tel && (
+        <FilaContacto
+          icono={(
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8.1 9.6a16 16 0 006 6l1.2-1.1a2 2 0 012.1-.5c.8.3 1.7.5 2.6.6a2 2 0 011.7 2z" />
+            </svg>
+          )}
+          principal={formatearTelefonoIntl(tel)}
+          secundario="su celular"
+          acciones={(
+            <span style={{ display: 'inline-flex', gap: 6, flex: 'none' }}>
+              <BotonFila onClick={() => { window.location.href = `tel:${tel}` }} etiqueta="Llamar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.6a2 2 0 01-.5 2.1L8.1 9.6a16 16 0 006 6l1.2-1.1a2 2 0 012.1-.5c.8.3 1.7.5 2.6.6a2 2 0 011.7 2z" />
+                </svg>
+              </BotonFila>
+              <BotonFila
+                onClick={onWhatsApp ?? (() => window.open(`https://wa.me/${tel}`, '_blank'))}
+                etiqueta="Escribir por WhatsApp"
+                color="#25D366"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3z" />
+                  <path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1112 20.2z" />
+                </svg>
+              </BotonFila>
+            </span>
+          )}
+        />
+      )}
+
+      {dir && (
+        <div style={{
+          borderRadius: 14, overflow: 'hidden',
+          border: falta ? '1px solid var(--cf-border)' : 0,
+        }}>
+          <FilaContacto
+            icono={(
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10.5c0 6.5-8 11-8 11s-8-4.5-8-11a8 8 0 1116 0z" />
+                <circle cx="12" cy="10.5" r="2.8" />
+              </svg>
+            )}
+            principal={dir}
+            secundario={[ref && `al lado de ${ref.toLowerCase()}`, rutaNombre].filter(Boolean).join(' · ') || null}
+            acciones={(
+              <BotonFila onClick={irAlMapa} etiqueta="Ir en el mapa" ancho>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
+                Ir
+              </BotonFila>
+            )}
+          />
+          {/* ⚠ EL AVISO QUE LA TARJETA CALLABA. «Calle 9» no lleva a ningún
+              sitio: sin número no sale en el mapa, y ese es el motivo real de
+              que un cobrador se pierda dando vueltas. */}
+          {falta && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '11px 15px',
+              background: 'color-mix(in srgb, var(--cf-gold) 10%, var(--cf-card))',
+              borderTop: '1px solid var(--cf-border)',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+                strokeWidth="2" strokeLinecap="round" style={{ flex: 'none' }}>
+                <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" />
+              </svg>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--cf-gold-dark)' }}>
+                Sin número no sale en el mapa.
+              </span>
+              {onEditar && (
+                <button type="button" onClick={onEditar} style={{
+                  border: 0, background: 'none', padding: 0, cursor: 'pointer', flex: 'none',
+                  font: 'inherit', fontSize: 12, fontWeight: 700, color: 'var(--cf-gold-dark)',
+                }}>Completar</button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {cliente?.notas && (
+        <div style={{
+          padding: '11px 15px', borderRadius: 14,
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        }}>
+          <p style={{
+            margin: '0 0 3px', fontSize: 10, fontWeight: 800, letterSpacing: '.07em',
+            textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+          }}>Notas</p>
+          <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap', color: 'var(--cf-ink-2)' }}>
+            {cliente.notas}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

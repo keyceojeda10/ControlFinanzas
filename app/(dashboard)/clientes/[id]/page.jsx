@@ -826,8 +826,17 @@ export default function ClienteDetallePage({ params }) {
         {/* ── EL CARRIL DERECHO ── */}
         <div className="space-y-5 min-w-0">
 
-      {/* Info de contacto */}
-      <InfoContactoCard cliente={cliente} />
+      {/* ══ E04 · «Cómo ubicarlo» ══
+          Los datos ya no son solo texto: el teléfono llama y escribe, la
+          dirección abre el mapa. La ruta va en la segunda línea de la
+          dirección —es parte de dónde está, no un dato suelto— y «Editar»
+          lleva al mismo sitio que la acción de abajo. */}
+      <InfoContactoCard
+        cliente={cliente}
+        rutaNombre={cliente?.ruta?.nombre || null}
+        onEditar={puedeEditarClientes ? () => router.push(`/clientes/${id}/editar`) : undefined}
+        onWhatsApp={cliente?.telefono ? () => setModalWA(true) : undefined}
+      />
 
       {/* Portal del cliente — solo owner */}
       {esOwner && (
