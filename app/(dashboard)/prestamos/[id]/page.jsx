@@ -1160,7 +1160,7 @@ export default function PrestamoDetallePage({ params }) {
             <p className="text-sm text-[var(--cf-green-dark)] font-medium">Pago registrado exitosamente</p>
           </div>
           {ultimoPago && cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
           )}
           {ultimoPago && (
             <div className="flex gap-2">
@@ -1175,7 +1175,7 @@ export default function PrestamoDetallePage({ params }) {
       {!exito && ultimoPago && !completado && (
         <>
           {cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
           )}
           <div className="flex gap-2">
             <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
@@ -1188,7 +1188,7 @@ export default function PrestamoDetallePage({ params }) {
       {completado && ultimoPago && (
         <>
           {cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setWaSugerida('pago_confirmacion'); setModalWA(true) }} />
+            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
           )}
           <div className="flex gap-2">
             <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
