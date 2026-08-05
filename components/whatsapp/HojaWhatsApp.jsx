@@ -47,16 +47,31 @@ export default function HojaWhatsApp({
   pago, organizationId, camposRecibo, preselectedTemplateId,
   pais = 'CO',
 }) {
-  const [familia, setFamilia] = useState('cobro')
+  /* En qué familia abre. 'cobro' es lo normal —escribirle a quien debe—, pero
+     cuando viene un pago la hoja es un RECIBO: abrir en «Cobro» le pediría la
+     cuota a quien acaba de pagarla. */
+  const [familia, setFamilia] = useState(pago ? 'pago' : 'cobro')
   const [elegida, setElegida] = useState(null)
+
+  /* El `useState` de arriba solo lee su valor la PRIMERA vez, y la hoja se
+     monta con la ficha —`open` decide si se ve, no si existe—: cuando el pago
+     llega después, la familia ya se quedó en 'cobro'. Es exactamente lo que le
+     pasó al mensaje de crédito aprobado, que abría con el recordatorio de
+     pago. Con el efecto reacciona al cambio en vez de quedarse con lo que
+     había al montarse. */
+  useEffect(() => {
+    if (pago) { setFamilia('pago'); setElegida(null) }
+  }, [pago])
   // El motor de siempre, a un toque.
   //
-  // Y DE ENTRADA cuando se viene de registrar un pago. Ese camino
-  // —`RegistrarPago`— trae el pago y los campos del recibo, y el modal viejo
-  // abre la plantilla de confirmación con el detalle completo. Las cuatro
-  // familias de T11-01 son para ESCRIBIRLE al cliente, no para acusar recibo:
-  // mandarlo aquí seria cambiarle el mensaje al que acaba de pagar.
-  const [avanzado, setAvanzado] = useState(Boolean(pago || preselectedTemplateId))
+  // ⚠ EL PAGO YA NO MANDA AL MODAL VIEJO. Antes sí: «el recibo es acusar
+  // recibo, no escribirle». Pero la familia «Pago» de esta hoja YA trae
+  // `pago_confirmacion` con sus mismas 5 secciones y el mismo detalle —solo
+  // pide que lleguen préstamo y pago, y ahora llegan—, así que la regla
+  // sobraba y dejaba el recibo en la pantalla que sobra.
+  // `preselectedTemplateId` sí sigue abriendo el motor completo: ese es el
+  // camino de «crédito aprobado», que pide una plantilla concreta.
+  const [avanzado, setAvanzado] = useState(Boolean(preselectedTemplateId))
 
   /* ⚠ `useState` SOLO LEE SU VALOR INICIAL UNA VEZ, y aquí eso rompía el
      mensaje de crédito aprobado.
@@ -71,8 +86,8 @@ export default function HojaWhatsApp({
      Con el efecto, la hoja reacciona al cambio en vez de quedarse con lo que
      había al montarse. */
   useEffect(() => {
-    if (pago || preselectedTemplateId) setAvanzado(true)
-  }, [pago, preselectedTemplateId])
+    if (preselectedTemplateId) setAvanzado(true)
+  }, [preselectedTemplateId])
   // Qué plantilla abrir en el panel completo. Al pulsar «Personalizar este
   // mensaje» se abre CON LA QUE SE ESTÁ MIRANDO, no en una lista donde hay que
   // volver a buscarla.
