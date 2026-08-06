@@ -197,6 +197,10 @@ export async function POST(request) {
               descripcion: `${p.tipo === 'mercancia' ? 'Mercancía' : 'Desembolso'} (carga masiva) - ${grupo.cliente.nombre}`,
               referenciaId: prestamo.id,
               referenciaTipo: 'prestamo',
+              // `rutaFinal` es la ruta a la que se está importando. Sin esto, una
+              // importación entera sale del capital global sin descontarse de
+              // ninguna ruta, y la sub-bolsa queda desviada desde el primer día.
+              rutaId: rutaFinal || null,
               creadoPorId: session.user.id,
             })
 
@@ -226,6 +230,7 @@ export async function POST(request) {
                 descripcion: `Abono previo (carga masiva) - ${grupo.cliente.nombre}`,
                 referenciaId: prestamo.id,
                 referenciaTipo: 'prestamo',
+                rutaId: rutaFinal || null,
                 creadoPorId: session.user.id,
               })
             }

@@ -606,6 +606,10 @@ export async function POST(request) {
           descripcion: `Abono previo préstamo en curso - ${cliente.nombre}`,
           referenciaId: nuevo.id,
           referenciaTipo: 'prestamo',
+          // Es un recaudo de un cliente que SÍ tiene ruta: sin esto entra al
+          // capital global y no a su sub-bolsa, y la ruta queda desviada. El
+          // mismo olvido que dejó las 9 rutas de PRESTA MIL sin cuadrar.
+          rutaId: cliente?.rutaId || null,
           creadoPorId: session.user.id,
         })
       }

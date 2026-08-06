@@ -68,6 +68,9 @@ export async function POST(request, { params }) {
         descripcion: `Abono previo préstamo en curso - ${prestamo.cliente.nombre}`,
         referenciaId: prestamoId,
         referenciaTipo: 'prestamo',
+        // El desembolso de arriba SÍ la pasa y este no: mismo olvido, misma
+        // función, dos llamadas seguidas.
+        rutaId: rutaIdCapital,
         creadoPorId: session.user.id,
       })
     }

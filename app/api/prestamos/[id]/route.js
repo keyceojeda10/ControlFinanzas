@@ -294,6 +294,17 @@ export async function PATCH(request, { params }) {
             : `Cancelación préstamo - devuelve solo pendiente (${p.cliente.nombre})`,
           referenciaId: id,
           referenciaTipo: referenciaTipoCancelacion,
+          /* ⚠ SIN ESTO EL DINERO VUELVE A LA CAJA GLOBAL PERO NO A SU RUTA.
+             Faltaba, y las otras llamadas de este mismo fichero sí lo pasan
+             (`:176`, `:197`, `:900`, `:911`) — era un olvido, no un criterio.
+
+             Cada cancelación dejaba el capital de esa ruta desviado PARA
+             SIEMPRE: el saldo global subía y la sub-bolsa de la ruta se quedaba
+             igual. Medido en PRESTA MIL: hasta el 1 de agosto el capital de casi
+             todas las rutas cuadraba al peso con la base que el dueño contaba
+             cada noche, y desde el 3 no volvió a cuadrar ni un día. Una sola
+             cancelación de $4.000.000 (TATIANA SERPA, 6 ago) entró así. */
+          rutaId: p.cliente?.rutaId || null,
           creadoPorId: session.user.id,
         })
         aplicoReverso = true
@@ -974,6 +985,14 @@ export async function DELETE(request, { params }) {
   // al cancelarlo. Solo eliminamos los registros sin tocar capital.
   const estabaCancelado = p.estado === 'cancelado'
 
+  /* ⚠ LA RUTA DEL CLIENTE, EN LOS TRES REVERSOS DE ABAJO.
+     Ninguno la pasaba: el dinero volvía a la caja global pero no a la sub-bolsa
+     de la ruta, y el capital de esa ruta quedaba desviado para siempre. Medido
+     en PRESTA MIL: hasta el 1 de agosto el capital de casi todas las rutas
+     cuadraba al peso con la base contada cada noche; desde el 3 —cuando
+     empiezan los reversos— no volvió a cuadrar ni un día. */
+  const rutaDelCliente = p.cliente?.rutaId || null
+
   await prisma.$transaction(async (tx) => {
     if (!estabaCancelado) {
       // 1. Reversar desembolso original (ingreso al capital = el dinero vuelve)
@@ -985,6 +1004,7 @@ export async function DELETE(request, { params }) {
         descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
         referenciaId: id,
         referenciaTipo: 'prestamo',
+        rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
       })
     }
@@ -1004,6 +1024,7 @@ export async function DELETE(request, { params }) {
         descripcion: `Reverso recaudo - préstamo eliminado`,
         referenciaId: id,
         referenciaTipo: 'pago',
+        rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
       })
     }
@@ -1018,6 +1039,7 @@ export async function DELETE(request, { params }) {
         descripcion: `Reverso descuento - préstamo eliminado`,
         referenciaId: id,
         referenciaTipo: 'pago',
+        rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
       })
     }
