@@ -23,6 +23,7 @@
 // que mueven plata.
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -147,6 +148,16 @@ export default function GastosPage() {
     }
   }
 
+  /* La cabecera del sistema. No la llamaba: salía vacía en móvil y sin
+     botón de volver en escritorio (`VolverEscritorio` no se pinta sin título).
+     ⚠ VA ANTES DEL RETURN: es un hook. */
+  useCabecera({
+    titulo: 'Gastos',
+    subtitulo: total > 0
+      ? `${fmt(Math.round(total))} este mes`
+      : 'nada registrado este mes',
+  })
+
   if (authLoading) return <PilaEsqueletos cuantos={3} alto={96} />
 
   // ── EL PERMISO MANDA, NO EL ROL ──
@@ -177,15 +188,12 @@ export default function GastosPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{
-            fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
-          }}>Gastos</span>
-          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-            Lo que se sale del capital
-          </span>
-        </div>
+        {/* El título lo pone el armazón (`useCabecera` arriba). Aquí salía otra
+            vez, y con él su subtítulo: el mismo dato en dos elementos de la
+            misma pantalla, que `10 §4` prohíbe. Se ve en la captura de PC —
+            «Gastos» en la barra de volver y «Gastos» debajo—. Queda solo el
+            hueco flexible para que el botón siga a la derecha. */}
+        <div style={{ flex: 1, minWidth: 0 }} />
           <button type="button" onClick={() => setAbrirReportar(true)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px',
             borderRadius: 12, flex: 'none', cursor: 'pointer', border: 0,

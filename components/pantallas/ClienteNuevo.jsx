@@ -66,7 +66,7 @@ export function ClienteNuevo({
         )}
         <span style={{
           flex: 1, minWidth: 0, fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+          fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
         }}>Nuevo cliente</span>
         {/* La salida al migrador de cartulinas. Va arriba y en texto: quien tiene
             la libreta en la mano no quiere teclear nada. */}

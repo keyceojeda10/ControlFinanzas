@@ -239,7 +239,7 @@ export function RepartirGanancia({
           </svg>
           <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
             <span style={{ fontSize: 11, color: '#8A8E98' }}>ahora</span>
-            <span className="cf-fig" style={{ fontSize: 21, color: '#F3F3F6' }}>{lesDebesDespues}</span>
+            <span className="cf-fig" style={{ fontSize: 20, color: '#F3F3F6' }}>{lesDebesDespues}</span>
           </span>
         </div>
       </BloqueOscuro>

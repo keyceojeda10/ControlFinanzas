@@ -24,6 +24,7 @@
 // nada», y lo cierto es que todavía no se ha repartido nunca.
 
 import { useState, useEffect, useCallback } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
@@ -68,6 +69,15 @@ export default function SociosPage() {
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
+
+  /* La cabecera del sistema: ver el mismo aviso en `gastos/page.jsx`.
+     ⚠ VA ANTES DEL RETURN: es un hook. */
+  useCabecera({
+    titulo: 'Socios',
+    subtitulo: socios.length === 0
+      ? 'ninguno todavía'
+      : `${socios.length} socio${socios.length === 1 ? '' : 's'}`,
+  })
 
   if (authLoading || cargando) return <PilaEsqueletos cuantos={3} alto={116} />
 

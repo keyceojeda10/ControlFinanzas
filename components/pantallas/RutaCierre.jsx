@@ -236,7 +236,7 @@ export default function RutaCerrada({
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{
               fontFamily: 'var(--font-space-grotesk), system-ui',
-              fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+              fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
             }}>{titulo}</span>
             {/* La hora a la que terminó, no «completada»: si el cobrador cerró a
                 las 18:38 y son las 21:00, la diferencia importa. */}

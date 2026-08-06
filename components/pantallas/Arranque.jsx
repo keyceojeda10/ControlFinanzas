@@ -72,7 +72,7 @@ function Titular({ titulo, ayuda, centrado }) {
     }}>
       <span style={{
         fontFamily: 'var(--font-space-grotesk), system-ui',
-        fontSize: 25, fontWeight: 600, lineHeight: 1.15, letterSpacing: '-.02em',
+        fontSize: 26, fontWeight: 600, lineHeight: 1.15, letterSpacing: '-.02em',
         color: 'var(--cf-ink)',
       }}>{titulo}</span>
       {ayuda && (
@@ -328,7 +328,9 @@ export function ArranqueCapital({
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{
                 fontFamily: 'var(--font-space-grotesk), system-ui',
-                fontSize: 26, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none',
+                // 25 a propósito: es el SÍMBOLO del campo, no un monto, y va
+                // más pequeño que la cifra. Mismo caso que `primitivos2.jsx`.
+                fontSize: 25, fontWeight: 600, color: 'var(--cf-ink-3)', flex: 'none',
               }}>{simbolo}</span>
               {/* `type=text` con `inputMode=decimal`: un `type=number` rechaza el
                   separador que no coincide con el locale del teléfono, y son 12

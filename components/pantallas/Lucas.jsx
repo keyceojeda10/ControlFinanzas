@@ -158,7 +158,7 @@ export function Vacio({
       <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 7, paddingBottom: 5 }}>
         <span style={{
           fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.25,
+          fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.25,
           color: 'var(--cf-ink)',
         }}>{titulo}</span>
         <span style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>{ayuda}</span>

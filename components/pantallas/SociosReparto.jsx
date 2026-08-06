@@ -484,7 +484,7 @@ export function HojaRepartir({
                 <span style={{ fontSize: 11, color: CARBON_TINTA_3 }}>{antesDespues.despuesEtiqueta}</span>
                 <span className="cf-fig" style={{
                   fontFamily: 'var(--font-space-grotesk), system-ui',
-                  fontSize: 21, fontWeight: 600, color: CARBON_TINTA,
+                  fontSize: 20, fontWeight: 600, color: CARBON_TINTA,
                 }}>{antesDespues.despues}</span>
               </div>
             </div>

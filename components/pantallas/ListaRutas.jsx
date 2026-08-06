@@ -249,7 +249,7 @@ export default function ListaRutas({
           <h1 style={{
             flex: 1, minWidth: 0, margin: 0,
             fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
           }}>Rutas</h1>
           <span style={{
             display: 'inline-flex', alignItems: 'center', flex: 'none',

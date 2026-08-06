@@ -136,7 +136,7 @@ function TarjetaRuta({ ruta, onAbrir, onAsignar }) {
               textTransform: 'uppercase', color: 'var(--cf-ink-3)',
             }}>Cartera de la ruta</span>
             <span className="cf-fig" style={{
-              fontSize: 25, fontWeight: 600, letterSpacing: '-.03em',
+              fontSize: 26, fontWeight: 600, letterSpacing: '-.03em',
               lineHeight: 1, color: 'var(--cf-ink)',
             }}>{ruta.cartera}</span>
           </div>

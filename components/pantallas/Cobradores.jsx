@@ -124,7 +124,7 @@ export function Cobradores({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
             <span style={{
               fontFamily: 'var(--font-space-grotesk), system-ui',
-              fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+              fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
             }}>Cobradores</span>
             {/* Las dos cifras juntas —cuántas cuentas y cuántas con ruta— son las
                 que hacen evidente el hueco. Cualquiera sola no dice nada. */}
@@ -348,7 +348,7 @@ export function CrearCobrador({
         )}
         <span style={{
           flex: 1, fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+          fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
         }}>Nuevo cobrador</span>
       </div>
 
@@ -620,7 +620,7 @@ export function MiDia({
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
               textTransform: 'uppercase', color: 'var(--cf-ink-3)',
             }}>Le tienes que entregar</span>
-            <span className="cf-fig" style={{ fontSize: 25, letterSpacing: '-.03em' }}>{entrega}</span>
+            <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em' }}>{entrega}</span>
             {/* Por qué no entrega todo lo que recogió. Sin esta línea la cifra
                 parece un descuadre. */}
             {entregaDetalle && (

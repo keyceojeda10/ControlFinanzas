@@ -73,7 +73,7 @@ export default function PlanExcedido({
         )}
         <h2 style={{
           fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+          fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
           color: 'var(--cf-ink)', margin: '5px 0 0', lineHeight: 1.22,
         }}>
           {titulo}

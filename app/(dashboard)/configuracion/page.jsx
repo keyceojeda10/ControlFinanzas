@@ -1613,7 +1613,7 @@ function ConfiguracionContent() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 24 }}>
           <span style={{
             fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
           }}>{abierta.nombre}</span>
           {panel(abierta.id)}
         </div>

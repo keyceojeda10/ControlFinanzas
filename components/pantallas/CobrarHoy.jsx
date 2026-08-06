@@ -48,7 +48,7 @@ function Avance({ recaudado, meta, cobrados = 0, deCuantos = 0, porcentaje = 0 }
       display: 'flex', alignItems: 'center', gap: 16, flex: 'none',
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
-        <span className="cf-fig" style={{ fontSize: 25, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+        <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
           {recaudado}
         </span>
         <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.35 }}>

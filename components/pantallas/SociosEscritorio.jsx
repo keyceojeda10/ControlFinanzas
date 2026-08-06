@@ -74,7 +74,7 @@ export default function SociosEscritorio({
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{
             display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 25, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)',
+            fontSize: 26, fontWeight: 600, letterSpacing: '-.025em', color: 'var(--cf-ink)',
           }}>Socios</span>
           <span className="cf-num" style={{ display: 'block', fontSize: 13, color: 'var(--cf-ink-3)', marginTop: 4 }}>
             {socios.length} activos · reparten por lo que pusieron

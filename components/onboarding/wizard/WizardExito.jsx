@@ -22,7 +22,7 @@ function Cifra({ etiqueta, valor }) {
   return (
     <span style={{ flex: 1, minWidth: 0 }}>
       <span className="cf-fig" style={{
-        display: 'block', fontSize: 21, fontWeight: 700, color: 'var(--cf-ink)', lineHeight: 1.1,
+        display: 'block', fontSize: 20, fontWeight: 700, color: 'var(--cf-ink)', lineHeight: 1.1,
       }}>
         {valor}
       </span>

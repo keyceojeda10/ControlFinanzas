@@ -2,6 +2,7 @@
 // app/(dashboard)/cobradores/page.jsx - Lista de cobradores
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { Cobradores } from '@/components/pantallas/Cobradores'
 import { agrupaCobradores } from '@/lib/adaptadores/cobradores'
@@ -193,6 +194,24 @@ function CobradoresPageInner() {
   }, [authLoading, esOwner])
 
   // Planes de entrada — bloquear
+  /* ── LA CABECERA LA PONE EL ARMAZÓN ──────────────────────────────────────
+   * El componente `Cobradores` pintaba su propio título a 21px —fuera de la
+   * escala, que solo tiene 27/20/17— y esta página no llamaba a `useCabecera`:
+   * en escritorio se quedaba sin botón de volver.
+   *
+   * Ahora el título va donde va el de todas las demás pantallas, y el
+   * componente se monta con `cabecera={false}`. El resumen —«10 cuentas · 10
+   * con ruta asignada»— pasa a ser el subtítulo, que es su papel.
+   *
+   * ⚠ VA ANTES DE LOS RETURNS: es un hook.
+   */
+  useCabecera({
+    titulo: 'Cobradores',
+    subtitulo: cobradores.length > 0
+      ? `${cobradores.length} cuenta${cobradores.length === 1 ? '' : 's'} · ${cobradores.filter((c) => c.ruta || c.rutaNombre).length} con ruta`
+      : null,
+  })
+
   if (!authLoading && ['starter', 'basic'].includes(plan)) {
     return (
       <div className="max-w-xl mx-auto">
@@ -313,6 +332,7 @@ function CobradoresPageInner() {
           <Cobradores
             alto="auto"
             sinMargen
+            cabecera={false}
             resumen={grupos.resumen}
             aviso={grupos.aviso}
             cobrando={grupos.cobrando}

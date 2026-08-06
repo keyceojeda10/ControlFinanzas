@@ -232,7 +232,7 @@ export function BandaDelDia({ recaudado, falta, progreso = 0 }) {
           <Rotulo espaciado=".09em">Recaudado hoy</Rotulo>
           <span className="cf-fig" style={{
             fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 25, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1,
+            fontSize: 26, fontWeight: 600, letterSpacing: '-.03em', lineHeight: 1,
             color: 'var(--cf-ink)',
           }}>{recaudado}</span>
         </div>

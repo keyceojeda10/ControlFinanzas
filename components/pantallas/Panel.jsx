@@ -469,7 +469,7 @@ export default function Panel({
           {caja && (
             <TarjetaDato rotulo="En caja" pie="Para prestar ahora">
               <span className="cf-fig" style={{
-                fontSize: 21, letterSpacing: '-.025em', color: 'var(--cf-ink)',
+                fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)',
               }}>{caja}</span>
             </TarjetaDato>
           )}
@@ -480,7 +480,7 @@ export default function Panel({
                     una es la mala noticia. «20 de 25» todo en rojo se lee como
                     si los 25 estuvieran en mora. */}
                 <span className="cf-fig" style={{
-                  fontSize: 21, letterSpacing: '-.025em',
+                  fontSize: 20, letterSpacing: '-.025em',
                   color: mora.cuantos > 0 ? 'var(--cf-red)' : 'var(--cf-ink)',
                 }}>{mora.cuantos}</span>
                 {mora.deCuantos > 0 && (

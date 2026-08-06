@@ -49,6 +49,10 @@ export function CampoMonto({
       ...style,
     }}>
       <span className="cf-fig" aria-hidden style={{
+        // ⚠ 25 A PROPÓSITO, y no es una infracción de escala: este es el
+        // SÍMBOLO del campo, no un monto. La receta pide que vaya más pequeño
+        // que la cifra (que va a 38). Un barrido de 25→26 lo subió y rompió esa
+        // relación; la prueba de `componentes-receta` lo cazó.
         fontSize: 25, color: 'var(--cf-ink-3)', flex: 'none',
       }}>{simbolo}</span>
       <input

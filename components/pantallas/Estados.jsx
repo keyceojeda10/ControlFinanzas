@@ -95,7 +95,7 @@ export function PorSincronizar({
           <span style={{
             flex: 1, minWidth: 0,
             fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 21, fontWeight: 600, letterSpacing: '-.02em',
+            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em',
           }}>{titulo}</span>
         </div>
 
