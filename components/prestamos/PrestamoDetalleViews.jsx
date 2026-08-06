@@ -736,20 +736,25 @@ export function TimelinePrestamo({
         </div>
       </div>
 
-      {/* Inicio · CUOTAS · vencimiento.
-          Las cuotas van EN EL CENTRO porque los días que faltan no dicen
-          cuántos pagos faltan, que es lo que se pregunta mirando esto. Era un
-          chip suelto arriba («2 cuotas pagadas») que aquí significa algo. */}
-      <div className="flex items-end justify-between text-[10px] mt-3 gap-2" style={{ color: 'var(--cf-ink-3)' }}>
+      {/* ⚠ LAS CUOTAS VAN EN SU PROPIO RENGLÓN, NO ENTRE LAS FECHAS.
+          Primero las puse en medio de la fila inicio/vencimiento y quedaron
+          apretadas contra las dos: en la captura del dueño, «1 de 6 cuotas»
+          caía pegado bajo la barra con las fechas descolocadas a los lados.
+          Reportado: «la información se puede distribuir mejor».
+
+          Ahora: las cuotas debajo de la barra —que es lo que la barra mide— y
+          las fechas en su fila, cada una en su extremo. */}
+      {cuotasTotales > 0 && (
+        <p className="font-mono-display font-semibold text-[12px] mt-4 text-center" style={{ color: 'var(--cf-ink)' }}>
+          {cuotasPagadas ?? 0} de {cuotasTotales} cuotas
+        </p>
+      )}
+
+      <div className="flex items-start justify-between text-[10px] mt-2.5 gap-3" style={{ color: 'var(--cf-ink-3)' }}>
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wider">Inicio</p>
           <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaInicio)}</p>
         </div>
-        {cuotasTotales > 0 && (
-          <p className="font-mono-display font-semibold shrink-0 pb-px" style={{ color: 'var(--cf-ink)' }}>
-            {cuotasPagadas ?? 0} de {cuotasTotales} cuotas
-          </p>
-        )}
         <div className="text-right min-w-0">
           <p className="text-[10px] uppercase tracking-wider">Vencimiento</p>
           <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaFin)}</p>
@@ -760,7 +765,7 @@ export function TimelinePrestamo({
           Eran pastillas de colores. En frase se leen de corrido y caben las
           cuotas que faltan, que es lo que sigue a «va adelantado». */}
       {(adelantado || atrasado || cuotasQueFaltan > 0) && (
-        <p className="text-[11px] mt-3 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+        <p className="text-[11px] mt-3 pt-3 leading-snug" style={{ color: 'var(--cf-ink-2)', borderTop: '1px solid var(--cf-border)' }}>
           {adelantado && <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Va adelantado. </span>}
           {atrasado && <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Va atrasado. </span>}
           {cuotasQueFaltan > 0 && (

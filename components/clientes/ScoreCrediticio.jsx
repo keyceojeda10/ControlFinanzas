@@ -35,7 +35,15 @@ export default function ScoreCrediticio({ cedula, plan }) {
       .finally(() => setLoading(false))
   }, [cedula, habilitado])
 
-  if (!habilitado || loading || !data) return null
+  /* ⚠ «SIN HISTORIAL» NO SE ENSEÑA.
+     El score avisa de un cliente que quedó mal en OTRA organización; `gris`
+     significa que no hay nada que avisar. Enseñarlo dejaba una pastilla suelta
+     con un «?» colgando bajo el bloque de Lucas —se ve en la captura del
+     dueño— que no responde ninguna pregunta: quien la lee se queda igual.
+
+     Los tres estados que SÍ dicen algo —rojo, amarillo, verde— siguen saliendo.
+     Es el mismo criterio con el que se quitó el chip de mora repetido. */
+  if (!habilitado || loading || !data || data.score === 'gris') return null
 
   const config = SCORE_CONFIG[data.score] || SCORE_CONFIG.gris
 

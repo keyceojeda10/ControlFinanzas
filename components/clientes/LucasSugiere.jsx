@@ -1,4 +1,5 @@
 'use client'
+
 // components/clientes/LucasSugiere.jsx — E05, la recomendación con marca y acción.
 //
 // ══ ERA UN BANNER GRIS CON UNA CHISPA Y UNA ✕ ══════════════════════════════
@@ -13,16 +14,63 @@
 // Y al pie va el descargo que la hace honesta: la app no aprueba un crédito,
 // resume lo que ya sabe. El monto sale del tope que el propio dueño puso.
 
+import { useState, useEffect } from 'react'
+
+/* ⚠ LA ESTRELLA NO ESTÁ CENTRADA EN SU PROPIO LIENZO.
+   El trazado va de y=2 (la punta) a y=18 (las patas): su centro visual está en
+   y=10, no en y=12, que es el centro del `viewBox`. Con `alignItems: center` el
+   navegador centra la CAJA del svg, no el dibujo que hay dentro, así que en el
+   cuadro dorado de 30px el icono quedaba 1,3px alto — poco, pero se ve.
+   Reportado: «el icono de lucas no se ve centrado en su cuadro».
+
+   Se baja el dibujo 2 unidades con un `translate` en vez de reescribir el
+   trazado a mano: es reversible y se entiende de un vistazo. */
 const CHISPA = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 2l1.9 5.6L19.5 9l-4.4 3.4 1.4 5.6L12 15l-4.5 3 1.4-5.6L4.5 9l5.6-1.4z" />
+    <g transform="translate(0 2)">
+      <path d="M12 2l1.9 5.6L19.5 9l-4.4 3.4 1.4 5.6L12 15l-4.5 3 1.4-5.6L4.5 9l5.6-1.4z" />
+    </g>
   </svg>
 )
 
-export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto }) {
-  if (!sugerencia?.titular) return null
+export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto, claveCierre }) {
+  /* El cierre se recuerda en `sessionStorage` con el MISMO patrón que
+     `AiTipBanner`: se guarda el TITULAR, no un simple «cerrado». Así, si la
+     situación del cliente cambia —se pone al día, abre otro préstamo— el aviso
+     nuevo vuelve a salir en vez de quedarse mudo para siempre. */
+  const [cerrado, setCerrado] = useState(false)
+  const titularActual = sugerencia?.titular ?? null
+
+  useEffect(() => { setCerrado(false) }, [titularActual])
+  useEffect(() => {
+    if (!claveCierre || !titularActual || typeof window === 'undefined') return
+    if (sessionStorage.getItem(`lucas-cerrado-${claveCierre}`) === titularActual) setCerrado(true)
+  }, [claveCierre, titularActual])
+
+  if (!sugerencia?.titular || cerrado) return null
   const { tono, titular, porque, etiqueta, monto } = sugerencia
   const esOferta = tono === 'oferta' && monto > 0 && !!onPrestar
+
+  const cerrar = () => {
+    setCerrado(true)
+    if (claveCierre && typeof window !== 'undefined') {
+      sessionStorage.setItem(`lucas-cerrado-${claveCierre}`, titular)
+    }
+  }
+
+  /* ⚠ SE PUEDE CERRAR SOLO CUANDO NO HAY NADA QUE HACER.
+     Este bloque perdió su ✕ a propósito: la lámina lo convirtió de aviso
+     descartable en una decisión con monto y botón, y una decisión no se cierra,
+     se toma.
+
+     Pero cuando NO es una oferta —«ya tiene 3 préstamos abiertos», «se atrasó un
+     día»— no trae botones: es una advertencia, y una advertencia que no se puede
+     quitar de en medio molesta cada vez que se abre la ficha. Reportado con
+     captura: «tampoco permite cerrarlo».
+
+     Con oferta la ✕ NO sale: ahí hay dos botones y cerrar sería esquivar la
+     decisión, que es justo lo que el rediseño vino a evitar. */
+  const sePuedeCerrar = !esOferta && !!claveCierre
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -45,6 +93,24 @@ export default function LucasSugiere({ sugerencia, onPrestar, onOtroMonto }) {
               flex: 'none', fontSize: 11, color: '#8A8E98',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>{etiqueta}</span>
+          )}
+          {sePuedeCerrar && (
+            <button
+              type="button"
+              onClick={cerrar}
+              aria-label="Cerrar la sugerencia"
+              style={{
+                flex: 'none', width: 26, height: 26, marginRight: -6, padding: 0,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                border: 0, background: 'none', cursor: 'pointer', color: '#8A8E98',
+                borderRadius: 8,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
           )}
         </div>
 

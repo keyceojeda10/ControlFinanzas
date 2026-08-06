@@ -586,7 +586,19 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
   const tel = cliente?.telefono ? String(cliente.telefono).replace(/\D/g, '') : ''
   const dir = cliente?.direccion?.trim()
   const ref = cliente?.referencia?.trim()
-  const falta = dir ? direccionIncompleta(dir) : false
+  /* ⚠ CON GPS SÍ SALE EN EL MAPA, POR MUY CORTA QUE SEA LA DIRECCIÓN.
+     `direccionIncompleta` solo lee el TEXTO, así que «Carrera 1» o «Las palmas»
+     disparaban el aviso aunque el cliente tuviera coordenadas exactas y el
+     botón «Ir» lo llevara sin problema. Medido en producción: 353 de 400
+     clientes con GPS recibían ese aviso, y era falso en los 353.
+
+     Reportado: «es raro lo que dice de "sin número no sale en el mapa" cuando
+     creo que sí tiene coordenadas».
+
+     `irAlMapa` (unas líneas más abajo) ya prefiere las coordenadas sobre el
+     texto: el aviso tiene que mirar lo mismo que el botón. */
+  const tieneGps = cliente?.latitud != null && cliente?.longitud != null
+  const falta = dir && !tieneGps ? direccionIncompleta(dir) : false
 
   if (!tel && !dir && !cliente?.notas) return null
 
@@ -675,8 +687,12 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
               que un cobrador se pierda dando vueltas. */}
           {falta && (
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '11px 15px',
+              display: 'flex', alignItems: 'center', gap: 10,
+              /* Mismo relleno lateral que la fila de arriba (`10px 14px`) para
+                 que el icono y el texto arranquen en la misma vertical, y algo
+                 más de alto: iba pegado al renglón anterior y se leía como si
+                 fuera parte de él. Reportado: «se ve como muy pegado». */
+              padding: '12px 14px',
               background: 'color-mix(in srgb, var(--cf-gold) 10%, var(--cf-card))',
               borderTop: '1px solid var(--cf-border)',
             }}>

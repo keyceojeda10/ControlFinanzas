@@ -1213,7 +1213,13 @@ export default function CajaPage() {
   const pendientesSinMovimiento = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) <= 0).length
 
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto space-y-4">
+    // ⚠ FALTABA EL ESCALÓN DE EN MEDIO. Iba de `max-w-2xl` (672px) directo a
+    // `lg:max-w-5xl` (1024px), y `lg:` no entra hasta los 1024 de ventana:
+    // entre medias la tarjeta se congelaba en 672 mientras la pantalla seguía
+    // creciendo. Medido en el espejo: a 768 sobraban 130px a los lados y a 900
+    // sobraban 262. Reportado con captura de una ventana estrecha en PC.
+    // (Comentario con `//`: un `{/* */}` tras `return (` es error de sintaxis.)
+    <div className="max-w-2xl md:max-w-3xl lg:max-w-5xl mx-auto space-y-4">
       {/* LA CABECERA LA PONE `CajaDia`, no esta pagina.
 
           Al montar el bloque nuevo dejé la vieja encima y quedaron DOS: «Caja ·
