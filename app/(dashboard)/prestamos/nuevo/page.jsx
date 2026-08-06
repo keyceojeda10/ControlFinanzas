@@ -9,6 +9,7 @@ import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
@@ -736,6 +737,28 @@ function NuevoPrestamo() {
   // su propia caja aparte; ahora la franja es UNA pieza y mide ~134 con la
   // cuota dentro. Se deja holgura: el último campo pegado al filete se lee como
   // si estuviera cortado.
+  /* ── LA CABECERA ESTABA EN BLANCO ────────────────────────────────────────
+   *
+   * Esta pantalla NO llamaba a `useCabecera`, así que su barra de 56px se
+   * pintaba vacía: ni título, ni la espina de progreso. Y es la pantalla con la
+   * que se crea un préstamo — la que más se usa para mover plata.
+   *
+   * Reportado por el dueño: «tienen cabecera pero en blanco, sin texto».
+   *
+   * Su variante es `TAREA` (`lib/armazon.js:92`), que acepta `titulo`, `paso` y
+   * `total` y pinta la espina. Los tres datos ya existían aquí —`paso` y
+   * `PASOS`—; solo faltaba pasárselos. Es el mismo patrón que el selector de
+   * cuenta al renovar: la pieza montada y nadie alimentándola.
+   *
+   * El título dice EN QUÉ PASO SE ESTÁ, no «Nuevo préstamo»: la espina ya cuenta
+   * cuántos van, y el nombre del paso es lo que le falta al que está tecleando.
+   */
+  useCabecera({
+    titulo: PASOS[paso]?.label ?? 'Nuevo préstamo',
+    paso: paso + 1,
+    total: PASOS.length,
+  })
+
   return (
     <div className="max-w-2xl mx-auto pb-40 lg:pb-36">
       {/* Stepper */}

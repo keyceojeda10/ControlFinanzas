@@ -22,8 +22,6 @@ const ESTADOS = [
 ]
 
 export default function LineasCreditoPage() {
-  useCabecera({ titulo: 'Líneas de crédito' })
-
   const { esOwner, esCobrador, loading: authLoading } = useAuth()
   const router = useRouter()
   const [lineas, setLineas] = useState([])
@@ -58,9 +56,31 @@ export default function LineasCreditoPage() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  const totalSaldo = lineas.reduce((s, l) => s + (l.saldoTotal || 0), 0)
+
+  /* ⚠ EL CONTEO SÍ CABE EN LA CABECERA, Y ESTE SITIO IMPORTA.
+     Iba en un renglón suelto dentro de la pantalla, con un comentario que decía
+     «es lo único que la cabecera no puede saber». Sí puede: el hook se llama
+     dentro del componente.
+
+     Pero el sitio tiene DOS condiciones y me equivoqué en las dos:
+
+     · DESPUÉS de `lineas` y `totalSaldo`. Lo puse arriba del todo y la cabecera
+       salió EN BLANCO — un `const` leído antes de declararse. El build no lo ve.
+     · ANTES del `if (authLoading) return`. Es un hook: detrás de un return
+       temprano el orden cambia entre renders y React tira la pantalla. Está
+       documentado igual en `prestamos/[id]` y `clientes/[id]`.
+
+     O sea: entre el cálculo y el return, que es justo donde está. */
+  useCabecera({
+    titulo: 'Líneas de crédito',
+    subtitulo: lineas.length
+      ? `${lineas.length} línea${lineas.length === 1 ? '' : 's'} · saldo ${formatMoney(totalSaldo)}`
+      : 'ninguna todavía',
+  })
+
   if (authLoading) return <div className="p-4 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>
 
-  const totalSaldo = lineas.reduce((s, l) => s + (l.saldoTotal || 0), 0)
   const totalCupo = lineas.reduce((s, l) => s + l.cupoMaximo, 0)
 
   // Sin `px-4`: el relleno lateral lo pone el armazon (`layout.jsx` con su
@@ -70,13 +90,10 @@ export default function LineasCreditoPage() {
     <div className="max-w-2xl lg:max-w-5xl mx-auto py-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        {/* El titulo lo pone el armazon; el CONTEO se queda, que es lo que
-            cambia y lo unico que la cabecera no puede saber. */}
-        <div>
-          <p className="text-xs text-[var(--cf-ink-3)]">
-            {lineas.length} línea{lineas.length !== 1 ? 's' : ''} · Saldo total {formatMoney(totalSaldo)}
-          </p>
-        </div>
+        {/* El conteo subió a la cabecera: dejarlo aquí sería el mismo dato en
+            dos elementos de la misma pantalla. Queda el hueco para que el botón
+            siga a la derecha. */}
+        <div className="flex-1 min-w-0" />
         {esOwner && (
           <Link href="/lineas-credito/nueva" className="cf-btn-primary inline-flex items-center justify-center font-medium rounded-[12px] border transition-all h-9 px-3 text-xs">
             + Nueva línea
