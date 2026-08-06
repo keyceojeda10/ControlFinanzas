@@ -383,10 +383,10 @@ export default function NuevoCobrador() {
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-[var(--cf-ink-3)] mt-2">
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-2">
             Nota: "Gestión de préstamos" es un permiso avanzado e independiente para cambios administrativos de créditos.
           </p>
-          <p className="text-[9px] text-[var(--cf-ink-3)] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] mt-2">Los permisos se pueden modificar después desde la edición del cobrador.</p>
         </SectionCard>
 
         <div className="flex gap-3 pt-2">

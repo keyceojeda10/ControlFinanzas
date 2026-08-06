@@ -196,20 +196,20 @@ export default function RetencionPage() {
                   </Link>
                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                     {org.algunVezPago ? (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
                         style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }}
                       >
                         PAGANTE
                       </span>
                     ) : (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
                         style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-info)' }}
                       >
                         TRIAL
                       </span>
                     )}
                     {org.waChurnSent && (
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
                         style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-warning)' }}
                       >
                         WA ENVIADO
@@ -225,7 +225,7 @@ export default function RetencionPage() {
                 </div>
                 <div className="text-center">
                   <p className="text-[11px] text-[var(--color-text-primary)] font-medium">{org.clientes}</p>
-                  <p className="text-[9px] text-[var(--color-text-muted)]">{org.prestamos} prest.</p>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">{org.prestamos} prest.</p>
                 </div>
                 <div className="text-center">
                   {tab === 'sinActividad' ? (

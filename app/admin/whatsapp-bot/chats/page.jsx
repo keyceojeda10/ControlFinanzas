@@ -124,7 +124,7 @@ export default function ChatsPage() {
                     <span className="text-[12px] text-[var(--color-text-muted)] truncate">{previewTexto(c.ultimoMensaje)}</span>
                     <span className="flex items-center gap-1 shrink-0">
                       {textoVentana(c.ventanaMs) && (
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                        <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
                           c.ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
                           : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
                           : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
@@ -132,7 +132,7 @@ export default function ChatsPage() {
                           {textoVentana(c.ventanaMs)}
                         </span>
                       )}
-                      {c.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente</span>}
+                      {c.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente</span>}
                       {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)]" title={`Temp ${c.temperatura}`} />}
                     </span>
                   </div>
@@ -325,7 +325,7 @@ function ChatPanel({ lead, onBack, onUpdate }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-sm text-white font-medium truncate">{lead.nombre}</span>
-            {lead.registrado && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente registrado</span>}
+            {lead.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente registrado</span>}
           </div>
           <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1.5">
             {lead.telefono} · temp {lead.temperatura}
@@ -429,7 +429,7 @@ function Burbuja({ m, leadId }) {
   return (
     <div className={`flex flex-col ${align}`}>
       <div className={`max-w-[78%] rounded-[12px] px-3 py-2 ${color}`}>
-        {m.rol === 'admin' && <p className="text-[9px] opacity-70 mb-0.5">Tú (manual)</p>}
+        {m.rol === 'admin' && <p className="text-[11px] opacity-70 mb-0.5">Tú (manual)</p>}
         {m.tipoMensaje === 'image' && mediaUrl && (
           <a href={mediaUrl} target="_blank" rel="noreferrer">
             <img src={mediaUrl} alt="imagen" className="rounded-[8px] max-w-full max-h-[240px] mb-1" />
@@ -448,7 +448,7 @@ function Burbuja({ m, leadId }) {
           <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
         )}
       </div>
-      <span className="text-[9px] text-[var(--color-text-muted)] mt-0.5 px-1 flex items-center gap-1">
+      <span className="text-[11px] text-[var(--color-text-muted)] mt-0.5 px-1 flex items-center gap-1">
         {new Date(m.createdAt).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
         {!esLead && <EstadoEntrega m={m} />}
       </span>

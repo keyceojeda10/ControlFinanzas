@@ -48,7 +48,7 @@ export function ComoPaga({ meses = [], lectura }) {
               background: COLOR[m.estado] ?? COLOR.nada,
               flex: 'none',
             }} />
-            <span className="cf-num" style={{ fontSize: 9, color: 'var(--cf-ink-4)', flex: 'none' }}>
+            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-4)', flex: 'none' }}>
               {m.etiqueta}
             </span>
           </span>
@@ -86,7 +86,7 @@ function FilaPrestamo({ titulo, diasAtraso, estado = 'aldia', monto, cuota, prim
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{titulo}</span>
           {diasAtraso > 0 && (
-            <Pastilla tono={estado === 'mora' ? 'mora' : 'atraso'} numerica style={{ height: 19, fontSize: 9.5, flex: 'none' }}>
+            <Pastilla tono={estado === 'mora' ? 'mora' : 'atraso'} numerica style={{ height: 19, fontSize: 11, flex: 'none' }}>
               {diasAtraso}d
             </Pastilla>
           )}

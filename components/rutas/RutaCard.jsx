@@ -140,13 +140,13 @@ export default function RutaCard({ ruta, congelada }) {
             style={{ borderTop: `1px solid ${P.track}` }}
           >
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Prestado</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Prestado</p>
               <p className="text-[12px] font-mono-display font-bold leading-tight" style={{ color: P.ink }}>
                 {formatMoney(ruta.capitalTotal)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Con intereses</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: P.sub }}>Con intereses</p>
               <p className="text-[12px] font-mono-display font-bold leading-tight" style={{ color: P.ink }}>
                 {formatMoney(ruta.totalAPagarRuta ?? 0)}
               </p>

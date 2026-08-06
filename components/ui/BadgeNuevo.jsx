@@ -33,7 +33,7 @@ export default function BadgeNuevo({ fecha, children, className = '' }) {
 export function NuevoChip() {
   return (
     <span
-      className="inline-flex items-center gap-1 text-[8px] font-bold uppercase tracking-wider px-1.5 py-px rounded-full shrink-0"
+      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-px rounded-full shrink-0"
       style={{
         color: 'var(--cf-green-dark)',
         background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)',

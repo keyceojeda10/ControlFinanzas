@@ -104,7 +104,7 @@ export default function MetodoPagoAdmin() {
               </div>
               <span className="text-sm font-medium truncate" style={{ color: 'var(--cf-ink)' }}>{m.nombre}</span>
               {m.esPredeterminado && (
-                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>Default</span>
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>Default</span>
               )}
             </div>
             <button

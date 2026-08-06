@@ -34,7 +34,7 @@ function Cifra({ etiqueta, valor, color }) {
   return (
     <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <span style={{
-        fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
         textTransform: 'uppercase', color: 'var(--cf-ink-3)',
       }}>{etiqueta}</span>
       <span className="cf-fig" style={{ fontSize: 14, fontWeight: 600, color: color ?? 'var(--cf-ink)' }}>

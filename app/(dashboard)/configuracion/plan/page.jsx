@@ -457,7 +457,7 @@ export default function PlanPage() {
                 >
                   {p.label}
                   {p.badge && (
-                    <span className="text-[9px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
+                    <span className="text-[11px] font-bold px-1 py-0.5 rounded-full font-mono-display" style={{
                       background: periodo === p.key ? 'rgba(0,0,0,0.15)' : 'var(--cf-green-dark)',
                       color: periodo === p.key ? 'var(--cf-gold-ink)' : '#fff',
                     }}>{p.badge}</span>
@@ -501,12 +501,12 @@ export default function PlanPage() {
                         {p.nombre}
                       </span>
                       {p.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
                           {p.badge}
                         </span>
                       )}
                       {esRecurrActiva && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-green-dark)', color: '#fff' }}>
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-green-dark)', color: '#fff' }}>
                           Activo
                         </span>
                       )}
@@ -530,7 +530,7 @@ export default function PlanPage() {
                         </span>
                       )}
                       {ahorro > 0 && (
-                        <p className="text-[9px] font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
+                        <p className="text-[11px] font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
                           Ahorras {formatMoney(ahorro)}
                         </p>
                       )}

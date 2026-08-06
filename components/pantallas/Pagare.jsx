@@ -58,7 +58,7 @@ export function AntesDeFirmar({
               <span style={{
                 display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 10px', borderRadius: 999,
                 background: 'rgba(255,255,255,.08)', flex: 'none', marginBottom: 5,
-                fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#A3A8B2',
+                fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#A3A8B2',
               }}>{medio}</span>
             )}
           </div>
@@ -286,7 +286,7 @@ export function PagareFirmado({
             <span style={{
               display: 'inline-flex', alignItems: 'center', height: 21, padding: '0 9px', borderRadius: 999, flex: 'none',
               background: 'var(--cf-green-pill-bg)', border: '1px solid var(--cf-green-pill-border)',
-              fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-green-dark)',
+              fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-green-dark)',
             }}>firmado</span>
           </div>
 

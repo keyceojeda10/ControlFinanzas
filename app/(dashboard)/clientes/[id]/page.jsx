@@ -661,7 +661,7 @@ export default function ClienteDetallePage({ params }) {
                       <span className="text-xs font-semibold text-[var(--cf-ink)]">Línea de crédito</span>
                     </div>
                     <span
-                      className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full"
                       style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
                     >
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cf-ink-2)' }} />
@@ -670,15 +670,15 @@ export default function ClienteDetallePage({ params }) {
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center mb-2">
                     <div>
-                      <p className="text-[9px] text-[var(--cf-ink-3)] uppercase tracking-wider">Cupo</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wider">Cupo</p>
                       <p className="text-xs font-mono-display font-bold text-[var(--cf-ink)] mt-0.5">{formatMoney(lc.cupoMaximo)}</p>
                     </div>
                     <div>
-                      <p className="text-[9px] text-[var(--cf-ink-3)] uppercase tracking-wider">Usado</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wider">Usado</p>
                       <p className="text-xs font-mono-display font-bold text-[var(--cf-ink)] mt-0.5">{formatMoney(lc.capitalUsado || 0)}</p>
                     </div>
                     <div>
-                      <p className="text-[9px] text-[var(--cf-ink-3)] uppercase tracking-wider">Disponible</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wider">Disponible</p>
                       <p className="text-xs font-mono-display font-bold mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(lc.cupoDisponible || 0)}</p>
                     </div>
                   </div>
@@ -1558,7 +1558,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
           </p>
         </div>
         {p.esClavo && (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
+          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
         )}
         <Badge variant={badge.variant}>{badge.label}</Badge>
         <svg className="w-4 h-4 text-[var(--cf-border)] group-hover:text-[var(--cf-ink-3)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1590,7 +1590,7 @@ function PrestamoCard({ prestamo: p, clienteId, cliente, orgNombre, ocultarSaldo
         </div>
         <div className="flex items-center gap-1.5">
           {p.esClavo && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}>Perdido</span>
           )}
           <Badge variant={badge.variant}>{badge.label}</Badge>
         </div>

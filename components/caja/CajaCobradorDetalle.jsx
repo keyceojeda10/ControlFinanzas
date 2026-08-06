@@ -739,7 +739,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
-                      {m.esClavo && <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-[var(--cf-red-dark)]/15 text-[var(--cf-red-dark)]">CLAVO</span>}
+                      {m.esClavo && <span className="text-[11px] font-bold px-1 py-0.5 rounded bg-[var(--cf-red-dark)]/15 text-[var(--cf-red-dark)]">CLAVO</span>}
                       <span className="text-[11px] text-[var(--cf-ink-3)]">{fmtHora(m.fecha)}</span>
                     </div>
                     <p className="text-xs text-[var(--cf-ink)] truncate">

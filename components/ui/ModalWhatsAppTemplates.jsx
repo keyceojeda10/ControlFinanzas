@@ -226,7 +226,7 @@ export default function ModalWhatsAppTemplates({
                     <span className="text-[14px]">{t.icon}</span>
                     <span className="text-[11px] font-semibold truncate" style={{ color: active ? t.color : 'var(--cf-ink)' }}>{t.label}</span>
                   </div>
-                  <p className="text-[9px] leading-tight" style={{ color: 'var(--cf-ink-3)' }}>{t.desc}</p>
+                  <p className="text-[11px] leading-tight" style={{ color: 'var(--cf-ink-3)' }}>{t.desc}</p>
                 </button>
               )
             })}
@@ -250,7 +250,7 @@ export default function ModalWhatsAppTemplates({
               <span className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
                 Personalizar secciones
               </span>
-              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', color: 'var(--cf-gold)' }}>
                 {seccionesActuales.filter(s => !s.locked && seccionesActivas.has(s.key)).length}/{seccionesActuales.filter(s => !s.locked).length}
               </span>
             </button>
@@ -275,7 +275,7 @@ export default function ModalWhatsAppTemplates({
               Mensaje (puedes editarlo)
             </p>
             <div className="flex items-center gap-2">
-              <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                 {textoEditable.length} caracteres
               </p>
               <button

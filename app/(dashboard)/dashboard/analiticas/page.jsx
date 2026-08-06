@@ -338,7 +338,7 @@ export default function AnaliticasPage() {
                   {/* Dos líneas reservadas: los rótulos salen del diccionario y
                       pueden ser de cualquier largo. Sin esto, «Recaudado» ocupa
                       una línea y su cifra queda a otra altura que las demás. */}
-                  <p className="text-[9px] font-bold uppercase tracking-[.09em]"
+                  <p className="text-[10px] font-bold uppercase tracking-[.09em]"
                      style={{ color: '#8A8E98', minHeight: '2.2em' }}>{etiqueta}</p>
                   <p className="cf-fig text-[15px] lg:text-[19px] mt-1 truncate" style={{
                     color: verde && valor < 0 ? '#F0575C' : '#F3F3F6',
@@ -381,13 +381,13 @@ export default function AnaliticasPage() {
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                   {alertasResumen.graves > 0 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-red-pill-bg)] text-[var(--cf-red-dark)] font-bold">{alertasResumen.graves} graves</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--cf-red-pill-bg)] text-[var(--cf-red-dark)] font-bold">{alertasResumen.graves} graves</span>
                   )}
                   {alertasResumen.moderadas > 0 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-gold-tint)] text-[var(--cf-gold-dark)] font-bold">{alertasResumen.moderadas} mod.</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--cf-gold-tint)] text-[var(--cf-gold-dark)] font-bold">{alertasResumen.moderadas} mod.</span>
                   )}
                   {alertasResumen.leves > 0 && (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] font-bold">{alertasResumen.leves} leves</span>
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] font-bold">{alertasResumen.leves} leves</span>
                   )}
                 </div>
               </div>
@@ -402,7 +402,7 @@ export default function AnaliticasPage() {
                       className="flex items-center justify-between py-2 px-2 sm:px-3 rounded-[10px] hover:bg-[var(--cf-fill)] transition-colors group gap-2"
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${sev.bg} ${sev.text} shrink-0`}>
+                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${sev.bg} ${sev.text} shrink-0`}>
                           {a.diasMora}d
                         </span>
                         <span className="text-[12px] sm:text-[13px] font-medium text-[var(--cf-ink)] truncate">{a.clienteNombre}</span>
@@ -475,10 +475,10 @@ export default function AnaliticasPage() {
                             {i + 1}
                           </span>
                           <span className="text-[12px] sm:text-[13px] font-medium truncate">{c.nombre}</span>
-                          {c.rol === 'owner' && <span className="text-[8px] px-1 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] shrink-0">admin</span>}
+                          {c.rol === 'owner' && <span className="text-[11px] px-1 py-0.5 rounded bg-[var(--cf-fill)] text-[var(--cf-ink-3)] shrink-0">admin</span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[9px] text-[var(--cf-ink-3)] font-mono hidden sm:inline">{c.pagos} pagos</span>
+                          <span className="text-[11px] text-[var(--cf-ink-3)] font-mono hidden sm:inline">{c.pagos} pagos</span>
                           <span className="text-[12px] sm:text-[13px] font-mono font-bold">{fmtShort(c.recaudado)}</span>
                         </div>
                       </div>
@@ -504,21 +504,21 @@ export default function AnaliticasPage() {
             <ProgressBar value={proyeccion.recaudado} max={proyeccion.esperado} color="var(--cf-gold)" height={10} />
             <div className="grid grid-cols-3 gap-2 mt-2">
               <div>
-                <p className="text-[9px] text-[var(--cf-ink-3)]">Recaudado</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)]">Recaudado</p>
                 <p className="text-[13px] lg:text-[15px] font-mono font-bold truncate">
                   <span className="hidden sm:inline">{fmt(proyeccion.recaudado)}</span>
                   <span className="sm:hidden">{fmtShort(proyeccion.recaudado)}</span>
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-[9px] text-[var(--cf-ink-3)]">Prom. diario</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)]">Prom. diario</p>
                 <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--cf-ink-2)] truncate">
                   <span className="hidden sm:inline">{fmt(proyeccion.promedioDiario)}</span>
                   <span className="sm:hidden">{fmtShort(proyeccion.promedioDiario)}</span>
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[9px] text-[var(--cf-ink-3)]">Proyectado</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)]">Proyectado</p>
                 <p className="text-[13px] lg:text-[15px] font-mono font-bold text-[var(--cf-gold)] truncate">
                   <span className="hidden sm:inline">{fmt(proyeccion.proyectado)}</span>
                   <span className="sm:hidden">{fmtShort(proyeccion.proyectado)}</span>
@@ -558,7 +558,7 @@ export default function AnaliticasPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-[var(--cf-green-dark)] shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-[9px] text-[var(--cf-ink-3)]">Ganancia (interés)</p>
+                          <p className="text-[11px] text-[var(--cf-ink-3)]">Ganancia (interés)</p>
                           <p className="text-[14px] lg:text-[16px] font-mono font-bold text-[var(--cf-green-dark)] truncate">
                             <span className="hidden sm:inline">{fmt(rentabilidad.interesGanadoMes)}</span>
                             <span className="sm:hidden">{fmtShort(rentabilidad.interesGanadoMes)}</span>
@@ -569,7 +569,7 @@ export default function AnaliticasPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-[var(--cf-gold)] shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-[9px] text-[var(--cf-ink-3)]">Capital recuperado</p>
+                          <p className="text-[11px] text-[var(--cf-ink-3)]">Capital recuperado</p>
                           <p className="text-[14px] lg:text-[16px] font-mono font-bold truncate">
                             <span className="hidden sm:inline">{fmt(rentabilidad.capitalRecuperadoMes)}</span>
                             <span className="sm:hidden">{fmtShort(rentabilidad.capitalRecuperadoMes)}</span>
@@ -670,34 +670,34 @@ export default function AnaliticasPage() {
       {/* === Cartera + Negocio === */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <Card href="/prestamos" className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Préstamos activos</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Préstamos activos</p>
           <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1">{cartera.activos}</p>
-          {cartera.pctMora > 0 && <p className="text-[9px] text-[var(--cf-red-dark)] font-medium">{cartera.pctMora}% en mora</p>}
+          {cartera.pctMora > 0 && <p className="text-[11px] text-[var(--cf-red-dark)] font-medium">{cartera.pctMora}% en mora</p>}
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Por cobrar</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Por cobrar</p>
           <p className="text-[16px] lg:text-[22px] font-mono font-bold mt-1 text-[var(--cf-gold)] truncate">
             <span className="hidden sm:inline">{fmt(resumen.porCobrar)}</span>
             <span className="sm:hidden">{fmtShort(resumen.porCobrar)}</span>
           </p>
-          <p className="text-[9px] text-[var(--cf-ink-3)] truncate">
+          <p className="text-[11px] text-[var(--cf-ink-3)] truncate">
             <span className="hidden sm:inline">{fmt(resumen.interesEnCartera)}</span>
             <span className="sm:hidden">{fmtShort(resumen.interesEnCartera)}</span>
             {' '}interés
           </p>
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Ticket promedio</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Ticket promedio</p>
           <p className="text-[16px] lg:text-[22px] font-mono font-bold mt-1 truncate">
             <span className="hidden sm:inline">{fmt(cartera.ticketPromedio)}</span>
             <span className="sm:hidden">{fmtShort(cartera.ticketPromedio)}</span>
           </p>
-          <p className="text-[9px] text-[var(--cf-ink-3)]">por préstamo</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)]">por préstamo</p>
         </Card>
         <Card className="overflow-hidden">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Clientes que repiten</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Clientes que repiten</p>
           <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1 text-[var(--cf-ink-2)]">{cartera.clientesRepiten}%</p>
-          <p className="text-[9px] text-[var(--cf-ink-3)]">2+ préstamos</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)]">2+ préstamos</p>
         </Card>
       </div>
     </div>

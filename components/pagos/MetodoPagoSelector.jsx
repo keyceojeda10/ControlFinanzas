@@ -159,7 +159,7 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
           </span>
         )}
         {metodoActivo === 'efectivo' && !controlado && (
-          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>Ultimo</span>
+          <span className="absolute top-2 right-2 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>Ultimo</span>
         )}
         <div
           className="w-11 h-11 rounded-[12px] flex items-center justify-center"
@@ -195,7 +195,7 @@ export default function MetodoPagoSelector({ metodosPago = [], onSelect, disable
           </span>
         )}
         {metodoActivo === 'transferencia' && !controlado && (
-          <span className="absolute top-2 right-2 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>Ultimo</span>
+          <span className="absolute top-2 right-2 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 15%, transparent)', color: 'var(--cf-ink-2)' }}>Ultimo</span>
         )}
         <div
           className="w-11 h-11 rounded-[12px] flex items-center justify-center"

@@ -407,7 +407,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>
               Resumen del prestamo
             </p>
-            <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
+            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
           </div>
           <div className="px-3.5 py-2 space-y-0" style={{ background: 'var(--cf-surface)' }}>
             {/* Editable: Monto */}

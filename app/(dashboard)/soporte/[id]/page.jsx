@@ -220,7 +220,7 @@ export default function TicketDetallePage() {
                   <div key={m.id} className="flex justify-center">
                     <div className="max-w-[90%] rounded-[12px] px-4 py-3 bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.2)]">
                       <p className="text-xs text-[var(--cf-ink-2)] leading-relaxed whitespace-pre-wrap font-medium">{m.contenido}</p>
-                      <p className="text-[9px] text-[var(--cf-ink-3)] mt-1 text-right">
+                      <p className="text-[11px] text-[var(--cf-ink-3)] mt-1 text-right">
                         {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -252,7 +252,7 @@ export default function TicketDetallePage() {
                       </a>
                     )}
                     {m.contenido && <p className="text-xs text-[var(--cf-ink)] leading-relaxed whitespace-pre-wrap">{m.contenido}</p>}
-                    <p className="text-[9px] text-[var(--cf-ink-3)] mt-1 text-right">
+                    <p className="text-[11px] text-[var(--cf-ink-3)] mt-1 text-right">
                       {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>

@@ -112,7 +112,7 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
       {/* Row 2: estado + monto */}
       <div className="flex items-center justify-between gap-1">
         <span
-          className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
+          className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
           style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
         >
           <span className="w-1 h-1 rounded-full" style={{ background: color }} />
@@ -129,7 +129,7 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
       {(cliente.creadoPor || esNuevo) && (
         <div className="flex items-center justify-between gap-1 mt-1.5">
           {cliente.creadoPor ? (
-            <span className="text-[8px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
+            <span className="text-[11px] font-medium px-1.5 py-px rounded-full truncate" style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
               {cliente.creadoPor.nombre || 'Cobrador'}
             </span>
           ) : <span />}

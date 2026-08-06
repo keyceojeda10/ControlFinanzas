@@ -215,7 +215,7 @@ export default function AbonoPorDias({
 function Pastilla({ children }) {
   return (
     <span style={{
-      flex: 'none', fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 999,
+      flex: 'none', fontSize: 11, fontWeight: 700, padding: '1px 5px', borderRadius: 999,
       background: 'color-mix(in srgb, var(--cf-red-dark) 12%, transparent)',
       color: 'var(--cf-red-dark)',
     }}>{children}</span>

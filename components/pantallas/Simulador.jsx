@@ -182,7 +182,7 @@ export default function Simulador({
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>{modo}</span>
             {recomendado && (
-              <Pastilla tono="aldia" style={{ height: 20, fontSize: 9.5, flex: 'none' }}>recomendado</Pastilla>
+              <Pastilla tono="aldia" style={{ height: 20, fontSize: 11, flex: 'none' }}>recomendado</Pastilla>
             )}
             <button type="button" onClick={onCambiarModo} style={{
               background: 'none', border: 0, cursor: 'pointer', flex: 'none',

@@ -312,7 +312,7 @@ export default function BarraLateral({
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
                 background: 'var(--cf-red)', border: '2px solid var(--cf-card)',
-                fontSize: 9, fontWeight: 700, color: '#FFF',
+                fontSize: 11, fontWeight: 700, color: '#FFF',
               }}>{cuantosAvisos}</span>
             )}
           </button>

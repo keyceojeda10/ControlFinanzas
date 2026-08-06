@@ -415,7 +415,7 @@ export default function ModificarPlazo({
                   <span className="text-xs font-bold text-[var(--cf-gold)] font-mono-display">
                     {formatMoney(preview.nuevaCuota)}
                     {preview.cuotaDelta !== 0 && (
-                      <span className={`ml-1 text-[9px] ${preview.cuotaDelta < 0 ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
+                      <span className={`ml-1 text-[11px] ${preview.cuotaDelta < 0 ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                         ({preview.cuotaDelta > 0 ? '+' : ''}{formatMoney(Math.abs(preview.cuotaDelta))})
                       </span>
                     )}

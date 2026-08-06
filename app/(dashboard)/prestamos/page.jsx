@@ -138,7 +138,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
       <div className="flex items-center justify-between gap-1 mb-1.5">
         <div className="flex items-center gap-1 min-w-0">
           <span
-            className="inline-flex items-center gap-0.5 text-[8px] font-semibold px-1.5 py-px rounded-full shrink-0"
+            className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
             style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
           >
             <span className="w-1 h-1 rounded-full" style={{ background: color }} />
@@ -146,7 +146,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           </span>
           {p.modoInteres && MODO_TAG[p.modoInteres] && (
             <span
-              className="text-[7px] font-semibold px-1.5 py-px rounded-full shrink-0"
+              className="text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
               style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
             >
               {MODO_TAG[p.modoInteres]}
@@ -172,7 +172,7 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
           />
         </div>
         <div className="flex items-center justify-between mt-0.5">
-          <p className="text-[9px] text-[var(--cf-ink-3)]">
+          <p className="text-[11px] text-[var(--cf-ink-3)]">
             <span className="font-mono-display font-semibold" style={{ color }}>{porcentaje}%</span> pagado
           </p>
           {esNuevo && <NuevoChip />}
@@ -923,7 +923,7 @@ export default function PrestamosPage() {
                         {cliente.nombre}
                       </span>
                       <span
-                        className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap font-mono-display"
+                        className="text-[11px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap font-mono-display"
                         style={{
                           background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
                           color: 'var(--cf-gold)',
@@ -933,7 +933,7 @@ export default function PrestamosPage() {
                       </span>
                       {tieneNuevo && (
                         <span
-                          className="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                          className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-full whitespace-nowrap"
                           style={{
                             background: 'color-mix(in srgb, var(--cf-green-dark) 14%, transparent)',
                             color: 'var(--cf-green-dark)',

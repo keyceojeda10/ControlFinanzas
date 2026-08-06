@@ -261,7 +261,7 @@ function PanelLinea({ linea }) {
         <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Todavía no hay.</p>
       ) : (
         <div className="space-y-1.5">
-          <div className="grid gap-2 text-[9.5px] font-extrabold uppercase tracking-[.06em]"
+          <div className="grid gap-2 text-[10px] font-extrabold uppercase tracking-[.06em]"
             style={{ gridTemplateColumns: '1fr 68px 78px', color: 'var(--cf-ink-3)' }}>
             <span>Qué pasó</span>
             <span style={{ textAlign: 'right' }}>A interés</span>
@@ -457,13 +457,13 @@ function LineaCreditoCard({ linea, seleccionada, onSeleccionar }) {
           style={{ borderTop: `1px solid ${P.track}` }}
         >
           <div>
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Disponible</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Disponible</p>
             <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
               {formatMoney(linea.cupoDisponible || 0)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Tasa mensual</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>Tasa mensual</p>
             <p className="text-[12px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>
               {linea.tasaInteres}%
             </p>

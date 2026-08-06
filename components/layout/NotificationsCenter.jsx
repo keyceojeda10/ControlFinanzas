@@ -380,7 +380,7 @@ export default function NotificationsCenter({ size = 'md' }) {
       >
         <BellIcon className={size === 'sm' ? 'w-3.5 h-3.5' : 'w-4.5 h-4.5'} />
         {total > 0 && (
-          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full text-[9px] font-bold flex items-center justify-center" style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}>
+          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-1 rounded-full text-[11px] font-bold flex items-center justify-center" style={{ background: 'var(--cf-gold)', color: 'var(--cf-ink)' }}>
             {total}
           </span>
         )}

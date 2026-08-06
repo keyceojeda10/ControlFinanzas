@@ -366,7 +366,7 @@ export default function NegocioPage() {
                             <span className="font-bold text-[11px]" style={{ color: venceColor }}>
                               {dr <= 0 ? 'Vencido' : `${dr}d`}
                             </span>
-                            <span className="text-[9px] text-[var(--color-text-muted)]">
+                            <span className="text-[11px] text-[var(--color-text-muted)]">
                               {new Date(u.fechaVencimiento).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                             </span>
                           </div>
@@ -395,7 +395,7 @@ export default function NegocioPage() {
                           <span className="font-bold text-sm" style={{ color: SCORE_COLOR(u.score) }}>
                             {u.score}
                           </span>
-                          <span className="text-[9px]" style={{ color: SCORE_COLOR(u.score) }}>
+                          <span className="text-[11px]" style={{ color: SCORE_COLOR(u.score) }}>
                             {SCORE_LABEL(u.score)}
                           </span>
                         </div>

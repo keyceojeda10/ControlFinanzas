@@ -321,7 +321,7 @@ export default function AdminTicketDetallePage() {
                   <div key={m.id} className="flex justify-center">
                     <div className="max-w-[90%] rounded-[12px] px-4 py-3 bg-[rgba(139,92,246,0.08)] border border-[rgba(139,92,246,0.2)]">
                       <p className="text-xs text-[var(--color-purple)] leading-relaxed whitespace-pre-wrap font-medium">{m.contenido}</p>
-                      <p className="text-[9px] text-[var(--color-text-muted)] mt-1 text-right">
+                      <p className="text-[11px] text-[var(--color-text-muted)] mt-1 text-right">
                         {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -353,7 +353,7 @@ export default function AdminTicketDetallePage() {
                       </a>
                     )}
                     {m.contenido && <p className="text-xs text-[var(--color-text-primary)] leading-relaxed whitespace-pre-wrap">{m.contenido}</p>}
-                    <p className="text-[9px] text-[var(--color-text-muted)] mt-1 text-right">
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1 text-right">
                       {new Date(m.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>

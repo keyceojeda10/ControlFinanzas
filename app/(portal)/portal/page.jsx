@@ -218,7 +218,7 @@ export default function PortalPage() {
                     {FREQ_LABEL[p.frecuencia] || p.frecuencia} · Cuota {fmt(p.cuota)}
                   </p>
                 </div>
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${est.bg} ${est.text}`}>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${est.bg} ${est.text}`}>
                   {est.label}
                 </span>
               </div>

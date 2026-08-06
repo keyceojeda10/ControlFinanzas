@@ -100,7 +100,7 @@ export default function WizardMetodoCarga({ onElegir, onSaltar }) {
                   </span>
                   {v.insignia && (
                     <span style={{
-                      fontSize: 9.5, fontWeight: 700, letterSpacing: '.07em',
+                      fontSize: 11, fontWeight: 700, letterSpacing: '.07em',
                       padding: '3px 7px', borderRadius: 999,
                       background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
                     }}>

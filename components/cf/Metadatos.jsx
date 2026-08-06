@@ -200,7 +200,7 @@ export function EtiquetaNuevo({ nuevo }) {
         background: 'var(--cf-green-dark)',
       }} />
       <span style={{
-        fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
         color: 'var(--cf-green-dark)', textTransform: 'uppercase',
       }}>Nuevo</span>
     </span>

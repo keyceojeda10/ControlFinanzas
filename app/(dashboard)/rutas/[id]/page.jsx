@@ -2160,7 +2160,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
               >
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.color || 'var(--cf-ink-2)' }} />
                 {g.nombre}
-                <span className="text-[9px] opacity-60">{g._count?.clientes ?? 0}</span>
+                <span className="text-[11px] opacity-60">{g._count?.clientes ?? 0}</span>
               </button>
             ))}
           </div>
@@ -2416,7 +2416,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                         <div className="flex items-center gap-1 mt-0.5">
                           {c.tieneClavo && (
                             <span
-                              className="shrink-0 text-[8px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
+                              className="shrink-0 text-[10px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
                               style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
                             >Clavo</span>
                           )}
@@ -2447,7 +2447,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                           {c.cuota > 0 && (
                             <div className="flex items-baseline gap-1">
                               <p className="text-[13px] font-bold text-[var(--cf-ink)] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
-                              <p className="text-[9px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
+                              <p className="text-[11px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
                             </div>
                           )}
                           {c.telefono && (
@@ -2569,7 +2569,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                           return (
                             <div key={p.id}>
                               {c.prestamosActivos.length > 1 && (
-                                <p className="text-[9px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-3)' }}>
+                                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-3)' }}>
                                   Prestamo {i + 1}
                                 </p>
                               )}
@@ -2582,14 +2582,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                               </div>
                               <div className="flex items-center justify-between mt-0.5">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
+                                  <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
                                   {pct >= 80 && pct < 100 && !tieneMora && (
-                                    <span className="text-[8px] font-bold uppercase px-1 py-px rounded" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
+                                    <span className="text-[10px] font-bold uppercase px-1 py-px rounded" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
                                       Renovar
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[9px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>de {formatMoney(p.totalAPagar)}</span>
+                                <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>de {formatMoney(p.totalAPagar)}</span>
                               </div>
                             </div>
                           )
@@ -2598,19 +2598,19 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                         {/* Grid: pagado / cuota / prox cobro */}
                         <div className="grid grid-cols-3 gap-px rounded-[8px] overflow-hidden" style={{ background: 'var(--cf-border)' }}>
                           <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagado</p>
+                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagado</p>
                             <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
                               {formatMoney(c.prestamosActivos.reduce((s, p) => s + (p.totalPagado ?? 0), 0))}
                             </p>
                           </div>
                           <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
+                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
                             <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
                               {formatMoney(c.cuota)}
                             </p>
                           </div>
                           <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Prox. cobro</p>
+                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Prox. cobro</p>
                             <p className="text-[11px] font-bold capitalize" style={{ color: tieneMora ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
                               {cobroLabelContextual || '—'}
                             </p>
@@ -2657,13 +2657,13 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                         {c.pagoHoy && (() => {
                           const geo = c.pagoHoyGeo
                           if (!geo) return (
-                            <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
+                            <div className="flex items-center gap-1 text-[11px]" style={{ color: '#555' }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                               sin geolocalización
                             </div>
                           )
                           if (geo.clienteSinCoords || geo.distanciaMetros == null) return (
-                            <div className="flex items-center gap-1 text-[9px]" style={{ color: '#555' }}>
+                            <div className="flex items-center gap-1 text-[11px]" style={{ color: '#555' }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                               cliente sin ubicación fijada
                             </div>
@@ -2671,7 +2671,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                           const d = geo.distanciaMetros
                           const geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
                           return (
-                            <div className="flex items-center gap-1 text-[9px] font-medium" style={{ color: geoColor }}>
+                            <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: geoColor }}>
                               <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                               a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`}
                             </div>
@@ -2969,7 +2969,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                               </p>
                               <div className="flex items-center gap-1.5">
                                 {c.tieneClavo && (
-                                  <span className="shrink-0 text-[8px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
+                                  <span className="shrink-0 text-[10px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
                                     style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
                                   >Clavo</span>
                                 )}

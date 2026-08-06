@@ -199,11 +199,11 @@ function CobradorDetalleInner({ params }) {
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
                   <div className="rounded-[12px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--cf-ink-3) 10%, transparent)' }}>
-                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Cobros</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Cobros</p>
                     <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{data.pagosMes ?? 0}</p>
                   </div>
                   <div className="rounded-[12px] px-2.5 py-1.5 text-right" style={{ background: 'color-mix(in srgb, var(--cf-ink-3) 10%, transparent)' }}>
-                    <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Clientes</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Clientes</p>
                     <p className="text-[14px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{clientes.length}</p>
                   </div>
                 </div>

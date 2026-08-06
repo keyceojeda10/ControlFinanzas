@@ -245,7 +245,7 @@ export default function OrganizacionesPage() {
                   {hace(o.ownerLastActivityAt)}
                 </span>
                 {o.ownerLastLoginAt && (
-                  <p className="text-[9px] text-[var(--color-text-muted)] mt-0.5">
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
                     login: {hace(o.ownerLastLoginAt)}
                   </p>
                 )}
@@ -259,7 +259,7 @@ export default function OrganizacionesPage() {
                         : `${Math.abs(o.suscripcion.diasRestantes)}d vencida`}
                     </Badge>
                     {(o.suscripcion.montoCOP ?? 0) > 0 && (
-                      <p className="text-[9px] text-[var(--color-success)] mt-0.5">pagado</p>
+                      <p className="text-[11px] text-[var(--color-success)] mt-0.5">pagado</p>
                     )}
                   </div>
                 ) : (

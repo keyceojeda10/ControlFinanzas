@@ -171,19 +171,19 @@ function CuotaFila({
               · {fmtFecha(fila.fechaEsperada)}
             </span>
             {esProxima && (
-              <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
+              <span className="text-[11px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
                 style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', color: 'var(--cf-gold)' }}>
                 Siguiente
               </span>
             )}
             {esBalloon && !completado && (
-              <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
+              <span className="text-[11px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
                 style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
                 Capital + interes
               </span>
             )}
             {tieneExtra && (
-              <span className="text-[8px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
+              <span className="text-[11px] font-bold px-1.5 py-px rounded-full whitespace-nowrap"
                 style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
                 + Capital extra
               </span>
@@ -229,15 +229,15 @@ function CuotaFila({
         style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}
       >
         <div>
-          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Capital</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Capital</p>
           <p className="text-[11px] font-mono-display" style={{ color: tieneExtra ? 'var(--cf-ink-2)' : 'var(--cf-ink)' }}>{formatMoney(fila.capital)}</p>
         </div>
         <div className="text-center">
-          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Interés</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés</p>
           <p className="text-[11px] font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(fila.interes)}</p>
         </div>
         <div className="text-right">
-          <p className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
+          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
           <p className="text-[12px] font-bold font-mono-display" style={{ color: completado ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>
             {formatMoney(fila.cuotaTotal)}
           </p>

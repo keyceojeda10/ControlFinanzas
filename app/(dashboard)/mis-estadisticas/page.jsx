@@ -140,7 +140,7 @@ export default function MisEstadisticasPage() {
                     title={formatMoney(d.total)}
                   />
                 </div>
-                <p className="text-[9px] text-center leading-tight" style={{ color: isHoy ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
+                <p className="text-[11px] text-center leading-tight" style={{ color: isHoy ? 'var(--cf-gold)' : 'var(--cf-ink-3)' }}>
                   {fmtFechaCorta(d.fecha)}
                 </p>
               </div>

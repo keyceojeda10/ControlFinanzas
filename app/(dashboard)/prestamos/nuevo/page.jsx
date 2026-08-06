@@ -849,7 +849,7 @@ function NuevoPrestamo() {
                   ganancia y las ocho filas mientras se decide». */}
               {Array.isArray(calculo.tablaAmortizacion) && calculo.tablaAmortizacion.length > 0 && (
                 <>
-                  <div className="grid gap-2 text-[9.5px] font-extrabold uppercase tracking-[.06em] mt-4 mb-1"
+                  <div className="grid gap-2 text-[10px] font-extrabold uppercase tracking-[.06em] mt-4 mb-1"
                     style={{ gridTemplateColumns: '22px 1fr 1fr', color: 'var(--cf-ink-3)' }}>
                     <span>#</span>
                     <span style={{ textAlign: 'right' }}>Interés</span>
@@ -1580,7 +1580,7 @@ function NuevoPrestamo() {
                     style={{ border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
                     <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card)), var(--cf-card))' }}>
                       <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>Resumen del préstamo</p>
-                      <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
+                      <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
                     </div>
                     <div className="px-4 py-2" style={{ background: 'var(--cf-card)' }}>
                       {/* Cuota + Total — calculados, no editables */}
@@ -1746,7 +1746,7 @@ function NuevoPrestamo() {
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
               title="Resumen del préstamo"
               color="var(--cf-green-dark)"
-              accent={<span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un campo para editar</span>}
+              accent={<span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un campo para editar</span>}
             >
               <div className="space-y-0 text-sm">
                 {/* Cliente — no editable */}
@@ -1869,7 +1869,7 @@ function NuevoPrestamo() {
               icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>}
               title="¿De qué cuenta sale?"
               color="var(--cf-ink-2)"
-              accent={<span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>Para el desglose por cuenta</span>}
+              accent={<span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Para el desglose por cuenta</span>}
             >
               <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)' }}>
                 De dónde entregas este dinero. Por defecto efectivo.

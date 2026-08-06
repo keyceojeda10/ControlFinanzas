@@ -52,7 +52,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           Resumen del préstamo
         </p>
         {labelModo && (
-          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
             style={{ background: 'color-mix(in srgb, var(--cf-gold) 14%, transparent)', color: 'var(--cf-gold)' }}>
             {labelModo}
           </span>

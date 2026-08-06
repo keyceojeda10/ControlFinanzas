@@ -1286,12 +1286,12 @@ export default function RegistrarPago({
                         {labelP} {f.numeroPeriodo}
                       </span>
                       {esBalloon && (
-                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
+                        <span className="text-[11px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
                           Globo
                         </span>
                       )}
                       {vencida && (
-                        <span className="text-[8px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
+                        <span className="text-[11px] font-bold px-1 py-px rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--cf-red-dark)' }}>
                           Vencida
                         </span>
                       )}

@@ -314,7 +314,7 @@ export function CuentaSocio({
               <span key={c.etiqueta} style={{ display: 'contents' }}>
                 {i > 0 && <span style={{ width: 1, background: 'rgba(255,255,255,.09)', flex: 'none' }} />}
                 <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8A8E98', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#8A8E98', whiteSpace: 'nowrap' }}>
                     {c.etiqueta}
                   </span>
                   <span className="cf-fig" style={{ fontSize: 14.5, color: c.color ?? '#F3F3F6' }}>{c.valor}</span>

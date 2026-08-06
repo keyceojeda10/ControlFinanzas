@@ -112,7 +112,7 @@ function CifraRuta({ rotulo, valor, tono, sinLinea }) {
       borderRight: sinLinea ? 'none' : '1px solid var(--cf-hairline)',
     }}>
       <span style={{
-        fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em',
+        fontSize: 10, fontWeight: 700, letterSpacing: '.08em',
         textTransform: 'uppercase', color: 'var(--cf-ink-3)',
       }}>{rotulo}</span>
       <span className="cf-fig" style={{

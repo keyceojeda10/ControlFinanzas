@@ -65,7 +65,7 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
         background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)',
       }}>
         <span style={{
-          display: 'inline-block', fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em',
+          display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
           padding: '3px 8px', borderRadius: 999,
           background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
         }}>
@@ -120,7 +120,7 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>{t.texto}</span>
                   {puerta && (
-                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em',
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
                       padding: '2px 7px', borderRadius: 999,
                       background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
                       AQUÍ YA NO COBRAS SOLO

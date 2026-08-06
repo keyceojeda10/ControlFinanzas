@@ -187,13 +187,13 @@ export default function SuscripcionesPage() {
                 </Link>
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                   {s.esTrial ? (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
                       style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-info)' }}
                     >
                       TRIAL
                     </span>
                   ) : (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-[4px]"
+                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
                       style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }}
                     >
                       PAGADO · <span className="font-mono-display">{formatMoney(s.montoCOP)}</span>
@@ -209,7 +209,7 @@ export default function SuscripcionesPage() {
               </div>
               <div className="text-center">
                 <p className="text-[11px] text-[var(--color-text-primary)] font-medium">{s.clientes}</p>
-                <p className="text-[9px] text-[var(--color-text-muted)]">{s.prestamos} préstamo{s.prestamos !== 1 ? 's' : ''}</p>
+                <p className="text-[11px] text-[var(--color-text-muted)]">{s.prestamos} préstamo{s.prestamos !== 1 ? 's' : ''}</p>
               </div>
               <div className="text-center">
                 <p className="text-xs text-[var(--color-text-muted)]">

@@ -213,10 +213,10 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.label}</span>
               {esPreferido && (
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>Tu modo habitual</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>Tu modo habitual</span>
               )}
               {m.tag && !esPreferido && (
-                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{m.tag}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: m.key === 'fijo' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.06)', color: m.key === 'fijo' ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }}>{m.tag}</span>
               )}
             </div>
             {m.base && <p className="text-[11px] font-semibold mb-0.5" style={{ color: BASES[m.base].color }}>{BASES[m.base].texto}</p>}

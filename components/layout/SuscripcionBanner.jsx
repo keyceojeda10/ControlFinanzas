@@ -185,7 +185,7 @@ export default function SuscripcionBanner() {
                         {item.valor}
                       </span>
                     </div>
-                    <p className="text-[9px] mt-1 uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                    <p className="text-[10px] mt-1 uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                       {item.label}
                     </p>
                   </div>

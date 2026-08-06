@@ -479,7 +479,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               ].map((c) => (
                 <div key={c.rotulo} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <span style={{
-                    fontSize: 9.5, fontWeight: 700, letterSpacing: '.06em',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
                     textTransform: 'uppercase', color: '#8A8E98',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{c.rotulo}</span>

@@ -160,17 +160,17 @@ export default function CobradorCard({ cobrador, onToggleActivo, toggling, suspe
           style={{ borderTop: '1px solid var(--cf-border)' }}
         >
           <div>
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Ruta</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Ruta</p>
             <p className="text-[11px] font-semibold mt-0.5 truncate" style={{ color: cobrador.ruta ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)' }}>
               {cobrador.ruta?.nombre ?? 'Sin ruta'}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Clientes</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Clientes</p>
             <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-ink)' }}>{cobrador.cantidadClientes ?? 0}</p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagos hoy</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagos hoy</p>
             <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>{cobrador.cantidadPagosHoy ?? 0}</p>
           </div>
         </div>

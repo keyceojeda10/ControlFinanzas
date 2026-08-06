@@ -93,7 +93,7 @@ export default function ClavosPage() {
           </svg>
           Filtros avanzados
           {numFiltrosActivos > 0 && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold" style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[11px] font-bold" style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
               {numFiltrosActivos}
             </span>
           )}
@@ -229,7 +229,7 @@ export default function ClavosPage() {
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-medium text-[var(--cf-ink)] truncate">{it.cliente}</p>
                 {it.clavoPerdida && (
-                  <span className="shrink-0 text-[8px] font-semibold px-1.5 py-px rounded-full bg-[color-mix(in_srgb,var(--cf-red-dark)_15%,transparent)] text-[var(--cf-red-dark)] border border-[color-mix(in_srgb,var(--cf-red-dark)_25%,transparent)]">
+                  <span className="shrink-0 text-[11px] font-semibold px-1.5 py-px rounded-full bg-[color-mix(in_srgb,var(--cf-red-dark)_15%,transparent)] text-[var(--cf-red-dark)] border border-[color-mix(in_srgb,var(--cf-red-dark)_25%,transparent)]">
                     Pérdida
                   </span>
                 )}

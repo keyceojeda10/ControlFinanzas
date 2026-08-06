@@ -171,7 +171,7 @@ function OpcionModo({ nombre, nota, insignia, activo, onElegir }) {
             fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{nombre}</span>
-          {insignia && <Pastilla tono="aldia" style={{ height: 19, fontSize: 9, flex: 'none' }}>{insignia}</Pastilla>}
+          {insignia && <Pastilla tono="aldia" style={{ height: 19, fontSize: 11, flex: 'none' }}>{insignia}</Pastilla>}
         </span>
         {/* La nota dice qué le pasa AL CLIENTE, no la fórmula. */}
         <span style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 3 }}>

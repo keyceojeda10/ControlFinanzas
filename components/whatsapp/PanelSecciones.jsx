@@ -99,7 +99,7 @@ export default function PanelSecciones({ secciones, activas, onChange, guardado,
       <div style={{ borderTop: '1px solid var(--cf-border)' }}>
         {Array.isArray(extras) && extras.length > 0 && (
           <div className="px-3 pt-2 pb-1 space-y-1.5">
-            <p className="text-[9px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>
+            <p className="text-[10px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>
               Campos adicionales
             </p>
             {extras.map((e, idx) => (

@@ -314,7 +314,7 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
                 { label: 'Pagos', value: `${data.resumen.pagosCount}`, color: 'var(--cf-ink)' },
               ].map(s => (
                 <div key={s.label} className="rounded-[10px] px-2.5 py-2" style={{ background: 'var(--cf-fill)' }}>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">{s.label}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">{s.label}</p>
                   <p className="text-sm font-bold font-mono-display" style={{ color: s.color }}>{s.value}</p>
                 </div>
               ))}

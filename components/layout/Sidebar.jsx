@@ -615,7 +615,7 @@ export default function Sidebar() {
         {/* Status line */}
         <div className="flex items-center gap-1.5 px-1 pt-0.5">
           <SyncStatusBadgeTrigger />
-          <span className="text-[9px]" style={{ color: 'var(--cf-ink-3)' }}>·</span>
+          <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>·</span>
           <CacheAge />
         </div>
       </div>

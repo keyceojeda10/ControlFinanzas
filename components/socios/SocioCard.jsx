@@ -88,7 +88,7 @@ export default function SocioCard({ socio }) {
           <div className="relative">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
                   Balance neto
                 </p>
                 <p className="font-mono-display font-bold leading-none mt-1" style={{ color: P.ink, fontSize: 'clamp(22px, 6vw, 26px)' }}>
@@ -96,7 +96,7 @@ export default function SocioCard({ socio }) {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: P.sub }}>
                   Intereses
                 </p>
                 <p className="text-[15px] font-mono-display font-bold mt-1" style={{ color: P.accent }}>
@@ -110,7 +110,7 @@ export default function SocioCard({ socio }) {
               style={{ borderTop: `1px solid color-mix(in srgb, ${P.accent} 20%, transparent)` }}
             >
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: P.sub }}>
                   En calle
                 </p>
                 <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: P.ink }}>

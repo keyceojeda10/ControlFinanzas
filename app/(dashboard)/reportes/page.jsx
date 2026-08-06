@@ -586,7 +586,7 @@ export default function ReportesPage() {
                     </div>
                     <p className="text-[11px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
                     <p className="text-[12px] font-bold font-mono-display mt-0.5" style={{ color: medalColor }}>{formatMoney(c.totalRecogido || 0)}</p>
-                    <p className="text-[9px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{c.eficiencia}% eficiencia</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{c.eficiencia}% eficiencia</p>
                   </div>
                 )
               })}

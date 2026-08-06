@@ -222,15 +222,15 @@ export default function CuadreDia({ fecha }) {
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2.5 lg:mt-0 lg:flex lg:gap-0 lg:flex-none">
                 <div className="lg:w-[140px] lg:text-right">
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Sistema</p>
                   <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{formatMoney(f.recaudadoSistema)}</p>
                 </div>
                 <div className="lg:w-[140px] lg:text-right">
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Recibido</p>
                   <p className="text-[13px] font-bold font-mono-display text-[var(--cf-ink)]">{f.efectivoRecibido != null ? formatMoney(f.efectivoRecibido) : '—'}</p>
                 </div>
                 <div className="lg:w-[140px] lg:text-right">
-                  <p className="text-[9px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Diferencia</p>
                   <p className="text-[13px] font-bold font-mono-display" style={{ color: f.diferencia == null ? 'var(--cf-ink-3)' : f.diferencia === 0 ? 'var(--cf-green-dark)' : f.diferencia < 0 ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }}>
                     {f.diferencia == null ? '—' : `${f.diferencia > 0 ? '+' : ''}${formatMoney(f.diferencia)}`}
                   </p>

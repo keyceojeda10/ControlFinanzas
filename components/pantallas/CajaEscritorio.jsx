@@ -85,7 +85,7 @@ function Linea({ etiqueta, valor, tono, onExplicar }) {
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 15, height: 15, borderRadius: 999, flex: 'none',
             border: '1px solid var(--cf-border-strong)',
-            fontSize: 9.5, fontWeight: 700, color: 'var(--cf-ink-3)',
+            fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)',
           }}>?</span>
         )}
       </span>

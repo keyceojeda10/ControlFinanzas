@@ -266,7 +266,7 @@ export default function BotLeadDetalle() {
                     </span>
                   )}
                   <p className="whitespace-pre-wrap break-words">{msg.texto}</p>
-                  <p className="text-[9px] text-[var(--color-text-muted)] mt-1 text-right">
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1 text-right">
                     {formatFecha(msg.createdAt)}
                   </p>
                 </div>

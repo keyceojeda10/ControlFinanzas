@@ -101,7 +101,7 @@ export default function WizardFeatures({ onNext }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{c.titulo}</p>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wide"
                     style={{ background: c.bg, color: c.color }}>{c.tag}</span>
                 </div>
                 <p className="text-[11px] leading-relaxed mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>{c.detalle}</p>
