@@ -205,7 +205,7 @@ export async function GET(request, { params }) {
     ],
   }
 
-  const [cobros, gastos, desembolsos, cierre, recargos, primerMovPorRuta] = await Promise.all([
+  const [cobros, gastos, desembolsos, cierre, cuadreAnterior, recargos, primerMovPorRuta] = await Promise.all([
     // Cobros del día: pagos reales (excluye ajustes) del cobrador o de sus rutas.
     prisma.pago.findMany({
       where: {
@@ -245,6 +245,30 @@ export async function GET(request, { params }) {
     prisma.cierreCaja.findFirst({
       where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
       select: { id: true },
+    }),
+    /* ── CON CUÁNTO SALIÓ ESTA MAÑANA: EL CUADRE DE ANOCHE ──
+       El último cierre CONFIRMADO anterior a hoy. `efectivoRecibido` es el
+       efectivo que el dueño contó y le dejó al cobrador para salir, y es la
+       cifra que él considera «la base». Ver el porqué donde se usa, abajo.
+
+       ⚠ SOLO LOS DOS DÍAS ANTERIORES. Sin este tope, al cobrador que no se
+       cuadra nunca se le rescataba un cierre de hace semanas y se pintaba como
+       si fuera la base de hoy: medido en producción, a CARLOS #10 —que no tiene
+       NI UN cierre confirmado en once días— le salían $11.583.000 donde antes
+       ponía $2.790.277. Un dato viejo presentado como el de esta mañana es peor
+       que el cálculo aproximado.
+
+       Dos días y no uno para que el negocio que cuadra en sábado y no trabaja el
+       domingo no pierda su base el lunes. */
+    prisma.cierreCaja.findFirst({
+      where: {
+        organizationId, cobradorId,
+        fecha: { lt: inicio, gte: new Date(inicio.getTime() - 2 * 24 * 3600 * 1000) },
+        confirmadoEn: { not: null },
+        efectivoRecibido: { not: null },
+      },
+      orderBy: { fecha: 'desc' },
+      select: { fecha: true, efectivoRecibido: true },
     }),
     // Recargos del día: aplicados por el cobrador o en clientes de sus rutas
     // Las FILAS, no un `aggregate`: hacen falta con su ruta para poder
@@ -297,10 +321,46 @@ export async function GET(request, { params }) {
     }
     deltaPorRuta.set(m.rutaId, prev + delta)
   }
-  const saldoAperturaTotal = rutas.reduce((acc, r) => {
+  const saldoAperturaDerivado = rutas.reduce((acc, r) => {
     const delta = deltaPorRuta.get(r.id) || 0
     return acc + Math.round((r.saldoCapital || 0) - delta)
   }, 0)
+
+  /* ══ «CON LO QUE SALIÓ» ES EL EFECTIVO DEL CUADRE, NO EL CAPITAL DE LA RUTA ══
+   *
+   * Reportado con vídeo: «cuadré todos los saldos con la base con la que deben
+   * salir los muchachos en la mañana… hice un retiro en la ruta 6 y se me
+   * cambiaron TODAS las bases». Solo la ruta 1 quedó bien.
+   *
+   * El retiro NO fue la causa —de hecho ya no existe, lo borró—. Reconstruyendo
+   * el saldo de cada ruta día a día contra la base que él contó cada noche, las
+   * dos cifras llevaban separándose desde el 3 de agosto:
+   *
+   *     RUTA #2   1 ago: 694.000 vs 672.000   ← cuadraba
+   *               3 ago: 427.695 vs 294.000   ← empieza a separarse
+   *               5 ago: 504.874 vs 198.000
+   *
+   * Son DOS cifras distintas que la pantalla llamaba igual:
+   *
+   *   · lo que él cuadra cada noche  → el efectivo que recibe y vuelve a
+   *     entregar, en `CierreCaja.efectivoRecibido`
+   *   · lo que se pintaba aquí       → `Ruta.saldoCapital`, que el cuadre NO
+   *     toca (ver `caja/cuadre/route.js`: solo escribe la confirmación)
+   *
+   * Así que cada noche él cuadraba el efectivo y el capital de la ruta seguía
+   * por su lado. Medido en producción el 6 ago: las 9 cifras de sus capturas son
+   * EXACTAMENTE el `efectivoRecibido` de la noche anterior, al peso.
+   *
+   * Y la ruta 1 salía bien por casualidad aritmética: ese día tuvo un desembolso
+   * de 200.000 y `92.000 − (−200.000)` da justo sus 292.000.
+   *
+   * ⚠ El derivado se queda como RESPALDO, no se borra: hay negocios que no
+   * cuadran caja por la noche (de los 10 cierres del 4 ago, 6 tenían el saldo en
+   * cero) y para ellos el cálculo de antes sigue siendo lo único que hay.
+   */
+  const saldoAperturaTotal = cuadreAnterior?.efectivoRecibido != null
+    ? Math.round(cuadreAnterior.efectivoRecibido)
+    : saldoAperturaDerivado
 
   // Renovaciones del dia: cuanto se renovo en total, cuanto de eso fue saldo viejo
   // "absorbido" (la cartulina: el cliente ya lo debia, no entrego efectivo) y cuanto
@@ -374,11 +434,21 @@ export async function GET(request, { params }) {
       // Sin capital habilitado el saldo de la ruta no significa nada (la bolsa es
       // global). Se envia para que la UI no alerte por un cero que no es un saldo.
       capitalHabilitado: !!r.capitalHabilitado,
-      // ── EL INICIO DEL DIA, POR RUTA ──
-      // `deltaPorRuta` ya existia pero solo se usaba para sumar el total; aqui
-      // se guarda el de CADA ruta. Es el saldo de la sub-bolsa ANTES de los
-      // movimientos de hoy: sin el, la cuenta del dia de una ruta empieza en el
-      // aire y no se puede seguir con un lapiz.
+      /* ── EL INICIO DEL DIA, POR RUTA ──
+         `deltaPorRuta` ya existia pero solo se usaba para sumar el total; aqui
+         se guarda el de CADA ruta. Es el saldo de la sub-bolsa ANTES de los
+         movimientos de hoy: sin el, la cuenta del dia de una ruta empieza en el
+         aire y no se puede seguir con un lapiz.
+
+         ⚠ Esta cifra sigue siendo el CAPITAL de la ruta, y es lo correcto para
+         esta fila: la pregunta «cuánto capital tenía esta ruta al empezar» no es
+         la misma que «con cuánto efectivo salió el cobrador». La de arriba pasó
+         a leer del cuadre; ésta no, porque el cuadre es por COBRADOR y no sabe
+         repartir entre las rutas de quien lleva varias.
+
+         Que las dos puedan no sumar es real y está bien: son dos preguntas. Con
+         un solo cobrador y una sola ruta —el caso de quien reportó el fallo— la
+         diferencia entre ambas ES el descuadre acumulado, y verla es útil. */
       saldoApertura: Math.round((r.saldoCapital || 0) - (deltaPorRuta.get(r.id) || 0)),
       prestadoDia: 0,
       cobradoDia: 0,
