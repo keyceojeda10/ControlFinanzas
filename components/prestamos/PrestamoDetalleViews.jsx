@@ -626,7 +626,42 @@ export function GrillaDatosSecciones({ secciones }) {
 }
 
 // ─── 7. Línea de tiempo del préstamo ─────────────────────────────
-export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, color = 'var(--cf-gold)' }) {
+/* ══ E03 · CUATRO BLOQUES QUE DECÍAN TRES COSAS ════════════════════════════
+ *
+ * Debajo del historial había, uno detrás de otro:
+ *
+ *   1 · un banner ámbar con ✕: «Faltan solo 2 cuotas para completar»
+ *   2 · dos chips: «2 cuotas pagadas» · «Préstamo #2 con este cliente»
+ *   3 · una tarjeta «Cliente recurrente» que REPETÍA el chip palabra por palabra
+ *   4 · la línea de tiempo, con fondo crema que la hacía parecer otro aviso
+ *
+ * Medido en la ficha de un cliente real: «Préstamo #2 con este cliente» salía
+ * DOS veces seguidas, y arriba del todo la cabecera ya decía «1 préstamo
+ * completado · cliente recurrente». Tres sitios para el mismo dato.
+ *
+ * Son tres cosas: cómo va, si va adelantado, y si es cliente repetido.
+ *
+ * El banner desaparece: un aviso que se puede cerrar es un aviso que no
+ * importaba, y «faltan solo 2 cuotas» es lo que ya dice la barra, con otras
+ * palabras y encima de ella.
+ *
+ * La línea de tiempo se queda —muestra el punto de hoy entre inicio y
+ * vencimiento, y eso es bueno— pero pierde el fondo teñido y gana las cuotas
+ * en el centro: los días que faltan no dicen cuántos PAGOS faltan.
+ *
+ * Y «cliente recurrente» pasa a la frase que diría un prestamista de verdad:
+ * lo que importa de un cliente repetido no es que se repita, es CÓMO TERMINÓ
+ * las veces anteriores.
+ *
+ * Ya hay precedente en este mismo fichero: el chip de mora se quitó porque
+ * «62 días en mora» salía cinco veces en la misma pantalla.
+ */
+export function TimelinePrestamo({
+  fechaInicio, fechaFin, porcentajePagado, color = 'var(--cf-gold)',
+  // Nuevos: lo que absorbe de los otros tres bloques.
+  cuotasPagadas = null, cuotasTotales = null,
+  prestamoNumeroCliente = null, prestamosCompletadosCliente = 0,
+}) {
   // Calcular pcts de forma segura (sin useHooks dentro de condicionales)
   const inicio = fechaInicio ? new Date(fechaInicio) : null
   const fin = fechaFin ? new Date(fechaFin) : null
@@ -644,16 +679,22 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
   // Si el progreso de pago va por delante del tiempo → buena señal
   const adelantado = animPago > animTiempo + 5
   const atrasado = animPago < animTiempo - 5
+  const cuotasQueFaltan = (cuotasTotales > 0 && cuotasPagadas != null)
+    ? Math.max(0, cuotasTotales - cuotasPagadas)
+    : 0
 
   return (
-    <div className="rounded-[20px] p-4" style={{ background: `linear-gradient(135deg, color-mix(in srgb, ${color} 10%, var(--cf-card)) 0%, var(--cf-card) 100%)`, border: `1px solid color-mix(in srgb, ${color} 20%, var(--cf-border))` }}>
+    // Tarjeta normal: el fondo teñido la hacía parecer un aviso más, en una
+    // zona que ya tenía tres. (Comentario con `//`: un `{/* */}` justo después
+    // de `return (` es error de sintaxis — la trampa nº1 de este proyecto.)
+    <div className="rounded-[20px] p-4" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
-          Línea de tiempo
+          Cómo va
         </p>
         {diasRestantes > 0 && (
           <span className="text-[10px]" style={{ color: 'var(--cf-ink-2)' }}>
-            Faltan <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink)' }}>{diasRestantes}</span> día{diasRestantes === 1 ? '' : 's'}
+            faltan <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink)' }}>{diasRestantes}</span> día{diasRestantes === 1 ? '' : 's'}
           </span>
         )}
       </div>
@@ -695,37 +736,59 @@ export function TimelinePrestamo({ fechaInicio, fechaFin, porcentajePagado, colo
         </div>
       </div>
 
-      {/* Etiquetas de inicio/fin */}
-      <div className="flex items-center justify-between text-[10px] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
-        <div>
+      {/* Inicio · CUOTAS · vencimiento.
+          Las cuotas van EN EL CENTRO porque los días que faltan no dicen
+          cuántos pagos faltan, que es lo que se pregunta mirando esto. Era un
+          chip suelto arriba («2 cuotas pagadas») que aquí significa algo. */}
+      <div className="flex items-end justify-between text-[10px] mt-3 gap-2" style={{ color: 'var(--cf-ink-3)' }}>
+        <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wider">Inicio</p>
           <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaInicio)}</p>
         </div>
-        <div className="text-right">
+        {cuotasTotales > 0 && (
+          <p className="font-mono-display font-semibold shrink-0 pb-px" style={{ color: 'var(--cf-ink)' }}>
+            {cuotasPagadas ?? 0} de {cuotasTotales} cuotas
+          </p>
+        )}
+        <div className="text-right min-w-0">
           <p className="text-[10px] uppercase tracking-wider">Vencimiento</p>
           <p className="font-medium" style={{ color: 'var(--cf-ink-2)' }}>{fmtFechaCorta(fechaFin)}</p>
         </div>
       </div>
 
-      {/* Mensaje de estado de progreso */}
-      {adelantado && (
-        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)', color: 'var(--cf-green-dark)' }}>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
-          </svg>
-          <span>Va adelantado en pagos</span>
-        </div>
+      {/* ── LAS DOS FRASES ────────────────────────────────────────────────
+          Eran pastillas de colores. En frase se leen de corrido y caben las
+          cuotas que faltan, que es lo que sigue a «va adelantado». */}
+      {(adelantado || atrasado || cuotasQueFaltan > 0) && (
+        <p className="text-[11px] mt-3 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+          {adelantado && <span className="font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Va adelantado. </span>}
+          {atrasado && <span className="font-semibold" style={{ color: 'var(--cf-gold-dark)' }}>Va atrasado. </span>}
+          {cuotasQueFaltan > 0 && (
+            <>Le falta{cuotasQueFaltan === 1 ? '' : 'n'} {cuotasQueFaltan} cuota{cuotasQueFaltan === 1 ? '' : 's'}
+              {porcentajePagado >= 80 ? ' y ya casi termina.' : '.'}</>
+          )}
+        </p>
       )}
-      {atrasado && (
-        <div className="mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 12%, transparent)', color: 'var(--cf-gold-dark)' }}>
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Atrasado vs el tiempo del préstamo</span>
-        </div>
+
+      {/* Cliente repetido: lo que importa no es que se repita, es cómo terminó
+          las veces anteriores. Absorbe el chip y la tarjeta que lo repetía. */}
+      {prestamoNumeroCliente > 1 && (
+        <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+          Es su {ORDINAL[prestamoNumeroCliente] ?? `${prestamoNumeroCliente}º`} préstamo contigo
+          {prestamosCompletadosCliente > 0 && (
+            <> · pagó {prestamosCompletadosCliente === 1 ? 'el anterior' : `los ${prestamosCompletadosCliente} anteriores`}</>
+          )}
+        </p>
       )}
     </div>
   )
+}
+
+/* «Es su tercer préstamo» se lee mejor que «Es su 3º préstamo», que es lo que
+   pide la lámina. Más allá de diez, el número a secas. */
+const ORDINAL = {
+  2: 'segundo', 3: 'tercer', 4: 'cuarto', 5: 'quinto',
+  6: 'sexto', 7: 'séptimo', 8: 'octavo', 9: 'noveno', 10: 'décimo',
 }
 
 // ─── 8. Mini card de un pago en el historial ─────────────────────

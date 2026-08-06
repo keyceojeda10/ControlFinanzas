@@ -34,19 +34,17 @@ import {
   PrestamoHeroCard,
   HeaderClienteContexto,
   BotonPagoPersonalidad,
-  StatsContextuales,
-  generarStatsContextuales,
   ChipsAccionesSecundarias,
   GrillaDatosSecciones,
   TimelinePrestamo,
   PagoMiniCard,
-  ComparativoPrestamosCliente,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
+// Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
+// `calcularPrestamo`, no una división que se parezca.
+import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
 import { formatMoney } from '@/lib/i18n'
-import AiTipBanner from '@/components/ui/AiTipBanner'
-import { generarTipPrestamo } from '@/lib/tips/prestamoTips'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
@@ -780,18 +778,6 @@ export default function PrestamoDetallePage({ params }) {
   }
 
   // Stats contextuales
-  const statsContexto = generarStatsContextuales({
-    prestamo,
-    totalPagado: totalPagadoReal,
-    cuotasPagadas,
-    fechaInicio,
-    fechaFin,
-    diasMora,
-    porcentajePagado,
-    prestamoNumeroCliente: statsCliente?.numeroEsteDe,
-    totalPrestamosCliente: statsCliente?.totalPrestamos,
-  })
-
   // Iconos SVG para narrativa (sin emojis)
   const ICON_TROFEO = <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" /></svg>
   const ICON_CHECK = <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -1262,7 +1248,17 @@ export default function PrestamoDetallePage({ params }) {
       <HeaderClienteContexto
         cliente={cliente}
         prestamo={prestamo}
-        statsCliente={statsCliente && statsCliente.totalPrestamos > 1
+        /* ⚠ E03 · «cliente recurrente» SOLO UNA VEZ POR PANTALLA.
+           Salía en la cabecera, en un chip y en una tarjeta: tres veces. Ahora,
+           para el DUEÑO, vive una sola vez en «Cómo va» y dicho como lo diría un
+           prestamista: «es su segundo préstamo contigo · pagó el anterior» —lo
+           que importa de un cliente repetido no es que se repita, es cómo
+           terminó las veces anteriores.
+
+           Al COBRADOR se le sigue diciendo aquí: «Cómo va» es solo del dueño
+           (`esOwner` en su condición), así que quitarlo de la cabecera le
+           borraría el dato en vez de moverlo. */
+        statsCliente={!esOwner && statsCliente && statsCliente.totalPrestamos > 1
           ? `${statsCliente.completados} préstamo${statsCliente.completados === 1 ? '' : 's'} completado${statsCliente.completados === 1 ? '' : 's'} · cliente recurrente`
           : null}
         onWhatsApp={cliente?.telefono ? () => setModalWA(true) : null}
@@ -1515,28 +1511,43 @@ export default function PrestamoDetallePage({ params }) {
         </Card>
       )}
 
-      {/* Tip IA contextual */}
-      <AiTipBanner tip={generarTipPrestamo(prestamo, pagos)} pageKey={`prestamo-${prestamo.id}`} />
+      {/* ══ E03 · CUATRO BLOQUES → UNO ═══════════════════════════════════
+          Aquí había, seguidos: el banner de la IA con su ✕, los chips, la
+          tarjeta «Cliente recurrente» que repetía el chip palabra por palabra,
+          y la línea de tiempo. Cuatro cajas para tres datos.
 
-      {/* ── 4. STATS INTELIGENTES CONTEXTUALES (chips) — solo owner ── */}
-      {esOwner && statsContexto.length > 0 && <StatsContextuales stats={statsContexto} />}
+          Se van los tres primeros y su contenido entra en «Cómo va»:
+          · el banner  → un aviso que se puede cerrar es un aviso que no
+            importaba, y decía lo mismo que la barra de progreso
+          · los chips  → «N cuotas pagadas» ahora va EN la línea de tiempo,
+            donde significa algo
+          · la tarjeta → «cliente recurrente» pasa a la frase que diría un
+            prestamista: cómo terminó las veces anteriores
 
-      {/* ── 9. COMPARATIVO PRÉSTAMOS DEL CLIENTE — solo owner ──────── */}
-      {esOwner && (
-        <ComparativoPrestamosCliente
-          totalPrestamosCliente={statsCliente?.totalPrestamos}
-          prestamoNumeroCliente={statsCliente?.numeroEsteDe}
-          prestamosCompletadosCliente={statsCliente?.completados}
-        />
-      )}
+          `StatsContextuales`, `AiTipBanner` y `ComparativoPrestamosCliente`
+          siguen existiendo y se usan en otras pantallas: aquí solo dejan de
+          montarse. */}
 
-      {/* ── 7. LÍNEA DE TIEMPO DEL PRÉSTAMO — solo owner ─────────── */}
+      {/* ── CÓMO VA — solo owner ────────────────────────────────────── */}
       {esOwner && estaActivo && fechaInicio && fechaFin && (
         <TimelinePrestamo
           fechaInicio={fechaInicio}
           fechaFin={fechaFin}
           porcentajePagado={porcentajePagado}
           color={moodColorFromPrestamo(prestamo)}
+          cuotasPagadas={cuotasPagadas}
+          /* Con tabla, el total son sus filas. Sin tabla, el PLAZO partido por
+             los días del periodo — la misma fórmula que usa `calcularPrestamo`
+             (`lib/calculos.js:652`).
+
+             ⚠ NO vale `totalAPagar / cuotaDiaria`: lo probé y en este préstamo
+             daba «2 de 5 cuotas» cuando son 3, porque la última cuota no es
+             igual que las demás. La cifra se veía plausible y estaba mal. */
+          cuotasTotales={cuotasAmortizacion.length > 0
+            ? cuotasAmortizacion.length
+            : (diasPlazo > 0 ? Math.ceil(diasPlazo / obtenerDiasPorPeriodo(frecuencia)) : null)}
+          prestamoNumeroCliente={statsCliente?.numeroEsteDe}
+          prestamosCompletadosCliente={statsCliente?.completados}
         />
       )}
 
