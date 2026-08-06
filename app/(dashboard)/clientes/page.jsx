@@ -970,7 +970,8 @@ export default function ClientesPage() {
           const atraso = dameCifra(a, 'Atraso')
           const cumple = dameCifra(a, 'Cumple')
           const pagado = dameCifra(a, 'Pagado')
-          const prox   = dameCifra(a, 'Próx. cobro')
+          // La clave es la etiqueta que pone el adaptador; van a la par.
+          const prox   = dameCifra(a, 'Cobra el')
           const color = (cif) => cif?.tono === 'contra' ? 'var(--cf-red-dark)'
             : cif?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
           return (
@@ -1056,7 +1057,7 @@ export default function ClientesPage() {
                 {/* A la derecha SOLO las cifras (de «Deuda» en adelante). «Ruta»
                     y «Creó» son texto: alineados a la derecha se leerían como si
                     fueran números. */}
-                {['Cliente', 'Ruta', 'Creó', 'Deuda', 'Atraso', 'Cumple', 'Pagado', 'Próx. cobro'].map((h, i) => (
+                {['Cliente', 'Ruta', 'Creó', 'Deuda', 'Atraso', 'Cumple', 'Pagado', 'Cobra el'].map((h, i) => (
                   <span key={h} className={`text-[10px] font-bold uppercase tracking-[.09em] ${i >= 3 ? 'text-right' : ''}`}
                     style={{ color: 'var(--cf-ink-3)' }}>{h}</span>
                 ))}
