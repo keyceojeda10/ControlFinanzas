@@ -9,6 +9,7 @@ import BarraLateral   from '@/components/armazon/BarraLateral'
 import { iniciales }  from '@/lib/armazon'
 import Armazon, { VolverEscritorio } from '@/components/armazon/Armazon'
 import PageWrapper    from '@/components/layout/PageWrapper'
+import PaisActivo     from '@/components/layout/PaisActivo'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
 import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
@@ -66,6 +67,9 @@ export default async function DashboardLayout({ children }) {
   const avatarId = session?.user?.avatarId ?? null
   return (
     <Armazon nombre={nombre} rol={session?.user?.rol ?? ''} avatarId={avatarId}>
+    {/* El país de la organización, para las 465 llamadas a `formatMoney` que no
+        lo pasan. Ver el porqué en el propio componente. */}
+    <PaisActivo country={session?.user?.country ?? 'co'} />
     <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
           cobrando en la calle. La regla de supresion es exclusiva de movil.

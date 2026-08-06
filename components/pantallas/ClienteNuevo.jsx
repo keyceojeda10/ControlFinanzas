@@ -25,6 +25,12 @@ import { useState } from 'react'
 
 export function ClienteNuevo({
   nombre = '', cedula = '', telefono = '', direccion = '',
+  /* El documento NO se llama igual en todos lados: es DNI en Argentina, RUT en
+     Chile, Carnet en Bolivia. `lib/countries.js` lo tiene definido para los
+     dieciocho países desde siempre; lo que faltaba era que alguien lo usara.
+     Viene por prop y no de `useCountry` porque este componente es puro: recibe
+     todo lo que pinta. El valor por defecto mantiene lo de antes. */
+  rotuloDocumento = 'Cédula',
   rutas = [], ruta, onRuta,
   onCampo, onGuardarYPrestar, onGuardarYOtro, onDesdeFoto, onVolver,
   guardando = false,
@@ -92,7 +98,7 @@ export function ClienteNuevo({
           {/* La cédula más ancha que la ruta: los números son largos y no se
               pueden abreviar; el nombre de una ruta sí. */}
           <div style={{ flex: 1.3, minWidth: 0 }}>
-            <Campo rotulo="Cédula" valor={cedula} numerica
+            <Campo rotulo={rotuloDocumento} valor={cedula} numerica
               onCambiar={(v) => onCampo?.('cedula', v)}
               placeholder="opcional" />
           </div>
