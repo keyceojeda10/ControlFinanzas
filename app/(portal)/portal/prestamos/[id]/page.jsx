@@ -15,6 +15,7 @@
 // siempre. Total = saldo + pagado, que es lo mismo y no depende del permiso.
 
 import { useState, useEffect, useCallback } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useRouter, useParams } from 'next/navigation'
 import { formatMoney } from '@/lib/i18n'
 import { PortalPrestamo } from '@/components/pantallas/PortalCliente'
@@ -98,7 +99,7 @@ export default function PortalPrestamoDetalle() {
       <div style={{ width: '100%', maxWidth: 430, minHeight: '100dvh', display: 'flex' }}>
         <PortalPrestamo
           cliente={cliente?.nombre}
-          cedula={cliente?.cedula ? `CC ${cliente.cedula}` : null}
+          cedula={cliente?.cedula ? `${abreviaturaDocumento()} ${cliente.cedula}` : null}
           onSalir={async () => {
             await fetch('/api/portal/auth', { method: 'DELETE' })
             router.push('/portal/login')

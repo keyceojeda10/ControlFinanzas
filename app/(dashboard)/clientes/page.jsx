@@ -1219,7 +1219,7 @@ export default function ClientesPage() {
                       <span className="min-w-0 flex-1">
                         <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</span>
                         <span className="block text-[11.5px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
-                          {[c.cedula ? `CC ${c.cedula}` : null, c.ruta?.nombre].filter(Boolean).join(' · ')}
+                          {[c.cedula ? `${abreviaturaDocumento()} ${c.cedula}` : null, c.ruta?.nombre].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span className="text-[13px] font-bold shrink-0" style={{ color: 'var(--cf-gold-dark)' }}>Abrir</span>

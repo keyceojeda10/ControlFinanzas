@@ -4,6 +4,7 @@
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
 import { formatMoney } from '@/lib/i18n'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
@@ -350,7 +351,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 el dato que más se mira de un cliente después del nombre, y en
                 una línea caben los tres. */}
             <p className="text-[11px] mt-0.5" style={{ color: '#8A8E98' }}>
-              {cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `CC ${cliente.cedula}` : 'Sin documento'}
+              {cliente?.cedula && !cliente.cedula.startsWith('SIN-') ? `${abreviaturaDocumento()} ${cliente.cedula}` : 'Sin documento'}
               {cliente?.telefono && (
                 <> · <span style={{ color: '#A3A8B2' }}>{telefonoLegible(cliente.telefono)}</span></>
               )}
