@@ -58,17 +58,46 @@ export default function AsistentePage() {
        Y `max-w-3xl` en vez de `2xl`: aquí no hay barra lateral ni tarjetas al
        costado —la pantalla es solo la conversación—, así que 42rem dejaba las
        burbujas angostas con el resto en blanco. También lo reportó. */
+    /* ── EL RELLENO DEL `main` NO VALE AQUÍ ───────────────────────────────
+       Reportado en móvil: «la barra donde se escribe sale tapada… no es
+       estática, da mucha vuelta, y el contenido sale muy angosto».
+
+       Las tres cosas son el mismo relleno. El `<main>` del layout lleva
+       `px-5 py-5`, y esta pantalla se dimensiona con `100dvh` como si lo
+       ocupara todo:
+
+         · los 40px de `py-5` se SUMAN a esa altura → el documento medía 908
+           en una ventana de 852, y el aviso del pie caía en y=860, fuera de
+           la pantalla. Medido, no supuesto.
+         · como el documento es más alto que la ventana, la página entera
+           rueda: por eso la barra «da vueltas» en vez de quedarse quieta.
+         · los 40px de `px-5` dejaban la conversación en 321px de 393.
+
+       Se anulan con márgenes negativos —el mismo recurso que usa
+       `BarraFiltros`— en vez de tocar el `<main>`, que lo comparten las 46
+       pantallas. En escritorio el relleno es `lg:px-6 lg:py-6`, así que ahí
+       se anulan 24 en vez de 20.
+
+       ⚠ El margen negativo hace que CUALQUIER hermano se le monte encima; por
+       eso esta pantalla no pinta nada más que el chat. */
     <div
-      className="mx-auto w-full max-w-3xl flex flex-col"
+      className="-mx-5 -my-5 lg:-mx-6 lg:-my-6"
       style={{
         // `--cf-h-header`, el token de verdad. Mi primera versión inventó
         // `--cf-h-cabecera`, que no existe: el CSS lo resuelve al valor de
         // respaldo y parece funcionar, así que un nombre mal escrito aquí no
         // falla en ningún sitio — solo deja de seguir al token si este cambia.
+        //
+        // La cabecera móvil son 56px que en escritorio NO existen (`lg:hidden`),
+        // pero allí el `<main>` tiene su propio relleno y la barra lateral
+        // arranca desde arriba, así que el hueco de 56 se lo come el
+        // `lg:-my-6`. Descontarla siempre es lo que menos piezas mueve.
         height: 'calc(100dvh - var(--cf-h-header, 56px) - env(safe-area-inset-bottom, 0px))',
       }}
     >
-      <AsistenteChat key={reinicio} />
+      <div className="mx-auto w-full max-w-3xl h-full flex flex-col">
+        <AsistenteChat key={reinicio} />
+      </div>
     </div>
   )
 }
