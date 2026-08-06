@@ -12,7 +12,7 @@
 // se registra con un hook, y un hook necesita cliente. El título de la pestaña
 // lo pone el layout.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AsistenteChat from '@/components/asistente/AsistenteChat'
 import { useCabecera } from '@/components/armazon/Armazon'
 
@@ -20,6 +20,23 @@ export default function AsistentePage() {
   // Una llave que sube fuerza a rehacer la conversación desde cero sin que la
   // página tenga que conocer el estado interno del chat.
   const [reinicio, setReinicio] = useState(0)
+
+  /* El scroll fantasma de 56px, apagado mientras se está aquí. Ver el porqué
+     donde se monta el chat, abajo. Solo en móvil: en escritorio la pantalla
+     fluye con el resto y el documento ya cuadra. */
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 1024) return
+    const antes = {
+      html: document.documentElement.style.overflow,
+      body: document.body.style.overflow,
+    }
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = antes.html
+      document.body.style.overflow = antes.body
+    }
+  }, [])
 
   useCabecera({
     titulo: 'Lucas',
@@ -93,12 +110,13 @@ export default function AsistentePage() {
 
           Probé antes con un hermano de altura cero y NO basta: `min-h-screen`
           gana igual. Se apaga el scroll del documento mientras esta pantalla
-          está montada, y se restaura al salir. */}
-      <style>{`
-        @media (max-width: 1023px) {
-          html, body { overflow: hidden; height: 100%; }
-        }
-      `}</style>
+          está montada, y se restaura al salir.
+
+          ⚠ Va por `useEffect` y no por un `<style>` en el JSX: aquel lo pintaba
+          el servidor y el cliente lo volvía a montar, y React se quejaba con el
+          error #418 (desajuste de hidratación). Aquí solo corre en el cliente,
+          y el `return` deshace el cambio al salir de la pantalla — que era la
+          otra mitad del problema. */}
 
       <div
         className="fixed inset-x-0 bottom-0 lg:static lg:-mx-6 lg:-my-6"
