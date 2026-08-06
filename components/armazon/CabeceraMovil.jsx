@@ -16,6 +16,7 @@
 
 import Link from 'next/link'
 import { CABECERA } from '@/lib/armazon'
+import { getAvatarById } from '@/lib/avatars'
 
 const ALTO = 56
 
@@ -109,19 +110,43 @@ const IconoCampana = () => (
    El estado de conexión NO se pierde: sigue en HojaCuenta, que es justo a donde
    lleva este avatar, y ahí se dice con palabras («Conectado» / «Sin conexión»)
    en vez de con un punto de 11px que hay que saber interpretar. */
-function Avatar({ iniciales = '', onClick }) {
+function Avatar({ iniciales = '', avatarId = null, nombre = '', onClick }) {
+  /* ── EL AVATAR ELEGIDO, SI LO HAY ──
+     Reportado: «el ícono que uno selecciona para su perfil no se refleja en la
+     cabecera, siguen saliendo las iniciales». El dato existía en la base
+     (`User.avatarId`) y viajaba en la sesión (`lib/auth.js:331`), pero NADIE se
+     lo pasaba al armazón: esta pastilla solo aceptaba `iniciales`.
+
+     El dibujo sale de `getAvatarById`, la MISMA fuente que usa
+     `components/ui/Avatar` y la pantalla donde se elige. Aquí no se puede montar
+     ese componente entero —esta pastilla es un `<button>` con su propio tamaño y
+     su borde redondo—, pero la lista de avatares es una sola: si mañana se añade
+     uno, aparece en los tres sitios sin tocar nada. */
+  const dibujo = avatarId ? getAvatarById(avatarId) : null
+
   return (
     <button type="button" onClick={onClick} aria-label="Tu cuenta"
       style={{ background: 'none', border: 0, padding: 0, marginLeft: 4, cursor: 'pointer', flex: 'none' }}>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        flex: 'none',
-        /* 32px: T40-00-a. T39-01 lo dibujaba a 34. */
-        width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
-        borderRadius: 999,
-        background: 'var(--cf-blue)',   /* azul = persona, NUNCA dinero */
-        fontSize: 12, fontWeight: 700, color: '#FFF', letterSpacing: '.01em',
-      }}>{iniciales}</span>
+      {dibujo ? (
+        <span
+          aria-hidden
+          style={{
+            display: 'inline-block', flex: 'none', overflow: 'hidden',
+            width: 32, minWidth: 32, height: 32, minHeight: 32, borderRadius: 999,
+          }}
+          dangerouslySetInnerHTML={{ __html: dibujo.svg }}
+        />
+      ) : (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          flex: 'none',
+          /* 32px: T40-00-a. T39-01 lo dibujaba a 34. */
+          width: 32, minWidth: 32, height: 32, minHeight: 32, aspectRatio: '1',
+          borderRadius: 999,
+          background: 'var(--cf-blue)',   /* azul = persona, NUNCA dinero */
+          fontSize: 12, fontWeight: 700, color: '#FFF', letterSpacing: '.01em',
+        }}>{iniciales}</span>
+      )}
     </button>
   )
 }
@@ -140,7 +165,7 @@ const base = {
 }
 
 /* ── Variante de navegación ── */
-function Navegacion({ iniciales, hayAvisos, onBuscar, onAvisos, onCuenta }) {
+function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos, onCuenta }) {
   return (
     // `0 18px 0 20px` y `gap: 6`, literal de T40-00-a. Yo tenía 16 de derecha y
     // 12 de hueco: con los botones de 40px, esos 6 de más por hueco separaban
@@ -153,7 +178,7 @@ function Navegacion({ iniciales, hayAvisos, onBuscar, onAvisos, onCuenta }) {
       <span style={{ flex: 1 }} />
       <BotonIcono etiqueta="Buscar" onClick={onBuscar ?? abrirBuscador}><IconoBuscar /></BotonIcono>
       <BotonIcono etiqueta="Avisos" onClick={onAvisos ?? abrirAvisos} badge={hayAvisos}><IconoCampana /></BotonIcono>
-      <Avatar iniciales={iniciales} onClick={onCuenta} />
+      <Avatar iniciales={iniciales} avatarId={avatarId} nombre={nombre} onClick={onCuenta} />
     </header>
   )
 }

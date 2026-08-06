@@ -56,8 +56,16 @@ export default async function DashboardLayout({ children }) {
   // HTML y la hidratacion. Ver el comentario de Armazon.jsx.
   const session = await getServerSession(authOptions)
   const nombre = session?.user?.nombre ?? session?.user?.name ?? ''
+  /* El avatar baja POR EL MISMO CAMINO que el nombre, y por el mismo motivo: si
+     se leyera de `useSession()` el servidor pintaría las iniciales y el cliente
+     el dibujo, con el parpadeo en cada carga que ese comentario ya explica.
+
+     No bajaba, y por eso el usuario elegía su avatar en configuración y seguía
+     viendo «CC» en la cabecera: el dato estaba en la sesión (`lib/auth.js:331`)
+     y en la base (`User.avatarId`), pero nadie se lo pasaba al armazón. */
+  const avatarId = session?.user?.avatarId ?? null
   return (
-    <Armazon nombre={nombre} rol={session?.user?.rol ?? ''}>
+    <Armazon nombre={nombre} rol={session?.user?.rol ?? ''} avatarId={avatarId}>
     <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
           cobrando en la calle. La regla de supresion es exclusiva de movil.
@@ -74,6 +82,7 @@ export default async function DashboardLayout({ children }) {
         nombre={nombre}
         rol={session?.user?.rol ?? ''}
         iniciales={iniciales(nombre)}
+        avatarId={avatarId}
       />
 
       {/* Área principal */}

@@ -133,7 +133,7 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
   }, [registrar, clave])   // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-export default function Armazon({ children, nombre: nombreServidor, rol: rolServidor = '', hayAvisos = false, onCrear }) {
+export default function Armazon({ children, nombre: nombreServidor, rol: rolServidor = '', avatarId: avatarServidor = null, hayAvisos = false, onCrear }) {
   // EL FAB ESTABA MUERTO. `onCrear` se declaraba aquí pero el layout nunca lo
   // pasaba, así que el botón principal de crear —el que sale en TODAS las
   // pantallas de navegación— se pulsaba y no hacía nada: ni menú, ni navegar,
@@ -204,6 +204,15 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
   // avatar en cada carga. La sesión de cliente queda solo como respaldo.
   const nombre = nombreServidor || session?.user?.nombre || session?.user?.name || ''
   const rol = rolServidor || session?.user?.rol || ''
+  /* El avatar elegido en configuración. Mismo camino que el nombre —del layout
+     servidor— por la misma razón: leerlo solo del cliente parpadea en cada
+     carga. La sesión de cliente queda de respaldo, y así el cambio se ve sin
+     tener que volver a entrar.
+
+     ⚠ `??`, no `||`: `avatarServidor` puede ser `null` a propósito (el usuario
+     le dio a «Quitar») y con `||` se recuperaría el de la sesión vieja, que es
+     justo el que acaba de borrar. */
+  const avatarId = avatarServidor ?? session?.user?.avatarId ?? null
 
   return (
     <ArmazonContext.Provider value={valor}>
@@ -221,6 +230,8 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         <CabeceraMovil
           variante={armazon.cabecera}
           iniciales={iniciales(nombre)}
+          avatarId={avatarId}
+          nombre={nombre}
           hayAvisos={avisos > 0 || hayAvisos}
           onCuenta={() => setCuenta(true)}
           titulo={dePantalla?.titulo}
@@ -275,6 +286,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         nombre={nombre}
         rol={rolEnEspanol(rol)}
         iniciales={iniciales(nombre)}
+        avatarId={avatarId}
         conectado={conectado}
         tema={theme ?? 'system'}
         onCambiarTema={setTheme}

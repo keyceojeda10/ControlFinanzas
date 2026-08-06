@@ -15,6 +15,7 @@
 // que lo ve.
 
 import HojaInferior from '@/components/cf/HojaInferior'
+import { getAvatarById } from '@/lib/avatars'
 import { Tarjeta, Pastilla, BotonDestructivo } from '@/components/cf/primitivos'
 
 /* Miniatura de 34px que imita la pantalla. Es lo que hace elegible el tema. */
@@ -80,7 +81,7 @@ function FilaAcceso({ nombre, pastilla, onClick, primera }) {
 
 export default function HojaCuenta({
   abierta, onCerrar,
-  nombre = '', negocio = '', rol = '', iniciales = '',
+  nombre = '', negocio = '', rol = '', iniciales = '', avatarId = null,
   conectado = true, guardadoHace = 'hace un momento',
   tema = 'light', onCambiarTema,
   diasRestantesPlan = null,
@@ -93,11 +94,21 @@ export default function HojaCuenta({
       {/* 1 · Identidad */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '2px 0 6px' }}>
         <span style={{ position: 'relative', flex: 'none' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 52, height: 52, aspectRatio: '1', borderRadius: 999,
-            background: 'var(--cf-blue)', fontSize: 19, fontWeight: 700, color: '#FFF',
-          }}>{iniciales}</span>
+          {/* El avatar elegido, si lo hay. Es la hoja a la que lleva la pastilla
+              de la cabecera: si allí sale el dibujo y aquí las iniciales, parece
+              que se abrió la cuenta de otro. */}
+          {avatarId && getAvatarById(avatarId) ? (
+            <span aria-hidden style={{
+              display: 'inline-block', overflow: 'hidden',
+              width: 52, height: 52, borderRadius: 999,
+            }} dangerouslySetInnerHTML={{ __html: getAvatarById(avatarId).svg }} />
+          ) : (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 52, height: 52, aspectRatio: '1', borderRadius: 999,
+              background: 'var(--cf-blue)', fontSize: 19, fontWeight: 700, color: '#FFF',
+            }}>{iniciales}</span>
+          )}
           <span style={{
             position: 'absolute', bottom: 0, right: 0,
             width: 14, height: 14, borderRadius: 999,

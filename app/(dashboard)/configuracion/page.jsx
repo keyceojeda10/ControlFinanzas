@@ -186,16 +186,16 @@ function TabPerfil() {
         <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Información personal</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nombre</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Nombre</label>
             <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Email</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Email</label>
             <input type="email" value={perfil?.email ?? ''} readOnly disabled className={inputClass} />
             <p className="text-[10px] text-[var(--cf-ink-3)]">El email no se puede cambiar</p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Número de WhatsApp</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Número de WhatsApp</label>
             <input
               type="tel"
               value={telefono}
@@ -209,7 +209,7 @@ function TabPerfil() {
           <Button onClick={guardarTelefono} loading={guardandoTel} size="sm">Guardar WhatsApp</Button>
           <div className="pt-2" style={{ borderTop: '1px solid var(--cf-border)' }} />
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Rol</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Rol</label>
             <div className="flex items-center gap-2">
               <Badge variant={session?.user?.rol === 'owner' ? 'blue' : 'gray'}>
                 {{ owner: 'Administrador', cobrador: 'Cobrador', superadmin: 'Super Admin' }[session?.user?.rol] ?? 'Usuario'}
@@ -307,15 +307,15 @@ function TabPerfil() {
         <p className="text-[11px] font-extrabold text-[var(--cf-ink-3)] uppercase tracking-[.07em] mb-4">Cambiar contraseña</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Contraseña actual</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Contraseña actual</label>
             <input type="password" value={pwActual} onChange={(e) => setPwActual(e.target.value)} placeholder="Tu contraseña actual" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Nueva contraseña</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Nueva contraseña</label>
             <input type="password" value={pwNuevo} onChange={(e) => setPwNuevo(e.target.value)} placeholder="Mínimo 6 caracteres" className={inputClass} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Confirmar nueva contraseña</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Confirmar nueva contraseña</label>
             <input type="password" value={pwConfirmar} onChange={(e) => setPwConfirmar(e.target.value)} placeholder="Repite la nueva contraseña" className={inputClass} />
           </div>
           {msgPw && <Alerta tipo={msgPw.tipo}>{msgPw.texto}</Alerta>}
@@ -694,7 +694,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
         </p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Tasa moratorio mensual (%)</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Tasa moratorio mensual (%)</label>
             <input
               type="text"
               inputMode="decimal"
@@ -708,7 +708,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--cf-ink-3)]">Dias de gracia</label>
+            <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Dias de gracia</label>
             <input
               type="number"
               min="0"

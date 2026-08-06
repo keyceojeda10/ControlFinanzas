@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { rolEnEspanol } from '@/lib/armazon'
+import { getAvatarById } from '@/lib/avatars'
 import { useOnline } from '@/hooks/useOnline'
 import { useTheme } from '@/lib/theme/ThemeProvider'
 
@@ -214,7 +215,7 @@ function SelectorTema({ tema, onCambiar }) {
 }
 
 export default function BarraLateral({
-  nombre = '', rol = '', iniciales = '',
+  nombre = '', rol = '', iniciales = '', avatarId = null,
   hayAvisos = false, onBuscar, onAvisos, onCuenta,
 }) {
   const pathname = usePathname() || '/'
@@ -358,14 +359,23 @@ export default function BarraLateral({
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)', cursor: 'pointer',
           }}>
           <span style={{ position: 'relative', flex: 'none' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 32, height: 32, borderRadius: 999, background: 'var(--cf-blue)',
-              /* 11px acá, no 12: la lámina baja un punto respecto al avatar de
-                 la cabecera móvil, porque al lado hay nombre y rol y las
-                 iniciales dejan de ser lo que se lee. */
-              fontSize: 11, fontWeight: 700, color: '#FFF',
-            }}>{iniciales}</span>
+            {/* El avatar elegido en configuración, si lo hay. Antes solo se
+                pintaban las iniciales aunque el usuario hubiera escogido uno. */}
+            {avatarId && getAvatarById(avatarId) ? (
+              <span aria-hidden style={{
+                display: 'inline-block', overflow: 'hidden',
+                width: 32, height: 32, borderRadius: 999,
+              }} dangerouslySetInnerHTML={{ __html: getAvatarById(avatarId).svg }} />
+            ) : (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, borderRadius: 999, background: 'var(--cf-blue)',
+                /* 11px acá, no 12: la lámina baja un punto respecto al avatar de
+                   la cabecera móvil, porque al lado hay nombre y rol y las
+                   iniciales dejan de ser lo que se lee. */
+                fontSize: 11, fontWeight: 700, color: '#FFF',
+              }}>{iniciales}</span>
+            )}
             <span style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, borderRadius: 999, background: conectado ? 'var(--cf-green)' : 'var(--cf-ink-4)', border: '2px solid var(--cf-card)' }} />
           </span>
           <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
