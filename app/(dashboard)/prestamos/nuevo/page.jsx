@@ -25,6 +25,38 @@ import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
 
+/**
+ * «4 ago» para el calendario del panel.
+ *
+ * ⚠ `timeZone: 'UTC'` NO ES OPCIONAL. `lib/dinero/calendario.js` calcula las
+ * fechas de cobro entera y deliberadamente en UTC («producción corre en UTC y
+ * el desarrollo en Bogotá, así que un error con métodos locales es invisible
+ * aquí y real allí»). Formatearlas con la zona del navegador las corre un día
+ * para cualquiera al oeste de UTC-5 — Costa Rica, sin ir más lejos, que es
+ * UTC-6 y sí tenemos ahí.
+ */
+/**
+ * Las columnas del calendario del panel: # · fecha · cuota · saldo.
+ *
+ * ⚠ UNA SOLA CONSTANTE PARA LA CABECERA Y PARA LAS FILAS. Las escribí por
+ * separado y quedaron en 52px y 46px: las columnas salían corridas y en el JSX
+ * las dos rejillas se leen idénticas. Es la segunda vez que me pasa en este
+ * rediseño —la otra fue la lista de clientes, con 8 columnas arriba y 7
+ * abajo—, y las dos veces solo se vio midiendo el DOM.
+ */
+const COLUMNAS_CALENDARIO = '18px 52px 1fr 1fr'
+
+const fechaCorta = (d) => {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('es-CO', {
+    day: 'numeric', month: 'short', timeZone: 'UTC',
+  })
+    // `es-CO` devuelve «13 de ago.» — con «de» y con punto. En una columna de
+    // 52px eso no cabe, y la lámina la escribe «4 ago».
+    .replace(' de ', ' ')
+    .replace('.', '')
+}
+
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
 // Modo de interes preferido del prestamista (lo elige una vez con el asistente y
@@ -771,7 +803,10 @@ function NuevoPrestamo() {
      donde se llama. */
 
   return (
-    <div className="max-w-2xl mx-auto pb-40 lg:pb-36">
+    /* En móvil sigue siendo la columna de 672px de siempre. En escritorio se
+       ensancha para que quepan las dos columnas de T16-00; el formulario NO
+       crece, se queda en sus 672px, y lo que aparece al lado es la cuenta. */
+    <div className="max-w-2xl xl:max-w-[1076px] mx-auto pb-40 lg:pb-36">
       {/* Stepper */}
       {/* Sin contador: el de dentro del paso 2 («Paso 1 de 5») es el que avanza
           al pulsar «Continuar». Con los dos, la pantalla decia «PASO 2 DE 3» y
@@ -784,111 +819,23 @@ function NuevoPrestamo() {
         onChange={(idx) => { if (idx <= paso) setPaso(idx) }}
       />
 
-      {/* ── LA CUENTA AL LADO, MIENTRAS SE DECIDE (T16-01) ──
-          La lámina: «el panel derecho se recalcula al escribir. Subir el interés
-          de 20 a 25 mueve la cuota, la ganancia y las ocho filas mientras se
-          decide — que es exactamente lo que el dueño hace hoy con una
-          calculadora al lado.»
+      {/* ══ T16-00 · LAS DOS COLUMNAS ══
+          La lámina de escritorio: el formulario a la izquierda y la cuenta a la
+          derecha, recalculándose al escribir. «Subir el interés de 20 a 25 mueve
+          la cuota, la ganancia y las ocho filas mientras se decide — que es
+          exactamente lo que el dueño hace hoy con una calculadora al lado.»
 
-          Hoy la cuota solo aparece al pulsar «Continuar», ya en el paso de
-          revisar: se elige a ciegas y se comprueba después. El cálculo YA existe
-          y se rehace en cada tecla; lo único que faltaba era enseñarlo.
+          Antes esto era un `aside` con `position: fixed` colgado del borde
+          derecho. Era un atajo mío para no tocar los tres pasos, y se notaba:
+          flotaba sin relación con nada y SE MONTABA ENCIMA de la pastilla
+          «Repetir anterior», que salía cortada a media palabra. Ahora es una
+          columna de verdad, así que ni tapa ni la tapan.
 
-          Va `fixed` a propósito: el cuerpo del asistente está centrado en 672px
-          y desde `xl` sobran ~300px a cada lado, así que la columna cabe SIN
-          tocar la estructura de los tres pasos —que son mil líneas y mueven
-          plata—. Por debajo de `xl` no se pinta y no estorba. */}
-      {paso === 1 && (
-        <aside
-          className="hidden xl:block fixed right-4 top-24 w-[280px] rounded-[16px] p-4"
-          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-        >
-          <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
-            Con estas condiciones
-          </p>
-
-          {!calculo ? (
-            <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
-              Escribe el monto, la tasa y el plazo y aquí verás cuánto ganas y
-              cómo queda el calendario.
-            </p>
-          ) : (
-            <>
-              {/* LA CUOTA NO SE REPITE AQUI.
-                  La banda verde de abajo es `fixed` y ya se recalcula al
-                  escribir —eso lo cerro T01-06—. Ponerla otra vez seria la misma
-                  cifra dos veces en la misma pantalla. Este panel es para lo que
-                  la banda NO puede decir. */}
-              <div className="mt-2 space-y-1.5">
-                {[
-                  ['Le entregas', Number(monto) || 0],
-                  ['Te devuelve', calculo.totalAPagar],
-                  ['Ganas', calculo.totalInteres],
-                ].map(([etiqueta, valor]) => (
-                  <div key={etiqueta} className="flex items-center justify-between gap-3">
-                    <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>{etiqueta}</span>
-                    <span className="cf-fig text-[13px] font-bold" style={{
-                      color: etiqueta === 'Ganas' ? 'var(--cf-green-dark)' : 'var(--cf-ink)',
-                    }}>
-                      {formatMoney(Math.round(valor || 0))}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* ESTE AVISO VA AQUÍ, NO AL FINAL.
-                  Dice que la cuota no cubre el interés y que el préstamo se va a
-                  alargar solo. Es una decisión que se toma MOVIENDO la tasa o la
-                  cuota, así que tiene que verse mientras se mueven —no después
-                  de confirmar. */}
-              {avisoCuotaVisible && (
-                <p className="text-[11px] font-semibold mt-3 rounded-[10px] px-2.5 py-2 leading-snug"
-                  style={{
-                    color: 'var(--cf-red-dark)',
-                    background: 'var(--cf-red-pill-bg)',
-                    border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)',
-                  }}>
-                  Con esta cuota no alcanza a cubrir el interés: el préstamo se
-                  alargaría solo. Sube la cuota o baja la tasa.
-                </p>
-              )}
-
-              {/* Las primeras filas del calendario. No es la tabla entera —para
-                  eso está el paso de revisar—: es ver que el reparto entre
-                  capital e interés es el que se espera ANTES de seguir. La
-                  lámina lo pide junto a la ganancia: «mueve la cuota, la
-                  ganancia y las ocho filas mientras se decide». */}
-              {Array.isArray(calculo.tablaAmortizacion) && calculo.tablaAmortizacion.length > 0 && (
-                <>
-                  <div className="grid gap-2 text-[10px] font-extrabold uppercase tracking-[.06em] mt-4 mb-1"
-                    style={{ gridTemplateColumns: '22px 1fr 1fr', color: 'var(--cf-ink-3)' }}>
-                    <span>#</span>
-                    <span style={{ textAlign: 'right' }}>Interés</span>
-                    <span style={{ textAlign: 'right' }}>Capital</span>
-                  </div>
-                  {calculo.tablaAmortizacion.slice(0, 6).map((f) => (
-                    <div key={f.numeroPeriodo} className="grid gap-2"
-                      style={{ gridTemplateColumns: '22px 1fr 1fr' }}>
-                      <span className="cf-num text-[11.5px]" style={{ color: 'var(--cf-ink-3)' }}>{f.numeroPeriodo}</span>
-                      <span className="cf-fig text-[11.5px]" style={{ textAlign: 'right', color: 'var(--cf-ink-3)' }}>
-                        {formatMoney(Math.round(f.interes || 0))}
-                      </span>
-                      <span className="cf-fig text-[11.5px] font-semibold" style={{ textAlign: 'right', color: 'var(--cf-ink)' }}>
-                        {formatMoney(Math.round(f.capital || 0))}
-                      </span>
-                    </div>
-                  ))}
-                  {calculo.tablaAmortizacion.length > 6 && (
-                    <p className="text-[10.5px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-                      y {calculo.tablaAmortizacion.length - 6} cobros más
-                    </p>
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </aside>
-      )}
+          `items-start` + `sticky` en el panel: la columna izquierda mide 2.654px
+          y la derecha 600, y sin eso el panel se estira hasta abajo y la cuenta
+          queda fuera de la vista justo cuando se está tecleando el monto. */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,672px)_380px] xl:gap-6 xl:items-start">
+        <div className="min-w-0">
 
       {error && (
         <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
@@ -1233,7 +1180,12 @@ function NuevoPrestamo() {
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
               </div>
 
-              <div className="space-y-2">
+              {/* Cuatro tarjetas de 672px de ancho para tres palabras. Apiladas
+                  sumaban 340px de alto ellas solas, y el paso entero pedía 2,8
+                  pantallas de scroll en un monitor de 1440. En dos columnas
+                  ocupan la mitad y siguen cabiendo enteras. En el teléfono
+                  —debajo de `sm`— se quedan apiladas como estaban. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {FRECUENCIAS.map(f => {
                   const activo = frecuencia === f.key
                   const descs = { diario: 'Cobra todos los días hábiles', semanal: 'Cobra una vez por semana', quincenal: 'Cobra cada dos semanas', mensual: 'Cobra una vez al mes' }
@@ -1935,6 +1887,120 @@ function NuevoPrestamo() {
         )
       })()}
 
+        </div>{/* ── fin de la columna del formulario ── */}
+
+        {/* ── LA CUENTA, AL LADO Y EN VIVO ──
+            Solo desde `xl`: por debajo no hay sitio para dos columnas y la
+            cuota sigue saliendo en la franja de abajo, como en el teléfono.
+
+            El orden es el de la lámina: primero la cuota —que es la cifra que
+            se está buscando—, luego lo que se gana, y debajo el calendario
+            entero. */}
+        <aside
+          data-panel="cuenta"
+          className="hidden xl:block sticky top-20 rounded-[16px] overflow-hidden"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+        >
+          <div className="px-4 pt-3.5 pb-4">
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+              Se recalcula al escribir
+            </p>
+
+            {!calculo ? (
+              <p className="text-[12.5px] mt-2 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+                Escribe el monto, la tasa y el plazo y aquí verás la cuota,
+                cuánto ganas y cómo queda el calendario.
+              </p>
+            ) : (
+              <>
+                <p className="text-[11px] font-bold uppercase tracking-[.08em] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
+                  {frecuencia === 'diario' ? 'Cuota diaria'
+                    : frecuencia === 'semanal' ? 'Cuota semanal'
+                    : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
+                </p>
+                <p className="cf-fig text-[32px] leading-none mt-1"
+                   style={{ letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+                  {formatMoney(calculo.cuotaDiaria)}
+                </p>
+
+                <div className="mt-4 space-y-1.5">
+                  {[
+                    ['Ganancia', calculo.totalInteres, 'var(--cf-green-dark)'],
+                    ['Capital', Number(monto) || 0, 'var(--cf-ink)'],
+                    ['Total a recibir', calculo.totalAPagar, 'var(--cf-ink)'],
+                  ].map(([etiqueta, valor, color]) => (
+                    <div key={etiqueta} className="flex items-center justify-between gap-3">
+                      <span className="text-[12.5px]" style={{ color: 'var(--cf-ink-3)' }}>{etiqueta}</span>
+                      <span className="cf-fig text-[13.5px] font-bold" style={{ color }}>
+                        {formatMoney(Math.round(valor || 0))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ESTE AVISO VA AQUÍ, NO AL FINAL.
+                    Dice que la cuota no cubre el interés y que el préstamo se va
+                    a alargar solo. Es una decisión que se toma MOVIENDO la tasa
+                    o la cuota, así que tiene que verse mientras se mueven —no
+                    después de confirmar. */}
+                {avisoCuotaVisible && (
+                  <p className="text-[11.5px] font-semibold mt-3 rounded-[10px] px-2.5 py-2 leading-snug"
+                    style={{
+                      color: 'var(--cf-red-dark)',
+                      background: 'var(--cf-red-pill-bg)',
+                      border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)',
+                    }}>
+                    Con esta cuota no alcanza a cubrir el interés: el préstamo se
+                    alargaría solo. Sube la cuota o baja la tasa.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* El calendario ENTERO, no las seis primeras filas. La lámina lo pide
+              completo, y aquí sí cabe: el panel tiene su propio scroll y la
+              cabecera se queda pegada arriba, así que da igual que sean 8 cobros
+              o 90. Antes se recortaba a 6 porque el panel flotaba sin altura
+              conocida y una lista larga se salía de la pantalla. */}
+          {calculo && Array.isArray(calculo.tablaAmortizacion) && calculo.tablaAmortizacion.length > 0 && (
+            <div className="max-h-[38vh] overflow-y-auto"
+                 style={{ borderTop: '1px solid var(--cf-border)' }}>
+              {/* Los nombres salen de `lib/calculos.js`: la fila trae
+                  `cuotaTotal`, `saldoRestante` y `fechaEsperada`. Escribí
+                  `f.cuota` de memoria y no existe — habría pintado una columna
+                  de ceros sin que nada fallara, que es como se cuelan estas. */}
+              <div className="grid gap-2 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[.06em] sticky top-0"
+                style={{
+                  gridTemplateColumns: COLUMNAS_CALENDARIO,
+                  color: 'var(--cf-ink-3)',
+                  background: 'var(--cf-card)',
+                  borderBottom: '1px solid var(--cf-border)',
+                }}>
+                <span>#</span>
+                <span>Fecha</span>
+                <span style={{ textAlign: 'right' }}>Cuota</span>
+                <span style={{ textAlign: 'right' }}>Saldo</span>
+              </div>
+              {calculo.tablaAmortizacion.map((f) => (
+                <div key={f.numeroPeriodo} className="grid gap-2 px-4 py-[3px]"
+                  style={{ gridTemplateColumns: COLUMNAS_CALENDARIO }}>
+                  <span className="cf-num text-[11.5px]" style={{ color: 'var(--cf-ink-3)' }}>{f.numeroPeriodo}</span>
+                  <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>{fechaCorta(f.fechaEsperada)}</span>
+                  <span className="cf-fig text-[11.5px] font-semibold" style={{ textAlign: 'right', color: 'var(--cf-ink)' }}>
+                    {formatMoney(Math.round(f.cuotaTotal || 0))}
+                  </span>
+                  <span className="cf-fig text-[11.5px]" style={{ textAlign: 'right', color: 'var(--cf-ink-3)' }}>
+                    {formatMoney(Math.round(f.saldoRestante || 0))}
+                  </span>
+                </div>
+              ))}
+              <div className="h-2" />
+            </div>
+          )}
+        </aside>
+      </div>{/* ── fin de las dos columnas ── */}
+
       {/* ══ T01-06 · LA FRANJA DE ACCIÓN: UNA SOLA PIEZA ══
           La cuota en vivo y los botones eran DOS bloques flotantes, uno encima
           del otro, cada uno con su fondo, su borde y su sombra. Encajarlos
@@ -1968,8 +2034,11 @@ function NuevoPrestamo() {
             aparecía al final. La lámina la pone aquí, grande —30px, no 13—,
             porque es la cifra que se está buscando mientras se mueven los
             controles de arriba. */}
+        {/* `xl:hidden`: desde `xl` la cuota ya está arriba en el panel, a 32px y
+            junto a la ganancia y el calendario. Dejarla también aquí ponía la
+            misma cifra dos veces en la misma pantalla. */}
         {paso === 1 && calculo && (
-          <div className="max-w-2xl mx-auto flex items-end justify-between gap-4 mb-3.5">
+          <div className="xl:hidden max-w-2xl mx-auto flex items-end justify-between gap-4 mb-3.5">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[.1em]" style={{ color: 'var(--cf-ink-3)' }}>
                 {frecuencia === 'diario' ? 'Cuota diaria' : frecuencia === 'semanal' ? 'Cuota semanal' : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
@@ -1989,7 +2058,11 @@ function NuevoPrestamo() {
           </div>
         )}
 
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
+        {/* Los botones se alinean con la COLUMNA DEL FORMULARIO, no con el
+            centro de la pantalla: la caja de fuera mide ahora 1076px por las dos
+            columnas, y un `mx-auto` a secas dejaba «Revisar préstamo» flotando
+            bajo el panel de la cuenta, que no es lo que se está rellenando. */}
+        <div className="max-w-2xl xl:max-w-[1076px] mx-auto flex items-center gap-3 xl:pr-[404px]">
           {paso === 0 ? (
             <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading} className="flex-1">
               Cancelar
