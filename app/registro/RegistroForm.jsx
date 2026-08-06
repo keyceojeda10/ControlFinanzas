@@ -83,11 +83,10 @@ const PASOS = 3
 function PieWizard({ onAtras, onSeguir, seguirBloqueado, seguirTexto = 'Continuar', cargando, theme }) {
   return (
     <div
-      className="flex-none flex gap-2.5"
+      className="flex-none flex gap-2.5 mt-auto"
       style={{
         padding: '14px 0 0',
         borderTop: `1px solid ${theme.borderLight}`,
-        marginTop: 24,
       }}
     >
       {onAtras && (
@@ -328,8 +327,18 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
     <div className="min-h-screen flex flex-col" style={{ background: t.bg }}>
       <div className="absolute inset-x-0 top-0 h-64 pointer-events-none" style={{ background: t.gradient }} />
 
+      {/* ── EL PIE, ABAJO DE VERDAD ──
+          Reportado: «se ve un espacio todo feo ahí que no tiene sentido».
+
+          El pie ya estaba, pero la columna no tenía altura: se quedaba donde
+          acabara el contenido —a media pantalla— y debajo un vacío enorme.
+          Medido a 393×852: el botón caía en y=412 de 852.
+
+          `flex-1` en la columna y `mt-auto` en el pie: el contenido se queda
+          arriba y la acción baja al borde, que es donde llega el pulgar. En
+          escritorio se centra, que es donde tiene sentido. */}
       <div className="relative flex-1 flex flex-col items-center px-5 py-8 lg:py-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md flex-1 flex flex-col lg:flex-none">
 
           {/* Logo */}
           <div className="mb-6">
@@ -381,7 +390,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           {/* ── Step 0: Bienvenida ── */}
           {/* ── Step 1: Nombre ── */}
           {step === 1 && (
-            <div>
+            <div className="flex-1 flex flex-col">
               {/* Sin "Atras": el primer paso no tiene a donde volver desde que
                   se quito la portada. Un control que no hace nada enseña a
                   desconfiar de los que si hacen. */}
@@ -440,7 +449,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
           {/* ── Step 2: WhatsApp ── */}
           {step === 2 && (
-            <div>
+            <div className="flex-1 flex flex-col">
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
@@ -524,7 +533,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
 
           {/* ── Step 3: Email + Password ── */}
           {step === 3 && (
-            <div>
+            <div className="flex-1 flex flex-col">
               {/* Sin `BackButton` arriba: el «Atrás» va en el pie, junto al que
                   avanza, como en la lámina. Tenerlo en los dos sitios eran dos
                   controles para lo mismo. */}
