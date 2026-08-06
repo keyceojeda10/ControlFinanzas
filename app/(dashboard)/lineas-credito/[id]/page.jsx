@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { useCabecera } from '@/components/armazon/Armazon'
 import MoneyInput from '@/components/ui/MoneyInput'
 import Avatar from '@/components/ui/Avatar'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -41,6 +42,21 @@ export default function DetalleLineaPage({ params }) {
   }, [id])
 
   useEffect(() => { cargar() }, [cargar])
+
+  /* ── LA CABECERA DEL SISTEMA ──────────────────────────────────────────────
+   * Esta ficha no la llamaba: cabecera vacía en móvil y, en escritorio, sin
+   * botón de volver —`VolverEscritorio` no se pinta sin título—.
+   *
+   * El hero oscuro de abajo se queda: es un bloque de los legítimos, con avatar
+   * y cifra. Lo que faltaba era la cabecera, no sustituirlo.
+   * ⚠ VA ANTES DEL RETURN: es un hook. */
+  useCabecera({
+    titulo: linea?.cliente?.nombre,
+    subtitulo: linea ? [
+      'línea de crédito',
+      linea.estado === 'activa' ? 'activa' : (linea.estado ?? null),
+    ].filter(Boolean).join(' · ') : null,
+  })
 
   if (authLoading || loading) {
     return <div className="max-w-2xl mx-auto py-6 space-y-3">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>

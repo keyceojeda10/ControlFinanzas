@@ -2,7 +2,13 @@
 
 import { forwardRef, useId } from 'react'
 
-const labelCls = 'text-[12.5px] font-bold tracking-[0.01em]'
+/* ⚠ ERA `text-[12.5px]`, Y EL 12.5 NO EXISTE.
+   La escala Manrope de `11-ESCALAS §1C` tiene siete tamaños —16·15·14·13·12·11·10—
+   y ninguno con decimal. Este único literal se propagaba a la etiqueta de TODOS
+   los formularios de la app: 235 usos de tamaños intermedios en el repo, y este
+   era el más multiplicador. 12px es el valor de la escala para un metadato o una
+   etiqueta de campo. */
+const labelCls = 'text-[12px] font-bold tracking-[0.01em]'
 const labelStyle = { color: 'var(--cf-ink-2)' }
 const fieldStyle = {
   background: 'var(--cf-fill)',
@@ -48,7 +54,7 @@ export const Input = forwardRef(function Input(
           inputMode={actualInputMode}
           onChange={handleChange}
           className={[
-            'cf-input w-full h-11 rounded-[12px] border text-sm transition-all duration-200',
+            'cf-input w-full h-14 rounded-[14px] border text-sm transition-all duration-200',
             'focus:outline-none focus:border-[var(--cf-gold)]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             prefix ? 'pl-8' : 'pl-3',
@@ -84,7 +90,7 @@ export const Select = forwardRef(function Select(
         ref={ref}
         id={fieldId}
         className={[
-          'cf-input w-full h-11 rounded-[12px] border text-sm px-3',
+          'cf-input w-full h-14 rounded-[14px] border text-sm px-3',
           'focus:outline-none focus:border-[var(--cf-gold)]',
           'transition-all duration-200 cursor-pointer',
           error ? 'cf-input-error' : '',

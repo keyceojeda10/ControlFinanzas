@@ -10,10 +10,45 @@
 
 ---
 
+## ⚠ EMPIEZA POR AQUÍ SI VAS A TOCAR LA INTERFAZ
+
+Dos documentos mandan sobre todos los demás, y hay que leerlos **antes** de
+escribir una línea de JSX:
+
+| | Qué responde |
+|---|---|
+| **`10-COMO-CREAR-ELEMENTOS-NUEVOS.md`** | *Qué tipo* de elemento usar, cuando NO hay un diseño que copiar. Tablas de decisión para botón, sección, dato y texto. |
+| **`11-ESCALAS-Y-CONSISTENCIA.md`** | *Qué medidas exactas* tiene. Escalas **cerradas**: alturas, radios, tipografía, iconos, espaciado. |
+
+Las tres reglas que resumen los dos:
+
+1. **Un elemento nuevo nunca se inventa: se compone de piezas que ya existen.**
+   Nueve piezas —contenedor, cifra, etiqueta, fila, pastilla, barra, botón,
+   separador, icono— y ninguna de las 146 pantallas usa nada más.
+2. **Las escalas son cerradas.** Si necesitas un tamaño que no está, no
+   interpoles: usa el más cercano de la tabla. No existe 50px porque hay 48 y 52.
+3. **Dos elementos con el mismo papel miden exactamente lo mismo, siempre.**
+   Todos los botones primarios: 52px. No 52 en una pantalla y 50 en otra.
+
+Y la comprobación que vale más que cualquier lista:
+
+> **Busca en el sistema otro elemento con el mismo papel y compara las medidas
+> una por una. Si no coinciden, el tuyo está mal — no el que ya existe.**
+>
+> La consistencia no se mantiene decidiendo bien: se mantiene **no decidiendo**,
+> copiando la decisión que ya se tomó.
+
+Antes de dar por terminada cualquier tarea de interfaz, corre los dos checklists:
+`10 §7` (doce puntos) y `11 §9` (trece).
+
+---
+
 ## Dónde está cada cosa
 
 | Qué | Handoff | Código |
 |---|---|---|
+| **Cómo decidir un elemento nuevo** | **`10-COMO-CREAR-ELEMENTOS-NUEVOS.md`** | — |
+| **Escalas cerradas y consistencia** | **`11-ESCALAS-Y-CONSISTENCIA.md`** | — |
 | Tokens exactos | `01-TOKENS.md` | `app/tokens-2026.css` |
 | Cabecera, barra inferior, sidebar | `02-ARMAZON.md` | `components/armazon/` |
 | La regla de supresión | `02-ARMAZON.md` § E | `lib/armazon.js` + tests |

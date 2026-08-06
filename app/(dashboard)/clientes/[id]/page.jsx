@@ -19,6 +19,7 @@ import TarjetaCliente      from '@/components/cf/TarjetaCliente'
 import { adaptarPrestamos } from '@/lib/adaptadores/prestamos'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { planTieneFotos }            from '@/lib/planes'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
 import ClienteHeroCard, { InfoContactoCard, AccionesClienteChips } from '@/components/clientes/ClienteHeroCard'
@@ -374,6 +375,40 @@ export default function ClienteDetallePage({ params }) {
     } catch { alert('Error de conexión') }
     finally { setActionLoading(false) }
   }
+
+  /* ── LA CABECERA, IGUAL QUE EN LA FICHA DEL PRÉSTAMO ──────────────────────
+   *
+   * Esta pantalla NO llamaba a `useCabecera`, así que su cabecera salía vacía:
+   * solo la flecha de volver. La ficha del préstamo —que es la misma clase de
+   * pantalla— sí la llama y enseña «nombre · contexto». Reportado por el dueño:
+   * «genera la sensación de que son dos aplicaciones distintas».
+   *
+   * No es una decisión de diseño distinta: es un olvido. `clientes/nuevo`,
+   * `clientes/[id]/editar` y `clientes/[id]/historial` SÍ la llaman.
+   *
+   * Se copia el patrón que ya existe en `prestamos/[id]` —nombre arriba, una
+   * línea de contexto separada por `·`— en vez de inventar otro. Regla de
+   * `11-ESCALAS-Y-CONSISTENCIA.md §9`: busca otro elemento con el mismo papel y
+   * copia sus medidas; si no coinciden, el tuyo está mal.
+   *
+   * ⚠ VA AQUÍ, ANTES DEL `if (loading) return`. Es un hook: detrás de un return
+   * temprano el orden cambia entre renders y React tira la pantalla. Está
+   * documentado en `prestamos/[id]/page.jsx` con el mismo aviso.
+   */
+  useCabecera({
+    titulo: cliente?.nombre,
+    subtitulo: cliente ? (() => {
+      const activos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
+      const debe = activos.reduce((a, p) => a + Math.max(0, (p.totalAPagar ?? 0) - (p.totalPagado ?? 0)), 0)
+      const mora = Math.max(0, ...activos.map((p) => p.diasMora ?? 0))
+      return [
+        activos.length === 0
+          ? 'sin préstamos activos'
+          : `${activos.length} préstamo${activos.length === 1 ? '' : 's'} · debe ${formatMoney(Math.round(debe))}`,
+        activos.length > 0 ? (mora > 0 ? `${mora} día${mora === 1 ? '' : 's'} de atraso` : 'al día') : null,
+      ].filter(Boolean).join(' · ')
+    })() : null,
+  })
 
   if (loading) {
     return <SkeletonPrestamoDetalle />

@@ -5,13 +5,14 @@ import { formatMoney } from '@/lib/i18n'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania } from '@/lib/adaptadores/ruta'
 import { createPortal } from 'react-dom'
-import { useState, useEffect, useRef, useCallback, use } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
 import dynamic                       from 'next/dynamic'
 import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { obtenerCoordsRapido } from '@/lib/geo'
 // Las mismas que usa el servidor para el «3,4 km» de la cabecera.
 import { optimizeRoute, totalDistance } from '@/lib/routeOptimizer'
@@ -1397,6 +1398,50 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
+  /* ── LA CABECERA DEL SISTEMA, EN LUGAR DE LA HECHA A MANO ─────────────────
+   * Aquí abajo había una copia divergente: 21px de título contra los 17 del
+   * sistema, y 12 de subtítulo contra 11. Se retiró; esto la sustituye.
+   *
+   * El lápiz de renombrar va en `acciones`, que es su sitio: la cabecera de
+   * detalle acepta «las acciones DE ESE objeto» (`CabeceraMovil.jsx:162`). El
+   * campo de edición y sus botones de guardar/cancelar siguen donde estaban.
+   *
+   * ⚠ `acciones` NO entra en la clave de re-suscripción de `useCabecera`, así
+   * que va memoizada — lo pide el docblock del hook y `asistente/page.jsx` es
+   * el ejemplo de lo que pasa cuando no se hace.
+   */
+  const accionesCabecera = useMemo(() => (
+    esOwner && ruta && !editandoNombre ? (
+      <button
+        type="button"
+        onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
+        aria-label="Cambiar el nombre de la ruta"
+        style={{
+          width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', color: 'var(--cf-ink-3)', flex: 'none',
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+    ) : null
+  ), [esOwner, ruta, editandoNombre])
+
+  useCabecera({
+    titulo: ruta?.nombre,
+    subtitulo: ruta ? [
+      ruta.cobrador?.nombre ?? 'sin cobrador',
+      `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
+      // Solo si se pudo medir: con menos de dos clientes con coordenadas la API
+      // devuelve null, y «0 km» se leería como que están todos en el mismo portal.
+      ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+    ].filter(Boolean).join(' · ') : null,
+    acciones: accionesCabecera,
+  })
+
   if (loading) return <SkeletonRutaDetalle />
 
   if (error || !ruta) return (
@@ -1919,42 +1964,19 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             </button>
           </div>
         ) : (
-          <>
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{
-                fontFamily: 'var(--font-space-grotesk), system-ui',
-                fontSize: 21, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{ruta.nombre}</span>
-              {/* QUIEN Y CUANTOS, no una pastilla de estado de colores. «Buen
-                  ritmo» a las nueve de la maniana no significa nada. */}
-              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-                {[
-                  ruta.cobrador?.nombre ?? 'sin cobrador',
-                  `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
-                  // ── «3,4 km» (T27-02) ──
-                  // Lo que se camina hoy. Es lo que decide si la ruta cabe en
-                  // una mañana, y no estaba en ninguna pantalla.
-                  //
-                  // Solo sale si de verdad se pudo medir: la API devuelve `null`
-                  // cuando hay menos de dos clientes con coordenadas, y ahí es
-                  // mejor no decir nada que decir «0 km» — que se leería como
-                  // que están todos en el mismo portal.
-                  ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
-                ].filter(Boolean).join(' · ')}
-              </span>
-            </div>
-            {esOwner && (
-              <button
-                onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
-                className="shrink-0 p-1"
-                style={{ color: 'var(--cf-ink-3)' }}
-                aria-label="Cambiar el nombre"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              </button>
-            )}
-          </>
+          /* ── EL NOMBRE Y SUS DATOS SE FUERON A LA CABECERA ────────────────
+             Aquí había una cabecera hecha a mano que copiaba la del sistema
+             carácter por carácter pero con OTRAS medidas: 21px de título contra
+             los 17 del sistema, y subtítulo a 12 contra 11. Es de las que hacían
+             que dos pantallas equivalentes parecieran de apps distintas.
+
+             Lo que se conserva entero es la EDICIÓN DEL NOMBRE: el campo, el
+             guardar y el cancelar siguen aquí arriba, y el lápiz que la abre se
+             pasa a `acciones` de la cabecera, que es su sitio —«las acciones DE
+             ESE objeto», dice `CabeceraMovil.jsx:162`—.
+
+             Rediseñar no puede llevarse una función por delante. */
+          null
         )}
       </div>
 

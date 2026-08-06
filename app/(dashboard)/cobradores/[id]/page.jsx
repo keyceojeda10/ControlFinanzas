@@ -8,6 +8,7 @@ import { useAuth }                  from '@/hooks/useAuth'
 import { Badge }                    from '@/components/ui/Badge'
 import { Card }                     from '@/components/ui/Card'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
+import { useCabecera }              from '@/components/armazon/Armazon'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import Link                         from 'next/link'
 import { ConfirmModal }             from '@/components/ui/ConfirmModal'
@@ -62,6 +63,23 @@ function CobradorDetalleInner({ params }) {
       setToggling(false)
     }
   }
+
+  /* ── LA CABECERA DEL SISTEMA ──────────────────────────────────────────────
+   * Esta ficha no la llamaba, así que salía vacía —solo la flecha— y en
+   * ESCRITORIO no tenía ni salida: `VolverEscritorio` hace `if (!de?.titulo)
+   * return null`, o sea que sin cabecera no hay botón de volver en PC.
+   *
+   * Se copia el patrón de `prestamos/[id]` y `clientes/[id]`: nombre arriba,
+   * una línea de contexto separada por `·`. No se inventa otro.
+   *
+   * ⚠ VA ANTES DEL `if (loading) return`: es un hook. */
+  useCabecera({
+    titulo: data?.nombre,
+    subtitulo: data ? [
+      data.ruta?.nombre ?? 'sin ruta',
+      data.activo === false ? 'inactivo' : 'activo',
+    ].filter(Boolean).join(' · ') : null,
+  })
 
   if (loading) {
     return (

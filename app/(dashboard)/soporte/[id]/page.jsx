@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
+import { useCabecera } from '@/components/armazon/Armazon'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -143,6 +144,22 @@ export default function TicketDetallePage() {
     setSending(false)
   }
 
+  /* ── LA CABECERA DEL SISTEMA ──────────────────────────────────────────────
+   * Aquí abajo había un `{/* Header *_/}` seguido de NADA —se borró la cabecera
+   * y quedó el marcador— y el asunto del ticket vivía dentro de la primera
+   * tarjeta a 25px: el título más grande de toda la app, contra los 17 del
+   * sistema.
+   *
+   * Sin `useCabecera` esta pantalla tampoco tenía botón de volver en escritorio.
+   * ⚠ VA ANTES DEL RETURN: es un hook. */
+  useCabecera({
+    titulo: ticket?.asunto,
+    subtitulo: ticket ? [
+      TIPO_LABEL[ticket.tipo] || ticket.tipo,
+      (ESTADO_BADGE[ticket.estado] || ESTADO_BADGE.abierto).label,
+    ].filter(Boolean).join(' · ') : null,
+  })
+
   if (loading) return <div className="max-w-2xl mx-auto"><SkeletonCard /><SkeletonCard /></div>
 
   if (!ticket) {
@@ -158,14 +175,16 @@ export default function TicketDetallePage() {
 
   return (
     <div className="max-w-2xl lg:max-w-4xl mx-auto">
-      {/* Header */}
+      {/* La cabecera la pone el armazón (ver `useCabecera` arriba). */}
 
       {/* Ticket info */}
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">{ticket.asunto}</h1>
-            <div className="flex items-center gap-2 mt-1.5">
+            {/* El asunto ya está en la cabecera: aquí solo quedan las pastillas
+                de estado. Repetirlo era el mismo dato en dos elementos de la
+                misma pantalla, que `10 §4` prohíbe. */}
+            <div className="flex items-center gap-2">
               <Badge variant="gray">{TIPO_LABEL[ticket.tipo] || ticket.tipo}</Badge>
               <Badge variant={estado.variant}>{estado.label}</Badge>
               {ticket.solicitaContacto && (
