@@ -47,6 +47,25 @@ export function Recibo({
   cuando,
   onWhatsApp, onGuardarImagen, onImprimir, onSiguiente,
   telefono,
+  // ── LO QUE SOLO TENÍA EL COMPROBANTE VIEJO ──
+  // Esta pantalla vivía únicamente en el cobro desde la ruta; los otros dos
+  // caminos —la ficha del préstamo y el cobro por QR— sacaban una versión
+  // escrita a mano dentro de `RegistrarPago.jsx`. Al unificarlos hay que
+  // traerse lo que aquella hacía y ésta no, o el rediseño «pierde funciones en
+  // silencio», que ya pasó con el modo abreviado.
+  //
+  // `titulo` — no todo pago es un pago: también se aplican recargos, descuentos,
+  // abonos a capital y pagos de solo interés, y el comprobante lo decía.
+  titulo = 'Pago registrado',
+  // `offline` — el cobro guardado sin señal. Es el aviso MÁS importante de los
+  // cuatro: sin él, el cobrador ve el visto verde y cree que ya subió.
+  offline = false,
+  // `medioPago` — «Efectivo» o «Transferencia · Nequi». Con la caja discriminada
+  // por medio de pago, esto es lo que deja constancia de por dónde entró.
+  medioPago,
+  // `evidencia` — la foto adjunta. `{ url, subiendo, onAdjuntar }`; sin el
+  // objeto no se pinta nada (en la ruta no se usa).
+  evidencia,
   // EL NOMBRE DEL SIGUIENTE, no «Siguiente cobro». El pie de T15-03 lo dice
   // literal: «la accion dorada NO es "listo": es el nombre del siguiente,
   // porque en la calle el cobro no termina, SIGUE». Un boton que dice a quien
@@ -72,26 +91,53 @@ export function Recibo({
       }}>
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
           {/* Verde, no dorado. El dorado de esta pantalla es «siguiente cobro»:
-              el visto es un hecho consumado, no la acción que sigue. */}
+              el visto es un hecho consumado, no la acción que sigue.
+
+              ⚠ SALVO SIN SEÑAL. Un cobro guardado en el teléfono todavía no ha
+              subido, y el visto verde diría que sí: el cobrador tiene que saber
+              que eso aún le puede faltar al cuadre. Reloj ámbar.
+
+              El fondo va con `--cf-gold-tint`, que el propio fichero de tokens
+              describe como «aviso ámbar», NO con `--cf-gold`: ese está reservado
+              a seguir la ruta y es el único de la pantalla. Lo defiende una
+              prueba, y tiene razón — dos dorados y ninguno destaca. */}
           <span aria-hidden style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 64, height: 64, minWidth: 64, minHeight: 64, flex: 'none',
-            borderRadius: 999, background: 'var(--cf-green)',
+            borderRadius: 999,
+            background: offline ? 'var(--cf-gold-tint)' : 'var(--cf-green)',
+            border: offline ? '1.5px solid var(--cf-gold-dark)' : 'none',
           }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFF"
-              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
+            {offline ? (
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+                strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+              </svg>
+            ) : (
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFF"
+                strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            )}
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            {/* No todo pago es un pago: también hay recargos, descuentos, abonos
+                a capital y pagos de solo interés, y el comprobante viejo los
+                nombraba. Llamar «Pago registrado» a un recargo sería mentir en
+                el papel que el cliente se guarda. */}
             <span style={{
               fontFamily: 'var(--font-space-grotesk), system-ui',
-              fontSize: 23, fontWeight: 600, letterSpacing: '-.02em',
-            }}>Pago registrado</span>
+              fontSize: 23, fontWeight: 600, letterSpacing: '-.02em', textAlign: 'center',
+            }}>{titulo}</span>
             {/* Fecha Y HORA. Dos pagos el mismo día son dos recibos distintos, y
                 sin la hora no se distinguen. */}
-            {cuando && (
+            {cuando && !offline && (
               <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{cuando}</span>
+            )}
+            {offline && (
+              <span style={{ fontSize: 13, color: 'var(--cf-gold-dark)', textAlign: 'center' }}>
+                guardado en el teléfono · sube solo al recuperar señal
+              </span>
             )}
           </div>
         </div>
@@ -115,6 +161,12 @@ export function Recibo({
           </div>
 
           <Fila etiqueta="Cliente" valor={cliente} />
+          {/* POR DÓNDE ENTRÓ. Va DENTRO del troquelado porque es dato del
+              comprobante, no del cobrador: si mañana el cliente reclama que
+              transfirió, aquí está escrito. Desde que la caja se discrimina por
+              medio de pago (Nequi, Bancolombia, efectivo…) esta línea es la que
+              ata el recibo con el cuadre. */}
+          {medioPago && <Fila etiqueta="Pagó con" valor={medioPago} />}
           {saldo && <Fila etiqueta="Saldo pendiente" valor={saldo} cifra />}
           {proximoCobro && <Fila etiqueta="Próximo cobro" valor={proximoCobro} />}
 
@@ -133,6 +185,51 @@ export function Recibo({
             {recibidoPor ? `Recibido por ${recibidoPor} · ${negocio}` : negocio}
           </span>
         </div>
+
+        {/* LA FOTO DE EVIDENCIA. También fuera del troquelado: es respaldo del
+            cobrador para cuando alguien discute un cobro, no algo que el cliente
+            se lleve. Solo con el pago ya subido —sin `id` en el servidor no hay
+            dónde colgarla—, por eso el llamador no pasa `evidencia` si el pago
+            quedó offline. */}
+        {evidencia && (
+          <div style={{ flex: 'none', padding: '0 2px' }}>
+            {evidencia.url ? (
+              <div style={{
+                position: 'relative', borderRadius: 14, overflow: 'hidden',
+                border: '1px solid var(--cf-border)',
+              }}>
+                <img src={evidencia.url} alt="Evidencia del cobro"
+                  style={{ display: 'block', width: '100%', height: 128, objectFit: 'cover' }} />
+                <span style={{
+                  position: 'absolute', right: 8, bottom: 8,
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '4px 9px', borderRadius: 999,
+                  background: 'rgba(0,0,0,.7)', color: '#FFF', fontSize: 11, fontWeight: 600,
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                  Foto guardada
+                </span>
+              </div>
+            ) : (
+              <button type="button" onClick={evidencia.onAdjuntar} disabled={evidencia.subiendo}
+                style={{
+                  ...SECUNDARIO, width: '100%', height: 46, fontSize: 14,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  color: 'var(--cf-ink-2)', opacity: evidencia.subiendo ? 0.6 : 1,
+                }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+                {evidencia.subiendo ? 'Subiendo…' : 'Adjuntar foto de evidencia'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* CÓMO VA EL DÍA. Fuera del troquelado a propósito: no es parte del
             comprobante del cliente —a él no le importa la meta de la ruta— sino

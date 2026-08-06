@@ -30,7 +30,9 @@ function fmtFechaHora(d) {
 }
 
 // Dibuja el recibo termico en un canvas y lo devuelve.
-function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
+// Exportada por la misma razón que `generarHTMLRecibo`: la imagen del recibo se
+// pide desde los tres caminos y tiene que salir idéntica en todos.
+export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   const W = 620          // ancho logico
   const PAD = 44
   const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'

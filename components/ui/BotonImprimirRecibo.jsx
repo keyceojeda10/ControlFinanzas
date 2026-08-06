@@ -79,7 +79,10 @@ function renderCamposCustom(campos, cliente, prestamo) {
   }).join('')
 }
 
-function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
+// Exportada: la usa también `lib/recibo-acciones.js`, para que los tres caminos
+// del comprobante impriman lo mismo. Dejarla privada es como se coló el fallo de
+// «arreglé el recibo de WhatsApp y la imagen se quedó con el error».
+export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   const linea     = '━'.repeat(30)
   const lineaFina = '─'.repeat(30)
   const camposAUsar = (Array.isArray(camposRecibo) && camposRecibo.length > 0)

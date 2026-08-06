@@ -2,13 +2,13 @@
 // components/prestamos/RegistrarPago.jsx - Modal de registro de pago
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useCountry } from '@/hooks/useCountry'
 import { useAuth }    from '@/hooks/useAuth'
 import { useRouter }   from 'next/navigation'
 import { Modal }       from '@/components/ui/Modal'
 import { Button }      from '@/components/ui/Button'
 import { Input }       from '@/components/ui/Input'
-import BotonCompartir       from '@/components/ui/BotonCompartir'
 import BotonImprimirRecibo  from '@/components/ui/BotonImprimirRecibo'
 import BotonCompartirRecibo from '@/components/ui/BotonCompartirRecibo'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
@@ -16,11 +16,13 @@ import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/Ca
 import { generarTextoPlantilla } from '@/lib/whatsapp-plantillas'
 import { formatearTelefono, abrirWhatsApp } from '@/lib/whatsapp'
 import MoneyInput           from '@/components/ui/MoneyInput'
-import MonedaCF             from '@/components/ui/MonedaCF'
 import MetodoPagoSelector   from '@/components/pagos/MetodoPagoSelector'
 import HojaInferior        from '@/components/cf/HojaInferior'
 import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
 import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
+// El comprobante del rediseño, el mismo que ya salía en el cobro desde la ruta.
+import { Recibo } from '@/components/pantallas/Recibo'
+import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import {
@@ -529,267 +531,147 @@ export default function RegistrarPago({
     )
   }
 
-  // ── Vista éxito ───────────────────────────────────────────────
+  // ══ EL COMPROBANTE, UNO SOLO PARA LOS TRES CAMINOS ═════════════════════════
+  //
+  // Aquí había una versión escrita a mano, y en el cobro desde la ruta salía
+  // `components/pantallas/Recibo`. El dueño lo reportó: «el modal de pago
+  // registrado es diferente en varios lugares… necesito consistencia y no tener
+  // dos modales de pago registrado».
+  //
+  // La migración a las pantallas del rediseño ya se había hecho para la CAPTURA
+  // del pago (`RegistrarCobro`, `AbonoPorDias`, `Gestion`) y se quedó a medias:
+  // la pantalla de éxito nunca se cambió. Es el mismo desajuste que ya se
+  // corrigió con Recargo/Descuento (ver `prestamos/[id]/page.jsx:2202`), donde
+  // «se pulsaba una fila del menú rediseñado y encima aparecía la pantalla
+  // vieja».
+  //
+  // ⚠ LO QUE LA VIEJA HACÍA Y LA NUEVA NO. Se llevaron las cuatro al `Recibo`,
+  // porque un rediseño que se lleva funciones por delante ya rompió una vez el
+  // modo abreviado sin que nadie se enterara:
+  //
+  //   · el título por tipo — un recargo no es «Pago registrado»
+  //   · el aviso de guardado sin señal — con visto verde, el cobrador cree que
+  //     ya subió; es el más importante de los cuatro
+  //   · el medio de pago — desde que la caja se discrimina por Nequi/efectivo,
+  //     es lo que ata el recibo con el cuadre
+  //   · la foto de evidencia
+  //
+  // Lo que NO se lleva: la tarjeta de «Cuota N de M / Saldo / Progreso». El
+  // saldo ya está dentro del troquelado del `Recibo` y el resto es información
+  // del préstamo, que está a un toque en su ficha — repetirla aquí era llenar el
+  // comprobante de cosas que el cliente no se lleva.
   if (exitoso && pagoGuardado) {
     const prestamoWA = prestamoAct ?? prestamo
     const rutaInfo = getNextInRuta()
+    const off = Boolean(pagoGuardado.offline)
 
-    return (
-      <Modal
-        open={open}
-        onClose={handleCerrar}
-        title={
-          tipo === 'recargo' ? 'Recargo aplicado' :
-          tipo === 'descuento' ? 'Descuento aplicado' :
-          tipo === 'capital' ? 'Abono a capital registrado' :
-          tipo === 'intereses' ? 'Pago de intereses registrado' :
-          'Pago registrado'
-        }
-        footer={
-          <div className="flex gap-2 w-full">
-            <Button variant="secondary" onClick={handleCerrar} className={rutaInfo ? 'flex-shrink-0' : 'w-full'}>
-              Cerrar
-            </Button>
-            {rutaInfo && (
-              <button
-                onClick={navigateNextInRuta}
-                className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold active:scale-[0.98] transition-all"
-                style={rutaInfo.isLast
-                  // Texto CLARO sobre verde oscuro. Decia `--cf-ink`, que en tema
-                  // claro es casi negro: negro sobre verde oscuro no se lee. Es la
-                  // tercera vez que aparece esta misma pareja en el repo.
-                  ? { background: 'var(--cf-green-dark)', color: '#F3F3F6' }
-                  : { background: 'linear-gradient(135deg, var(--cf-gold), color-mix(in srgb, var(--cf-gold) 85%, black))', color: '#3a2900' }
-                }
-              >
-                {rutaInfo.isLast
-                  ? 'Ruta finalizada'
-                  : `Siguiente → ${rutaInfo.next.nombre}`
-                }
-              </button>
-            )}
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex flex-col items-center gap-2 py-3">
-            {pagoGuardado.offline ? (
-              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-[rgba(245,197,24,0.15)]">
-                <svg className="w-7 h-7 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            ) : (
-              <div className="relative wizard-success-bounce">
-                <MonedaCF pose="celebra" size={104} />
-                <div
-                  className="absolute -bottom-1 right-0 w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--cf-green-dark)', border: '2px solid var(--cf-card)' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="#ffffff" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-            )}
-            <p className="text-[var(--cf-ink)] font-bold text-lg font-mono-display">{formatMoney(pagoGuardado.montoPagado)}</p>
-            <p className="text-[var(--cf-ink-3)] text-sm">
-              {pagoGuardado.offline ? 'guardado offline — se sincronizará al conectar'
-                : tipo === 'recargo' ? 'recargo aplicado correctamente'
-                : tipo === 'descuento' ? 'descuento aplicado correctamente'
-                : 'pagado correctamente'}
-            </p>
-            {!pagoGuardado.offline && !['recargo', 'descuento'].includes(tipo) && pagoGuardado.metodoPago && (
-              <p className="text-[11px] mt-0.5" style={{ color: pagoGuardado.metodoPago === 'transferencia' ? 'var(--cf-ink-2)' : 'var(--cf-green-dark)' }}>
-                {pagoGuardado.metodoPago === 'transferencia'
-                  ? (pagoGuardado.plataforma ? `Transferencia · ${pagoGuardado.plataforma}` : 'Transferencia')
-                  : 'Efectivo'}
-              </p>
-            )}
-          </div>
+    // «Efectivo» o «Transferencia · Nequi». En un recargo o un descuento no hay
+    // medio: no entró ni salió dinero.
+    const medioPago = (!off && !['recargo', 'descuento'].includes(tipo) && pagoGuardado.metodoPago)
+      ? (pagoGuardado.metodoPago === 'transferencia'
+          ? (pagoGuardado.plataforma ? `Transferencia · ${pagoGuardado.plataforma}` : 'Transferencia')
+          : 'Efectivo')
+      : null
 
-          {/* ── «LLEVAS HOY $X DE $Y» (T15-03) ──
-              Es lo que el cobrador quiere saber justo después de cobrar: cuánto
-              le falta para cerrar el día. La lámina la pone aquí, debajo del
-              monto, y hasta ahora la pantalla no la tenía.
+    /* A PANTALLA COMPLETA, no dentro del `Modal` genérico. El `Recibo` ya trae
+       su propia cabecera y su botonera, así que el `Modal` le pondría un título
+       encima del suyo y un pie debajo del suyo. Y es como se monta en la ruta
+       (`rutas/[id]/page.jsx:1527`), que es justo la mitad que se veía bien: si
+       uno sale a pantalla completa y el otro en una ventanita, siguen siendo dos
+       pantallas distintas aunque compartan componente.
 
-              La cifra sale del contexto de ruta (`sessionStorage`), que es una
-              FOTO de cuando se entró al recorrido, así que el pago que se acaba
-              de hacer se suma aquí — si no, la barra se quedaría atrás justo en
-              el cobro que se está mirando.
+       `--cf-surface`, no `--cf-bg`: ese token NO EXISTE, y un nombre inventado
+       no da error — la capa sale transparente. Lo caza `tokens-existen`. */
+    if (!open || typeof document === 'undefined') return null
 
-              Solo con recorrido en marcha y con meta: fuera de la ruta no hay
-              «hoy» que llevar, y sin meta la barra no significa nada. */}
-          {rutaNav?.esperadoHoy > 0 && !pagoGuardado.offline && !['recargo', 'descuento'].includes(tipo) && (() => {
-            const llevo = Math.round((rutaNav.recaudadoHoy ?? 0) + (pagoGuardado.montoPagado ?? 0))
-            const meta = Math.round(rutaNav.esperadoHoy)
-            const pct = Math.max(2, Math.min(100, Math.round((llevo / meta) * 100)))
-            return (
-              <div className="rounded-[12px] px-3 py-2.5" style={{ background: 'var(--cf-fill)' }}>
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>Llevas hoy</span>
-                  <span className="cf-fig text-[13.5px] font-bold" style={{ color: 'var(--cf-ink)' }}>
-                    {formatMoney(llevo)} de {formatMoney(meta)}
-                  </span>
-                </div>
-                <div className="mt-2 h-[7px] rounded-full overflow-hidden" style={{ background: 'var(--cf-card)' }}>
-                  <span className="block h-[7px] rounded-full" style={{
-                    width: `${pct}%`, background: 'var(--cf-gold)',
-                  }} />
-                </div>
-              </div>
-            )
-          })()}
-
-          {prestamoWA && (
-            <div
-              className="rounded-[20px] px-4 py-3 space-y-1.5 text-sm"
-              style={{
-                background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 4%, transparent) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, transparent) 100%)`,
-                boxShadow: `0 0 30px color-mix(in srgb, var(--cf-green-dark) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
-              }}
-            >
-              {(() => {
-                const totalCuotas = prestamoWA.cuotasAmortizacion?.length || null
-                const cuotasPagadas = totalCuotas != null && prestamoWA.cuotasPendientes != null
-                  ? totalCuotas - prestamoWA.cuotasPendientes
-                  : null
-                return cuotasPagadas != null && totalCuotas ? (
-                  <div className="flex justify-between">
-                    <span className="text-[var(--cf-ink-3)]">Cuota</span>
-                    <span className="text-[var(--cf-ink)] font-medium font-mono-display">{cuotasPagadas} de {totalCuotas}</span>
-                  </div>
-                ) : null
-              })()}
-              <div className="flex justify-between">
-                <span className="text-[var(--cf-ink-3)]">Saldo pendiente</span>
-                <span className="text-[var(--cf-ink)] font-medium font-mono-display">{formatMoney(prestamoWA.saldoPendiente)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--cf-ink-3)]">Progreso</span>
-                <span className="text-[var(--cf-green-dark)] font-medium font-mono-display">{prestamoWA.porcentajePagado}%</span>
-              </div>
-            </div>
-          )}
-
-          {pagoGuardado?.id && !pagoGuardado.offline && (
-            <div className="space-y-2">
-              <input
-                ref={fotoInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) subirFotoEvidencia(f)
-                  e.target.value = ''
-                }}
-              />
-              {fotoEvidencia ? (
-                <div className="relative rounded-[12px] overflow-hidden border" style={{ borderColor: 'var(--cf-border)' }}>
-                  <img src={fotoEvidencia} alt="Evidencia" className="w-full h-32 object-cover" />
-                  <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium" style={{ background: 'rgba(0,0,0,0.7)', color: 'var(--cf-green-dark)' }}>
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Foto guardada
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fotoInputRef.current?.click()}
-                  disabled={subiendoFoto}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-[12px] border text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-60"
-                  style={{
-                    borderColor: 'color-mix(in srgb, var(--cf-border) 80%, transparent)',
-                    background: 'color-mix(in srgb, var(--cf-card) 60%, transparent)',
-                    color: 'var(--cf-ink-2)',
-                  }}
-                >
-                  {subiendoFoto ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" />
-                        <path className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="currentColor" stroke="none" />
-                      </svg>
-                      Subiendo...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      Adjuntar foto de evidencia
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          )}
-
-          {cliente?.telefono && prestamoWA && (
-            <div className="flex">
-              <button
-                type="button"
-                /* ⚠ ABRE LA HOJA, NO MANDA. Este es el botón que más se
-                   pulsa de toda la aplicación —sale justo después de cobrar— y
-                   disparaba el recibo sin que nadie lo leyera: el cobrador veía
-                   el mensaje ya dentro del chat del cliente, con las cifras
-                   puestas. «Personalizar» estaba escondido en el engranaje de
-                   al lado, que casi nadie encuentra.
-                   La hoja lo enseña, deja retocarlo y manda desde dentro. */
-                onClick={() => setModalWA(true)}
-                className="flex-1 flex items-center justify-center gap-2 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer"
-                style={{ background: '#25D366', color: '#fff' }}
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                </svg>
-                Enviar por WhatsApp
-              </button>
-              {/* El engranaje de «Personalizar mensaje» vivía aquí, al lado,
-                  porque el botón verde mandaba de una. Ahora los dos abrían la
-                  misma hoja: era un botón para llegar dos veces al mismo sitio.
-                  La personalización no se pierde —está dentro de la hoja— y
-                  este rincón deja de tener un icono que no lleva a nada nuevo. */}
-
-            </div>
-          )}
-
-          {prestamoWA && (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <BotonCompartirRecibo cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} camposRecibo={camposLocal} label="Compartir recibo" />
-                <button
-                  type="button"
-                  onClick={() => setVistaComprobante(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]"
-                >
-                  <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Imprimir
-                </button>
-              </div>
-              <BotonCompartir cliente={cliente} prestamo={prestamoWA} pago={pagoGuardado} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposLocal} />
-            </div>
-          )}
-
-          <HojaWhatsApp
-            open={modalWA}
-            onClose={() => setModalWA(false)}
-            cliente={cliente}
-            prestamo={prestamoWA}
-            pago={pagoGuardado}
-            orgNombre={orgNombre}
-            ocultarSaldo={ocultarSaldoWA}
-            organizationId={organizationId}
-            camposRecibo={camposLocal}
+    return createPortal(
+      <div data-recibo="1" style={{
+        position: 'fixed', inset: 0, zIndex: 10002,
+        background: 'var(--cf-surface)', overflowY: 'auto',
+      }}>
+        <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Recibo
+            titulo={
+              tipo === 'recargo' ? 'Recargo aplicado' :
+              tipo === 'descuento' ? 'Descuento aplicado' :
+              tipo === 'capital' ? 'Abono a capital' :
+              tipo === 'intereses' ? 'Pago de interés' :
+              'Pago registrado'
+            }
+            offline={off}
+            monto={formatMoney(pagoGuardado.montoPagado)}
+            cliente={cliente?.nombre ?? '—'}
+            medioPago={medioPago}
+            saldo={prestamoWA?.saldoPendiente != null
+              ? formatMoney(Math.round(prestamoWA.saldoPendiente)) : null}
+            proximoCobro={prestamoWA?.proximoCobro
+              ? formatFechaCobroRelativa(prestamoWA.proximoCobro) : null}
+            negocio={orgNombre}
+            cuando={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
+            telefono={cliente?.telefono ?? null}
+            /* La misma barra que ya salía aquí: la cifra viene de la foto de
+               `sessionStorage`, así que hay que SUMARLE el pago recién hecho o
+               la barra se queda atrás justo en el cobro que se está mirando. */
+            progresoDia={(rutaNav?.esperadoHoy > 0 && !off && !['recargo', 'descuento'].includes(tipo))
+              ? (() => {
+                  const llevo = Math.round((rutaNav.recaudadoHoy ?? 0) + (pagoGuardado.montoPagado ?? 0))
+                  const meta = Math.round(rutaNav.esperadoHoy)
+                  return {
+                    texto: `${formatMoney(llevo)} de ${formatMoney(meta)}`,
+                    porcentaje: Math.max(2, Math.min(100, Math.round((llevo / meta) * 100))),
+                  }
+                })()
+              : null}
+            /* Sin `id` en el servidor no hay dónde colgar la foto, así que el
+               pago guardado sin señal no la ofrece. */
+            evidencia={(pagoGuardado?.id && !off) ? {
+              url: fotoEvidencia,
+              subiendo: subiendoFoto,
+              onAdjuntar: () => fotoInputRef.current?.click(),
+            } : null}
+            onWhatsApp={() => setModalWA(true)}
+            /* Los dos hacen la acción de verdad, no abren un paso intermedio. El
+               checklist de «qué campos salen en el impreso» sigue existiendo,
+               pero es configuración del cliente y no tiene por qué interponerse
+               cada vez que alguien quiere el papel. */
+            onGuardarImagen={() => guardarReciboImagen({
+              cliente, prestamo: prestamoWA, pago: pagoGuardado, orgNombre, camposRecibo: camposLocal,
+            })}
+            onImprimir={() => imprimirRecibo({
+              cliente, prestamo: prestamoWA, pago: pagoGuardado, orgNombre, camposRecibo: camposLocal,
+            })}
+            onSiguiente={rutaInfo ? navigateNextInRuta : null}
+            siguienteNombre={rutaInfo && !rutaInfo.isLast ? rutaInfo.next?.nombre : null}
+            onCerrar={handleCerrar}
           />
         </div>
-      </Modal>
+
+        <input
+          ref={fotoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) subirFotoEvidencia(f)
+            e.target.value = ''
+          }}
+        />
+
+        <HojaWhatsApp
+          open={modalWA}
+          onClose={() => setModalWA(false)}
+          cliente={cliente}
+          prestamo={prestamoWA}
+          pago={pagoGuardado}
+          orgNombre={orgNombre}
+          ocultarSaldo={ocultarSaldoWA}
+          organizationId={organizationId}
+          camposRecibo={camposLocal}
+        />
+      </div>,
+      document.body,
     )
   }
 

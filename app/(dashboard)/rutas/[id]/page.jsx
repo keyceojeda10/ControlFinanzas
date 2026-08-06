@@ -37,6 +37,7 @@ import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
 import { Recibo }                    from '@/components/pantallas/Recibo'
+import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
 import { rotulo } from '@/lib/dinero/definiciones'
@@ -1564,6 +1565,32 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           if (siguiente) abrirPagoRapido(siguiente)
         }}
         siguienteNombre={(ruta?.clientes ?? []).find((c) => c.cobroPendienteHoy && c.id !== reciboCobro.clienteId)?.nombre ?? null}
+        /* ⚠ ESTOS DOS NO ESTABAN, y sus botones se pintaban igual: «Guardar
+           imagen» e «Imprimir» llevaban aquí sin hacer NADA desde que se montó
+           la pantalla. Un botón sin función detrás no da error ni se ve
+           distinto — apareció al unificar el comprobante con la ficha del
+           préstamo, que sí los tenía conectados.
+
+           Las dos acciones viven en `lib/recibo-acciones.js` para que los tres
+           caminos impriman lo mismo. */
+        onGuardarImagen={() => {
+          const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
+          guardarReciboImagen({
+            cliente: c ?? { nombre: reciboCobro.nombre },
+            prestamo: c?.prestamosActivos?.[0] ?? null,
+            pago: { montoPagado: reciboCobro.monto, fechaPago: new Date().toISOString() },
+            orgNombre,
+          })
+        }}
+        onImprimir={() => {
+          const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
+          imprimirRecibo({
+            cliente: c ?? { nombre: reciboCobro.nombre },
+            prestamo: c?.prestamosActivos?.[0] ?? null,
+            pago: { montoPagado: reciboCobro.monto, fechaPago: new Date().toISOString() },
+            orgNombre,
+          })
+        }}
         onCerrar={() => setReciboCobro(null)}
       />
     </div>,
