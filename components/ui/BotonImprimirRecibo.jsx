@@ -4,6 +4,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
+import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe } from '@/lib/recibo-derivados'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,10 +41,27 @@ export function resolverCampo(campo, cliente, prestamo) {
     totalAPagar:     formatMoney(prestamo.totalAPagar ?? 0),
     montoPrestado:   formatMoney(prestamo.montoPrestado ?? 0),
     cuota:           formatMoney(prestamo.cuotaDiaria ?? 0),
-    progreso:        `${prestamo.porcentajePagado ?? 0}%`,
+    /* ⚠ ESTOS TRES NO SON COLUMNAS: los calcula el API. Desde la pantalla de
+       pago llega el préstamo CRUDO y venían `undefined`, así que el
+       comprobante salía con guiones y con «0%».
+
+       El mismo cliente lo reportó DOS DÍAS SEGUIDOS: el 4 lo arreglé solo en
+       el recibo de WhatsApp, y el 5 volvió con la captura de la IMAGEN, que es
+       este fichero y seguía leyendo `prestamo.numeroCuota ?? '-'`.
+
+           Cuota actual     -      ← debía decir «1 de 4»
+           Cuotas restantes -      ← debía decir «3»
+
+       Ahora los tres salen de `lib/recibo-derivados.js`, que es el mismo sitio
+       del que los saca el recibo de WhatsApp. */
+    progreso:        `${porcentajeDe(prestamo)}%`,
     frecuencia:      prestamo.frecuencia ?? '-',
     fechaVencimiento: fmtFecha(prestamo.fechaFin),
-    numeroCuota:     prestamo.numeroCuota ?? '-',
+    numeroCuota:     prestamo.numeroCuota ?? numeroCuotaDe(prestamo) ?? '-',
+    cuotasRestantes: (() => {
+      const r = cuotasRestantesDe(prestamo)
+      return r == null ? '-' : `${r}`
+    })(),
     diasMora:        `${prestamo.diasMora ?? 0}`,
     clienteCedula:   (cliente?.cedula && !cliente.cedula.startsWith('SIN-')) ? cliente.cedula : '-',
     clienteTelefono: cliente?.telefono ?? '-',
