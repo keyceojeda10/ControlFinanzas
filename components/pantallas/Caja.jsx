@@ -126,14 +126,34 @@ export function CajaDia({
   // reserva la altura entera y deja un HUECO BLANCO de media pantalla debajo de
   // los movimientos. Ahi va `auto`.
   alto = '100%',
+  /* ⚠ EL RELLENO LATERAL SE APLICABA DOS VECES.
+   *
+   * Este componente añadía `--cf-pad-screen` (20px) por su cuenta, y la página
+   * que lo monta YA está dentro del armazón, que pone los suyos. Resultado
+   * medido en el espejo a 393px:
+   *
+   *     «Aquí ves el efectivo…»    x=20  ancho 353   ← lo normal
+   *     «CÓMO SE ARMA EL SALDO»    x=40  ancho 313   ← 20px de más por lado
+   *     «MOVIMIENTOS DE HOY»       x=40  ancho 313
+   *
+   * Reportado por el dueño: «el primer bloque de caja en móvil sale más angosto
+   * que el resto de elementos de esa pantalla».
+   *
+   * Se copia la salida que ya usa `Cobradores.jsx:94`: una prop `sinMargen`
+   * para cuando el componente vive dentro de una página que ya tiene relleno.
+   * No se inventa otra — `11-ESCALAS §9`: busca el mismo papel y copia su
+   * decisión.
+   */
+  sinMargen = false,
 }) {
+  const padLateral = sinMargen ? '0' : 'var(--cf-pad-screen)'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: alto }}>
       <div style={{
         flex: alto === 'auto' ? 'none' : 1, minHeight: 0,
         overflowY: alto === 'auto' ? 'visible' : 'auto',
         display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)',
-        padding: '8px var(--cf-pad-screen) 16px',
+        padding: `8px ${padLateral} 16px`,
       }}>
 
         {/* El encabezado: «Caja», la fecha debajo, y «Reporte» a la derecha.

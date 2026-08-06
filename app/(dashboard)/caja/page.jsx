@@ -1430,6 +1430,7 @@ export default function CajaPage() {
                   antepone la apertura. */}
               <CajaDia
                 alto="auto"
+                sinMargen
                 fecha={`${rangoData.cantidadPagos} ${rangoData.cantidadPagos === 1 ? 'pago' : 'pagos'} en el período`}
                 lineas={[
                   { id: 'recaudo', rotulo: 'Lo que entró', signo: 1, monto: rangoData.cobrado, texto: formatMoney(rangoData.cobrado) },
@@ -1576,6 +1577,7 @@ export default function CajaPage() {
           pastilla enseña el rango y no una fecha. */}
       <CajaDia
         alto="auto"
+        sinMargen
         fecha={periodo.modo === 'hoy' ? null : fechaLarga}
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
