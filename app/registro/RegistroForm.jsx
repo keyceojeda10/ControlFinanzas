@@ -60,13 +60,15 @@ function useTheme() {
   return light ? LIGHT : DARK
 }
 
-/* El wizard son TRES pasos: nombre+negocio, WhatsApp, correo y clave.
-   El cuarto (verificar el código) ya no es registro: es confirmar, y por eso no
+/* El wizard son CUATRO pasos: nombre, negocio, WhatsApp, correo y clave.
+   El quinto (verificar el código) ya no es registro: es confirmar, y por eso no
    entra en la espina.
 
-   Eran cuatro hasta que se juntaron nombre y negocio, que es lo que pide
-   `T07-02-registro`: «nombre y negocio caben juntos». */
-const PASOS = 3
+   ⚠ La lámina `T07-02-registro` sugiere juntar nombre y negocio en una sola
+   pantalla. Se probó y se REVIRTIÓ: el encargo era estético y cambiar el número
+   de pasos toca el flujo, que es otra decisión y no la que se pidió. Los cuatro
+   pasos se quedan como estaban. */
+const PASOS = 4
 
 /* ── EL PIE DEL WIZARD ─────────────────────────────────────────────────────
    Reportado: «el botón no está muy pegado al input… se ve un espacio todo feo
@@ -168,17 +170,12 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const goNext = () => setStep(s => s + 1)
   const goBack = () => { setStep(s => s - 1); setError('') }
 
-  /* ── NOMBRE Y NEGOCIO EN UNA SOLA PANTALLA ──
-     Lo pide `T07-02-registro` con esas palabras: «el wizard baja de 6 pantallas
-     a 4: nombre y negocio CABEN JUNTOS, y la portada de bienvenida desaparece».
-     La portada ya se había quitado; esto faltaba, y por eso eran cuatro pasos y
-     no tres.
-
-     No es solo estética: cada pantalla del registro es una oportunidad de
-     abandonar, y la activación es el cuello de botella del producto. Dos campos
-     de una línea no necesitan una pantalla cada uno. */
   const handleStep1 = () => {
     if (!form.nombre.trim()) { setError('Ingresa tu nombre'); return }
+    goNext()
+  }
+
+  const handleStep2 = () => {
     if (!form.nombreOrganizacion.trim()) { setError('Ingresa el nombre de tu negocio'); return }
     goNext()
   }
@@ -228,7 +225,15 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           value: 39000.0, currency: 'COP',
         })
       }
-      setStep(5)
+      /* ⚠ `PASOS + 1`, NO un número escrito a mano.
+         Aquí decía `setStep(5)` y al juntar nombre y negocio la verificación
+         pasó a ser el paso 4: la cuenta se creaba bien y la pantalla siguiente
+         salía EN BLANCO, porque ningún bloque responde al 5. No lo cazó ni el
+         build ni las pruebas — solo se ve registrándose de verdad.
+
+         Atado a `PASOS` para que el día que se añada o quite un paso, esto
+         siga apuntando a la verificación y no a la nada. */
+      setStep(PASOS + 1)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
@@ -400,55 +405,62 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 ¿Cómo te llamas?
               </h1>
               <p className="text-[15px] mb-7" style={{ color: t.textSecondary }}>
-                Tu nombre y el de tu negocio. Los dos se pueden cambiar después.
+                Así te saludamos dentro de la app.
               </p>
 
-              <div className="flex flex-col gap-4">
-                <AuthInput
-                  value={form.nombre}
-                  onChange={set('nombre')}
-                  placeholder="Ej: Carlos García"
-                  autoComplete="given-name"
-                  icon={
-                    <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                    </svg>
-                  }
-                />
-
-                {/* El rótulo va SOLO aquí: con dos campos seguidos, el segundo
-                    sin nombre se lee como una repetición del primero. Arriba no
-                    hace falta — el titular ya pregunta cómo se llama. */}
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-[12px] font-bold tracking-[0.01em] px-0.5" style={{ color: t.textSecondary }}>
-                    Y tu negocio
-                  </span>
-                  <AuthInput
-                    value={form.nombreOrganizacion}
-                    onChange={set('nombreOrganizacion')}
-                    placeholder="Ej: Préstamos García"
-                    icon={
-                      <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
-                      </svg>
-                    }
-                  />
-                  <span className="text-[11px] px-0.5" style={{ color: t.textMuted }}>
-                    Es el nombre que ven tus clientes y cobradores.
-                  </span>
-                </div>
-              </div>
+              <AuthInput
+                value={form.nombre}
+                onChange={set('nombre')}
+                placeholder="Ej: Carlos García"
+                autoComplete="given-name"
+                icon={
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                }
+              />
 
               <PieWizard
                 onSeguir={handleStep1}
-                seguirBloqueado={!form.nombre.trim() || !form.nombreOrganizacion.trim()}
+                seguirBloqueado={!form.nombre.trim()}
                 theme={t}
               />
             </div>
           )}
 
-          {/* ── Step 2: WhatsApp ── */}
+          {/* ── Step 2: Negocio ── */}
           {step === 2 && (
+            <div className="flex-1 flex flex-col">
+              <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
+                style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
+                ¿Cómo se llama tu negocio?
+              </h1>
+              <p className="text-[15px] mb-7" style={{ color: t.textSecondary }}>
+                El nombre que ven tus clientes y cobradores.
+              </p>
+
+              <AuthInput
+                value={form.nombreOrganizacion}
+                onChange={set('nombreOrganizacion')}
+                placeholder="Ej: Préstamos García"
+                icon={
+                  <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                  </svg>
+                }
+              />
+
+              <PieWizard
+                onAtras={goBack}
+                onSeguir={handleStep2}
+                seguirBloqueado={!form.nombreOrganizacion.trim()}
+                theme={t}
+              />
+            </div>
+          )}
+
+          {/* ── Step 3: WhatsApp ── */}
+          {step === 3 && (
             <div className="flex-1 flex flex-col">
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
@@ -531,8 +543,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </div>
           )}
 
-          {/* ── Step 3: Email + Password ── */}
-          {step === 3 && (
+          {/* ── Step 4: Email + Password ── */}
+          {step === 4 && (
             <div className="flex-1 flex flex-col">
               {/* Sin `BackButton` arriba: el «Atrás» va en el pie, junto al que
                   avanza, como en la lámina. Tenerlo en los dos sitios eran dos
@@ -608,8 +620,8 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </div>
           )}
 
-          {/* ── Step 4: Verificacion OTP ── */}
-          {step === 4 && (
+          {/* ── Step 5: Verificacion OTP ── */}
+          {step === 5 && (
             <div className="text-center">
               <div className="inline-flex items-center justify-center mb-5"
                 style={{
@@ -756,7 +768,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </p>
           )}
 
-          {(step === 1 || step === 3) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
+          {(step === 1 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
