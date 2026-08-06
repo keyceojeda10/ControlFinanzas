@@ -591,6 +591,13 @@ export default function RegistrarPago({
       }}>
         <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
           <Recibo
+            /* `capital` e `intereses` se alcanzan desde el propio «¿A qué se
+               aplica?» de la hoja. `recargo` y `descuento` HOY NO llegan aquí
+               —la ficha los abre por `Gestion.jsx` con su propia hoja, ver
+               `prestamos/[id]/page.jsx:941`—, pero el componente sigue
+               aceptando `tabInicial='recargo'`, así que las dos ramas se quedan:
+               el día que alguien vuelva a entrar por ahí, el comprobante no
+               dirá «Pago registrado» de un recargo. */
             titulo={
               tipo === 'recargo' ? 'Recargo aplicado' :
               tipo === 'descuento' ? 'Descuento aplicado' :
