@@ -232,28 +232,56 @@ export default function TablaAmortizacion({
                 opacity: c.pagada ? 0.5 : 1,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* ── LOS TRES NO SIEMPRE CABEN EN UN RENGLÓN ──
+                  Reportado con captura: el monto se salía por la derecha, y solo
+                  en la fila que lleva pastilla. Medido a 393px, quedan 317
+                  útiles y las tres piezas piden:
+
+                      «Mes 1 · 5 de septiembre»  157      ← ni se recorta
+                      SIGUIENTE                   69
+                      $105.000                    68
+                      dos huecos de 10            20
+                                                 ───
+                                                 314  ← cabe por 3px
+
+                  La lámina lo dibuja así, pero con un caso que cabe («Mes 1 · 21
+                  de agosto» y $366.667). Con «septiembre» o «Quincena 12» y una
+                  cuota de millones se pasa de largo: 3px de margen no es un
+                  diseño que funcione, es uno que aguanta por casualidad.
+
+                  `wrap`, y la fecha DEJA de encogerse. Con `flex: 1` cedía ella
+                  primera y salía «Quincena 12 · 30 de …»: el día es EL dato —es
+                  cuándo hay que cobrar— y perder el mes por caber es peor que
+                  usar dos renglones. Medido en los tres casos: los dos primeros
+                  siguen en un renglón, idénticos a la lámina, y solo el peor se
+                  parte, bajando el monto (que con `marginLeft:auto` queda solo y
+                  alineado a la derecha, mejor que una pastilla huérfana). */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <span style={{
-                  flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+                  flex: 'none', minWidth: 0, fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>{c.cuando}</span>
 
+                {/* El monto va ANTES en el orden del DOM para que, al partirse,
+                    lo que baje sea la pastilla y no la cifra: el monto es lo
+                    último de la fila en todas las demás pantallas y tiene que
+                    seguir estando arriba, a la derecha de la fecha.
+                    `order` lo devuelve a su sitio visual cuando sí cabe. */}
+                <span className="cf-fig" style={{
+                  fontSize: 18, fontWeight: 600, letterSpacing: '-.025em',
+                  color: 'var(--cf-ink)', flex: 'none', order: 2, marginLeft: 'auto',
+                }}>{c.cuota}</span>
+
                 {/* La pastilla a mano, no la del sistema: la de la lámina es
                     fondo dorado plano con letra `#3A2900`, y el tono `destacado`
-                    del sistema no es ese. Y va ANTES del monto, no después: el
-                    monto es lo último de la fila en todas las demás pantallas. */}
+                    del sistema no es ese. */}
                 {c.siguiente && (
                   <span style={{
                     display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px',
                     borderRadius: 11, background: ORO, color: '#3A2900',
-                    fontSize: 10, fontWeight: 700, letterSpacing: '.02em', flex: 'none',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.02em', flex: 'none', order: 1,
                   }}>SIGUIENTE</span>
                 )}
-
-                <span className="cf-fig" style={{
-                  fontSize: 18, fontWeight: 600, letterSpacing: '-.025em',
-                  color: 'var(--cf-ink)', flex: 'none',
-                }}>{c.cuota}</span>
               </div>
 
               <Barra capital={c.capitalNum} ganancia={c.gananciaNum} />
