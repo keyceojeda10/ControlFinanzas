@@ -218,31 +218,26 @@ export default function TarjetaCliente({
         )}
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: m.huecoSub }}>
-          {/* El nombre SOLO en su línea: nada le puede robar ancho. El punto de
-              «nuevo» va con `flex: none` y 6px, así que no se lo quita. */}
+          {/* ── EL NOMBRE, LA LÍNEA ENTERA PARA ÉL ───────────────────────────
+              La pastilla «NUEVO» iba AQUÍ, delante del nombre, con `flex: none`
+              y un comentario que decía que así no le robaba ancho. `flex: none`
+              impide que la pastilla se encoja, no que ocupe: son dos cosas
+              distintas y me lo creí sin medirlo.
+
+              Reportado: «la etiqueta de Nuevo desplaza mucho el nombre».
+              Medido a 393px con el caso de su captura —cliente nuevo CON
+              préstamo, así que el monto ocupa la derecha—:
+
+                  sin la pastilla   nombre 160px · 1 renglón
+                  con la pastilla   nombre  79px · 3 renglones
+
+              Le robaba 81px, más de la mitad. «Carlos Andres Ojeda» salía en
+              tres líneas.
+
+              Ahora baja a la fila de estado, con «Al día». No pierde nada: esa
+              fila es justo donde el ojo va a buscar en qué situación está el
+              cliente, y las dos pastillas juntas se leen de una pasada. */}
           <span style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-            {/* «NUEVO» SE LEE, no se adivina. Era un punto verde de 7px sin
-                texto: en una lista de 1.315 clientes eso no se distingue de una
-                mota, y el dueño lo reportó como que no salía. Ahora es una
-                pastilla con su palabra. Va DELANTE del nombre porque es lo que
-                hace saltar la fila; el `flex:none` impide que le robe ancho. */}
-            {nuevo && (
-              <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
-                height: 19, padding: '0 8px 0 6px', borderRadius: 999,
-                background: 'var(--cf-green-tint, color-mix(in srgb, var(--cf-green) 14%, transparent))',
-                border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
-              }}>
-                <span aria-hidden style={{
-                  width: 5, height: 5, borderRadius: 999, flex: 'none',
-                  background: 'var(--cf-green-dark)',
-                }} />
-                <span style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
-                  color: 'var(--cf-green-dark)', textTransform: 'uppercase',
-                }}>Nuevo</span>
-              </span>
-            )}
             {/* EL NOMBRE NO SE CORTA NUNCA. Iba con `nowrap` + puntos
                 suspensivos y los nombres largos salían partidos. El dueño:
                 «el nombre nunca se debe cortar, porque es para la fácil
@@ -269,11 +264,36 @@ export default function TarjetaCliente({
           {/* La pastilla y el contexto comparten esta línea. El contexto se
               encoge, la pastilla no: con un nombre de ruta largo se recorta la
               ruta, nunca los días de mora. */}
-          {(etiquetaEstado || contexto || piezas) && (
+          {(etiquetaEstado || contexto || piezas || nuevo) && (
             // `flex-start` y no `center`: cuando los metadatos ocupan dos
             // renglones, centrar deja la pastilla flotando a media altura de un
             // hueco blanco. Arriba queda a la altura del primer dato.
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, minWidth: 0, flexWrap: 'wrap', rowGap: 4 }}>
+              {/* «NUEVO» SE LEE, no se adivina. Era un punto verde de 7px sin
+                  texto: en una lista de 1.315 clientes eso no se distingue de
+                  una mota, y el dueño lo reportó como que no salía.
+
+                  Va PRIMERA de la fila —antes que «Al día»— porque es lo que
+                  hace saltar el renglón al recorrer la lista. Aquí sí puede ir
+                  delante: esta fila envuelve (`flexWrap`), así que si no cabe
+                  baja de renglón en vez de estrujar a su vecina. */}
+              {nuevo && (
+                <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
+                  height: 19, padding: '0 8px 0 6px', borderRadius: 999,
+                  background: 'var(--cf-green-tint, color-mix(in srgb, var(--cf-green) 14%, transparent))',
+                  border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
+                }}>
+                  <span aria-hidden style={{
+                    width: 5, height: 5, borderRadius: 999, flex: 'none',
+                    background: 'var(--cf-green-dark)',
+                  }} />
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
+                    color: 'var(--cf-green-dark)', textTransform: 'uppercase',
+                  }}>Nuevo</span>
+                </span>
+              )}
               {etiquetaEstado && (
                 // El pagado lleva pastilla NEUTRA (gris), no una de su color: no
                 // hay «color de terminado», hay ausencia de alarma.
