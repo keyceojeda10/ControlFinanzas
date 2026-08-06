@@ -81,20 +81,24 @@ export default function AsistentePage() {
        `max-w-3xl`: aquí no hay barra lateral ni tarjetas al costado —la pantalla
        es solo la conversación—, así que 42rem dejaba las burbujas angostas. */
     <>
-      {/* ⚠ EL HERMANO QUE ANULA EL SCROLL FANTASMA.
+      {/* ⚠ EL SCROLL FANTASMA DE 56px.
           Con el chat en `fixed`, el `<main>` se queda SIN contenido que lo
           dimensione… y su padre es `min-h-screen`, así que se estira igual a
           852 empezando en y=56: documento de 908 en una ventana de 852, y la
           página rueda 56px en vacío. Es justo el «da mucha vuelta».
 
           Medido: en las demás pantallas el `main` mide lo que su contenido
-          (2.658 en el panel, 11.423 en clientes) y ese scroll SÍ es legítimo.
-          El fantasma es exclusivo de aquí, así que se arregla aquí y no en el
-          layout, que lo comparten las 46.
+          (2.658 en el panel, 11.423 en clientes) y ESE scroll sí es legítimo.
+          El fantasma es exclusivo de aquí.
 
-          Este bloque de altura cero le da al `main` un contenido de 0px que
-          gana al `min-h-screen` del padre. */}
-      <div className="h-0 lg:hidden" aria-hidden />
+          Probé antes con un hermano de altura cero y NO basta: `min-h-screen`
+          gana igual. Se apaga el scroll del documento mientras esta pantalla
+          está montada, y se restaura al salir. */}
+      <style>{`
+        @media (max-width: 1023px) {
+          html, body { overflow: hidden; height: 100%; }
+        }
+      `}</style>
 
       <div
         className="fixed inset-x-0 bottom-0 lg:static lg:-mx-6 lg:-my-6"
