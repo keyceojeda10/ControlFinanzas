@@ -18,6 +18,8 @@ import { Tarjeta } from '@/components/cf/primitivos'
 /* Los iconos son de trazo, 20px, en gris. No compiten con las cifras. */
 const I = {
   plata:      <><rect x="2.5" y="6" width="19" height="13" rx="2.5" /><path d="M2.5 10.5h19M17 15h1.5" /></>,
+  // Caja: el cajón con su ranura y las monedas. Mismo trazo que el resto.
+  caja:       <><rect x="2.5" y="7.5" width="19" height="12" rx="2.5" /><path d="M9 7.5V6a2 2 0 012-2h2a2 2 0 012 2v1.5M9.5 13h5" /></>,
   negocio:    <><path d="M3 20h18M6.5 20v-7M12 20V6.5M17.5 20v-11" /></>,
   simulador:  <><rect x="4" y="2.5" width="16" height="19" rx="2.5" /><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 15.5v3" /></>,
   reportes:   <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>,
@@ -157,6 +159,19 @@ export default function PantallaMas({
 
   const herramientas = [
     { icono: 'plata',      nombre: 'Mi plata',            cifra: plataLista && `${plataLista} listos para prestar`, destino: '/capital' },
+    /* ⚠ LA CAJA SOLO SE ALCANZABA DESDE EL BOTÓN +.
+       Reportado por el dueño: «caja debería estar en el menú de los 4
+       cuadritos porque es una opción muy importante y en móvil solo sale en el
+       menú FAB».
+
+       Va SEGUNDA, pegada a «Mi plata», porque son las dos preguntas de dinero:
+       cuánto tengo para prestar y cuánto entró hoy. Separarlas obligaría a
+       recorrer la lista para pasar de una a otra.
+
+       Sin cifra, como «Reportes»: el API de esta pantalla no trae nada de la
+       caja del día, y añadir una consulta a la pantalla que más se abre para
+       llenar un renglón no compensa. Un dato inventado sería peor. */
+    { icono: 'caja',       nombre: 'Caja',                cifra: null, destino: '/caja' },
     { icono: 'negocio',    nombre: '¿Cómo va el negocio?', cifra: rendimiento, tono: 'bien', destino: '/dashboard/analiticas' },
     // Salió de la cabecera de préstamos: se consulta antes de prestar, no todos
     // los días, y allí costaba 50px permanentes en la pantalla más apretada.
