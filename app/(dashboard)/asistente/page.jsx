@@ -26,15 +26,29 @@ export default function AsistentePage() {
      fluye con el resto y el documento ya cuadra. */
   useEffect(() => {
     if (typeof window === 'undefined' || window.innerWidth >= 1024) return
+    const html = document.documentElement
+    const body = document.body
     const antes = {
-      html: document.documentElement.style.overflow,
-      body: document.body.style.overflow,
+      hOverflow: html.style.overflow, hAlto: html.style.height,
+      bOverflow: body.style.overflow, bAlto: body.style.height,
     }
-    document.documentElement.style.overflow = 'hidden'
-    document.body.style.overflow = 'hidden'
+    /* ⚠ EL `overflow: hidden` SOLO NO BASTA, y lo comprobé midiendo: con él
+       puesto en `html` y `body`, `window.scrollTo(0, 5000)` seguía dejando
+       `scrollY = 56`. Oculta la barra pero el documento se sigue pudiendo mover
+       por programa —y con el dedo—, que es justo lo que el dueño describe como
+       «da mucha vuelta».
+
+       Lo que lo fija es la ALTURA: sin `height: 100%`, el `<html>` sigue
+       midiendo 908 en una ventana de 852. */
+    html.style.overflow = 'hidden'
+    html.style.height = '100%'
+    body.style.overflow = 'hidden'
+    body.style.height = '100%'
     return () => {
-      document.documentElement.style.overflow = antes.html
-      document.body.style.overflow = antes.body
+      html.style.overflow = antes.hOverflow
+      html.style.height = antes.hAlto
+      body.style.overflow = antes.bOverflow
+      body.style.height = antes.bAlto
     }
   }, [])
 
