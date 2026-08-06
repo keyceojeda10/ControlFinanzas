@@ -268,6 +268,34 @@ function NuevoPrestamo() {
     { label: 'Confirmar' },
   ]
 
+  /* ── LA CABECERA ────────────────────────────────────────────────────────────
+   *
+   * ⚠⚠ VA AQUÍ Y NO MÁS ABAJO, Y ES LA TERCERA VEZ QUE LO APRENDO.
+   *
+   * Estaba después de `if (authLoading) return null` (línea ~718). Con la sesión
+   * cargando, el componente salía ANTES de llamar a este hook; cuando terminaba
+   * de cargar, lo llamaba. Dos renders con distinto número de hooks es el React
+   * error #310, y la pantalla entera se caía:
+   *
+   *     «No podemos conectarnos ahora mismo» — en la pantalla con la que se
+   *     crea un préstamo, la que más se usa para mover plata.
+   *
+   * Llegó a producción porque `next build` NO lo ve, las 2.849 pruebas tampoco
+   * —ninguna monta esta pantalla— y en desarrollo la sesión suele estar ya
+   * caliente, así que no se dispara. Solo aparece cargando la página de verdad.
+   *
+   * Y tiene que ir DESPUÉS de `paso` y `PASOS`, que es lo que lee: subirlo más
+   * arriba lo rompe por la otra punta (leer una `const` antes de declararla).
+   * El sitio correcto es este hueco entre las dos cosas.
+   */
+  useCabecera({
+    // El título dice EN QUÉ PASO SE ESTÁ, no «Nuevo préstamo»: la espina ya
+    // cuenta cuántos van, y el nombre del paso es lo que le falta al que teclea.
+    titulo: PASOS[paso]?.label ?? 'Nuevo préstamo',
+    paso: paso + 1,
+    total: PASOS.length,
+  })
+
   // Pre-llenar desde cartulina si venimos de importar
   useEffect(() => {
     if (!searchParams.get('fromCartulina')) return
@@ -738,27 +766,9 @@ function NuevoPrestamo() {
   // su propia caja aparte; ahora la franja es UNA pieza y mide ~134 con la
   // cuota dentro. Se deja holgura: el último campo pegado al filete se lee como
   // si estuviera cortado.
-  /* ── LA CABECERA ESTABA EN BLANCO ────────────────────────────────────────
-   *
-   * Esta pantalla NO llamaba a `useCabecera`, así que su barra de 56px se
-   * pintaba vacía: ni título, ni la espina de progreso. Y es la pantalla con la
-   * que se crea un préstamo — la que más se usa para mover plata.
-   *
-   * Reportado por el dueño: «tienen cabecera pero en blanco, sin texto».
-   *
-   * Su variante es `TAREA` (`lib/armazon.js:92`), que acepta `titulo`, `paso` y
-   * `total` y pinta la espina. Los tres datos ya existían aquí —`paso` y
-   * `PASOS`—; solo faltaba pasárselos. Es el mismo patrón que el selector de
-   * cuenta al renovar: la pieza montada y nadie alimentándola.
-   *
-   * El título dice EN QUÉ PASO SE ESTÁ, no «Nuevo préstamo»: la espina ya cuenta
-   * cuántos van, y el nombre del paso es lo que le falta al que está tecleando.
-   */
-  useCabecera({
-    titulo: PASOS[paso]?.label ?? 'Nuevo préstamo',
-    paso: paso + 1,
-    total: PASOS.length,
-  })
+  /* La cabecera se llama ARRIBA, antes de los `return null` de permisos: aquí
+     abajo provocaba el React error #310 y tumbaba la pantalla entera. El porqué,
+     donde se llama. */
 
   return (
     <div className="max-w-2xl mx-auto pb-40 lg:pb-36">
