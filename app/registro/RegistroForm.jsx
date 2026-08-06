@@ -12,12 +12,19 @@ import { getCountryList } from '@/lib/countries'
 import { normalizarEmail } from '@/lib/normalizar-email'
 
 const PAISES = getCountryList()
+/* ⚠ ESTA LISTA VA A LA PAR DE `COUNTRIES`. Los países salen de
+   `getCountryList()`, pero la bandera se busca aquí: un país nuevo sin su
+   entrada aparece en el desplegable SIN icono y nadie se entera hasta que lo
+   ve un usuario. Lo vigila `paises-completos.test.js`. */
 const FLAGS = {
   co: '\u{1F1E8}\u{1F1F4}', mx: '\u{1F1F2}\u{1F1FD}', pe: '\u{1F1F5}\u{1F1EA}',
   ec: '\u{1F1EA}\u{1F1E8}', do: '\u{1F1E9}\u{1F1F4}', hn: '\u{1F1ED}\u{1F1F3}',
   gt: '\u{1F1EC}\u{1F1F9}', sv: '\u{1F1F8}\u{1F1FB}', ni: '\u{1F1F3}\u{1F1EE}',
   pa: '\u{1F1F5}\u{1F1E6}', ve: '\u{1F1FB}\u{1F1EA}', us: '\u{1F1FA}\u{1F1F8}',
   cr: '\u{1F1E8}\u{1F1F7}',
+  // El cono sur
+  ar: '\u{1F1E6}\u{1F1F7}', cl: '\u{1F1E8}\u{1F1F1}', bo: '\u{1F1E7}\u{1F1F4}',
+  py: '\u{1F1F5}\u{1F1FE}', uy: '\u{1F1FA}\u{1F1FE}',
 }
 
 const TOTAL_STEPS = 5
