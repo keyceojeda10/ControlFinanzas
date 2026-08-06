@@ -6,7 +6,6 @@ import { signIn }              from 'next-auth/react'
 import Link                    from 'next/link'
 import { EspinaProgreso }      from '@/components/armazon/CabeceraMovil'
 import AuthInput               from '@/components/auth/AuthInput'
-import AuthButton              from '@/components/auth/AuthButton'
 import { getCountryConfig, validatePhone } from '@/lib/i18n'
 import { getCountryList } from '@/lib/countries'
 import { normalizarEmail } from '@/lib/normalizar-email'
@@ -26,8 +25,6 @@ const FLAGS = {
   ar: '\u{1F1E6}\u{1F1F7}', cl: '\u{1F1E8}\u{1F1F1}', bo: '\u{1F1E7}\u{1F1F4}',
   py: '\u{1F1F5}\u{1F1FE}', uy: '\u{1F1FA}\u{1F1FE}',
 }
-
-const TOTAL_STEPS = 5
 
 const LIGHT = {
   bg: '#f4f4f1', bgCard: '#ffffff', bgCardHover: 'rgba(20,20,28,0.03)',
@@ -63,46 +60,63 @@ function useTheme() {
   return light ? LIGHT : DARK
 }
 
-// El wizard son CUATRO pasos: nombre, negocio, WhatsApp, correo y clave.
-// El quinto (verificar) ya no es registro: es confirmar.
-const PASOS = 4
+/* El wizard son TRES pasos: nombre+negocio, WhatsApp, correo y clave.
+   El cuarto (verificar el código) ya no es registro: es confirmar, y por eso no
+   entra en la espina.
 
-function BackButton({ onClick, theme }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors mb-6"
-      style={{ color: theme.textMuted }}
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-      </svg>
-      Atrás
-    </button>
-  )
-}
+   Eran cuatro hasta que se juntaron nombre y negocio, que es lo que pide
+   `T07-02-registro`: «nombre y negocio caben juntos». */
+const PASOS = 3
 
-function ContinueButton({ onClick, disabled, children = 'Continuar' }) {
+/* ── EL PIE DEL WIZARD ─────────────────────────────────────────────────────
+   Reportado: «el botón no está muy pegado al input… se ve un espacio todo feo
+   ahí que no tiene sentido».
+
+   Tenía razón, y el canon lo dibuja así: `T07-02-registro` pone la acción en un
+   pie de `flex: none` con fondo propio y borde superior, con «Atrás» y
+   «Continuar» EN LA MISMA FILA (`flex: 1` y `flex: 2`, o sea el doble de ancho
+   para el que avanza). El botón iba suelto bajo el campo con un `mt-6`, así que
+   en una pantalla alta quedaba flotando en medio y debajo un vacío enorme.
+
+   Con el pie abajo, el hueco deja de ser un error: es el respiro entre lo que se
+   teclea y lo que se pulsa, y el pulgar llega sin estirarse. */
+function PieWizard({ onAtras, onSeguir, seguirBloqueado, seguirTexto = 'Continuar', cargando, theme }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="group relative w-full h-12 rounded-[12px] overflow-hidden font-bold text-[15px] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+    <div
+      className="flex-none flex gap-2.5"
       style={{
-        background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))',
-        color: '#3a2900',
-        boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent)',
+        padding: '14px 0 0',
+        borderTop: `1px solid ${theme.borderLight}`,
+        marginTop: 24,
       }}
     >
-      <span className="relative flex items-center justify-center gap-2">
-        {children}
-        <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      </span>
-    </button>
+      {onAtras && (
+        <button
+          type="button"
+          onClick={onAtras}
+          className="h-12 rounded-[14px] font-semibold text-[15px] transition-all cursor-pointer active:scale-[0.98]"
+          style={{ flex: 1, background: theme.bgCard, border: `1px solid ${theme.border}`, color: theme.textSecondary }}
+        >
+          Atrás
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onSeguir}
+        disabled={seguirBloqueado || cargando}
+        /* `flex: 2` cuando hay «Atrás»: el doble de ancho, como en la lámina.
+           No es cosmético — dice cuál de los dos es la acción. */
+        className="h-12 rounded-[14px] font-bold text-[16px] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
+        style={{
+          flex: onAtras ? 2 : 1,
+          background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))',
+          color: '#3a2900',
+          boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent)',
+        }}
+      >
+        {cargando ? 'Un momento…' : seguirTexto}
+      </button>
+    </div>
   )
 }
 
@@ -155,12 +169,17 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const goNext = () => setStep(s => s + 1)
   const goBack = () => { setStep(s => s - 1); setError('') }
 
+  /* ── NOMBRE Y NEGOCIO EN UNA SOLA PANTALLA ──
+     Lo pide `T07-02-registro` con esas palabras: «el wizard baja de 6 pantallas
+     a 4: nombre y negocio CABEN JUNTOS, y la portada de bienvenida desaparece».
+     La portada ya se había quitado; esto faltaba, y por eso eran cuatro pasos y
+     no tres.
+
+     No es solo estética: cada pantalla del registro es una oportunidad de
+     abandonar, y la activación es el cuello de botella del producto. Dos campos
+     de una línea no necesitan una pantalla cada uno. */
   const handleStep1 = () => {
     if (!form.nombre.trim()) { setError('Ingresa tu nombre'); return }
-    goNext()
-  }
-
-  const handleStep2 = () => {
     if (!form.nombreOrganizacion.trim()) { setError('Ingresa el nombre de tu negocio'); return }
     goNext()
   }
@@ -336,7 +355,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           )}
 
           {/* Referido badge */}
-          {referrer && step < 5 && (
+          {referrer && step < PASOS + 1 && (
             <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 mb-5"
               style={{ background: 'color-mix(in srgb, var(--color-accent) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--color-accent) 20%, transparent)' }}>
               <svg className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-accent)' }} fill="currentColor" viewBox="0 0 20 20">
@@ -349,7 +368,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
           )}
 
           {/* Error global */}
-          {error && step > 0 && step < 5 && (
+          {error && step > 0 && step < PASOS + 1 && (
             <div className="flex items-center gap-2.5 text-[13px] rounded-[10px] px-4 py-3 mb-5"
               style={{ background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--color-danger) 30%, transparent)', color: 'var(--color-danger)' }}>
               <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -371,62 +390,57 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
                 ¿Cómo te llamas?
               </h1>
-              <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
-                Así te saludamos dentro de la app.
+              <p className="text-[15px] mb-7" style={{ color: t.textSecondary }}>
+                Tu nombre y el de tu negocio. Los dos se pueden cambiar después.
               </p>
 
-              <AuthInput
-                value={form.nombre}
-                onChange={set('nombre')}
-                placeholder="Ej: Carlos García"
-                autoComplete="given-name"
-                icon={
-                  <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
-                }
-              />
+              <div className="flex flex-col gap-4">
+                <AuthInput
+                  value={form.nombre}
+                  onChange={set('nombre')}
+                  placeholder="Ej: Carlos García"
+                  autoComplete="given-name"
+                  icon={
+                    <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  }
+                />
 
-              <div className="mt-6">
-                <ContinueButton onClick={handleStep1} disabled={!form.nombre.trim()} />
+                {/* El rótulo va SOLO aquí: con dos campos seguidos, el segundo
+                    sin nombre se lee como una repetición del primero. Arriba no
+                    hace falta — el titular ya pregunta cómo se llama. */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[12px] font-bold tracking-[0.01em] px-0.5" style={{ color: t.textSecondary }}>
+                    Y tu negocio
+                  </span>
+                  <AuthInput
+                    value={form.nombreOrganizacion}
+                    onChange={set('nombreOrganizacion')}
+                    placeholder="Ej: Préstamos García"
+                    icon={
+                      <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                      </svg>
+                    }
+                  />
+                  <span className="text-[11px] px-0.5" style={{ color: t.textMuted }}>
+                    Es el nombre que ven tus clientes y cobradores.
+                  </span>
+                </div>
               </div>
+
+              <PieWizard
+                onSeguir={handleStep1}
+                seguirBloqueado={!form.nombre.trim() || !form.nombreOrganizacion.trim()}
+                theme={t}
+              />
             </div>
           )}
 
-          {/* ── Step 2: Negocio ── */}
+          {/* ── Step 2: WhatsApp ── */}
           {step === 2 && (
             <div>
-              <BackButton onClick={goBack} theme={t} />
-
-              <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
-                style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
-                ¿Cómo se llama tu negocio?
-              </h1>
-              <p className="text-[15px] mb-8" style={{ color: t.textSecondary }}>
-                El nombre que ven tus clientes y cobradores.
-              </p>
-
-              <AuthInput
-                value={form.nombreOrganizacion}
-                onChange={set('nombreOrganizacion')}
-                placeholder="Ej: Préstamos García"
-                icon={
-                  <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
-                  </svg>
-                }
-              />
-
-              <div className="mt-6">
-                <ContinueButton onClick={handleStep2} disabled={!form.nombreOrganizacion.trim()} />
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 3: WhatsApp ── */}
-          {step === 3 && (
-            <div>
-              <BackButton onClick={goBack} theme={t} />
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
@@ -436,59 +450,84 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 Para verificar tu cuenta y enviar recordatorios de cobro a tus clientes.
               </p>
 
-              {/* Country selector */}
-              <div className="relative mb-3 rounded-[12px] cursor-pointer"
-                style={{ background: t.bgCardHover, border: `1.5px solid ${t.border}` }}>
-                <div className="flex items-center gap-3 px-4 py-3 pointer-events-none">
-                  <span className="text-[20px] leading-none shrink-0">{selectedFlag}</span>
-                  <span className="flex-1 text-[14px] font-medium" style={{ color: t.text }}>
-                    {PAISES.find(p => p.code === country)?.name || 'Colombia'}
+              {/* ── EL PAÍS COMO PREFIJO, NO COMO FILA ──
+                  `T07-02-registro`: «el selector de país pasa de fila completa a
+                  PREFIJO, y "sin el código de país" deja de ser una nota gris
+                  bajo el campo».
+
+                  Las dos cosas son la misma idea: el país no es una pregunta
+                  aparte, es parte del número. Con el `+54` pegado al campo, la
+                  nota sobra — se ve que el código ya está puesto. */}
+              <div
+                className="flex items-stretch rounded-[12px] overflow-hidden"
+                style={{ background: t.bgCard, border: `1.5px solid ${t.border}` }}
+              >
+                <div className="relative flex items-center gap-1.5 pl-3.5 pr-2.5 shrink-0 cursor-pointer"
+                  style={{ borderRight: `1px solid ${t.borderLight}` }}>
+                  <span className="text-[19px] leading-none">{selectedFlag}</span>
+                  <span className="cf-num text-[15px] font-semibold whitespace-nowrap" style={{ color: t.text }}>
+                    {countryCfg.phonePrefix}
                   </span>
-                  <svg className="w-4 h-4 shrink-0" style={{ color: t.textMuted }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: t.textMuted }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    aria-label="País"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  >
+                    {PAISES.map(p => (
+                      <option key={p.code} value={p.code} style={{ background: t.optionBg, color: t.text }}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                >
-                  {PAISES.map(p => (
-                    <option key={p.code} value={p.code} style={{ background: t.optionBg, color: t.text }}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+
+                {/* Sin el `AuthInput` porque aquí no cabe su icono: el prefijo ya
+                    ocupa ese sitio y dice lo mismo que diría el icono. */}
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={form.telefono}
+                  onChange={(e) => { setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, countryCfg.phoneDigits) }); setError('') }}
+                  placeholder={countryCfg.phonePlaceholder}
+                  autoComplete="tel"
+                  maxLength={countryCfg.phoneDigits}
+                  className="cf-num flex-1 min-w-0 h-[52px] px-3.5 text-[16px] font-medium bg-transparent outline-none"
+                  style={{ color: t.text }}
+                />
               </div>
 
-              <AuthInput
-                type="tel"
-                inputMode="numeric"
-                value={form.telefono}
-                onChange={(e) => { setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, countryCfg.phoneDigits) }); setError('') }}
-                placeholder={countryCfg.phonePlaceholder}
-                autoComplete="tel"
-                maxLength={countryCfg.phoneDigits}
-                icon={
-                  <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                  </svg>
-                }
+              {/* La promesa se queda: no es una instrucción sino un compromiso, y
+                  es lo que hace que alguien deje su número. Lo que se va es «sin
+                  el código de país», que el prefijo ya resuelve. */}
+              <div className="flex items-start gap-2.5 mt-3 rounded-[14px] px-4 py-3"
+                style={{ background: t.bgCard, border: `1px solid ${t.borderLight}` }}>
+                <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="#25d366" strokeWidth={1.9} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z" />
+                </svg>
+                <span className="text-[12px] leading-[1.45]" style={{ color: t.textSecondary }}>
+                  Nunca te vamos a escribir para venderte nada.
+                </span>
+              </div>
+
+              <PieWizard
+                onAtras={goBack}
+                onSeguir={handleStep3}
+                seguirBloqueado={!form.telefono.trim()}
+                theme={t}
               />
-              <p className="text-[11px] mt-1.5 px-0.5" style={{ color: t.textMuted }}>
-                Sin el código de país. Solo el número.
-              </p>
-
-              <div className="mt-6">
-                <ContinueButton onClick={handleStep3} disabled={!form.telefono.trim()} />
-              </div>
             </div>
           )}
 
-          {/* ── Step 4: Email + Password ── */}
-          {step === 4 && (
+          {/* ── Step 3: Email + Password ── */}
+          {step === 3 && (
             <div>
-              <BackButton onClick={goBack} theme={t} />
+              {/* Sin `BackButton` arriba: el «Atrás» va en el pie, junto al que
+                  avanza, como en la lámina. Tenerlo en los dos sitios eran dos
+                  controles para lo mismo. */}
 
               <h1 className="text-[26px] lg:text-[30px] leading-[1.15] font-semibold mb-2"
                 style={{ color: t.text, fontFamily: 'var(--font-space-grotesk)' }}>
@@ -549,43 +588,19 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
                 </span>
               </label>
 
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading || !form.email.trim() || !form.password || !form.terminosAceptados}
-                  className="group relative w-full h-12 rounded-[12px] overflow-hidden font-bold text-[15px] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]"
-                  style={{
-                    background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 85%, #000))',
-                    color: '#3a2900',
-                    boxShadow: '0 2px 8px color-mix(in srgb, var(--color-accent) 25%, transparent)',
-                  }}
-                >
-                  <span className="relative flex items-center justify-center gap-2">
-                    {loading ? (
-                      <>
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Creando cuenta...
-                      </>
-                    ) : (
-                      <>
-                        Crear cuenta gratis
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </>
-                    )}
-                  </span>
-                </button>
-              </div>
+              <PieWizard
+                onAtras={goBack}
+                onSeguir={handleSubmit}
+                seguirBloqueado={!form.email.trim() || !form.password || !form.terminosAceptados}
+                seguirTexto="Crear cuenta gratis"
+                cargando={loading}
+                theme={t}
+              />
             </div>
           )}
 
-          {/* ── Step 5: Verificacion OTP ── */}
-          {step === 5 && (
+          {/* ── Step 4: Verificacion OTP ── */}
+          {step === 4 && (
             <div className="text-center">
               <div className="inline-flex items-center justify-center mb-5"
                 style={{
@@ -732,7 +747,7 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
             </p>
           )}
 
-          {(step === 1 || step === 4) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
+          {(step === 1 || step === 3) && <div className="flex items-center justify-center gap-2.5 mt-6 text-[12px] flex-wrap" style={{ color: t.textMuted }}>
             <span className="inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
