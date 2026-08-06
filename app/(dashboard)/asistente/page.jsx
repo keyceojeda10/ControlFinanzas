@@ -80,19 +80,36 @@ export default function AsistentePage() {
 
        `max-w-3xl`: aquí no hay barra lateral ni tarjetas al costado —la pantalla
        es solo la conversación—, así que 42rem dejaba las burbujas angostas. */
-    <div
-      className="fixed inset-x-0 bottom-0 lg:static lg:-mx-6 lg:-my-6"
-      style={{
-        // `--cf-h-header`, el token de verdad. Mi primera versión inventó
-        // `--cf-h-cabecera`, que no existe: el CSS lo resuelve al valor de
-        // respaldo y parece funcionar, así que un nombre mal escrito aquí no
-        // falla en ningún sitio — solo deja de seguir al token si este cambia.
-        height: 'calc(100dvh - var(--cf-h-header, 56px) - env(safe-area-inset-bottom, 0px))',
-      }}
-    >
-      <div className="mx-auto w-full max-w-3xl h-full flex flex-col">
-        <AsistenteChat key={reinicio} />
+    <>
+      {/* ⚠ EL HERMANO QUE ANULA EL SCROLL FANTASMA.
+          Con el chat en `fixed`, el `<main>` se queda SIN contenido que lo
+          dimensione… y su padre es `min-h-screen`, así que se estira igual a
+          852 empezando en y=56: documento de 908 en una ventana de 852, y la
+          página rueda 56px en vacío. Es justo el «da mucha vuelta».
+
+          Medido: en las demás pantallas el `main` mide lo que su contenido
+          (2.658 en el panel, 11.423 en clientes) y ese scroll SÍ es legítimo.
+          El fantasma es exclusivo de aquí, así que se arregla aquí y no en el
+          layout, que lo comparten las 46.
+
+          Este bloque de altura cero le da al `main` un contenido de 0px que
+          gana al `min-h-screen` del padre. */}
+      <div className="h-0 lg:hidden" aria-hidden />
+
+      <div
+        className="fixed inset-x-0 bottom-0 lg:static lg:-mx-6 lg:-my-6"
+        style={{
+          // `--cf-h-header`, el token de verdad. Mi primera versión inventó
+          // `--cf-h-cabecera`, que no existe: el CSS lo resuelve al valor de
+          // respaldo y parece funcionar, así que un nombre mal escrito aquí no
+          // falla en ningún sitio — solo deja de seguir al token si este cambia.
+          height: 'calc(100dvh - var(--cf-h-header, 56px) - env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <div className="mx-auto w-full max-w-3xl h-full flex flex-col">
+          <AsistenteChat key={reinicio} />
+        </div>
       </div>
-    </div>
+    </>
   )
 }
