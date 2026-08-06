@@ -99,50 +99,93 @@ export default function TraerCartera({
           color: 'var(--cf-ink-2)', margin: '10px 0 0', maxWidth: '62ch', lineHeight: 1.55,
         }}>
           Tu cartera vieja tiene que entrar antes de que la app te sirva de algo.
-          Escoge por dónde: si tienes 40 préstamos en una libreta, la foto es lo más rápido.
+          Escoge por dónde: casi todos empiezan escribiendo los de esta semana.
         </p>
       </div>
 
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-5 lg:items-start">
         <div className="flex flex-col gap-3 lg:col-start-1">
-          {/* ── LA FOTO, PRIMERA Y LA UNICA DORADA ──
-              Es la mas rapida y la que mas gente puede usar: la cartera de este
-              negocio vive en una libreta, no en un Excel. */}
+          {/* ── ESCRIBIRLOS, PRIMERA Y LA ÚNICA DORADA ──────────────────────
+              Aquí estaba la foto, con el rótulo «lo más rápido» y el único botón
+              dorado, y «empezar de cero» iba de última con un texto que sonaba a
+              rendirse: «voy metiendo los préstamos uno por uno».
+
+              El dueño lo corrigió: «la opción recomendada por defecto debería
+              ser manual». Y los datos le dan la razón — medido en producción:
+
+                  clientes creados de a poco   5.026  (97%)
+                  en ráfaga de 5+ por minuto     152  (3%)
+
+              De los 78 negocios que llegaron a 10 clientes, NINGUNO cargó
+              mayoritariamente en bloque. Estábamos recomendando de primeras la
+              vía que usa el 3%, y a quien la rechazaba lo mandábamos a una
+              opción redactada como si fuera darse por vencido. */}
           <Tarjeta destacada>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span className="text-[19px] lg:text-[21px]" style={{
                 fontFamily: 'var(--font-space-grotesk), system-ui',
                 fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
-              }}>Tómale foto a tu libreta</span>
+              }}>Escribe tu primer cliente</span>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 10px',
                 borderRadius: 999, background: 'var(--cf-gold-tint)',
                 fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
                 textTransform: 'uppercase', color: 'var(--cf-gold-text)',
-              }}>Lo más rápido</span>
+              }}>Recomendado</span>
             </div>
             <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--cf-ink-2)', margin: '10px 0 0' }}>
-              Sube las fotos desde el computador o mándalas desde el teléfono. Leemos los
-              datos y tú solo corriges lo que esté mal. Unos 20 minutos para 40 préstamos.
+              Nombre, teléfono y cuánto le prestaste. Es como lo hace casi todo el mundo:
+              se empieza con los de esta semana y el resto entra solo, según se van cobrando.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 16 }}>
-              <button type="button" onClick={onFoto} style={{
+              <button type="button" onClick={onCero} style={{
                 height: 48, padding: '0 22px', borderRadius: 14, border: 0, cursor: 'pointer',
                 background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
                 font: 'inherit', fontSize: 15.5, fontWeight: 700,
+              }}>Crear el primero</button>
+            </div>
+          </Tarjeta>
+
+          {/* ── LA FOTO: SIGUE SIENDO LO MÁS VISTOSO, Y VA MARCADA ───────────
+              «Trata de destacar un poco más la opción de imagen, porque es algo
+              novedoso, pero ojo, que la opción recomendada debería ser la
+              manual». Son dos jerarquías distintas: el oro marca lo que se
+              recomienda, la pastilla marca lo que es nuevo. A quien tiene la
+              libreta llena de verdad le sigue ahorrando la tarde. */}
+          <Tarjeta>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <p style={{ fontSize: 16.5, fontWeight: 700, color: 'var(--cf-ink)', margin: 0 }}>
+                    Tómale foto a tu libreta
+                  </p>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 8px',
+                    borderRadius: 999, background: 'var(--cf-gold-tint)',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                    textTransform: 'uppercase', color: 'var(--cf-gold-dark)',
+                  }}>Nuevo</span>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-3)', margin: '3px 0 0' }}>
+                  La IA lee los datos. Si tienes 40 préstamos en una libreta, unos 20 minutos.
+                </p>
+                {onWhatsApp && (
+                  <button type="button" onClick={onWhatsApp} style={{
+                    background: 'none', border: 0, padding: 0, marginTop: 8, cursor: 'pointer',
+                    font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
+                  }}>Mandarlas desde el teléfono</button>
+                )}
+              </div>
+              <button type="button" onClick={onFoto} style={{
+                height: 44, padding: '0 18px', borderRadius: 13, flex: 'none', cursor: 'pointer',
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
               }}>Subir fotos</button>
-              {onWhatsApp && (
-                <button type="button" onClick={onWhatsApp} style={{
-                  background: 'none', border: 0, padding: 0, cursor: 'pointer', font: 'inherit',
-                  fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-dark)',
-                }}>Mandarlas desde el teléfono</button>
-              )}
             </div>
           </Tarjeta>
 
           {[
             { id: 'excel', titulo: 'Ya lo tengo en Excel', ayuda: 'Sube tu archivo y emparejamos las columnas contigo.', accion: 'Subir archivo', on: onExcel },
-            { id: 'cero',  titulo: 'Empezar de cero',      ayuda: 'Voy metiendo los préstamos uno por uno a medida que los cobre.', accion: 'Crear el primero', on: onCero },
           ].filter((o) => o.on).map((o) => (
             <Tarjeta key={o.id}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

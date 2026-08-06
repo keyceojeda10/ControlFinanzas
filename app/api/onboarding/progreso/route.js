@@ -195,7 +195,42 @@ export async function GET() {
   // relevo la lista de misiones (que con el umbral viejo en 99 no se renderizo
   // NUNCA: con step<99 ganaba el wizard, y con step>=99 la respuesta salia
   // antes por completado).
-  const currentStep = org?.onboardingStep ?? 0
+  let currentStep = org?.onboardingStep ?? 0
+
+  /* ══ EL PASO 2 SE DA POR HECHO EN CUANTO HAY CLIENTES ══════════════════════
+   *
+   * Reportado: «creé el cliente manual, me voy al dashboard, y me sigue
+   * apareciendo como si todavía debiera crear un usuario cuando ya lo creé».
+   *
+   * La causa: el paso 2 es «traer tu cartera», y al elegir «escribir el
+   * primero» el asistente guarda el paso 2 y manda a `/clientes/nuevo`
+   * (`OnboardingWizard.jsx`, `onCero`). El cliente se crea bien… pero NADIE
+   * avanza el paso, así que al volver el asistente vuelve a pedir la cartera.
+   *
+   * Las otras dos vías —foto y Excel— sí avanzan, porque terminan dentro del
+   * propio asistente y él llama a `persistStep(3)`. La de a mano se va de la
+   * pantalla y no vuelve.
+   *
+   * ⚠ SE ARREGLA AQUÍ Y NO EN EL FORMULARIO DE CLIENTE. Hay cinco caminos para
+   * crear un cliente —el formulario, el migrador, el Excel, el asistente y la
+   * carga masiva— y pedirle a cada uno que se acuerde de avisar es garantizar
+   * que el sexto se olvide. El paso deja de ser algo que hay que anunciar y
+   * pasa a ser algo que se comprueba: si hay clientes, la cartera está traída.
+   *
+   * `clientes` ya está contado arriba, así que no cuesta una consulta más. */
+  const PASO_TRAER_CARTERA = 2
+  if (currentStep <= PASO_TRAER_CARTERA && clientes > 0) {
+    currentStep = PASO_TRAER_CARTERA + 1
+    // Se guarda para que la próxima petición no tenga que volver a deducirlo, y
+    // sobre todo para que el asistente no parpadee entre pasos al recargar.
+    if ((org?.onboardingStep ?? 0) !== currentStep) {
+      await prisma.organization.update({
+        where: { id: orgId },
+        data: { onboardingStep: currentStep },
+      }).catch(() => {})
+    }
+  }
+
   // ⚠ AL REABRIR NO SE LANZA EL ASISTENTE. Se reabre poniendo el paso en 0, y
   // con paso 0 el wizard se toma la pantalla entera: le saldría la bienvenida
   // —«¿cómo prestas?», «tu capital inicial»— a alguien que lleva meses con la

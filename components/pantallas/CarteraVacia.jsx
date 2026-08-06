@@ -30,7 +30,36 @@
 import Link from 'next/link'
 import MonedaCF from '@/components/ui/MonedaCF'
 
+/* ══ EL ORDEN LO DECIDEN LOS DATOS, Y ESTABAN AL REVÉS ══════════════════════
+ *
+ * Reportado por el dueño: «lo que más usan los usuarios para registrar clientes
+ * no es la opción de foto, sino la manual. La opción recomendada por defecto
+ * debería ser manual».
+ *
+ * Medido en producción antes de moverlo, y le da la razón de sobra:
+ *
+ *     clientes creados de a poco   5.026  (97%)
+ *     en ráfaga de 5+ en un minuto   152  (3%)
+ *
+ * Y entre los 78 negocios que SÍ arrancaron —10 o más clientes—, ninguno cargó
+ * mayoritariamente en bloque.
+ *
+ * ⚠ ESTO INVALIDA EL RAZONAMIENTO QUE HABÍA. El comentario decía que ninguna de
+ * las 311 cuentas atascadas había hecho una sesión de carga en bloque, y de ahí
+ * concluía que había que empujarlas a ella. Pero es que casi NADIE la hace, ni
+ * los que arrancan bien: el dato no separaba a los que funcionan de los que no,
+ * así que no decía lo que parecía decir.
+ *
+ * La foto se queda —es lo más vistoso y a quien tiene un cuaderno lleno le
+ * ahorra la tarde— pero de segunda, que es donde la pone su uso real. */
 const VIAS = [
+  {
+    id: 'mano',
+    titulo: 'Escribir un cliente',
+    nota: 'Nombre, teléfono y ya está',
+    destino: '/clientes/nuevo',
+    icono: <><circle cx="10" cy="8" r="3.4" /><path d="M3.5 20a6.5 6.5 0 0113 0" /><path d="M18 8v6M15 11h6" /></>,
+  },
   {
     id: 'foto',
     titulo: 'Foto de la cartulina',
@@ -47,25 +76,29 @@ const VIAS = [
     // como «borrar», que es lo contrario de lo que hace este botón.
     icono: <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5" /><path d="M8.5 12.5h7M8.5 16h7M12 12.5V16" /></>,
   },
-  {
-    id: 'mano',
-    titulo: 'Escribir el primero',
-    nota: 'Un cliente a mano',
-    destino: '/clientes/nuevo',
-    icono: <><circle cx="10" cy="8" r="3.4" /><path d="M3.5 20a6.5 6.5 0 0113 0" /><path d="M18 8v6M15 11h6" /></>,
-  },
 ]
 
 /* `arrancada`: ya tiene uno o dos clientes, pero sigue lejos de una cartera.
    No es la misma pantalla —ni el mismo tono—: decirle «tu cartera está vacía» a
    quien acaba de cargar a su primer cliente es negarle lo que sí hizo. */
 export default function CarteraVacia({ puedeCrear = true, arrancada = false, cuantos = 0 }) {
-  // Un cobrador sin permiso de crear no puede usar ninguna de las tres vías;
-  // ofrecérselas es mandarlo a un error.
-  // Con la cartera arrancada se cae «escribir el primero»: ya lo escribió, y
-  // seguir ofreciéndoselo es proponerle justo lo que le tiene atascado —cargar
-  // de a uno—. El botón de crear a mano sigue estando en la pantalla (el FAB).
-  const vias = !puedeCrear ? [] : arrancada ? VIAS.filter((v) => v.id !== 'mano') : VIAS
+  /* Un cobrador sin permiso de crear no puede usar ninguna de las tres vías;
+     ofrecérselas es mandarlo a un error.
+
+     ⚠ CON LA CARTERA ARRANCADA TAMBIÉN VAN LAS TRES. Antes se caía «a mano» en
+     cuanto había un cliente, con el argumento de que seguir ofreciéndolo era
+     empujar a lo que tiene atascada a la gente. El dueño lo reportó: «cuando
+     sugiere seguir creando clientes, no está el apartado principal recomendado,
+     que sería crear cliente manual».
+
+     Y los datos le dan la razón: el 97% de los clientes se crean de a poco. La
+     vía que se estaba escondiendo era justo la que usa todo el mundo, y lo que
+     quedaba eran las dos que casi nadie toca — o sea, la tarjeta de ayuda no
+     ofrecía ninguna ayuda usable.
+
+     Decir «el FAB sigue ahí» no valía: si hay que explicar dónde está el botón,
+     es que no está donde se busca. */
+  const vias = puedeCrear ? VIAS : []
 
   return (
     <div style={{
@@ -99,9 +132,11 @@ export default function CarteraVacia({ puedeCrear = true, arrancada = false, cua
         </span>
         <span style={{ display: 'block', fontSize: 13.5, color: 'var(--cf-ink-2)', lineHeight: 1.5, marginTop: 6 }}>
           {arrancada
-            /* Sin cifras de conversión ni promesas: lo que le sirve es que el
-               resto de la cartera se puede subir de una vez, no de a uno. */
-            ? 'Sube el resto de una vez y ves toda tu cartera junta.'
+            /* Antes decía «sube el resto de una vez», que empujaba a la carga
+               en bloque — la vía que usa el 3%. Ahora que la primera opción es
+               escribir a mano, el texto tiene que acompañarla o se contradice
+               con el botón que hay justo debajo. */
+            ? 'Sigue agregando y ves toda tu cartera junta.'
             : 'Carga tus clientes y en tres minutos ves quién te debe y cuánto.'}
         </span>
       </span>
@@ -115,8 +150,8 @@ export default function CarteraVacia({ puedeCrear = true, arrancada = false, cua
               display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
               minHeight: 68, padding: '0 16px', cursor: 'pointer', textAlign: 'left',
               background: 'var(--cf-card)',
-              // La primera va destacada: es la que más gente completa, y la que
-              // convierte un cuaderno en cartera sin teclear nada.
+              // La primera va destacada, y ahora la primera es escribir a mano:
+              // es la vía del 97% de los clientes que se cargan de verdad.
               border: `1px solid ${i === 0 ? 'var(--cf-gold-border)' : 'var(--cf-border)'}`,
               borderRadius: 'var(--cf-r-card)',
               boxShadow: i === 0 ? '0 0 0 3px rgba(231,164,0,.10)' : 'none',
@@ -135,8 +170,28 @@ export default function CarteraVacia({ puedeCrear = true, arrancada = false, cua
             </span>
 
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                {v.titulo}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  {v.titulo}
+                </span>
+                {/* ── LA FOTO ES LO NOVEDOSO, PERO NO LO RECOMENDADO ──
+                    El dueño lo pidió separado: «que la opción recomendada sea la
+                    manual, pero destacar un poco más la de imagen porque es algo
+                    novedoso».
+
+                    Son dos jerarquías distintas y por eso se dicen con dos
+                    señales distintas: el anillo dorado marca lo que se
+                    RECOMIENDA —la primera— y esta pastilla marca lo que es
+                    NUEVO. Poner las dos cosas en el mismo sitio obligaba a
+                    elegir entre destacar la que funciona y destacar la que
+                    sorprende. */}
+                {v.id === 'foto' && (
+                  <span style={{
+                    flex: 'none', padding: '2px 7px', borderRadius: 999,
+                    background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
+                  }}>Nuevo</span>
+                )}
               </span>
               <span style={{ display: 'block', fontSize: 12.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
                 {v.nota}
