@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { nombreDocumento } from '@/lib/documento'
 import { Firma } from '@/components/pantallas/Pagare'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -102,7 +103,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
   ctx.fillStyle = 'var(--cf-ink)'
   ctx.font = '15px system-ui, sans-serif'
   y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
-  y += 24; ctx.fillText(`Cédula: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
+  y += 24; ctx.fillText(`${nombreDocumento()}: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
   y += 24; ctx.fillText(`Teléfono: ${cliente.telefono || '—'}`, 40, y)
 
   y += 20

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -138,7 +139,7 @@ export default function NuevaLineaPage() {
                 <Avatar nombre={c.nombre} fotoUrl={c.fotoUrl} size={36} fontSize={12} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-[var(--cf-ink)] truncate">{c.nombre}</p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)]">CC {c.cedula}</p>
+                  <p className="text-[11px] text-[var(--cf-ink-3)]">{abreviaturaDocumento()} {c.cedula}</p>
                 </div>
               </button>
             ))}
@@ -158,7 +159,7 @@ export default function NuevaLineaPage() {
                 <Avatar nombre={clienteSeleccionado.nombre} fotoUrl={clienteSeleccionado.fotoUrl} size={40} fontSize={14} />
                 <div>
                   <p className="text-sm font-semibold text-[var(--cf-ink)]">{clienteSeleccionado.nombre}</p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)]">CC {clienteSeleccionado.cedula}</p>
+                  <p className="text-[11px] text-[var(--cf-ink-3)]">{abreviaturaDocumento()} {clienteSeleccionado.cedula}</p>
                 </div>
               </div>
             </Card>

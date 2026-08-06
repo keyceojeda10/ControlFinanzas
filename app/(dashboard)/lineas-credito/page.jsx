@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useCabecera } from '@/components/armazon/Armazon'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -408,7 +409,7 @@ function LineaCreditoCard({ linea, seleccionada, onSeleccionar }) {
                 {linea.cliente?.nombre}
               </p>
               <p className="text-[10px] mt-0.5" style={{ color: P.sub }}>
-                CC {linea.cliente?.cedula} · Cupo {formatMoney(linea.cupoMaximo)}
+                {abreviaturaDocumento()} {linea.cliente?.cedula} · Cupo {formatMoney(linea.cupoMaximo)}
               </p>
             </div>
           </div>

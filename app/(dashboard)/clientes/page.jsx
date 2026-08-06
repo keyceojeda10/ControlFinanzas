@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/page.jsx - Lista de clientes
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth }       from '@/hooks/useAuth'
@@ -1088,7 +1089,7 @@ export default function ClientesPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{c.nombre}</p>
-                    <p className="text-xs text-[var(--cf-ink-2)] mt-0.5">CC {c.cedula}</p>
+                    <p className="text-xs text-[var(--cf-ink-2)] mt-0.5">{abreviaturaDocumento()} {c.cedula}</p>
                   </div>
                 </label>
               ) : vista === 'compacta' ? (

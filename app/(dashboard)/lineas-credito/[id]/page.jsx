@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
@@ -135,7 +136,7 @@ export default function DetalleLineaPage({ params }) {
             />
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-bold leading-tight" style={{ color: CARBON.ink }}>{linea.cliente?.nombre}</p>
-              <p className="text-[11px] mt-0.5" style={{ color: CARBON.sub }}>Línea de crédito · CC {linea.cliente?.cedula}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: CARBON.sub }}>Línea de crédito · {abreviaturaDocumento()} {linea.cliente?.cedula}</p>
             </div>
             <span
               className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full shrink-0"

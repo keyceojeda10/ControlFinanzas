@@ -1,4 +1,5 @@
 import { formatMoney } from '@/lib/i18n'
+import { abreviaturaDocumento } from '@/lib/documento'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 import CardActionMenu from '@/components/ui/CardActionMenu'
@@ -79,7 +80,7 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
             </p>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
               {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
-                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>CC {cliente.cedula}</span>
+                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>{abreviaturaDocumento()} {cliente.cedula}</span>
               )}
               {cliente.creadoPor && (
                 <>

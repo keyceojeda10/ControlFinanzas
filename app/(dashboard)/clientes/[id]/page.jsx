@@ -2,6 +2,7 @@
 // app/(dashboard)/clientes/[id]/page.jsx - Detalle del cliente
 
 import { ComoPaga } from '@/components/pantallas/FichaCliente'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useState, useEffect, useRef, useCallback, use } from 'react'
 import { useRouter }                 from 'next/navigation'
 import Link                          from 'next/link'
@@ -1370,7 +1371,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm text-[var(--cf-ink)] truncate">{c.nombre}</p>
-                        <p className="text-[10px] text-[var(--cf-ink-3)]">CC {c.cedula}</p>
+                        <p className="text-[10px] text-[var(--cf-ink-3)]">{abreviaturaDocumento()} {c.cedula}</p>
                       </div>
                     </button>
                   ))}

@@ -10,6 +10,7 @@
 'use client'
 
 import { formatMoney } from '@/lib/i18n'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { resolverCampo } from '@/components/ui/BotonImprimirRecibo'
 
@@ -108,7 +109,7 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   y += 14; sep('#d1d5db'); y += 20
 
   row('Cliente', cliente?.nombre ?? 'N/A'); y += 26
-  if (tieneCedula) { row('CC', cliente.cedula); y += 26 }
+  if (tieneCedula) { row(abreviaturaDocumento(), cliente.cedula); y += 26 }
   row('Fecha', fmtFecha(pago?.fechaPago)); y += 18
   sep('#eef0f2'); y += 34
 

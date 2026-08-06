@@ -10,6 +10,7 @@
 // Lo que queda cuando el cliente dice que nunca firmó.
 
 import { Tarjeta, BotonPrimario, BotonSecundario, BotonTexto } from '@/components/cf/primitivos'
+import { abreviaturaDocumento } from '@/lib/documento'
 
 /* ── 01 · Lo que va a firmar ───────────────────────────────────────────────
    ESCRITO PARA LEÉRSELO EN VOZ ALTA, no para que lo firme sin mirar.
@@ -295,7 +296,7 @@ export function PagareFirmado({
           {/* En primera persona y con las cifras dentro de la frase: así se lee
               en voz alta y así vale delante de alguien. */}
           <span style={{ fontSize: 13.5, color: 'var(--cf-ink)', lineHeight: 1.6 }}>
-            Yo, <strong>{cliente}</strong>, con CC {cedula}, declaro que recibí{' '}
+            Yo, <strong>{cliente}</strong>, con {abreviaturaDocumento()} {cedula}, declaro que recibí{' '}
             <strong>{recibio}</strong> y me comprometo a devolver <strong>{devuelve}</strong> en{' '}
             {plazoTexto}, empezando el {empieza}.
           </span>

@@ -4,6 +4,7 @@
 // Inspirados en Mercury / Revolut, alineados con el dashboard rediseñado.
 
 import { useState, useEffect, useRef, useId } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import Link from 'next/link'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
@@ -279,7 +280,7 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
             {cliente?.nombre || 'Cliente'}
           </Link>
           {cliente?.cedula && !cliente.cedula.startsWith('SIN-') && (
-            <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>CC {cliente.cedula}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{abreviaturaDocumento()} {cliente.cedula}</p>
           )}
           {statsCliente && (
             <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>{statsCliente}</p>

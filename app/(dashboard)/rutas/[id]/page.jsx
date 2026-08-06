@@ -2,6 +2,7 @@
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
 import { formatMoney } from '@/lib/i18n'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania } from '@/lib/adaptadores/ruta'
 import { createPortal } from 'react-dom'
@@ -3387,7 +3388,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--cf-ink)]">{c.nombre}</p>
-                  <p className="text-xs text-[var(--cf-ink-3)]">CC {c.cedula}</p>
+                  <p className="text-xs text-[var(--cf-ink-3)]">{abreviaturaDocumento()} {c.cedula}</p>
                 </div>
                 {seleccionados.includes(c.id) && (
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>
@@ -3445,7 +3446,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                       En: {c.rutaNombre}
                     </span>
                   </div>
-                  <p className="text-xs text-[var(--cf-ink-3)]">CC {c.cedula}</p>
+                  <p className="text-xs text-[var(--cf-ink-3)]">{abreviaturaDocumento()} {c.cedula}</p>
                 </div>
                 {seleccionados.includes(c.id) && (
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.preventDefault()}>

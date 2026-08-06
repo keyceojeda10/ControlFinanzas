@@ -2,6 +2,7 @@
 // app/(dashboard)/prestamos/nuevo/page.jsx - Formulario de nuevo préstamo
 
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { useRouter, useSearchParams }              from 'next/navigation'
 import Link                                        from 'next/link'
 import { useAuth }                                 from '@/hooks/useAuth'
@@ -924,7 +925,7 @@ function NuevoPrestamo() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
-              <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>CC {c.cedula}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>{abreviaturaDocumento()} {c.cedula}</p>
             </div>
             {mostrarCheck && c.id === clienteId && (
               <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--cf-gold)' }}>
@@ -968,7 +969,7 @@ function NuevoPrestamo() {
                     {clienteSeleccionado.nombre}
                   </p>
                   <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>
-                    CC {clienteSeleccionado.cedula}
+                    {abreviaturaDocumento()} {clienteSeleccionado.cedula}
                   </p>
                 </div>
                 <button

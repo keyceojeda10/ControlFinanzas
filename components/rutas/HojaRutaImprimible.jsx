@@ -10,6 +10,7 @@
 // uppercase con borde fino, filas alternadas para lectura rápida).
 
 import { useEffect, useState } from 'react'
+import { abreviaturaDocumento } from '@/lib/documento'
 import { createPortal } from 'react-dom'
 import { formatMoney } from '@/lib/i18n'
 
@@ -88,7 +89,7 @@ export default function HojaRutaImprimible({ ruta, clientes }) {
               <td className="hr-c-num">{i + 1}</td>
               <td className="hr-c-cli">
                 <span className="hr-nombre">{c.nombre}</span>
-                {c.cedula && !c.cedula.startsWith('SIN-') ? <span className="hr-ced">CC {c.cedula}</span> : null}
+                {c.cedula && !c.cedula.startsWith('SIN-') ? <span className="hr-ced">{abreviaturaDocumento()} {c.cedula}</span> : null}
               </td>
               <td className="hr-c-dir">
                 {c.direccion ? <span className="hr-dir">{c.direccion}</span> : null}
