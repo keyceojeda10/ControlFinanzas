@@ -74,8 +74,15 @@ function BarChart({ data, dataKey, color = 'var(--cf-gold)', formatValue }) {
 const COLS_RUTA = '28px minmax(0,1fr) 92px 104px 118px'
 
 function FilaRuta({ r, i, maxRoi, fmtShort, cabecera, huerfana }) {
+  /* ⚠ `display` NO va aquí. Iba, y por eso la cabecera de la tabla —que lleva
+     `hidden sm:grid`— se pintaba igualmente en el móvil: el estilo en línea le
+     gana siempre a la clase, así que `hidden` no tenía ningún efecto. Medido a
+     393px: «Rinde» se salía de la pantalla, de 301 a 419.
+
+     Las filas ya lo hacían bien (se caen a dos columnas y usan `sm:!grid-cols`
+     para las cinco); solo la cabecera se quedó a medias. Cada uso declara su
+     propio `display` por clase. */
   const base = {
-    display: 'grid',
     gridTemplateColumns: COLS_RUTA,
     alignItems: 'center',
     gap: 10,
