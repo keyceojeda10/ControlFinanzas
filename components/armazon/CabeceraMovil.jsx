@@ -212,14 +212,23 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
             background: 'var(--cf-card)', border: '1px solid rgba(20,20,28,.1)',
             cursor: 'pointer', padding: 0,
           }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)" strokeWidth="2.2" strokeLinecap="round">
+          {/* 19px: §6 fija 19–21 para ✕ y ←. Estaba a 17, el tamaño de un
+              icono de fila, y se veía más pequeña que la flecha de volver de
+              las otras cabeceras. */}
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)" strokeWidth="2.2" strokeLinecap="round">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
         {titulo && (
           <span className="cf-num" style={{
             fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 15, fontWeight: 600, letterSpacing: '-.01em', color: 'var(--cf-ink)',
+            /* ⚠ ERA 15px, Y LA ESCALA DE TÍTULOS NO LO TIENE.
+               `11-ESCALAS §1B` da tres: 27 escritorio · 20 móvil · 17 cabecera
+               de detalle. Un formulario a 15 y una ficha a 17 hacían que dos
+               cabeceras de la misma app se vieran de distinto tamaño — es lo
+               que el dueño describió como «parecen dos aplicaciones».
+               17 es el de cabecera, que es lo que esto es. */
+            fontSize: 17, fontWeight: 600, letterSpacing: '-.015em', color: 'var(--cf-ink)',
           }}>{titulo}</span>
         )}
       </div>
