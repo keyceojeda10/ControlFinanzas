@@ -139,9 +139,12 @@ export default function AtajosCobro({
           }}>{iniciales}</span>
         )}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {/* El nombre entero, igual que en la tarjeta: es la comprobación de
+              que se le está cobrando a quien se cree. Ver la nota larga en
+              `ParadaDeCobro`. */}
           <span style={{
             fontSize: 16, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            minWidth: 0, overflowWrap: 'anywhere',
           }}>{nombre}</span>
           <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
             {activos.length} {activos.length === 1 ? 'préstamo' : 'préstamos'} · debe {formatMoney(debeTotal, pais)}

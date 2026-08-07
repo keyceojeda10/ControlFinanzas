@@ -51,6 +51,19 @@ const ESTADOS_CLIENTE = [
   { value: '',          label: 'Todos'     },
   { value: 'activo',    label: 'Al día'    },
   { value: 'mora',      label: 'En mora',  color: 'var(--cf-red-dark)' },
+  /* ── LOS DOS QUE PIDIÓ EL DUEÑO ──
+     «Sería bastante ideal que se pudiera identificar fácilmente si uno va a
+     buscar un cliente nuevo, si va a buscar un cliente con clavo.»
+
+     Van en la fila de chips y no dentro de «Más filtros», por lo mismo que en
+     préstamos: un filtro que hay que buscar es un filtro que no se usa.
+
+     ⚠ NO LLEVAN CONTEO. La fila los pinta desde `conteos`, que el endpoint
+     calcula por ESTADO (`total/activo/mora/cancelado`). Poner un «· 0» que no
+     es cierto se lee como «no hay ninguno» y hace descartar el filtro sin
+     probarlo — está escrito tres líneas más abajo, en el sitio donde se pintan. */
+  { value: 'nuevos',    label: 'Nuevos (24h)', sinConteo: true },
+  { value: 'clavo',     label: 'Con perdidos', color: 'var(--cf-red-dark)', sinConteo: true },
   { value: 'cancelado', label: 'Cancelados' },
 ]
 
@@ -389,11 +402,14 @@ export default function ClientesPage() {
       // «Hoy o antes» y no «hoy»: el que lleva tres días atrasado también tiene
       // que aparecer. Dejarlo fuera esconde justo a los que hay que ir a ver.
       opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: 'hoy', nombre: 'Hoy o antes' }] },
-    { id: 'mora', titulo: 'Días de mora', valor: moraMin,
+    /* El título pregunta y la opción responde entera, para que se lean como una
+       frase: «lleva atrasado → más de 7 días». Antes decía «Días de mora → Más
+       de 7», que obliga a completar la frase de cabeza. */
+    { id: 'mora', titulo: 'Lleva atrasado', valor: moraMin,
       onCambiar: (v) => { setMoraMin(v); setPage(1) },
-      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7' },
-        { valor: '15', nombre: 'Más de 15' }, { valor: '30', nombre: 'Más de 30' }] },
-    { id: 'sinPrestamo', titulo: 'Sin préstamo activo', valor: sinPrestamo ? 'si' : '',
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7 días' },
+        { valor: '15', nombre: 'Más de 15 días' }, { valor: '30', nombre: 'Más de 30 días' }] },
+    { id: 'sinPrestamo', titulo: 'Sin nada que cobrarle', valor: sinPrestamo ? 'si' : '',
       onCambiar: (v) => { setSinPrestamo(v === 'si'); setPage(1) },
       // El cliente que ya terminó y no debe nada: es al que hay que volver a
       // prestarle, y hasta ahora no habia forma de encontrarlo sin recorrer la
@@ -409,7 +425,7 @@ export default function ClientesPage() {
     // por elegir cuadrícula. Y como los dos rótulos NO miden igual, la fila
     // entera se recolocaba al pulsar el conmutador. Elegir cómo se ve una lista
     // no filtra nada: se ven los mismos clientes.
-    { id: 'vista', tipo: 'vistas', titulo: 'Cómo se ven', valor: vista === 'lista' ? '' : vista,
+    { id: 'vista', tipo: 'vistas', titulo: 'Tamaño de la ficha', valor: vista === 'lista' ? '' : vista,
       onCambiar: (v) => cambiarVista(v || 'lista'),
       opciones: OPCIONES_VISTA },
     ...(grupos.length > 0 ? [{
@@ -519,7 +535,13 @@ export default function ClientesPage() {
         params.set('sinTelefono', '1')
       }
       // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
-      if (calculados.estado) params.set('estado', calculados.estado)
+      /* ⚠ «nuevos» y «clavo» NO son estados: son columnas, y van por su propio
+         parámetro. Mandarlos como `estado` daría un enum inválido y el endpoint
+         devolvería la lista entera sin filtrar — que es peor que un error,
+         porque parece que funciona. */
+      if (calculados.estado === 'nuevos') params.set('nuevos', '1')
+      else if (calculados.estado === 'clavo') params.set('clavo', '1')
+      else if (calculados.estado) params.set('estado', calculados.estado)
       if (calculados.mora) params.set('mora', String(calculados.mora))
       if (calculados.pagaHoy) params.set('pagaHoy', '1')
       if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
@@ -905,14 +927,14 @@ export default function ClientesPage() {
           onCambiar={(v) => { setEstado(v); setPage(1) }}
           onMasFiltros={() => setHojaFiltros(true)}
           hayMasFiltros={nFiltros > 0}
-          filtros={ESTADOS_CLIENTE.map(({ value, label }) => ({
+          filtros={ESTADOS_CLIENTE.map(({ value, label, sinConteo }) => ({
             id: value,
             nombre: label,
             // Mientras carga NO se pone conteo. Un "· 0" que todavia no es
             // cierto se lee como "no hay ninguno" y hace descartar el filtro
             // antes de que llegue el dato.
             // Del servidor, no de la pagina. Sin ellos, sin numero.
-            conteo: conteos ? (value === '' ? conteos.total : conteos[value] ?? 0) : undefined,
+            conteo: sinConteo || !conteos ? undefined : (value === '' ? conteos.total : conteos[value] ?? 0),
           }))}
         />
       </div>

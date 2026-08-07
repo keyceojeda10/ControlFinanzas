@@ -273,9 +273,23 @@ export function FilaCobro({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
+        {/* ── ⚠ EL NOMBRE NO SE CORTA NUNCA ────────────────────────────────
+            Iba con `nowrap` + puntos suspensivos y salía «Carlos Prueb…». El
+            dueño lo reportó con el motivo exacto, que no es de estética:
+
+              «si hay varios Carlos y lo que los diferencia es el apellido, y
+               el apellido sale cortado, es difícil identificarlos»
+
+            En una ruta de 143 clientes eso es tocar la puerta equivocada. La
+            tarjeta de las listas ya lo tenía resuelto así desde que se reportó
+            allí; ésta se había quedado atrás.
+
+            `anywhere` y no `break-word`: una cédula o un apellido compuesto sin
+            espacios se desbordaría igual. Pasa a dos renglones si hace falta —
+            una tarjeta pareja que no dice a quién estás mirando no sirve. */}
         <span style={{
           fontSize: 17, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
-          minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          minWidth: 0, overflowWrap: 'anywhere',
           textDecoration: cobrada ? 'line-through' : 'none',
         }}>{nombre}</span>
 
@@ -291,7 +305,16 @@ export function FilaCobro({
               : cobradoA ? `Cobrado ${cobradoA}` : 'Cobrado'}
           </span>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          /* ── Y LA DIRECCIÓN TAMPOCO ──
+             «La dirección tiene que verse y el nombre tiene que verse completo.»
+             Con `nowrap` salía «CALLE 31 CON AVENI…», que en la calle no lleva
+             a ninguna puerta. La fila envuelve: la pastilla y la distancia son
+             `flex: none` y se quedan arriba; lo que baja de renglón es la
+             dirección, que es lo único que se lee entero o no sirve. */
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7, minWidth: 0,
+            flexWrap: 'wrap', rowGap: 3,
+          }}>
             {textoPastilla && (
               <span className="cf-num" style={{
                 display: 'inline-flex', alignItems: 'center', flex: 'none',
@@ -302,8 +325,8 @@ export function FilaCobro({
             )}
             {donde && (
               <span style={{
-                fontSize: 12, color: 'var(--cf-ink-3)',
-                minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)',
+                minWidth: 0, overflowWrap: 'anywhere',
               }}>{donde}</span>
             )}
             {/* ── LA DISTANCIA (E07) ──

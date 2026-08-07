@@ -54,6 +54,24 @@ const ESTADOS = [
   // endpoint con `listosRenovar=1`, con el MISMO umbral que usa el panel para
   // contarlos, para que el numero de la fila y el largo de la lista coincidan.
   { value: 'renovar',    label: 'Renovar' },
+  /* ── LOS DOS QUE EL DUEÑO NO ENCONTRABA ──
+     «No hay un filtro claro para los préstamos clavos […] tampoco hay un filtro
+     claro de nuevos préstamos.» No estaban escondidos en «Más filtros»: no
+     existían en ningún sitio.
+
+     Van AQUÍ, en la fila de chips, y no dentro de la hoja: la hoja es para
+     afinar —la frecuencia, el modo de interés, la ruta— y estos dos son
+     preguntas de todos los días. Un filtro que hay que buscar es un filtro que
+     no se usa; lo dijo él con esas palabras: «o yo no lo he encontrado
+     fácilmente».
+
+     Ninguno de los dos es un estado en la base: los resuelve el endpoint con
+     `clavo=1` y `nuevos=1`, igual que «mora» y «renovar». */
+  { value: 'clavo',      label: 'Perdidos', color: 'var(--cf-red-dark)' },
+  // «Nuevos» = las ÚLTIMAS 24 HORAS, la misma definición que la pastilla
+  // «Nuevo» de la tarjeta. Dos definiciones distintas darían una lista filtrada
+  // con tarjetas sin pastilla.
+  { value: 'nuevos',     label: 'Nuevos (24h)' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -358,7 +376,7 @@ export default function PrestamosPage() {
   // también: no son filtros, pero son decisiones de cómo mirar la lista, y
   // ocupaban otros 85px arriba para algo que se cambia una vez al mes.
   const gruposFiltro = [
-    { id: 'frecuencia', titulo: 'Cada cuánto cobra', valor: frecuencia,
+    { id: 'frecuencia', titulo: 'Cada cuánto se cobra', valor: frecuencia,
       onCambiar: (v) => { setFrecuencia(v); setPage(1) },
       // Con el título encima, «Toda frecuencia» sobra: ahí va «Cualquiera».
       opciones: FRECUENCIAS.map(({ value, label }) => ({ valor: value, nombre: value === '' ? 'Cualquiera' : label })) },
@@ -369,29 +387,43 @@ export default function PrestamosPage() {
       onCambiar: (v) => { setRutaId(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Todas las rutas' },
         ...rutas.map((r) => ({ valor: String(r.id), nombre: r.nombre }))] },
-    { id: 'diasMora', titulo: 'Dias de mora', valor: diasMoraMin,
+    /* ── LOS RÓTULOS, EN CASTELLANO Y SIN ADIVINANZAS ────────────────────
+       «Hay filtros que se entienden muy bien, pero hay otros que no se entienden
+       claramente a qué se refieren.» Los tres de aquí eran los peores:
+
+         «Dias de mora» / «Mas de 7»  → sin tildes, y «más de 7» ¿de qué?
+         «No me han pagado»           → el título dice quién, las opciones dicen
+                                        cuándo, y «Hace +7 días» no cierra la frase
+         «Nuevos o renovados»         → «nuevos» ahora es el chip de las 24 horas,
+                                        así que decía dos cosas distintas
+
+       La regla que se aplica: el título hace la pregunta y la opción la
+       responde entera, de modo que se lean juntos como una frase. */
+    { id: 'diasMora', titulo: 'Lleva atrasado', valor: diasMoraMin,
       onCambiar: (v) => { setDiasMoraMin(v); setPage(1) },
-      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Mas de 7' },
-        { valor: '15', nombre: 'Mas de 15' }, { valor: '30', nombre: 'Mas de 30' }] },
-    { id: 'sinPagos', titulo: 'No me han pagado', valor: sinPagosDias,
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7 días' },
+        { valor: '15', nombre: 'Más de 15 días' }, { valor: '30', nombre: 'Más de 30 días' }] },
+    { id: 'sinPagos', titulo: 'Sin recibir un peso desde hace', valor: sinPagosDias,
       onCambiar: (v) => { setSinPagosDias(v); setPage(1) },
-      opciones: [{ valor: '', nombre: 'Todos' }, { valor: '7', nombre: 'Hace +7 días' },
-        { valor: '15', nombre: 'Hace +15 días' }, { valor: '30', nombre: 'Hace +30 días' }] },
-    { id: 'renovacion', titulo: 'Nuevos o renovados', valor: renovacion,
+      opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7 días' },
+        { valor: '15', nombre: 'Más de 15 días' }, { valor: '30', nombre: 'Más de 30 días' }] },
+    { id: 'renovacion', titulo: '¿Es una renovación?', valor: renovacion,
       onCambiar: (v) => { setRenovacion(v); setPage(1) },
-      opciones: [{ valor: '', nombre: 'Todos' }, { valor: 'si', nombre: 'Le presté de nuevo' },
-        { valor: 'no', nombre: 'Primera vez' }] },
-    { id: 'agrupar', titulo: 'Cómo verlo', valor: agrupar ? 'cliente' : '',
+      opciones: [{ valor: '', nombre: 'Da igual' }, { valor: 'si', nombre: 'Sí, le presté de nuevo' },
+        { valor: 'no', nombre: 'No, es su primer préstamo' }] },
+    // «Cómo verlo» y «Cómo se ven» eran dos rótulos que sonaban igual y hacían
+    // cosas distintas. Ahora cada uno dice lo suyo.
+    { id: 'agrupar', titulo: 'Juntar los de un mismo cliente', valor: agrupar ? 'cliente' : '',
       onCambiar: (v) => {
         const next = v === 'cliente'
         setAgrupar(next)
         try { localStorage.setItem('cf:prestamos:agrupar', next ? '1' : '0') } catch {}
       },
-      opciones: [{ valor: '', nombre: 'Uno por uno' }, { valor: 'cliente', nombre: 'Agrupado por cliente' }] },
+      opciones: [{ valor: '', nombre: 'No, uno por uno' }, { valor: 'cliente', nombre: 'Sí, agrupados' }] },
     // `tipo: 'vistas'` para que NO cuente como filtro: ver el comentario gemelo
     // en clientes. Elegir cuadrícula ponía un «1» en el botón de al lado y
     // movía la fila entera.
-    { id: 'vista', tipo: 'vistas', titulo: 'Cómo se ven', valor: vistaP === 'lista' ? '' : vistaP,
+    { id: 'vista', tipo: 'vistas', titulo: 'Tamaño de la ficha', valor: vistaP === 'lista' ? '' : vistaP,
       onCambiar: (v) => cambiarVistaP(v || 'lista'),
       opciones: OPCIONES_VISTA },
   ]
@@ -475,11 +507,16 @@ export default function PrestamosPage() {
       // Ni «mora» ni «renovar» son estados en la base: se piden los activos y el
       // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
       // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
-      const derivado = est === 'mora' || est === 'renovar'
-      const apiEstado = derivado ? 'activo' : est
+      const derivado = est === 'mora' || est === 'renovar' || est === 'clavo' || est === 'nuevos'
+      // ⚠ «Nuevos» NO fuerza `activo`: un préstamo metido hace dos horas puede
+      // estar pendiente de aprobación, y ése es justo el que se busca al
+      // revisar lo que entró hoy.
+      const apiEstado = est === 'nuevos' ? '' : derivado ? 'activo' : est
       if (apiEstado) params.set('estado', apiEstado)
       if (est === 'mora') params.set('soloMora', '1')
       if (est === 'renovar') params.set('listosRenovar', '1')
+      if (est === 'clavo') params.set('clavo', '1')
+      if (est === 'nuevos') params.set('nuevos', '1')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)

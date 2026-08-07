@@ -74,6 +74,21 @@ export async function GET(request) {
   // en el server sobre TODOS los activos y despues se pagina el resultado.
   const soloMora  = searchParams.get('soloMora') === '1'
 
+  /* ── LOS DOS QUE FALTABAN ────────────────────────────────────────────────
+     Reportados por el dueño: «no hay un filtro claro para los préstamos clavos
+     dentro del apartado de préstamos […] tampoco hay un filtro claro de nuevos
+     préstamos». No estaban ni escondidos: no existían.
+
+     Los dos son columnas, así que se filtran en SQL y la paginación sigue
+     siendo cierta. `esClavo` es un booleano del préstamo; «nuevo» es lo mismo
+     que ya define la etiqueta de la tarjeta —creado en las ÚLTIMAS 24 HORAS, no
+     «hoy»—, para que el filtro y la pastilla no cuenten distinto.
+
+     ⚠ 24 horas y no el día de calendario: uno metido a las 23:50 dejaría de ser
+     nuevo diez minutos después, y otro de las 00:10 lo sería un día entero. */
+  const soloClavos = searchParams.get('clavo') === '1'
+  const soloNuevos = searchParams.get('nuevos') === '1'
+
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
@@ -101,6 +116,8 @@ export async function GET(request) {
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
     ...(renovacion === 'no' && { renovadoDeId: null }),
     ...(modoInteres && { modoInteres }),
+    ...(soloClavos && { esClavo: true }),
+    ...(soloNuevos && { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }),
     // MISMA definicion que usa el dashboard para contar la alerta, para que el
     // numero que ves arriba y la lista que abres coincidan. Usa el campo
     // denormalizado ultimoPagoAt (tiene indice con estado) en vez de subqueries

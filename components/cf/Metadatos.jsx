@@ -96,7 +96,18 @@ export function Dato({ trazo, children, titulo, fuerte = false, apagado = false 
         fontWeight: fuerte ? 600 : 400,
         fontStyle: apagado ? 'italic' : undefined,
         color: apagado ? 'var(--cf-ink-4)' : fuerte ? 'var(--cf-ink-2)' : 'var(--cf-ink-3)',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        /* ── ⚠ NO SE RECORTA ──
+           Iba con `nowrap` + puntos suspensivos, así que una ruta llamada
+           «RUTA. #. 5 SECTOR ALTO» salía a medias. El dueño lo pidió como regla,
+           no como caso: «la información se puede leer completa, no puede salir
+           cortada». Y tiene razón sobre para qué existe esta línea — la cédula,
+           el teléfono y la ruta están ahí para IDENTIFICAR, y media cédula no
+           identifica a nadie.
+
+           Baja de renglón: `Metadatos` ya envuelve, así que en la tarjeta cabe
+           sin tocar nada. En la celda de la tabla crece el alto de la fila, que
+           es un precio mucho menor que esconder el dato. */
+        minWidth: 0, overflowWrap: 'anywhere',
       }}>{children}</span>
     </span>
   )

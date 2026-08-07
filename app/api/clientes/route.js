@@ -65,6 +65,20 @@ export async function GET(request) {
     ? (grupo === '_none' ? { grupoCobroId: null } : { grupoCobroId: grupo })
     : {}
 
+  /* ── DOS FILTROS QUE NO EXISTÍAN ─────────────────────────────────────────
+     «Sería bastante ideal que se pudiera identificar fácilmente si uno va a
+     buscar un cliente nuevo, si va a buscar un cliente con clavo.»
+
+     Los dos se resuelven en SQL, así que la paginación y los conteos siguen
+     siendo ciertos — al revés que la mora, que hay que calcular en JS.
+
+     «Nuevo» son las ÚLTIMAS 24 HORAS: exactamente lo mismo que decide la
+     pastilla «Nuevo» de la tarjeta (`esNuevo` en el adaptador). Si el filtro y
+     la pastilla usaran definiciones distintas, la lista filtrada enseñaría
+     tarjetas sin pastilla y nadie sabría por qué. */
+  const soloNuevos = searchParams.get('nuevos') === '1'
+  const soloConClavo = searchParams.get('clavo') === '1'
+
   // Clientes sin ruta asignada. Existe para que la alerta "N clientes sin ruta"
   // del dashboard tenga a donde llevar: antes enlazaba a /clientes pelado y
   // caias al listado completo, sin forma de saber cuales eran.
@@ -103,6 +117,10 @@ export async function GET(request) {
     { estado: { notIn: ['eliminado'] } },
   ]
   if (soloSinRuta) condiciones.push({ rutaId: null })
+  if (soloNuevos) condiciones.push({ createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
+  // Un clavo VIVO: `estado: 'activo'` porque un préstamo perdido y ya cancelado
+  // no es una alarma, es historia.
+  if (soloConClavo) condiciones.push({ prestamos: { some: { esClavo: true, estado: 'activo' } } })
 
   // Clientes sin numero guardado. Existe por el mismo motivo que `sinRuta`: el
   // aviso de «N clientes no tienen numero» de Avisos por WhatsApp tiene que
