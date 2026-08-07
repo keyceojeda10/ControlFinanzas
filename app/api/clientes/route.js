@@ -292,6 +292,11 @@ export async function GET(request) {
         fechaFin:         p.fechaFin,
         createdAt:        p.createdAt,
         frecuencia:       p.frecuencia,
+        // `diasPlazo` lo usa la hoja de pago para escribir «cuota 13 de 24»
+        // cuando el prestamo no tiene tabla de amortizacion. Sin el, el cobro
+        // rapido desde la tarjeta de cliente salia sin ese renglon y el de la
+        // lista de prestamos con el: el mismo modal diciendo dos cosas.
+        diasPlazo:        p.diasPlazo,
         modoInteres:      p.modoInteres,
         tasaInteres:      p.tasaInteres,
         cuotaDiaria:      p.cuotaDiaria,
