@@ -22,7 +22,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
-import { getLocalDateStr } from '@/lib/i18n'
+import { getLocalDateStr, inicioDelDiaLocal } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { enviarPushOrg } from '@/lib/push'
@@ -80,12 +80,24 @@ export async function GET(request) {
      préstamos». No estaban ni escondidos: no existían.
 
      Los dos son columnas, así que se filtran en SQL y la paginación sigue
-     siendo cierta. `esClavo` es un booleano del préstamo; «nuevo» es lo mismo
-     que ya define la etiqueta de la tarjeta —creado en las ÚLTIMAS 24 HORAS, no
-     «hoy»—, para que el filtro y la pastilla no cuenten distinto.
+     siendo cierta.
 
-     ⚠ 24 horas y no el día de calendario: uno metido a las 23:50 dejaría de ser
-     nuevo diez minutos después, y otro de las 00:10 lo sería un día entero. */
+     ── ⚠ «DE HOY» ES LA JORNADA, NO UNA VENTANA DE 24 HORAS ──
+     Lo escribí primero a 24 horas —la misma definición que la pastilla «Nuevo»
+     de la tarjeta— y el dueño lo cuestionó. Tiene razón, y el motivo es de
+     cuadre, no de gusto:
+
+     TODO lo demás de esta app es un día —la caja, el cierre, «recaudado hoy»,
+     «cobrar hoy»— y todos corren de 05:00Z a 05:00Z. Con una ventana móvil, a
+     las 9 de la mañana el filtro enseñaría desde las 9 de ayer: preguntas
+     «¿cuántos préstamos salieron hoy?», el filtro dice 7 y la caja dice 5
+     desembolsos. Dos números para lo mismo, que en esta app ya ha costado caro.
+
+     La PASTILLA de la tarjeta se queda en 24 horas a propósito, y por eso el
+     chip se llama «De hoy» y no «Nuevos»: la pastilla dice «recién creado» —ahí
+     manda que dure lo mismo para todos, o uno metido a las 23:50 deja de ser
+     nuevo diez minutos después— y el chip dice «entró en esta jornada». Son dos
+     preguntas distintas y el nombre lo dice. */
   const soloClavos = searchParams.get('clavo') === '1'
   const soloNuevos = searchParams.get('nuevos') === '1'
 
@@ -117,7 +129,7 @@ export async function GET(request) {
     ...(renovacion === 'no' && { renovadoDeId: null }),
     ...(modoInteres && { modoInteres }),
     ...(soloClavos && { esClavo: true }),
-    ...(soloNuevos && { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }),
+    ...(soloNuevos && { createdAt: { gte: inicioDelDiaLocal(session.user.country ?? 'co') } }),
     // MISMA definicion que usa el dashboard para contar la alerta, para que el
     // numero que ves arriba y la lista que abres coincidan. Usa el campo
     // denormalizado ultimoPagoAt (tiene indice con estado) en vez de subqueries

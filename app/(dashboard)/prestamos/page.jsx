@@ -68,10 +68,15 @@ const ESTADOS = [
      Ninguno de los dos es un estado en la base: los resuelve el endpoint con
      `clavo=1` y `nuevos=1`, igual que «mora» y «renovar». */
   { value: 'clavo',      label: 'Perdidos', color: 'var(--cf-red-dark)' },
-  // «Nuevos» = las ÚLTIMAS 24 HORAS, la misma definición que la pastilla
-  // «Nuevo» de la tarjeta. Dos definiciones distintas darían una lista filtrada
-  // con tarjetas sin pastilla.
-  { value: 'nuevos',     label: 'Nuevos (24h)' },
+  /* ⚠ «DE HOY», NO «NUEVOS (24h)». Lo puse primero a 24 horas y el dueño lo
+     cuestionó con razón: todo lo demás de la app es un día —caja, cierre,
+     recaudado— y una ventana móvil no cuadra contra ninguno.
+
+     La PASTILLA de la tarjeta sí sigue a 24 horas, y por eso el chip cambia de
+     nombre: la pastilla dice «recién creado» y el chip «entró en esta jornada».
+     Con los dos llamándose «Nuevo» serían dos cifras distintas con el mismo
+     nombre; con nombres distintos, son dos preguntas distintas. */
+  { value: 'nuevos',     label: 'De hoy' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]

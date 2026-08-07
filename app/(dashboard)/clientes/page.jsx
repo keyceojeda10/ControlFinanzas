@@ -62,7 +62,7 @@ const ESTADOS_CLIENTE = [
      calcula por ESTADO (`total/activo/mora/cancelado`). Poner un «· 0» que no
      es cierto se lee como «no hay ninguno» y hace descartar el filtro sin
      probarlo — está escrito tres líneas más abajo, en el sitio donde se pintan. */
-  { value: 'nuevos',    label: 'Nuevos (24h)', sinConteo: true },
+  { value: 'nuevos',    label: 'De hoy', sinConteo: true },
   { value: 'clavo',     label: 'Con perdidos', color: 'var(--cf-red-dark)', sinConteo: true },
   { value: 'cancelado', label: 'Cancelados' },
 ]

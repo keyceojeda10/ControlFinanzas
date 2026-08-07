@@ -15,7 +15,7 @@ import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
 import { trackEvent } from '@/lib/analytics'
-import { getUtcOffset, validateDocument, getDocumentConfig } from '@/lib/i18n'
+import { getUtcOffset, validateDocument, getDocumentConfig, inicioDelDiaLocal } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 
@@ -72,10 +72,14 @@ export async function GET(request) {
      Los dos se resuelven en SQL, así que la paginación y los conteos siguen
      siendo ciertos — al revés que la mora, que hay que calcular en JS.
 
-     «Nuevo» son las ÚLTIMAS 24 HORAS: exactamente lo mismo que decide la
-     pastilla «Nuevo» de la tarjeta (`esNuevo` en el adaptador). Si el filtro y
-     la pastilla usaran definiciones distintas, la lista filtrada enseñaría
-     tarjetas sin pastilla y nadie sabría por qué. */
+     ⚠ «De hoy» es la JORNADA —05:00Z a 05:00Z, la misma frontera que la caja y
+     el cierre— y NO una ventana de 24 horas. Ver la nota larga en
+     `/api/prestamos`: la pregunta que se hace con este chip es de supervisión
+     («¿a quién cargó mi cobrador hoy?») y tiene que cuadrar con el día.
+
+     La pastilla «Nuevo» de la tarjeta SÍ se queda en 24 horas (`esNuevo` en el
+     adaptador), y por eso el chip no se llama «Nuevos»: son dos preguntas
+     distintas y el nombre las separa. */
   const soloNuevos = searchParams.get('nuevos') === '1'
   const soloConClavo = searchParams.get('clavo') === '1'
 
@@ -117,7 +121,7 @@ export async function GET(request) {
     { estado: { notIn: ['eliminado'] } },
   ]
   if (soloSinRuta) condiciones.push({ rutaId: null })
-  if (soloNuevos) condiciones.push({ createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
+  if (soloNuevos) condiciones.push({ createdAt: { gte: inicioDelDiaLocal(session.user.country ?? 'co') } })
   // Un clavo VIVO: `estado: 'activo'` porque un préstamo perdido y ya cancelado
   // no es una alarma, es historia.
   if (soloConClavo) condiciones.push({ prestamos: { some: { esClavo: true, estado: 'activo' } } })
