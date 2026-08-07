@@ -86,7 +86,18 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         className={[
           'relative w-full cf-modal-dialog',
           'rounded-t-[20px] sm:rounded-[20px]',
-          'max-h-[90vh] flex flex-col',
+          /* ⚠ `dvh`, NO `vh`. En Safari de iPhone `100vh` es la altura del
+             viewport SIN la barra del navegador, así que `90vh` es MÁS ALTO que
+             lo que se ve. Y como el modal se ancla abajo (`items-end`), lo que
+             se sale es lo de ARRIBA: la cabecera con la X.
+
+             Resultado: un modal del que no se puede salir. Reportado con
+             captura en el de «Generar comprobante», donde se veía la lista de
+             campos y el pie, pero ni el título ni la X.
+
+             Esto vale para TODOS los modales de la app, que pasan por aquí. El
+             `vh` se deja delante como respaldo para quien no entienda `dvh`. */
+          'max-h-[90vh] max-h-[90dvh] flex flex-col',
           'animate-slide-up sm:animate-modal-in',
           sizes[size] ?? sizes.md,
         ].join(' ')}

@@ -241,9 +241,14 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
           aria-label="Cerrar menú"
         >
           <div
-            className="absolute bottom-0 left-0 right-0 rounded-t-[20px] overflow-hidden animate-slide-up cf-sheet"
+            /* La altura va en CLASE y no en el `style` para poder dejar el `vh`
+               como respaldo del `dvh`: en un `style` inline no caben las dos, y
+               si un navegador viejo no entendiera `dvh` se quedaría sin tope de
+               altura. `dvh` es la altura que de verdad queda con la barra del
+               navegador puesta — con `vh` a secas, en Safari de iPhone la hoja
+               se extiende por debajo de lo que se ve. */
+            className="absolute bottom-0 left-0 right-0 rounded-t-[20px] overflow-hidden animate-slide-up cf-sheet max-h-[75vh] max-h-[75dvh]"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '75vh' }}
           >
             <div className="flex justify-center pt-3 pb-1.5">
               <div className="w-10 h-1 rounded-full" style={{ background: 'var(--cf-border-strong)' }} />

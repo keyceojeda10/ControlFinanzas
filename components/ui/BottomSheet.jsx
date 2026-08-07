@@ -63,7 +63,7 @@ export default function BottomSheet({ open, onClose, title, children, footer, cl
         role="dialog"
         aria-modal="true"
         className={[
-          'relative w-full max-w-lg max-h-[90vh] flex flex-col',
+          'relative w-full max-w-lg max-h-[90vh] max-h-[90dvh] flex flex-col',
           'rounded-t-[28px] animate-sheetUp',
           className,
         ].join(' ')}

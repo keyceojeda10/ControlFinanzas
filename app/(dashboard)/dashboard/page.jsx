@@ -541,7 +541,7 @@ function KpiInfoPopover({ info, color, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={info.titulo || 'Explicación'}
-        className="relative w-full max-w-[640px] max-h-[85vh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px]"
+        className="relative w-full max-w-[640px] max-h-[85vh] max-h-[85dvh] overflow-y-auto rounded-t-[20px] sm:rounded-[20px]"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         style={{

@@ -326,8 +326,17 @@ export default function HojaWhatsApp({
           dos veces me equivoqué: la medida decía otra cosa y no la miré hasta
           recorrer la cadena de anchos entera desde el contenido hacia arriba.) */}
       <div
-        className="relative flex w-full mt-auto max-h-[92vh]
-                   sm:m-auto sm:max-w-[460px] sm:max-h-[86vh]
+        /* ⚠ `dvh`, NO `vh`. En Safari de iPhone `100vh` es la altura del
+           viewport SIN la barra de herramientas del navegador, así que una hoja
+           anclada abajo a `92vh` se extiende POR DEBAJO de lo que se ve: el
+           botón verde de «Abrir WhatsApp» quedaba tapado por la barra de Safari
+           y solo asomaba su borde. Reportado con captura.
+
+           `dvh` es la altura dinámica —la que de verdad queda— y se ajusta sola
+           cuando la barra aparece y desaparece. El `vh` se deja delante como
+           respaldo para los navegadores que no lo entienden. */
+        className="relative flex w-full mt-auto max-h-[92vh] max-h-[92dvh]
+                   sm:m-auto sm:max-w-[460px] sm:max-h-[86vh] sm:max-h-[86dvh]
                    sm:rounded-[var(--cf-r-sheet)] sm:overflow-hidden"
       >
         <Plantillas

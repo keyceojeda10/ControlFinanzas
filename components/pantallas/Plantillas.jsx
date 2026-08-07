@@ -346,8 +346,13 @@ export function Plantillas({
 
         </div>
 
+        {/* ⚠ EL HUECO DE ABAJO SALE DE `env(safe-area-inset-bottom)`, no de un
+            número fijo. Con 24px clavados, en un iPhone el botón queda debajo
+            de la barra de Safari o de la raya del gesto de inicio: se veía
+            asomar el borde verde y nada más. */}
         <div style={{
-          flex: 'none', padding: '14px 22px 24px',
+          flex: 'none',
+          padding: '14px 22px calc(env(safe-area-inset-bottom, 0px) + 24px)',
           background: 'var(--cf-card)', borderTop: '1px solid var(--cf-border-strong)',
         }}>
           {/* Sin teléfono no hay a dónde mandarlo. Abrir un wa.me roto es peor

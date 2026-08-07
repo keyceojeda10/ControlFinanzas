@@ -125,7 +125,7 @@ export default function NuevaLineaPage() {
             />
           </div>
 
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+          <div className="space-y-2 max-h-[50vh] max-h-[50dvh] overflow-y-auto">
             {clientesFiltrados.slice(0, 30).map(c => (
               <button
                 key={c.id}

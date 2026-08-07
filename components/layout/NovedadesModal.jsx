@@ -88,7 +88,7 @@ export default function NovedadesModal() {
       />
 
       <div
-        className="relative w-full sm:max-w-md max-h-[88vh]"
+        className="relative w-full sm:max-w-md max-h-[88vh] max-h-[88dvh]"
         style={{ animation: 'cf-nov-up 260ms cubic-bezier(0.22,1,0.36,1)' }}
       >
         <Novedades

@@ -260,7 +260,7 @@ function TabPerfil() {
       </Card>
 
       <Modal open={avatarPickerOpen} onClose={() => setAvatarPickerOpen(false)} title="Elige tu avatar" size="lg">
-        <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+        <div className="space-y-5 max-h-[70vh] max-h-[70dvh] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
           {AVATAR_CATEGORIES.map(cat => {
             const catAvatars = AVATARS.filter(a => a.categoria === cat.id)
             if (!catAvatars.length) return null

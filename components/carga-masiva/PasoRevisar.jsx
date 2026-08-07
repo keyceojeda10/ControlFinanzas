@@ -170,7 +170,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       )}
 
       {/* Lista de clientes agrupados */}
-      <div className="space-y-2 max-h-[55vh] overflow-y-auto">
+      <div className="space-y-2 max-h-[55vh] max-h-[55dvh] overflow-y-auto">
         {clientesVisibles.map((cliente) => {
           const isExpanded = expandido === cliente.key
           return (
