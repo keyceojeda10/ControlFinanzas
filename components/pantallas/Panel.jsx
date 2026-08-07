@@ -185,8 +185,22 @@ function Hero({
        dentro de la columna izquierda de `[1fr | 360px]`, que a 1440 mide 776, y
        el tope la dejaba acabando 56px antes que las tarjetas blancas de su
        propia columna. */
-    <div style={{
+    <div data-bloque="recaudado" style={{
       background: BLOQUE.fondo,
+      /* ── ⚠ EL BORDE NO ES ADORNO: EN OSCURO ES LA CAJA ──
+         La adenda pide #15161A, y en tema oscuro `--cf-surface` ES #15161A: la
+         tarjeta queda del MISMÍSIMO color que el fondo de la app —ratio 1,00— y
+         desaparece. Se ve el contenido flotando sin caja.
+
+         El sistema ya tiene esta regla escrita en `tokens-2026.css`, y viene de
+         un reporte del dueño: «el borde está del mismo color que el fondo,
+         entonces no se ve como que fuese una caja». Allí se midió que en oscuro
+         el relleno no alcanza a dibujar la caja y el borde tiene que hacer ese
+         trabajo, al 14%.
+
+         Va en los dos temas: sobre la tarjeta oscura, un blanco al 14% es
+         imperceptible en claro y en oscuro es lo único que la dibuja. */
+      border: '1px solid rgba(255,255,255,.14)',
       borderRadius: 20,
       padding: '19px 21px',
       display: 'flex', flexDirection: 'column', gap: 14,
@@ -280,10 +294,24 @@ function Hero({
           <div className="relative h-[52px] lg:h-[96px]"
             style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flex: 'none' }}>
             {alturaLinea != null && (
-              <span aria-hidden="true" style={{
-                position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
-                borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
-              }} />
+              <>
+                <span aria-hidden="true" style={{
+                  position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
+                  borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
+                }} />
+                {/* ── LA CIFRA DE LA LÍNEA ──
+                    Sin ella la línea no se entiende: a tamaño real se lee como
+                    un separador de sección, no como una referencia. Va pegada a
+                    la línea y a la derecha, que es donde acaba.
+
+                    Solo desde `lg`: en 393px la cifra se come el ancho de dos
+                    barras y estorba más de lo que aclara. */}
+                <span className="hidden lg:block" style={{
+                  position: 'absolute', right: 0, bottom: `calc(${Math.min(100, alturaLinea)}% + 3px)`,
+                  fontSize: 10, fontWeight: 700, color: BLOQUE.apagado,
+                  pointerEvents: 'none', background: BLOQUE.fondo, paddingLeft: 6,
+                }}>{meta}</span>
+              </>
             )}
             {semana.map((n, i) => {
               const esHoy = i === semana.length - 1
