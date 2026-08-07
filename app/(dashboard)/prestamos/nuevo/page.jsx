@@ -65,6 +65,21 @@ const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 const UNIDAD_PLAZO = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }
 const UNIDAD_CUOTA = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }
 
+/**
+ * Las opciones de segundo nivel —el día de la semana dentro de «semanal»—.
+ *
+ * ⚠ EL FONDO INACTIVO ES `--cf-card`, NO `--cf-surface`. En tema claro los dos
+ * son blancos, y en cuanto el formulario pasó a descansar sobre una hoja
+ * blanca, todo lo que iba sobre `--cf-surface` se quedó sin nada que lo
+ * separara del fondo: «en PC ni siquiera los veo». El borde es lo que los
+ * dibuja, así que tiene que estar siempre.
+ */
+function estiloOpcionMenor(activo) {
+  return activo
+    ? { background: 'color-mix(in srgb, var(--cf-gold) 14%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold-dark, var(--cf-gold))' }
+    : { background: 'var(--cf-card)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)' }
+}
+
 // Modo de interes preferido del prestamista (lo elige una vez con el asistente y
 // queda por defecto). Guardado en el dispositivo para no repetir el test en cada
 // prestamo; se puede rehacer cuando quiera.
@@ -896,7 +911,7 @@ function NuevoPrestamo() {
             style={{
               background: c.id === clienteId
                 ? 'color-mix(in srgb, var(--cf-gold) 12%, transparent)'
-                : 'var(--cf-surface)',
+                : 'var(--cf-fill)',
               borderColor: c.id === clienteId
                 ? 'var(--cf-gold)'
                 : 'var(--cf-border)',
@@ -964,7 +979,7 @@ function NuevoPrestamo() {
                   type="button"
                   onClick={() => { setClienteId(''); setClienteNombre('') }}
                   className="text-xs font-semibold px-2.5 py-1.5 rounded-[8px] transition-colors"
-                  style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-surface)' }}
+                  style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}
                 >
                   Cambiar
                 </button>
@@ -1005,7 +1020,7 @@ function NuevoPrestamo() {
                   placeholder="Buscar por nombre o cédula"
                   className="w-full h-12 pl-10 pr-4 rounded-[12px] border text-sm focus:outline-none transition-colors"
                   style={{
-                    background: 'var(--cf-surface)',
+                    background: 'var(--cf-fill)',
                     borderColor: 'var(--cf-border)',
                     color: 'var(--cf-ink)',
                   }}
@@ -1099,20 +1114,38 @@ function NuevoPrestamo() {
                 </p>
               </div>
 
-              {/* Tipo toggle */}
+              {/* ── PRÉSTAMO O MERCANCÍA ──
+                  Se quedaron del lenguaje viejo mientras todo lo de alrededor
+                  cambiaba: píldoras de 22px y 44 de alto al lado de la
+                  frecuencia, que es rectangular de 12px y 48. Parecían de otra
+                  pantalla, y el reporte fue exacto: «no rediseñaste esos
+                  botones».
+
+                  Y en escritorio casi no se veían. El inactivo iba sobre
+                  `--cf-surface`, que en claro es blanco: en cuanto puse la hoja
+                  blanca detrás, «Mercancía» se quedó sin nada que lo separara
+                  del fondo. Eso lo rompí yo al meter el papel.
+
+                  ⚠ `rounded-[12px]` A MANO, no `rounded-xl`: el tema redefine
+                  `--radius-xl` a 22px, así que `rounded-xl` NO son los 12 de
+                  Tailwind. Ninguno de los radios del tema (11/14/18/22) está en
+                  el canon, que manda 8/10/12/16/20.
+
+                  Mismo patrón que la frecuencia a propósito: son dos preguntas
+                  de la misma clase —elegir una de varias— y con dos lenguajes
+                  distintos se leen como si fueran cosas distintas. */}
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => handleModoChange('prestamo')}
-                  className="h-11 rounded-xl border text-sm font-semibold transition-all"
-                  style={modo === 'prestamo'
-                    ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' }
-                    : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}
-                >Préstamo</button>
-                <button type="button" onClick={() => handleModoChange('mercancia')}
-                  className="h-11 rounded-xl border text-sm font-semibold transition-all"
-                  style={modo === 'mercancia'
-                    ? { background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', borderColor: 'var(--cf-ink-2)', color: 'var(--cf-ink-2)' }
-                    : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}
-                >Mercancía</button>
+                {[['prestamo', 'Préstamo'], ['mercancia', 'Mercancía']].map(([clave, etiqueta]) => {
+                  const activo = modo === clave
+                  return (
+                    <button key={clave} type="button" onClick={() => handleModoChange(clave)}
+                      className="h-12 rounded-[12px] border text-sm font-semibold transition-all"
+                      style={activo
+                        ? { background: 'var(--cf-ink)', borderColor: 'var(--cf-ink)', color: 'var(--cf-card)' }
+                        : { background: 'var(--cf-card)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-2)' }}
+                    >{etiqueta}</button>
+                  )
+                })}
               </div>
 
               {modo === 'mercancia' && (
@@ -1261,14 +1294,17 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia cobras?</label>
                   <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Fija el dia de la semana. "Auto" usa el dia de inicio.</p>
+                  {/* El día se queda en oro y no en tinta: es una elección DE
+                      DENTRO de «semanal», no de las de arriba. Si todo se marca
+                      igual de fuerte, deja de leerse qué depende de qué. */}
                   <div className="grid grid-cols-7 gap-1">
                     <button type="button" onClick={() => setDiaCobroSemana('')}
-                      className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                      style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>Auto</button>
+                      className="h-10 rounded-[10px] border text-[10px] font-semibold transition-all"
+                      style={estiloOpcionMenor(diaCobroSemana === '')}>Auto</button>
                     {DIAS_SEMANA.slice(0, 6).map(d => (
                       <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
-                        className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>{d.l}</button>
+                        className="h-10 rounded-[10px] border text-[10px] font-semibold transition-all"
+                        style={estiloOpcionMenor(diaCobroSemana === d.v)}>{d.l}</button>
                     ))}
                   </div>
                 </div>
@@ -1287,14 +1323,23 @@ function NuevoPrestamo() {
                       style={modoDiaCobro === 'mes' ? { background: 'var(--cf-card)', color: 'var(--cf-gold)', boxShadow: '0 1px 4px rgba(0,0,0,0.12)' } : { color: 'var(--cf-ink-3)' }}>Dias del mes</button>
                   </div>
                   {modoDiaCobro === 'semana' ? (
+                    /* ⚠ EL MISMO SELECTOR, SEGUNDA VÍA. «Qué día cobras» sale
+                       por dos caminos —desde semanal y desde quincenal— y la
+                       primera vez arreglé solo el de arriba. Es el fallo que ya
+                       me costó dos días con el comprobante: si algo se ve por
+                       varios sitios, hay que buscarlos TODOS.
+
+                       Y el comentario va SIN LLAVES: dentro de una rama de
+                       ternario solo cabe una expresión, y `{…}` + `<div>` son
+                       dos hijos sueltos. Eso tumbó la pantalla entera. */
                     <div className="grid grid-cols-7 gap-1">
                       <button type="button" onClick={() => setDiaCobroSemana('')}
-                        className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                        style={diaCobroSemana === '' ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>Auto</button>
+                        className="h-10 rounded-[10px] border text-[10px] font-semibold transition-all"
+                        style={estiloOpcionMenor(diaCobroSemana === '')}>Auto</button>
                       {DIAS_SEMANA.slice(0, 6).map(d => (
                         <button key={d.v} type="button" onClick={() => setDiaCobroSemana(d.v)}
-                          className="h-9 rounded-lg border text-[10px] font-semibold transition-all"
-                          style={diaCobroSemana === d.v ? { background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)', borderColor: 'var(--cf-gold)', color: 'var(--cf-gold)' } : { background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}>{d.l}</button>
+                          className="h-10 rounded-[10px] border text-[10px] font-semibold transition-all"
+                          style={estiloOpcionMenor(diaCobroSemana === d.v)}>{d.l}</button>
                       ))}
                     </div>
                   ) : (
@@ -1559,7 +1604,7 @@ function NuevoPrestamo() {
               </div>
 
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
-                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)' }}>
+                style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Cobrar seguro</p>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Suma un cargo fijo al préstamo</p>
@@ -1590,7 +1635,7 @@ function NuevoPrestamo() {
                     value={socioId}
                     onChange={(e) => setSocioId(e.target.value)}
                     className="mt-1.5 w-full h-10 px-2 rounded-[12px] text-sm"
-                    style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
+                    style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
                   >
                     <option value="">Sin socio</option>
                     {listaSocios.filter(s => s.activo).map(s => (
@@ -1601,7 +1646,7 @@ function NuevoPrestamo() {
               )}
 
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
-                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)' }}>
+                style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Ya habia pagado algo antes</p>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Migrar un préstamo con abonos previos</p>
@@ -1665,7 +1710,7 @@ function NuevoPrestamo() {
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                                  style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                                  style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                                 <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
                               </div>
                             } />
@@ -1675,7 +1720,7 @@ function NuevoPrestamo() {
                           editor={
                             <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const nd = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (nd) setPlazoUnidades(nd) }}
                               className="h-8 rounded-lg border px-2 text-sm"
-                              style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
+                              style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                               <option value="diario">Diario</option><option value="semanal">Semanal</option><option value="quincenal">Quincenal</option><option value="mensual">Mensual</option>
                             </select>
                           } />
@@ -1685,7 +1730,7 @@ function NuevoPrestamo() {
                             <div className="flex items-center gap-1.5">
                               <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
                                 className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                                style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                               <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{unidadPlazoL}</span>
                             </div>
                           } />
@@ -1700,7 +1745,7 @@ function NuevoPrestamo() {
                             editor={
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
-                                style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
+                                style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                                 <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option><option value="lineal_dinamico">Decr. dinámico</option>
                               </select>
                             } />
@@ -1828,7 +1873,7 @@ function NuevoPrestamo() {
                       <div className="flex items-center gap-1.5">
                         <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                          style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                          style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                         <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
                       </div>
                     }
@@ -1841,7 +1886,7 @@ function NuevoPrestamo() {
                   editor={
                     <select value={frecuencia} onChange={e => { setFrecuencia(e.target.value); const newDefault = { diario: '30', semanal: '8', quincenal: '4', mensual: '2' }[e.target.value]; if (newDefault) setPlazoUnidades(newDefault) }}
                       className="h-8 rounded-lg border px-2 text-sm"
-                      style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
+                      style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                       <option value="diario">Diario</option>
                       <option value="semanal">Semanal</option>
                       <option value="quincenal">Quincenal</option>
@@ -1857,7 +1902,7 @@ function NuevoPrestamo() {
                     <div className="flex items-center gap-1.5">
                       <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
                         className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
-                        style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
+                        style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                       <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>{unidadPlazoLabel}</span>
                     </div>
                   }
@@ -1875,7 +1920,7 @@ function NuevoPrestamo() {
                     editor={
                       <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                         className="h-8 rounded-lg border px-2 text-sm"
-                        style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
+                        style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
                         <option value="fijo">Clásico</option>
                         <option value="unico">De una vez</option>
                         <option value="solo_interes">Globo</option>
