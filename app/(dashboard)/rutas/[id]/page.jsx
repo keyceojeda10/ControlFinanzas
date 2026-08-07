@@ -4,7 +4,10 @@
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, filaZonaDe } from '@/lib/adaptadores/ruta'
+// La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
+// components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
+import { Carril, FilaCobro, SeparadorZona, FilaFueraDeParada } from '@/components/cf/ParadaDeCobro'
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback, useMemo, use } from 'react'
 import { useRouter }                 from 'next/navigation'
@@ -374,7 +377,6 @@ export default function RutaDetallePage({ params }) {
   // T24-03: la ficha de capital de la ruta. Se abre tocando el bloque negro,
   // que es justo la cifra sobre la que responde («¿me rinde meter plata aqui?»).
   const [fichaCapital, setFichaCapital] = useState(false)
-  const [seccionProximosAbierta, setSeccionProximosAbierta] = useState(false)
   // «Solo hoy»: esconder a quien no toca cobrar hoy. Apagado por defecto —
   // quitar clientes de la vista sin que nadie lo haya pedido es peor que
   // mostrarlos de más—, pero se recuerda para quien lo enciende.
@@ -2299,431 +2301,59 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             <p className="text-sm text-[var(--cf-ink-2)]">Sin clientes asignados</p>
           </div>
         ) : (() => {
-          // Render de una card de cliente. `conGrip` = true en modo ordenar (drag).
-          const renderCard = (c, idx, { conGrip }) => {
-              const globalIdx = conGrip && !grupoFiltro ? idx : (ruta.clientes ?? []).findIndex(x => x.id === c.id)
-              const numPos = globalIdx + 1
-              const isCompleted = c.estado === 'completado'
-              const pendienteHoy = Boolean(
-                c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado')
-              )
-              const tieneMora = c.diasMora > 0
-              const abonoConPendiente = c.pagoHoy && pendienteHoy
-              const statusColor = isCompleted
-                ? (c.tieneClavo ? 'var(--cf-red-dark)' : '#666')
-                : abonoConPendiente
-                  ? 'var(--cf-gold-dark)'
-                  : c.pagoHoy
-                  ? 'var(--cf-green-dark)'
-                  : c.hoySinCobro && !pendienteHoy
-                    ? 'var(--cf-gold-dark)'
-                    : pendienteHoy
-                      ? 'var(--cf-gold-dark)'
-                      : 'var(--cf-green-dark)'
-              const statusText = isCompleted
-                ? (c.tieneClavo ? 'Préstamo perdido' : 'Sin deuda — se puede retirar')
-                : abonoConPendiente
-                  ? 'Abonó hoy · sigue pendiente'
-                  : c.pagoHoy
-                  ? 'Pagó hoy'
-                  : c.hoySinCobro && !pendienteHoy
-                    ? 'Hoy no se cobra'
-                    : pendienteHoy
-                      ? 'Pago pendiente hoy'
-                      : 'Al día'
-              const detalleMora = tieneMora
-                ? `${c.diasMora}d mora${c.cuotasEnMora ? ` · ${c.cuotasEnMora} cuota${c.cuotasEnMora === 1 ? '' : 's'}` : ''}${c.montoEnMora ? ` · ${formatMoney(c.montoEnMora)}` : ''}`
-                : null
-              const cobroLabelContextual = c.diasParaCobro === 0
-                ? 'Hoy'
-                : c.diasParaCobro === 1
-                  ? 'Mañana'
-                  : c.diasParaCobro === -1
-                    ? 'Ayer'
-                    : c.proximoCobroLabel
-              const prefijoCobro = c.diasParaCobro != null && c.diasParaCobro < 0 ? 'Debió cobrarse' : 'Próx. cobro'
-              const detalleCobro = !isCompleted && cobroLabelContextual ? `${prefijoCobro}: ${cobroLabelContextual}` : null
-              const dragActivo = conGrip && !grupoFiltro
-              return (
-                <div
-                  key={c.id}
-                  id={`cliente-${c.id}`}
-                  data-idx={idx}
-                  draggable={dragActivo}
-                  onDragStart={dragActivo ? () => handleDragStart(idx) : undefined}
-                  onDragOver={dragActivo ? (e) => handleDragOver(e, idx) : undefined}
-                  onDrop={dragActivo ? () => handleDrop(idx) : undefined}
-                  onDragEnd={dragActivo ? handleDragEnd : undefined}
-                  onTouchStart={dragActivo ? (e) => handleTouchStart(e, idx) : undefined}
-                  onTouchMove={dragActivo ? (e) => handleTouchMove(e, idx) : undefined}
-                  onTouchEnd={dragActivo ? handleTouchEnd : undefined}
-                  className={[
-                    'flex items-stretch gap-0 rounded-[12px] transition-all overflow-hidden',
-                    'border',
-                    isCompleted && !c.tieneClavo ? 'opacity-50' : '',
-                    dragIndex === idx ? 'opacity-30 scale-95' : '',
-                    dragOverIdx === idx && dragIndex !== idx ? 'border-[var(--cf-gold)] bg-[rgba(245,197,24,0.05)]' : 'border-[#1f1f1f] bg-[rgba(255,255,255,0.02)]',
-                    highlightId === c.id ? 'border-[var(--cf-gold)] bg-[rgba(245,197,24,0.08)]' : '',
-                  ].join(' ')}
-                >
-                  {/* Borde lateral de color por estado (se lee de reojo en campo) */}
-                  <div className="w-1 shrink-0 self-stretch" style={{ background: statusColor }} />
+          // El cliente crudo por id: la tarjeta recibe la fila ya adaptada
+          // —textos, no campos— y las acciones necesitan el original (telefono,
+          // coordenadas, prestamoActivo).
+          const porId = new Map(clientesFiltrados.map((c) => [c.id, c]))
 
-                  {/* Grip + input de posicion (modo Ordenar) */}
-                  {conGrip && (
-                  <div
-                    data-grip="true"
-                    className="flex flex-col items-center justify-center w-14 shrink-0 self-stretch cursor-grab active:cursor-grabbing touch-none select-none gap-0.5"
-                    style={{ background: 'rgba(255,255,255,0.02)' }}
-                  >
-                    <svg className="w-3.5 h-3.5 text-[#555]" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="9" cy="7" r="1.5" /><circle cx="15" cy="7" r="1.5" />
-                      <circle cx="9" cy="13" r="1.5" /><circle cx="15" cy="13" r="1.5" />
-                    </svg>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      defaultValue={numPos}
-                      key={`pos-${c.id}-${numPos}`}
-                      onFocus={(e) => { e.target.select(); e.stopPropagation() }}
-                      onClick={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                      onBlur={(e) => {
-                        if (grupoFiltro) { e.target.value = numPos; return }
-                        const newPos = parseInt(e.target.value, 10)
-                        if (!newPos || newPos < 1 || newPos > ruta.clientes.length || newPos === numPos) {
-                          e.target.value = numPos
-                          return
-                        }
-                        const nuevos = [...ruta.clientes]
-                        const [moved] = nuevos.splice(globalIdx, 1)
-                        nuevos.splice(newPos - 1, 0, moved)
-                        setRuta(prev => ({ ...prev, clientes: nuevos }))
-                        guardarOrden(nuevos)
-                      }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur() }}
-                      className="w-12 h-6 text-center text-[11px] font-bold tabular-nums rounded-[6px] border bg-transparent cursor-text
-                        focus:bg-[var(--cf-card)] focus:border-[var(--cf-gold)] focus:cursor-text focus:outline-none transition-colors"
-                      style={{ color: 'var(--cf-ink-3)', borderColor: 'var(--cf-border)' }}
-                      min={1}
-                      max={ruta.clientes.length}
-                    />
-                  </div>
-                  )}
-
-                  {/* Numero racing (modo trabajo) — ocupa todo el alto de la card */}
-                  {!conGrip && (
-                    <div
-                      className="flex items-center justify-center shrink-0 self-stretch relative"
-                      style={{ width: numPos > 999 ? 44 : numPos > 99 ? 38 : numPos > 9 ? 36 : 30 }}
-                    >
-                      <span
-                        className="absolute font-black tabular-nums italic select-none pointer-events-none"
-                        style={{
-                          fontSize: numPos > 999 ? '36px' : numPos > 99 ? '44px' : numPos > 9 ? '70px' : '80px',
-                          lineHeight: 1,
-                          color: 'var(--cf-ink)',
-                          opacity: 0.08,
-                          letterSpacing: '-0.05em',
-                          fontFamily: 'system-ui, sans-serif',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >{numPos}</span>
-                    </div>
-                  )}
-
-                  {/* Client content — clickable */}
-                  <div
-                    className="flex-1 py-3 pl-3 pr-3 min-w-0 cursor-pointer active:opacity-80"
-                    onClick={() => abrirClienteDesdeRuta(c, idx)}
-                  >
-                    <div className="flex items-start gap-3 min-w-0">
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-bold text-[var(--cf-ink)] leading-snug">{c.nombre}</p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {c.tieneClavo && (
-                            <span
-                              className="shrink-0 text-[10px] font-extrabold uppercase tracking-[.07em] px-1.5 py-0.5 rounded-md"
-                              style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 15%, transparent)', color: 'var(--cf-red-dark)' }}
-                            >Clavo</span>
-                          )}
-                          {c.grupoCobro && !grupoFiltro && (
-                            <span className="shrink-0 w-2 h-2 rounded-full" style={{ background: c.grupoCobro.color || 'var(--cf-ink-2)' }} title={c.grupoCobro.nombre} />
-                          )}
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusColor, boxShadow: `0 0 5px ${statusColor}50` }} />
-                          <span className="text-[10px]" style={{ color: statusColor }}>{statusText}</span>
-                          {c.frecuencia && c.frecuencia !== 'diario' && !isCompleted && (
-                            <span className="text-[10px] ml-1" style={{ color: c.diasParaCobro < 0 ? 'var(--cf-red-dark)' : c.diasParaCobro === 0 ? 'var(--cf-green-dark)' : c.diasParaCobro === 1 ? 'var(--cf-gold)' : '#666' }}>
-                              · {c.diasParaCobro < 0
-                                ? `Vencido ${Math.abs(c.diasParaCobro)}d`
-                                : c.diasParaCobro === 0
-                                  ? 'Cobra hoy'
-                                  : c.diasParaCobro === 1
-                                    ? 'Cobra mañana'
-                                    : c.diasParaCobro != null
-                                      ? `Cobra en ${c.diasParaCobro}d`
-                                      : ''}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right side: cuota + WA + cobrar */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
-                        <div className="flex items-center gap-1.5">
-                          {c.cuota > 0 && (
-                            <div className="flex items-baseline gap-1">
-                              <p className="text-[13px] font-bold text-[var(--cf-ink)] font-mono-display leading-none">{formatMoney(c.cuota)}</p>
-                              <p className="text-[11px] text-[#777] leading-none">/{c.frecuencia === 'semanal' ? 'sem' : c.frecuencia === 'quincenal' ? 'qna' : c.frecuencia === 'mensual' ? 'mes' : 'dia'}</p>
-                            </div>
-                          )}
-                          {c.telefono && (
-                            <a
-                              href={`tel:${c.telefono}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all active:scale-90"
-                              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)' }}
-                              title="Llamar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="var(--cf-ink-2)" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                              </svg>
-                            </a>
-                          )}
-                          {c.telefono && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                const p = c.prestamosActivos?.[0]
-                                setModalWA({
-                                  cliente: { id: c.id, nombre: c.nombre, telefono: c.telefono, cedula: c.cedula, direccion: c.direccion },
-                                  prestamo: p ? {
-                                    ...p,
-                                    estado: c.estado === 'completado' ? 'completado' : 'activo',
-                                    porcentajePagado: p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0,
-                                  } : null,
-                                })
-                              }}
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all active:scale-90"
-                              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)' }}
-                              title="Enviar WhatsApp"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="#25D366" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                              </svg>
-                            </button>
-                          )}
-                          {c.latitud != null && c.longitud != null && (
-                            <a
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${c.latitud},${c.longitud}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-9 h-9 rounded-[10px] flex items-center justify-center transition-all active:scale-90"
-                              style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)' }}
-                              title="Cómo llegar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="var(--cf-ink-2)" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                              </svg>
-                            </a>
-                          )}
-                        </div>
-
-                        {/* New loan button — shown for clients without active loans */}
-                        {isCompleted && !c.tieneClavo && puedeGestionarRutas && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); router.push(`/prestamos/nuevo?clienteId=${c.id}`) }}
-                            className="h-8 rounded-[12px] flex items-center justify-center shrink-0 transition-all active:scale-95 px-3 gap-1.5 bg-[rgba(245,197,24,0.10)] border border-[rgba(245,197,24,0.25)] hover:bg-[rgba(245,197,24,0.20)]"
-                          >
-                            <svg className="w-3 h-3 shrink-0 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            <span className="text-[11px] font-bold whitespace-nowrap text-[var(--cf-gold)]">Prestar</span>
-                          </button>
-                        )}
-
-                        {/* Quick pay button */}
-                        {(!isCompleted || c.tieneClavo) && c.cuota > 0 && c.prestamoActivo && (!c.pagoHoy || pendienteHoy) && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); abrirPagoRapido(c) }}
-                            disabled={pagandoRapido === c.id}
-                            title={abonoConPendiente ? 'El cliente aun tiene cuotas atrasadas pendientes' : 'Registrar cobro del día'}
-                            className="h-9 rounded-[11px] flex items-center justify-center shrink-0 transition-all active:scale-95 px-3.5 gap-1.5"
-                            style={{
-                              // COBRAR ES LA ACCION DE LA PANTALLA: va solida.
-                              // Antes era una pastilla translucida con el texto
-                              // del mismo verde que el fondo — la accion mas
-                              // importante de la ruta se leia como una etiqueta.
-                              //
-                              // El ambar avisa de que el cliente arrastra cuotas:
-                              // no bloquea el cobro, pero no deja que se pulse en
-                              // automatico.
-                              background: abonoConPendiente ? 'var(--cf-gold)' : 'var(--cf-green)',
-                              color: abonoConPendiente ? 'var(--cf-gold-ink)' : '#FFF',
-                              border: 0,
-                            }}
-                          >
-                            {pagandoRapido === c.id ? (
-                              <svg className="w-3.5 h-3.5 text-[var(--cf-green-dark)] animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                              </svg>
-                            ) : pagoRapidoOk === c.id ? (
-                              <svg className="w-3.5 h-3.5 text-[var(--cf-ink)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <>
-                                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor"
-                                  viewBox="0 0 24 24" strokeWidth={2.2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
-                                </svg>
-                                <span className="text-[12px] font-bold whitespace-nowrap">Cobrar</span>
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Sección inferior: saldo, barra progreso, mora, detalles */}
-                    {(!isCompleted || c.tieneClavo) && c.prestamosActivos?.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {c.prestamosActivos.map((p, i) => {
-                          const pct = p.totalAPagar > 0 ? Math.min(100, Math.round(((p.totalPagado ?? 0) / p.totalAPagar) * 100)) : 0
-                          const barColor = tieneMora ? 'var(--cf-red-dark)' : pct >= 80 ? 'var(--cf-green-dark)' : 'var(--cf-gold)'
-                          return (
-                            <div key={p.id}>
-                              {c.prestamosActivos.length > 1 && (
-                                <p className="text-[10px] font-extrabold uppercase tracking-[.07em] mb-1" style={{ color: 'var(--cf-ink-3)' }}>
-                                  Prestamo {i + 1}
-                                </p>
-                              )}
-                              <div className="flex items-baseline justify-between">
-                                <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Saldo pendiente</p>
-                                <p className="text-[13px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(p.saldoPendiente)}</p>
-                              </div>
-                              <div className="mt-1 h-[4px] rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
-                                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
-                              </div>
-                              <div className="flex items-center justify-between mt-0.5">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[11px] font-semibold" style={{ color: barColor }}>{pct}% pagado</span>
-                                  {pct >= 80 && pct < 100 && !tieneMora && (
-                                    <span className="text-[10px] font-bold uppercase px-1 py-px rounded" style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)', color: 'var(--cf-green-dark)' }}>
-                                      Renovar
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[11px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>de {formatMoney(p.totalAPagar)}</span>
-                              </div>
-                            </div>
-                          )
-                        })}
-
-                        {/* Grid: pagado / cuota / prox cobro */}
-                        <div className="grid grid-cols-3 gap-px rounded-[8px] overflow-hidden" style={{ background: 'var(--cf-border)' }}>
-                          <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Pagado</p>
-                            <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
-                              {formatMoney(c.prestamosActivos.reduce((s, p) => s + (p.totalPagado ?? 0), 0))}
-                            </p>
-                          </div>
-                          <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Cuota</p>
-                            <p className="text-[11px] font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
-                              {formatMoney(c.cuota)}
-                            </p>
-                          </div>
-                          <div className="px-2 py-1.5" style={{ background: 'var(--cf-surface)' }}>
-                            <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>Prox. cobro</p>
-                            <p className="text-[11px] font-bold capitalize" style={{ color: tieneMora ? 'var(--cf-red-dark)' : 'var(--cf-ink)' }}>
-                              {cobroLabelContextual || '—'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Mora badge */}
-                        {tieneMora && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-[6px] text-[10px] font-semibold"
-                            style={{ background: 'color-mix(in srgb, var(--cf-red-dark) 10%, transparent)', color: 'var(--cf-red-dark)' }}
-                          >
-                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-                            </svg>
-                            <span className="capitalize">{detalleMora}</span>
-                          </div>
-                        )}
-
-                        {/* Moratorio pendiente */}
-                        {tieneMora && ruta?.configMoratorio?.tasaMoratorio > 0 && c.diasMora > (ruta.configMoratorio.diasGracia || 5) && (
-                          <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-[6px]"
-                            style={{ background: 'color-mix(in srgb, var(--cf-gold-dark) 8%, transparent)', color: 'var(--cf-gold-dark)' }}
-                          >
-                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Interés moratorio pendiente</span>
-                          </div>
-                        )}
-
-                        {/* Cuota extra programada */}
-                        {c.cuotaExtraHoy && (
-                          <div className="flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-[6px]"
-                            style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}
-                          >
-                            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            <span className="font-mono-display">Cuota extra: {formatMoney(c.montoCuotaExtra)}</span>
-                          </div>
-                        )}
-
-                        {/* Geo badge */}
-                        {c.pagoHoy && (() => {
-                          const geo = c.pagoHoyGeo
-                          if (!geo) return (
-                            <div className="flex items-center gap-1 text-[11px]" style={{ color: '#555' }}>
-                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              sin geolocalización
-                            </div>
-                          )
-                          if (geo.clienteSinCoords || geo.distanciaMetros == null) return (
-                            <div className="flex items-center gap-1 text-[11px]" style={{ color: '#555' }}>
-                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              cliente sin ubicación fijada
-                            </div>
-                          )
-                          const d = geo.distanciaMetros
-                          const geoColor = d <= 50 ? 'var(--cf-green-dark)' : d <= 200 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
-                          return (
-                            <div className="flex items-center gap-1 text-[11px] font-medium" style={{ color: geoColor }}>
-                              <svg className="w-2.5 h-2.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              a {d < 1000 ? `${d}m` : `${(d / 1000).toFixed(1)}km`}
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Remove button (owner o cobrador con permiso) — solo en modo ordenar */}
-                  {puedeGestionarRutas && conGrip && (
-                    <button
-                      onClick={() => setConfirmQuitar({ id: c.id, nombre: c.nombre })}
-                      disabled={quitando === c.id}
-                      className="pr-2 pl-0 self-stretch flex items-center text-[var(--cf-ink-2)] hover:text-[var(--cf-red-dark)] transition-colors disabled:opacity-50"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )
+          const abrirWhatsApp = (c) => {
+            const p = c.prestamosActivos?.[0]
+            setModalWA({
+              cliente: { id: c.id, nombre: c.nombre, telefono: c.telefono, cedula: c.cedula, direccion: c.direccion },
+              prestamo: p ? {
+                ...p,
+                estado: c.estado === 'completado' ? 'completado' : 'activo',
+                porcentajePagado: p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0,
+              } : null,
+            })
           }
+
+          const abrirMapa = (c) => {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.latitud},${c.longitud}`, '_blank', 'noopener,noreferrer')
+          }
+
+          /* ── LA PARADA (Adenda 5 · E07 + E08) ──────────────────────────
+             Era otra tarjeta distinta a la de /cobros-hoy, siendo LA MISMA
+             parada de LA MISMA ruta. La lámina la retrata entera: el número de
+             orden como marca de agua al 8% detrás del texto, nueve cifras
+             —tres saldos, tres barras, tres columnas y la franja de mora— y
+             «ninguna es la que se va a pedir». Más un riel lateral de color y
+             un `bg-[rgba(255,255,255,0.02)]` fijo, que en tema claro es un gris
+             invisible sobre blanco.
+
+             Ahora es `FilaCobro`, la misma que pinta /cobros-hoy, y el número
+             sale al carril de `Carril`. Arreglar una arregla las dos: por no
+             tenerlo así, el recibo de WhatsApp se reportó roto dos días
+             seguidos. */
+          const renderCard = (fila, i, { actual } = {}) => (
+            <Carril
+              key={fila.id}
+              orden={fila.orden}
+              cobrada={fila.cobrada}
+              actual={actual}
+              ultima={fila.ultima}
+            >
+              <FilaCobro
+                {...fila}
+                activa={actual}
+                onClick={() => abrirPagoRapido(porId.get(fila.id))}
+                onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
+                onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
+                onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
+              />
+            </Carril>
+          )
+
 
           // MODO ORDENAR: lista plana con drag-and-drop (comportamiento original).
           if (modoVista === 'ordenar') {
@@ -3200,88 +2830,92 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             )
           }
 
-          // MODO TRABAJO: 3 secciones (por cobrar hoy / pagaron hoy / proximos).
-          const porCobrarHoy = []
-          const yaPagaronHoy = []
-          const proximosYAlDia = []
-          for (const c of clientesFiltrados) {
-            const pendiente = Boolean(c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado'))
-            if (pendiente) porCobrarHoy.push(c)
-            else if (c.pagoHoy) yaPagaronHoy.push(c)
-            else proximosYAlDia.push(c)
-          }
+          /* ── MODO TRABAJO · LA RUTA EN DOS ZONAS (E09) ─────────────────
+             Arriba las VISITAS, numeradas en el carril; abajo «también en esta
+             ruta», sin número.
 
-          const SectionHeader = ({ titulo, count, color }) => (
+             La regla de la lámina es de aritmética, no de estética: «el carril
+             numera visitas, no clientes». Un contador que incluye paradas que
+             no se hacen es PEOR que no tener contador — el cobrador lee «16
+             cobros», hace los diez que había de verdad y se cree atrasado
+             yendo al día. Antes las tres secciones numeraban sobre la ruta
+             entera, así que el que hoy no tocaba también gastaba número. */
+          const { visitas, tambien } = paradasDeRuta(clientesFiltrados)
+          const pendientes = visitas.filter((f) => !f.cobrada)
+          // La parada actual es la PRIMERA sin cobrar de toda la lista, no la
+          // primera de cada grupo: es donde el cobrador está parado ahora.
+          const idActual = pendientes[0]?.id
+
+          const Rotulo = ({ titulo, cuantos, color }) => (
             <div className="flex items-center gap-2 mb-2 mt-1 px-1">
               <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: color || 'var(--cf-ink-3)' }}>
                 {titulo}
               </span>
               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
-                {count}
+                {cuantos}
               </span>
               <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
+            </div>
+          )
+
+          const zonaDeAbajo = tambien.length > 0 && (
+            <div>
+              <SeparadorZona />
+              <div className="flex flex-col gap-1.5">
+                {tambien.map((c) => {
+                  const fila = filaZonaDe(c, { formatear: (n) => formatMoney(n) })
+                  return (
+                    <FilaFueraDeParada
+                      key={c.id}
+                      {...fila}
+                      onClick={() => abrirClienteDesdeRuta(c, 0)}
+                      onAccion={() => {
+                        if (fila.estado === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${c.id}`)
+                        else if (fila.estado === 'inactivo') setConfirmQuitar({ id: c.id, nombre: c.nombre })
+                        else abrirPagoRapido(c)
+                      }}
+                    />
+                  )
+                })}
+              </div>
             </div>
           )
 
           return (
             <div className="space-y-5">
               {vistaPlana ? (
-                <div className="space-y-1.5">
-                  {clientesFiltrados.map((c, idx) => renderCard(c, idx, { conGrip: false }))}
-                </div>
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    {visitas.map((f, i) => renderCard(f, i, { actual: f.id === idActual }))}
+                  </div>
+                  {zonaDeAbajo}
+                </>
               ) : (
                 <>
-                  {/* Por cobrar hoy */}
-                  {porCobrarHoy.length > 0 && (
+                  {pendientes.length > 0 && (
                     <div>
-                      <SectionHeader titulo="Por cobrar hoy" count={porCobrarHoy.length} color="var(--cf-gold-dark)" />
-                      <div className="space-y-1.5">
-                        {porCobrarHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                      <Rotulo titulo="Por cobrar hoy" cuantos={pendientes.length} color="var(--cf-gold-dark)" />
+                      <div className="flex flex-col gap-1.5">
+                        {visitas.filter((f) => !f.cobrada).map((f, i) => renderCard(f, i, { actual: f.id === idActual }))}
                       </div>
                     </div>
                   )}
 
-                  {/* Ya pagaron hoy */}
-                  {yaPagaronHoy.length > 0 && (
+                  {visitas.some((f) => f.cobrada) && (
                     <div>
-                      <SectionHeader titulo="Ya pagaron hoy" count={yaPagaronHoy.length} color="var(--cf-green-dark)" />
-                      <div className="space-y-1.5">
-                        {yaPagaronHoy.map((c, i) => renderCard(c, i, { conGrip: false }))}
+                      <Rotulo titulo="Ya pagaron hoy" cuantos={visitas.filter((f) => f.cobrada).length} color="var(--cf-green-dark)" />
+                      <div className="flex flex-col gap-1.5">
+                        {visitas.filter((f) => f.cobrada).map((f, i) => renderCard(f, i))}
                       </div>
                     </div>
                   )}
 
-                  {/* Proximos y al dia (colapsable) */}
-                  {proximosYAlDia.length > 0 && (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setSeccionProximosAbierta(v => !v)}
-                        className="w-full flex items-center gap-2 mb-2 mt-1 px-1"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor"
-                          style={{ color: 'var(--cf-ink-3)', transform: seccionProximosAbierta ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 150ms ease' }}>
-                          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
-                          Próximos y al día
-                        </span>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
-                          {proximosYAlDia.length}
-                        </span>
-                        <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
-                      </button>
-                      {seccionProximosAbierta && (
-                        <div className="space-y-1.5">
-                          {proximosYAlDia.map((c, i) => renderCard(c, i, { conGrip: false }))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {zonaDeAbajo}
                 </>
               )}
             </div>
           )
+
         })()}
       </div>
 

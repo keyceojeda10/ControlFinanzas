@@ -150,6 +150,40 @@ export async function GET(request, { params }) {
     _count: { clientes: conteoPorGrupo[g.id] ?? 0 },
   }))
 
+  /* ── CUÁNDO TERMINÓ DE PAGAR CADA PRÉSTAMO LIQUIDADO (Adenda 5 · E09) ──
+     La fila de «sin deuda» dice «Terminó de pagar el 4 de julio», y esa fecha
+     es el último pago del préstamo. No se puede sacar del `include` de arriba:
+     allí los pagos vienen filtrados al día de hoy para calcular el recaudado, y
+     un préstamo liquidado en mayo no tiene ninguno.
+
+     UNA consulta agregada para toda la ruta, no una por cliente: en una ruta de
+     203 clientes lo segundo son 203 viajes a la base.
+
+     ⚠ Y VA SOBRE TODOS LOS PRÉSTAMOS, no solo los liquidados, porque el mismo
+     filtro de hoy rompía otra cosa: `diasDesdeUltimoPago` se calculaba también
+     desde `p.pagos[0]`, así que solo podía salir 0 —si cobró hoy— o `null`. La
+     tira de cifras de la tarjeta pinta ese dato como «Últ. pago», y con `null`
+     escribe «nunca» EN ROJO. Es decir: toda la ruta marcada como gente a la que
+     jamás se le ha cobrado, que es lo contrario de la verdad y justo la línea
+     que se mira para decidir a quién apretar. */
+  const idsPrestamos = (ruta.clientes ?? []).flatMap((c) =>
+    (c.prestamos ?? []).map((p) => p.id)
+  )
+  const finDePrestamo = new Map()
+  if (idsPrestamos.length > 0) {
+    const finales = await prisma.pago.groupBy({
+      by: ['prestamoId'],
+      where: {
+        prestamoId: { in: idsPrestamos },
+        // Un recargo o un descuento no son «pagar»: mueven la deuda, no la
+        // saldan. La fecha tiene que ser la del último dinero entregado.
+        tipo: { notIn: ['recargo', 'descuento'] },
+      },
+      _max: { fechaPago: true },
+    })
+    for (const f of finales) finDePrestamo.set(f.prestamoId, f._max.fechaPago)
+  }
+
   // Calcular métricas del día + cartera
   let esperadoHoy  = 0
   let recaudadoHoy = 0
@@ -254,6 +288,20 @@ export async function GET(request, { params }) {
     let cuotasPagadasCliente = 0
     const prestamosActivos = []
     let ultimaFechaPago = null
+    // ── LOS QUE NO SON VISITA DE HOY (Adenda 5 · E09) ──
+    // La lámina baja a «también en esta ruta» a quien no toca cobrar, y le pide
+    // a cada estado la frase que de verdad sirve. Al de SIN DEUDA le pide dos
+    // datos que no teníamos: cuándo terminó de pagar y cuánto se le puede
+    // prestar. Se sacan de sus préstamos ya liquidados, que la consulta YA trae
+    // enteros —«se traen TODOS»—, así que no cuesta una consulta más.
+    //
+    // `puedePrestarHasta` es lo más grande que ya devolvió completo. No es una
+    // recomendación de riesgo: es el único techo que este cliente tiene
+    // demostrado. Inventar una cifra mayor sería mandar a prestar de más desde
+    // una pantalla de cobro.
+    let terminoDePagar = null
+    let puedePrestarHasta = 0
+    let prestamosCompletados = 0
     let frecuencia   = 'diario'
     let proximoCobro = null
     let cobroPendienteHoy = false
@@ -346,6 +394,23 @@ export async function GET(request, { params }) {
             fechaPago: pg.fechaPago,
           }
         }
+      }
+
+      // ── E09 · lo que dejó atrás el que ya no debe ──
+      // Antes del `continue`, que es el único sitio donde se ven los préstamos
+      // liquidados. El clavo no cuenta: se perdió, no lo devolvió, y ofrecerle
+      // más plata a quien dejó un clavo por el mismo camino es al revés.
+      if (p.estado !== 'activo' && !p.esClavo) {
+        prestamosCompletados++
+        puedePrestarHasta = Math.max(puedePrestarHasta, p.montoPrestado ?? 0)
+        // ⚠ LA FECHA NO SALE DE `p.pagos`. Ese `include` viene filtrado a HOY
+        // —`fechaPago: { gte: _hoy, lt: _manana }`—, así que un préstamo que se
+        // terminó de pagar hace meses trae CERO pagos y `p.pagos[0]` es
+        // `undefined`. Leerlo daría `null` siempre y la fila diría «terminó de
+        // pagar» sin fecha, sin que nada fallara. Sale de `finDePrestamo`, que
+        // se resuelve arriba en una sola consulta agregada.
+        const fin = finDePrestamo.get(p.id)
+        if (fin && (!terminoDePagar || fin > terminoDePagar)) terminoDePagar = fin
       }
 
       // Métricas de cartera/mora solo para préstamos activos
@@ -447,9 +512,16 @@ export async function GET(request, { params }) {
         ...extraInfo,
       })
 
-      // Último pago más reciente (pagos ya vienen ordenados por fechaPago desc)
-      if (p.pagos.length > 0) {
-        const fecha = new Date(p.pagos[0].fechaPago)
+      // Último pago más reciente.
+      //
+      // ⚠ NO desde `p.pagos[0]`, que es lo que había: ese `include` viene
+      // filtrado a hoy —lo pide el cálculo del recaudado—, así que esta fecha
+      // solo podía ser la de hoy o ninguna, y `diasDesdeUltimoPago` salía
+      // siempre 0 o `null`. Nunca «hace 9 días», que es el caso que importa.
+      // Sale del agregado de arriba, que sí mira el historial entero.
+      const ultimo = finDePrestamo.get(p.id)
+      if (ultimo) {
+        const fecha = new Date(ultimo)
         if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
       }
 
@@ -514,6 +586,15 @@ export async function GET(request, { params }) {
         ? Math.round((cuotasPagadasCliente / cuotasVencidasCliente) * 100)
         : null,
       diasDesdeUltimoPago,
+      // La fecha entera, no solo los días: la tira de cifras de la tarjeta la
+      // pinta como «Últ. pago · 21 jun».
+      ultimoPagoAt: ultimaFechaPago,
+      // E09 · para la zona «también en esta ruta». Ver el comentario largo de
+      // arriba: `puedePrestarHasta` es el techo YA DEMOSTRADO, no una
+      // recomendación.
+      terminoDePagar,
+      puedePrestarHasta: Math.round(puedePrestarHasta),
+      prestamosCompletados,
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
@@ -524,6 +605,9 @@ export async function GET(request, { params }) {
       frecuencia,
       diasParaCobro,
       proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
+      // La fecha cruda además del rótulo: E09 escribe «le cobras el 19 de
+      // agosto» y necesita formatearla ella, no heredar el formato corto.
+      proximoCobroAt: proximoCobro,
       grupoCobro: c.grupoCobro ?? null,
       // MVP geolocalizacion: pago mas reciente de hoy con coords, ya con distancia.
       // null cuando: el cobrador nego permiso, no hubo pago, o pago sin coords.
