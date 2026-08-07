@@ -402,7 +402,9 @@ export default function RutasPage() {
       {rutas.length > 1 && (
         <button type="button" onClick={() => setModoOrdenar(true)} style={{
           display: 'inline-flex', alignItems: 'center', flex: 'none',
-          height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
+          // 11px, no píldora: en el sistema el 999px está reservado a avatar,
+          // punto, pastilla, barra y el botón +. Un chip de texto no es ninguno.
+          height: 34, padding: '0 13px', borderRadius: 11,
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', cursor: 'pointer',
           fontFamily: 'var(--font-manrope), system-ui',

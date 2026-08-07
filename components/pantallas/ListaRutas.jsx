@@ -23,6 +23,7 @@
 //      discontinuo y su «Asignar».
 
 import { BotonPrimario, EstadoVacio, Aviso } from '@/components/cf/primitivos'
+import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 
 const COLOR_PASTILLA = {
   mora:   { bg: 'var(--cf-red-pill-bg)', bd: 'var(--cf-red-pill-border)', fg: 'var(--cf-red-dark)' },
@@ -253,7 +254,10 @@ export default function ListaRutas({
           }}>Rutas</h1>
           <span style={{
             display: 'inline-flex', alignItems: 'center', flex: 'none',
-            height: 34, padding: '0 13px', borderRadius: 'var(--cf-r-pill)',
+            // 11px, no píldora: el 999px es de avatar, punto, pastilla, barra
+            // y el botón +. Este es un chip de texto, y al lado de «Ordenar»
+            // los dos tienen que leerse como la misma clase de control.
+            height: 34, padding: '0 13px', borderRadius: 11,
             background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
             fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
           }}>Hoy</span>
@@ -263,9 +267,14 @@ export default function ListaRutas({
             cobros» arriba y abajo es decir lo mismo dos veces. */}
         {/* Con banda, aquí va su detalle —«4 rutas · 20 cobros hoy»—; sin
             ella, el resumen de siempre. Nunca los dos: dicen lo mismo. */}
-        <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
-          {banda ? banda.detalle : resumen}
-        </span>
+        {/* Sin banda, el resumen de siempre. CON banda no se pinta: «9 rutas ·
+            16 cobros» ya sube al lado del porcentaje, dentro del bloque, y
+            aquí sería el mismo dato dos veces en dos renglones seguidos. */}
+        {!banda && (
+          <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>
+            {resumen}
+          </span>
+        )}
       </div>
 
       {/* ── LA BANDA DEL DÍA (T04-01) ──
@@ -273,24 +282,67 @@ export default function ListaRutas({
           resumen de una línea, donde la cifra con la que el dueño abre la
           pantalla por la mañana competía con el número de rutas. */}
       {banda && (
+        /* ── ADENDA 5 · E11 · EL MISMO ERROR QUE LA TARJETA DEL PANEL ──
+           Esto era una banda DORADA MACIZA, y el dorado está reservado al monto
+           principal, la acción primaria y el foco: con el fondo entero dorado
+           los dos montos quedan del color de su propia caja y el ojo no
+           encuentra dónde mirar.
+
+           Pasa al bloque oscuro del sistema, pero COMPACTO —16px de radio y
+           16px de relleno, no los 20 del titular del panel— porque aquí es un
+           resumen sobre una lista, no la respuesta de la pantalla.
+
+           Las dos cifras cambian a RECAUDADO y TE FALTAN, que es la gramática
+           del sistema, y entra la barra con su porcentaje: sin ella los dos
+           montos son datos sueltos y nadie sabe si el día va bien. */
         <div style={{
-          flex: 'none', borderRadius: 'var(--cf-r-card)', padding: '14px 18px',
-          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-          display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14,
+          flex: 'none', borderRadius: 16, padding: '16px 18px',
+          background: BLOQUE.fondo,
+          // El borde, por lo mismo que en la tarjeta del panel: en tema oscuro
+          // el fondo de la app ES este mismo color y sin él la banda desaparece.
+          border: BORDE_BLOQUE,
+          display: 'flex', flexDirection: 'column', gap: 12,
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-              opacity: .75,
-            }}>Esperado hoy</span>
-            <span className="cf-fig" style={{ fontSize: 26, letterSpacing: '-.03em' }}>{banda.esperado}</span>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+                color: BLOQUE.rotulo,
+              }}>Recaudado hoy</span>
+              <span className="cf-fig" style={{
+                fontSize: 26, letterSpacing: '-.03em', color: BLOQUE.tinta, lineHeight: 1,
+              }}>{banda.recaudado}</span>
+            </div>
+            {banda.faltan && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end', flex: 'none' }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
+                  color: BLOQUE.rotulo,
+                }}>Te faltan</span>
+                <span className="cf-fig" style={{ fontSize: 19, color: BLOQUE.oro, lineHeight: 1 }}>
+                  {banda.faltan}
+                </span>
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end', flex: 'none' }}>
+
+          {/* La barra, y a su lado el porcentaje con el detalle. «9 rutas · 16
+              cobros» sube aquí en vez de vivir en un renglón gris aparte. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-              opacity: .75,
-            }}>Recaudado</span>
-            <span className="cf-fig" style={{ fontSize: 19 }}>{banda.recaudado}</span>
+              flex: 1, minWidth: 0, height: 8, borderRadius: 999,
+              overflow: 'hidden', background: BLOQUE.pista,
+            }}>
+              <span style={{
+                display: 'block', height: 8, borderRadius: 999,
+                width: `${banda.porcentaje}%`, background: BLOQUE.oro,
+              }} />
+            </span>
+            <span className="cf-num" style={{
+              fontSize: 12, color: BLOQUE.apagado, flex: 'none', whiteSpace: 'nowrap',
+            }}>
+              {banda.porcentaje}% · {banda.detalleCorto}
+            </span>
           </div>
         </div>
       )}

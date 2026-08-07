@@ -46,6 +46,7 @@
 
 import { Fragment, useEffect, useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
+import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 
 /* Los nombres de los siete días de la barra dorada.
    La API manda siete números pelados, sin fecha, pero el ÚLTIMO es hoy: con eso
@@ -119,18 +120,9 @@ const RUTAS_VISIBLES = 5
    del tema —es el mismo error que tenía la versión dorada, donde el texto
    usaba un token que en oscuro valía el mismo dorado del fondo y la tarjeta
    salía muda—. */
-const BLOQUE = {
-  fondo:   '#15161A',
-  tinta:   '#F3F3F6',   // la cifra
-  rotulo:  '#A3A8B2',   // etiquetas y prosa
-  apagado: '#8A8E98',   // contexto y valores secundarios
-  oro:     '#F5B824',
-  rojo:    '#F0575C',
-  linea:   'rgba(255,255,255,.09)',
-  pista:   'rgba(255,255,255,.12)',
-  barra:   'rgba(255,255,255,.34)',   // días que cobraron todo
-  barraNo: 'rgba(255,255,255,.16)',   // días que no llegaron
-}
+// La paleta vive en `components/cf/bloqueOscuro.js`: la comparte con la banda
+// del día de Rutas, y dos copias de los mismos hex se separan en cuanto se
+// retoca una.
 
 /* La caja oscura, que las dos comparten.
  *
@@ -157,7 +149,7 @@ function CajaOscura({ marca, children, className = '' }) {
        por tamaño de pantalla, su `display` no puede estar en el `style`. */
     <div data-bloque={marca} className={`flex-col gap-[14px] ${className}`} style={{
       background: BLOQUE.fondo,
-      border: '1px solid rgba(255,255,255,.14)',
+      border: BORDE_BLOQUE,
       borderRadius: 20,
       padding: '19px 21px',
       minWidth: 0,
