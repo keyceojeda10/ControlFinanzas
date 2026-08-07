@@ -246,10 +246,14 @@ export async function GET(request, { params }) {
       where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
       select: { id: true },
     }),
-    /* ── CON CUÁNTO SALIÓ ESTA MAÑANA: EL CUADRE DE ANOCHE ──
+    /* ── LO QUE SE CONTÓ ANOCHE (que NO es la base de hoy) ──
        El último cierre CONFIRMADO anterior a hoy. `efectivoRecibido` es el
-       efectivo que el dueño contó y le dejó al cobrador para salir, y es la
-       cifra que él considera «la base». Ver el porqué donde se usa, abajo.
+       efectivo que se contó al cerrar.
+
+       ⚠ NO ES LA BASE. Llegué a usarlo como tal el 6 de agosto y estuvo mal:
+       es una FOTO del momento del cuadre, y la plata sigue moviéndose después
+       —una reposición de base, un retiro—. Ver la nota larga donde se usa.
+       Sirve para EXPLICAR la diferencia, no para sustituir al libro.
 
        ⚠ SOLO LOS DOS DÍAS ANTERIORES. Sin este tope, al cobrador que no se
        cuadra nunca se le rescataba un cierre de hace semanas y se pintaba como
@@ -1013,13 +1017,26 @@ export async function GET(request, { params }) {
   // quedó en tres cuadros diferentes, ahí fue donde estamos enredados»—.
   const cuentaRuta = {
     apertura: saldoAperturaTotal,
-    // Lo que el cobrador entregó anoche, para poder enfrentarlo con la base sin
-    // confundirlo con ella. `null` cuando no hubo cuadre.
+    /* ── LO QUE SE CONTÓ ANOCHE, Y LO QUE SE MOVIÓ DESPUÉS ──────────────
+       Las dos cifras juntas, porque una sola no explica nada. Medido en
+       producción el 7 ago, las dos rutas que el dueño reportó:
+
+         RUTA #3   cerró en 1.652.000 → el cuadre la dejó en 74.000
+                   → a las 02:45 le reponen la base, +1.231.000 → 1.305.000
+         RUTA #4   cerró en 1.068.000 → a las 03:46 RETIRO DE CAJA
+                   de −1.000.000 → 68.000
+
+       La pantalla enseñaba 74.000 y 1.068.000: la foto tomada en medio, antes
+       del último movimiento. Y por eso «solo fallaban esas dos»: en la #2,
+       #5, #8 y #9 no se movió nada después de cuadrar, así que la foto vieja
+       coincidía. El fallo era general; lo que cambiaba era si se veía.
+
+       Con las dos a la vista, cuando no cuadran se ve POR QUÉ en vez de que
+       haya que venir a preguntarlo. */
     efectivoContadoAnoche,
-    // Cuánto se separan las dos. Es el faltante o sobrante real de la noche:
-    // en la ruta 3 del 6 de agosto son 1.578.000 que no se entregaron.
-    difEntreLibroYContado: efectivoContadoAnoche != null
-      ? Math.round(efectivoContadoAnoche - saldoAperturaTotal)
+    contadoAnocheEl: cuadreAnterior?.fecha ?? null,
+    movidoDespuesDelCuadre: efectivoContadoAnoche != null
+      ? Math.round(saldoAperturaTotal - efectivoContadoAnoche)
       : null,
     cobradoTotal: cobradoEfectivoNeto + cobradoDigital,
     cobradoEfectivo: cobradoEfectivoNeto,

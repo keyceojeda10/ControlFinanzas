@@ -26,6 +26,20 @@ const GASTO_ESTADO_COLORS = {
   rechazado: 'var(--cf-red-dark)',
 }
 
+/* «Anoche contó $74.000 · después entraron $1.231.000».
+   `null` cuando no hubo cuadre: sin cifra que comparar no hay nada que
+   explicar, y un renglón vacío con un guion es peor que ninguno. */
+function notaDeLaApertura(cr) {
+  const contado = cr?.efectivoContadoAnoche
+  if (contado == null) return null
+  const movido = cr?.movidoDespuesDelCuadre ?? 0
+  const base = `Anoche contó ${formatMoney(contado)}`
+  if (movido === 0) return base
+  // «Entraron» y «salieron», no «diferencia»: lo que hubo fue plata moviéndose
+  // —una base repuesta, un retiro—, y decirlo así ahorra la pregunta.
+  return `${base} · después ${movido > 0 ? 'entraron' : 'salieron'} ${formatMoney(Math.abs(movido))}`
+}
+
 /* Un renglón de la cuenta: rótulo a la izquierda, cifra a la derecha, y su
    explicación opcional debajo. Sin signo: el signo lo dice el grupo —«Entra» o
    «Sale»—, que es justo lo que el dueño pedía poder ver de un vistazo en vez de
@@ -165,9 +179,28 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           <p className="text-[10.5px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--cf-green-dark)' }}>
             Entra
           </p>
+          {/* ── POR QUÉ NO ES LO QUE SE CONTÓ ANOCHE ───────────────────────
+              Reportado por PRESTA MIL: «la lista 3 y la 4 no cuadran con lo
+              que aparece en caja». Y no eran esas dos: el fallo era general y
+              solo se veía donde la plata se movió DESPUÉS de cuadrar.
+
+                RUTA #3   cerró en 1.652.000 → el cuadre la dejó en 74.000
+                          → a las 02:45 le reponen la base, +1.231.000
+                RUTA #4   cerró en 1.068.000 → a las 03:46 un retiro de
+                          −1.000.000
+
+              La base sale ahora del libro, que sigue todos los movimientos. Y
+              debajo se dice qué se contó anoche y cuánto se movió después, para
+              que cuando las dos no coincidan se vea el porqué en vez de que
+              haya que venir a preguntarlo.
+
+              El «anoche contó» se enseña SIEMPRE que haya cuadre, aunque
+              coincida: un renglón que solo aparece cuando algo va mal se lee
+              como una alarma, y aquí casi siempre es normal. */}
           <Renglon
             rotulo="Con lo que salió"
             monto={cr.apertura ?? 0}
+            detalle={notaDeLaApertura(cr)}
             onExplicar={onExplicar ? () => onExplicar('apertura') : undefined}
           />
           <Renglon
