@@ -431,10 +431,26 @@ html[data-theme="light"] .cf-gradient-mesh::before {
       (rounded-[1Xpx] / rounded-[2Xpx]) — captura la mayoria automaticamente.
    2) clase .cf-hero-card explicita — refuerzo para cards con radius via
       `style` inline o componentes clave (Card, hero cards). */
+/* ⚠ EL SELECTOR NO PUEDE PILLAR LAS CLASES CON PREFIJO DE PANTALLA.
+   Estaba como `[class*="rounded-[1"]`, que busca la subcadena en TODO el
+   atributo y por tanto coincide también con `lg:rounded-[16px]` — una clase
+   que solo pinta en escritorio activando un `transform` que solo existe en
+   móvil. Y un `transform`, aunque sea la identidad, convierte al elemento en
+   el marco de referencia de cualquier `position: fixed` que lleve dentro.
+
+   Así salía la barra de «Crear cliente»: 353px de ancho empezando en x=20, en
+   una pantalla de 393 — una caja blanca flotando en medio en vez de apoyada en
+   los bordes. Estuvo ahí desde antes, escondida: la barra era del mismo color
+   que el fondo y no se veía dónde empezaba. Al pasarla a blanco quedó a la
+   vista.
+
+   Con `^=` y `*=" "` solo entran las clases sin prefijo: `rounded-[16px]` sí,
+   `lg:rounded-[16px]` no. El fix del Mali sigue cubriendo lo que tiene que
+   cubrir —lo que de verdad se redondea en móvil—. */
 @media (max-width: 1023px) {
   .cf-hero-card,
-  [class*="rounded-[1"],
-  [class*="rounded-[2"] {
+  [class^="rounded-[1"], [class*=" rounded-[1"],
+  [class^="rounded-[2"], [class*=" rounded-[2"] {
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
   }

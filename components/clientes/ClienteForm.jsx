@@ -517,7 +517,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               autoComplete="name"
               autoFocus
               tono="papel"
-              className="cf-campo-grande h-[68px] rounded-[14px] text-[24px] font-semibold tracking-[-.02em]"
+              /* ── LA MISMA ALTURA QUE LOS DEMÁS ──
+                 Estaba a 68px y 24 de letra, contra los 56 y 16 del resto:
+                 «el input de nombre sale más grande que los demás». En crear
+                 préstamo el campo enorme funciona porque el monto ES la
+                 pantalla; aquí el nombre solo es el primero de una lista de
+                 campos, y sacarlo 12px de la fila rompe el renglón sin decir
+                 nada que no diga ya la frase de abajo.
+
+                 Se queda la letra algo mayor —19, no 24— para que siga
+                 leyéndose como el principal sin salirse de la fila. */
+              className="cf-campo-grande text-[19px] font-semibold tracking-[-.01em]"
             />
             <div className="grid sm:grid-cols-2 gap-5 items-start">
             <div>
