@@ -89,8 +89,16 @@ export function useArrastreLargo({ activo = true, cantidad = 0, onReordenar } = 
     if (e.button != null && e.button !== 0) return
     /* Los botones de dentro de la tarjeta —cobrar, WhatsApp, mapa— NO arrancan
        el arrastre: quien aprieta «Cobrar» un segundo de más no quiere mover a
-       nadie de sitio. */
-    if (e.target?.closest?.('button, a, input, [role="button"]')) return
+       nadie de sitio.
+
+       ⚠ `[role="button"]` NO puede estar en esta lista, y me costó la primera
+       prueba en el espejo: la tarjeta ENTERA lleva `role="button"` —se toca
+       para cobrar— así que `closest('[role="button"]')` encontraba la propia
+       tarjeta y el gesto no arrancaba nunca. Se salía por aquí en silencio: sin
+       error, sin vibración y sin nada que mirar en el código.
+
+       Los elementos de verdad interactivos se listan por su etiqueta. */
+    if (e.target?.closest?.('button, a, input, select, textarea, label')) return
 
     inicio.current = { x: e.clientX, y: e.clientY, id: e.pointerId, el: e.currentTarget }
     puntero.current = { y: e.clientY }
