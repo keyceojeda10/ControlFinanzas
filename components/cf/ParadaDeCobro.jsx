@@ -118,7 +118,8 @@ export function Carril({ orden, cobrada, actual, ultima, ancla, resaltada, child
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
   avisoMora, avisos = [], prestamos = [],
-  cuota, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar, onReabrir,
+  cuota, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
+  onReabrir, onCerrarVisita,
   cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
   // Marca dónde está el cobrador AHORA: borde dorado y aviso de mora. Ya NO
