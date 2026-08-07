@@ -250,8 +250,19 @@ function FilaCobro({
           cuánto lleva sin pagar y cuánto debe EN TOTAL, que es lo que se dice
           en voz alta en la puerta. Y con la palabra «en total» pegada a la
           cifra: el fallo que la adenda denuncia es justo un saldo leído como si
-          fuera la mora, y ahí el cobrador le pide al cliente diez veces de más. */}
-      {avisoMora && !cobrada && (
+          fuera la mora, y ahí el cobrador le pide al cliente diez veces de más.
+
+          ⚠ SOLO EN LA PARADA ACTUAL, y esto lo aprendí MIRANDO la pantalla, no
+          contando. Puesto en todas salían 472 franjas rojas seguidas: la lista
+          entera en rojo es el muro que esta pantalla vino a quitar, y en cada
+          tarjeta la frase repetía con más palabras lo que ya dicen la pastilla
+          («19d») y el saldo («debe $240.000») dos renglones más arriba.
+
+          Es el mismo defecto que E10 le reprocha al riel —«el cuarto sitio
+          donde se dice lo mismo»—, así que ponerlo en todas era cambiar un
+          duplicado por otro. En la parada actual sí aporta: es donde el
+          cobrador está parado y va a hablar. */}
+      {avisoMora && activa && !cobrada && (
         <div style={{
           flex: 'none', display: 'flex', alignItems: 'flex-start', gap: 9,
           padding: '10px 13px', borderRadius: 12,
