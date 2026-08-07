@@ -11,6 +11,7 @@ import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
@@ -58,6 +59,11 @@ const fechaCorta = (d) => {
 }
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
+
+// Cómo se llaman las cuotas según cada cuánto se cobra. Estaba escrito con un
+// ternario de cuatro ramas en tres sitios distintos.
+const UNIDAD_PLAZO = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }
+const UNIDAD_CUOTA = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }
 
 // Modo de interes preferido del prestamista (lo elige una vez con el asistente y
 // queda por defecto). Guardado en el dispositivo para no repetir el test en cada
@@ -320,6 +326,10 @@ function NuevoPrestamo() {
    * arriba lo rompe por la otra punta (leer una `const` antes de declararla).
    * El sitio correcto es este hueco entre las dos cosas.
    */
+  /* ¿Cabe el campo grande con los atajos dentro? Va AQUÍ ARRIBA, con los demás
+     hooks y antes de cualquier `return`, por lo mismo que `useCabecera`. */
+  const pantallaAncha = usePantallaAncha()
+
   useCabecera({
     // El título dice EN QUÉ PASO SE ESTÁ, no «Nuevo préstamo»: la espina ya
     // cuenta cuántos van, y el nombre del paso es lo que le falta al que teclea.
@@ -579,6 +589,18 @@ function NuevoPrestamo() {
 
   const clienteSeleccionado = clientes.find(c => c.id === clienteId) ?? null
 
+  /* Los atajos del monto se pintan DENTRO del campo cuando hay sitio y debajo
+     cuando no, así que se declaran una vez y se colocan en los dos sitios. Si se
+     escriben dos veces, un día se cambia uno y el otro se queda como estaba. */
+  const atajosDeMonto = [50000, 100000, 200000, 500000, 1000000].map((v) => (
+    <button key={v} type="button" onClick={() => setMonto(String(v))}
+      className="px-2.5 h-7 rounded-lg text-[11px] font-semibold transition-all shrink-0"
+      style={String(monto) === String(v)
+        ? { background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', border: '1px solid var(--cf-gold)', color: 'var(--cf-gold)' }
+        : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}
+    >{v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}</button>
+  ))
+
   // Sobre saldo con una cuota que no cubre ni el interes del primer periodo: el
   // prestamo no amortiza nunca (el capital se queda quieto y todo se apila en la
   // ultima cuota). No se deja avanzar hasta corregirla.
@@ -835,7 +857,16 @@ function NuevoPrestamo() {
           y la derecha 600, y sin eso el panel se estira hasta abajo y la cuenta
           queda fuera de la vista justo cuando se está tecleando el monto. */}
       <div className="xl:grid xl:grid-cols-[minmax(0,672px)_380px] xl:gap-6 xl:items-start">
-        <div className="min-w-0">
+        {/* ── EL FORMULARIO VA SOBRE PAPEL ──
+            Los campos flotaban sueltos sobre el fondo de la app, sin nada
+            detrás: «las cajitas no tienen fondo, entonces se ve un poco
+            extraño». En la lámina todo el formulario descansa sobre una hoja
+            blanca, y es lo que le da el peso a la columna frente al panel de la
+            derecha, que también es una hoja.
+
+            Solo desde `xl`: en el teléfono la pantalla YA es la hoja, y meter
+            una tarjeta dentro de otra añade un borde que no separa nada. */}
+        <div className="min-w-0 xl:rounded-[16px] xl:p-6 xl:border xl:bg-[var(--cf-card)] xl:border-[var(--cf-border)]">
 
       {error && (
         <div className="mt-6 rounded-[12px] px-4 py-3 text-sm"
@@ -1099,19 +1130,27 @@ function NuevoPrestamo() {
                 <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                   {modo === 'mercancia' ? 'Valor del artículo' : 'Monto del préstamo'}
                 </label>
-                <div className="mt-1.5">
-                  <MoneyInput value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="0" />
+                {/* ── EL MONTO, A TAMAÑO DE PROTAGONISTA (T16-00) ──
+                    Es la cifra alrededor de la que gira la pantalla entera y
+                    salía con el mismo tamaño que la cédula. La lámina lo pone a
+                    34px sobre papel blanco, y mete los atajos DENTRO del propio
+                    campo en vez de dejarlos sueltos debajo.
+
+                    En pantalla estrecha los atajos van fuera: dentro de un
+                    campo de 340px no caben cinco pastillas sin estrujar la
+                    cifra, que es justo lo que se está mirando. */}
+                <div className="mt-2" style={{ '--cf-hueco-sufijo': '268px' }}>
+                  <MoneyInput
+                    value={monto}
+                    onChange={(e) => setMonto(e.target.value)}
+                    placeholder="0"
+                    tamano="grande"
+                    sufijo={pantallaAncha ? atajosDeMonto : null}
+                  />
                 </div>
-                <div className="flex gap-1.5 flex-wrap mt-2">
-                  {[50000, 100000, 200000, 500000, 1000000].map((v) => (
-                    <button key={v} type="button" onClick={() => setMonto(String(v))}
-                      className="px-2.5 h-7 rounded-lg text-[11px] font-medium transition-all"
-                      style={String(monto) === String(v)
-                        ? { background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)', border: '1px solid var(--cf-gold)', color: 'var(--cf-gold)' }
-                        : { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-3)' }}
-                    >{v >= 1000000 ? `${v / 1000000}M` : `${v / 1000}k`}</button>
-                  ))}
-                </div>
+                {!pantallaAncha && (
+                  <div className="flex gap-1.5 flex-wrap mt-2">{atajosDeMonto}</div>
+                )}
                 {clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo && (
                   <p className="text-xs mt-2 font-semibold" style={{ color: 'var(--cf-red-dark)' }}>
                     Supera el tope de {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
@@ -1180,36 +1219,42 @@ function NuevoPrestamo() {
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
               </div>
 
-              {/* Cuatro tarjetas de 672px de ancho para tres palabras. Apiladas
-                  sumaban 340px de alto ellas solas, y el paso entero pedía 2,8
-                  pantallas de scroll en un monitor de 1440. En dos columnas
-                  ocupan la mitad y siguen cabiendo enteras. En el teléfono
-                  —debajo de `sm`— se quedan apiladas como estaban. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* ── LAS CUATRO, EN UNA FILA (T16-00) ──
+                  Eran cuatro tarjetas de 672px de ancho para tres palabras, con
+                  su bolita de radio y una frase explicando qué es «semanal».
+                  Apiladas sumaban 340px de alto ellas solas.
+
+                  La lámina las pone como pastillas en una fila y la elegida en
+                  NEGRO —no en dorado—: el oro está reservado a la acción de
+                  seguir, y aquí lo que hace falta es que se vea cuál está
+                  puesta de un vistazo. La descripción baja a un renglón debajo,
+                  y solo la de la elegida: las otras tres no hacen falta hasta
+                  que se tocan.
+
+                  Por debajo de `sm` van dos y dos, que a 393px es lo que cabe
+                  sin que «Quincenal» se parta. */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {FRECUENCIAS.map(f => {
                   const activo = frecuencia === f.key
-                  const descs = { diario: 'Cobra todos los días hábiles', semanal: 'Cobra una vez por semana', quincenal: 'Cobra cada dos semanas', mensual: 'Cobra una vez al mes' }
                   return (
                     <button key={f.key} type="button" onClick={() => handleFrecuenciaChange(f.key)}
-                      className="w-full text-left rounded-xl p-4 transition-all"
-                      style={{
-                        background: activo ? 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' : 'var(--cf-surface)',
-                        border: activo ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
-                      }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
-                          style={{ borderColor: activo ? 'var(--cf-gold)' : 'var(--cf-border)' }}>
-                          {activo && <div className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />}
-                        </div>
-                        <div>
-                          <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{f.label}</span>
-                          <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>{descs[f.key]}</p>
-                        </div>
-                      </div>
+                      className="h-12 rounded-[12px] text-sm font-semibold transition-all"
+                      style={activo
+                        ? { background: 'var(--cf-ink)', border: '1px solid var(--cf-ink)', color: 'var(--cf-card)' }
+                        : { background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}>
+                      {f.label}
                     </button>
                   )
                 })}
               </div>
+              <p className="text-[12px] -mt-3" style={{ color: 'var(--cf-ink-3)' }}>
+                {{
+                  diario: 'Cobra todos los días hábiles.',
+                  semanal: 'Cobra una vez por semana.',
+                  quincenal: 'Cobra cada dos semanas.',
+                  mensual: 'Cobra una vez al mes.',
+                }[frecuencia]}
+              </p>
 
               {/* Dia ancla para semanal */}
               {frecuencia === 'semanal' && (
@@ -1286,51 +1331,102 @@ function NuevoPrestamo() {
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Define la tasa y en cuanto tiempo paga.</p>
               </div>
 
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Interés mensual</label>
-                <Input type="text" inputMode="decimal" value={tasa} onChange={(e) => setTasa(soloDecimal(e.target.value))} placeholder="20" suffix="%" />
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {[5, 10, 15, 20, 25, 30].map(v => (
-                    <button key={v} type="button" onClick={() => setTasa(String(v))}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
-                      style={String(v) === tasa
-                        ? { background: 'var(--cf-gold)', color: '#000' }
-                        : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
-                      }
-                    >{v}%</button>
-                  ))}
+              {/* ── EL INTERÉS Y EL PLAZO, UNO AL LADO DEL OTRO (T16-00) ──
+                  Se leen juntos («20% a 8 semanas») y se decidían en dos filas
+                  separadas, cada una de ancho completo. La lámina los pone en
+                  dos columnas y con la cifra grande, porque son cifras que se
+                  MIRAN, no campos que se rellenan.
+
+                  Los atajos se quedan aunque la lámina no los dibuje: son un
+                  mockup de una pantalla, no el inventario de lo que la pantalla
+                  hace, y quitarlos sería perder función por parecerme a un
+                  dibujo. */}
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Interés mensual</label>
+                  <div className="mt-1.5 relative flex items-center h-[68px] rounded-[14px] px-4"
+                    style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                    <input
+                      type="text" inputMode="decimal" value={tasa}
+                      onChange={(e) => setTasa(soloDecimal(e.target.value))}
+                      placeholder="20"
+                      className="cf-campo-grande bg-transparent border-0 outline-none w-[92px] text-[30px] font-semibold tracking-[-.02em]"
+                      style={{ color: 'var(--cf-ink)' }}
+                    />
+                    <span className="text-[18px] font-semibold -ml-1" style={{ color: 'var(--cf-ink-3)' }}>%</span>
+                    {/* La lámina dice «tu valor de siempre». Lo único que sé de
+                        verdad es la tasa del préstamo ANTERIOR de este cliente
+                        —es lo que devuelve `ultimo-cliente`—, así que el texto
+                        dice eso y no algo que no puedo comprobar. */}
+                    {ultimoPrestamo?.tasaInteres != null
+                      && String(ultimoPrestamo.tasaInteres) === String(tasa) && (
+                      <span className="absolute right-4 text-[11.5px]" style={{ color: 'var(--cf-ink-3)' }}>
+                        igual que el anterior
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {[5, 10, 15, 20, 25, 30].map(v => (
+                      <button key={v} type="button" onClick={() => setTasa(String(v))}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                        style={String(v) === tasa
+                          ? { background: 'var(--cf-gold)', color: '#000' }
+                          : { background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
+                        }
+                      >{v}%</button>
+                    ))}
+                  </div>
                 </div>
-                {Number(monto) > 0 && Number(tasa) > 0 && (
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-                    Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
-                  </p>
-                )}
+
+                <div>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuántas cuotas</label>
+                  <div className="mt-1.5 flex items-center h-[68px] rounded-[14px] pl-4 pr-2.5 gap-2"
+                    style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                    <input
+                      type="text" inputMode="numeric" value={plazoUnidades}
+                      onChange={(e) => setPlazoUnidades(e.target.value.replace(/\D/g, ''))}
+                      className="cf-campo-grande bg-transparent border-0 outline-none w-[66px] text-[30px] font-semibold tracking-[-.02em]"
+                      style={{ color: 'var(--cf-ink)' }}
+                    />
+                    <span className="text-[13.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--cf-ink-3)' }}>
+                      {UNIDAD_PLAZO[frecuencia]}
+                    </span>
+                    {/* Sumar y restar de uno en uno: el plazo se afina, no se
+                        teclea de cero. `type="button"` a propósito — dentro de un
+                        formulario, un botón sin tipo envía. */}
+                    {[['−', -1], ['+', 1]].map(([signo, paso]) => (
+                      <button key={signo} type="button"
+                        onClick={() => setPlazoUnidades(String(Math.max(1, (Number(plazoUnidades) || 0) + paso)))}
+                        className="w-10 h-10 rounded-[10px] text-[17px] font-semibold shrink-0 transition-all"
+                        style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
+                        aria-label={paso > 0 ? 'Una cuota más' : 'Una cuota menos'}
+                      >{signo}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {(frecuencia === 'diario' ? [15, 20, 25, 30, 45, 60]
+                      : frecuencia === 'semanal' ? [4, 6, 8, 10, 12, 16]
+                      : frecuencia === 'quincenal' ? [2, 3, 4, 6, 8, 12]
+                      : [1, 2, 3, 4, 6, 12]
+                    ).map(v => (
+                      <button key={v} type="button" onClick={() => setPlazoUnidades(String(v))}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                        style={String(v) === plazoUnidades
+                          ? { background: 'var(--cf-gold)', color: '#000' }
+                          : { background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
+                        }
+                      >{v}</button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
-                  ¿En cuánto tiempo paga? ({frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'})
-                </label>
-                <Input type="number" inputMode="numeric" value={plazoUnidades} onChange={(e) => setPlazoUnidades(e.target.value)} />
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {(frecuencia === 'diario' ? [15, 20, 25, 30, 45, 60]
-                    : frecuencia === 'semanal' ? [4, 6, 8, 10, 12, 16]
-                    : frecuencia === 'quincenal' ? [2, 3, 4, 6, 8, 12]
-                    : [1, 2, 3, 4, 6, 12]
-                  ).map(v => (
-                    <button key={v} type="button" onClick={() => setPlazoUnidades(String(v))}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
-                      style={String(v) === plazoUnidades
-                        ? { background: 'var(--cf-gold)', color: '#000' }
-                        : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
-                      }
-                    >{v}</button>
-                  ))}
-                </div>
-                {frecuencia !== 'diario' && plazoUnidades && (
-                  <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>= {plazo} días</p>
-                )}
-              </div>
+              {Number(monto) > 0 && Number(tasa) > 0 && (
+                <p className="text-[12px] -mt-2" style={{ color: 'var(--cf-ink-3)' }}>
+                  Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
+                  {frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : ''}
+                </p>
+              )}
 
               {/* Preview del interes mensual (sin cuota/total — eso depende del modo de interes que se elige en el paso siguiente) */}
               {Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
@@ -1902,7 +1998,11 @@ function NuevoPrestamo() {
           style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
           <div className="px-4 pt-3.5 pb-4">
-            <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-3)' }}>
+            {/* El punto verde es de la lámina y hace falta: sin él, «se
+                recalcula al escribir» es una promesa; con él se lee como algo
+                que está vivo ahora mismo. */}
+            <p className="text-[10px] font-extrabold uppercase tracking-[.07em] flex items-center gap-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--cf-green-dark)' }} />
               Se recalcula al escribir
             </p>
 
@@ -1913,30 +2013,57 @@ function NuevoPrestamo() {
               </p>
             ) : (
               <>
-                <p className="text-[11px] font-bold uppercase tracking-[.08em] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
-                  {frecuencia === 'diario' ? 'Cuota diaria'
-                    : frecuencia === 'semanal' ? 'Cuota semanal'
-                    : frecuencia === 'quincenal' ? 'Cuota quincenal' : 'Cuota mensual'}
-                </p>
-                <p className="cf-fig text-[32px] leading-none mt-1"
-                   style={{ letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
-                  {formatMoney(calculo.cuotaDiaria)}
-                </p>
+                {/* La cuota y la ganancia van A LA PAR, no una debajo de otra
+                    en una lista: son las dos cifras de la decisión —lo que él
+                    cobra cada vez y lo que se lleva al final— y la lámina las
+                    pone en la misma línea, la ganancia en dorado. */}
+                <div className="flex items-end justify-between gap-3 mt-3">
+                  <div className="min-w-0">
+                    <p className="text-[10.5px] font-bold uppercase tracking-[.08em]" style={{ color: 'var(--cf-ink-3)' }}>
+                      Cuota {UNIDAD_CUOTA[frecuencia]}
+                    </p>
+                    <p className="cf-fig text-[30px] leading-none mt-1 truncate"
+                       style={{ letterSpacing: '-.03em', color: 'var(--cf-ink)' }}>
+                      {formatMoney(calculo.cuotaDiaria)}
+                    </p>
+                  </div>
+                  <div className="text-right min-w-0">
+                    <p className="text-[10.5px] font-bold uppercase tracking-[.08em]" style={{ color: 'var(--cf-ink-3)' }}>
+                      Ganancia
+                    </p>
+                    <p className="cf-fig text-[19px] leading-none mt-1 truncate"
+                       style={{ letterSpacing: '-.02em', color: 'var(--cf-gold)' }}>
+                      {formatMoney(Math.round(calculo.totalInteres || 0))}
+                    </p>
+                  </div>
+                </div>
 
-                <div className="mt-4 space-y-1.5">
-                  {[
-                    ['Ganancia', calculo.totalInteres, 'var(--cf-green-dark)'],
-                    ['Capital', Number(monto) || 0, 'var(--cf-ink)'],
-                    ['Total a recibir', calculo.totalAPagar, 'var(--cf-ink)'],
-                  ].map(([etiqueta, valor, color]) => (
-                    <div key={etiqueta} className="flex items-center justify-between gap-3">
-                      <span className="text-[12.5px]" style={{ color: 'var(--cf-ink-3)' }}>{etiqueta}</span>
-                      <span className="cf-fig text-[13.5px] font-bold" style={{ color }}>
-                        {formatMoney(Math.round(valor || 0))}
+                {/* ── LA PROPORCIÓN, EN UNA BARRA ──
+                    Cuánto de lo que va a volver es su plata y cuánto es
+                    ganancia. En cifras hay que restar mentalmente; en la barra
+                    se ve de un golpe si el interés se está comiendo el préstamo
+                    o es una porción razonable. */}
+                {calculo.totalAPagar > 0 && (
+                  <>
+                    <div className="flex h-2 rounded-full overflow-hidden mt-3.5" style={{ background: 'var(--cf-fill)' }}>
+                      <div style={{
+                        width: `${Math.min(100, Math.max(0, (Number(monto) || 0) / calculo.totalAPagar * 100))}%`,
+                        background: 'var(--cf-ink)',
+                      }} />
+                      <div className="flex-1" style={{ background: 'var(--cf-gold)' }} />
+                    </div>
+                    <div className="flex items-center justify-between gap-3 mt-2 text-[11.5px]" style={{ color: 'var(--cf-ink-3)' }}>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-[3px] shrink-0" style={{ background: 'var(--cf-ink)' }} />
+                        Capital <b className="cf-fig font-bold" style={{ color: 'var(--cf-ink)' }}>{formatMoney(Number(monto) || 0)}</b>
+                      </span>
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-[3px] shrink-0" style={{ background: 'var(--cf-gold)' }} />
+                        Total <b className="cf-fig font-bold" style={{ color: 'var(--cf-ink)' }}>{formatMoney(calculo.totalAPagar)}</b>
                       </span>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
 
                 {/* ESTE AVISO VA AQUÍ, NO AL FINAL.
                     Dice que la cuota no cubre el interés y que el préstamo se va
