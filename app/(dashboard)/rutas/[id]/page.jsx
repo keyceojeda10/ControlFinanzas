@@ -4,10 +4,11 @@
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, filaZonaDe } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
-import { Carril, FilaCobro, SeparadorZona, FilaFueraDeParada } from '@/components/cf/ParadaDeCobro'
+import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
+import { useArrastreLargo } from '@/hooks/useArrastreLargo'
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback, useMemo, use } from 'react'
 import { useRouter }                 from 'next/navigation'
@@ -1406,6 +1407,25 @@ export default function RutaDetallePage({ params }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ruta, clientesFiltrados])
 
+  /* ── DEJARLA APRETADA Y MOVERLA, SIN SALIR DE «COBROS» ──────────────────
+     «De pronto están haciendo el cobro y rápidamente necesitan moverla hacia
+     arriba o hacia abajo.» El modo «Ordenar» sigue siendo el bueno para armar
+     el recorrido entero; esto es el movimiento suelto que se hace en la calle.
+
+     ⚠ VA AQUÍ ARRIBA, no dentro del render. Es un hook, y los hooks no pueden
+     vivir dentro del `(() => …)()` que pinta la lista: en cuanto la lista
+     cambiara de rama —agrupada, vacía, error— React se quedaría con un número
+     de hooks distinto entre renders y la pantalla revienta.
+
+     Los índices son los de `clientesFiltrados`, y `moverParadaEnRuta` los
+     traduce a la ruta completa: con «Solo hoy» puesto se sigue guardando el
+     orden de todos, que fue el fallo que ya dejó una ruta revuelta. */
+  const arrastre = useArrastreLargo({
+    activo: modoVista === 'trabajo',
+    cantidad: clientesFiltrados.length,
+    onReordenar: reordenarPorNumero,
+  })
+
   /* Quitar de la ruta. NO borra al cliente ni su préstamo: le deja `rutaId` en
      null, que es lo que hace el endpoint. Con confirmación porque quitar por
      error a alguien le rompe el día al cobrador. */
@@ -2420,9 +2440,21 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
              sale al carril de `Carril`. Arreglar una arregla las dos: por no
              tenerlo así, el recibo de WhatsApp se reportó roto dos días
              seguidos. */
-          const renderCard = (fila, i, { actual } = {}) => (
+          const renderCard = (fila, { actual } = {}) => {
+            // El índice REAL dentro de `clientesFiltrados`, que es el que
+            // entiende `moverParadaEnRuta`. Agrupar no renumera —el número es la
+            // posición en la ruta— así que sale del propio `orden`.
+            const i = fila.orden - 1
+            const g = arrastre.gestos(i)
+            return (
             <Carril
               key={fila.id}
+              {...g}
+              tenue={fila.zona !== 'hoy'}
+              levantada={arrastre.arrastrando?.desde === i}
+              destino={arrastre.arrastrando != null
+                && arrastre.arrastrando.hasta === i
+                && arrastre.arrastrando.desde !== i}
               /* ⚠ EL ANCLA DE VOLVER. `ruta-scroll-<id>` guarda a quién se
                  entró y al volver se busca por este `id`. Me lo llevé por
                  delante al sustituir la tarjeta: sin él `getElementById`
@@ -2447,9 +2479,20 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
                 onCerrarVisita={() => cerrarVisita(porId.get(fila.id))}
                 onReabrir={() => reabrirVisita(porId.get(fila.id))}
+                /* ── LO QUE HACE EL BOTÓN GRANDE CUANDO HOY NO HAY COBRO ──
+                   Cobrar antes / Cobrar (recuperación) / Prestarle / Sacar de
+                   la ruta. Con «Cobrar» en los cuatro, el cobrador le pide la
+                   cuota a quien no debe nada. */
+                onAccion={() => {
+                  const c = porId.get(fila.id)
+                  if (fila.contexto?.zona === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${fila.id}`)
+                  else if (fila.contexto?.zona === 'inactivo') setConfirmQuitar({ id: fila.id, nombre: fila.nombre })
+                  else abrirPagoRapido(c)
+                }}
               />
             </Carril>
-          )
+            )
+          }
 
 
           // MODO ORDENAR: lista plana con drag-and-drop (comportamiento original).
@@ -2946,7 +2989,17 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
               && (ruta?.configMoratorio?.tasaMoratorio ?? 0) > 0
               && c.diasMora > (ruta.configMoratorio.diasGracia || 5),
           }))
-          const { visitas, tambien } = paradasDeRuta(conMoratorio)
+          /* ── UNA SOLA LISTA, TODOS DENTRO ──────────────────────────────
+             Antes esto devolvía `{ visitas, tambien }` y la pantalla pintaba
+             las visitas numeradas y a los demás en un fondo de saco sin número
+             ni datos. El dueño lo rebatió con la pantalla delante: «salen hasta
+             abajo, sin ninguna numeración, sin ningún dato de sus préstamos,
+             sin ningún contexto, nada».
+
+             `visitas` sigue saliendo, pero solo para CONTAR: el «Empezar
+             recorrido · 67» y las paradas por hacer cuentan cobros, no
+             clientes, y ahí la regla de la lámina sigue en pie. */
+          const { filas, visitas } = paradasDeRuta(conMoratorio, { formatear: (n) => formatMoney(n) })
           const pendientes = visitas.filter((f) => !f.cobrada)
           // La parada actual es la PRIMERA sin cobrar de toda la lista, no la
           // primera de cada grupo: es donde el cobrador está parado ahora.
@@ -2964,29 +3017,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             </div>
           )
 
-          const zonaDeAbajo = tambien.length > 0 && (
-            <div>
-              <SeparadorZona />
-              <div className="flex flex-col gap-1.5">
-                {tambien.map((c) => {
-                  const fila = filaZonaDe(c, { formatear: (n) => formatMoney(n) })
-                  return (
-                    <FilaFueraDeParada
-                      key={c.id}
-                      {...fila}
-                      onClick={() => abrirClienteDesdeRuta(c, 0)}
-                      onAccion={() => {
-                        if (fila.estado === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${c.id}`)
-                        else if (fila.estado === 'inactivo') setConfirmQuitar({ id: c.id, nombre: c.nombre })
-                        else abrirPagoRapido(c)
-                      }}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          )
-
           return (
             /* El hueco es para la barra flotante de «Empezar recorrido», que va
                `fixed` sobre la pastilla de navegación. Sin él tapa la última
@@ -2998,39 +3028,38 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 ? 'calc(var(--cf-nav-inset) + var(--cf-h-nav) + env(safe-area-inset-bottom, 0px) + 78px)'
                 : undefined,
             }}>
+              {/* ⚠ EL `ref` DEL ARRASTRE ENVUELVE A LAS DOS VISTAS.
+                  El gesto mide las tarjetas buscándolas DENTRO de este nodo, y
+                  la página monta la lista en dos ramas: si el `ref` colgara de
+                  una sola, al cambiar de vista el arrastre dejaría de encontrar
+                  nada y no pasaría nada al soltar — sin error y sin pista. */}
+              <div ref={arrastre.lista} className="space-y-5">
               {vistaPlana ? (
-                <>
-                  <div className="flex flex-col gap-1.5">
-                    {visitas.map((f, i) => renderCard(f, i, { actual: f.id === idActual }))}
-                  </div>
-                  {zonaDeAbajo}
-                </>
+                /* LA LISTA COMPLETA: todos, en el orden de la ruta, cada uno con
+                   su número y su tarjeta entera. Los que hoy no tienen cobro
+                   llevan su pastilla —«Al día», «Clavo», «Sin préstamo»— y su
+                   propio botón, pero por lo demás son la misma tarjeta. */
+                <div className="flex flex-col gap-1.5">
+                  {filas.map((f) => renderCard(f, { actual: f.id === idActual }))}
+                </div>
               ) : (
+                /* AGRUPADA: las mismas tarjetas, repartidas por situación.
+                   «Si se va a agrupar, que aparezcan los que se cobran hoy, los
+                   que están al día, los que están con tarjeta clavo o los que
+                   están sin préstamo.» El número NO se renumera por grupo: sigue
+                   siendo la posición en la ruta. */
                 <>
-                  {pendientes.length > 0 && (
-                    <div>
-                      <Rotulo titulo="Por cobrar hoy" cuantos={pendientes.length} color="var(--cf-gold-dark)" />
+                  {gruposDeRuta(filas).map((g) => (
+                    <div key={g.clave}>
+                      <Rotulo titulo={g.titulo} cuantos={g.filas.length} color={g.color} />
                       <div className="flex flex-col gap-1.5">
-                        {visitas.filter((f) => !f.cobrada).map((f, i) => renderCard(f, i, { actual: f.id === idActual }))}
+                        {g.filas.map((f) => renderCard(f, { actual: f.id === idActual }))}
                       </div>
                     </div>
-                  )}
-
-                  {visitas.some((f) => f.cobrada) && (
-                    <div>
-                      {/* «Hechas», no «pagaron»: aquí caen también las que el cobrador cerró a
-                          mano sin que entrara plata —«no estaba», «negocio cerrado»—, y
-                          decir que esas pagaron es falso en la pantalla del dinero. */}
-                      <Rotulo titulo="Visitas hechas hoy" cuantos={visitas.filter((f) => f.cobrada).length} color="var(--cf-green-dark)" />
-                      <div className="flex flex-col gap-1.5">
-                        {visitas.filter((f) => f.cobrada).map((f, i) => renderCard(f, i))}
-                      </div>
-                    </div>
-                  )}
-
-                  {zonaDeAbajo}
+                  ))}
                 </>
               )}
+              </div>
             </div>
           )
 

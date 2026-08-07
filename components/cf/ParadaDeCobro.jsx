@@ -31,6 +31,20 @@ export const PASTILLA = {
   mora:   { bg: 'var(--cf-red-pill-bg)',   bd: 'var(--cf-red-pill-border)',   fg: 'var(--cf-red-dark)' },
   atraso: { bg: 'var(--cf-gold-bg)',       bd: 'var(--cf-gold-border)',       fg: 'var(--cf-gold-text-2)' },
   aldia:  { bg: 'var(--cf-green-pill-bg)', bd: 'var(--cf-green-pill-border)', fg: 'var(--cf-green-dark)' },
+  // Los dos que trajo el reparto por zonas: «sin préstamo» reciente —una
+  // oportunidad, va destacada— y «sin préstamo» viejo, que es una fila que
+  // nadie limpió y no debe competir con nada.
+  destacado: { bg: 'var(--cf-gold-tint)', bd: 'var(--cf-gold-border)', fg: 'var(--cf-gold-text)' },
+  neutro:    { bg: 'var(--cf-fill)',      bd: 'var(--cf-border)',      fg: 'var(--cf-ink-3)' },
+}
+
+/* El anillo del avatar cuando la fila NO es visita de hoy. Mismo papel que
+   `COLOR_ESTADO`: el color va pegado a lo que identifica la fila. */
+export const COLOR_ZONA = {
+  aldia:    'var(--cf-green)',
+  clavo:    'var(--cf-red)',
+  sindeuda: 'var(--cf-gold)',
+  inactivo: 'var(--cf-ink-4)',
 }
 
 /* ══ EL CARRIL DE RECORRIDO (Adenda 5 · E08) ══════════════════════════════
@@ -54,19 +68,53 @@ export const PASTILLA = {
    `--cf-ink-2` y no en gris claro a propósito: son los que el cobrador mira
    POR DELANTE para saber cuánto le falta, y en gris claro quedan a 3,12:1 y no
    se leen bajo sol. */
-export function Carril({ orden, cobrada, actual, ultima, ancla, resaltada, children }) {
+export function Carril({
+  orden, cobrada, actual, ultima, ancla, resaltada, tenue = false,
+  // Los dos estados del arrastre por pulsación larga. `resto` recoge los
+  // manejadores del gesto (`useArrastreLargo`), que van en ESTE nodo porque es
+  // el que se mide para saber sobre cuál se soltó.
+  levantada = false, destino = false, style, children, ...resto
+}) {
+  /* ── `tenue`: LLEVA NÚMERO, PERO NO ES PARADA DE HOY ──
+     El dueño quiere a todos numerados —«así el primero fuera uno que estuviese
+     con clavo, así en el dos estuviese un cliente que no tenía préstamo»— y
+     tiene razón: ese número es la POSICIÓN EN LA RUTA, con la que se orienta
+     entre 142 clientes.
+
+     Pero un círculo idéntico al de una parada pendiente diría que hay que
+     tocar esa puerta hoy. Así que va con el mismo número y menos peso: sin
+     borde grueso y en gris. Se sigue contando, deja de llamar. */
   const circulo = cobrada
     ? { w: 30, bg: 'var(--cf-green)', bd: 'none', fg: '#FFF' }
     : actual
       ? { w: 34, bg: 'var(--cf-ink)', bd: 'none', fg: 'var(--cf-card)' }
-      : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
+      : tenue
+        ? { w: 26, bg: 'var(--cf-fill)', bd: 'none', fg: 'var(--cf-ink-3)' }
+        : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
 
   return (
-    <div id={ancla} className="flex lg:contents" style={{
+    <div id={ancla} className="flex lg:contents" {...resto} style={{
       gap: 10, alignItems: 'stretch',
       // El aterrizaje al volver de cobrar. `scroll-margin` para que no quede
       // pegada al borde de arriba cuando el navegador la trae a la vista.
       scrollMarginTop: 90, scrollMarginBottom: 90,
+      /* ── LO QUE SE VE MIENTRAS SE ARRASTRA ──
+         La que se mueve se levanta y se aclara; la de destino se marca con un
+         filete dorado. No se reordena en vivo: con treinta filas, recolocarlas
+         en cada píxel va a tirones en el teléfono en el que se cobra. */
+      ...(levantada ? {
+        transform: 'scale(1.02)', opacity: .92,
+        boxShadow: '0 10px 24px rgba(20,20,28,.18)',
+        borderRadius: 'var(--cf-r-card)',
+        position: 'relative', zIndex: 3,
+      } : null),
+      ...(destino ? {
+        outline: '2px dashed var(--cf-gold)', outlineOffset: 2,
+        borderRadius: 'var(--cf-r-card)',
+      } : null),
+      transition: 'transform .12s, box-shadow .12s',
+      ...style,
+      ...(resto.style ?? null),
     }}>
       {/* ⚠ `flex flex-col items-center` EN LA CLASE, NO EN EL `style`.
           Un `display` en línea SIEMPRE gana a una clase, así que con
@@ -84,7 +132,7 @@ export function Carril({ orden, cobrada, actual, ultima, ancla, resaltada, child
           width: circulo.w, height: circulo.w, minWidth: circulo.w, minHeight: circulo.w,
           aspectRatio: '1', borderRadius: 999, flex: 'none',
           background: circulo.bg, border: circulo.bd, color: circulo.fg,
-          fontSize: actual ? 16 : 14, fontWeight: 700,
+          fontSize: actual ? 16 : tenue ? 12.5 : 14, fontWeight: 700,
         }}>
           {cobrada ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -121,14 +169,32 @@ export function FilaCobro({
   cuota, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
   cobradoA, montoCobrado, cifras, pagadoPct, onClick,
+  /* ── QUIEN HOY NO TIENE COBRO USA ESTA MISMA TARJETA ──
+     `contextoZona()` en `adaptadores/ruta.js`. Trae la pastilla, la frase que
+     explica por qué hoy no le toca, qué va a la derecha y qué dice el botón.
+     `null` en las visitas de hoy, que es el caso normal.
+
+     Antes esto era OTRA tarjeta —`FilaFueraDeParada`, sin número, sin cifras y
+     sin acciones— y el dueño lo reportó: «salen hasta abajo, sin ninguna
+     numeración, sin ningún dato de sus préstamos, sin ningún contexto, nada».
+     Una segunda tarjeta para lo mismo es el fallo del comprobante otra vez. */
+  contexto = null,
+  onAccion,
   // ── LA PARADA ACTUAL (T03-01) ──
   // Marca dónde está el cobrador AHORA: borde dorado y aviso de mora. Ya NO
   // decide quién tiene botones —eso era así y el dueño lo rebatió con el caso
   // real; ver la nota larga junto a la fila de acciones—.
   activa = false, onLlamar, onWhatsApp, onMapa, onMas,
 }) {
-  const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
-  const p = PASTILLA[estado] || PASTILLA.aldia
+  const color = contexto
+    ? (COLOR_ZONA[contexto.zona] || COLOR_ESTADO.aldia)
+    : (COLOR_ESTADO[estado] || COLOR_ESTADO.aldia)
+  // UNA sola pastilla: con contexto manda la de la zona («Al día», «Clavo»,
+  // «Sin préstamo»). La de los días de atraso sobra ahí —quien no tiene cobro
+  // hoy no lleva atraso del día— y dos pastillas seguidas se leen como dos
+  // estados distintos de la misma persona.
+  const p = PASTILLA[contexto?.pastilla?.tono ?? estado] || PASTILLA.aldia
+  const textoPastilla = contexto ? contexto.pastilla?.texto : etiquetaEstado
   // El plegador de préstamos. Arranca cerrado: se abre «solo si el cliente
   // discute», que es lo que dice la adenda y lo que pasa en la calle.
   const [abierto, setAbierto] = useState(false)
@@ -219,13 +285,13 @@ export function FilaCobro({
           </span>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-            {etiquetaEstado && (
+            {textoPastilla && (
               <span className="cf-num" style={{
                 display: 'inline-flex', alignItems: 'center', flex: 'none',
                 height: 20, padding: '0 8px', borderRadius: 'var(--cf-r-pill)',
                 background: p.bg, border: `1px solid ${p.bd}`, color: p.fg,
                 fontSize: 11, fontWeight: 700,
-              }}>{etiquetaEstado}</span>
+              }}>{textoPastilla}</span>
             )}
             {donde && (
               <span style={{
@@ -258,15 +324,17 @@ export function FilaCobro({
         <span className="cf-fig" style={{
           fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-green-dark)', flex: 'none',
         }}>{montoCobrado}</span>
-      ) : (
+      ) : contexto?.monto === 'ninguno' ? null : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flex: 'none' }}>
           {/* EN NEGRO. Era un botón rojo en cada fila, y con veinte filas eso
               era el muro: rojo es mora, no «cobrar». */}
           <span className="cf-fig" style={{ fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)' }}>
-            {cuota}
+            {contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.cifra : cuota}
           </span>
-          {debe && (
-            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>{debe}</span>
+          {(contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.pie : debe) && (
+            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+              {contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.pie : debe}
+            </span>
           )}
         </div>
       )}
@@ -407,7 +475,23 @@ export function FilaCobro({
         </div>
       )}
 
-      <TiraCifras columnas={cifras} enTarjeta />
+      {/* ── POR QUÉ HOY NO LE TOCA ──
+          «Le cobras el 20 de diciembre · en 500 días», «Préstamo dado por
+          perdido», «Terminó de pagar el 3 de julio». Es la línea que convierte
+          una fila muda en una decisión: si vale la pena adelantarle, si hay que
+          volver a prestarle o si la ruta está sin limpiar.
+
+          Va en gris y sin caja: no es una alarma —para eso están los `avisos`,
+          que sí llevan fondo— sino el estado normal de esa persona. */}
+      {contexto?.nota && !cobrada && (
+        <span style={{
+          flex: 'none', fontSize: 12, lineHeight: 1.4, color: 'var(--cf-ink-3)',
+        }}>{contexto.nota}</span>
+      )}
+
+      {/* Las de la zona cuando las trae —al día usa las de siempre, porque
+          atraso y cumplimiento son ciertos y son lo que decide renovarle—. */}
+      <TiraCifras columnas={contexto?.cifras ?? cifras} enTarjeta />
 
       {/* ── LOS PRÉSTAMOS, PLEGADOS (E07) ──
           «Se pliegan y se abren solo si el cliente discute.» El titular de la
@@ -553,16 +637,27 @@ export function FilaCobro({
           {/* Sigue funcionando tocar la tarjeta entera —el gesto de siempre no
               se quita—; esto solo lo hace visible, y ahora con el tamaño que
               le corresponde. */}
+          {/* ── NO SIEMPRE DICE «COBRAR» ──
+              A quien está al día se le ADELANTA, al que terminó se le PRESTA y
+              al que lleva un año sin nada se le SACA de la ruta. Con el mismo
+              botón dorado en los cuatro, el cobrador le pide la cuota a quien
+              no debe nada.
+
+              Y el dorado sólido se lo queda quien gana dinero: la cuota de hoy
+              y «Prestarle». «Cobrar antes» va secundario porque es un adelanto,
+              no la cuota. */}
           <button
             type="button"
-            onClick={onClick}
+            onClick={contexto?.accion ? onAccion : onClick}
             style={{
-              width: '100%', height: 46, border: 'none', borderRadius: 12,
-              background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+              width: '100%', height: 46, borderRadius: 12,
+              border: contexto?.accion?.tono === 'apagado' ? '1px solid var(--cf-border-strong)' : 'none',
+              background: contexto?.accion?.tono === 'apagado' ? 'var(--cf-card)' : 'var(--cf-gold)',
+              color: contexto?.accion?.tono === 'apagado' ? 'var(--cf-ink-2)' : 'var(--cf-gold-ink)',
               font: 'inherit', fontSize: 15, fontWeight: 700, cursor: 'pointer',
               letterSpacing: '-.01em',
             }}
-          >Cobrar</button>
+          >{contexto?.accion?.texto ?? 'Cobrar'}</button>
         </div>
       )}
 
@@ -653,138 +748,16 @@ export function SeparadorZona({ children = 'También en esta ruta' }) {
   )
 }
 
-/* Los tres estados de abajo, con la caja que le toca a cada uno:
+/* ⚠ AQUÍ VIVÍA `FilaFueraDeParada`, la tarjeta reducida del fondo de la lista.
+   Enseñaba nombre, una frase y un botón: sin número, sin cifras, sin los
+   préstamos y sin las acciones. El dueño lo reportó con la pantalla delante —
+   «salen hasta abajo, sin ninguna numeración, sin ningún dato de sus préstamos,
+   sin ningún contexto, nada»— y tiene razón: un cliente al día con $149.000
+   pendientes no es menos información que uno que se cobra hoy.
 
-     aldia     tarjeta blanca      la fecha del próximo cobro   «Cobrar antes»
-     sindeuda  borde dorado        cuánto se le puede prestar   «Prestarle»
-     inactivo  sin tarjeta, gris   desde cuándo no tiene nada   «Sacar»
+   Ahora es LA MISMA `FilaCobro`, con `contexto` diciendo en qué situación está.
+   Ver `contextoZona()` en `lib/adaptadores/ruta.js`.
 
-   ── EL COPY, QUE ES LA MITAD DE LA LÁMINA ──
-   «Se puede retirar» —lo que decía la pantalla vieja— suena a que el cliente se
-   va. Es SACARLO DE LA RUTA, y solo aplica al inactivo: al que acaba de pagar
-   no hay que sacarlo, hay que PRESTARLE. Eran dos estados con el mismo botón y
-   son opuestos: uno es una oportunidad y el otro una ruta desactualizada.
-
-   Y la fecha manda sobre los días. «Cobra en 13d» deja al cobrador contando con
-   los dedos; «el 19 de agosto» es lo que se le dice al cliente en la puerta.
-   Los días van AL LADO, nunca en lugar de ella. */
-const CAJA_ZONA = {
-  aldia:    { fondo: 'var(--cf-card)', borde: '1px solid var(--cf-border)', anillo: 'var(--cf-green)' },
-  sindeuda: { fondo: 'color-mix(in srgb, var(--cf-gold) 6%, var(--cf-card))',
-              borde: '1px solid var(--cf-gold-border)', anillo: 'var(--cf-gold)' },
-  // Sin tarjeta: no es una parada ni una oportunidad, es una fila pendiente de
-  // limpiar. Darle caja la pondría al mismo nivel que las otras dos.
-  inactivo: { fondo: 'transparent', borde: '1px solid transparent', anillo: null },
-}
-
-const PASTILLA_ZONA = {
-  aldia:    { texto: 'Al día', ...PASTILLA.aldia },
-  sindeuda: { texto: 'Listo',  ...PASTILLA.atraso },
-  inactivo: null,
-}
-
-export function FilaFueraDeParada({
-  nombre, iniciales, estado = 'aldia', subtitulo, detalle, apunte,
-  accion, onAccion, onClick,
-}) {
-  const caja = CAJA_ZONA[estado] ?? CAJA_ZONA.aldia
-  const pastilla = PASTILLA_ZONA[estado]
-  const esInactivo = estado === 'inactivo'
-
-  return (
-    <div
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      style={{
-        background: caja.fondo, border: caja.borde,
-        borderRadius: 'var(--cf-r-card)', flex: 'none',
-        padding: esInactivo ? '9px 14px' : '13px 15px',
-        display: 'flex', flexDirection: 'column', gap: 11,
-        cursor: onClick ? 'pointer' : 'default',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* El inactivo lleva el avatar más chico y SIN anillo: el anillo dice
-            cómo va un cobro, y aquí no hay cobro del que hablar. */}
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: esInactivo ? 32 : 38, height: esInactivo ? 32 : 38,
-          minWidth: esInactivo ? 32 : 38, minHeight: esInactivo ? 32 : 38,
-          aspectRatio: '1', borderRadius: 999, flex: 'none',
-          background: 'var(--cf-fill)',
-          border: caja.anillo ? `2px solid ${caja.anillo}` : 'none',
-          fontSize: esInactivo ? 12 : 14, fontWeight: 700,
-          color: esInactivo ? 'var(--cf-ink-3)' : 'var(--cf-ink-2)',
-        }}>{iniciales}</span>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-          <span style={{
-            fontSize: esInactivo ? 14 : 15, fontWeight: 700, letterSpacing: '-.01em',
-            color: esInactivo ? 'var(--cf-ink-2)' : 'var(--cf-ink)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>{nombre}</span>
-          {subtitulo && (
-            <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>{subtitulo}</span>
-          )}
-        </div>
-
-        {/* El inactivo se lleva el botón a la primera línea: no tiene segunda.
-            No hay nada que contar de alguien que no tiene préstamo. */}
-        {esInactivo && accion && (
-          <BotonZona onClick={onAccion} tono="apagado">{accion}</BotonZona>
-        )}
-
-        {pastilla && (
-          <span className="cf-num" style={{
-            display: 'inline-flex', alignItems: 'center', flex: 'none',
-            height: 21, padding: '0 9px', borderRadius: 'var(--cf-r-pill)',
-            background: pastilla.bg, border: `1px solid ${pastilla.bd}`, color: pastilla.fg,
-            fontSize: 11, fontWeight: 700,
-          }}>{pastilla.texto}</span>
-        )}
-      </div>
-
-      {!esInactivo && (detalle || accion) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {detalle && (
-              <span style={{ fontSize: 12.5, lineHeight: 1.35, color: 'var(--cf-ink-2)' }}>{detalle}</span>
-            )}
-            {apunte && (
-              <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>{apunte}</span>
-            )}
-          </div>
-          {accion && (
-            /* DORADO SÓLIDO solo en «Prestarle». Es la única de las tres que
-               gana dinero, y la lámina denuncia justo lo contrario: el botón de
-               antes era dorado PÁLIDO sobre gris y «no se lee como acción, se
-               lee como algo deshabilitado». «Cobrar antes» va secundario a
-               propósito: cobrarle hoy es un adelanto, no la cuota. */
-            <BotonZona onClick={onAccion} tono={estado === 'sindeuda' ? 'oro' : 'apagado'}>
-              {accion}
-            </BotonZona>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function BotonZona({ children, onClick, tono = 'apagado' }) {
-  const oro = tono === 'oro'
-  return (
-    <button
-      type="button"
-      onClick={(e) => { e.stopPropagation(); onClick?.() }}
-      style={{
-        flex: 'none', height: 38, padding: '0 15px', cursor: 'pointer',
-        borderRadius: 'var(--cf-r-control)', font: 'inherit',
-        fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap',
-        background: oro ? 'var(--cf-gold)' : 'var(--cf-card)',
-        border: oro ? 'none' : '1px solid var(--cf-border-strong)',
-        color: oro ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
-      }}
-    >{children}</button>
-  )
-}
+   Se borra en vez de dejarse sin usar a propósito: dos tarjetas para lo mismo
+   es como se llegó al comprobante que se arregló por un camino y siguió roto
+   por el otro, reportado dos días seguidos. */
