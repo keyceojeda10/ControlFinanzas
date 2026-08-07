@@ -21,6 +21,7 @@
 // recorre la calle en orden, y si el cobrado desaparece pierde la referencia de
 // dónde iba. Tachado sigue siendo el mapa del recorrido.
 
+import { useState } from 'react'
 import { BotonPrimario, EstadoVacio , TiraCifras} from '@/components/cf/primitivos'
 import { BotonFiltros } from './HojaFiltros'
 
@@ -94,6 +95,7 @@ function CabezaGrupo({ nombre, pendientes, total }) {
 /* ══ La fila de cobro ══ */
 function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
+  avisoMora, prestamos = [],
   cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
   // La lámina le pone borde dorado y tres acciones al primer cobro pendiente:
@@ -104,6 +106,9 @@ function FilaCobro({
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
   const p = PASTILLA[estado] || PASTILLA.aldia
+  // El plegador de préstamos. Arranca cerrado: se abre «solo si el cliente
+  // discute», que es lo que dice la adenda y lo que pasa en la calle.
+  const [abierto, setAbierto] = useState(false)
 
   return (
     <div
@@ -240,7 +245,89 @@ function FilaCobro({
       {/* «Atraso $48.000 · Cumple 62% · Cuota 13/24 · Últ. pago 21 jun».
           El adaptador no la manda en el cobrado: ya está tachado y con su hora,
           y enseñarle el atraso a alguien que acaba de pagar es ruido. */}
+      {/* ── EL AVISO DE MORA, EN UNA FRASE (E07) ──
+          «Lleva 28 días sin pagar. Debe $960.000 en total.» Dice de una vez
+          cuánto lleva sin pagar y cuánto debe EN TOTAL, que es lo que se dice
+          en voz alta en la puerta. Y con la palabra «en total» pegada a la
+          cifra: el fallo que la adenda denuncia es justo un saldo leído como si
+          fuera la mora, y ahí el cobrador le pide al cliente diez veces de más. */}
+      {avisoMora && !cobrada && (
+        <div style={{
+          flex: 'none', display: 'flex', alignItems: 'flex-start', gap: 9,
+          padding: '10px 13px', borderRadius: 12,
+          background: 'var(--cf-red-pill-bg)',
+          border: '1px solid color-mix(in srgb, var(--cf-red-dark) 22%, transparent)',
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)"
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ flex: 'none', marginTop: 1 }}>
+            <path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+          </svg>
+          <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--cf-red-dark)', minWidth: 0 }}>
+            Lleva <b>{avisoMora.dias} días sin pagar</b>. Debe {avisoMora.total} en total.
+          </span>
+        </div>
+      )}
+
       <TiraCifras columnas={cifras} enTarjeta />
+
+      {/* ── LOS PRÉSTAMOS, PLEGADOS (E07) ──
+          «Se pliegan y se abren solo si el cliente discute.» El titular de la
+          tarjeta es lo que se le pide HOY; los saldos son para cuando hay que
+          defender la cifra.
+
+          Solo con MÁS DE UNO: con un solo préstamo no hay nada que plegar —el
+          saldo ya está arriba, en «debe $92.000»— y un desplegable que abre una
+          sola fila es un toque de más para nada. */}
+      {!cobrada && prestamos.length > 1 && (
+        <div style={{ flex: 'none' }} onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setAbierto((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: 0,
+              background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
+              fontSize: 12, color: 'var(--cf-ink-3)',
+            }}
+          >
+            {prestamos.length} préstamos
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+              style={{ transform: abierto ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+
+          {abierto && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+              {prestamos.map((p) => (
+                <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                      {p.desde ? `Del ${p.desde}` : 'Préstamo'}
+                    </span>
+                    <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-ink)', flex: 'none' }}>
+                      {p.saldo}
+                    </span>
+                  </div>
+                  <span style={{
+                    display: 'block', height: 4, borderRadius: 999,
+                    background: 'var(--cf-fill)', overflow: 'hidden', flex: 'none',
+                  }}>
+                    <span style={{
+                      display: 'block', height: 4, borderRadius: 999,
+                      width: `${p.pagadoPct}%`, background: color,
+                    }} />
+                  </span>
+                  <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+                    {p.pagadoPct}% pagado{p.pagadoDe ? ` de ${p.pagadoDe}` : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Las acciones de la parada actual. Solo aquí: en las demás filas serían
           sesenta botones en una pantalla que se opera caminando.

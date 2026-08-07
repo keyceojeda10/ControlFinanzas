@@ -284,6 +284,15 @@ export async function GET() {
           modoInteres: p.modoInteres || 'fijo',
           esBalloon: proximaCuota?.esBalloon || false,
           cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
+          /* ── PARA EL PLEGADOR DE E07 ──
+             Con dos préstamos, la tarjeta abre una lista donde cada uno se
+             identifica POR SU FECHA —«del 4 de marzo»—, no como «Préstamo 1»:
+             el cliente dice «el de marzo», no «el uno». Y cada uno con su
+             barra, así que hace falta cuánto lleva pagado.
+             Los tres campos ya venían en el `select`. */
+          fechaInicio: p.fechaInicio ?? null,
+          totalPagado: Number(p.totalPagado ?? 0),
+          totalAPagar: Number(p.totalAPagar ?? 0),
           ...extraInfo,
         })
 
