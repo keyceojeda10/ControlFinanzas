@@ -1897,7 +1897,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         subtitulo={[
           ruta.cobrador?.nombre ? `Cobra ${ruta.cobrador.nombre}` : 'Sin cobrador',
           `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
-          `${ruta.pendientesHoy ?? 0} ${(ruta.pendientesHoy ?? 0) === 1 ? 'cobro programado hoy' : 'cobros programados hoy'}`,
+          `${paradasPorHacer} ${paradasPorHacer === 1 ? 'cobro programado hoy' : 'cobros programados hoy'}`,
           ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
         ].filter(Boolean).join(' · ')}
         migaVolver={`Rutas · ${ruta.nombre}`}
@@ -1920,7 +1920,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             ? [{ id: 'recorrido', texto: `Empezar recorrido · ${paradasPorHacer}`, principal: true, onClick: () => setEnRecorrido(true) }]
             : []),
         ]}
-        chips={[{ id: 'trabajo', texto: 'Hoy', conteo: ruta.pendientesHoy ?? 0 },
+        chips={[{ id: 'trabajo', texto: 'Hoy', conteo: paradasPorHacer },
                 { id: 'auditoria', texto: 'Todos', conteo: ruta.clientes?.length ?? 0 }]}
         chipActivo={modoVista === 'auditoria' ? 'auditoria' : 'trabajo'}
         onChip={(v) => setModoVista(v)}
@@ -2988,7 +2988,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           )
 
           return (
-            <div className="space-y-5">
+            /* El hueco es para la barra flotante de «Empezar recorrido», que va
+               `fixed` sobre la pastilla de navegación. Sin él tapa la última
+               ficha para siempre —y ahora tapa justo su botón de cobrar, que
+               pasó a ser el pie de la tarjeta—: la lista se acaba y no hay a
+               dónde seguir bajando. */
+            <div className="space-y-5" style={{
+              paddingBottom: paradasPorHacer > 0
+                ? 'calc(var(--cf-nav-inset) + var(--cf-h-nav) + env(safe-area-inset-bottom, 0px) + 78px)'
+                : undefined,
+            }}>
               {vistaPlana ? (
                 <>
                   <div className="flex flex-col gap-1.5">
@@ -3520,7 +3529,11 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
           Ahora se calcula desde los tokens en vez de un número a mano: si un
           día la pastilla cambia de alto, esto se mueve con ella. */}
-      {modoVista === 'trabajo' && (ruta?.pendientesHoy ?? 0) > 0 && (
+      {/* ⚠ SON DOS BOTONES DISTINTOS. Este flotante es el que se ve en el
+          teléfono; el de la barra de acciones de arriba casi no sale. Arreglé
+          el contador solo en aquel y en la captura seguía diciendo 134 con 133
+          puertas: hay que buscarlos TODOS, que es el fallo del comprobante. */}
+      {modoVista === 'trabajo' && paradasPorHacer > 0 && (
         <div style={{
           position: 'fixed', left: 0, right: 0,
           bottom: 'calc(var(--cf-nav-inset) + var(--cf-h-nav) + env(safe-area-inset-bottom, 0px) + 12px)',
@@ -3538,7 +3551,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
               boxShadow: '0 6px 20px rgba(20,20,28,.18)',
             }}
           >
-            Empezar recorrido · {ruta.pendientesHoy}
+            Empezar recorrido · {paradasPorHacer}
           </button>
         </div>
       )}
