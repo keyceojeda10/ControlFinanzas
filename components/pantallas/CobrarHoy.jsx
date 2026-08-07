@@ -92,6 +92,75 @@ function CabezaGrupo({ nombre, pendientes, total }) {
   )
 }
 
+/* ══ EL CARRIL DE RECORRIDO (Adenda 5 · E08) ══════════════════════════════
+   «El orden no es un dato del cliente: es dónde está en la fila. Por eso vive
+   fuera de la tarjeta.» Dentro competía con el nombre y el monto; fuera, en
+   columna, se lee sin mirar nada más — que es lo que hace un cobrador cuando
+   levanta la vista de la moto.
+
+   Se paga solo porque el carril TAMBIÉN da el progreso: sin contar nada se ve
+   cuántas paradas van con check y cuántas quedan huecas.
+
+   ⚠ SOLO EN EL TELÉFONO, y esto no lo dice la lámina: en escritorio la lista
+   va a DOS COLUMNAS (`lg:grid-cols-2`), y un carril con línea conectora
+   necesita una sola secuencia — con dos columnas la línea uniría paradas que
+   no van seguidas y el número diría una posición falsa. La propia adenda pone
+   la condición: «B en la ruta de cobro, donde el orden manda y HAY UNA SOLA
+   SECUENCIA». En escritorio no la hay, así que allí no se pinta. Y no se
+   pierde nada: la ruta se cobra caminando, con el teléfono.
+
+   Los tres estados y sus medidas salen de la adenda. El número pendiente va en
+   `--cf-ink-2` y no en gris claro a propósito: son los que el cobrador mira
+   POR DELANTE para saber cuánto le falta, y en gris claro quedan a 3,12:1 y no
+   se leen bajo sol. */
+function Carril({ orden, cobrada, actual, ultima, children }) {
+  const circulo = cobrada
+    ? { w: 30, bg: 'var(--cf-green)', bd: 'none', fg: '#FFF' }
+    : actual
+      ? { w: 34, bg: 'var(--cf-ink)', bd: 'none', fg: 'var(--cf-card)' }
+      : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
+
+  return (
+    <div className="flex lg:contents" style={{ gap: 10, alignItems: 'stretch' }}>
+      {/* ⚠ `flex flex-col items-center` EN LA CLASE, NO EN EL `style`.
+          Un `display` en línea SIEMPRE gana a una clase, así que con
+          `display: 'flex'` en el `style` el `lg:hidden` no hacía nada y el
+          carril se pintaba también en escritorio —729 círculos donde no hay una
+          sola secuencia—.
+
+          Es la TERCERA vez hoy: antes fue `display:'grid'` comiéndose un
+          `hidden sm:grid`, y luego `display:'flex'` en la caja del panel
+          duplicando la gráfica en el teléfono. Hay una prueba que lo barre
+          entero para que no haya una cuarta. */}
+      <div className="lg:hidden flex flex-col items-center" style={{ width: 34, flex: 'none' }}>
+        <span className="cf-num" style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: circulo.w, height: circulo.w, minWidth: circulo.w, minHeight: circulo.w,
+          aspectRatio: '1', borderRadius: 999, flex: 'none',
+          background: circulo.bg, border: circulo.bd, color: circulo.fg,
+          fontSize: actual ? 16 : 14, fontWeight: 700,
+        }}>
+          {cobrada ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          ) : orden}
+        </span>
+        {/* El conector no va en la última: una línea que sale de la última
+            parada y no llega a nada dice que falta algo. */}
+        {!ultima && (
+          <span aria-hidden style={{
+            flex: 1, width: 2, minHeight: 8, marginTop: 4,
+            borderRadius: 999, background: 'var(--cf-border-strong)',
+          }} />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+    </div>
+  )
+}
+
 /* ══ La fila de cobro ══ */
 function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
@@ -355,8 +424,18 @@ function FilaCobro({
       {activa && !cobrada && (onWhatsApp || onMapa || onMas) && (
         <div style={{ display: 'flex', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
+          {/* ── SOLO EL ICONO, y no es cosmético ──
+              Con el carril, la tarjeta pierde 46px de ancho —la propia adenda
+              lo avisa: «quedan 304px de los 350»— y los cuatro controles dejan
+              de caber: medido, «WhatsApp» se salía de su botón y pisaba
+              «Mapa».
+
+              La lámina de E07 los dibuja así: tres iconos cuadrados de 44 y el
+              botón de cobrar llevándose el resto. El texto sobra porque el
+              logo de WhatsApp y el pin de mapa se reconocen solos, y lo que sí
+              tiene que leerse —«Cobrar»— gana el sitio que sueltan. */}
           {onWhatsApp && (
-            <AccionParada onClick={onWhatsApp} texto="WhatsApp" tono="verde" relleno>
+            <AccionParada onClick={onWhatsApp} tono="verde" relleno soloIcono aria-label="WhatsApp">
               {/* EL LOGO DE VERDAD. Lo que había era una burbuja de trazo
                   dibujada a mano: no es el logo de WhatsApp, y encima el trazo
                   tocaba el borde del viewBox y salía cortado. */}
@@ -364,7 +443,7 @@ function FilaCobro({
             </AccionParada>
           )}
           {onMapa && (
-            <AccionParada onClick={onMapa} texto="Mapa">
+            <AccionParada onClick={onMapa} soloIcono aria-label="Ver en el mapa">
               <path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z" />
               <circle cx="12" cy="10" r="2.6" />
             </AccionParada>
@@ -569,16 +648,25 @@ export default function CobrarHoy({
           <div key={g.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
             <CabezaGrupo nombre={g.nombre} pendientes={g.pendientes} total={g.total} />
             <div className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-              {g.filas.map((f) => (
-                <FilaCobro
+              {g.filas.map((f, i) => (
+                <Carril
                   key={f.id}
-                  {...f}
-                  activa={f.id === idActual}
-                  onClick={() => onCobrar?.(f)}
-                  onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
-                  onMapa={onMapa ? () => onMapa(f) : undefined}
-                  onMas={onMas ? () => onMas(f) : undefined}
-                />
+                  // La posición en la fila, no el índice del array: se cuenta
+                  // dentro de su ruta, que es el recorrido que el cobrador hace.
+                  orden={i + 1}
+                  cobrada={f.cobrada}
+                  actual={f.id === idActual}
+                  ultima={i === g.filas.length - 1}
+                >
+                  <FilaCobro
+                    {...f}
+                    activa={f.id === idActual}
+                    onClick={() => onCobrar?.(f)}
+                    onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
+                    onMapa={onMapa ? () => onMapa(f) : undefined}
+                    onMas={onMas ? () => onMas(f) : undefined}
+                  />
+                </Carril>
               ))}
             </div>
           </div>
