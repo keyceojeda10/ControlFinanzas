@@ -243,7 +243,13 @@ export function FilaCobro({
           regla de la adenda es que «el estado lo llevan los elementos que ya
           identifican a la fila, nunca uno añadido para pintarlo». */}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+      {/* ⚠ `flex-start`, NO `center`. Con el nombre y la dirección enteros esta
+          fila pasa a tres renglones, y centrando el avatar quedaba a media
+          altura —junto al apellido en vez de junto al nombre— y el monto
+          flotando en medio del hueco. Es la misma decisión que ya está escrita
+          en `TarjetaCliente`: arriba, todo empieza a la altura de la primera
+          línea, que es la que se lee. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
 
       {/* El avatar del cobrado es un CHECK, no sus iniciales: la fila ya está
           tachada, y un avatar normal invita a volver a tocarla. */}
