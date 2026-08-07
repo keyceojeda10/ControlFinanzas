@@ -236,34 +236,26 @@ export default function NuevoClientePage() {
 
   // Wizard del formulario
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-5">
+    <div className="max-w-2xl lg:max-w-3xl mx-auto">
+      {/* ── EL ICONO SUELTO SE VA ──
+          Quedaba un círculo dorado con un monigote flotando encima del
+          formulario, sin nada al lado: el título que lo acompañaba se mudó a la
+          cabecera y el icono se quedó ahí huérfano. Un adorno sin función que
+          además empujaba el primer campo 60px hacia abajo.
+
+          «Cambiar método» —con tilde— pasa a ser un enlace discreto a la
+          derecha, que es lo que es: una salida, no el primer paso. */}
+      <div className="mb-4 flex justify-end">
         <button
           onClick={() => { setMetodo(null); setDatosCartulina(null); setOcrError(''); setOcrAdvertencias([]) }}
-          className="flex items-center gap-1.5 text-sm transition-colors mb-3"
+          className="flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
           style={{ color: 'var(--cf-ink-3)' }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          Cambiar metodo
+          Cambiar método
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 22%, transparent), color-mix(in srgb, var(--cf-gold) 12%, transparent))',
-              border: '1px solid color-mix(in srgb, var(--cf-gold) 30%, transparent)',
-              color: 'var(--cf-gold)',
-            }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-            </svg>
-          </div>
-          {/* El titulo de esta vista tambien va a la cabecera: cambia con el
-              metodo, y por eso tiene que cambiar ARRIBA, no aparecer un
-              segundo titulo debajo. */}
-        </div>
       </div>
 
       <ClienteForm

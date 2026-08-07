@@ -345,7 +345,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
   const planSinRutas = ['starter', 'basic'].includes(plan)
 
   return (
-    <div className="max-w-xl mx-auto pb-32 lg:pb-32">
+    /* En escritorio la caja se ensancha y el formulario descansa sobre una
+       hoja, igual que en crear préstamo: los campos flotaban sueltos sobre el
+       fondo de la app, sin nada detrás. En el teléfono no —la pantalla YA es la
+       hoja, y una tarjeta dentro de otra solo añade un borde que no separa—. */
+    <div className="max-w-xl lg:max-w-3xl mx-auto pb-32 lg:pb-32 lg:rounded-[16px] lg:p-7 lg:border lg:bg-[var(--cf-card)] lg:border-[var(--cf-border)]">
       {/* ── UNA PANTALLA, NO TRES PASOS (T07-03) ──
           Esto eran tres pasos con su barra de progreso: datos, ubicación y
           organización. Y de los tres, DOS ERAN ENTEROS OPCIONALES — dirección,
@@ -465,6 +469,14 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
             </div>
           )}
 
+          {/* ── EL NOMBRE MANDA, LO DEMÁS ACOMPAÑA (T07-03) ──
+              «Un solo campo obligatorio: el nombre. La cédula dice "opcional" en
+              el propio campo, porque exigirla en la calle frena la carga y es la
+              razón por la que muchos negocios se quedan en cinco clientes.»
+
+              Los tres campos iban apilados y de ancho completo: 575px para diez
+              dígitos de cédula. El nombre sube a campo grande y los dos cortos
+              se ponen a la par. */}
           <div className="mt-7 space-y-5">
             <Input
               label="Nombre completo"
@@ -474,13 +486,21 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               error={errores.nombre}
               autoComplete="name"
               autoFocus
+              className="cf-campo-grande h-[68px] rounded-[14px] text-[24px] font-semibold tracking-[-.02em]"
             />
+            <div className="grid sm:grid-cols-2 gap-5 items-start">
             <div>
               {!sinCedula && (
                 <>
                   <Input
                     label={`${documentConfig.label}`}
-                    placeholder={`Ej: ${documentConfig.placeholder}`}
+                    /* «opcional» PRIMERO, y el ejemplo detrás.
+                       La lámina quiere que la palabra esté en el propio campo,
+                       pero poner solo «opcional» borraba el formato del
+                       documento del país —que se internacionalizó justo para
+                       que a un cliente en Argentina no le saliera «CC»—. Lo
+                       cazó una prueba de esa tanda; van las dos cosas. */
+                    placeholder={`opcional · ej. ${documentConfig.placeholder}`}
                     value={form.cedula}
                     onChange={set('cedula')}
                     error={errores.cedula}
@@ -502,25 +522,21 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   })()}
                 </>
               )}
-              {!esEdicion && (
-                <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={sinCedula}
-                    onChange={(e) => {
-                      setSinCedula(e.target.checked)
-                      if (e.target.checked) {
-                        setForm(prev => ({ ...prev, cedula: '' }))
-                        setErrores(prev => ({ ...prev, cedula: '' }))
-                      }
-                    }}
-                    className="accent-[var(--cf-gold)] w-4 h-4 rounded"
-                  />
-                  <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
-                    No tengo la cédula
-                  </span>
-                </label>
-              )}
+              {/* ── LA CASILLA «NO TENGO LA CÉDULA» SE VA ──
+                  No pierde nada: dejar el campo vacío YA hacía exactamente lo
+                  mismo. Lo dice el propio código donde se arma el payload —
+                  `sinCedula || !form.cedula.trim()` → el mismo marcador `SIN-`—
+                  y el comentario de al lado lo explica: «el marcador también
+                  cuando el campo se deja vacío, no solo con la casilla».
+
+                  Era de cuando la cédula era obligatoria y hacía falta una
+                  puerta de escape. Ahora el campo dice «opcional» y debajo pone
+                  que solo el nombre hace falta: la casilla decía por tercera vez
+                  lo mismo, y encima escondía el campo al marcarla.
+
+                  ⚠ EL ESTADO `sinCedula` SE QUEDA. No es decorativo: al EDITAR
+                  un cliente cuya cédula es un marcador `SIN-…`, es lo que hace
+                  que el campo salga vacío en vez de enseñar «SIN-m3k9x2». */}
             </div>
             <Input
               label={phoneConfig.label}
@@ -530,6 +546,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               error={errores.telefono}
               inputMode="tel"
             />
+            </div>
+
+            {/* Lo dice la lámina y lo dicen los datos: 311 de 411 negocios se
+                quedan en cinco clientes o menos, y cada campo que parece
+                obligatorio es una razón para no cargar el siguiente. */}
+            <p className="text-[12.5px] flex items-start gap-2" style={{ color: 'var(--cf-ink-3)' }}>
+              <svg className="w-4 h-4 shrink-0 mt-[2px]" fill="none" stroke="currentColor" strokeWidth={1.7} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+              </svg>
+              Solo el nombre es obligatorio. Lo demás lo puedes completar cuando lo visites.
+            </p>
           </div>
         </section>
       )}
@@ -545,21 +572,26 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           </p>
 
           <div className="mt-7 space-y-5">
-            <Input
-              label="Dirección"
-              placeholder="Calle, barrio, ciudad..."
-              value={form.direccion}
-              onChange={set('direccion')}
-              error={errores.direccion}
-            />
-            <Input
-              label="Referencia"
-              placeholder="Ej: Tienda La Esquina, frente al colegio"
-              value={form.referencia}
-              onChange={set('referencia')}
-              error={errores.referencia}
-              maxLength={100}
-            />
+            {/* A la par: la dirección y la referencia son la misma pregunta
+                —dónde lo encuentro— y se rellenan a la vez. Apiladas ocupaban
+                dos filas de 575px para dos frases cortas. */}
+            <div className="grid sm:grid-cols-2 gap-5 items-start">
+              <Input
+                label="Dirección"
+                placeholder="Calle, barrio, ciudad..."
+                value={form.direccion}
+                onChange={set('direccion')}
+                error={errores.direccion}
+              />
+              <Input
+                label="Referencia"
+                placeholder="Ej: frente al colegio"
+                value={form.referencia}
+                onChange={set('referencia')}
+                error={errores.referencia}
+                maxLength={100}
+              />
+            </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
                 Ubicación en el mapa (opcional)
@@ -714,7 +746,11 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       <div
         className="fixed left-0 right-0 lg:left-[var(--cf-w-sidebar)] bottom-0 z-[46] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] lg:px-6 lg:pb-6"
         style={{
-          background: 'var(--cf-surface)',
+          // `--cf-card`, no `--cf-surface`: el token dice literalmente «toda
+          // tarjeta, fila, campo, BARRA DE ACCIÓN». `--cf-surface` es el fondo
+          // de la app, y con él la barra no se separaba del contenido. Es la
+          // misma confusión que dejó «Mercancía» invisible en crear préstamo.
+          background: 'var(--cf-card)',
           borderTop: '1px solid var(--cf-border)',
           boxShadow: 'var(--cf-sh-sheet)',
         }}
