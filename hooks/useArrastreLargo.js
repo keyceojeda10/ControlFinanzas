@@ -55,13 +55,16 @@ export function useArrastreLargo({ activo = true, cantidad = 0, onReordenar } = 
   const inicio = useRef(null)
   /* ⚠ UNA MARCA DE TIEMPO, NO UN INTERRUPTOR.
      Empezó siendo `bloquearClick = true`, que se apagaba al tragarse el
-     siguiente clic. Pero tras un arrastre largo el navegador NO emite ningún
-     clic —el puntero se movió demasiado— así que la bandera se quedaba
-     encendida y se comía el TOQUE SIGUIENTE, que sí era de verdad. Medido en el
-     espejo: se movía una tarjeta y la próxima que se tocaba no abría el cobro.
+     siguiente clic. El problema de esa forma es que da por hecho que SIEMPRE
+     viene un clic detrás del arrastre, y no es cierto: cuando el puntero se ha
+     movido mucho, el navegador no emite ninguno. La bandera se quedaría
+     encendida y se comería el TOQUE SIGUIENTE, que sí es de verdad — y eso deja
+     una tarjeta que no cobra sin nada que mirar.
 
-     Con la hora del último arrastre no hay estado que se quede pegado: pasados
-     400 ms, cualquier clic es del usuario. */
+     ⚠ NO lo vi pasar: lo perseguí por una prueba mía que buscaba el título de
+     otra hoja de cobro. Es una decisión de forma, no la corrección de un fallo
+     medido. Con la hora del último arrastre no hay estado que se quede pegado:
+     pasados 400 ms, cualquier clic es del usuario. */
   const ultimoArrastre = useRef(0)
   const puntero = useRef({ y: 0 })
 
