@@ -172,6 +172,14 @@ export async function GET() {
       // El atraso en plata es `montoParaAlDia`, que ya estaba. Estas tres no.
       let cuotasVencidas = 0
       let cuotasPagadasSum = 0
+      /* CUÁNTO LLEVA PAGADO, en plata, sumando sus préstamos activos.
+         Es lo que pinta la barra a sangre de la Adenda 5, y NO es lo mismo que
+         «cumple»: cumple mira las cuotas que YA vencieron —si va al día con lo
+         exigible—, y esto mira el préstamo entero. Un cliente recién prestado
+         puede cumplir al 100% llevando pagado el 4%. Los dos acentos de la
+         tarjeta solo pueden convivir si dicen cosas distintas. */
+      let pagadoAcum = 0
+      let totalAcum = 0
       let cuotaDeMayorMora = null
       let ultimoPagoISO = null
       let cobroPendienteHoy = false
@@ -252,6 +260,9 @@ export async function GET() {
           : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
         const pagadasP = Math.max(0, totalCuotas - calcularCuotasPendientes(p))
         cuotasPagadasSum += pagadasP
+        // Los dos campos ya venían en el `select`; solo faltaba sumarlos.
+        pagadoAcum += Number(p.totalPagado ?? 0)
+        totalAcum += Number(p.totalAPagar ?? 0)
         cuotasVencidas += pagadasP + calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
         // «Cuota 13/24». Se queda con la del prestamo mas atrasado, que es el
         // que manda la visita: con dos prestamos, el numero de uno solo mentiria.
@@ -321,6 +332,12 @@ export async function GET() {
         // en un cliente recien prestado lo pinta como el peor de la ruta.
         cumplimiento: cuotasVencidas > 0 ? Math.round((cuotasPagadasSum / cuotasVencidas) * 100) : null,
         cuotaTexto: cuotaDeMayorMora?.texto ?? null,
+        // Para la barra a sangre de la tarjeta. Acotado a 100: con un recargo
+        // el total sube, pero un pago adelantado puede dejar la razón por
+        // encima de 1 y una barra al 140% se sale de su pista.
+        pagadoPct: totalAcum > 0
+          ? Math.max(0, Math.min(100, Math.round((pagadoAcum / totalAcum) * 100)))
+          : null,
         ultimoPagoAt: ultimoPagoISO,
         hoySinCobro: _hoySinCobro,
         prestamoActivo: prestamosActivos[0]?.id ?? null,

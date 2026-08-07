@@ -94,7 +94,7 @@ function CabezaGrupo({ nombre, pendientes, total }) {
 /* ══ La fila de cobro ══ */
 function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde,
-  cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, onClick,
+  cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
   // La lámina le pone borde dorado y tres acciones al primer cobro pendiente:
   // es donde está el cobrador AHORA. El resto quedan como están —una lista de
@@ -118,7 +118,8 @@ function FilaCobro({
         border: activa && !cobrada ? '1.5px solid var(--cf-gold)' : '1px solid var(--cf-border)',
         boxShadow: activa && !cobrada ? '0 0 0 3px var(--cf-gold-focus)' : undefined,
         borderRadius: 'var(--cf-r-card)',
-        padding: '14px 16px 14px 19px',
+        // Sin hueco abajo: la barra a sangre del pie va pegada al borde.
+        padding: '14px 16px 0 16px',
         // COLUMNA, no fila. Antes era una sola fila —avatar, nombre, cuota— y
         // T03-01 le pone debajo la tira de cifras. La fila de siempre baja un
         // nivel y se queda igual; lo que cambia es que ahora tiene hermana.
@@ -129,11 +130,17 @@ function FilaCobro({
         cursor: cobrada ? 'default' : 'pointer',
       }}
     >
-      <span aria-hidden style={{
-        position: 'absolute', left: 0, top: 12, bottom: 12,
-        width: 4, borderRadius: 999,
-        background: cobrada ? 'var(--cf-green)' : color,
-      }} />
+      {/* ── ADENDA 5 · E10 · FUERA EL RIEL LATERAL ──
+          Aquí había un filete de color pegado al borde izquierdo. La adenda lo
+          quita en todas las listas, y la razón es que era el CUARTO sitio donde
+          se decía lo mismo —ya está la pastilla, la cifra de atraso en rojo y
+          el progreso— y el único sin dato. Además iba a sangre con las esquinas
+          rectas, peleando con el radio de la tarjeta.
+
+          Lo sustituyen dos acentos que SÍ dicen cosas distintas: el anillo del
+          avatar dice cómo está, y la barra del pie cuánto lleva pagado. La
+          regla de la adenda es que «el estado lo llevan los elementos que ya
+          identifican a la fila, nunca uno añadido para pintarlo». */}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
 
@@ -151,10 +158,16 @@ function FilaCobro({
           </svg>
         </span>
       ) : (
+        /* EL ANILLO LLEVA EL ESTADO. `aspectRatio: 1` con `minWidth` y
+           `minHeight` no es de adorno: sin ellos el avatar se aplasta en cuanto
+           el nombre de al lado es largo, y con el anillo puesto un óvalo se ve
+           roto. Lo dice la lista de comprobación de la adenda. */
         <span style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 40, height: 40, minWidth: 40, aspectRatio: '1', borderRadius: 999, flex: 'none',
+          width: 40, height: 40, minWidth: 40, minHeight: 40, aspectRatio: '1',
+          borderRadius: 999, flex: 'none',
           background: 'var(--cf-fill)', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
+          border: `2px solid ${color}`,
         }}>{iniciales}</span>
       )}
 
@@ -238,6 +251,30 @@ function FilaCobro({
           )}
         </div>
       )}
+
+      {/* ── LA BARRA A SANGRE (Adenda 5 · E10) ──
+          Último hijo de la tarjeta, pegada al borde de lado a lado. El
+          `margin` negativo anula el padding lateral: sin él quedaría un
+          renglón de color flotando con 16px de aire a cada lado, que se lee
+          como un elemento más y no como el borde de la tarjeta.
+
+          ⚠ `flex: none` es obligatorio. La tarjeta es una columna flex y sin
+          él la barra se encoge hasta desaparecer en cuanto el contenido de
+          arriba pide sitio — y el fallo es invisible: no se rompe nada, solo
+          deja de estar.
+
+          Dice CUÁNTO LLEVA PAGADO, que es lo que la distingue del anillo del
+          avatar. Si algún día las dos dijeran lo mismo, sobraría una. */}
+      <span aria-hidden style={{
+        flex: 'none', display: 'block', height: 5,
+        margin: '0 -16px', background: 'var(--cf-fill)',
+      }}>
+        <span style={{
+          display: 'block', height: 5,
+          width: `${Math.max(0, Math.min(100, pagadoPct ?? 0))}%`,
+          background: cobrada ? 'var(--cf-green)' : color,
+        }} />
+      </span>
     </div>
   )
 }
