@@ -220,8 +220,14 @@ export function FilaCobro({
         // nivel y se queda igual; lo que cambia es que ahora tiene hermana.
         display: 'flex', flexDirection: 'column', gap: 11,
         overflow: 'hidden', flex: 'none',
-        // El cobrado se atenúa, no se borra. .6 es de la lámina.
-        opacity: cobrada ? 0.6 : 1,
+        /* El cobrado se atenúa, no se borra. La lámina dice .6, y con la fila
+           reducida de antes bastaba: solo llevaba el nombre y la hora.
+           ⚠ Ahora lleva sus cifras —atraso, cumplimiento, último pago— y a .6
+           el «$850.000» en rojo sobre blanco se queda por debajo del contraste
+           que se lee bajo sol, que es donde se usa esta pantalla. Sube a .72:
+           sigue leyéndose «hecha» —el círculo verde, el check, el nombre
+           tachado y el monto en verde— sin que los números haya que adivinarlos. */
+        opacity: cobrada ? 0.72 : 1,
         cursor: cobrada ? 'default' : 'pointer',
       }}
     >
