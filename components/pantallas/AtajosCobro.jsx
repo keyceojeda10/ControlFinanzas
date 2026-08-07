@@ -31,6 +31,7 @@
 // detección de duplicados. Este archivo solo decide QUÉ se pulsa.
 
 import { useState } from 'react'
+import { EtiquetaClavo } from '@/components/cf/primitivos'
 import { formatMoney } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
@@ -43,11 +44,19 @@ const MOTIVOS = [
 ]
 
 /** «Préstamo 1 · diario» y, debajo, en qué situación está. */
-function Cabecera({ indice, frecuencia, diasMora, saldo, pais }) {
+function Cabecera({ indice, frecuencia, diasMora, saldo, pais, esClavo }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+      <span style={{
+        display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', rowGap: 4, minWidth: 0,
+        fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)',
+      }}>
         Préstamo {indice}{frecuencia ? ` · ${frecuencia}` : ''}
+        {/* ⚠ CUÁL de ellos está dado por perdido, EN LA HOJA DE COBRO.
+            Reportado por el dueño: «ni al darle al botón de cobrar dice cuál de
+            los dos préstamos está como perdido». Es donde peor se nota — es la
+            pantalla en la que se decide sobre cuál entra la plata. */}
+        {esClavo && <EtiquetaClavo />}
       </span>
       <span className="cf-num" style={{ fontSize: 11.5, color: diasMora > 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
         {diasMora > 0 ? `${diasMora}d de atraso · ` : ''}debe {formatMoney(saldo ?? 0, pais)}
@@ -181,6 +190,7 @@ export default function AtajosCobro({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <Cabecera
                   indice={i + 1}
+                  esClavo={p.esClavo}
                   frecuencia={p.frecuencia}
                   diasMora={Number(p.diasMora ?? 0)}
                   saldo={p.saldoPendiente}

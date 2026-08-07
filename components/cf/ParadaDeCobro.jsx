@@ -19,7 +19,7 @@
 // estan en la ruta pero no son visita de hoy).
 
 import { useState } from 'react'
-import { TiraCifras } from '@/components/cf/primitivos'
+import { EtiquetaClavo, TiraCifras } from '@/components/cf/primitivos'
 
 export const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -84,6 +84,12 @@ export function Carril({
      Pero un círculo idéntico al de una parada pendiente diría que hay que
      tocar esa puerta hoy. Así que va con el mismo número y menos peso: sin
      borde grueso y en gris. Se sigue contando, deja de llamar. */
+  /* ⚠ EL COBRADO CONSERVA SU NÚMERO. Llevaba un check en vez de la cifra, y el
+     dueño lo reportó: «no sale qué número de lista es en ruta, y eso es
+     importantísimo, así haya pagado». Tiene razón — el número es por dónde va
+     caminando, y una parada hecha sigue ocupando su sitio en el recorrido.
+     Que está hecha lo dice el VERDE del círculo, el check del avatar, el nombre
+     tachado y el monto en verde. El número no le quitaba sitio a nada. */
   const circulo = cobrada
     ? { w: 30, bg: 'var(--cf-green)', bd: 'none', fg: '#FFF' }
     : actual
@@ -134,12 +140,7 @@ export function Carril({
           background: circulo.bg, border: circulo.bd, color: circulo.fg,
           fontSize: actual ? 16 : tenue ? 12.5 : 14, fontWeight: 700,
         }}>
-          {cobrada ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          ) : orden}
+          {orden}
         </span>
         {/* El conector no va en la última: una línea que sale de la última
             parada y no llega a nada dice que falta algo. */}
@@ -501,7 +502,7 @@ export function FilaCobro({
           Solo con MÁS DE UNO: con un solo préstamo no hay nada que plegar —el
           saldo ya está arriba, en «debe $92.000»— y un desplegable que abre una
           sola fila es un toque de más para nada. */}
-      {!cobrada && prestamos.length > 1 && (
+      {prestamos.length > 1 && (
         <div style={{ flex: 'none' }} onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
@@ -524,9 +525,16 @@ export function FilaCobro({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
               {prestamos.map((p) => (
                 <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <span style={{
+                      display: 'flex', alignItems: 'center', gap: 6, minWidth: 0,
+                      fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)',
+                    }}>
                       {p.desde ? `Del ${p.desde}` : 'Préstamo'}
+                      {/* CUÁL de los dos es el perdido. Arriba ya avisa que
+                          tiene uno; aquí se dice cuál, que es lo que hacía
+                          falta para no volver a prestarle sobre él. */}
+                      {p.esClavo && <EtiquetaClavo />}
                     </span>
                     <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-ink)', flex: 'none' }}>
                       {p.saldo}
@@ -578,7 +586,13 @@ export function FilaCobro({
           El muro sigue evitado por otro lado: la parada actual conserva su
           borde dorado y su aviso de mora, así que se distingue igual. Lo que
           cambia es que las demás dejan de estar mudas. */}
-      {!cobrada && (onLlamar || onWhatsApp || onMapa || onMas) && (
+      {/* ── ⚠ Y EN LA COBRADA TAMBIÉN, PERO SIN EL BOTÓN GRANDE ──
+          Iba con `!cobrada` entero, así que una parada hecha se quedaba sin
+          forma de escribirle el recibo por WhatsApp ni de abrir su ficha: había
+          que buscar al cliente por otro camino justo después de cobrarle.
+          Lo que NO vuelve es el botón dorado: ahí ya no hay nada que cobrar hoy
+          y un «Cobrar» sobre una fila tachada invita a cobrar dos veces. */}
+      {(onLlamar || onWhatsApp || onMapa || onMas) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
           {/* ── DOS FILAS, Y NO UNA ────────────────────────────────────────
@@ -646,6 +660,7 @@ export function FilaCobro({
               Y el dorado sólido se lo queda quien gana dinero: la cuota de hoy
               y «Prestarle». «Cobrar antes» va secundario porque es un adelanto,
               no la cuota. */}
+          {!cobrada && (
           <button
             type="button"
             onClick={contexto?.accion ? onAccion : onClick}
@@ -658,6 +673,7 @@ export function FilaCobro({
               letterSpacing: '-.01em',
             }}
           >{contexto?.accion?.texto ?? 'Cobrar'}</button>
+          )}
         </div>
       )}
 

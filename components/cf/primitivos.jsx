@@ -300,6 +300,36 @@ export function Pastilla({ children, tono = 'neutro', numerica = false, style })
   )
 }
 
+/* ══ «CLAVO» — EN LA FILA DEL PRÉSTAMO, NO SOLO EN LA DEL CLIENTE ══════════
+ *
+ * Reportado por el dueño, y es un fallo de dinero, no de estética:
+ *
+ *   «me dice que ese cliente tiene un préstamo perdido como clavo. Eso está
+ *    excelente, pero no me dice CUÁL, ni en el desglose, ni al darle al botón
+ *    de cobrar […] solamente entrando dentro del préstamo, sin saber cuál»
+ *
+ * Un cliente con dos préstamos y uno dado por perdido salía con el aviso rojo
+ * arriba y luego dos filas idénticas debajo: para saber a cuál no hay que
+ * volver a prestarle, había que abrir los dos.
+ *
+ * Va en LA MISMA pieza para las cinco pantallas donde se lista un préstamo —la
+ * ruta, su hoja de cobro, la lista de préstamos, la ficha del cliente y el
+ * desplegable nuevo— porque cinco pastillas escritas a mano acaban siendo cinco
+ * textos distintos. Con la roja de mora: un clavo no es un aviso, es una
+ * pérdida.
+ */
+export function EtiquetaClavo({ style }) {
+  return (
+    <Pastilla tono="mora" style={{ gap: 4, ...style }}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2.6" strokeLinecap="round" aria-hidden style={{ flex: 'none' }}>
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+      Clavo
+    </Pastilla>
+  )
+}
+
 /* ══ 5 · Botones ══ */
 const BOTON_BASE = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,

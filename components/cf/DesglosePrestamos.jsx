@@ -36,7 +36,7 @@
 // de meterse dentro».
 
 import { useId, useState } from 'react'
-import { Pastilla, TiraCifras } from './primitivos'
+import { EtiquetaClavo, Pastilla, TiraCifras } from './primitivos'
 
 const COLOR_ESTADO = {
   mora:    'var(--cf-red)',
@@ -144,6 +144,9 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
             {ficha.etiqueta && (
               <Pastilla tono={TONO_PASTILLA[ficha.estado] ?? 'neutro'} numerica>{ficha.etiqueta}</Pastilla>
             )}
+            {/* CUÁL de los dos es el perdido. Con dos préstamos del mismo
+                cliente, sin esto las dos fichas se leen igual. */}
+            {ficha.clavo && <EtiquetaClavo />}
             {ficha.desde && (
               <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
                 desde {ficha.desde}

@@ -51,7 +51,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
-import { BarraProgreso, Pastilla, TiraCifras } from './primitivos'
+import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo } from './primitivos'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 import DesglosePrestamos from './DesglosePrestamos'
 
@@ -124,6 +124,13 @@ export default function TarjetaCliente({
   // ya está a la derecha y dos pastillas en la misma fila compiten. El punto
   // dice «mira aquí» sin quitarle sitio al nombre, que es lo que se lee.
   nuevo = false,
+  /* ── DADO POR PERDIDO ──
+     Va al lado de la pastilla de estado, no en su lugar: un clavo puede además
+     estar en mora, y las dos cosas hacen falta. La compone `adaptarPrestamos`
+     desde `esClavo`, así que sale igual en la lista de préstamos y en la ficha
+     del cliente — que son dos de las cinco pantallas donde el dueño no podía
+     saber cuál de los dos préstamos era el perdido. */
+  clavo = false,
   monto,
   // Debajo del monto y alineado a su derecha: «de $1.200.000» en préstamos,
   // «3 préstamos» en clientes.
@@ -353,6 +360,7 @@ export default function TarjetaCliente({
                   {etiquetaEstado}
                 </Pastilla>
               )}
+              {clavo && <EtiquetaClavo />}
               {/* ⚠ ESTA LÍNEA YA NO SE RECORTA, Y ES UN CAMBIO DELIBERADO.
                   Arriba está escrito por qué iba a una sola línea: las tarjetas
                   cambiaban de alto según lo larga que fuera la dirección, y una

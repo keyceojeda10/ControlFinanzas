@@ -1691,6 +1691,10 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           ocupado={!!pagandoRapido}
           prestamos={(modalPagoRapido.prestamosActivos ?? []).map((pr) => ({
             id: pr.id,
+            // Cuál está dado por perdido. La hoja de cobro es donde peor se
+            // notaba: es la pantalla en la que se decide sobre cuál entra la
+            // plata, y las dos filas se leían igual.
+            esClavo: !!pr.esClavo,
             cuota: pr.cuotaDiaria,
             saldoPendiente: pr.saldoPendiente,
             diasMora: pr.diasMora,
