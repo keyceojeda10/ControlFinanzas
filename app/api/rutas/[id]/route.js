@@ -396,6 +396,22 @@ export async function GET(request, { params }) {
         }
       }
 
+      // ── EL ÚLTIMO PAGO, DE TODOS LOS PRÉSTAMOS ──
+      // Antes del `continue`: estaba después, así que el cliente sin préstamo
+      // activo —que es justo el de la zona de abajo— se quedaba sin fecha. Un
+      // «hace cuánto se le vio» que solo existe para quien todavía debe no
+      // sirve para decidir si la ruta está desactualizada.
+      //
+      // ⚠ Y NO desde `p.pagos[0]`, que es lo que había: ese `include` viene
+      // filtrado a hoy —lo pide el cálculo del recaudado—, así que la fecha
+      // solo podía ser la de hoy o ninguna. Nunca «hace 9 días», que es el
+      // caso que importa. Sale del agregado de arriba, que mira el historial.
+      const ultimo = finDePrestamo.get(p.id)
+      if (ultimo) {
+        const fecha = new Date(ultimo)
+        if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
+      }
+
       // ── E09 · lo que dejó atrás el que ya no debe ──
       // Antes del `continue`, que es el único sitio donde se ven los préstamos
       // liquidados. El clavo no cuenta: se perdió, no lo devolvió, y ofrecerle
@@ -428,6 +444,10 @@ export async function GET(request, { params }) {
         const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
         prestamosActivos.push({
           id: p.id,
+          // Que se sepa desde fuera. Sin esto, un cliente cuyo único préstamo
+          // es un clavo se lee como cliente con préstamo activo, y la zona de
+          // abajo le ponía «Al día» con anillo verde a un préstamo PERDIDO.
+          esClavo: true,
           cuotaDiaria: Math.round(cuotaClavo),
           cuotaDiariaOriginal: p.cuotaDiaria,
           saldoPendiente: Math.round(saldoClavo),
@@ -511,19 +531,6 @@ export async function GET(request, { params }) {
         cuotaNumero: proximaCuota?.numeroPeriodo ?? null,
         ...extraInfo,
       })
-
-      // Último pago más reciente.
-      //
-      // ⚠ NO desde `p.pagos[0]`, que es lo que había: ese `include` viene
-      // filtrado a hoy —lo pide el cálculo del recaudado—, así que esta fecha
-      // solo podía ser la de hoy o ninguna, y `diasDesdeUltimoPago` salía
-      // siempre 0 o `null`. Nunca «hace 9 días», que es el caso que importa.
-      // Sale del agregado de arriba, que sí mira el historial entero.
-      const ultimo = finDePrestamo.get(p.id)
-      if (ultimo) {
-        const fecha = new Date(ultimo)
-        if (!ultimaFechaPago || fecha > ultimaFechaPago) ultimaFechaPago = fecha
-      }
 
       // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
       frecuencia = p.frecuencia || 'diario'
