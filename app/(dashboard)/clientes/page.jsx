@@ -18,11 +18,17 @@ import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
 import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
+// El desplegable de la tarjeta: una ficha por préstamo. Vive en el adaptador de
+// PRÉSTAMOS —no en el de clientes— porque las dos listas pintan la misma pieza,
+// y el de clientes no puede importarlo sin cerrar un círculo de imports.
+import { desgloseDe } from '@/lib/adaptadores/prestamos'
 import CarteraVacia from '@/components/pantallas/CarteraVacia'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useRouter } from 'next/navigation'
 import HojaWhatsApp from '@/components/whatsapp/HojaWhatsApp'
+// El mismo modal de la ficha del préstamo. Ver la nota en la lista de préstamos.
+import RegistrarPago from '@/components/prestamos/RegistrarPago'
 import MonedaCF          from '@/components/ui/MonedaCF'
 import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
@@ -250,6 +256,14 @@ export default function ClientesPage() {
   const [modalGrupos, setModalGrupos] = useState(false)
   // Modal selector de plantillas WhatsApp (se abre desde swipe)
   const [waCliente, setWaCliente] = useState(null)
+  /* ── EL PRÉSTAMO DEL QUE SE ESCRIBE ─────────────────────────────────────
+     La hoja de plantillas se abría con `prestamo={null}`: las catorce
+     plantillas que hablan de cuota, saldo o días de atraso quedaban fuera y el
+     cobrador veía solo las genéricas. Desde el desplegable sí se sabe de cuál
+     de los tres préstamos se está hablando, así que se manda. */
+  const [waPrestamo, setWaPrestamo] = useState(null)
+  // El cobro rápido desde la tarjeta: { cliente, prestamo }.
+  const [cobroRapido, setCobroRapido] = useState(null)
   const [tabModalGrupos, setTabModalGrupos] = useState('filtrar') // filtrar | gestionar
   const [nuevoGrupo,  setNuevoGrupo]  = useState('')
   const [grupoColor,  setGrupoColor]  = useState(null)
@@ -1100,6 +1114,28 @@ export default function ClientesPage() {
                 <TarjetaCliente
                   key={c.id}
                   {...adaptados[i]}
+                  /* ── EL DESPLEGABLE ──
+                     «Hay clientes que su tarjeta dice tres préstamos, pero no
+                     hay ningún dropdown que les saque estadísticas específicas
+                     de cuál es el estado de esos tres sin necesidad de meterse
+                     dentro del cliente.»
+
+                     Y el caso que lo hacía urgente: la tira decía «cobra el 19
+                     de ago» para toda la persona, cuando «si un cliente tiene
+                     tres préstamos, no se cobran todos el mismo día». Ese dato
+                     —y el atraso, y la cuota— ahora salen por préstamo, aquí
+                     dentro. Arriba se queda el más cercano, que es cuándo hay
+                     que volver a verle la cara. */
+                  desglose={desgloseDe(c.prestamos, country)}
+                  onPrestamo={(f) => { window.location.href = `/prestamos/${f.id}` }}
+                  onWhatsAppPrestamo={(f) => {
+                    setWaPrestamo((c.prestamos || []).find((x) => x.id === f.id) ?? null)
+                    setWaCliente(c)
+                  }}
+                  onCobrarPrestamo={(f) => {
+                    const pr = (c.prestamos || []).find((x) => x.id === f.id)
+                    if (pr) setCobroRapido({ cliente: c, prestamo: pr })
+                  }}
                   onClick={() => { window.location.href = `/clientes/${c.id}` }}
                 />
               )
@@ -1533,12 +1569,33 @@ export default function ClientesPage() {
         </div>
       )}
 
+      {/* ── COBRO RÁPIDO DESDE LA TARJETA ──
+          El mismo modal de la ficha del préstamo. Al terminar se recarga la
+          lista en silencio: sin eso la tarjeta seguiría diciendo el saldo de
+          antes del pago que se acaba de registrar. */}
+      {cobroRapido && (
+        <RegistrarPago
+          prestamoId={cobroRapido.prestamo.id}
+          cuotaDiaria={cobroRapido.prestamo.cuotaDiaria}
+          saldoPendiente={cobroRapido.prestamo.saldoPendiente
+            ?? ((cobroRapido.prestamo.totalAPagar || 0) - (cobroRapido.prestamo.totalPagado || 0))}
+          open
+          onClose={() => setCobroRapido(null)}
+          onSuccess={() => {
+            setCobroRapido(null)
+            fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
+          }}
+          cliente={cobroRapido.cliente}
+          prestamo={cobroRapido.prestamo}
+        />
+      )}
+
       {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}
       <HojaWhatsApp
         open={!!waCliente}
-        onClose={() => setWaCliente(null)}
+        onClose={() => { setWaCliente(null); setWaPrestamo(null) }}
         cliente={waCliente}
-        prestamo={null}
+        prestamo={waPrestamo}
         orgNombre={orgNombre}
         ocultarSaldo={ocultarSaldoWA}
         organizationId={organizationId}

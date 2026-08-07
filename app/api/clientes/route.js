@@ -8,6 +8,8 @@ import {
   calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual,
   // La tira de cifras de T03-03: el atraso en plata y el cumplimiento.
   calcularMontoEnMora, calcularCuotasEnMora, calcularCuotasPendientes, tieneTablaAmortizacion,
+  // El desglose por prestamo: cuanto de MI plata sigue afuera en cada uno.
+  calcularCapitalRestante,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
@@ -144,6 +146,10 @@ export async function GET(request) {
           totalAPagar: true,
           montoPrestado: true,
           modoInteres: true,
+          // Para el desglose: sin la tasa, la ficha de cada prestamo no puede
+          // decir en que se pacto, y el mismo «20%» significa cosas distintas
+          // segun el modo.
+          tasaInteres: true,
           diaCobroMes: true,
           diaCobroMes2: true,
           diaCobroSemana: true,
@@ -211,14 +217,29 @@ export async function GET(request) {
     let montoEnMoraTotal = 0
     let cuotasVencidas = 0     // las que ya debian estar pagadas
     let cuotasPagadasSum = 0
+    // ── EL DESGLOSE, PRESTAMO POR PRESTAMO ──────────────────────────────
+    //
+    // La tarjeta decia «3 prestamos» y despues generalizaba TODOS los KPI en
+    // una sola tira: un atraso, un cumplimiento, un «cobra el». Con tres
+    // creditos abiertos eso ultimo es directamente otra cosa —cada prestamo
+    // tiene su propio dia de cobro— y para saber cual esta mal habia que
+    // entrar a la ficha del cliente.
+    //
+    // No cuesta una consulta mas: este bucle YA calcula el saldo, la mora, el
+    // proximo cobro y las cuotas de cada prestamo para poder sumarlos. Lo
+    // unico que faltaba era no tirar las piezas despues de sumarlas.
+    const desglose = []
 
     for (const p of c.prestamos) {
-      try { saldoTotal += calcularSaldoPendiente(p) } catch (e) {
+      let saldoP = 0, diasMoraP = 0, moraP = 0, proxP = null
+      let cuotasTotalP = 0, cuotasPendP = 0
+      try { saldoP = calcularSaldoPendiente(p); saldoTotal += saldoP } catch (e) {
         console.error(`[clientes] calcularSaldoPendiente falló para préstamo ${p.id}:`, e.message)
       }
       totalAPagarSum += (p.totalAPagar ?? 0)
       try {
         const dm = calcularDiasMora(p, diasExcluidos, festivos)
+        diasMoraP = dm
         if (dm > diasMoraMax) diasMoraMax = dm
       } catch (e) {
         console.error(`[clientes] calcularDiasMora falló para préstamo ${p.id}:`, e.message)
@@ -228,12 +249,14 @@ export async function GET(request) {
       }
       try {
         const prox = calcularProximoCobro(p, diasExcluidos, festivos)
+        proxP = prox ?? null
         if (prox && (!proximoCobroMin || prox < proximoCobroMin)) proximoCobroMin = prox
       } catch (e) {
         console.error(`[clientes] calcularProximoCobro falló para préstamo ${p.id}:`, e.message)
       }
       try {
-        montoEnMoraTotal += calcularMontoEnMora(p, diasExcluidos, festivos)
+        moraP = calcularMontoEnMora(p, diasExcluidos, festivos)
+        montoEnMoraTotal += moraP
         // CUMPLIMIENTO = de las cuotas que YA debian estar pagadas, cuantas lo
         // estan. Las pagadas salen de `totalCuotas - cuotasPendientes`; las que
         // ya vencieron son esas mismas mas las que estan en mora.
@@ -246,13 +269,50 @@ export async function GET(request) {
         const total = tieneTablaAmortizacion(p)
           ? p.cuotasAmortizacion.length
           : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0)
-        const pagadas = Math.max(0, total - calcularCuotasPendientes(p))
+        const pendientes = calcularCuotasPendientes(p)
+        const pagadas = Math.max(0, total - pendientes)
         const enMora = calcularCuotasEnMora(p, diasExcluidos, festivos)
+        cuotasTotalP = total
+        cuotasPendP = pendientes
         cuotasPagadasSum += pagadas
         cuotasVencidas += pagadas + enMora
       } catch (e) {
         console.error(`[clientes] la tira de cifras fallo para prestamo ${p.id}:`, e.message)
       }
+
+      // Una fila por prestamo, con lo mismo que ya manda `/api/prestamos` para
+      // su propia lista. Los nombres son los MISMOS a proposito: el desplegable
+      // de la tarjeta de cliente y la tarjeta de prestamo comparten adaptador,
+      // y dos juegos de nombres distintos para el mismo dato acaban en dos
+      // definiciones de «saldo» que se separan sin que nadie lo note.
+      desglose.push({
+        id:               p.id,
+        estado:           p.estado,
+        fechaInicio:      p.fechaInicio,
+        fechaFin:         p.fechaFin,
+        createdAt:        p.createdAt,
+        frecuencia:       p.frecuencia,
+        modoInteres:      p.modoInteres,
+        tasaInteres:      p.tasaInteres,
+        cuotaDiaria:      p.cuotaDiaria,
+        montoPrestado:    p.montoPrestado,
+        totalAPagar:      p.totalAPagar,
+        totalPagado:      p.totalPagado ?? 0,
+        ultimoPagoAt:     p.ultimoPagoAt,
+        esClavo:          p.esClavo,
+        saldoPendiente:   saldoP,
+        porcentajePagado: (() => {
+          try { return calcularPorcentajePagado(p) } catch { return 0 }
+        })(),
+        capitalRestante:  (() => {
+          try { return calcularCapitalRestante(p) } catch { return null }
+        })(),
+        diasMora:         diasMoraP,
+        montoEnMora:      moraP,
+        totalCuotas:      cuotasTotalP,
+        cuotasPendientes: cuotasPendP,
+        proximoCobro:     proxP,
+      })
     }
 
     const porcentajePagadoPromedio = totalAPagarSum > 0
@@ -271,6 +331,14 @@ export async function GET(request) {
       rutaNombre:       c.ruta?.nombre ?? null,
       grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
+      // El desglose del desplegable. Va ordenado por lo que se cobra ANTES:
+      // abierto, lo primero que se lee es a cual hay que ir hoy.
+      prestamos: desglose.slice().sort((a, b) => {
+        const ta = a.proximoCobro ? new Date(a.proximoCobro).getTime() : Infinity
+        const tb = b.proximoCobro ? new Date(b.proximoCobro).getTime() : Infinity
+        if (ta !== tb) return ta - tb
+        return (b.saldoPendiente ?? 0) - (a.saldoPendiente ?? 0)
+      }),
       montoEnMora:      montoEnMoraTotal,
       // Sin nada vencido todavia no hay nada que cumplir: `null`, no 0%. Un 0%
       // en un cliente que acaba de recibir el prestamo lo pinta como el peor de

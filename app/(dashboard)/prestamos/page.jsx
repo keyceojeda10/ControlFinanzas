@@ -13,13 +13,18 @@ import PrestamoCard                           from '@/components/prestamos/Prest
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
 import { BarraProgreso }                      from '@/components/cf/primitivos'
 import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
-import { adaptarPrestamos, tresCifras, fechaCorta } from '@/lib/adaptadores/prestamos'
+import { adaptarPrestamos, tresCifras, fechaCorta, fichaDe } from '@/lib/adaptadores/prestamos'
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
+// El cobro rapido de la tarjeta. Es el MISMO modal que la ficha del prestamo y
+// que el cobro por QR: montarlo desde una lista ya es un camino probado
+// (`QrCobroModal` lo hace con `{ nombre, telefono }` de cliente). Escribir aqui
+// un cobro propio habria sido un segundo sitio donde se registra plata.
+import RegistrarPago               from '@/components/prestamos/RegistrarPago'
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
 import MonedaCF                               from '@/components/ui/MonedaCF'
@@ -326,6 +331,8 @@ export default function PrestamosPage() {
   }, [])
   // Modal selector de plantillas WA (se abre desde swipe action)
   const [waContext, setWaContext] = useState(null)  // { cliente, prestamo }
+  // El prestamo que se esta cobrando desde la tarjeta, sin salir de la lista.
+  const [cobroRapido, setCobroRapido] = useState(null)
   const hasLoadedOnceRef = useRef(false)
 
   // Pais del usuario para badge "Nuevo" y formatos
@@ -877,6 +884,23 @@ export default function PrestamosPage() {
                 <TarjetaCliente
                   key={p.id}
                   {...adaptados[i]}
+                  /* ── EL DESPLEGABLE, CON EL DESGLOSE LARGO ──
+                     «Un dropdown que tenga un desglose mucho más bonito sin
+                     necesidad de entrar al préstamo directamente, y que también
+                     dentro del dropdown ponerle el botón de las plantillas de
+                     WhatsApp y también un cobro rápido.»
+
+                     Aquí es UNA sola ficha —la de este préstamo— y va con
+                     `largo`: prestado, total, ya pagó, le falta, capital afuera,
+                     vence y último pago. En la lista de clientes son varias y
+                     van cortas, o el desplegable dejaría de leerse de una
+                     pasada. */
+                  desglose={{
+                    rotulo: 'Ver el desglose',
+                    prestamos: [fichaDe(p, country, { largo: true })],
+                  }}
+                  onWhatsAppPrestamo={() => setWaContext({ cliente: p.cliente, prestamo: p })}
+                  onCobrarPrestamo={() => setCobroRapido(p)}
                   onClick={() => { window.location.href = `/prestamos/${p.id}` }}
                 />
               )
@@ -1069,6 +1093,27 @@ export default function PrestamosPage() {
             Siguiente
           </button>
         </div>
+      )}
+
+      {/* ── COBRO RÁPIDO DESDE LA TARJETA ──
+          El mismo modal de la ficha del préstamo, montado aquí. Al terminar se
+          recarga la lista en silencio: sin eso la tarjeta seguiría diciendo el
+          saldo de antes del pago que se acaba de registrar, que es la forma más
+          rápida de que alguien cobre dos veces. */}
+      {cobroRapido && (
+        <RegistrarPago
+          prestamoId={cobroRapido.id}
+          cuotaDiaria={cobroRapido.cuotaDiaria}
+          saldoPendiente={cobroRapido.saldoPendiente ?? ((cobroRapido.totalAPagar || 0) - (cobroRapido.totalPagado || 0))}
+          open
+          onClose={() => setCobroRapido(null)}
+          onSuccess={() => {
+            setCobroRapido(null)
+            fetchPrestamos(buscar, estado, page, { soft: true, ...filtrosExtra })
+          }}
+          cliente={cobroRapido.cliente}
+          prestamo={cobroRapido}
+        />
       )}
 
       {/* Modal selector de plantillas WhatsApp (se abre desde swipe) */}

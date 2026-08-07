@@ -53,6 +53,7 @@
 
 import { BarraProgreso, Pastilla, TiraCifras } from './primitivos'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
+import DesglosePrestamos from './DesglosePrestamos'
 
 const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -142,6 +143,22 @@ export default function TarjetaCliente({
   // elimina — y son 882 préstamos. La reemplaza el vencimiento.
   sinProgreso = false,
   nota,                    // «vence en 18 días»
+
+  // ── EL DESPLEGABLE ──
+  // `{ rotulo, prestamos: [ficha] }`, lo que devuelven `desgloseDe()` (varios,
+  // en la lista de clientes) y `fichaDe(…, { largo: true })` (uno, en la de
+  // préstamos). La tarjeta no sabe cuál de los dos le llegó: pinta lo que hay.
+  //
+  // Existe porque la tira de cuatro columnas es un TITULAR. Un cliente con tres
+  // préstamos enseñaba UN atraso, UN cumplimiento y UN «cobra el» —y ese último
+  // ni siquiera es de nadie: cada préstamo tiene su propio día de cobro— así
+  // que para saber cuál iba mal había que entrar a la ficha.
+  desglose,
+  // Qué hace cada ficha del desplegable. Sin ellas se pinta el desglose y ya:
+  // los botones no aparecen. Ver `DesglosePrestamos`.
+  onPrestamo,              // entrar a ESE préstamo
+  onWhatsAppPrestamo,      // abrir las plantillas con ESE préstamo de contexto
+  onCobrarPrestamo,        // cobro rápido de ESE préstamo
 
   onClick,
   style,
@@ -420,6 +437,23 @@ export default function TarjetaCliente({
       {/* La pinta `TiraCifras`, en primitivos: la comparte con la FilaCobro de
           cobrar hoy, que no tiene esta estructura pero sí esta tira. */}
       <TiraCifras columnas={cifras} enTarjeta />
+
+      {/* ── EL DESPLEGABLE ──
+          Va DEBAJO de la tira y ENCIMA del avance, y ese sitio es el argumento:
+          la tira es el titular y esto es el detalle del titular. Puesto arriba
+          separaría el nombre de sus cifras; puesto al final, después de la
+          barra, quedaría colgando bajo el borde de color que cierra la tarjeta.
+
+          Cerrado ocupa un renglón de 12px. Es el precio de que el dueño pueda
+          ver el estado de los tres préstamos de alguien sin abrir su ficha. */}
+      {desglose?.prestamos?.length > 0 && (
+        <DesglosePrestamos
+          desglose={desglose}
+          onAbrir={onPrestamo ? (f) => onPrestamo(f) : undefined}
+          onWhatsApp={onWhatsAppPrestamo ? (f) => onWhatsAppPrestamo(f) : undefined}
+          onCobrar={onCobrarPrestamo ? (f) => onCobrarPrestamo(f) : undefined}
+        />
+      )}
 
       {/* ── El avance ──
           La barra y su lectura en la MISMA fila. Antes la barra iba sola y el
