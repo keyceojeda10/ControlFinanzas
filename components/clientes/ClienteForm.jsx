@@ -379,10 +379,13 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {(
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
-            {esEdicion ? 'Datos del cliente' : '¿Quien es tu cliente?'}
+            {esEdicion ? 'Datos del cliente' : '¿Quién es tu cliente?'}
           </h2>
+          {/* Decía «Nombre, documento y teléfono. Lo mínimo para registrarlo»,
+              y ya no era verdad: de los tres, dos son opcionales. Un subtítulo
+              que enumera tres campos se lee como tres campos obligatorios. */}
           <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-            Nombre, documento y teléfono. Lo mínimo para registrarlo.
+            Con el nombre basta. Lo demás ayuda a encontrarlo y a cobrarle.
           </p>
 
           {/* Foto */}
@@ -538,13 +541,32 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   un cliente cuya cédula es un marcador `SIN-…`, es lo que hace
                   que el campo salga vacío en vez de enseñar «SIN-m3k9x2». */}
             </div>
+            {/* ── EL TELÉFONO TAMBIÉN ES OPCIONAL, Y HAY QUE DECIRLO ──
+                Lo era ya: la validación solo comprueba el formato SI hay algo
+                escrito, igual que la cédula. Pero el campo no lo decía, así que
+                en la calle se lee como obligatorio y frena lo mismo — que es
+                justo lo que esta pantalla vino a quitar.
+
+                El icono de WhatsApp es de la lámina y hace el trabajo que no
+                hace la palabra: dice PARA QUÉ sirve dejarlo. Opcional no es lo
+                mismo que inútil, y sin teléfono no hay recordatorio. */}
             <Input
               label={phoneConfig.label}
-              placeholder={`Ej: ${phoneConfig.placeholder}`}
+              placeholder={`opcional · ej. ${phoneConfig.placeholder}`}
               value={form.telefono}
               onChange={set('telefono')}
               error={errores.telefono}
               inputMode="tel"
+              suffix={
+                <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none"
+                  stroke={form.telefono.trim() ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)'}
+                  strokeWidth={1.7} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M20.5 3.5A10.4 10.4 0 003.7 16.1L2.5 21.5l5.5-1.2A10.4 10.4 0 1020.5 3.5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M8.4 8.2c.2-.5.4-.5.6-.5h.5c.2 0 .4 0 .6.5l.7 1.6c.1.2 0 .4-.1.5l-.5.6c-.1.2-.2.3 0 .6a7 7 0 003.2 2.8c.3.1.5.1.6 0l.7-.8c.2-.2.3-.2.6-.1l1.6.8c.2.1.4.2.4.4v.5c0 .4-.3 1.2-1.5 1.5a5 5 0 01-3.6-.9 11 11 0 01-4.3-4.6c-.5-1-.6-2.1-.5-2.9z" />
+                </svg>
+              }
             />
             </div>
 
@@ -565,7 +587,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       {(
         <section className="mt-8">
           <h2 className="text-[22px] font-bold leading-tight" style={{ color: 'var(--cf-ink)' }}>
-            ¿Donde lo ubicamos?
+            ¿Dónde lo ubicamos?
           </h2>
           <p className="text-sm mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
             Dirección y referencias. Sirve para visitarlo y enrutarlo.
