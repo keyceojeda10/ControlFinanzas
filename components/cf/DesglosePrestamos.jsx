@@ -118,7 +118,14 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
         opacity: ficha.estado === 'pagado' ? 0.65 : 1,
       }}
     >
-      {/* ── Qué se pactó, y cuánto falta ── */}
+      {/* ── Qué se pactó, y cuánto falta ──
+          `sinCabecera` la apaga: en la tarjeta de PRÉSTAMO todo esto ya está dos
+          centímetros más arriba —el título, la pastilla y la tira— y repetirlo
+          es la tercera copia del mismo dato en la misma pantalla. Ahí el
+          desplegable existe para lo que NO está arriba, que es cómo se reparte
+          la plata. En la de cliente no hay nada de ese préstamo arriba, así que
+          la cabecera es la información. */}
+      {!ficha.sinCabecera && (
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
           <span style={{
@@ -160,9 +167,10 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
           </span>
         </div>
       </div>
+      )}
 
       {/* ── El avance ── */}
-      {!ficha.sinProgreso && (
+      {!ficha.sinCabecera && !ficha.sinProgreso && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <span aria-hidden style={{
             display: 'block', height: 4, borderRadius: 999, flex: 'none',
@@ -180,7 +188,7 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
           )}
         </div>
       )}
-      {ficha.sinProgreso && ficha.avance && (
+      {!ficha.sinCabecera && ficha.sinProgreso && ficha.avance && (
         <span className="cf-num" style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--cf-ink-3)' }}>
           {ficha.avance}
         </span>
@@ -189,13 +197,13 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
       {/* CUOTA · ATRASO · COBRA EL — las de este préstamo, no las del cliente.
           Es literalmente lo que faltaba: «si un cliente tiene tres préstamos, no
           se cobran todos el mismo día, porque es dependiendo al préstamo». */}
-      <TiraCifras columnas={ficha.cifras} enTarjeta />
+      {!ficha.sinCabecera && <TiraCifras columnas={ficha.cifras} enTarjeta />}
 
       {/* ── El desglose largo, solo en la tarjeta de préstamo ── */}
       {ficha.lineas?.length > 0 && (
         <div style={{
           display: 'flex', flexDirection: 'column', gap: 0,
-          paddingTop: 10, borderTop: '1px solid var(--cf-border-soft)',
+          ...(ficha.sinCabecera ? null : { paddingTop: 10, borderTop: '1px solid var(--cf-border-soft)' }),
         }}>
           {ficha.lineas.map((l, i) => (
             <div key={i} style={{
