@@ -146,12 +146,20 @@ const BLOQUE = {
  */
 function CajaOscura({ marca, children, className = '' }) {
   return (
-    <div data-bloque={marca} className={className} style={{
+    /* ⚠ `display` VA EN LA CLASE, NUNCA EN EL `style`.
+       Estaba como `display: 'flex'` en línea, y el estilo en línea SIEMPRE gana
+       a una clase: el `hidden` de la caja de la semana no hacía nada y la
+       gráfica salía DOS VECES en el teléfono —una dentro del bloque principal y
+       otra en su propia caja debajo—. Lo reportó el dueño con la captura.
+
+       Es la segunda vez en esta misma tanda: antes fue un `display:'grid'` en
+       línea comiéndose un `hidden sm:grid`. Si algo se tiene que poder esconder
+       por tamaño de pantalla, su `display` no puede estar en el `style`. */
+    <div data-bloque={marca} className={`flex-col gap-[14px] ${className}`} style={{
       background: BLOQUE.fondo,
       border: '1px solid rgba(255,255,255,.14)',
       borderRadius: 20,
       padding: '19px 21px',
-      display: 'flex', flexDirection: 'column', gap: 14,
       minWidth: 0,
     }}>{children}</div>
   )
@@ -181,11 +189,14 @@ function Hero({
   /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
      fila de debajo. En un EFECTO porque dependen del reloj del navegador; el
      servidor no puede saberlos. */
+  // Qué barra está tocada. Se reinicia sola al cambiar la semana.
+  const [diaAbierto, setDiaAbierto] = useState(null)
   const [dias, setDias] = useState([])
   const [cortos, setCortos] = useState([])
   useEffect(() => {
     setDias(nombresDeDias(semana?.length ?? 0))
     setCortos(diasCortos(semana?.length ?? 0))
+    setDiaAbierto(null)
   }, [semana?.length])
 
   /* ── LA ESCALA DE LA GRÁFICA ──
@@ -236,7 +247,7 @@ function Hero({
 
        Debajo de `lg` es una sola caja, con la gráfica dentro. */
     <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_392px] lg:gap-4 lg:items-stretch">
-      <CajaOscura marca="recaudado">
+      <CajaOscura marca="recaudado" className="flex">
         <RotuloBloque texto="Recaudado hoy" apunte={<span className="hidden lg:inline">{fecha}</span>} />
 
         {/* ── EL MONTO Y SU CONTEXTO, EN LA MISMA LÍNEA ──
@@ -358,22 +369,42 @@ function Hero({
               }}>{meta}</span>
             </>
           )}
+          {/* ── SE PUEDEN TOCAR, Y ESO NO SE PODÍA PERDER ──
+              Al rehacer la tarjeta las pasé de `<button>` a `<span>` con
+              `title`, y el `title` es un globo de ESCRITORIO: en el teléfono no
+              hay puntero, así que la función desapareció sin dejar rastro. El
+              dueño lo pidió por su nombre en su día —«no es interactiva, no se
+              le puede picar y ver los saldos»— y volvió a reportarlo ahora.
+
+              La adenda quita el PIE «Martes 4 · $565.000» porque flotaba abajo
+              sin conexión con ninguna barra, no la posibilidad de tocarlas. Así
+              que vuelven a ser botones y la respuesta va a la frase de abajo,
+              que ya está ahí y ya habla de la gráfica: el dato deja de flotar. */}
           {barras.map((n, i) => {
             const esHoy = i === barras.length - 1
             const llego = esperadoCrudo ? n >= esperadoCrudo : false
+            const elegido = diaAbierto === i
             return (
-              <span
+              <button
                 key={i}
+                type="button"
                 suppressHydrationWarning
-                title={`${dias[i] ?? ''} ${fmt ? fmt(n) : n}`}
+                onClick={() => setDiaAbierto(elegido ? null : i)}
+                aria-label={`${dias[i] ?? `día ${i + 1}`}: ${fmt ? fmt(n) : n}`}
                 style={{
-                  flex: 1, minWidth: 0,
+                  flex: 1, minWidth: 0, padding: 0, border: 0, cursor: 'pointer',
+                  alignSelf: 'flex-end',
                   // Mínimo de 6px: una barra de altura cero desaparece y el día
                   // parece que no existe, cuando lo que pasa es que no se cobró
                   // nada — que es justo lo que hay que ver.
                   height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
                   borderRadius: '4px 4px 0 0',
                   background: esHoy ? BLOQUE.oro : (llego ? BLOQUE.barra : BLOQUE.barraNo),
+                  // La elegida se marca con un aro, no cambiando de color: el
+                  // color ya significa «hoy» y «llegó», y no puede significar
+                  // una tercera cosa.
+                  outline: elegido ? `2px solid ${BLOQUE.tinta}` : 'none',
+                  outlineOffset: 2,
                 }}
               />
             )
@@ -407,11 +438,27 @@ function Hero({
             Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
             misma comparación con la que se pintan. */}
         {cumplieron != null && (
-          <p style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo, marginTop: 'auto' }}>
-            {cumplieron === 0
-              ? <>Ningún día de los últimos {barras.length} llegó a lo que tocaba cobrar. </>
-              : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {barras.length} días</b>. </>}
-            La línea es lo que toca cada día.
+          <p suppressHydrationWarning style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo, marginTop: 'auto' }}>
+            {diaAbierto != null ? (
+              /* Con una barra tocada, la frase habla de ESE día. Es el sitio
+                 donde el dato tiene contexto: la alternativa era el pie suelto
+                 que la adenda quitó por flotar sin dueño. */
+              <>
+                <b style={{ color: BLOQUE.tinta }}>{dias[diaAbierto] ?? 'Ese día'}</b>
+                {': '}
+                <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(barras[diaAbierto]) : barras[diaAbierto]}</b>
+                {esperadoCrudo ? (barras[diaAbierto] >= esperadoCrudo
+                  ? <> — cobraste todo lo que tocaba.</>
+                  : <> — te faltaron {fmt ? fmt(esperadoCrudo - barras[diaAbierto]) : (esperadoCrudo - barras[diaAbierto])}.</>) : null}
+              </>
+            ) : (
+              <>
+                {cumplieron === 0
+                  ? <>Ningún día de los últimos {barras.length} llegó a lo que tocaba cobrar. </>
+                  : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {barras.length} días</b>. </>}
+                La línea es lo que toca cada día.
+              </>
+            )}
           </p>
         )}
       </>
