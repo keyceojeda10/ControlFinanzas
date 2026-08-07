@@ -326,41 +326,46 @@ export async function GET(request, { params }) {
     return acc + Math.round((r.saldoCapital || 0) - delta)
   }, 0)
 
-  /* ══ «CON LO QUE SALIÓ» ES EL EFECTIVO DEL CUADRE, NO EL CAPITAL DE LA RUTA ══
+  /* ══ «CON LO QUE SALIÓ» SALE DEL LIBRO, NO DEL EFECTIVO DEL CUADRE ══════
    *
-   * Reportado con vídeo: «cuadré todos los saldos con la base con la que deben
-   * salir los muchachos en la mañana… hice un retiro en la ruta 6 y se me
-   * cambiaron TODAS las bases». Solo la ruta 1 quedó bien.
+   * ⚠ ESTO ESTUVO AL REVÉS ENTRE EL 6 Y EL 7 DE AGOSTO, y lo cambié yo.
    *
-   * El retiro NO fue la causa —de hecho ya no existe, lo borró—. Reconstruyendo
-   * el saldo de cada ruta día a día contra la base que él contó cada noche, las
-   * dos cifras llevaban separándose desde el 3 de agosto:
+   * El 6 de agosto tomé `cuadreAnterior.efectivoRecibido` porque las nueve
+   * cifras de sus capturas coincidían al peso con ese campo. Coincidían, sí,
+   * pero por casualidad — y al día siguiente reportó dos rutas descuadradas:
    *
-   *     RUTA #2   1 ago: 694.000 vs 672.000   ← cuadraba
-   *               3 ago: 427.695 vs 294.000   ← empieza a separarse
-   *               5 ago: 504.874 vs 198.000
+   *     RUTA #3   capital 1.305.000   la pantalla decía    74.000
+   *     RUTA #4   capital    68.000   la pantalla decía 1.068.000
    *
-   * Son DOS cifras distintas que la pantalla llamaba igual:
+   * MIDIENDO LAS DIEZ RUTAS SE VE LO QUE ES `efectivoRecibido`: en OCHO de las
+   * diez vale exactamente lo mismo que `recaudadoSistema`, porque el dueño usa
+   * el botón de «confirmar los que entregaron lo mismo que dice el sistema», y
+   * ese botón graba la cifra del sistema tal cual (ver `CuadreDia.jsx`, donde
+   * el propio comentario lo dice: «por construcción todos»).
    *
-   *   · lo que él cuadra cada noche  → el efectivo que recibe y vuelve a
-   *     entregar, en `CierreCaja.efectivoRecibido`
-   *   · lo que se pintaba aquí       → `Ruta.saldoCapital`, que el cuadre NO
-   *     toca (ver `caja/cuadre/route.js`: solo escribe la confirmación)
+   * O sea que NO ES UNA BASE: es LO QUE SE RECAUDÓ AYER. Ponerlo como «con lo
+   * que salió» le enseñaba al cobrador el recaudo del día anterior como si
+   * fuera la plata con la que arranca. Coincide cuando la ruta cierra el día
+   * con lo mismo que cobró —#5, #8 y #9 dan exacto— y se separa cuando no:
+   * la ruta 3 cobró 1.652.000 y entregó 74.000, un faltante de 1.578.000.
    *
-   * Así que cada noche él cuadraba el efectivo y el capital de la ruta seguía
-   * por su lado. Medido en producción el 6 ago: las 9 cifras de sus capturas son
-   * EXACTAMENTE el `efectivoRecibido` de la noche anterior, al peso.
+   * Y no eran «solo dos rutas rotas»: siete de las diez estaban mal. Las otras
+   * cinco por diez o treinta mil pesos, que no se notan.
    *
-   * Y la ruta 1 salía bien por casualidad aritmética: ese día tuvo un desembolso
-   * de 200.000 y `92.000 − (−200.000)` da justo sus 292.000.
+   * `saldoAperturaDerivado` es `Ruta.saldoCapital` menos lo que se movió hoy,
+   * o sea el saldo del libro al arrancar el día. Es reproducible —sale de
+   * sumar los movimientos, y comprobé que cuadra al peso con `saldoCapital` en
+   * las 1.646 y 1.475 filas de esas dos rutas— y no lo puede torcer un número
+   * mal tecleado en el cuadre de la noche.
    *
-   * ⚠ El derivado se queda como RESPALDO, no se borra: hay negocios que no
-   * cuadran caja por la noche (de los 10 cierres del 4 ago, 6 tenían el saldo en
-   * cero) y para ellos el cálculo de antes sigue siendo lo único que hay.
+   * Lo contado anoche NO se pierde: viaja aparte en `efectivoContadoAnoche`
+   * para poder enfrentarlo con esto cuando haga falta. Son dos preguntas
+   * distintas y el error fue llamarlas igual.
    */
-  const saldoAperturaTotal = cuadreAnterior?.efectivoRecibido != null
+  const saldoAperturaTotal = saldoAperturaDerivado
+  const efectivoContadoAnoche = cuadreAnterior?.efectivoRecibido != null
     ? Math.round(cuadreAnterior.efectivoRecibido)
-    : saldoAperturaDerivado
+    : null
 
   // Renovaciones del dia: cuanto se renovo en total, cuanto de eso fue saldo viejo
   // "absorbido" (la cartulina: el cliente ya lo debia, no entrego efectivo) y cuanto
@@ -1008,6 +1013,14 @@ export async function GET(request, { params }) {
   // quedó en tres cuadros diferentes, ahí fue donde estamos enredados»—.
   const cuentaRuta = {
     apertura: saldoAperturaTotal,
+    // Lo que el cobrador entregó anoche, para poder enfrentarlo con la base sin
+    // confundirlo con ella. `null` cuando no hubo cuadre.
+    efectivoContadoAnoche,
+    // Cuánto se separan las dos. Es el faltante o sobrante real de la noche:
+    // en la ruta 3 del 6 de agosto son 1.578.000 que no se entregaron.
+    difEntreLibroYContado: efectivoContadoAnoche != null
+      ? Math.round(efectivoContadoAnoche - saldoAperturaTotal)
+      : null,
     cobradoTotal: cobradoEfectivoNeto + cobradoDigital,
     cobradoEfectivo: cobradoEfectivoNeto,
     cobradoDigital,
