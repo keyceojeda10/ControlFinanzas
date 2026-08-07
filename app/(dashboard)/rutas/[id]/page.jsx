@@ -421,6 +421,46 @@ export default function RutaDetallePage({ params }) {
       : (clienteRuta.prestamoActivo ? [clienteRuta.prestamoActivo] : []),
   })
 
+  /* Quién scrollea de verdad en esta pantalla. Se busca en vez de guardarse en
+     una `ref` porque el contenedor cambia según el modo de vista y el ancho, y
+     una referencia al de ayer devuelve 0 sin avisar. */
+  const contenedorDeLaLista = () => {
+    let mejor = null
+    for (const el of document.querySelectorAll('div, main, section')) {
+      if (el.scrollHeight > el.clientHeight + 40 && el.clientHeight > 300) {
+        if (!mejor || el.clientHeight > mejor.clientHeight) mejor = el
+      }
+    }
+    return mejor
+  }
+  const scrollTopDeLaLista = () => contenedorDeLaLista()?.scrollTop ?? window.scrollY
+
+  /* ── VOLVER A DONDE SE IBA ─────────────────────────────────────────────
+     EL CLIENTE MANDA SOBRE LOS PÍXELES. La lista cambia entre que se sale y se
+     vuelve —al que se acaba de cobrar deja de tocarle y puede cambiarse de
+     sitio—, así que el desplazamiento guardado apunta a otra fila. Buscar la
+     ficha por su `id` acierta aunque la lista se haya movido; los píxeles
+     quedan de respaldo, para cuando esa ficha ya no está.
+
+     Y el resaltado no es adorno: con doscientas tarjetas iguales, aterrizar en
+     el sitio correcto sin que nada diga cuál era obliga a releer nombres. */
+  const volverASuSitio = (clienteId, savedY) => {
+    const el = document.getElementById(`cliente-${clienteId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'instant', block: 'center' })
+      setHighlightId(clienteId)
+      setTimeout(() => setHighlightId(null), 2200)
+      return
+    }
+    // `!= null` y no `if (savedY)`: la cadena «0» es un desplazamiento válido
+    // —el principio de la lista— y con la comprobación floja se descartaba.
+    const y = savedY != null ? parseInt(savedY, 10) : NaN
+    if (Number.isNaN(y)) return
+    const caja = contenedorDeLaLista()
+    if (caja) caja.scrollTop = y
+    else window.scrollTo(0, y)
+  }
+
   const guardarContextoRuta = (clienteRuta, idxRuta) => {
     if (!ruta?.clientes?.length) return
 
@@ -428,7 +468,13 @@ export default function RutaDetallePage({ params }) {
     if (currentIndex < 0) return
 
     sessionStorage.setItem(`ruta-scroll-${id}`, clienteRuta.id)
-    sessionStorage.setItem(`ruta-scrollY-${id}`, String(window.scrollY))
+    // ⚠ EL SCROLL NO ES EL DE LA VENTANA. La lista va dentro de un contenedor
+    // con `overflowY: auto`, así que `window.scrollY` es SIEMPRE 0 — y como se
+    // guardaba como cadena, al volver `"0"` daba verdadero y la restauración
+    // entraba por `window.scrollTo(0, 0)`: subía arriba del todo y ni siquiera
+    // llegaba a probar el `scrollIntoView` de respaldo. Con 200 clientes eso es
+    // volver a bajar a mano cada vez que se cobra a uno.
+    sessionStorage.setItem(`ruta-scrollY-${id}`, String(scrollTopDeLaLista()))
     sessionStorage.setItem(`ruta-modo-${id}`, modoVista)
 
     localStorage.setItem(`cf-ruta-progress-${id}`, JSON.stringify({
@@ -620,16 +666,7 @@ export default function RutaDetallePage({ params }) {
     }
 
     requestAnimationFrame(() => {
-      const el = document.getElementById(`cliente-${scrollTo}`)
-      if (savedY) {
-        window.scrollTo(0, parseInt(savedY, 10))
-      } else if (el) {
-        el.scrollIntoView({ behavior: 'instant', block: 'center' })
-      }
-      if (el) {
-        setHighlightId(scrollTo)
-        setTimeout(() => setHighlightId(null), 2000)
-      }
+      volverASuSitio(scrollTo, savedY)
     })
   }, [ruta, id])
 
@@ -639,16 +676,7 @@ export default function RutaDetallePage({ params }) {
     pendingScrollRef.current = null
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const el = document.getElementById(`cliente-${scrollTo}`)
-        if (savedY) {
-          window.scrollTo(0, parseInt(savedY, 10))
-        } else if (el) {
-          el.scrollIntoView({ behavior: 'instant', block: 'center' })
-        }
-        if (el) {
-          setHighlightId(scrollTo)
-          setTimeout(() => setHighlightId(null), 2000)
-        }
+        volverASuSitio(scrollTo, savedY)
       })
     })
   }, [modoVista])
@@ -2338,6 +2366,13 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           const renderCard = (fila, i, { actual } = {}) => (
             <Carril
               key={fila.id}
+              /* ⚠ EL ANCLA DE VOLVER. `ruta-scroll-<id>` guarda a quién se
+                 entró y al volver se busca por este `id`. Me lo llevé por
+                 delante al sustituir la tarjeta: sin él `getElementById`
+                 devuelve null, no se restaura nada y el cobrador aparece
+                 arriba del todo con 200 clientes por debajo. */
+              ancla={`cliente-${fila.id}`}
+              resaltada={highlightId === fila.id}
               orden={fila.orden}
               cobrada={fila.cobrada}
               actual={actual}
@@ -2347,6 +2382,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 {...fila}
                 activa={actual}
                 onClick={() => abrirPagoRapido(porId.get(fila.id))}
+                onLlamar={porId.get(fila.id)?.telefono
+                  ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
+                  : undefined}
                 onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
                 onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
                 onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
@@ -2840,7 +2878,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
              cobros», hace los diez que había de verdad y se cree atrasado
              yendo al día. Antes las tres secciones numeraban sobre la ruta
              entera, así que el que hoy no tocaba también gastaba número. */
-          const { visitas, tambien } = paradasDeRuta(clientesFiltrados)
+          const conMoratorio = clientesFiltrados.map((c) => ({
+            ...c,
+            // El moratorio depende de la CONFIGURACIÓN DE LA RUTA (tasa y días
+            // de gracia), no del cliente, así que no puede salir del adaptador
+            // compartido: se resuelve aquí y viaja ya resuelto.
+            moratorioPendiente: c.diasMora > 0
+              && (ruta?.configMoratorio?.tasaMoratorio ?? 0) > 0
+              && c.diasMora > (ruta.configMoratorio.diasGracia || 5),
+          }))
+          const { visitas, tambien } = paradasDeRuta(conMoratorio)
           const pendientes = visitas.filter((f) => !f.cobrada)
           // La parada actual es la PRIMERA sin cobrar de toda la lista, no la
           // primera de cada grupo: es donde el cobrador está parado ahora.

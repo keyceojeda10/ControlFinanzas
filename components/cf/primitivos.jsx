@@ -118,6 +118,19 @@ export function BloqueOscuro({ etiqueta, cifra, unidad, tono = 'neutro', childre
  * distinto («rótulo» vs «etiqueta», «mora» vs «contra») es exactamente cómo se
  * separan dos cosas que deberían moverse juntas.
  */
+/* Cuánto se le baja el cuerpo a una cifra según lo larga que sea. Los cortes
+   salen de medir la columna: con cuatro columnas en un teléfono de 393px y la
+   tarjeta con carril quedan ~78px, y la fuente de cifras gasta unos 0,58em por
+   carácter. «$1.272.000» son 10 caracteres, que a 14px pide 81px y no entra;
+   a 12,5px pide 73 y sí. Nada por debajo de 11: más pequeño ya no se lee al
+   sol, y entonces el problema deja de ser el ancho. */
+function pasoLargo(valor) {
+  const n = String(valor ?? '').length
+  if (n <= 9) return 0
+  if (n <= 11) return 1.5
+  return 3
+}
+
 export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = false }) {
   if (!columnas?.length) return null
   const sep = enTarjeta ? 'var(--cf-border-soft)'
@@ -139,12 +152,32 @@ export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = fal
               color: sobreOscuro ? '#8A8E98' : 'var(--cf-ink-3)',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>{c.etiqueta}</span>
+            {/* ── LA CIFRA NO PUEDE SALIRSE DE SU COLUMNA ──
+                ⚠ Aquí no había NI recorte ni ajuste: la etiqueta llevaba su
+                `nowrap/ellipsis` y el valor no llevaba nada. Con un atraso de
+                siete cifras la columna se desbordaba y el número se metía
+                encima de la de al lado: en la captura se leía
+                «$1.272.0004 0%» —el atraso pegado al cumplimiento— y no hay
+                forma de saber dónde acaba uno y empieza el otro. En una
+                pantalla de cobro eso es pedirle al cliente la cifra
+                equivocada.
+
+                Se estrechó al meter el carril: la tarjeta perdió los 44px de
+                la columna del número, así que quedan ~78px por columna con
+                cuatro columnas, y «$1.272.000» necesita unos 80.
+
+                LA CIFRA SE ENCOGE, NO SE ABREVIA. «$1,27M» se lee rápido pero
+                no se puede decir en voz alta en la puerta, y esta línea es
+                justo la que el cobrador lee para pedir. Se baja el cuerpo por
+                tramos y el ancho queda garantizado por el `overflow`, que es
+                el que impide que vuelva a pisar a la vecina pase lo que pase. */}
             <span className="cf-fig" style={{
-              fontSize: enTarjeta ? 14 : sobreOscuro ? 16 : 15,
+              fontSize: (enTarjeta ? 14 : sobreOscuro ? 16 : 15) - pasoLargo(c.valor),
               color: c.tono === 'favor'  ? (sobreOscuro ? '#2FBE6A' : 'var(--cf-green-dark)')
                    : c.tono === 'contra' ? (sobreOscuro ? '#F0575C' : 'var(--cf-red-dark)')
                    : c.tono === 'oro'    ? (sobreOscuro ? '#F5B824' : 'var(--cf-gold-dark)')
                    : (sobreOscuro ? '#F3F3F6' : 'var(--cf-ink)'),
+              minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip',
             }}>{c.valor}</span>
           </div>
         </div>

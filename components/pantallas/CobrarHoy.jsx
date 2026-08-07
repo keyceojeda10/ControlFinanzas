@@ -132,6 +132,7 @@ export default function CobrarHoy({
   nFiltros = 0,
   sinSubir = 0,
   onCobrar,
+  onLlamar,
   onMapa,
   // Acciones de la parada actual (T03-01). Cada una es opcional: sin ella, su
   // botón no se pinta.
@@ -213,7 +214,8 @@ export default function CobrarHoy({
                     {...f}
                     activa={f.id === idActual}
                     onClick={() => onCobrar?.(f)}
-                    onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
+                  onLlamar={onLlamar ? () => onLlamar(f) : undefined}
+                  onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
                     onMapa={onMapa ? () => onMapa(f) : undefined}
                     onMas={onMas ? () => onMas(f) : undefined}
                   />
@@ -254,7 +256,13 @@ export default function CobrarHoy({
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </BotonPrimario>
-          <button type="button" onClick={onMapa} aria-label="Ver en el mapa" style={{
+          {/* ⚠ `onClick={() => onMapa()}`, NO `onClick={onMapa}`.
+              Así se le pasaba el EVENTO del clic como si fuera la fila, y en
+              la página `fila.id` salía `undefined`: no encontraba cliente, no
+              armaba destino, y la rama de respaldo pedía ese mismo cliente que
+              no existía. El botón no hacía absolutamente nada, sin error ni
+              aviso. Reportado: «uno le da clic ahí y no hace nada». */}
+          <button type="button" onClick={() => onMapa()} aria-label="Ver la ruta en el mapa" style={{
             width: 62, height: 62, minWidth: 62, borderRadius: 999, flex: 'none',
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
             boxShadow: 'var(--cf-sh-flotante, 0 6px 20px rgba(20,20,28,.14))',

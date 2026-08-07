@@ -419,9 +419,38 @@ export default function CobrosHoyPage() {
           if (primero) abrirPago(primero)
         }}
         onMapa={(fila) => {
-          // Con fila: la parada actual, a su dirección. Sin ella: el botón del
-          // encabezado, que lleva al mapa de rutas.
-          const c = fila ? clientes.find((x) => x.id === fila.id) : null
+          /* ── SIN FILA: LA RUTA ENTERA ──────────────────────────────────
+             Es el botón redondo de al lado de «Empezar ruta», y lo que se
+             espera de él es ver por dónde hay que caminar hoy. Antes decía
+             llevar «al mapa de rutas» y no llevaba a ninguna parte: ni había
+             tal rama, ni llegaba a ejecutarse —el `onClick` le pasaba el
+             evento del clic como fila—.
+
+             Se arma una ruta de Google Maps con las paradas PENDIENTES que
+             tienen coordenadas, en el orden en que hay que hacerlas. Google
+             admite hasta nueve puntos intermedios; por encima de eso se
+             mandan los primeros, que es por donde se empieza igualmente.
+
+             Sin ninguna coordenada no se abre nada y se dice por qué:
+             mandarlo a un mapa vacío es el mismo fallo de «acabar en la lista
+             de rutas sin saber por qué». */
+          if (!fila) {
+            const conCoords = clientes
+              .filter((x) => x.cobroPendienteHoy && x.latitud != null && x.longitud != null)
+            if (conCoords.length === 0) {
+              alert('Ninguno de los cobros de hoy tiene la ubicación guardada, así que no hay ruta que dibujar.\n\nSe le pone entrando a la ficha del cliente, en «Fijar en la ubicación actual».')
+              return
+            }
+            const puntos = conCoords.slice(0, 10).map((x) => `${x.latitud},${x.longitud}`)
+            const destino = puntos.pop()
+            const escalas = puntos.length ? `&waypoints=${puntos.join('|')}` : ''
+            window.open(
+              `https://www.google.com/maps/dir/?api=1&destination=${destino}${escalas}&travelmode=driving`,
+              '_blank', 'noopener,noreferrer',
+            )
+            return
+          }
+          const c = clientes.find((x) => x.id === fila.id)
           const destino = c?.latitud && c?.longitud
             ? `${c.latitud},${c.longitud}`
             : [c?.direccion, c?.referencia].filter(Boolean).join(' ')
@@ -441,6 +470,12 @@ export default function CobrosHoyPage() {
               window.location.href = `/clientes/${c.id}`
             }
           }
+        }}
+        onLlamar={(fila) => {
+          // Se llama antes de subir la loma. Estaba en la tarjeta vieja de la
+          // ruta y se perdió al unificarlas; vuelve a las dos.
+          const c = clientes.find((x) => x.id === fila?.id)
+          if (c?.telefono) window.location.href = `tel:${c.telefono}`
         }}
         onWhatsApp={(fila) => {
           // ⚠ ABRE LA HOJA DE PLANTILLAS, no un `wa.me` pelado.

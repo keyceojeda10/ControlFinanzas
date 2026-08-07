@@ -54,7 +54,7 @@ export const PASTILLA = {
    `--cf-ink-2` y no en gris claro a propósito: son los que el cobrador mira
    POR DELANTE para saber cuánto le falta, y en gris claro quedan a 3,12:1 y no
    se leen bajo sol. */
-export function Carril({ orden, cobrada, actual, ultima, children }) {
+export function Carril({ orden, cobrada, actual, ultima, ancla, resaltada, children }) {
   const circulo = cobrada
     ? { w: 30, bg: 'var(--cf-green)', bd: 'none', fg: '#FFF' }
     : actual
@@ -62,7 +62,12 @@ export function Carril({ orden, cobrada, actual, ultima, children }) {
       : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
 
   return (
-    <div className="flex lg:contents" style={{ gap: 10, alignItems: 'stretch' }}>
+    <div id={ancla} className="flex lg:contents" style={{
+      gap: 10, alignItems: 'stretch',
+      // El aterrizaje al volver de cobrar. `scroll-margin` para que no quede
+      // pegada al borde de arriba cuando el navegador la trae a la vista.
+      scrollMarginTop: 90, scrollMarginBottom: 90,
+    }}>
       {/* ⚠ `flex flex-col items-center` EN LA CLASE, NO EN EL `style`.
           Un `display` en línea SIEMPRE gana a una clase, así que con
           `display: 'flex'` en el `style` el `lg:hidden` no hacía nada y el
@@ -97,7 +102,13 @@ export function Carril({ orden, cobrada, actual, ultima, children }) {
           }} />
         )}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      <div style={{
+        flex: 1, minWidth: 0, borderRadius: 'var(--cf-r-card)',
+        // Dos segundos de halo al volver: dice CUÁL era sin tener que releer
+        // nombres en una lista de doscientas iguales.
+        boxShadow: resaltada ? '0 0 0 3px var(--cf-gold-focus)' : undefined,
+        transition: 'box-shadow .25s',
+      }}>{children}</div>
     </div>
   )
 }
@@ -106,14 +117,13 @@ export function Carril({ orden, cobrada, actual, ultima, children }) {
 /* ══ La fila de cobro ══ */
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
-  avisoMora, prestamos = [],
-  cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
+  avisoMora, avisos = [], prestamos = [],
+  cuota, debe, cobrada = false, abonoHoy, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
-  // La lámina le pone borde dorado y tres acciones al primer cobro pendiente:
-  // es donde está el cobrador AHORA. El resto quedan como están —una lista de
-  // veinte tarjetas con tres botones cada una es un muro— y sus acciones salen
-  // al tocarlas.
-  activa = false, onWhatsApp, onMapa, onMas,
+  // Marca dónde está el cobrador AHORA: borde dorado y aviso de mora. Ya NO
+  // decide quién tiene botones —eso era así y el dueño lo rebatió con el caso
+  // real; ver la nota larga junto a la fila de acciones—.
+  activa = false, onLlamar, onWhatsApp, onMapa, onMas,
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
   const p = PASTILLA[estado] || PASTILLA.aldia
@@ -291,6 +301,57 @@ export function FilaCobro({
         </div>
       )}
 
+      {/* Los renglones de arriba. Van en TODAS las fichas, no solo en la
+          actual, porque cambian la cifra que se pide: enterarse de la cuota
+          extra al llegar a la puerta es tarde. */}
+      {!cobrada && avisos.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 'none' }}>
+          {avisos.map((a, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '7px 11px', borderRadius: 10,
+              background: a.tono === 'contra' ? 'var(--cf-red-pill-bg)' : 'var(--cf-gold-bg)',
+              border: `1px solid ${a.tono === 'contra' ? 'var(--cf-red-pill-border)' : 'var(--cf-gold-border)'}`,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke={a.tono === 'contra' ? 'var(--cf-red-dark)' : 'var(--cf-gold-text-2)'}
+                strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+                <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" />
+              </svg>
+              <span style={{
+                fontSize: 11.5, lineHeight: 1.3, minWidth: 0,
+                color: a.tono === 'contra' ? 'var(--cf-red-dark)' : 'var(--cf-gold-text-2)',
+              }}>{a.texto}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── ABONÓ HOY, PERO SIGUE PENDIENTE ──
+          El caso que se había perdido. Un cliente con tres préstamos abona
+          $8.000 de uno: entró plata suya hoy, pero todavía le toca cobro. La
+          fila queda VIVA —con su cuota y su botón— y lo dice, para que el
+          cobrador no le vuelva a cobrar lo mismo sin darse cuenta.
+
+          Verde y no rojo: es dinero que YA entró. Lo que avisa no es un
+          problema del cliente, es un dato de la visita. */}
+      {abonoHoy && !cobrada && (
+        <div style={{
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 11,
+          background: 'var(--cf-green-pill-bg)',
+          border: '1px solid var(--cf-green-pill-border)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-green-dark)"
+            strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+          <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-green-dark)', minWidth: 0 }}>
+            Ya abonó <b>{abonoHoy}</b> hoy · sigue pendiente
+          </span>
+        </div>
+      )}
+
       <TiraCifras columnas={cifras} enTarjeta />
 
       {/* ── LOS PRÉSTAMOS, PLEGADOS (E07) ──
@@ -363,7 +424,22 @@ export function FilaCobro({
           ⚠ DORADO, NUNCA VERDE. En el sistema el verde significa «al día,
           pagado»; usarlo como color de acción rompe esa lectura justo donde más
           importa, que es la pantalla donde se decide si alguien pagó. */}
-      {activa && !cobrada && (onWhatsApp || onMapa || onMas) && (
+      {/* ── EN TODAS LAS FICHAS, NO SOLO EN LA ACTUAL ──
+          Estaban solo en la parada actual, con este argumento: «una lista de
+          veinte tarjetas con tres botones cada una es un muro». El dueño lo
+          rebate con el caso real, y tiene razón: «alguien se quiere saltar un
+          cliente y entonces a aquel no lo puede gestionar; no le va a dar la
+          opción de tocarle el WhatsApp, la ubicación o el cobro rápido».
+
+          El orden de la ruta es una SUGERENCIA, no un carril: el cobrador se
+          salta al que no está, vuelve luego, cobra al que le sale al paso. Una
+          pantalla que solo deja operar la fila número uno le obliga a cobrar en
+          un orden que la calle no respeta.
+
+          El muro sigue evitado por otro lado: la parada actual conserva su
+          borde dorado y su aviso de mora, así que se distingue igual. Lo que
+          cambia es que las demás dejan de estar mudas. */}
+      {!cobrada && (onLlamar || onWhatsApp || onMapa || onMas) && (
         <div style={{ display: 'flex', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
           {/* ── SOLO EL ICONO, y no es cosmético ──
@@ -376,6 +452,14 @@ export function FilaCobro({
               botón de cobrar llevándose el resto. El texto sobra porque el
               logo de WhatsApp y el pin de mapa se reconocen solos, y lo que sí
               tiene que leerse —«Cobrar»— gana el sitio que sueltan. */}
+          {/* LLAMAR. Estaba en la tarjeta vieja de la ruta y se perdió en la
+              sustitución: se llama antes de llegar, para no subir la loma y
+              encontrarse la casa cerrada. */}
+          {onLlamar && (
+            <AccionParada onClick={onLlamar} soloIcono aria-label="Llamar">
+              <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </AccionParada>
+          )}
           {onWhatsApp && (
             <AccionParada onClick={onWhatsApp} tono="verde" relleno soloIcono aria-label="WhatsApp">
               {/* EL LOGO DE VERDAD. Lo que había era una burbuja de trazo
