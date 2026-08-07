@@ -83,9 +83,21 @@ const MEDIDAS = {
   // Con la tira del turno 03 las dos convergen: T03-03 y T03-04 dibujan el
   // mismo relleno y el mismo riel. Lo único que las separa es el avatar, que
   // solo lleva la de cliente, y el hueco que necesita a su lado.
-  cliente:  { relleno: '15px 16px 15px 19px', hueco: 12, riel: 14, huecoFila: 12, monto: 20, huecoSub: 4 },
-  prestamo: { relleno: '15px 16px 15px 19px', hueco: 12, riel: 14, huecoFila: 10, monto: 20, huecoSub: 4 },
+  cliente:  { hueco: 12, huecoFila: 12, monto: 20, huecoSub: 4 },
+  prestamo: { hueco: 12, huecoFila: 10, monto: 20, huecoSub: 4 },
 }
+
+/* El relleno, en piezas sueltas y no en una cadena.
+ *
+ * La barra a sangre del pie necesita SUS NÚMEROS para anularlo con un margen
+ * negativo: escritos aparte se separan del padding en cuanto se toca uno, y la
+ * barra queda flotando con aire a un lado.
+ *
+ * ⚠ Y EL IZQUIERDO BAJA DE 19 A 16. Los 3px de más eran «el hueco que deja
+ * sitio al riel», y el riel se fue con E10: sin él, la tarjeta quedaba con el
+ * texto descentrado —tres píxeles más lejos del borde izquierdo que del
+ * derecho— sin nada que lo justificara. */
+const RELLENO_LATERAL = { arriba: 15, der: 16, abajo: 15, izq: 16 }
 
 export default function TarjetaCliente({
   nombre,
@@ -156,7 +168,8 @@ export default function TarjetaCliente({
         background: 'var(--cf-card)',
         border: '1px solid var(--cf-border)',
         borderRadius: 'var(--cf-r-card)',
-        padding: m.relleno,               /* el 19 izquierdo deja sitio al riel */
+        // Sin hueco abajo: la barra a sangre va pegada al borde inferior.
+        padding: `${RELLENO_LATERAL.arriba}px ${RELLENO_LATERAL.der}px 0 ${RELLENO_LATERAL.izq}px`,
         display: 'flex', flexDirection: 'column', gap: m.hueco,
         overflow: 'hidden',
         flex: 'none',
@@ -165,11 +178,23 @@ export default function TarjetaCliente({
         ...style,
       }}
     >
-      {/* El riel: el portador del color de estado. */}
-      <span aria-hidden style={{
-        position: 'absolute', left: 0, top: m.riel, bottom: m.riel,
-        width: 4, borderRadius: 999, background: color,
-      }} />
+      {/* ── ADENDA 5 · E10 · FUERA EL RIEL ──
+          Aquí vivía el filete de 4px pegado al borde izquierdo, y la adenda lo
+          quita en las dos variantes: «el estado lo llevan los elementos que ya
+          identifican a la fila — nunca uno añadido para pintarlo».
+
+          Era el CUARTO sitio donde se decía lo mismo —ya están la pastilla, la
+          cifra de atraso en rojo y la barra de progreso— y el único sin dato.
+          Y encima iba a sangre con las esquinas rectas, peleando con el radio
+          de 16px de la tarjeta.
+
+          Lo sustituyen:
+            · cliente (tiene avatar) → anillo de 2px + la barra, ahora a sangre
+            · préstamo (sin avatar)  → solo la barra a sangre
+
+          ⚠ DOS ACENTOS SOLO CONVIVEN SI DICEN COSAS DISTINTAS: el anillo dice
+          CÓMO ESTÁ y la barra CUÁNTO LLEVA PAGADO. Añadir un riel encima sería
+          decir la pastilla por cuarta vez. */}
 
       {/* ── Nivel 1 · quién, y cuánto ──
           EL TURNO 03 MANDA SOBRE EL 02, Y ESTO ES LO QUE CAMBIA.
@@ -185,11 +210,21 @@ export default function TarjetaCliente({
             /* `relative` porque la foto va encima en absoluto: sin esto se
                anclaría a la tarjeta entera y saldría en una esquina. */
             position: 'relative',
-            width: 40, minWidth: 40, height: 40, aspectRatio: '1',
+            width: 40, minWidth: 40, height: 40, minHeight: 40, aspectRatio: '1',
             borderRadius: 999, flex: 'none', overflow: 'hidden',
-            /* Gris pelado. Ver la nota de arriba: el borde de color sobra. */
             background: 'var(--cf-fill)',
             fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
+            /* ── EL ANILLO DE ESTADO (Adenda 5 · E10) ──
+               Aquí decía «gris pelado, el borde de color sobra», y era cierto
+               MIENTRAS existía el riel: con riel, pastilla y barra ya había
+               tres sitios diciendo el estado y el anillo habría sido el cuarto.
+
+               La adenda invierte el reparto: quita el riel y le da el estado al
+               avatar, que es lo primero que se mira de cada fila. Ahora el
+               anillo no es el cuarto portador, es el primero — y el borde
+               izquierdo de la tarjeta queda limpio, que es lo que hace que una
+               lista de treinta clientes se vea ordenada en vez de rayada. */
+            border: `2px solid ${color}`,
           }}>
             {/* LA FOTO NUNCA SE PINTABA. El cliente la sube, la base la guarda
                 (163 clientes la tienen) y esta tarjeta enseñaba las iniciales
@@ -390,21 +425,45 @@ export default function TarjetaCliente({
           La barra y su lectura en la MISMA fila. Antes la barra iba sola y el
           «54% pagado» vivía arriba, al lado del monto; la lámina los junta y
           añade la cuota exacta, que es lo que dice por dónde va el cliente. */}
-      {!sinProgreso && monto != null && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <BarraProgreso porcentaje={porcentaje} tono={TONO_BARRA[estado]} alto={5} style={{ flex: 1 }} />
-          {avance && (
-            <span className="cf-num" style={{
-              fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)',
-              flex: 'none', whiteSpace: 'nowrap',
-            }}>{avance}</span>
-          )}
-        </div>
+      {/* La lectura del avance se queda donde estaba —«cuota 13/24 · 54%»—; lo
+          que baja al borde es la BARRA. */}
+      {!sinProgreso && monto != null && avance && (
+        <span className="cf-num" style={{
+          fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)',
+          alignSelf: 'flex-end', whiteSpace: 'nowrap',
+        }}>{avance}</span>
       )}
 
       {/* `unico` no tiene cuotas: sin barra, la nota ocupa su sitio. */}
       {sinProgreso && nota && (
         <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)' }}>{nota}</span>
+      )}
+
+      {/* ── LA BARRA A SANGRE (Adenda 5 · E10) ──
+          Último hijo, pegada al borde de lado a lado. El `margin` negativo
+          anula el relleno lateral: sin él quedaría un renglón de color flotando
+          con 16px de aire a cada lado, que se lee como un elemento más y no
+          como el borde de la tarjeta.
+
+          «Encierran la tarjeta arriba a la izquierda y abajo a lo ancho, así
+          que el color aparece donde el ojo entra y donde sale.»
+
+          ⚠ `flex: none` es obligatorio y ya está escrito en la cabecera de este
+          archivo: la tarjeta es una columna flex y sin él la barra se encoge
+          hasta desaparecer cuando el contenido de arriba pide sitio. El fallo
+          es invisible — no rompe nada, solo deja de estar. */}
+      {!sinProgreso && monto != null && (
+        <span aria-hidden style={{
+          flex: 'none', display: 'block', height: 5,
+          margin: `0 -${RELLENO_LATERAL.der}px 0 -${RELLENO_LATERAL.izq}px`,
+          background: 'var(--cf-fill)',
+        }}>
+          <span style={{
+            display: 'block', height: 5,
+            width: `${Math.max(0, Math.min(100, porcentaje ?? 0))}%`,
+            background: color,
+          }} />
+        </span>
       )}
     </div>
   )
