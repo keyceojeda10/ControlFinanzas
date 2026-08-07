@@ -402,7 +402,7 @@ export default function CobrosHoyPage() {
       />
 
       <CobrarHoy
-        {...adaptarCobrosHoy(data, { pais: user?.country, orden, filtros })}
+        {...adaptarCobrosHoy(data, { pais: user?.country, orden, filtros, coords })}
         sinMargen
         orden={orden}
         onOrden={setOrden}

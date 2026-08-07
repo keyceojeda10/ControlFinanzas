@@ -93,7 +93,7 @@ function CabezaGrupo({ nombre, pendientes, total }) {
 
 /* ══ La fila de cobro ══ */
 function FilaCobro({
-  nombre, iniciales, estado = 'aldia', etiquetaEstado, donde,
+  nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
   cuota, debe, cobrada = false, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
   // La lámina le pone borde dorado y tres acciones al primer cobro pendiente:
@@ -198,6 +198,23 @@ function FilaCobro({
                 minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{donde}</span>
             )}
+            {/* ── LA DISTANCIA (E07) ──
+                «El cobrador decide el orden real con ella»: con dos clientes
+                igual de atrasados, va primero el que tiene al lado.
+
+                `flex: none` para que NO se recorte: es la dirección la que se
+                acorta con puntos suspensivos si no cabe, porque de ella basta
+                con el principio. La distancia son cinco caracteres y o se ve
+                entera o no dice nada.
+
+                Sin GPS el adaptador manda `null` y la línea queda como estaba:
+                inventar una distancia manda a caminar mal, que es justo lo que
+                esto viene a evitar. */}
+            {distancia && (
+              <span className="cf-num" style={{
+                fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none', opacity: .85,
+              }}>· {distancia}</span>
+            )}
           </div>
         )}
       </div>
@@ -225,8 +242,18 @@ function FilaCobro({
           y enseñarle el atraso a alguien que acaba de pagar es ruido. */}
       <TiraCifras columnas={cifras} enTarjeta />
 
-      {/* Las tres acciones de la parada actual. Solo aquí: en las demás filas
-          serían sesenta botones en una pantalla que se opera caminando. */}
+      {/* Las acciones de la parada actual. Solo aquí: en las demás filas serían
+          sesenta botones en una pantalla que se opera caminando.
+
+          ── E07 · Y LA PRINCIPAL, EN DORADO ──
+          Cobrar era lo ÚNICO que no tenía botón: se hacía tocando la tarjeta
+          entera, que es un gesto que hay que saberse. Los tres iconos de al
+          lado —WhatsApp, mapa, más— son las secundarias y llevaban todo el peso
+          visual de la fila.
+
+          ⚠ DORADO, NUNCA VERDE. En el sistema el verde significa «al día,
+          pagado»; usarlo como color de acción rompe esa lectura justo donde más
+          importa, que es la pantalla donde se decide si alguien pagó. */}
       {activa && !cobrada && (onWhatsApp || onMapa || onMas) && (
         <div style={{ display: 'flex', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
@@ -249,6 +276,19 @@ function FilaCobro({
               <circle cx="12" cy="5" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="12" cy="19" r="1.4" />
             </AccionParada>
           )}
+
+          {/* `flex: 1` para que se lleve el sitio que sobra: es la acción por la
+              que se abrió la pantalla. Y sigue funcionando tocar la tarjeta —el
+              gesto de siempre no se quita—, esto solo lo hace visible. */}
+          <button
+            type="button"
+            onClick={onClick}
+            style={{
+              flex: 1, minWidth: 0, height: 42, border: 'none', borderRadius: 12,
+              background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+              font: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            }}
+          >Cobrar</button>
         </div>
       )}
 
