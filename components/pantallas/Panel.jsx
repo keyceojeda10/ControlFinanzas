@@ -132,9 +132,51 @@ const BLOQUE = {
   barraNo: 'rgba(255,255,255,.16)',   // días que no llegaron
 }
 
+/* La caja oscura, que las dos comparten.
+ *
+ * ⚠ EL BORDE NO ES ADORNO: EN OSCURO ES LA CAJA.
+ * La adenda pide #15161A, y en tema oscuro `--cf-surface` ES #15161A: la
+ * tarjeta queda del MISMÍSIMO color que el fondo de la app —ratio 1,00— y
+ * desaparece. Se ve el contenido flotando sin caja.
+ *
+ * El sistema ya tiene esta regla escrita en `tokens-2026.css`, y viene de un
+ * reporte del dueño: «el borde está del mismo color que el fondo, entonces no
+ * se ve como que fuese una caja». Allí se midió que en oscuro el relleno no
+ * alcanza a dibujar la caja y que el borde tiene que hacer ese trabajo, al 14%.
+ */
+function CajaOscura({ marca, children, className = '' }) {
+  return (
+    <div data-bloque={marca} className={className} style={{
+      background: BLOQUE.fondo,
+      border: '1px solid rgba(255,255,255,.14)',
+      borderRadius: 20,
+      padding: '19px 21px',
+      display: 'flex', flexDirection: 'column', gap: 14,
+      minWidth: 0,
+    }}>{children}</div>
+  )
+}
+
+/** El rótulo de arriba, con su apunte a la derecha. */
+function RotuloBloque({ texto, apunte }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+        color: BLOQUE.rotulo,
+      }}>{texto}</span>
+      {apunte && (
+        <span className="cf-num" style={{ fontSize: 12, color: BLOQUE.apagado, textAlign: 'right' }}>
+          {apunte}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function Hero({
   recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt,
-  faltan, enMora = 0, promedio7d, esperadoCrudo,
+  faltan, enMora = 0, promedio7d, esperadoCrudo, fecha,
 }) {
   /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
      fila de debajo. En un EFECTO porque dependen del reloj del navegador; el
@@ -148,15 +190,13 @@ function Hero({
 
   /* ── LA ESCALA DE LA GRÁFICA ──
      La línea punteada tiene que caber: si un día cobró más que lo esperado, el
-     tope es esa barra; si nadie llegó, el tope es la línea. Escalando solo
-     contra la barra más alta, la línea se saldría del contenedor justo en el
-     caso que más importa —el de la semana floja—. */
+     tope es esa barra; si nadie llegó, el tope es la línea.
+
+     El 1,12 es AIRE, no un número mágico. Cuando lo que toca cobrar supera a
+     todas las barras —la semana floja, que es cuando más se mira esto— la línea
+     queda exactamente en el techo del contenedor y se lee como el borde de la
+     caja, no como una referencia. */
   const barras = semana ?? []
-  /* El 1,12 es AIRE, no un número mágico. Cuando lo que toca cobrar supera a
-     todas las barras —una semana floja, que es cuando más se mira esto— la
-     línea queda exactamente en el techo del contenedor y se lee como el borde
-     de la caja, no como una referencia. Con un 12% por encima siempre queda
-     dentro y se ve que es una línea. */
   const tope = Math.max(...barras, (esperadoCrudo ?? 0) * 1.12, 0)
   const alturaLinea = tope > 0 && esperadoCrudo ? (esperadoCrudo / tope) * 100 : null
 
@@ -179,206 +219,204 @@ function Hero({
     promedio7d   && { rot: 'Promedio 7d', val: promedio7d, soloAncho: true },
   ].filter(Boolean)
 
+  const hayGrafica = semana && tope > 0
+
   return (
-    /* ⚠ EL TOPE DE ANCHO LO PONE LA REJILLA, NO ESTA TARJETA.
-       Aquí hubo un `maxWidth: 720` de cuando ocupaba la pantalla entera. Vive
-       dentro de la columna izquierda de `[1fr | 360px]`, que a 1440 mide 776, y
-       el tope la dejaba acabando 56px antes que las tarjetas blancas de su
-       propia columna. */
-    <div data-bloque="recaudado" style={{
-      background: BLOQUE.fondo,
-      /* ── ⚠ EL BORDE NO ES ADORNO: EN OSCURO ES LA CAJA ──
-         La adenda pide #15161A, y en tema oscuro `--cf-surface` ES #15161A: la
-         tarjeta queda del MISMÍSIMO color que el fondo de la app —ratio 1,00— y
-         desaparece. Se ve el contenido flotando sin caja.
+    /* ── DOS BLOQUES, COMO LA LÁMINA ──
+       «La gráfica sale a su propia tarjeta porque en 392px ya caben la cifra de
+       la línea de meta y los nombres de los días — en 390px de móvil no
+       cabían.»
 
-         El sistema ya tiene esta regla escrita en `tokens-2026.css`, y viene de
-         un reporte del dueño: «el borde está del mismo color que el fondo,
-         entonces no se ve como que fuese una caja». Allí se midió que en oscuro
-         el relleno no alcanza a dibujar la caja y el borde tiene que hacer ese
-         trabajo, al 14%.
+       ⚠ Y POR ESO ESTE BLOQUE OCUPA LA FILA ENTERA DEL PANEL. Medido a 1440:
+       la columna izquierda de la rejilla son 766px, y quitándole los 392 de la
+       gráfica quedan 358 para el monto a 40px y cinco columnas de cifras — no
+       caben. Con la fila entera (1142) quedan 734, que es casi lo que tenía
+       antes. La partición y el `col-span` van juntos: uno sin el otro no
+       funciona.
 
-         Va en los dos temas: sobre la tarjeta oscura, un blanco al 14% es
-         imperceptible en claro y en oscuro es lo único que la dibuja. */
-      border: '1px solid rgba(255,255,255,.14)',
-      borderRadius: 20,
-      padding: '19px 21px',
-      display: 'flex', flexDirection: 'column', gap: 14,
-      flex: 'none',
-    }}>
-      <span style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-        color: BLOQUE.rotulo,
-      }}>Recaudado hoy</span>
+       Debajo de `lg` es una sola caja, con la gráfica dentro. */
+    <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_392px] lg:gap-4 lg:items-stretch">
+      <CajaOscura marca="recaudado">
+        <RotuloBloque texto="Recaudado hoy" apunte={<span className="hidden lg:inline">{fecha}</span>} />
 
-      {/* ── EL MONTO Y SU CONTEXTO, EN LA MISMA LÍNEA ──
-          Alineados por la base: la cifra manda y el contexto se apoya en ella.
-          El copy dice «que toca cobrar», NO «meta del día»: $626.167 no es una
-          meta, es plata que le deben hoy. Una meta es algo a lo que uno aspira
-          y que se puede no alcanzar sin consecuencia; llamarlo meta hace que
-          quedarse corto se sienta normal. */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <span className="cf-fig text-[34px] lg:text-[40px]" style={{
-          letterSpacing: '-.035em', color: BLOQUE.tinta, lineHeight: 1,
-        }}>{recaudado}</span>
-        {meta && (
-          <span className="cf-num text-[12px] lg:text-[14px]" style={{
-            color: BLOQUE.apagado, paddingBottom: 2,
-          }}>de {meta} que toca cobrar</span>
-        )}
-      </div>
-
-      {/* ── LA BARRA, CON SU PORCENTAJE AL FINAL ──
-          El % estaba DOS VECES: una pastilla arriba a la derecha y esta barra,
-          diciendo lo mismo sin conexión visual entre las dos. Al final de la
-          barra deja de ser un dato duplicado y pasa a ser su etiqueta. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <span style={{
-          flex: 1, height: 11, borderRadius: 999, overflow: 'hidden',
-          background: BLOQUE.pista,
-        }}>
-          <span style={{
-            display: 'block', height: 11, borderRadius: 999,
-            width: `${Math.max(0, Math.min(100, porcentaje))}%`,
-            background: BLOQUE.oro,
-          }} />
-        </span>
-        <span className="cf-fig" style={{
-          fontSize: 15, fontWeight: 600, letterSpacing: '-.02em',
-          color: BLOQUE.oro, flex: 'none',
-        }}>{porcentaje}%</span>
-      </div>
-
-      {/* ── LA TIRA DE CIFRAS ──
-          Antes era «2 cobrados · 14 pendientes · ayer $460.400»: tres datos
-          sueltos, sin etiqueta y todos del mismo peso. Con rótulo encima y un
-          filete entre columnas se puede comparar de un vistazo.
-
-          Las dos últimas se esconden por debajo de `lg`: la adenda pone tres en
-          móvil y cinco en escritorio. */}
-      <div style={{
-        display: 'flex', gap: 8,
-        paddingTop: 13, borderTop: `1px solid ${BLOQUE.linea}`,
-      }}>
-        {cifras.map((c, i) => (
-          <Fragment key={c.rot}>
-            {i > 0 && (
-              <span className={c.soloAncho ? 'hidden lg:block' : ''}
-                style={{ width: 1, background: BLOQUE.linea, flex: 'none' }} />
-            )}
-            <span className={`${c.soloAncho ? 'hidden lg:flex' : 'flex'}`}
-              style={{ flex: 1, minWidth: 0, flexDirection: 'column', gap: 4 }}>
-              <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
-                textTransform: 'uppercase', color: BLOQUE.apagado,
-              }}>{c.rot}</span>
-              <span className="cf-fig text-[15px] lg:text-[19px]" style={{
-                fontWeight: 600, letterSpacing: '-.02em', color: c.color ?? BLOQUE.tinta,
-              }}>{c.val}</span>
-            </span>
-          </Fragment>
-        ))}
-      </div>
-
-      {/* ── LOS SIETE DÍAS ──
-          Contestan «¿hoy es un buen día o es un día normal?», que la cifra sola
-          no contesta. Antes eran siete barras sin escala ni referencia y del
-          mismo color que el fondo: no decían nada. Lo que les faltaba es la
-          LÍNEA de lo que toca cobrar cada día — con ella, cada barra se lee sola.
-
-          ⚠ LA ALTURA DEL CONTENEDOR VA EN PX, NUNCA `flex:1`. Las barras miden
-          su alto en porcentaje: si el contenedor colapsa, el gráfico
-          desaparece entero sin que falle nada. */}
-      {semana && tope > 0 && (
-        <>
-          <div className="relative h-[52px] lg:h-[96px]"
-            style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flex: 'none' }}>
-            {alturaLinea != null && (
-              <>
-                <span aria-hidden="true" style={{
-                  position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
-                  borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
-                }} />
-                {/* ── LA CIFRA DE LA LÍNEA ──
-                    Sin ella la línea no se entiende: a tamaño real se lee como
-                    un separador de sección, no como una referencia. Va pegada a
-                    la línea y a la derecha, que es donde acaba.
-
-                    Solo desde `lg`: en 393px la cifra se come el ancho de dos
-                    barras y estorba más de lo que aclara. */}
-                <span className="hidden lg:block" style={{
-                  position: 'absolute', right: 0, bottom: `calc(${Math.min(100, alturaLinea)}% + 3px)`,
-                  fontSize: 10, fontWeight: 700, color: BLOQUE.apagado,
-                  pointerEvents: 'none', background: BLOQUE.fondo, paddingLeft: 6,
-                }}>{meta}</span>
-              </>
-            )}
-            {semana.map((n, i) => {
-              const esHoy = i === semana.length - 1
-              const llego = esperadoCrudo ? n >= esperadoCrudo : false
-              return (
-                <span
-                  key={i}
-                  suppressHydrationWarning
-                  title={`${dias[i] ?? ''} ${fmt ? fmt(n) : n}`}
-                  style={{
-                    flex: 1, minWidth: 0,
-                    // Mínimo de 6px: una barra de altura cero desaparece y el
-                    // día parece que no existe, cuando lo que pasa es que no se
-                    // cobró nada — que es justo lo que hay que ver.
-                    height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
-                    borderRadius: '4px 4px 0 0',
-                    background: esHoy ? BLOQUE.oro : (llego ? BLOQUE.barra : BLOQUE.barraNo),
-                  }}
-                />
-              )
-            })}
-          </div>
-
-          {/* Debajo, solo los extremos en móvil; en escritorio caben los nombres
-              de los días. La cifra de la línea va arriba a la derecha, donde
-              está la línea, y solo donde hay sitio para leerla. */}
-          <div className="flex lg:hidden" style={{ justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, color: BLOQUE.apagado }}>hace una semana</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: BLOQUE.oro }}>hoy</span>
-          </div>
-          <div className="hidden lg:flex" style={{ gap: 9 }}>
-            {semana.map((_, i) => {
-              const esHoy = i === semana.length - 1
-              return (
-                // `suppressHydrationWarning`: el nombre sale del reloj del
-                // navegador, así que el servidor pinta vacío y el cliente el
-                // día. Sin esto React tira el árbol entero al hidratar.
-                <span key={i} suppressHydrationWarning style={{
-                  flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 700,
-                  color: esHoy ? BLOQUE.oro : BLOQUE.apagado,
-                }}>{esHoy ? 'hoy' : (cortos[i] ?? '')}</span>
-              )
-            })}
-          </div>
-
-          {/* ── LA LECTURA ESCRITA ──
-              SIN ESTA FRASE LA GRÁFICA SIGUE SIN DECIR NADA. Un gráfico que
-              necesita interpretación no informa; uno que trae su lectura sí.
-
-              Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
-              misma comparación con la que se pintan, así que no puede decir
-              «3 de 7» y haber cuatro por encima de la línea. */}
-          {cumplieron != null && (
-            <p style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo }}>
-              {/* En negativo la frase salía torcida —«no cobraste todo ninguno
-                  de los últimos 7 días»— y es justo el día en que más se lee.
-                  El caso de cero se dice en positivo y con su consecuencia. */}
-              {cumplieron === 0
-                ? <>Ningún día de los últimos {semana.length} llegó a lo que tocaba cobrar. </>
-                : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {semana.length} días</b>. </>}
-              La línea es lo que toca cada día.
-            </p>
+        {/* ── EL MONTO Y SU CONTEXTO, EN LA MISMA LÍNEA ──
+            Alineados por la base: la cifra manda y el contexto se apoya en ella.
+            El copy dice «que toca cobrar», NO «meta del día»: no es una meta,
+            es plata que le deben hoy. Una meta es algo a lo que uno aspira y
+            que se puede no alcanzar sin consecuencia; llamarlo meta hace que
+            quedarse corto se sienta normal. */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <span className="cf-fig text-[34px] lg:text-[40px]" style={{
+            letterSpacing: '-.035em', color: BLOQUE.tinta, lineHeight: 1,
+          }}>{recaudado}</span>
+          {meta && (
+            <span className="cf-num text-[12px] lg:text-[14px]" style={{
+              color: BLOQUE.apagado, paddingBottom: 2,
+            }}>de {meta} que toca cobrar</span>
           )}
-        </>
+        </div>
+
+        {/* ── LA BARRA, CON SU PORCENTAJE AL FINAL ──
+            El % estaba DOS VECES: una pastilla arriba a la derecha y esta barra,
+            diciendo lo mismo sin conexión visual entre las dos. Al final de la
+            barra deja de ser un dato duplicado y pasa a ser su etiqueta. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <span style={{
+            flex: 1, height: 11, borderRadius: 999, overflow: 'hidden',
+            background: BLOQUE.pista,
+          }}>
+            <span style={{
+              display: 'block', height: 11, borderRadius: 999,
+              width: `${Math.max(0, Math.min(100, porcentaje))}%`,
+              background: BLOQUE.oro,
+            }} />
+          </span>
+          <span className="cf-fig" style={{
+            fontSize: 15, fontWeight: 600, letterSpacing: '-.02em',
+            color: BLOQUE.oro, flex: 'none',
+          }}>{porcentaje}%</span>
+        </div>
+
+        {/* ── LA TIRA DE CIFRAS ──
+            Antes era «2 cobrados · 14 pendientes · ayer $460.400»: tres datos
+            sueltos, sin etiqueta y todos del mismo peso. Con rótulo encima y un
+            filete entre columnas se puede comparar de un vistazo.
+
+            Las dos últimas se esconden por debajo de `lg`: tres en móvil, cinco
+            en escritorio. */}
+        <div style={{
+          display: 'flex', gap: 8, marginTop: 'auto',
+          paddingTop: 13, borderTop: `1px solid ${BLOQUE.linea}`,
+        }}>
+          {cifras.map((c, i) => (
+            <Fragment key={c.rot}>
+              {i > 0 && (
+                <span className={c.soloAncho ? 'hidden lg:block' : ''}
+                  style={{ width: 1, background: BLOQUE.linea, flex: 'none' }} />
+              )}
+              <span className={`${c.soloAncho ? 'hidden lg:flex' : 'flex'}`}
+                style={{ flex: 1, minWidth: 0, flexDirection: 'column', gap: 4 }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                  textTransform: 'uppercase', color: BLOQUE.apagado,
+                }}>{c.rot}</span>
+                <span className="cf-fig text-[15px] lg:text-[19px]" style={{
+                  fontWeight: 600, letterSpacing: '-.02em', color: c.color ?? BLOQUE.tinta,
+                }}>{c.val}</span>
+              </span>
+            </Fragment>
+          ))}
+        </div>
+
+        {/* En móvil la gráfica va DENTRO de esta caja: a 393px no hay dos
+            columnas, y una segunda tarjeta solo añadiría un borde y otro
+            título para lo mismo. */}
+        {hayGrafica && <div className="lg:hidden"><Grafica /></div>}
+      </CajaOscura>
+
+      {/* La misma gráfica, en su propia caja, solo desde `lg`. */}
+      {hayGrafica && (
+        <CajaOscura marca="semana" className="hidden lg:flex">
+          <RotuloBloque
+            texto={`Los últimos ${semana.length} días`}
+            apunte={cumplieron != null
+              ? (cumplieron === 0 ? 'ningún día completo' : `cobraste todo ${cumplieron} ${cumplieron === 1 ? 'vez' : 'veces'}`)
+              : null}
+          />
+          <Grafica />
+        </CajaOscura>
       )}
     </div>
   )
+
+  /* La gráfica se declara aquí dentro a propósito: usa ocho valores del cuerpo
+     —barras, tope, la línea, los nombres— y pasarlos por props a un componente
+     de fuera sería ocho props para un trozo que solo existe aquí. Y se pinta en
+     DOS sitios (dentro de la caja en móvil, en la suya en escritorio), así que
+     duplicar el JSX era la otra salida, peor. */
+  function Grafica() {
+    return (
+      <>
+        {/* ⚠ LA ALTURA DEL CONTENEDOR VA EN PX, NUNCA `flex:1`. Las barras
+            miden su alto en porcentaje: si el contenedor colapsa, el gráfico
+            desaparece entero sin que falle nada. */}
+        <div className="relative h-[52px] lg:h-[96px]"
+          style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flex: 'none' }}>
+          {alturaLinea != null && (
+            <>
+              <span aria-hidden="true" style={{
+                position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
+                borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
+              }} />
+              {/* ── LA CIFRA DE LA LÍNEA ──
+                  Sin ella la línea no se entiende: a tamaño real se lee como un
+                  separador de sección, no como una referencia. */}
+              <span className="hidden lg:block" style={{
+                position: 'absolute', right: 0, bottom: `calc(${Math.min(100, alturaLinea)}% + 3px)`,
+                fontSize: 10, fontWeight: 700, color: BLOQUE.apagado,
+                pointerEvents: 'none', background: BLOQUE.fondo, paddingLeft: 6,
+              }}>{meta}</span>
+            </>
+          )}
+          {barras.map((n, i) => {
+            const esHoy = i === barras.length - 1
+            const llego = esperadoCrudo ? n >= esperadoCrudo : false
+            return (
+              <span
+                key={i}
+                suppressHydrationWarning
+                title={`${dias[i] ?? ''} ${fmt ? fmt(n) : n}`}
+                style={{
+                  flex: 1, minWidth: 0,
+                  // Mínimo de 6px: una barra de altura cero desaparece y el día
+                  // parece que no existe, cuando lo que pasa es que no se cobró
+                  // nada — que es justo lo que hay que ver.
+                  height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
+                  borderRadius: '4px 4px 0 0',
+                  background: esHoy ? BLOQUE.oro : (llego ? BLOQUE.barra : BLOQUE.barraNo),
+                }}
+              />
+            )
+          })}
+        </div>
+
+        {/* Debajo, solo los extremos en móvil; en escritorio caben los nombres. */}
+        <div className="flex lg:hidden" style={{ justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, color: BLOQUE.apagado }}>hace una semana</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: BLOQUE.oro }}>hoy</span>
+        </div>
+        <div className="hidden lg:flex" style={{ gap: 9 }}>
+          {barras.map((_, i) => {
+            const esHoy = i === barras.length - 1
+            return (
+              // `suppressHydrationWarning`: el nombre sale del reloj del
+              // navegador, así que el servidor pinta vacío y el cliente el día.
+              // Sin esto React tira el árbol entero al hidratar.
+              <span key={i} suppressHydrationWarning style={{
+                flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 700,
+                color: esHoy ? BLOQUE.oro : BLOQUE.apagado,
+              }}>{esHoy ? 'hoy' : (cortos[i] ?? '')}</span>
+            )
+          })}
+        </div>
+
+        {/* ── LA LECTURA ESCRITA ──
+            SIN ESTA FRASE LA GRÁFICA SIGUE SIN DECIR NADA. Un gráfico que
+            necesita interpretación no informa; uno que trae su lectura sí.
+
+            Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
+            misma comparación con la que se pintan. */}
+        {cumplieron != null && (
+          <p style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo, marginTop: 'auto' }}>
+            {cumplieron === 0
+              ? <>Ningún día de los últimos {barras.length} llegó a lo que tocaba cobrar. </>
+              : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {barras.length} días</b>. </>}
+            La línea es lo que toca cada día.
+          </p>
+        )}
+      </>
+    )
+  }
 }
 
 /* ══ Las dos tarjetas blancas ══
@@ -575,8 +613,15 @@ export default function Panel({
 
       {/* 2 · El hero dorado */}
       {hero && (
-        <div className="lg:col-start-1 lg:row-start-1 flex flex-col">
-          <Hero {...hero} fmt={fmt} />
+        /* ⚠ LA FILA ENTERA, y no es una preferencia: es lo que hace que la
+           gráfica quepa en su propia tarjeta. Medido a 1440 — la columna
+           izquierda son 766px, y quitándole los 392 de la gráfica quedan 358
+           para el monto a 40px y cinco columnas de cifras, que no caben. Con la
+           fila entera quedan 734, casi lo que tenía antes.
+
+           Por eso todo lo demás baja una fila. */
+        <div className="lg:col-span-2 lg:row-start-1 flex flex-col">
+          <Hero {...hero} fecha={fecha} fmt={fmt} />
         </div>
       )}
 
@@ -596,7 +641,7 @@ export default function Panel({
             partes iguales: lo único que faltaba era que el contenedor ocupara
             la fila entera. */
         <div
-          className="lg:col-start-2 lg:row-start-1 lg:flex-col lg:self-stretch"
+          className="lg:col-start-2 lg:row-start-2 lg:flex-col"
           style={{ display: 'flex', gap: 10, flex: 'none' }}
         >
           {caja && (
@@ -664,7 +709,7 @@ export default function Panel({
             debajo. Abarcando 2 y 3, la columna izquierda apila «Necesita tu
             atención» y lo que venga después a su lado, y la rejilla cuadra sin
             estirar nada. */
-        <Tarjeta className="lg:col-start-2 lg:row-start-2 lg:row-span-2" style={{ gap: 13, padding: 16 }}>
+        <Tarjeta className="lg:col-start-2 lg:row-start-3" style={{ gap: 13, padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
