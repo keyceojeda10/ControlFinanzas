@@ -16,8 +16,26 @@ const fieldStyle = {
   color: 'var(--cf-ink)',
 }
 
+/* ── `tono="papel"`: el campo como CAJA, no como hueco ──
+ *
+ * El relleno gris de `--cf-fill` funciona cuando el formulario va sobre el
+ * fondo de la app: el campo es el hueco más claro dentro de una zona gris.
+ * Sobre una hoja blanca se invierte —el campo pasa a ser una mancha gris sobre
+ * papel— y el formulario entero se lee apagado.
+ *
+ * Es exactamente la diferencia entre las dos pantallas de esta tanda: en crear
+ * préstamo los campos son blancos con borde y se ven como cajas; en crear
+ * cliente se quedaron grises y el rediseño parecía un formulario viejo con un
+ * campo grande encima. Lo dijo el dueño: «el de préstamos te quedó hermoso».
+ */
+const fieldStylePapel = {
+  background: 'var(--cf-card)',
+  borderColor: 'var(--cf-border)',
+  color: 'var(--cf-ink)',
+}
+
 export const Input = forwardRef(function Input(
-  { label, error, prefix, suffix, className = '', containerClassName = '', type, onChange, ...props },
+  { label, error, prefix, suffix, className = '', containerClassName = '', type, onChange, tono, ...props },
   ref
 ) {
   const generatedId = useId()
@@ -62,7 +80,7 @@ export const Input = forwardRef(function Input(
             error ? 'cf-input-error' : '',
             className,
           ].join(' ')}
-          style={fieldStyle}
+          style={tono === 'papel' ? fieldStylePapel : fieldStyle}
           {...props}
         />
         {suffix && (
@@ -77,7 +95,7 @@ export const Input = forwardRef(function Input(
 })
 
 export const Select = forwardRef(function Select(
-  { label, error, className = '', containerClassName = '', children, ...props },
+  { label, error, className = '', containerClassName = '', children, tono, ...props },
   ref
 ) {
   const generatedId = useId()
@@ -96,7 +114,7 @@ export const Select = forwardRef(function Select(
           error ? 'cf-input-error' : '',
           className,
         ].join(' ')}
-        style={fieldStyle}
+        style={tono === 'papel' ? fieldStylePapel : fieldStyle}
         {...props}
       >
         {children}

@@ -15,6 +15,28 @@ import { useCountry } from '@/hooks/useCountry'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
+/**
+ * La etiqueta de un campo, con «opcional» detrás cuando toca.
+ *
+ * Va en la etiqueta y no en el placeholder a propósito: dentro del campo, la
+ * palabra compite con lo que se escribe y empuja el ejemplo del formato. Aquí
+ * arriba se lee ANTES de entrar al campo, que es cuando decide si lo rellenas.
+ *
+ * Y en gris flojo, no en rojo ni en negrita: no es un aviso, es un permiso.
+ */
+function Etiqueta({ texto, opcional = false }) {
+  return (
+    <span className="inline-flex items-baseline gap-1.5">
+      {texto}
+      {opcional && (
+        <span className="text-[11px] font-medium tracking-normal" style={{ color: 'var(--cf-ink-3)', opacity: 0.85 }}>
+          opcional
+        </span>
+      )}
+    </span>
+  )
+}
+
 export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null, esOwner = false }) {
   const router = useRouter()
   const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
@@ -396,7 +418,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               <button
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
-                className="relative w-20 h-20 rounded-full shrink-0 overflow-hidden transition-all active:scale-95"
+                /* Era un círculo de 80px con borde discontinuo, encima del
+                   nombre y con más peso visual que el único campo obligatorio
+                   de la pantalla. Baja a 56 y pasa a cuadrado redondeado, que
+                   es lo que manda el canon —el círculo está reservado a los
+                   avatares con persona dentro, no a un hueco vacío—. */
+                className="relative w-14 h-14 rounded-[14px] shrink-0 overflow-hidden transition-all active:scale-95"
                 style={{
                   background: fotoPreview ? 'transparent' : 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
                   border: `2px dashed ${fotoPreview ? 'var(--cf-gold)' : 'color-mix(in srgb, var(--cf-gold) 40%, transparent)'}`,
@@ -489,6 +516,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               error={errores.nombre}
               autoComplete="name"
               autoFocus
+              tono="papel"
               className="cf-campo-grande h-[68px] rounded-[14px] text-[24px] font-semibold tracking-[-.02em]"
             />
             <div className="grid sm:grid-cols-2 gap-5 items-start">
@@ -496,14 +524,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               {!sinCedula && (
                 <>
                   <Input
-                    label={`${documentConfig.label}`}
-                    /* «opcional» PRIMERO, y el ejemplo detrás.
-                       La lámina quiere que la palabra esté en el propio campo,
-                       pero poner solo «opcional» borraba el formato del
-                       documento del país —que se internacionalizó justo para
-                       que a un cliente en Argentina no le saliera «CC»—. Lo
-                       cazó una prueba de esa tanda; van las dos cosas. */
-                    placeholder={`opcional · ej. ${documentConfig.placeholder}`}
+                    /* «opcional» va en la ETIQUETA, no dentro del placeholder.
+                       Metido en el placeholder salía «opcional · ej.
+                       1023456789»: una frase larga y gris dentro del campo, que
+                       compite con lo que se escribe y encima empuja el ejemplo
+                       —el formato del documento del país, que se
+                       internacionalizó para que a alguien en Argentina no le
+                       saliera «CC»—. Arriba, en pequeño, se lee antes de entrar
+                       al campo, que es cuando hace falta saberlo. */
+                    label={<Etiqueta texto={documentConfig.label} opcional />}
+                    placeholder={`Ej: ${documentConfig.placeholder}`}
+                    tono="papel"
                     value={form.cedula}
                     onChange={set('cedula')}
                     error={errores.cedula}
@@ -541,32 +572,20 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   un cliente cuya cédula es un marcador `SIN-…`, es lo que hace
                   que el campo salga vacío en vez de enseñar «SIN-m3k9x2». */}
             </div>
-            {/* ── EL TELÉFONO TAMBIÉN ES OPCIONAL, Y HAY QUE DECIRLO ──
-                Lo era ya: la validación solo comprueba el formato SI hay algo
-                escrito, igual que la cédula. Pero el campo no lo decía, así que
-                en la calle se lee como obligatorio y frena lo mismo — que es
-                justo lo que esta pantalla vino a quitar.
+            {/* El teléfono también es opcional —lo era ya: la validación solo
+                comprueba el formato SI hay algo escrito— y ahora lo dice.
 
-                El icono de WhatsApp es de la lámina y hace el trabajo que no
-                hace la palabra: dice PARA QUÉ sirve dejarlo. Opcional no es lo
-                mismo que inútil, y sin teléfono no hay recordatorio. */}
+                SIN el icono de WhatsApp que había puesto: dibujado a mano
+                dentro de un campo gris quedaba nefasto, y su trabajo —decir
+                para qué sirve dejarlo— lo hace mejor una palabra debajo. */}
             <Input
-              label={phoneConfig.label}
-              placeholder={`opcional · ej. ${phoneConfig.placeholder}`}
+              label={<Etiqueta texto={phoneConfig.label} opcional />}
+              placeholder={`Ej: ${phoneConfig.placeholder}`}
               value={form.telefono}
               onChange={set('telefono')}
               error={errores.telefono}
               inputMode="tel"
-              suffix={
-                <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none"
-                  stroke={form.telefono.trim() ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)'}
-                  strokeWidth={1.7} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M20.5 3.5A10.4 10.4 0 003.7 16.1L2.5 21.5l5.5-1.2A10.4 10.4 0 1020.5 3.5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M8.4 8.2c.2-.5.4-.5.6-.5h.5c.2 0 .4 0 .6.5l.7 1.6c.1.2 0 .4-.1.5l-.5.6c-.1.2-.2.3 0 .6a7 7 0 003.2 2.8c.3.1.5.1.6 0l.7-.8c.2-.2.3-.2.6-.1l1.6.8c.2.1.4.2.4.4v.5c0 .4-.3 1.2-1.5 1.5a5 5 0 01-3.6-.9 11 11 0 01-4.3-4.6c-.5-1-.6-2.1-.5-2.9z" />
-                </svg>
-              }
+              tono="papel"
             />
             </div>
 
@@ -599,19 +618,21 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                 dos filas de 575px para dos frases cortas. */}
             <div className="grid sm:grid-cols-2 gap-5 items-start">
               <Input
-                label="Dirección"
+                label={<Etiqueta texto="Dirección" opcional />}
                 placeholder="Calle, barrio, ciudad..."
                 value={form.direccion}
                 onChange={set('direccion')}
                 error={errores.direccion}
+                tono="papel"
               />
               <Input
-                label="Referencia"
+                label={<Etiqueta texto="Referencia" opcional />}
                 placeholder="Ej: frente al colegio"
                 value={form.referencia}
                 onChange={set('referencia')}
                 error={errores.referencia}
                 maxLength={100}
+                tono="papel"
               />
             </div>
             <div>
@@ -680,7 +701,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
             {!planSinRutas && rutas.length > 0 && (
               <>
-                <Select label="Ruta" value={form.rutaId} onChange={set('rutaId')}>
+                <Select label="Ruta" tono="papel" value={form.rutaId} onChange={set('rutaId')}>
                   <option value="">Sin ruta asignada</option>
                   {rutas.map((r) => (
                     <option key={r.id} value={r.id}>{r.nombre}</option>
@@ -689,7 +710,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
                 {form.rutaId && !esEdicion && clientesRuta.length > 0 && (
                   <Select
-                    label="Posicion en la ruta"
+                    label="Posición en la ruta"
+                    tono="papel"
                     value={posicionEnRuta}
                     onChange={(e) => setPosicionEnRuta(e.target.value)}
                   >
@@ -706,7 +728,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
               </>
             )}
             {grupos.length > 0 && (
-              <Select label="Grupo de cobro" value={form.grupoCobroId} onChange={set('grupoCobroId')}>
+              <Select label="Grupo de cobro" tono="papel" value={form.grupoCobroId} onChange={set('grupoCobroId')}>
                 <option value="">Sin grupo</option>
                 {grupos.map((g) => (
                   <option key={g.id} value={g.id}>{g.nombre}</option>

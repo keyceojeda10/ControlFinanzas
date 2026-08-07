@@ -165,7 +165,10 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
           type="button"
           onClick={handleGPS}
           disabled={gpsLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs font-medium hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50 active:scale-95"
+          /* Es la acción principal de este bloque —la que se usa de pie en la
+             puerta del cliente— y salía del mismo tamaño que «ocultar mapa».
+             Sube a la altura de un control de verdad. */
+          className="inline-flex items-center gap-2 px-4 h-11 rounded-[10px] bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-[13px] font-semibold hover:bg-[rgba(245,197,24,0.15)] transition-all disabled:opacity-50 active:scale-95"
         >
           {gpsLoading ? (
             <>
@@ -181,7 +184,11 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Mi ubicación
+              {/* «Mi ubicación» no dice qué va a pasar al pulsarlo: puede
+                  entenderse como «ver dónde estoy». Lo que hace es CLAVAR la
+                  del cliente en donde estás parado, que es como se usa —de pie
+                  en la puerta de su casa— y por eso el verbo va delante. */}
+              Fijar en la ubicación actual
             </>
           )}
         </button>
@@ -189,7 +196,10 @@ export default function LocationPicker({ latitud, longitud, onLocationChange }) 
         <button
           type="button"
           onClick={() => setShowMap((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] text-xs font-medium hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)] transition-all active:scale-95"
+          /* `--cf-card`, no `--cf-surface`: éste es un CONTROL, y `--cf-surface`
+             es el fondo de la app. Sobre la hoja blanca del formulario se
+             quedaba sin nada que lo separara del papel. */
+          className="inline-flex items-center gap-2 px-4 h-11 rounded-[10px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-[var(--cf-ink-2)] text-[13px] font-semibold hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)] transition-all active:scale-95"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
