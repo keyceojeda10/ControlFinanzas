@@ -327,6 +327,11 @@ export async function GET() {
         rutaId: ruta?.id ?? null,
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
+        // Un préstamo dado por perdido. Lo tenía la ruta y aquí no, así que el
+        // mismo cliente salía avisado en una pantalla y mudo en la otra —y la
+        // tarjeta es la misma—. Sin el aviso se lee como un cliente cualquiera
+        // al que se le sigue cobrando normal.
+        tieneClavo: (c.prestamos ?? []).some((p) => p.esClavo && p.estado === 'activo'),
         pagoHoy: yaPageHoy,
         // ISO: la hora se formatea en el CLIENTE. Hecho aca saldria en la zona
         // del servidor, y en produccion eso es UTC: «Cobrado 14:06» cuando el
