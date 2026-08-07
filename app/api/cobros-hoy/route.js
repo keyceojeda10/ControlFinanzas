@@ -154,6 +154,22 @@ export async function GET() {
   let esperadoHoyTotal = 0
   let recaudadoHoyTotal = 0
 
+  /* La visita que el cobrador ya dio por cerrada hoy. Misma nota larga que en
+     /api/rutas/[id]: NO toca `cobroPendienteHoy`, porque ese campo alimenta el
+     esperado del día y el cuadre. Solo cambia dónde sale el cliente en la
+     lista y si sigue contando como parada por hacer. */
+  const cerradasHoy = await prisma.visitaReagendada.findMany({
+    where: {
+      organizationId,
+      clienteId: { in: clientes.map((c) => c.id) },
+      fechaOriginal: { gte: _hoy, lt: _manana },
+    },
+    select: { clienteId: true, motivo: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  const cierreDeHoy = new Map()
+  for (const v of cerradasHoy) if (!cierreDeHoy.has(v.clienteId)) cierreDeHoy.set(v.clienteId, v.motivo)
+
   const clientesAgregados = []
 
   {
@@ -340,6 +356,8 @@ export async function GET() {
         montoCobradoHoy: Math.round(pagadoHoy),
         saldoTotal: Math.round(saldoCliente),
         cobroPendienteHoy: pendienteHoyCliente,
+        visitaCerradaHoy: cierreDeHoy.has(c.id),
+        motivoCierre: cierreDeHoy.get(c.id) ?? null,
         diasMora: mora,
         montoParaPonerseAlDia: Math.round(montoParaAlDia),
         // La tira de T03-01. `null` cuando no hay nada vencido todavia: un 0%

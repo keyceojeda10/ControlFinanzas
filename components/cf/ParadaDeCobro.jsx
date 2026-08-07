@@ -118,7 +118,8 @@ export function Carril({ orden, cobrada, actual, ultima, ancla, resaltada, child
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
   avisoMora, avisos = [], prestamos = [],
-  cuota, debe, cobrada = false, abonoHoy, cobradoA, montoCobrado, cifras, pagadoPct, onClick,
+  cuota, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar, onReabrir,
+  cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   // ── LA PARADA ACTUAL (T03-01) ──
   // Marca dónde está el cobrador AHORA: borde dorado y aviso de mora. Ya NO
   // decide quién tiene botones —eso era así y el dueño lo rebatió con el caso
@@ -206,7 +207,14 @@ export function FilaCobro({
 
         {cobrada ? (
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-            {cobradoA ? `Cobrado ${cobradoA}` : 'Cobrado'}
+            {cerradaPorHoy
+              /* CERRADA A MANO, y se dice con esas palabras. «Cobrado» a
+                 secas sobre alguien que todavía debe es mentira: lo que pasó
+                 es que el cobrador siguió camino. */
+              ? (abonadoAntesDeCerrar
+                  ? `Abonó ${abonadoAntesDeCerrar} · cerrado por hoy`
+                  : 'Cerrado por hoy')
+              : cobradoA ? `Cobrado ${cobradoA}` : 'Cobrado'}
           </span>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
@@ -301,6 +309,29 @@ export function FilaCobro({
         </div>
       )}
 
+      {/* ── DESHACER EL CIERRE ────────────────────────────────────────────
+          Se cierra «con la opción de si él quiere realizar otro abono,
+          poderle abonar». Sin esta salida, decir «ya no paga más» sería
+          irreversible por una decisión que se toma de pie en una puerta, y
+          el cliente que saca otro billete a los dos minutos dejaría al
+          cobrador teniendo que buscar la ficha por otro camino.
+
+          Discreto y en su propia línea: la fila cerrada tiene que seguir
+          leyéndose como hecha. */}
+      {cerradaPorHoy && onReabrir && (
+        <div style={{ flex: 'none' }} onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={onReabrir}
+            style={{
+              width: '100%', height: 38, borderRadius: 11, cursor: 'pointer',
+              background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+              font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-ink-2)',
+            }}
+          >Volver a abrir · cobrarle más</button>
+        </div>
+      )}
+
       {/* Los renglones de arriba. Van en TODAS las fichas, no solo en la
           actual, porque cambian la cifra que se pide: enterarse de la cuota
           extra al llegar a la puerta es tarde. */}
@@ -346,9 +377,32 @@ export function FilaCobro({
             strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
             <path d="M5 13l4 4L19 7" />
           </svg>
-          <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-green-dark)', minWidth: 0 }}>
+          <span style={{ flex: 1, fontSize: 12, lineHeight: 1.35, color: 'var(--cf-green-dark)', minWidth: 0 }}>
             Ya abonó <b>{abonoHoy}</b> hoy · sigue pendiente
           </span>
+          {/* ── «HASTA AQUÍ POR HOY» ──────────────────────────────────────
+              Reportado con el caso exacto: debe $100.000, la cuota es de
+              $10.000 y ya abonó $20.000 —dos cuotas—. Está bien que siga
+              apareciendo, pero si el cliente ya dijo que no da más, el
+              cobrador necesita seguir su ruta sin tenerlo eternamente de
+              primero como pendiente.
+
+              Va AQUÍ y no entre las acciones a propósito: solo tiene sentido
+              cuando ya entró plata, y pegado a la frase que dice cuánta. Como
+              botón suelto invitaría a saltarse clientes sin cobrarles. */}
+          {onCerrarVisita && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onCerrarVisita() }}
+              style={{
+                flex: 'none', height: 30, padding: '0 11px', cursor: 'pointer',
+                borderRadius: 9, font: 'inherit', fontSize: 12, fontWeight: 700,
+                background: 'var(--cf-card)',
+                border: '1px solid var(--cf-green-pill-border)',
+                color: 'var(--cf-green-dark)', whiteSpace: 'nowrap',
+              }}
+            >Hasta aquí hoy</button>
+          )}
         </div>
       )}
 
@@ -440,8 +494,21 @@ export function FilaCobro({
           borde dorado y su aviso de mora, así que se distingue igual. Lo que
           cambia es que las demás dejan de estar mudas. */}
       {!cobrada && (onLlamar || onWhatsApp || onMapa || onMas) && (
-        <div style={{ display: 'flex', gap: 8, flex: 'none' }}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
+          {/* ── DOS FILAS, Y NO UNA ────────────────────────────────────────
+              Estaban los cinco controles en una sola fila con «Cobrar» a
+              `flex: 1`, quedándose con lo que sobrara. Con tres iconos aún
+              respiraba; al entrar el de llamar —que la tarjeta vieja tenía y
+              se había perdido— se quedó en unos 90px y el botón principal
+              pasó a ser el más pequeño de la fila. Reportado: «el botón de
+              cobrar quedó justificadamente pequeño».
+
+              Las secundarias se reparten el ancho arriba y COBRAR SE LLEVA UN
+              RENGLÓN ENTERO. Cuesta unos 50px de alto por ficha, y los vale:
+              es la acción por la que se abre esta pantalla, y con las
+              acciones ya en todas las fichas es la que más se pulsa. */}
+          <div style={{ display: 'flex', gap: 8 }}>
           {/* ── SOLO EL ICONO, y no es cosmético ──
               Con el carril, la tarjeta pierde 46px de ancho —la propia adenda
               lo avisa: «quedan 304px de los 350»— y los cuatro controles dejan
@@ -480,16 +547,19 @@ export function FilaCobro({
             </AccionParada>
           )}
 
-          {/* `flex: 1` para que se lleve el sitio que sobra: es la acción por la
-              que se abrió la pantalla. Y sigue funcionando tocar la tarjeta —el
-              gesto de siempre no se quita—, esto solo lo hace visible. */}
+          </div>
+
+          {/* Sigue funcionando tocar la tarjeta entera —el gesto de siempre no
+              se quita—; esto solo lo hace visible, y ahora con el tamaño que
+              le corresponde. */}
           <button
             type="button"
             onClick={onClick}
             style={{
-              flex: 1, minWidth: 0, height: 42, border: 'none', borderRadius: 12,
+              width: '100%', height: 46, border: 'none', borderRadius: 12,
               background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-              font: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              font: 'inherit', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              letterSpacing: '-.01em',
             }}
           >Cobrar</button>
         </div>
@@ -539,7 +609,10 @@ export function AccionParada({ children, texto, tono, soloIcono, relleno, onClic
       onClick={onClick}
       {...resto}
       style={{
-        height: 42, flex: soloIcono ? 'none' : 1, width: soloIcono ? 46 : undefined,
+        // `flex: 1` también con solo icono: ahora comparten su propia fila y
+        // se reparten el ancho, en vez de quedarse en 46px fijos dejando un
+        // hueco muerto a la derecha.
+        height: 42, flex: 1, minWidth: soloIcono ? 44 : undefined,
         minWidth: 0, cursor: 'pointer', borderRadius: 'var(--cf-r-control)',
         background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,

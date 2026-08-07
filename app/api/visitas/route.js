@@ -5,7 +5,12 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad }     from '@/lib/activity-log'
 
-const MOTIVOS_VALIDOS = ['no_estaba', 'negocio_cerrado', 'no_tenia_dinero', 'pidio_plazo', 'otro']
+// `pago_parcial` es el que faltaba: el cliente SÍ pagó, pero ya dijo que no da
+// más por hoy. Los otros cuatro describen por qué no pagó nada, y ninguno vale
+// para «abonó $20.000 de los $100.000 y hasta ahí llega». Sin él, el cobrador
+// no tenía forma de cerrar esa visita y el cliente le seguía saliendo de
+// primero como pendiente toda la jornada.
+const MOTIVOS_VALIDOS = ['no_estaba', 'negocio_cerrado', 'no_tenia_dinero', 'pidio_plazo', 'pago_parcial', 'otro']
 
 // ─── POST /api/visitas — Crear visita reagendada ────────────────
 export async function POST(request) {
@@ -95,6 +100,64 @@ export async function GET(request) {
     return Response.json(visitas)
   } catch (err) {
     console.error('GET /api/visitas error:', err)
+    return Response.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+/* ─── DELETE /api/visitas?clienteId=…&hoy=1 — deshacer el cierre de hoy ─────
+   El cobrador cierra la visita de alguien que abonó y sigue debiendo, y el
+   cliente saca otro billete a los dos minutos. Sin esta salida, «hasta aquí
+   hoy» sería irreversible por una decisión que se toma de pie en una puerta.
+
+   Solo borra las de HOY y solo de esta organización: una anotación de ayer es
+   historial del negocio y no se toca desde un botón de la ruta. */
+export async function DELETE(request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.organizationId) {
+      return Response.json({ error: 'No autorizado' }, { status: 401 })
+    }
+    const { organizationId } = session.user
+    const { searchParams } = new URL(request.url)
+    const clienteId = searchParams.get('clienteId')
+    if (!clienteId) {
+      return Response.json({ error: 'clienteId es obligatorio' }, { status: 400 })
+    }
+    if (searchParams.get('hoy') !== '1') {
+      return Response.json({ error: 'Solo se pueden deshacer las visitas de hoy' }, { status: 400 })
+    }
+
+    // El mismo corte de día que usan la ruta y cobros-hoy: medianoche local
+    // guardada en UTC. Restar 24h desde «ahora» borraría también las de ayer
+    // por la tarde.
+    const ahora = new Date()
+    const inicio = new Date(Date.UTC(
+      ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 0, 0, 0, 0,
+    ))
+    const fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000)
+
+    const { count } = await prisma.visitaReagendada.deleteMany({
+      where: {
+        organizationId,
+        clienteId,
+        fechaOriginal: { gte: inicio, lt: fin },
+      },
+    })
+
+    try {
+      await logActividad({
+        userId: session.user.id,
+        organizationId,
+        accion: 'reabrir_visita',
+        entidadTipo: 'cliente',
+        entidadId: clienteId,
+        descripcion: `Volvió a abrir la visita de hoy (${count} anotación${count === 1 ? '' : 'es'})`,
+      })
+    } catch {}
+
+    return Response.json({ ok: true, borradas: count })
+  } catch (err) {
+    console.error('DELETE /api/visitas error:', err)
     return Response.json({ error: 'Error interno' }, { status: 500 })
   }
 }

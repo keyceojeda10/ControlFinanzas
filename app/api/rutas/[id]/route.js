@@ -166,6 +166,32 @@ export async function GET(request, { params }) {
      escribe «nunca» EN ROJO. Es decir: toda la ruta marcada como gente a la que
      jamás se le ha cobrado, que es lo contrario de la verdad y justo la línea
      que se mira para decidir a quién apretar. */
+  /* ── LA VISITA QUE EL COBRADOR YA DIO POR CERRADA ──────────────────────
+     «Ya abonó lo que iba a abonar, déjame seguir con la ruta.» Se anota como
+     `VisitaReagendada` con `motivo: 'pago_parcial'` —o con los otros cuatro,
+     que son los del «¿qué te dijo?» cuando no pagó nada—.
+
+     ⚠ ESTO NO TOCA `cobroPendienteHoy`. Ese campo alimenta `esperadoHoy`, el
+     cuadre de caja y los reportes: la deuda del cliente NO se encoge porque el
+     cobrador decida seguir camino, y bajar el esperado inflaría el porcentaje
+     cumplido del día. Lo que cambia es DÓNDE SALE en la lista y si sigue
+     contando como parada por hacer, que es presentación.
+
+     Ese modelo ya se escribía desde la ruta y no lo leía NADIE: anotar «no
+     estaba» tampoco sacaba al cliente de la lista, así que el gesto no servía
+     de nada. Se arregla aquí para los dos casos a la vez. */
+  const cerradas = await prisma.visitaReagendada.findMany({
+    where: {
+      organizationId,
+      clienteId: { in: (ruta.clientes ?? []).map((c) => c.id) },
+      fechaOriginal: { gte: _hoy, lt: _manana },
+    },
+    select: { clienteId: true, motivo: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  })
+  const cierreDeHoy = new Map()
+  for (const v of cerradas) if (!cierreDeHoy.has(v.clienteId)) cierreDeHoy.set(v.clienteId, v.motivo)
+
   const idsPrestamos = (ruta.clientes ?? []).flatMap((c) =>
     (c.prestamos ?? []).map((p) => p.id)
   )
@@ -605,6 +631,10 @@ export async function GET(request, { params }) {
       cuota:     cuotaCliente,
       hoySinCobro: _hoySinCobro,
       cobroPendienteHoy: pendienteHoyCliente,
+      // Presentación, no dinero: ver la nota larga de arriba. El cliente sigue
+      // debiendo y sigue contando en el esperado del día.
+      visitaCerradaHoy: cierreDeHoy.has(c.id),
+      motivoCierre: cierreDeHoy.get(c.id) ?? null,
       prestamoActivo: prestamosActivos[0]?.id ?? null,
       prestamosActivos,
       cuotaExtraHoy: prestamosActivos.some(p => p.cuotaExtraHoy),

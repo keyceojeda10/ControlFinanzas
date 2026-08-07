@@ -524,6 +524,13 @@ export default function RutaDetallePage({ params }) {
     else window.location.href = url
   }
 
+  // Puertas que quedan por tocar hoy: pendientes menos las que el cobrador ya
+  // dio por cerradas. Ver la nota del botón «Empezar recorrido».
+  const paradasPorHacer = (ruta?.clientes ?? []).filter((c) => {
+    const pendiente = Boolean(c.cobroPendienteHoy ?? (!c.pagoHoy && !c.hoySinCobro && c.estado !== 'completado'))
+    return pendiente && !c.visitaCerradaHoy
+  }).length
+
   const abrirClienteDesdeRuta = (clienteRuta, idxVista) => {
     if (!clienteRuta || !ruta?.clientes?.length) return
 
@@ -1902,8 +1909,15 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           // tienen ruta). Con `setModalClientes` el modal abria VACIO y decia
           // «Todos los clientes ya tienen ruta asignada», que era mentira.
           { id: 'agregar', texto: 'Agregar cliente', onClick: () => abrirModalClientes() },
-          ...((ruta.pendientesHoy ?? 0) > 0
-            ? [{ id: 'recorrido', texto: `Empezar recorrido · ${ruta.pendientesHoy}`, principal: true, onClick: () => setEnRecorrido(true) }]
+          /* ⚠ CUENTA PUERTAS POR TOCAR, no deudas abiertas.
+             `ruta.pendientesHoy` viene del servidor e incluye al que el
+             cobrador ya cerró a mano —y eso está bien ahí: ese cliente sigue
+             debiendo y sigue contando en el esperado del día—. Pero como
+             número de paradas mentiría: diría 134 cuando quedan 133 puertas,
+             que es exactamente lo que la Adenda 5 reprocha —«un contador que
+             incluye paradas que no se hacen es peor que no tener contador»—. */
+          ...(paradasPorHacer > 0
+            ? [{ id: 'recorrido', texto: `Empezar recorrido · ${paradasPorHacer}`, principal: true, onClick: () => setEnRecorrido(true) }]
             : []),
         ]}
         chips={[{ id: 'trabajo', texto: 'Hoy', conteo: ruta.pendientesHoy ?? 0 },
@@ -2346,6 +2360,49 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             })
           }
 
+          /* ── CERRAR Y REABRIR LA VISITA DEL DÍA ─────────────────────────
+             Se anota como `VisitaReagendada`, que ya existía con sus motivos
+             y hasta ahora no la leía nadie. `pago_parcial` es el motivo nuevo:
+             los otros cuatro dicen por qué NO pagó, y aquí sí pagó.
+
+             La fecha reagendada es el próximo cobro que ya tiene calculado —o
+             mañana si no hay—: es lo que pasa de todas formas, y pedirla en la
+             puerta es un paso más de pie en la calle. */
+          const cerrarVisita = async (c) => {
+            const hoyIso = new Date().toISOString()
+            const prox = c.proximoCobroAt ?? new Date(Date.now() + 86400000).toISOString()
+            try {
+              const res = await fetch('/api/visitas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  clienteId: c.id, prestamoId: c.prestamoActivo ?? null, rutaId: ruta?.id,
+                  fechaOriginal: hoyIso, fechaReagendada: prox, motivo: 'pago_parcial',
+                }),
+              })
+              if (!res.ok) {
+                const d = await res.json().catch(() => ({}))
+                alert(d?.error || 'No se pudo cerrar la visita')
+                return
+              }
+              await fetchRuta()
+            } catch {
+              // El cobrador acaba de decidir algo sobre este cliente: si no
+              // quedó guardado tiene que saberlo, no descubrirlo al recargar.
+              alert('Sin conexión: la visita no quedó cerrada. Vuelve a intentarlo.')
+            }
+          }
+
+          const reabrirVisita = async (c) => {
+            try {
+              const res = await fetch(`/api/visitas?clienteId=${c.id}&hoy=1`, { method: 'DELETE' })
+              if (!res.ok) { alert('No se pudo volver a abrir la visita'); return }
+              await fetchRuta()
+            } catch {
+              alert('Sin conexión: no se pudo volver a abrir la visita.')
+            }
+          }
+
           const abrirMapa = (c) => {
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.latitud},${c.longitud}`, '_blank', 'noopener,noreferrer')
           }
@@ -2388,6 +2445,8 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
                 onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
                 onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
+                onCerrarVisita={() => cerrarVisita(porId.get(fila.id))}
+                onReabrir={() => reabrirVisita(porId.get(fila.id))}
               />
             </Carril>
           )
@@ -2950,7 +3009,10 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
                   {visitas.some((f) => f.cobrada) && (
                     <div>
-                      <Rotulo titulo="Ya pagaron hoy" cuantos={visitas.filter((f) => f.cobrada).length} color="var(--cf-green-dark)" />
+                      {/* «Hechas», no «pagaron»: aquí caen también las que el cobrador cerró a
+                          mano sin que entrara plata —«no estaba», «negocio cerrado»—, y
+                          decir que esas pagaron es falso en la pantalla del dinero. */}
+                      <Rotulo titulo="Visitas hechas hoy" cuantos={visitas.filter((f) => f.cobrada).length} color="var(--cf-green-dark)" />
                       <div className="flex flex-col gap-1.5">
                         {visitas.filter((f) => f.cobrada).map((f, i) => renderCard(f, i))}
                       </div>
