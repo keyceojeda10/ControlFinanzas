@@ -1042,7 +1042,7 @@ export default function ClientesPage() {
                 }}>{a?.iniciales}</span>
                 <span className="min-w-0">
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                    <span className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)', minWidth: 0, overflowWrap: 'anywhere' }}>{a?.nombre}</span>
                     <EtiquetaNuevo nuevo={a?.nuevo} />
                   </span>
                   {/* Cédula y teléfono, NO el `contexto` entero: ése termina en
@@ -1275,7 +1275,7 @@ export default function ClientesPage() {
                         background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)',
                       }}>{(c.nombre ?? '?').split(' ').slice(0, 2).map((x) => x[0]).join('')}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</span>
+                        <span className="block text-[14px] font-semibold" style={{ color: 'var(--cf-ink)', minWidth: 0, overflowWrap: 'anywhere' }}>{c.nombre}</span>
                         <span className="block text-[11.5px] truncate" style={{ color: 'var(--cf-ink-3)' }}>
                           {[c.cedula ? `${abreviaturaDocumento()} ${c.cedula}` : null, c.ruta?.nombre].filter(Boolean).join(' · ')}
                         </span>

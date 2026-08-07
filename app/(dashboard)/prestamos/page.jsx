@@ -829,7 +829,7 @@ export default function PrestamosPage() {
                             cortado por la mitad. */}
                         <span className="min-w-0">
                           <span className="flex items-center gap-2 min-w-0">
-                            <span className="text-[14px] font-semibold truncate" style={{ color: 'var(--cf-ink)' }}>{a?.nombre}</span>
+                            <span className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)', minWidth: 0, overflowWrap: 'anywhere' }}>{a?.nombre}</span>
                             <EtiquetaNuevo nuevo={a?.nuevo} />
                           </span>
                           {/* Solo la RUTA debajo del nombre. El autor se fue a su
