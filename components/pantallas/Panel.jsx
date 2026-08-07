@@ -2,21 +2,29 @@
 
 // components/pantallas/Panel.jsx — El panel del dueño. Lámina T02-01.
 //
-// EL HERO ES DORADO, y eso no es una decisión mía. El pie de T02-01 lo explica:
+// EL HERO YA NO ES DORADO — Y ESO TAMPOCO ES DECISIÓN MÍA.
 //
-//   «El hero dorado se queda —es el momento dorado del sistema— pero baja de
-//    300px a 150px y ahora sí informa: recaudado, meta, progreso y cobros.
-//    Mora y caja pasan a blanco: hoy son dos tarjetas teñidas que compiten
-//    entre sí. La misma cifra de mora dejó de repetirse tres veces.»
+// Aquí decía «el hero es dorado y eso no es una decisión mía», citando el pie de
+// T02-01, y añadía que yo lo había cambiado por un bloque oscuro razonando por
+// mi cuenta y me habían corregido. Todo eso ERA cierto, y por eso se deja
+// escrito: para que nadie deshaga el cambio pensando que se coló otra vez.
 //
-// «Hoy» ahí significa la app EN PRODUCCIÓN, no un intento anterior: el dorado
-// viene de la pantalla que el usuario ya tiene, y se queda por continuidad. Yo
-// lo había cambiado por un bloque oscuro razonando por mi cuenta.
+// Lo que cambió es que llegó la ADENDA 4 («La tarjeta insignia del panel»,
+// `CF Diseño 2026/Elementos/Principal dashboard/entrega-recaudado/`), que es
+// posterior a T02-01 y lo revisa explícitamente:
+//
+//   «El fondo dorado no es un estilo, es un error de sistema. El dorado está
+//    reservado al monto principal, la acción primaria y el foco del campo
+//    activo. Cuando lo lleva el fondo entero, el monto queda del mismo color
+//    que su contenedor y el ojo no encuentra dónde mirar.»
+//
+// Con su lámina de antes/después y su lista de comprobación. Así que ahora el
+// titular es el bloque oscuro del sistema y el dorado vuelve a ser el acento.
 //
 // LOS CINCO BLOQUES, EN ESTE ORDEN:
 //
 //   1 · saludo + fecha        ← lo manda T40-00-a: «el saludo baja al cuerpo»
-//   2 · hero dorado           ← recaudado, meta, %, cobrados/pendientes/ayer
+//   2 · el bloque oscuro      ← recaudado, lo que toca cobrar, %, tira y semana
 //   3 · dos tarjetas blancas  ← en caja · en mora (con su monto expuesto)
 //   4 · necesita tu atención  ← con contador y chevrones
 //   5 · por ruta hoy          ← una barra por ruta, con su color
@@ -36,7 +44,7 @@
 // Presentacional a propósito: recibe todo por props. Así se puede ver y ajustar
 // contra la lámina sin depender de la base de datos.
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
 
 /* Los nombres de los siete días de la barra dorada.
@@ -60,6 +68,27 @@ function nombresDeDias(largo) {
   })
 }
 
+/* Los mismos días, en tres letras: «jue vie sáb dom lun mar hoy».
+ *
+ * `nombresDeDias` da «Viernes 31», que es lo que necesitaba el pie de la
+ * versión anterior. Debajo de siete barras de 96px no cabe: se pisan unos con
+ * otros y dejan de leerse. La adenda los escribe abreviados por eso.
+ *
+ * ⚠ DEPENDE DEL RELOJ DEL NAVEGADOR, así que el servidor y el cliente pintan
+ * cosas distintas y React tira el árbol (el error de hidratación). Por eso se
+ * calcula en un efecto y los `<span>` llevan `suppressHydrationWarning`.
+ */
+function diasCortos(largo) {
+  const hoy = new Date()
+  return Array.from({ length: largo }, (_, i) => {
+    const atras = largo - 1 - i
+    if (atras === 0) return 'hoy'
+    const d = new Date(hoy)
+    d.setDate(d.getDate() - atras)
+    return d.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '').slice(0, 4)
+  })
+}
+
 /* Cuántas rutas se ven sin desplegar.
    Cinco no es un número redondo cualquiera: es lo que hace que esta tarjeta
    mida parecido a «Necesita tu atención», que es su pareja en la fila de la
@@ -67,181 +96,257 @@ function nombresDeDias(largo) {
    debajo — que es lo que se veía desproporcionado. */
 const RUTAS_VISIBLES = 5
 
-/* ══ El hero dorado ══
-   Sobre dorado el texto es #3A2900 y los rótulos #7A5800 — NUNCA blanco. Y la
-   barra va en #3A2900 sobre una pista del mismo tono al 16%: sobre dorado, un
-   relleno blanco no se ve. */
-// ── ⚠ TEXTO SOBRE LA TARJETA DORADA ───────────────────────────────────────
-//
-// Esta tarjeta es dorada SIEMPRE, en claro y en oscuro. Así que su texto tiene
-// que ser oscuro SIEMPRE — y `--cf-gold-text` NO sirve: en tema oscuro vale
-// `#F5B824`, o sea el MISMO dorado del fondo. Las letras desaparecían.
-//
-// Lo reportó el dueño con las dos capturas al lado: en claro se leían
-// «RECAUDADO HOY», «de $998.534 · meta del día», «3 cobrados 16 pendientes» y
-// «Toca una barra»; en oscuro la tarjeta salía muda.
-//
-// `--cf-gold-ink` (#3A2900) está definido UNA sola vez, sin variante oscura,
-// justo porque es «texto SOBRE dorado. Nunca blanco». Ese es el que va aquí.
-//
-// La confusión está en el nombre: `--cf-gold-text` es para texto DORADO sobre
-// fondo neutro (por eso en oscuro se aclara), no para texto sobre dorado.
-const TINTA_SOBRE_ORO = 'var(--cf-gold-ink)'
+/* ══ LA TARJETA INSIGNIA DEL PANEL (Adenda 4) ══════════════════════════════
+   Era un bloque DORADO MACIZO. La adenda lo llama por su nombre: «el fondo
+   dorado no es un estilo, es un error de sistema».
 
-function Hero({ recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt }) {
-  // La barra mas alta manda la escala. Con todo en cero no se pinta nada: siete
-  // barras planas no son un grafico, son ruido.
-  const tope = Math.max(...(semana ?? [0]))
+   El dorado está reservado en todo el sistema a tres cosas —el monto
+   principal, la acción primaria y el foco del campo activo—, así que cuando lo
+   lleva el fondo entero:
 
-  // Qué barra está tocada, y cómo se llama cada día. Ver `nombresDeDias`.
-  const [diaAbierto, setDiaAbierto] = useState(null)
+     · el monto queda del MISMO color que su contenedor y el ojo no encuentra
+       dónde mirar;
+     · el texto oscuro sobre ámbar pierde contraste, y la hora pico de cobro
+       son las 17:00, bajo sol: la peor combinación posible;
+     · las barras ámbar sobre fondo ámbar son invisibles.
+
+   Ahora es el bloque oscuro del sistema y el dorado vuelve a ser solo el
+   acento: la barra, el porcentaje y la cifra que falta.
+
+   ⚠ SOBRE FONDO OSCURO LOS COLORES CAMBIAN. Los del tema claro no tienen
+   contraste suficiente sobre #15161A. Van los de la adenda, fijos: esta
+   tarjeta es oscura en los dos temas, así que sus colores no pueden depender
+   del tema —es el mismo error que tenía la versión dorada, donde el texto
+   usaba un token que en oscuro valía el mismo dorado del fondo y la tarjeta
+   salía muda—. */
+const BLOQUE = {
+  fondo:   '#15161A',
+  tinta:   '#F3F3F6',   // la cifra
+  rotulo:  '#A3A8B2',   // etiquetas y prosa
+  apagado: '#8A8E98',   // contexto y valores secundarios
+  oro:     '#F5B824',
+  rojo:    '#F0575C',
+  linea:   'rgba(255,255,255,.09)',
+  pista:   'rgba(255,255,255,.12)',
+  barra:   'rgba(255,255,255,.34)',   // días que cobraron todo
+  barraNo: 'rgba(255,255,255,.16)',   // días que no llegaron
+}
+
+function Hero({
+  recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt,
+  faltan, enMora = 0, promedio7d, esperadoCrudo,
+}) {
+  /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
+     fila de debajo. En un EFECTO porque dependen del reloj del navegador; el
+     servidor no puede saberlos. */
   const [dias, setDias] = useState([])
-  useEffect(() => { setDias(nombresDeDias(semana?.length ?? 0)) }, [semana?.length])
-  // Mientras el efecto no ha corrido —y en el HTML del servidor— la etiqueta va
-  // en relativo, que es cierto sin mirar el reloj.
-  const diaDeLaSemana = (i, largo) => dias[i]
-    || (largo - 1 - i === 0 ? 'Hoy' : `hace ${largo - 1 - i} días`)
-  const pie = [
-    `${cobrados} cobrado${cobrados === 1 ? '' : 's'}`,
-    `${pendientes} pendiente${pendientes === 1 ? '' : 's'}`,
-    ayer ? `ayer ${ayer}` : null,
+  const [cortos, setCortos] = useState([])
+  useEffect(() => {
+    setDias(nombresDeDias(semana?.length ?? 0))
+    setCortos(diasCortos(semana?.length ?? 0))
+  }, [semana?.length])
+
+  /* ── LA ESCALA DE LA GRÁFICA ──
+     La línea punteada tiene que caber: si un día cobró más que lo esperado, el
+     tope es esa barra; si nadie llegó, el tope es la línea. Escalando solo
+     contra la barra más alta, la línea se saldría del contenedor justo en el
+     caso que más importa —el de la semana floja—. */
+  const barras = semana ?? []
+  /* El 1,12 es AIRE, no un número mágico. Cuando lo que toca cobrar supera a
+     todas las barras —una semana floja, que es cuando más se mira esto— la
+     línea queda exactamente en el techo del contenedor y se lee como el borde
+     de la caja, no como una referencia. Con un 12% por encima siempre queda
+     dentro y se ve que es una línea. */
+  const tope = Math.max(...barras, (esperadoCrudo ?? 0) * 1.12, 0)
+  const alturaLinea = tope > 0 && esperadoCrudo ? (esperadoCrudo / tope) * 100 : null
+
+  /* Cuántos días cobraron TODO lo que tocaba. La adenda insiste en que el texto
+     y el gráfico cuenten la misma historia: «si dice 3 de 7, tiene que haber
+     exactamente 3 barras por encima de la línea». Por eso se cuenta con la
+     misma comparación con la que se pintan, y no a ojo. */
+  const cumplieron = esperadoCrudo
+    ? barras.filter((n) => n >= esperadoCrudo).length
+    : null
+
+  /* La tira de cifras. Tres en móvil, cinco en escritorio, y NI UNA MÁS: es un
+     tope de la adenda, no una casualidad de los datos que hay hoy. Las que no
+     tienen dato se caen solas en vez de dejar un hueco con un guion. */
+  const cifras = [
+    { rot: 'Cobrados',  val: `${cobrados} de ${cobrados + pendientes}` },
+    faltan       && { rot: 'Te faltan',   val: faltan,     color: BLOQUE.oro },
+    enMora > 0   && { rot: 'En mora',     val: String(enMora), color: BLOQUE.rojo, soloAncho: true },
+    ayer         && { rot: 'Ayer',        val: ayer },
+    promedio7d   && { rot: 'Promedio 7d', val: promedio7d, soloAncho: true },
   ].filter(Boolean)
 
   return (
-    /* ⚠ AQUÍ HABÍA UN `maxWidth: 720`, Y SOBRABA.
-       Se puso cuando el hero ocupaba el ancho ENTERO de la pantalla: a 1440 eran
-       1.560px de oro macizo con la cifra en una esquina y medio metro de
-       amarillo vacío. El tope tenía sentido entonces.
-
-       Pero el hero ya vive dentro de la columna izquierda de la rejilla
-       `[1fr | 360px]`, que a 1440 mide 776px. El tope lo dejaba en 720 y el
-       dorado acababa 56px ANTES que las tarjetas blancas de su propia columna
-       —«Necesita tu atención» y «Tu plata puesta»—, con el borde derecho
-       desalineado. Medido: 720 de ancho, acabando en x=994 cuando la columna
-       llega a 1050.
-
-       Lo acota la rejilla, que es de quien es ese trabajo. Un tope escrito a
-       mano encima de una columna que ya acota es un desajuste esperando. */
+    /* ⚠ EL TOPE DE ANCHO LO PONE LA REJILLA, NO ESTA TARJETA.
+       Aquí hubo un `maxWidth: 720` de cuando ocupaba la pantalla entera. Vive
+       dentro de la columna izquierda de `[1fr | 360px]`, que a 1440 mide 776, y
+       el tope la dejaba acabando 56px antes que las tarjetas blancas de su
+       propia columna. */
     <div style={{
-      background: 'var(--cf-gold)',
-      borderRadius: 'var(--cf-r-card)',
-      padding: '18px 20px',
+      background: BLOQUE.fondo,
+      borderRadius: 20,
+      padding: '19px 21px',
       display: 'flex', flexDirection: 'column', gap: 14,
       flex: 'none',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+        color: BLOQUE.rotulo,
+      }}>Recaudado hoy</span>
+
+      {/* ── EL MONTO Y SU CONTEXTO, EN LA MISMA LÍNEA ──
+          Alineados por la base: la cifra manda y el contexto se apoya en ella.
+          El copy dice «que toca cobrar», NO «meta del día»: $626.167 no es una
+          meta, es plata que le deben hoy. Una meta es algo a lo que uno aspira
+          y que se puede no alcanzar sin consecuencia; llamarlo meta hace que
+          quedarse corto se sienta normal. */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <span className="cf-fig text-[34px] lg:text-[40px]" style={{
+          letterSpacing: '-.035em', color: BLOQUE.tinta, lineHeight: 1,
+        }}>{recaudado}</span>
+        {meta && (
+          <span className="cf-num text-[12px] lg:text-[14px]" style={{
+            color: BLOQUE.apagado, paddingBottom: 2,
+          }}>de {meta} que toca cobrar</span>
+        )}
+      </div>
+
+      {/* ── LA BARRA, CON SU PORCENTAJE AL FINAL ──
+          El % estaba DOS VECES: una pastilla arriba a la derecha y esta barra,
+          diciendo lo mismo sin conexión visual entre las dos. Al final de la
+          barra deja de ser un dato duplicado y pasa a ser su etiqueta. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <span style={{
+          flex: 1, height: 11, borderRadius: 999, overflow: 'hidden',
+          background: BLOQUE.pista,
+        }}>
           <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.11em', textTransform: 'uppercase',
-            color: TINTA_SOBRE_ORO,
-          }}>Recaudado hoy</span>
-          <span className="cf-fig" style={{
-            fontSize: 38, letterSpacing: '-.03em', color: 'var(--cf-gold-ink)',
-          }}>{recaudado}</span>
-          {/* La meta va DEBAJO de la cifra, no al lado: «$412.000 de $872.867»
-              en una línea hace dudar de cuál de los dos es lo cobrado. */}
-          {meta && (
-            <span className="cf-num" style={{
-              fontSize: 13, fontWeight: 600, color: TINTA_SOBRE_ORO,
-            }}>de {meta} · meta del día</span>
-          )}
-        </div>
+            display: 'block', height: 11, borderRadius: 999,
+            width: `${Math.max(0, Math.min(100, porcentaje))}%`,
+            background: BLOQUE.oro,
+          }} />
+        </span>
         <span className="cf-fig" style={{
-          display: 'inline-flex', alignItems: 'center', flex: 'none',
-          height: 26, padding: '0 11px', borderRadius: 'var(--cf-r-pill)',
-          background: 'rgba(58,41,0,.14)',
-          fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-ink)',
+          fontSize: 15, fontWeight: 600, letterSpacing: '-.02em',
+          color: BLOQUE.oro, flex: 'none',
         }}>{porcentaje}%</span>
       </div>
 
-      <div style={{
-        height: 8, borderRadius: 999, overflow: 'hidden', flex: 'none',
-        background: 'rgba(58,41,0,.16)',
-      }}>
-        <span style={{
-          display: 'block', height: 8, borderRadius: 999,
-          width: `${Math.max(0, Math.min(100, porcentaje))}%`,
-          background: 'var(--cf-gold-ink)',
-        }} />
-      </div>
+      {/* ── LA TIRA DE CIFRAS ──
+          Antes era «2 cobrados · 14 pendientes · ayer $460.400»: tres datos
+          sueltos, sin etiqueta y todos del mismo peso. Con rótulo encima y un
+          filete entre columnas se puede comparar de un vistazo.
 
-      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-        {pie.map((t, i) => (
-          <span key={i} className="cf-num" style={{
-            fontSize: 12, fontWeight: 600, color: TINTA_SOBRE_ORO,
-          }}>{t}</span>
+          Las dos últimas se esconden por debajo de `lg`: la adenda pone tres en
+          móvil y cinco en escritorio. */}
+      <div style={{
+        display: 'flex', gap: 8,
+        paddingTop: 13, borderTop: `1px solid ${BLOQUE.linea}`,
+      }}>
+        {cifras.map((c, i) => (
+          <Fragment key={c.rot}>
+            {i > 0 && (
+              <span className={c.soloAncho ? 'hidden lg:block' : ''}
+                style={{ width: 1, background: BLOQUE.linea, flex: 'none' }} />
+            )}
+            <span className={`${c.soloAncho ? 'hidden lg:flex' : 'flex'}`}
+              style={{ flex: 1, minWidth: 0, flexDirection: 'column', gap: 4 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                textTransform: 'uppercase', color: BLOQUE.apagado,
+              }}>{c.rot}</span>
+              <span className="cf-fig text-[15px] lg:text-[19px]" style={{
+                fontWeight: 600, letterSpacing: '-.02em', color: c.color ?? BLOQUE.tinta,
+              }}>{c.val}</span>
+            </span>
+          </Fragment>
         ))}
       </div>
 
-      {/* LOS SIETE DIAS. Contestan «¿hoy es un buen día o es un día normal?»,
-          que la cifra sola no contesta. El de hoy va en carbón y los seis
-          anteriores en dorado quemado: sin esa diferencia la barra de hoy se
-          pierde entre las otras seis.
+      {/* ── LOS SIETE DÍAS ──
+          Contestan «¿hoy es un buen día o es un día normal?», que la cifra sola
+          no contesta. Antes eran siete barras sin escala ni referencia y del
+          mismo color que el fondo: no decían nada. Lo que les faltaba es la
+          LÍNEA de lo que toca cobrar cada día — con ella, cada barra se lee sola.
 
-          ⚠ ANTES ESTO ERA `hidden lg:flex`: las siete barras solo se pintaban en
-          escritorio, porque se construyeron contra T02-07, que es la lámina de
-          1440. En el teléfono —que es donde el dueño mira— el historial de la
-          semana no existía.
-
-          El dueño lo pidió por su nombre: «cuánto está cobrando en el día, con
-          un pequeño historial de una semana; eso era lo que teníamos antes y
-          funcionaba bien». Una lámina de escritorio no decide qué ve el que va
-          en la calle. En móvil van más bajas (44px) para no empujar las dos
-          tarjetas blancas fuera de la primera pantalla. */}
+          ⚠ LA ALTURA DEL CONTENEDOR VA EN PX, NUNCA `flex:1`. Las barras miden
+          su alto en porcentaje: si el contenedor colapsa, el gráfico
+          desaparece entero sin que falle nada. */}
       {semana && tope > 0 && (
         <>
-          {/* SE PUEDEN TOCAR. Antes eran `aria-hidden` y no respondían: siete
-              barras que enseñaban la forma de la semana pero no decían cuánto
-              fue cada día. El dueño lo pidió: «la caja amarilla donde está el
-              recaudo de los últimos 7 días no es interactiva, no se le puede
-              picar y ver los saldos».
-
-              La API manda siete números SIN fecha, pero el último es HOY, así
-              que el día sale contando hacia atrás. */}
-          <div
-            className="flex h-[44px] lg:h-[62px]"
-            style={{ gap: 8, alignItems: 'flex-end', flex: 'none' }}
-          >
+          <div className="relative h-[52px] lg:h-[96px]"
+            style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flex: 'none' }}>
+            {alturaLinea != null && (
+              <span aria-hidden="true" style={{
+                position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
+                borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
+              }} />
+            )}
             {semana.map((n, i) => {
               const esHoy = i === semana.length - 1
-              const elegido = diaAbierto === i
+              const llego = esperadoCrudo ? n >= esperadoCrudo : false
               return (
-                <button
+                <span
                   key={i}
-                  type="button"
-                  onClick={() => setDiaAbierto(elegido ? null : i)}
-                  aria-label={`${diaDeLaSemana(i, semana.length)}: ${fmt ? fmt(n) : n}`}
+                  suppressHydrationWarning
+                  title={`${dias[i] ?? ''} ${fmt ? fmt(n) : n}`}
                   style={{
-                    flex: 1, minWidth: 0, padding: 0, border: 0, cursor: 'pointer',
-                    alignSelf: 'flex-end',
-                    // `flex: none` en el alto y un minimo de 6px: una barra de
-                    // altura cero desaparece y el dia parece que no existe,
-                    // cuando lo que pasa es que no se cobro nada — que es justo
-                    // lo que hay que ver.
+                    flex: 1, minWidth: 0,
+                    // Mínimo de 6px: una barra de altura cero desaparece y el
+                    // día parece que no existe, cuando lo que pasa es que no se
+                    // cobró nada — que es justo lo que hay que ver.
                     height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
-                    borderRadius: '6px 6px 0 0',
-                    background: esHoy ? 'var(--cf-gold-ink)' : 'rgba(58,41,0,.16)',
-                    // El elegido se marca con un borde, no cambiando su color:
-                    // el color ya significa «hoy» y no puede significar dos cosas.
-                    outline: elegido ? '2px solid var(--cf-gold-ink)' : 'none',
-                    outlineOffset: 2,
+                    borderRadius: '4px 4px 0 0',
+                    background: esHoy ? BLOQUE.oro : (llego ? BLOQUE.barra : BLOQUE.barraNo),
                   }}
                 />
               )
             })}
           </div>
 
-          {/* La respuesta va DEBAJO, no en un globo: el dedo tapa el globo justo
-              donde está la cifra. Y ocupa sitio siempre —aunque esté vacía— para
-              que la tarjeta no dé un salto al tocar. */}
-          <span className="cf-num" style={{
-            fontSize: 12, fontWeight: 600, minHeight: 16, flex: 'none',
-            color: TINTA_SOBRE_ORO,
-          }}>
-            {diaAbierto === null
-              ? 'Toca una barra para ver el día'
-              : `${diaDeLaSemana(diaAbierto, semana.length)} · ${fmt ? fmt(semana[diaAbierto]) : semana[diaAbierto]}`}
-          </span>
+          {/* Debajo, solo los extremos en móvil; en escritorio caben los nombres
+              de los días. La cifra de la línea va arriba a la derecha, donde
+              está la línea, y solo donde hay sitio para leerla. */}
+          <div className="flex lg:hidden" style={{ justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: BLOQUE.apagado }}>hace una semana</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: BLOQUE.oro }}>hoy</span>
+          </div>
+          <div className="hidden lg:flex" style={{ gap: 9 }}>
+            {semana.map((_, i) => {
+              const esHoy = i === semana.length - 1
+              return (
+                // `suppressHydrationWarning`: el nombre sale del reloj del
+                // navegador, así que el servidor pinta vacío y el cliente el
+                // día. Sin esto React tira el árbol entero al hidratar.
+                <span key={i} suppressHydrationWarning style={{
+                  flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 700,
+                  color: esHoy ? BLOQUE.oro : BLOQUE.apagado,
+                }}>{esHoy ? 'hoy' : (cortos[i] ?? '')}</span>
+              )
+            })}
+          </div>
+
+          {/* ── LA LECTURA ESCRITA ──
+              SIN ESTA FRASE LA GRÁFICA SIGUE SIN DECIR NADA. Un gráfico que
+              necesita interpretación no informa; uno que trae su lectura sí.
+
+              Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
+              misma comparación con la que se pintan, así que no puede decir
+              «3 de 7» y haber cuatro por encima de la línea. */}
+          {cumplieron != null && (
+            <p style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo }}>
+              {/* En negativo la frase salía torcida —«no cobraste todo ninguno
+                  de los últimos 7 días»— y es justo el día en que más se lee.
+                  El caso de cero se dice en positivo y con su consecuencia. */}
+              {cumplieron === 0
+                ? <>Ningún día de los últimos {semana.length} llegó a lo que tocaba cobrar. </>
+                : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {semana.length} días</b>. </>}
+              La línea es lo que toca cada día.
+            </p>
+          )}
         </>
       )}
     </div>
