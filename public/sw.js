@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v875'
+const CACHE_NAME   = 'cf-v876'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -14,7 +14,7 @@ const CACHE_NAME   = 'cf-v875'
 //
 // (Antes subió por `telefono`, `latitud` y `longitud` en ese mismo endpoint y
 // por `atrasoRuta` en `/api/rutas`.)
-const API_CACHE    = 'cf-api-v101'
+const API_CACHE    = 'cf-api-v102'
 // Cache inmutable para _next/static — NO se borra entre versiones.
 // Los chunks llevan hash en el nombre, así que nunca hay stale content.
 const STATIC_CACHE = 'cf-static'
