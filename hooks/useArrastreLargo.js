@@ -53,7 +53,16 @@ export function useArrastreLargo({ activo = true, cantidad = 0, onReordenar } = 
   const cajas = useRef([])
   const reloj = useRef(null)
   const inicio = useRef(null)
-  const bloquearClick = useRef(false)
+  /* ⚠ UNA MARCA DE TIEMPO, NO UN INTERRUPTOR.
+     Empezó siendo `bloquearClick = true`, que se apagaba al tragarse el
+     siguiente clic. Pero tras un arrastre largo el navegador NO emite ningún
+     clic —el puntero se movió demasiado— así que la bandera se quedaba
+     encendida y se comía el TOQUE SIGUIENTE, que sí era de verdad. Medido en el
+     espejo: se movía una tarjeta y la próxima que se tocaba no abría el cobro.
+
+     Con la hora del último arrastre no hay estado que se quede pegado: pasados
+     400 ms, cualquier clic es del usuario. */
+  const ultimoArrastre = useRef(0)
   const puntero = useRef({ y: 0 })
 
   const limpiarReloj = () => {
@@ -142,7 +151,7 @@ export function useArrastreLargo({ activo = true, cantidad = 0, onReordenar } = 
     setArrastrando(null)
     if (!g) return
     // Hubo arrastre: el `click` que viene detrás abriría la hoja de cobro.
-    bloquearClick.current = true
+    ultimoArrastre.current = Date.now()
     if (g.desde !== g.hasta) onReordenar?.(g.desde, g.hasta)
   }
 
@@ -192,8 +201,7 @@ export function useArrastreLargo({ activo = true, cantidad = 0, onReordenar } = 
     onPointerCancel: soltar,
     // En fase de captura: llega ANTES que el `onClick` de la tarjeta.
     onClickCapture: (e) => {
-      if (!bloquearClick.current) return
-      bloquearClick.current = false
+      if (Date.now() - ultimoArrastre.current > 400) return
       e.preventDefault()
       e.stopPropagation()
     },
