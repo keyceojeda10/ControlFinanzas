@@ -27,6 +27,81 @@ function haceTiempo(fecha) {
   return `Hace ${dias}d`
 }
 
+/* ── LA CAMPAÑA DE FOTOS (7-10 ago 2026) ────────────────────────────────────
+ *
+ * Vive DENTRO de Activación y no en una sección propia. La campaña es una
+ * jugada de activación —el muro del negocio es pasar el cuaderno, y esto mide
+ * si el lector de cartulinas sirve para tumbarlo—, así que la pregunta es la
+ * misma que ya responde esta pantalla. Y el panel tiene trece secciones: una
+ * decimocuarta para tres días queda huérfana en el menú el martes.
+ *
+ * ⚠ CUENTA, NO ENSEÑA. Ni una foto ni un nombre de cliente. Una galería de
+ * cédulas ajenas en una pantalla web recrearía justo el agujero que estas fotos
+ * evitan yéndose a `/opt/cf-fotos-donadas`. Se revisan por SSH.
+ *
+ * Se retira sola: si no hay ni una foto y la campaña ya cerró, no pinta nada.
+ */
+function TiraFotosDonadas() {
+  const [d, setD] = useState(null)
+  useEffect(() => {
+    fetch('/api/admin/fotos-donadas').then(r => r.json()).then(setD).catch(() => {})
+  }, [])
+
+  if (!d || d.error) return null
+  if (!d.viva && !d.total) return null
+
+  const pct = Math.min(100, Math.round((d.total / d.meta) * 100))
+  const cierra = new Date(d.cierraEn)
+  const FORMA = { cartulina: 'tarjeta por cliente', lista: 'cuaderno con lista', otro: 'otra cosa', sin_decir: 'no dijo' }
+
+  return (
+    <Card className="mb-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Fotos donadas para el lector</p>
+          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
+            {d.total} <span className="text-sm font-normal text-[var(--color-text-muted)]">de {d.meta}</span>
+          </p>
+          <p className="text-[10px] text-[var(--color-text-muted)]">
+            {d.negocios.length} {d.negocios.length === 1 ? 'negocio' : 'negocios'}
+            {d.ultima ? ` · última ${haceTiempo(d.ultima)}` : ''}
+          </p>
+        </div>
+        <div className="text-right">
+          <Badge variant={d.viva ? 'yellow' : 'green'}>{d.viva ? 'Abierta' : 'Cerrada'}</Badge>
+          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+            {d.viva
+              ? `Cierra ${cierra.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })}`
+              : 'Ya se retiró del panel'}
+          </p>
+        </div>
+      </div>
+
+      <div className="h-1.5 rounded-full mt-3 overflow-hidden" style={{ background: 'var(--color-border)' }}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--color-accent)' }} />
+      </div>
+
+      {/* Qué forma tienen los registros: decide para qué hay que construir. */}
+      {Object.keys(d.porForma).length > 0 && (
+        <div className="flex gap-3 mt-3 flex-wrap">
+          {Object.entries(d.porForma).map(([k, n]) => (
+            <span key={k} className="text-[11px] text-[var(--color-text-muted)]">
+              <strong className="text-[var(--color-text-primary)]">{n}</strong> {FORMA[k] ?? k}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {d.negocios.length > 0 && (
+        <p className="text-[11px] text-[var(--color-text-muted)] mt-2">
+          {d.negocios.slice(0, 6).map(n => `${n.nombre} (${n.fotos})`).join(' · ')}
+          {d.negocios.length > 6 ? ` y ${d.negocios.length - 6} más` : ''}
+        </p>
+      )}
+    </Card>
+  )
+}
+
 export default function ActivacionPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -92,6 +167,8 @@ export default function ActivacionPage() {
           <p className="text-[10px] text-[var(--color-text-muted)]">Próximos 3 días</p>
         </Card>
       </div>
+
+      <TiraFotosDonadas />
 
       {/* Filtros */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
