@@ -362,10 +362,10 @@ export default function BarraLateral({
             {/* El avatar elegido en configuración, si lo hay. Antes solo se
                 pintaban las iniciales aunque el usuario hubiera escogido uno. */}
             {avatarId && getAvatarById(avatarId) ? (
-              <span aria-hidden style={{
+              <img src={getAvatarById(avatarId).src} alt="" aria-hidden loading="lazy" style={{
                 display: 'inline-block', overflow: 'hidden',
                 width: 32, height: 32, borderRadius: 999,
-              }} dangerouslySetInnerHTML={{ __html: getAvatarById(avatarId).svg }} />
+              }} />
             ) : (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

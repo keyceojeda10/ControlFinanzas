@@ -128,13 +128,14 @@ function Avatar({ iniciales = '', avatarId = null, nombre = '', onClick }) {
     <button type="button" onClick={onClick} aria-label="Tu cuenta"
       style={{ background: 'none', border: 0, padding: 0, marginLeft: 4, cursor: 'pointer', flex: 'none' }}>
       {dibujo ? (
-        <span
+        <img
+          src={dibujo.src}
+          alt=""
           aria-hidden
           style={{
             display: 'inline-block', flex: 'none', overflow: 'hidden',
             width: 32, minWidth: 32, height: 32, minHeight: 32, borderRadius: 999,
           }}
-          dangerouslySetInnerHTML={{ __html: dibujo.svg }}
         />
       ) : (
         <span style={{

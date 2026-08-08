@@ -98,10 +98,10 @@ export default function HojaCuenta({
               de la cabecera: si allí sale el dibujo y aquí las iniciales, parece
               que se abrió la cuenta de otro. */}
           {avatarId && getAvatarById(avatarId) ? (
-            <span aria-hidden style={{
+            <img src={getAvatarById(avatarId).src} alt="" aria-hidden loading="lazy" style={{
               display: 'inline-block', overflow: 'hidden',
               width: 52, height: 52, borderRadius: 999,
-            }} dangerouslySetInnerHTML={{ __html: getAvatarById(avatarId).svg }} />
+            }} />
           ) : (
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

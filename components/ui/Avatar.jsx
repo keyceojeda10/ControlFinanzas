@@ -62,14 +62,25 @@ export default function Avatar({ nombre, fotoUrl, avatarId, size = 40, fontSize,
     )
   }
 
-  const nftAvatar = avatarId ? getAvatarById(avatarId) : null
-  if (nftAvatar) {
+  const elegido = avatarId ? getAvatarById(avatarId) : null
+  if (elegido) {
     return (
-      <div
+      /* ⚠ `<img>` Y NO SVG INCRUSTADO. Dos motivos, los dos medidos:
+             · Los 96 dibujos pesan 550 KB. Incrustados viajan en el JS a todo
+               el mundo, tenga avatar o no; como imagen se baja solo el suyo.
+             · DiceBear emite `id="viewboxMask"`, EL MISMO en todos. Varios en
+               la misma página y las máscaras se pisan: en mi hoja de muestra
+               cinco estilos salieron en blanco. En un `<img>` cada SVG es su
+               propio documento. */
+      <img
+        src={elegido.src}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
         onClick={onClick}
         className={`shrink-0 overflow-hidden ${shapeClass} ${onClick ? 'cursor-pointer' : ''} ${className}`}
         style={{ width: px, height: px, minWidth: px, borderRadius: round ? undefined : radius, ...extraStyle }}
-        dangerouslySetInnerHTML={{ __html: nftAvatar.svg }}
       />
     )
   }

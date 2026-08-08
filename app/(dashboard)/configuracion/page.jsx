@@ -283,7 +283,10 @@ function TabPerfil() {
                         }}
                         title={av.nombre}
                       >
-                        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: av.svg }} />
+                        {/* `loading="lazy"`: son 96 y el selector abre con
+                            cuatro filas a la vista. Sin esto se piden los 96 de
+                            golpe en una red de barrio. */}
+                        <img src={av.src} alt={av.nombre} loading="lazy" decoding="async" className="w-full h-full" />
                         {selected && (
                           <div className="absolute inset-0 flex items-end justify-center pb-1">
                             <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: 'var(--cf-gold)' }}>

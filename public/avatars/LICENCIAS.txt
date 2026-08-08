@@ -1,0 +1,12 @@
+Avatares generados con DiceBear (https://dicebear.com) — MIT.
+
+notionists  CC0 1.0                            Zoish
+lorelei     CC0 1.0                            Lisa Wischofsky
+openPeeps   CC0 1.0                            Pablo Stanley
+thumbs      CC0 1.0                            DiceBear
+shapes      CC0 1.0                            DiceBear
+glass       CC0 1.0                            DiceBear
+avataaars   Libre para uso personal y comercial  Pablo Stanley
+bottts      Libre para uso personal y comercial  Pablo Stanley
+
+Se regeneran con: node scripts/generar-avatares.mjs
