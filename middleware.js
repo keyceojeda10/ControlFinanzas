@@ -174,7 +174,24 @@ export const config = {
     '/rutas/:path*',
     '/socios/:path*',
     '/soporte/:path*',
-    '/tutoriales/:path*',
+    /* ⚠ AQUÍ DECÍA `'/tutoriales/:path*'`, Y ESO SE COMÍA LAS IMÁGENES.
+       `/tutoriales` NO TIENE SUBPÁGINAS —una sola `page.jsx`— así que el
+       comodín solo llegaba a alcanzar los PNG de `public/tutoriales/`.
+
+       El daño no se ve navegando, porque el usuario va con sesión. Lo sufre el
+       OPTIMIZADOR de Next: pide la imagen desde el servidor, SIN cookie, se
+       come el 307 al login y devuelve 400. En el log queda como «The requested
+       resource isn't a valid image … received null» — que suena a PNG corrupto
+       y no lo es: `file` dice que las imágenes están perfectas.
+
+       Llevaba tiempo así: ese mismo error salía en producción por
+       `10_ruta_detalle.png` antes de tocar nada. Las capturas de los tutoriales
+       no se han visto NUNCA a través de `next/image`.
+
+       Medido contra el espejo:
+         /tutoriales/02_dashboard.png                → 307
+         /_next/image?url=/tutoriales/02_dashboard…  → 400 */
+    '/tutoriales',
     '/suscripcion-vencida',
     '/login',
     '/registro',
