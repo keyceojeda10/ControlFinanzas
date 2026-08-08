@@ -22,7 +22,7 @@ export async function GET(req) {
 
   const fmt = (v) => formatMoney(v, country)
 
-  const [org, festivos, rutas] = await Promise.all([
+  const { org, festivos, rutas } = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
       select: { nombre: true, diasSinCobro: true },
@@ -75,7 +75,69 @@ export async function GET(req) {
       },
       orderBy: { nombre: 'asc' },
     }),
-  ])
+  ]).then(async ([org, festivos, rutas]) => {
+    /* ══ ⚠ LOS CLIENTES SIN RUTA TAMBIEN COBRAN ═══════════════════════════
+     *
+     * Este reporte recorria RUTAS y, dentro, los clientes de cada ruta. Quien
+     * no habia creado ninguna ruta se bajaba un PDF VACIO: el bucle no entraba
+     * nunca. Y no fallaba — generaba el documento con «0 clientes», que es
+     * peor, porque parece una respuesta.
+     *
+     * Medido en produccion el 8 ago 2026, al reportarlo un cliente (Crediya:
+     * 0 rutas, 31 clientes, 35 prestamos activos, PDF vacio):
+     *
+     *   · 160 de 223 negocios con prestamos activos NO tienen ninguna ruta
+     *   · 2.904 de 5.395 prestamos activos no salian en el papel
+     *
+     * O sea el 72 % de los negocios y el 54 % de la cartera. No era el caso
+     * raro de uno: era la mayoria.
+     *
+     * Los sueltos se agrupan bajo «Sin ruta». Solo se piden cuando NO se ha
+     * filtrado por una ruta concreta: si el usuario eligio una, quiere esa. */
+    const sinRuta = rutaId ? [] : await prisma.cliente.findMany({
+      where: {
+        organizationId: orgId,
+        OR: [{ rutaId: null }, { ruta: { activo: false } }],
+        estado: { notIn: ['eliminado', 'inactivo'] },
+        prestamos: { some: { estado: 'activo', esClavo: false } },
+      },
+      select: {
+        id: true,
+        nombre: true,
+        cedula: true,
+        telefono: true,
+        direccion: true,
+        diasSinCobro: true,
+        prestamos: {
+          where: { estado: 'activo', esClavo: false },
+          select: {
+            estado: true,
+            montoPrestado: true,
+            totalAPagar: true,
+            cuotaDiaria: true,
+            frecuencia: true,
+            fechaInicio: true,
+            diasPlazo: true,
+            modoInteres: true,
+            proximoCobroManual: true,
+            cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, capital: true, pagado: true, fechaEsperada: true } },
+            pagos: { select: { montoPagado: true, tipo: true } },
+          },
+        },
+      },
+      orderBy: { nombre: 'asc' },
+    })
+
+    /* Va al final y se comporta como una ruta mas, para que el resto del
+       codigo —el bucle, los totales, el PDF— no tenga que saber que existe.
+       `diasSinCobro: null` hace que herede los de la organizacion, que es lo
+       correcto: un cliente sin ruta no tiene dias propios de ruta. */
+    const gruposCobro = sinRuta.length
+      ? [...rutas, { id: null, nombre: 'Sin ruta', diasSinCobro: null, clientes: sinRuta }]
+      : rutas
+
+    return { org, festivos, rutas: gruposCobro }
+  })
 
   const festArr = festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10))
 

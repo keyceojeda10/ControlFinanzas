@@ -50,7 +50,44 @@ export async function GET() {
     },
   })
 
-  const resultado = rutas.map((r) => {
+  /* ══ ⚠ LOS CLIENTES SIN RUTA TAMBIEN SON CARTERA ═════════════════════════
+   *
+   * Esto recorre RUTAS, asi que quien no ha creado ninguna no aparecia: ni sus
+   * clientes, ni su capital, ni su saldo. Medido en produccion el 8 ago 2026,
+   * al reportar un cliente que su reporte salia vacio:
+   *
+   *   · 160 de 223 negocios con prestamos activos NO tienen ninguna ruta
+   *   · 2.904 de 5.395 prestamos activos quedaban fuera
+   *
+   * Se agrupan al final bajo «Sin ruta» y se comportan como una ruta mas, para
+   * que el resto del codigo no tenga que saber que existen. */
+  const sueltos = await prisma.cliente.findMany({
+    where: {
+      organizationId: orgId,
+      OR: [{ rutaId: null }, { ruta: { is: null } }],
+      prestamos: { some: { estado: 'activo', esClavo: false } },
+    },
+    include: {
+      prestamos: {
+        where: { estado: 'activo', esClavo: false },
+        select: {
+          montoPrestado: true,
+          totalAPagar: true,
+          totalPagado: true,
+          cuotaDiaria: true,
+          modoInteres: true,
+          cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
+          pagos: { select: { montoPagado: true, tipo: true } },
+        },
+      },
+    },
+  })
+
+  const grupos = sueltos.length
+    ? [...rutas, { id: null, nombre: 'Sin ruta', cobrador: null, clientes: sueltos }]
+    : rutas
+
+  const resultado = grupos.map((r) => {
     let capitalActivo = 0
     let saldoPendiente = 0
     let cuotaDiariaTotal = 0
