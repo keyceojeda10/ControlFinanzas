@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
 import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { parsearDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
 // mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
@@ -122,9 +123,16 @@ export async function GET() {
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'activo', esClavo: false },
       select: {
-        id: true, montoPrestado: true, totalAPagar: true, totalPagado: true,
+        // `estado` se filtra arriba y ADEMAS se pide. `calcularDiasMora` lo lee,
+        // y un campo que no entra en el `select` vale `undefined`, no da error:
+        // devolvia 0 dias de mora en TODOS los prestamos, sin un aviso. Esta
+        // pantalla decia «0 en mora» de 984 mientras el otro reporte, mismo
+        // negocio y mismo dia, decia 851. Ver la nota en lib/calculos.js.
+        // `proximoCobroManual` tambien lo lee, para saber desde cuando cuenta.
+        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
+        proximoCobroManual: true,
         cliente: { select: { id: true, nombre: true, rutaId: true } },
         // `interes` y los abonos a capital NO estaban aqui, y sin ellos
         // `capitalEnCalle()` calcula de menos sin avisar: los prestamos con
@@ -311,21 +319,34 @@ export async function GET() {
 
   // Working days calculation
   const mesActualKey = mesActual.toISOString().slice(0, 7)
-  const diasExcluidos = organization?.diasSinCobro || []
-  const diasMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+  /* ⚠ AQUI HABIA DOS IDIOMAS EN LA MISMA LINEA.
+   *
+   * `diasSinCobro` se guarda como un JSON de NUMEROS —`"[0]"` es «no se cobra
+   * domingo»— y esto lo comparaba contra una tabla de NOMBRES («domingo»). La
+   * comparacion no fallaba: era `false` siempre, asi que el mes contaba como
+   * habiles los siete dias. Con `[1,2,3,4,5]` —un negocio que solo cobra fines
+   * de semana— el esperado del mes salia tres veces y media.
+   *
+   * Y el mismo string en crudo iba a `calcularDiasMora`, que espera un array de
+   * numeros: `"[0]".length` es 3, asi que contaba tres dias excluidos por
+   * semana en vez de uno.
+   *
+   * Medido: 20 negocios lo tienen configurado, 18 con prestamos vivos y 1.483
+   * prestamos activos. */
+  const diasExcluidos = parsearDiasSinCobro(organization?.diasSinCobro) ?? []
 
   const diasTranscurridos = hoy.getDate()
   let diasHabiles = 0
   for (let d = 1; d <= diasTranscurridos; d++) {
     const f = new Date(hoy.getFullYear(), hoy.getMonth(), d)
-    if (!diasExcluidos.includes(diasMap[f.getDay()])) diasHabiles++
+    if (!diasExcluidos.includes(f.getDay())) diasHabiles++
   }
 
   const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate()
   let diasHabilesTotalMes = 0
   for (let d = 1; d <= ultimoDiaMes; d++) {
     const f = new Date(hoy.getFullYear(), hoy.getMonth(), d)
-    if (!diasExcluidos.includes(diasMap[f.getDay()])) diasHabilesTotalMes++
+    if (!diasExcluidos.includes(f.getDay())) diasHabilesTotalMes++
   }
 
   const recaudadoMes = Number(pagosEsteMes._sum?.montoPagado || 0)
