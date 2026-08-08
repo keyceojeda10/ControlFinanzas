@@ -223,7 +223,15 @@ registrar "Subiendo a Google Drive..."
 # el dueno con su cuenta. Esto solo aguanta mejor mientras tanto.
 SUBIDA_OK=0
 if rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE"        --stats-one-line --retries 5 --retries-sleep 60s        --low-level-retries 20 --drive-pacer-min-sleep 200ms        --timeout 10m 2>&1 | tee -a "$LOG"; then
-    REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*//p')
+    # ⚠ EL GRUPO DE CAPTURA DE ESTE SED SE PERDIO AL REESCRIBIR EL SCRIPT.
+    #   Python interpreto la referencia como el byte de control 0x01 en vez de dejar
+    #   las dos letras, asi que sed no veia una referencia: REMOTO salia VACIO
+    #   y la verificacion habria fallado SIEMPRE, incluso con la cuota de
+    #   Google ya arreglada. La marca de copia-fuera no se habria escrito
+    #   nunca y el vigilante seguiria avisando sin motivo.
+    #   Lo cace mirando los bytes del archivo (`od -c`), no ejecutandolo:
+    #   en pantalla se veia igual que el original.
+    REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
     if [ "${REMOTO:-0}" = "$PESO" ]; then
         registrar "Verificado en Drive: mismo tamaño"
         date +%s > "$MARCA_FUERA"
