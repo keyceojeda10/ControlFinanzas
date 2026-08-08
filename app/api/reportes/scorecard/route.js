@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,17 @@ export async function GET(req) {
     if (session.user.rol !== 'owner') {
       return NextResponse.json({ success: false, error: 'Solo el administrador puede ver el scorecard' }, { status: 403 })
     }
+    /* ⚠ ESTE ENDPOINT NO TENIA NINGUNA BARRERA DE PLAN, y por aqui se colaba
+     * a plan Inicial —322 de los 431 negocios— algo que la tabla de planes
+     * marca de Basico en adelante (`reportesNivel`, en lib/planes.js). No era
+     * una decision: era un olvido, y llevaba abierto desde el primer dia.
+     *
+     * La pantalla que llama aqui enseña <PlanGate/> al ver `motivo: 'plan'`.
+     * Sin eso decia «revisa tu conexion», que le echa la culpa al internet
+     * del cliente por algo que es de su plan. */
+    const veto = await exigeNivelReportes(session, 1)
+    if (veto) return veto
+
 
     const orgId = session.user.organizationId
     if (!orgId) {

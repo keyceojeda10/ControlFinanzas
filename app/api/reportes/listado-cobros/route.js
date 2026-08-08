@@ -13,6 +13,16 @@ export async function GET(req) {
   if (!session) return Response.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return Response.json({ error: 'Solo el administrador' }, { status: 403 })
 
+  /* ⚠ AQUI NO HAY BARRERA DE PLAN, Y ES A PROPOSITO.
+   *
+   * Todos los demas reportes se cerraron a Basico el 8 ago 2026. Este NO: es la
+   * hoja con la que el cobrador sale a la calle, no un reporte de gestion.
+   * Quitarsela a los 322 negocios en plan Inicial seria quitarles la
+   * herramienta de trabajo del dia, no una funcion de mas.
+   *
+   * Decision del dueño, no un olvido: si alguien viene a «arreglar» esto,
+   * hay una prueba que lo tiene fijado (lib/__tests__/barreras-de-plan). */
+
   const orgId = session.user.organizationId
   const country = session.user.country ?? 'co'
   const { searchParams } = new URL(req.url)

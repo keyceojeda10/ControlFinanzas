@@ -6,6 +6,8 @@ import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from
 import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO } from '@/lib/papel/tokens'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { rotulo } from '@/lib/dinero/definiciones'
 
 // La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
 // y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
@@ -28,6 +30,17 @@ export async function GET() {
   const { organizationId, rol } = session.user
   if (!organizationId) return Response.json({ error: 'Sin organización' }, { status: 400 })
   if (rol === 'cobrador') return Response.json({ error: 'Solo owner' }, { status: 403 })
+  /* ⚠ ESTE ENDPOINT NO TENIA NINGUNA BARRERA DE PLAN, y por aqui se colaba
+   * a plan Inicial —322 de los 431 negocios— algo que la tabla de planes
+   * marca de Basico en adelante (`reportesNivel`, en lib/planes.js). No era
+   * una decision: era un olvido, y llevaba abierto desde el primer dia.
+   *
+   * La pantalla que llama aqui enseña <PlanGate/> al ver `motivo: 'plan'`.
+   * Sin eso decia «revisa tu conexion», que le echa la culpa al internet
+   * del cliente por algo que es de su plan. */
+  const veto = await exigeNivelReportes(session, 1)
+  if (veto) return veto
+
 
   const country = session.user.country ?? 'co'
   const fmt = v => formatMoney(v, country)
@@ -298,7 +311,9 @@ export async function GET() {
   doc.font(F.cifraFuerte).fontSize(TIPO.cifra).fillColor(COLOR.ink)
   hoja.escribir(fmt(gananciaNetaMes), L, y + 30, { width: W - 16, align: 'right' })
   doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink3)
-  hoja.escribir('GANANCIA NETA', L, y + 16, { width: W - 16, align: 'right', characterSpacing: 0.6 })
+  // El mismo nombre que la pantalla. «Ganancia neta» esta prohibido en la
+  // interfaz por chocar con «Utilidad neta»; el papel no puede decir otra cosa.
+  hoja.escribir(rotulo('gananciaMes').toUpperCase(), L, y + 16, { width: W - 16, align: 'right', characterSpacing: 0.6 })
   y += ALTO_ROI + 18
 
   y = hoja.cifras([

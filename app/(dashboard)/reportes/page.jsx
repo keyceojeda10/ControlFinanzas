@@ -10,6 +10,7 @@ import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import EmptyState              from '@/components/ui/EmptyState'
 import { nivelReportes }       from '@/lib/planes'
+import PlanGate               from '@/components/ui/PlanGate'
 import { Reportes }             from '@/components/pantallas/Reportes'
 import { ComoVaEntrando, SegurosCobrados, CobrosDelMes } from '@/components/pantallas/ReportesDetalle'
 import { aGrafica, aSeguros, aCobrosMes } from '@/lib/adaptadores/reportes-detalle'
@@ -40,66 +41,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 // ── Gate de plan ───────────────────────────────────────────────
-function PlanGate() {
-  const features = [
-    { label: 'Ingresos diario / semanal / mensual', color: 'var(--cf-green-dark)' },
-    { label: 'Cobros programados por mes', color: 'var(--cf-gold-dark)' },
-    { label: 'Rendimiento por cobrador', color: 'var(--cf-ink-2)' },
-    { label: 'Cartera y analisis por ruta', color: 'var(--cf-ink-2)' },
-    { label: 'Exportar a PDF y Excel', color: 'var(--cf-red-dark)' },
-  ]
-  return (
-    <div className="max-w-xl mx-auto mt-8">
-      {/* Sin <h1>: la cabecera ya dice «Reportes». */}
-      <div className="rounded-[20px] p-6 text-center cf-card-shadow"
-        style={{
-          background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-gold) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)',
-          border: '1px solid color-mix(in srgb, var(--cf-gold) 22%, var(--cf-border))',
-        }}
-      >
-        <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}
-        >
-          <svg className="w-7 h-7" style={{ color: 'var(--cf-gold)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-          </svg>
-        </div>
-        <p className="text-base font-bold mb-1" style={{ color: 'var(--cf-ink)' }}>Reportes y analisis</p>
-        <p className="text-[13px] mb-5" style={{ color: 'var(--cf-ink-3)' }}>
-          Visualiza el rendimiento de tu negocio con datos en tiempo real.
-        </p>
-        <div className="inline-flex flex-col gap-2.5 text-left mb-5">
-          {features.map((f) => (
-            <div key={f.label} className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded-[6px] flex items-center justify-center shrink-0"
-                style={{ background: `color-mix(in srgb, ${f.color} 18%, transparent)` }}
-              >
-                <svg className="w-2.5 h-2.5" style={{ color: f.color }} fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              </div>
-              <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>{f.label}</span>
-            </div>
-          ))}
-        </div>
-        <a
-          href="/configuracion/plan"
-          className="inline-flex items-center gap-2 text-[13px] font-bold px-5 py-2.5 rounded-[12px] transition-all"
-          style={{
-            background: 'var(--cf-gold)',
-            color: 'var(--cf-gold-ink)',
-          }}
-        >
-          Ver planes
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-          </svg>
-        </a>
-      </div>
-    </div>
-  )
-}
+
 
 // ── Nudge de upgrade para secciones bloqueadas ─────────────────
 function UpgradeNudge({ titulo, planRequerido }) {
@@ -317,7 +259,19 @@ export default function ReportesPage() {
     )
   }
 
-  if (!esOwner || nivel === 0) return <PlanGate />
+  if (!esOwner || nivel === 0) {
+    return (
+      <PlanGate
+        incluye={[
+          'Ingresos por día, semana y mes',
+          'Cobros programados del mes',
+          'Rendimiento de cada cobrador',
+          'Cartera y análisis por ruta',
+          'Bajar en PDF y en Excel',
+        ]}
+      />
+    )
+  }
 
   // Top recaudacion del periodo (medalla)
   // ── EL HALLAZGO: solo si es cierto ──

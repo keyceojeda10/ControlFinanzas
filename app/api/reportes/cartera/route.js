@@ -3,14 +3,19 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { nivelReportes }   from '@/lib/planes'
 import { capitalEnCalle }  from '@/lib/dinero/reparto'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador' }, { status: 403 })
-  if (nivelReportes(session.user.plan) < 2) return NextResponse.json({ error: 'Plan insuficiente' }, { status: 403 })
+  /* El plan del JWT no se refresca sin volver a entrar: quien acaba de
+     pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
+     usa el token como atajo y solo pregunta a la base cuando va a
+     decir que no. Ver lib/plan-servidor.js. */
+  const veto = await exigeNivelReportes(session, 2)
+  if (veto) return veto
 
   const orgId = session.user.organizationId
 

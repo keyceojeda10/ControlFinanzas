@@ -4,6 +4,7 @@ import { prisma, Prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
 import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 // La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
 // mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
@@ -33,6 +34,17 @@ export async function GET() {
   const { organizationId, rol } = session.user
   if (!organizationId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
   if (rol === 'cobrador') return NextResponse.json({ error: 'Solo owner' }, { status: 403 })
+  /* ⚠ ESTE ENDPOINT NO TENIA NINGUNA BARRERA DE PLAN, y por aqui se colaba
+   * a plan Inicial —322 de los 431 negocios— algo que la tabla de planes
+   * marca de Basico en adelante (`reportesNivel`, en lib/planes.js). No era
+   * una decision: era un olvido, y llevaba abierto desde el primer dia.
+   *
+   * La pantalla que llama aqui enseña <PlanGate/> al ver `motivo: 'plan'`.
+   * Sin eso decia «revisa tu conexion», que le echa la culpa al internet
+   * del cliente por algo que es de su plan. */
+  const veto = await exigeNivelReportes(session, 1)
+  if (veto) return veto
+
 
   const ahora = new Date()
   const hoy = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }))

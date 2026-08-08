@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/i18n'
 import MonedaCF from '@/components/ui/MonedaCF'
 import Avatar from '@/components/ui/Avatar'
 import { rotulo } from '@/lib/dinero/definiciones'
+import PlanGate from '@/components/ui/PlanGate'
 
 const MEDALS = {
   1: { color: 'var(--cf-gold)', label: '1°' },
@@ -208,12 +209,20 @@ export default function RankingCobradoresPage() {
   const [periodo, setPeriodo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [sinPlan, setSinPlan] = useState(false)
 
   const cargar = useCallback(() => {
     setLoading(true)
     setError('')
     fetch('/api/reportes/scorecard')
-      .then((r) => {
+      .then(async (r) => {
+        /* El 403 por plan viaja marcado hasta el `catch`. Con un `new Error()`
+           pelado —como estaba— alli no hay forma de distinguir «tu plan no
+           llega» de «se cayo la red», y al cliente se le enseñaba lo segundo. */
+        if (r.status === 403) {
+          const cuerpo = await r.json().catch(() => ({}))
+          if (cuerpo?.motivo === 'plan') { const e = new Error('plan'); e.plan = true; throw e }
+        }
         if (!r.ok) throw new Error()
         return r.json()
       })
@@ -221,7 +230,8 @@ export default function RankingCobradoresPage() {
         setCobradores(Array.isArray(d?.cobradores) ? d.cobradores : [])
         setPeriodo(d?.periodo ?? null)
       })
-      .catch(() => setError('No se pudo cargar el ranking de cobradores.'))
+      // Un 403 por plan no es un fallo de carga: se contesta con <PlanGate/>.
+      .catch((e) => { if (e?.plan) setSinPlan(true); else setError('No se pudo cargar el ranking de cobradores.') })
       .finally(() => setLoading(false))
   }, [])
 
@@ -229,6 +239,20 @@ export default function RankingCobradoresPage() {
     if (authLoading || !esOwner) { setLoading(false); return }
     cargar()
   }, [authLoading, esOwner, cargar])
+
+  if (sinPlan) {
+    return (
+      <PlanGate
+        titulo="Ranking de cobradores"
+        texto="Quién recauda más, quién deja más mora y cómo va cada uno mes a mes."
+        incluye={[
+          'Recaudado y cumplimiento por cobrador',
+          'Mora que deja cada uno',
+          'Comparación entre rutas',
+        ]}
+      />
+    )
+  }
 
   if (!authLoading && !esOwner) {
     return (

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import { rotulo } from '@/lib/dinero/definiciones'
+import PlanGate from '@/components/ui/PlanGate'
 
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[10px] bg-[var(--cf-fill)] ${className}`} />
@@ -194,6 +195,7 @@ export default function AnaliticasPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [sinPlan, setSinPlan] = useState(false)
   const [showAllAlertas, setShowAllAlertas] = useState(false)
   const [descargando, setDescargando] = useState(false)
 
@@ -232,8 +234,19 @@ export default function AnaliticasPage() {
     // y diciendo que hacer; `e.message` puede ser cualquier cosa del navegador.
     const ctrl = new AbortController()
     fetch('/api/dashboard/analiticas', { signal: ctrl.signal })
-      .then(r => { if (!r.ok) throw new Error('Error cargando datos'); return r.json() })
-      .then((d) => { setData(d); setLoading(false) })
+      .then(async (r) => {
+        /* ⚠ UN 403 POR PLAN NO ES UN FALLO DE CONEXION. Al cerrar Analiticas a
+           Basico, este `catch` le habria dicho «revisa la conexion» a los 322
+           negocios en plan Inicial: culpa del internet del cliente por algo que
+           es de su plan, y ni una pista de que se arregla pagando. */
+        if (r.status === 403) {
+          const cuerpo = await r.json().catch(() => ({}))
+          if (cuerpo?.motivo === 'plan') { setSinPlan(true); setLoading(false); return null }
+        }
+        if (!r.ok) throw new Error('Error cargando datos')
+        return r.json()
+      })
+      .then((d) => { if (d) { setData(d); setLoading(false) } })
       .catch((e) => {
         if (e?.name === 'AbortError') return   // salimos de la pantalla, no es un fallo
         setError('No pudimos cargar tus números. Revisa la conexión y vuelve a intentarlo.')
@@ -241,6 +254,25 @@ export default function AnaliticasPage() {
       })
     return () => ctrl.abort()
   }, [])
+
+  if (sinPlan) {
+    return (
+      <PlanGate
+        titulo="Analíticas de tu negocio"
+        texto="Cuánto estás ganando de verdad, quién te está quedando mal y para dónde va el mes."
+        incluye={[
+          'Rendimiento del mes sobre lo que tienes en la calle',
+          // «Ganancia neta» esta prohibido: convivia con «Utilidad neta» en
+          // la misma pantalla siendo dos numeros distintos. El nombre bueno lo
+          // pone `rotulo('gananciaMes')`.
+          `${rotulo('gananciaMes')}, gastos y capital en calle`,
+          'Quién está atrasado y cuánto hay en riesgo',
+          'Recaudado y gastos de los últimos 6 meses',
+          'Informe en PDF para el contador o el socio',
+        ]}
+      />
+    )
+  }
 
   if (loading) {
     return (

@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import * as XLSX            from 'xlsx'
-import { nivelReportes }   from '@/lib/planes'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 // `desde`/`hasta` en null => la hoja NO esta filtrada por fecha y lo dice.
 // Antes las hojas de Clientes y Prestamos escribian "Periodo: 2026-07-01 al
@@ -41,7 +41,12 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador' }, { status: 403 })
-  if (nivelReportes(session.user.plan) < 3) return NextResponse.json({ error: 'Plan insuficiente' }, { status: 403 })
+  /* El plan del JWT no se refresca sin volver a entrar: quien acaba de
+     pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
+     usa el token como atajo y solo pregunta a la base cuando va a
+     decir que no. Ver lib/plan-servidor.js. */
+  const veto = await exigeNivelReportes(session, 3)
+  if (veto) return veto
 
   const orgId = session.user.organizationId
   const { searchParams } = new URL(req.url)

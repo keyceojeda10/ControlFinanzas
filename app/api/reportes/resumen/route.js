@@ -5,9 +5,9 @@ import { authOptions }   from '@/lib/auth'
 import { prisma }        from '@/lib/prisma'
 import { calcularDiasMora, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { nivelReportes } from '@/lib/planes'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -17,7 +17,12 @@ export async function GET(req) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   if (session.user.rol !== 'owner') return NextResponse.json({ error: 'Solo el administrador' }, { status: 403 })
-  if (nivelReportes(session.user.plan) < 1) return NextResponse.json({ error: 'Plan insuficiente' }, { status: 403 })
+  /* El plan del JWT no se refresca sin volver a entrar: quien acaba de
+     pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
+     usa el token como atajo y solo pregunta a la base cuando va a
+     decir que no. Ver lib/plan-servidor.js. */
+  const veto = await exigeNivelReportes(session, 1)
+  if (veto) return veto
 
   const orgId = session.user.organizationId
   const { searchParams } = new URL(req.url)

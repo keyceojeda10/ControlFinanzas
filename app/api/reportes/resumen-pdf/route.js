@@ -1,12 +1,12 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { nivelReportes }    from '@/lib/planes'
 import { formatMoney, getUtcOffset, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 import { calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 import { COLOR } from '@/lib/papel/tokens'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -20,7 +20,12 @@ export async function GET(req) {
    * BAJARLOS pedia nivel 2. O sea: el plan Basico veia la cifra y no podia
    * llevarsela al contador. Cobrar por el mismo dato en otro formato es
    * exactamente lo que hace sentir engañado a quien ya pago. */
-  if (nivelReportes(session.user.plan) < 1) return Response.json({ error: 'Plan insuficiente' }, { status: 403 })
+  /* El plan del JWT no se refresca sin volver a entrar: quien acaba de
+     pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
+     usa el token como atajo y solo pregunta a la base cuando va a
+     decir que no. Ver lib/plan-servidor.js. */
+  const veto = await exigeNivelReportes(session, 1)
+  if (veto) return veto
 
   const orgId = session.user.organizationId
   const country = session.user.country ?? 'co'

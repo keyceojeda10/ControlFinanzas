@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getLocalDayRange } from '@/lib/i18n'
-import { nivelReportes } from '@/lib/planes'
+import { exigeNivelReportes } from '@/lib/plan-servidor'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,10 +14,11 @@ export async function GET(request) {
 
   const { organizationId, rol, id: userId } = session.user
 
-  const orgData = await prisma.organization.findUnique({ where: { id: organizationId }, select: { plan: true } })
-  if (nivelReportes(orgData?.plan) < 1) {
-    return Response.json({ error: 'Disponible desde el plan Crecimiento' }, { status: 403 })
-  }
+  /* Decia «Disponible desde el plan Crecimiento» mientras cerraba en
+     BASICO: el mensaje mandaba al cliente a un plan mas caro del que
+     necesitaba. Ahora el texto lo pone un solo sitio. */
+  const veto = await exigeNivelReportes(session, 1)
+  if (veto) return veto
   const url = new URL(request.url)
   const fechaParam = url.searchParams.get('fecha')
   const rutasParam = url.searchParams.get('rutas')
