@@ -234,6 +234,14 @@ export default function FichaPrestamo({
   cobro,
   // cómo se pactó
   prestado, ganancia, plazoTexto,
+  /* ── QUÉ DÍAS SE COBRA ──
+     «Se cobra de lunes a sábado», «Se cobra todos los martes», «Se cobra el 5
+     de cada mes». Reportado dos veces por el dueño: «sigo sin ver los días o
+     día de pagos». Y no es lo mismo que el próximo cobro —eso ya está en la
+     tira—: es el CALENDARIO. En un préstamo diario, «30 cuotas diarias» no son
+     treinta días seguidos si la ruta no cobra domingos: son cinco semanas.
+     La compone `calendarioDeCobro` en `lib/dias-sin-cobro.js`. */
+  diasDeCobro,
   cuotaQuePusiste,            // manual
   tasaTexto,                  // proporcional: "20% al mes, repartido sobre 45 días"
   // historial
@@ -442,6 +450,11 @@ export default function FichaPrestamo({
                   <span className="cf-num" style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)' }}>{empezoEl}</span>
                 </div>
               )}
+              {/* En el pago único no hay calendario de cuotas, pero sí un día
+                  en que se cobra todo: la frase lo dice igual. */}
+              {diasDeCobro && (
+                <span style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', lineHeight: 1.4 }}>{diasDeCobro}</span>
+              )}
             </>
           ) : (
             <>
@@ -453,6 +466,25 @@ export default function FichaPrestamo({
               <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
                 {plazoTexto} · tu ganancia {ganancia}
               </span>
+
+              {/* La tercera línea, y va en su propio renglón con el icono del
+                  calendario: las dos de arriba hablan de PLATA y ésta de
+                  TIEMPO. Pegada a ellas con un punto medio se leería como una
+                  cuarta cifra del trato. */}
+              {diasDeCobro && (
+                <span style={{
+                  display: 'flex', alignItems: 'center', gap: 7, marginTop: 4,
+                  fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.4,
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+                    strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"
+                    aria-hidden style={{ flex: 'none' }}>
+                    <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+                    <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
+                  </svg>
+                  {diasDeCobro}
+                </span>
+              )}
 
               {/* `manual`: la cuota la puso el dueño, y el verbo lo reconoce. */}
               {cuotaQuePusiste && (

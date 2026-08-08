@@ -42,6 +42,7 @@ import {
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
+import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 // Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
@@ -1049,6 +1050,17 @@ export default function PrestamoDetallePage({ params }) {
      `estaActivo`: en un préstamo cerrado no hay próximo cobro que enseñar. */
   const cobro = estaActivo ? cifraProximoCobro({ proximoCobro }) : null
 
+  /* ── QUÉ DÍAS SE COBRA ──
+     Reportado dos veces: «sigo sin ver los días o día de pagos». No es el
+     próximo cobro —eso ya sale en la tira— sino el CALENDARIO: en un préstamo
+     diario, «30 cuotas diarias» no son treinta días seguidos si la ruta no
+     cobra domingos.
+
+     `diasExcluidos` lo resuelve el servidor con la jerarquía Préstamo >
+     Cliente > Ruta > Organización, y hasta ahora no salía del endpoint: aquí
+     solo había el campo crudo del préstamo, sin la herencia. */
+  const diasDeCobroTexto = calendarioDeCobro(prestamo, prestamo?.diasExcluidos ?? [])
+
   // ⚠ SIN `pb-28`. El hueco de la pastilla lo reserva el ARMAZÓN, que es el
   // único que sabe si la hay: `Armazon.jsx:185` pinta un espaciador de 112px
   // cuando toca. Poner aquí otros 112 los SUMABA, y el dueño lo fotografió:
@@ -1411,6 +1423,7 @@ export default function PrestamoDetallePage({ params }) {
         enMora={hayMontoMora ? formatMoney(Math.round(montoEnMora)) : '$0'}
         cuotasFaltantes={cuotasFaltantesTexto}
         cobro={cobro}
+        diasDeCobro={diasDeCobroTexto}
         prestado={formatMoney(montoPrestadoRedondeado)}
         ganancia={formatMoney(Math.max(0, Math.round((totalAPagar || 0) - montoPrestadoRedondeado)))}
         plazoTexto={plazoPactadoTexto}

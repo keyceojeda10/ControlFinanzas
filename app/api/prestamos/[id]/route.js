@@ -85,7 +85,17 @@ export async function GET(request, { params }) {
       select: { fecha: true },
     }),
   ])
-  const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+  /* ⚠ EL CUARTO ARGUMENTO ES EL PRÉSTAMO, y faltaba.
+     `obtenerDiasSinCobro` resuelve la jerarquía Préstamo > Cliente > Ruta >
+     Organización, y aquí se le pasaban solo tres: los días sin cobro propios
+     del préstamo NO GANABAN. La pantalla tiene un control para ponerlos
+     —«Días sin cobro», dentro de Gestión— así que se podían configurar y no
+     hacían nada en esta pantalla.
+
+     Y peor: `/api/clientes/[id]` y `/api/cobros-hoy` SÍ los pasan, así que el
+     mismo préstamo podía enseñar un próximo cobro distinto según por dónde se
+     mirara. */
+  const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org, p)
 
   const moratorio = calcularInteresMoratorio(p, diasExcluidos, festivos, org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
@@ -102,6 +112,10 @@ export async function GET(request, { params }) {
     montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(p, diasExcluidos, festivos),
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
+    /* Los días resueltos, para que la pantalla pueda DECIR qué días se cobra.
+       Se calculaban aquí y se tiraban; la pantalla solo tenía el campo crudo
+       del préstamo, sin la herencia del cliente, la ruta ni la organización. */
+    diasExcluidos,
     moratorio,
   })
 }
