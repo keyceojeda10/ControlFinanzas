@@ -107,7 +107,7 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   const ALTO_FILA = 32
   const H = ALTO_BANDA + 26 + ALTO_MONTO + 22
     + (2 + (tieneCedula ? 1 : 0) + filas.length) * ALTO_FILA
-    + 22 + 52
+    + 22 + 34
 
   const escala = 2
   const canvas = document.createElement('canvas')
@@ -120,8 +120,14 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   ctx.fillRect(0, 0, W, H)
 
   // ── La banda dorada, con el nombre del negocio ──────────────────────────
+  /* La banda sigue las esquinas de la tarjeta. Con `fillRect` el dorado
+     rellenaba el cuadrado y asomaba por fuera del marco redondeado: dos
+     picos dorados arriba. */
   ctx.fillStyle = TINTA.gold
-  ctx.fillRect(0, 0, W, ALTO_BANDA)
+  ctx.beginPath()
+  if (ctx.roundRect) ctx.roundRect(0, 0, W, ALTO_BANDA, [16, 16, 0, 0])
+  else ctx.rect(0, 0, W, ALTO_BANDA)
+  ctx.fill()
 
   ctx.textAlign = 'left'
   ctx.fillStyle = TINTA.goldInk
