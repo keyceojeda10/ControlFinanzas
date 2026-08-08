@@ -61,16 +61,52 @@ const COLOR = {
 }
 const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
 
+/* ══ ⚠ LO QUE DE VERDAD SE VA A GUARDAR, EN UNA SOLA FUNCIÓN ══════════════
+ *
+ * Esto empezó siendo tres cálculos sueltos —uno en el semáforo, otro en el
+ * texto de la fila y otro al guardar— y se separaron en el peor sitio posible.
+ *
+ * El fallo, cazado corriendo el lote entero contra el espejo: el OCR devuelve
+ * `tasa: ''` cuando no la encuentra en la foto, y `''` NO es `null`. Así que
+ * `f.tasa ?? base.tasa` daba `''` —el `??` solo cae al defecto con null o
+ * undefined— y `Number('')` es 0. El texto de la fila usaba `||`, así que decía
+ * «diario 20 %»… y al guardar se creaban los siete préstamos AL 0 % DE INTERÉS.
+ *
+ * La pantalla mostraba una cosa y guardaba otra. Sobre una cartera de veinte
+ * millones eso son cuatro millones de interés que desaparecen sin un error a la
+ * vista, y no se descubre hasta que no cuadra la plata meses después.
+ *
+ * Ahora hay UN resolvedor y lo usan los tres. Si mañana se añade un campo con
+ * defecto, entra aquí y los tres lo heredan.
+ */
+function efectivo(f, base) {
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null }
+  const frecuencia = f.frecuencia || base.frecuencia
+  return {
+    nombre: f.nombre?.trim() ?? '',
+    monto: num(f.monto),
+    // `||` y no `??`: el campo vacío del formulario es '' y tiene que caer al
+    // valor de arriba, igual que si no viniera.
+    tasa: num(f.tasa) ?? num(base.tasa),
+    frecuencia,
+    plazoUnidades: num(f.plazoUnidades) ?? PLAZO_DEFAULT[frecuencia],
+  }
+}
+
 /* El semáforo se recalcula EN EL NAVEGADOR cada vez que se edita una fila, no
    solo cuando llega del servidor: si no, corregir el monto de una fila roja la
    dejaría roja y el usuario no sabría que ya está bien. Misma regla que
    `semaforo()` en `lib/cartulina.js`; se repite aquí porque esa vive en el
    servidor y esto corre mientras se teclea. */
 function estadoDe(f, base) {
-  if (!f.nombre?.trim() || !(Number(f.monto) > 0)) return 'rojo'
-  const frec = f.frecuencia || base.frecuencia
-  const tasa = f.tasa ?? base.tasa
-  if (!frec || !(Number(tasa) > 0) || !(Number(f.plazoUnidades) > 0)) return 'ambar'
+  const e = efectivo(f, base)
+  if (!e.nombre || !e.monto) return 'rojo'
+  /* ⚠ ÁMBAR SOLO POR LO QUE NO SE PUEDE RESOLVER. La tasa y el plazo ahora
+     SIEMPRE tienen valor —el de arriba o el del defecto— así que marcarlos en
+     ámbar sería pedir revisar algo que ya está decidido. Lo que sí merece una
+     mirada es que el OCR no leyera la frecuencia ni el plazo de ESA fila: son
+     los dos que cambian cuánto se le cobra. */
+  if (!f.frecuencia || !(Number(f.plazoUnidades) > 0)) return 'ambar'
   return 'verde'
 }
 
@@ -178,8 +214,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
       const tanda = creables.slice(i, i + A_LA_VEZ)
       await Promise.all(tanda.map(async (f) => {
         try {
-          const frecuencia = f.frecuencia || base.frecuencia
-          const plazo = Number(f.plazoUnidades) || PLAZO_DEFAULT[frecuencia]
+          const { monto, tasa, frecuencia, plazoUnidades: plazo } = efectivo(f, base)
           const diasPlazo = plazo * (DIAS_POR_PERIODO[frecuencia] || 1)
 
           const resC = await fetch('/api/clientes', {
@@ -201,8 +236,8 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               clienteId: dataC.id,
-              montoPrestado: Number(f.monto),
-              tasaInteres: Number(f.tasa ?? base.tasa),
+              montoPrestado: monto,
+              tasaInteres: tasa,
               diasPlazo,
               fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
               frecuencia,
@@ -222,8 +257,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             cedula: f.cedula?.trim() ?? '',
             telefono: f.telefono?.trim() ?? '',
             direccion: f.direccion?.trim() ?? '',
-            monto: Number(f.monto),
-            tasa: Number(f.tasa ?? base.tasa),
+            monto, tasa,
             frecuencia, plazoUnidades: plazo,
             modoInteres: base.modoInteres,
             fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
@@ -248,10 +282,10 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           ia: f._ia,
           final: {
             nombre: f.nombre, cedula: f.cedula, telefono: f.telefono, direccion: f.direccion,
-            montoPrestado: Number(f.monto) || null,
-            tasaInteres: Number(f.tasa ?? base.tasa) || null,
-            frecuencia: f.frecuencia || base.frecuencia,
-            diasPlazo: Number(f.plazoUnidades) || null,
+            montoPrestado: efectivo(f, base).monto,
+            tasaInteres: efectivo(f, base).tasa,
+            frecuencia: efectivo(f, base).frecuencia,
+            diasPlazo: efectivo(f, base).plazoUnidades,
           },
         })),
       }),
@@ -478,8 +512,10 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
               fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)', minWidth: 0, width: '100%',
             }} />
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+            {/* Del mismo resolvedor que el guardado: si la fila dice una cosa
+                y se guarda otra, nadie lo nota hasta que no cuadra la plata. */}
             {f._estado === 'rojo' ? ROTULO.rojo
-              : `${formatMoney(Number(f.monto) || 0)} · ${f.frecuencia || base.frecuencia} ${f.tasa || base.tasa}%`}
+              : `${formatMoney(efectivo(f, base).monto ?? 0)} · ${efectivo(f, base).frecuencia} ${efectivo(f, base).tasa}%`}
             {f._foto ? ` · foto ${f._foto}` : ''}
           </span>
         </div>
