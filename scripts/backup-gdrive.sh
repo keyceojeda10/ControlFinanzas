@@ -55,7 +55,8 @@ set -euo pipefail
 APP_DIR="/home/control-finanzas"
 BACKUP_DIR="/home/backups/cf"
 ESTADO_DIR="/opt/cf-backup"
-GDRIVE_REMOTE="gdrive:ControlFinanzas/backups"
+# El destino de la copia de fuera se fija mas abajo, cuando ya se leyo el
+# .env (ver REMOTO_FUERA).
 RETENCION_LOCAL_DIAS=7
 RETENCION_DRIVE_DIAS=60
 FECHA=$(date +%Y-%m-%d_%H-%M-%S)
@@ -73,6 +74,19 @@ set -a
 # shellcheck disable=SC1091
 source "${APP_DIR}/.env"
 set +a
+
+# ─── A donde va la copia de FUERA ─────────────────────────
+#
+# Sale del .env para que cambiar de proveedor sea UNA LINEA y no editar el
+# script en el servidor — que es exactamente como se perdio el permiso de
+# ejecucion en marzo y estuvo 140 noches caido.
+#
+#   BACKUP_REMOTE="b2:cf-respaldos/control-finanzas"
+#
+# Google Drive queda de valor por defecto solo para no romper nada si el .env
+# no lo trae; el plan es B2, porque la cuota de Drive la comparte rclone entre
+# todos sus usuarios y estaba agotada.
+REMOTO_FUERA="${BACKUP_REMOTE:-gdrive:ControlFinanzas/backups}"
 
 DATABASE_URL=$(echo "${DATABASE_URL:-}" | tr -d '"' | tr -d "'")
 DB_NAME=$(echo "$DATABASE_URL" | sed -n 's|mysql://[^/]*/\([^?]*\).*|\1|p')
@@ -221,8 +235,13 @@ registrar "Subiendo a Google Drive..."
 # minutos en la consola de Google Cloud, ver
 # https://rclone.org/drive/#making-your-own-client-id— y esa la tiene que hacer
 # el dueno con su cuenta. Esto solo aguanta mejor mientras tanto.
+# `--drive-pacer-min-sleep` solo existe para Drive; con B2 sobra.
+case "$REMOTO_FUERA" in
+    gdrive:*|drive:*) RITMO_DRIVE="--drive-pacer-min-sleep 200ms" ;;
+    *)                RITMO_DRIVE="" ;;
+esac
 SUBIDA_OK=0
-if rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE"        --stats-one-line --retries 5 --retries-sleep 60s        --low-level-retries 20 --drive-pacer-min-sleep 200ms        --timeout 10m 2>&1 | tee -a "$LOG"; then
+if rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$REMOTO_FUERA"        --stats-one-line --retries 5 --retries-sleep 60s        --low-level-retries 20 ${RITMO_DRIVE}        --timeout 10m 2>&1 | tee -a "$LOG"; then
     # ⚠ EL GRUPO DE CAPTURA DE ESTE SED SE PERDIO AL REESCRIBIR EL SCRIPT.
     #   Python interpreto la referencia como el byte de control 0x01 en vez de dejar
     #   las dos letras, asi que sed no veia una referencia: REMOTO salia VACIO
@@ -231,7 +250,7 @@ if rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE"        --stats-one-li
     #   nunca y el vigilante seguiria avisando sin motivo.
     #   Lo cace mirando los bytes del archivo (`od -c`), no ejecutandolo:
     #   en pantalla se veia igual que el original.
-    REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
+    REMOTO=$(rclone size "$REMOTO_FUERA/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
     if [ "${REMOTO:-0}" = "$PESO" ]; then
         registrar "Verificado en Drive: mismo tamaño"
         date +%s > "$MARCA_FUERA"
@@ -252,7 +271,7 @@ fi
 # vivia en Drive: si caducaba la autorizacion, no quedaba nada.
 
 find "$BACKUP_DIR" -name "cf-backup-*.gpg" -type f -mtime "+${RETENCION_LOCAL_DIAS}" -delete 2>/dev/null || true
-rclone delete "$GDRIVE_REMOTE" --min-age "${RETENCION_DRIVE_DIAS}d" 2>/dev/null || true
+rclone delete "$REMOTO_FUERA" --min-age "${RETENCION_DRIVE_DIAS}d" 2>/dev/null || true
 
 LOCALES=$(find "$BACKUP_DIR" -name "cf-backup-*.gpg" -type f | wc -l)
 
