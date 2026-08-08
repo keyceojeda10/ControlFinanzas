@@ -100,8 +100,21 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
     archivos.forEach((f) => fd.append('fotos', f))
     try {
       const res = await fetch('/api/herramientas/leer-cartulinas-lote', { method: 'POST', body: fd })
-      const json = await res.json()
-      if (!res.ok) { setError(json.error ?? 'No pudimos leer las fotos'); setSubiendo(false); return }
+      /* ⚠ EL `json()` VA APARTE DEL `fetch`, y no es cosmético: si la respuesta
+         no es JSON —un 504 del proxy, un HTML de error, un cuerpo vacío porque
+         se cortó la subida— `res.json()` lanza DENTRO del mismo `try` y el
+         `catch` de abajo lo contaba como «sin conexión». Me lo comí probando en
+         el espejo: la petición llegaba y respondía, y la pantalla decía que no
+         había internet. Un mensaje que miente sobre la causa hace perder la
+         tarde. */
+      let json = null
+      try { json = await res.json() } catch {
+        setError(res.status === 413
+          ? 'Las fotos pesan demasiado juntas. Prueba con menos de una vez.'
+          : `El servidor respondió algo que no entendemos (${res.status}). Vuelve a intentarlo.`)
+        setSubiendo(false); return
+      }
+      if (!res.ok) { setError(json?.error ?? 'No pudimos leer las fotos'); setSubiendo(false); return }
 
       const nuevas = (json.clientes ?? []).map((c, i) => ({
         _id: `${Date.now()}-${i}`,
@@ -128,8 +141,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
       // Se ACUMULAN: se sube el cuaderno por tandas, no de una sola vez.
       setFilas((prev) => [...prev, ...nuevas])
       setAviso({ porFoto: json.porFoto ?? [], fallos: json.fallos ?? [], uso: json.uso })
-    } catch {
-      setError('Sin conexión. Vuelve a intentarlo.')
+    } catch (e) {
+      // Aquí sí es la red: el `fetch` ni llegó.
+      setError(`No se pudo enviar: ${e?.message ?? 'sin conexión'}. Prueba con menos fotos.`)
     } finally {
       setSubiendo(false)
     }
