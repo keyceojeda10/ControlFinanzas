@@ -59,3 +59,6 @@ next-env.d.ts
 # Copia servible del handoff para poder MIRARLO con scripts/ver-diseno.mjs.
 # 1,8 MB de material de diseño, no código.
 public/diseno.html
+
+# Fotos donadas para medir el lector de cartulinas (fuera de public/, fuera de git)
+.fotos-donadas/

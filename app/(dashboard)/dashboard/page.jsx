@@ -24,6 +24,7 @@ const OnboardingWizard    = dynamic(() => import('@/components/onboarding/Onboar
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
 const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
 const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
+const BannerFotosDonadas  = dynamic(() => import('@/components/dashboard/BannerFotosDonadas'),   { ssr: false })
 const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
 const InstallBanner       = dynamic(() => import('@/components/layout/InstallBanner'),            { ssr: false })
 
@@ -1599,6 +1600,19 @@ export default function DashboardPage() {
       {!authLoading && !esOwner && session?.user?.id && (
         <CobradorOnboarding userId={session.user.id} />
       )}
+      {/* ── LA CAMPAÑA DE FOTOS, y VA DESPUÉS DEL ONBOARDING ──
+          Quien está configurando la cuenta tiene una tarea a medias; pedirle un
+          favor por encima de ella es cambiarle el orden a lo suyo. Esto puede
+          esperar tres renglones.
+
+          Solo al dueño: el cuaderno es suyo, y es quien puede decidir compartir
+          los datos de sus clientes. Un cobrador no tiene por qué tomar esa
+          decisión por él.
+
+          El componente se borra solo cuando la campaña cierra —por llegar a las
+          40 fotos o por pasar el lunes— así que quitarlo de aquí no es urgente,
+          pero sí conviene: es código de una campaña de tres días. */}
+      {esOwner && <BannerFotosDonadas />}
       {/* El promotor de la app SALE de la pila de arriba. Segun el orden del
           diseño es «lo comodo» —no pierdes un peso por no instalarla hoy— y
           estaba haciendo de tercera franja ambar seguida. Cuatro franjas ambar

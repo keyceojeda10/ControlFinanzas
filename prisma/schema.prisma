@@ -155,6 +155,7 @@ model Organization {
   cierresCaja        CierreCaja[]
   suscripciones      Suscripcion[]
   asistenteMemorias  AsistenteMemoria[]
+  fotosDonadas       FotoDonada[]
   adminLogs          AdminLog[]
   gastosMenores      GastoMenor[]
   tickets            TicketSoporte[]
@@ -232,6 +233,7 @@ model User {
   actividadLogs     ActividadLog[]
   pushSubscriptions PushSubscription[]
   asistenteMemorias AsistenteMemoria[]
+  fotosDonadas      FotoDonada[]
   clientesCreadosPor Cliente[]         @relation("ClientesCreadosPor")
   notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
   ubicacionLogs     UbicacionLog[]
@@ -667,6 +669,37 @@ model ActividadLog {
   @@index([userId])
   // El cron de limpieza filtra por createdAt suelto; sin esto es full scan
   // en bucle, y MariaDB no tiene index skip scan que lo rescate.
+  @@index([createdAt])
+}
+
+// ─── FOTOS DONADAS PARA ENSEÑARLE A LEER AL SISTEMA ────
+//
+// Campaña de fin de semana (7-10 ago 2026). Se le pide al prestamista que
+// comparta fotos de SUS cuadernos y cartulinas para medir qué tan bien las lee
+// la IA, porque no teníamos ni una foto real con la que probar.
+//
+// ⚠ LA FOTO NO SE GUARDA AQUÍ NI EN `public/`. Aquí solo queda el rastro; el
+// archivo va a una carpeta del servidor fuera del alcance de la web. Todo lo
+// que hay bajo `public/uploads/` se sirve como archivo estático y responde 200
+// SIN SESIÓN —comprobado contra producción—, y estas fotos llevan el nombre, la
+// cédula y la deuda de gente que no es el usuario.
+model FotoDonada {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  archivo        String // ruta en disco, FUERA de public/
+  bytes          Int
+  // cartulina | lista | otro — lo que dijo el usuario que es, sin adivinar
+  forma          String?
+  createdAt      DateTime @default(now())
+  // Se llena cuando yo la reviso, para la tabla de aciertos por campo
+  revisadaAt     DateTime?
+  notas          String?  @db.Text
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
   @@index([createdAt])
 }
 
