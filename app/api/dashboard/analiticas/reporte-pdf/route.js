@@ -9,6 +9,7 @@ import { COLOR, TIPO } from '@/lib/papel/tokens'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { rotulo } from '@/lib/dinero/definiciones'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
 
 // La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
 // y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
@@ -204,8 +205,52 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
 
   const recaudadoMes = Number(pagosEsteMes._sum?.montoPagado || 0)
   const recaudadoMesAnterior = Number(pagosMesAnterior._sum?.montoPagado || 0)
-  const cuotaDiariaTotal = prestamosActivosDetalle.reduce((s, p) => s + Number(p.cuotaDiaria || 0), 0)
-  const esperadoMes = cuotaDiariaTotal * diasHabilesTotalMes
+  /* Los dias sin cobro de CADA prestamo, por la jerarquia
+     Prestamo > Cliente > Ruta > Organizacion. Se saca aqui porque lo necesitan
+     dos cuentas —la meta del mes y la mora— y tenerlo dos veces es como
+     empiezan a divergir. */
+  const diasDeCobroDe = (p) =>
+    obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, { diasSinCobro: organization?.diasSinCobro }, p)
+
+  const festivosFechas = festivos.map(f => f.fecha)
+
+  /* ⚠ `cuotaDiaria` NO ES UNA CUOTA DIARIA: guarda la cuota de la frecuencia
+   * que tenga el prestamo. Esto sumaba todas y las multiplicaba por los dias
+   * del mes, asi que un prestamo SEMANAL contaba treinta veces en vez de
+   * cuatro.
+   *
+   * Medido sobre un negocio de la muestra —565 semanales, 30 quincenales, 11
+   * mensuales y 378 diarios—: la meta del mes salia **$1.703.787.000** cuando
+   * lo que de verdad vence son **$301.478.229**. Cinco veces y media, y sobre
+   * una cartera total de $339M: le decia al dueño que iba por el 1 % de una
+   * meta cinco veces mayor que todo lo que tiene prestado. Una barra de avance
+   * contra un numero imposible no significa nada.
+   *
+   * Ahora se pregunta al CALENDARIO de cada prestamo, dia por dia, con
+   * `tocaCobrarEn` — la misma funcion con la que se arma la meta de la caja, en
+   * vez de un sexto calculo propio (ver la cabecera de lib/dinero/esperado.js).
+   *
+   * Se usa solo `tocaCobrarEn` y no `esperadoDePrestamo` a proposito: esa
+   * ademas calcula lo ATRASADO recorriendo hasta 370 dias hacia atras, y aqui
+   * serian once millones de vueltas por cada carga de la pantalla. */
+  const diasDelMes = []
+  for (let d = 1; d <= ultimoDiaMes; d++) {
+    diasDelMes.push(new Date(hoy.getFullYear(), hoy.getMonth(), d))
+  }
+
+  const esperadoMes = prestamosActivosDetalle.reduce((suma, p) => {
+    const cuota = cuotaDelPeriodo(p)
+    if (!cuota) return suma
+    const dias = diasDeCobroDe(p)
+    let veces = 0
+    for (const d of diasDelMes) {
+      if (tocaCobrarEn(p, d, dias, festivosFechas)) veces++
+    }
+    // Nunca se puede esperar mas de lo que se debe: un prestamo al que le
+    // quedan $50.000 no aporta tres cuotas a la meta del mes.
+    const saldo = Math.max(0, Number(p.totalAPagar || 0) - Number(p.totalPagado || 0))
+    return suma + Math.min(cuota * veces, saldo)
+  }, 0)
   const promedioDiario = diasHabiles > 0 ? recaudadoMes / diasHabiles : 0
   const proyeccionMes = promedioDiario * diasHabilesTotalMes
 
@@ -257,12 +302,11 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   const roiMensual = capitalEnCalle > 0 ? (gananciaNetaMes / capitalEnCalle * 100) : 0
 
   // Mora
-  const festivosFechas = festivos.map(f => f.fecha)
   const alertas = []
   for (const p of prestamosActivosDetalle) {
     // Los suyos, no los del negocio. `diasExcluidos` sigue sirviendo para el
     // calendario del MES —esa si es una cuenta de la organizacion—.
-    const susDias = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, { diasSinCobro: organization?.diasSinCobro }, p)
+    const susDias = diasDeCobroDe(p)
     const dias = calcularDiasMora(p, susDias, festivosFechas)
     if (dias > 0) {
       alertas.push({
