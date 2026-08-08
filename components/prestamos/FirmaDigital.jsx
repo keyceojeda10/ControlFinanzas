@@ -14,8 +14,19 @@ import { useAuth } from '@/hooks/useAuth'
 const BASE_BOTON = {
   height: 38, borderRadius: 'var(--cf-r-control)',
   font: 'inherit', fontSize: 12, fontWeight: 700,
-  cursor: 'pointer', minWidth: 0,
+  cursor: 'pointer', minWidth: 0, paddingInline: 8,
   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+  /* ⚠ `1 1 auto`, NO `flex-1`. Con `flex-1` (base 0) los tres se reparten el
+     ancho en TERCIOS IGUALES, y no necesitan lo mismo: «Pagaré» pide 61px y
+     «Comprobante» 100. En un teléfono de 360 —el Android corriente— al tercero
+     le tocaban 88 y perdía 12px de letra por la derecha.
+
+     ⚠⚠ Y NO LO CAZA `scrollWidth > clientWidth`: el contenido va centrado, se
+     recorta por los dos lados y `scrollWidth` sigue igual. Decía «no se corta»
+     en las tres anchuras. Hay que medir el texto con un `Range` contra el hueco
+     que deja el icono. Con la base en `auto` cada uno arranca de lo que pide y
+     solo se reparte lo que sobra. */
+  flex: '1 1 auto',
 }
 const SECUNDARIO = {
   ...BASE_BOTON,
@@ -465,7 +476,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           <button
             type="button"
             onClick={() => setModalFirmar(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1.5 transition-colors"
             style={firmaUrl ? { ...SECUNDARIO } : {
               // Sin firma es LA acción de esta tarjeta, no una más de tres.
               ...BASE_BOTON,
@@ -484,7 +495,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarPagare}
             disabled={descargandoPagare}
-            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1.5 transition-colors"
             style={{
               ...BASE_BOTON,
               background: 'var(--cf-gold-tint)',
@@ -503,7 +514,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarComprobante}
             disabled={descargando}
-            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1.5 transition-colors"
             style={SECUNDARIO}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
