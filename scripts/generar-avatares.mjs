@@ -7,108 +7,123 @@
 // desde algún sitio?». Tenía razón: esto lo hace mejor gente que dibuja para
 // vivir.
 //
-// Vienen de **DiceBear** y se generan AQUÍ, en local. No se pide nada por
-// internet en caliente: la app se usa sin señal, y una petición a un servidor
-// ajeno para pintar la cabecera sería un punto de fallo nuevo.
+// ⚠ Las DOCE secciones las eligió él, mirando muestras de 21 librerías y
+// mandándome capturas de las que le servían. No las elegí yo: mis dos intentos
+// de escoger por él fallaron los dos.
 //
-// ── LICENCIAS (por eso están estos ocho estilos y no otros) ────────────────
+// ── ⚠ NADA SE PIDE POR INTERNET EN CALIENTE ───────────────────────────────
 //
-//   notionists  CC0 1.0   Zoish            lorelei    CC0 1.0   Lisa Wischofsky
-//   openPeeps   CC0 1.0   Pablo Stanley    thumbs     CC0 1.0   DiceBear
-//   shapes      CC0 1.0   DiceBear         glass      CC0 1.0   DiceBear
-//   avataaars   libre para uso comercial   Pablo Stanley
-//   bottts      libre para uso comercial   Pablo Stanley
+// Todo se genera AQUÍ y queda como archivo en `public/avatars/`. La app se usa
+// sin señal: llamar a un servidor ajeno para pintar la cabecera sería un punto
+// de fallo nuevo.
 //
-// Quedan fuera los CC BY 4.0 (adventurer, micah, personas, bigSmile…): son
-// buenos, pero obligan a poner la atribución visible y eso es un compromiso que
-// no se puede olvidar en tres meses. Los de aquí no piden nada.
+// ── LICENCIAS ──────────────────────────────────────────────────────────────
 //
-// ⚠ Y quedan fuera POR LA MISMA RAZÓN por la que se fueron Iron Man y Elsa: lo
-// que se publica en un producto que cobra tiene que tener el permiso claro.
+// Ocho secciones no piden nada (CC0, MIT, Apache 2.0, «libre para uso
+// comercial»).
 //
-// ── ⚠ POR QUÉ ARCHIVOS SUELTOS Y NO SVG DENTRO DEL JS ─────────────────────
+// ⚠ CUATRO SON CC BY 4.0 y OBLIGAN a poner los créditos donde se vean:
+// adventurerNeutral (Lisa Wischofsky), bigSmile (Ashley Seo), croodles (vijay
+// verma) y micah (Micah Lanier). Esa línea vive al pie del selector, en
+// `app/(dashboard)/configuracion/page.jsx`, y hay una prueba que falla si
+// desaparece. Si algún día estorba, se quita la SECCIÓN, no la línea.
 //
-// Medido: 96 avatares son **519 KB** de SVG. Metidos en `lib/avatars.js` los
-// descarga entero cada usuario en cada visita, tenga o no avatar, y esta app la
-// abre gente con mala señal. Como archivos en `public/avatars/`, el navegador
-// se baja SOLO el que necesita —uno en la cabecera— y los 96 nada más cuando
-// alguien abre el selector.
+// ⚠ Y NO HAY PERSONAJES CON DUEÑO. Se pidieron Goku, Superman, Batman,
+// Spider-Man e Iron Man con el argumento de que «aún no somos tan grandes». Son
+// de Toei, DC, Marvel y Disney; las reclamaciones no miran el tamaño, y aquí
+// hay 429 negocios pagando encima de esta marca.
 //
-// De paso resuelve algo que no se ve venir: DiceBear emite `id="viewboxMask"`,
-// **el mismo en todos**. Inertados varios en la misma página, cada
-// `mask="url(#viewboxMask)"` resuelve al PRIMERO del documento y los demás se
-// borran. Me pasó al hacer la muestra: cinco estilos salieron en blanco. En un
-// `<img>` cada SVG es su propio documento y el choque desaparece.
+// ── PARA CORRERLO ──────────────────────────────────────────────────────────
 //
+//   npm install --no-save @dicebear/core@9 @dicebear/collection@9 @iconify/json
 //   node scripts/generar-avatares.mjs
 //
-// Escribe en `public/avatars/` y reescribe la lista de `lib/avatars-lista.js`.
+// Escribe `public/avatars/` y `lib/avatars-lista.js`.
 
 import { createAvatar } from '@dicebear/core'
-import * as estilos from '@dicebear/collection'
+import * as dicebear from '@dicebear/collection'
 import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { createRequire } from 'node:module'
 
+const req = createRequire(import.meta.url)
 const DESTINO = 'public/avatars'
-const POR_ESTILO = 12
+const POR_SECCION = 12
 
-/* Los fondos salen de la misma paleta que usaba el juego anterior: saturados y
-   oscuros, para que la figura recorte encima. DiceBear los pinta él mismo, así
-   que no hay que componer nada — solo pasarle la lista. */
+/* Fondos saturados: la figura tiene que recortar encima. Doce, uno por puesto,
+   para que dentro de una sección no se repita ninguno. */
 const FONDOS = ['3D4EAD', '2B6CB0', '20808D', '2F855A', 'B7791F', 'C05621',
   'A33B3B', '8B3A5A', '6B46C1', '4A5568', '5A7D2A', '7B3F8C']
 
-/* Las semillas deciden qué cara sale. Son nombres a propósito y no números:
-   DiceBear reparte rasgos por el hash, y con nombres de por aquí sale un
-   conjunto variado sin tener que elegir a mano peinado por peinado. */
+/* Nombres de por aquí, no números: DiceBear reparte los rasgos por el hash del
+   texto, así sale un conjunto variado sin elegir peinado por peinado. */
 const SEMILLAS = ['Carlos', 'Marta', 'Jhoan', 'Ana', 'Diego', 'Lucia',
   'Andres', 'Paula', 'Steven', 'Rosa', 'Julian', 'Camila']
 
-/* ⚠ LAS SEMILLAS AL AZAR SACAN CARAS GRITANDO. DiceBear reparte gestos por el
-   hash, y su catálogo incluye `vomit`, `screamOpen`, `cry`, `xDizzy`, `rage`,
-   `veryAngry`. En la primera tanda salieron caras llorando y con los ojos en
-   equis: en una app de trabajo eso no va — el avatar acompaña al usuario todo
-   el día en la cabecera.
-
-   Así que el gesto NO se deja al azar: se limita a los amables. Lo que sigue
-   variando libremente es lo que distingue a una persona de otra (pelo, piel,
-   ropa, accesorios), que es para lo que sirve la semilla. */
+/* ⚠ LOS GESTOS NO SE DEJAN AL AZAR donde el estilo lo permite. El catálogo de
+   DiceBear incluye `vomit`, `screamOpen`, `cry`, `xDizzy`: en una tanda anterior
+   salieron caras llorando y con los ojos en equis. El avatar acompaña al
+   usuario todo el día en la cabecera de una app de trabajo. Lo que sí sigue
+   variando libre es lo que distingue a una persona de otra. */
 const GESTOS = {
-  avataaars: {
-    eyes: ['default', 'happy', 'wink', 'squint', 'side', 'closed'],
-    mouth: ['default', 'smile', 'twinkle', 'serious'],
-    eyebrows: ['default', 'defaultNatural', 'flatNatural', 'raisedExcited', 'upDown'],
-  },
-  openPeeps: {
-    face: ['calm', 'cheeky', 'smile', 'smileBig', 'smileTeethGap', 'solemn',
-      'serious', 'blank', 'eyesClosed', 'lovingGrin1', 'explaining', 'driven'],
-  },
-  lorelei: {
-    mouth: ['happy01', 'happy02', 'happy03', 'happy04', 'happy05', 'happy06',
-      'happy07', 'happy08', 'happy09', 'happy10', 'happy11', 'happy12'],
-  },
+  lorelei: { mouth: ['happy01', 'happy02', 'happy03', 'happy04', 'happy05', 'happy06', 'happy07', 'happy08', 'happy09', 'happy10', 'happy11', 'happy12'] },
+  loreleiNeutral: { mouth: ['happy01', 'happy02', 'happy03', 'happy04', 'happy05', 'happy06', 'happy07', 'happy08', 'happy09', 'happy10', 'happy11', 'happy12'] },
 }
 
-const GRUPOS = [
-  { id: 'avataaars', estilo: 'avataaars', nombre: 'Caras' },
-  { id: 'peeps', estilo: 'openPeeps', nombre: 'Retratos' },
-  { id: 'notion', estilo: 'notionists', nombre: 'Trazo' },
-  { id: 'lorelei', estilo: 'lorelei', nombre: 'Ilustradas' },
-  { id: 'bottts', estilo: 'bottts', nombre: 'Robots' },
-  { id: 'thumbs', estilo: 'thumbs', nombre: 'Caritas' },
-  { id: 'shapes', estilo: 'shapes', nombre: 'Formas' },
-  { id: 'glass', estilo: 'glass', nombre: 'Degradados' },
+/* Los iconos se eligen a mano: Bootstrap trae 146 y la mayoría son flechas y
+   carpetas; los emoji de Google, miles. Estos son los que dicen algo. */
+const TEMAS = {
+  geek: ['controller', 'dice5', 'bug', 'keyboard', 'mouse2', 'puzzle',
+    'trophy', 'magic', 'lightningCharge', 'disc', 'moonStars', 'display'],
+  dinero: ['money-bag', 'dollar-banknote', 'coin', 'credit-card', 'money-with-wings',
+    'chart-increasing', 'bank', 'receipt', 'purse', 'gem-stone', 'abacus', 'handshake'],
+  premios: ['trophy', 'crown', 'sports-medal', 'rocket', 'joystick', 'video-game',
+    'party-popper', 'sparkles', 'direct-hit', 'fire', 'game-die', 'ribbon'],
+}
+
+const SECCIONES = [
+  // ── Las ocho sin condiciones ──
+  { id: 'caras', nombre: 'Caras', fuente: 'dicebear', estilo: 'lorelei' },
+  { id: 'rostro', nombre: 'Solo cara', fuente: 'dicebear', estilo: 'loreleiNeutral' },
+  { id: 'trazo', nombre: 'Trazo', fuente: 'dicebear', estilo: 'notionists' },
+  { id: 'caritas', nombre: 'Caritas', fuente: 'dicebear', estilo: 'thumbs' },
+  { id: 'robots', nombre: 'Robots', fuente: 'dicebear', estilo: 'bottts' },
+  { id: 'geek', nombre: 'Geek', fuente: 'dicebear', estilo: 'icons', tema: 'geek' },
+  { id: 'dinero', nombre: 'Dinero', fuente: 'iconify', pref: 'noto', tema: 'dinero' },
+  { id: 'premios', nombre: 'Premios', fuente: 'iconify', pref: 'noto-v1', tema: 'premios' },
+  // ── Las cuatro que piden créditos ──
+  { id: 'gestos', nombre: 'Gestos', fuente: 'dicebear', estilo: 'adventurerNeutral' },
+  { id: 'sonrisas', nombre: 'Sonrisas', fuente: 'dicebear', estilo: 'bigSmile' },
+  { id: 'garabatos', nombre: 'Garabatos', fuente: 'dicebear', estilo: 'croodles' },
+  { id: 'retratos', nombre: 'Retratos', fuente: 'dicebear', estilo: 'micah' },
 ]
 
-/* ⚠ El bloque `<metadata>` con el RDF de la licencia pesa ~1 KB POR ARCHIVO y
-   no lo lee ningún navegador. Se quita del SVG y la atribución se guarda en
-   `public/avatars/LICENCIAS.txt`, que es donde un humano la puede encontrar.
-   Con CC0 no hace falta ni eso; se deja por decencia. */
+/* ⚠ El bloque `<metadata>` con el RDF pesa ~1 KB POR ARCHIVO y no lo lee ningún
+   navegador. La atribución vive donde un humano la encuentra: en el selector y
+   en `public/avatars/LICENCIAS.txt`. */
 const limpiar = (svg) => svg
   .replace(/<metadata[\s\S]*?<\/metadata>/g, '')
-  .replace(/\s{2,}/g, ' ')
-  .replace(/>\s+</g, '><')
-  .trim()
+  .replace(/\s{2,}/g, ' ').replace(/>\s+</g, '><').trim()
+
+/* Iconify entrega el dibujo suelto y su lienzo; aquí se compone el avatar:
+   círculo de color y el icono centrado al 60 %.
+
+   ⚠ Los ids se prefijan aunque cada SVG acabe en su propio archivo: si mañana
+   alguien los vuelve a incrustar en una página, `url(#…)` resolvería al primero
+   del documento y los demás se borrarían. Ya pasó con DiceBear. */
+function desdeIconify(pref, nombre, fondo, i) {
+  const datos = req(`@iconify/json/json/${pref}.json`)
+  const ic = datos.icons[nombre]
+  if (!ic) throw new Error(`${pref}: no existe el icono «${nombre}»`)
+  const w = ic.width ?? datos.width ?? 24
+  const h = ic.height ?? datos.height ?? 24
+  const esc = 72 / Math.max(w, h)
+  const cuerpo = ic.body
+    .replace(/id="([^"]+)"/g, (_, x) => `id="${pref}${i}-${x}"`)
+    .replace(/url\(#([^)]+)\)/g, (_, x) => `url(#${pref}${i}-${x})`)
+    .replace(/(xlink:href|href)="#([^"]+)"/g, (_, a, x) => `${a}="#${pref}${i}-${x}"`)
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"><circle cx="60" cy="60" r="60" fill="#${fondo}"/><g transform="translate(${(120 - w * esc) / 2},${(120 - h * esc) / 2}) scale(${esc})">${cuerpo}</g></svg>`
+}
 
 if (existsSync(DESTINO)) rmSync(DESTINO, { recursive: true })
 mkdirSync(DESTINO, { recursive: true })
@@ -116,43 +131,58 @@ mkdirSync(DESTINO, { recursive: true })
 const lista = []
 let bytes = 0
 
-for (const g of GRUPOS) {
-  for (let i = 0; i < POR_ESTILO; i++) {
-    const svg = limpiar(createAvatar(estilos[g.estilo], {
-      seed: SEMILLAS[i % SEMILLAS.length],
-      backgroundColor: [FONDOS[i % FONDOS.length]],
-      radius: 50,
-      ...(GESTOS[g.estilo] ?? {}),
-    }).toString())
-    const archivo = `${g.id}-${i + 1}.svg`
-    writeFileSync(join(DESTINO, archivo), svg)
+for (const s of SECCIONES) {
+  const tema = s.tema ? TEMAS[s.tema] : null
+  for (let i = 0; i < POR_SECCION; i++) {
+    const fondo = FONDOS[i % FONDOS.length]
+    let svg
+    if (s.fuente === 'iconify') {
+      svg = limpiar(desdeIconify(s.pref, tema[i], fondo, i))
+    } else {
+      svg = limpiar(createAvatar(dicebear[s.estilo], {
+        seed: tema ? tema[i] : SEMILLAS[i % SEMILLAS.length],
+        backgroundColor: [fondo], radius: 50,
+        ...(tema ? { icon: [tema[i]], scale: 60 } : {}),
+        ...(GESTOS[s.estilo] ?? {}),
+      }).toString())
+    }
+    const id = `${s.id}-${i + 1}`
+    writeFileSync(join(DESTINO, `${id}.svg`), svg)
     bytes += svg.length
-    lista.push({ id: `${g.id}-${i + 1}`, categoria: g.id, nombre: `${g.nombre} ${i + 1}` })
+    lista.push({ id, categoria: s.id, nombre: `${s.nombre} ${i + 1}` })
   }
 }
 
-writeFileSync(join(DESTINO, 'LICENCIAS.txt'), `Avatares generados con DiceBear (https://dicebear.com) — MIT.
+writeFileSync(join(DESTINO, 'LICENCIAS.txt'), `Avatares del perfil de Control Finanzas.
+Generados en local con: node scripts/generar-avatares.mjs
 
-notionists  CC0 1.0                            Zoish
-lorelei     CC0 1.0                            Lisa Wischofsky
-openPeeps   CC0 1.0                            Pablo Stanley
-thumbs      CC0 1.0                            DiceBear
-shapes      CC0 1.0                            DiceBear
-glass       CC0 1.0                            DiceBear
-avataaars   Libre para uso personal y comercial  Pablo Stanley
-bottts      Libre para uso personal y comercial  Pablo Stanley
+-- SIN CONDICIONES ------------------------------------------------
+lorelei / loreleiNeutral   CC0 1.0          Lisa Wischofsky  (DiceBear)
+notionists                 CC0 1.0          Zoish            (DiceBear)
+thumbs                     CC0 1.0          DiceBear
+bottts                     Libre comercial  Pablo Stanley    (DiceBear)
+icons                      MIT              The Bootstrap Authors
+Noto Emoji / Noto v1       Apache 2.0       Google
 
-Se regeneran con: node scripts/generar-avatares.mjs
+-- PIDEN ATRIBUCION VISIBLE (CC BY 4.0) ---------------------------
+adventurerNeutral          CC BY 4.0        Lisa Wischofsky
+bigSmile                   CC BY 4.0        Ashley Seo
+croodles                   CC BY 4.0        vijay verma
+micah                      CC BY 4.0        Micah Lanier
+
+Los creditos salen al pie del selector de avatar
+(app/(dashboard)/configuracion/page.jsx). Si se quitan de ahi, hay que quitar
+tambien esas cuatro secciones: no es opcional.
 `)
 
-const cats = GRUPOS.map((g) => `  { id: '${g.id}', nombre: '${g.nombre}' },`).join('\n')
+const cats = SECCIONES.map((s) => `  { id: '${s.id}', nombre: '${s.nombre}' },`).join('\n')
 const avs = lista.map((a) => `  { id: '${a.id}', nombre: '${a.nombre}', categoria: '${a.categoria}' },`).join('\n')
 
 writeFileSync('lib/avatars-lista.js', `// lib/avatars-lista.js — GENERADO. No editar a mano.
 //
 // Lo escribe \`scripts/generar-avatares.mjs\`. Aquí solo va la LISTA; los dibujos
-// son archivos en \`public/avatars/\` y se piden por \`<img src>\`, porque los 96
-// juntos pesan ${(bytes / 1024).toFixed(0)} KB y nadie tiene que descargarlos para ver la cabecera.
+// son archivos en \`public/avatars/\` y se piden por \`<img src>\`, porque los
+// ${lista.length} juntos pesan ${(bytes / 1024).toFixed(0)} KB y nadie tiene que descargarlos para ver la cabecera.
 
 export const AVATAR_CATEGORIES = [
 ${cats}
@@ -163,5 +193,4 @@ ${avs}
 ]
 `)
 
-console.log(`${lista.length} avatares · ${(bytes / 1024).toFixed(0)} KB en total · ${(bytes / lista.length / 1024).toFixed(1)} KB cada uno`)
-console.log(`→ ${DESTINO}/ y lib/avatars-lista.js`)
+console.log(`${lista.length} avatares · ${SECCIONES.length} secciones · ${(bytes / 1024).toFixed(0)} KB · ${(bytes / lista.length / 1024).toFixed(1)} KB cada uno`)

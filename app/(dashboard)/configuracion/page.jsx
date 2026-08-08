@@ -303,6 +303,21 @@ function TabPerfil() {
               </div>
             )
           })}
+
+          {/* ⚠ ESTA LÍNEA ES UNA OBLIGACIÓN, NO UN ADORNO.
+              Ocho de las doce secciones no piden nada (CC0, MIT, Apache 2.0).
+              CUATRO son CC BY 4.0 —Gestos, Sonrisas, Garabatos y Retratos— y
+              se pueden usar y vender a cambio de decir de quién son, donde se
+              vea. Esto es «donde se vea».
+
+              Si algún día alguien borra esta línea, lo correcto es quitar esas
+              cuatro secciones, no la línea. Hay una prueba que lo vigila. La
+              lista completa está en `public/avatars/LICENCIAS.txt`. */}
+          <p className="text-[10px] leading-relaxed pt-1" style={{ color: 'var(--cf-ink-4)' }}>
+            Ilustraciones de <a href="https://dicebear.com" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>DiceBear</a>,
+            Bootstrap y Google. Gestos por Lisa Wischofsky, Sonrisas por Ashley Seo,
+            Garabatos por vijay verma y Retratos por Micah Lanier (CC BY 4.0).
+          </p>
         </div>
       </Modal>
 

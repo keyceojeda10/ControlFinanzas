@@ -1,12 +1,20 @@
-Avatares generados con DiceBear (https://dicebear.com) — MIT.
+Avatares del perfil de Control Finanzas.
+Generados en local con: node scripts/generar-avatares.mjs
 
-notionists  CC0 1.0                            Zoish
-lorelei     CC0 1.0                            Lisa Wischofsky
-openPeeps   CC0 1.0                            Pablo Stanley
-thumbs      CC0 1.0                            DiceBear
-shapes      CC0 1.0                            DiceBear
-glass       CC0 1.0                            DiceBear
-avataaars   Libre para uso personal y comercial  Pablo Stanley
-bottts      Libre para uso personal y comercial  Pablo Stanley
+-- SIN CONDICIONES ------------------------------------------------
+lorelei / loreleiNeutral   CC0 1.0          Lisa Wischofsky  (DiceBear)
+notionists                 CC0 1.0          Zoish            (DiceBear)
+thumbs                     CC0 1.0          DiceBear
+bottts                     Libre comercial  Pablo Stanley    (DiceBear)
+icons                      MIT              The Bootstrap Authors
+Noto Emoji / Noto v1       Apache 2.0       Google
 
-Se regeneran con: node scripts/generar-avatares.mjs
+-- PIDEN ATRIBUCION VISIBLE (CC BY 4.0) ---------------------------
+adventurerNeutral          CC BY 4.0        Lisa Wischofsky
+bigSmile                   CC BY 4.0        Ashley Seo
+croodles                   CC BY 4.0        vijay verma
+micah                      CC BY 4.0        Micah Lanier
+
+Los creditos salen al pie del selector de avatar
+(app/(dashboard)/configuracion/page.jsx). Si se quitan de ahi, hay que quitar
+tambien esas cuatro secciones: no es opcional.
