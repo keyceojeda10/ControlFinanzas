@@ -94,13 +94,53 @@ const TEMPORALES = [
   'Falta verificar tu correo',
   'nos mandaste',                 // el «gracias» de la misma campaña
 ]
-const quitarTemporales = () => p.evaluate((frases) => {
-  for (const f of frases) {
-    for (const el of document.querySelectorAll('div, button, a')) {
-      if (el.children.length < 8 && (el.innerText || '').includes(f)) { el.remove(); break }
+
+/* ⚠⚠ ESTA FUNCIÓN ME VACIÓ EL PANEL ENTERO, Y LA SUBÍ ASÍ.
+ *
+ * Mi primera versión cogía el PRIMER `div` cuyo texto contuviera la frase, con
+ * un `children.length < 8` de guardia. Eso no protege de nada: el recorrido del
+ * DOM va de fuera adentro, así que el primero que coincide es un ANCESTRO —el
+ * contenedor de toda la columna— y `.remove()` se llevó el panel completo. La
+ * captura salió con la cabecera, la barra de abajo y NADA en medio.
+ *
+ * No lo cazó ninguna comprobación: el archivo existía, pesaba lo suyo y el
+ * guion dijo «26 de 26 capturadas». Lo vi abriendo la imagen.
+ *
+ * Ahora hace dos cosas distintas:
+ *   1. Busca el elemento MÁS PROFUNDO que contiene la frase y sube solo
+ *      mientras el padre no traiga mucho más texto que él. Así se lleva la
+ *      tarjeta del aviso y no la pantalla.
+ *   2. Compara el texto de la página antes y después. Si se perdió más de un
+ *      tercio, eso no fue una limpieza: fue un destrozo, y ABORTA.
+ */
+const quitarTemporales = async () => {
+  const perdida = await p.evaluate((frases) => {
+    const antes = document.body.innerText.length
+    for (const f of frases) {
+      const conLaFrase = [...document.querySelectorAll('div, p, span, button, a')]
+        .filter((el) => (el.innerText || '').includes(f))
+      if (!conLaFrase.length) continue
+      // El más profundo = el de menos texto propio.
+      let obj = conLaFrase.reduce((a, b) => ((a.innerText || '').length <= (b.innerText || '').length ? a : b))
+      /* Sube hasta la TARJETA del aviso, y ni un paso más.
+         ⚠ La regla de «el padre no puede traer 1,8× más texto» no sirvió: se
+         paró en el `<p>` del titular y dejó media tarjeta con su botón, que es
+         peor que dejarla entera. Lo que separa un aviso de una pantalla no es
+         la proporción, es el TAMAÑO ABSOLUTO: un banner son doscientos y pico
+         caracteres; el panel, miles. */
+      const TOPE_AVISO = 500
+      while (obj.parentElement && obj.parentElement !== document.body
+             && (obj.parentElement.innerText || '').length <= TOPE_AVISO) {
+        obj = obj.parentElement
+      }
+      obj.remove()
     }
+    return 1 - document.body.innerText.length / (antes || 1)
+  }, TEMPORALES)
+  if (perdida > 0.33) {
+    throw new Error(`quitarTemporales se llevó el ${Math.round(perdida * 100)}% del texto de la pantalla`)
   }
-}, TEMPORALES)
+}
 
 const ir = async (ruta, espera = 6500) => {
   await p.goto(`${BASE}${ruta}`, { waitUntil: 'domcontentloaded', timeout: 90000 })
