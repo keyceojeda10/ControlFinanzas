@@ -14,7 +14,11 @@ import { useAuth } from '@/hooks/useAuth'
 const BASE_BOTON = {
   height: 38, borderRadius: 'var(--cf-r-control)',
   font: 'inherit', fontSize: 12, fontWeight: 700,
-  cursor: 'pointer', minWidth: 0, paddingInline: 8,
+  /* ⚠ RELLENO 4, NO 8. Con 8 los tres rellenos se comen 48px de los 222 que
+     hay en un teléfono de 360, y los TRES botones salían recortados —no solo
+     «Comprobante»—: el texto pide 236 y solo cabían 222. Con 4 quedan 254
+     contra 236, y ya sobra. */
+  cursor: 'pointer', minWidth: 0, paddingInline: 4,
   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   /* ⚠ `1 1 auto`, NO `flex-1`. Con `flex-1` (base 0) los tres se reparten el
      ancho en TERCIOS IGUALES, y no necesitan lo mismo: «Pagaré» pide 61px y
@@ -476,7 +480,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           <button
             type="button"
             onClick={() => setModalFirmar(true)}
-            className="flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1 transition-colors"
             style={firmaUrl ? { ...SECUNDARIO } : {
               // Sin firma es LA acción de esta tarjeta, no una más de tres.
               ...BASE_BOTON,
@@ -495,7 +499,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarPagare}
             disabled={descargandoPagare}
-            className="flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1 transition-colors"
             style={{
               ...BASE_BOTON,
               background: 'var(--cf-gold-tint)',
@@ -514,7 +518,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarComprobante}
             disabled={descargando}
-            className="flex items-center justify-center gap-1.5 transition-colors"
+            className="flex items-center justify-center gap-1 transition-colors"
             style={SECUNDARIO}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
