@@ -233,7 +233,8 @@ export async function GET(req) {
      renglon antes que perder una letra: el cobrador va a esa casa con este
      papel, y «Cra 50 # 50-100 barrio La» no es una direccion. */
   const columnas = [
-    { clave: 'num', titulo: '#', ancho: 0.5 },
+    // 0,5 dejaba «100» partido en «10 / 0» a partir del cliente numero cien.
+    { clave: 'num', titulo: '#', ancho: 0.8 },
     // La direccion va DEBAJO del nombre, no en columna aparte: en columna
     // propia se partia en dos o tres renglones y el listado de 984 prestamos
     // salia en 86 hojas. Debajo tiene el doble de ancho y entra en una.

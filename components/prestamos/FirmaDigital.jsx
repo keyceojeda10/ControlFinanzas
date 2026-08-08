@@ -112,7 +112,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
   let y = 40
 
   // Title
-  ctx.fillStyle = 'var(--cf-ink)'
+  ctx.fillStyle = '#15161A'
   ctx.font = 'bold 22px system-ui, sans-serif'
   ctx.fillText('Comprobante de préstamo', 40, y += 30)
 
@@ -132,7 +132,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
   ctx.font = '13px system-ui, sans-serif'
   ctx.fillText('DATOS DEL CLIENTE', 40, y)
 
-  ctx.fillStyle = 'var(--cf-ink)'
+  ctx.fillStyle = '#15161A'
   ctx.font = '15px system-ui, sans-serif'
   y += 26; ctx.fillText(`Nombre: ${cliente.nombre || '—'}`, 40, y)
   y += 24; ctx.fillText(`${nombreDocumento()}: ${cliente.cedula && !cliente.cedula.startsWith('SIN-') ? cliente.cedula : '—'}`, 40, y)
@@ -165,7 +165,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
     ctx.fillStyle = '#555555'
     ctx.font = '14px system-ui, sans-serif'
     ctx.fillText(label, 40, y)
-    ctx.fillStyle = 'var(--cf-ink)'
+    ctx.fillStyle = '#15161A'
     ctx.font = 'bold 14px system-ui, sans-serif'
     ctx.textAlign = 'right'
     ctx.fillText(value, w - 40, y)
@@ -192,7 +192,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
       // en la zona del negocio — leerlo en UTC pondría un cobro de las 7 de
       // la noche en el día siguiente.
       ctx.fillText(formatFechaCorta(pago.fechaPago, pais, tz), 40, y)
-      ctx.fillStyle = 'var(--cf-ink)'
+      ctx.fillStyle = '#15161A'
       ctx.font = 'bold 13px system-ui, sans-serif'
       ctx.textAlign = 'right'
       ctx.fillText(formatMoney(pago.montoPagado), w - 40, y)
@@ -284,7 +284,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
     ctx.lineWidth = 2.5
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = 'var(--cf-ink)'
+    ctx.strokeStyle = '#15161A'
   }, [])
 
   useEffect(() => {

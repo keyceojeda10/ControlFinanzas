@@ -273,7 +273,7 @@ function NuevoPrestamo() {
     ctx.lineWidth = 2.5
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = 'var(--cf-ink)'
+    ctx.strokeStyle = '#15161A'
   }, [])
 
   const firmaGetPoint = (e) => {

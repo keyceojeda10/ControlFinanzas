@@ -286,12 +286,15 @@ export async function GET() {
   doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink3)
   hoja.escribir('RENDIMIENTO DEL MES', L + 16, y + 12, { characterSpacing: 0.6 })
   doc.font(F.cifraFuerte).fontSize(34).fillColor(roiOk ? COLOR.green : COLOR.red)
-  hoja.escribir(`${Math.round(roiMensual * 10) / 10}%`, L + 16, y + 28)
+  // Coma decimal: aqui «0.2%» se lee como otra cosa.
+  hoja.escribir(`${String(Math.round(roiMensual * 10) / 10).replace('.', ',')}%`, L + 16, y + 28)
   doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
   hoja.escribir('de lo que tienes en la calle', L + 16, y + 60)
 
   doc.font(F.texto).fontSize(TIPO.pie).fillColor(COLOR.ink4)
-  hoja.escribir('ganancia neta ÷ capital en calle', L, y + 60, { width: W - 16, align: 'right' })
+  // Manrope no trae el signo de dividir y PDFKit lo sustituia por un «+»,
+  // que dice lo contrario. En palabras no hay glifo que falte.
+  hoja.escribir('la ganancia entre el capital en calle', L, y + 60, { width: W - 16, align: 'right' })
   doc.font(F.cifraFuerte).fontSize(TIPO.cifra).fillColor(COLOR.ink)
   hoja.escribir(fmt(gananciaNetaMes), L, y + 30, { width: W - 16, align: 'right' })
   doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink3)
