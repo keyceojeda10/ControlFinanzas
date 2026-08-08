@@ -76,7 +76,22 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
       className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose?.() }}
     >
-      <div className="absolute inset-0 cf-modal-overlay backdrop-blur-md animate-overlay-in" />
+      {/* ══ ⚠ EL CLIC AFUERA NO CERRABA NINGÚN MODAL DE LA APP ══════════════
+          El manejador de arriba compara `e.target === overlayRef.current`, y
+          ese contenedor NUNCA es lo que se toca: este div de fondo lo cubre
+          entero y es quien recibe el clic. Medido en la pantalla, no leído —
+          `elementFromPoint` en el hueco de arriba devuelve `DIV.absolute.inset-0`
+          y el modal seguía abierto en móvil Y en escritorio.
+
+          Por eso el dueño lo reportó como «a veces ni siquiera dando un clic
+          afuera se puede cerrar»: no era a veces, eran los 47.
+
+          El manejador de arriba se queda por si algún día el fondo deja de
+          cubrirlo todo; el que trabaja es este. */}
+      <div
+        className="absolute inset-0 cf-modal-overlay backdrop-blur-md animate-overlay-in"
+        onClick={() => onClose?.()}
+      />
 
       <div
         ref={dialogRef}
@@ -102,6 +117,35 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           sizes[size] ?? sizes.md,
         ].join(' ')}
       >
+        {/* ══ ⚠ SIN TÍTULO NO HABÍA NINGUNA SALIDA ═══════════════════════════
+            La X vivía DENTRO de `{title && …}`, así que un modal sin título se
+            quedaba sin cabecera y sin forma de cerrarse. Le pasa a los dos que
+            traen su propio encabezado dentro —la FIRMA y RENOVAR— y son
+            justamente los que atrapan: en el de la firma, si no firmas no
+            puedes darle a «Listo», y no hay nada más que tocar.
+
+            Aquí la X flota en la esquina, sobre el contenido, con fondo propio
+            para que se lea encima de lo que sea. Y el contenido gana margen a la
+            derecha (más abajo) para que no le caiga encima a un nombre largo:
+            «Firma aquí, …» ocupa todo el ancho. */}
+        {!title && (
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
+            style={{
+              background: 'var(--cf-card)',
+              border: '1px solid var(--cf-border)',
+              color: 'var(--cf-ink-2)',
+              boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+            }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+
         {title && (
           <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
             <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
@@ -118,7 +162,8 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        {/* El `pr-16` solo cuando no hay título: es el sitio de la X flotante. */}
+        <div className={`flex-1 overflow-y-auto py-5 pl-5 ${title ? 'pr-5' : 'pr-16'}`}>{children}</div>
 
         {footer && (
           <div className="shrink-0 px-5 py-4 flex items-center justify-end gap-3" style={{ borderTop: '1px solid var(--cf-border)' }}>

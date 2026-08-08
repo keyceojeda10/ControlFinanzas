@@ -41,6 +41,14 @@ function Camara({ className }) {
   )
 }
 
+function Galeria({ className }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  )
+}
+
 export default function BannerFotosDonadas() {
   const [estado, setEstado] = useState(null)
   const [abierto, setAbierto] = useState(false)
@@ -141,6 +149,7 @@ function HojaDonar({ open, onClose, onListo }) {
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState(null)
   const inputRef = useRef(null)
+  const camaraRef = useRef(null)
 
   useEffect(() => {
     if (!open) { setFotos([]); setResultado(null); setError(null) }
@@ -281,15 +290,45 @@ function HojaDonar({ open, onClose, onListo }) {
             </div>
           )}
 
-          {/* `capture` NO se pone a propósito: forzaría la cámara y la mayoría
-              ya tiene las fotos tomadas en el carrete. */}
+          {/* ── DOS PUERTAS, Y HACEN FALTA LAS DOS ──────────────────────────
+              Mi primera versión solo abría el carrete, con la nota de que
+              `capture` «forzaría la cámara y la mayoría ya tiene las fotos
+              tomadas». Eso da por hecho algo que no se midió: el dueño lo
+              señaló — «de pronto no tienen las fotos guardadas, pero sí las
+              quieren tomar directamente».
+
+              Y es lo más probable en este caso: a nadie se le ocurre
+              fotografiar su cuaderno hasta que se lo pedimos. Si la única
+              puerta es el carrete, hay que salir de la app, abrir la cámara,
+              tomar las fotos y volver a buscar el banner — que es justo el
+              camino en el que se pierde la gente.
+
+              `capture="environment"` abre la cámara trasera directamente. En
+              escritorio el navegador lo ignora y se comporta como el otro
+              botón, así que no rompe nada: por eso son dos `input` y no uno con
+              el atributo condicionado. */}
           <input ref={inputRef} type="file" accept="image/*" multiple onChange={elegir} className="hidden" />
-          <button type="button" onClick={() => inputRef.current?.click()}
-            className="w-full h-[46px] text-sm font-bold flex items-center justify-center gap-2"
-            style={{ borderRadius: 'var(--cf-r-control)', background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
-            <Camara className="w-[18px] h-[18px]" />
-            {fotos.length ? `Agregar más (${fotos.length} de ${MAX_POR_ENVIO})` : 'Elegir fotos'}
-          </button>
+          <input ref={camaraRef} type="file" accept="image/*" capture="environment" multiple onChange={elegir} className="hidden" />
+
+          <div className="flex gap-2">
+            <button type="button" onClick={() => camaraRef.current?.click()}
+              className="flex-1 h-[46px] text-sm font-bold flex items-center justify-center gap-2"
+              style={{ borderRadius: 'var(--cf-r-control)', background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)', color: 'var(--cf-gold-text)', cursor: 'pointer', minWidth: 0 }}>
+              <Camara className="w-[18px] h-[18px] shrink-0" />
+              Tomar foto
+            </button>
+            <button type="button" onClick={() => inputRef.current?.click()}
+              className="flex-1 h-[46px] text-sm font-bold flex items-center justify-center gap-2"
+              style={{ borderRadius: 'var(--cf-r-control)', background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)', color: 'var(--cf-ink-2)', cursor: 'pointer', minWidth: 0 }}>
+              <Galeria className="w-[18px] h-[18px] shrink-0" />
+              De la galería
+            </button>
+          </div>
+          {fotos.length > 0 && (
+            <p className="text-[11px] text-center" style={{ color: 'var(--cf-ink-3)' }}>
+              {fotos.length} de {MAX_POR_ENVIO} · puedes seguir agregando
+            </p>
+          )}
 
           {error && (
             <p className="text-[12px] font-bold" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>
