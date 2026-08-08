@@ -55,10 +55,16 @@ export default function PlanGate({
         <p className="text-base font-bold mb-1" style={{ color: 'var(--cf-ink)' }}>{titulo}</p>
         <p className="text-[13px] mb-5" style={{ color: 'var(--cf-ink-3)' }}>{texto}</p>
 
+        {/* ⚠ La lista y el boton iban los dos como `inline-flex`, o sea en la
+            misma linea de texto: con rotulos largos el boton se montaba ENCIMA
+            de la lista y tapaba el primer renglon. En la pagina de reportes no
+            se veia porque alli los rotulos son cortos y cabian. Cada uno en su
+            bloque, y el problema no vuelve por mucho que crezca el texto. */}
         {incluye.length > 0 && (
-          <div className="inline-flex flex-col gap-2.5 text-left mb-5">
-            {incluye.slice(0, 5).map((linea, i) => (
-              <div key={linea} className="flex items-center gap-2.5">
+          <div className="flex justify-center mb-5">
+            <div className="flex flex-col gap-2.5 text-left">
+              {incluye.slice(0, 5).map((linea, i) => (
+                <div key={linea} className="flex items-center gap-2.5">
                 <div
                   className="w-4 h-4 rounded-[6px] flex items-center justify-center shrink-0"
                   style={{ background: `color-mix(in srgb, ${COLORES[i % COLORES.length]} 18%, transparent)` }}
@@ -69,7 +75,8 @@ export default function PlanGate({
                 </div>
                 <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>{linea}</span>
               </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
