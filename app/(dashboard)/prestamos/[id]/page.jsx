@@ -613,8 +613,14 @@ export default function PrestamoDetallePage({ params }) {
       ? cuotasAmortizacion.length
       : (diasPlazo > 0 ? Math.round(diasPlazo / porPeriodo) : 0)
     if (!n) return null
-    const adj = { diario: 'diarias', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[frecuencia] ?? ''
-    return `${n} cuotas ${adj}`.trim()
+    /* ⚠ EN SINGULAR CUANDO ES UNA. Salía «1 cuotas mensuales» en la pantalla,
+       que es el mismo descuido que ya se corrigió en «pagó completos sus 1
+       préstamo»: el plural entero, no solo la «s». */
+    const uno = n === 1
+    const adj = uno
+      ? ({ diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia] ?? '')
+      : ({ diario: 'diarias', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[frecuencia] ?? '')
+    return `${n} cuota${uno ? '' : 's'} ${adj}`.trim()
   })()
 
   // Los ultimos pagos, con el SALDO QUE LE QUEDO despues de cada uno. Esa es la
