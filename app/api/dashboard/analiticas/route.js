@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
 import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
-import { parsearDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
 // mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
@@ -133,7 +133,21 @@ export async function GET() {
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         proximoCobroManual: true,
-        cliente: { select: { id: true, nombre: true, rutaId: true } },
+        /* ⚠ LOS DIAS SIN COBRO SON DEL CLIENTE, NO SOLO DEL NEGOCIO.
+           Aqui se usaban los de la organizacion para TODOS. En este negocio la
+           mayoria de los clientes semanales llevan los suyos —«[0,1,2,3,4,5]»
+           es «a este solo se le cobra el sabado»— y con los del negocio se les
+           contaban seis dias de atraso por cada uno real: cambia la gravedad
+           (grave/moderada/leve) y el monto en riesgo.
+           La jerarquia es Prestamo > Cliente > Ruta > Organizacion y la resuelve
+           `obtenerDiasSinCobro`, que es lo que ya hace «Como me fue». */
+        diasSinCobro: true,
+        cliente: {
+          select: {
+            id: true, nombre: true, rutaId: true, diasSinCobro: true,
+            ruta: { select: { diasSinCobro: true } },
+          },
+        },
         // `interes` y los abonos a capital NO estaban aqui, y sin ellos
         // `capitalEnCalle()` calcula de menos sin avisar: los prestamos con
         // tabla darian interes 0 y los abonos explicitos no bajarian el capital.
@@ -409,7 +423,10 @@ export async function GET() {
   let montoMora = 0
 
   for (const p of prestamosActivosDetalle) {
-    const dias = calcularDiasMora(p, diasExcluidos, festivosFechas)
+    // Los suyos, no los del negocio. `diasExcluidos` sigue sirviendo para el
+    // calendario del MES —esa si es una cuenta de la organizacion—.
+    const susDias = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, { diasSinCobro: organization?.diasSinCobro }, p)
+    const dias = calcularDiasMora(p, susDias, festivosFechas)
     if (dias > 0) {
       clientesMora++
       const deuda = Number(p.totalAPagar) - Number(p.totalPagado || 0)

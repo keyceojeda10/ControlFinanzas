@@ -8,7 +8,7 @@ import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO } from '@/lib/papel/tokens'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { rotulo } from '@/lib/dinero/definiciones'
-import { parsearDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
 // La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
 // y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
@@ -151,7 +151,15 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         proximoCobroManual: true,
-        cliente: { select: { id: true, nombre: true } },
+        /* ⚠ Los dias sin cobro son del CLIENTE, no solo del negocio: ver la
+           nota igual en /api/dashboard/analiticas. */
+        diasSinCobro: true,
+        cliente: {
+          select: {
+            id: true, nombre: true, diasSinCobro: true,
+            ruta: { select: { diasSinCobro: true } },
+          },
+        },
         // `interes` y los abonos a capital hacen falta para `capitalEnCalle()`.
         cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, fechaEsperada: true } },
         pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
@@ -252,7 +260,10 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   const festivosFechas = festivos.map(f => f.fecha)
   const alertas = []
   for (const p of prestamosActivosDetalle) {
-    const dias = calcularDiasMora(p, diasExcluidos, festivosFechas)
+    // Los suyos, no los del negocio. `diasExcluidos` sigue sirviendo para el
+    // calendario del MES —esa si es una cuenta de la organizacion—.
+    const susDias = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, { diasSinCobro: organization?.diasSinCobro }, p)
+    const dias = calcularDiasMora(p, susDias, festivosFechas)
     if (dias > 0) {
       alertas.push({
         clienteNombre: p.cliente.nombre,
