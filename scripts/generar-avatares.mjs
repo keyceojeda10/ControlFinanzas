@@ -64,6 +64,31 @@ const FONDOS = ['3D4EAD', '2B6CB0', '20808D', '2F855A', 'B7791F', 'C05621',
 const SEMILLAS = ['Carlos', 'Marta', 'Jhoan', 'Ana', 'Diego', 'Lucia',
   'Andres', 'Paula', 'Steven', 'Rosa', 'Julian', 'Camila']
 
+/* ⚠ LAS SEMILLAS AL AZAR SACAN CARAS GRITANDO. DiceBear reparte gestos por el
+   hash, y su catálogo incluye `vomit`, `screamOpen`, `cry`, `xDizzy`, `rage`,
+   `veryAngry`. En la primera tanda salieron caras llorando y con los ojos en
+   equis: en una app de trabajo eso no va — el avatar acompaña al usuario todo
+   el día en la cabecera.
+
+   Así que el gesto NO se deja al azar: se limita a los amables. Lo que sigue
+   variando libremente es lo que distingue a una persona de otra (pelo, piel,
+   ropa, accesorios), que es para lo que sirve la semilla. */
+const GESTOS = {
+  avataaars: {
+    eyes: ['default', 'happy', 'wink', 'squint', 'side', 'closed'],
+    mouth: ['default', 'smile', 'twinkle', 'serious'],
+    eyebrows: ['default', 'defaultNatural', 'flatNatural', 'raisedExcited', 'upDown'],
+  },
+  openPeeps: {
+    face: ['calm', 'cheeky', 'smile', 'smileBig', 'smileTeethGap', 'solemn',
+      'serious', 'blank', 'eyesClosed', 'lovingGrin1', 'explaining', 'driven'],
+  },
+  lorelei: {
+    mouth: ['happy01', 'happy02', 'happy03', 'happy04', 'happy05', 'happy06',
+      'happy07', 'happy08', 'happy09', 'happy10', 'happy11', 'happy12'],
+  },
+}
+
 const GRUPOS = [
   { id: 'avataaars', estilo: 'avataaars', nombre: 'Caras' },
   { id: 'peeps', estilo: 'openPeeps', nombre: 'Retratos' },
@@ -97,6 +122,7 @@ for (const g of GRUPOS) {
       seed: SEMILLAS[i % SEMILLAS.length],
       backgroundColor: [FONDOS[i % FONDOS.length]],
       radius: 50,
+      ...(GESTOS[g.estilo] ?? {}),
     }).toString())
     const archivo = `${g.id}-${i + 1}.svg`
     writeFileSync(join(DESTINO, archivo), svg)
