@@ -1830,7 +1830,7 @@ export default function PrestamoDetallePage({ params }) {
                       )}
                       <BotonAbrirRecibo
                         small
-                        onClick={() => setModalRecibo({ tipo: 'pago', pago: { montoPagado: pago.montoPagado, fechaPago: pago.fechaPago } })}
+                        onClick={() => setModalRecibo({ tipo: 'pago', pago: { id: pago.id, montoPagado: pago.montoPagado, fechaPago: pago.fechaPago } })}
                       />
                     </div>
                   )}

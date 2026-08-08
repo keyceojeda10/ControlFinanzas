@@ -26,8 +26,12 @@ function fmtFecha(d) {
 }
 function fmtFechaHora(d) {
   const f = d ? new Date(d) : new Date()
-  return f.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-    + ' ' + f.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+  /* Mes ENTERO y «a las». En corto el ICU nuevo escribe «7 de ago de 2026»,
+     con un «de» de mas que chirria, y en un comprobante hay sitio de sobra
+     para la fecha completa: es el papel al que se recurre cuando hay una
+     discusion sobre si se pago o no. */
+  return f.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })
+    + ' a las ' + f.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
 }
 
 // Dibuja el recibo termico en un canvas y lo devuelve.
@@ -49,6 +53,7 @@ const TINTA = {
   ink: '#15161A', ink2: '#4A4E57', ink3: '#63676F', ink4: '#8E929A',
   green: '#12A150', greenTint: '#E8F6EE',
   card: '#FFFFFF', cardAlt: '#F9F9F6', border: '#E4E4E1', borderSoft: '#EDEDEA',
+  surface: '#F1F1EC',   // el hueso del fondo: el PNG no puede salir transparente
 }
 
 /* Las familias REALES que está usando la página. `next/font` genera un nombre
@@ -76,38 +81,181 @@ function caja(ctx, x, y, w, h, r) {
   else ctx.rect(x, y, w, h)
   return ctx
 }
+/* ══ LAS PIEZAS DEL PAPEL ══════════════════════════════════════════════════ */
 
-/* Dibuja el comprobante en un canvas y lo devuelve.
+/**
+ * La silueta de un ticket: esquinas redondeadas y el borde de arriba y el de
+ * abajo MORDIDOS por semicírculos.
  *
- * Exportada por la misma razón que `generarHTMLRecibo`: la imagen se pide desde
- * tres caminos distintos y tiene que salir idéntica en los tres. Cuando arreglé
- * el recibo de WhatsApp con funciones privadas, la IMAGEN no pudo usarlas y el
- * mismo fallo se reportó dos días seguidos.
+ * Es lo que más hace por el parecido con un comprobante de verdad, y es una
+ * sola ruta —no un rectángulo con círculos del color del fondo encima—: así la
+ * sombra sigue el contorno dentado en vez de quedarse recta por detrás.
  *
- * ⚠ Quien manda en la cabecera es EL NEGOCIO, no nosotros. Antes el titular
- * era «CONTROL FINANZAS» en grande y el nombre del prestamista debajo en gris:
- * el cliente recibe por WhatsApp el comprobante de un proveedor de software que
- * no conoce. Nuestro nombre va al pie, en pequeño. */
+ * `paso` sale de dividir el ancho: con un número fijo de dientes cambian de
+ * tamaño según el ancho, y con un tamaño fijo el último queda cortado.
+ */
+function siluetaTicket(ctx, x, y, w, h, r, radioDiente) {
+  const dientes = Math.max(4, Math.round(w / (radioDiente * 2.6)))
+  const paso = w / dientes
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  for (let i = 0; i < dientes; i++) {
+    const cx = x + paso * (i + 0.5)
+    ctx.lineTo(cx - radioDiente, y)
+    ctx.arc(cx, y, radioDiente, Math.PI, 0, true)   // muerde hacia dentro
+  }
+  ctx.lineTo(x + w - r, y)
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+  for (let i = dientes - 1; i >= 0; i--) {
+    const cx = x + paso * (i + 0.5)
+    ctx.lineTo(cx + radioDiente, y + h)
+    ctx.arc(cx, y + h, radioDiente, 0, Math.PI, true)
+  }
+  ctx.lineTo(x + r, y + h)
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+  ctx.lineTo(x, y + r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.closePath()
+}
+
+/** El separador de puntitos, como el del papel térmico. */
+function punteado(ctx, x1, y, x2) {
+  ctx.save()
+  ctx.setLineDash([2, 5])
+  ctx.strokeStyle = TINTA.border
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(x1, y)
+  ctx.lineTo(x2, y)
+  ctx.stroke()
+  ctx.restore()
+}
+
+/** El visto de «pago recibido», dibujado y no un emoji: los emoji no se pintan
+    igual en cada teléfono y en algunos salen como un cuadro. */
+function visto(ctx, cx, cy, r) {
+  ctx.save()
+  ctx.fillStyle = TINTA.greenTint
+  ctx.beginPath()
+  ctx.arc(cx + r, cy, r + 3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = TINTA.green
+  ctx.lineWidth = 2.2
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(cx + r - 4.5, cy)
+  ctx.lineTo(cx + r - 1, cy + 3.5)
+  ctx.lineTo(cx + r + 5, cy - 3.5)
+  ctx.stroke()
+  ctx.restore()
+}
+
+/**
+ * La filigrana: las tres barras ascendentes de la marca
+ * (`public/logo-icon.svg`), grandes y muy claras.
+ *
+ * ⚠ Se dibujan aquí en vez de cargar el SVG: la imagen se pide por red y
+ * `dibujarRecibo` es sincrónica, así que a veces llegaría después de pintar y
+ * el recibo saldría sin fondo unas veces sí y otras no. Son tres rectángulos.
+ */
+function filigrana(ctx, x, y, w, h) {
+  ctx.save()
+  /* ⚠ Grande y al borde parecia un fallo de pintado, no una marca: tres
+     bloques beige cortados por el canto derecho. Cabe entera, abajo a la
+     derecha, y a la mitad de opacidad. */
+  ctx.globalAlpha = 0.045
+  ctx.fillStyle = TINTA.gold
+  const lado = Math.min(w, h) * 0.34
+  const bx = x + w - lado * 1.15
+  const by = y + h - lado * 0.30
+  const ancho = lado * 0.20
+  const hueco = lado * 0.34
+  const altos = [lado * 0.30, lado * 0.52, lado * 0.80]
+  altos.forEach((alto, i) => {
+    const px = bx + i * hueco
+    if (ctx.roundRect) {
+      ctx.beginPath()
+      ctx.roundRect(px, by - alto, ancho, alto, ancho * 0.35)
+      ctx.fill()
+    } else {
+      ctx.fillRect(px, by - alto, ancho, alto)
+    }
+  })
+  ctx.restore()
+}
+
+/* ══ EL COMPROBANTE, CON FORMA DE COMPROBANTE ══════════════════════════════
+ *
+ * El dueño trajo el de Nequi como referencia: «me parece muy bonito y muy buen
+ * ejemplo de cómo se debe hacer». Lo que hace que ese funcione, y que aquí se
+ * copia:
+ *
+ *   · **La silueta dentada.** Es lo que más pesa: unos bordes recortados
+ *     arriba y abajo y el papel se lee como un RECIBO, no como una tarjeta.
+ *   · **Un estado arriba, con icono y color.** «Envío realizado» allí,
+ *     «Pago recibido» aquí. Contesta antes que ningún dato.
+ *   · **Los datos APILADOS**, rótulo pequeño encima y valor grande debajo. En
+ *     dos columnas —como estaba— un nombre largo y su valor se pelean por el
+ *     ancho; apilados cada uno tiene la línea entera.
+ *   · **Una filigrana** de fondo. Da textura y hace el papel más difícil de
+ *     falsificar de un vistazo.
+ *
+ * ⚠ LO QUE NO SE COPIA, Y POR QUÉ:
+ *
+ *   · **El QR.** El de Nequi verifica el envío. Aquí el único QR que existe
+ *     —`/qr/{cliente}`— es del COBRADOR: abre la pantalla de cobro y pide
+ *     sesión. En un papel que va al deudor por WhatsApp no sirve de nada. El
+ *     portal del cliente sí tiene enlace, pero se entra con teléfono y PIN: un
+ *     QR a una puerta que quizá no puede abrir es peor que ninguno.
+ *   · **La ilustración dibujada a mano.** La de Nequi la hizo un ilustrador.
+ *     Mis dos intentos de dibujar para esta app se rechazaron —«quedaron mucho
+ *     peor»—, así que la filigrana es la marca que ya existe: las tres barras
+ *     de `public/logo-icon.svg`, geometría pura, en muy claro.
+ *
+ * Y manda EL NEGOCIO, no nosotros: el cliente recibe el comprobante de su
+ * prestamista, no el de un proveedor de software que no conoce.
+ */
 export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   const W = 620
-  const PAD = 40
+  const PAD = 44
   const { texto: SANS, cifra: MONO } = familias()
 
   const campos = (Array.isArray(camposRecibo) && camposRecibo.length > 0)
     ? camposRecibo
     : getDefaultCampos()
-  const filas = campos.map((c) => ({
-    label: c.nombre,
-    value: c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo),
-  }))
   const tieneCedula = cliente?.cedula && !String(cliente.cedula).startsWith('SIN-')
 
-  const ALTO_BANDA = 92
-  const ALTO_MONTO = 132
-  const ALTO_FILA = 32
-  const H = ALTO_BANDA + 26 + ALTO_MONTO + 22
-    + (2 + (tieneCedula ? 1 : 0) + filas.length) * ALTO_FILA
-    + 22 + 34
+  /* Los pares, en orden de lo que se mira primero. Los configurables del
+     negocio van al final: son el detalle del préstamo, no la identidad. */
+  const datos = [
+    ['Para', cliente?.nombre ?? '—'],
+    ...(tieneCedula ? [[abreviaturaDocumento(), String(cliente.cedula)]] : []),
+    ['Fecha', fmtFechaHora(pago?.fechaPago)],
+    /* La referencia, como en cualquier comprobante: es lo que se cita cuando
+       el cliente dice que pago y el cobrador dice que no. Solo sale si el pago
+       trae `id` — hay una via que llama con el monto y la fecha nada mas. */
+    ...(pago?.id ? [['Referencia', String(pago.id).slice(-8).toUpperCase()]] : []),
+    ...campos.map((c) => [
+      c.nombre,
+      c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo),
+    ]),
+  ].filter(([, v]) => v != null && String(v).trim() !== '' && String(v) !== '—')
+
+  /* ⚠ La altura se suma con LAS MISMAS piezas con las que se dibuja. Al
+     llevarlas por separado —una constante para el bloque del monto y luego un
+     `y` que avanzaba a su aire— el monto acabo pintado ENCIMA del primer dato.
+     Se ve en la imagen; en el codigo los dos numeros parecen razonables. */
+  const MARGEN = 18          // aire alrededor del ticket, donde caen los dientes
+  const ALTO_BANDA = 96
+  const ALTO_ESTADO = 54     // el visto y «Pago recibido», con su punteado
+  const ALTO_MONTO = 92      // rotulo + cifra grande + punteado
+  const ALTO_PAR = 46
+  const ALTO_PIE = 56
+  const H = MARGEN * 2 + ALTO_BANDA + ALTO_ESTADO + ALTO_MONTO
+    + datos.length * ALTO_PAR + ALTO_PIE
 
   const escala = 2
   const canvas = document.createElement('canvas')
@@ -116,111 +264,105 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   const ctx = canvas.getContext('2d')
   ctx.scale(escala, escala)
 
-  ctx.fillStyle = TINTA.card
+  /* El fondo NO se deja transparente: un PNG con alfa sale con el fondo negro
+     en varias vistas de WhatsApp, y el recibo acaba ilegible. */
+  ctx.fillStyle = TINTA.surface
   ctx.fillRect(0, 0, W, H)
 
-  // ── La banda dorada, con el nombre del negocio ──────────────────────────
-  /* La banda sigue las esquinas de la tarjeta. Con `fillRect` el dorado
-     rellenaba el cuadrado y asomaba por fuera del marco redondeado: dos
-     picos dorados arriba. */
-  ctx.fillStyle = TINTA.gold
-  ctx.beginPath()
-  if (ctx.roundRect) ctx.roundRect(0, 0, W, ALTO_BANDA, [16, 16, 0, 0])
-  else ctx.rect(0, 0, W, ALTO_BANDA)
+  // ── La silueta dentada ──────────────────────────────────────────────────
+  const x0 = MARGEN, y0 = MARGEN
+  const w = W - MARGEN * 2, h = H - MARGEN * 2
+  siluetaTicket(ctx, x0, y0, w, h, 14, 11)
+  ctx.save()
+  ctx.shadowColor = 'rgba(20,20,28,.10)'
+  ctx.shadowBlur = 14
+  ctx.shadowOffsetY = 3
+  ctx.fillStyle = TINTA.card
   ctx.fill()
+  ctx.restore()
+
+  // Todo lo demás queda DENTRO del ticket.
+  ctx.save()
+  siluetaTicket(ctx, x0, y0, w, h, 14, 11)
+  ctx.clip()
+
+  filigrana(ctx, x0, y0, w, h)
+
+  // ── La banda del negocio ────────────────────────────────────────────────
+  ctx.fillStyle = TINTA.gold
+  ctx.fillRect(x0, y0, w, ALTO_BANDA)
 
   ctx.textAlign = 'left'
   ctx.fillStyle = TINTA.goldInk
   ctx.font = `600 12px ${SANS}`
-  ctx.fillText('COMPROBANTE DE PAGO', PAD, 34)
+  ctx.fillText('COMPROBANTE DE PAGO', PAD, y0 + 30)
 
-  /* El nombre se encoge hasta que entra. Hay negocios con nombres de 100
-     caracteres —hay uno que lleva el teléfono y un aviso dentro del nombre— y
-     dibujado tal cual se sale del recibo por la derecha. */
   let tam = 26
   ctx.font = `700 ${tam}px ${SANS}`
-  while (tam > 13 && ctx.measureText(orgNombre || 'Mi negocio').width > W - PAD * 2) {
+  while (tam > 13 && ctx.measureText(orgNombre || 'Mi negocio').width > w - (PAD - x0) * 2) {
     tam -= 1
     ctx.font = `700 ${tam}px ${SANS}`
   }
   ctx.fillStyle = TINTA.ink
-  ctx.fillText(orgNombre || 'Mi negocio', PAD, 68)
+  ctx.fillText(orgNombre || 'Mi negocio', PAD, y0 + 66)
 
-  // ── El monto, que es lo que el cliente busca ────────────────────────────
-  let y = ALTO_BANDA + 26
-  ctx.fillStyle = TINTA.goldTint
-  caja(ctx, PAD, y, W - PAD * 2, ALTO_MONTO, 14).fill()
+  let y = y0 + ALTO_BANDA
 
-  ctx.textAlign = 'center'
-  ctx.fillStyle = TINTA.ink3
-  ctx.font = `600 12px ${SANS}`
-  ctx.fillText('PAGÓ', W / 2, y + 30)
-
-  ctx.fillStyle = TINTA.ink
-  ctx.font = `700 44px ${MONO}`
-  ctx.fillText(formatMoney(pago?.montoPagado ?? 0), W / 2, y + 78)
-
-  // Pastilla verde: el recibo dice «recibido», no solo cuánto.
-  const rotulo = 'RECIBIDO'
-  ctx.font = `700 11px ${SANS}`
-  const anchoPastilla = ctx.measureText(rotulo).width + 26
-  ctx.fillStyle = TINTA.greenTint
-  caja(ctx, (W - anchoPastilla) / 2, y + 94, anchoPastilla, 22, 11).fill()
+  // ── El estado, lo primero que se lee ────────────────────────────────────
+  y += 32
+  visto(ctx, PAD, y - 6, 9)
+  ctx.textAlign = 'left'
   ctx.fillStyle = TINTA.green
-  ctx.fillText(rotulo, W / 2, y + 109)
+  ctx.font = `700 19px ${SANS}`
+  ctx.fillText('Pago recibido', PAD + 30, y)
+  y += 22
+  punteado(ctx, PAD, y, W - PAD)
 
-  y += ALTO_MONTO + 22
+  /* El monto va a la IZQUIERDA como los demas datos, no centrado. Centrado
+     rompia la columna que forman todos los rotulos y se leia como si fuera
+     otra seccion. Es un dato mas —el mas importante—, y eso se dice con el
+     tamaño, no con la posicion. */
+  y += 26
+  ctx.fillStyle = TINTA.ink3
+  ctx.font = `15px ${SANS}`
+  ctx.fillText('¿Cuánto?', PAD, y)
+  ctx.fillStyle = TINTA.ink
+  ctx.font = `700 42px ${MONO}`
+  ctx.fillText(formatMoney(pago?.montoPagado ?? 0), PAD, y + 42)
+  y += 66
 
-  // ── Los datos ───────────────────────────────────────────────────────────
-  const renglon = (etiqueta, valor, fuerte) => {
-    ctx.textAlign = 'left'
-    ctx.font = `14px ${SANS}`
+  // ── Los pares, apilados ─────────────────────────────────────────────────
+  ctx.textAlign = 'left'
+  for (const [rotulo, valor] of datos) {
     ctx.fillStyle = TINTA.ink3
-    ctx.fillText(String(etiqueta), PAD, y + 20)
+    ctx.font = `15px ${SANS}`
+    ctx.fillText(String(rotulo), PAD, y)
 
-    ctx.textAlign = 'right'
-    ctx.font = `${fuerte ? '700' : '600'} 14px ${fuerte ? MONO : SANS}`
-    ctx.fillStyle = TINTA.ink
-    /* ⚠ El nombre y la cédula NO se recortan: es lo que identifica a la
-       persona. Se encoge la letra hasta que entra. */
-    const hueco = W - PAD * 2 - ctx.measureText(String(etiqueta)).width - 90
-    let t = 14
-    while (t > 9 && ctx.measureText(String(valor)).width > hueco) {
+    /* ⚠ Nombre y cédula NO se recortan: se encoge la letra hasta que entra.
+       Es lo que identifica a la persona, y cortado no sirve. */
+    let t = 19
+    ctx.font = `600 ${t}px ${SANS}`
+    while (t > 11 && ctx.measureText(String(valor)).width > w - (PAD - x0) * 2) {
       t -= 1
-      ctx.font = `${fuerte ? '700' : '600'} ${t}px ${fuerte ? MONO : SANS}`
+      ctx.font = `600 ${t}px ${SANS}`
     }
-    ctx.fillText(String(valor), W - PAD, y + 20)
-
-    ctx.strokeStyle = TINTA.borderSoft
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(PAD, y + ALTO_FILA - 0.5)
-    ctx.lineTo(W - PAD, y + ALTO_FILA - 0.5)
-    ctx.stroke()
-    y += ALTO_FILA
+    ctx.fillStyle = TINTA.ink
+    ctx.fillText(String(valor), PAD, y + 24)
+    y += ALTO_PAR
   }
 
-  renglon('Cliente', cliente?.nombre ?? '—')
-  if (tieneCedula) renglon(abreviaturaDocumento(), cliente.cedula)
-  renglon('Fecha', fmtFecha(pago?.fechaPago))
-  for (const f of filas) renglon(f.label, f.value, true)
-
   // ── El pie ──────────────────────────────────────────────────────────────
-  y += 22
-  ctx.textAlign = 'left'
-  ctx.font = `11px ${SANS}`
+  y += 6
+  punteado(ctx, PAD, y, W - PAD)
+  y += 26
   ctx.fillStyle = TINTA.ink4
-  ctx.fillText(fmtFechaHora(pago?.fechaPago), PAD, y)
-  ctx.textAlign = 'right'
-  ctx.fillText('Control Finanzas', W - PAD, y)
+  ctx.font = `12px ${SANS}`
+  ctx.fillText('Generado por Control Finanzas', PAD, y)
 
-  // El marco, al final, para que ninguna caja lo tape.
-  ctx.strokeStyle = TINTA.border
-  ctx.lineWidth = 1
-  caja(ctx, 0.5, 0.5, W - 1, H - 1, 16).stroke()
-
+  ctx.restore()
   return canvas
 }
+
 
 export default function BotonCompartirRecibo({ cliente, prestamo, pago, orgNombre = '', camposRecibo, label = 'Compartir recibo' }) {
   const handleClick = () => {
