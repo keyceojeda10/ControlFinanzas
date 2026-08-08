@@ -11,6 +11,9 @@ import MoneyInput from '@/components/ui/MoneyInput'
 import { invalidarCachePorPrefijo } from '@/lib/offline'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
+// El cuaderno entero de una sentada. Ver la nota larga del componente: el 73 %
+// de los negocios se queda en cinco clientes tecleando de uno en uno.
+import LoteFotos from '@/components/migrador/LoteFotos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -67,7 +70,7 @@ function calcularFicha(ficha) {
 }
 
 // ─── Vista: selector foto vs manual ───────────────────────────────
-function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, onFotoChange, numero }) {
+function SelectorMetodo({ onLote, onFoto, onManual, ocrLoading, ocrError, fotoInputRef, onFotoChange, numero }) {
   return (
     <div>
       <div className="mb-5">
@@ -87,6 +90,35 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
 
       <div className="flex flex-col gap-3">
         <input ref={fotoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFotoChange} />
+
+        {/* ── LA PRIMERA, Y ES LA QUE MUEVE EL NEGOCIO ──
+            Las otras dos agregan UN cliente. Ésta pasa el cuaderno entero, y es
+            la diferencia entre pagar y no: medido en producción, de los que
+            superan 21 clientes paga la mitad, y de los que se quedan en cinco,
+            el 1 %. Va arriba y en dorado por eso, no por ser la nueva. */}
+        <button type="button" onClick={onLote} disabled={ocrLoading}
+          className="order-0 w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: 'var(--cf-gold)', border: '1.5px solid var(--cf-gold)' }}>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(255,255,255,.35)', color: 'var(--cf-gold-ink)' }}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold" style={{ color: 'var(--cf-gold-ink)' }}>
+                Pasar todo el cuaderno
+              </h3>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: 'color-mix(in srgb, var(--cf-gold-ink) 78%, transparent)' }}>
+                Tómale foto a todas tus cartulinas o a las hojas de tu cuaderno —hasta
+                30 de una vez— y te dejamos la lista armada para revisar.
+              </p>
+            </div>
+          </div>
+        </button>
         <button type="button" onClick={onManual} disabled={ocrLoading}
           className="order-2 w-full text-left rounded-2xl p-5 transition-all active:scale-[0.98] disabled:opacity-60"
           style={{ background: 'var(--cf-card)', border: '1.5px solid var(--cf-border)' }}>
@@ -98,8 +130,8 @@ function SelectorMetodo({ onFoto, onManual, ocrLoading, ocrError, fotoInputRef, 
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Escribir a mano</h3>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Nombre, cédula, monto y condiciones, uno por uno.</p>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Escribir uno a mano</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Nombre, cédula, monto y condiciones.</p>
             </div>
           </div>
         </button>
@@ -601,7 +633,7 @@ export default function MigradorPage() {
 
   const defaults = { tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' }
 
-  // vista: 'lista' | 'selector' | 'formulario'
+  // vista: 'lista' | 'selector' | 'formulario' | 'lote'
   const [vista, setVista] = useState('selector')
   const [ficha, setFicha] = useState(() => fichaVacia(defaults))
   const [creados, setCreados] = useState([])
@@ -616,6 +648,9 @@ export default function MigradorPage() {
   // desde aquí sin moverla es un TDZ: revienta al montar la pantalla.
   const volverDeLaMigracion = useCallback(() => {
     if (vista === 'lista') { router.back(); return }
+    // Del lote se vuelve al selector, no atrás: quien subió veinte fotos y
+    // pulsa la flecha no quiere salirse de la migración.
+    if (vista === 'lote') { setVista('selector'); return }
     if (vista === 'selector') {
       if (creados.length > 0) { setVista('lista') } else { router.back() }
       return
@@ -636,6 +671,7 @@ export default function MigradorPage() {
   useCabecera({
     titulo: {
       lista: 'Tu cartera',
+      lote: 'Tu cuaderno en fotos',
       selector: creados.length > 0 ? 'Agregar cliente' : 'Pasar mi cuaderno',
       formulario: editandoIdx !== null
         ? `Editar: ${creados[editandoIdx]?.nombre || 'cliente'}`
@@ -643,6 +679,7 @@ export default function MigradorPage() {
     }[vista],
     subtitulo: {
       lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
+      lote: 'Toma las fotos y revisa antes de guardar',
       selector: creados.length > 0 ? 'Cómo quieres registrar este cliente' : 'Agrega tus clientes con foto o a mano, uno a uno',
       formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su préstamo',
     }[vista],
@@ -1095,6 +1132,7 @@ export default function MigradorPage() {
           )}
 
           <SelectorMetodo
+            onLote={() => irA('lote')}
             onFoto={() => fotoRef.current?.click()}
             onManual={() => { setFicha(fichaVacia(defaults)); irA('formulario') }}
             ocrLoading={ocrLoading}
@@ -1104,6 +1142,36 @@ export default function MigradorPage() {
             numero={proximoNumero}
           />
         </>
+      )}
+
+      {/* ════════ VISTA: LOTE ════════ */}
+      {vista === 'lote' && (
+        <LoteFotos
+          rutas={rutas}
+          onSalir={() => { setFicha(fichaVacia(defaults)); irA('formulario') }}
+          /* Los creados se suman a la misma lista que los de uno en uno: para
+             la pantalla de «Tu cartera» son lo mismo, y separar las dos vías
+             obligaría a mantener dos resúmenes que tarde o temprano dirían
+             cifras distintas. El total lo calcula la misma función. */
+          onListo={({ creados: nuevos, fallos }) => {
+            if (nuevos?.length) {
+              setCreados((prev) => [...prev, ...nuevos.map((c) => {
+                const calc = calcularFicha({
+                  ...c,
+                  monto: String(c.monto), tasa: String(c.tasa),
+                  plazoUnidades: String(c.plazoUnidades), cuotaManual: '',
+                })
+                return { ...c, totalAPagar: calc?.totalAPagar ?? 0, cuota: calc?.cuotaDiaria ?? 0 }
+              })])
+              invalidarCachePorPrefijo('clientes:').catch(() => {})
+            }
+            setSuccessMsg(fallos?.length
+              ? `${nuevos.length} guardados · ${fallos.length} no se pudieron crear`
+              : `${nuevos.length} cliente${nuevos.length === 1 ? '' : 's'} guardado${nuevos.length === 1 ? '' : 's'}`)
+            irA(nuevos?.length ? 'lista' : 'selector')
+            setTimeout(() => setSuccessMsg(''), 6000)
+          }}
+        />
       )}
 
       {/* ════════ VISTA: FORMULARIO ════════ */}
