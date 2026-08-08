@@ -1001,14 +1001,20 @@ export default function ClientesPage() {
         // Armarla desde `adaptados[i]` no solo lo arregla: garantiza que la
         // tabla y la tarjeta digan LO MISMO. Dos caminos para la misma cifra es
         // como se acaban contradiciendo.
-        const dameCifra = (a, etiqueta) => a?.cifras?.find((x) => x.etiqueta === etiqueta) ?? null
+        /* ⚠ BUSCA POR `clave` PRIMERO, y por rótulo solo si no la hay.
+           El rótulo de la columna del cobro ya NO es fijo —«COBRA hoy»,
+           «VENCIÓ EL 14 jul», «COBRA EL 19 ago»— así que buscarla por
+           «Cobra el» la habría dejado vacía en todas las filas vencidas: sin
+           error, solo en blanco. Las demás columnas siguen sin clave y se
+           encuentran por su rótulo, que no cambia. */
+        const dameCifra = (a, etiqueta, clave) =>
+          a?.cifras?.find((x) => (clave && x.clave === clave) || x.etiqueta === etiqueta) ?? null
 
         const filaTabla = (c, a, i) => {
           const atraso = dameCifra(a, 'Atraso')
           const cumple = dameCifra(a, 'Cumple')
           const pagado = dameCifra(a, 'Pagado')
-          // La clave es la etiqueta que pone el adaptador; van a la par.
-          const prox   = dameCifra(a, 'Cobra el')
+          const prox   = dameCifra(a, 'Cobra el', 'cobro')
           const color = (cif) => cif?.tono === 'contra' ? 'var(--cf-red-dark)'
             : cif?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
           return (

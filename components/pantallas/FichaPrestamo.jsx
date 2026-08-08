@@ -23,14 +23,26 @@
 import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda, Aviso } from '@/components/cf/primitivos'
 
 /* Tira de tres cifras en tarjeta blanca (móvil). En escritorio son cinco. */
+/* ⚠ SE LLAMA «TiraTres» Y AHORA ADMITE CUATRO, a propósito de no renombrarla:
+   el nombre lo usan tres pantallas y cambiarlo por un número es cambiar el
+   nombre otra vez el día que sean cinco. Lo que hace es una tira de columnas.
+
+   La cuarta llegó porque el dueño reportó que DENTRO del préstamo no se dice
+   nunca cuándo se cobra: «dice cuatro cuotas de tantas, pero no dice qué día se
+   cobran». Y tenía razón — el dato existía (`cobroInfo` en la página) y NO SE
+   PINTABA EN NINGÚN SITIO. Se calculaba, con su color y su rótulo, y se tiraba.
+
+   A cuatro columnas en 393px quedan ~74px cada una, que es justo lo que ya
+   soporta la tira de las tarjetas: por eso los rótulos son cortos. */
 function TiraTres({ columnas }) {
+  const cs = columnas.filter(Boolean)
   return (
     <div style={{
-      display: 'flex', gap: 8, alignItems: 'stretch', flex: 'none',
+      display: 'flex', gap: cs.length > 3 ? 6 : 8, alignItems: 'stretch', flex: 'none',
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
       borderRadius: 'var(--cf-r-card)', padding: '15px 18px',
     }}>
-      {columnas.map((c, i) => (
+      {cs.map((c, i) => (
         <div key={i} style={{ display: 'contents' }}>
           {i > 0 && <span style={{ width: 1, background: 'var(--cf-divider)', flex: 'none' }} />}
           <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -38,7 +50,10 @@ function TiraTres({ columnas }) {
               {c.etiqueta}
             </span>
             <span className="cf-fig" style={{
-              fontSize: 16,
+              // Con cuatro columnas el sitio baja de 100 a 74px: «$140.000» a
+              // cuerpo 16 se sale. Es la misma regla que ya aplica `TiraCifras`.
+              fontSize: cs.length > 3 ? 14 : 16,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip', minWidth: 0,
               color: c.tono === 'contra'  ? 'var(--cf-red-dark)'
                    : c.tono === 'favor'   ? 'var(--cf-green-dark)'
                    : c.tono === 'apagado' ? 'var(--cf-ink-3)'
@@ -212,6 +227,11 @@ export default function FichaPrestamo({
   fechaVencimiento, diasParaVencer, empezoEl,
   // tira
   cuota, enMora, cuotasFaltantes,
+  /* ── CUÁNDO SE COBRA ──
+     `{ etiqueta, valor, tono }` de `cifraProximoCobro`: «COBRA / hoy»,
+     «VENCIÓ EL / 14 jul» o «COBRA EL / 19 ago». Es el dato que faltaba dentro
+     del préstamo: se sabía la cuota y cuántas quedan, pero no QUÉ DÍA. */
+  cobro,
   // cómo se pactó
   prestado, ganancia, plazoTexto,
   cuotaQuePusiste,            // manual
@@ -378,6 +398,7 @@ export default function FichaPrestamo({
             // una. La palabra dice lo mismo y no se lee como plata.
             { etiqueta: 'En mora', valor: hayMora ? enMora : 'Nada', tono: hayMora ? 'contra' : 'apagado' },
             { etiqueta: 'Le faltan', valor: cuotasFaltantes },
+            cobro && { etiqueta: cobro.etiqueta, valor: cobro.valor, tono: cobro.tono },
           ]} />
         )}
 

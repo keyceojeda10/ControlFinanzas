@@ -41,6 +41,7 @@ import {
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
+import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 // Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
@@ -1031,14 +1032,16 @@ export default function PrestamoDetallePage({ params }) {
     }
     return `/clientes/${clienteRuta.id}`
   }
-  const cobroVencido = estaActivo && proximoCobro && new Date(proximoCobro) < new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }).split(',')[0])
-  const cobroInfo = estaActivo && proximoCobro
-    ? {
-        label: cobroVencido ? 'Debió cobrarse' : 'Próximo cobro',
-        value: formatFechaCobroRelativa(proximoCobro),
-        color: cobroVencido ? 'var(--cf-red-dark)' : 'var(--cf-gold)',
-      }
-    : null
+  /* ── ⚠ AQUÍ VIVÍA UN CONTROL MUERTO ──
+     `cobroInfo` se calculaba con su rótulo y su color… y NO SE PINTABA EN
+     NINGÚN SITIO. Por eso el dueño reportó que dentro del préstamo no se dice
+     nunca cuándo se cobra: el dato estaba y no llegaba a la pantalla.
+
+     Ahora sale de `cifraProximoCobro`, la misma función que las tarjetas y la
+     tabla, y entra como cuarta columna de la tira. Una regla, cuatro pantallas.
+
+     `estaActivo`: en un préstamo cerrado no hay próximo cobro que enseñar. */
+  const cobro = estaActivo ? cifraProximoCobro({ proximoCobro }) : null
 
   // ⚠ SIN `pb-28`. El hueco de la pastilla lo reserva el ARMAZÓN, que es el
   // único que sabe si la hay: `Armazon.jsx:185` pinta un espaciador de 112px
@@ -1401,6 +1404,7 @@ export default function PrestamoDetallePage({ params }) {
         cuota={formatMoney(Math.round(cuotaDiaria || 0))}
         enMora={hayMontoMora ? formatMoney(Math.round(montoEnMora)) : '$0'}
         cuotasFaltantes={cuotasFaltantesTexto}
+        cobro={cobro}
         prestado={formatMoney(montoPrestadoRedondeado)}
         ganancia={formatMoney(Math.max(0, Math.round((totalAPagar || 0) - montoPrestadoRedondeado)))}
         plazoTexto={plazoPactadoTexto}

@@ -5,6 +5,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
+import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
@@ -231,6 +232,22 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
   const cuotaVigente = tienePrestamos
     ? prestamosActivos.reduce((a, p) => a + (p?.cuotaDiaria ?? 0), 0) || null
     : null
+
+  /* ── EL RÓTULO CAMBIA CON LA SITUACIÓN ──
+     «COBRA EL / hoy» y «COBRA EL / vencido» no se dicen, y el segundo además
+     esconde el único dato que sirve: qué día venció. Sale de
+     `cifraProximoCobro`, la misma función que pinta las tarjetas y la tabla, o
+     serían cuatro reglas distintas para la misma frase. */
+  const cobro = (() => {
+    const fechas = prestamosActivos
+      .map((p) => p?.proximoCobro)
+      .filter(Boolean)
+      .map((f) => new Date(f))
+      .filter((d) => !Number.isNaN(d.getTime()))
+    if (!fechas.length) return null
+    const cercana = new Date(Math.min(...fechas.map((d) => d.getTime())))
+    return cifraProximoCobro({ proximoCobro: cercana.toISOString() })
+  })()
 
   const proximoCobroTexto = (() => {
     const fechas = prestamosActivos
@@ -469,13 +486,14 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
             }}>
               {[
                 /* ⚠ «PRÓXIMO COBRO» NO CABE EN UNA CUARTA PARTE DE 393px:
-                   salía «PRÓXIMO CO…». Se dice «Cobra el», que es la misma
-                   pregunta con dos palabras cortas — y con la fecha debajo se
-                   lee «Cobra el / 4 de ago» sin que falte nada. Medido en la
-                   captura, no en el código: ahí se veía correcto. */
+                   salía «PRÓXIMO CO…». Por eso el rótulo es corto, y ahora
+                   además CAMBIA con la situación —«COBRA / hoy», «VENCIÓ EL /
+                   14 jul»— porque «cobra el vencido» ni se dice ni informa.
+                   La regla vive en `cifraProximoCobro`, compartida con las
+                   tarjetas y la tabla. */
                 { rotulo: 'Le debe', valor: formatMoney(saldoTotal) },
                 { rotulo: 'Cuota', valor: cuotaVigente != null ? formatMoney(cuotaVigente) : '—' },
-                { rotulo: 'Cobra el', valor: proximoCobroTexto ?? '—' },
+                { rotulo: cobro?.etiqueta ?? 'Cobra el', valor: cobro?.valor ?? '—', tono: cobro?.tono },
                 { rotulo: 'Cómo paga', valor: `${pctPagado}%` },
               ].map((c) => (
                 <div key={c.rotulo} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -484,8 +502,12 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                     textTransform: 'uppercase', color: '#8A8E98',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{c.rotulo}</span>
+                  {/* Los colores del bloque oscuro son los suyos, no los del
+                      papel: `--cf-red-dark` sobre carbón no se lee. Mismos
+                      valores que usa `TiraCifras` con `sobreOscuro`. */}
                   <span className="font-mono-display" style={{
-                    fontSize: 13.5, fontWeight: 700, color: '#F3F3F6',
+                    fontSize: 13, fontWeight: 700,
+                    color: c.tono === 'contra' ? '#F0575C' : c.tono === 'oro' ? '#F5B824' : '#F3F3F6',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{c.valor}</span>
                 </div>
