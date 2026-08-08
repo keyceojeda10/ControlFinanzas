@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Modal } from '@/components/ui/Modal'
-import { FORMAS, MAX_POR_ENVIO } from '@/lib/fotos-donadas'
+import { FORMAS, MAX_POR_ENVIO, TIPOS } from '@/lib/fotos-donadas'
 
 /* ══ EL BANNER DE LA CAMPAÑA DE FOTOS ═══════════════════════════════════════
  *
@@ -152,9 +152,17 @@ function HojaDonar({ open, onClose, onListo }) {
   useEffect(() => () => fotos.forEach((f) => URL.revokeObjectURL(f.url)), [fotos])
 
   const elegir = (e) => {
-    const nuevas = [...(e.target.files || [])].map((file) => ({ file, url: URL.createObjectURL(file) }))
+    /* ⚠ SE FILTRA AQUÍ TAMBIÉN, no solo en el servidor. El `accept="image/*"`
+       es una sugerencia al selector, no una reja: en el gestor de archivos de
+       Android se puede elegir «todos los archivos» y colar un PDF o un audio.
+       Sin este renglón aparecía la MINIATURA ROTA de un `.txt` y el rechazo solo
+       llegaba después de mandar — lo vi probando el flujo en el espejo. Quien
+       lo viera pensaría que la función está mal, no su archivo. */
+    const todas = [...(e.target.files || [])]
+    const nuevas = todas.filter((f) => TIPOS.includes(f.type)).map((file) => ({ file, url: URL.createObjectURL(file) }))
+    const coladas = todas.length - nuevas.length
     setFotos((prev) => [...prev, ...nuevas].slice(0, MAX_POR_ENVIO))
-    setError(null)
+    setError(coladas ? `${coladas} ${coladas === 1 ? 'archivo no es una foto' : 'archivos no son fotos'} y no se ${coladas === 1 ? 'agregó' : 'agregaron'}` : null)
     // Sin esto, elegir la MISMA foto dos veces no dispara `change`.
     e.target.value = ''
   }
