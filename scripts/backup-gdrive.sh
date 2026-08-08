@@ -185,6 +185,26 @@ fi
 cp "${APP_DIR}/.env" "${TRABAJO}/env-backup"
 cp "${APP_DIR}/prisma/schema.prisma" "${TRABAJO}/schema.prisma"
 
+# ⚠ LAS FOTOS Y LAS FIRMAS TAMBIEN, Y ANTES NO IBAN.
+#
+# Descubierto el 8 ago 2026 al preguntar el dueno que haria falta para migrar
+# de servidor sin perder datos. El paquete llevaba la base, el .env y el
+# esquema — pero NO `public/uploads/`: firmas de pagares, fotos de clientes,
+# fotos de pagos y adjuntos de soporte.
+#
+# El agujero no se ve porque la base SI se respalda: `Prestamo.firmaUrl` y
+# `Cliente.fotoUrl` seguirian ahi despues de restaurar, apuntando a archivos
+# que ya no existen. Se veria como imagenes rotas, no como una perdida — que
+# es peor, porque no alarma.
+#
+# Son 27 MB. El paquete pasa de 22 a ~45 MB; en 16 GB de Drive no es nada.
+if [ -d "${APP_DIR}/public/uploads" ]; then
+    cp -a "${APP_DIR}/public/uploads" "${TRABAJO}/uploads"
+    registrar "Archivos de usuario: $(du -sh "${TRABAJO}/uploads" | cut -f1)"
+else
+    registrar "AVISO: no existe public/uploads — nada que copiar"
+fi
+
 registrar "Comprimiendo..."
 tar -czf "${BACKUP_DIR}/${NOMBRE}.tar.gz" -C "$BACKUP_DIR" "$(basename "$TRABAJO")"
 
