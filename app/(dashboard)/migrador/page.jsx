@@ -73,18 +73,30 @@ function calcularFicha(ficha) {
 function SelectorMetodo({ onLote, onFoto, onManual, ocrLoading, ocrError, fotoInputRef, onFotoChange, numero }) {
   return (
     <div>
+      {/* ⚠ EL TÍTULO YA NO CUENTA CLIENTES.
+          Decía «Agregar cliente #1» con una bolita numerada, y eso era cierto
+          cuando las dos opciones agregaban uno. Con la del cuaderno entero
+          arriba, el número contradice al botón principal: el que va a pasar
+          treinta clientes no está agregando el número uno.
+
+          Solo vuelve a numerar cuando ya hay clientes dentro, que es cuando el
+          usuario está agregando de uno en uno y el conteo sí le dice algo. */}
       <div className="mb-5">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
-            {numero}
-          </div>
+          {numero > 1 && (
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+              {numero}
+            </div>
+          )}
           <h2 className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>
-            Agregar cliente #{numero}
+            {numero > 1 ? `Agregar cliente #${numero}` : '¿Cómo lo pasamos?'}
           </h2>
         </div>
         <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
-          Si tienes una foto de la cartulina, cuaderno o libreta del cliente, la IA puede leer los datos por ti. Si no, puedes escribir todo manual.
+          {numero > 1
+            ? 'Con foto la IA lee los datos por ti, o escríbelos a mano.'
+            : 'Si tienes tu cartera en cartulinas o en un cuaderno, la foto es el camino corto. Tú revisas antes de guardar.'}
         </p>
       </div>
 
