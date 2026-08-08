@@ -265,7 +265,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             clienteId: dataC.id, prestamoId: dataP.id,
           })
         } catch (e) {
-          fallos.push({ nombre: f.nombre || '(sin nombre)', error: e.message })
+          // El motivo viaja PEGADO A LA FILA, no en una lista aparte: «1 no se
+          // pudo crear» sin decir cuál ni por qué es un callejón sin salida.
+          fallos.push({ _id: f._id, nombre: f.nombre || '(sin nombre)', error: e.message })
         }
         hechos++
         setCreando({ hechos, total: creables.length, fallos: [...fallos] })
@@ -292,7 +294,28 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
     }).catch(() => {})
 
     setCreando(null)
-    setFilas(fallos.length ? conEstado.filter((f) => fallos.some((x) => x.nombre === f.nombre)) : [])
+
+    /* ── ⚠ SI ALGUNA FALLÓ, NO SE SALE DE LA PANTALLA ──
+       Antes navegaba igual y dejaba un «1 no se pudo crear» en un mensaje que
+       se va a los seis segundos: el usuario perdía la fila y el motivo, y no
+       tenía forma de reintentarla sin volver a fotografiar.
+
+       Las que se crearon se van —ya están guardadas, repetirlas sería
+       duplicarlas— y las que fallaron se quedan con su motivo escrito, listas
+       para corregir y volver a pulsar. */
+    if (fallos.length) {
+      const conFallo = new Map(fallos.map((x) => [x._id, x.error]))
+      setFilas((prev) => prev
+        .filter((f) => conFallo.has(f._id))
+        .map((f) => ({ ...f, _error: conFallo.get(f._id) })))
+      setError(creados.length
+        ? `Se guardaron ${creados.length}. Estos ${fallos.length} no: revisa el motivo en cada uno.`
+        : `No se pudo guardar ninguno. El motivo está en cada fila.`)
+      onListo?.({ creados, fallos, quedanFilas: true })
+      return
+    }
+
+    setFilas([])
     onListo?.({ creados, fallos })
   }
 
@@ -497,7 +520,8 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
   return (
     <div style={{
       borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
-      border: '1px solid var(--cf-border)', overflow: 'hidden',
+      border: `1px solid ${f._error ? 'var(--cf-red-pill-border)' : 'var(--cf-border)'}`,
+      overflow: 'hidden',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px' }}>
         <span aria-hidden style={{
@@ -511,6 +535,11 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
               border: 0, background: 'none', padding: 0, font: 'inherit',
               fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)', minWidth: 0, width: '100%',
             }} />
+          {f._error && (
+            <span style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-red-dark)', fontWeight: 700 }}>
+              No se guardó: {f._error}
+            </span>
+          )}
           <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
             {/* Del mismo resolvedor que el guardado: si la fila dice una cosa
                 y se guarda otra, nadie lo nota hasta que no cuadra la plata. */}

@@ -1165,7 +1165,7 @@ export default function MigradorPage() {
              la pantalla de «Tu cartera» son lo mismo, y separar las dos vías
              obligaría a mantener dos resúmenes que tarde o temprano dirían
              cifras distintas. El total lo calcula la misma función. */
-          onListo={({ creados: nuevos, fallos }) => {
+          onListo={({ creados: nuevos, fallos, quedanFilas }) => {
             if (nuevos?.length) {
               setCreados((prev) => [...prev, ...nuevos.map((c) => {
                 const calc = calcularFicha({
@@ -1177,9 +1177,16 @@ export default function MigradorPage() {
               })])
               invalidarCachePorPrefijo('clientes:').catch(() => {})
             }
-            setSuccessMsg(fallos?.length
-              ? `${nuevos.length} guardados · ${fallos.length} no se pudieron crear`
-              : `${nuevos.length} cliente${nuevos.length === 1 ? '' : 's'} guardado${nuevos.length === 1 ? '' : 's'}`)
+            /* ⚠ CON FALLOS NO SE CAMBIA DE PANTALLA. El componente se queda con
+               las filas que no se pudieron guardar y su motivo escrito; sacarlo
+               de ahí le borraría las dos cosas y tendría que volver a
+               fotografiar. Solo se navega cuando entraron todas. */
+            if (quedanFilas) {
+              if (nuevos?.length) setSuccessMsg(`${nuevos.length} guardado${nuevos.length === 1 ? '' : 's'}`)
+              setTimeout(() => setSuccessMsg(''), 6000)
+              return
+            }
+            setSuccessMsg(`${nuevos.length} cliente${nuevos.length === 1 ? '' : 's'} guardado${nuevos.length === 1 ? '' : 's'}`)
             irA(nuevos?.length ? 'lista' : 'selector')
             setTimeout(() => setSuccessMsg(''), 6000)
           }}
