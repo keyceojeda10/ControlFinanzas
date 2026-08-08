@@ -8,6 +8,23 @@ import { Button } from '@/components/ui/Button'
 import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 
+/* Alto 38 y radio 14: los del sistema. Iban a 32 y 8 —por debajo del área que
+   necesita un dedo— y con `text-[11px]`, que en una fila de tres botones deja
+   «Comprobante» casi ilegible. */
+const BASE_BOTON = {
+  height: 38, borderRadius: 'var(--cf-r-control)',
+  font: 'inherit', fontSize: 12, fontWeight: 700,
+  cursor: 'pointer', minWidth: 0,
+  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+}
+const SECUNDARIO = {
+  ...BASE_BOTON,
+  background: 'var(--cf-card)',
+  border: '1px solid var(--cf-border-strong)',
+  color: 'var(--cf-ink-2)',
+}
+
+
 // ── ⚠ ESTAS FECHAS SE LEEN EN UTC, NO EN LA ZONA DEL TELÉFONO ─────────────
 //
 // Un prestamista lo reportó con el comprobante en la mano: «me dice que termina
@@ -355,12 +372,34 @@ export default function FirmaDigital({ prestamo, onSave }) {
     }
   }
 
+  /* ══ ⚠ ESTA TARJETA ERA LA ÚLTIMA CON EL DISEÑO VIEJO ══════════════════════
+   *
+   * El dueño la señaló: «es lo único dentro de esa sección de préstamos que
+   * está utilizando el diseño anterior». Y tenía razón por tres motivos que solo
+   * se ven midiendo, no mirando:
+   *
+   *  1. ⚠ DOS DE LOS TRES BOTONES ERAN INVISIBLES. Iban con
+   *     `background: rgba(255,255,255,0.06)` — blanco al 6 % — que es un resto
+   *     del tema OSCURO. Sobre la tarjeta blanca del tema claro no se ve nada:
+   *     «Modificar» y «Comprobante» parecían texto suelto, no botones. Por eso
+   *     la tarjeta se leía distinta según hubiera firma o no: firmada, el botón
+   *     principal también pasaba a ese fondo fantasma y quedaban los tres.
+   *  2. RADIOS FUERA DE ESCALA: 12 en la tarjeta y 8/10 dentro. El sistema usa
+   *     `--cf-r-card` (18) y `--cf-r-control` (14).
+   *  3. BOTONES DE 32px de alto. El dedo necesita 44, y el resto de la pantalla
+   *     usa 38-46.
+   *
+   * Lo que SÍ se conserva es el tinte verde cuando está firmada: eso no era el
+   * diseño viejo, es que un pagaré firmado y uno sin firmar son dos estados
+   * distintos y la tarjeta hace bien en decirlo.
+   */
   return (
     <>
       {/* Card visible */}
       <div
-        className="w-full rounded-[12px] border overflow-hidden"
+        className="w-full border overflow-hidden"
         style={{
+          borderRadius: 'var(--cf-r-card)',
           background: firmaUrl
             ? 'color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card))'
             : 'var(--cf-card)',
@@ -370,9 +409,12 @@ export default function FirmaDigital({ prestamo, onSave }) {
         }}
       >
         {/* Header */}
-        <div className="p-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
-            style={{ background: firmaUrl ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' : 'color-mix(in srgb, var(--cf-ink-3) 10%, transparent)' }}
+        <div className="px-4 pt-4 pb-3 flex items-center gap-3">
+          <div className="w-9 h-9 flex items-center justify-center shrink-0"
+            style={{
+              borderRadius: 'var(--cf-r-icon)',
+              background: firmaUrl ? 'color-mix(in srgb, var(--cf-green-dark) 15%, transparent)' : 'var(--cf-fill)',
+            }}
           >
             <svg className="w-4 h-4" style={{ color: firmaUrl ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
@@ -386,10 +428,11 @@ export default function FirmaDigital({ prestamo, onSave }) {
               Firmado, se queda como estaba: ahí sí es un dato. */}
           <div className="flex-1 min-w-0">
             {firmaUrl ? (
-              <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
+              <p className="text-[10px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
             ) : (
               <>
-                <p className="text-[13.5px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                {/* 13.5 no está en la escala: los tamaños del sistema no llevan coma. */}
+                <p className="text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>
                   Falta la firma del pagaré
                 </p>
                 {desdeCuando && (
@@ -407,26 +450,27 @@ export default function FirmaDigital({ prestamo, onSave }) {
           <button
             type="button"
             onClick={() => setModalVer(true)}
-            className="w-full px-3 pb-2"
+            className="w-full px-4 pb-3"
           >
-            <div className="rounded-[10px] overflow-hidden w-full border" style={{ background: '#ffffff', borderColor: 'var(--cf-border)', height: 80 }}>
+            <div className="overflow-hidden w-full border" style={{ borderRadius: 'var(--cf-r-control)', background: '#ffffff', borderColor: 'var(--cf-border)', height: 88 }}>
               <img src={firmaUrl} alt="Firma" className="h-full w-auto object-contain mx-auto" />
             </div>
           </button>
         )}
 
-        {/* Botones */}
-        <div className="px-3 pb-3 flex gap-2">
+        {/* ── Botones ──
+            `secundario` es el estilo de verdad del sistema: papel con borde. El
+            `rgba(255,255,255,0.06)` que había es blanco sobre blanco. */}
+        <div className="px-4 pb-4 flex gap-2">
           <button
             type="button"
             onClick={() => setModalFirmar(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
-            style={firmaUrl ? {
-              background: 'rgba(255,255,255,0.06)',
-              color: 'var(--cf-ink-2)',
-            } : {
+            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
+            style={firmaUrl ? { ...SECUNDARIO } : {
               // Sin firma es LA acción de esta tarjeta, no una más de tres.
+              ...BASE_BOTON,
               background: 'var(--cf-gold)',
+              border: '1px solid transparent',
               color: 'var(--cf-gold-ink)',
               fontWeight: 700,
             }}
@@ -440,10 +484,14 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarPagare}
             disabled={descargandoPagare}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
             style={{
-              background: 'color-mix(in srgb, var(--cf-gold) 12%, transparent)',
-              color: 'var(--cf-gold)',
+              ...BASE_BOTON,
+              background: 'var(--cf-gold-tint)',
+              border: '1px solid var(--cf-gold-border)',
+              // `--cf-gold-text`, no `--cf-gold`: el dorado puro sobre su propio
+              // tinte no llega al contraste que se lee bajo sol.
+              color: 'var(--cf-gold-text)',
             }}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -455,11 +503,8 @@ export default function FirmaDigital({ prestamo, onSave }) {
             type="button"
             onClick={descargarComprobante}
             disabled={descargando}
-            className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-[8px] text-[11px] font-medium transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              color: 'var(--cf-ink-2)',
-            }}
+            className="flex-1 flex items-center justify-center gap-1.5 transition-colors"
+            style={SECUNDARIO}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -472,7 +517,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
       {/* Modal ver firma ampliada */}
       <Modal open={modalVer} onClose={() => setModalVer(false)} title="Firma del cliente">
         {firmaUrl && (
-          <div className="rounded-[12px] overflow-hidden border" style={{ background: '#ffffff', borderColor: 'var(--cf-border)' }}>
+          <div className="overflow-hidden border" style={{ borderRadius: 'var(--cf-r-control)', background: '#ffffff', borderColor: 'var(--cf-border)' }}>
             <img src={firmaUrl} alt="Firma" className="w-full object-contain" style={{ maxHeight: 300 }} />
           </div>
         )}

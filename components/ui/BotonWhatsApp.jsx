@@ -30,11 +30,30 @@ const TEXTOS = {
   historial:'Enviar historial completo',
 }
 
+/* ── ⚠ «ENVIAR ALERTA DE MORA» LLEVABA UN DORADO QUE NO ES EL DE LA APP ──
+ *
+ * El dueño lo señaló junto con la tarjeta de la firma. La diferencia no se ve
+ * mirando el botón solo; se ve al lado de cualquier otro dorado de la pantalla:
+ *
+ *   ·  el que había → rgba(245,158,11,…)  = amber-500 de Tailwind  (#F59E0B)
+ *   ·  el del sistema → var(--cf-gold)                              (#E7A400)
+ *
+ * Son dos amarillos distintos, el de Tailwind más naranja y más claro. Puestos
+ * en la misma columna que la pastilla de mora, se leen como dos estados que no
+ * existen. Ahora usa los tokens —`--cf-gold-tint`, `--cf-gold-border`,
+ * `--cf-gold-text`—, los MISMOS que la pastilla, así que combinan por
+ * construcción y no por coincidencia.
+ *
+ * ⚠ EL VERDE #25d366 SE QUEDA, y no es descuido: es el verde de la MARCA
+ * WhatsApp. Ese botón dice a dónde lleva, no qué estado tiene; cambiarlo por
+ * `--cf-green` —que aquí significa «al día»— haría que «enviar el recibo» se
+ * leyera como «ya pagó». Lo que sí se corrige es la caja: radio y alto del
+ * sistema. */
 const ESTILOS = {
-  prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-white',
-  pago:     'bg-[#25d366] hover:bg-[#1da855] text-white',
-  mora:     'bg-[rgba(245,158,11,0.15)] hover:bg-[rgba(245,158,11,0.25)] text-[var(--cf-gold-dark)] border border-[rgba(245,158,11,0.3)]',
-  historial:'bg-[#25d366] hover:bg-[#1da855] text-white',
+  prestamo: 'bg-[#25d366] hover:bg-[#1da855] text-white border border-transparent',
+  pago:     'bg-[#25d366] hover:bg-[#1da855] text-white border border-transparent',
+  mora:     'bg-[var(--cf-gold-tint)] hover:bg-[var(--cf-gold-bg)] text-[var(--cf-gold-text)] border border-[var(--cf-gold-border)]',
+  historial:'bg-[#25d366] hover:bg-[#1da855] text-white border border-transparent',
 }
 
 export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre, ocultarSaldo, camposRecibo, organizationId }) {
@@ -58,7 +77,9 @@ export default function BotonWhatsApp({ tipo, cliente, prestamo, pago, orgNombre
       type="button"
       onClick={handleClick}
       className={[
-        'flex items-center justify-center gap-2 px-4 h-10 rounded-[12px] text-sm font-medium transition-all duration-150 cursor-pointer w-full',
+        /* 46 y `--cf-r-control` (14): la medida de los botones de acción del
+           resto de la ficha. Iba a 40 y radio 12, que no están en la escala. */
+        'flex items-center justify-center gap-2 px-4 h-[46px] rounded-[var(--cf-r-control)] text-sm font-bold transition-all duration-150 cursor-pointer w-full',
         ESTILOS[tipo] ?? ESTILOS.pago,
       ].join(' ')}
     >

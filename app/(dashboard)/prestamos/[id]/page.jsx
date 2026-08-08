@@ -1008,6 +1008,26 @@ export default function PrestamoDetallePage({ params }) {
         ? { id: 'recuperar', nombre: 'Sacar de perdidos', hacer: () => quitarClavo() }
         : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
     }
+    /* ── ⚠ CANCELAR ENTRA AQUÍ, Y BAJA DEL PIE DE LA PANTALLA ──
+       Vivía suelto al final de la página: en el teléfono había que bajar tres
+       pantallas para encontrarlo, y en escritorio salía **a todo el ancho de
+       6xl** —un rectángulo rosa de 1.200px— que es como lo fotografió el dueño.
+
+       Su sitio es este grupo: cancelar es la última forma de cerrar un
+       préstamo, al lado de renovar, cerrar anticipado y mover a perdidos. Y de
+       paso deja de ser la acción más grande de la pantalla siendo la más
+       destructiva.
+
+       `peligro: true` la pinta en rojo, igual que «Mover a perdidos». */
+    if (estaActivo && esOwner && !completado) {
+      cierra.push({
+        id: 'cancelar', nombre: 'Cancelar el préstamo', peligro: true,
+        hacer: () => {
+          setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
+          setConfirmCancel(true)
+        },
+      })
+    }
     if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
 
     return g
@@ -1868,25 +1888,21 @@ export default function PrestamoDetallePage({ params }) {
         </div>
       </div>
 
-      {/* ── CANCELAR PRÉSTAMO (solo owner, solo activo) ──────────── */}
-      {estaActivo && session?.user?.rol === 'owner' && !completado && (
-        <div className="pt-2">
-          {!confirmCancel ? (
-            <button
-              onClick={() => {
-                setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
-                setConfirmCancel(true)
-              }}
-              className="w-full flex items-center justify-center gap-2 h-11 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] border border-[var(--cf-border)] hover:border-[rgba(239,68,68,0.3)] transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-              Cancelar préstamo
-            </button>
-          ) : (
-            <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.3)] rounded-[20px] cf-card-shadow p-4 space-y-3">
-              <p className="text-sm text-[var(--cf-red-dark)] font-semibold">¿Cancelar este préstamo?</p>
+      {/* ── CANCELAR PRÉSTAMO ─────────────────────────────────────────────
+          El disparador vive ahora en la hoja de Gestión, grupo «Cierra el
+          préstamo». Aquí solo queda la confirmación, y en un MODAL: al fondo de
+          la página el usuario tendría que bajar tres pantallas para leer lo que
+          está a punto de aceptar, y en escritorio ocupaba los 1.200px de ancho.
+
+          ⚠ Los colores dejan de ser `rgba(239,68,68,…)`, que es el rojo de
+          Tailwind y NO el del sistema (`--cf-red`, #E5484D). Se veía parecido y
+          era otro: por eso este bloque «tenía el diseño anterior». */}
+      <Modal
+        open={!!confirmCancel && estaActivo && session?.user?.rol === 'owner' && !completado}
+        onClose={() => setConfirmCancel(false)}
+        title="¿Cancelar este préstamo?"
+      >
+            <div className="space-y-3">
               <p className="text-xs text-[var(--cf-ink-3)]">
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
               </p>
@@ -1895,7 +1911,7 @@ export default function PrestamoDetallePage({ params }) {
                 <div className="space-y-2">
                   <p className="text-[11px] text-[var(--cf-ink-2)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[14px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2.5 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1910,7 +1926,7 @@ export default function PrestamoDetallePage({ params }) {
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2 cursor-pointer">
+                  <label className="flex items-start gap-2.5 rounded-[14px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2.5 cursor-pointer">
                     <input
                       type="radio"
                       name="modo-reversion-capital"
@@ -1930,7 +1946,7 @@ export default function PrestamoDetallePage({ params }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmCancel(false)}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:bg-[var(--cf-surface)] transition-colors"
+                  className="flex-1 h-[46px] rounded-[14px] text-sm font-bold text-[var(--cf-ink-2)] border border-[var(--cf-border-strong)] hover:bg-[var(--cf-surface)] transition-colors"
                 >
                   No, volver
                 </button>
@@ -1963,15 +1979,13 @@ export default function PrestamoDetallePage({ params }) {
                     }
                   }}
                   disabled={cancelando}
-                  className="flex-1 h-10 rounded-[12px] text-sm font-bold text-[var(--cf-ink)] bg-[var(--cf-red-dark)] hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_85%,black)] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-[46px] rounded-[14px] text-sm font-bold text-white bg-[var(--cf-red-dark)] hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_85%,black)] disabled:opacity-50 transition-colors"
                 >
                   {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
+      </Modal>
 
       {/* Modal: atajos de cobro */}
       <Modal
