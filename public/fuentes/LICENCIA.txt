@@ -1,0 +1,11 @@
+Fuentes incrustadas en los PDF de Control Finanzas.
+
+Manrope        SIL Open Font License 1.1   Mikhail Sharanda / Michael Sharanda
+Space Grotesk  SIL Open Font License 1.1   Florian Karsten
+
+La OFL permite incrustarlas en documentos y usarlas comercialmente. Son las
+mismas dos que usa la interfaz (app/layout.js, via next/font), para que el papel
+y la pantalla hablen el mismo idioma.
+
+Descargadas de Google Fonts en formato TTF: PDFKit no admite WOFF ni WOFF2, que
+es lo unico que trae @fontsource.

@@ -4,8 +4,8 @@ import { prisma }           from '@/lib/prisma'
 import { formatMoney }      from '@/lib/i18n'
 import { calcularSaldoPendiente, calcularDiasMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import PDFDocument          from 'pdfkit'
-import { PassThrough }      from 'stream'
+import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
+import { COLOR } from '@/lib/papel/tokens'
 import { rotulo } from '@/lib/dinero/definiciones'
 
 export async function GET(req) {
@@ -199,232 +199,103 @@ export async function GET(req) {
     })
   }
 
-  // ── Generate PDF ─────────────────────────────────────────
-  const doc = new PDFDocument({ size: 'letter', margin: 40, bufferPages: true })
-  const stream = new PassThrough()
-  const chunks = []
-  stream.on('data', chunk => chunks.push(chunk))
-  const done = new Promise(resolve => stream.on('end', resolve))
-  doc.pipe(stream)
+  /* ══ EL PAPEL ═════════════════════════════════════════════════════════
+   *
+   * Todo el dibujo lo pone `lib/papel/documento`. Aqui abajo solo se decide
+   * QUE va en la hoja; el COMO —fuentes de la marca, tabla que no se corta,
+   * pie que no abre hojas de mas— es del kit y sale igual en los cuatro
+   * documentos del sistema.
+   *
+   * Antes este archivo declaraba su propia paleta (`#16a34a`, `#dc2626`:
+   * colores por defecto de Tailwind) y dibujaba con Helvetica. Por eso no se
+   * parecia ni a la app ni a los otros reportes. */
+  const doc = abrirDocumento({ pie: `Control Finanzas · ${org?.nombre ?? 'Mi negocio'}` })
 
-  // ── Design tokens ─────────────────────────────────────────
-  const COLOR_INK      = '#111111'
-  const COLOR_TEXT     = '#333333'
-  const COLOR_MUTED    = '#666666'
-  const COLOR_FAINT    = '#999999'
-  const COLOR_BORDER   = '#dddddd'
-  const COLOR_HEAD_BG  = '#f0f0f0'
-  const COLOR_ROW_BG   = '#f8f8f8'
-  const COLOR_GREEN    = '#16a34a'
-  const COLOR_RED      = '#dc2626'
-  const COLOR_AMBER    = '#d97706'
-
-  const W = 612 - 80
-  const LEFT = 40
-  const RIGHT = 572
-  const PAGE_BOTTOM = 748
-
-  const nombreNegocio = org?.nombre ?? 'Mi Negocio'
   const hoy = new Date().toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  // lineBreak: false on ALL text calls — prevents PDFKit from auto-creating blank pages
-  const t = (str, x, y, opts = {}) => doc.text(str, x, y, { lineBreak: false, ...opts })
+  let y = doc.cabecera({
+    negocio: org?.nombre,
+    titulo: 'Quién me debe',
+    subtitulo: hoy,
+    meta: `${filas.length} clientes · ${soloMora ? 'Solo en mora' : 'Todos'}`,
+  })
 
-  function ensureSpace(y, needed) {
-    if (y + needed > PAGE_BOTTOM) {
-      doc.addPage()
-      return 40
-    }
-    return y
-  }
+  y = doc.tarjetasResumen([
+    { rotulo: 'Cuota del periodo', valor: fmt(totalCuotas) },
+    { rotulo: 'Saldo pendiente', valor: fmt(totalSaldos) },
+    { rotulo: rotulo('clientesEnMora'), valor: `${clientesConMora} de ${filas.length}`,
+      tono: clientesConMora > 0 ? 'malo' : 'bueno' },
+  ], y)
 
-  // ── Header ────────────────────────────────────────────────
-  doc.fontSize(20).font('Helvetica-Bold').fillColor(COLOR_INK)
-  t(nombreNegocio, LEFT, 40, { width: W * 0.68, height: 24, ellipsis: true })
+  const sufijo = (f) => f === 'semanal' ? '/sem' : f === 'quincenal' ? '/qna' : f === 'mensual' ? '/mes' : '/día'
 
-  doc.fontSize(11).font('Helvetica').fillColor(COLOR_MUTED)
-  t('Listado de cobros', LEFT, 64)
-
-  doc.fontSize(10).fillColor('#777777')
-  t(hoy, LEFT, 79)
-
-  const filterLabel = soloMora ? 'Solo en mora' : 'Todos los clientes'
-  doc.fontSize(8).fillColor(COLOR_FAINT)
-  t(`${filas.length} clientes · ${filterLabel}`, LEFT, 42, { width: W, align: 'right' })
-
-  doc.rect(LEFT, 98, W, 2).fill(COLOR_GREEN)
-
-  // ── Summary cards ─────────────────────────────────────────
-  const cardW = W / 3 - 6
-  const cardH = 48
-  let cardY = 112
-
-  const cards = [
-    { label: 'Cuota diaria total', value: fmt(totalCuotas), color: COLOR_GREEN },
-    { label: 'Saldo pendiente', value: fmt(totalSaldos), color: COLOR_INK },
-    { label: rotulo('clientesEnMora'), value: String(clientesConMora), color: clientesConMora > 0 ? COLOR_RED : COLOR_GREEN },
+  /* ⚠ `identidad: true` = NO SE RECORTA. Nombre, direccion y telefono bajan de
+     renglon antes que perder una letra: el cobrador va a esa casa con este
+     papel, y «Cra 50 # 50-100 barrio La» no es una direccion. */
+  const columnas = [
+    { clave: 'num', titulo: '#', ancho: 0.5 },
+    { clave: 'nombre', titulo: 'Cliente', ancho: 2.8, identidad: true },
+    { clave: 'direccion', titulo: 'Dirección', ancho: 2.6, identidad: true },
+    { clave: 'telefono', titulo: 'Teléfono', ancho: 1.4, identidad: true },
+    { clave: 'cuota', titulo: 'Cuota', ancho: 1.5, fuente: 'cifra' },
+    { clave: 'saldo', titulo: 'Debe', ancho: 1.6, fuente: 'cifra' },
+    { clave: 'mora', titulo: 'Mora', ancho: 1.3, alinear: 'center' },
   ]
 
-  cards.forEach((c, i) => {
-    const x = LEFT + i * (cardW + 9)
-    doc.save()
-    doc.roundedRect(x, cardY, cardW, cardH, 6).fillAndStroke('#fafafa', COLOR_BORDER)
-    doc.restore()
-    doc.rect(x, cardY, 3, cardH).fill(c.color)
-    doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_MUTED)
-    t(c.label.toUpperCase(), x + 12, cardY + 10, { width: cardW - 16, characterSpacing: 0.2 })
-    doc.fontSize(13).font('Helvetica-Bold').fillColor(c.color)
-    t(c.value, x + 12, cardY + 25, { width: cardW - 16, height: 16, ellipsis: true })
+  const aFila = (f, i) => ({
+    num: String(i + 1),
+    nombre: f.nombre,
+    direccion: f.direccion || '—',
+    telefono: f.telefono || '—',
+    cuota: fmt(f.cuota) + sufijo(f.frecuencia),
+    saldo: fmt(f.saldo),
+    mora: f.mora > 0 ? `${f.mora} d` : 'Al día',
+    moraPastilla: f.mora > 0
+      ? { fondo: COLOR.redTint, color: COLOR.red }
+      : { fondo: COLOR.greenTint, color: COLOR.green },
   })
 
-  let y = cardY + cardH + 20
+  /* ⚠ QUIEN NO TIENE RUTAS NO VE RUTAS. Un negocio que nunca creo ninguna se
+     bajaba —cuando se bajaba algo— una hoja encabezada por «Sin ruta», que le
+     dice que le falta algo que el no usa. Si no hay ni una ruta, es una lista
+     limpia de clientes: el mismo dato con la cara que le corresponde. */
+  const hayRutas = rutas.some((r) => r.id !== null)
 
-  // ── Table by route ────────────────────────────────────────
-  const rutasAgrupadas = {}
-  for (const f of filas) {
-    if (!rutasAgrupadas[f.ruta]) rutasAgrupadas[f.ruta] = []
-    rutasAgrupadas[f.ruta].push(f)
-  }
-
-  const COL = {
-    num:    { x: LEFT,       w: 18 },
-    nombre: { x: LEFT + 18,  w: 152 },
-    tel:    { x: LEFT + 170, w: 68 },
-    cuota:  { x: LEFT + 238, w: 82 },
-    saldo:  { x: LEFT + 320, w: 82 },
-    avance: { x: LEFT + 402, w: 42 },
-    mora:   { x: LEFT + 444, w: 88 },
-  }
-  const ROW_H = 18
-  const ROW_H_DIR = 28
-
-  for (const [rutaNombre, clientes] of Object.entries(rutasAgrupadas)) {
-    y = ensureSpace(y, 50)
-
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(COLOR_INK)
-    t(rutaNombre.toUpperCase(), LEFT, y, { width: W, characterSpacing: 0.3 })
-    y += 13
-    doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(COLOR_INK).lineWidth(1).stroke()
-    y += 8
-
-    // Table header — extraido a funcion para poder REDIBUJARLO al cambiar de
-    // pagina. Antes se dibujaba una sola vez: una ruta de mas de ~30 clientes
-    // pasaba a la hoja 2 y ahi salian columnas anonimas de numeros, sin forma
-    // de saber cual era cuota y cual saldo. El cobrador lo lee en la calle.
-    const drawTableHeader = (yy) => {
-      doc.save()
-      doc.rect(LEFT, yy - 2, W, ROW_H).fill(COLOR_HEAD_BG)
-      doc.restore()
-
-      doc.fontSize(7).font('Helvetica-Bold').fillColor(COLOR_MUTED)
-      t('#', COL.num.x + 2, yy + 3, { width: COL.num.w })
-      t('CLIENTE', COL.nombre.x, yy + 3, { width: COL.nombre.w })
-      t('TELÉFONO', COL.tel.x, yy + 3, { width: COL.tel.w })
-      t('CUOTA', COL.cuota.x, yy + 3, { width: COL.cuota.w, align: 'right' })
-      t('SALDO', COL.saldo.x, yy + 3, { width: COL.saldo.w, align: 'right' })
-      t('AVANCE', COL.avance.x, yy + 3, { width: COL.avance.w, align: 'center' })
-      t('MORA', COL.mora.x, yy + 3, { width: COL.mora.w, align: 'center' })
-      return yy + ROW_H
+  if (!hayRutas) {
+    y = doc.tabla({ columnas, filas: filas.map(aFila) }, y)
+  } else {
+    const porRuta = new Map()
+    for (const f of filas) {
+      if (!porRuta.has(f.ruta)) porRuta.set(f.ruta, [])
+      porRuta.get(f.ruta).push(f)
     }
+    const grupos = [...porRuta].map(([nombre, lista]) => ({
+      titulo: nombre,
+      // El subtotal va en el TITULO, no en una fila al pie: se lee antes de
+      // recorrer la tabla, que es cuando sirve.
+      nota: `${lista.length} clientes · ${fmt(lista.reduce((a, c) => a + c.saldo, 0))}`,
+      filas: lista.map(aFila),
+    }))
+    y = doc.tabla({ columnas, grupos }, y)
 
-    y = ensureSpace(y, ROW_H + 10)
-    y = drawTableHeader(y)
-
-    // Table rows
-    clientes.forEach((c, i) => {
-      const hasDir = c.direccion.length > 0
-      const rowH = hasDir ? ROW_H_DIR : ROW_H
-      const yAntes = y
-      y = ensureSpace(y, rowH + 4)
-      if (y !== yAntes) y = drawTableHeader(y)   // hubo salto de pagina
-
-      if (i % 2 === 1) {
-        doc.save()
-        doc.rect(LEFT, y - 2, W, rowH).fill(COLOR_ROW_BG)
-        doc.restore()
-      }
-
-      const freq = c.frecuencia === 'semanal' ? '/sem' : c.frecuencia === 'quincenal' ? '/qna' : c.frecuencia === 'mensual' ? '/mes' : '/día'
-
-      const cellH = 12
-
-      doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_TEXT)
-      t(String(i + 1), COL.num.x + 2, y + 3, { width: COL.num.w - 2, height: cellH })
-      doc.font('Helvetica-Bold')
-      t(c.nombre, COL.nombre.x, y + 3, { width: COL.nombre.w - 4, height: cellH, ellipsis: true })
-      if (hasDir) {
-        doc.fontSize(6).font('Helvetica').fillColor(COLOR_FAINT)
-        t(c.direccion, COL.nombre.x, y + 14, { width: COL.nombre.w - 4, height: 10, ellipsis: true })
-      }
-      doc.fontSize(7).font('Helvetica').fillColor(COLOR_MUTED)
-      t(c.telefono, COL.tel.x, y + 3, { width: COL.tel.w - 4, height: cellH, ellipsis: true })
-      doc.fontSize(7).fillColor(COLOR_TEXT)
-      t(fmt(c.cuota) + freq, COL.cuota.x, y + 3, { width: COL.cuota.w - 2, height: cellH, align: 'right' })
-      t(fmt(c.saldo), COL.saldo.x, y + 3, { width: COL.saldo.w - 2, height: cellH, align: 'right' })
-
-      // Avance (% pagado)
-      const avText = `${c.avance}%`
-      const avColor = c.avance >= 80 ? COLOR_GREEN : c.avance >= 50 ? COLOR_AMBER : COLOR_TEXT
-      doc.fontSize(7).font('Helvetica-Bold').fillColor(avColor)
-      t(avText, COL.avance.x, y + 3, { width: COL.avance.w, height: cellH, align: 'center' })
-
-      // Mora badge — clamp width to column
-      const drawMoraBadge = (text, bg, color) => {
-        const tw = doc.font('Helvetica-Bold').fontSize(7).widthOfString(text)
-        const bw = Math.min(tw + 10, COL.mora.w - 2)
-        const bx = COL.mora.x + (COL.mora.w - bw) / 2
-        doc.save()
-        doc.roundedRect(bx, y + 1, bw, 13, 6).fill(bg)
-        doc.restore()
-        doc.fontSize(7).font('Helvetica-Bold').fillColor(color)
-        t(text, bx, y + 4, { width: bw, height: cellH, align: 'center' })
-      }
-
-      if (c.mora > 0) {
-        const badgeBg = c.mora > 10 ? '#fee2e2' : '#fef3c7'
-        const badgeColor = c.mora > 10 ? COLOR_RED : COLOR_AMBER
-        drawMoraBadge(`${c.mora}d mora`, badgeBg, badgeColor)
-      } else {
-        drawMoraBadge('Al día', '#dcfce7', COLOR_GREEN)
-      }
-
-      y += rowH
-    })
-
-    // Route subtotal
-    y += 4
-    doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(COLOR_BORDER).lineWidth(0.5).stroke()
-    y += 6
-    const subtotalCuota = clientes.reduce((s, c) => s + c.cuota, 0)
-    const subtotalSaldo = clientes.reduce((s, c) => s + c.saldo, 0)
-    doc.fontSize(7.5).font('Helvetica-Bold').fillColor(COLOR_INK)
-    t(`${clientes.length} clientes`, COL.nombre.x, y, { width: COL.nombre.w - 4, height: 12 })
-    t(fmt(subtotalCuota), COL.cuota.x, y, { width: COL.cuota.w - 2, height: 12, align: 'right' })
-    t(fmt(subtotalSaldo), COL.saldo.x, y, { width: COL.saldo.w - 2, height: 12, align: 'right' })
-    y += 24
+    if (porRuta.has('Sin ruta')) {
+      y = doc.nota(
+        'Los clientes «Sin ruta» tienen préstamo activo pero todavía no están asignados a un recorrido. Aparecen al final para que no se queden sin cobrar.',
+        y, { tono: 'acento' },
+      )
+    }
   }
 
-  // ── Footer (every page) ──────────────────────────────────
-  const range = doc.bufferedPageRange()
-  for (let i = range.start; i < range.start + range.count; i++) {
-    doc.switchToPage(i)
-    const pageH = doc.page.height
-    doc.moveTo(LEFT, pageH - 42).lineTo(RIGHT, pageH - 42).strokeColor('#eeeeee').lineWidth(0.5).stroke()
-    doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-    t('Control Finanzas', LEFT, pageH - 32, { width: W, align: 'center', height: 12 })
-    doc.fontSize(7.5).font('Helvetica').fillColor(COLOR_FAINT)
-    t(`Página ${i - range.start + 1} de ${range.count}`, LEFT, pageH - 32, { width: W, align: 'right', height: 12 })
+  if (!filas.length) {
+    doc.nota(
+      soloMora
+        ? 'No hay ningún cliente en mora ahora mismo.'
+        : 'No hay préstamos activos. En cuanto prestes, este listado sale con los clientes que tienes que visitar.',
+      y,
+    )
   }
 
-  doc.end()
-  await done
-  const buffer = Buffer.concat(chunks)
-
+  const buffer = await doc.cerrar()
   const fechaFile = new Date().toISOString().slice(0, 10)
-  return new Response(buffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="listado-cobros-${fechaFile}.pdf"`,
-    },
-  })
+  return respuestaPdf(buffer, `quien-me-debe-${fechaFile}.pdf`)
 }

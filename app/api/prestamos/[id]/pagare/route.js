@@ -2,10 +2,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { formatMoney }      from '@/lib/i18n'
-import PDFDocument          from 'pdfkit'
-import { PassThrough }      from 'stream'
 import { readFile }         from 'fs/promises'
 import path                 from 'path'
+import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
+import { COLOR, TIPO, HOJA, RADIO } from '@/lib/papel/tokens'
 
 const FREQ_LABEL = { diario: 'diario', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }
 
@@ -114,63 +114,61 @@ export async function GET(req, { params }) {
     } catch {}
   }
 
-  const doc = new PDFDocument({ size: 'letter', margin: 50 })
-  const stream = new PassThrough()
-  const chunks = []
-  stream.on('data', chunk => chunks.push(chunk))
-  const done = new Promise(resolve => stream.on('end', resolve))
-  doc.pipe(stream)
+  /* EL TEXTO LEGAL NO SE TOCA. Lo unico que cambia respecto de la version
+   * anterior es COMO SE VE: las mismas frases, las mismas clausulas, el mismo
+   * orden. Este documento presta merito ejecutivo y su redaccion no es cosa de
+   * un rediseno.
+   *
+   * Lo que si cambia: fuentes de la marca en vez de Helvetica, el filete
+   * dorado, el monto en Space Grotesk, y el pie con numero de pagina. Antes se
+   * escribia a `alto - 30` con margen 50, o sea por debajo del area util, que
+   * es justo lo que abria hojas de mas. */
+  const hoja = abrirDocumento({ pie: `Pagaré No. ${prestamo.id.slice(-8).toUpperCase()}` })
+  const doc = hoja.doc
+  const { L, R, W } = hoja
 
-  const W = 612 - 100
-  const LEFT = 50
-  const RIGHT = 562
-  let y = 50
+  doc.font(F.fuerte).fontSize(TIPO.titulo + 4).fillColor(COLOR.ink)
+  hoja.escribir('PAGARÉ', L, HOJA.margen, { width: W, align: 'center', characterSpacing: 2 })
 
-  // Header
-  doc.fontSize(22).font('Helvetica-Bold').fillColor('#111111')
-     .text('PAGARE', LEFT, y, { width: W, align: 'center', lineBreak: false })
-  y += 30
+  doc.font(F.cifra).fontSize(TIPO.rotulo).fillColor(COLOR.ink4)
+  hoja.escribir(`No. ${prestamo.id.slice(-8).toUpperCase()}`, L, HOJA.margen + 32, { width: W, align: 'center' })
 
-  doc.fontSize(9).font('Helvetica').fillColor('#666666')
-     .text(`No. ${prestamo.id.slice(-8).toUpperCase()}`, LEFT, y, { width: W, align: 'center', lineBreak: false })
-  y += 20
+  doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
+  hoja.escribir(
+    org?.ciudad ? `${org.ciudad}, ${fmtFecha(prestamo.createdAt)}` : fmtFecha(prestamo.createdAt),
+    L, HOJA.margen + 48, { width: W, align: 'center' },
+  )
 
-  if (org?.ciudad) {
-    doc.fontSize(10).font('Helvetica').fillColor('#333333')
-       .text(`${org.ciudad}, ${fmtFecha(prestamo.createdAt)}`, LEFT, y, { width: W, align: 'center', lineBreak: false })
-    y += 18
-  } else {
-    doc.fontSize(10).font('Helvetica').fillColor('#333333')
-       .text(fmtFecha(prestamo.createdAt), LEFT, y, { width: W, align: 'center', lineBreak: false })
-    y += 18
-  }
-
-  // Separator
-  y += 5
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#cccccc').lineWidth(0.5).stroke()
-  y += 15
-
-  // Monto en letras
-  doc.fontSize(10).font('Helvetica-Bold').fillColor('#111111')
-     .text(`Valor: ${fmt(totalInt)} (${numeroALetras(totalInt)} PESOS)`, LEFT, y, { width: W, lineBreak: false, ellipsis: true })
+  let y = HOJA.margen + 70
+  doc.rect(L, y, W, 3).fill(COLOR.gold)
   y += 22
 
-  // Cuerpo del pagare
+  /* El valor, en grande. Es lo primero que busca cualquiera que abre un pagare
+     y estaba en cuerpo 10, del mismo tamano que las clausulas. */
+  const ALTO_VALOR = 52
+  doc.roundedRect(L, y, W, ALTO_VALOR, RADIO).fillAndStroke(COLOR.goldTint, COLOR.gold)
+  doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.goldInk)
+  hoja.escribir('VALOR', L + 14, y + 9, { characterSpacing: 0.6 })
+  doc.font(F.cifraFuerte).fontSize(TIPO.cifraGrande).fillColor(COLOR.ink)
+  hoja.escribir(fmt(totalInt), L + 14, y + 20, { width: W - 28, ellipsis: true })
+  y += ALTO_VALOR + 8
+
+  doc.font(F.texto).fontSize(TIPO.tabla).fillColor(COLOR.ink3)
+  doc.text(`${numeroALetras(totalInt).toUpperCase()} PESOS`, L, y, { width: W })
+  y = doc.y + 16
+
   const cuerpo = `Yo, ${cliente.nombre || '________________'}` +
     (cliente.cedula && !cliente.cedula.startsWith('SIN-') ? `, identificado(a) con cedula de ciudadania No. ${cliente.cedula}` : '') +
     `, me comprometo a pagar incondicionalmente a la orden de ${org?.nombre || 'EL ACREEDOR'} la suma de ${fmt(totalInt)} (${numeroALetras(totalInt)} PESOS), correspondiente a un prestamo por valor de ${fmt(montoInt)} con una tasa de interes del ${prestamo.tasaInteres}% y un plazo de ${prestamo.diasPlazo} dias.`
 
-  doc.fontSize(10).font('Helvetica').fillColor('#222222')
-     .text(cuerpo, LEFT, y, { width: W, align: 'justify', lineGap: 3 })
-  y = doc.y + 15
+  doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
+  doc.text(cuerpo, L, y, { width: W, align: 'justify', lineGap: 3 })
+  y = doc.y + 10
 
-  // Condiciones de pago
   const condiciones = `El pago se realizara en cuotas de ${fmt(Math.round(prestamo.cuotaDiaria))} con frecuencia ${FREQ_LABEL[prestamo.frecuencia] || prestamo.frecuencia}, desde el ${fmtFecha(prestamo.fechaInicio)} hasta el ${fmtFecha(prestamo.fechaFin)}.`
+  doc.text(condiciones, L, y, { width: W, align: 'justify', lineGap: 3 })
+  y = hoja.sitio(doc.y + 16, 90)
 
-  doc.text(condiciones, LEFT, y, { width: W, align: 'justify', lineGap: 3 })
-  y = doc.y + 15
-
-  // Clausulas
   const clausulas = [
     'En caso de mora, el deudor acepta pagar los intereses moratorios pactados y los gastos de cobranza que se generen.',
     'El deudor renuncia a los requerimientos de ley para ser constituido en mora y autoriza al acreedor a reportar el incumplimiento ante las centrales de riesgo o bases de datos que apliquen.',
@@ -178,96 +176,71 @@ export async function GET(req, { params }) {
     'Para todos los efectos legales, el deudor senala como domicilio la ciudad donde se suscribe este documento.',
   ]
 
-  doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333')
-     .text('CLAUSULAS:', LEFT, y, { lineBreak: false })
-  y = doc.y + 6
-
+  y = hoja.seccion('Cláusulas', y)
   clausulas.forEach((c, i) => {
-    doc.fontSize(9).font('Helvetica').fillColor('#333333')
-       .text(`${i + 1}. ${c}`, LEFT, y, { width: W, align: 'justify', lineGap: 2 })
-    y = doc.y + 6
+    doc.font(F.cifraFuerte).fontSize(TIPO.tabla).fillColor(COLOR.gold)
+    hoja.escribir(`${i + 1}`, L, y + 1)
+    doc.font(F.texto).fontSize(TIPO.tabla).fillColor(COLOR.ink2)
+    doc.text(c, L + 16, y, { width: W - 16, align: 'justify', lineGap: 2 })
+    y = doc.y + 7
   })
 
-  y += 10
+  y = hoja.seccion('Resumen del crédito', hoja.sitio(y + 8, 130))
 
-  // Tabla resumen
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#cccccc').lineWidth(0.5).stroke()
-  y += 12
-
-  doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333')
-     .text('RESUMEN DEL CREDITO', LEFT, y, { lineBreak: false })
-  y += 16
-
-  const filas = [
+  /* Dos columnas de pares rotulo/valor: ocho renglones seguidos ocupaban media
+     hoja y empujaban las firmas a la siguiente. */
+  const resumen = [
     ['Monto prestado', fmt(montoInt)],
-    ['Tasa de interes', `${prestamo.tasaInteres}%`],
+    ['Tasa de interés', `${prestamo.tasaInteres}%`],
     ['Total a pagar', fmt(totalInt)],
     ['Cuota', fmt(Math.round(prestamo.cuotaDiaria))],
     ['Frecuencia', FREQ_LABEL[prestamo.frecuencia] || prestamo.frecuencia],
-    ['Plazo', `${prestamo.diasPlazo} dias`],
-    ['Fecha inicio', fmtFecha(prestamo.fechaInicio)],
-    ['Fecha vencimiento', fmtFecha(prestamo.fechaFin)],
+    ['Plazo', `${prestamo.diasPlazo} días`],
+    ['Fecha de inicio', fmtFecha(prestamo.fechaInicio)],
+    ['Vencimiento', fmtFecha(prestamo.fechaFin)],
   ]
-
-  filas.forEach(([label, value]) => {
-    doc.fontSize(9).font('Helvetica').fillColor('#555555')
-       .text(label, LEFT, y, { width: 190, lineBreak: false })
-    doc.fontSize(9).font('Helvetica-Bold').fillColor('#111111')
-       .text(value, LEFT + 200, y, { width: W - 200, lineBreak: false, ellipsis: true })
-    y += 16
+  const anchoCol = W / 2
+  resumen.forEach(([rot, valor], i) => {
+    const x = L + (i % 2) * anchoCol
+    const yy = y + Math.floor(i / 2) * 20
+    doc.font(F.texto).fontSize(TIPO.tabla).fillColor(COLOR.ink3)
+    hoja.escribir(rot, x, yy, { width: anchoCol * 0.52 })
+    doc.font(F.cifraFuerte).fontSize(TIPO.tabla).fillColor(COLOR.ink)
+    hoja.escribir(valor, x + anchoCol * 0.52, yy, { width: anchoCol * 0.42, ellipsis: true })
+    if (i % 2 === 0) {
+      doc.moveTo(L, yy + 15).lineTo(R, yy + 15).lineWidth(0.5).strokeColor(COLOR.borderSoft).stroke()
+    }
   })
+  y += Math.ceil(resumen.length / 2) * 20 + 26
 
-  y += 15
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor('#cccccc').lineWidth(0.5).stroke()
-  y += 25
+  /* LAS DOS FIRMAS MIDEN LO MISMO, con imagen o sin ella. Antes la firma del
+     deudor empujaba `y` 65 puntos cuando venia como imagen y la caja del
+     acreedor quedaba a otra altura: dos rayas desalineadas en un documento que
+     va a un juzgado. */
+  const ALTO_FIRMA = 64
+  y = hoja.sitio(y, ALTO_FIRMA + 46)
+  const colW = W / 2 - 12
+  const xDer = L + colW + 24
 
-  // Firmas
-  const colW = W / 2 - 10
-  const firmaLeft = LEFT
-  const firmaRight = LEFT + colW + 20
-
-  // Firma deudor
   if (firmaBuffer) {
-    try {
-      const imgH = 60
-      doc.image(firmaBuffer, firmaLeft, y, { width: 150, height: imgH, fit: [150, imgH] })
-      y += imgH + 5
-    } catch {}
-  } else {
-    y += 50
+    try { doc.image(firmaBuffer, L, y + 4, { fit: [colW - 10, ALTO_FIRMA - 10] }) } catch {}
+  }
+  y += ALTO_FIRMA
+
+  const rayaFirma = (x, titulo, nombre, extra) => {
+    doc.moveTo(x, y).lineTo(x + colW, y).lineWidth(0.5).strokeColor(COLOR.ink4).stroke()
+    doc.font(F.fuerte).fontSize(TIPO.tabla).fillColor(COLOR.ink2)
+    hoja.escribir(titulo, x, y + 6, { width: colW })
+    doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink4)
+    hoja.escribir(nombre, x, y + 19, { width: colW, ellipsis: true })
+    if (extra) hoja.escribir(extra, x, y + 30, { width: colW, ellipsis: true })
   }
 
-  doc.moveTo(firmaLeft, y).lineTo(firmaLeft + colW, y).strokeColor('#888888').lineWidth(0.5).stroke()
-  doc.fontSize(9).font('Helvetica').fillColor('#333333')
-     .text('Firma del deudor', firmaLeft, y + 5, { lineBreak: false })
-  doc.fontSize(8).fillColor('#666666')
-     .text(cliente.nombre || '', firmaLeft, y + 17, { width: colW, lineBreak: false, ellipsis: true })
-  if (cliente.cedula && !cliente.cedula.startsWith('SIN-')) {
-    doc.text(`C.C. ${cliente.cedula}`, firmaLeft, y + 28, { lineBreak: false })
-  }
+  rayaFirma(L, 'Firma del deudor', cliente.nombre || '',
+    cliente.cedula && !cliente.cedula.startsWith('SIN-') ? `C.C. ${cliente.cedula}` : '')
+  rayaFirma(xDer, 'Firma del acreedor', org?.nombre || '', '')
 
-  // Firma acreedor
-  doc.moveTo(firmaRight, y).lineTo(firmaRight + colW, y).strokeColor('#888888').lineWidth(0.5).stroke()
-  doc.fontSize(9).font('Helvetica').fillColor('#333333')
-     .text('Firma del acreedor', firmaRight, y + 5, { lineBreak: false })
-  doc.fontSize(8).fillColor('#666666')
-     .text(org?.nombre || '', firmaRight, y + 17, { width: colW, lineBreak: false, ellipsis: true })
-
-  // Footer
-  const pageH = doc.page.height
-  doc.fontSize(7).font('Helvetica').fillColor('#bbbbbb')
-     .text('Documento generado por Control Finanzas', LEFT, pageH - 30, { width: W, align: 'center', lineBreak: false, height: 10 })
-
-  doc.end()
-  await done
-  const buffer = Buffer.concat(chunks)
-
+  const buffer = await hoja.cerrar()
   const nombreArchivo = `pagare-${(cliente.nombre || 'cliente').replace(/\s+/g, '-').slice(0, 30)}.pdf`
-
-  return new Response(buffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${nombreArchivo}"`,
-    },
-  })
+  return respuestaPdf(buffer, nombreArchivo)
 }

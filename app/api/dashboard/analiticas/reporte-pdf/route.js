@@ -4,13 +4,13 @@ import { prisma, Prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
 import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
+import { COLOR, TIPO } from '@/lib/papel/tokens'
 
 // La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
 // y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
 const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
 
-import PDFDocument from 'pdfkit'
-import { PassThrough } from 'stream'
 
 // Modos con tabla de amortizacion: su interes se lee de la tabla, no se
 // reparte plano. Misma regla que /api/dashboard/analiticas.
@@ -254,301 +254,130 @@ export async function GET() {
     meses.push(d.toISOString().slice(0, 7))
   }
 
-  // ── PDF Generation ──
-  const doc = new PDFDocument({ size: 'letter', margin: 40, bufferPages: true })
-  const stream = new PassThrough()
-  const chunks = []
-  stream.on('data', chunk => chunks.push(chunk))
-  const done = new Promise(resolve => stream.on('end', resolve))
-  doc.pipe(stream)
+  /* Todo el dibujo lo pone `lib/papel/documento`.
+   *
+   * Lo que este informe tenia y no se veia leyendo el codigo: el pie se
+   * escribia a y=760 y y=766, con el area util acabando en 752, y ademas la
+   * linea de la izquierda iba SIN `lineBreak: false`. Las dos cosas abren
+   * pagina en PDFKit. De ahi las «hojas de mas» del final. */
+  const hoja = abrirDocumento({ pie: `${org?.nombre || 'Control Finanzas'} · Informe de rendimiento` })
+  const doc = hoja.doc
+  const { L, R, W } = hoja
 
-  const W = 532, LEFT = 40, RIGHT = 572
-  const t = (str, x, y, opts = {}) => doc.text(String(str ?? ''), x, y, { lineBreak: false, ...opts })
-
-  const mesNombre = hoy.toLocaleDateString('es', { month: 'long', year: 'numeric' })
-  const fechaGeneracion = hoy.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-
-  let ensureSpace = (y, needed) => {
-    if (y + needed > 740) { doc.addPage(); return 50 }
-    return y
-  }
-
-  // ── HEADER ──
-  doc.rect(LEFT, 38, 4, 26).fill(ACCENT)
-  doc.font('Helvetica-Bold').fontSize(18).fillColor(INK)
-  t(org?.nombre || 'Control Finanzas', LEFT + 12, 40)
-  doc.font('Helvetica').fontSize(10).fillColor(MUTED)
-  t('Informe de Rendimiento', LEFT + 12, 60)
-
-  doc.font('Helvetica').fontSize(9).fillColor(FAINT)
-  t(mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1), RIGHT - 150, 42, { width: 150, align: 'right' })
-  t(`Generado: ${fechaGeneracion}`, RIGHT - 200, 54, { width: 200, align: 'right' })
-
-  doc.moveTo(LEFT, 78).lineTo(RIGHT, 78).strokeColor(BORDER).lineWidth(0.5).stroke()
-
-  // ── ROI & RESUMEN FINANCIERO ──
-  let y = 92
-
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('RENDIMIENTO DEL MES', LEFT, y)
-  y += 20
-
-  // Big ROI
-  doc.font('Helvetica-Bold').fontSize(32).fillColor(roiMensual >= 0 ? GREEN : RED)
-  t(`${Math.round(roiMensual * 10) / 10}%`, LEFT, y)
-  doc.font('Helvetica').fontSize(10).fillColor(MUTED)
-  t('ROI mensual', LEFT + 90, y + 14)
-  doc.font('Helvetica').fontSize(8).fillColor(FAINT)
-  t(`(ganancia neta / capital en calle)`, LEFT + 90, y + 28)
-
-  // KPI cards right side
-  const kpiX = 300
-  const drawKpi = (x, yy, label, value, color = INK) => {
-    doc.font('Helvetica').fontSize(7).fillColor(MUTED)
-    t(label, x, yy)
-    doc.font('Helvetica-Bold').fontSize(12).fillColor(color)
-    t(value, x, yy + 10)
-  }
-  drawKpi(kpiX, y, 'GANANCIA NETA', fmt(gananciaNetaMes), gananciaNetaMes >= 0 ? GREEN : RED)
-  drawKpi(kpiX + 130, y, 'RECAUDADO', fmt(recaudadoMes), BLUE)
-  drawKpi(kpiX, y + 30, 'GASTOS', fmt(gastosMesActual), RED)
-  drawKpi(kpiX + 130, y + 30, 'CAPITAL EN CALLE', fmt(capitalEnCalle), INK)
-
-  y += 70
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-  y += 14
-
-  // ── PROYECCION ──
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('PROYECCIÓN DEL MES', LEFT, y)
-  y += 16
-
-  // Progress bar
-  const barW = W - 160
-  const pctAvance = esperadoMes > 0 ? Math.min(recaudadoMes / esperadoMes, 1) : 0
-  doc.roundedRect(LEFT, y, barW, 12, 3).fillColor('#eeeeee').fill()
-  if (pctAvance > 0) doc.roundedRect(LEFT, y, barW * pctAvance, 12, 3).fillColor(ACCENT).fill()
-  doc.font('Helvetica-Bold').fontSize(7).fillColor(INK)
-  t(`${Math.round(pctAvance * 100)}%`, LEFT + barW * pctAvance - 20, y + 2)
-
-  const projX = LEFT + barW + 14
-  doc.font('Helvetica').fontSize(7).fillColor(MUTED)
-  t('Proyectado', projX, y - 2)
-  doc.font('Helvetica-Bold').fontSize(11).fillColor(ACCENT)
-  t(fmt(Math.round(proyeccionMes)), projX, y + 8)
-
-  y += 20
-  doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-  t(`Promedio diario: ${fmt(Math.round(promedioDiario))}  |  Día ${diasHabiles} de ${diasHabilesTotalMes} hábiles`, LEFT, y)
-
-  if (esperadoMes > 0) {
-    const diff = proyeccionMes >= esperadoMes
-      ? `${Math.round(((proyeccionMes / esperadoMes) - 1) * 100)}% por encima de lo esperado (${fmt(Math.round(esperadoMes))})`
-      : `${Math.round((1 - (proyeccionMes / esperadoMes)) * 100)}% por debajo de lo esperado (${fmt(Math.round(esperadoMes))})`
-    doc.font('Helvetica').fontSize(8).fillColor(proyeccionMes >= esperadoMes ? GREEN : RED)
-    t(diff, LEFT, y + 12)
-  }
-
-  y += 32
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-  y += 14
-
-  // ── CARTERA ──
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('ESTADO DE CARTERA', LEFT, y)
-  y += 16
-
-  const colW = W / 4
-  const drawStatBox = (x, yy, label, value, color = INK) => {
-    doc.font('Helvetica').fontSize(7).fillColor(MUTED)
-    t(label, x, yy)
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(color)
-    t(value, x, yy + 10)
-  }
-
-  drawStatBox(LEFT, y, 'PRÉSTAMOS ACTIVOS', `${prestamosActivosDetalle.length}`)
-  drawStatBox(LEFT + colW, y, 'POR COBRAR', fmt(porCobrar), BLUE)
-  drawStatBox(LEFT + colW * 2, y, 'INTERÉS EN CARTERA', fmt(interesEnCartera), GREEN)
-  drawStatBox(LEFT + colW * 3, y, 'EN MORA', `${alertas.length} (${prestamosActivosDetalle.length > 0 ? Math.round(alertas.length / prestamosActivosDetalle.length * 100) : 0}%)`, alertas.length > 0 ? RED : GREEN)
-
-  y += 30
-
-  const clientesRepiten = totalClientes > 0 ? Math.round((prestamosTotal.length / totalClientes) * 100) : 0
-  const ticketPromedio = prestamosActivosDetalle.length > 0 ? capitalEnCalle / prestamosActivosDetalle.length : 0
-  drawStatBox(LEFT, y, 'TICKET PROMEDIO', fmt(Math.round(ticketPromedio)))
-  drawStatBox(LEFT + colW, y, 'CLIENTES QUE REPITEN', `${clientesRepiten}%`, BLUE)
-  drawStatBox(LEFT + colW * 2, y, 'CLAVOS', `${prestamosEsclavo._count || 0}`, prestamosEsclavo._count > 0 ? RED : FAINT)
-  drawStatBox(LEFT + colW * 3, y, 'MONTO CLAVOS', fmt(Number(prestamosEsclavo._sum?.totalAPagar || 0)), prestamosEsclavo._count > 0 ? RED : FAINT)
-
-  y += 36
-  doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-  y += 14
-
-  // ── CLIENTES EN MORA (table) ──
-  if (alertas.length > 0) {
-    y = ensureSpace(y, 60)
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(RED)
-    t(`CLIENTES EN MORA (${alertas.length})`, LEFT, y)
-    doc.font('Helvetica').fontSize(8).fillColor(MUTED)
-    t(`Monto total en riesgo: ${fmt(montoMoraTotal)}`, LEFT + 200, y)
-    y += 16
-
-    // Table header
-    doc.roundedRect(LEFT, y, W, 16, 2).fillColor(HEAD_BG).fill()
-    doc.font('Helvetica-Bold').fontSize(7).fillColor(TEXT)
-    t('CLIENTE', LEFT + 6, y + 4)
-    t('DIAS', LEFT + 240, y + 4)
-    t('SEVERIDAD', LEFT + 290, y + 4)
-    t('CUOTA', LEFT + 370, y + 4)
-    t('MONTO EN RIESGO', LEFT + 430, y + 4, { width: 96, align: 'right' })
-    y += 18
-
-    for (let i = 0; i < alertas.length; i++) {
-      y = ensureSpace(y, 16)
-      const a = alertas[i]
-      if (i % 2 === 1) doc.rect(LEFT, y - 1, W, 15).fillColor(ROW_BG).fill()
-
-      doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-      t(a.clienteNombre.length > 30 ? a.clienteNombre.slice(0, 28) + '...' : a.clienteNombre, LEFT + 6, y + 2)
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(a.severidad === 'grave' ? RED : a.severidad === 'moderada' ? AMBER : FAINT)
-      t(`${a.diasMora}`, LEFT + 244, y + 2)
-
-      // Severity badge
-      const sevColor = a.severidad === 'grave' ? RED : a.severidad === 'moderada' ? AMBER : FAINT
-      const sevBg = a.severidad === 'grave' ? RED_BG : a.severidad === 'moderada' ? AMBER_BG : '#f0f0f0'
-      const sevLabel = a.severidad === 'grave' ? 'GRAVE' : a.severidad === 'moderada' ? 'MODERADA' : 'LEVE'
-      doc.roundedRect(LEFT + 290, y, 50, 13, 3).fillColor(sevBg).fill()
-      doc.font('Helvetica-Bold').fontSize(6).fillColor(sevColor)
-      t(sevLabel, LEFT + 296, y + 3)
-
-      doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-      t(fmt(a.cuotaDiaria), LEFT + 370, y + 2)
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(a.severidad === 'grave' ? RED : TEXT)
-      t(fmt(a.montoEnRiesgo), LEFT + 430, y + 2, { width: 96, align: 'right' })
-      y += 16
-    }
-
-    y += 10
-    doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-    y += 14
-  }
-
-  // ── COBRADORES ──
-  if (cobradoresData.length > 0) {
-    y = ensureSpace(y, 60)
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-    t('DESEMPEÑO COBRADORES', LEFT, y)
-    y += 16
-
-    doc.roundedRect(LEFT, y, W, 16, 2).fillColor(HEAD_BG).fill()
-    doc.font('Helvetica-Bold').fontSize(7).fillColor(TEXT)
-    t('#', LEFT + 6, y + 4)
-    t('NOMBRE', LEFT + 22, y + 4)
-    t('ROL', LEFT + 220, y + 4)
-    t('PAGOS', LEFT + 300, y + 4)
-    t('RECAUDADO', LEFT + 380, y + 4, { width: 146, align: 'right' })
-    y += 18
-
-    const totalRecaudadoCob = cobradoresData.reduce((s, c) => s + c.recaudado, 0)
-
-    for (let i = 0; i < cobradoresData.length; i++) {
-      y = ensureSpace(y, 16)
-      const c = cobradoresData[i]
-      if (i % 2 === 1) doc.rect(LEFT, y - 1, W, 15).fillColor(ROW_BG).fill()
-
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(i < 3 ? ACCENT : FAINT)
-      t(`${i + 1}`, LEFT + 8, y + 2)
-      doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-      t(c.nombre, LEFT + 22, y + 2)
-      doc.font('Helvetica').fontSize(7).fillColor(FAINT)
-      t(c.rol === 'owner' ? 'Admin' : 'Cobrador', LEFT + 220, y + 2)
-      doc.font('Helvetica').fontSize(8).fillColor(TEXT)
-      t(`${c.pagos}`, LEFT + 306, y + 2)
-      doc.font('Helvetica-Bold').fontSize(8).fillColor(INK)
-      t(fmt(c.recaudado), LEFT + 380, y + 2, { width: 146, align: 'right' })
-      y += 16
-    }
-
-    y += 10
-    doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-    y += 14
-  }
-
-  // ── TENDENCIA MENSUAL (bar chart) ──
-  y = ensureSpace(y, 120)
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('RECAUDADO ÚLTIMOS 6 MESES', LEFT, y)
-  y += 18
-
-  const chartH = 80, chartW = W - 40, chartLeft = LEFT + 20
-  const maxRecaudado = Math.max(...meses.map(m => Number(pagoMap[m]?.total || 0)), 1)
-
-  for (let i = 0; i < meses.length; i++) {
-    const val = Number(pagoMap[meses[i]]?.total || 0)
-    const barH = (val / maxRecaudado) * chartH
-    const barW2 = (chartW / meses.length) - 8
-    const barX = chartLeft + i * (chartW / meses.length) + 4
-
-    doc.roundedRect(barX, y + chartH - barH, barW2, barH, 2).fillColor(ACCENT).fill()
-
-    const mesLabel = new Date(meses[i] + '-15').toLocaleDateString('es', { month: 'short' })
-    doc.font('Helvetica').fontSize(7).fillColor(MUTED)
-    t(mesLabel.toUpperCase(), barX, y + chartH + 4, { width: barW2, align: 'center' })
-
-    if (val > 0) {
-      doc.font('Helvetica').fontSize(6).fillColor(TEXT)
-      t(fmt(val), barX - 4, y + chartH - barH - 10, { width: barW2 + 8, align: 'center' })
-    }
-  }
-
-  y += chartH + 20
-
-  // ── TENDENCIA GASTOS ──
-  y = ensureSpace(y, 110)
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(MUTED)
-  t('GASTOS ÚLTIMOS 6 MESES', LEFT, y)
-  y += 18
-
-  const maxGasto = Math.max(...meses.map(m => Number(gastoMap[m]?.total || 0)), 1)
-  for (let i = 0; i < meses.length; i++) {
-    const val = Number(gastoMap[meses[i]]?.total || 0)
-    const barH = maxGasto > 0 ? (val / maxGasto) * chartH : 0
-    const barW2 = (chartW / meses.length) - 8
-    const barX = chartLeft + i * (chartW / meses.length) + 4
-
-    doc.roundedRect(barX, y + chartH - barH, barW2, Math.max(barH, 1), 2).fillColor(RED).fill()
-
-    const mesLabel = new Date(meses[i] + '-15').toLocaleDateString('es', { month: 'short' })
-    doc.font('Helvetica').fontSize(7).fillColor(MUTED)
-    t(mesLabel.toUpperCase(), barX, y + chartH + 4, { width: barW2, align: 'center' })
-
-    if (val > 0) {
-      doc.font('Helvetica').fontSize(6).fillColor(TEXT)
-      t(fmt(val), barX - 4, y + chartH - barH - 10, { width: barW2 + 8, align: 'center' })
-    }
-  }
-
-  // ── FOOTER (all pages) ──
-  const range = doc.bufferedPageRange()
-  const totalPages = range.count
-  for (let i = 0; i < totalPages; i++) {
-    doc.switchToPage(i)
-    doc.moveTo(LEFT, 760).lineTo(RIGHT, 760).strokeColor(BORDER_L).lineWidth(0.5).stroke()
-    doc.font('Helvetica').fontSize(7).fillColor(FAINT)
-    doc.text('Control Finanzas — Informe de Rendimiento', LEFT, 766, { lineBreak: false })
-    doc.text(`Página ${i + 1} de ${totalPages}`, RIGHT - 80, 766, { lineBreak: false, width: 80, align: 'right', height: 10 })
-  }
-  doc.switchToPage(totalPages - 1)
-
-  doc.end()
-  await done
-  const buffer = Buffer.concat(chunks)
-
-  const fileName = `rendimiento-${mesActualKey}.pdf`
-  return new Response(buffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${fileName}"`,
-    },
+  let y = hoja.cabecera({
+    negocio: org?.nombre,
+    titulo: 'Cómo va el negocio',
+    subtitulo: mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1),
+    meta: `Generado el ${fechaGeneracion}`,
   })
+
+  /* EL ROI MANDA EN LA HOJA. Es la unica cifra que contesta «¿esto me esta
+     dando plata?», y estaba al mismo tamano que el resto. */
+  const ALTO_ROI = 76
+  const roiOk = roiMensual >= 0
+  doc.roundedRect(L, y, W, ALTO_ROI, 6).fillAndStroke(roiOk ? COLOR.greenTint : COLOR.redTint, roiOk ? COLOR.green : COLOR.red)
+  doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink3)
+  hoja.escribir('RENDIMIENTO DEL MES', L + 16, y + 12, { characterSpacing: 0.6 })
+  doc.font(F.cifraFuerte).fontSize(34).fillColor(roiOk ? COLOR.green : COLOR.red)
+  hoja.escribir(`${Math.round(roiMensual * 10) / 10}%`, L + 16, y + 28)
+  doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
+  hoja.escribir('de lo que tienes en la calle', L + 16, y + 60)
+
+  doc.font(F.texto).fontSize(TIPO.pie).fillColor(COLOR.ink4)
+  hoja.escribir('ganancia neta ÷ capital en calle', L, y + 60, { width: W - 16, align: 'right' })
+  doc.font(F.cifraFuerte).fontSize(TIPO.cifra).fillColor(COLOR.ink)
+  hoja.escribir(fmt(gananciaNetaMes), L, y + 30, { width: W - 16, align: 'right' })
+  doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink3)
+  hoja.escribir('GANANCIA NETA', L, y + 16, { width: W - 16, align: 'right', characterSpacing: 0.6 })
+  y += ALTO_ROI + 18
+
+  y = hoja.cifras([
+    { rotulo: 'Recaudado', valor: fmt(recaudadoMes) },
+    { rotulo: 'Gastos', valor: fmt(gastosMesActual) },
+    { rotulo: 'Capital en calle', valor: fmt(capitalEnCalle) },
+    { rotulo: 'Proyectado del mes', valor: fmt(Math.round(proyeccionMes)) },
+  ], y)
+
+  /* La barra de avance del mes: cuanto de lo esperado ya entro. */
+  y = hoja.seccion('Lo que va del mes', y)
+  const pct = esperadoMes > 0 ? Math.min(recaudadoMes / esperadoMes, 1) : 0
+  doc.roundedRect(L, y, W, 14, 4).fill(COLOR.surface)
+  if (pct > 0) doc.roundedRect(L, y, Math.max(W * pct, 6), 14, 4).fill(COLOR.gold)
+  doc.font(F.cifraFuerte).fontSize(TIPO.rotulo).fillColor(COLOR.ink2)
+  hoja.escribir(`${Math.round(pct * 100)}% de ${fmt(esperadoMes)}`, L, y + 20, { width: W })
+  y += 40
+
+  y = hoja.seccion('Estado de la cartera', y)
+  y = hoja.cifras([
+    { rotulo: 'Préstamos activos', valor: String(prestamosActivosDetalle.length) },
+    { rotulo: 'Por cobrar', valor: fmt(porCobrar) },
+    { rotulo: 'Interés en cartera', valor: fmt(interesEnCartera), tono: 'bueno' },
+    { rotulo: 'En mora', valor: `${alertas.length} de ${prestamosActivosDetalle.length}`, tono: alertas.length > 0 ? 'malo' : 'bueno' },
+    { rotulo: 'Préstamo promedio', valor: fmt(Math.round(prestamosActivosDetalle.length > 0 ? capitalEnCalle / prestamosActivosDetalle.length : 0)) },
+    { rotulo: 'Clientes que repiten', valor: `${totalClientes > 0 ? Math.round((prestamosTotal.length / totalClientes) * 100) : 0}%` },
+    { rotulo: 'Clavos', valor: String(prestamosEsclavo._count || 0), tono: prestamosEsclavo._count > 0 ? 'malo' : undefined },
+    { rotulo: 'Monto en clavos', valor: fmt(Number(prestamosEsclavo._sum?.totalAPagar || 0)), tono: prestamosEsclavo._count > 0 ? 'malo' : undefined },
+  ], y)
+
+  if (alertas.length > 0) {
+    y = hoja.seccion(`Quién está atrasado · ${fmt(montoMoraTotal)} en riesgo`, y)
+    y = hoja.tabla({
+      columnas: [
+        { clave: 'nombre', titulo: 'Cliente', ancho: 3.4, identidad: true },
+        { clave: 'dias', titulo: 'Días', ancho: 1, alinear: 'right' },
+        { clave: 'sev', titulo: 'Qué tan grave', ancho: 1.8, alinear: 'center' },
+        { clave: 'cuota', titulo: 'Cuota', ancho: 1.6, fuente: 'cifra' },
+        { clave: 'riesgo', titulo: 'En riesgo', ancho: 1.8, fuente: 'cifra' },
+      ],
+      filas: alertas.map((a) => ({
+        nombre: a.clienteNombre,
+        dias: String(a.diasMora),
+        sev: a.severidad === 'grave' ? 'Grave' : a.severidad === 'moderada' ? 'Moderada' : 'Leve',
+        sevPastilla: a.severidad === 'grave'
+          ? { fondo: COLOR.redTint, color: COLOR.red }
+          : a.severidad === 'moderada'
+            ? { fondo: COLOR.goldTint, color: COLOR.goldInk }
+            : { fondo: COLOR.surface, color: COLOR.ink3 },
+        cuota: fmt(a.cuotaDiaria),
+        riesgo: fmt(a.montoEnRiesgo),
+        riesgoColor: a.severidad === 'grave' ? COLOR.red : undefined,
+      })),
+    }, y)
+  }
+
+  if (cobradoresData.length > 0) {
+    y = hoja.seccion('Quién recaudó más', y)
+    y = hoja.tabla({
+      columnas: [
+        { clave: 'pos', titulo: '#', ancho: 0.5 },
+        { clave: 'nombre', titulo: 'Nombre', ancho: 4, identidad: true },
+        { clave: 'rol', titulo: 'Rol', ancho: 1.6 },
+        { clave: 'pagos', titulo: 'Pagos', ancho: 1.2, alinear: 'right' },
+        { clave: 'recaudado', titulo: 'Recaudado', ancho: 2.2, fuente: 'cifra' },
+      ],
+      filas: cobradoresData.map((c, i) => ({
+        pos: String(i + 1),
+        nombre: c.nombre,
+        rol: c.rol === 'owner' ? 'Admin' : 'Cobrador',
+        pagos: String(c.pagos),
+        recaudado: fmt(c.recaudado),
+      })),
+    }, y)
+  }
+
+  const etiquetaMes = (m) => new Date(m + '-15')
+    .toLocaleDateString('es', { month: 'short' }).replace(/^de /, '').slice(0, 3).toUpperCase()
+
+  y = hoja.barras(
+    meses.map((m) => ({ etiqueta: etiquetaMes(m), valor: Number(pagoMap[m]?.total || 0) })),
+    y, { titulo: 'Lo recaudado en los últimos 6 meses', formato: fmt },
+  )
+
+  y = hoja.barras(
+    meses.map((m) => ({ etiqueta: etiquetaMes(m), valor: Number(gastoMap[m]?.total || 0) })),
+    y, { titulo: 'Los gastos en los últimos 6 meses', formato: fmt },
+  )
+
+  const buffer = await hoja.cerrar()
+  return respuestaPdf(buffer, `como-va-el-negocio-${mesActualKey}.pdf`)
 }
