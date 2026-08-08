@@ -33,7 +33,22 @@ set -uo pipefail
 APP_DIR="/home/control-finanzas"
 ESTADO_DIR="/opt/cf-backup"
 MARCA_EXITO="${ESTADO_DIR}/ULTIMO-EXITO"
-UMBRAL_HORAS=30   # el respaldo es diario; 30h da margen sin dejar pasar dos dias
+MARCA_FUERA="${ESTADO_DIR}/ULTIMO-EXITO-FUERA"
+
+# ⚠ DOS UMBRALES PORQUE SON DOS RIESGOS DISTINTOS.
+#
+# El 8 ago 2026 este vigilante grito «RESPALDO CAIDO — hace 160 horas» durante
+# siete noches, y habia siete respaldos locales; el ultimo, de hacia una hora.
+# Lo que fallaba era la subida a Drive, y como el script moria ahi, la marca de
+# exito no se escribia. El aviso era literalmente falso.
+#
+# Un aviso que exagera se acaba ignorando, y entonces no sirve el dia que sea
+# verdad. Asi que ahora:
+#   · sin copia LOCAL en 30 h  → CRITICO. No hay respaldo de nada.
+#   · sin copia FUERA en 48 h  → GRAVE. Hay respaldo, pero en el mismo disco
+#                                que la base: si el VPS muere, muere con el.
+UMBRAL_HORAS=30
+UMBRAL_FUERA_HORAS=48
 
 set -a
 # shellcheck disable=SC1091
@@ -67,16 +82,48 @@ HORAS=$(( (AHORA - ULTIMO) / 3600 ))
 
 if [ "$HORAS" -gt "$UMBRAL_HORAS" ]; then
     DIAS=$(( HORAS / 24 ))
-    avisar "🔴 RESPALDO CAIDO — Control Finanzas
+    avisar "🔴 SIN RESPALDO — Control Finanzas
 
-El ultimo respaldo correcto fue hace ${HORAS} horas (${DIAS} dias).
-Fecha: $(date -d "@${ULTIMO}" '+%Y-%m-%d %H:%M')
+No hay copia local desde hace ${HORAS} horas (${DIAS} dias).
+Ultima: $(date -d "@${ULTIMO}" '+%Y-%m-%d %H:%M')
 
-El respaldo deberia correr cada noche a las 3:00.
+Deberia correr cada noche a las 3:00.
 Servidor: $(hostname)
 
 Revisa: tail -40 /home/backups/cf/backup.log"
     exit 1
 fi
 
-echo "OK: ultimo respaldo hace ${HORAS}h ($(date -d "@${ULTIMO}" '+%Y-%m-%d %H:%M'))"
+# ── La copia de fuera, que es otra cosa ────────────────────────────────────
+FUERA=$(cat "$MARCA_FUERA" 2>/dev/null || echo 0)
+HORAS_FUERA=$(( (AHORA - FUERA) / 3600 ))
+
+if [ "$HORAS_FUERA" -gt "$UMBRAL_FUERA_HORAS" ]; then
+    # ⚠ Sin marca, `HORAS_FUERA` se cuenta desde 1970 y salia «20673 dias sin
+    #   subir», que es ruido. Si nunca ha subido, se dice asi.
+    if [ "$FUERA" -gt 0 ]; then
+        CUANTO="${HORAS_FUERA} horas ($(( HORAS_FUERA / 24 )) dias) sin subir"
+        CUANDO=$(date -d "@${FUERA}" '+%Y-%m-%d %H:%M')
+    else
+        CUANTO="nunca ha subido desde que se separo la cuenta"
+        CUANDO="nunca"
+    fi
+    avisar "🟠 SIN COPIA FUERA — Control Finanzas
+
+El respaldo local SI se esta haciendo (el ultimo, hace ${HORAS} h).
+Lo que falla es el duplicado en Google Drive: ${CUANTO}.
+Ultima subida: ${CUANDO}
+
+Riesgo: la unica copia vive en el mismo disco que la base.
+Si el VPS se pierde, se pierde todo.
+
+Casi siempre es el limite de la API de Google (el cliente compartido de
+rclone). El arreglo de fondo es un client_id propio:
+https://rclone.org/drive/#making-your-own-client-id
+
+Servidor: $(hostname)
+Revisa: tail -40 /home/backups/cf/backup.log"
+    exit 1
+fi
+
+echo "OK: local hace ${HORAS}h · fuera hace ${HORAS_FUERA}h"

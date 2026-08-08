@@ -63,6 +63,8 @@ NOMBRE="cf-backup-${FECHA}"
 TRABAJO="${BACKUP_DIR}/.trabajo-${FECHA}"
 LOG="${BACKUP_DIR}/backup.log"
 MARCA_EXITO="${ESTADO_DIR}/ULTIMO-EXITO"
+# La copia de fuera lleva su propia marca: son dos cosas distintas.
+MARCA_FUERA="${ESTADO_DIR}/ULTIMO-EXITO-FUERA"
 TAMANO_PREVIO="${ESTADO_DIR}/ULTIMO-TAMANO"
 
 mkdir -p "$BACKUP_DIR" "$ESTADO_DIR"
@@ -183,19 +185,59 @@ ARCHIVO="${NOMBRE}.tar.gz.gpg"
 PESO=$(stat -c%s "${BACKUP_DIR}/${ARCHIVO}")
 registrar "Paquete: ${ARCHIVO} ($(numfmt --to=iec "$PESO"))"
 
-# ─── 4 · Subir y verificar ─────────────────────────────────────────────────
+# ─── 4 · La copia local YA ESTA HECHA. Se marca aqui. ──────────────────────
+#
+# ⚠ ESTA MARCA SE MOVIO, Y ES EL ARREGLO DEL 8 DE AGOSTO DE 2026.
+#
+# Estaba al final del script, DESPUES de subir a Drive. Siete noches seguidas la
+# subida fallo por el limite de la API de Google, el script murio en la
+# verificacion y la marca no se escribio nunca. Resultado: el vigilante grito
+# «RESPALDO CAIDO — el ultimo correcto fue hace 160 horas» cuando habia SIETE
+# respaldos locales, el ultimo de hacia una hora.
+#
+# Es el fallo de las 140 noches del reves: entonces el aviso decia que todo iba
+# bien estando caido; ahora decia caido estando bien. Las dos veces el problema
+# es el mismo: la senal no describe la realidad.
+#
+# Son DOS cosas distintas y ahora se miden por separado:
+#   · copia LOCAL  — el volcado existe y esta cifrado.        CRITICO
+#   · copia FUERA  — ademas hay un duplicado en Drive.        GRAVE, no critico
+#
+# Si el disco del VPS muere, la copia local muere con el: por eso la de fuera
+# sigue avisando, pero con su propio mensaje.
+
+date +%s > "$MARCA_EXITO"
+echo "$BYTES" > "$TAMANO_PREVIO"
+registrar "Copia local lista y verificada"
+
+# ─── 5 · Subir fuera y verificar ───────────────────────────────────────────
 
 registrar "Subiendo a Google Drive..."
-rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE" --stats-one-line 2>&1 | tee -a "$LOG"
 
-# No basta con que rclone diga que subio: se comprueba que el archivo esta
-# alli Y que pesa lo mismo.
-REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')
-if [ "${REMOTO:-0}" != "$PESO" ]; then
-    registrar "En Drive pesa '${REMOTO:-nada}' y aqui ${PESO}"
-    exit 1
+# ⚠ Reintentos y paso lento por el limite de Google. El error dice «Quota
+# exceeded … consumer project_number:202264815644», y ese proyecto NO es
+# nuestro: es el cliente COMPARTIDO que rclone trae de fabrica y que usa todo el
+# mundo, por eso se agota. La solucion de verdad es un client_id propio —cinco
+# minutos en la consola de Google Cloud, ver
+# https://rclone.org/drive/#making-your-own-client-id— y esa la tiene que hacer
+# el dueno con su cuenta. Esto solo aguanta mejor mientras tanto.
+SUBIDA_OK=0
+if rclone copy "${BACKUP_DIR}/${ARCHIVO}" "$GDRIVE_REMOTE"        --stats-one-line --retries 5 --retries-sleep 60s        --low-level-retries 20 --drive-pacer-min-sleep 200ms        --timeout 10m 2>&1 | tee -a "$LOG"; then
+    REMOTO=$(rclone size "$GDRIVE_REMOTE/${ARCHIVO}" --json 2>/dev/null | sed -n 's/.*"bytes":\([0-9]*\).*//p')
+    if [ "${REMOTO:-0}" = "$PESO" ]; then
+        registrar "Verificado en Drive: mismo tamaño"
+        date +%s > "$MARCA_FUERA"
+        SUBIDA_OK=1
+    else
+        registrar "En Drive pesa '${REMOTO:-nada}' y aqui ${PESO}"
+    fi
+else
+    registrar "rclone no pudo subir (ver el error arriba)"
 fi
-registrar "Verificado en Drive: mismo tamaño"
+
+# ⚠ NO se sale con error: la copia local esta hecha y verificada, y matar el
+# script aqui es lo que borraba esa verdad durante siete noches.
+[ "$SUBIDA_OK" = "1" ] || registrar "SIN COPIA FUERA — la local si esta. Avisa el vigilante."
 
 # ─── 5 · Retencion ─────────────────────────────────────────────────────────
 # La copia local se QUEDA. La version vieja la borraba, asi que la unica copia
@@ -206,10 +248,9 @@ rclone delete "$GDRIVE_REMOTE" --min-age "${RETENCION_DRIVE_DIAS}d" 2>/dev/null 
 
 LOCALES=$(find "$BACKUP_DIR" -name "cf-backup-*.gpg" -type f | wc -l)
 
-# ─── 6 · Marca de exito, para el vigilante ─────────────────────────────────
-
-date +%s > "$MARCA_EXITO"
-echo "$BYTES" > "$TAMANO_PREVIO"
+# ─── 7 · Cierre ────────────────────────────────────────────────────────────
+# La marca de exito ya se escribio arriba, en cuanto la copia local quedo
+# verificada. Aqui no se vuelve a tocar.
 
 registrar "═══ Listo: ${ARCHIVO} · ${LOCALES} copias locales ═══"
 registrar ""
