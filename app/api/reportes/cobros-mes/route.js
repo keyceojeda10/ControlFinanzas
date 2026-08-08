@@ -78,50 +78,77 @@ export async function GET(req) {
   const mesInicio = new Date(year, monthIdx, 1)
   const mesFin    = new Date(year, monthIdx + 1, 0, 23, 59, 59)
 
-  const rutas = await prisma.ruta.findMany({
-    where: { organizationId: orgId },
-    select: {
-      id: true,
-      nombre: true,
-      cobrador: { select: { nombre: true } },
-      clientes: {
-        where: { estado: 'activo' },
-        select: {
-          id: true,
-          nombre: true,
-          cedula: true,
-          telefono: true,
-          prestamos: {
-            where: {
-              estado: 'activo',
-              esClavo: false,
-              fechaInicio: { lte: mesFin },
-              fechaFin: { gte: mesInicio },
-            },
-            select: {
-              id: true,
-              cuotaDiaria: true,
-              totalAPagar: true,
-              totalPagado: true,
-              frecuencia: true,
-              fechaInicio: true,
-              fechaFin: true,
-              diaCobroMes: true,
-              cuotasAmortizacion: {
-                select: {
-                  numeroPeriodo: true,
-                  cuotaTotal: true,
-                  pagado: true,
-                  fechaEsperada: true,
-                },
-              },
-            },
+  /* ⚠ QUIEN NO TIENE RUTA TAMBIEN COBRA ESTE MES.
+   *
+   * Este reporte recorria RUTAS y, dentro, los clientes de cada ruta. Quien no
+   * ha creado ninguna se bajaba una hoja vacia — y no fallaba, que es peor:
+   * parece una respuesta, asi que se sospecha de los datos, no del sistema.
+   *
+   * Medido el 8 ago 2026: 160 de 223 negocios con prestamos activos NO tienen
+   * ninguna ruta. El 72 %.
+   *
+   * Mismo arreglo que en «Quien me debe» y en el reporte del dia: los sueltos
+   * —y los de una ruta desactivada— se agrupan al final bajo «Sin ruta» y se
+   * comportan como una ruta mas, para que el bucle y los totales no tengan que
+   * saber que existen. */
+  const seleccionCliente = {
+    id: true,
+    nombre: true,
+    cedula: true,
+    telefono: true,
+    prestamos: {
+      where: {
+        estado: 'activo',
+        esClavo: false,
+        fechaInicio: { lte: mesFin },
+        fechaFin: { gte: mesInicio },
+      },
+      select: {
+        id: true,
+        cuotaDiaria: true,
+        totalAPagar: true,
+        totalPagado: true,
+        frecuencia: true,
+        fechaInicio: true,
+        fechaFin: true,
+        diaCobroMes: true,
+        cuotasAmortizacion: {
+          select: {
+            numeroPeriodo: true,
+            cuotaTotal: true,
+            pagado: true,
+            fechaEsperada: true,
           },
         },
       },
     },
-    orderBy: { nombre: 'asc' },
-  })
+  }
+
+  const [rutasReales, sueltos] = await Promise.all([
+    prisma.ruta.findMany({
+      where: { organizationId: orgId },
+      select: {
+        id: true,
+        nombre: true,
+        cobrador: { select: { nombre: true } },
+        clientes: { where: { estado: 'activo' }, select: seleccionCliente },
+      },
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.cliente.findMany({
+      where: {
+        organizationId: orgId,
+        estado: 'activo',
+        OR: [{ rutaId: null }, { ruta: { activo: false } }],
+      },
+      select: seleccionCliente,
+      orderBy: { nombre: 'asc' },
+    }),
+  ])
+
+  const rutas = sueltos.length
+    ? [...rutasReales, { id: null, nombre: 'Sin ruta', cobrador: null, clientes: sueltos }]
+    : rutasReales
 
   const resultado = []
   let granTotal = 0

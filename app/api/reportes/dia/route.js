@@ -49,14 +49,37 @@ export async function GET(request) {
     orderBy: { nombre: 'asc' },
   })
 
-  if (rutas.length === 0) {
+  /* ⚠ QUIEN NO HA CREADO NINGUNA RUTA NO SE QUEDA SIN REPORTE.
+   *
+   * Esto devolvia un 404 «No se encontraron rutas». Medido el 8 ago 2026:
+   * 160 de 223 negocios con prestamos activos NO tienen ninguna ruta —el 72 %—,
+   * asi que a la mayoria el reporte del dia le contestaba con un error. Y aun
+   * teniendo rutas, el cliente que todavia no esta asignado a ninguna no salia:
+   * no aparece en el papel del dia y no se le cobra.
+   *
+   * Es el mismo fallo que ya se corrigio en «Quien me debe» y en la cartera.
+   *
+   * ⚠ Los sueltos SOLO se anaden cuando el reporte no viene filtrado por rutas
+   * concretas y quien pregunta NO es un cobrador: a un cobrador se le enseñan
+   * sus rutas, y un cliente sin asignar no es de nadie todavia. */
+  const puedeVerSueltos = rol !== 'cobrador' && rutaIds.length === 0
+
+  if (rutas.length === 0 && !puedeVerSueltos) {
     return Response.json({ error: 'No se encontraron rutas' }, { status: 404 })
   }
 
   const rutaIdsReal = rutas.map(r => r.id)
 
   const clientesDeRutas = await prisma.cliente.findMany({
-    where: { organizationId, rutaId: { in: rutaIdsReal } },
+    where: {
+      organizationId,
+      OR: [
+        { rutaId: { in: rutaIdsReal } },
+        // `rutaId: null` no cubre al que esta en una ruta DESACTIVADA: esa ruta
+        // no entra en `rutaIdsReal` y su gente desaparecia igual.
+        ...(puedeVerSueltos ? [{ rutaId: null }, { ruta: { activo: false } }] : []),
+      ],
+    },
     select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true },
   })
   const clienteIds = clientesDeRutas.map(c => c.id)
@@ -151,10 +174,27 @@ export async function GET(request) {
   const totalEsperado = prestamosActivos.reduce((a, p) => a + Math.round(p.cuotaDiaria || 0), 0)
   const totalGastos = gastos.reduce((a, g) => a + Math.round(g.monto || 0), 0)
 
-  const porRuta = rutas.map(r => {
-    const pagosRuta = pagos.filter(p => p.rutaId === r.id)
-    const prestamosRuta = prestamosActivos.filter(p => p.cliente?.rutaId === r.id)
-    const pendientesRuta = [...clientesUnicos.values()].filter(p => p.rutaId === r.id)
+  /* «Sin ruta» se comporta como una ruta mas para que el bucle, los totales y
+     el papel no tengan que saber que existe. Solo aparece si hay alguien. */
+  const sueltos = puedeVerSueltos
+    ? [...clientesUnicos.values()].filter((x) => !rutaIdsReal.includes(x.rutaId))
+    : []
+  const gruposRuta = sueltos.length
+    ? [...rutas, { id: null, nombre: 'Sin ruta', cobrador: null }]
+    : rutas
+
+  /* ⚠ «Sin ruta» NO es `rutaId === null`. Quien esta en una ruta DESACTIVADA
+     conserva su `rutaId` —un id de verdad— pero esa ruta no entra en la lista,
+     asi que con la comparacion contra `null` se quedaba sin grupo: cargado,
+     contando en los totales de arriba, y en ninguna fila de abajo. */
+  const esDeEsteGrupo = (rutaIdDelCliente, r) => r.id === null
+    ? !rutaIdsReal.includes(rutaIdDelCliente ?? null)
+    : rutaIdDelCliente === r.id
+
+  const porRuta = gruposRuta.map(r => {
+    const pagosRuta = pagos.filter(p => esDeEsteGrupo(p.rutaId, r))
+    const prestamosRuta = prestamosActivos.filter(p => esDeEsteGrupo(p.cliente?.rutaId ?? null, r))
+    const pendientesRuta = [...clientesUnicos.values()].filter(p => esDeEsteGrupo(p.rutaId, r))
     return {
       id: r.id,
       nombre: r.nombre,
@@ -169,7 +209,7 @@ export async function GET(request) {
   return Response.json({
     fecha: (fechaParam || inicio.toISOString().slice(0, 10)),
     organizacion: org?.nombre || '',
-    rutas: rutas.map(r => ({ id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre })),
+    rutas: gruposRuta.map(r => ({ id: r.id, nombre: r.nombre, cobrador: r.cobrador?.nombre })),
     resumen: {
       totalRecaudado,
       totalEsperado,
