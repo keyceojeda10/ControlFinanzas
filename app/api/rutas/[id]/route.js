@@ -328,7 +328,7 @@ export async function GET(request, { params }) {
     let terminoDePagar = null
     let puedePrestarHasta = 0
     let prestamosCompletados = 0
-    let frecuencia   = 'diario'
+    let frecuencia   = null   // null = todavia no se ha visto ningun prestamo
     let proximoCobro = null
     let cobroPendienteHoy = false
     // Pago de hoy con coords mas reciente — alimenta el badge en la card del cliente.
@@ -558,8 +558,13 @@ export async function GET(request, { params }) {
         ...extraInfo,
       })
 
-      // Frecuencia y próximo cobro del préstamo activo (lib centralizado)
-      frecuencia = p.frecuencia || 'diario'
+      /* ⚠ CON DOS PRESTAMOS DE FRECUENCIAS DISTINTAS, ESTO MENTIA.
+         Se quedaba con la del ULTIMO del bucle, sin avisar: un cliente con uno
+         diario y uno semanal salia rotulado como semanal y el cobrador le pedia
+         la cuota del dia equivocado. Cuando no coinciden se dice `varias`, que
+         es la verdad, y la tarjeta no pone rotulo. */
+      const suya = p.frecuencia || 'diario'
+      frecuencia = frecuencia === null ? suya : (frecuencia === suya ? suya : 'varias')
       const pc = calcularProximoCobro(p, diasExcluidosPrestamo, festivos)
       if (pc && (!proximoCobro || pc < proximoCobro)) proximoCobro = pc
 
@@ -639,7 +644,7 @@ export async function GET(request, { params }) {
       prestamosActivos,
       cuotaExtraHoy: prestamosActivos.some(p => p.cuotaExtraHoy),
       montoCuotaExtra: prestamosActivos.reduce((s, p) => s + (p.montoCuotaExtra || 0), 0),
-      frecuencia,
+      frecuencia: frecuencia ?? 'diario',
       diasParaCobro,
       proximoCobroLabel: proximoCobro ? formatFechaCobro(proximoCobro) : null,
       // La fecha cruda además del rótulo: E09 escribe «le cobras el 19 de

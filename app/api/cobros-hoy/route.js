@@ -181,6 +181,11 @@ export async function GET() {
       const _hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
 
       let cuotaCliente = 0
+      // `frecuencia` estaba en el `select` de Prisma y no se devolvia, asi
+      // que la tarjeta de Cobrar hoy no podia decir de que periodo es la
+      // cuota. Es la misma tarjeta que la de la ruta: o lo saben las dos o
+      // el mismo cliente se ve distinto en cada pantalla.
+      let frecuencia = null
       let pagadoHoy = 0
       let mora = 0
       let montoParaAlDia = 0
@@ -254,6 +259,9 @@ export async function GET() {
         // y usa la tabla en modos que la tienen. Antes mostraba la cuota fija completa.
         const cuotaReal = cuotaProximoCobro(p)
         cuotaCliente += cuotaReal
+        // `varias` cuando no coinciden: rotular con la de uno solo es mentir.
+        const suya = p.frecuencia || 'diario'
+        frecuencia = frecuencia === null ? suya : (frecuencia === suya ? suya : 'varias')
         esperadoHoyTotal += cuotaReal
 
         const saldo = calcularSaldoPendiente(p)
@@ -343,6 +351,7 @@ export async function GET() {
         rutaId: ruta?.id ?? null,
         rutaNombre: ruta?.nombre ?? 'Sin ruta',
         cuota: cuotaCliente,
+        frecuencia: frecuencia ?? 'diario',
         // Un préstamo dado por perdido. Lo tenía la ruta y aquí no, así que el
         // mismo cliente salía avisado en una pantalla y mudo en la otra —y la
         // tarjeta es la misma—. Sin el aviso se lee como un cliente cualquiera

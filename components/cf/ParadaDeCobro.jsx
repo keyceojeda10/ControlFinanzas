@@ -167,7 +167,7 @@ export function Carril({
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
   avisoMora, avisos = [], prestamos = [],
-  cuota, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
+  cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
   cobradoA, montoCobrado, cifras, pagadoPct, onClick,
   /* ── QUIEN HOY NO TIENE COBRO USA ESTA MISMA TARJETA ──
@@ -361,14 +361,39 @@ export function FilaCobro({
           fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-green-dark)', flex: 'none',
         }}>{montoCobrado}</span>
       ) : contexto?.monto === 'ninguno' ? null : (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flex: 'none' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flex: 'none' }}>
+          {/* ── DE QUÉ PERIODO ES ESTA CUOTA ──
+              Reportado por un cobrador: «solo dice Rosa Suárez, $8.000, pero no
+              se sabe si esa cuota es diaria, semanal, quincenal o mensual».
+              Tenía razón: $8.000 al día y $8.000 al mes son dos negocios
+              distintos, y sin el periodo el número no se puede ni cobrar ni
+              comparar con la tarjeta de al lado.
+
+              ⚠ Va ENCIMA y no pegado a la cifra. Como sufijo —«$8.000/qna»— se
+              come el ancho del nombre, que es `flex: 1` y ya baja de renglón:
+              los apellidos son lo que identifica y no se recortan.
+
+              `null` cuando el cliente tiene varios préstamos con periodos
+              distintos, y cuando el monto no es una cuota (un clavo enseña lo
+              perdido, no una cuota). */}
+          {periodo && !(contexto?.monto && contexto.monto !== 'defecto') && (
+            <span style={{
+              fontSize: 10, lineHeight: 1.1, color: 'var(--cf-ink-4)',
+              textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600,
+            }}>{periodo}</span>
+          )}
           {/* EN NEGRO. Era un botón rojo en cada fila, y con veinte filas eso
               era el muro: rojo es mora, no «cobrar». */}
           <span className="cf-fig" style={{ fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)' }}>
             {contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.cifra : cuota}
           </span>
+          {/* ⚠ 13px, NO 11. «El valor que dice debe sale muy pequeño», y es la
+              cifra con la que se negocia en la puerta: $8.000 sobre una deuda
+              de $60.000 y sobre una de $600.000 son dos visitas distintas.
+              También sube de `ink-3` a `ink-2`: a 11px y en gris claro, al sol
+              y con el teléfono en la mano, no se leía. */}
           {(contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.pie : debe) && (
-            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+            <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)', marginTop: 1 }}>
               {contexto?.monto && contexto.monto !== 'defecto' ? contexto.monto.pie : debe}
             </span>
           )}
