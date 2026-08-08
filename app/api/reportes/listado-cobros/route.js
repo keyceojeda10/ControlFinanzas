@@ -237,9 +237,10 @@ export async function GET(req) {
     // La direccion va DEBAJO del nombre, no en columna aparte: en columna
     // propia se partia en dos o tres renglones y el listado de 984 prestamos
     // salia en 86 hojas. Debajo tiene el doble de ancho y entra en una.
-    { clave: 'nombre', titulo: 'Cliente y dirección', ancho: 5, identidad: true, sub: 'direccion' },
-    { clave: 'telefono', titulo: 'Teléfono', ancho: 1.6, identidad: true },
-    { clave: 'cuota', titulo: 'Cuota', ancho: 1.5, fuente: 'cifra' },
+    { clave: 'nombre', titulo: 'Cliente y dirección', ancho: 4.6, identidad: true, sub: 'direccion' },
+    { clave: 'telefono', titulo: 'Teléfono', ancho: 1.5, identidad: true },
+    // 1,5 dejaba «$150.000/sem» en dos renglones dentro de la celda.
+    { clave: 'cuota', titulo: 'Cuota', ancho: 1.9, fuente: 'cifra' },
     { clave: 'saldo', titulo: 'Debe', ancho: 1.6, fuente: 'cifra' },
     { clave: 'mora', titulo: 'Mora', ancho: 1.3, alinear: 'center' },
   ]
