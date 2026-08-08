@@ -254,6 +254,13 @@ export async function GET() {
     meses.push(d.toISOString().slice(0, 7))
   }
 
+  /* ⚠ Estas dos vivian en el bloque de PDFKit que se retiro, y al retirarlo se
+     fueron con el: el informe reventaba con «mesNombre is not defined». Lo
+     dijo el LOG del espejo, no el build ni las pruebas: sin TypeScript, un
+     identificador que no existe solo falla cuando alguien pulsa el boton. */
+  const mesNombre = hoy.toLocaleDateString('es', { month: 'long', year: 'numeric' })
+  const fechaGeneracion = hoy.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
   /* Todo el dibujo lo pone `lib/papel/documento`.
    *
    * Lo que este informe tenia y no se veia leyendo el codigo: el pie se

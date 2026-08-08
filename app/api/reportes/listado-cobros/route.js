@@ -234,9 +234,11 @@ export async function GET(req) {
      papel, y «Cra 50 # 50-100 barrio La» no es una direccion. */
   const columnas = [
     { clave: 'num', titulo: '#', ancho: 0.5 },
-    { clave: 'nombre', titulo: 'Cliente', ancho: 2.8, identidad: true },
-    { clave: 'direccion', titulo: 'Dirección', ancho: 2.6, identidad: true },
-    { clave: 'telefono', titulo: 'Teléfono', ancho: 1.4, identidad: true },
+    // La direccion va DEBAJO del nombre, no en columna aparte: en columna
+    // propia se partia en dos o tres renglones y el listado de 984 prestamos
+    // salia en 86 hojas. Debajo tiene el doble de ancho y entra en una.
+    { clave: 'nombre', titulo: 'Cliente y dirección', ancho: 5, identidad: true, sub: 'direccion' },
+    { clave: 'telefono', titulo: 'Teléfono', ancho: 1.6, identidad: true },
     { clave: 'cuota', titulo: 'Cuota', ancho: 1.5, fuente: 'cifra' },
     { clave: 'saldo', titulo: 'Debe', ancho: 1.6, fuente: 'cifra' },
     { clave: 'mora', titulo: 'Mora', ancho: 1.3, alinear: 'center' },
@@ -245,7 +247,7 @@ export async function GET(req) {
   const aFila = (f, i) => ({
     num: String(i + 1),
     nombre: f.nombre,
-    direccion: f.direccion || '—',
+    direccion: f.direccion || '',
     telefono: f.telefono || '—',
     cuota: fmt(f.cuota) + sufijo(f.frecuencia),
     saldo: fmt(f.saldo),

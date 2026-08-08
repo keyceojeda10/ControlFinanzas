@@ -145,7 +145,9 @@ export async function GET(req, { params }) {
 
   /* El valor, en grande. Es lo primero que busca cualquiera que abre un pagare
      y estaba en cuerpo 10, del mismo tamano que las clausulas. */
-  const ALTO_VALOR = 52
+  // 52 dejaba el monto tocando el borde de abajo de la caja: 26pt de letra no
+  // caben en 52 - 20 de hueco superior. Se ve en la hoja, no en el numero.
+  const ALTO_VALOR = 60
   doc.roundedRect(L, y, W, ALTO_VALOR, RADIO).fillAndStroke(COLOR.goldTint, COLOR.gold)
   doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.goldInk)
   hoja.escribir('VALOR', L + 14, y + 9, { characterSpacing: 0.6 })
@@ -232,7 +234,9 @@ export async function GET(req, { params }) {
     doc.font(F.fuerte).fontSize(TIPO.tabla).fillColor(COLOR.ink2)
     hoja.escribir(titulo, x, y + 6, { width: colW })
     doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.ink4)
-    hoja.escribir(nombre, x, y + 19, { width: colW, ellipsis: true })
+    // `height` obliga a UN renglon: un nombre de negocio largo se repartia en
+    // dos y el segundo caia justo donde va la cedula.
+    hoja.escribir(nombre, x, y + 19, { width: colW, height: 11, ellipsis: true })
     if (extra) hoja.escribir(extra, x, y + 30, { width: colW, ellipsis: true })
   }
 
