@@ -4,6 +4,8 @@ import { useCountry } from '@/hooks/useCountry'
 import { AntesDespues } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { porQueNegativa, esAlarma } from '@/lib/dinero/ruta-negativa'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
@@ -277,6 +279,47 @@ export default function CapitalTab() {
   const todaLaPlata = saldoCapital + enCalle
   const pctListo = todaLaPlata > 0 ? Math.max(2, Math.round((saldoCapital / todaLaPlata) * 100)) : 0
 
+  /* ══ LO QUE SE PUEDE HACER AQUÍ ═══════════════════════════════════════════
+   *
+   * Esta pantalla se llama «Mi plata» en el menú, y ahí empieza el problema:
+   * quien busca «capital» no la encuentra por su nombre.
+   *
+   * ⚠ Y «SACAR PLATA» NO TIENE BOTÓN PROPIO. Hay que pulsar «Registrar
+   * movimiento» —que dice inyección— y elegir «Saco plata» YA DENTRO del
+   * modal. Medido en producción: 126 negocios mueven capital, y solo 5,5 veces
+   * cada uno en dos meses. Es el perfil exacto de lo que se olvida y se acaba
+   * preguntando por WhatsApp.
+   *
+   * Los sinónimos son lo que hace que esto sirva: no son los nombres de los
+   * botones, son las palabras con las que la gente lo pide. */
+  const accionesCapital = [
+    { id: 'capital-meter', label: 'Meter plata al fondo', pista: 'Registrar una inyección',
+      sinonimos: ['meter plata', 'meter capital', 'poner plata', 'inyeccion', 'inyectar',
+        'agregar capital', 'aumentar el fondo', 'entro plata'],
+      ejecutar: () => { setModalTipo('inyeccion'); setShowModal(true) } },
+    { id: 'capital-sacar', label: 'Sacar plata del fondo', pista: 'Registrar un retiro',
+      sinonimos: ['sacar plata', 'sacar capital', 'retirar', 'retiro', 'saque plata',
+        'sacar dinero', 'me lleve plata'],
+      ejecutar: () => { setModalTipo('retiro'); setShowModal(true) } },
+    { id: 'capital-cuadrar', label: 'Cuadrar el saldo', pista: 'Cuando el real no coincide',
+      sinonimos: ['cuadrar', 'ajustar el saldo', 'no me cuadra', 'corregir el saldo',
+        'ajuste', 'esta mal el saldo'],
+      ejecutar: () => { setModalTipo('ajuste'); setShowModal(true) } },
+    { id: 'capital-inicial', label: 'Registrar el capital inicial', pista: 'Con cuánto arrancaste',
+      sinonimos: ['capital inicial', 'con cuanto empece', 'lo que puse al principio',
+        'configurar el capital'],
+      disponible: !resumen?.configurado,
+      ejecutar: () => { setModalTipo('capital_inicial'); setShowModal(true) } },
+    { id: 'capital-estricto', label: 'Modo estricto del capital', pista: 'No prestar sin fondo',
+      sinonimos: ['modo estricto', 'que no me deje prestar', 'bloquear si no hay plata'],
+      disponible: Boolean(resumen?.configurado),
+      /* ⚠ `capitalEstricto`, NO `resumen.modoEstricto`: ese campo no existe en
+         el resumen y valdría `undefined` siempre, así que el interruptor
+         ofrecería «activar» aunque ya estuviera activo. Un campo que no existe
+         no da error; devuelve `undefined` y se lee como «apagado». */
+      ejecutar: () => setConfirmEstricto(capitalEstricto ? 'desactivar' : 'activar') },
+  ]
+
   return (
     <div className="space-y-5">
       {/* ── TODA TU PLATA (T30-01) ── */}
@@ -320,6 +363,11 @@ export default function CapitalTab() {
           el saldo» —el antiguo «ajuste manual»— sale del desplegable y tiene su
           propia entrada, en gris y con su explicacion: reescribe el saldo sin
           que haya entrado ni salido plata, y eso no es un movimiento mas. */}
+      {/* La caja va ARRIBA de los botones: quien no encuentra «sacar plata» no
+          la va a encontrar mirando más abajo. */}
+      <RegistrarAcciones clave="capital" acciones={accionesCapital} />
+      <QueNecesitas ejemplos={['sacar plata', 'cuadrar el saldo', 'capital inicial']} />
+
       <div className="flex justify-end items-center gap-2">
         <button
           type="button"
