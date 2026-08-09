@@ -140,9 +140,13 @@ export function Firma({
   children, guardando = false, puedeGuardar = true,
 }) {
   return (
+    /* ⚠ SIN FONDO PROPIO. Dentro del modal, la cabecera con la X es blanca
+       —la del diálogo— y este bloque pintaba `--cf-surface`: quedaba una franja
+       blanca encima del título, como una costura. El fondo lo pone quien
+       contiene, que es el modal. */
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100%',
-      background: 'var(--cf-surface)', padding: '14px 20px 16px', gap: 12,
+      padding: '14px 20px 16px', gap: 12,
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11, flex: 'none' }}>
         <span style={{ minWidth: 0 }}>
