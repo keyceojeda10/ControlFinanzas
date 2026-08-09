@@ -33,6 +33,8 @@ import { ListaSocios } from '@/components/pantallas/SociosReparto'
 import { PilaEsqueletos } from '@/components/cf/primitivos2'
 import { EstadoVacio } from '@/components/cf/primitivos'
 import { loQuePusieron, cuentaDelSocio, cabeceraSocios, tuParte } from '@/lib/adaptadores/socios'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 export default function SociosPage() {
   const { esOwner, loading: authLoading } = useAuth()
@@ -128,6 +130,19 @@ export default function SociosPage() {
   const puesto = loQuePusieron(paraAdaptador, fmt)
   const porId = Object.fromEntries(puesto.socios.map((s) => [s.id, s]))
 
+  /* ══ LO QUE SE PUEDE HACER CON LOS SOCIOS ================================
+   *
+   * Módulo pequeño y de vocabulario propio: quien tiene socios dice «aporte» y
+   * «retiro», pero también «metió plata», «le devolví» y «cuánto le debo». La
+   * decisión de julio dejó UN solo modelo —reparto por % del capital—, así que
+   * aquí no hay que ofrecer nada del reparto por préstamo. */
+  const accionesSocios = [
+    { id: 'soc-nuevo', label: 'Agregar un socio', pista: 'Quién más pone plata',
+      sinonimos: ['nuevo socio', 'agregar socio', 'crear socio', 'meter un socio',
+        'alguien mas puso plata'],
+      ejecutar: () => router.push('/socios/nuevo') },
+  ]
+
   return (
     <div style={{ height: '100%', minHeight: 0 }}>
       <ListaSocios
@@ -148,6 +163,14 @@ export default function SociosPage() {
         onSocio={(s) => router.push(`/socios/${s.id}`)}
         onNuevo={() => router.push('/socios/nuevo')}
       />
+
+      {/* Debajo de la lista, no encima: el listado de socios es corto -tres o
+          cuatro nombres- y meter una caja de búsqueda por delante del título
+          empuja hacia abajo lo único que se viene a mirar aquí. */}
+      <div style={{ padding: '4px 16px 20px' }}>
+        <RegistrarAcciones clave="socios" acciones={accionesSocios} />
+        <QueNecesitas ejemplos={['agregar un socio']} />
+      </div>
     </div>
   )
 }

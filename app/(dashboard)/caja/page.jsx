@@ -31,6 +31,8 @@ import { CajaDia, PestanasCaja } from '@/components/pantallas/Caja'
 import CajaEscritorio from '@/components/pantallas/CajaEscritorio'
 import CajaPorRuta from '@/components/caja/CajaPorRuta'
 import { agruparCajaPorRuta, totalesCajaPorRuta } from '@/lib/adaptadores/caja-por-ruta'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -1212,6 +1214,53 @@ export default function CajaPage() {
   const pendientesConRecaudo = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) > 0).length
   const pendientesSinMovimiento = cobradores.filter(c => !c.cerrado && (c.recaudadoDia || 0) <= 0).length
 
+  /* ══ LO QUE SE PUEDE HACER EN CAJA =======================================
+   *
+   * ⚠ LA PRIMERA VERSIÓN DE ESTO OFRECÍA AQUÍ «meter o sacar capital», Y ESTÁ
+   * MAL: eso no se hace en Caja, se hace en Mi plata. Lo dijo el dueño con esas
+   * palabras. Pero la gente SÍ va a escribirlo aquí —es la pantalla del dinero
+   * del día—, así que la frase se reconoce y se LLEVA al sitio correcto, con la
+   * etiqueta diciendo dónde está. Reconocer y llevar; no fingir que se hace
+   * aquí, ni dejar el vacío que manda a preguntar por WhatsApp.
+   *
+   * Y el ajuste de caja tiene el problema de siempre: el botón dice «Ajuste» y
+   * lo que la gente busca es «me sobró plata» o «me faltó plata». */
+  const accionesCaja = [
+    { id: 'caja-gasto', label: 'Anotar un gasto', pista: 'Gasolina, almuerzo, transporte',
+      sinonimos: ['gasto', 'anotar un gasto', 'gastos', 'gasolina', 'almuerzo', 'transporte',
+        'registrar un gasto', 'gaste'],
+      disponible: puedeReportarGastos,
+      ejecutar: () => { setShowGasto(true) } },
+    { id: 'caja-ajuste', label: 'Cuadrar la caja del día', pista: 'Cuando sobra o falta plata',
+      sinonimos: ['ajuste', 'cuadrar', 'me sobro plata', 'me falto plata', 'no me cuadra',
+        'sobrante', 'faltante', 'corregir la caja'],
+      disponible: esOwner,
+      ejecutar: () => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteDireccion('ingreso') } },
+    { id: 'caja-cuadre', label: 'Ver el cuadre de los cobradores', pista: 'Quién entregó y quién no',
+      sinonimos: ['cuadre', 'cierre de caja', 'cerrar el dia', 'entregar la plata',
+        'que entrego cada cobrador', 'cuadre de cobradores'],
+      disponible: esOwner && cobradoresParaFiltro.length > 0,
+      ejecutar: () => setCajaTab('cuadre') },
+    { id: 'caja-cuentas', label: 'Ver el dinero por cuenta', pista: 'Nequi, efectivo, banco',
+      sinonimos: ['cuentas', 'nequi', 'efectivo', 'banco', 'transferencias',
+        'cuanto tengo en nequi', 'por cuenta'],
+      disponible: esOwner,
+      ejecutar: () => setCajaTab('cuentas') },
+    { id: 'caja-porruta', label: 'Ver la caja de una ruta', pista: 'Lo de un cobrador y su recorrido',
+      sinonimos: ['por ruta', 'caja de la ruta', 'lo de un cobrador', 'caja por cobrador'],
+      ejecutar: () => setCajaTab('porruta') },
+    { id: 'caja-reabrir', label: 'Reabrir un cierre ya hecho', pista: 'Volver a editar el día',
+      sinonimos: ['reabrir', 'volver a abrir', 'me equivoque al cerrar', 'editar el cierre',
+        'deshacer el cierre'],
+      disponible: esOwner,
+      ejecutar: () => reabrirCierreOwner() },
+    { id: 'caja-capital', label: 'Meter o sacar plata del fondo', pista: 'Está en Mi plata, te llevo',
+      sinonimos: ['meter plata', 'sacar plata', 'meter capital', 'sacar capital', 'inyeccion',
+        'retirar del fondo', 'capital'],
+      disponible: puedeVerCapital,
+      ejecutar: () => router.push('/capital') },
+  ]
+
   return (
     // ⚠ FALTABA EL ESCALÓN DE EN MEDIO. Iba de `max-w-2xl` (672px) directo a
     // `lg:max-w-5xl` (1024px), y `lg:` no entra hasta los 1024 de ventana:
@@ -1265,6 +1314,11 @@ export default function CajaPage() {
           pestañas ya ocupan el ancho y apretarlo todo en 393px haría la
           pastilla ilegible. */}
       <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 lg:gap-3">
+      {/* Va encima de las pestañas: «cuentas» y «cuadre» SON pestañas, y quien
+          no sabe que existen no las va a encontrar mirando la que está abierta. */}
+      <RegistrarAcciones clave="caja" acciones={accionesCaja} />
+      <QueNecesitas ejemplos={['anotar un gasto', 'me faltó plata', 'nequi']} />
+
         <div className="min-w-0 lg:flex-1">
           <PestanasCaja
             activa={cajaTab}

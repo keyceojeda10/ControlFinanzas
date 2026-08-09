@@ -15,6 +15,8 @@ import EmptyState from '@/components/ui/EmptyState'
 import { CuentaSocio } from '@/components/pantallas/Socios'
 import { formatMoney } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 export default function SocioDetallePage() {
   const { id } = useParams()
@@ -246,6 +248,33 @@ export default function SocioDetallePage() {
   const enMora = socio.prestamos.filter((p) => (p.diasMora ?? 0) > 0)
     .reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
 
+  /* ══ LO QUE SE PUEDE HACER CON ESTE SOCIO ================================
+   *
+   * «Aporte» y «retiro» son las palabras del sistema. Las de la gente son
+   * «metió plata», «le devolví» y «cuánto le debo». El menú de los tres puntos
+   * —editar y eliminar— ni siquiera dice que existe hasta que se pulsa.
+   *
+   * ⚠ No se registra «repartir ganancias»: el reparto por préstamo se retiró en
+   * julio y hoy solo queda el reparto por % del capital, que se ve, no se
+   * ejecuta. Ofrecer un botón para algo que ya no se hace es peor que nada. */
+  const accionesSocio = [
+    { id: 'socio-aporte', label: 'Registrar que puso plata', pista: 'Un aporte al capital',
+      sinonimos: ['aporte', 'metio plata', 'puso plata', 'agrego capital', 'aporto',
+        'entrego plata', 'nuevo aporte'],
+      ejecutar: () => { setTipoAporte('aporte'); setModalAporte(true) } },
+    { id: 'socio-retiro', label: 'Registrar que le devolví plata', pista: 'Un retiro del socio',
+      sinonimos: ['retiro', 'le devolvi', 'le pague', 'saco plata', 'le entregue',
+        'devolucion', 'le di plata'],
+      ejecutar: () => { setTipoAporte('retiro'); setModalAporte(true) } },
+    { id: 'socio-editar', label: 'Editar los datos del socio', pista: 'Nombre, teléfono, porcentaje',
+      sinonimos: ['editar', 'corregir', 'cambiar el nombre', 'cambiar el porcentaje',
+        'cambiar el telefono'],
+      ejecutar: () => { setMenuAbierto(false); setEditando(true) } },
+    { id: 'socio-eliminar', label: 'Eliminar el socio', pista: 'No se puede deshacer',
+      sinonimos: ['eliminar', 'borrar socio', 'quitar socio', 'se salio'],
+      ejecutar: () => { setMenuAbierto(false); setConfirmEliminarSocio(true) } },
+  ]
+
   return (
     <div style={{ height: '100%', minHeight: 0 }}>
       <CuentaSocio
@@ -455,6 +484,13 @@ export default function SocioDetallePage() {
 
       </div>
       </CuentaSocio>
+
+      {/* Debajo de la cuenta: aqui se viene a MIRAR cuanto puso y cuanto se le
+          debe. La caja va donde termina de leerse eso, no tapandolo. */}
+      <div style={{ padding: '4px 16px 20px' }}>
+        <RegistrarAcciones clave="socio" acciones={accionesSocio} />
+        <QueNecesitas ejemplos={['metio plata', 'le devolvi', 'editar']} />
+      </div>
 
       {/* Modal registrar aporte/retiro */}
       <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
