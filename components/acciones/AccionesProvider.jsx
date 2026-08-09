@@ -72,7 +72,18 @@ export function useAcciones() {
  * render, que es el fallo clásico de cerrar sobre el estado viejo.
  */
 export function useRegistrarAcciones(clave, lista) {
-  const ctx = useContext(Contexto)
+  /* ⚠ SOLO `registrar`, NUNCA EL CONTEXTO ENTERO.
+   *
+   * Con `ctx` en las dependencias del efecto esto era un BUCLE INFINITO:
+   * registrar cambia `porPantalla` → el proveedor re-renderiza → `valor` es un
+   * objeto nuevo → `ctx` cambió → el efecto vuelve a correr → registra otra
+   * vez. La aplicación se quedaba re-renderizando sin parar y los toques no
+   * llegaban: reportado como «dentro de un préstamo la barra de abajo queda
+   * completamente inutilizada».
+   *
+   * `registrar` viene de un `useCallback` sin dependencias, así que es estable
+   * y el efecto solo corre cuando cambia de verdad la lista. */
+  const registrar = useContext(Contexto)?.registrar
   const ultima = useRef(lista)
   ultima.current = lista
 
@@ -81,7 +92,7 @@ export function useRegistrarAcciones(clave, lista) {
     .join('|')
 
   useEffect(() => {
-    if (!ctx) return undefined
+    if (!registrar) return undefined
     // Se envuelve para que el buscador llame SIEMPRE a la versión de ahora.
     const envueltas = (ultima.current || []).map((a) => ({
       ...a,
@@ -90,8 +101,8 @@ export function useRegistrarAcciones(clave, lista) {
         return (viva?.ejecutar ?? a.ejecutar)?.(...args)
       },
     }))
-    return ctx.registrar(clave, envueltas)
-  }, [ctx, clave, firma])
+    return registrar(clave, envueltas)
+  }, [registrar, clave, firma])
 }
 
 /**

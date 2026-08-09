@@ -162,8 +162,19 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           </div>
         )}
 
-        {/* El `pr-16` solo cuando no hay título: es el sitio de la X flotante. */}
-        <div className={`flex-1 overflow-y-auto py-5 pl-5 ${title ? 'pr-5' : 'pr-16'}`}>{children}</div>
+        {/* ⚠ EL HUECO DE LA X NO SE LE COBRA A TODO EL CONTENIDO.
+            Estaba con `pr-16` en el contenedor entero, así que la X reservaba
+            una franja de 64px A LO LARGO DE TODO EL MODAL: el formulario se
+            corría a la izquierda y quedaba un canal vacío hasta abajo.
+            Reportado: «le pone un borde lateral a todo el modal y se ve
+            terrible».
+            La X solo estorba en su propia altura, así que el sitio se hace con
+            un `float` de esa altura y el resto del contenido usa el ancho
+            completo. */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {!title && <div aria-hidden className="float-right h-9 w-12" />}
+          {children}
+        </div>
 
         {footer && (
           <div className="shrink-0 px-5 py-4 flex items-center justify-end gap-3" style={{ borderTop: '1px solid var(--cf-border)' }}>
