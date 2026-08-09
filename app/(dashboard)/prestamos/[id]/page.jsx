@@ -43,7 +43,7 @@ import {
 import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
-import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import { SINONIMOS_GESTION, EXTRAS_PRESTAMO } from '@/lib/acciones/prestamo'
 // Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
@@ -1049,7 +1049,7 @@ export default function PrestamoDetallePage({ params }) {
    *
    * `hacer()` abre su modal directamente, así que no hace falta abrir antes la
    * hoja: se llega en un toque en vez de tres. */
-  const accionesBuscables = useMemo(() => [
+  const accionesBuscables = [
     ...gruposGestion.flatMap((g) => g.acciones).map((a) => ({
       id: `prestamo-${a.id}`,
       label: a.nombre,
@@ -1073,9 +1073,7 @@ export default function PrestamoDetallePage({ params }) {
       sinonimos: EXTRAS_PRESTAMO[4].sinonimos,
       disponible: Boolean(cliente?.telefono),
       ejecutar: () => setModalWA(true) },
-  ], [gruposGestion, estaActivo, completado, mostrarAtajosCobro, cliente?.telefono])
-
-  useRegistrarAcciones('prestamo', accionesBuscables)
+  ]
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1448,6 +1446,7 @@ export default function PrestamoDetallePage({ params }) {
             y esto es el atajo para quien no los va a abrir. Escribe «quiero
             renovar este préstamo» y se abre la hoja de renovar, sin pasar por
             el chip ni por el menú. */}
+        <RegistrarAcciones clave="prestamo" acciones={accionesBuscables} />
         <QueNecesitas ejemplos={['renovar', 'cancelar', 'cambiar el plazo']} />
 
       {/* ── LA FICHA DE T41-01 ──

@@ -93,3 +93,22 @@ export function useRegistrarAcciones(clave, lista) {
     return ctx.registrar(clave, envueltas)
   }, [ctx, clave, firma])
 }
+
+/**
+ * Registra desde el JSX en vez de desde el cuerpo del componente.
+ *
+ * ⚠ ESTO NO ES UN CAPRICHO: llamar al hook en el cuerpo de una pantalla larga
+ * lo pone DESPUÉS de sus retornos tempranos (cargando, no encontrado…), y
+ * entonces el número de hooks cambia entre renders. React lo corta con el error
+ * #310, «rendered more hooks than during the previous render», y la pantalla se
+ * queda en blanco.
+ *
+ * Dentro de un componente propio los hooks son suyos y el orden nunca cambia,
+ * porque solo se monta cuando la pantalla ya decidió pintarse.
+ *
+ *   <RegistrarAcciones clave="prestamo" acciones={accionesBuscables} />
+ */
+export function RegistrarAcciones({ clave, acciones }) {
+  useRegistrarAcciones(clave, acciones)
+  return null
+}
