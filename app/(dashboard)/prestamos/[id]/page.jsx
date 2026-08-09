@@ -1068,6 +1068,11 @@ export default function PrestamoDetallePage({ params }) {
     { id: 'prestamo-historial', label: 'Ver y gestionar los pagos', pista: 'En este préstamo',
       sinonimos: EXTRAS_PRESTAMO[2].sinonimos,
       // El acordeón arranca cerrado a propósito; desde aquí se abre.
+      //
+      // ⚠ Y HAY QUE IR A ENSEÑARLO. Abrirlo y quedarse arriba es lo que el
+      // dueño reportó como «le doy clic allí y no hace nada»: el acordeón vive
+      // 1.500px más abajo. El ancla ya existía para «Ver los N pagos».
+      llevarA: 'cf-historial-pagos',
       ejecutar: () => setHistorialOpen(true) },
     { id: 'prestamo-whatsapp', label: 'Escribirle por WhatsApp', pista: 'En este préstamo',
       sinonimos: EXTRAS_PRESTAMO[4].sinonimos,

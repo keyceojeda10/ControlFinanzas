@@ -517,10 +517,21 @@ export default function ClienteDetallePage({ params }) {
     { id: 'cli-qr', label: 'Ver el QR del cliente', pista: 'Para cobrarle escaneando',
       sinonimos: ['qr', 'codigo', 'escanear'],
       ejecutar: () => setModalQR(true) },
-    { id: 'cli-festivo', label: 'Marcar hoy como festivo', pista: 'Hoy no se le cobra',
+    /* ⚠ ESTA LLEVA, NO EJECUTA, Y ES A PROPÓSITO.
+     *
+     * El botón es un interruptor: si hoy YA está marcado como festivo, vuelve a
+     * pulsarlo y lo quita. Dispararlo a ciegas desde un buscador podía
+     * desmarcar el festivo de TODO el negocio sin que nadie lo viera —el botón
+     * está al final de la ficha—. Y marcar festivo cambia lo que se le cobra a
+     * la cartera entera ese día.
+     *
+     * Así que aquí se reconoce la palabra y se lleva al botón; el dedo lo pone
+     * la persona, viendo si dice «Festivo hoy» o «Hoy es festivo». */
+    { id: 'cli-festivo', label: 'Marcar hoy como festivo', pista: 'Te llevo al botón',
       sinonimos: ['festivo', 'hoy no se cobra', 'dia sin cobro', 'feriado'],
       disponible: esOwner,
-      ejecutar: () => marcarFestivoHoy() },
+      llevarA: 'cf-festivo-hoy',
+      ejecutar: () => {} },
     { id: 'cli-historial', label: 'Ver el historial del cliente', pista: 'Todo lo que ha pagado',
       sinonimos: ['historial', 'todo lo que ha pagado', 'sus pagos', 'antecedentes'],
       ejecutar: () => router.push(`/clientes/${cliente?.id}/historial`) },
@@ -904,6 +915,7 @@ export default function ClienteDetallePage({ params }) {
       {/* Festivo hoy (solo owner) */}
       {esOwner && (
         <button
+          id="cf-festivo-hoy"
           onClick={festivoHoy ? quitarFestivoHoy : marcarFestivoHoy}
           disabled={guardandoFestivo}
           className={[

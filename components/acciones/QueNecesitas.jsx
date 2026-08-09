@@ -44,6 +44,25 @@ export default function QueNecesitas({
   // que no tenerla.
   if (!acciones.length) return null
 
+  /* ⚠ EJECUTAR NO ES SUFICIENTE: HAY QUE LLEVAR.
+   *
+   * Reportado con captura y flecha: se escribe «Gest», sale «Ver y gestionar
+   * los pagos», se pulsa y NO PASA NADA. Y sí pasaba — abría el acordeón del
+   * historial, que vive 1.500px más abajo. El estado cambiaba, la pantalla no
+   * se movía, y desde arriba eso se lee como un botón roto.
+   *
+   * Un modal se ve solo. Lo que se abre DENTRO de la página hay que ir a
+   * enseñarlo: la acción declara `llevarA` con el id de su destino. */
+  const ejecutarYLlevar = (a) => {
+    a.ejecutar?.()
+    if (!a.llevarA) return
+    // Con retraso: React todavía no ha pintado lo que se acaba de abrir.
+    setTimeout(() => {
+      document.getElementById(a.llevarA)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+  }
+
   return (
     /* 46 de alto y radio de control (14): la misma medida que el buscador de
        clientes y que el conmutador de vista. Antes era una tarjeta de 18 con
@@ -84,7 +103,7 @@ export default function QueNecesitas({
             <button
               key={a.id}
               type="button"
-              onClick={() => { setTexto(''); a.ejecutar?.() }}
+              onClick={() => { setTexto(''); ejecutarYLlevar(a) }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 gap: 10, width: '100%', textAlign: 'left', font: 'inherit',

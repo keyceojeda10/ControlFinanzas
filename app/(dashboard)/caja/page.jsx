@@ -1252,7 +1252,10 @@ export default function CajaPage() {
     { id: 'caja-reabrir', label: 'Reabrir un cierre ya hecho', pista: 'Volver a editar el día',
       sinonimos: ['reabrir', 'volver a abrir', 'me equivoque al cerrar', 'editar el cierre',
         'deshacer el cierre'],
-      disponible: esOwner,
+      /* ⚠ Solo si HAY un cierre que reabrir. Sin él, `modoAjusteCierre` se
+         encendía y no se veía nada: se ofrecía deshacer algo que no existe. */
+      disponible: esOwner && cierres.some((c) => c.cobradorId === ownerId),
+      llevarA: 'cf-cierre-owner',
       ejecutar: () => reabrirCierreOwner() },
     { id: 'caja-capital', label: 'Meter o sacar plata del fondo', pista: 'Está en Mi plata, te llevo',
       sinonimos: ['meter plata', 'sacar plata', 'meter capital', 'sacar capital', 'inyeccion',
@@ -1759,7 +1762,9 @@ export default function CajaPage() {
         const mostrarFormulario = !cierreOwner || modoAjusteCierre
 
         return (
-          <Card>
+          /* `id` para que «Reabrir un cierre» traiga la vista hasta aquí:
+             encender el modo y no moverse se lee como un botón roto. */
+          <Card id="cf-cierre-owner">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">
                 Mi cierre del día

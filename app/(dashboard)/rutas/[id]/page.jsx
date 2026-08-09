@@ -1130,9 +1130,15 @@ export default function RutaDetallePage({ params }) {
     { id: 'ruta-empezar', label: 'Empezar el recorrido', pista: 'Cliente por cliente',
       sinonimos: ['empezar', 'salir a cobrar', 'recorrido', 'arrancar la ruta'],
       ejecutar: () => setEnRecorrido(true) },
+    /* ⚠ `/api/rutas/[id]/hoja` NO EXISTE Y NUNCA EXISTIÓ.
+     * Abría una pestaña con un 404 en blanco. El botón de verdad —el de la
+     * fila de chips— usa `window.print()`, que imprime esta misma pantalla con
+     * su CSS de impresión. Yo copié la llamada inventada en vez de mirar qué
+     * hacía el botón que ya estaba. */
     { id: 'ruta-hoja', label: 'Imprimir la hoja de la ruta', pista: 'Para llevarla en papel',
       sinonimos: ['imprimir', 'hoja', 'papel', 'planilla', 'listado para la calle'],
-      ejecutar: () => window.open(`/api/rutas/${id}/hoja`, '_blank') },
+      disponible: (ruta?.clientes?.length ?? 0) > 0,
+      ejecutar: () => window.print() },
     { id: 'ruta-caja', label: 'Cerrar la caja del día', pista: 'De esta ruta',
       sinonimos: ['cerrar caja', 'cuadrar', 'entregar la plata', 'cierre del dia'],
       ejecutar: () => setModalCaja(true) },
@@ -1988,7 +1994,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         migaVolver={`Rutas · ${ruta.nombre}`}
         onVolver={() => router.push('/rutas')}
         acciones={[
-          { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.open(`/api/rutas/${id}/hoja`, '_blank') },
+          // Mismo 404 que arriba: en escritorio llevaba meses abriendo una
+          // pestaña vacía. `window.print()` es lo que hace el botón de móvil.
+          { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.print() },
           // ⚠ `abrirModalClientes`, NO `setModalClientes`: la que trae la lista
           // es la primera (hace el fetch de `/api/clientes` y separa los que no
           // tienen ruta). Con `setModalClientes` el modal abria VACIO y decia
