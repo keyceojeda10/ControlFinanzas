@@ -1,7 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
-import { useState, useEffect, useRef, useCallback, use } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
