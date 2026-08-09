@@ -43,6 +43,9 @@ import {
 import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
+import { useRegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
+import { SINONIMOS_GESTION, EXTRAS_PRESTAMO } from '@/lib/acciones/prestamo'
 // Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
@@ -1033,6 +1036,46 @@ export default function PrestamoDetallePage({ params }) {
     return g
   })()
 
+  /* ══ LO QUE SE PUEDE HACER AQUÍ, PARA QUE SE PUEDA BUSCAR ═════════════════
+   *
+   * «La gente entra a un préstamo y no sabe cómo cancelarlo o renovarlo,
+   * entonces escriben por WhatsApp.» Y es verdad: renovar y cancelar están en
+   * el TERCER nivel, dentro de la hoja «Gestión».
+   *
+   * ⚠ Se DERIVAN de `gruposGestion`, no se vuelven a listar. Duplicarlas sería
+   * garantizar que un día se separen: se añade una fila al menú y la búsqueda
+   * no la encuentra. Lo único que se añade son los sinónimos, que es lo que no
+   * está escrito en ninguna parte — cómo llama la gente a cada cosa.
+   *
+   * `hacer()` abre su modal directamente, así que no hace falta abrir antes la
+   * hoja: se llega en un toque en vez de tres. */
+  const accionesBuscables = useMemo(() => [
+    ...gruposGestion.flatMap((g) => g.acciones).map((a) => ({
+      id: `prestamo-${a.id}`,
+      label: a.nombre,
+      pista: a.valor ? String(a.valor) : 'En este préstamo',
+      sinonimos: SINONIMOS_GESTION[a.id] ?? [],
+      ejecutar: () => a.hacer?.(),
+    })),
+    { id: 'prestamo-pagar', label: 'Registrar un pago', pista: 'En este préstamo',
+      sinonimos: EXTRAS_PRESTAMO[0].sinonimos,
+      disponible: estaActivo && !completado,
+      ejecutar: () => abrirPagoNormal() },
+    { id: 'prestamo-abonos', label: 'Abonos y atajos de cobro', pista: 'En este préstamo',
+      sinonimos: EXTRAS_PRESTAMO[1].sinonimos,
+      disponible: mostrarAtajosCobro,
+      ejecutar: () => setModalAtajosCobro(true) },
+    { id: 'prestamo-historial', label: 'Ver y gestionar los pagos', pista: 'En este préstamo',
+      sinonimos: EXTRAS_PRESTAMO[2].sinonimos,
+      // El acordeón arranca cerrado a propósito; desde aquí se abre.
+      ejecutar: () => setHistorialOpen(true) },
+    { id: 'prestamo-whatsapp', label: 'Escribirle por WhatsApp', pista: 'En este préstamo',
+      sinonimos: EXTRAS_PRESTAMO[4].sinonimos,
+      disponible: Boolean(cliente?.telefono),
+      ejecutar: () => setModalWA(true) },
+  ], [gruposGestion, estaActivo, completado, mostrarAtajosCobro, cliente?.telefono])
+
+  useRegistrarAcciones('prestamo', accionesBuscables)
 
   const abrirPagoNormal = () => {
     setPresetPago(null)
@@ -1396,7 +1439,16 @@ export default function PrestamoDetallePage({ params }) {
             }] : []),
           ]}
         />
+
       )}
+
+        {/* ⚠ LA ENTRADA PARA QUIEN NO SABE QUE HAY UN BUSCADOR.
+            Va JUSTO DEBAJO de los chips a propósito: los chips son la puerta a
+            los tres niveles de escondite —«Gestión · Renovar, plazo, ajustes»—
+            y esto es el atajo para quien no los va a abrir. Escribe «quiero
+            renovar este préstamo» y se abre la hoja de renovar, sin pasar por
+            el chip ni por el menú. */}
+        <QueNecesitas ejemplos={['renovar', 'cancelar', 'cambiar el plazo']} />
 
       {/* ── LA FICHA DE T41-01 ──
           Sustituye al hero con donut y sparkline, y a la grilla de datos en tres

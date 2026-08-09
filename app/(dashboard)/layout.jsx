@@ -22,6 +22,8 @@ import CompletarTelefonoModal from '@/components/layout/CompletarTelefonoModal'
 import NovedadesModal from '@/components/layout/NovedadesModal'
 import UbicacionProvider from '@/components/providers/UbicacionProvider'
 import SesionTracker from '@/components/providers/SesionTracker'
+import { AccionesProvider } from '@/components/acciones/AccionesProvider'
+import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -66,6 +68,11 @@ export default async function DashboardLayout({ children }) {
      y en la base (`User.avatarId`), pero nadie se lo pasaba al armazón. */
   const avatarId = session?.user?.avatarId ?? null
   return (
+    /* ⚠ EL PROVEEDOR VA POR FUERA DE TODO, incluido el buscador global.
+       Cada pantalla apunta sus acciones al montarse y el buscador las lee: si
+       el proveedor estuviera dentro del árbol de las pantallas, el buscador
+       —que se monta al final de este mismo layout— no las vería. */
+    <AccionesProvider>
     <Armazon nombre={nombre} rol={session?.user?.rol ?? ''} avatarId={avatarId}>
     {/* El país de la organización, para las 465 llamadas a `formatMoney` que no
         lo pasan. Ver el porqué en el propio componente. */}
@@ -134,6 +141,10 @@ export default async function DashboardLayout({ children }) {
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
 
+      {/* La guía de instalación, con timbre global: hasta ahora no se podía
+          enlazar desde ningún sitio. Ver el porqué en el componente. */}
+      <PuertaInstalacion />
+
       {/* Modal completar telefono (owners sin telefono) */}
       <CompletarTelefonoModal />
 
@@ -150,5 +161,6 @@ export default async function DashboardLayout({ children }) {
       <Analytics />
     </div>
     </Armazon>
+    </AccionesProvider>
   )
 }

@@ -34,6 +34,8 @@ import { obtenerClientesOffline, obtenerRutasOffline } from '@/lib/offline'
 import { aFilasBusqueda } from '@/lib/adaptadores/busqueda'
 import { leerRecientes } from '@/lib/recientes'
 import { BusquedaGlobal } from '@/components/pantallas/Estados'
+import { buscarAcciones } from '@/lib/acciones/registro'
+import { useAcciones } from '@/components/acciones/AccionesProvider'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
@@ -178,9 +180,14 @@ export default function GlobalSearch() {
     debounceRef.current = setTimeout(() => search(val), 300)
   }
 
-  const ir = useCallback((href) => {
-    if (!href) return
+  /* Una fila puede ser un sitio al que ir o algo que HACER aquí mismo. Las
+     acciones de la pantalla abren modales que viven en su propio estado, así
+     que no hay `href` al que empujar: se cierra el buscador y se llama a lo que
+     la pantalla apuntó. Ver components/acciones/AccionesProvider.jsx. */
+  const ir = useCallback((href, hacer) => {
+    if (!href && !hacer) return
     setOpen(false)
+    if (hacer) { hacer(); return }
     router.push(href)
   }, [router])
 
@@ -193,21 +200,48 @@ export default function GlobalSearch() {
   // Y con dos letras, buscar a Carlos lo dejaba debajo de «cartera» y «carga
   // masiva». Este buscador es para llegar a una PERSONA; los destinos son un
   // extra que no puede mandar sobre lo que se vino a buscar.
+  /* ⚠ LAS ACCIONES DE ESTA PANTALLA VAN PRIMERO, y es la única cosa que se
+     pone por delante de la gente.
+     El motivo: si estás dentro de un préstamo y escribes «renovar», lo que
+     quieres es renovar ESE préstamo, no encontrar a un cliente que se llame
+     así. Fuera de una pantalla con acciones registradas esto es una lista
+     vacía y todo queda como estaba.
+     Es lo que arregla el problema reportado: «la gente entra a un préstamo y no
+     sabe cómo cancelarlo o renovarlo, entonces escriben por WhatsApp». */
+  const accionesPantalla = useAcciones()
   const filas = useMemo(() => {
     const texto = query.trim()
     if (texto.length === 0) return []
+
+    const acciones = texto.length < 2 ? [] : buscarAcciones(accionesPantalla, texto, 4).map((a) => ({
+      id: `acc-${a.id}`,
+      tipo: 'accion',
+      nombre: a.label,
+      detalle: a.pista || 'Aquí mismo',
+      iniciales: '›',
+      hacer: a.ejecutar,
+    }))
+
     const gente = aFilasBusqueda(results)
-    // Desde dos letras, igual que la API: con una sola, «a» los trae todos.
-    const destinos = texto.length < 2 ? [] : comandosFiltrados.slice(0, 3).map((c) => ({
+
+    /* Desde dos letras, igual que la API: con una sola, «a» los trae todos.
+       ⚠ El tope sube de 3 a 6 cuando NO hay gente que enseñar. Estaba clavado
+       en 3 para que los destinos no taparan a las personas —correcto—, pero con
+       eso «instalar aplicación» podía quedarse fuera aunque acertara de lleno.
+       Si no hay personas, no hay a quién tapar. */
+    const cupo = gente.length ? 3 : 6
+    const destinos = texto.length < 2 ? [] : comandosFiltrados.slice(0, cupo).map((c) => ({
       id: `cmd-${c.id}`,
       tipo: 'comando',
       nombre: c.label,
       detalle: c.sub,
       iniciales: '›',
       href: c.href,
+      hacer: c.evento ? () => window.dispatchEvent(new Event(c.evento)) : undefined,
     }))
-    return [...gente, ...destinos]
-  }, [comandosFiltrados, results, query])
+
+    return [...acciones, ...gente, ...destinos]
+  }, [accionesPantalla, comandosFiltrados, results, query])
 
   // Teclado: solo tiene sentido con teclado, o sea en escritorio.
   useEffect(() => {
@@ -221,7 +255,7 @@ export default function GlobalSearch() {
         setSelected((p) => Math.max(p - 1, 0))
       } else if (e.key === 'Enter' && filas[selected]) {
         e.preventDefault()
-        ir(filas[selected].href)
+        ir(filas[selected].href, filas[selected].hacer)
       }
     }
     window.addEventListener('keydown', handler)
@@ -257,7 +291,7 @@ export default function GlobalSearch() {
           recientes={recientes}
           atajos={atajos}
           onAtajo={(a) => ir(a.href)}
-          onAbrir={(f) => ir(f.href)}
+          onAbrir={(f) => ir(f.href, f.hacer)}
           resultados={filas}
           vacio={
             loading ? 'Buscando…'
