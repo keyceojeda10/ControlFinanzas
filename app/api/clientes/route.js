@@ -29,7 +29,6 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url)
   const buscar = searchParams.get('buscar')?.trim() ?? ''
-  const grupo = searchParams.get('grupo')?.trim() ?? ''
   const rutaIdFiltro = searchParams.get('rutaId')?.trim() ?? ''
   const page = searchParams.get('page') ? Number(searchParams.get('page')) : null
   const limit = Math.min(Number(searchParams.get('limit')) || 50, 100)
@@ -59,10 +58,6 @@ export async function GET(request) {
           { direccion: { contains: buscar } },
         ],
       }
-    : {}
-
-  const filtroGrupo = grupo
-    ? (grupo === '_none' ? { grupoCobroId: null } : { grupoCobroId: grupo })
     : {}
 
   /* ── DOS FILTROS QUE NO EXISTÍAN ─────────────────────────────────────────
@@ -135,7 +130,6 @@ export async function GET(request) {
   }
   if (Object.keys(filtroRuta).length) condiciones.push(filtroRuta)
   if (Object.keys(filtroBuscar).length) condiciones.push(filtroBuscar)
-  if (Object.keys(filtroGrupo).length) condiciones.push(filtroGrupo)
 
   const whereClause = { AND: condiciones }
 
@@ -154,7 +148,6 @@ export async function GET(request) {
       diasSinCobro: true,
       montoMaximoPrestamo: true,
       ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
-      grupoCobro: { select: { id: true, nombre: true, color: true } },
       prestamos: {
         where:  { estado: 'activo' },
         select: {
@@ -356,7 +349,6 @@ export async function GET(request) {
       estado:           calcularEstadoCliente(c.prestamos, diasExcluidos, festivos),
       rutaId:           c.rutaId,
       rutaNombre:       c.ruta?.nombre ?? null,
-      grupoCobro:       c.grupoCobro ?? null,
       prestamosActivos: c.prestamos.length,
       // El desglose del desplegable. Va ordenado por lo que se cobra ANTES:
       // abierto, lo primero que se lee es a cual hay que ir hoy.
@@ -528,7 +520,7 @@ export async function POST(request) {
   const body = await request.json()
   // `cedula` con `let`: cuando no viene se le pone el marcador «SIN-…» unas
   // lineas mas abajo, y con `const` eso seria un error en ejecucion.
-  const { nombre, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, grupoCobroId, diasSinCobro, posicionEnRuta } = body
+  const { nombre, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, posicionEnRuta } = body
   let { cedula } = body
 
   let diasSinCobroVal
@@ -577,7 +569,6 @@ export async function POST(request) {
           notas:      notas?.trim()      || null,
           fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
           rutaId:     rutaId || null,
-          grupoCobroId: grupoCobroId || null,
           estado:     'activo',
           eliminadoEn: null,
         },
@@ -608,17 +599,6 @@ export async function POST(request) {
     }
     if (!await rutaPermitida(organizationId, rutaId)) {
       return Response.json({ error: 'Esta ruta excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
-    }
-  }
-
-  // Si se envía grupoCobroId, verificar que pertenece a la organización
-  if (grupoCobroId) {
-    const grupo = await prisma.grupoCobro.findFirst({
-      where: { id: grupoCobroId, organizationId },
-      select: { id: true },
-    })
-    if (!grupo) {
-      return Response.json({ error: 'Grupo de cobro no válido' }, { status: 400 })
     }
   }
 
@@ -696,7 +676,6 @@ export async function POST(request) {
       notas:      notas?.trim()      || null,
       fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null,
       rutaId:     rutaFinal,
-      grupoCobroId: grupoCobroId || null,
       latitud:    lat,
       longitud:   lng,
       creadoPorId: session.user.id,

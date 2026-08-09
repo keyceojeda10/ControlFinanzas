@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export function Modal({ open, onClose, title, children, size = 'md', footer }) {
+export function Modal({ open, onClose, title, subtitle, children, size = 'md', footer, padding = true }) {
   const overlayRef = useRef(null)
   const dialogRef = useRef(null)
   const previousFocusRef = useRef(null)
@@ -100,7 +100,9 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
         aria-labelledby={title ? 'cf-modal-title' : undefined}
         className={[
           'relative w-full cf-modal-dialog',
-          'rounded-t-[20px] sm:rounded-[20px]',
+          /* El token, no un 20 a mano: `--cf-r-sheet` es 22px y es lo que ya
+             usa `HojaInferior`, que es la que sigue el handoff. */
+          'rounded-t-[var(--cf-r-sheet)] sm:rounded-[var(--cf-r-sheet)]',
           /* ⚠ `dvh`, NO `vh`. En Safari de iPhone `100vh` es la altura del
              viewport SIN la barra del navegador, así que `90vh` es MÁS ALTO que
              lo que se ve. Y como el modal se ancla abajo (`items-end`), lo que
@@ -117,38 +119,48 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           sizes[size] ?? sizes.md,
         ].join(' ')}
       >
-        {/* ══ ⚠ SIN TÍTULO NO HABÍA NINGUNA SALIDA ═══════════════════════════
-            La X vivía DENTRO de `{title && …}`, así que un modal sin título se
-            quedaba sin cabecera y sin forma de cerrarse. Le pasa a los dos que
-            traen su propio encabezado dentro —la FIRMA y RENOVAR— y son
-            justamente los que atrapan: en el de la firma, si no firmas no
-            puedes darle a «Listo», y no hay nada más que tocar.
+        {/* ══ ⚠ LA X NO FLOTA ═══════════════════════════════════════════════
+            Aquí había un CÍRCULO `absolute top-3 right-3`, y el hueco que le
+            hacía sitio —un `float-right`— vivía DENTRO del área que scrollea.
+            En cuanto se deslizaba, hueco y botón se separaban y el contenido
+            pasaba por debajo de la X. Reportado con captura de «Renovar»: la
+            X encima de la tarjeta del capital adeudado.
 
-            Aquí la X flota en la esquina, sobre el contenido, con fondo propio
-            para que se lea encima de lo que sea. Y el contenido gana margen a la
-            derecha (más abajo) para que no le caiga encima a un nombre largo:
-            «Firma aquí, …» ocupa todo el ancho. */}
+            Y el círculo iba contra una regla que ya estaba escrita:
+            «un botón nunca es circular; el 999px está reservado a cinco cosas
+            y ninguna es un botón de acción» (11-ESCALAS-Y-CONSISTENCIA).
+
+            Ahora, sin título, se pinta una cabecera CORTA en flujo con el
+            mismo botón cuadrado de la cabecera con título. En flujo el
+            contenido no puede pasarle por debajo, y no hay hueco que cuadrar
+            con nada. Le toca a los dos modales que traen su propio encabezado
+            dentro: la FIRMA y RENOVAR. */}
         {!title && (
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="absolute top-3 right-3 z-10 w-11 h-11 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
-            style={{
-              background: 'var(--cf-card)',
-              border: '1px solid var(--cf-border)',
-              color: 'var(--cf-ink-2)',
-              boxShadow: '0 1px 3px rgba(0,0,0,.08)',
-            }}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="shrink-0 flex justify-end px-2 pt-2">
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="w-11 h-11 flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
+              style={{ color: 'var(--cf-ink-2)' }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         )}
 
         {title && (
           <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
-            <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
+            {/* El subtítulo no es adorno: en «Renovar» dice de QUIÉN es el
+                préstamo que se cierra. Antes vivía dentro del cuerpo porque la
+                cabecera no sabía pintarlo. */}
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
+              {subtitle && (
+                <span className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{subtitle}</span>
+              )}
+            </div>
             <button
               onClick={onClose}
               aria-label="Cerrar"
@@ -162,17 +174,10 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }) {
           </div>
         )}
 
-        {/* ⚠ EL HUECO DE LA X NO SE LE COBRA A TODO EL CONTENIDO.
-            Estaba con `pr-16` en el contenedor entero, así que la X reservaba
-            una franja de 64px A LO LARGO DE TODO EL MODAL: el formulario se
-            corría a la izquierda y quedaba un canal vacío hasta abajo.
-            Reportado: «le pone un borde lateral a todo el modal y se ve
-            terrible».
-            La X solo estorba en su propia altura, así que el sitio se hace con
-            un `float` de esa altura y el resto del contenido usa el ancho
-            completo. */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {!title && <div aria-hidden className="float-right h-9 w-12" />}
+        {/* `padding={false}` para el contenido que trae el suyo: la hoja de
+            firma tiene su propio `14px 20px 16px` y con el `p-5` de aquí
+            quedaba doble margen y el lienzo estrecho. */}
+        <div className={padding ? 'flex-1 overflow-y-auto p-5' : 'flex-1 overflow-y-auto'}>
           {children}
         </div>
 

@@ -364,7 +364,6 @@ export default function RutaDetallePage({ params }) {
   const [guardandoDSC,   setGuardandoDSC]   = useState(false)
   const [festivoHoy,     setFestivoHoy]     = useState(null)
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
-  const [grupoFiltro,    setGrupoFiltro]    = useState(null)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
   const [busquedaRuta,   setBusquedaRuta]   = useState('')
   // Vista de la lista: 'trabajo' = 3 secciones (por cobrar/pagados/proximos) sin drag.
@@ -1430,7 +1429,6 @@ export default function RutaDetallePage({ params }) {
 
   const clientesFiltrados = (() => {
     let list = ruta?.clientes ?? []
-    if (grupoFiltro) list = list.filter(c => c.grupoCobro?.id === grupoFiltro)
     if (estadoFiltro === 'pendientes') list = list.filter(c => c.cobroPendienteHoy)
     else if (estadoFiltro === 'mora') list = list.filter(c => c.diasMora > 0)
     else if (estadoFiltro === 'pagados') list = list.filter(c => c.pagoHoy)
@@ -2275,7 +2273,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       <div>
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[var(--cf-surface)] py-2 -mx-1 px-1">
           <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide">
-            Clientes ({clientesFiltrados.length}{grupoFiltro ? ` de ${ruta.clientes?.length ?? 0}` : ''})
+            Clientes ({clientesFiltrados.length})
           </span>
           <span className="text-[10px] text-[#777]">
             {guardandoOrden && <span className="text-[var(--cf-ink-3)] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
@@ -2311,28 +2309,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           </div>
         )}
 
-        {/* Chips de filtro por grupo */}
-        {ruta.gruposCobro?.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1 mb-2">
-            <button
-              onClick={() => setGrupoFiltro(null)}
-              className={`shrink-0 h-9 px-3.5 rounded-full text-[11px] font-medium transition-all ${!grupoFiltro ? 'bg-white text-black' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] border border-[var(--cf-border)]'}`}
-            >
-              Todos
-            </button>
-            {ruta.gruposCobro.map(g => (
-              <button
-                key={g.id}
-                onClick={() => setGrupoFiltro(grupoFiltro === g.id ? null : g.id)}
-                className={`shrink-0 h-9 px-3.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 transition-all ${grupoFiltro === g.id ? 'bg-white text-black' : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] border border-[var(--cf-border)]'}`}
-              >
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: g.color || 'var(--cf-ink-2)' }} />
-                {g.nombre}
-                <span className="text-[11px] opacity-60">{g._count?.clientes ?? 0}</span>
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Toggle de vista: Trabajo del dia (3 secciones) vs Ordenar ruta (drag) vs Auditoria (admin) */}
         {ruta.clientes?.length > 0 && (

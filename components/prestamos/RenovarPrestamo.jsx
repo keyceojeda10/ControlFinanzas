@@ -178,7 +178,15 @@ export default function RenovarPrestamo({
     : null
 
   return (
-    <Modal open={open} onClose={handleClose}>
+    /* El título va en la CABECERA del modal, no dentro del cuerpo. Mientras
+       estuvo dentro, el modal no tenía cabecera y se le pintaba una X
+       flotante que al deslizar caía encima del capital adeudado. */
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Renovar el préstamo"
+      subtitle={clienteNombre ? `Cierra el de ${clienteNombre} y abre uno nuevo` : 'Cierra el actual y abre uno nuevo'}
+    >
       <div className="space-y-4">
 
         {/* -- T05-02, MONTADA --
@@ -194,8 +202,8 @@ export default function RenovarPrestamo({
             del prestamo -tasa, plazo, frecuencia, seguro- siguen enteras, ahora
             dentro del componente. */}
         <Renovar
-          titulo="Renovar el préstamo"
-          ayuda={clienteNombre ? `Cierra el de ${clienteNombre} y abre uno nuevo` : 'Cierra el actual y abre uno nuevo'}
+          titulo={null}
+          ayuda={null}
           saldoEtiqueta={modoUsaTabla ? 'Capital adeudado' : 'Saldo pendiente'}
           saldo={formatMoney(saldo)}
           saldoNota={`Se absorbe en el nuevo y el anterior queda como completado. Prestó ${formatMoney(montoAnterior)} · cuota ${formatMoney(cuotaAnterior)}.`}

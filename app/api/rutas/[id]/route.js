@@ -86,7 +86,6 @@ export async function GET(request, { params }) {
       cobrador: { select: { id: true, nombre: true, email: true, latitud: true, longitud: true, ubicacionUpdatedAt: true } },
       clientes: {
         include: {
-          grupoCobro: { select: { id: true, nombre: true, color: true } },
           prestamos: {
             // Se traen TODOS (incluido clavo): el cobro de hoy de un clavo sí suma al
             // recaudado de la ruta (dinero real). El lado negativo del clavo
@@ -132,23 +131,6 @@ export async function GET(request, { params }) {
   })
 
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
-
-  // Grupos de cobro son organizacionales; aquí se devuelven con conteo dentro de esta ruta.
-  const gruposBase = await prisma.grupoCobro.findMany({
-    where: { organizationId },
-    orderBy: { orden: 'asc' },
-    select: { id: true, nombre: true, color: true, orden: true, createdAt: true },
-  })
-
-  const conteoPorGrupo = (ruta.clientes ?? []).reduce((acc, c) => {
-    if (c.grupoCobroId) acc[c.grupoCobroId] = (acc[c.grupoCobroId] ?? 0) + 1
-    return acc
-  }, {})
-
-  const gruposCobro = gruposBase.map((g) => ({
-    ...g,
-    _count: { clientes: conteoPorGrupo[g.id] ?? 0 },
-  }))
 
   /* ── CUÁNDO TERMINÓ DE PAGAR CADA PRÉSTAMO LIQUIDADO (Adenda 5 · E09) ──
      La fila de «sin deuda» dice «Terminó de pagar el 4 de julio», y esa fecha
@@ -650,7 +632,6 @@ export async function GET(request, { params }) {
       // La fecha cruda además del rótulo: E09 escribe «le cobras el 19 de
       // agosto» y necesita formatearla ella, no heredar el formato corto.
       proximoCobroAt: proximoCobro,
-      grupoCobro: c.grupoCobro ?? null,
       // MVP geolocalizacion: pago mas reciente de hoy con coords, ya con distancia.
       // null cuando: el cobrador nego permiso, no hubo pago, o pago sin coords.
       pagoHoyGeo: pagoHoyGeoCliente
@@ -719,7 +700,6 @@ export async function GET(request, { params }) {
       capitalPendiente: Math.round(capitalPendiente),
     } : {}),
     cobrador:    ruta.cobrador,
-    gruposCobro,
     clientes:    clientesEnriquecidos,
     esperadoHoy: Math.round(esperadoHoy),
     recaudadoHoy: Math.round(recaudadoHoy),

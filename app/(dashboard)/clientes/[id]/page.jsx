@@ -603,6 +603,17 @@ export default function ClienteDetallePage({ params }) {
         onFotoActualizada={(url) => setCliente(prev => ({ ...prev, fotoUrl: url }))}
       />
 
+      {/* ⚠ ESTABA DEBAJO DE TODOS LOS PRÉSTAMOS.
+          Iba pegada a los chips de acciones, y los chips están al final: para
+          escribir «reagendar» había que pasar el hero, Lucas, el score, todos
+          los préstamos activos y las líneas de crédito. «Si la persona quiere
+          buscar algo enseguida, va a tener que bajar muy, muy abajo.»
+
+          Aquí arriba cabe porque ahora es UN renglón de 46px, no una tarjeta
+          de tres. Los préstamos siguen entrando en la primera pantalla. */}
+      <RegistrarAcciones clave="cliente" acciones={accionesCliente} />
+      <QueNecesitas ejemplos={['reagendar', 'ubicación', 'inactivar']} />
+
       {/* ══ E05 · Lucas, en vez del banner gris ══
           Era un aviso con chispa y ✕ que decía una frase sin salida. Ahora
           lleva el monto —el tope que TÚ le pusiste, no una cifra inventada— y
@@ -788,11 +799,6 @@ export default function ClienteDetallePage({ params }) {
           OJO: dentro del JSX el comentario VA CON LLAVES. Sin ellas se imprime
           en la pantalla — salio como parrafo en la ficha del cliente. Es la
           trampa contraria a la de `return (`, donde las llaves sobran. */}
-
-      {/* La caja va ANTES de los chips: los chips son cinco de las diez cosas
-          que se pueden hacer aquí; el resto vive en filas y en el carril. */}
-      <RegistrarAcciones clave="cliente" acciones={accionesCliente} />
-      <QueNecesitas ejemplos={['editar', 'reagendar', 'eliminar']} />
 
       {/* Acciones rapidas como chips */}
       {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (

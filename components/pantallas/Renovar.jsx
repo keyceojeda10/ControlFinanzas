@@ -66,13 +66,19 @@ export function Renovar({
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{
-          fontFamily: 'var(--font-space-grotesk), system-ui',
-          fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
-        }}>{titulo}</span>
-        <span style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{ayuda}</span>
-      </div>
+      {/* El encabezado se pinta SOLO si alguien lo pide. Dentro del modal ahora
+          lo lleva la cabecera de `Modal`, que es donde va la X: mientras el
+          titulo estuvo aqui, el modal se quedaba sin cabecera y le tocaba una X
+          flotante. La lamina sigue pudiendo pedirlo para verlo suelto. */}
+      {(titulo || ayuda) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {titulo && <span style={{
+            fontFamily: 'var(--font-space-grotesk), system-ui',
+            fontSize: 20, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)',
+          }}>{titulo}</span>}
+          {ayuda && <span style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{ayuda}</span>}
+        </div>
+      )}
 
       {/* LO QUE QUEDA DEL ACTUAL, primero. Es la cifra que el cliente ya debe y
           la que hace que el total del nuevo no sea lo que se entrega. */}

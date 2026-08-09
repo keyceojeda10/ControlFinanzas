@@ -234,7 +234,7 @@ export async function PATCH(request, { params }) {
     return Response.json(actualizado)
   }
 
-  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, grupoCobroId, montoMaximoPrestamo, camposRecibo } = body
+  const { nombre, cedula, telefono, direccion, referencia, notas, fotoUrl, rutaId, latitud, longitud, diasSinCobro, montoMaximoPrestamo, camposRecibo } = body
 
   if (montoMaximoPrestamo !== undefined) {
     if (session.user.rol !== 'owner') {
@@ -278,17 +278,6 @@ export async function PATCH(request, { params }) {
   let lat = latitud !== undefined ? latitud : undefined
   let lng = longitud !== undefined ? longitud : undefined
 
-  // Si se envía grupoCobroId, validar que pertenece a la organización
-  if (grupoCobroId !== undefined && grupoCobroId !== null && grupoCobroId !== '') {
-    const grupo = await prisma.grupoCobro.findFirst({
-      where: { id: grupoCobroId, organizationId: session.user.organizationId },
-      select: { id: true },
-    })
-    if (!grupo) {
-      return Response.json({ error: 'Grupo de cobro no válido' }, { status: 400 })
-    }
-  }
-
   // Validar cambios de ruta: owner puede reasignar (si existe en su org);
   // cobrador con permiso puede editar campos del cliente, pero no cambiar su ruta.
   if (rutaId !== undefined) {
@@ -324,7 +313,6 @@ export async function PATCH(request, { params }) {
       ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
       ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
       ...(rutaId        !== undefined && { rutaId:        rutaId        || null }),
-      ...(grupoCobroId !== undefined && { grupoCobroId: grupoCobroId || null }),
       ...(lat          !== undefined && { latitud:    lat }),
       ...(lng          !== undefined && { longitud:   lng }),
       ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),

@@ -31,6 +31,12 @@ export default function QueNecesitas({
 }) {
   const acciones = useAcciones()
   const [texto, setTexto] = useState('')
+  /* ⚠ EN REPOSO ES UNA LÍNEA, Y ANTES NO LO ERA.
+     El comentario de arriba decía «en reposo es una línea» y eran dos: la de
+     ejemplos solo se escondía al escribir. Medido en la lista de clientes:
+     83px por delante del título, y el texto partido en dos renglones a 412px.
+     Ahora los ejemplos salen al TOCAR el campo, que es cuando hacen falta. */
+  const [enfocado, setEnfocado] = useState(false)
   const encontradas = useMemo(() => buscarAcciones(acciones, texto, 5), [acciones, texto])
   const buscando = texto.trim().length >= 2
 
@@ -39,17 +45,27 @@ export default function QueNecesitas({
   if (!acciones.length) return null
 
   return (
+    /* 46 de alto y radio de control (14): la misma medida que el buscador de
+       clientes y que el conmutador de vista. Antes era una tarjeta de 18 con
+       padding propio, y en una fila con ellos desentonaba. */
     <div
       style={{
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-        borderRadius: 'var(--cf-r-card)', padding: '12px 14px',
+        borderRadius: 'var(--cf-r-control)',
       }}
     >
-      <label style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <label style={{
+        display: 'flex', alignItems: 'center', gap: 9,
+        height: 46, padding: '0 14px',
+      }}>
         <span style={{ color: 'var(--cf-ink-3)', display: 'flex' }}>{LUPA}</span>
         <input
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
+          onFocus={() => setEnfocado(true)}
+          /* Con retraso: sin él, el `blur` de tocar un resultado lo esconde
+             antes de que el clic llegue a dispararse. */
+          onBlur={() => setTimeout(() => setEnfocado(false), 150)}
           placeholder={titulo}
           /* ⚠ `type="text"`, no `search`: el navegador le pone su propia X y su
              propio alto, y deja de parecerse al resto de campos de la app. */
@@ -63,7 +79,7 @@ export default function QueNecesitas({
       </label>
 
       {buscando && (
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {encontradas.map((a) => (
             <button
               key={a.id}
@@ -104,8 +120,8 @@ export default function QueNecesitas({
         </div>
       )}
 
-      {!buscando && ejemplos.length > 0 && (
-        <p style={{ fontSize: 12, color: 'var(--cf-ink-4)', margin: '6px 0 0 25px' }}>
+      {enfocado && !buscando && ejemplos.length > 0 && (
+        <p style={{ fontSize: 12, color: 'var(--cf-ink-4)', margin: 0, padding: '0 14px 10px 39px' }}>
           Escribe lo que quieres hacer: {ejemplos.join(', ')}…
         </p>
       )}

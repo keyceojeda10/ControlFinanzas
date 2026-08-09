@@ -91,7 +91,6 @@ export async function POST(request) {
 
       // Wave 4: estructura
       await tx.ruta.deleteMany({ where: { organizationId: orgId } })
-      await tx.grupoCobro.deleteMany({ where: { organizationId: orgId } })
 
       // Wave 5: usuarios no-owner
       await tx.user.deleteMany({ where: { organizationId: orgId, rol: { not: 'owner' } } })

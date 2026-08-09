@@ -118,12 +118,6 @@ export default function ClienteCard({ cliente, actions, esNuevo }) {
                   Perdido
                 </span>
               )}
-              {cliente.grupoCobro && (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                  style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}>
-                  {cliente.grupoCobro.nombre}
-                </span>
-              )}
               {esNuevo && <NuevoChip />}
             </div>
             {actions?.length > 0 && <CardActionMenu actions={actions} />}

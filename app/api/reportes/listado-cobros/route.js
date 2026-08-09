@@ -142,11 +142,13 @@ export async function GET(req) {
        codigo —el bucle, los totales, el PDF— no tenga que saber que existe.
        `diasSinCobro: null` hace que herede los de la organizacion, que es lo
        correcto: un cliente sin ruta no tiene dias propios de ruta. */
-    const gruposCobro = sinRuta.length
+    /* El nombre viejo hablaba de grupos y no tenia NADA que ver con los
+       cobro que se retiraron: son las rutas mas el cajon de «Sin ruta». */
+    const rutasYSinRuta = sinRuta.length
       ? [...rutas, { id: null, nombre: 'Sin ruta', diasSinCobro: null, clientes: sinRuta }]
       : rutas
 
-    return { org, festivos, rutas: gruposCobro }
+    return { org, festivos, rutas: rutasYSinRuta }
   })
 
   const festArr = festivos.map(f => new Date(f.fecha).toISOString().slice(0, 10))

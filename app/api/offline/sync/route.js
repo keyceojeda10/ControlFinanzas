@@ -322,16 +322,6 @@ export async function GET() {
     fecha: fechaHoyStr,
   }
 
-  // ── 5. Grupos de cobro (para formulario de crear cliente offline) ──
-  let grupos = []
-  try {
-    grupos = await prisma.grupoCobro.findMany({
-      where: { organizationId: orgId },
-      select: { id: true, nombre: true },
-      orderBy: { nombre: 'asc' },
-    })
-  } catch {}
-
   // ── 6. Cobradores (para lista offline) ──
   let cobradoresLista = []
   if (rol === 'owner') {
@@ -350,7 +340,6 @@ export async function GET() {
     rutas,
     dashboard,
     caja,
-    grupos,
     cobradores: cobradoresLista,
     userId,
     rol,

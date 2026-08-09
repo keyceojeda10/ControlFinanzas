@@ -57,7 +57,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
     referencia: clienteInicial?.referencia ?? '',
     notas:      clienteInicial?.notas      ?? datosIniciales?.notas      ?? '',
     rutaId:     clienteInicial?.rutaId     ?? '',
-    grupoCobroId: clienteInicial?.grupoCobroId ?? '',
     latitud:    clienteInicial?.latitud    ?? null,
     longitud:   clienteInicial?.longitud   ?? null,
     montoMaximoPrestamo: clienteInicial?.montoMaximoPrestamo ?? '',
@@ -246,7 +245,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       notas:      form.notas.trim()      || undefined,
       rutaId:     form.rutaId || undefined,
       posicionEnRuta: form.rutaId && posicionEnRuta !== 'final' ? posicionEnRuta : undefined,
-      grupoCobroId: form.grupoCobroId || undefined,
       latitud:    form.latitud,
       longitud:   form.longitud,
       diasSinCobro: diasSinCobro.length > 0 ? diasSinCobro : null,
@@ -736,14 +734,6 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cargando clientes de la ruta...</p>
                 )}
               </>
-            )}
-            {grupos.length > 0 && (
-              <Select label="Grupo de cobro" tono="papel" value={form.grupoCobroId} onChange={set('grupoCobroId')}>
-                <option value="">Sin grupo</option>
-                {grupos.map((g) => (
-                  <option key={g.id} value={g.id}>{g.nombre}</option>
-                ))}
-              </Select>
             )}
 
             <div>

@@ -41,7 +41,6 @@ export async function GET() {
     const [
       usuarios,
       rutas,
-      gruposCobro,
       clientes,
       prestamos,
       pagos,
@@ -66,7 +65,6 @@ export async function GET() {
     ] = await Promise.all([
       prisma.user.findMany({ where: { organizationId: orgId } }),
       prisma.ruta.findMany({ where: { organizationId: orgId } }),
-      prisma.grupoCobro.findMany({ where: { organizationId: orgId } }),
       prisma.cliente.findMany({ where: { organizationId: orgId } }),
       prisma.prestamo.findMany({
         where: { organizationId: orgId },
@@ -117,7 +115,6 @@ export async function GET() {
       organizacion: org,
       usuarios: usuariosSinPassword,
       rutas,
-      gruposCobro,
       clientes,
       prestamos,
       pagos,

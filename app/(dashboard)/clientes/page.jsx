@@ -34,8 +34,6 @@ import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
 import { formatMoney, isHoy } from '@/lib/i18n'
 import { useCountry }    from '@/hooks/useCountry'
-import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
-import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 // Iconos para acciones swipe
 const IconWA = (
@@ -266,9 +264,6 @@ export default function ClientesPage() {
   const [ultimosCargados, setUltimosCargados] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [total,    setTotal]      = useState(0)
-  const [grupos,   setGrupos]     = useState([])
-  const [grupoFiltro, setGrupoFiltro] = useState('')
-  const [modalGrupos, setModalGrupos] = useState(false)
   // Modal selector de plantillas WhatsApp (se abre desde swipe)
   const [waCliente, setWaCliente] = useState(null)
   /* ── EL PRÉSTAMO DEL QUE SE ESCRIBE ─────────────────────────────────────
@@ -279,15 +274,6 @@ export default function ClientesPage() {
   const [waPrestamo, setWaPrestamo] = useState(null)
   // El cobro rápido desde la tarjeta: { cliente, prestamo }.
   const [cobroRapido, setCobroRapido] = useState(null)
-  const [tabModalGrupos, setTabModalGrupos] = useState('filtrar') // filtrar | gestionar
-  const [nuevoGrupo,  setNuevoGrupo]  = useState('')
-  const [grupoColor,  setGrupoColor]  = useState(null)
-  const [guardandoGrupo, setGuardandoGrupo] = useState(false)
-  const [editandoGrupo, setEditandoGrupo]   = useState(null)
-  const [modoAsignar, setModoAsignar] = useState(false)
-  const [selAsignar,  setSelAsignar]  = useState([])
-  const [grupoAsignar, setGrupoAsignar] = useState('')
-  const [asignandoGrupo, setAsignandoGrupo] = useState(false)
 
 
   const [rutaIdFiltro, setRutaIdFiltro] = useState('')
@@ -299,7 +285,7 @@ export default function ClientesPage() {
   // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
   // pantallas distintas. Una dice como empezar; la otra, como volver atras.
   const carteraVacia = !loading && !error && clientes.length === 0 &&
-    !buscar && !estado && !grupoFiltro && !rutaIdFiltro
+    !buscar && !estado && !rutaIdFiltro
   const [rutas,        setRutas]       = useState([])
   // Si hay sitio para la tabla. En un efecto, no leyendo `matchMedia` al
   // pintar: eso hace que el servidor diga una cosa y el cliente otra y React
@@ -430,12 +416,6 @@ export default function ClientesPage() {
     { id: 'vista', tipo: 'vistas', titulo: 'Tamaño de la ficha', valor: vista === 'lista' ? '' : vista,
       onCambiar: (v) => cambiarVista(v || 'lista'),
       opciones: OPCIONES_VISTA },
-    ...(grupos.length > 0 ? [{
-      id: 'grupo', titulo: 'Grupo de cobro', valor: grupoFiltro,
-      onCambiar: (v) => { setGrupoFiltro(v); setPage(1) },
-      opciones: [{ valor: '', nombre: 'Todos' },
-        ...grupos.map((g) => ({ valor: String(g.nombre ?? g), nombre: String(g.nombre ?? g) }))],
-    }] : []),
   ]
   const nFiltros = contarFiltros(gruposFiltro)
 
@@ -467,11 +447,11 @@ export default function ClientesPage() {
     }).catch(() => {})
   }, [esOwner])
 
-  const fetchClientes = useCallback(async (q, p, grupoId = '', rutaId = '', { soft = false, calculados = {} } = {}) => {
+  const fetchClientes = useCallback(async (q, p, rutaId = '', { soft = false, calculados = {} } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `clientes:${q || ''}:${p}:${grupoId || 'all'}:${rutaId || 'all'}`
+    const cacheKey = `clientes:${q || ''}:${p}:${rutaId || 'all'}`
 
     // Cache-first: si hay datos cacheados para este filtro, pintarlos al
     // instante y revalidar en segundo plano. Sin cache → skeleton.
@@ -501,11 +481,6 @@ export default function ClientesPage() {
               const ql = q.toLowerCase()
               filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
             }
-            if (grupoId) {
-              filtered = grupoId === '_none'
-                ? filtered.filter((c) => !c.grupoCobro?.id)
-                : filtered.filter((c) => c.grupoCobro?.id === grupoId)
-            }
             const start = (p - 1) * LIMIT
             cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
           }
@@ -520,7 +495,6 @@ export default function ClientesPage() {
     try {
       const params = new URLSearchParams()
       if (q) params.set('buscar', q)
-      if (grupoId) params.set('grupo', grupoId)
       if (rutaId) params.set('rutaId', rutaId)
       // Viene de la alerta "N clientes sin ruta asignada" del dashboard.
       // Se lee de window.location y NO del hook: este loader es un useCallback
@@ -572,11 +546,6 @@ export default function ClientesPage() {
               const ql = q.toLowerCase()
               filtered = filtered.filter(c => c.nombre?.toLowerCase().includes(ql) || c.cedula?.includes(ql) || c.telefono?.includes(ql))
             }
-            if (grupoId) {
-              filtered = grupoId === '_none'
-                ? filtered.filter((c) => !c.grupoCobro?.id)
-                : filtered.filter((c) => c.grupoCobro?.id === grupoId)
-            }
             const start = (p - 1) * LIMIT
             cached = { clientes: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
           }
@@ -598,42 +567,28 @@ export default function ClientesPage() {
     }
   }, [])
 
-  const fetchGrupos = useCallback(async () => {
-    try {
-      const res = await fetch('/api/grupos')
-      if (!res.ok) return
-      const data = await res.json()
-      setGrupos(Array.isArray(data) ? data : [])
-    } catch {}
-  }, [])
-
-  useEffect(() => {
-    fetchGrupos()
-  }, [fetchGrupos, lastSyncedAt])
-
   // Búsqueda -> volver a página 1
   useEffect(() => {
     setPage(1)
   }, [buscar])
 
-  // Cambiar filtro de grupo o ruta reinicia paginación y selección
+  // Cambiar el filtro de ruta reinicia la paginación
   useEffect(() => {
     setPage(1)
-    setSelAsignar([])
-  }, [grupoFiltro, rutaIdFiltro])
+  }, [rutaIdFiltro])
 
   // Carga de clientes con debounce
   useEffect(() => {
-    const t = setTimeout(() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro,
+    const t = setTimeout(() => fetchClientes(buscar, page, rutaIdFiltro,
       { soft: refreshKey > 0, calculados: { estado, mora: moraMin, pagaHoy, sinPrestamo } }), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo])
+  }, [fetchClientes, buscar, page, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {
     if (!lastSyncedAt) return
-    fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
-  }, [lastSyncedAt, fetchClientes, buscar, page, grupoFiltro, rutaIdFiltro])
+    fetchClientes(buscar, page, rutaIdFiltro, { soft: true })
+  }, [lastSyncedAt, fetchClientes, buscar, page, rutaIdFiltro])
 
   const getApiError = async (res, fallback) => {
     try {
@@ -642,122 +597,6 @@ export default function ClientesPage() {
       if (typeof data?.message === 'string' && data.message.trim()) return data.message
     } catch {}
     return fallback
-  }
-
-  const crearGrupo = async () => {
-    if (!nuevoGrupo.trim()) return
-    setGuardandoGrupo(true)
-    setError('')
-    try {
-      const res = await fetch('/api/grupos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: nuevoGrupo.trim(), color: grupoColor }),
-      })
-      if (!res.ok) {
-        setError(await getApiError(res, 'No se pudo crear el grupo.'))
-        return
-      }
-
-      setNuevoGrupo('')
-      setGrupoColor(null)
-      fetchGrupos()
-    } catch {
-      setError('No se pudo crear el grupo.')
-    } finally {
-      setGuardandoGrupo(false)
-    }
-  }
-
-  const editarGrupo = async (grupoId, data) => {
-    setError('')
-    try {
-      const res = await fetch(`/api/grupos/${grupoId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) {
-        setError(await getApiError(res, 'No se pudo actualizar el grupo.'))
-        return false
-      }
-
-      fetchGrupos()
-      fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
-      return true
-    } catch {}
-    setError('No se pudo actualizar el grupo.')
-    return false
-  }
-
-  const guardarNombreGrupo = async (grupo, valorCrudo) => {
-    const nombreLimpio = valorCrudo.trim()
-    if (!nombreLimpio) {
-      setError('El nombre del grupo no puede quedar vacío.')
-      setEditandoGrupo(null)
-      return
-    }
-    if (nombreLimpio === grupo.nombre) {
-      setEditandoGrupo(null)
-      return
-    }
-    await editarGrupo(grupo.id, { nombre: nombreLimpio })
-    setEditandoGrupo(null)
-  }
-
-  const eliminarGrupo = async (grupoId) => {
-    if (!confirm('¿Eliminar este grupo? Los clientes quedarán sin grupo.')) return
-    setError('')
-    try {
-      const res = await fetch(`/api/grupos/${grupoId}`, { method: 'DELETE' })
-      if (!res.ok) {
-        setError(await getApiError(res, 'No se pudo eliminar el grupo.'))
-        return
-      }
-
-      if (grupoFiltro === grupoId) setGrupoFiltro('')
-      fetchGrupos()
-      fetchClientes(buscar, page, grupoFiltro === grupoId ? '' : grupoFiltro, rutaIdFiltro, { soft: true })
-    } catch {
-      setError('No se pudo eliminar el grupo.')
-    }
-  }
-
-  const toggleSeleccion = (clienteId) => {
-    setSelAsignar((prev) =>
-      prev.includes(clienteId) ? prev.filter((id) => id !== clienteId) : [...prev, clienteId]
-    )
-  }
-
-  const asignarGrupoClientes = async () => {
-    if (!selAsignar.length || !grupoAsignar) return
-    setAsignandoGrupo(true)
-    setError('')
-    try {
-      const responses = await Promise.all(selAsignar.map((cid) =>
-        fetch(`/api/clientes/${cid}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ grupoCobroId: grupoAsignar === '_none' ? null : grupoAsignar }),
-        })
-      ))
-
-      const failed = responses.find((res) => !res.ok)
-      if (failed) {
-        setError(await getApiError(failed, 'No se pudo asignar el grupo a todos los clientes seleccionados.'))
-        return
-      }
-
-      setModoAsignar(false)
-      setSelAsignar([])
-      setGrupoAsignar('')
-      fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
-      fetchGrupos()
-    } catch {
-      setError('No se pudo asignar el grupo a los clientes seleccionados.')
-    } finally {
-      setAsignandoGrupo(false)
-    }
   }
 
   // ── LOS CONTEOS DE LOS CHIPS, SOBRE LA CARTERA ENTERA ──
@@ -770,69 +609,35 @@ export default function ClientesPage() {
     const p = new URLSearchParams({ soloConteos: '1' })
     if (buscar) p.set('buscar', buscar)
     if (rutaIdFiltro) p.set('rutaId', rutaIdFiltro)
-    if (grupoFiltro) p.set('grupo', grupoFiltro)
     fetch(`/api/clientes?${p}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (vivo && d) setConteos(d) })
       .catch(() => {})
     return () => { vivo = false }
-  }, [buscar, rutaIdFiltro, grupoFiltro, refreshKey])
+  }, [buscar, rutaIdFiltro, refreshKey])
   const moraCount = conteos?.mora ?? 0
-  const filtrosActivos = (estado ? 1 : 0) + (grupoFiltro ? 1 : 0) + (rutaIdFiltro ? 1 : 0)
+  const filtrosActivos = (estado ? 1 : 0) + (rutaIdFiltro ? 1 : 0)
   const tieneBusqueda = !!buscar.trim()
-  const grupoActivoLabel = grupoFiltro === '_none'
-    ? 'Sin grupo'
-    : (grupos.find((g) => g.id === grupoFiltro)?.nombre || '')
-  const hayControlesActivos = tieneBusqueda || filtrosActivos > 0 || modoAsignar
+  const hayControlesActivos = tieneBusqueda || filtrosActivos > 0
 
   const limpiarControles = () => {
     setBuscar('')
     setEstado('')
-    setGrupoFiltro('')
     setRutaIdFiltro('')
-    setModoAsignar(false)
-    setSelAsignar([])
-    setGrupoAsignar('')
   }
 
-  const abrirModoAsignar = () => {
-    setModoAsignar(true)
-    setSelAsignar([])
-    setGrupoAsignar('')
-    setModalGrupos(false)
-  }
-
-  const cancelarAsignacion = () => {
-    setModoAsignar(false)
-    setSelAsignar([])
-    setGrupoAsignar('')
-  }
-
-  /* ══ LO QUE SE PUEDE HACER EN LA LISTA DE CLIENTES ═══════════════════════
-   * La pantalla más transversal que hay: 192 negocios crearon clientes en dos
-   * meses, 95 los editaron y 90 los borraron. Aquí no hay «dolor de función
-   * rara»: hay funciones buenas que nadie ve. Los grupos de cobro llevaban
-   * meses sin una sola forma de abrirse. */
-  const accionesClientes = [
-    { id: 'clientes-nuevo', label: 'Crear un cliente nuevo', pista: 'Nombre, teléfono, dirección',
-      sinonimos: ['nuevo cliente', 'crear cliente', 'agregar cliente', 'meter un cliente',
-        'ingresar cliente', 'registrar cliente'],
-      ejecutar: () => router.push('/clientes/nuevo') },
-    { id: 'clientes-grupos', label: 'Grupos de cobro', pista: 'Agrupar clientes y filtrar por grupo',
-      sinonimos: ['grupos', 'grupo de cobro', 'agrupar clientes', 'crear un grupo',
-        'separar clientes', 'categorias'],
-      ejecutar: () => setModalGrupos(true) },
-    { id: 'clientes-filtros', label: 'Filtrar la lista', pista: 'Por estado, ruta, frecuencia',
-      sinonimos: ['filtrar', 'filtros', 'ver solo los que deben', 'en mora', 'por ruta',
-        'buscar por estado'],
-      ejecutar: () => setHojaFiltros(true) },
-    { id: 'clientes-vista', label: 'Cambiar entre tabla y fichas', pista: 'Cómo se ve la lista',
-      sinonimos: ['tabla', 'ver en tabla', 'vista', 'cambiar la vista', 'fichas', 'lista'],
-      ejecutar: () => setVista((v) => (v === 'tabla' ? 'lista' : 'tabla')) },
-  ]
+  /* ══ AQUÍ NO VA EL BUSCADOR DE ACCIONES ══════════════════════════════════
+   *
+   * Lo tuvo un día. Con los grupos de cobro fuera, lo único que le quedaba por
+   * ofrecer era «nuevo cliente», «filtros» y «cambiar vista» — y las tres
+   * tienen botón a la vista. Un buscador que solo repite lo que ya se ve es
+   * ruido, y aquí costaba 83px por delante del título.
+   *
+   * Donde sí está es en la FICHA del cliente, que esconde de verdad: reagendar,
+   * fijar el GPS, marcar festivo, el QR, inactivar sin borrar. */
 
   return (
-    <div className={`max-w-3xl lg:max-w-6xl mx-auto ${modoAsignar ? 'pb-40 lg:pb-28' : ''}`}>
+    <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* Cartera vacía DE VERDAD, no "el filtro no devolvió nada". */}
       {/* eslint-disable-next-line no-unused-vars */}
       {null}
@@ -860,12 +665,6 @@ export default function ClientesPage() {
           quitarlo salvo borrar el parámetro a mano de la barra de direcciones. */}
       <AvisoFiltroUrl />
 
-      {/* ⚠ «Grupos» acaba de dejar de ser inalcanzable: el modal existía entero
-          y `setModalGrupos` no lo llamaba NADIE. Registrarlo aquí es la segunda
-          puerta, por si el botón nuevo tampoco se ve. */}
-      <RegistrarAcciones clave="clientes" acciones={accionesClientes} />
-      <QueNecesitas ejemplos={['nuevo cliente', 'grupos', 'ver en tabla']} />
-
       <div className="flex flex-col gap-3 mb-3">
         {/* ── El encabezado de T02-05 ──
             «Clientes» y a la derecha «31 · 20 en mora», con la mora en rojo.
@@ -890,15 +689,15 @@ export default function ClientesPage() {
             esta pagina DESDE SIEMPRE, sin ningun control que lo cambiara: solo
             se podia poner llegando con `?rutaId=` en la URL.
 
-            Los dos que van aqui —ruta y grupo de cobro— son los que el
-            servidor sabe filtrar de verdad, sobre TODA la cartera. No se añaden
+            El que va aqui —la ruta— es el que el servidor sabe filtrar de
+            verdad, sobre TODA la cartera. No se añaden
             los de mora ni «le toca hoy» todavia porque `/api/clientes` no los
             acepta: filtrarlos en el navegador solo miraria los 50 de esta
             pagina, y un filtro que MIENTE es peor que no tenerlo. */}
         <HojaFiltros
           abierta={hojaFiltros}
           onCerrar={() => setHojaFiltros(false)}
-          onLimpiar={() => { setRutaIdFiltro(''); setGrupoFiltro(''); setMoraMin('')
+          onLimpiar={() => { setRutaIdFiltro(''); setMoraMin('')
             setPagaHoy(false); setSinPrestamo(false); setPage(1) }}
           grupos={gruposFiltro}
         />
@@ -918,7 +717,7 @@ export default function ClientesPage() {
             <BuscadorLista
               valor={buscar}
               onCambiar={(e) => { setBuscar(e.target.value); setPage(1) }}
-              placeholder={modoAsignar ? 'Buscar para asignar…' : 'Nombre o cédula'}
+              placeholder="Nombre o cédula"
             />
           </div>
           {/* ── POR QUÉ VUELVE A ESTAR AQUÍ, TAMBIÉN EN MÓVIL ──
@@ -942,41 +741,19 @@ export default function ClientesPage() {
               desplaza en horizontal, y una pieza que hay que poder pulsar
               siempre no puede irse fuera de la pantalla al deslizar. Eso ya
               pasó con el propio botón de filtros en la versión vieja. */}
-          {!modoAsignar && (
-            <ConmutadorVista
-              valor={vista === 'lista' ? '' : vista}
-              onCambiar={(v) => cambiarVista(v || 'lista')}
-              opciones={OPCIONES_VISTA}
-            />
-          )}
+          {/* ⚠ Y NADA MÁS EN ESTA FILA.
+              Aquí hubo un botón «Grupos» de 36px al lado de dos piezas de 46,
+              con radio 12 donde el resto usa 14, y con `shrink-0`: se comía
+              ~93px y al input le quedaban ~124, así que «Nombre o cédula»
+              salía cortado. El canon ya tenía la respuesta —«si algo no cabe,
+              se quita contenido, no se encoge el elemento»— y lo que sobraba
+              era el botón. */}
+          <ConmutadorVista
+            valor={vista === 'lista' ? '' : vista}
+            onCambiar={(v) => cambiarVista(v || 'lista')}
+            opciones={OPCIONES_VISTA}
+          />
 
-          {/* ⚠ ESTE BOTÓN NO EXISTÍA, Y EL MODAL SÍ.
-              «Grupos de cobro» —crearlos, renombrarlos, darles color, filtrar
-              por grupo y asignar un grupo a varios clientes de golpe— estaba
-              entero y era INALCANZABLE: `setModalGrupos` no se llamaba desde
-              ninguna parte del archivo. Una función terminada que nadie podía
-              usar, en la pantalla más usada de la app (192 negocios crean
-              clientes, 95 los editan).
-              No lo vio ninguna prueba: el modal se renderiza, el estado existe,
-              y nada falla. Solo salta al buscar quién lo abre. */}
-          {!modoAsignar && grupos.length >= 0 && (
-            <button
-              type="button"
-              onClick={() => setModalGrupos(true)}
-              className="flex items-center gap-1.5 h-9 px-3 rounded-[12px] text-[13px] font-semibold shrink-0"
-              style={{
-                background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-                color: 'var(--cf-ink-2)',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="8" cy="8" r="3" /><circle cx="16" cy="16" r="3" />
-                <path d="M8 11v5a2 2 0 0 0 2 2h2" />
-              </svg>
-              Grupos
-            </button>
-          )}
         </div>
 
         {/* Cada filtro con SU CONTEO: sin el número, elegir es a ciegas y hay
@@ -1137,7 +914,7 @@ export default function ClientesPage() {
           )
         }
 
-        if (vista === 'tabla' && !modoAsignar) {
+        if (vista === 'tabla') {
           return filtrados.length > 0 ? (
             <div className="rounded-[14px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
               <div className="grid items-center px-4 py-2.5"
@@ -1172,28 +949,7 @@ export default function ClientesPage() {
         return filtrados.length > 0 ? (
           <StaggeredList className={vista === 'compacta' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2' : 'flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3'}>
             {filtrados.map((c, i) => (
-              modoAsignar ? (
-                <label
-                  key={c.id}
-                  className={[
-                    'flex items-center gap-3 border rounded-[12px] p-4 transition-all cursor-pointer',
-                    selAsignar.includes(c.id)
-                      ? 'border-[color-mix(in_srgb,var(--cf-gold)_35%,transparent)] bg-[var(--cf-gold-tint)]'
-                      : 'border-[var(--cf-border)] bg-[var(--cf-surface)] hover:border-[color-mix(in_srgb,var(--cf-gold)_40%,transparent)]',
-                  ].join(' ')}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selAsignar.includes(c.id)}
-                    onChange={() => toggleSeleccion(c.id)}
-                    className="accent-[var(--cf-gold)]"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{c.nombre}</p>
-                    <p className="text-xs text-[var(--cf-ink-2)] mt-0.5">{abreviaturaDocumento()} {c.cedula}</p>
-                  </div>
-                </label>
-              ) : vista === 'compacta' ? (
+              vista === 'compacta' ? (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
                   <ClienteCardCompacto cliente={c} esNuevo={isHoy(c.createdAt, country)} />
                 </BadgeNuevo>
@@ -1249,7 +1005,7 @@ export default function ClientesPage() {
           <Button
             size="sm"
             className="mt-4"
-            onClick={() => fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro)}
+            onClick={() => fetchClientes(buscar, page, rutaIdFiltro)}
           >
             Reintentar
           </Button>
@@ -1283,7 +1039,7 @@ export default function ClientesPage() {
           repetir el error de esconder los KPIs en cero.
 
           Se calla en cuanto pasa de 5: a partir de ahí ya sabe cargar. */}
-      {!loading && !error && !buscar && !estado && !grupoFiltro && !rutaIdFiltro
+      {!loading && !error && !buscar && !estado && !rutaIdFiltro
         && total > 0 && total <= 5 && puedeCrearClientes && (
         <div className="mt-4">
           <CarteraVacia
@@ -1295,7 +1051,7 @@ export default function ClientesPage() {
       )}
 
       {/* El filtro dejó la lista en cero — la cartera sí tiene clientes. */}
-      {!loading && !error && clientes.length === 0 && (buscar || estado || grupoFiltro || rutaIdFiltro) && (
+      {!loading && !error && clientes.length === 0 && (buscar || estado || rutaIdFiltro) && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4">
             <MonedaCF pose="busca" size={100} />
@@ -1385,13 +1141,6 @@ export default function ClientesPage() {
                 Limpiar búsqueda
               </button>
             </>
-          ) : grupoFiltro ? (
-            <>
-              <p className="text-sm font-medium text-[var(--cf-ink)]">Sin clientes en este grupo</p>
-              <button onClick={() => setGrupoFiltro('')} className="mt-3 text-xs text-[var(--cf-gold)] hover:underline">
-                Ver todos los grupos
-              </button>
-            </>
           ) : (
             /* Filtro de estado o de ruta: antes esta rama no decía NADA — solo
                quedaba la moneda flotando y ningún modo de volver atrás. */
@@ -1409,221 +1158,8 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Modal: grupos de cobro con pestañas */}
-      <Modal
-        open={modalGrupos}
-        onClose={() => { setModalGrupos(false); setEditandoGrupo(null) }}
-        title="Grupos de cobro"
-      >
-        <div className="space-y-4">
-          {/* Tabs */}
-          <div className="flex gap-1 p-1 rounded-xl bg-[var(--cf-card)] border border-[var(--cf-border)]">
-            {[
-              { key: 'filtrar', label: 'Filtrar' },
-              { key: 'gestionar', label: 'Gestionar' },
-              { key: 'asignar', label: 'Asignar' },
-            ].map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTabModalGrupos(t.key)}
-                className={[
-                  'flex-1 h-8 rounded-lg text-xs font-medium transition-colors',
-                  tabModalGrupos === t.key
-                    ? 'bg-[var(--cf-gold)] text-[var(--cf-gold-ink)]'
-                    : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
-                ].join(' ')}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {/* FILTRAR */}
-          {tabModalGrupos === 'filtrar' && (
-            <div className="space-y-2">
-              <p className="text-[11px] text-[var(--cf-ink-3)]">Mostrar solo clientes de un grupo:</p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => { setGrupoFiltro(''); setModalGrupos(false) }}
-                  className={[
-                    'px-3 h-8 rounded-full text-xs border transition-colors',
-                    !grupoFiltro
-                      ? 'border-[var(--cf-gold)] text-[var(--cf-gold)] bg-[var(--cf-gold-tint)]'
-                      : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
-                  ].join(' ')}
-                >
-                  Todos
-                </button>
-                <button
-                  onClick={() => { setGrupoFiltro('_none'); setModalGrupos(false) }}
-                  className={[
-                    'px-3 h-8 rounded-full text-xs border transition-colors',
-                    grupoFiltro === '_none'
-                      ? 'border-[var(--cf-ink-2)] text-[var(--cf-ink-2)] bg-[var(--cf-fill)]'
-                      : 'border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]',
-                  ].join(' ')}
-                >
-                  Sin grupo
-                </button>
-                {grupos.map((g) => {
-                  const c = g.color || 'var(--cf-gold)'
-                  const active = grupoFiltro === g.id
-                  return (
-                    <button
-                      key={g.id}
-                      onClick={() => { setGrupoFiltro(g.id); setModalGrupos(false) }}
-                      className="px-3 h-8 rounded-full text-xs border inline-flex items-center gap-1.5 transition-colors"
-                      style={active
-                        ? { color: c, borderColor: c, background: `color-mix(in srgb, ${c} 12%, transparent)` }
-                        : { color: 'var(--cf-ink-3)', borderColor: 'var(--cf-border)' }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
-                      {g.nombre}
-                      <span className="text-[10px] opacity-70">{g._count?.clientes ?? 0}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              {grupos.length === 0 && (
-                <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">
-                  Aún no tienes grupos. Créalos en la pestaña "Gestionar".
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* GESTIONAR */}
-          {tabModalGrupos === 'gestionar' && (
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <input
-                  value={nuevoGrupo}
-                  onChange={e => setNuevoGrupo(e.target.value)}
-                  placeholder="Nombre del grupo..."
-                  className="flex-1 h-9 px-3 rounded-lg bg-[var(--cf-surface)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)]"
-                  onKeyDown={e => e.key === 'Enter' && crearGrupo()}
-                />
-                <button
-                  onClick={crearGrupo}
-                  disabled={!nuevoGrupo.trim() || guardandoGrupo}
-                  className="h-9 px-4 rounded-lg bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-sm font-bold shrink-0 disabled:opacity-50 active:scale-95 transition-transform"
-                >
-                  {guardandoGrupo ? '...' : 'Crear'}
-                </button>
-              </div>
-
-              <div className="flex gap-2 flex-wrap">
-                {COLORES_GRUPO.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setGrupoColor(grupoColor === c ? null : c)}
-                    className={`w-7 h-7 rounded-full transition-all ${grupoColor === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--cf-surface)] scale-110' : 'hover:scale-110'}`}
-                    style={{ background: c }}
-                  />
-                ))}
-              </div>
-
-              {grupos.length > 0 ? (
-                <div className="space-y-2 pt-2 border-t border-[var(--cf-border)]">
-                  {grupos.map(g => (
-                    <div key={g.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--cf-fill)] border border-[var(--cf-border)]">
-                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: g.color || 'var(--cf-ink-3)' }} />
-                      {editandoGrupo === g.id ? (
-                        <input
-                          defaultValue={g.nombre}
-                          autoFocus
-                          className="flex-1 h-7 px-2 rounded bg-[var(--cf-surface)] border border-[var(--cf-border-strong)] text-sm text-[var(--cf-ink)]"
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
-                            if (e.key === 'Escape') setEditandoGrupo(null)
-                          }}
-                          onBlur={e => { guardarNombreGrupo(g, e.target.value) }}
-                        />
-                      ) : (
-                        <span className="flex-1 text-sm text-[var(--cf-ink)] truncate cursor-pointer" onClick={() => setEditandoGrupo(g.id)}>
-                          {g.nombre}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-[var(--cf-ink-3)] shrink-0">{g._count?.clientes ?? 0}</span>
-                      <div className="flex gap-1 shrink-0">
-                        {COLORES_GRUPO.slice(0, 4).map(c => (
-                          <button
-                            key={c}
-                            onClick={() => editarGrupo(g.id, { color: c })}
-                            className={`w-4 h-4 rounded-full ${g.color === c ? 'ring-1 ring-white' : ''}`}
-                            style={{ background: c }}
-                          />
-                        ))}
-                      </div>
-                      <button onClick={() => eliminarGrupo(g.id)} className="text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] transition-colors shrink-0">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-[var(--cf-ink-3)] text-center py-4">Aún no tienes grupos. Crea uno para organizar tus clientes por día o zona.</p>
-              )}
-            </div>
-          )}
-
-          {/* ASIGNAR */}
-          {tabModalGrupos === 'asignar' && (
-            <div className="space-y-3">
-              <p className="text-[11px] text-[var(--cf-ink-3)]">
-                Activa el modo asignación para seleccionar varios clientes de la lista y cambiarles el grupo.
-              </p>
-              <Button onClick={abrirModoAsignar} className="w-full">
-                Activar selección múltiple
-              </Button>
-              {grupos.length === 0 && (
-                <p className="text-[11px] text-[var(--cf-gold-dark)] text-center">
-                  Primero crea al menos un grupo en la pestaña "Gestionar".
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </Modal>
 
       {/* Sticky bar: modo asignación activo (posicionada encima del BottomNav móvil) */}
-      {modoAsignar && (
-        <div className="fixed left-0 right-0 z-50 border-t border-[color-mix(in_srgb,var(--cf-gold)_40%,transparent)] bg-[var(--cf-surface)] lg:bg-[var(--cf-surface)]/98 lg:backdrop-blur-md bottom-[84px] lg:bottom-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
-          <div className="max-w-3xl lg:max-w-6xl mx-auto px-3 py-2.5">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="text-xs text-[var(--cf-gold)] font-semibold">
-                {selAsignar.length} {selAsignar.length === 1 ? 'seleccionado' : 'seleccionados'}
-              </div>
-              <button
-                onClick={cancelarAsignacion}
-                className="text-xs text-[var(--cf-ink-2)] hover:text-[var(--cf-ink)] underline underline-offset-2"
-              >
-                Cancelar
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={grupoAsignar}
-                onChange={(e) => setGrupoAsignar(e.target.value)}
-                className="flex-1 min-w-0 h-10 px-2 rounded-lg bg-[var(--cf-fill)] border border-[var(--cf-border)] text-xs text-[var(--cf-ink)]"
-              >
-                <option value="">Elegir grupo…</option>
-                <option value="_none">Sin grupo</option>
-                {grupos.map((g) => (
-                  <option key={g.id} value={g.id}>{g.nombre}</option>
-                ))}
-              </select>
-              <button
-                onClick={asignarGrupoClientes}
-                disabled={!selAsignar.length || !grupoAsignar || asignandoGrupo}
-                className="shrink-0 h-10 px-4 rounded-lg bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] text-xs font-bold disabled:opacity-40 active:scale-95 transition-transform"
-              >
-                {asignandoGrupo ? '...' : 'Asignar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Paginación */}
       {/* Con un chip de estado activo el paginador es mentira: filtra sobre la
@@ -1670,7 +1206,7 @@ export default function ClientesPage() {
           onClose={() => setCobroRapido(null)}
           onSuccess={() => {
             setCobroRapido(null)
-            fetchClientes(buscar, page, grupoFiltro, rutaIdFiltro, { soft: true })
+            fetchClientes(buscar, page, rutaIdFiltro, { soft: true })
           }}
           cliente={cobroRapido.cliente}
           prestamo={cobroRapido.prestamo}

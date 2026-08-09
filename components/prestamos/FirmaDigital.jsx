@@ -552,7 +552,9 @@ export default function FirmaDigital({ prestamo, onSave }) {
 
           El `canvas` va por la ranura `children`: el trazo que dibuja la lamina
           es de mentira, aqui la firma es de verdad. */}
-      <Modal open={modalFirmar} onClose={() => setModalFirmar(false)}>
+      {/* `padding={false}`: `Firma` trae su propio `14px 20px 16px`, y con el
+          del modal encima el lienzo quedaba estrecho y el titulo corrido. */}
+      <Modal open={modalFirmar} onClose={() => setModalFirmar(false)} padding={false}>
         <div style={{ height: 'min(70vh, 460px)' }}>
           <Firma
             nombre={prestamo?.cliente?.nombre ?? 'aquí'}
