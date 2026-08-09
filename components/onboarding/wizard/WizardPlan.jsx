@@ -54,12 +54,14 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
      escalera, que ya es el primero con cobradores. */
   const [elegido, setElegido] = useState(perfil === 'equipo' ? (tramos[0]?.id ?? 'growth') : 'starter')
   const [guardando, setGuardando] = useState(null)
+  const [fallo, setFallo] = useState(false)
 
   /* Se guarda al tocar, no al continuar: si se cierra el asistente a medias, la
      elección ya está hecha. El endpoint solo acepta cambios durante el
      onboarding, así que no puede colarse un cambio de plan más tarde. */
   const elegir = async (id) => {
     if (id === elegido) return
+    setFallo(false)
     const antes = elegido
     setElegido(id)
     setGuardando(id)
@@ -71,9 +73,14 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
       })
       // Si el servidor no lo acepta se vuelve atrás: dejar la tarjeta marcada
       // sin que el plan haya cambiado es peor que no dejar elegir.
-      if (!r.ok) setElegido(antes)
+      /* ⚠ SI FALLA, SE DICE. Volver la tarjeta a su sitio sin más deja al
+         usuario tocando un plan que no se marca, sin saber por qué: es el mismo
+         `catch` mudo que ya nos costó un diagnóstico falso en la pantalla de
+         bajar reportes. */
+      if (!r.ok) { setElegido(antes); setFallo(true) }
     } catch {
       setElegido(antes)
+      setFallo(true)
     } finally {
       setGuardando(null)
     }
@@ -222,6 +229,14 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
           })}
         </div>
       </div>
+
+      {fallo && (
+        <p role="alert" style={{
+          fontSize: 12.5, color: 'var(--cf-red-dark)', margin: 0, lineHeight: 1.5,
+        }}>
+          No se pudo guardar el plan. Revisa la conexión y tócalo otra vez.
+        </p>
+      )}
 
       {/* La frase que quita la presión: el límite no corta el negocio. */}
       <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: 0, lineHeight: 1.5 }}>
