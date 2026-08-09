@@ -36,6 +36,7 @@ import { leerRecientes } from '@/lib/recientes'
 import { BusquedaGlobal } from '@/components/pantallas/Estados'
 import { buscarAcciones } from '@/lib/acciones/registro'
 import { useAcciones } from '@/components/acciones/AccionesProvider'
+import { TUTORIALES } from '@/lib/tutorialesData'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
@@ -240,7 +241,25 @@ export default function GlobalSearch() {
       hacer: c.evento ? () => window.dispatchEvent(new Event(c.evento)) : undefined,
     }))
 
-    return [...acciones, ...gente, ...destinos]
+    /* ⚠ LAS GUÍAS VAN LAS ÚLTIMAS, Y ESO ES LA REGLA ENTERA.
+       Primero HACER —la acción de esta pantalla—, después el sitio, y solo al
+       final aprender a hacerlo. Una guía por delante de la acción convierte un
+       toque en una lectura.
+       Van con `?t=`, que abre esa guía desplegada en vez de dejar al usuario
+       buscándola en una lista de 34. */
+    const guias = texto.length < 2 ? [] : buscarAcciones(
+      TUTORIALES.map((t) => ({ id: `tut-${t.id}`, label: t.title, sinonimos: t.keywords || [] })),
+      texto, 2,
+    ).map((g) => ({
+      id: g.id,
+      tipo: 'guia',
+      nombre: g.label,
+      detalle: 'Cómo se hace',
+      iniciales: '?',
+      href: `/tutoriales?t=${g.id.replace('tut-', '')}`,
+    }))
+
+    return [...acciones, ...gente, ...destinos, ...guias]
   }, [accionesPantalla, comandosFiltrados, results, query])
 
   // Teclado: solo tiene sentido con teclado, o sea en escritorio.

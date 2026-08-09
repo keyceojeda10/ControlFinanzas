@@ -1,7 +1,7 @@
 'use client'
 // components/TutorialesList.jsx — Lista interactiva de tutoriales con categorías
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { TUTORIALES, CATEGORIAS } from '@/lib/tutorialesData'
 
@@ -51,6 +51,12 @@ function Lightbox({ src, alt, onClose }) {
 // ─── Tutorial card ───────────────────────────────────────────
 function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
+
+  /* ⚠ `useState(defaultOpen)` SOLO LEE AL MONTAR, y el `?t=` de la URL llega
+     después, en un efecto: sin esto la tarjeta enlazada se quedaba plegada y el
+     enlace no servía de nada. Se abre cuando pasa a true, y nunca se cierra
+     sola: si volviera a cerrarse, cerrarla a mano no funcionaría. */
+  useEffect(() => { if (defaultOpen) setOpen(true) }, [defaultOpen])
   const [copied, setCopied] = useState(false)
 
   const handleCopy = useCallback(() => {
@@ -197,6 +203,21 @@ function CategorySection({ categoria, tutoriales, showCopyButton, onImageClick }
 
 // ─── Main component ──────────────────────────────────────────
 export default function TutorialesList({ showCopyButton = false }) {
+  /* ⚠ `?t=<id>` ABRE ESA GUÍA. Sin esto no se podía ENLAZAR a un tutorial: el
+     enlace abría la página y la tarjeta seguía plegada, porque `defaultOpen`
+     dependía del filtro y no del enlace. Y sin enlace, el buscador solo podía
+     decir «está en tutoriales», que es tanto como no decir nada.
+     Se lee una sola vez: si se siguiera el parámetro, la tarjeta se volvería a
+     abrir sola cada vez que el usuario la cierra.
+
+     ⚠ Se lee del NAVEGADOR, no con `useSearchParams`: ese hook obliga a envolver
+     el componente en un `<Suspense>` y, sin él, revienta el prerenderizado de
+     `/admin/tutoriales`, que monta esta misma lista. Un parámetro opcional no
+     justifica cambiarle el armazón a dos páginas. */
+  const [pedido, setPedido] = useState(null)
+  useEffect(() => {
+    setPedido(new URLSearchParams(window.location.search).get('t'))
+  }, [])
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState(null)
   const [lightbox, setLightbox] = useState({ src: null, alt: '' })
@@ -291,7 +312,7 @@ export default function TutorialesList({ showCopyButton = false }) {
                 tutorial={t}
                 showCopyButton={showCopyButton}
                 onImageClick={(src, alt) => setLightbox({ src, alt })}
-                defaultOpen={filtered.length === 1}
+                defaultOpen={filtered.length === 1 || tutorial.id === pedido}
               />
             </div>
           ))}
