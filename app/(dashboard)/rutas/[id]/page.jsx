@@ -43,6 +43,8 @@ import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
 import { Recibo }                    from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 import HojaInferior                  from '@/components/cf/HojaInferior'
 import { anotarReciente } from '@/lib/recientes'
 import { rotulo } from '@/lib/dinero/definiciones'
@@ -1091,7 +1093,68 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
-  const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
+  const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
+
+  /* ══ LO QUE SE PUEDE HACER EN ESTA RUTA ═══════════════════════════════════
+   *
+   * ⚠ DOS DE ESTAS NO TENÍAN NINGÚN BOTÓN. `eliminarRuta` y `cambiarCobrador`
+   * estaban escritas y no se llamaban desde ninguna parte del JSX: no se podía
+   * borrar una ruta ni cambiarle el cobrador DESDE la ruta. El modal de
+   * confirmar el borrado también estaba, esperando a que alguien lo abriera.
+   *
+   * Cambiar de cobrador se resuelve LLEVANDO a la ficha del cobrador, que es
+   * donde vive el asignador de verdad. Inventar aquí un segundo selector sería
+   * tener dos sitios para lo mismo, que es como empiezan a divergir.
+   *
+   * El resto son chips de una fila que se desplaza: en un móvil de 390px la
+   * mitad nace fuera de la pantalla. */
+  const accionesRuta = [
+    { id: 'ruta-agregar', label: 'Agregar clientes a la ruta', pista: 'En esta ruta',
+      sinonimos: ['agregar cliente', 'meter cliente', 'enrutar', 'añadir clientes',
+        'poner un cliente en la ruta', 'asignar clientes'],
+      disponible: puedeGestionarRutas,
+      ejecutar: () => abrirModalClientes() },
+    { id: 'ruta-quitar', label: 'Quitar un cliente de la ruta', pista: 'Se hace en «Ordenar»',
+      sinonimos: ['quitar cliente', 'sacar de la ruta', 'desenrutar', 'sacar un cliente'],
+      disponible: puedeGestionarRutas,
+      ejecutar: () => setModoVista('ordenar') },
+    { id: 'ruta-ordenar', label: 'Cambiar el orden del recorrido', pista: 'Arrastrando o con flechas',
+      sinonimos: ['ordenar', 'reordenar', 'cambiar el orden', 'mover un cliente de puesto'],
+      disponible: puedeGestionarRutas,
+      ejecutar: () => setModoVista('ordenar') },
+    { id: 'ruta-optimizar', label: 'Optimizar el recorrido', pista: 'Ordena por cercanía',
+      sinonimos: ['optimizar', 'ruta mas corta', 'ordenar por cercania', 'que camine menos'],
+      ejecutar: () => setConfirmOptimizar(true) },
+    { id: 'ruta-mapa', label: 'Ver la ruta en el mapa', pista: 'En esta ruta',
+      sinonimos: ['mapa', 'ver en el mapa', 'google maps', 'como llego'],
+      ejecutar: () => setShowMap((v) => !v) },
+    { id: 'ruta-empezar', label: 'Empezar el recorrido', pista: 'Cliente por cliente',
+      sinonimos: ['empezar', 'salir a cobrar', 'recorrido', 'arrancar la ruta'],
+      ejecutar: () => setEnRecorrido(true) },
+    { id: 'ruta-hoja', label: 'Imprimir la hoja de la ruta', pista: 'Para llevarla en papel',
+      sinonimos: ['imprimir', 'hoja', 'papel', 'planilla', 'listado para la calle'],
+      ejecutar: () => window.open(`/api/rutas/${id}/hoja`, '_blank') },
+    { id: 'ruta-caja', label: 'Cerrar la caja del día', pista: 'De esta ruta',
+      sinonimos: ['cerrar caja', 'cuadrar', 'entregar la plata', 'cierre del dia'],
+      ejecutar: () => setModalCaja(true) },
+    { id: 'ruta-capital', label: 'Ver el capital de la ruta', pista: 'Lo que tienes puesto aquí',
+      sinonimos: ['capital de la ruta', 'cuanto tengo aqui', 'plata de la ruta'],
+      disponible: esOwner || puedeVerCapitalRuta,
+      ejecutar: () => setFichaCapital(true) },
+    { id: 'ruta-nombre', label: 'Cambiar el nombre de la ruta', pista: 'En esta ruta',
+      sinonimos: ['renombrar', 'cambiar el nombre', 'ponerle otro nombre'],
+      disponible: esOwner,
+      ejecutar: () => setEditandoNombre(true) },
+    { id: 'ruta-cobrador', label: 'Cambiar el cobrador de la ruta', pista: 'Se asigna desde el cobrador',
+      sinonimos: ['cambiar cobrador', 'asignar cobrador', 'quien cobra esta ruta',
+        'poner otro cobrador'],
+      disponible: esOwner,
+      ejecutar: () => router.push('/cobradores') },
+    { id: 'ruta-eliminar', label: 'Eliminar esta ruta', pista: 'No borra los clientes',
+      sinonimos: ['eliminar ruta', 'borrar ruta', 'quitar la ruta'],
+      disponible: esOwner,
+      ejecutar: () => eliminarRuta() },
+  ]
 
   const quitarCliente = async (clienteId) => {
     setConfirmQuitar(null)
@@ -2131,6 +2194,15 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           le robaba el primer lugar a "+ Agregar", que es lo que de verdad usa
           a diario quien administra rutas con cobradores. Un cliente lo
           reporto. Visible != protagonista. */}
+      {/* ⚠ LOS CHIPS SE SALEN DE LA PANTALLA. La fila se desplaza en horizontal,
+          así que en un móvil de 390px «Optimizar», «Mapa» y los demás nacen
+          fuera de la vista: hay que arrastrar para saber que existen. La caja
+          los alcanza a todos sin arrastrar nada.
+          Medido: cada negocio crea 1,5 rutas en dos meses. Es lo que menos se
+          repite de todo lo que se mide, o sea lo que más se olvida. */}
+      <RegistrarAcciones clave="ruta" acciones={accionesRuta} />
+      <QueNecesitas ejemplos={['agregar clientes', 'optimizar', 'cerrar la caja']} />
+
       <div className={`flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${modoVista === 'ordenar' ? 'hidden' : ''}`}>
         {puedeGestionarRutas && (
           <button onClick={abrirModalClientes} className="shrink-0 h-10 px-3.5 rounded-[12px] border border-[#222] bg-[var(--cf-card)] text-[11px] text-[var(--cf-ink-2)] font-medium active:scale-95 transition-transform">
