@@ -32,6 +32,8 @@ import { Modal } from '@/components/ui/Modal'
 import QrClienteModal from '@/components/clientes/QrClienteModal'
 import dynamic from 'next/dynamic'
 import { anotarReciente } from '@/lib/recientes'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -473,6 +475,57 @@ export default function ClienteDetallePage({ params }) {
   const esUltimoEnRuta = rutaNav && rutaNav.currentIndex >= rutaNav.clientes.length - 1
   const esPrimeroEnRuta = rutaNav && rutaNav.currentIndex <= 0
 
+  /* ══ LO QUE SE PUEDE HACER CON ESTE CLIENTE ═══════════════════════════════
+   *
+   * Es la pantalla más transversal de la app: 192 negocios crean clientes, 95
+   * los editan y 90 los borran en dos meses. Y las acciones están repartidas
+   * entre chips, filas de una lista y el carril de la derecha.
+   *
+   * ⚠ El portal del cliente NO se registra aquí: `togglePortal` y el PIN viven
+   * dentro de otro componente, con su propio estado, y desde fuera no se
+   * pueden llamar. Se lleva a la ficha, que es donde está la tarjeta. Ofrecer
+   * algo que no se puede ejecutar es peor que no ofrecerlo. */
+  const accionesCliente = [
+    { id: 'cli-prestamo', label: 'Prestarle a este cliente', pista: 'Nuevo préstamo',
+      sinonimos: ['prestar', 'nuevo prestamo', 'hacerle un credito', 'darle plata'],
+      disponible: puedeCrearPrestamos,
+      ejecutar: () => router.push(`/prestamos/nuevo?clienteId=${cliente?.id}`) },
+    { id: 'cli-wa', label: 'Escribirle por WhatsApp', pista: 'Recordatorio o recibo',
+      sinonimos: ['whatsapp', 'mandarle mensaje', 'recordarle', 'escribirle'],
+      disponible: Boolean(cliente?.telefono),
+      ejecutar: () => setModalWA(true) },
+    { id: 'cli-editar', label: 'Editar los datos del cliente', pista: 'Nombre, cédula, teléfono',
+      sinonimos: ['editar', 'corregir', 'cambiar el telefono', 'cambiar la direccion',
+        'me equivoque en el nombre'],
+      disponible: puedeEditarClientes,
+      ejecutar: () => router.push(`/clientes/${cliente?.id}/editar`) },
+    { id: 'cli-eliminar', label: 'Eliminar este cliente', pista: 'No se puede deshacer',
+      sinonimos: ['eliminar', 'borrar cliente', 'quitar cliente'],
+      disponible: esOwner,
+      ejecutar: () => setShowConfirmDelete(true) },
+    { id: 'cli-inactivo', label: 'Activar o desactivar el cliente', pista: 'Dejar de cobrarle sin borrarlo',
+      sinonimos: ['inactivar', 'desactivar', 'suspender', 'dejar de cobrarle', 'pausar'],
+      disponible: esOwner,
+      ejecutar: () => handleToggleInactivo() },
+    { id: 'cli-reagendar', label: 'Reagendar la visita', pista: 'Pasarla a otro día',
+      sinonimos: ['reagendar', 'aplazar', 'pasar la visita', 'volver otro dia', 'no estaba'],
+      ejecutar: () => setModalReagendar(true) },
+    { id: 'cli-gps', label: 'Fijar la ubicación de la casa', pista: 'Para que el cobrador llegue',
+      sinonimos: ['ubicacion', 'gps', 'donde vive', 'marcar la casa', 'coordenadas'],
+      disponible: puedeEditarClientes,
+      ejecutar: () => handleFijarUbicacion() },
+    { id: 'cli-qr', label: 'Ver el QR del cliente', pista: 'Para cobrarle escaneando',
+      sinonimos: ['qr', 'codigo', 'escanear'],
+      ejecutar: () => setModalQR(true) },
+    { id: 'cli-festivo', label: 'Marcar hoy como festivo', pista: 'Hoy no se le cobra',
+      sinonimos: ['festivo', 'hoy no se cobra', 'dia sin cobro', 'feriado'],
+      disponible: esOwner,
+      ejecutar: () => marcarFestivoHoy() },
+    { id: 'cli-historial', label: 'Ver el historial del cliente', pista: 'Todo lo que ha pagado',
+      sinonimos: ['historial', 'todo lo que ha pagado', 'sus pagos', 'antecedentes'],
+      ejecutar: () => router.push(`/clientes/${cliente?.id}/historial`) },
+  ]
+
   return (
     <div className="max-w-2xl lg:max-w-6xl mx-auto space-y-5 pb-4">
 
@@ -735,6 +788,11 @@ export default function ClienteDetallePage({ params }) {
           OJO: dentro del JSX el comentario VA CON LLAVES. Sin ellas se imprime
           en la pantalla — salio como parrafo en la ficha del cliente. Es la
           trampa contraria a la de `return (`, donde las llaves sobran. */}
+
+      {/* La caja va ANTES de los chips: los chips son cinco de las diez cosas
+          que se pueden hacer aquí; el resto vive en filas y en el carril. */}
+      <RegistrarAcciones clave="cliente" acciones={accionesCliente} />
+      <QueNecesitas ejemplos={['editar', 'reagendar', 'eliminar']} />
 
       {/* Acciones rapidas como chips */}
       {(puedeCrearPrestamos || puedeEditarClientes || esOwner) && (

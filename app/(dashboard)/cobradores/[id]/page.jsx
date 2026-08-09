@@ -12,6 +12,8 @@ import { useCabecera }              from '@/components/armazon/Armazon'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
 import Link                         from 'next/link'
 import { ConfirmModal }             from '@/components/ui/ConfirmModal'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 export default function CobradorDetallePage({ params }) {
   return <CobradorDetalleInner params={params} />
@@ -103,8 +105,41 @@ function CobradorDetalleInner({ params }) {
   const ruta = data.ruta
   const clientes = ruta?.clientes ?? []
 
+  /* ══ LO QUE SE PUEDE HACER CON ESTE COBRADOR ═════════════════════════════
+   *
+   * Las tres acciones serias de esta pantalla son invisibles: activar/suspender
+   * es una PASTILLA que parece una etiqueta de estado, editar y eliminar son
+   * dos iconos sin una palabra al lado, y enviar las credenciales está dentro
+   * de un acordeón cerrado. Nada de eso se lee; se descubre pulsando.
+   *
+   * ⚠ Los PERMISOS no se registran aquí: viven en la pantalla de editar, y es
+   * ahí donde hay que llevar a quien pregunta «cómo restringir al cobrador».
+   * Por eso «permisos» es sinónimo de editar y no una acción propia. */
+  const accionesCobrador = [
+    { id: 'cobr-editar', label: 'Editar el cobrador y sus permisos', pista: 'Qué puede ver y hacer',
+      sinonimos: ['editar', 'permisos', 'restringir', 'limitar al cobrador', 'que no vea',
+        'que no pueda borrar', 'cambiar el nombre', 'cambiar la ruta'],
+      ejecutar: () => router.push(`/cobradores/${id}/editar`) },
+    { id: 'cobr-credenciales', label: 'Enviar o cambiar la contraseña', pista: 'Mandarle el usuario y la clave',
+      sinonimos: ['credenciales', 'contraseña', 'clave', 'no puede entrar', 'reenviar acceso',
+        'resetear la clave', 'usuario y clave'],
+      ejecutar: () => setShowReenviar(true) },
+    { id: 'cobr-suspender', label: 'Activar o suspender el cobrador', pista: 'Quitarle el acceso sin borrarlo',
+      sinonimos: ['suspender', 'desactivar', 'bloquear', 'quitarle el acceso', 'activar',
+        'inactivar cobrador'],
+      ejecutar: () => toggleActivo() },
+    { id: 'cobr-eliminar', label: 'Eliminar el cobrador', pista: 'No se puede deshacer',
+      sinonimos: ['eliminar', 'borrar cobrador', 'quitar cobrador', 'se fue'],
+      ejecutar: () => setConfirmEliminar(true) },
+  ]
+
   return (
     <div className="max-w-xl lg:max-w-4xl mx-auto space-y-4 pb-4">
+
+      {/* Va arriba del hero: las tres acciones que esconde esta pantalla están
+          repartidas entre una pastilla, dos iconos pelados y un acordeón. */}
+      <RegistrarAcciones clave="cobrador" acciones={accionesCobrador} />
+      <QueNecesitas ejemplos={['permisos', 'contraseña', 'suspender']} />
       {/* Back */}
 
       {/* HERO CARD: cobrador + stats + acciones */}

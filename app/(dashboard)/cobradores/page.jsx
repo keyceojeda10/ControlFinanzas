@@ -15,6 +15,8 @@ import CobradorCard            from '@/components/cobradores/CobradorCard'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { useCountry } from '@/hooks/useCountry'
 import { obtenerCobradoresOffline } from '@/lib/offline'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 export default function CobradoresPage() {
   return <CobradoresPageInner />
@@ -244,8 +246,35 @@ function CobradoresPageInner() {
     )
   }
 
+  /* ══ LO QUE SE PUEDE HACER CON LOS COBRADORES ════════════════════════════
+   *
+   * Aquí el problema no es que las funciones estén hondas: es que NO TIENEN
+   * NOMBRE. Reordenar es arrastrar, el ranking es un icono, y asignar la ruta
+   * está dentro de la ficha. Quien busca «restringir al cobrador» —una de las
+   * preguntas literales que llegan por WhatsApp— tiene que adivinar que eso
+   * vive dentro de la ficha de cada uno. */
+  const accionesCobradores = [
+    { id: 'cob-nuevo', label: 'Crear un cobrador', pista: 'Cuenta con usuario y clave',
+      sinonimos: ['crear cobrador', 'nuevo cobrador', 'agregar cobrador', 'meter un empleado',
+        'dar acceso a alguien', 'nuevo usuario'],
+      disponible: esOwner,
+      ejecutar: () => router.push('/cobradores/nuevo') },
+    { id: 'cob-ranking', label: 'Ver el ranking de cobradores', pista: 'Quién recauda más',
+      sinonimos: ['ranking', 'quien cobra mas', 'comparar cobradores', 'rendimiento',
+        'desempeño', 'el mejor cobrador'],
+      disponible: esOwner,
+      ejecutar: () => router.push('/cobradores/ranking') },
+    { id: 'cob-ordenar', label: 'Cambiar el orden de la lista', pista: 'Arrastrar para reordenar',
+      sinonimos: ['ordenar', 'reordenar', 'cambiar el orden', 'mover de puesto'],
+      disponible: esOwner,
+      ejecutar: () => setModoOrdenar((v) => !v) },
+  ]
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
+
+      <RegistrarAcciones clave="cobradores" acciones={accionesCobradores} />
+      <QueNecesitas ejemplos={['crear cobrador', 'ranking', 'reordenar']} />
       {/* ── LOS DOS BOTONES DE ARRIBA SE VAN (T09-02) ──
           Aqui habia un titulo «Cobradores» y, a su derecha, «Ranking» y «Nuevo
           cobrador»: dos botones del mismo tamaño, pegados, que en 390px no

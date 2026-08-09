@@ -34,6 +34,8 @@ import Avatar            from '@/components/ui/Avatar'
 import { Card }          from '@/components/ui/Card'
 import { formatMoney, isHoy } from '@/lib/i18n'
 import { useCountry }    from '@/hooks/useCountry'
+import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
+import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 // Iconos para acciones swipe
 const IconWA = (
@@ -806,6 +808,29 @@ export default function ClientesPage() {
     setGrupoAsignar('')
   }
 
+  /* ══ LO QUE SE PUEDE HACER EN LA LISTA DE CLIENTES ═══════════════════════
+   * La pantalla más transversal que hay: 192 negocios crearon clientes en dos
+   * meses, 95 los editaron y 90 los borraron. Aquí no hay «dolor de función
+   * rara»: hay funciones buenas que nadie ve. Los grupos de cobro llevaban
+   * meses sin una sola forma de abrirse. */
+  const accionesClientes = [
+    { id: 'clientes-nuevo', label: 'Crear un cliente nuevo', pista: 'Nombre, teléfono, dirección',
+      sinonimos: ['nuevo cliente', 'crear cliente', 'agregar cliente', 'meter un cliente',
+        'ingresar cliente', 'registrar cliente'],
+      ejecutar: () => router.push('/clientes/nuevo') },
+    { id: 'clientes-grupos', label: 'Grupos de cobro', pista: 'Agrupar clientes y filtrar por grupo',
+      sinonimos: ['grupos', 'grupo de cobro', 'agrupar clientes', 'crear un grupo',
+        'separar clientes', 'categorias'],
+      ejecutar: () => setModalGrupos(true) },
+    { id: 'clientes-filtros', label: 'Filtrar la lista', pista: 'Por estado, ruta, frecuencia',
+      sinonimos: ['filtrar', 'filtros', 'ver solo los que deben', 'en mora', 'por ruta',
+        'buscar por estado'],
+      ejecutar: () => setHojaFiltros(true) },
+    { id: 'clientes-vista', label: 'Cambiar entre tabla y fichas', pista: 'Cómo se ve la lista',
+      sinonimos: ['tabla', 'ver en tabla', 'vista', 'cambiar la vista', 'fichas', 'lista'],
+      ejecutar: () => setVista((v) => (v === 'tabla' ? 'lista' : 'tabla')) },
+  ]
+
   return (
     <div className={`max-w-3xl lg:max-w-6xl mx-auto ${modoAsignar ? 'pb-40 lg:pb-28' : ''}`}>
       {/* Cartera vacía DE VERDAD, no "el filtro no devolvió nada". */}
@@ -834,6 +859,12 @@ export default function ClientesPage() {
           faltan nueve, no como que hay un filtro puesto. Y no había forma de
           quitarlo salvo borrar el parámetro a mano de la barra de direcciones. */}
       <AvisoFiltroUrl />
+
+      {/* ⚠ «Grupos» acaba de dejar de ser inalcanzable: el modal existía entero
+          y `setModalGrupos` no lo llamaba NADIE. Registrarlo aquí es la segunda
+          puerta, por si el botón nuevo tampoco se ve. */}
+      <RegistrarAcciones clave="clientes" acciones={accionesClientes} />
+      <QueNecesitas ejemplos={['nuevo cliente', 'grupos', 'ver en tabla']} />
 
       <div className="flex flex-col gap-3 mb-3">
         {/* ── El encabezado de T02-05 ──
