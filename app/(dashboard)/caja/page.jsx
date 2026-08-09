@@ -1317,7 +1317,11 @@ export default function CajaPage() {
       {/* Va encima de las pestañas: «cuentas» y «cuadre» SON pestañas, y quien
           no sabe que existen no las va a encontrar mirando la que está abierta. */}
       <RegistrarAcciones clave="caja" acciones={accionesCaja} />
-      <QueNecesitas ejemplos={['anotar un gasto', 'me faltó plata', 'nequi']} />
+      {/* Dos ejemplos, no tres: con tres la pista se parte en dos renglones y la
+          caja crece 28px sobre la pantalla que el dueño abre cada mañana. Y los
+          dos que quedan son los que NO tienen botón —«Registrar gasto» ya está
+          ahí abajo, en dorado—. «Nequi» con mayúscula: es una marca. */}
+      <QueNecesitas ejemplos={['me faltó plata', 'Nequi']} />
 
         <div className="min-w-0 lg:flex-1">
           <PestanasCaja
