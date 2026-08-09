@@ -39,6 +39,7 @@
 import { chromium } from 'playwright'
 import { encode } from 'next-auth/jwt'
 import { writeFileSync, existsSync } from 'node:fs'
+import { senalar, borrarSenales } from './senalar.mjs'
 
 const BASE = process.env.BASE_CAPTURAS || 'http://localhost:3007'
 const SECRETO = process.env.SECRETO_ESPEJO || 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c'
@@ -220,10 +221,38 @@ const PANTALLAS = [
   { archivo: '24_prestamo_gestion.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión' },
   { archivo: '25_prestamo_abonos.png', ruta: null, deDetallePrestamo: true, toca: 'Abonos' },
   { archivo: '26_cliente_portal.png', ruta: null, deDetalleCliente: true, toca: 'Activar portal' },
+
+  /* ── LAS QUE FALTABAN: LO QUE NADIE ENCUENTRA ──────────────────────────
+     De las ~20 acciones del préstamo solo TRES tenían tutorial. Estas son las
+     que llegan por WhatsApp: renovar, cancelar, cerrar antes, cambiar el plazo
+     y dar por perdido. Todas viven detrás del chip «Gestión», así que la foto
+     va CON EL SEÑALAMIENTO puesto: sin la flecha, una lista de doce filas no
+     explica dónde hay que tocar. */
+  { archivo: '27_buscar_accion.png', ruta: null, deDetallePrestamo: true,
+    senal: { selector: 'input[placeholder*="necesitas"]',
+      texto: 'Escribe lo que quieres hacer', numero: 1 } },
+  { archivo: '28_gestion_menu.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    senal: { rotulo: 'Renovar el préstamo', texto: 'Renovar, plazo y cancelar están aquí', numero: 2 } },
+  { archivo: '29_renovar.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    luego: 'Renovar el préstamo',
+    senal: { rotulo: 'Solo el saldo', texto: 'El total INCLUYE lo que ya debe', numero: 1 } },
+  { archivo: '30_plazo.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    luego: 'Modificar el plazo' },
+  { archivo: '31_cerrar_anticipado.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    luego: 'Cerrar anticipado' },
+  { archivo: '32_perdidos.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    luego: 'Mover a perdidos' },
+  { archivo: '33_cancelar.png', ruta: null, deDetallePrestamo: true, toca: 'Gestión',
+    luego: 'Cancelar el préstamo' },
 ]
 
+/* Para iterar el estilo sin regenerar las 33: SOLO=28 saca solo esa.
+   Antes de hacer un montón de imágenes hay que aprobar UNA. */
+const SOLO = process.env.SOLO || ''
+const LISTA = SOLO ? PANTALLAS.filter((x) => SOLO.split(',').some((n) => x.archivo.startsWith(n.trim()))) : PANTALLAS
+
 let hechas = 0, fallos = []
-for (const s of PANTALLAS) {
+for (const s of LISTA) {
   try {
     if (s.sinSesion) {
       /* El login se fotografía SIN sesión o redirige al panel. Contexto aparte,
@@ -249,7 +278,26 @@ for (const s of PANTALLAS) {
         await p.waitForTimeout(1600)
         await quitarTemporales()
       }
+      /* Un segundo toque, para lo que vive DENTRO de una hoja: «Gestión» y
+         luego «Renovar el préstamo». Es exactamente el recorrido de tres
+         niveles del que se queja la gente, y hay que fotografiarlo entero. */
+      if (s.luego) {
+        const abrio2 = await p.evaluate((rotulo) => {
+          const b = [...document.querySelectorAll('button, a, [role="button"]')]
+            .find((x) => (x.textContent || '').replace(/\s+/g, ' ').trim().startsWith(rotulo))
+          if (!b) return false
+          b.click(); return true
+        }, s.luego)
+        if (!abrio2) throw new Error(`no encontré «${s.luego}» dentro de «${s.toca}»`)
+        await p.waitForTimeout(1600)
+      }
+      /* ⚠ El señalamiento se dibuja DENTRO de la página, sobre el elemento de
+         verdad. Pintarlo después por coordenadas se rompe en cuanto el botón se
+         mueve, y la flecha se queda apuntando al vacío sin que nadie se entere:
+         el archivo existe y pesa lo suyo. */
+      if (s.senal) await senalar(p, s.senal)
       await p.screenshot({ path: `public/tutoriales/${s.archivo}` })
+      if (s.senal) await borrarSenales(p)
     }
     /* Que el archivo exista no basta: una pantalla de error también se
        fotografía tan ricamente.

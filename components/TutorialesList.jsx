@@ -121,6 +121,28 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
             {showCopyButton ? tutorial.text : parseWhatsAppText(tutorial.text)}
           </div>
 
+          {/* ⚠ LA GUÍA TERMINA EN EL SITIO, NO EN OTRA FOTO.
+              La regla, decidida con el dueño: si se puede hacer aquí, se hace;
+              si hay que ir a otro sitio, se LLEVA. Leer cómo se renueva un
+              préstamo y quedarse en la página de tutoriales obliga a recordar
+              el camino; el botón lo ahorra.
+              No todas lo tienen: instalar la app no lleva a ninguna pantalla
+              nuestra —el botón que hay que tocar es del navegador— y ahí las
+              imágenes SON la explicación. */}
+          {tutorial.destino && (
+            <a
+              href={tutorial.destino.href}
+              className="mt-3 flex items-center justify-center gap-2 h-12 rounded-[14px] font-bold text-[15px] transition-all"
+              style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
+            >
+              {tutorial.destino.texto}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </a>
+          )}
+
           {/* Action buttons */}
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             {/* El botón «Compartir video» se fue con el iframe: mandaba por
