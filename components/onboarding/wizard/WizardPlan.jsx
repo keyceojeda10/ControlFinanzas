@@ -28,13 +28,56 @@
 import { tramosDePlan } from '@/lib/adaptadores/planes'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import { useCountry } from '@/hooks/useCountry'
+import { useState } from 'react'
 
+/* ⚠ LOS PLANES SE ELIGEN AQUÍ, y no es una pantalla nueva: son las mismas
+   tarjetas que ya estaban, ahora pulsables.
+   El dueño: «si en cobra solo le permitimos el plan de 100 clientes y el
+   usuario tiene 200, dice ah, no me va a servir». Tenía razón, y el problema
+   era real: durante la prueba la cuenta nace en Inicial y el migrador corta en
+   100 clientes, 1 ruta y CERO cobradores, mientras la pantalla promete «todo
+   abierto».
+   Yo propuse levantar los límites durante la prueba y él propuso esto. Es
+   mejor: no añade una vía de excepción en los tres sitios que aplican
+   límites, y el plan elegido es la señal de compra de quien va a pagar.
+   ⚠ Y no regala nada al vencer: el `middleware` corta el API entero cuando la
+   suscripción vence, tenga el plan que tenga. */
 export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
   const { country, formatMoney } = useCountry()
   // Quien contestó «tengo cobradores» ve la escalera desde el primer plan que
   // se los permite. Ofrecerle Inicial sería ofrecerle un plan donde lo que
   // acaba de decir que hace no se puede hacer.
   const tramos = tramosDePlan(country, (n) => formatMoney(n), 3, perfil)
+
+  /* Preseleccionado el que le corresponde por lo que ya dijo, para que quien no
+     quiera pensar no tenga que hacerlo. `equipo` arranca en el primero de SU
+     escalera, que ya es el primero con cobradores. */
+  const [elegido, setElegido] = useState(perfil === 'equipo' ? (tramos[0]?.id ?? 'growth') : 'starter')
+  const [guardando, setGuardando] = useState(null)
+
+  /* Se guarda al tocar, no al continuar: si se cierra el asistente a medias, la
+     elección ya está hecha. El endpoint solo acepta cambios durante el
+     onboarding, así que no puede colarse un cambio de plan más tarde. */
+  const elegir = async (id) => {
+    if (id === elegido) return
+    const antes = elegido
+    setElegido(id)
+    setGuardando(id)
+    try {
+      const r = await fetch('/api/onboarding/cambiar-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: id }),
+      })
+      // Si el servidor no lo acepta se vuelve atrás: dejar la tarjeta marcada
+      // sin que el plan haya cambiado es peor que no dejar elegir.
+      if (!r.ok) setElegido(antes)
+    } catch {
+      setElegido(antes)
+    } finally {
+      setGuardando(null)
+    }
+  }
 
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 18 }}>
@@ -109,12 +152,27 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
             // A quien cobra solo se le marca Crecimiento: es donde deja de
             // estar solo. No es publicidad — es enseñarle dónde está la puerta.
             const puerta = perfil !== 'equipo' && t.id === 'growth'
+            const activo = t.id === elegido
             return (
-            <div key={t.id} style={{
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => elegir(t.id)}
+              aria-pressed={activo}
+              style={{
+              width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
               display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
               gap: 12, padding: '12px 16px',
               borderTop: i ? '1px solid var(--cf-divider)' : 0,
-              background: puerta ? 'var(--cf-gold-tint)' : 'transparent',
+              borderLeft: 0, borderRight: 0, borderBottom: 0,
+              /* El dorado marca la SELECCIÓN, que es uno de los tres papeles que
+                 tiene reservados en el sistema. La «puerta» —dónde deja de
+                 cobrar solo— ya no se pinta de fondo: si lo hiciera, competiría
+                 con lo elegido y habría dos filas doradas diciendo cosas
+                 distintas. Se queda con su pastilla, que es la que lo explica. */
+              background: activo ? 'var(--cf-gold-tint)' : 'transparent',
+              opacity: guardando && guardando !== t.id ? 0.6 : 1,
+              transition: 'background 160ms ease',
             }}>
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
@@ -137,10 +195,29 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
                   {t.techo}
                 </span>
               </span>
-              <span className="cf-fig" style={{ flex: 'none', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                {t.precio}
+              <span style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span className="cf-fig" style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
+                  {t.precio}
+                </span>
+                {/* El visto va DIBUJADO y siempre ocupa su sitio, marcado o no:
+                    si apareciera y desapareciera, el precio bailaría a cada
+                    toque. */}
+                <span aria-hidden style={{
+                  width: 20, height: 20, borderRadius: 999, flex: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: activo ? 'var(--cf-gold)' : 'transparent',
+                  border: activo ? 0 : '1.5px solid var(--cf-border-strong)',
+                }}>
+                  {activo && (
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                      stroke="var(--cf-gold-ink)" strokeWidth="3.5"
+                      strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  )}
+                </span>
               </span>
-            </div>
+            </button>
             )
           })}
         </div>
