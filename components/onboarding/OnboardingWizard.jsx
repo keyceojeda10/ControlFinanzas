@@ -272,6 +272,8 @@ export default function OnboardingWizard({
         const faltantes = importResult?.faltantes ?? []
         return (
           <ListoParaCobrar
+            // Va dentro del panel, no a pantalla completa: sin la barra blanca.
+            embebido
             titulo="Ya tienes tu cartera adentro"
             subtitulo={prestamos > 0
               ? `${prestamos} ${prestamos === 1 ? 'préstamo' : 'préstamos'} de ${clientes} ${clientes === 1 ? 'cliente' : 'clientes'}`

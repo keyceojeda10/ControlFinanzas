@@ -612,6 +612,16 @@ export function ListoParaCobrar({
   cifras = [],
   faltaTitulo = 'Lo que falta, cuando puedas', falta = [], faltaNota,
   onVerCobros, cobrosHoy, onPanel,
+  /* ⚠ EMBEBIDO: esta pantalla también se usa DENTRO del panel, al final del
+     asistente, y allí no ocupa el teléfono entero.
+     El pie es una barra blanca de borde a borde con esquinas rectas, que es lo
+     correcto pegada al canto inferior de una pantalla completa. Suelta en
+     mitad del panel se lee como un rectángulo blanco ahí puesto: reportado al
+     registrarse de cero, «el diseño está como cuadrado y se ve un poco
+     extraño».
+     Embebida, los botones van sobre el fondo de la página, como en todos los
+     demás pasos del asistente. */
+  embebido = false,
 }) {
   return (
     <Pantalla>
@@ -736,7 +746,7 @@ export function ListoParaCobrar({
         )}
       </Cuerpo>
 
-      <Pie relleno={`14px ${PAD}px 22px`}>
+      <Pie fondo={embebido ? 'transparent' : 'var(--cf-card)'} relleno={embebido ? '16px 0 0' : `14px ${PAD}px 22px`}>
         {onVerCobros && (
           <BotonOro onClick={onVerCobros}>
             {cobrosHoy != null ? `Ver los ${cobrosHoy} cobros de hoy` : 'Ver los cobros de hoy'}

@@ -85,9 +85,26 @@ const PASOS = 4
 function PieWizard({ onAtras, onSeguir, seguirBloqueado, seguirTexto = 'Continuar', cargando, theme }) {
   return (
     <div
-      className="flex-none flex gap-2.5 mt-auto"
+      /* ⚠ PEGADO ABAJO Y SIEMPRE A LA VISTA.
+         Reportado al registrarse de cero: «los botones salen escondidos, hay
+         que rodarse un poquito hacia abajo, y es ilógico con el montón de
+         espacio que hay».
+         Eran dos cosas a la vez:
+         1) El contenedor medía `100vh`, y en el navegador móvil eso INCLUYE la
+            franja que tapa la barra de direcciones. El pie quedaba anclado al
+            fondo de una caja más alta que lo que se ve. Se arregla con `dvh`,
+            que es la altura que de verdad queda (el proyecto ya usa el par
+            `vh`+`dvh` en las hojas y la barra lateral).
+         2) Y aun con la altura buena, un paso largo empujaba el pie fuera de
+            la pantalla. Con `sticky` se queda pegado abajo mientras se
+            desplaza, así que la acción NUNCA hay que ir a buscarla.
+         Lleva fondo propio porque un pie transparente deja pasar el texto por
+         debajo de los botones. */
+      className="flex-none flex gap-2.5 mt-auto sticky bottom-0 z-10"
       style={{
-        padding: '14px 0 0',
+        padding: '14px 0 calc(14px + env(safe-area-inset-bottom, 0px))',
+        marginBottom: 'calc(-1 * env(safe-area-inset-bottom, 0px))',
+        background: theme.bg,
         borderTop: `1px solid ${theme.borderLight}`,
       }}
     >
@@ -329,7 +346,14 @@ export default function RegistroForm({ refCode, planParam, countryParam }) {
   const accentColor = verificarPor === 'whatsapp' ? '#25d366' : 'var(--color-accent)'
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: t.bg }}>
+    <div
+      /* `min-h-screen` (100vh) se queda de respaldo para navegadores viejos y
+         `min-h-[100dvh]` manda donde se entiende: en móvil, 100vh cuenta la
+         franja de la barra de direcciones, y todo lo anclado abajo queda fuera
+         de la vista. */
+      className="min-h-screen min-h-[100dvh] flex flex-col"
+      style={{ background: t.bg }}
+    >
       <div className="absolute inset-x-0 top-0 h-64 pointer-events-none" style={{ background: t.gradient }} />
 
       {/* ── EL PIE, ABAJO DE VERDAD ──

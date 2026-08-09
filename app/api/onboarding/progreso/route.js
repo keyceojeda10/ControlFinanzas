@@ -175,15 +175,39 @@ export async function GET() {
   const total = misionesFiltradas.length
   const completado = completadas === total
 
-  // Auto-complete: core completo (cliente + prestamo + pago) => step 99
-  //
-  // ⚠ TAMPOCO SE APLICA A LO QUE SE ACABA DE REABRIR. Es la TERCERA puerta que
-  // cierra el onboarding, y una cuenta parada con un cliente, un préstamo y un
-  // pago de hace meses la cumple: sin este `!reapertura` se volvería a cerrar
-  // aquí, en la misma petición, y la reapertura no serviría de nada.
-  // Las tres puertas hay que abrirlas a la vez o no se abre ninguna.
-  const coreCompleto = clientes > 0 && prestamos > 0 && pagos > 0
-  if (!reapertura && coreCompleto && (org?.onboardingStep ?? 0) < 99) {
+  /* ══ ⚠ CUÁNDO SE DA POR TERMINADA LA GUÍA ═════════════════════════════════
+   *
+   * Esto se cerraba con el CORE —un cliente, un préstamo y un pago—, así que en
+   * cuanto el usuario registraba su primer cobro la lista entera desaparecía y
+   * con ella las misiones que aún faltaban: instalar la app, registrar el
+   * capital, el primer cierre de caja, y en el flujo con cobradores también
+   * crear la ruta y el cobrador.
+   *
+   * Reportado tras registrarse de cero: «se quitan los goals en el paso tres o
+   * cuatro y queda incompleto». Y con razón: se le quitaba la guía a mitad de
+   * la guía.
+   *
+   * Ahora se cierra cuando está hecho TODO lo comprobable.
+   *
+   * ⚠ `instalar-app` NO cuenta, y no es un descuido: el servidor no puede saber
+   * si la PWA está instalada —solo el cliente lo sabe, y en un navegador de
+   * escritorio no se instala nunca—, así que si contara la guía no se cerraría
+   * JAMÁS. Ese era el motivo real del atajo del core; el atajo estaba bien
+   * intencionado y cortaba de más.
+   *
+   * ⚠ Y TAMPOCO SE APLICA A LO QUE SE ACABA DE REABRIR. Es la TERCERA puerta
+   * que cierra el onboarding, y una cuenta parada con un cliente, un préstamo y
+   * un pago de hace meses la cumple: sin este `!reapertura` se volvería a
+   * cerrar aquí, en la misma petición, y la reapertura no serviría de nada.
+   * Las tres puertas hay que abrirlas a la vez o no se abre ninguna.
+   *
+   * Medido antes de cambiarlo: 264 negocios ya tienen la guía cerrada —siguen
+   * cerrados por la puerta de arriba— y de los 172 abiertos solo UNO tiene
+   * pagos. O sea que esto no le devuelve la guía a nadie: cambia lo que ve
+   * quien se registra a partir de ahora. */
+  const comprobables = misionesFiltradas.filter((m) => m.id !== 'instalar-app')
+  const todoHecho = comprobables.every((m) => m.completada)
+  if (!reapertura && todoHecho && (org?.onboardingStep ?? 0) < 99) {
     await prisma.organization.update({
       where: { id: orgId },
       data: { onboardingStep: 99 },
