@@ -27,7 +27,7 @@ const getColombiaDateStr = () => {
 }
 
 export default function ReporteDia({ open, onClose, rutasDisponibles = [], fechaInicial }) {
-  const { esOwner, esCobrador, session } = useAuth()
+  const { esOwner, esCobrador, session, orgNombre } = useAuth()
   const [fecha, setFecha] = useState(fechaInicial || getColombiaDateStr())
   const [rutasSeleccionadas, setRutasSeleccionadas] = useState([])
   const [data, setData] = useState(null)
@@ -211,7 +211,10 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
         })
       }
 
-      texto += `\n_Control Finanzas_`
+      // El reporte lleva nombres de deudores y cuotas, y se comparte por
+      // WhatsApp: lo firma el negocio, no el software. Ver la nota de
+      // `lib/whatsapp-plantillas.js`.
+      if (orgNombre) texto += `\n_${orgNombre}_`
 
       if (navigator.share) {
         await navigator.share({ title: 'Reporte del dia', text: texto })
