@@ -43,7 +43,10 @@ function Fila({ etiqueta, valor, mono, cifra }) {
 }
 
 export function Recibo({
-  monto, cliente, saldo, proximoCobro, numero, recibidoPor, negocio = 'Control Finanzas',
+  // ⚠ Sin valor por defecto: con `negocio` vacío se imprimía «Recibido por
+  // Juan · Control Finanzas» en el recibo que ve el deudor. El emisor del
+  // recibo es quien prestó, nunca el software.
+  monto, cliente, saldo, proximoCobro, numero, recibidoPor, negocio = '',
   cuando,
   onWhatsApp, onGuardarImagen, onImprimir, onSiguiente,
   telefono,

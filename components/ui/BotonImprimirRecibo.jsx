@@ -131,8 +131,12 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
   }
 </style></head><body>
 
-  <div class="center bold" style="font-size:15px; letter-spacing: 1px;">CONTROL FINANZAS</div>
-  ${orgNombre ? `<div class="center" style="font-size:11px; color:#555;">${orgNombre}</div>` : ''}
+  <!-- ⚠ QUIEN PRESTA VA PRIMERO Y VA GRANDE.
+       Aquí decía CONTROL FINANZAS en 15px y el nombre del negocio debajo, en 11
+       y en gris. Es el papel que el cobrador le deja en la mano al deudor: para
+       cualquiera que lo lea, quien prestó la plata se llama Control Finanzas.
+       Justo lo que no somos. -->
+  <div class="center bold" style="font-size:15px; letter-spacing: 1px;">${(orgNombre || '').toUpperCase() || 'COMPROBANTE'}</div>
   <div class="linea">${linea}</div>
 
   <div class="center bold" style="font-size:12px;">COMPROBANTE DE PAGO</div>
@@ -154,7 +158,10 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
 
   <div class="footer">${fmtFechaHora(pago?.fechaPago || new Date())}</div>
   <div class="footer" style="margin-top:4px;">Gracias por su pago</div>
-  <div class="footer" style="margin-top:2px;">www.control-finanzas.com</div>
+  <!-- La marca no desaparece: baja al pie CON su papel escrito al lado.
+       Esconderla sería peor —si el deudor la encuentra igual, nada le explica
+       qué es—. Verla con la explicación pegada es lo que protege. -->
+  <div class="footer" style="margin-top:6px; font-size:8px; line-height:1.35;">Software de gestión: Control Finanzas · no presta dinero ni realiza cobros</div>
 
   <button class="btn-cerrar no-print" onclick="window.close()">Cerrar</button>
 
@@ -229,7 +236,7 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo
 </style></head><body>
   <div class="wrap">
     <div class="title">Historial completo del crédito</div>
-    <div class="sub">Control Finanzas${orgNombre ? ` · ${orgNombre}` : ''}</div>
+    <div class="sub">${orgNombre || ''}</div>
 
     <div class="grid">
       <div class="item"><b>Cliente:</b> ${cliente?.nombre || 'N/A'}</div>
@@ -266,7 +273,7 @@ ${Array.isArray(camposRecibo) && camposRecibo.length > 0 ? camposRecibo.map(c =>
       <tbody>${filasPagos}</tbody>
     </table>
 
-    <div class="footer">Documento generado automáticamente por Control Finanzas.</div>
+    <div class="footer" style="font-size:8px; line-height:1.35;">Software de gestión: Control Finanzas · no presta dinero ni realiza cobros</div>
 
     <button class="btn-cerrar no-print" onclick="window.close()">Cerrar</button>
   </div>

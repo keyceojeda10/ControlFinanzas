@@ -136,7 +136,7 @@ export function AntesDeFirmar({
 // `guardando` y `puedeGuardar` vienen de la app: subir la firma es una peticion
 // y el boton tiene que decir que esta en ello.
 export function Firma({
-  nombre, resumen, fecha, hora, hayTrazo = false, onBorrar, onListo,
+  nombre, resumen, fecha, hora, acreedor, hayTrazo = false, onBorrar, onListo,
   children, guardando = false, puedeGuardar = true,
 }) {
   return (
@@ -171,6 +171,27 @@ export function Firma({
         </BotonPrimario>
         </span>
       </div>
+
+      {/* ══ ⚠ QUÉ ESTÁ FIRMANDO, ESCRITO ══════════════════════════════════
+          Antes aquí solo había tres cifras y un recuadro en blanco. La persona
+          trazaba su firma sin que la pantalla dijera una palabra de qué
+          aceptaba: las cláusulas viven únicamente en un PDF que se genera
+          DESPUÉS y se descarga desde el panel del prestamista.
+
+          Este renglón es además de donde sale la autorización de datos. Sin
+          ella, todo lo que se hace con los datos de esta persona —incluido el
+          indicador de riesgo entre negocios— se queda sin base.
+
+          ⚠ TEXTO PENDIENTE DE REVISIÓN POR ABOGADO. */}
+      <p style={{
+        flex: 'none', margin: 0, fontSize: 11.5, lineHeight: 1.45,
+        color: 'var(--cf-ink-3)',
+      }}>
+        Al firmar, {nombre ? <strong style={{ color: 'var(--cf-ink-2)' }}>{nombre}</strong> : 'el cliente'}{' '}
+        acepta la deuda en las condiciones de arriba y autoriza a{' '}
+        <strong style={{ color: 'var(--cf-ink-2)' }}>{acreedor || 'quien le presta'}</strong>{' '}
+        a guardar y usar sus datos personales para administrar este crédito y evaluar créditos futuros.
+      </p>
 
       <div style={{
         flex: 1, minHeight: 0, position: 'relative',

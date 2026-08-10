@@ -370,7 +370,10 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   y += 26
   ctx.fillStyle = TINTA.ink4
   ctx.font = `12px ${SANS}`
-  ctx.fillText('Generado por Control Finanzas', L, y)
+  // Dice el papel que cumple, no solo el nombre: esta imagen se le manda al
+  // deudor por WhatsApp y es de lo poco que se queda en su teléfono.
+  ctx.font = `11px ${SANS}`
+  ctx.fillText('Software de gestión: Control Finanzas · no presta dinero ni realiza cobros', L, y)
 
   ctx.restore()
   return canvas

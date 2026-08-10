@@ -206,7 +206,8 @@ export default function HojaWhatsApp({
       const secs = plantillaMotor.getSecciones(ctx)
       let t = secs.filter((x) => x.locked || seccionesActivas.has(x.key)).map((x) => x.texto).join('').trim()
       if (extras.length > 0) {
-        const firma = orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
+        // El software no firma cobros. Ver `lib/whatsapp-plantillas.js`.
+  const firma = orgNombre ? `_${orgNombre}_` : ''
         const bloque = extras.map((e) => `${e.nombre}: ${e.valor}`).join('\n')
         const i = t.lastIndexOf(firma)
         // Los campos propios van ANTES de la firma, no detrás: la firma cierra

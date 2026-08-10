@@ -53,10 +53,24 @@ function Rotulo({ children }) {
    simbolo de moneda generico —el que usa cualquier pagina de prestamos rapidos—
    es justo lo que no ayuda a que se fie del enlace.
    `/logo-icon.svg` es el mismo archivo que ya usa la pantalla de registro. */
+/* ⚠ AQUI IBA NUESTRO LOGO, Y NO PUEDE IR.
+   `/logo-icon.svg` es el mismo icono de la marca que ve el prestamista al
+   registrarse. Puesto en la portada del portal del deudor, lo que dice es
+   «esta deuda es con Control Finanzas». Se cambia por una marca neutra que
+   no es de nadie: un candado, que además es lo que la pantalla promete
+   —«solo puedes ver tu propio préstamo»—. */
 function Moneda({ tamano = 52 }) {
   return (
-    <span aria-hidden style={{ display: 'inline-flex', flex: 'none' }}>
-      <img src="/logo-icon.svg" alt="" width={tamano} height={tamano} />
+    <span aria-hidden style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      flex: 'none', width: tamano, height: tamano, borderRadius: tamano * 0.28,
+      background: 'var(--cf-fill)', color: 'var(--cf-ink-2)',
+    }}>
+      <svg width={tamano * 0.5} height={tamano * 0.5} viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="10" width="16" height="11" rx="2.5" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </svg>
     </span>
   )
 }
@@ -420,6 +434,24 @@ export function PortalPrestamo({
                 }}>escribirle por WhatsApp</button>
               </>
             )}
+          </span>
+
+          {/* ⚠ QUIEN NO LE PRESTO, TAMBIEN SE DICE.
+              Arriba está el nombre de quien prestó; esta línea cierra la otra
+              mitad. El deudor entró por un enlace de nuestro dominio, así que
+              en algún momento va a ver el nombre: mejor que lo vea aquí, con
+              el papel explicado, que lo deduzca al revés. */}
+          <span style={{
+            display: 'block', marginTop: 10, fontSize: 11, textAlign: 'center',
+            color: 'var(--cf-ink-4)', lineHeight: 1.5,
+          }}>
+            Esta página funciona con Control Finanzas, el software de gestión que
+            usa {prestamista}. Control Finanzas no presta dinero, no cobra y no
+            decide sobre tu crédito.{' '}
+            <a href="https://control-finanzas.com/para-clientes" target="_blank" rel="noopener noreferrer"
+              style={{ color: 'var(--cf-ink-3)', textDecoration: 'underline' }}>
+              Más información
+            </a>
           </span>
         </div>
       )}

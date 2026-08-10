@@ -235,7 +235,7 @@ async function generarComprobante(prestamo, pais = 'co', tz = null) {
 export default function FirmaDigital({ prestamo, onSave }) {
   // El pais y la zona salen de la sesion: sin ellos el comprobante se
   // formatea con la zona del TELEFONO y resta un dia (ver `formatFecha`).
-  const { country: paisSesion, timezone: tzSesion } = useAuth()
+  const { country: paisSesion, timezone: tzSesion, orgNombre } = useAuth()
   const prestamoId = prestamo?.id
   const firmaUrl = prestamo?.firmaUrl
 
@@ -561,6 +561,9 @@ export default function FirmaDigital({ prestamo, onSave }) {
             resumen={resumenFirma}
             fecha={new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
             hora={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
+            /* El acreedor es el negocio, nunca el software: es su nombre el que
+               tiene que aparecer en la frase que el cliente acepta. */
+            acreedor={orgNombre}
             onBorrar={limpiar}
             onListo={guardar}
             guardando={saving}

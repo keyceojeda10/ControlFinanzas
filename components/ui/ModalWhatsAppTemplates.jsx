@@ -67,7 +67,8 @@ export default function ModalWhatsAppTemplates({
           .trim()
         if (Array.isArray(extrasLocal) && extrasLocal.length > 0) {
           const extraText = extrasLocal.map(e => `\u{1f4cb} ${e.nombre}: ${e.valor}`).join('\n')
-          const orgFirma = orgNombre ? `_${orgNombre}_` : '_Control Finanzas_'
+          // El software no firma cobros. Ver `lib/whatsapp-plantillas.js`.
+  const orgFirma = orgNombre ? `_${orgNombre}_` : ''
           const firmaIdx = texto.lastIndexOf(orgFirma)
           if (firmaIdx > 0) {
             texto = texto.slice(0, firmaIdx) + extraText + '\n\n' + texto.slice(firmaIdx)
