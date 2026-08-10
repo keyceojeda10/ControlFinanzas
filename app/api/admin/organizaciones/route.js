@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { condicionesDeBusqueda } from '@/lib/admin/buscar-organizacion'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -20,16 +21,11 @@ export async function GET(req) {
 
   const where = { AND: [] }
 
-  // Búsqueda por nombre de org, email de usuario o teléfono de usuario
+  /* Nombre de la organización, y nombre, correo O TELÉFONO de sus usuarios.
+     El teléfono es el que faltaba: ver `lib/admin/buscar-organizacion.js`. */
   if (busqueda && busqueda.trim()) {
-    const q = busqueda.trim()
-    where.AND.push({
-      OR: [
-        { nombre: { contains: q } },
-        { users: { some: { email: { contains: q } } } },
-        { users: { some: { nombre: { contains: q } } } },
-      ],
-    })
+    const condiciones = condicionesDeBusqueda(busqueda)
+    if (condiciones.length) where.AND.push({ OR: condiciones })
   }
 
   if (plan)     where.AND.push({ plan })

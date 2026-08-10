@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { condicionesDeBusqueda } from '@/lib/admin/buscar-organizacion'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -19,11 +20,9 @@ export async function GET(req) {
 
   const where = {}
   if (q) {
-    where.OR = [
-      { nombre: { contains: q } },
-      { users: { some: { email: { contains: q }, rol: 'owner' } } },
-      { users: { some: { nombre: { contains: q }, rol: 'owner' } } },
-    ]
+    // Aquí faltaba el teléfono igual que en Organizaciones.
+    const condiciones = condicionesDeBusqueda(q, { soloOwner: true })
+    if (condiciones.length) where.OR = condiciones
   }
   if (plan) where.plan = plan
   if (estado) where.estadoContacto = estado
