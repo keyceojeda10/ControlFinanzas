@@ -462,23 +462,56 @@ function Hero({
    Antes eran dos tarjetas TEÑIDAS —una verde y una roja— y competían entre sí:
    con las dos gritando, ninguna era la importante. En blanco, el color queda
    solo en la cifra que de verdad lo necesita. */
-function TarjetaDato({ rotulo, children, pie }) {
+/* ══ LAS DOS TARJETAS BLANCAS, Y POR QUÉ AHORA SE ABREN ═══════════════════
+   Un dueño, sobre lo mismo por enésima vez:
+
+     «él me dice que él va a revisar, no le salen los clientes que están en
+      mora, no les puede cobrar, cuando realmente sí están en mora.»
+
+   Y sí estaban: su panel decía «EN MORA · 10 de 106 · $118.045.749 expuestos».
+   El número estaba bien y **la tarjeta era un `<div>`**. La única fila del panel
+   que llevaba a alguna parte era la de «más de 30 días», que en su cuenta son 2
+   de los 10: los otros 8 no tenían ni un camino desde la pantalla de inicio.
+
+   Una cifra que nombra un problema y no se puede abrir no es información, es un
+   callejón: obliga a acordarse de que existe un chip «En mora» en otra pantalla.
+   `destino` es opcional a propósito — la tarjeta sin sitio a donde ir se sigue
+   pintando igual, como un `<div>`, y no finge ser pulsable. */
+function TarjetaDato({ rotulo, children, pie, destino, onIr }) {
+  const abre = destino && onIr ? () => onIr(destino) : null
+  const Caja = abre ? 'button' : 'div'
   return (
-    <div style={{
-      flex: 1, minWidth: 0,
-      background: 'var(--cf-card)',
-      border: '1px solid var(--cf-border)',
-      borderRadius: 'var(--cf-r-card)',
-      padding: 15,
-      display: 'flex', flexDirection: 'column', gap: 7,
-    }}>
+    <Caja
+      {...(abre ? { type: 'button', onClick: abre } : {})}
+      style={{
+        flex: 1, minWidth: 0,
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
+        borderRadius: 'var(--cf-r-card)',
+        padding: 15,
+        display: 'flex', flexDirection: 'column', gap: 7,
+        textAlign: 'left', font: 'inherit',
+        cursor: abre ? 'pointer' : 'default',
+      }}
+    >
       <span style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
         fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
         color: 'var(--cf-ink-3)',
-      }}>{rotulo}</span>
+      }}>
+        {rotulo}
+        {/* El chevrón dice que se entra, y va en el rótulo y no al lado de la
+            cifra: ahí competiría con el único número que la tarjeta enseña. */}
+        {abre && (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden
+            stroke="var(--cf-chevron)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+        )}
+      </span>
       {children}
       {pie && <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{pie}</span>}
-    </div>
+    </Caja>
   )
 }
 
@@ -684,14 +717,25 @@ export default function Panel({
           style={{ display: 'flex', gap: 10, flex: 'none' }}
         >
           {caja && (
-            <TarjetaDato rotulo="En caja" pie="Para prestar ahora">
+            <TarjetaDato rotulo="En caja" pie="Para prestar ahora" destino="/caja" onIr={onIr}>
               <span className="cf-fig" style={{
                 fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)',
               }}>{caja}</span>
             </TarjetaDato>
           )}
           {mora && (
-            <TarjetaDato rotulo="En mora" pie={mora.expuesto ? `${mora.expuesto} expuestos` : null}>
+            /* A CLIENTES Y NO A PRÉSTAMOS: la tarjeta cuenta PERSONAS —«10 de
+               106»— y `/prestamos?estado=mora` cuenta préstamos. Un dueño con un
+               cliente que lleva dos préstamos atrasados vería 10 acá y 11 allá, y
+               ese desajuste es justo el que ya obligó a rehacer el conteo del
+               panel una vez. Sin nadie en mora no se abre: una lista vacía es
+               peor respuesta que un número quieto. */
+            <TarjetaDato
+              rotulo="En mora"
+              pie={mora.expuesto ? `${mora.expuesto} expuestos` : null}
+              destino={mora.cuantos > 0 ? '/clientes?filtro=mora' : null}
+              onIr={onIr}
+            >
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 {/* El conteo en rojo, el total en gris: son dos cifras y solo
                     una es la mala noticia. «20 de 25» todo en rojo se lee como
