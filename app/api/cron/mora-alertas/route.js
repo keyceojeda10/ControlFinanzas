@@ -56,6 +56,20 @@ const CRON_SECRET = process.env.CRON_SECRET
    Por encima, los que sobran van en UNA fila que lleva a la lista completa. */
 const MAX_FILAS_POR_ORG = 12
 
+/* ⚠ LA VENTANA, Y POR QUÉ NO BASTABA CON «NO REPETIR».
+ *
+ * Sin ella, «avisar lo que no se ha avisado» significa que la PRIMERA corrida
+ * avisa de toda la mora viva. Probado en el espejo antes de subirlo: dijo
+ * «4.258 préstamos se atrasaron», y no se atrasaron hoy — llevan meses. El
+ * aviso habría nacido mintiendo, que es peor que no tenerlo.
+ *
+ * Tres días, y no uno, porque el guion puede no correr: si el servidor está
+ * caído el martes, el que se atrasó el martes se avisa el miércoles en vez de
+ * perderse para siempre. No cambia el umbral —el del dueño sigue siendo un día,
+ * «vence el 10, el 11 ya avisa»—, cambia cuánto aguanta un despiste nuestro.
+ */
+const VENTANA_DIAS = 3
+
 const dinero = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CO')}`
 
 export async function POST(req) {
@@ -142,7 +156,7 @@ export async function POST(req) {
          a `/api/mora`. */
       const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org, p)
       const dias = calcularDiasMora(p, diasExcluidos, fest)
-      if (dias < 1) continue
+      if (dias < 1 || dias > VENTANA_DIAS) continue
 
       // La cuota que disparó el atraso: es lo que hace única a ESTA mora.
       const ancla = calcularProximoCobro(p, diasExcluidos, fest)
@@ -207,7 +221,7 @@ export async function POST(req) {
           filas.push({
             organizationId: orgId, userId, tipo: 'mora',
             titulo: `Y otros ${sobran} clientes se atrasaron`,
-            mensaje: `Hoy se atrasaron ${lista.length} en total. Toca para verlos.`,
+            mensaje: `Se acaban de atrasar ${lista.length} en total. Toca para verlos.`,
             datos: JSON.stringify({
               // Sin `llave`: esta fila es un resumen del día, no el aviso de un
               // préstamo, y no debe bloquear el aviso individual de mañana.
