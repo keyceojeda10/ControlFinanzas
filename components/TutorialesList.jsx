@@ -4,30 +4,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { TUTORIALES, CATEGORIAS } from '@/lib/tutorialesData'
+import { TextoGuia } from '@/components/tutoriales/ModalGuia'
 
-// ─── Parse WhatsApp formatting to React elements ─────────────
-function parseWhatsAppText(text) {
-  return text.split('\n').map((line, i) => {
-    const parts = []
-    let remaining = line
-    let key = 0
-    while (remaining.length > 0) {
-      const startIdx = remaining.indexOf('*')
-      if (startIdx === -1) { parts.push(remaining); break }
-      const endIdx = remaining.indexOf('*', startIdx + 1)
-      if (endIdx === -1) { parts.push(remaining); break }
-      if (startIdx > 0) parts.push(remaining.slice(0, startIdx))
-      parts.push(<strong key={key++} className="text-[var(--cf-ink)] font-semibold">{remaining.slice(startIdx + 1, endIdx)}</strong>)
-      remaining = remaining.slice(endIdx + 1)
-    }
-    return (
-      <span key={i}>
-        {parts}
-        {i < text.split('\n').length - 1 && '\n'}
-      </span>
-    )
-  })
-}
+/* ⚠ EL TRADUCTOR DE `*negrita*` VIVE EN `ModalGuia`, y esta lista lo importa
+   de alli. Estaba escrito aqui dentro, y ahora la misma guia se lee por DOS
+   caminos —esta pantalla y el modal de «¿Que necesitas hacer aqui?»—: dos
+   copias del mismo interprete es como se acaba con dos formas de entender un
+   asterisco. Es el fallo del comprobante, que se reporto dos dias seguidos. */
 
 // ─── Lightbox ────────────────────────────────────────────────
 function Lightbox({ src, alt, onClose }) {
@@ -124,7 +107,7 @@ function TutorialCard({ tutorial, showCopyButton, onImageClick, defaultOpen = fa
 
           {/* Text */}
           <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-xl p-4 text-xs text-[var(--cf-ink)] whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto">
-            {showCopyButton ? tutorial.text : parseWhatsAppText(tutorial.text)}
+            {showCopyButton ? tutorial.text : <TextoGuia texto={tutorial.text} />}
           </div>
 
           {/* ⚠ LA GUÍA TERMINA EN EL SITIO, NO EN OTRA FOTO.
@@ -312,7 +295,14 @@ export default function TutorialesList({ showCopyButton = false }) {
                 tutorial={t}
                 showCopyButton={showCopyButton}
                 onImageClick={(src, alt) => setLightbox({ src, alt })}
-                defaultOpen={filtered.length === 1 || tutorial.id === pedido}
+                /* ⚠ AQUÍ DECÍA `tutorial.id`, Y `tutorial` NO EXISTE EN ESTE
+                   ÁMBITO: la variable del `map` es `t`. Un `ReferenceError` en
+                   pleno render, así que la pantalla entera de tutoriales
+                   reventaba —«tutorial is not defined» en los detalles
+                   técnicos— y solo en la rama de búsqueda/filtro, que es
+                   justo la que abre el enlace `?t=`.
+                   Pasa build y pruebas sin chistar: aquí no hay TypeScript. */
+                defaultOpen={filtered.length === 1 || t.id === pedido}
               />
             </div>
           ))}

@@ -16,7 +16,23 @@
 
 import { useMemo, useState } from 'react'
 import { buscarAcciones } from '@/lib/acciones/registro'
-import { useAcciones } from './AccionesProvider'
+import { buscarGuias } from '@/lib/tutoriales/guias'
+import ModalGuia from '@/components/tutoriales/ModalGuia'
+import { useAcciones, ejecutarAccion } from './AccionesProvider'
+
+/* La misma fila para la acción y para la guía: lo que las separa es el signo
+   de interrogación, no la forma de la caja. */
+const FILA = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  gap: 10, width: '100%', textAlign: 'left', font: 'inherit',
+  padding: '10px 10px', border: 0, borderRadius: 12,
+  background: 'var(--cf-surface)', cursor: 'pointer',
+}
+
+/* El titulo y la pista de una fila, escritos UNA vez. Repetirlos era ademas
+   duplicar el `14.5`, que es un tamaño fuera de la escala y esta contado. */
+const TITULO = { display: 'block', fontSize: 14.5, fontWeight: 600, color: 'var(--cf-ink)' }
+const PISTA = { display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 1 }
 
 const LUPA = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -37,36 +53,33 @@ export default function QueNecesitas({
      83px por delante del título, y el texto partido en dos renglones a 412px.
      Ahora los ejemplos salen al TOCAR el campo, que es cuando hacen falta. */
   const [enfocado, setEnfocado] = useState(false)
+  /* La guía abierta. Se pinta encima de la pantalla en la que estás: eso es
+     todo el pedido — «que no me mande a ningún lado, sino que allí mismo me
+     salga un modal». */
+  const [guia, setGuia] = useState(null)
   const encontradas = useMemo(() => buscarAcciones(acciones, texto, 5), [acciones, texto])
+  /* ⚠ LAS GUÍAS FALTABAN ENTERAS, y era la mitad del trabajo de esta caja.
+     El dueño: «si alguien quiere saber cómo renovar con un tutorial, no va a
+     poder porque no sale. Sale la opción rápida de que lo lleva a renovar el
+     préstamo, pero no le explica cómo». Las 34 guías existían y solo las
+     conocía el buscador general.
+
+     Van DETRÁS de las acciones y son dos como mucho: primero hacer, después
+     aprender a hacerlo. Una guía por delante convierte un toque en una lectura. */
+  const guias = useMemo(() => buscarGuias(texto, 2), [texto])
   const buscando = texto.trim().length >= 2
 
   // Sin nada registrado no se pinta: una caja que nunca encuentra nada es peor
   // que no tenerla.
   if (!acciones.length) return null
 
-  /* ⚠ EJECUTAR NO ES SUFICIENTE: HAY QUE LLEVAR.
-   *
-   * Reportado con captura y flecha: se escribe «Gest», sale «Ver y gestionar
-   * los pagos», se pulsa y NO PASA NADA. Y sí pasaba — abría el acordeón del
-   * historial, que vive 1.500px más abajo. El estado cambiaba, la pantalla no
-   * se movía, y desde arriba eso se lee como un botón roto.
-   *
-   * Un modal se ve solo. Lo que se abre DENTRO de la página hay que ir a
-   * enseñarlo: la acción declara `llevarA` con el id de su destino. */
-  const ejecutarYLlevar = (a) => {
-    a.ejecutar?.()
-    if (!a.llevarA) return
-    // Con retraso: React todavía no ha pintado lo que se acaba de abrir.
-    setTimeout(() => {
-      document.getElementById(a.llevarA)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 80)
-  }
+  const vacio = buscando && encontradas.length === 0 && guias.length === 0
 
   return (
-    /* 46 de alto y radio de control (14): la misma medida que el buscador de
-       clientes y que el conmutador de vista. Antes era una tarjeta de 18 con
-       padding propio, y en una fila con ellos desentonaba. */
+    <>
+    {/* 46 de alto y radio de control (14): la misma medida que el buscador de
+        clientes y que el conmutador de vista. Antes era una tarjeta de 18 con
+        padding propio, y en una fila con ellos desentonaba. */}
     <div
       style={{
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
@@ -103,23 +116,44 @@ export default function QueNecesitas({
             <button
               key={a.id}
               type="button"
-              onClick={() => { setTexto(''); ejecutarYLlevar(a) }}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: 10, width: '100%', textAlign: 'left', font: 'inherit',
-                padding: '10px 10px', border: 0, borderRadius: 12,
-                background: 'var(--cf-surface)', cursor: 'pointer',
-              }}
+              onClick={() => { setTexto(''); ejecutarAccion(a) }}
+              style={FILA}
             >
               <span style={{ minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 14.5, fontWeight: 600, color: 'var(--cf-ink)' }}>
-                  {a.label}
-                </span>
+                <span style={TITULO}>{a.label}</span>
                 {a.pista && (
-                  <span style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 1 }}>
-                    {a.pista}
-                  </span>
+                  <span style={PISTA}>{a.pista}</span>
                 )}
+              </span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden
+                stroke="var(--cf-ink-4)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          ))}
+
+          {/* ── Y CÓMO SE HACE ──
+              El signo de interrogación distingue de un vistazo la explicación
+              de la acción: son dos cosas distintas y la de arriba se pulsa mil
+              veces más. No abre otra pantalla — abre la guía encima de ésta. */}
+          {guias.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => { setTexto(''); setGuia(g) }}
+              style={FILA}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 26, height: 26, minWidth: 26, borderRadius: 999, flex: 'none',
+                  background: 'var(--cf-fill)', color: 'var(--cf-ink-3)',
+                  fontSize: 13, fontWeight: 800,
+                }}>?</span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={TITULO}>{g.title}</span>
+                  <span style={PISTA}>Cómo se hace, con capturas</span>
+                </span>
               </span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden
                 stroke="var(--cf-ink-4)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -130,7 +164,7 @@ export default function QueNecesitas({
 
           {/* ⚠ NUNCA EL VACÍO. Quedarse en blanco es lo que hoy manda a la gente
               a escribir por WhatsApp, que es justo lo que esto viene a evitar. */}
-          {encontradas.length === 0 && (
+          {vacio && (
             <p style={{ fontSize: 13, color: 'var(--cf-ink-3)', margin: '4px 2px 2px', lineHeight: 1.5 }}>
               No encontré eso aquí. Prueba con otra palabra, o mira las{' '}
               <a href="/tutoriales" style={{ color: 'var(--cf-gold-dark)', fontWeight: 600 }}>guías</a>.
@@ -145,5 +179,8 @@ export default function QueNecesitas({
         </p>
       )}
     </div>
+
+    <ModalGuia guia={guia} onClose={() => setGuia(null)} />
+    </>
   )
 }

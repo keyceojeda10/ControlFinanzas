@@ -56,6 +56,31 @@ export function useAcciones() {
 }
 
 /**
+ * Dispara una acción registrada Y VA A ENSEÑAR lo que abrió.
+ *
+ * ⚠ EJECUTAR NO ES SUFICIENTE. Reportado con captura y flecha: se escribe
+ * «Gest», sale «Ver y gestionar los pagos», se pulsa y NO PASA NADA. Y sí
+ * pasaba — abría el acordeón del historial, que vive 1.500px más abajo. El
+ * estado cambiaba, la pantalla no se movía, y desde arriba eso se lee como un
+ * botón roto.
+ *
+ * Un modal se ve solo. Lo que se abre DENTRO de la página hay que ir a
+ * enseñarlo: la acción declara `llevarA` con el id de su destino.
+ *
+ * Vive aquí y no dentro de la caja de búsqueda porque ahora lo llaman DOS: la
+ * caja y el botón final de la guía. Escrito dos veces se habría separado.
+ */
+export function ejecutarAccion(a) {
+  a?.ejecutar?.()
+  if (!a?.llevarA) return
+  // Con retraso: React todavía no ha pintado lo que se acaba de abrir.
+  setTimeout(() => {
+    document.getElementById(a.llevarA)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, 80)
+}
+
+/**
  * Lo que llama cada pantalla.
  *
  *   useRegistrarAcciones('prestamo', [

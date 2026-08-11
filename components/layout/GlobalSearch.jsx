@@ -36,7 +36,8 @@ import { leerRecientes } from '@/lib/recientes'
 import { BusquedaGlobal } from '@/components/pantallas/Estados'
 import { buscarAcciones } from '@/lib/acciones/registro'
 import { useAcciones } from '@/components/acciones/AccionesProvider'
-import { TUTORIALES } from '@/lib/tutorialesData'
+import { buscarGuias } from '@/lib/tutoriales/guias'
+import ModalGuia from '@/components/tutoriales/ModalGuia'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
@@ -61,6 +62,9 @@ function IconoAtajo({ d, extra }) {
 
 export default function GlobalSearch() {
   const [open, setOpen] = useState(false)
+  /* La guia abierta. Vive AQUI y no dentro del panel de busqueda porque el
+     panel se cierra al elegir: si el modal colgara de el, se iria con el. */
+  const [guia, setGuia] = useState(null)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -245,18 +249,19 @@ export default function GlobalSearch() {
        Primero HACER —la acción de esta pantalla—, después el sitio, y solo al
        final aprender a hacerlo. Una guía por delante de la acción convierte un
        toque en una lectura.
-       Van con `?t=`, que abre esa guía desplegada en vez de dejar al usuario
-       buscándola en una lista de 34. */
-    const guias = texto.length < 2 ? [] : buscarAcciones(
-      TUTORIALES.map((t) => ({ id: `tut-${t.id}`, label: t.title, sinonimos: t.keywords || [] })),
-      texto, 2,
-    ).map((g) => ({
-      id: g.id,
+
+       ⚠ Y NO MANDAN A NINGÚN LADO. Iban con `href: /tutoriales?t=…`, y el dueño
+       lo rebatió con las dos razones: «aparte de que no es lo que quiero, está
+       roto» —lo estaba: `tutorial is not defined`— y «yo quería que en un
+       modal, ahí mismo sin moverse para ningún otro lado». Sacar a alguien de
+       su préstamo para explicarle cómo renovarlo le cuesta el camino de vuelta. */
+    const guias = texto.length < 2 ? [] : buscarGuias(texto, 2).map((g) => ({
+      id: `tut-${g.id}`,
       tipo: 'guia',
-      nombre: g.label,
-      detalle: 'Cómo se hace',
+      nombre: g.title,
+      detalle: 'Cómo se hace, con capturas',
       iniciales: '?',
-      href: `/tutoriales?t=${g.id.replace('tut-', '')}`,
+      hacer: () => setGuia(g),
     }))
 
     return [...acciones, ...gente, ...destinos, ...guias]
@@ -281,7 +286,11 @@ export default function GlobalSearch() {
     return () => window.removeEventListener('keydown', handler)
   }, [open, filas, selected, ir])
 
-  if (!open) return null
+  /* ⚠ EL MODAL SOBREVIVE AL CIERRE DEL BUSCADOR, y ese es todo el asunto: el
+     panel se cierra —«ahi mismo, sin moverse»— y la guia se queda encima de la
+     pantalla en la que estabas. Colgada del `return` de abajo se desmontaria en
+     el mismo golpe que la abre. */
+  if (!open) return guia ? <ModalGuia guia={guia} onClose={() => setGuia(null)} /> : null
 
   const atajos = ATAJOS
     .filter((a) => !(a.soloDueno && esCobrador))
