@@ -82,7 +82,12 @@ export async function GET(request) {
   // Calcular mora para cada préstamo
   const clientesEnMora = prestamos
     .map((p) => {
-      const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org)
+      /* ⚠ EL CUARTO ARGUMENTO ES EL PRÉSTAMO, y faltaba. `obtenerDiasSinCobro`
+         resuelve Préstamo > Cliente > Ruta > Organización; sin él, los días sin
+         cobro propios del préstamo —que la ficha SÍ deja configurar— no ganan, y
+         el mismo préstamo daba una mora acá y otra en su pantalla. Es el mismo
+         renglón que ya se corrigió en `/api/prestamos/[id]`. */
+      const diasExcluidos = obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org, p)
       const diasMora = calcularDiasMora(p, diasExcluidos, festivos)
       if (diasMora <= 0) return null
       return {

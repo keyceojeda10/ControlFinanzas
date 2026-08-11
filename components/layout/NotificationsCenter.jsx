@@ -468,8 +468,13 @@ export default function NotificationsCenter({ size = 'md' }) {
                       if (n.datos) {
                         try {
                           const d = JSON.parse(n.datos)
-                          if (d.clienteId) {
-                            window.location.href = `/clientes/${d.clienteId}`
+                          /* `href` primero: hay avisos que no son de un cliente
+                             —«y otros 40 se atrasaron»— y sin esto la fila se
+                             marcaba como leída y no llevaba a ninguna parte, que
+                             es el control muerto de siempre. */
+                          const destino = d.href || (d.clienteId ? `/clientes/${d.clienteId}` : null)
+                          if (destino) {
+                            window.location.href = destino
                             setOpen(false)
                           }
                         } catch {}
@@ -478,8 +483,26 @@ export default function NotificationsCenter({ size = 'md' }) {
                     className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors cf-menu-item"
                     style={{ borderBottom: '1px solid var(--cf-border)', opacity: n.leida ? 0.6 : 1 }}
                   >
-                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: n.leida ? 'var(--cf-fill)' : 'var(--cf-gold-tint)' }}>
-                      <UserIcon className="w-4 h-4" style={{ color: n.leida ? 'var(--cf-ink-3)' : 'var(--cf-gold)' }} />
+                    {/* El aviso de mora va en ROJO y con el triángulo, no en
+                        dorado y con la silueta: en una lista donde todo se ve
+                        igual, «se atrasó» y «te crearon un cliente» pesan lo
+                        mismo, y no pesan lo mismo. Leída, se apaga a gris como
+                        las demás. */}
+                    <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{
+                      background: n.leida ? 'var(--cf-fill)'
+                        : n.tipo === 'mora' ? 'color-mix(in srgb, var(--cf-red) 14%, transparent)'
+                        : 'var(--cf-gold-tint)',
+                    }}>
+                      {n.tipo === 'mora' ? (
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden
+                          stroke={n.leida ? 'var(--cf-ink-3)' : 'var(--cf-red-dark)'}
+                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                          <path d="M12 9v4M12 17h.01" />
+                        </svg>
+                      ) : (
+                        <UserIcon className="w-4 h-4" style={{ color: n.leida ? 'var(--cf-ink-3)' : 'var(--cf-gold)' }} />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium" style={{ color: 'var(--cf-ink)' }}>{n.titulo}</p>
