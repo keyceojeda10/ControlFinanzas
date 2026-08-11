@@ -255,7 +255,7 @@ export default function GlobalSearch() {
        roto» —lo estaba: `tutorial is not defined`— y «yo quería que en un
        modal, ahí mismo sin moverse para ningún otro lado». Sacar a alguien de
        su préstamo para explicarle cómo renovarlo le cuesta el camino de vuelta. */
-    const guias = texto.length < 2 ? [] : buscarGuias(texto, 2).map((g) => ({
+    const guias = texto.length < 2 ? [] : buscarGuias(texto, 2, accionesPantalla).map((g) => ({
       id: `tut-${g.id}`,
       tipo: 'guia',
       nombre: g.title,

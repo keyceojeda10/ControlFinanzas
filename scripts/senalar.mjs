@@ -38,16 +38,36 @@ export async function senalar(p, orden) {
   const encontrado = await p.evaluate(({ texto, rotulo, selector, desde, numero, ROJO, TINTA }) => {
     const limpio = (s) => (s || '').replace(/\s+/g, ' ').trim()
 
+    /* ⚠ SOLO LO QUE SE VE. Esta app pinta el MISMO botón dos veces —uno para
+       el teléfono y otro para el escritorio, con `hidden lg:flex`— y el
+       recorrido del DOM encuentra primero el que está oculto. El aro salía
+       entonces sobre un rectángulo de 0×0 y la captura se caía con un «no
+       encontré qué señalar» que era mentira: ahí estaba, invisible.
+
+       Se descartan los de tamaño cero ANTES de elegir, no después. */
+    const seVe = (el) => {
+      const r = el.getBoundingClientRect()
+      if (!r.width || !r.height) return false
+      const cs = getComputedStyle(el)
+      return cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) !== 0
+    }
+
     let obj = null
-    if (selector) obj = document.querySelector(selector)
+    if (selector) obj = [...document.querySelectorAll(selector)].find(seVe) ?? null
     if (!obj && rotulo) {
       const candidatos = [...document.querySelectorAll('button, a, input, label, [role="button"]')]
       // El de texto MÁS CORTO que contiene el rótulo: el recorrido del DOM va
       // de fuera adentro, así que sin esto se señala un contenedor entero.
-      const conEl = candidatos.filter((x) => limpio(x.textContent).includes(rotulo))
+      /* ⚠ TAMBIÉN POR `aria-label`. En el teléfono los botones que importan no
+         llevan texto: crear un cliente es el «+» flotante (`aria-label="Crear"`)
+         y la ruta nueva es un icono (`aria-label="Nueva ruta"`). Buscando solo
+         por texto, los tres pasos donde se CREA algo se quedaban sin foto — que
+         son justo los que alguien busca la primera vez. */
+      const nombre = (x) => `${limpio(x.textContent)} ${x.getAttribute('aria-label') || ''}`
+      const conEl = candidatos.filter((x) => nombre(x).includes(rotulo) && seVe(x))
       if (conEl.length) {
         obj = conEl.reduce((a, b) =>
-          (limpio(a.textContent).length <= limpio(b.textContent).length ? a : b))
+          (nombre(a).length <= nombre(b).length ? a : b))
       }
     }
     if (!obj) return null

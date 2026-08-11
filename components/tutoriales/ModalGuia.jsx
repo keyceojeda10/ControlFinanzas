@@ -132,33 +132,58 @@ export default function ModalGuia({ guia, onClose }) {
         size="md"
         footer={pie}
       >
-        {/* Las capturas llevan los señalamientos —el recuadro rojo y la
-            etiqueta— y a 150px no se leen. Se dice que se pueden ampliar: sin
-            la frase, la miniatura se lee como una ilustración y nadie la toca. */}
+        {/* ══ EL PASO A PASO, EN VERTICAL Y NUMERADO ══════════════════════
+            Esto era una TIRA HORIZONTAL de miniaturas de 150px, y el dueño la
+            rebatió con lo que se ve:
+
+              «solamente tienen una imagen, cuando se supone que es un paso a
+               paso, son varias imágenes y tienen que ir subrayadas y señaladas
+               todos los clics.»
+
+            Medido: 28 de las 34 guías tenían UNA foto. Y a 150px el
+            señalamiento —el aro rojo y su etiqueta— no se lee, así que la
+            miniatura no enseñaba dónde tocar: había que ampliarla para
+            enterarse, o sea leer la guía dos veces.
+
+            Ahora cada paso es una fila: la instrucción arriba, con su número, y
+            debajo la captura A TODO EL ANCHO del modal. Ocupa más y hay que
+            desplazarse — y ese es el intercambio correcto: se lee de corrido,
+            que es lo que hace quien está atascado. Ampliar sigue estando para
+            el detalle fino. */}
         {guia.images?.length > 0 && (
-          <p className="text-[11px] mb-1.5" style={{ color: 'var(--cf-ink-4)' }}>
-            Toca la captura para verla grande
-          </p>
-        )}
-        {guia.images?.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto pb-2 mb-4">
-            {guia.images.map((img) => (
-              <button
-                key={img.src}
-                type="button"
-                onClick={() => setAmpliada(img)}
-                className="shrink-0 w-[150px] rounded-xl overflow-hidden text-left"
-                style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-card)', cursor: 'zoom-in' }}
-              >
-                <Image src={img.src} alt={img.caption || ''} width={400} height={700}
-                  className="w-full h-auto" />
-                <span className="block text-[10px] text-center py-1.5 px-2"
-                  style={{ color: 'var(--cf-ink-3)' }}>
-                  {img.caption}
-                </span>
-              </button>
+          <ol style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 18 }}>
+            {guia.images.map((img, i) => (
+              <li key={img.src} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <span aria-hidden style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 22, height: 22, minWidth: 22, borderRadius: 999, flex: 'none',
+                    background: 'var(--cf-ink)', color: 'var(--cf-card)',
+                    fontSize: 12, fontWeight: 800, marginTop: 1,
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 14, lineHeight: 1.4, color: 'var(--cf-ink)', fontWeight: 600 }}>
+                    {img.caption}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAmpliada(img)}
+                  aria-label="Ver la captura grande"
+                  style={{
+                    display: 'block', width: '100%', padding: 0, borderRadius: 14,
+                    overflow: 'hidden', cursor: 'zoom-in',
+                    border: '1px solid var(--cf-border)', background: 'var(--cf-card)',
+                  }}
+                >
+                  {/* 500×717 es el tamaño con que las saca el guión. Se declara
+                      igual para que Next reserve el hueco exacto y la guía no
+                      pegue un salto al cargar cada captura. */}
+                  <Image src={img.src} alt={img.caption || ''} width={500} height={717}
+                    className="w-full h-auto" />
+                </button>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
 
         <div

@@ -66,7 +66,7 @@ export default function QueNecesitas({
 
      Van DETRÁS de las acciones y son dos como mucho: primero hacer, después
      aprender a hacerlo. Una guía por delante convierte un toque en una lectura. */
-  const guias = useMemo(() => buscarGuias(texto, 2), [texto])
+  const guias = useMemo(() => buscarGuias(texto, 2, acciones), [texto, acciones])
   const buscando = texto.trim().length >= 2
 
   // Sin nada registrado no se pinta: una caja que nunca encuentra nada es peor
