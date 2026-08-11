@@ -141,6 +141,8 @@ export async function POST(req) {
       try {
         const d = JSON.parse(n.datos || '{}')
         if (d.llave) yaAvisado.add(d.llave)
+        // La fila de resumen anota las de los que no cupieron en el tope.
+        if (Array.isArray(d.llaves)) for (const k of d.llaves) yaAvisado.add(k)
       } catch {}
     }
 
@@ -158,15 +160,25 @@ export async function POST(req) {
       const dias = calcularDiasMora(p, diasExcluidos, fest)
       if (dias < 1 || dias > VENTANA_DIAS) continue
 
+      /* ⚠ SI NO HAY PLATA VENCIDA, NO HAY NADA QUE AVISAR.
+       *
+       * En el espejo salieron 71 avisos que decían «se atrasó… Debe $0». Todos
+       * eran de CUOTA ÚNICA, donde el pago es al final: `calcularMontoEnMora`
+       * devuelve 0 a propósito —no se puede reclamar plata que aún no vence— y
+       * `calcularDiasMora` sin embargo cuenta días. Los dos no se han puesto de
+       * acuerdo para ese modo, y es un desacuerdo anterior a este guion.
+       *
+       * Mientras tanto, la campana no despierta a nadie por una deuda que no
+       * sabe nombrar: un aviso que dice «debe $0» enseña a ignorar los avisos. */
+      const monto = calcularMontoEnMora(p, diasExcluidos, fest)
+      if (monto <= 0) continue
+
       // La cuota que disparó el atraso: es lo que hace única a ESTA mora.
       const ancla = calcularProximoCobro(p, diasExcluidos, fest)
       const llave = `${p.id}:${ancla ? new Date(ancla).toISOString().slice(0, 10) : dias}`
       if (yaAvisado.has(llave)) continue
 
-      ;(nuevos[p.organizationId] ||= []).push({
-        llave, dias, prestamo: p,
-        monto: calcularMontoEnMora(p, diasExcluidos, fest),
-      })
+      ;(nuevos[p.organizationId] ||= []).push({ llave, dias, prestamo: p, monto })
     }
 
     const res = { orgs: 0, filas: 0, push: 0, prestamos: 0 }
@@ -214,18 +226,23 @@ export async function POST(req) {
       }
 
       /* Los que no cupieron NO se callan: se dicen en una fila que lleva a la
-         lista entera. Un tope silencioso se lee como «no había más». */
-      const sobran = lista.length - MAX_FILAS_POR_ORG
-      if (sobran > 0) {
+         lista entera. Un tope silencioso se lee como «no había más».
+         ⚠ Y LA FILA SE LLEVA SUS LLAVES. Sin esto el guion no era idempotente:
+         los que se quedaban fuera del tope no quedaban anotados en ninguna
+         parte, así que la corrida siguiente los volvía a coger y el negocio
+         recibía otras doce cada día. Probado en el espejo: la segunda corrida
+         creó 48 filas más sin que se hubiera atrasado nadie nuevo. */
+      const restantes = lista.slice(MAX_FILAS_POR_ORG)
+      if (restantes.length > 0) {
         for (const userId of destinatarios) {
           filas.push({
             organizationId: orgId, userId, tipo: 'mora',
-            titulo: `Y otros ${sobran} clientes se atrasaron`,
+            titulo: `Y otros ${restantes.length} clientes se atrasaron`,
             mensaje: `Se acaban de atrasar ${lista.length} en total. Toca para verlos.`,
             datos: JSON.stringify({
-              // Sin `llave`: esta fila es un resumen del día, no el aviso de un
-              // préstamo, y no debe bloquear el aviso individual de mañana.
               href: '/clientes?filtro=mora', resumen: true, cuantos: lista.length,
+              // En plural: son los avisos que esta fila resume.
+              llaves: restantes.map((x) => x.llave),
             }),
           })
         }
