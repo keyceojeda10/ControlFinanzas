@@ -132,6 +132,14 @@ export default function ModalGuia({ guia, onClose }) {
         size="md"
         footer={pie}
       >
+        {/* Las capturas llevan los señalamientos —el recuadro rojo y la
+            etiqueta— y a 150px no se leen. Se dice que se pueden ampliar: sin
+            la frase, la miniatura se lee como una ilustración y nadie la toca. */}
+        {guia.images?.length > 0 && (
+          <p className="text-[11px] mb-1.5" style={{ color: 'var(--cf-ink-4)' }}>
+            Toca la captura para verla grande
+          </p>
+        )}
         {guia.images?.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pb-2 mb-4">
             {guia.images.map((img) => (
