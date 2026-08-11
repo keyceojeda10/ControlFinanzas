@@ -178,7 +178,13 @@ export default function ModalGuia({ guia, onClose }) {
                   {/* 500×717 es el tamaño con que las saca el guión. Se declara
                       igual para que Next reserve el hueco exacto y la guía no
                       pegue un salto al cargar cada captura. */}
+                  {/* La PRIMERA no espera a que la vean: es la que está en
+                      pantalla en cuanto se abre la guía, y con la carga perezosa
+                      salía un recuadro vacío de medio modal mientras llegaba.
+                      Las demás sí esperan — son 78 capturas en total y no hay
+                      por qué bajarlas todas de una. */}
                   <Image src={img.src} alt={img.caption || ''} width={500} height={717}
+                    loading={i === 0 ? 'eager' : 'lazy'}
                     className="w-full h-auto" />
                 </button>
               </li>
