@@ -85,6 +85,52 @@ export default function PilaAvisos({ children, onVerTodos }) {
   const [vivos, setVivos] = useState({})
   const [hoja, setHoja] = useState(false)
 
+  /* ══ LO GUARDADO ══════════════════════════════════════════════════════════
+     El dueño: «tenemos un apartado de notificaciones y no estamos mandando
+     notificaciones de ninguna clase. Ahí podría llegar una notificación de,
+     este cliente está atrasado, y ahí se va guardando».
+
+     Y era peor de lo que él creía: la tabla `Notificacion` se escribía desde
+     hacía meses —346 filas en producción— y **no la leía nadie**. Su pantalla,
+     `NotificationsCenter`, vivía dentro de `Header.jsx` y `Sidebar.jsx`, que el
+     armazón nuevo dejó de montar. Escribir y no mostrar es el mismo defecto que
+     el selector de cuenta al renovar: las dos mitades hechas y sin hilo.
+
+     ⚠ ESTO REVOCA UNA DECISIÓN ESCRITA. `CosasPorResolver` decía «los avisos de
+     tu cartera —mora, renovaciones— no viven aquí: son TRABAJO, no
+     notificaciones». Manda el dueño, que quiere el atraso en la campana y
+     guardado. Lo del panel no se quita: sigue estando, y ahora además se abre. */
+  const [guardados, setGuardados] = useState([])
+  useEffect(() => {
+    let vivo = true
+    const traer = () => {
+      fetch('/api/notificaciones', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : []))
+        .then((d) => { if (vivo && Array.isArray(d)) setGuardados(d) })
+        .catch(() => {})
+    }
+    traer()
+    // Al volver a la pestaña, no cada minuto: el cron corre una vez al día.
+    const alVolver = () => { if (document.visibilityState === 'visible') traer() }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => { vivo = false; document.removeEventListener('visibilitychange', alVolver) }
+  }, [])
+
+  const marcarLeida = (id) => {
+    setGuardados((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)))
+    fetch('/api/notificaciones', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch(() => {})
+  }
+  const marcarTodas = () => {
+    setGuardados((prev) => prev.map((n) => ({ ...n, leida: true })))
+    fetch('/api/notificaciones', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marcarTodasLeidas: true }),
+    }).catch(() => {})
+  }
+
   // La campana vive en otro punto del árbol —la cabecera y la barra lateral son
   // hermanas de la pila, no hijas— y el layout es Server Component, así que no
   // puede sostener el estado compartido. Un evento del navegador cruza el árbol
@@ -129,7 +175,10 @@ export default function PilaAvisos({ children, onVerTodos }) {
   // el numero de arriba y el texto de abajo dicen por fin lo mismo.
   //
   // Reportado por el usuario: «la campanita notifica y al abrir no hay nada».
-  const cuantos = perdedores.length
+  // Y lo guardado sin leer cuenta igual: es justo lo que la app no te está
+  // enseñando. Sin sumarlo, un atraso nuevo llegaría sin que nada se encienda.
+  const sinLeer = guardados.filter((n) => !n.leida).length
+  const cuantos = perdedores.length + sinLeer
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('cf:avisos', { detail: cuantos }))
   }, [cuantos])
@@ -159,6 +208,18 @@ export default function PilaAvisos({ children, onVerTodos }) {
       <CosasPorResolver
         abierta={hoja}
         onCerrar={() => setHoja(false)}
+        guardados={guardados}
+        sinLeer={sinLeer}
+        onLeer={marcarLeida}
+        onLeerTodas={marcarTodas}
+        onAbrirGuardado={(n) => {
+          try {
+            const d = JSON.parse(n.datos || '{}')
+            const destino = d.href || (d.clienteId ? `/clientes/${d.clienteId}` : null)
+            if (destino) { window.location.href = destino; return }
+          } catch {}
+          setHoja(false)
+        }}
         items={perdedores.map((p) => {
           const c = CONTENIDO[p.id]
           if (!c) return null
