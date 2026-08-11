@@ -12,9 +12,9 @@ import { Fragment } from 'react'
 // siempre coinciden con el número de lámina (aquí «Crear» y la lámina es «el
 // menú del +»).
 //
-// El menú del +. LA ÚNICA PANTALLA DEL SISTEMA CON EL DORADO COMO SUPERFICIE.
-// Se justifica porque es el momento en que la app pregunta, y porque es la
-// pantalla más frecuente después del panel.
+// El menú del +. Va sobre el BLOQUE OSCURO del sistema; el dorado a pantalla
+// completa que tenía antes está revocado y explicado más abajo, junto a los
+// colores.
 //
 // ⚠️ NO EXISTE EN ESCRITORIO. Ahí esa acción vive en el botón dorado de cada
 // pantalla; un menú a pantalla completa en 1440 sería un salto en falso.
@@ -26,19 +26,57 @@ import { Fragment } from 'react'
 //     solo lleva. Si se ven iguales, el usuario los trata igual.
 //  2. CADA OPCIÓN TRAE SU CIFRA. Con la cifra al lado el menú se vuelve panel y
 //     el dueño decide sin entrar. Mismo criterio que la pantalla "Más".
-//  3. LUCAS ES UNA TARJETA BLANCA COMO LAS DEMÁS. Nunca un círculo oscuro sobre
-//     el dorado: se lee como un parche, dos oscuros peleando en el mismo fondo.
+//  3. LUCAS ES UNA TARJETA COMO LAS DEMÁS, no un objeto aparte: no es una
+//     acción más, pero tampoco un parche pegado al pie.
 
-const ORO      = '#E7A400'
-const TINTA    = '#3A2900'
-// MEDIDOS, no elegidos a ojo. El handoff pide .62 y .55, que sobre el dorado
-// dan 2,98:1 y 2,61:1 — por debajo del minimo de 4,5:1 para texto pequeño. El
-// primer alfa que pasa es .82 (4,55:1). Son los dos textos mas chicos de la
-// pantalla mas saturada del sistema, asi que es justo donde se nota.
-const TINTA_2  = 'rgba(58,41,0,.82)'   // 4,55:1 · fecha, 12px
-const ROTULO   = 'rgba(58,41,0,.86)'   // 4,94:1 · rotulos de grupo, 10px
-const LINEA    = '1px solid rgba(20,20,28,.07)'
-const TARJETA  = 'rgba(255,255,255,.92)'
+/* ══ ⚠ EL DORADO A PANTALLA COMPLETA, REVOCADO ═══════════════════════════
+ *
+ * Aquí decía «LA ÚNICA PANTALLA DEL SISTEMA CON EL DORADO COMO SUPERFICIE», y
+ * el dueño lo tumbó viéndolo en el teléfono: «el fondo del menú abierto me
+ * parece bastante repelente ese color naranja».
+ *
+ * Y la regla ya estaba escrita en DESIGN.md, dos veces:
+ *
+ *   «El dorado #E7A400 se reserva a TRES COSAS: el monto principal de la
+ *    pantalla, la acción primaria y el foco del campo activo. Nada más.»
+ *   «Cuando una pantalla no tiene monto, no tiene nada dorado salvo su botón.»
+ *
+ * Este menú no tiene monto. La excepción se justificaba con «es el momento en
+ * que la app pregunta», que es una razón de ánimo, no de sistema — y se pagaba
+ * cara: la tabla de contraste de DESIGN.md existe casi entera por esta
+ * pantalla, donde los dos textos más pequeños daban 2,61:1 y 2,98:1 y había que
+ * ir subiendo alfas a mano hasta que pasaran.
+ *
+ * ── LO QUE VA EN SU LUGAR ──────────────────────────────────────────────────
+ *
+ * EL BLOQUE OSCURO, que es la superficie pesada que el sistema ya tiene: la
+ * misma del panel de «Recaudado hoy» y la de la ficha del cliente. Sus valores
+ * son literales y no tokens a propósito, igual que en `BloqueOscuro`: dentro
+ * del bloque no manda el tema, manda que el fondo es negro.
+ *
+ * Tres cosas que se ganan y no son de gusto:
+ *   · sobre una app clara, un plano casi negro se lee como UNA CAPA ENCIMA, que
+ *     es lo que un menú a pantalla completa tiene que decir;
+ *   · el dorado vuelve a ser acento —los iconos de lo que mueve plata y la X—
+ *     en vez de ser el papel;
+ *   · el contraste deja de depender de alfas medidos: todos los colores son
+ *     opacos y el peor par queda en 5,02:1.
+ */
+const SUPERFICIE = '#15161A'
+const TARJETA    = '#1E1F24'   // NO negro puro: el borde tiene que verse
+/* La tarjeta y la hoja están a 1,10 de contraste entre sí —son dos oscuros—,
+   así que sin el filete las tarjetas se funden con el fondo y las filas quedan
+   flotando. Es la misma nota que lleva `BloqueOscuro`. */
+const BORDE      = '1px solid rgba(255,255,255,.10)'
+const LINEA      = '1px solid rgba(255,255,255,.09)'
+const TEXTO      = '#F3F3F6'   // 14,85:1 sobre la tarjeta
+const TEXTO_2    = '#A3A8B2'   //  6,89:1 · cifras al pie de cada fila
+const ROTULO     = '#8A8E98'   //  5,02:1 · rótulos de grupo, 10px
+const FLECHA     = '#6E727A'   //  3,41:1 · es un grafismo, mínimo 3:1
+const CHIP_BG    = 'rgba(255,255,255,.07)'
+const CHIP_FG    = '#A3A8B2'
+const CHIP_ORO_BG = 'rgba(245,184,36,.14)'
+const CHIP_ORO_FG = '#F5B824'
 
 const I = {
   pago:     <><path d="M12 3v18M17 7.5c0-2-2.2-3-5-3s-5 .9-5 2.8c0 4.4 10 2.2 10 6.6 0 2-2.2 3.1-5 3.1s-5-1.1-5-3" /></>,
@@ -82,25 +120,25 @@ function Accion({ icono, nombre, cifra, destacada, alto = 56, primera, onClick }
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 37, minWidth: 37, height: 37, borderRadius: 12, flex: 'none',
-        background: destacada ? '#FDF3D6' : '#F3F3EF',
-        color: destacada ? '#B07D00' : '#4A4E57',
+        background: destacada ? CHIP_ORO_BG : CHIP_BG,
+        color: destacada ? CHIP_ORO_FG : CHIP_FG,
       }}>
         <Icono nombre={icono} />
       </span>
 
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{
-          fontSize: 15, fontWeight: 600, color: '#14141C',
+          fontSize: 15, fontWeight: 600, color: TEXTO,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{nombre}</span>
         {cifra && (
           <span className="cf-num" style={{
-            fontSize: 12, color: '#6B6F79', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            fontSize: 12, color: TEXTO_2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{cifra}</span>
         )}
       </span>
 
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B9BCC4"
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={FLECHA}
         strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
         <path d="M9 5l7 7-7 7" />
       </svg>
@@ -114,23 +152,23 @@ function Destino({ icono, nombre, cifra, onClick }) {
     <button type="button" onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 calc(50% - 5px)', minWidth: 0,
       minHeight: 52, padding: '0 12px', cursor: 'pointer', textAlign: 'left',
-      background: TARJETA, border: 0, borderRadius: 14,
+      background: TARJETA, border: BORDE, borderRadius: 14,
     }}>
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         width: 30, minWidth: 30, height: 30, borderRadius: 9, flex: 'none',
-        background: '#F3F3EF', color: '#4A4E57',
+        background: CHIP_BG, color: CHIP_FG,
       }}>
         <Icono nombre={icono} tam={17} />
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <span style={{
-          fontSize: 13.5, fontWeight: 600, color: '#14141C', lineHeight: 1.2,
+          fontSize: 13.5, fontWeight: 600, color: TEXTO, lineHeight: 1.2,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>{nombre}</span>
         {cifra && (
           <span className="cf-num" style={{
-            fontSize: 11, color: '#6B6F79', lineHeight: 1.3, marginTop: 1,
+            fontSize: 11, color: TEXTO_2, lineHeight: 1.3, marginTop: 1,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{cifra}</span>
         )}
@@ -189,7 +227,7 @@ export default function MenuCrear({
 
   return (
     <div style={{
-      position: 'absolute', inset: 0, background: ORO, color: TINTA,
+      position: 'absolute', inset: 0, background: SUPERFICIE, color: TEXTO,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       <div style={{
@@ -199,9 +237,9 @@ export default function MenuCrear({
       }}>
         <span style={{
           fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 24, fontWeight: 600,
-          letterSpacing: '-.02em', color: TINTA, padding: '0 4px', flex: 'none',
+          letterSpacing: '-.02em', color: TEXTO, padding: '0 4px', flex: 'none',
         }}>¿Qué vas a hacer?</span>
-        <span className="cf-num" style={{ fontSize: 12, color: TINTA_2, padding: '0 4px', marginTop: -5, flex: 'none' }}>
+        <span className="cf-num" style={{ fontSize: 12, color: TEXTO_2, padding: '0 4px', marginTop: -5, flex: 'none' }}>
           {/* Sin fecha ni hora NO se pinta el separador: quedaba un «·»
               suelto bajo el título, que parece un fallo de render. */}
           {[fecha, hora].filter(Boolean).join(' · ')}
@@ -221,7 +259,7 @@ export default function MenuCrear({
           <Fragment key={g.id}>
             <span style={{ height: 5, flex: 'none' }} />
             <Rotulo>{g.rotulo}</Rotulo>
-            <div style={{ background: TARJETA, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
+            <div style={{ background: TARJETA, border: BORDE, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
               {g.filas}
             </div>
           </Fragment>
@@ -245,19 +283,19 @@ export default function MenuCrear({
         <button type="button" onClick={ir('/asistente')} style={{
           display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
           minHeight: 66, padding: '0 15px', cursor: 'pointer', textAlign: 'left',
-          background: TARJETA, border: 0, borderRadius: 18,
+          background: TARJETA, border: BORDE, borderRadius: 18,
         }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 37, minWidth: 37, height: 37, borderRadius: 12, flex: 'none',
-            background: '#FDF3D6', color: '#B07D00',
+            background: CHIP_ORO_BG, color: CHIP_ORO_FG,
           }}>
             <Icono nombre="lucas" />
           </span>
           <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#14141C' }}>Preguntarle a Lucas</span>
+            <span style={{ fontSize: 15, fontWeight: 600, color: TEXTO }}>Preguntarle a Lucas</span>
             <span style={{
-              fontSize: 12, color: '#6B6F79', fontStyle: 'italic',
+              fontSize: 12, color: TEXTO_2, fontStyle: 'italic',
               whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             }}>«{ejemploLucas}»</span>
           </span>
@@ -276,8 +314,13 @@ export default function MenuCrear({
         bottom: 'calc(var(--cf-nav-inset) + env(safe-area-inset-bottom, 0px))',
         width: 62, height: 62, aspectRatio: '1', borderRadius: 999,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        background: '#15161A', border: 0, cursor: 'pointer',
-        boxShadow: '0 6px 20px rgba(58,41,0,.32)',
+        /* ⚠ ERA `#15161A` CON LA X DORADA, y esa es exactamente la superficie
+           que ahora tiene la hoja: el botón desaparecía. Sube un escalón y se
+           le pone filete, que es como se separan dos oscuros en este sistema.
+           La sombra deja de ser marrón (venía del fondo dorado). */
+        background: '#26282F', border: '1px solid rgba(255,255,255,.16)',
+        cursor: 'pointer',
+        boxShadow: '0 6px 20px rgba(0,0,0,.45)',
         transform: 'translateZ(0)',   // GPU Mali: el radio rompe el rasterizado sin esto
       }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F5B824"

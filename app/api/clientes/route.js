@@ -18,6 +18,7 @@ import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, validateDocument, getDocumentConfig, inicioDelDiaLocal } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
+import { dispararTrasCrear } from '@/lib/capi-activacion'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -705,6 +706,9 @@ export async function POST(request) {
 
   logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: 'crear_cliente' })
+  // Avisa a Meta si con este cliente la organizacion cruzo 6 o 21 clientes.
+  // No se espera: si el CAPI tarda o falla, la respuesta al usuario no se frena.
+  dispararTrasCrear({ organizationId, creados: 1 })
   return Response.json(cliente, { status: 201 })
   } catch (err) {
     console.error('[POST /api/clientes]', err)

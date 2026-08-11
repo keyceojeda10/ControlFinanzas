@@ -13,6 +13,7 @@ import { trackEvent }       from '@/lib/analytics'
 import { LIMITES_PLAN, LIMITES_RUTAS } from '@/lib/planes'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { dispararTrasCrear } from '@/lib/capi-activacion'
 
 export async function POST(request) {
   try {
@@ -277,6 +278,9 @@ export async function POST(request) {
       evento: 'carga_masiva',
       metadata: { clientesCreados, prestamosCreados, filas: filas.length },
     })
+    // Una carga masiva puede cruzar los dos umbrales de golpe (6 y 21): el
+    // helper evalua ambos por separado y emite un evento por cada uno cruzado.
+    dispararTrasCrear({ organizationId, creados: clientesCreados })
 
     return Response.json({
       resultado: {
