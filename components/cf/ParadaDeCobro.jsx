@@ -200,6 +200,104 @@ export function FilaCobro({
   // discute», que es lo que dice la adenda y lo que pasa en la calle.
   const [abierto, setAbierto] = useState(false)
 
+  /* ══ QUIEN NO HAY QUE VISITAR PESA MENOS ══════════════════════════════════
+   *
+   * Lo pidió el cliente más grande, y la razón es de la calle: «en ruta los
+   * cobradores se enredan mucho», porque el que ya terminó de pagar salía del
+   * mismo tamaño que el que debe. Medido en producción: la RUTA #4 tiene 45 de
+   * 140 así (32%) y la #1, 56 de 206. Son decenas de tarjetas de media pantalla
+   * de gente a la que hoy no hay que tocarle la puerta.
+   *
+   * No se distingue con un color más —el filete lateral ya se quitó en E10 por
+   * ser el cuarto sitio diciendo lo mismo— sino con lo único que no se puede
+   * confundir de un vistazo: PESO. La de cobro es blanca, alta y con botón
+   * dorado; ésta es plana, baja y sin botón grande. La diferencia se ve con el
+   * teléfono a un brazo de distancia y bajo sol.
+   *
+   * ⚠ NO PIERDE NADA, y esto importa porque ya pasó una vez: rediseñar y
+   * llevarse funciones en silencio. Sigue teniendo su número en el carril, su
+   * nombre entero —nunca cortado—, su estado, su acción propia («Prestarle» /
+   * «Sacar de la ruta») y la tarjeta entera sigue abriendo la ficha del cliente
+   * al tocarla, que es donde viven el teléfono, el mapa y el historial. Lo que
+   * se va es lo que aquí no se usa: la dirección para ir a cobrar, la rejilla
+   * de cifras del cobro y la barra de progreso de un préstamo que ya no existe.
+   */
+  const compacta = contexto?.zona === 'sindeuda' || contexto?.zona === 'inactivo'
+
+  if (compacta) {
+    const esListo = contexto.zona === 'sindeuda'
+    return (
+      <div
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        style={{
+          position: 'relative',
+          /* Plana sobre el fondo de la pantalla, no blanca: las de cobro son
+             las que se levantan. */
+          background: 'var(--cf-surface)',
+          border: '1px solid var(--cf-border)',
+          borderRadius: 'var(--cf-r-card)',
+          padding: '10px 12px',
+          display: 'flex', alignItems: 'center', gap: 11,
+          flex: 'none', cursor: 'pointer', overflow: 'hidden',
+        }}
+      >
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 34, height: 34, minWidth: 34, minHeight: 34, aspectRatio: '1',
+          borderRadius: 999, flex: 'none',
+          background: 'var(--cf-fill)', fontSize: 12, fontWeight: 700,
+          color: 'var(--cf-ink-3)',
+          border: `1.5px solid ${color}`,
+        }}>{iniciales}</span>
+
+        <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {/* El nombre entero. Con 143 clientes en una ruta, un apellido
+              cortado es tocar la puerta equivocada. */}
+          <span style={{
+            fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.25,
+            /* Parte por donde sea antes que salirse: hay negocios que meten
+               el monto en el nombre («YUSMARY MIRANDA $ 500») y aquí al lado
+               hay un botón. Recortar no es opción: el apellido es lo que
+               distingue a dos clientes con el mismo nombre. */
+            overflowWrap: 'anywhere',
+          }}>{nombre}</span>
+          <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', lineHeight: 1.3 }}>
+            {esListo ? 'Pagó completo' : 'Sin préstamo'}
+            {contexto.cifras?.length ? ` · ${contexto.cifras[contexto.cifras.length - 1].etiqueta.toLowerCase()} ${contexto.cifras[contexto.cifras.length - 1].valor}` : ''}
+          </span>
+        </span>
+
+        {/* La acción, en pequeño. «Prestarle» es la única de las cuatro zonas
+            que gana dinero, así que se queda en dorado —aquí el dorado sí es la
+            acción principal de la tarjeta—; «Sacar de la ruta» va apagada. */}
+        {contexto.accion && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onAccion?.() }}
+            style={{
+              flex: 'none', height: 34, padding: '0 13px',
+              borderRadius: 'var(--cf-r-control)', cursor: 'pointer',
+              font: 'inherit', fontSize: 12, fontWeight: 700,
+              /* ⚠ PERFILADO, NO RELLENO, y va contra mi primer intento.
+                 Lo puse en dorado macizo porque «Prestarle» es la acción que
+                 gana dinero. En la captura el ojo iba a los DOS «Prestarle»
+                 antes que al «Cobrar» de abajo, y eso invierte la prioridad de
+                 quien va en ruta: el trabajo del día es cobrar. La fila entera
+                 existe para pesar menos; un botón macizo la devuelve al frente.
+                 Se queda el dorado en el texto y el borde: se identifica sin
+                 competir. */
+              background: 'var(--cf-card)',
+              color: esListo ? 'var(--cf-gold-text-2)' : 'var(--cf-ink-2)',
+              border: `1px solid ${esListo ? 'var(--cf-gold-border)' : 'var(--cf-border-strong)'}`,
+            }}
+          >{contexto.accion.texto}</button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       onClick={cobrada ? undefined : onClick}
