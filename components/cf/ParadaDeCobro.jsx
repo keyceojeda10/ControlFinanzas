@@ -255,6 +255,12 @@ export function FilaCobro({
       tabIndex: 0,
     }
     : null
+  /* ⚠ LA FOTO NO ES UNA SEGUNDA PARADA DEL TABULADOR. Lleva el mismo toque
+     —el dueño pidió las dos: «si le pico al nombre o al perfil»— pero declararla
+     otra vez como destino pondría DOS paradas por cliente, y en la ruta medida
+     son 203: 406 paradas para llegar al mismo sitio dos veces. El nombre, que
+     está pegado y sí dice a quién se va, se queda con el papel. */
+  const identidadMuda = irAFicha ? { onClick: irAFicha } : null
 
   /* ══ QUIEN NO HAY QUE VISITAR PESA MENOS ══════════════════════════════════
    *
@@ -430,8 +436,7 @@ export function FilaCobro({
            el nombre de al lado es largo, y con el anillo puesto un óvalo se ve
            roto. Lo dice la lista de comprobación de la adenda. */
         <span
-          {...identidad}
-          aria-label={irAFicha ? `Abrir la ficha de ${nombre}` : undefined}
+          {...identidadMuda}
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 40, height: 40, minWidth: 40, minHeight: 40, aspectRatio: '1',
