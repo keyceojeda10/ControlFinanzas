@@ -487,6 +487,7 @@ export default function CobrosHoyPage() {
           if (c) setWaCliente(c)
         }}
         onMas={(fila) => { window.location.href = `/clientes/${fila.id}` }}
+        onAbrirCliente={(fila) => { window.location.href = `/clientes/${fila.id}` }}
       />
 
 

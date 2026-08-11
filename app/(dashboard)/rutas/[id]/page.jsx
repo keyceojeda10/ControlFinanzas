@@ -388,6 +388,35 @@ export default function RutaDetallePage({ params }) {
   const [vistaPlana, setVistaPlana] = useState(() => {
     try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
   })
+  /* ══ LOS GRUPOS SE PLIEGAN ══════════════════════════════════════════════
+   *
+   * Reportado con el caso que lo hace obvio, y es de ruta grande:
+   *
+   *   «si yo tengo 100 clientes por cobrar hoy y quiero ver a los que están
+   *    para prestarle de nuevo, tengo que desplazarme hacia abajo todos esos
+   *    100 clientes para poder ver la lista de los que están por prestar»
+   *
+   * O sea: agrupar SEPARABA pero no ACERCABA. La sección más larga es siempre
+   * la primera —«Por cobrar hoy»— así que las cuatro de abajo quedaban a cien
+   * tarjetas de distancia, que es justo lo que la vista agrupada venía a
+   * evitar. Con las medidas de la RUTA #1 son 206 clientes en seis secciones.
+   *
+   * Se guarda QUÉ ESTÁ CERRADO, no qué está abierto: así una sección nueva
+   * —o un grupo que hoy está vacío y mañana no— sale abierta por defecto, que
+   * es lo que el cobrador espera al abrir la pantalla por la mañana.
+   *
+   * Un `Set` en el estado y no un array: `has()` se llama una vez por sección
+   * en cada pintado. */
+  const [gruposCerrados, setGruposCerrados] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('cf-ruta-grupos-cerrados') ?? '[]')) } catch { return new Set() }
+  })
+  const plegarGrupo = (clave) => setGruposCerrados((prev) => {
+    const s = new Set(prev)
+    if (s.has(clave)) s.delete(clave)
+    else s.add(clave)
+    try { localStorage.setItem('cf-ruta-grupos-cerrados', JSON.stringify([...s])) } catch {}
+    return s
+  })
   // Vista Auditoria (admin): filtro por estado de cobro hoy, busqueda y fila expandida.
   const [auditoriaFiltro, setAuditoriaFiltro] = useState('todos') // 'todos' | 'pagaron' | 'pendientes' | 'parciales'
   const [auditoriaBusqueda, setAuditoriaBusqueda] = useState('')
@@ -1092,8 +1121,8 @@ export default function RutaDetallePage({ params }) {
     }
   }
 
-  const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
-
+  const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
+
   /* ══ LO QUE SE PUEDE HACER EN ESTA RUTA ═══════════════════════════════════
    *
    * ⚠ DOS DE ESTAS NO TENÍAN NINGÚN BOTÓN. `eliminarRuta` y `cambiarCobrador`
@@ -2531,6 +2560,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 {...fila}
                 activa={actual}
                 onClick={() => abrirPagoRapido(porId.get(fila.id))}
+                /* ── EL NOMBRE Y LA FOTO LLEVAN A LA FICHA ──
+                   A la ficha del cliente, NO al cobro: `onMas` y `onClick` ya
+                   van los dos al cobro por caminos distintos, y lo que faltaba
+                   era ver a la persona —su historial, sus datos, sus otros
+                   préstamos—. En la tarjeta compacta, además, era el único
+                   destino posible: sin préstamo vivo el cobro rápido se sale
+                   por su propio `return` y la tarjeta no hacía nada. */
+                onAbrirCliente={() => router.push(`/clientes/${fila.id}`)}
                 onLlamar={porId.get(fila.id)?.telefono
                   ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
                   : undefined}
@@ -3065,8 +3102,25 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           // primera de cada grupo: es donde el cobrador está parado ahora.
           const idActual = pendientes[0]?.id
 
-          const Rotulo = ({ titulo, cuantos, color }) => (
-            <div className="flex items-center gap-2 mb-2 mt-1 px-1">
+          /* El rótulo es AHORA EL PLEGADOR, y no un botón al lado: es la única
+             pieza fija de la sección, la que se sigue viendo con cien tarjetas
+             debajo, y es donde se toca por instinto.
+
+             La cuenta se queda puesta con la sección cerrada —«Por cobrar hoy ·
+             100»— porque plegada es lo único que dice cuánto hay ahí dentro. */
+          const Rotulo = ({ titulo, cuantos, color, clave, cerrado }) => (
+            <button
+              type="button"
+              onClick={() => plegarGrupo(clave)}
+              aria-expanded={!cerrado}
+              className="w-full flex items-center gap-2 mb-2 mt-1 px-1 text-left"
+              style={{ background: 'none', border: 0, cursor: 'pointer', font: 'inherit', minHeight: 34 }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color || 'var(--cf-ink-3)'}
+                strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+                style={{ flex: 'none', transform: cerrado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
               <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: color || 'var(--cf-ink-3)' }}>
                 {titulo}
               </span>
@@ -3074,7 +3128,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 {cuantos}
               </span>
               <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
-            </div>
+            </button>
           )
 
           return (
@@ -3109,14 +3163,25 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                    están sin préstamo.» El número NO se renumera por grupo: sigue
                    siendo la posición en la ruta. */
                 <>
-                  {gruposDeRuta(filas).map((g) => (
+                  {gruposDeRuta(filas).map((g) => {
+                    const cerrado = gruposCerrados.has(g.clave)
+                    return (
                     <div key={g.clave}>
-                      <Rotulo titulo={g.titulo} cuantos={g.filas.length} color={g.color} />
-                      <div className="flex flex-col gap-1.5">
-                        {g.filas.map((f) => renderCard(f, { actual: f.id === idActual }))}
-                      </div>
+                      <Rotulo titulo={g.titulo} cuantos={g.filas.length} color={g.color}
+                        clave={g.clave} cerrado={cerrado} />
+                      {/* Cerrada NO SE PINTA, no se esconde con CSS: con 206
+                          clientes en la ruta más grande, dejar las tarjetas
+                          montadas y taparlas cuesta el mismo trabajo de pintado
+                          que tenerlas a la vista, y el teléfono en el que se
+                          cobra es el que lo paga. */}
+                      {!cerrado && (
+                        <div className="flex flex-col gap-1.5">
+                          {g.filas.map((f) => renderCard(f, { actual: f.id === idActual }))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    )
+                  })}
                 </>
               )}
               </div>

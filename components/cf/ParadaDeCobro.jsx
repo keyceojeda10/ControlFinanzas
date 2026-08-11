@@ -163,6 +163,25 @@ export function Carril({
 }
 
 
+/* La marca de que ese nombre LLEVA A ALGÚN SITIO. Sin ella el destino existe
+   pero no se ve: la tarjeta ya se puede tocar entera, así que nada distingue el
+   nombre del resto y nadie lo prueba. Va pegada al texto y no como icono suelto
+   a la derecha —ahí competiría con el monto—, y en `ink-4` para que sea una
+   pista y no un adorno.
+
+   ⚠ `display:'inline'` y `verticalAlign`, no un flex: el nombre baja de renglón
+   cuando es largo —los apellidos no se recortan nunca— y una flecha en su
+   propia caja se quedaría arriba, separada de la última palabra. */
+function FlechaFicha({ tam = 13 }) {
+  return (
+    <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-4)"
+      strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4, marginBottom: 2 }}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  )
+}
+
 /* ══ La fila de cobro ══ */
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
@@ -170,6 +189,23 @@ export function FilaCobro({
   cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
   cobradoA, montoCobrado, cifras, pagadoPct, onClick,
+  /* ── ⚠ EL NOMBRE Y LA FOTO ABREN LA FICHA ────────────────────────────────
+     Reportado por el dueño con el caso que lo hace evidente:
+
+       «si hay un usuario que está en modo que hay que prestarle, esa tarjeta
+        queda totalmente muerta. Solamente sirve el botón de prestarle, pero si
+        yo quiero ver la información detallada de ese cliente, no le puedo dar
+        al nombre e ir a verlo.»
+
+     Y es literal, no una impresión: el `onClick` de la tarjeta abre el cobro
+     rápido, y `abrirPagoRapido` empieza por `if (activos.length === 0) return`.
+     Quien no tiene préstamo vivo —que es justo quien sale en la tarjeta
+     compacta— tocaba la tarjeta y no pasaba NADA. Sin error y sin pista.
+
+     La salida no es un botón más ni la tarjeta entera: es lo que ya identifica
+     a la fila —su foto y su nombre—, que es lo que él pidió y lo que se toca
+     por instinto. */
+  onAbrirCliente,
   /* ── QUIEN HOY NO TIENE COBRO USA ESTA MISMA TARJETA ──
      `contextoZona()` en `adaptadores/ruta.js`. Trae la pastilla, la frase que
      explica por qué hoy no le toca, qué va a la derecha y qué dice el botón.
@@ -200,6 +236,26 @@ export function FilaCobro({
   // discute», que es lo que dice la adenda y lo que pasa en la calle.
   const [abierto, setAbierto] = useState(false)
 
+  /* Los manejadores de «abrir la ficha». `stopPropagation` es obligatorio: la
+     tarjeta entera ya es un botón y sin él el toque haría las dos cosas.
+     `role="link"` y el teclado porque esto es un destino de navegación
+     —cambia de pantalla— y no una acción sobre la fila. */
+  const irAFicha = onAbrirCliente
+    ? (e) => { e.stopPropagation(); onAbrirCliente() }
+    : null
+  const identidad = irAFicha
+    ? {
+      onClick: irAFicha,
+      onKeyDown: (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return
+        e.preventDefault()
+        irAFicha(e)
+      },
+      role: 'link',
+      tabIndex: 0,
+    }
+    : null
+
   /* ══ QUIEN NO HAY QUE VISITAR PESA MENOS ══════════════════════════════════
    *
    * Lo pidió el cliente más grande, y la razón es de la calle: «en ruta los
@@ -228,7 +284,13 @@ export function FilaCobro({
     const esListo = contexto.zona === 'sindeuda'
     return (
       <div
-        onClick={onClick}
+        /* ⚠ AQUÍ LA TARJETA ENTERA SÍ ABRE LA FICHA, y es la excepción a
+           «solo el nombre y la foto». En las demás la tarjeta lleva al cobro y
+           hay dos destinos que repartir; en ésta no hay cobro que abrir —por
+           definición no tiene préstamo vivo— así que `onClick` se sale por el
+           `return` y el toque no hace nada. Una tarjeta muerta de lado a lado
+           es peor que una con un solo destino. */
+        onClick={irAFicha ?? onClick}
         role="button"
         tabIndex={0}
         style={{
@@ -262,7 +324,7 @@ export function FilaCobro({
                hay un botón. Recortar no es opción: el apellido es lo que
                distingue a dos clientes con el mismo nombre. */
             overflowWrap: 'anywhere',
-          }}>{nombre}</span>
+          }}>{nombre}{irAFicha && <FlechaFicha tam={11} />}</span>
           <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', lineHeight: 1.3 }}>
             {esListo ? 'Pagó completo' : 'Sin préstamo'}
             {contexto.cifras?.length ? ` · ${contexto.cifras[contexto.cifras.length - 1].etiqueta.toLowerCase()} ${contexto.cifras[contexto.cifras.length - 1].valor}` : ''}
@@ -367,13 +429,17 @@ export function FilaCobro({
            `minHeight` no es de adorno: sin ellos el avatar se aplasta en cuanto
            el nombre de al lado es largo, y con el anillo puesto un óvalo se ve
            roto. Lo dice la lista de comprobación de la adenda. */
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          width: 40, height: 40, minWidth: 40, minHeight: 40, aspectRatio: '1',
-          borderRadius: 999, flex: 'none',
-          background: 'var(--cf-fill)', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
-          border: `2px solid ${color}`,
-        }}>{iniciales}</span>
+        <span
+          {...identidad}
+          aria-label={irAFicha ? `Abrir la ficha de ${nombre}` : undefined}
+          style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 40, height: 40, minWidth: 40, minHeight: 40, aspectRatio: '1',
+            borderRadius: 999, flex: 'none',
+            background: 'var(--cf-fill)', fontSize: 15, fontWeight: 700, color: 'var(--cf-ink-2)',
+            border: `2px solid ${color}`,
+            cursor: irAFicha ? 'pointer' : undefined,
+          }}>{iniciales}</span>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
@@ -391,11 +457,17 @@ export function FilaCobro({
             `anywhere` y no `break-word`: una cédula o un apellido compuesto sin
             espacios se desbordaría igual. Pasa a dos renglones si hace falta —
             una tarjeta pareja que no dice a quién estás mirando no sirve. */}
-        <span style={{
-          fontSize: 17, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
-          minWidth: 0, overflowWrap: 'anywhere',
-          textDecoration: cobrada ? 'line-through' : 'none',
-        }}>{nombre}</span>
+        {/* ⚠ Y ES EL DESTINO DE «VER A ESTE CLIENTE». Ver la nota de
+            `onAbrirCliente` arriba: la tarjeta lleva al cobro, el nombre lleva
+            a la persona. Son dos preguntas distintas en la misma fila. */}
+        <span
+          {...identidad}
+          style={{
+            fontSize: 17, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--cf-ink)',
+            minWidth: 0, overflowWrap: 'anywhere',
+            textDecoration: cobrada ? 'line-through' : 'none',
+            cursor: irAFicha ? 'pointer' : undefined,
+          }}>{nombre}{irAFicha && <FlechaFicha />}</span>
 
         {cobrada ? (
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>

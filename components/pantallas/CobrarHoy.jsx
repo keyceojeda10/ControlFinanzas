@@ -138,6 +138,10 @@ export default function CobrarHoy({
   // botón no se pinta.
   onWhatsApp,
   onMas,
+  // El nombre y la foto llevan a la ficha del cliente. Va aquí y no solo en la
+  // ruta porque ésta es LA MISMA tarjeta: pasarlo en una pantalla y no en la
+  // otra es cómo se llegó a tener dos comprobantes, uno arreglado y otro no.
+  onAbrirCliente,
   onEmpezar,
   sinMargen = false,
 }) {
@@ -218,6 +222,7 @@ export default function CobrarHoy({
                   onWhatsApp={onWhatsApp ? () => onWhatsApp(f) : undefined}
                     onMapa={onMapa ? () => onMapa(f) : undefined}
                     onMas={onMas ? () => onMas(f) : undefined}
+                    onAbrirCliente={onAbrirCliente ? () => onAbrirCliente(f) : undefined}
                   />
                 </Carril>
               ))}
