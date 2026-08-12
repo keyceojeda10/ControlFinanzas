@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import * as XLSX            from 'xlsx'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { construirCuentaCompleta } from '@/lib/reportes/cuenta-completa'
 
 // `desde`/`hasta` en null => la hoja NO esta filtrada por fecha y lo dice.
 // Antes las hojas de Clientes y Prestamos escribian "Periodo: 2026-07-01 al
@@ -61,6 +62,40 @@ export async function GET(req) {
 
   let wb = XLSX.utils.book_new()
   let filename = `control-finanzas-${tipo}-${desde}.xlsx`
+
+  /* ══ TODO: LA CUENTA ENTERA EN UN SOLO ARCHIVO ════════════════════════════
+   *
+   * Pedido por el dueño, con las palabras de su cliente:
+   *
+   *   «él quiere donde le salgan los clientes, con lo que debe, o sea todo,
+   *    todo el desglose, todo en un Excel. De clientes, préstamo, lo que debe,
+   *    fechas de pago, cobro, todo, con todas las columnas.»
+   *
+   * Lo que había eran CUATRO archivos sueltos y flacos: «Clientes» no decía
+   * cuánto debe nadie (seis columnas: nombre, cédula, teléfono, dirección,
+   * ruta, estado) y «Pagos» tenía cuatro. Para armar la foto de la cuenta había
+   * que bajarse los cuatro y cruzarlos a mano en Excel.
+   *
+   * ⚠ LAS CIFRAS SALEN DE `lib/calculos`, NO DE UNA RESTA AQUÍ. La hoja de
+   * Préstamos calculaba el saldo como `totalAPagar - suma(pagos)`, que ignora
+   * la tabla de amortización, los abonos a capital y la cascada. Un Excel que
+   * no cuadra con la pantalla es peor que no tenerlo: el prestamista se lo
+   * lleva al contador y discute con su propio sistema.
+   *
+   * La hoja CARTERA es la que pidió: una fila por préstamo con la persona, su
+   * préstamo, lo que va pagado, lo que debe, la mora y las fechas — todo junto,
+   * sin cruzar nada. */
+  if (tipo === 'todo') {
+    filename = `control-finanzas-cuenta-completa-${hasta}.xlsx`
+    const armado = await construirCuentaCompleta(orgId, { desde, hasta, fechaDesde, fechaHasta })
+    const buffer = XLSX.write(armado.wb, { type: 'buffer', bookType: 'xlsx' })
+    return new Response(buffer, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    })
+  }
 
   // ── CLIENTES ──────────────────────────────────────────────────
   if (tipo === 'clientes') {
