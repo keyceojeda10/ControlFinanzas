@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
+import { directorioAlmacen } from '@/lib/almacen'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
@@ -79,7 +80,9 @@ export async function POST(request, { params }) {
     const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1]
     const randomName = crypto.randomBytes(16).toString('hex')
     const fileName = `${randomName}.${ext}`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'tickets')
+    const uploadDir = // Fuera de `public/`: lo que vive ahí lo sirve Next como estático y NO pasa
+    // por la sesión. Ver `lib/almacen.js`.
+    path.join(directorioAlmacen(), 'tickets')
 
     await mkdir(uploadDir, { recursive: true })
     await writeFile(path.join(uploadDir, fileName), bytes)

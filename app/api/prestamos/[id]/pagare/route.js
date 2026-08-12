@@ -6,6 +6,7 @@ import { readFile }         from 'fs/promises'
 import path                 from 'path'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO, HOJA, RADIO } from '@/lib/papel/tokens'
+import { leerSubido } from '@/lib/almacen'
 
 const FREQ_LABEL = { diario: 'diario', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }
 
@@ -107,12 +108,10 @@ export async function GET(req, { params }) {
   const montoInt = Math.round(prestamo.montoPrestado)
   const totalInt = Math.round(prestamo.totalAPagar)
 
-  let firmaBuffer = null
-  if (prestamo.firmaUrl) {
-    try {
-      firmaBuffer = await readFile(path.join(process.cwd(), 'public', prestamo.firmaUrl))
-    } catch {}
-  }
+  /* La firma se lee por `leerSubido`, que mira el almacén nuevo Y el viejo: los
+     archivos salieron de `public/` porque ahí Next los servía sin sesión, y un
+     pagaré sin la firma estampada no se ve roto — se ve normal y no sirve. */
+  const firmaBuffer = await leerSubido(prestamo.firmaUrl)
 
   /* EL TEXTO LEGAL NO SE TOCA. Lo unico que cambia respecto de la version
    * anterior es COMO SE VE: las mismas frases, las mismas clausulas, el mismo

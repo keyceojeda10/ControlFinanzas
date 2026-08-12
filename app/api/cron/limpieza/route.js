@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { unlink } from 'fs/promises'
 import path from 'path'
+import { borrarSubido } from '@/lib/almacen'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const DIAS_RETENCION = 90
@@ -96,8 +97,7 @@ export async function POST(req) {
     if (pagos.length === 0) break
     for (const p of pagos) {
       try {
-        const filePath = path.join(process.cwd(), 'public', p.fotoUrl)
-        await unlink(filePath)
+        await borrarSubido(p.fotoUrl)
       } catch {}
     }
     await prisma.pago.updateMany({

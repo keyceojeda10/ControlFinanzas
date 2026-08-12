@@ -5,6 +5,7 @@ import sharp from 'sharp'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
+import { directorioAlmacen } from '@/lib/almacen'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_SIZE = 5 * 1024 * 1024
@@ -69,7 +70,9 @@ export async function POST(request, { params }) {
 
     const randomName = crypto.randomBytes(16).toString('hex')
     const fileName = `${randomName}.webp`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'pagos', organizationId)
+    const uploadDir = // Fuera de `public/`: lo que vive ahí lo sirve Next como estático y NO pasa
+    // por la sesión. Ver `lib/almacen.js`.
+    path.join(directorioAlmacen(), 'pagos', organizationId)
     await mkdir(uploadDir, { recursive: true })
     await writeFile(path.join(uploadDir, fileName), compressed)
 

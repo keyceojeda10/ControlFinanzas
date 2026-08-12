@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
+import { directorioAlmacen, borrarSubido } from '@/lib/almacen'
 
 // POST /api/prestamos/[id]/firma — Guardar firma del cliente (base64 PNG)
 export async function POST(request, { params }) {
@@ -36,13 +37,15 @@ export async function POST(request, { params }) {
 
     const randomName = crypto.randomBytes(16).toString('hex')
     const fileName = `${randomName}.png`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'firmas', organizationId)
+    const uploadDir = // Fuera de `public/`: lo que vive ahí lo sirve Next como estático y NO pasa
+    // por la sesión. Ver `lib/almacen.js`.
+    path.join(directorioAlmacen(), 'firmas', organizationId)
     await mkdir(uploadDir, { recursive: true })
     await writeFile(path.join(uploadDir, fileName), buffer)
 
     if (prestamo.firmaUrl) {
       try {
-        await unlink(path.join(process.cwd(), 'public', prestamo.firmaUrl))
+        await borrarSubido(prestamo.firmaUrl)
       } catch {}
     }
 
@@ -78,7 +81,7 @@ export async function DELETE(request, { params }) {
 
     if (prestamo.firmaUrl) {
       try {
-        await unlink(path.join(process.cwd(), 'public', prestamo.firmaUrl))
+        await borrarSubido(prestamo.firmaUrl)
       } catch {}
     }
 

@@ -6,6 +6,7 @@ import sharp from 'sharp'
 import { writeFile, mkdir, unlink } from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
+import { directorioAlmacen, borrarSubido } from '@/lib/almacen'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB raw
@@ -95,15 +96,16 @@ export async function POST(request, { params }) {
     // Guardar archivo
     const randomName = crypto.randomBytes(16).toString('hex')
     const fileName = `${randomName}.webp`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'clientes', organizationId)
+    const uploadDir = // Fuera de `public/`: lo que vive ahí lo sirve Next como estático y NO pasa
+    // por la sesión. Ver `lib/almacen.js`.
+    path.join(directorioAlmacen(), 'clientes', organizationId)
     await mkdir(uploadDir, { recursive: true })
     await writeFile(path.join(uploadDir, fileName), compressed)
 
     // Eliminar foto anterior si existe
     if (cliente.fotoUrl) {
       try {
-        const oldPath = path.join(process.cwd(), 'public', cliente.fotoUrl)
-        await unlink(oldPath)
+        await borrarSubido(cliente.fotoUrl)
       } catch {
         // Archivo anterior no existe, ignorar
       }
@@ -151,8 +153,7 @@ export async function DELETE(request, { params }) {
 
     if (cliente.fotoUrl) {
       try {
-        const oldPath = path.join(process.cwd(), 'public', cliente.fotoUrl)
-        await unlink(oldPath)
+        await borrarSubido(cliente.fotoUrl)
       } catch {}
     }
 
