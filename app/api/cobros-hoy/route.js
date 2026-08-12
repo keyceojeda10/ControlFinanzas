@@ -323,6 +323,8 @@ export async function GET() {
              barra, así que hace falta cuánto lleva pagado.
              Los tres campos ya venían en el `select`. */
           fechaInicio: p.fechaInicio ?? null,
+          // El plazo pactado, para el tramo «11 jun → 23 sept» de la tarjeta.
+          fechaFin: p.fechaFin ?? null,
           totalPagado: Number(p.totalPagado ?? 0),
           totalAPagar: Number(p.totalAPagar ?? 0),
           ...extraInfo,

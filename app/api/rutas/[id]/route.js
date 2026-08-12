@@ -478,6 +478,8 @@ export async function GET(request, { params }) {
           frecuencia: p.frecuencia || 'diario',
           montoPrestado: p.montoPrestado,
           fechaInicio: p.fechaInicio,
+          // El plazo pactado, para el tramo «11 jun → 23 sept» de la tarjeta.
+          fechaFin: p.fechaFin ?? null,
           seguro: !!p.seguro,
           montoSeguro: p.montoSeguro ?? null,
           modoInteres: p.modoInteres || 'fijo',
@@ -540,6 +542,8 @@ export async function GET(request, { params }) {
         frecuencia: p.frecuencia || 'diario',
         montoPrestado: p.montoPrestado,
         fechaInicio: p.fechaInicio,
+        // El plazo pactado, para el tramo «11 jun → 23 sept» de la tarjeta.
+        fechaFin: p.fechaFin ?? null,
         seguro: !!p.seguro,
         montoSeguro: p.montoSeguro ?? null,
         modoInteres: p.modoInteres || 'fijo',
