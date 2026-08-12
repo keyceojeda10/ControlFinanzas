@@ -188,7 +188,7 @@ export function FilaCobro({
   avisoMora, avisos = [], prestamos = [],
   cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
-  cobradoA, montoCobrado, cifras, pagadoPct, onClick,
+  cobradoA, montoCobrado, cifras, pagadoPct, vida, onClick,
   /* ── ⚠ EL NOMBRE Y LA FOTO ABREN LA FICHA ────────────────────────────────
      Reportado por el dueño con el caso que lo hace evidente:
 
@@ -784,8 +784,16 @@ export function FilaCobro({
                       width: `${p.pagadoPct}%`, background: color,
                     }} />
                   </span>
+                  {/* ⚠ EN PESOS Y NO SOLO EN PORCENTAJE. Decía «63% pagado de
+                      $1.200.000», y el cliente en la puerta no pregunta un
+                      porcentaje: pregunta cuánto lleva puesto. El porcentaje se
+                      queda —es lo que se lee de un vistazo y lo que dibuja la
+                      barra de encima— pero delante va la cifra.
+                      Y su tramo de fechas, que aquí es donde puede decirse: con
+                      varios préstamos la línea de abajo no sabe de cuál hablar. */}
                   <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
-                    {p.pagadoPct}% pagado{p.pagadoDe ? ` de ${p.pagadoDe}` : ''}
+                    Pagado {p.pagado}{p.pagadoDe ? ` de ${p.pagadoDe}` : ''} · {p.pagadoPct}%
+                    {p.tramo ? ` · ${p.tramo}` : ''}
                   </span>
                 </div>
               ))}
@@ -912,6 +920,49 @@ export function FilaCobro({
         </div>
       )}
 
+      {/* ── EL RÓTULO DE LA BARRA (ago 2026) ─────────────────────────────
+          «Pagado $28.000 de $120.000 · 11 jun → 23 sep»
+
+          Dos cosas que pidió el cliente que camina la ruta, y las dos por el
+          mismo motivo: no entrar y salir de la ficha estando de pie en una
+          puerta.
+
+            «el usuario le pregunta que cuánto ya ha pagado»
+            «tiene que poderse ver la fecha de inicio y la de finalización»
+
+          ⚠ NO ES UN BLOQUE NUEVO: ES EL RÓTULO DE UNA BARRA QUE YA ESTABA.
+          Justo debajo va la barra a sangre cuyo relleno es `pagadoPct`, y su
+          propio comentario dice «dice CUÁNTO LLEVA PAGADO» — pero va
+          `aria-hidden` y sin un solo número. El dato estaba dibujado y no
+          estaba dicho. Ponerlo aquí cuesta un renglón y convierte la barra en
+          la ilustración de la frase, en vez de en un adorno.
+
+          POR QUÉ ABAJO Y NO EN LA TIRA DE CIFRAS. La tira responde a HOY
+          —atraso, cumplimiento, cuota, último pago— con cuatro columnas de
+          ~78px que ya se estrecharon una vez. Esto es el préstamo ENTERO: otra
+          pregunta, otro registro. Y arriba no cabía sin robarle sitio al
+          nombre y al monto, que son lo que se lee primero.
+
+          En gris y a 12px a propósito: es el dato que se consulta cuando lo
+          preguntan, no el que decide la visita. Si compitiera con el monto,
+          la tarjeta dejaría de leerse de un vistazo — que es lo único que el
+          dueño pidió no perder. */}
+      {vida && !cobrada && (
+        <span style={{
+          flex: 'none', fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)',
+          display: 'flex', flexWrap: 'wrap', columnGap: 6, rowGap: 2,
+        }}>
+          {/* La cifra que preguntan, en `ink-2`: dentro de una línea gris tiene
+              que poder encontrarse sin leer la frase entera. */}
+          <span>
+            Pagado <b className="cf-num" style={{ color: 'var(--cf-ink-2)', fontWeight: 700 }}>{vida.pagado}</b> de {vida.total}
+          </span>
+          {vida.tramo && (
+            <span className="cf-num" style={{ whiteSpace: 'nowrap' }}>· {vida.tramo}</span>
+          )}
+        </span>
+      )}
+
       {/* ── LA BARRA A SANGRE (Adenda 5 · E10) ──
           Último hijo de la tarjeta, pegada al borde de lado a lado. El
           `margin` negativo anula el padding lateral: sin él quedaría un
@@ -924,7 +975,8 @@ export function FilaCobro({
           deja de estar.
 
           Dice CUÁNTO LLEVA PAGADO, que es lo que la distingue del anillo del
-          avatar. Si algún día las dos dijeran lo mismo, sobraría una. */}
+          avatar. Si algún día las dos dijeran lo mismo, sobraría una. Desde
+          ago 2026 lleva ADEMÁS su rótulo, justo encima. */}
       <span aria-hidden style={{
         flex: 'none', display: 'block', height: 5,
         margin: '0 -16px', background: 'var(--cf-fill)',

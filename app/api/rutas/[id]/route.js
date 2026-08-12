@@ -101,6 +101,14 @@ export async function GET(request, { params }) {
               totalPagado: true,
               frecuencia: true,
               fechaInicio: true,
+              /* ⚠ `fechaFin` ES EL PLAZO PACTADO, NO EL FINAL DE VERDAD.
+              El préstamo se cobra hasta saldar, no hasta que se acabe el
+              calendario: un recargo sube la deuda sin mover esta fecha. Por eso
+              en la tarjeta se enseña como un TRAMO —«11 jun → 23 sep»— y nunca
+              con la palabra «termina», que sería prometer algo que el sistema no
+              cumple. Lo pidió el cliente que camina la ruta: «tiene que poderse
+              ver la fecha de inicio y la de finalización sin entrar y salir». */
+              fechaFin: true,
               diasPlazo: true,
               diaCobroSemana: true,
               diaCobroMes: true,
