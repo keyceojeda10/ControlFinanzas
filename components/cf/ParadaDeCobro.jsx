@@ -729,6 +729,62 @@ export function FilaCobro({
           atraso y cumplimiento son ciertos y son lo que decide renovarle—. */}
       <TiraCifras columnas={contexto?.cifras ?? cifras} enTarjeta />
 
+      {/* ── EL RÓTULO DE LA BARRA (ago 2026) ─────────────────────────────
+          «Pagado $28.000 de $120.000 · 11 jun → 23 sep»
+
+          Dos cosas que pidió el cliente que camina la ruta, y las dos por el
+          mismo motivo: no entrar y salir de la ficha estando de pie en una
+          puerta.
+
+            «el usuario le pregunta que cuánto ya ha pagado»
+            «tiene que poderse ver la fecha de inicio y la de finalización»
+
+          ⚠ NO ES UN BLOQUE NUEVO: ES EL RÓTULO DE UNA BARRA QUE YA ESTABA.
+          Justo debajo va la barra a sangre cuyo relleno es `pagadoPct`, y su
+          propio comentario dice «dice CUÁNTO LLEVA PAGADO» — pero va
+          `aria-hidden` y sin un solo número. El dato estaba dibujado y no
+          estaba dicho. Ponerlo aquí cuesta un renglón y convierte la barra en
+          la ilustración de la frase, en vez de en un adorno.
+
+          POR QUÉ ABAJO Y NO EN LA TIRA DE CIFRAS. La tira responde a HOY
+          —atraso, cumplimiento, cuota, último pago— con cuatro columnas de
+          ~78px que ya se estrecharon una vez. Esto es el préstamo ENTERO: otra
+          pregunta, otro registro. Y arriba no cabía sin robarle sitio al
+          nombre y al monto, que son lo que se lee primero.
+
+          En gris y a 12px a propósito: es el dato que se consulta cuando lo
+          preguntan, no el que decide la visita. Si compitiera con el monto,
+          la tarjeta dejaría de leerse de un vistazo — que es lo único que el
+          dueño pidió no perder. */}
+      {/* ⚠ SIN «·» DE SEPARADOR, y esto salió en la captura y no midiendo.
+          Iba «Pagado $1.000.000 de $6.000.000 · 23 jul → 20 ago» en una sola
+          frase, y a 393px parte por el punto: el segundo renglón EMPEZABA con
+          «· 23 jul», que se lee como una viñeta suelta o como texto roto.
+
+          Son dos datos, no una frase: la plata a la izquierda, el plazo a la
+          derecha. Cuando caben van en la misma línea con el aire de por medio;
+          cuando no, cada uno se queda entero en la suya y ninguno empieza por
+          un signo. Es la misma lógica de la tira de arriba, sin sus filetes —
+          aquí son dos y no hacen columna. */}
+      {vida && !cobrada && (
+        <div style={{
+          flex: 'none', display: 'flex', flexWrap: 'wrap',
+          alignItems: 'baseline', justifyContent: 'space-between',
+          columnGap: 10, rowGap: 2,
+          fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)',
+        }}>
+          {/* La cifra que preguntan, en `ink-2`: dentro de una línea gris tiene
+              que poder encontrarse sin leer la frase entera. */}
+          <span style={{ minWidth: 0 }}>
+            Pagado <b className="cf-num" style={{ color: 'var(--cf-ink-2)', fontWeight: 700 }}>{vida.pagado}</b> de {vida.total}
+          </span>
+          {vida.tramo && (
+            <span className="cf-num" style={{ flex: 'none', whiteSpace: 'nowrap' }}>{vida.tramo}</span>
+          )}
+        </div>
+      )}
+
+
       {/* ── LOS PRÉSTAMOS, PLEGADOS (E07) ──
           «Se pliegan y se abren solo si el cliente discute.» El titular de la
           tarjeta es lo que se le pide HOY; los saldos son para cuando hay que
@@ -918,49 +974,6 @@ export function FilaCobro({
           >{contexto?.accion?.texto ?? 'Cobrar'}</button>
           )}
         </div>
-      )}
-
-      {/* ── EL RÓTULO DE LA BARRA (ago 2026) ─────────────────────────────
-          «Pagado $28.000 de $120.000 · 11 jun → 23 sep»
-
-          Dos cosas que pidió el cliente que camina la ruta, y las dos por el
-          mismo motivo: no entrar y salir de la ficha estando de pie en una
-          puerta.
-
-            «el usuario le pregunta que cuánto ya ha pagado»
-            «tiene que poderse ver la fecha de inicio y la de finalización»
-
-          ⚠ NO ES UN BLOQUE NUEVO: ES EL RÓTULO DE UNA BARRA QUE YA ESTABA.
-          Justo debajo va la barra a sangre cuyo relleno es `pagadoPct`, y su
-          propio comentario dice «dice CUÁNTO LLEVA PAGADO» — pero va
-          `aria-hidden` y sin un solo número. El dato estaba dibujado y no
-          estaba dicho. Ponerlo aquí cuesta un renglón y convierte la barra en
-          la ilustración de la frase, en vez de en un adorno.
-
-          POR QUÉ ABAJO Y NO EN LA TIRA DE CIFRAS. La tira responde a HOY
-          —atraso, cumplimiento, cuota, último pago— con cuatro columnas de
-          ~78px que ya se estrecharon una vez. Esto es el préstamo ENTERO: otra
-          pregunta, otro registro. Y arriba no cabía sin robarle sitio al
-          nombre y al monto, que son lo que se lee primero.
-
-          En gris y a 12px a propósito: es el dato que se consulta cuando lo
-          preguntan, no el que decide la visita. Si compitiera con el monto,
-          la tarjeta dejaría de leerse de un vistazo — que es lo único que el
-          dueño pidió no perder. */}
-      {vida && !cobrada && (
-        <span style={{
-          flex: 'none', fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)',
-          display: 'flex', flexWrap: 'wrap', columnGap: 6, rowGap: 2,
-        }}>
-          {/* La cifra que preguntan, en `ink-2`: dentro de una línea gris tiene
-              que poder encontrarse sin leer la frase entera. */}
-          <span>
-            Pagado <b className="cf-num" style={{ color: 'var(--cf-ink-2)', fontWeight: 700 }}>{vida.pagado}</b> de {vida.total}
-          </span>
-          {vida.tramo && (
-            <span className="cf-num" style={{ whiteSpace: 'nowrap' }}>· {vida.tramo}</span>
-          )}
-        </span>
       )}
 
       {/* ── LA BARRA A SANGRE (Adenda 5 · E10) ──
