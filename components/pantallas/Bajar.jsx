@@ -108,6 +108,9 @@ export function BajarInformacion({
   datos = [],
   datosTitulo = 'Tus datos en crudo',
   datosNota = 'Excel para el contador o para hacer tus propias cuentas.',
+  // `{ plan, href }` cuando el plan del negocio no alcanza. Sin esto el bloque
+  // se pinta igual y el servidor contesta 403 al tocar.
+  bloqueado = null,
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -238,7 +241,35 @@ export function BajarInformacion({
               {datosNota}
             </span>
           </div>
-          {datos.map((d) => (
+
+          {/* ── ⚠ NO SE OFRECE LO QUE VA A FALLAR ──────────────────────────
+              Este bloque se pintaba igual para todos, con su conteo de filas
+              y su flecha de bajar — y el servidor contestaba 403 a quien no
+              llegaba de plan. Medido: lo alcanzaban CINCO negocios de 457.
+
+              Tocar y que salga un error es peor que no ver el botón: no dice
+              qué pasó ni qué hacer. Ahora, a quien no le da el plan, se le dice
+              antes y con el camino puesto — la misma solución que ya usa
+              «Cartera por ruta» en la pantalla de reportes. */}
+          {bloqueado && (
+            <div style={{
+              margin: '0 19px 15px', padding: '13px 15px', borderRadius: 'var(--cf-r-card)',
+              background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+              display: 'flex', flexDirection: 'column', gap: 9,
+            }}>
+              <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-gold-text-2)' }}>
+                Bajar tus datos en Excel viene con el plan <b>{bloqueado.plan}</b>.
+              </span>
+              <a href={bloqueado.href ?? '/configuracion/plan'} style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                height: 40, padding: '0 16px', borderRadius: 'var(--cf-r-control)',
+                background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              }}>Ver planes</a>
+            </div>
+          )}
+
+          {!bloqueado && datos.map((d) => (
             <button
               key={d.tipo}
               type="button"

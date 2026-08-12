@@ -18,6 +18,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { BajarInformacion } from '@/components/pantallas/Bajar'
 import { PilaEsqueletos } from '@/components/cf/primitivos2'
 import { formatMoney } from '@/lib/i18n'
+import { nivelReportes } from '@/lib/planes'
 
 /** Primer y último día del mes en curso, que es el período por defecto. */
 function mesActual() {
@@ -75,7 +76,11 @@ async function compartir(archivo, titulo) {
 
 export default function BajarPage() {
   const router = useRouter()
-  const { esOwner, loading: cargandoSesion } = useAuth()
+  const { session, esOwner, loading: cargandoSesion } = useAuth()
+  /* El Excel en crudo pide nivel 1 (Básico en adelante). Estaba en 3 y lo
+     alcanzaban cinco negocios de 457: a los demás se les pintaba el bloque y
+     el servidor les contestaba 403 al tocar. Ahora se dice ANTES. */
+  const alcanzaElPlan = nivelReportes(session?.user?.plan ?? 'starter') >= 1
   const { desde, hasta } = mesActual()
 
   const [rutas, setRutas] = useState([])
@@ -245,14 +250,22 @@ export default function BajarPage() {
             setBajandoResumen,
           ),
         }}
+        bloqueado={alcanzaElPlan ? null : { plan: 'Básico', href: '/configuracion/plan' }}
         datos={[
+          /* ── LA CUENTA COMPLETA VA PRIMERA ──────────────────────────────
+             Es la que pidió el cliente que lleva meses con esto: «todo el
+             desglose, todo en un Excel, con todas las columnas». Las cuatro de
+             abajo se quedan porque el contador a veces quiere una sola tabla,
+             pero quien entra aquí buscando SU cartera la encuentra de primera.
+             Sin filas al lado: son cuatro hojas, no una cifra. */
+          { tipo: 'todo', nombre: 'Todo — la cuenta completa', sinFilas: true },
           { tipo: 'clientes', nombre: 'Clientes' },
           { tipo: 'prestamos', nombre: 'Préstamos' },
           { tipo: 'pagos', nombre: 'Pagos' },
           { tipo: 'cobradores', nombre: 'Cobradores' },
         ].map((d) => ({
           ...d,
-          filas: conteos?.[d.tipo] ?? null,
+          filas: d.sinFilas ? null : (conteos?.[d.tipo] ?? null),
           bajando: bajandoExcel === d.tipo,
           onBajar: () => conAviso(
             async () => guardar(await pedirArchivo(

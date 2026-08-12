@@ -46,7 +46,22 @@ export async function GET(req) {
      pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
      usa el token como atajo y solo pregunta a la base cuando va a
      decir que no. Ver lib/plan-servidor.js. */
-  const veto = await exigeNivelReportes(session, 3)
+  /* ══ NIVEL 1: DESDE BÁSICO ════════════════════════════════════════════════
+   *
+   * Estaba en 3 —plan Empresarial, $259.000— y eso son **5 negocios de 457**.
+   * Los otros 452 veían el bloque «Tus datos en crudo» con su conteo de filas,
+   * tocaban la flecha de bajar y el servidor les contestaba 403: un botón que
+   * se ofrece y falla.
+   *
+   * Decisión del dueño (ago 2026), con el caso de un cliente suyo que lleva
+   * meses pidiendo «el desglose completo en Excel» y ya paga Básico. Baja a
+   * nivel 1 y lo alcanzan 108 negocios (basic 73 + growth 18 + standard 12 +
+   * professional 5). Es la misma razón por la que Básico llegó a los reportes:
+   * darle un motivo a quien está en Inicial para subir.
+   *
+   * ⚠ Inicial (346 negocios) sigue sin él A PROPÓSITO — pero ahora la pantalla
+   * se lo dice ANTES de tocar, en vez de dejarlo estrellarse contra un error. */
+  const veto = await exigeNivelReportes(session, 1)
   if (veto) return veto
 
   const orgId = session.user.organizationId
