@@ -232,9 +232,23 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
     // El marcador tambien cuando el campo se deja vacio, no solo con la casilla:
     // ahora la cedula es opcional y el backend la sigue usando como clave.
-    const cedulaFinal = sinCedula || !form.cedula.trim()
-      ? `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
-      : form.cedula.trim()
+    //
+    // ⚠ AL EDITAR SE CONSERVA EL MARCADOR QUE YA TENÍA.
+    //
+    // Esto acuñaba uno nuevo en cada guardado, y al editar a un cliente sin
+    // documento —1.574 de 6.012, una cuarta parte— mandaba una cédula distinta
+    // de la guardada. El API lo leía como «cambió la cédula», se lo pasaba al
+    // validador y devolvía «Cédula no válido (ej: 1023456789)»: un error sobre
+    // un campo que esta pantalla NI SIQUIERA PINTA cuando `sinCedula` es true,
+    // así que el prestamista cambiaba la dirección y le salía un problema de
+    // cédula que no tenía dónde corregir. No se podía guardar nada.
+    const cedulaFinal = !sinCedula && form.cedula.trim()
+      ? form.cedula.trim()
+      : esEdicion && cedulaExistente.startsWith('SIN-')
+        ? cedulaExistente
+        /* `esEdicion` no sobra: sin él, «Cargar otro cliente» mandaría el mismo
+           marcador dos veces y el segundo choca contra la clave única. */
+        : `SIN-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
     const payload = {
       nombre:     form.nombre.trim(),

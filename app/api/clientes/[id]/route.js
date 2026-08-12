@@ -255,7 +255,26 @@ export async function PATCH(request, { params }) {
   }
 
   // Si cambia la cédula, verificar que no exista otra igual
-  if (cedula && cedula.trim() !== clienteBase.cedula) {
+  //
+  // ⚠ EL MARCADOR «SIN-…» NO ES UNA CÉDULA Y NO SE VALIDA COMO TAL.
+  //
+  // Cuando un cliente se crea sin documento —que ahora es lo normal: solo el
+  // nombre es obligatorio— se le guarda un marcador `SIN-m3k9x2ab` para que la
+  // clave única de la organización siga funcionando. Al crear, el POST ya lo
+  // sabía (`esSinCedula`, en `app/api/clientes/route.js`). Aquí no.
+  //
+  // Resultado: EDITAR a uno de esos clientes era imposible. El formulario
+  // manda otro marcador, este bloque lo ve distinto del guardado, se lo pasa a
+  // `validateDocument`, y devuelve «Cédula no válido (ej: 1023456789)» —un
+  // error sobre un campo que la pantalla de edición NI SIQUIERA MUESTRA, así
+  // que quien lo recibe no tiene nada que corregir: cambia la dirección, pulsa
+  // guardar y le sale un problema de cédula—.
+  //
+  // Medido contra producción: **1.574 de 6.012 clientes vivos (26%) en 86
+  // negocios** no se podían editar. No es un caso raro; es una cuarta parte de
+  // la cartera.
+  const esSinCedula = !!cedula && cedula.trim().startsWith('SIN-')
+  if (cedula && !esSinCedula && cedula.trim() !== clienteBase.cedula) {
     const country = session.user.country ?? 'co'
     const docConfig = getDocumentConfig(country)
     if (!validateDocument(cedula.trim(), country)) {
@@ -302,11 +321,19 @@ export async function PATCH(request, { params }) {
     if (geo) { lat = geo.lat; lng = geo.lng }
   }
 
+  /* Y el marcador tampoco SE REESCRIBE. El formulario acuña uno nuevo en cada
+     guardado, así que la «cédula» del cliente cambiaba sola cada vez que se le
+     tocaba la dirección. Se queda el que ya tenía: es una llave interna, no un
+     dato del cliente, y nada gana con rotar.
+     (El formulario también deja de acuñarlo, pero la PWA sirve el paquete
+      viejo hasta que refresque: esta es la mitad que lo corta hoy.) */
+  const conservaMarcador = esSinCedula && clienteBase.cedula?.startsWith('SIN-')
+
   const actualizado = await prisma.cliente.update({
     where: { id },
     data: {
       ...(nombre     && { nombre:     nombre.trim()     }),
-      ...(cedula     && { cedula:     cedula.trim()     }),
+      ...(cedula && !conservaMarcador && { cedula: cedula.trim() }),
       ...(telefono   && { telefono:   telefono.trim()   }),
       ...(direccion  !== undefined && { direccion:  direccion?.trim()  || null }),
       ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
