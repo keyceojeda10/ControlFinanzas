@@ -5,9 +5,15 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useCountry } from '@/hooks/useCountry'
 
 export default function CompletarTelefonoModal() {
   const { data: session, status } = useSession()
+  /* ⚠ ESTE MODAL EXIGÍA UN CELULAR COLOMBIANO: `/^3\d{9}$/`, la etiqueta «+57»
+     pegada al campo y el mensaje «Ingresa un celular colombiano válido».
+     A un dueño de Argentina no le dejaba escribir el suyo, y es lo primero que
+     ve al entrar. Ahora lo dice el país de su cuenta. */
+  const { validatePhone, phoneConfig, config } = useCountry()
   const [open, setOpen] = useState(false)
   const [telefono, setTelefono] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,8 +38,8 @@ export default function CompletarTelefonoModal() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const limpio = telefono.replace(/\D/g, '')
-    if (!/^3\d{9}$/.test(limpio)) {
-      setError('Ingresa un celular colombiano válido (ej: 3001234567)')
+    if (!validatePhone(limpio)) {
+      setError(`Ingresa un ${phoneConfig.label.toLowerCase()} válido (ej: ${phoneConfig.placeholder})`)
       return
     }
     setLoading(true)
@@ -129,19 +135,22 @@ export default function CompletarTelefonoModal() {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none font-medium"
               style={{ color: 'rgba(255,255,255,0.6)', zIndex: 2 }}
             >
-              +57
+              {config.phonePrefix}
             </span>
             <input
               type="tel"
               inputMode="numeric"
-              maxLength={10}
+              maxLength={config.phoneDigits + 1}
               autoFocus
               value={telefono}
-              onChange={(e) => { setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10)); setError('') }}
-              placeholder="3001234567"
+              onChange={(e) => { setTelefono(e.target.value.replace(/\D/g, '').slice(0, config.phoneDigits + 1)); setError('') }}
+              placeholder={phoneConfig.placeholder}
               className="w-full h-11 rounded-[12px] text-sm transition-all"
               style={{
-                paddingLeft: '46px',
+                /* El hueco lo marca el prefijo, no un 46 fijo: «+593» y «+549»
+                   son dos caracteres más que «+57» y se montaban encima de lo
+                   que el dueño escribe. */
+                paddingLeft: `${22 + config.phonePrefix.length * 8}px`,
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.15)',
                 color: '#f0f0f0',

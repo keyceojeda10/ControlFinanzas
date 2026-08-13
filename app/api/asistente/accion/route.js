@@ -208,7 +208,11 @@ export async function POST(req) {
             const pd = await prestamoRes.json()
             const prestamo = pd.prestamo ?? pd
             const cliente = prestamo.cliente
-            const tel = formatearTelefono(cliente?.telefono)
+            /* ⚠ EL PAÍS VA A MANO PORQUE ESTO ES EL SERVIDOR: `fijarPaisActivo`
+               solo vale en el navegador —aquí una petición argentina y otra
+               colombiana comparten proceso—. Sin esto se le pega «57» al
+               teléfono de cualquiera. */
+            const tel = formatearTelefono(cliente?.telefono, session.user.country)
             if (tel) {
               const pagosReal = (prestamo.pagos ?? []).filter(p => !['recargo', 'descuento'].includes(p.tipo))
               const totalPagado = pagosReal.reduce((s, p) => s + Number(p.montoPagado), 0)

@@ -4,6 +4,7 @@
 // via WhatsApp, compartir nativo (SMS/email/apps) o copiar al portapapeles.
 
 import { useState } from 'react'
+import { telefonoParaWhatsApp } from '@/lib/i18n'
 
 const LOGIN_URL = 'https://app.control-finanzas.com/login'
 
@@ -19,15 +20,11 @@ function buildMensaje({ nombreCobrador, email, password, nombreOwner }) {
   )
 }
 
-// Normaliza el telefono a formato internacional para wa.me.
-// Si solo tiene 10 digitos (CO sin indicativo), le antepone 57.
-function normalizarTelefono(tel) {
-  if (!tel) return null
-  const digits = String(tel).replace(/\D/g, '')
-  if (!digits) return null
-  if (digits.length === 10) return `57${digits}` // Colombia por defecto
-  return digits
-}
+/* ⚠ AQUÍ VIVÍA UN NORMALIZADOR PROPIO que decía «Colombia por defecto» y le
+   pegaba un 57 a cualquier número de diez dígitos. En una cuenta de Argentina
+   le mandaba las credenciales del cobrador a un número que no existe. Uno de
+   los cuatro sitios que se inventaban la misma regla; ahora todos usan
+   `telefonoParaWhatsApp`, que sabe de países. */
 
 export default function CompartirCredenciales({ nombreCobrador, email, password, nombreOwner, telefono }) {
   const [copiado, setCopiado] = useState(false)
@@ -35,7 +32,7 @@ export default function CompartirCredenciales({ nombreCobrador, email, password,
 
   const mensaje = buildMensaje({ nombreCobrador, email, password, nombreOwner })
   const hasNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
-  const telNorm = normalizarTelefono(telefono)
+  const telNorm = telefonoParaWhatsApp(telefono)
 
   const handleWhatsApp = () => {
     // Si hay telefono, abrir chat directo. Si no, abrir selector de contactos.

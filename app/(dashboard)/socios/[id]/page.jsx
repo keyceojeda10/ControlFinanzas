@@ -13,7 +13,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import EmptyState from '@/components/ui/EmptyState'
 import { CuentaSocio } from '@/components/pantallas/Socios'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, telefonoParaWhatsApp } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
@@ -299,9 +299,12 @@ export default function SocioDetallePage() {
             `Te he dado ${fmt(socio.totalRetiros || 0)}.`,
             `Tu plata está en ${socio.prestamos.length} préstamos, ${fmt(capitalEnCalle)} en la calle.`,
           ].join('\n')
-          const tel = String(socio.telefono ?? '').replace(/\D/g, '')
-          const num = tel.length > 10 ? tel : `57${tel}`
-          window.open(tel.length >= 7
+          /* Era `tel.length > 10 ? tel : '57' + tel`: el indicativo de Colombia
+             a mano, en una app que ya vende en doce países. Sin número válido
+             se abre WhatsApp con el selector de contactos, que es lo que ya
+             hacía y sigue siendo lo correcto. */
+          const num = telefonoParaWhatsApp(socio.telefono)
+          window.open(num
             ? `https://wa.me/${num}?text=${encodeURIComponent(t)}`
             : `https://wa.me/?text=${encodeURIComponent(t)}`, '_blank')
         }}

@@ -3,7 +3,7 @@
 // Hero card premium para detalle de cliente. Saldo total + avatar + chips
 // + acciones rapidas. Inspirado en Mercury / Revolut.
 
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, telefonoParaWhatsApp } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
@@ -668,7 +668,13 @@ export function InfoContactoCard({ cliente, rutaNombre, onEditar, onWhatsApp }) 
                 </svg>
               </BotonFila>
               <BotonFila
-                onClick={onWhatsApp ?? (() => window.open(`https://wa.me/${tel}`, '_blank'))}
+                /* ⚠ `tel` son los dígitos tal cual los escribió el prestamista,
+                   SIN indicativo. `wa.me/3625325911` no abre el chat de nadie.
+                   `telefonoParaWhatsApp` le pone el del país de la cuenta —y a
+                   los móviles argentinos, además, el 9 que WhatsApp exige—.
+                   `telefonoLegible(tel)` de arriba se queda: ese es para LEER,
+                   este para MARCAR, y confundirlos ya salió caro una vez. */
+                onClick={onWhatsApp ?? (() => window.open(`https://wa.me/${telefonoParaWhatsApp(tel) ?? tel}`, '_blank'))}
                 etiqueta="Escribir por WhatsApp"
                 color="#25D366"
               >
