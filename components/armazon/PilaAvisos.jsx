@@ -129,6 +129,34 @@ export default function PilaAvisos({ children, onVerTodos }) {
       body: JSON.stringify({ id }),
     }).catch(() => {})
   }
+  /* ── BORRAR, QUE ES DISTINTO DE MARCAR LEÍDA ─────────────────────────────
+     «Yo le di leídas, pero me van a salir todas ahí, así como tenues, pero no se
+     me van a quitar.» Leída es «ya lo vi»; borrada es «fuera». Con solo lo
+     primero la lista crece para siempre y deja de servir de nada.
+
+     Se quita de la pantalla ANTES de que conteste el servidor: el aviso ya se
+     leyó, no hay nada que perder si la petición falla, y esperar medio segundo a
+     que desaparezca un elemento que se acaba de tocar se siente roto. */
+  const borrar = (id) => {
+    setGuardados((prev) => prev.filter((n) => n.id !== id))
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
+    fetch('/api/notificaciones', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch(() => {})
+  }
+
+  const borrarLeidas = () => {
+    setGuardados((prev) => prev.filter((n) => !n.leida))
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
+    fetch('/api/notificaciones', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ borrarLeidas: true }),
+    }).catch(() => {})
+  }
+
   const marcarTodas = () => {
     setGuardados((prev) => prev.map((n) => ({ ...n, leida: true })))
     // Se olvida lo compartido: si no, durante unos segundos el otro sitio que
@@ -223,6 +251,8 @@ export default function PilaAvisos({ children, onVerTodos }) {
         sinLeer={sinLeer}
         onLeer={marcarLeida}
         onLeerTodas={marcarTodas}
+        onBorrar={borrar}
+        onBorrarLeidas={borrarLeidas}
         onAbrirGuardado={(n) => {
           try {
             const d = JSON.parse(n.datos || '{}')

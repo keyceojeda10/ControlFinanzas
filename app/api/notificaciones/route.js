@@ -52,3 +52,44 @@ export async function PATCH(request) {
 
   return Response.json({ error: 'Parámetros inválidos' }, { status: 400 })
 }
+
+/* ══ BORRAR ════════════════════════════════════════════════════════════════
+   Faltaba, y el dueño lo pidió con las palabras exactas de lo que le pasa:
+   «yo le di leídas, pero me van a salir todas ahí, así como tenues, pero no se
+   me van a quitar».
+
+   Marcar leída y borrar son dos cosas distintas: leída es «ya lo vi», borrada es
+   «fuera». Con solo lo primero la lista crece para siempre y deja de servir.
+
+   ⚠ `deleteMany` con el `userId` en el WHERE, igual que el PATCH: sin eso
+   cualquiera podría borrar la notificación de otro mandando su id. */
+export async function DELETE(request) {
+  const session = await getServerSession(authOptions)
+  if (!session) return Response.json({ error: 'No autorizado' }, { status: 401 })
+
+  const body = await request.json().catch(() => ({}))
+
+  if (body.borrarLeidas) {
+    const { count } = await prisma.notificacion.deleteMany({
+      where: { userId: session.user.id, leida: true },
+    })
+    return Response.json({ ok: true, borradas: count })
+  }
+
+  if (body.borrarTodas) {
+    const { count } = await prisma.notificacion.deleteMany({
+      where: { userId: session.user.id },
+    })
+    return Response.json({ ok: true, borradas: count })
+  }
+
+  if (body.id) {
+    const { count } = await prisma.notificacion.deleteMany({
+      where: { id: body.id, userId: session.user.id },
+    })
+    if (count === 0) return Response.json({ error: 'No encontrada' }, { status: 404 })
+    return Response.json({ ok: true, borradas: count })
+  }
+
+  return Response.json({ error: 'Parámetros inválidos' }, { status: 400 })
+}
