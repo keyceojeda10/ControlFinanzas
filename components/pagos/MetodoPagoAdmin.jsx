@@ -128,7 +128,17 @@ export default function MetodoPagoAdmin() {
           onChange={e => setNuevo(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && agregar()}
           placeholder="Ej: Nequi, Daviplata..."
-          className="flex-1 h-9 px-3 rounded-[10px] border text-sm outline-none transition-all"
+          /* ⚠ `min-w-0` NO SOBRA. Sin él, el campo no puede encogerse por debajo
+             de su ancho intrínseco —`min-width: auto` es el defecto de todo hijo
+             de un flex— y con la letra a 16px que `globals.css` le fuerza en
+             móvil, ese mínimo son 210px. Con el botón en 113 y el hueco de 8, la
+             fila pedía 331px en una caja de 298: el botón se salía 33px y 16 de
+             ellos por fuera de la tarjeta. Medido en el DOM a 372px de ancho.
+
+             Y la altura pasa de `h-9` a `h-12` para igualar al botón: `size="sm"`
+             ya no son 36px, son 48. La escala quitó las alturas de 36 y 44 y
+             este campo se quedó con la de antes. */
+          className="flex-1 min-w-0 h-12 px-3 rounded-[10px] border text-sm outline-none transition-all"
           style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-fill)', color: 'var(--cf-ink)' }}
         />
         <Button
