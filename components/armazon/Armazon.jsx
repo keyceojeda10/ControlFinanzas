@@ -25,6 +25,7 @@ import PastillaNav from '@/components/armazon/PastillaNav'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import QrScanner from '@/components/qr/QrScanner'
+import { olvidarCompartido } from '@/lib/pedir-compartido'
 
 const ArmazonContext = createContext(null)
 
@@ -293,7 +294,21 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         onConfiguracion={() => { setCuenta(false); router.push('/configuracion') }}
         onPlan={() => { setCuenta(false); router.push('/configuracion/plan') }}
         onSoporte={() => { setCuenta(false); router.push('/soporte') }}
-        onCerrarSesion={() => signOut({ callbackUrl: '/login' })}
+        onCerrarSesion={() => {
+          /* ── AL SALIR SE BORRA LO LEÍDO, NO LO PENDIENTE ──────────────────
+             Dos personas comparten teléfono más de lo que uno cree: el cobrador
+             entrega el turno y el dueño entra en el mismo aparato. Sin esto, las
+             respuestas guardadas del anterior siguen ahí, y si al siguiente le
+             falla la red por un momento la app se las sirve.
+
+             La barra vieja además llamaba a `limpiarDatosOffline()`, que BORRA
+             LA BASE LOCAL ENTERA — incluidos los pagos que el cobrador todavía
+             no ha subido. Eso no se copia: cerrar sesión no puede tragarse plata
+             cobrada. Aquí solo se tira lo que se puede volver a pedir. */
+          try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_API_CACHE' }) } catch {}
+          olvidarCompartido()
+          signOut({ callbackUrl: '/login' })
+        }}
       />
 
       {menuCrear && (
