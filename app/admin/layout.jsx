@@ -8,24 +8,32 @@ import { usePathname } from 'next/navigation'
 import { signOut }     from 'next-auth/react'
 import { Badge }       from '@/components/ui/Badge'
 
+/* ⚠ «Negocio», «Dashboard» y «Métricas» eran TRES entradas para la misma
+   pregunta, con cifras que no coincidian entre si. Ahora es UNA: `inicio`.
+   Las tres rutas viejas siguen existiendo hasta que la tanda de Usuarios se
+   lleve por delante lo que quede; lo que se quita aqui es el menu. */
 const nav = [
   {
-    href: '/admin/negocio',
-    label: 'Negocio',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/dashboard',
-    label: 'Dashboard',
+    href: '/admin/inicio',
+    label: 'Inicio',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    ),
+  },
+  {
+    /* ⚠ Sigue aquí a proposito. `negocio` lleva el marcador de conversion de
+       las pruebas y el calendario de vencimientos a 30 dias, y eso NO esta en
+       `inicio`: es material de la pantalla de Usuarios, que llega en la tanda
+       siguiente. Quitarla hoy seria perder funciones sin avisar. */
+    href: '/admin/negocio',
+    label: 'Pruebas',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
@@ -135,16 +143,6 @@ const nav = [
     ),
   },
   {
-    href: '/admin/metricas',
-    label: 'Métricas',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
     href: '/admin/tutoriales',
     label: 'Tutoriales',
     icon: (
@@ -165,13 +163,13 @@ export default function AdminLayout({ children }) {
 
   const mainNav = nav.slice(0, MOBILE_MAIN)
   const moreNav = nav.slice(MOBILE_MAIN)
-  const moreActive = moreNav.some(n => pathname === n.href || (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)))
+  const moreActive = moreNav.some(n => pathname === n.href || (n.href !== '/admin/inicio' && pathname.startsWith(n.href)))
 
   return (
-    <div className="flex min-h-dvh bg-[#0a0a0a]">
+    <div className="flex min-h-dvh bg-[var(--cf-surface)]">
       {/* Sidebar desktop */}
-      <aside className="hidden lg:flex w-60 flex-col border-r border-[#2a2a2a] bg-[#0a0a0a] shrink-0">
-        <div className="px-5 py-5 border-b border-[#2a2a2a]">
+      <aside className="hidden lg:flex w-60 flex-col border-r border-[var(--cf-border)] bg-[var(--cf-surface)] shrink-0">
+        <div className="px-5 py-5 border-b border-[var(--cf-border)]">
           <Image src="/logo-full.svg" alt="Control Finanzas" width={150} height={38} priority />
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="purple">SUPERADMIN</Badge>
@@ -181,7 +179,7 @@ export default function AdminLayout({ children }) {
 
         <nav className="flex-1 py-4 px-3 space-y-1">
           {nav.map(({ href, label, icon }) => {
-            const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
+            const active = pathname === href || (href !== '/admin/inicio' && pathname.startsWith(href))
             return (
               <Link
                 key={href}
@@ -190,7 +188,7 @@ export default function AdminLayout({ children }) {
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all',
                   active
                     ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
-                    : 'text-[var(--color-text-muted)] hover:text-[white] hover:bg-[#1a1a1a]',
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)]',
                 ].join(' ')}
               >
                 {icon}
@@ -200,7 +198,7 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#2a2a2a]">
+        <div className="px-3 py-4 border-t border-[var(--cf-border)]">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
@@ -216,7 +214,7 @@ export default function AdminLayout({ children }) {
 
       {/* Mobile header */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] bg-[#0a0a0a]">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[var(--cf-border)] bg-[var(--cf-surface)]">
           <Image src="/logo-icon.svg" alt="CF" width={28} height={28} />
           <span className="text-sm font-bold text-white ml-1">Admin</span>
           <div className="flex items-center gap-2">
@@ -242,13 +240,13 @@ export default function AdminLayout({ children }) {
           >
             <div className="absolute inset-0 bg-black/60" />
             <div
-              className="absolute bottom-16 left-0 right-0 bg-[#111111] border-t border-[#2a2a2a] rounded-t-[20px] px-2 pt-3 pb-4"
+              className="absolute bottom-16 left-0 right-0 bg-[var(--cf-card)] border-t border-[var(--cf-border)] rounded-t-[20px] px-2 pt-3 pb-4"
               onClick={e => e.stopPropagation()}
             >
-              <div className="w-10 h-1 bg-[#333333] rounded-full mx-auto mb-3" />
+              <div className="w-10 h-1 bg-[var(--cf-border-strong)] rounded-full mx-auto mb-3" />
               <div className="grid grid-cols-4 gap-1">
                 {moreNav.map(({ href, label, icon }) => {
-                  const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
+                  const active = pathname === href || (href !== '/admin/inicio' && pathname.startsWith(href))
                   return (
                     <Link
                       key={href}
@@ -258,7 +256,7 @@ export default function AdminLayout({ children }) {
                         'flex flex-col items-center gap-1 py-3 px-1 rounded-[12px] text-[11px] font-medium transition-all',
                         active
                           ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
-                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[#1a1a1a]',
+                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--cf-fill)]',
                       ].join(' ')}
                     >
                       {icon}
@@ -272,9 +270,9 @@ export default function AdminLayout({ children }) {
         )}
 
         {/* Mobile bottom nav */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex border-t border-[#2a2a2a] bg-[#0a0a0a] z-50">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex border-t border-[var(--cf-border)] bg-[var(--cf-surface)] z-50">
           {mainNav.map(({ href, label, icon }) => {
-            const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
+            const active = pathname === href || (href !== '/admin/inicio' && pathname.startsWith(href))
             return (
               <Link
                 key={href}

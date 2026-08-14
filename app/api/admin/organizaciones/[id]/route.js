@@ -6,6 +6,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { enviarEmail, emailPagoAprobado } from '@/lib/email'
 import { PLANES_VALIDOS } from '@/lib/planes'
+import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -345,31 +346,55 @@ export async function PATCH(req, { params }) {
       fechaVencimiento = new Date(baseDate)
       fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
 
-      await prisma.suscripcion.update({
-        where: { id: subExistente.id },
-        data: {
-          plan:             planNuevo,
-          estado:           'activa',
-          fechaInicio:      debeExtender ? undefined : ahora,
-          fechaVencimiento,
-          mercadopagoId:    'pago_directo',
+      /* El apunte del libro va en la MISMA transacción que la suscripción: si
+         se da el servicio, la plata queda registrada, y si no, ninguna de las
+         dos cosas pasa. Este era el camino por el que entraron 82 de los 93
+         pagos y era el que menos rastro dejaba. Ver lib/libro-pagos.js. */
+      await prisma.$transaction(async (tx) => {
+        await tx.suscripcion.update({
+          where: { id: subExistente.id },
+          data: {
+            plan:             planNuevo,
+            estado:           'activa',
+            fechaInicio:      debeExtender ? undefined : ahora,
+            fechaVencimiento,
+            mercadopagoId:    'pago_directo',
+            montoCOP,
+          },
+        })
+        await registrarPagoSuscripcion(tx, {
+          organizationId: id,
+          plan:    planNuevo,
           montoCOP,
-        },
+          periodo: periodoValido,
+          gateway: 'manual',
+          adminId: session.user.id,
+        })
       })
     } else {
       fechaVencimiento = new Date(ahora)
       fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
 
-      await prisma.suscripcion.create({
-        data: {
-          organizationId:   id,
-          plan:             planNuevo,
-          estado:           'activa',
-          fechaInicio:      ahora,
-          fechaVencimiento,
-          mercadopagoId:    'pago_directo',
+      await prisma.$transaction(async (tx) => {
+        await tx.suscripcion.create({
+          data: {
+            organizationId:   id,
+            plan:             planNuevo,
+            estado:           'activa',
+            fechaInicio:      ahora,
+            fechaVencimiento,
+            mercadopagoId:    'pago_directo',
+            montoCOP,
+          },
+        })
+        await registrarPagoSuscripcion(tx, {
+          organizationId: id,
+          plan:    planNuevo,
           montoCOP,
-        },
+          periodo: periodoValido,
+          gateway: 'manual',
+          adminId: session.user.id,
+        })
       })
     }
 

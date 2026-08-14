@@ -1198,3 +1198,41 @@ model Sugerencia {
   @@index([organizationId])
   @@index([createdAt])
 }
+
+/// ══ EL LIBRO DE PAGOS DEL SAAS ══════════════════════════════════════════════
+///
+/// Antes de esto no existía. `Suscripcion` es UNA fila por organización y
+/// renovar la PISA: `activarPlanPagado` actualiza `montoCOP`, la fecha y el
+/// `wompiTransactionId` de la fila que ya estaba. El pago del mes anterior
+/// dejaba de existir, así que la pregunta «¿cuánto me entró este mes?» no tenía
+/// respuesta posible — el dato nunca se guardó.
+///
+/// Aquí cada pago es una fila que ya no se toca nunca más. `Suscripcion` sigue
+/// siendo el ESTADO (hasta cuándo tiene servicio); esto es el HISTORIAL.
+///
+/// ⚠ `origen` no es adorno. Las filas de marzo a agosto de 2026 se
+/// reconstruyeron leyendo el texto de `AdminLog` (el monto venía escrito en la
+/// frase), y van marcadas `reconstruido` para que nadie las confunda con las
+/// que se registraron en vivo. Si algún día no cuadran, se sabe cuáles dudar.
+///
+/// ⚠ `gatewayId` es único: es la misma llave de idempotencia que ya usaba el
+/// webhook. En los pagos que se registran a mano va null —MySQL admite varios
+/// nulls y cada registro manual ES un pago distinto, no un duplicado—, salvo en
+/// los reconstruidos, que llevan `adminlog:<id>` para que volver a correr el
+/// script no duplique nada.
+model PagoSuscripcion {
+  id             String   @id @default(cuid())
+  organizationId String
+  plan           Plan
+  montoCOP       Int
+  periodo        String // mensual | trimestral | anual
+  gateway        String // wompi | mercadopago | manual
+  gatewayId      String? @unique
+  referencia     String?
+  adminId        String? // quién lo registró, cuando fue a mano
+  origen         String   @default("directo") // directo | reconstruido
+  fecha          DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([fecha])
+}

@@ -100,7 +100,7 @@ export async function middleware(request) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     if (token.rol === 'superadmin') {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+      return NextResponse.redirect(new URL('/admin/inicio', request.url))
     }
 
     // ─── Verificar suscripción vencida (chequeo rapido del JWT) ────────────────
@@ -123,7 +123,7 @@ export async function middleware(request) {
   if (pathname === '/login') {
     if (token) {
       if (token.rol === 'superadmin') {
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+        return NextResponse.redirect(new URL('/admin/inicio', request.url))
       }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
@@ -134,7 +134,7 @@ export async function middleware(request) {
   if (pathname === '/registro') {
     if (token) {
       if (token.rol === 'superadmin') {
-        return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+        return NextResponse.redirect(new URL('/admin/inicio', request.url))
       }
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }

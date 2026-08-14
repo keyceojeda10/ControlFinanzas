@@ -208,7 +208,7 @@ export default function LoginPage() {
         esSuperadmin = false
       }
 
-      window.location.href = esSuperadmin ? '/admin/dashboard' : '/dashboard'
+      window.location.href = esSuperadmin ? '/admin/inicio' : '/dashboard'
     } catch {
       setError('Error al iniciar sesión. Intenta de nuevo.')
     } finally {
