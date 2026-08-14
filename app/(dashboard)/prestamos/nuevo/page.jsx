@@ -1500,7 +1500,19 @@ function NuevoPrestamo() {
                 onChange={(m) => {
                   setModoInteres(m)
                   setCapitalExtra([])
-                  if (m !== 'manual' && m !== 'saldo') setCuotaManual('')
+                  /* «Cuota fija personalizada» es OPCIONAL y su propio texto dice
+                     «dejar vacío para calcular automático»: tiene que quedar
+                     vacía. Antes se rellenaba con `calculo.cuotaDiaria`, que en
+                     este punto todavía es la del modo que se está ABANDONANDO
+                     —el estado no se ha aplicado—, así que al elegir «sobre
+                     saldo» aparecía la cuota del clásico, y esa se guardaba tal
+                     cual. Un prestamista lo reportó con el caso exacto: la
+                     tarjeta ofrecía $225.700 y el campo traía $266.700. En
+                     producción salieron así 12 préstamos de 6 negocios; el peor,
+                     $15.000.000 con cuota de $4.950.000 en vez de $4.528.900.
+                     `manual` sí necesita una cuota de partida: ahí el número no
+                     es opcional, lo pone el prestamista a propósito. */
+                  if (m !== 'manual') setCuotaManual('')
                   else if (calculo?.cuotaDiaria) setCuotaManual(String(calculo.cuotaDiaria))
                 }}
                 calculo={calculo}
