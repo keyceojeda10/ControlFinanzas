@@ -199,7 +199,12 @@ export function PorSincronizar({
    Y el aro de color del avatar trae el estado del cliente: quien busca a alguien
    casi siempre quiere saber cómo va, no solo entrar. */
 export function BusquedaGlobal({
-  texto, onTexto, marcador = 'Nombre, cédula o teléfono',
+  /* ⚠ EL MARCADOR PROMETÍA MENOS DE LO QUE HAY. «Nombre, cédula o teléfono» se
+     lee como «esto busca clientes», y detrás hay pantallas, ajustes, acciones y
+     guías. El dueño: «no dice que se puede buscar cualquier cosa dentro del
+     sistema». Se nombra lo que la gente teclea —una persona— y se dice que hay
+     más, sin convertir el campo en una lista. */
+  texto, onTexto, marcador = 'Busca un cliente, una pantalla o un ajuste',
   onCerrar,
   recientesTitulo = 'Últimos que abriste', recientes = [],
   atajosTitulo = 'Ir directo a', atajos = [],

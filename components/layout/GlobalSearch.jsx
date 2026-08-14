@@ -38,27 +38,34 @@ import { buscarAcciones } from '@/lib/acciones/registro'
 import { useAcciones } from '@/components/acciones/AccionesProvider'
 import { buscarGuias } from '@/lib/tutoriales/guias'
 import ModalGuia from '@/components/tutoriales/ModalGuia'
+import { IconoDeRuta } from '@/components/armazon/iconos'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
    no puede ver, para no ofrecerle una puerta que da a un 403. */
-const ATAJOS = [
-  { id: 'cobrar', texto: 'Cobrar hoy', href: '/cobros-hoy', d: 'M8.5 12.5l2.5 2.5 4.5-5', extra: <circle cx="12" cy="12" r="8.5" /> },
-  { id: 'caja', texto: 'Caja', href: '/caja', d: '', extra: <rect x="3" y="7" width="18" height="12" rx="2.5" /> },
-  { id: 'capital', texto: 'Mi plata', href: '/capital', d: 'M4 20V9l8-5 8 5v11z', soloDueno: true },
-  { id: 'gastos', texto: 'Gastos', href: '/gastos', d: 'M6 4h12v16H6zM9 9h6M9 13h4' },
-  { id: 'config', texto: 'Configuración', href: '/configuracion', d: 'M12 3v3M12 18v3M3 12h3M18 12h3', extra: <circle cx="12" cy="12" r="3" />, soloDueno: true },
-]
+/* Los saltos que se repiten a diario. No son «todos los destinos» —para eso
+   esta el menu— pero el bloque tenia sitio de sobra y el dueno lo dijo:
+   «hay bastante espacio, podriamos colocar mas opciones».
 
-function IconoAtajo({ d, extra }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)"
-      strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-      {extra}
-      {d && <path d={d} />}
-    </svg>
-  )
-}
+   Se anaden REPORTES y COBRADORES: los dos son de uso frecuente y ninguno esta
+   en la barra de abajo, asi que hoy cuestan tres toques. Lo que ya vive en la
+   pastilla no se repite aqui: seria gastar el sitio en algo que esta a un dedo.
+
+   ⚠ LOS ICONOS SALEN DE `armazon/iconos`, no dibujados aqui. Estaban a mano y
+   por eso «gastos», «caja», «mi plata» y «configuracion» se veian distintos que
+   en la barra lateral — reportado tal cual: «eso desconfigura un poco».
+
+   `soloDueno` marca los que un cobrador no puede ver, para no ofrecerle una
+   puerta que da a un 403. */
+const ATAJOS = [
+  { id: 'cobrar',   texto: 'Cobrar hoy',    href: '/cobros-hoy' },
+  { id: 'caja',     texto: 'Caja',          href: '/caja' },
+  { id: 'capital',  texto: 'Mi plata',      href: '/capital',      soloDueno: true },
+  { id: 'gastos',   texto: 'Gastos',        href: '/gastos' },
+  { id: 'reportes', texto: 'Reportes',      href: '/reportes',     soloDueno: true },
+  { id: 'equipo',   texto: 'Cobradores',    href: '/cobradores',   soloDueno: true },
+  { id: 'config',   texto: 'Configuración', href: '/configuracion', soloDueno: true },
+]
 
 export default function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -294,7 +301,7 @@ export default function GlobalSearch() {
 
   const atajos = ATAJOS
     .filter((a) => !(a.soloDueno && esCobrador))
-    .map((a) => ({ ...a, icono: <IconoAtajo d={a.d} extra={a.extra} /> }))
+    .map((a) => ({ ...a, icono: <IconoDeRuta href={a.href} color="var(--cf-ink-2)" /> }))
 
   const escribiendo = query.trim().length > 0
 
@@ -321,9 +328,15 @@ export default function GlobalSearch() {
           onAtajo={(a) => ir(a.href)}
           onAbrir={(f) => ir(f.href, f.hacer)}
           resultados={filas}
+          /* ⚠ DECÍA «Prueba con la cédula o el teléfono», y eso solo tiene
+             sentido si lo que buscabas era una persona. El dueño escribió
+             «Seguridad» y la app le contestó que probara con una cédula: le
+             estaba respondiendo a una pregunta que no hizo. Aquí se busca gente,
+             préstamos, pantallas, ajustes y guías; el mensaje tiene que servir
+             para todo eso o no decir nada. */
           vacio={
             loading ? 'Buscando…'
-              : escribiendo ? `Nada con «${query.trim()}». Prueba con la cédula o el teléfono.`
+              : escribiendo ? `Nada con «${query.trim()}» en clientes, préstamos ni en el sistema.`
                 : null
           }
           accion={auth.puedeCrearPrestamos === false ? null : {

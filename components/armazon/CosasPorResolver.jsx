@@ -37,10 +37,10 @@ function Tarjeta({ titulo, dato, nota, accion, onAccion, secundaria, onSecundari
     }}>
       <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--cf-ink)' }}>{titulo}</span>
       {dato && (
-        <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-3)' }}>{dato}</span>
+        <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{dato}</span>
       )}
       {nota && (
-        <span style={{ fontSize: 12.5, color: 'var(--cf-ink-2)', lineHeight: 1.45, marginTop: 3 }}>
+        <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45, marginTop: 3 }}>
           {nota}
         </span>
       )}
@@ -206,14 +206,14 @@ export default function CosasPorResolver({
               {/* Antes aquí ponía «LO QUE PASÓ» en versalitas. No decía nada que
                   la lista de abajo no dijera sola, y el dueño lo señaló junto
                   con el título. Lo que sí sirve es cuántos quedan sin leer. */}
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
                 {sinLeer > 0 ? `${sinLeer} sin leer` : 'Todos leídos'}
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 {sinLeer > 0 && (
                   <button type="button" onClick={onLeerTodas} style={{
                     background: 'none', border: 0, cursor: 'pointer', padding: 0,
-                    fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)',
+                    fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
                     textDecoration: 'underline', textUnderlineOffset: 3,
                   }}>
                     Marcar leídas
@@ -226,7 +226,7 @@ export default function CosasPorResolver({
                 {hayLeidas && (
                   <button type="button" onClick={onBorrarLeidas} style={{
                     background: 'none', border: 0, cursor: 'pointer', padding: 0,
-                    fontSize: 12.5, fontWeight: 600, color: 'var(--cf-ink-2)',
+                    fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-2)',
                     textDecoration: 'underline', textUnderlineOffset: 3,
                   }}>
                     Borrar leídas

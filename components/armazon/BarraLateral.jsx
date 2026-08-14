@@ -21,17 +21,21 @@ import { rolEnEspanol } from '@/lib/armazon'
 import { getAvatarById } from '@/lib/avatars'
 import { useOnline } from '@/hooks/useOnline'
 import { useTheme } from '@/lib/theme/ThemeProvider'
+import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
 
 const t = { fill: 'none', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }
 
+/* Los de RUTA salen del juego compartido: la barra lateral, la pastilla y los
+   accesos directos del buscador dibujaban cada uno los suyos, y por eso «gastos»
+   o «mi plata» se veían distintos según dónde miraras. Aquí quedan los que NO
+   son destinos —la lupa, la campana, el sol— que solo usa esta barra. */
 const ICONOS = {
-  dashboard:  <><path d="M4 11.5L12 4l8 7.5" /><path d="M6 10.5V20h12v-9.5" /></>,
-  cobros:     <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5v5l3 2" /></>,
-  rutas:      <><path d="M9 4.5L3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8 9 4.5z" /><path d="M9 4.5v12.7M15 6.8v12.7" /></>,
-  prestamos:  <><rect x="3" y="6" width="18" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /></>,
-  lineas:     <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 10h18M7 15h4" /></>,
-  clientes:   <><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19.5c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8" /><path d="M16 5.5a3 3 0 010 5.6M17.5 19.5c0-2.2-.8-3.6-2-4.5" /></>,
-  caja:       <><rect x="3" y="7" width="18" height="12" rx="2.5" /><path d="M3 11h18M7.5 15h3" /></>,
+  dashboard:  ICONO_DE_RUTA['/dashboard'],
+  cobros:     ICONO_DE_RUTA['/cobros-hoy'],
+  rutas:      ICONO_DE_RUTA['/rutas'],
+  prestamos:  ICONO_DE_RUTA['/prestamos'],
+  clientes:   ICONO_DE_RUTA['/clientes'],
+  caja:       ICONO_DE_RUTA['/caja'],
   buscar:     <><circle cx="11" cy="11" r="7" /><path d="M16.5 16.5L21 21" /></>,
   campana:    <><path d="M18 8.5a6 6 0 00-12 0c0 6.5-2.5 8.5-2.5 8.5h17S18 15 18 8.5z" /><path d="M13.7 20.5a2 2 0 01-3.4 0" /></>,
   chevron:    <><path d="M6 9l6 6 6-6" /></>,
