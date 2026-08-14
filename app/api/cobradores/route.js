@@ -74,6 +74,7 @@ export async function GET(request) {
                   diasPlazo: true,
                   diaCobroSemana: true,
                   diaCobroMes: true,
+                  primerCobro: true,
                   diaCobroMes2: true,
                 },
               },

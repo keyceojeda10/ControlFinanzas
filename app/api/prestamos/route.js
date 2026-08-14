@@ -570,6 +570,11 @@ export async function POST(request) {
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,
         diaCobroMes2:   diaCobroMes2Db,
+        // La fecha del primer cobro se guarda con el prestamo. Sin ella, al leer
+        // se volveria a derivar el calendario viejo —un mes entero desde que se
+        // entrego el dinero, y despues anclado al dia de corte— y el prestamo
+        // tendria dos verdades: una en su tabla y otra en «proximo cobro».
+        ...(calc.primerCobro ? { primerCobro: calc.primerCobro } : {}),
         ...(socioId && { socioId }),
         ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
         diasPlazo:     calc.numPeriodos * calc.diasPeriodo,

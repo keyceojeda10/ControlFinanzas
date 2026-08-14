@@ -144,6 +144,7 @@ export async function GET(req) {
                   diasPlazo: true,
                   diaCobroSemana: true,
                   diaCobroMes: true,
+                  primerCobro: true,
                   diaCobroMes2: true,
                   proximoCobroManual: true,
                 },

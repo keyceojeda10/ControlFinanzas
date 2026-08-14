@@ -91,6 +91,7 @@ export async function POST(req) {
         cuotaDiaria: true, totalAPagar: true, totalPagado: true, montoPrestado: true,
         frecuencia: true, fechaInicio: true, diasPlazo: true, modoInteres: true,
         diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
+        primerCobro: true,
         proximoCobroManual: true, esClavo: true, diasSinCobro: true,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },

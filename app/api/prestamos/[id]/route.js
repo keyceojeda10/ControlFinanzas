@@ -18,6 +18,7 @@ import {
   pagoHoy,
   prestamoDevuelveMenosDeLoPrestado,
   mensajePrestamoConPerdida,
+  primerCobroMensual,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
@@ -665,6 +666,8 @@ export async function PATCH(request, { params }) {
     const anclaPorDiaSemana = Number.isInteger(dataUpdate.diaCobroSemana)
       && (freq === 'semanal' || freq === 'quincenal')
 
+    const sinPagosAun = (Number(p.totalPagado) || 0) <= 0
+
     let fechaPorPeriodo = null
     if (usaTabla && anclaPorDiaMes) {
       const recalc = calcularPrestamo({
@@ -679,10 +682,25 @@ export async function PATCH(request, { params }) {
         diaCobroMes:   dataUpdate.diaCobroMes,
         ...(Number.isInteger(dataUpdate.diaCobroMes2) && { diaCobroMes2: dataUpdate.diaCobroMes2 }),
         ...(Array.isArray(p.capitalExtra) && p.capitalExtra.length > 0 && { capitalExtra: p.capitalExtra }),
+        // Un prestamo que ya recibio plata NO estrena calendario: su primera
+        // cuota esta en el pasado y probablemente cobrada, y derivarla otra vez
+        // la mandaria hacia atras. Sin pagos todavia si se recalcula entera, que
+        // es lo que el prestamista espera al cambiar el dia de cobro.
+        ...(sinPagosAun ? {} : { primerCobro: p.primerCobro ?? null }),
       })
+      // Se guarda junto a las filas para que «proximo cobro» y la tabla no
+      // puedan contarse dos historias distintas.
+      if (sinPagosAun) dataUpdate.primerCobro = recalc.primerCobro ?? null
       fechaPorPeriodo = new Map(
         (recalc.tablaAmortizacion || []).map((r) => [r.numeroPeriodo, r.fechaEsperada])
       )
+    } else if (freq === 'mensual' && !usaTabla && sinPagosAun) {
+      // Los modos sin tabla (`fijo`, `unico`, `manual`) derivan sus fechas al
+      // LEER, asi que aqui no hay filas que correr: basta con dejar la columna
+      // en su sitio y el calendario sale solo.
+      dataUpdate.primerCobro = Number.isInteger(dataUpdate.diaCobroMes)
+        ? primerCobroMensual(new Date(p.fechaInicio), dataUpdate.diaCobroMes)
+        : null
     } else if (usaTabla && anclaPorDiaSemana) {
       // Dia de la semana en modo con tabla: calcularPrestamo no reprograma por
       // dia de la semana, asi que corremos cada fila FUTURA al dia objetivo

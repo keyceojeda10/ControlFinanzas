@@ -167,6 +167,7 @@ export async function GET(request) {
           // segun el modo.
           tasaInteres: true,
           diaCobroMes: true,
+          primerCobro: true,
           diaCobroMes2: true,
           diaCobroSemana: true,
           esClavo: true,

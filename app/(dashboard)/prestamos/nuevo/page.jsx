@@ -1379,7 +1379,7 @@ function NuevoPrestamo() {
                       trae y cuánto es esa primera cuota. */}
                   {calculo?.prorrateoPrimerPeriodo && calculo.tablaAmortizacion?.[0] && (
                     <div className="mt-2 rounded-[10px] border p-2.5"
-                      style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-surface)' }}>
+                      style={{ borderColor: 'var(--cf-border-soft)', background: 'var(--cf-fill)' }}>
                       <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                         Primer cobro el {new Date(calculo.primerCobro).toLocaleDateString('es-CO', {
                           timeZone: 'UTC', day: 'numeric', month: 'long',

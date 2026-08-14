@@ -364,6 +364,13 @@ model Prestamo {
   diaCobroSemana Int? // 0=dom..6=sab — ancla para frecuencia semanal/quincenal (opcional)
   diaCobroMes    Int? // 1..31 — ancla para frecuencia mensual/quincenal (opcional, clamp a ultimo dia)
   diaCobroMes2   Int? // 1..31 — segundo dia ancla para quincenal (ej: cobra el 5 y el 20)
+  // Fecha del PRIMER cobro pactado. null = el calendario de siempre (fechaInicio
+  // + N periodos, anclado al dia de corte). Se llena al crear cuando hay dia de
+  // corte mensual, porque sin ella el primer periodo salia de cualquier tamano:
+  // presta el 13 y cobra los 30 y la primera cuota se iba 48 dias despues. Es
+  // nullable a proposito: los prestamos que ya existen la tienen en null y
+  // conservan su calendario exacto.
+  primerCobro    DateTime?
   diasSinCobro   String?
   fechaInicio    DateTime
   fechaFin       DateTime

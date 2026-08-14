@@ -112,6 +112,7 @@ export async function GET(req) {
         fechaInicio: true,
         fechaFin: true,
         diaCobroMes: true,
+        primerCobro: true,
         cuotasAmortizacion: {
           select: {
             numeroPeriodo: true,

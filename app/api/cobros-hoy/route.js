@@ -135,6 +135,7 @@ export async function GET() {
           diasPlazo: true,
           diaCobroSemana: true,
           diaCobroMes: true,
+          primerCobro: true,
           diaCobroMes2: true,
           diasSinCobro: true,
           modoInteres: true,
