@@ -23,6 +23,7 @@ import {
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { revivirPrestamoRenovado, efectivoQueSalio } from '@/lib/dinero/revertir-renovacion'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
@@ -258,7 +259,6 @@ export async function PATCH(request, { params }) {
     // (que ya considera abonos a capital que reducen totalAPagar). Así si el cliente abonó
     // $100k a capital, esa plata ya volvió a caja y no se cuenta como "restante a devolver".
     const saldoPendienteRestante = calcularSaldoPendiente(p)
-    const saldoNoRecuperado = Math.max(0, Math.min(Number(p.montoPrestado) - totalPagosReales, saldoPendienteRestante))
 
     const modoReversionSolicitado = body?.modoReversionCapital === 'devolver_todo'
       ? 'devolver_todo'
@@ -266,9 +266,10 @@ export async function PATCH(request, { params }) {
         ? 'devolver_restante'
         : (totalPagosReales > 0 ? 'devolver_restante' : 'devolver_todo')
 
-    const montoReversion = modoReversionSolicitado === 'devolver_todo'
-      ? Number(p.montoPrestado)
-      : saldoNoRecuperado
+    // Se calculan dentro de la transacción (necesitan leer el movimiento real).
+    let montoReversion = 0
+    let saldoNoRecuperado = 0
+    let revivido = null
 
     const referenciaTipoCancelacion = modoReversionSolicitado === 'devolver_todo'
       ? REF_CANCELACION_DEVOLVER_TODO
@@ -290,6 +291,20 @@ export async function PATCH(request, { params }) {
         },
         select: { id: true },
       })
+
+      /* ⚠ CANCELAR UNA RENOVACIÓN TAMBIÉN LE DEVUELVE EL SALDO AL VIEJO.
+         Es la otra mitad del mismo fallo que borrar: el dueño «quita el
+         préstamo» por cualquiera de las dos vías y espera lo mismo. Medido en
+         producción: 14 renovaciones canceladas, y los 14 préstamos anteriores
+         quedaron en saldo cero. Ver lib/dinero/revertir-renovacion.js. */
+      revivido = await revivirPrestamoRenovado(tx, p)
+
+      /* Lo que salió de la caja por este préstamo: en una renovación es solo la
+         diferencia entregada, no el monto. Devolver el monto entero inflaba el
+         capital por el saldo que la renovación absorbió y que nunca salió. */
+      const salio = await efectivoQueSalio(tx, p)
+      saldoNoRecuperado = Math.max(0, Math.min(salio - totalPagosReales, saldoPendienteRestante))
+      montoReversion = modoReversionSolicitado === 'devolver_todo' ? salio : saldoNoRecuperado
 
       const actualizadoPrestamo = await tx.prestamo.update({
         where: { id },
@@ -346,6 +361,10 @@ export async function PATCH(request, { params }) {
       montoReversionCapital: Math.round(montoReversion),
       totalPagadoReal: Math.round(totalPagosReales),
       saldoNoRecuperado: Math.round(saldoNoRecuperado),
+      // Para que la pantalla pueda decir «volvió el préstamo anterior con $X».
+      prestamoAnteriorRevivido: revivido
+        ? { id: revivido.id, saldoDevuelto: revivido.devuelto }
+        : null,
     }
     if (idempKey) setCachedMutation(idempKey, respuesta)
     return Response.json(respuesta)
@@ -1025,13 +1044,25 @@ export async function DELETE(request, { params }) {
      empiezan los reversos— no volvió a cuadrar ni un día. */
   const rutaDelCliente = p.cliente?.rutaId || null
 
+  let renovacionRevivida = null
+
   await prisma.$transaction(async (tx) => {
+    /* ⚠ EL SALDO VIEJO VUELVE ANTES DE QUE EL PRÉSTAMO NUEVO DESAPAREZCA.
+       Si esto es una renovación, el préstamo anterior está en cero porque esta
+       renovación se lo absorbió. Borrarla sin devolvérselo hacía desaparecer una
+       deuda que el cliente sigue debiendo. */
+    renovacionRevivida = await revivirPrestamoRenovado(tx, p)
+
     if (!estabaCancelado) {
-      // 1. Reversar desembolso original (ingreso al capital = el dinero vuelve)
+      /* 1. Reversar el desembolso: lo que SALIÓ, no lo que dice el préstamo.
+         En una renovación solo salió la diferencia entregada en mano; devolver
+         `montoPrestado` entero metía en la caja el saldo absorbido, que nunca
+         salió de ella. */
+      const salio = await efectivoQueSalio(tx, p)
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'ajuste',
-        monto: p.montoPrestado,
+        monto: salio,
         direccion: 'ingreso',
         descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
         referenciaId: id,
@@ -1081,6 +1112,24 @@ export async function DELETE(request, { params }) {
     await tx.prestamo.delete({ where: { id } })
   })
 
-  logActividad({ session, accion: 'eliminar_prestamo', entidadTipo: 'prestamo', entidadId: id, detalle: `Préstamo de ${p.cliente.nombre} eliminado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
-  return Response.json({ ok: true, message: 'Préstamo eliminado' })
+  logActividad({
+    session,
+    accion: 'eliminar_prestamo',
+    entidadTipo: 'prestamo',
+    entidadId: id,
+    detalle: renovacionRevivida
+      ? `Préstamo de ${p.cliente.nombre} eliminado — era una renovación: al anterior (${renovacionRevivida.id}) se le devolvió su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
+      : `Préstamo de ${p.cliente.nombre} eliminado`,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+  })
+  return Response.json({
+    ok: true,
+    message: renovacionRevivida
+      ? `Préstamo eliminado. Volvió el anterior con su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
+      : 'Préstamo eliminado',
+    // Para que la pantalla pueda decirlo sin adivinar.
+    prestamoAnteriorRevivido: renovacionRevivida
+      ? { id: renovacionRevivida.id, saldoDevuelto: renovacionRevivida.devuelto }
+      : null,
+  })
 }

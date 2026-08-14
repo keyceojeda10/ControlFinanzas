@@ -20,6 +20,7 @@ import TarjetaCliente      from '@/components/cf/TarjetaCliente'
 import { adaptarPrestamos } from '@/lib/adaptadores/prestamos'
 import { formatFechaCobroRelativa } from '@/lib/calculos'
 import { formatMoney } from '@/lib/i18n'
+import { mensajeBorrarPrestamo } from '@/lib/dinero/revertir-renovacion'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { planTieneFotos }            from '@/lib/planes'
 import ScoreCrediticio               from '@/components/clientes/ScoreCrediticio'
@@ -355,9 +356,19 @@ export default function ClienteDetallePage({ params }) {
     setActionLoading(true)
     try {
       const res = await fetch(`/api/prestamos/${prestamoId}`, { method: 'DELETE' })
-      if (!res.ok) { const d = await res.json(); alert(d.error || 'Error'); return }
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(d.error || 'Error'); return }
       setDeleteData(prev => prev.filter(p => p.id !== prestamoId))
       setCliente(prev => ({ ...prev, prestamos: prev.prestamos.filter(p => p.id !== prestamoId) }))
+      /* Si era una renovación, el préstamo anterior acaba de volver a activo con
+         su saldo. Estaba en la lista como «completado» y quitar solo la fila
+         borrada lo dejaba mostrándose pagado: hay que releer.
+         Reportado por PRESTA MIL: «el saldo viejo que tenía la tarjeta se
+         elimina». Se lo decimos, además, porque si no parece que no pasó nada. */
+      if (d.prestamoAnteriorRevivido) {
+        alert(`Préstamo eliminado. Volvió el anterior con su saldo de ${formatMoney(d.prestamoAnteriorRevivido.saldoDevuelto)}, que sigue por cobrar.`)
+        await fetchCliente({ soft: true })
+      }
     } catch { alert('Error de conexión') }
     finally { setActionLoading(false) }
   }
@@ -1177,7 +1188,7 @@ export default function ClienteDetallePage({ params }) {
       <ConfirmModal
         open={!!confirmDeletePrestamo}
         title="Eliminar préstamo"
-        message="¿Eliminar este préstamo y todos sus pagos? Esta acción no se puede deshacer."
+        message={mensajeBorrarPrestamo(cliente?.prestamos, confirmDeletePrestamo)}
         confirmLabel="Eliminar"
         confirmColor="red"
         onConfirm={() => _doDeletePrestamo(confirmDeletePrestamo)}

@@ -275,9 +275,17 @@ export async function POST(request, { params }) {
       const totalPagadoViejo = original.pagos
         .filter(p => !['recargo', 'descuento'].includes(p.tipo))
         .reduce((a, p) => a + p.montoPagado, 0)
+      /* ⚠ `totalAPagarPrevio` GUARDA EL NÚMERO QUE ESTA LÍNEA PISA.
+         Sin él, quitar después esta renovación (cobrador que renovó la cartulina
+         equivocada) borraba la deuda vieja para siempre: medido, 40 casos y
+         $23.054.900 en 10 negocios. Ver lib/dinero/revertir-renovacion.js. */
       await tx.prestamo.update({
         where: { id: prestamoId },
-        data: { totalAPagar: Math.round(totalPagadoViejo), estado: 'completado' },
+        data: {
+          totalAPagarPrevio: original.totalAPagar,
+          totalAPagar: Math.round(totalPagadoViejo),
+          estado: 'completado',
+        },
       })
     } else {
       await tx.prestamo.update({

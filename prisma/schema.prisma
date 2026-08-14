@@ -384,6 +384,13 @@ model Prestamo {
   ultimoPagoAt   DateTime?
   creadoPorId    String? // id del User que creo el prestamo (auditoria)
   renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)
+  // Lo que este prestamo debia ANTES de que una renovacion lo absorbiera.
+  // Renovar pisa totalAPagar con lo ya pagado para dejar el saldo en cero, y ese
+  // numero era irrecuperable: si despues se quitaba la renovacion (cobrador que
+  // renovo la cartulina equivocada) el saldo viejo se evaporaba y no habia como
+  // reconstruirlo. Aqui se conserva para poder devolverlo. Null = nunca lo
+  // renovaron, o ya se le devolvio.
+  totalAPagarPrevio Float?
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
   proximoCobroManual DateTime? // override manual de la fecha de proximo cobro (null = automatico)
