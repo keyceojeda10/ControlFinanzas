@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useOffline } from '@/components/providers/OfflineProvider'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { useAuth } from '@/hooks/useAuth'
+import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 
 function isStandalone() {
   if (typeof window === 'undefined') return false
@@ -132,18 +133,18 @@ export default function NotificationsCenter({ size = 'md' }) {
   // ─── Notificaciones in-app ───
   const fetchNotifCount = async () => {
     try {
-      const res = await fetch('/api/notificaciones?count=1')
-      if (!res.ok) return
-      const data = await res.json()
+      // Este componente se monta DOS veces —cabecera y barra lateral, una la
+      // esconde el CSS— y las dos pedían por su cuenta.
+      const data = await pedirCompartido('/api/notificaciones?count=1')
+      if (!data) return
       setNotifNoLeidas(data.count || 0)
     } catch {}
   }
 
   const fetchNotificaciones = async () => {
     try {
-      const res = await fetch('/api/notificaciones')
-      if (!res.ok) return
-      const data = await res.json()
+      const data = await pedirCompartido('/api/notificaciones')
+      if (!Array.isArray(data)) return
       setNotifInApp(data)
       setNotifNoLeidas(data.filter(n => !n.leida).length)
     } catch {}
@@ -162,12 +163,16 @@ export default function NotificationsCenter({ size = 'md' }) {
   const marcarLeida = async (id) => {
     setNotifInApp(prev => prev.map(n => n.id === id ? { ...n, leida: true } : n))
     setNotifNoLeidas(prev => Math.max(0, prev - 1))
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
     try { await fetch('/api/notificaciones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }) } catch {}
   }
 
   const marcarTodasLeidas = async () => {
     setNotifInApp(prev => prev.map(n => ({ ...n, leida: true })))
     setNotifNoLeidas(0)
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
     try { await fetch('/api/notificaciones', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ marcarTodasLeidas: true }) }) } catch {}
   }
 

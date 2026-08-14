@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useCountry } from '@/hooks/useCountry'
+import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 
 export default function CompletarTelefonoModal() {
   const { data: session, status } = useSession()
@@ -27,12 +28,10 @@ export default function CompletarTelefonoModal() {
       if (sessionStorage.getItem('cf-skip-telefono') === '1') return
     } catch {}
 
-    fetch('/api/configuracion/perfil')
-      .then((r) => r.json())
+    pedirCompartido('/api/configuracion/perfil')
       .then((data) => {
         if (!data?.telefono) setOpen(true)
       })
-      .catch(() => {})
   }, [status, session])
 
   const handleSubmit = async (e) => {
@@ -55,6 +54,9 @@ export default function CompletarTelefonoModal() {
         setError(data.error ?? 'Error al guardar')
         return
       }
+      // El teléfono acaba de cambiar: si alguien vuelve a preguntar en los
+      // próximos segundos, que no reciba el perfil de antes y reabra la ventana.
+      olvidarCompartido('/api/configuracion/perfil')
       setOpen(false)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

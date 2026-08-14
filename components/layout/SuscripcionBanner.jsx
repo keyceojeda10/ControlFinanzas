@@ -11,6 +11,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
+import { pedirCompartido } from '@/lib/pedir-compartido'
 
 function calcularTiempoRestante(fechaVencimiento) {
   const diff = new Date(fechaVencimiento) - new Date()
@@ -39,10 +40,11 @@ export default function SuscripcionBanner() {
   useEffect(() => {
     if (!orgId || rol === 'superadmin') return
     let cancelado = false
-    fetch('/api/pagos/estado')
-      .then((r) => (r.ok ? r.json() : null))
+    // Este efecto depende de `pathname`, o sea que vuelve a preguntar en CADA
+    // pantalla. Compartido, se pregunta una vez cada pocos segundos aunque el
+    // cobrador cruce cuatro secciones seguidas.
+    pedirCompartido('/api/pagos/estado')
       .then((d) => { if (!cancelado && d) setEstado(d) })
-      .catch(() => {})
     return () => { cancelado = true }
   }, [orgId, rol, pathname])
 

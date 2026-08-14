@@ -20,6 +20,7 @@ import { useSession } from 'next-auth/react'
 import HojaInferior from '@/components/cf/HojaInferior'
 import FranjaAviso from '@/components/armazon/FranjaAviso'
 import { BotonPrimario, BotonTexto } from '@/components/cf/primitivos'
+import { pedirCompartido } from '@/lib/pedir-compartido'
 
 const APLAZADO = 'cf:verificar-correo:aplazado'
 
@@ -45,10 +46,10 @@ export default function AvisoVerificarCorreo() {
 
   useEffect(() => {
     if (!email || rol === 'superadmin') return
-    fetch('/api/auth/estado-verificacion')
-      .then((r) => (r.ok ? r.json() : null))
+    // `[email, rol]` empiezan vacíos y se llenan cuando resuelve la sesión: el
+    // efecto corre dos veces y preguntaba dos veces.
+    pedirCompartido('/api/auth/estado-verificacion')
       .then((d) => setVerificado(d?.verificado ?? null))
-      .catch(() => {})
   }, [email, rol])
 
   if (!email || rol === 'superadmin' || verificado !== false) return null

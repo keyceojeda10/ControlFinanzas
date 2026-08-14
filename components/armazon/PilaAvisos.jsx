@@ -21,6 +21,7 @@
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ordenarAvisos } from '@/lib/adaptadores/avisos'
 import CosasPorResolver from '@/components/armazon/CosasPorResolver'
+import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 
 // El contenido de cada aviso EN LA HOJA. La franja de arriba es una línea; aquí
 // cada uno se explica y trae su acción.
@@ -104,10 +105,10 @@ export default function PilaAvisos({ children, onVerTodos }) {
   useEffect(() => {
     let vivo = true
     const traer = () => {
-      fetch('/api/notificaciones', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : []))
+      // Los mismos avisos los pide `NotificationsCenter`, que además está
+      // montado dos veces (cabecera y barra lateral). Compartido: una petición.
+      pedirCompartido('/api/notificaciones', { cache: 'no-store' })
         .then((d) => { if (vivo && Array.isArray(d)) setGuardados(d) })
-        .catch(() => {})
     }
     traer()
     // Al volver a la pestaña, no cada minuto: el cron corre una vez al día.
@@ -118,6 +119,11 @@ export default function PilaAvisos({ children, onVerTodos }) {
 
   const marcarLeida = (id) => {
     setGuardados((prev) => prev.map((n) => (n.id === id ? { ...n, leida: true } : n)))
+    // Se olvida lo compartido: si no, durante unos segundos el otro sitio que
+    // pinta los avisos seguiría enseñándolos sin leer.
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
+
     fetch('/api/notificaciones', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -125,6 +131,11 @@ export default function PilaAvisos({ children, onVerTodos }) {
   }
   const marcarTodas = () => {
     setGuardados((prev) => prev.map((n) => ({ ...n, leida: true })))
+    // Se olvida lo compartido: si no, durante unos segundos el otro sitio que
+    // pinta los avisos seguiría enseñándolos sin leer.
+    olvidarCompartido('/api/notificaciones')
+    olvidarCompartido('/api/notificaciones?count=1')
+
     fetch('/api/notificaciones', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ marcarTodasLeidas: true }),

@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import FranjaAviso from '@/components/armazon/FranjaAviso'
+import { pedirCompartido } from '@/lib/pedir-compartido'
 
 export default function LimitesPlanBanner() {
   const { data: session } = useSession()
@@ -24,10 +25,10 @@ export default function LimitesPlanBanner() {
   useEffect(() => {
     if (!orgId || rol !== 'owner') return
     let cancelado = false
-    fetch('/api/plan/uso')
-      .then((r) => (r.ok ? r.json() : null))
+    // Igual que el banner de suscripción: depende de `pathname` y se repetía en
+    // cada navegación.
+    pedirCompartido('/api/plan/uso')
       .then((d) => { if (!cancelado && d) setUso(d) })
-      .catch(() => {})
     return () => { cancelado = true }
   }, [orgId, rol, pathname])
 
