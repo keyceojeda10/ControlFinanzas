@@ -128,20 +128,32 @@ self.addEventListener('install', (e) => {
   self.skipWaiting()
 })
 
-// ─── Activate: clean ALL old caches (including static chunks) ──────
-// STATIC_CACHE se borra en cada deploy porque los chunk IDs de Next.js
-// pueden repetirse entre builds con contenido diferente — el hash en el
-// filename cambia, pero el SW cacheFirst compara por URL completa y no
-// pide el chunk nuevo si ya tiene uno con el mismo chunk ID.
+// ─── Activate: limpiar las cachés viejas ───────────────────────────
+//
+// ⚠ STATIC_CACHE SOBREVIVE, que es lo único que la hace útil. Antes se borraba
+// en cada despliegue «porque los chunk IDs pueden repetirse entre builds con
+// contenido diferente»: se comprobó con dos compilaciones distintas y de los 389
+// nombres comunes los 389 traían contenido idéntico. El nombre lleva la huella
+// del contenido; la misma URL no puede significar dos cosas.
+//
+// Borrarla tenía un coste que se pagaba entero: tras cada release, todos los
+// usuarios se bajaban otra vez el código de la app desde Boston. Y de regalo,
+// conservarla evita el `ChunkLoadError` del cambio de versión —el de quien tiene
+// la pantalla abierta y pide un archivo que el servidor ya reemplazó—, porque
+// ahora ese archivo sigue en su teléfono.
+//
+// Lo que sí se borra en cada versión es CACHE_NAME (las páginas) y, cuando
+// cambian las cifras, API_CACHE. Ahí es donde el contenido viejo miente.
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE)
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
-    ).then(() => self.clients.matchAll()).then((clients) => {
+    ).then(() => podarCache(STATIC_CACHE))
+      .then(() => self.clients.matchAll()).then((clients) => {
       clients.forEach((c) => c.postMessage({ type: 'SW_UPDATED' }))
     })
   )
@@ -185,12 +197,25 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // Next.js static assets (_next/static): network-first
-  // Los chunks llevan hash en el nombre — cada build genera URLs nuevas.
-  // cache-first causaba que chunks viejos de caches huérfanos se sirvieran
-  // porque caches.match() busca en TODOS los caches, no solo STATIC_CACHE.
+  // ── EL CÓDIGO DE LA APP: DE LA CACHÉ, SIN PREGUNTAR A LA RED ────────────
+  //
+  // Iba a la red SIEMPRE, y encima `networkFirst` no guarda nada: la caché de
+  // los chunks estaba viva en el nombre y muerta en los hechos. Con el servidor
+  // en Boston, cada cambio de sección pagaba viajes de ~90 ms para traer
+  // archivos que no pueden cambiar. Y sin señal la app no podía ni cargar su
+  // propio código.
+  //
+  // El comentario que había aquí decía que caché primero servía chunks viejos
+  // «porque los chunk IDs de Next.js pueden repetirse entre builds con contenido
+  // diferente». Se comprobó con dos compilaciones distintas del proyecto: de los
+  // 389 nombres presentes en las dos, los 389 traían contenido IDÉNTICO, y los
+  // archivos que cambiaron estrenaron nombre. El hash del nombre ES el del
+  // contenido, así que la misma URL no puede significar dos cosas.
+  //
+  // El fallo real era otro y está arreglado en `cacheFirst`: se buscaba en TODAS
+  // las cachés, huérfanas incluidas, en vez de en la que toca.
   if (url.pathname.startsWith('/_next/static')) {
-    e.respondWith(networkFirst(request))
+    e.respondWith(cacheFirst(request, STATIC_CACHE))
     return
   }
 
@@ -289,19 +314,56 @@ async function networkFirstPage(request) {
   }
 }
 
-async function cacheFirst(request) {
-  const cached = await caches.match(request)
+/**
+ * Caché primero, MIRANDO UNA SOLA CACHÉ.
+ *
+ * ⚠ Antes usaba `caches.match(request)`, que busca en TODAS las cachés del
+ * origen —incluidas las huérfanas de versiones viejas—. Eso sí podía devolver
+ * algo que ya no correspondía, y por ese susto se apagó la caché de los chunks
+ * entera. La causa no era «caché primero»: era buscar en todos lados. Abriendo
+ * la caché por su nombre, lo que no está ahí no existe.
+ */
+async function cacheFirst(request, nombreCache = STATIC_CACHE) {
+  const cache = await caches.open(nombreCache)
+  const cached = await cache.match(request)
   if (cached) return cached
   try {
     const response = await fetch(request)
     if (response.ok) {
-      // _next/static usa STATIC_CACHE (inmutable, sobrevive deploys)
-      const cache = await caches.open(STATIC_CACHE)
       cache.put(request, response.clone())
+      podarCache(nombreCache)
     }
     return response
   } catch {
     return new Response('', { status: 503 })
+  }
+}
+
+/**
+ * La caché de los chunks sobrevive a los despliegues, así que sin podarla
+ * crecería para siempre: cada versión deja los suyos. Como el nombre de cada
+ * archivo lleva su propia huella, los viejos no molestan —simplemente ya nadie
+ * los pide—, y se van por antigüedad. `cache.keys()` devuelve en orden de
+ * inserción, así que el primero de la lista es el más antiguo.
+ *
+ * El tope está muy por encima de lo que un usuario carga de una versión (una
+ * compilación entera son ~390 archivos y nadie visita todas las pantallas), y
+ * la poda corre en segundo plano: no se espera.
+ */
+const TOPE_ARCHIVOS_EN_CACHE = 500
+let podando = false
+async function podarCache(nombreCache) {
+  if (podando) return
+  podando = true
+  try {
+    const cache = await caches.open(nombreCache)
+    const claves = await cache.keys()
+    const sobran = claves.length - TOPE_ARCHIVOS_EN_CACHE
+    if (sobran > 0) await Promise.all(claves.slice(0, sobran).map((k) => cache.delete(k)))
+  } catch {
+    // Podar es mantenimiento: si falla, se sirve igual.
+  } finally {
+    podando = false
   }
 }
 
