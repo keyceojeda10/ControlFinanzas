@@ -30,6 +30,7 @@ import { useTheme }             from '@/lib/theme/ThemeProvider'
 import { getCountryList, COUNTRIES } from '@/lib/countries'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
+import { puedeRetroceder } from '@/lib/armazon'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1456,12 +1457,27 @@ function ConfiguracionContent() {
   const seccionParam = montado ? searchParams.get('s') : null
   const cobradores = Math.max(0, (uso?.usuarios?.usado ?? 1) - 1)
 
-  // La flecha de la cabecera: dentro de una seccion vuelve al INDICE; en el
-  // indice sale de configuracion. Sin esto salia siempre, y desde una seccion eso
-  // se siente como perder el sitio.
+  /* ── LA FLECHA TIENE QUE TERMINAR SALIENDO ────────────────────────────────
+     Dentro de una sección vuelve al ÍNDICE; en el índice sale de configuración.
+     Eso estaba bien pensado y mal implementado: volvía al índice con `push`, o
+     sea AÑADIENDO una entrada al historial. Después, desde el índice, la flecha
+     hace `back()` — y `back()` caía justo en la entrada anterior, que era la
+     sección de la que se acababa de salir. Volvías a entrar, pulsabas, volvías
+     a entrar: un ping-pong del que no se sale.
+
+     Reproducido en el espejo antes de tocarlo: seis toques seguidos y las seis
+     veces la ruta se quedaba en `/configuracion`.
+
+     Salir de la sección es RETROCEDER, no avanzar. Con `back()` el historial se
+     consume de verdad —sección → índice → de donde vino— y el último toque
+     termina en el inicio, que es lo que uno espera al machacar la flecha. Si no
+     hay nada detrás (se entró por enlace directo a `?s=`), se reemplaza la
+     entrada en vez de apilar otra. */
   useCabecera({
     titulo: 'Configuración',
-    onVolver: seccionParam ? () => router.push('/configuracion') : undefined,
+    onVolver: seccionParam
+      ? () => { if (puedeRetroceder()) router.back(); else router.replace('/configuracion') }
+      : undefined,
   })
 
   const paisCfg = COUNTRIES[org?.country] ?? null
