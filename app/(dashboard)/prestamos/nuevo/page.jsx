@@ -558,7 +558,13 @@ function NuevoPrestamo() {
       ...(cm > 0 && { cuotaManual: cm }),
       interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
       ...(capitalExtra.length > 0 && { capitalExtra }),
-      ...(modoDiaCobro === 'mes' && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
+      /* ⚠ LA MISMA CONDICIÓN QUE AL GUARDAR. Esta previsualización llevaba
+         `modoDiaCobro === 'mes'`, que es el interruptor de QUINCENAL: en mensual
+         el día de corte nunca entraba aquí, aunque las dos vías de guardado sí
+         lo mandan. O sea que el prestamista escribía «30», veía una tabla con
+         otras fechas, confirmaba, y el préstamo nacía con un calendario que no
+         era el que había revisado. */
+      ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
     lastValidCalculo.current = resultado
@@ -1363,6 +1369,31 @@ function NuevoPrestamo() {
                   <Input type="number" inputMode="numeric" value={diaCobroMes}
                     onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
                     placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
+
+                  {/* ── EL PRIMER COBRO, ESCRITO ────────────────────────────
+                      Escribir «30» aquí no dice nada por sí solo, y de lo que
+                      pasa detrás depende plata: el primer tramo casi nunca mide
+                      un mes. Un prestamista lo hacía a mano en cada préstamo
+                      porque el sistema no se lo enseñaba. Aquí queda la cuenta
+                      hecha antes de confirmar: qué día se cobra, cuántos días
+                      trae y cuánto es esa primera cuota. */}
+                  {calculo?.prorrateoPrimerPeriodo && calculo.tablaAmortizacion?.[0] && (
+                    <div className="mt-2 rounded-[10px] border p-2.5"
+                      style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-surface)' }}>
+                      <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                        Primer cobro el {new Date(calculo.primerCobro).toLocaleDateString('es-CO', {
+                          timeZone: 'UTC', day: 'numeric', month: 'long',
+                        })}
+                      </p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                        Son {calculo.diasPrimerPeriodo} dias desde que entregas, asi que esa cuota
+                        trae el interes de {calculo.diasPrimerPeriodo} dias y no de un mes:{' '}
+                        <span className="font-mono-display font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                          {formatMoney(calculo.tablaAmortizacion[0].cuotaTotal)}
+                        </span>. Las demas van completas.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
