@@ -201,7 +201,7 @@ function HojaOpinar({ open, onClose, onListo }) {
                 background: grabando ? 'color-mix(in srgb, var(--cf-red) 12%, transparent)' : 'var(--cf-fill)',
                 border: `1px solid ${grabando ? 'var(--cf-red)' : 'var(--cf-border)'}`,
                 color: grabando ? 'var(--cf-red-dark)' : 'var(--cf-ink-2)',
-                font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                font: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               }}
             >
               <Micro className="w-[17px] h-[17px]" />
@@ -231,7 +231,7 @@ function HojaOpinar({ open, onClose, onListo }) {
               <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>Nota de voz lista</span>
               <button type="button" onClick={() => setAudio(null)} style={{
                 background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
-                fontSize: 12.5, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+                fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
               }}>Quitar</button>
             </div>
           )}
@@ -241,7 +241,7 @@ function HojaOpinar({ open, onClose, onListo }) {
               {imagenes.map((f, i) => (
                 <span key={i} className="flex items-center gap-2 px-2.5 py-1.5" style={{
                   borderRadius: 'var(--cf-r-control)', background: 'var(--cf-fill)',
-                  fontSize: 12.5, color: 'var(--cf-ink-2)',
+                  fontSize: 13, color: 'var(--cf-ink-2)',
                 }}>
                   {f.name.length > 18 ? f.name.slice(0, 16) + '…' : f.name}
                   <button type="button" aria-label={`Quitar ${f.name}`}
