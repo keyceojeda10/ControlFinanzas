@@ -62,3 +62,6 @@ public/diseno.html
 
 # Fotos donadas para medir el lector de cartulinas (fuera de public/, fuera de git)
 .fotos-donadas/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
