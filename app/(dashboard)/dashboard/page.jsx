@@ -19,6 +19,7 @@ import AsistenteChat from '@/components/asistente/AsistenteChat'
 import { rotulo } from '@/lib/dinero/definiciones'
 import PanelDinero from '@/components/pantallas/PanelDinero'
 import { adaptarPanelDinero, notaDelPanel } from '@/lib/adaptadores/panel-dinero'
+import { pedirCompartido } from '@/lib/pedir-compartido'
 
 const OnboardingWizard    = dynamic(() => import('@/components/onboarding/OnboardingWizard'),    { ssr: false })
 const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/SpotlightOverlay'),    { ssr: false })
@@ -1479,9 +1480,10 @@ export default function DashboardPage() {
     if (esOwner) {
       fetches.push(loadCapital())
       fetches.push(
-        fetch('/api/pagos/estado').then(r => r.json())
-          .then(d => { if (d.diasRestantes !== undefined) setSusInfo(d) })
-          .catch(() => {})
+        // El mismo dato lo pide `SuscripcionBanner`, que está montado en el
+        // armazón: los dos preguntaban a la vez cada vez que se abría el inicio.
+        pedirCompartido('/api/pagos/estado')
+          .then(d => { if (d?.diasRestantes !== undefined) setSusInfo(d) })
       )
       fetches.push(
         fetch(`/api/equipo/resumen?t=${Date.now()}`, { cache: 'no-store' })
