@@ -453,6 +453,45 @@ export default function ClientesPage() {
     setIsOffline(false)
     const cacheKey = `clientes:${q || ''}:${p}:${rutaId || 'all'}`
 
+    /* ── LA PETICIÓN SALE ANTES DE MIRAR EL TELÉFONO ───────────────────────
+       Los parámetros se armaban DENTRO del `try`, después de `await
+       leerDeCache(...)`: la red esperaba a que IndexedDB terminara de leer.
+       Armarlos no depende de la caché, así que se hace aquí y la petición
+       arranca ya. Mismo dato, igual de fresco, pedido antes. */
+    const params = new URLSearchParams()
+    if (q) params.set('buscar', q)
+    if (rutaId) params.set('rutaId', rutaId)
+    // Viene de la alerta "N clientes sin ruta asignada" del dashboard.
+    // Se lee de window.location y NO del hook: este loader es un useCallback
+    // con dependencias vacias, asi que un searchParams capturado aqui se
+    // quedaria congelado en el primer render (el mismo bug de closure viejo
+    // que hacia que los filtros por URL no se aplicaran).
+    if (new URLSearchParams(window.location.search).get('sinRuta') === '1') {
+      params.set('sinRuta', '1')
+    }
+    // Igual que el anterior, y por la misma razon: viene del aviso «N clientes
+    // no tienen numero» de Avisos por WhatsApp. Tambien de window.location,
+    // porque este loader tiene dependencias vacias y el hook se congelaria.
+    if (new URLSearchParams(window.location.search).get('sinTelefono') === '1') {
+      params.set('sinTelefono', '1')
+    }
+    // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
+    /* ⚠ «nuevos» y «clavo» NO son estados: son columnas, y van por su propio
+       parámetro. Mandarlos como `estado` daría un enum inválido y el endpoint
+       devolvería la lista entera sin filtrar — que es peor que un error,
+       porque parece que funciona. */
+    if (calculados.estado === 'nuevos') params.set('nuevos', '1')
+    else if (calculados.estado === 'clavo') params.set('clavo', '1')
+    else if (calculados.estado) params.set('estado', calculados.estado)
+    if (calculados.mora) params.set('mora', String(calculados.mora))
+    if (calculados.pagaHoy) params.set('pagaHoy', '1')
+    if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
+    params.set('page', String(p))
+    params.set('limit', String(LIMIT))
+    const enCamino = navigator.onLine
+      ? fetch(`/api/clientes?${params}`).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      : null
+
     // Cache-first: si hay datos cacheados para este filtro, pintarlos al
     // instante y revalidar en segundo plano. Sin cache → skeleton.
     if (!shouldUseSoftRefresh) {
@@ -493,39 +532,10 @@ export default function ClientesPage() {
     }
 
     try {
-      const params = new URLSearchParams()
-      if (q) params.set('buscar', q)
-      if (rutaId) params.set('rutaId', rutaId)
-      // Viene de la alerta "N clientes sin ruta asignada" del dashboard.
-      // Se lee de window.location y NO del hook: este loader es un useCallback
-      // con dependencias vacias, asi que un searchParams capturado aqui se
-      // quedaria congelado en el primer render (el mismo bug de closure viejo
-      // que hacia que los filtros por URL no se aplicaran).
-      if (new URLSearchParams(window.location.search).get('sinRuta') === '1') {
-        params.set('sinRuta', '1')
-      }
-      // Igual que el anterior, y por la misma razon: viene del aviso «N clientes
-      // no tienen numero» de Avisos por WhatsApp. Tambien de window.location,
-      // porque este loader tiene dependencias vacias y el hook se congelaria.
-      if (new URLSearchParams(window.location.search).get('sinTelefono') === '1') {
-        params.set('sinTelefono', '1')
-      }
-      // Los que el servidor calcula. Sin ellos la peticion es la de siempre.
-      /* ⚠ «nuevos» y «clavo» NO son estados: son columnas, y van por su propio
-         parámetro. Mandarlos como `estado` daría un enum inválido y el endpoint
-         devolvería la lista entera sin filtrar — que es peor que un error,
-         porque parece que funciona. */
-      if (calculados.estado === 'nuevos') params.set('nuevos', '1')
-      else if (calculados.estado === 'clavo') params.set('clavo', '1')
-      else if (calculados.estado) params.set('estado', calculados.estado)
-      if (calculados.mora) params.set('mora', String(calculados.mora))
-      if (calculados.pagaHoy) params.set('pagaHoy', '1')
-      if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
-      params.set('page', String(p))
-      params.set('limit', String(LIMIT))
-      const res = await fetch(`/api/clientes?${params}`)
-      if (!res.ok) throw new Error()
-      const data = await res.json()
+      // `enCamino` ya llega resuelto a JSON, o a null si no hubo red o el
+      // servidor respondió mal. Las dos cosas caen al mismo sitio de siempre.
+      const data = await enCamino
+      if (!data) throw new Error('offline')
       if (data.offline) throw new Error('offline')
       setClientes(data.clientes)
       if (data.clientes?.length) setUltimosCargados(data.clientes)

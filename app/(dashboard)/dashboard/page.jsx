@@ -1352,6 +1352,18 @@ export default function DashboardPage() {
 
   const loadDashboard = useCallback(async () => {
     setIsOffline(false)
+    /* ── LA RED SALE PRIMERO, Y LA CACHÉ PINTA MIENTRAS LLEGA ──────────────
+       El «cache-first» de abajo es correcto en la idea y estaba mal en el
+       orden: se hacía `await leerDeCache(...)` y la petición no salía hasta
+       terminar de leer IndexedDB. La red se quedaba parada esperando al
+       teléfono. Ahora salen a la vez — mismo dato, igual de fresco, pedido
+       antes. */
+    const enCamino = navigator.onLine
+      ? fetch(`/api/dashboard/resumen?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        }).then((r) => r.json()).catch(() => null)
+      : null
     // Cache-first: pintar al instante el ultimo resumen guardado y revalidar
     // en segundo plano. Evita el flash skeleton→datos al entrar al dashboard.
     try {
@@ -1370,14 +1382,10 @@ export default function DashboardPage() {
       } catch {}
     }
     try {
-      // Cache-buster: evita que el navegador o cualquier intermediario reuse
-      // una respuesta vieja. Combinado con Cache-Control: no-store en la API,
-      // garantiza que cada carga del dashboard sea fresca.
-      const r = await fetch(`/api/dashboard/resumen?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      })
-      const d = await r.json()
+      // La petición ya salió arriba, con su cache-buster: ni el navegador ni
+      // ningún intermediario pueden devolver una respuesta vieja.
+      const d = enCamino ? await enCamino : null
+      if (!d) throw new Error('offline')
       if (d.error) setError(d.error)
       else if (d.offline) throw new Error('offline')
       else {
