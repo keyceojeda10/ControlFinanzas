@@ -1355,9 +1355,20 @@ export default function DashboardPage() {
     /* ── LA RED SALE PRIMERO, Y LA CACHÉ PINTA MIENTRAS LLEGA ──────────────
        El «cache-first» de abajo es correcto en la idea y estaba mal en el
        orden: se hacía `await leerDeCache(...)` y la petición no salía hasta
-       terminar de leer IndexedDB. La red se quedaba parada esperando al
-       teléfono. Ahora salen a la vez — mismo dato, igual de fresco, pedido
-       antes. */
+       terminar de leer IndexedDB. Ahora salen a la vez.
+
+       ⚠ NO SE MIDIÓ NINGUNA MEJORA. La primera medida decía «589 ms haciendo
+       cola», y era UNA muestra de algo que varía cientos de milisegundos entre
+       pasadas seguidas. Comparando las dos versiones con 7 muestras cada una,
+       con la app ya caliente: la petición sale a los 252 ms antes y 249 después,
+       y el dato llega a 543 contra 536. Eso es ruido.
+
+       Se deja igualmente porque no cuesta nada y quita una dependencia que no
+       tenía razón de ser —pedir a la red no necesita saber qué hay guardado—, y
+       porque en un teléfono viejo con la base local llena esa lectura sí puede
+       pesar. Pero no es un arreglo de velocidad: si alguien busca de dónde
+       sacar tiempo, no es de aquí. El dato tarda ~285 ms en ir y volver, y ahí
+       es donde está. */
     const enCamino = navigator.onLine
       ? fetch(`/api/dashboard/resumen?t=${Date.now()}`, {
           cache: 'no-store',

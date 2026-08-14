@@ -456,8 +456,20 @@ export default function ClientesPage() {
     /* ── LA PETICIÓN SALE ANTES DE MIRAR EL TELÉFONO ───────────────────────
        Los parámetros se armaban DENTRO del `try`, después de `await
        leerDeCache(...)`: la red esperaba a que IndexedDB terminara de leer.
-       Armarlos no depende de la caché, así que se hace aquí y la petición
-       arranca ya. Mismo dato, igual de fresco, pedido antes. */
+       Armarlos no depende de la caché, así que se hace aquí.
+
+       ⚠ NO SE MIDIÓ NINGUNA MEJORA. La primera medida decía «589 ms haciendo
+       cola», y era UNA muestra de algo que varía cientos de milisegundos entre
+       pasadas seguidas. Comparando las dos versiones con 7 muestras cada una,
+       con la app ya caliente: la petición sale a los 252 ms antes y 249 después,
+       y el dato llega a 543 contra 536. Eso es ruido.
+
+       Se deja igualmente porque no cuesta nada y quita una dependencia que no
+       tenía razón de ser —pedir a la red no necesita saber qué hay guardado—, y
+       porque en un teléfono viejo con la base local llena esa lectura sí puede
+       pesar. Pero no es un arreglo de velocidad: si alguien busca de dónde
+       sacar tiempo, no es de aquí. El dato tarda ~285 ms en ir y volver, y ahí
+       es donde está. */
     const params = new URLSearchParams()
     if (q) params.set('buscar', q)
     if (rutaId) params.set('rutaId', rutaId)

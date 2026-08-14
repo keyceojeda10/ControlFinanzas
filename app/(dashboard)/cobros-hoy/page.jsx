@@ -105,13 +105,20 @@ export default function CobrosHoyPage() {
     /* ── LA RED ARRANCA YA, NO DESPUÉS DE MIRAR EL TELÉFONO ────────────────
        Antes se hacía `await leerDeCache(...)` y SOLO ENTONCES salía la
        petición. Leer IndexedDB no es gratis —abrir la base, ir al almacén— y
-       mientras tanto la red estaba parada. Medido en la pantalla de cada
-       mañana: las cifras llegaban a los 752 ms, de los cuales 589 eran cola.
-       La consulta en sí tarda 163 ms.
+       mientras tanto la red estaba parada. Las dos cosas salen ahora a la vez.
 
-       Las dos cosas salen a la vez: la caché sigue pintando lo último que se
-       vio mientras el dato de verdad viene en camino. No cambia qué se enseña
-       ni cuán fresco es — solo deja de esperar para empezar. */
+       ⚠ NO SE MIDIÓ NINGUNA MEJORA. La primera medida decía «589 ms haciendo
+       cola», y era UNA muestra de algo que varía cientos de milisegundos entre
+       pasadas seguidas. Comparando las dos versiones con 7 muestras cada una,
+       con la app ya caliente: la petición sale a los 252 ms antes y 249 después,
+       y el dato llega a 543 contra 536. Eso es ruido.
+
+       Se deja igualmente porque no cuesta nada y quita una dependencia que no
+       tenía razón de ser —pedir a la red no necesita saber qué hay guardado—, y
+       porque en un teléfono viejo con la base local llena esa lectura sí puede
+       pesar. Pero no es un arreglo de velocidad: si alguien busca de dónde
+       sacar tiempo, no es de aquí. El dato tarda ~285 ms en ir y volver, y ahí
+       es donde está. */
     const enCamino = navigator.onLine
       ? fetch(`/api/cobros-hoy?t=${Date.now()}`, { cache: 'no-store' })
           .then((r) => r.json())
