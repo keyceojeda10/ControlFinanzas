@@ -156,11 +156,33 @@ export async function POST(request, { params }) {
   // IMPORTANTE: el seguro NO se suma a totalAPagar (igual que en crear normal);
   // se guarda en su campo `montoSeguro` aparte. Asi el saldo pendiente y el
   // cierre del prestamo se comportan identico a los prestamos normales.
+  /* ══ EL DÍA DE COBRO SE HEREDA ═════════════════════════════════════════════
+   *
+   * Renovar no lo pasaba nunca, así que el préstamo nuevo nacía SIN día de
+   * corte: un prestamista que tiene a todos sus clientes cerrados el 30 renovaba
+   * y ese cliente se le iba al día que cayera la renovación. Justo lo que la
+   * pantalla de renovar promete que no pasa —«los datos del préstamo siguen
+   * enteros»— y lo único que no seguía.
+   *
+   * Solo si la frecuencia no cambia: un ancla del día 30 no significa nada en un
+   * préstamo diario. La pantalla no ofrece cambiarlo, igual que no ofrece cambiar
+   * la ruta: se hereda y ya.
+   */
+  const mismaFrecuencia = freq === original.frecuencia
+  const diaCobroMesDb = mismaFrecuencia && (freq === 'mensual' || freq === 'quincenal')
+    ? original.diaCobroMes : null
+  const diaCobroMes2Db = mismaFrecuencia && freq === 'quincenal'
+    ? original.diaCobroMes2 : null
+  const diaCobroSemanaDb = mismaFrecuencia && (freq === 'semanal' || freq === 'quincenal')
+    ? original.diaCobroSemana : null
+
   const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
   const calc = calcularPrestamo({
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     ...(modoRenovacion === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
+    ...(Number.isInteger(diaCobroMesDb) && { diaCobroMes: diaCobroMesDb }),
+    ...(Number.isInteger(diaCobroMes2Db) && { diaCobroMes2: diaCobroMes2Db }),
   })
   // Ver la guardia equivalente en POST /api/prestamos: una cuota que no cubre el
   // interes del primer periodo hace que el prestamo nunca amortice.
@@ -277,6 +299,10 @@ export async function POST(request, { params }) {
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
         interesAdelantado: modoInteresFinal === 'solo_interes' && !!body.interesAdelantado,
+        diaCobroSemana: diaCobroSemanaDb,
+        diaCobroMes:    diaCobroMesDb,
+        diaCobroMes2:   diaCobroMes2Db,
+        ...(calc.primerCobro ? { primerCobro: calc.primerCobro } : {}),
         // El plazo REAL sale del calculo, no del formulario. Con cuota manual el
         // plazo se auto-extiende (ver calcularPrestamo) y guardar el valor pedido
         // dejaba el prestamo contradiciendose: un caso real quedo con "180 dias"
