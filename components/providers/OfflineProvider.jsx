@@ -291,6 +291,37 @@ export default function OfflineProvider({ children }) {
 
     navigator.serviceWorker.register('/sw.js').catch(() => {})
 
+    /* ── EL INTERRUPTOR DEL MODO RÁPIDO ──────────────────────────────────────
+     *
+     * Con él encendido, el ARMAZÓN de cada pantalla sale del teléfono y se
+     * refresca por detrás, en vez de esperar el viaje a Boston. Las cifras no
+     * cambian de camino: cada sección las sigue pidiendo al API, y el API sigue
+     * yendo a la red primero. Un saldo guardado es un saldo que miente.
+     *
+     * Va por DISPOSITIVO y no por cuenta a propósito. El dueño no puede juzgar
+     * esto en el espejo —«el espejo te sirve es a ti»— y necesita sentirlo en la
+     * app de verdad, con su cartera, sin que nadie más lo tenga encima hasta que
+     * él diga. Se enciende una vez con `?rapido=1` y queda; se apaga con
+     * `?rapido=0`. Quien no lo active no nota absolutamente nada.
+     */
+    try {
+      const parametro = new URLSearchParams(window.location.search).get('rapido')
+      if (parametro === '1' || parametro === '0') {
+        localStorage.setItem('cf-modo-rapido', parametro)
+      }
+      const activo = localStorage.getItem('cf-modo-rapido') === '1'
+      // El service worker que ya manda, o el que acabe de tomar el mando: sin
+      // esperar a `ready` el mensaje se pierde en la primera carga.
+      navigator.serviceWorker.ready
+        .then((reg) => (reg.active ?? navigator.serviceWorker.controller)?.postMessage({
+          type: 'MODO_RAPIDO', activo,
+        }))
+        .catch(() => {})
+    } catch {
+      // localStorage puede estar bloqueado (modo privado). Sin interruptor, la
+      // app se comporta como siempre, que es justo lo que debe pasar.
+    }
+
     // ── Y QUE LA APP SE ENTERE DE QUE HAY VERSION NUEVA ──
     //
     // `sw.js` ya hace `skipWaiting()` y `clients.claim()`, asi que el service

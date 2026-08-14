@@ -149,7 +149,7 @@ self.addEventListener('activate', (e) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== STATIC_CACHE)
+          .filter((k) => k !== CACHE_NAME && k !== API_CACHE && k !== STATIC_CACHE && k !== AJUSTES_CACHE)
           .map((k) => caches.delete(k))
       )
     ).then(() => podarCache(STATIC_CACHE))
@@ -219,9 +219,15 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // Page navigations: network-first, fallback to cache
+  // Page navigations: network-first, fallback to cache.
+  // Con el modo rápido encendido (solo quien lo activa en su propio teléfono),
+  // el armazón sale de la caché y se refresca por detrás. Las cifras no: cada
+  // sección las sigue pidiendo al API, y el API sigue yendo a la red primero.
   if (request.mode === 'navigate') {
-    e.respondWith(networkFirstPage(request))
+    e.respondWith(
+      modoRapidoActivo().then((rapido) =>
+        rapido ? armazonGuardadoYRefresca(request) : networkFirstPage(request))
+    )
     return
   }
 
@@ -271,6 +277,61 @@ const DYNAMIC_ROUTE_FALLBACKS = [
   { prefix: '/rutas/', fallback: '/rutas' },
   { prefix: '/cobradores/', fallback: '/cobradores' },
 ]
+
+/**
+ * ── MODO RÁPIDO (apagado para todo el mundo) ──────────────────────────────
+ *
+ * Sirve el ARMAZÓN de la pantalla desde el teléfono y lo refresca por detrás,
+ * en vez de esperar el viaje a Boston (~90 ms de ida y vuelta, más el resto).
+ *
+ * ⚠ ARMAZÓN, NO CIFRAS. Las seis secciones son componentes de cliente que piden
+ * sus números al API por separado —dashboard 8 llamadas, caja 12—, así que la
+ * página guardada no lleva plata dentro: lleva el marco, y las cifras siguen
+ * yendo a la red como siempre. Ni una sola ruta de `/api/` cambia aquí.
+ *
+ * Está detrás de un interruptor porque el dueño no puede juzgarlo en el espejo
+ * —sus palabras: «el espejo te sirve es a ti»— y necesita sentirlo en la app de
+ * verdad, con su cartera, sin exponer a nadie más. Se enciende por dispositivo
+ * con `?rapido=1` y se apaga con `?rapido=0`.
+ */
+const AJUSTES_CACHE = 'cf-ajustes'
+const CLAVE_MODO_RAPIDO = '/__modo-rapido'
+let modoRapido = null // null = todavía no se ha leído
+
+async function modoRapidoActivo() {
+  if (modoRapido !== null) return modoRapido
+  try {
+    const cache = await caches.open(AJUSTES_CACHE)
+    modoRapido = !!(await cache.match(CLAVE_MODO_RAPIDO))
+  } catch {
+    modoRapido = false
+  }
+  return modoRapido
+}
+
+/**
+ * Del teléfono ya, y se refresca por detrás para la próxima vez.
+ *
+ * Si no hay nada guardado se comporta igual que antes: espera a la red. Así el
+ * primer acceso a cada pantalla nunca puede enseñar algo que no existe.
+ */
+async function armazonGuardadoYRefresca(request) {
+  const cache = await caches.open(CACHE_NAME)
+  const guardado = await cache.match(request)
+
+  const refresco = fetch(request)
+    .then((response) => {
+      if (response.ok && !response.redirected) cache.put(request, response.clone())
+      return response
+    })
+    .catch(() => null)
+
+  if (guardado) {
+    // No se espera al refresco: se deja corriendo para la próxima navegación.
+    return guardado
+  }
+  return (await refresco) ?? networkFirstPage(request)
+}
 
 async function networkFirstPage(request) {
   try {
@@ -638,6 +699,19 @@ async function syncPagosFromSW() {
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
+  }
+
+  // El interruptor del modo rápido. Se guarda en su propia cache —que sobrevive
+  // a los despliegues— porque el service worker se duerme y se despierta solo:
+  // una variable en memoria se perderia y el ajuste se apagaria sin avisar.
+  if (e.data?.type === 'MODO_RAPIDO') {
+    const activo = !!e.data.activo
+    modoRapido = activo
+    e.waitUntil(caches.open(AJUSTES_CACHE).then((cache) =>
+      activo
+        ? cache.put(CLAVE_MODO_RAPIDO, new Response('1'))
+        : cache.delete(CLAVE_MODO_RAPIDO)
+    ))
   }
 
   // Limpiar cache de API al hacer logout (previene leak cross-sesión/cross-org)
