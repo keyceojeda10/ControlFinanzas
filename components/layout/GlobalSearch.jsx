@@ -328,8 +328,14 @@ export default function GlobalSearch() {
           }
           accion={auth.puedeCrearPrestamos === false ? null : {
             texto: 'Prestarle a alguien nuevo',
-            nota: 'crear cliente y préstamo de una vez',
-            onIr: () => ir('/prestamos/nuevo'),
+            nota: 'primero el cliente, y de ahí al préstamo',
+            /* Iba a `/prestamos/nuevo`, o sea DIRECTO al préstamo, saltándose
+               justo el paso que el botón promete. Y el asistente de préstamo
+               solo ofrece crear un cliente cuando no hay NINGUNO: con cartera
+               cargada no hay salida, hay que irse a buscar dónde se crean.
+               Ahora empieza por el cliente, y al guardarlo la propia pantalla
+               ofrece «Crear préstamo ahora» — que es «de una vez» de verdad. */
+            onIr: () => ir('/clientes/nuevo'),
           }}
           pie={recientes.length === 0 ? 'Escribe un nombre, una cédula o un teléfono' : null}
         />

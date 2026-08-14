@@ -1038,9 +1038,21 @@ function NuevoPrestamo() {
             {buscando && (
               <div className="mt-3 space-y-1.5">
                 {clientesFiltrados.length === 0 ? (
-                  <p className="text-sm text-center py-8" style={{ color: 'var(--cf-ink-3)' }}>
-                    Sin resultados. Prueba con otro nombre.
-                  </p>
+                  /* No estaba en la lista y no había nada que hacer: «Sin
+                     resultados» y a buscarse la vida. El cliente al que le vas a
+                     prestar puede ser nuevo — de hecho es el caso normal cuando
+                     alguien llega por primera vez— y desde aquí no se podía
+                     crear salvo que la cartera estuviera vacía del todo. */
+                  <div className="text-center py-8">
+                    <p className="text-sm mb-4" style={{ color: 'var(--cf-ink-3)' }}>
+                      Nadie con «{buscadorCliente.trim()}» en tu cartera.
+                    </p>
+                    <Link href="/clientes/nuevo"
+                      className="inline-flex h-11 px-5 rounded-[12px] items-center justify-center text-sm font-bold transition-all active:scale-[0.98]"
+                      style={{ background: 'var(--cf-gold)', color: '#111' }}>
+                      Crear este cliente
+                    </Link>
+                  </div>
                 ) : (
                   clientesFiltrados.slice(0, 8).map((c) => renderClienteRow(c))
                 )}
