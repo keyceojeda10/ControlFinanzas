@@ -26,6 +26,7 @@ const SpotlightOverlay    = dynamic(() => import('@/components/onboarding/Spotli
 const CobradorOnboarding  = dynamic(() => import('@/components/onboarding/CobradorOnboarding'),  { ssr: false })
 const DashboardAiTip      = dynamic(() => import('@/components/dashboard/DashboardAiTip'),       { ssr: false })
 const BannerFotosDonadas  = dynamic(() => import('@/components/dashboard/BannerFotosDonadas'),   { ssr: false })
+const BannerSugerencias   = dynamic(() => import('@/components/dashboard/BannerSugerencias'),    { ssr: false })
 const MonedaCF            = dynamic(() => import('@/components/ui/MonedaCF'),                    { ssr: false })
 const InstallBanner       = dynamic(() => import('@/components/layout/InstallBanner'),            { ssr: false })
 
@@ -1634,6 +1635,10 @@ export default function DashboardPage() {
           40 fotos o por pasar el lunes— así que quitarlo de aquí no es urgente,
           pero sí conviene: es código de una campaña de tres días. */}
       {esOwner && <BannerFotosDonadas />}
+      {/* ⚠ SIN `esOwner`, y a propósito. El banner de fotos era solo para dueños
+          y los cobradores no lo vieron nunca — son justo los que caminan la ruta
+          con la app en la mano ocho horas y tienen las quejas más concretas. */}
+      <BannerSugerencias />
       {/* El promotor de la app SALE de la pila de arriba. Segun el orden del
           diseño es «lo comodo» —no pierdes un peso por no instalarla hoy— y
           estaba haciendo de tercera franja ambar seguida. Cuatro franjas ambar

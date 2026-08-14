@@ -1166,3 +1166,28 @@ model SesionActiva {
   @@index([organizationId])
   @@index([lastActivityAt])
 }
+
+
+/// Lo que los usuarios dicen que les falta o les molesta.
+///
+/// ⚠ SIN RELACIONES A PROPÓSITO. `organizationId` y `userId` van como texto
+/// suelto: declararlas obligaría a tocar `Organization` y `User`, que son las
+/// dos tablas de las que cuelga todo, para una campaña temporal. El panel de
+/// administrador resuelve los nombres con una segunda consulta.
+///
+/// `texto` es SIEMPRE texto legible: si vino como nota de voz, aquí está la
+/// transcripción y el audio queda en `archivos`. Eso es lo que permite el
+/// sondeo — leer trescientos audios de uno en uno no es un sondeo.
+model Sugerencia {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  rol            String // owner | cobrador — para saber quién pide qué
+  texto          String   @db.Text
+  fuente         String // escrito | voz
+  archivos       String?  @db.Text // JSON: rutas dentro del almacén, fuera de la web
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([createdAt])
+}

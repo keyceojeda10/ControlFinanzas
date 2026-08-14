@@ -60,6 +60,21 @@ const nav = [
     ),
   },
   {
+    /* La campaña de sugerencias. Va junto a Soporte porque las dos son «lo que
+       dice la gente», pero SEPARADA a propósito: soporte es un problema que hay
+       que resolver hoy y esto es una idea para el mes que viene. Mezclarlas
+       enturbia las dos, que es justo lo que el dueño quería evitar.
+       Cuando la campaña cierre y el sondeo esté hecho, esta entrada se borra. */
+    href: '/admin/sugerencias',
+    label: 'Sugerencias',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M9.66 18h4.68M12 3a6 6 0 00-3.6 10.8c.5.38.85.9.96 1.5l.1.7h5.08l.1-.7c.11-.6.46-1.12.96-1.5A6 6 0 0012 3z" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/retencion',
     label: 'Retencion',
     icon: (
