@@ -1482,7 +1482,7 @@ export default function DashboardPage() {
       fetches.push(
         // El mismo dato lo pide `SuscripcionBanner`, que está montado en el
         // armazón: los dos preguntaban a la vez cada vez que se abría el inicio.
-        pedirCompartido('/api/pagos/estado')
+        pedirCompartido('/api/pagos/estado', { ventanaMs: 60_000 })
           .then(d => { if (d?.diasRestantes !== undefined) setSusInfo(d) })
       )
       fetches.push(

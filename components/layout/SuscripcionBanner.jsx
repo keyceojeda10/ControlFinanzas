@@ -43,7 +43,7 @@ export default function SuscripcionBanner() {
     // Este efecto depende de `pathname`, o sea que vuelve a preguntar en CADA
     // pantalla. Compartido, se pregunta una vez cada pocos segundos aunque el
     // cobrador cruce cuatro secciones seguidas.
-    pedirCompartido('/api/pagos/estado')
+    pedirCompartido('/api/pagos/estado', { ventanaMs: 60_000 })
       .then((d) => { if (!cancelado && d) setEstado(d) })
     return () => { cancelado = true }
   }, [orgId, rol, pathname])

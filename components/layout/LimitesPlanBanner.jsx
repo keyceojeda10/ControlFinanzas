@@ -27,7 +27,7 @@ export default function LimitesPlanBanner() {
     let cancelado = false
     // Igual que el banner de suscripción: depende de `pathname` y se repetía en
     // cada navegación.
-    pedirCompartido('/api/plan/uso')
+    pedirCompartido('/api/plan/uso', { ventanaMs: 60_000 })
       .then((d) => { if (!cancelado && d) setUso(d) })
     return () => { cancelado = true }
   }, [orgId, rol, pathname])
