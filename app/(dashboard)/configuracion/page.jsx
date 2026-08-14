@@ -76,8 +76,6 @@ function TabPerfil() {
   const [msgAvatar, setMsgAvatar] = useState(null)
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [telefono,       setTelefono]       = useState('')
-  const [guardandoTel,   setGuardandoTel]   = useState(false)
-  const [msgTel,         setMsgTel]         = useState(null)
 
   useEffect(() => {
     fetch('/api/configuracion/perfil')
@@ -86,17 +84,43 @@ function TabPerfil() {
       .finally(() => setLoading(false))
   }, [])
 
-  const guardarNombre = async () => {
+  /* ══ UN SOLO GUARDADO PARA LA TARJETA ══════════════════════════════════
+     Habia DOS botones aqui: «Guardar WhatsApp» justo debajo del telefono y
+     «Guardar nombre» cinco elementos mas abajo, detras del Rol —que ni siquiera
+     se edita—. Reportado tal cual: «esos botones de guardado estan extranos y
+     aparte hasta de tamano diferente son».
+
+     Y de tamano distinto porque cada uno se ajustaba a su texto: «Guardar
+     WhatsApp» es mas largo que «Guardar nombre».
+
+     Es UNA tarjeta con DOS campos editables: se guarda entera. El endpoint ya
+     aceptaba los dos campos en la misma llamada, asi que no hay nada nuevo del
+     lado del servidor.
+
+     ⚠ El telefono solo se manda si hay algo escrito. Vaciarlo mandaba `null`, y
+     el API convierte eso en una cadena vacia que no pasa su propia validacion de
+     longitud: respondia «Ingresa un numero valido» a quien solo queria borrarlo.
+     Sin mandarlo, el numero se queda como estaba en vez de dar un error que no
+     explica nada. */
+  const guardarDatos = async () => {
     setGuardandoNom(true); setMsgNom(null)
+    const limpio = telefono.replace(/\D/g, '')
+    if (limpio && (limpio.length < 7 || limpio.length > 15)) {
+      setMsgNom({ tipo: 'error', texto: 'Ingresa un número de WhatsApp válido' })
+      setGuardandoNom(false); return
+    }
     try {
       const res  = await fetch('/api/configuracion/perfil', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre }),
+        body: JSON.stringify({ nombre, ...(limpio && { telefono: limpio }) }),
       })
       const data = await res.json()
-      setMsgNom(res.ok
-        ? { tipo: 'success', texto: 'Nombre actualizado correctamente' }
-        : { tipo: 'error',   texto: data.error ?? 'Error al guardar' })
+      if (res.ok) {
+        if (limpio) setPerfil(p => ({ ...p, telefono: limpio }))
+        setMsgNom({ tipo: 'success', texto: 'Datos actualizados' })
+      } else {
+        setMsgNom({ tipo: 'error', texto: data.error ?? 'Error al guardar' })
+      }
     } catch {
       setMsgNom({ tipo: 'error', texto: 'Error de conexión' })
     } finally { setGuardandoNom(false) }
@@ -120,30 +144,6 @@ function TabPerfil() {
     } catch {
       setMsgAvatar({ tipo: 'error', texto: 'Error de conexión' })
     } finally { setGuardandoAvatar(false) }
-  }
-
-  const guardarTelefono = async () => {
-    setGuardandoTel(true); setMsgTel(null)
-    const limpio = telefono.replace(/\D/g, '')
-    if (limpio && (limpio.length < 7 || limpio.length > 15)) {
-      setMsgTel({ tipo: 'error', texto: 'Ingresa un número de WhatsApp válido' })
-      setGuardandoTel(false); return
-    }
-    try {
-      const res  = await fetch('/api/configuracion/perfil', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ telefono: limpio || null }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setPerfil(p => ({ ...p, telefono: limpio || null }))
-        setMsgTel({ tipo: 'success', texto: 'Número de WhatsApp actualizado' })
-      } else {
-        setMsgTel({ tipo: 'error', texto: data.error ?? 'Error al guardar' })
-      }
-    } catch {
-      setMsgTel({ tipo: 'error', texto: 'Error de conexión' })
-    } finally { setGuardandoTel(false) }
   }
 
   const cambiarPassword = async () => {
@@ -206,9 +206,6 @@ function TabPerfil() {
             />
             <p className="text-[10px] text-[var(--cf-ink-3)]">Lo usamos para enviarte códigos de verificación. Si lo cambias, usa el nuevo número para iniciar sesión.</p>
           </div>
-          {msgTel && <Alerta tipo={msgTel.tipo}>{msgTel.texto}</Alerta>}
-          <Button onClick={guardarTelefono} loading={guardandoTel} size="sm">Guardar WhatsApp</Button>
-          <div className="pt-2" style={{ borderTop: '1px solid var(--cf-border)' }} />
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-[var(--cf-ink-3)]">Rol</label>
             <div className="flex items-center gap-2">
@@ -218,7 +215,11 @@ function TabPerfil() {
             </div>
           </div>
           {msgNom && <Alerta tipo={msgNom.tipo}>{msgNom.texto}</Alerta>}
-          <Button onClick={guardarNombre} loading={guardandoNom} size="sm">Guardar nombre</Button>
+          {/* A todo el ancho: un boton que se ajusta a su texto cambia de tamano
+              segun lo que diga, y al lado de otro se ve descuadrado. */}
+          <Button onClick={guardarDatos} loading={guardandoNom} size="sm" className="w-full">
+            Guardar cambios
+          </Button>
         </div>
       </Card>
 
