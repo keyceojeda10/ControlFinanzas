@@ -48,6 +48,11 @@ const cx = await mysql.createConnection({
   user: decodeURIComponent(u.username),
   password: decodeURIComponent(u.password),
   database: u.pathname.slice(1),
+  /* ⚠ SIN ESTO LOS MESES SALEN CORRIDOS. mysql2 interpreta las columnas
+     DATETIME como hora LOCAL de quien corre el script, pero la base las guarda
+     en UTC. Sin `timezone: 'Z'` el resumen de aquí no coincidía con el de la
+     pantalla: junio salía $259.001 corto y julio $141.001 largo. */
+  timezone: 'Z',
 })
 
 const plata = (n) => '$' + Math.round(n).toLocaleString('es-CO')
@@ -113,9 +118,17 @@ if (ilegibles.length) {
 }
 if (sinOrg.length) console.log(`⚠ ${sinOrg.length} sin organización (NO se apuntan)`)
 
+/* El mes se corta en Bogotá, igual que en /api/admin/inicio: el servidor corre
+   en UTC y lo cobrado a las 19:00 del día 31 es del mes que acaba, no del
+   siguiente. */
+const mesBogota = (d) => {
+  const b = new Date(new Date(d).getTime() - 5 * 3600000)
+  return `${b.getUTCFullYear()}-${String(b.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
 const porMes = {}
 for (const a of apuntes) {
-  const k = new Date(a.fecha).toISOString().slice(0, 7)
+  const k = mesBogota(a.fecha)
   porMes[k] = porMes[k] ?? { n: 0, total: 0 }
   porMes[k].n += 1
   porMes[k].total += a.montoCOP

@@ -67,7 +67,11 @@ export default function AdminInicio() {
   }, [])
 
   if (error) return <p style={{ fontSize: 13, color: 'var(--cf-red)' }}>{error}</p>
-  if (!d) return <PilaEsqueletos cuantos={4} alto={116} />
+  if (!d) return (
+    <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      <PilaEsqueletos cuantos={4} alto={116} />
+    </div>
+  )
 
   const { entro, deberiaEntrar, vivos, aLlamar } = d
   const diferencia = entro.esteMes - entro.mesPasado
@@ -86,7 +90,9 @@ export default function AdminInicio() {
             columnas={[
               { etiqueta: 'Mes pasado', valor: formatMoney(entro.mesPasado) },
               {
-                etiqueta: diferencia >= 0 ? 'Más que el pasado' : 'Menos que el pasado',
+                // Corto a propósito: TiraCifras recorta, y «MENOS QUE EL P…»
+                // no dice nada. El signo lo lleva la palabra.
+                etiqueta: diferencia >= 0 ? 'De más' : 'De menos',
                 valor: formatMoney(Math.abs(diferencia)),
               },
               { etiqueta: 'Pagos', valor: String(entro.pagosEsteMes) },
