@@ -320,8 +320,9 @@ export async function GET() {
   // Monthly trend
   const meses = []
   for (let i = 0; i < mesesAtras; i++) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras + 1 + i, 1)
-    meses.push(d.toISOString().slice(0, 7))
+    // Por el mismo sitio que todo lo demás: `new Date(año, mes, 1)` construye la
+    // fecha en la hora del servidor y aquí daba la clave correcta de casualidad.
+    meses.push(claveMesBogota(inicioDeMes(-mesesAtras + 1 + i)))
   }
   const pagoMap = Object.fromEntries(pagosMensuales.map(p => [p.mes, p]))
   const prestamoMap = Object.fromEntries(prestamosMensuales.map(p => [p.mes, p]))

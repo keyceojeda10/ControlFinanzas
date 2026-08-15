@@ -91,7 +91,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
     // amortizacion. Los que la tienen se corrigen despues sumando la diferencia
     // contra su tabla — igual que en la pantalla, o el PDF mostraria otra cifra.
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
+      SELECT DATE_FORMAT(DATE_SUB(p.fechaPago, INTERVAL 5 HOUR), '%Y-%m') as mes,
         SUM(p.montoPagado) as total,
         COUNT(*) as cantidad,
         SUM(${Prisma.raw(REPARTO_PAGO.interes)}) as interesGanado,
@@ -133,13 +133,13 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
       },
     }),
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(createdAt, '%Y-%m') as mes, SUM(montoPrestado) as capitalPrestado,
+      SELECT DATE_FORMAT(DATE_SUB(createdAt, INTERVAL 5 HOUR), '%Y-%m') as mes, SUM(montoPrestado) as capitalPrestado,
         COUNT(*) as cantidad
       FROM Prestamo WHERE organizationId = ${organizationId} AND createdAt >= ${fechaInicio} AND esClavo = false
       GROUP BY mes ORDER BY mes
     `,
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(fecha, '%Y-%m') as mes, SUM(monto) as total
+      SELECT DATE_FORMAT(DATE_SUB(fecha, INTERVAL 5 HOUR), '%Y-%m') as mes, SUM(monto) as total
       FROM GastoMenor WHERE organizationId = ${organizationId} AND fecha >= ${fechaInicio} AND estado = 'aprobado'
       GROUP BY mes ORDER BY mes
     `,
@@ -361,8 +361,9 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   // Monthly trend
   const meses = []
   for (let i = 0; i < mesesAtras; i++) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras + 1 + i, 1)
-    meses.push(d.toISOString().slice(0, 7))
+    // Por el mismo sitio que todo lo demás: `new Date(año, mes, 1)` construye la
+    // fecha en la hora del servidor y aquí daba la clave correcta de casualidad.
+    meses.push(claveMesBogota(inicioDeMes(-mesesAtras + 1 + i)))
   }
 
   /* ⚠ Estas dos vivian en el bloque de PDFKit que se retiro, y al retirarlo se
