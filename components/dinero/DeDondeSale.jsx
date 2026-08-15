@@ -116,6 +116,17 @@ export default function DeDondeSale({ cifra, fecha, cobradorId, onCerrar, onIr }
             }}>
               {e.formula}
             </p>
+            {/* La salida, cuando la duda de fondo se contesta en otra pantalla.
+                Sin esto la explicación deja al dueño sabiendo que la cifra está
+                bien y sin saber dónde mirar lo que de verdad quería ver. */}
+            {e.nota && (
+              <p style={{
+                margin: '10px 0 0', paddingTop: 10, fontSize: 12.5, lineHeight: 1.5,
+                color: 'var(--cf-ink-2)', borderTop: '1px solid var(--cf-border-soft)',
+              }}>
+                {e.nota}
+              </p>
+            )}
           </div>
 
           {datos.filas.length > 0 ? (

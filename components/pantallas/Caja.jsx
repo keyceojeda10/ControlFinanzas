@@ -329,7 +329,28 @@ export function CajaDia({
             display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12,
             flex: 'none', paddingTop: 13, borderTop: '1.5px solid rgba(20,20,28,.14)',
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+            {/* ── EL SALDO TAMBIÉN SE ABRE ───────────────────────────────────
+                Los cinco renglones de arriba se pueden tocar y este —el único
+                que la gente mira— no. Reportado por Préstamos Rincón: «al dinero
+                disponible para préstamos suman el capital cobrado + los
+                intereses, y para este solo se debería tener en cuenta el capital
+                pagado».
+
+                Comprobado contra su base: la cifra está bien. Es efectivo, y el
+                efectivo se puede prestar venga de donde venga; decirle que solo
+                tiene disponible el capital sería mentirle sobre plata que tiene
+                en la mano. Lo que faltaba era poder preguntarle a la cifra de
+                qué está hecha —y que la respuesta lo diga con esas palabras—. */}
+            <button
+              type="button"
+              onClick={onExplicar ? () => onExplicar('capitalDisponible') : undefined}
+              disabled={!onExplicar}
+              style={{
+                display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0,
+                background: 'none', border: 'none', padding: 0, textAlign: 'left',
+                cursor: onExplicar ? 'pointer' : 'default',
+              }}
+            >
               <span style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
                 color: 'var(--cf-ink-3)',
@@ -337,8 +358,17 @@ export function CajaDia({
               {/* «disponible para prestar» no es decoracion: es la diferencia
                   entre el saldo contable y la plata con la que de verdad se puede
                   salir a la calle hoy. */}
-              <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>disponible para prestar</span>
-            </div>
+              <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                disponible para prestar
+                {onExplicar && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.2" aria-hidden style={{ flex: 'none', opacity: .6 }}>
+                    <circle cx="12" cy="12" r="9" />
+                    <path strokeLinecap="round" d="M9.6 9.2a2.5 2.5 0 1 1 2.9 2.5v1.4M12.5 16.6h.01" />
+                  </svg>
+                )}
+              </span>
+            </button>
             <span className="cf-fig" style={{
               fontSize: 30, letterSpacing: '-.03em', color: 'var(--cf-ink)', flex: 'none',
             }}>{saldo}</span>
