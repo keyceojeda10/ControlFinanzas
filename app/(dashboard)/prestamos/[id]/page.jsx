@@ -129,7 +129,6 @@ export default function PrestamoDetallePage({ params }) {
   const [rechazando,   setRechazando]   = useState(false)
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
-  const [modoReversionCapital, setModoReversionCapital] = useState('devolver_todo')
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [confirmAnularPago, setConfirmAnularPago] = useState(null) // { pagoId, monto }
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
@@ -1025,10 +1024,7 @@ export default function PrestamoDetallePage({ params }) {
     if (estaActivo && esOwner && !completado) {
       cierra.push({
         id: 'cancelar', nombre: 'Cancelar el préstamo', peligro: true,
-        hacer: () => {
-          setModoReversionCapital(hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo')
-          setConfirmCancel(true)
-        },
+        hacer: () => setConfirmCancel(true),
       })
     }
     if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
@@ -2013,7 +2009,9 @@ export default function PrestamoDetallePage({ params }) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           estado: 'cancelado',
-                          modoReversionCapital: hayCobrosRegistrados ? modoReversionCapital : 'devolver_todo',
+                          /* Con cobros solo cabe devolver lo pendiente; el API lo
+                             fuerza igual, esto es para que las dos digan lo mismo. */
+                          modoReversionCapital: hayCobrosRegistrados ? 'devolver_restante' : 'devolver_todo',
                         }),
                       })
                       if (!res.ok) {
