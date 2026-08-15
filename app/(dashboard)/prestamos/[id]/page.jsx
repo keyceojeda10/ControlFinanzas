@@ -129,6 +129,8 @@ export default function PrestamoDetallePage({ params }) {
   const [rechazando,   setRechazando]   = useState(false)
   const [cancelando,   setCancelando]   = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
   const [anulando,     setAnulando]     = useState(null)   // pagoId que se está anulando
   const [confirmAnularPago, setConfirmAnularPago] = useState(null) // { pagoId, monto }
   const [comprobante,  setComprobante]  = useState(null)   // pagoId del comprobante expandido
@@ -808,7 +810,7 @@ export default function PrestamoDetallePage({ params }) {
   })()
   // El modal de gestión se muestra si puede gestionar préstamos O aplicar descuentos
   // (un cobrador con solo permiso de descuentos también debe poder abrirlo).
-  const mostrarGestionPrestamo = estaActivo && !completado && (puedeGestionarPrestamos || puedeAplicarDescuentos)
+
 
   const esDeHoy = (() => {
     if (!prestamo?.createdAt) return false
@@ -1027,10 +1029,43 @@ export default function PrestamoDetallePage({ params }) {
         hacer: () => setConfirmCancel(true),
       })
     }
+    /* ── ⚠ ELIMINAR VIVE AQUÍ, Y ANTES NO VIVÍA EN NINGUNA PARTE ─────────
+       Reportado por Crediya el 16 ago 2026: no encontraba cómo borrar un
+       préstamo. Escribió «Borrar» en el buscador de la pantalla y le salieron
+       «Ver y gestionar los pagos» y dos tutoriales.
+
+       Y tenía toda la razón: en TODA la app había UN solo sitio que borra un
+       préstamo —`_doDeletePrestamo`— y estaba dentro del modal de **eliminar
+       al CLIENTE**, el que sale cuando intentas borrarlo y aún tiene
+       préstamos. O sea: para quitar un préstamo había que empezar a borrar al
+       cliente. Nadie encuentra eso.
+
+       Peor: el aviso de cancelar le dice literalmente «no lo canceles: elimina
+       el préstamo» —un consejo que no se podía seguir—.
+
+       ⚠ NO lleva `estaActivo`. El caso que lo pide es justo un préstamo YA
+         cancelado: el suyo lo estaba, y por eso ni la fila de cancelar salía. */
+    if (esOwner && puedeGestionarPrestamos) {
+      cierra.push({
+        id: 'eliminar', nombre: 'Eliminar el préstamo', peligro: true,
+        hacer: () => setConfirmEliminar(true),
+      })
+    }
     if (cierra.length) g.push({ titulo: 'Cierra el préstamo', acciones: cierra })
 
     return g
   })()
+
+  /* ── ⚠ EL CHIP SALE SI HAY ALGO QUE HACER, NO SOLO SI ESTÁ ACTIVO ────────
+     Era `estaActivo && !completado`, así que en un préstamo CANCELADO la hoja
+     de Gestión no existía — y es justo donde vive «Eliminar el préstamo», que
+     es lo único que se puede hacer con uno cancelado. Crediya se quedó sin
+     puerta: ni chip, ni fila, ni resultado al buscar «Borrar».
+
+     Ahora se deriva de las propias acciones: si `gruposGestion` trajo alguna,
+     hay chip. Si no trajo ninguna, no aparece nada vacío. */
+  const mostrarGestionPrestamo = (puedeGestionarPrestamos || puedeAplicarDescuentos)
+    && gruposGestion.some((g) => g.acciones.length > 0)
 
   /* ══ LO QUE SE PUEDE HACER AQUÍ, PARA QUE SE PUEDA BUSCAR ═════════════════
    *
@@ -1949,6 +1984,90 @@ export default function PrestamoDetallePage({ params }) {
           ⚠ Los colores dejan de ser `rgba(239,68,68,…)`, que es el rojo de
           Tailwind y NO el del sistema (`--cf-red`, #E5484D). Se veía parecido y
           era otro: por eso este bloque «tenía el diseño anterior». */}
+      {/* ── ELIMINAR: LO QUE SE LLEVA POR DELANTE, DICHO ANTES ──────────────
+          Borrar un préstamo no es esconderlo: se van sus cobros y la caja
+          vuelve a como estaba. Eso es exactamente lo que Crediya necesitaba
+          —habia registrado $1.000.001 donde iban $100.000— y es lo que hay que
+          decirle a quien NO se equivoco, para que no lo use por error. */}
+      <Modal
+        open={!!confirmEliminar}
+        onClose={() => setConfirmEliminar(false)}
+        title="¿Eliminar este préstamo?"
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
+            Desaparece del cliente y de los informes. No se puede deshacer.
+          </p>
+
+          {hayCobrosRegistrados && (
+            <div
+              className="rounded-[14px] px-3 py-2.5 space-y-1.5"
+              style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
+            >
+              <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                Se borran también sus cobros: {formatMoney(totalPagadoReal)}
+              </p>
+              <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
+                La caja queda como si el préstamo nunca hubiera existido. Si esa plata
+                sí entró, no lo elimines: cancélalo.
+              </p>
+            </div>
+          )}
+
+          {/* La renovación devuelve el saldo del préstamo anterior. Lo dice
+              antes, no después: es el fallo que se arregló el 14 de agosto. */}
+          {renovadoDeId && (
+            <div
+              className="rounded-[14px] px-3 py-2.5"
+              style={{ background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)' }}
+            >
+              <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
+                Es una renovación: al eliminarla vuelve el préstamo anterior con el saldo
+                que tenía, que sigue por cobrar.
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmEliminar(false)}
+              className="flex-1 h-[46px] rounded-[14px] text-sm font-bold text-[var(--cf-ink-2)] border border-[var(--cf-border-strong)] hover:bg-[var(--cf-surface)] transition-colors"
+            >
+              No, volver
+            </button>
+            <button
+              disabled={eliminando}
+              onClick={async () => {
+                setEliminando(true)
+                try {
+                  const res = await fetch(`/api/prestamos/${id}`, { method: 'DELETE' })
+                  if (!res.ok) {
+                    let mensaje = 'No se pudo eliminar el préstamo.'
+                    try {
+                      const payload = await res.json()
+                      if (payload?.error) mensaje = payload.error
+                    } catch {}
+                    throw new Error(mensaje)
+                  }
+                  /* El préstamo ya no existe: quedarse en su pantalla daría un
+                     404. Se vuelve al cliente, que es de donde venía. */
+                  router.replace(cliente?.id ? `/clientes/${cliente.id}` : '/prestamos')
+                } catch (err) {
+                  setError(err.message || 'No se pudo eliminar el préstamo.')
+                  setConfirmEliminar(false)
+                } finally {
+                  setEliminando(false)
+                }
+              }}
+              className="flex-1 h-[46px] rounded-[14px] text-sm font-bold text-white disabled:opacity-60 transition-colors"
+              style={{ background: 'var(--cf-red-dark)' }}
+            >
+              {eliminando ? 'Eliminando…' : 'Sí, eliminar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         open={!!confirmCancel && estaActivo && session?.user?.rol === 'owner' && !completado}
         onClose={() => setConfirmCancel(false)}
