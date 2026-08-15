@@ -23,7 +23,7 @@ import {
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { revivirPrestamoRenovado, efectivoQueSalio } from '@/lib/dinero/revertir-renovacion'
+import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto } from '@/lib/dinero/revertir-renovacion'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
@@ -1064,10 +1064,9 @@ export async function DELETE(request, { params }) {
 
   const { organizationId } = session.user
 
-  // Reversar capital y eliminar pagos + préstamo en transacción
-  // Si el préstamo ya estaba cancelado, la reversión de capital ya se aplicó
-  // al cancelarlo. Solo eliminamos los registros sin tocar capital.
-  const estabaCancelado = p.estado === 'cancelado'
+  // Reversar capital y eliminar pagos + préstamo en transacción.
+  // Cuánto hay que devolver NO se decide por el estado: se le pregunta al libro
+  // cuánto volvió ya. Ver `capitalYaDevuelto`.
 
   /* ⚠ LA RUTA DEL CLIENTE, EN LOS TRES REVERSOS DE ABAJO.
      Ninguno la pasaba: el dinero volvía a la caja global pero no a la sub-bolsa
@@ -1086,16 +1085,29 @@ export async function DELETE(request, { params }) {
        deuda que el cliente sigue debiendo. */
     renovacionRevivida = await revivirPrestamoRenovado(tx, p)
 
-    if (!estabaCancelado) {
-      /* 1. Reversar el desembolso: lo que SALIÓ, no lo que dice el préstamo.
-         En una renovación solo salió la diferencia entregada en mano; devolver
-         `montoPrestado` entero metía en la caja el saldo absorbido, que nunca
-         salió de ella. */
-      const salio = await efectivoQueSalio(tx, p)
+    /* 1. Devolver a la caja lo que salió y AÚN NO ha vuelto.
+       Lo que salió es lo que salió, no lo que dice el préstamo: en una
+       renovación solo salió la diferencia entregada en mano, y devolver
+       `montoPrestado` entero metía en la caja el saldo absorbido.
+
+       ⚠ Y SE RESTA LO QUE YA VOLVIÓ. Aquí había un `if (!estabaCancelado)` que
+       no devolvía NADA si el préstamo ya estaba cancelado, dando por hecho que
+       cancelar había devuelto todo. Dejó de ser cierto el 15 de agosto, cuando
+       se quitó la opción «devolver todo» —la que inflaba las cajas $22M—: ahora
+       cancelar devuelve solo lo no recuperado, así que al borrar faltaba
+       justamente lo cobrado. Medido en el espejo con el caso de Crediya: la
+       caja quedaba $1.000.001 por debajo.
+
+       Preguntándole al libro cuánto volvió ya, los tres casos salen solos.
+       Ver `capitalYaDevuelto`. */
+    const salio = await efectivoQueSalio(tx, p)
+    const yaDevuelto = await capitalYaDevuelto(tx, p)
+    const faltaDevolver = Math.max(0, Math.round(salio - yaDevuelto))
+    if (faltaDevolver > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'ajuste',
-        monto: salio,
+        monto: faltaDevolver,
         direccion: 'ingreso',
         descripcion: `Reverso desembolso - préstamo eliminado (${p.cliente.nombre})`,
         referenciaId: id,
