@@ -1963,39 +1963,37 @@ export default function PrestamoDetallePage({ params }) {
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
               </p>
 
+              {/* ── YA NO SE ELIGE: CON COBROS SOLO CABE DEVOLVER LO PENDIENTE ──
+                  Aquí había dos opciones y una de ellas decía «conserva los cobros
+                  ya registrados y regresa el monto completo prestado». Eso es
+                  contar la misma plata dos veces, escrito como si fuera una
+                  función: la caja se quedaba con lo cobrado de regalo.
+
+                  Reportado por Crediya con su caso (escribió $1.000.001 donde
+                  iban $100.000 y anuló), y medido en producción: **$22.088.226
+                  de más en 120 préstamos anulados**.
+
+                  No es una preferencia que se pueda ofrecer, así que se quita la
+                  pregunta y se dice qué va a pasar. Y se señala la salida buena
+                  para el caso que de verdad tenía: ELIMINAR el préstamo, que sí
+                  revierte los cobros. */}
               {hayCobrosRegistrados && (
-                <div className="space-y-2">
-                  <p className="text-[11px] text-[var(--cf-ink-2)]">El préstamo ya tiene cobros registrados ({formatMoney(totalPagadoReal)}). Elige cómo reversar en caja:</p>
-
-                  <label className="flex items-start gap-2.5 rounded-[14px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="modo-reversion-capital"
-                      value="devolver_todo"
-                      checked={modoReversionCapital === 'devolver_todo'}
-                      onChange={() => setModoReversionCapital('devolver_todo')}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver todo el préstamo a caja (+{formatMoney(montoPrestadoRedondeado)})</p>
-                      <p className="text-[11px] text-[var(--cf-ink-3)]">Conserva los cobros ya registrados y regresa el monto completo prestado.</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-2.5 rounded-[14px] border border-[var(--cf-border)] bg-[var(--cf-fill)] px-3 py-2.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="modo-reversion-capital"
-                      value="devolver_restante"
-                      checked={modoReversionCapital === 'devolver_restante'}
-                      onChange={() => setModoReversionCapital('devolver_restante')}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-[var(--cf-ink)]">Devolver solo lo pendiente (+{formatMoney(saldoFinancieroPendiente)})</p>
-                      <p className="text-[11px] text-[var(--cf-ink-3)]">Calculado como prestado menos cobrado real.</p>
-                    </div>
-                  </label>
+                <div
+                  className="rounded-[14px] px-3 py-2.5 space-y-1.5"
+                  style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
+                >
+                  <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                    Vuelven a caja {formatMoney(saldoFinancieroPendiente)}
+                  </p>
+                  <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
+                    Es lo prestado menos los {formatMoney(totalPagadoReal)} que ya cobraste. Esos cobros
+                    se quedan registrados, porque esa plata sí entró.
+                  </p>
+                  <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
+                    ¿Te equivocaste al registrar un cobro? Entonces no lo canceles:
+                    <span className="font-semibold text-[var(--cf-ink-2)]"> elimina el préstamo</span>, que
+                    también borra sus cobros y deja la caja como estaba.
+                  </p>
                 </div>
               )}
 

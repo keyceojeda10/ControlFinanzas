@@ -65,3 +65,14 @@ public/diseno.html
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+
+# --- anadido para la migracion a Linux ---
+nul
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+credentials.json
+service-account.json

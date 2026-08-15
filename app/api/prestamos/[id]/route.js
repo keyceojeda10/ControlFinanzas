@@ -260,11 +260,44 @@ export async function PATCH(request, { params }) {
     // $100k a capital, esa plata ya volvió a caja y no se cuenta como "restante a devolver".
     const saldoPendienteRestante = calcularSaldoPendiente(p)
 
-    const modoReversionSolicitado = body?.modoReversionCapital === 'devolver_todo'
+    /* ══ CON COBROS REGISTRADOS SOLO SE PUEDE DEVOLVER LO PENDIENTE ══════════
+     *
+     * Reportado por Crediya el 16 ago 2026: escribió $1.000.001 donde iban
+     * $100.000, anuló el préstamo, y la caja se quedó con el millón.
+     *
+     * No es una preferencia, es aritmética. Anular deja los pagos vivos —a
+     * propósito, son plata que entró—, así que devolver ADEMÁS el desembolso
+     * entero cuenta la misma plata dos veces:
+     *
+     *     salió 2.119.000 · entró 1.000.001 · devuelve 2.119.000 = +1.000.001
+     *
+     * La opción existía en la pantalla y decía «conserva los cobros ya
+     * registrados y regresa el monto completo prestado», que es literalmente el
+     * doble conteo escrito como si fuera una función.
+     *
+     * Medido en producción ese día: **$22.088.226 de más repartidos en 120
+     * préstamos anulados**. Con el otro modo el neto da cero, que es lo
+     * correcto.
+     *
+     * ⚠ SE FUERZA AQUÍ, no solo en la pantalla. La app se usa sin señal y con
+     *   el service worker sirviendo pantallas viejas: una versión anterior
+     *   seguiría mandando `devolver_todo` y nadie se enteraría.
+     *
+     * Para deshacer el préstamo ENTERO —el caso de un pago mal escrito— la vía
+     * es ELIMINARLO: el `DELETE` de aquí abajo sí reversa los pagos.
+     */
+    const modoPedido = body?.modoReversionCapital === 'devolver_todo'
       ? 'devolver_todo'
       : body?.modoReversionCapital === 'devolver_restante'
         ? 'devolver_restante'
         : (totalPagosReales > 0 ? 'devolver_restante' : 'devolver_todo')
+
+    const modoReversionSolicitado = (totalPagosReales > 0 && modoPedido === 'devolver_todo')
+      ? 'devolver_restante'
+      : modoPedido
+    if (modoReversionSolicitado !== modoPedido) {
+      console.warn(`[prestamos/${id}] pidieron devolver_todo con ${totalPagosReales} ya cobrados: se devuelve solo lo pendiente`)
+    }
 
     // Se calculan dentro de la transacción (necesitan leer el movimiento real).
     let montoReversion = 0
