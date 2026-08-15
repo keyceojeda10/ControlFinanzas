@@ -532,9 +532,36 @@ export function FilaCobro({
       </div>
 
       {cobrada ? (
-        <span className="cf-fig" style={{
-          fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-green-dark)', flex: 'none',
-        }}>{montoCobrado}</span>
+        /* ── LO COBRADO Y LO QUE SIGUE DEBIENDO ───────────────────────────
+           Reportado por el dueño de PRESTA MIL con el caso al peso:
+
+             «Juan Archila me hizo un abono de 100.000 y le renové la
+              cartulina, quedó en un monto de 620. Sería bueno que cuando uno
+              renueve la cartulina le mostrara ahí la deuda […] uno queda como
+              con la duda, uy, será que se renovó, será que no se renovó,
+              porque pues no aparece nada.»
+
+           Y era literal: la fila cobrada solo pintaba el verde del pago. La
+           renovación quedó bien registrada —liquidó $205.000, cartulina nueva
+           de $500.000, entregó $295.000— pero en la ruta no había NADA que lo
+           dijera, así que la única forma de comprobarlo era abrir la ficha.
+
+           El dato ya llegaba a la tarjeta: `debe` es el saldo del cliente y se
+           calcula igual para todas las filas. Solo faltaba pintarlo aquí.
+
+           ⚠ No se pone `saldoTotal > 0` como condición de la fila: quien acabó
+             de pagar y no debe nada NO tiene que ver un renglón que diga
+             «debe $0». `debe` ya viene en null en ese caso. */
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, flex: 'none' }}>
+          <span className="cf-fig" style={{
+            fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-green-dark)',
+          }}>{montoCobrado}</span>
+          {debe && (
+            <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>
+              {debe}
+            </span>
+          )}
+        </div>
       ) : contexto?.monto === 'ninguno' ? null : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flex: 'none' }}>
           {/* ── DE QUÉ PERIODO ES ESTA CUOTA ──

@@ -12,7 +12,7 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } fro
 // Una sola definición para los TRES sitios que cierran cajas. Ver el archivo:
 // estaba duplicada con los argumentos en orden distinto y el tercer sitio se
 // quedó sin ninguna, escribiendo 0.
-import { calcularDesembolsadoDia } from '@/lib/dinero/desembolsado'
+import { calcularDesembolsadoDia, detalleDesembolsadoDia } from '@/lib/dinero/desembolsado'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -708,7 +708,12 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   }
 
   const gastos = gastosDia._sum?.monto || 0
-  const desembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
+  /* La cifra Y las filas que la componen, del mismo sitio: si la pantalla deja
+     abrir «lo que prestaste», la lista tiene que sumar exactamente el número de
+     arriba. Calcularlas por separado es como acaban dos cifras que se
+     contradicen. */
+  const { total: desembolsadoDia, filas: desembolsosDia } =
+    await detalleDesembolsadoDia(organizationId, inicio, fin, cobradorId)
   // Aditivo: valor de las cartulinas vs efectivo que salio de la caja. No entra
   // en ningun calculo de saldo, es solo para mostrar los dos numeros separados.
   const prestadoDetalle = await calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorId)
@@ -809,6 +814,9 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     conciliacion,
     gastos,
     desembolsadoDia,
+    // Con qué se compone: el dueño no podía comprobar el número y tuvo que
+    // escribir a soporte para saber de dónde salía.
+    desembolsosDia,
     // Dos cifras distintas del dia (se separan en renovaciones):
     valorPrestadoDia: prestadoDetalle.valorPrestado,
     efectivoEntregadoDia: prestadoDetalle.efectivoEntregado,

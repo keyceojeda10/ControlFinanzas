@@ -90,6 +90,10 @@ export default function CajaPage() {
   const [guardando, setGuardando] = useState(false)
   const [errorCaja, setErrorCaja] = useState('')
   const [exito, setExito] = useState(false)
+  /* «Lo que prestaste» se puede abrir. Ver el comentario largo junto al
+     renglón: el dueño tuvo que escribir a soporte porque la cifra no se podía
+     comprobar. */
+  const [verPrestados, setVerPrestados] = useState(false)
   const [showGasto, setShowGasto] = useState(false)
   const [showAjusteCaja, setShowAjusteCaja] = useState(false)
   const [ajusteDireccion, setAjusteDireccion] = useState('ingreso')
@@ -540,6 +544,9 @@ export default function CajaPage() {
   const valorPrestadoDia = Math.round(stats.valorPrestadoDia ?? 0)
   const efectivoEntregadoDia = Math.round(stats.efectivoEntregadoDia ?? 0)
   const cantidadPrestamosDia = stats.cantidadPrestamosDia ?? 0
+  // Las filas que componen «lo que prestaste». Suman EXACTAMENTE `prestadoHoy`:
+  // salen de la misma función que la cifra (lib/dinero/desembolsado.js).
+  const desembolsosDia = stats.desembolsosDia ?? []
   const gastosHoy = Math.round(stats.gastos || 0)
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
@@ -940,21 +947,90 @@ export default function CajaPage() {
                   : []),
                 { id: 'desembolsos', label: 'Lo que prestaste', valor: prestadoHoy, signo: -1 },
                 { id: 'gastos', label: 'Gastos', valor: gastosHoy, signo: -1 },
-              ].map(({ id, label, valor, signo }) => (
-                <div key={id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="text-[var(--cf-ink-3)] min-w-0 truncate">{label}</span>
-                  <span
-                    className="font-mono-display font-medium shrink-0"
-                    style={{
-                      color: signo === 1 ? 'var(--cf-green-dark)'
-                        : signo === -1 ? 'var(--cf-red-dark)'
-                        : 'var(--cf-ink-3)',
-                    }}
-                  >
-                    {signo === -1 && valor > 0 ? '−' : ''}{formatMoney(valor)}
-                  </span>
-                </div>
-              ))}
+              ].map(({ id, label, valor, signo }) => {
+                /* ── «LO QUE PRESTASTE» SE ABRE ────────────────────────
+                   Reportado por el dueño de PRESTA MIL el 14 ago 2026:
+
+                     «Hice tres renovaciones pero de esas tres una no iba […]
+                      la de 600 que me quedó mal yo la corregí allá en el
+                      cliente […] pero acá en caja quedó sumando 5.600, debería
+                      sumar solamente 5.»
+
+                   Reconstruido contra su base: la caja tenía razón al peso. Lo
+                   que no tenía era forma de comprobarlo —un número solo, sin
+                   nada detrás—, así que la única salida era escribir a soporte.
+
+                   La lista sale de la MISMA función que la cifra, así que suma
+                   exactamente lo de arriba. Si algún día no cuadra, es que
+                   alguien las volvió a separar. */
+                const abrible = id === 'desembolsos' && desembolsosDia.length > 0
+                const fila = (
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-[var(--cf-ink-3)] min-w-0 truncate flex items-center gap-1.5">
+                      {label}
+                      {abrible && (
+                        <svg
+                          className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor"
+                          strokeWidth={2.2} viewBox="0 0 24 24" aria-hidden
+                          style={{ transform: verPrestados ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </span>
+                    <span
+                      className="font-mono-display font-medium shrink-0"
+                      style={{
+                        color: signo === 1 ? 'var(--cf-green-dark)'
+                          : signo === -1 ? 'var(--cf-red-dark)'
+                          : 'var(--cf-ink-3)',
+                      }}
+                    >
+                      {signo === -1 && valor > 0 ? '−' : ''}{formatMoney(valor)}
+                    </span>
+                  </div>
+                )
+                if (!abrible) return <div key={id}>{fila}</div>
+                return (
+                  <div key={id}>
+                    <button
+                      type="button"
+                      onClick={() => setVerPrestados((v) => !v)}
+                      className="w-full text-left"
+                      aria-expanded={verPrestados}
+                    >
+                      {fila}
+                    </button>
+                    {verPrestados && (
+                      <div className="mt-2 mb-1 rounded-[12px] overflow-hidden" style={{ border: '1px solid var(--cf-border)' }}>
+                        {desembolsosDia.map((d, i) => (
+                          <div
+                            key={d.prestamoId}
+                            className="flex items-center justify-between gap-3 px-3 py-2"
+                            style={{ borderTop: i === 0 ? 'none' : '1px solid var(--cf-border-soft)' }}
+                          >
+                            <div className="min-w-0">
+                              {/* El nombre NO se recorta: es lo que identifica. */}
+                              <p className="text-[13px] text-[var(--cf-ink)]" style={{ fontWeight: 500 }}>{d.cliente || 'Sin nombre'}</p>
+                              {/* En una renovación la cartulina y lo entregado no
+                                  son lo mismo, y esa es justo la resta que nadie
+                                  puede hacer de cabeza. */}
+                              {d.esRenovacion && (
+                                <p className="text-[11px] text-[var(--cf-ink-3)]">
+                                  renovación · cartulina de {formatMoney(d.montoPrestado)}
+                                </p>
+                              )}
+                            </div>
+                            <span className="font-mono-display text-[13px] shrink-0" style={{ color: 'var(--cf-ink)' }}>
+                              {formatMoney(d.monto)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               {/* «Los seguros ya van dentro de lo cobrado»: pintarlos como una
                   línea más haría que el cobrador los reste o los sume otra vez
                   al cuadrar de cabeza. Por eso van en gris y sin signo. */}
