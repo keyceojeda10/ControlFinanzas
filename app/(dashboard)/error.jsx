@@ -31,7 +31,8 @@ const CADA = 60_000
 
 export default function DashboardError({ error, reset }) {
   const { isOnline, pendingCount } = useOffline()
-  const [reloading, setReloading] = useState(false)
+  // Qué recarga es: cambia lo que se le dice mientras espera.
+  const [reloading, setReloading] = useState(null) // null | 'guardado' | 'version'
   const [ultimoIntento, setUltimoIntento] = useState(() => Date.now())
   const [ahora, setAhora] = useState(() => Date.now())
 
@@ -79,10 +80,53 @@ export default function DashboardError({ error, reset }) {
     const clave = 'cf-offline-reload-' + window.location.pathname
     if (sessionStorage.getItem(clave)) return
     sessionStorage.setItem(clave, '1')
-    setReloading(true)
+    setReloading('guardado')
     const t = setTimeout(() => window.location.reload(), 300)
     return () => clearTimeout(t)
   }, [sinRed])
+
+  /* ══ EL FALLO QUE CAUSAMOS NOSOTROS AL DESPLEGAR ══════════════════════════
+   *
+   * «Loading chunk 2799 failed». Es el ÚNICO error de pantalla que sigue vivo
+   * en producción: 88 avisos en 19 negocios, y se dispara los días que más
+   * desplegamos —85 el 14 de agosto y 90 el 15, contra unos 20 de un día
+   * normal—.
+   *
+   * No es un fallo de la app: es que el navegador tiene cargado el HTML del
+   * build ANTERIOR y pide un trozo de JavaScript cuyo nombre ya no existe,
+   * porque el nombre lleva el hash del contenido y la compilación nueva lo
+   * cambió. Reintentar no sirve: se vuelve a pedir el mismo archivo que ya no
+   * está. Lo único que lo arregla es traer el HTML nuevo.
+   *
+   * Y traerlo funciona porque las navegaciones van por red primero
+   * (`networkFirstPage` en public/sw.js): la recarga baja el HTML nuevo, con
+   * los nombres nuevos.
+   *
+   * ⚠ SOLO CON RED, Y UNA SOLA VEZ. Sin red esto no se toca: ahí manda el
+   *   camino de arriba, que es el que deja seguir cobrando desde el teléfono.
+   *   Y la guarda de sesión evita el bucle de recargas, que sería peor que el
+   *   fallo — el cobrador se quedaría sin pantalla en mitad de la ruta.
+   */
+  useEffect(() => {
+    if (sinRed || !error) return
+    const texto = `${error.name ?? ''} ${error.message ?? ''}`
+    const esTrozoQueFalta = /ChunkLoadError|Loading chunk [\w-]+ failed|Failed to fetch dynamically imported module|Importing a module script failed/i.test(texto)
+    if (!esTrozoQueFalta) return
+
+    const clave = 'cf-chunk-reload'
+    if (sessionStorage.getItem(clave)) return
+    sessionStorage.setItem(clave, '1')
+    setReloading('version')
+    // Se le pide al service worker que se ponga al día antes de recargar: si
+    // hay uno esperando, es el que sabe de los archivos nuevos.
+    const t = setTimeout(() => {
+      navigator.serviceWorker?.getRegistration()
+        ?.then((r) => r?.update())
+        .catch(() => {})
+        .finally(() => window.location.reload())
+    }, 300)
+    return () => clearTimeout(t)
+  }, [error, sinRed])
 
   useEffect(() => {
     const alVolver = () => {
@@ -108,7 +152,11 @@ export default function DashboardError({ error, reset }) {
       <div className="flex items-center justify-center min-h-[60vh] px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-10 h-10 mx-auto mb-4 border-2 border-[var(--cf-gold)] border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-[var(--cf-ink-3)]">Cargando lo que tienes guardado…</p>
+          <p className="text-sm text-[var(--cf-ink-3)]">
+            {reloading === 'version'
+              ? 'Actualizando a la última versión…'
+              : 'Cargando lo que tienes guardado…'}
+          </p>
         </div>
       </div>
     )
