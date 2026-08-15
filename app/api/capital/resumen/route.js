@@ -208,12 +208,12 @@ export async function GET() {
   const [carteraAgregada, carteraSinRuta, prestamosVivos] = await Promise.all([
     prisma.prestamo.aggregate({
       where: { organizationId, estado: 'activo', esClavo: false },
-      _sum: { totalAPagar: true, totalPagado: true, montoPrestado: true },
+      _sum: { totalAPagar: true, totalPagado: true, abonadoCapital: true, montoPrestado: true },
       _count: true,
     }),
     prisma.prestamo.aggregate({
       where: { organizationId, estado: 'activo', esClavo: false, cliente: { rutaId: null } },
-      _sum: { totalAPagar: true, totalPagado: true },
+      _sum: { totalAPagar: true, totalPagado: true, abonadoCapital: true },
       _count: true,
     }),
     // «Capital en la calle» no se puede agregar en la base: depende de la tabla
@@ -224,7 +224,7 @@ export async function GET() {
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'activo', esClavo: false },
       select: {
-        montoPrestado: true, totalAPagar: true, totalPagado: true, modoInteres: true,
+        montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, modoInteres: true,
         cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
         pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
       },

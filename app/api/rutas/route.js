@@ -60,7 +60,7 @@ export async function GET(request) {
               // aquí viene filtrado SOLO A HOY —para el recaudado del día—, así
               // que no sirve para el acumulado. Es una columna de la misma
               // fila, ya calculada por el sistema.
-              totalPagado: true,
+              totalPagado: true, abonadoCapital: true,
               cuotaDiaria: true,
               frecuencia: true,
               fechaInicio: true,

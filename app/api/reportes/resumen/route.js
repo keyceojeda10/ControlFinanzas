@@ -82,7 +82,7 @@ export async function GET(req) {
         // false siempre y los modos con tabla se calcularian por la rama
         // equivocada.
         modoInteres: true,
-        totalPagado: true,
+        totalPagado: true, abonadoCapital: true,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
           select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, fechaEsperada: true },

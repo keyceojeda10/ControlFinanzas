@@ -149,7 +149,7 @@ export async function POST(req) {
     // Pedirlo en _sum tiraba PrismaClientValidationError y mataba el cron completo.
     const capitalResult = await prisma.prestamo.aggregate({
       where: { organizationId: org.id, estado: 'activo' },
-      _sum: { totalAPagar: true, totalPagado: true },
+      _sum: { totalAPagar: true, totalPagado: true, abonadoCapital: true },
     })
     const capitalActivo = Math.max(
       0,

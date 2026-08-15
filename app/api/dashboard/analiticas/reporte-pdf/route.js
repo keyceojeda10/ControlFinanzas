@@ -148,7 +148,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         // `estado` se filtra arriba y ADEMAS se pide: `calcularDiasMora` lo lee,
         // y sin el campo veia `undefined` y devolvia 0 en todos. Ver la nota en
         // lib/calculos.js.
-        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true,
+        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         proximoCobroManual: true,

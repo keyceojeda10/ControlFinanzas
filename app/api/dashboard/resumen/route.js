@@ -110,7 +110,7 @@ export async function GET() {
         diasPlazo: true,
         frecuencia: true,
         estado: true,
-        totalPagado: true,
+        totalPagado: true, abonadoCapital: true,
         ultimoPagoAt: true,
         modoInteres: true,
         proximoCobroManual: true,

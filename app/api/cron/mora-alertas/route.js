@@ -88,7 +88,7 @@ export async function POST(req) {
         // `estado` se pide ADEMÁS de filtrarlo: `calcularDiasMora` lo lee, y un
         // campo que no entra en el `select` vale `undefined`, no 'activo'.
         estado: true,
-        cuotaDiaria: true, totalAPagar: true, totalPagado: true, montoPrestado: true,
+        cuotaDiaria: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, montoPrestado: true,
         frecuencia: true, fechaInicio: true, diasPlazo: true, modoInteres: true,
         diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
         primerCobro: true,

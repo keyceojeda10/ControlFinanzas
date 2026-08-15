@@ -24,7 +24,7 @@ export async function GET(request) {
       id: true,
       montoPrestado: true,
       totalAPagar: true,
-      totalPagado: true,
+      totalPagado: true, abonadoCapital: true,
       cuotaDiaria: true,
       frecuencia: true,
       fechaInicio: true,

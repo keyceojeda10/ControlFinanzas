@@ -381,6 +381,22 @@ model Prestamo {
   // Denormalizados desde Pago (mantenidos por lib/prisma-pago-helpers.js).
   // Evitan recalcular totales iterando todos los pagos en cada lectura.
   totalPagado    Float          @default(0)
+  /// Lo abonado A CAPITAL, que está DENTRO de `totalPagado` y hay que poder
+  /// restarlo.
+  ///
+  /// Un abono a capital no paga cuotas: baja el saldo y la tabla se rehace con
+  /// cuotas más chicas. Pero la cascada que decide «hasta qué cuota llega lo
+  /// pagado» sumaba `totalPagado` a secas, así que se comía las cuotas futuras
+  /// una detrás de otra. Reportado por PRESTAMOS PEDRO el 14 ago 2026: David
+  /// Popayán abonó $500.000 y la pantalla le dijo que el próximo cobro era el
+  /// 27 de febrero de 2027 — los $500.000 repartidos como seis meses de
+  /// interés por adelantado.
+  ///
+  /// ⚠ VA DENORMALIZADO A PROPÓSITO. La resta se podía hacer leyendo `pagos`,
+  /// pero no todas las pantallas los cargan: `clientes/route.js` no los pide y
+  /// `prestamos/route.js` trae solo los diez últimos. Con la lista de pagos, la
+  /// misma deuda daba una fecha en la ficha y otra en el listado.
+  abonadoCapital Float          @default(0)
   ultimoPagoAt   DateTime?
   creadoPorId    String? // id del User que creo el prestamo (auditoria)
   renovadoDeId   String? // id del prestamo del que proviene (si fue una renovacion)

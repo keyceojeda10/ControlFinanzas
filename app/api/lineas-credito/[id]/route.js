@@ -45,7 +45,7 @@ function buildIncludeDetalle() {
         totalDesembolsos: true,
         interesesGenerados: true,
         totalCargos: true,
-        totalPagado: true,
+        totalPagado: true, abonadoCapital: true,
         saldoNuevo: true,
         pagoMinimo: true,
         createdAt: true,

@@ -70,7 +70,7 @@ export async function POST(request, { params }) {
   const prestamosActivos = descontarCapitalRuta
     ? await prisma.prestamo.findMany({
       where: { clienteId: { in: clienteIds }, organizationId, estado: 'activo', esClavo: false },
-      select: { id: true, totalAPagar: true, totalPagado: true, pagos: { select: { montoPagado: true, tipo: true } } },
+      select: { id: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, pagos: { select: { montoPagado: true, tipo: true } } },
     })
     : []
 

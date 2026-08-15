@@ -130,7 +130,7 @@ export async function GET() {
         // pantalla decia «0 en mora» de 984 mientras el otro reporte, mismo
         // negocio y mismo dia, decia 851. Ver la nota en lib/calculos.js.
         // `proximoCobroManual` tambien lo lee, para saber desde cuando cuenta.
-        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true,
+        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
         proximoCobroManual: true,

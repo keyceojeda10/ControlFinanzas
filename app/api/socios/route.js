@@ -28,7 +28,7 @@ export async function GET(request) {
             montoPrestado: true,
             tasaInteres: true,
             totalAPagar: true,
-            totalPagado: true,
+            totalPagado: true, abonadoCapital: true,
             estado: true,
             frecuencia: true,
             modoInteres: true,

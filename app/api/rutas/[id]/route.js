@@ -98,7 +98,7 @@ export async function GET(request, { params }) {
               cuotaDiaria: true,
               montoPrestado: true,
               totalAPagar: true,
-              totalPagado: true,
+              totalPagado: true, abonadoCapital: true,
               frecuencia: true,
               fechaInicio: true,
               /* ⚠ `fechaFin` ES EL PLAZO PACTADO, NO EL FINAL DE VERDAD.

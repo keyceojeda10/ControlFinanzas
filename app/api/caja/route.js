@@ -1234,7 +1234,7 @@ export async function GET(request) {
           montoPrestado: true,
           // Necesarios para calcularCapitalRestante (ver dashboard/resumen).
           modoInteres: true,
-          totalPagado: true,
+          totalPagado: true, abonadoCapital: true,
           cuotasAmortizacion: {
             orderBy: { numeroPeriodo: 'asc' },
             select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, fechaEsperada: true },

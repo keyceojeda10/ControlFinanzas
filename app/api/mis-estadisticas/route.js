@@ -106,7 +106,7 @@ export async function GET() {
             estado: true,
             cuotaDiaria: true,
             totalAPagar: true,
-            totalPagado: true,
+            totalPagado: true, abonadoCapital: true,
             fechaInicio: true,
             frecuencia: true,
             diasPlazo: true,

@@ -138,7 +138,7 @@ export async function GET(req) {
                   clienteId: true,
                   cuotaDiaria: true,
                   totalAPagar: true,
-                  totalPagado: true,
+                  totalPagado: true, abonadoCapital: true,
                   fechaInicio: true,
                   frecuencia: true,
                   diasPlazo: true,

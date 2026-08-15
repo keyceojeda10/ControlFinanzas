@@ -174,7 +174,7 @@ export async function GET(request) {
           createdAt: true,
           proximoCobroManual: true,
           // Denormalizados: evitan iterar todos los pagos.
-          totalPagado: true,
+          totalPagado: true, abonadoCapital: true,
           ultimoPagoAt: true,
           cuotasAmortizacion: {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },

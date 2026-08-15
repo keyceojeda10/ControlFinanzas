@@ -43,7 +43,7 @@ export async function GET() {
             select: {
               montoPrestado: true,
               totalAPagar: true,
-              totalPagado: true,
+              totalPagado: true, abonadoCapital: true,
               cuotaDiaria: true,
               modoInteres: true,
               cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
@@ -78,7 +78,7 @@ export async function GET() {
         select: {
           montoPrestado: true,
           totalAPagar: true,
-          totalPagado: true,
+          totalPagado: true, abonadoCapital: true,
           cuotaDiaria: true,
           modoInteres: true,
           cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },

@@ -87,7 +87,7 @@ export async function GET(request) {
 
   const prestamosDeClientes = await prisma.prestamo.findMany({
     where: { organizationId, clienteId: { in: clienteIds } },
-    select: { id: true, clienteId: true, cuotaDiaria: true, totalAPagar: true, totalPagado: true, estado: true,
+    select: { id: true, clienteId: true, cuotaDiaria: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, estado: true,
       cliente: { select: { id: true, nombre: true, cedula: true, telefono: true, direccion: true, rutaId: true } },
     },
   })

@@ -435,6 +435,12 @@ export async function POST(request, { params }) {
           fechaBase,
           diasPeriodo,
           frecuencia: prestamoActualizado.frecuencia,
+          /* ⚠ `frecuencia` ya se mandaba y DOS de las tres funciones ni la
+             declaraban: se calculaban las fechas a bloques de 30 días también
+             en mensual. Con el día de corte va la otra mitad de la regla — sin
+             él, un préstamo que cobra los 5 se recolocaba en el día que cayera
+             la última cuota previa. */
+          diaCobroMes: prestamoActualizado.diaCobroMes ?? null,
           interesAdelantado: !!prestamoActualizado.interesAdelantado,
         })
 
