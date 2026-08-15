@@ -102,6 +102,11 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         modoInteres: { in: MODOS_CON_TABLA },
         totalAPagar: { gt: 0 },
         cuotasAmortizacion: { some: {} },
+        /* ⚠ Los anulados TAMBIÉN fuera de la corrección, no solo de la consulta
+           base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra
+           volvía a subir por la puerta de la corrección. Lo cazó comparar las dos
+           pantallas del mismo negocio en el espejo, no leer el código. */
+        estado: { not: 'cancelado' },
       },
       select: {
         montoPrestado: true,
