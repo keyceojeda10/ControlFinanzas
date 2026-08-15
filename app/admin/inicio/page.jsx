@@ -27,9 +27,13 @@ import { SEGMENTOS } from '@/lib/admin/segmentos'
 const TITULO = { fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }
 const AYUDA  = { fontSize: 12, color: 'var(--cf-ink-3)' }
 
-function Seccion({ titulo, ayuda, children, accion }) {
+function Seccion({ titulo, ayuda, children, accion, ancha = false }) {
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <section style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      minWidth: 0,
+      ...(ancha ? { gridColumn: '1 / -1' } : null),
+    }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
           <h2 style={TITULO}>{titulo}</h2>
@@ -77,7 +81,19 @@ export default function AdminInicio() {
   const diferencia = entro.esteMes - entro.mesPasado
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 26, maxWidth: 760, margin: '0 auto' }}>
+    /* En PC las dos primeras secciones van una al lado de la otra: a 1440px, en
+       una sola columna de 760, la mitad derecha de la pantalla quedaba vacía.
+       `auto-fit` lo resuelve sin puntos de corte: en el teléfono es una columna
+       y en el escritorio son dos. Las dos de abajo cruzan entero porque son
+       listas, y una lista partida por la mitad se lee peor. */
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+      alignItems: 'start',
+      gap: 26,
+      maxWidth: 1120,
+      margin: '0 auto',
+    }}>
 
       {/* ── 1 · CUÁNTO ENTRÓ ─────────────────────────────────────────────── */}
       <Seccion
@@ -181,7 +197,7 @@ export default function AdminInicio() {
       </Seccion>
 
       {/* ── 3 · QUIÉN ESTÁ VIVO ──────────────────────────────────────────── */}
-      <Seccion titulo="Quién está usando el sistema" ayuda={`${vivos.totalReal} negocios de verdad, sin contar los que nunca arrancaron`}>
+      <Seccion ancha titulo="Quién está usando el sistema" ayuda={`${vivos.totalReal} negocios de verdad, sin contar los que nunca arrancaron`}>
         <Tarjeta style={{ padding: 16 }}>
           <TiraCifras
             columnas={[
@@ -206,6 +222,7 @@ export default function AdminInicio() {
 
       {/* ── 4 · QUÉ SE ESTÁ CAYENDO ──────────────────────────────────────── */}
       <Seccion
+        ancha
         titulo="A quién llamar"
         ayuda="Pagaron y se fueron, o probaron en serio y se les venció"
       >
