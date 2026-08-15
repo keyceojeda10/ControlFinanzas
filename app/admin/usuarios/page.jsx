@@ -104,7 +104,10 @@ function ListaUsuarios() {
   const cargar = useCallback(async () => {
     setCargando(true)
     try {
-      const qs = new URLSearchParams({ segmento, orden, limite: '200' })
+      /* ⚠ 50, no 200. Con 200 la página medía 36.000px en el teléfono: eso no
+         es una lista, es un muro. Para encontrar a alguien está el buscador; la
+         lista larga solo sirve para perderse. Lo que queda fuera se DICE. */
+      const qs = new URLSearchParams({ segmento, orden, limite: '50' })
       if (qDiferido.trim()) qs.set('q', qDiferido.trim())
       const r = await fetch(`/api/admin/usuarios?${qs}`)
       const j = await r.json()
