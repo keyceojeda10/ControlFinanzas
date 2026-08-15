@@ -54,7 +54,8 @@ if (!APLICAR) {
   process.exit(0)
 }
 
-const [r] = await q(`
+// Un UPDATE devuelve la cabecera del resultado, no una lista de filas.
+const r = await q(`
   UPDATE Prestamo p
   SET p.abonadoCapital = (
     SELECT COALESCE(SUM(g.montoPagado), 0) FROM Pago g
