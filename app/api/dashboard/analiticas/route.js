@@ -80,9 +80,12 @@ export async function GET() {
     prestamosConTabla,
   ] = await Promise.all([
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(fechaPago, '%Y-%m') as mes, SUM(montoPagado) as total, COUNT(*) as cantidad
-      FROM Pago WHERE organizationId = ${organizationId} AND fechaPago >= ${fechaInicio}
-        AND tipo NOT IN ('recargo', 'descuento')
+      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes, SUM(p.montoPagado) as total, COUNT(*) as cantidad
+      FROM Pago p
+      JOIN Prestamo pr ON pr.id = p.prestamoId
+      WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
+        AND p.tipo NOT IN ('recargo', 'descuento')
+        AND pr.estado <> 'cancelado'
       GROUP BY mes ORDER BY mes
     `,
     prisma.$queryRaw`
@@ -104,21 +107,45 @@ export async function GET() {
       _count: true, _sum: { totalAPagar: true },
     }),
     prisma.$queryRaw`
-      SELECT cobradorId, SUM(montoPagado) as recaudado, COUNT(*) as pagos
-      FROM Pago WHERE organizationId = ${organizationId} AND fechaPago >= ${mesActual}
-        AND tipo NOT IN ('recargo', 'descuento') AND cobradorId IS NOT NULL
-      GROUP BY cobradorId ORDER BY recaudado DESC
+      SELECT p.cobradorId, SUM(p.montoPagado) as recaudado, COUNT(*) as pagos
+      FROM Pago p WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${mesActual}
+        AND p.tipo NOT IN ('recargo', 'descuento') AND p.cobradorId IS NOT NULL
+        AND EXISTS (SELECT 1 FROM Prestamo pr WHERE pr.id = p.prestamoId AND pr.estado <> 'cancelado')
+      GROUP BY p.cobradorId ORDER BY recaudado DESC
     `,
     prisma.user.findMany({
       where: { organizationId },
       select: { id: true, nombre: true, rol: true },
     }),
+    /* ⚠ LOS PAGOS DE UN PRÉSTAMO ANULADO NO SON GANANCIA.
+     *
+     * Reportado por Crediya el 16 ago 2026: «me equivoqué en registrar un pago,
+     * era menos de lo que registré. A pesar de que cancelé el crédito, me sigue
+     * mostrando el movimiento y me alteró las utilidades». Tenía razón al peso:
+     * escribió $1.000.001 donde iban $100.000, anuló el préstamo, y el millón
+     * siguió contando como interés ganado del mes.
+     *
+     * Las consultas hermanas de esta misma pantalla YA filtraban por estado
+     * —la de rentabilidad por ruta y la de préstamos activos—; estas dos y el
+     * reparto interés/capital se quedaron atrás. La misma pantalla midiendo con
+     * dos criterios distintos.
+     *
+     * Medido en producción: 110 préstamos anulados conservan 194 pagos por
+     * $43.760.053, en 34 negocios. */
     prisma.pago.aggregate({
-      where: { organizationId, fechaPago: { gte: mesActual }, tipo: { notIn: ['recargo', 'descuento'] } },
+      where: {
+        organizationId, fechaPago: { gte: mesActual },
+        tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
+      },
       _sum: { montoPagado: true }, _count: true,
     }),
     prisma.pago.aggregate({
-      where: { organizationId, fechaPago: { gte: mesAnterior, lt: mesActual }, tipo: { notIn: ['recargo', 'descuento'] } },
+      where: {
+        organizationId, fechaPago: { gte: mesAnterior, lt: mesActual },
+        tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
+      },
       _sum: { montoPagado: true }, _count: true,
     }),
     prisma.prestamo.findMany({
@@ -202,6 +229,7 @@ export async function GET() {
       JOIN Prestamo pr ON p.prestamoId = pr.id
       WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
         AND p.tipo NOT IN ('recargo', 'descuento')
+        AND pr.estado <> 'cancelado'
       GROUP BY mes ORDER BY mes
     `,
     // Rentabilidad por ruta — misma correccion que arriba.

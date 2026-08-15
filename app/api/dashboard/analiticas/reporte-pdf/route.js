@@ -90,6 +90,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
       JOIN Prestamo pr ON pr.id = p.prestamoId
       WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
         AND p.tipo NOT IN ('recargo', 'descuento')
+        AND pr.estado <> 'cancelado'
       GROUP BY mes ORDER BY mes
     `,
     // Prestamos CON tabla, para corregir su aporte. El `some: {}` deja fuera los
@@ -129,17 +130,29 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
     `,
     prisma.$queryRaw`
       SELECT cobradorId, SUM(montoPagado) as recaudado, COUNT(*) as pagos
-      FROM Pago WHERE organizationId = ${organizationId} AND fechaPago >= ${mesActual}
-        AND tipo NOT IN ('recargo', 'descuento') AND cobradorId IS NOT NULL
-      GROUP BY cobradorId ORDER BY recaudado DESC
+      FROM Pago p WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${mesActual}
+        AND p.tipo NOT IN ('recargo', 'descuento') AND p.cobradorId IS NOT NULL
+        AND EXISTS (SELECT 1 FROM Prestamo pr WHERE pr.id = p.prestamoId AND pr.estado <> 'cancelado')
+      GROUP BY p.cobradorId ORDER BY recaudado DESC
     `,
     prisma.user.findMany({ where: { organizationId }, select: { id: true, nombre: true, rol: true } }),
+    /* Los anulados fuera, IGUAL que en la pantalla: este PDF es la misma cifra
+       impresa, y dos criterios distintos son dos ganancias distintas para el
+       mismo mes. Ver la nota larga en dashboard/analiticas/route.js. */
     prisma.pago.aggregate({
-      where: { organizationId, fechaPago: { gte: mesActual }, tipo: { notIn: ['recargo', 'descuento'] } },
+      where: {
+        organizationId, fechaPago: { gte: mesActual },
+        tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
+      },
       _sum: { montoPagado: true }, _count: true,
     }),
     prisma.pago.aggregate({
-      where: { organizationId, fechaPago: { gte: mesAnterior, lt: mesActual }, tipo: { notIn: ['recargo', 'descuento'] } },
+      where: {
+        organizationId, fechaPago: { gte: mesAnterior, lt: mesActual },
+        tipo: { notIn: ['recargo', 'descuento'] },
+        prestamo: { estado: { not: 'cancelado' } },
+      },
       _sum: { montoPagado: true }, _count: true,
     }),
     prisma.prestamo.findMany({
