@@ -50,11 +50,27 @@ export async function GET() {
 
   const ahora = new Date()
   const hoy = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }))
-  const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
+
+  /* ⚠ EL MES EMPIEZA A LAS 05:00 UTC, QUE ES MEDIANOCHE EN BOGOTÁ.
+   *
+   * `new Date(año, mes, 1)` construye la fecha en la hora LOCAL DEL SERVIDOR, y
+   * producción corre en UTC: el mes arrancaba a las 7 de la tarde del día
+   * anterior. Un pago de las 8:48 p.m. del 31 de julio contaba como de agosto
+   * aquí y como de julio en el dashboard —y esa era una de las dos diferencias
+   * que Miguel Ángel reportó—.
+   *
+   * Es el mismo convenio del resto de la app (`inicioMes` en dashboard/resumen)
+   * y el que ya se aplicó al libro de pagos del panel. En local no se ve: el
+   * servidor de desarrollo corre en Bogotá y las dos cuentas coinciden. */
+  const HORA_CORTE = 5
+  const inicioDeMes = (desplazamiento) =>
+    new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() + desplazamiento, 1, HORA_CORTE, 0, 0))
+
+  const mesActual = inicioDeMes(0)
+  const mesAnterior = inicioDeMes(-1)
 
   const mesesAtras = 6
-  const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras + 1, 1)
+  const fechaInicio = inicioDeMes(-mesesAtras + 1)
 
   const [
     pagosMensuales,
@@ -80,7 +96,7 @@ export async function GET() {
     prestamosConTabla,
   ] = await Promise.all([
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes, SUM(p.montoPagado) as total, COUNT(*) as cantidad
+      SELECT DATE_FORMAT(DATE_SUB(p.fechaPago, INTERVAL 5 HOUR), '%Y-%m') as mes, SUM(p.montoPagado) as total, COUNT(*) as cantidad
       FROM Pago p
       JOIN Prestamo pr ON pr.id = p.prestamoId
       WHERE p.organizationId = ${organizationId} AND p.fechaPago >= ${fechaInicio}
@@ -89,13 +105,13 @@ export async function GET() {
       GROUP BY mes ORDER BY mes
     `,
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(createdAt, '%Y-%m') as mes, SUM(montoPrestado) as capitalPrestado,
+      SELECT DATE_FORMAT(DATE_SUB(createdAt, INTERVAL 5 HOUR), '%Y-%m') as mes, SUM(montoPrestado) as capitalPrestado,
         SUM(totalAPagar) as totalAPagar, COUNT(*) as cantidad
       FROM Prestamo WHERE organizationId = ${organizationId} AND createdAt >= ${fechaInicio} AND esClavo = false
       GROUP BY mes ORDER BY mes
     `,
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(fecha, '%Y-%m') as mes, SUM(monto) as total
+      SELECT DATE_FORMAT(DATE_SUB(fecha, INTERVAL 5 HOUR), '%Y-%m') as mes, SUM(monto) as total
       FROM GastoMenor WHERE organizationId = ${organizationId} AND fecha >= ${fechaInicio} AND estado = 'aprobado'
       GROUP BY mes ORDER BY mes
     `,
@@ -189,7 +205,7 @@ export async function GET() {
     prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
     prisma.organization.findUnique({ where: { id: organizationId }, select: { diasSinCobro: true } }),
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(createdAt, '%Y-%m') as mes, COUNT(*) as nuevos
+      SELECT DATE_FORMAT(DATE_SUB(createdAt, INTERVAL 5 HOUR), '%Y-%m') as mes, COUNT(*) as nuevos
       FROM Cliente WHERE organizationId = ${organizationId} AND createdAt >= ${fechaInicio}
       GROUP BY mes ORDER BY mes
     `,
@@ -222,7 +238,7 @@ export async function GET() {
     // como interes ni como capital. Ahora entran y cuentan enteros como capital
     // recuperado, que es lo que son.
     prisma.$queryRaw`
-      SELECT DATE_FORMAT(p.fechaPago, '%Y-%m') as mes,
+      SELECT DATE_FORMAT(DATE_SUB(p.fechaPago, INTERVAL 5 HOUR), '%Y-%m') as mes,
         SUM(${Prisma.raw(REPARTO_PAGO.interes)}) as interesGanado,
         SUM(${Prisma.raw(REPARTO_PAGO.capital)}) as capitalRecuperado
       FROM Pago p
@@ -361,7 +377,10 @@ export async function GET() {
   })
 
   // Working days calculation
-  const mesActualKey = mesActual.toISOString().slice(0, 7)
+  // `mesActual` es ahora las 05:00 UTC del día 1, así que su clave hay que
+  // leerla descontando el corte o daría el mes correcto por casualidad.
+  const mesActualKey = new Date(mesActual.getTime() - HORA_CORTE * 3600000)
+    .toISOString().slice(0, 7)
   /* ⚠ AQUI HABIA DOS IDIOMAS EN LA MISMA LINEA.
    *
    * `diasSinCobro` se guarda como un JSON de NUMEROS —`"[0]"` es «no se cobra
