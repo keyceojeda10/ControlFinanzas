@@ -42,6 +42,27 @@ const persistStep = (step, flujo) => {
   }).catch(() => {})
 }
 
+/* ⚠ LO QUE `onboardingStep` NO PUEDE CONTAR.
+ *
+ * En la base se ve en qué paso quedó cada uno, y eso ya dijo lo importante: de
+ * los 29 que entraron con la campaña nueva, 17 no pasaron de «traer tu
+ * cartera» —nueve ahí y ocho saltándola— y solo uno terminó el arranque.
+ *
+ * Pero el paso 2 son TRES pantallas seguidas —planes, elegir método, y la foto
+ * o el Excel— y en la base son el mismo número. Así no se sabe si se van en la
+ * pantalla de planes, ante las tres opciones, o intentando la foto.
+ *
+ * Se apunta SOLO eso: las bifurcaciones que el número no distingue. Nada
+ * decorativo —cada evento contesta una pregunta que hoy no tiene respuesta y
+ * que decide qué se rehace—. */
+const marcar = (evento, extra) => {
+  fetch('/api/analytics/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ evento, pagina: '/onboarding', metadata: extra }),
+  }).catch(() => {})
+}
+
 export default function OnboardingWizard({
   nombre,
   onComplete,
@@ -96,9 +117,10 @@ export default function OnboardingWizard({
 
   // Step 2: Cartulina saltada
   const handleCartulinaSkip = useCallback(() => {
+    marcar('onb_cartera_saltada', { flujo, metodo })
     persistStep(3, flujo)
     setStep(3)
-  }, [flujo])
+  }, [flujo, metodo])
 
   // Step 3: Finish
   // Paso 50 = "ya vio el wizard" — apaga el wizard pero ENCIENDE la lista de
@@ -201,8 +223,13 @@ export default function OnboardingWizard({
         <WizardPlan
           perfil={flujo}
           hasta={finDePrueba()}
-          onCargar={() => setVioPlan(true)}
-          onPagar={() => { window.location.href = '/configuracion/plan' }}
+          onCargar={() => { marcar('onb_plan_seguir', { flujo }); setVioPlan(true) }}
+          onPagar={() => {
+            // Se van del asistente a pagar. Si muchos salen por aquí y no
+            // vuelven, la pantalla de planes está puesta demasiado pronto.
+            marcar('onb_plan_pagar', { flujo })
+            window.location.href = '/configuracion/plan'
+          }}
         />
       )}
 
@@ -225,9 +252,10 @@ export default function OnboardingWizard({
       {step === 2 && flujo && vioPlan && !metodo && (
         <TraerCartera
           nombre={nombre}
-          onFoto={() => setMetodo('foto')}
-          onExcel={() => setMetodo('excel')}
+          onFoto={() => { marcar('onb_metodo', { metodo: 'foto', flujo }); setMetodo('foto') }}
+          onExcel={() => { marcar('onb_metodo', { metodo: 'excel', flujo }); setMetodo('excel') }}
           onCero={() => {
+            marcar('onb_metodo', { metodo: 'cero', flujo })
             persistStep(2, flujo)
             window.location.href = '/clientes/nuevo'
           }}

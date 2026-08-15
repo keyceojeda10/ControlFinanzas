@@ -21,6 +21,7 @@ import { prisma } from '@/lib/prisma'
 import {
   PROMPT_UNO, procesarImagen, normalizarCliente, limiteDelDia,
 } from '@/lib/cartulina'
+import { trackEvent } from '@/lib/analytics'
 
 const MAX_FOTOS = 5
 const MAX_MB = 10 * 1024 * 1024
@@ -67,6 +68,17 @@ export async function POST(req) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
+  /* ⚠ EL LECTOR DE FOTOS NO DEJABA NI UN RASTRO.
+   *
+   * 17 de los 29 que se registraron con la campaña nueva no pasaron de «traer
+   * tu cartera»: nueve se quedaron ahí y ocho la saltaron. Pero no había forma
+   * de saber si INTENTARON la foto y les falló, o si ni la intentaron —y son
+   * dos problemas distintos con dos arreglos distintos—.
+   *
+   * Se apunta el resultado de cada lectura con su duración. Nada más: sin esto
+   * el rediseño del paso sería a ciegas, y con esto se decide con datos. */
+  const arranque = Date.now()
+
   const orgId = session.user.organizationId
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
@@ -91,6 +103,11 @@ export async function POST(req) {
 
   if (usadasHoy + fotos.length > limite) {
     const restantes = Math.max(0, limite - usadasHoy)
+    trackEvent({
+      organizationId: orgId, userId: session.user.id,
+      evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
+      metadata: { ok: false, motivo: 'limite', fotos: fotos.length, limite, usadas: usadasHoy, ms: Date.now() - arranque },
+    })
     return NextResponse.json({
       error: restantes > 0
         ? `Solo te quedan ${restantes} lecturas de foto por hoy. Sube ${restantes} foto${restantes === 1 ? '' : 's'} ahora, o carga el resto de tu cartera de una vez con un Excel.`
@@ -123,6 +140,11 @@ export async function POST(req) {
   }
 
   if (!resultados.length) {
+    trackEvent({
+      organizationId: orgId, userId: session.user.id,
+      evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
+      metadata: { ok: false, motivo: 'ilegible', fotos: fotos.length, errores: erroresFotos.slice(0, 3), ms: Date.now() - arranque },
+    })
     return NextResponse.json({
       error: erroresFotos.length
         ? erroresFotos.join('. ')
@@ -136,6 +158,18 @@ export async function POST(req) {
   }).catch(() => {})
 
   const datos = resultados.length === 1 ? resultados[0] : fusionar(resultados)
+
+  trackEvent({
+    organizationId: orgId, userId: session.user.id,
+    evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
+    metadata: {
+      ok: true, fotos: fotos.length, leidas: resultados.length,
+      fallidas: erroresFotos.length, ms: Date.now() - arranque,
+      // Si el lector saca el nombre pero no el monto, la pantalla siguiente
+      // queda a medias y el usuario tiene que escribirlo igual.
+      conNombre: !!datos.nombre, conMonto: datos.montoPrestado != null,
+    },
+  })
 
   return NextResponse.json({
     ok: true,
