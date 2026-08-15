@@ -489,5 +489,132 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Email ${nuevoEstado ? 'verificado' : 'desverificado'}` })
   }
 
+  /* ══ LO QUE EL PANEL NO PODÍA HACER ══════════════════════════════════════
+   *
+   * «Yo puedo agregar días, pero no puedo quitar días. Si yo quiero quitarle un
+   *  día a alguien, no le puedo restar un día. No puedo ubicarle una fecha
+   *  específica o establecerle una fecha con un calendario.» — 14 ago 2026.
+   *
+   * Y era literal: `suscripciones/[id]` validaba `dias < 1 → error`, así que la
+   * única dirección posible era hacia adelante. Medido: en cinco meses la
+   * extensión se usó UNA vez, y no porque no hiciera falta.
+   */
+  if (accion === 'ajustarVencimiento') {
+    const sub = await prisma.suscripcion.findFirst({
+      where: { organizationId: id, OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }] },
+      orderBy: { fechaVencimiento: 'desc' },
+    })
+    if (!sub) return NextResponse.json({ error: 'Este negocio no tiene suscripción' }, { status: 404 })
+
+    const ahora = new Date()
+    let nueva
+
+    if (body.fecha) {
+      // Fecha exacta, del calendario. Se ancla a las 05:00Z, el convenio de
+      // fechas de toda la app (ver lib/dinero/calendario.js).
+      const d = new Date(`${String(body.fecha).slice(0, 10)}T05:00:00.000Z`)
+      if (isNaN(d.getTime())) return NextResponse.json({ error: 'Fecha no válida' }, { status: 400 })
+      nueva = d
+    } else {
+      const dias = parseInt(body.dias, 10)
+      if (!Number.isFinite(dias) || dias === 0) {
+        return NextResponse.json({ error: 'Dime cuántos días mover, en más o en menos' }, { status: 400 })
+      }
+      if (Math.abs(dias) > 365) {
+        return NextResponse.json({ error: 'Como mucho 365 días de un tirón' }, { status: 400 })
+      }
+      // Se mueve desde donde vence HOY, no desde hoy: restar cinco días a quien
+      // vence el 30 tiene que dar el 25, no una fecha contada desde ahora.
+      nueva = new Date(sub.fechaVencimiento)
+      nueva.setUTCDate(nueva.getUTCDate() + dias)
+    }
+
+    /* ⚠ La única barrera: no dejarlo por debajo del inicio de la suscripción.
+       Un vencimiento anterior a su propio arranque no es un cobro adelantado,
+       es una fila que no significa nada. */
+    if (nueva < new Date(sub.fechaInicio)) {
+      return NextResponse.json({
+        error: `No puedo dejarlo antes del ${new Date(sub.fechaInicio).toISOString().slice(0, 10)}, que es cuando empezó`,
+      }, { status: 400 })
+    }
+
+    const antes = new Date(sub.fechaVencimiento)
+    const sigueVigente = nueva > ahora
+    await prisma.suscripcion.update({
+      where: { id: sub.id },
+      data: {
+        fechaVencimiento: nueva,
+        // Si se le mueve la fecha hacia adelante y estaba vencida, revive; y si
+        // se le mueve al pasado, se marca vencida. Dejar «activa» una que ya
+        // pasó es lo que hace que no salga en ninguna lista de cobro.
+        estado: sigueVigente ? 'activa' : 'vencida',
+      },
+    })
+    await prisma.organization.update({
+      where: { id },
+      data: { waChurnSent: false, waPreVencSent: false },
+    })
+
+    const dif = Math.round((nueva - antes) / 86400000)
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'ajustar_vencimiento',
+        detalle: `Vencimiento de "${org.nombre}": ${antes.toISOString().slice(0, 10)} → ${nueva.toISOString().slice(0, 10)}`
+          + ` (${dif >= 0 ? '+' : ''}${dif} días)`,
+      },
+    })
+    return NextResponse.json({
+      ok: true,
+      fechaVencimiento: nueva,
+      mensaje: `Ahora vence el ${nueva.toISOString().slice(0, 10)} (${dif >= 0 ? '+' : ''}${dif} días)`,
+    })
+  }
+
+  /* «La ficha de mis clientes se ve fea […] a algunos les aparece número, a
+   * otros no.» Medido: 62 de 485 dueños no tienen teléfono en NINGÚN campo. No
+   * era un fallo de la pantalla: era que no había forma de escribirlo. */
+  if (accion === 'editarDueno' && body.userId) {
+    const user = await prisma.user.findFirst({ where: { id: body.userId, organizationId: id } })
+    if (!user) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+    const data = {}
+    const cambios = []
+    if (typeof body.nombre === 'string' && body.nombre.trim() && body.nombre.trim() !== user.nombre) {
+      data.nombre = body.nombre.trim()
+      cambios.push(`nombre "${user.nombre}" → "${data.nombre}"`)
+    }
+    if (typeof body.telefono === 'string' && body.telefono.trim() !== (user.telefono ?? '')) {
+      data.telefono = body.telefono.trim() || null
+      cambios.push(`teléfono ${user.telefono || '(vacío)'} → ${data.telefono || '(vacío)'}`)
+    }
+    if (typeof body.email === 'string' && body.email.trim().toLowerCase() !== user.email) {
+      const email = body.email.trim().toLowerCase()
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        return NextResponse.json({ error: 'Ese correo no tiene forma de correo' }, { status: 400 })
+      }
+      // ⚠ El correo ES la llave con la que entra. Si ya lo tiene otro, cambiarlo
+      //   dejaría a uno de los dos sin poder iniciar sesión.
+      const ocupado = await prisma.user.findFirst({ where: { email, NOT: { id: body.userId } }, select: { id: true } })
+      if (ocupado) return NextResponse.json({ error: 'Ese correo ya lo usa otra cuenta' }, { status: 409 })
+      data.email = email
+      cambios.push(`correo ${user.email} → ${email}`)
+    }
+
+    if (!cambios.length) return NextResponse.json({ ok: true, mensaje: 'No había nada que cambiar' })
+
+    await prisma.user.update({ where: { id: body.userId }, data })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'editar_dueno',
+        detalle:        `Datos de "${user.nombre}": ${cambios.join(' · ')}`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: cambios.join(' · ') })
+  }
+
   return NextResponse.json({ error: 'Acción no válida' }, { status: 400 })
 }
