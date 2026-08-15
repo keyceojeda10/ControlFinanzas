@@ -7,6 +7,7 @@ import { calcularDiasMora, calcularSaldoPendiente, calcularPatrimonio, tienePeri
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
+import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -78,7 +79,7 @@ export async function GET() {
     clientesSinRutaCount,
     clientesSinPagosLargo,
     pagos7Dias,
-    pagosMesDetalle,
+    prestamosQueCobraronEsteMes,
   ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: orgId },
@@ -336,22 +337,31 @@ export async function GET() {
       select: { montoPagado: true, fechaPago: true },
     }),
 
-    // Pagos del mes CON el prestamo para calcular interes ganado proporcional.
-    // Solo owner (el cobrador no ve la ganancia del negocio).
-    esCobrador ? Promise.resolve([]) : prisma.pago.findMany({
+    /* Los PRÉSTAMOS que cobraron este mes, con su tabla y su historial de pagos.
+     *
+     * ⚠ Antes esto traía los pagos sueltos y repartía cada uno por la PROPORCIÓN
+     *   del préstamo entero. En un préstamo francés las primeras cuotas son casi
+     *   todo interés, así que esa cuenta se queda corta: Miguel Ángel veía
+     *   $135.417 aquí y $215.019 en analíticas, el mismo mes. Ver
+     *   lib/dinero/interes-cobrado.js.
+     *
+     * ⚠ Hace falta el historial ENTERO, no solo los pagos del mes: el interés de
+     *   un pago depende de por dónde va la tabla, y eso lo dice lo pagado antes.
+     *
+     * El coste medido es despreciable: el negocio con más movimiento son 43
+     * préstamos y 169 filas de cuotas. */
+    esCobrador ? Promise.resolve([]) : prisma.prestamo.findMany({
       where: {
         organizationId: orgId,
-        fechaPago: { gte: inicioMes, lte: finMes },
-        tipo: { notIn: ['recargo', 'descuento'] },
-        prestamo: { estado: { not: 'cancelado' } },
+        estado: { not: 'cancelado' },
+        pagos: {
+          some: {
+            fechaPago: { gte: inicioMes, lte: finMes },
+            tipo: { notIn: ['recargo', 'descuento'] },
+          },
+        },
       },
-      select: {
-        montoPagado: true,
-        // La fecha permite separar la ganancia de HOY del mismo conjunto de
-        // filas, sin pagar una consulta aparte.
-        fechaPago: true,
-        prestamo: { select: { montoPrestado: true, totalAPagar: true } },
-      },
+      select: SELECT_PARA_INTERES,
     }),
   ])
 
@@ -562,26 +572,22 @@ export async function GET() {
   let interesGanadoHoy = null
   let capitalRecuperadoHoy = null
   if (!esCobrador) {
-    let interesMes = 0
-    let interesHoy = 0
-    let capitalHoy = 0
-    for (const pago of (pagosMesDetalle || [])) {
-      const monto = pago.montoPagado ?? 0
-      const esDeHoy = pago.fechaPago && pago.fechaPago >= inicioDiaUTC
-      // La fraccion sale del modulo, acotada a [0, 1]. La guarda que habia aqui
-      // (`total > capital`) mandaba a capital el pago entero cuando el prestamo
-      // se habia cerrado por debajo de lo prestado, mientras el SQL de
-      // analiticas le metia interes NEGATIVO a la misma pantalla.
-      const interesDelPago = monto * fraccionInteres(pago.prestamo)
-      interesMes += interesDelPago
-      if (esDeHoy) {
-        interesHoy += interesDelPago
-        capitalHoy += monto - interesDelPago
+    /* La MISMA cuenta que analíticas, de la misma función: con tabla manda la
+       tabla, sin tabla manda la proporción. Escrita aparte era como la misma
+       ganancia del mismo mes salía distinta según la pantalla. */
+    const conPagos = prestamosQueCobraronEsteMes || []
+    interesGanadoMes = interesCobradoDeLosPrestamos(conPagos, { desde: inicioMes, hasta: finMes })
+    interesGanadoHoy = interesCobradoDeLosPrestamos(conPagos, { desde: inicioDiaUTC, hasta: finMes })
+    // El capital de hoy es el resto: lo recaudado hoy menos lo que fue interés.
+    let recaudadoHoy = 0
+    for (const pr of conPagos) {
+      for (const g of (pr.pagos || [])) {
+        if (g.fechaPago && g.fechaPago >= inicioDiaUTC && g.fechaPago <= finMes) {
+          recaudadoHoy += g.montoPagado ?? 0
+        }
       }
     }
-    interesGanadoMes = Math.round(interesMes)
-    interesGanadoHoy = Math.round(interesHoy)
-    capitalRecuperadoHoy = Math.round(capitalHoy)
+    capitalRecuperadoHoy = Math.round(Math.max(0, recaudadoHoy - interesGanadoHoy))
   }
 
   // Sparkline 7d (de mas viejo a mas reciente, hoy es el ultimo): sparkline7d[6] = hoy
