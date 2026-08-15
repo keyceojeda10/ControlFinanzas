@@ -155,11 +155,15 @@ function ListaUsuarios() {
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* ⚠ En el teléfono van UNO DEBAJO DEL OTRO. En la misma fila, el
+          desplegable se comía el ancho y el buscador se quedaba en «Negocio»:
+          no se leía qué se puede buscar, que es justo lo que lo hace útil. */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
         <Buscador valor={q} onCambio={setQ} />
         <select
           value={orden}
           onChange={(e) => setOrden(e.target.value)}
+          className="w-full sm:w-auto"
           style={{
             height: 'var(--cf-h-field)', borderRadius: 'var(--cf-r-control)',
             border: '1px solid var(--cf-border)', background: 'var(--cf-card)',
@@ -211,8 +215,14 @@ function ListaUsuarios() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                       {/* El nombre NO se recorta: es lo que identifica. */}
+                      {/* El nombre NO se recorta —es lo que identifica— pero SÍ
+                          se parte: hay negocios cuyo nombre es un correo entero
+                          sin espacios, y se montaba encima de la pastilla. */}
                       <Link href={`/admin/organizaciones/${u.id}`}
-                        style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)', textDecoration: 'none', minWidth: 0 }}>
+                        style={{
+                          fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+                          textDecoration: 'none', minWidth: 0, overflowWrap: 'anywhere',
+                        }}>
                         {u.nombre}
                       </Link>
                       <Pastilla tono={segmentos.find((s) => s.id === u.segmento)?.tono ?? 'neutro'}>
