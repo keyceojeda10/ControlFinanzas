@@ -149,6 +149,15 @@ async function calcularPrestadoDetalleDia(organizationId, inicio, fin, cobradorI
       where: {
         organizationId,
         tipo: 'desembolso',
+        /* ⚠ LA RESERVA DE RUTA NO ES PLATA ENTREGADA.
+           Al asignar clientes a una ruta con capital se asienta un `desembolso`
+           con `ajusteArranqueRuta`: mueve la bolsa de la ruta, no la caja
+           (`saldoAnterior` y `saldoNuevo` idénticos). Y como aquí «gana el más
+           reciente», ese asiento le pisaba al préstamo su desembolso de verdad:
+           a Inversiones L&D le decía que entregó $600.000 donde entregó $500.000,
+           dos veces, y salían $200.000 «de préstamos que no cuadran».
+           Es el mismo fallo que `afectaCaja`, por la otra vía. */
+        ajusteArranqueRuta: false,
         createdAt: { gte: inicio, lt: fin },
         referenciaTipo: 'prestamo',
         ...whereMov,
@@ -414,6 +423,8 @@ async function calcularPrestadoPorRutaDia(organizationId, inicio, fin) {
     where: {
       organizationId,
       tipo: 'desembolso',
+      // Ver la nota de arriba: la reserva de ruta no es plata entregada.
+      ajusteArranqueRuta: false,
       createdAt: { gte: inicio, lt: fin },
       referenciaTipo: 'prestamo',
       referenciaId: { in: prestamos.map((p) => p.id) },
