@@ -59,3 +59,35 @@ next-env.d.ts
 # Copia servible del handoff para poder MIRARLO con scripts/ver-diseno.mjs.
 # 1,8 MB de material de diseño, no código.
 public/diseno.html
+
+# --- generado automaticamente para la migracion a Linux ---
+node_modules/
+.next/
+dist/
+build/
+out/
+.venv/
+venv/
+__pycache__/
+target/
+.turbo/
+vendor/
+.cache/
+coverage/
+.parcel-cache/
+.svelte-kit/
+.angular/
+.nuxt/
+*.log
+
+# secretos: respaldados aparte en 01-SECRETOS/secretos-CIFRADO.7z
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+credentials.json
+service-account.json
+.npmrc
+.pypirc
