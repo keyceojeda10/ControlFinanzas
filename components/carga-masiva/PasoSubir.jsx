@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
+import { ACCEPT_TABLA, AVISO_HOJA_DE_GOOGLE } from '@/lib/archivos-tabla'
 
 export default function PasoSubir({ onDatos }) {
   const [modo, setModo] = useState('archivo')
@@ -157,7 +158,7 @@ export default function PasoSubir({ onDatos }) {
           <input
             ref={fileRef}
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept={ACCEPT_TABLA}
             onChange={handleArchivo}
             className="hidden"
           />
@@ -170,6 +171,10 @@ export default function PasoSubir({ onDatos }) {
             <>
               <p className="text-sm text-[var(--cf-ink)] font-medium">Toca para seleccionar archivo</p>
               <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">Excel (.xlsx, .xls) o CSV</p>
+              {/* ⚠ Ver `lib/archivos-tabla.js`: una hoja NATIVA de Google no se
+                  puede elegir desde el móvil por mucho que se ample el
+                  `accept`. Quien no lo sabe cree que la app está rota. */}
+              <p className="text-[11px] text-[var(--cf-ink-3)] mt-2 leading-snug">{AVISO_HOJA_DE_GOOGLE}</p>
             </>
           )}
         </div>

@@ -16,6 +16,7 @@ import { aCargaMasiva } from '@/lib/importar/aCargaMasiva'
 import { adaptarRevision } from '@/lib/adaptadores/revision'
 import RevisionCarga from '@/components/pantallas/RevisionCarga'
 import { useCountry } from '@/hooks/useCountry'
+import { ACCEPT_TABLA, AVISO_HOJA_DE_GOOGLE } from '@/lib/archivos-tabla'
 
 export default function WizardExcel({ onComplete, onSkip }) {
   const { formatMoney } = useCountry()
@@ -176,8 +177,17 @@ export default function WizardExcel({ onComplete, onSkip }) {
           <span style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
             Elegir el archivo
           </span>
-          <input type="file" accept=".xlsx,.xls,.csv" onChange={elegirArchivo} style={{ display: 'none' }} />
+          <input type="file" accept={ACCEPT_TABLA} onChange={elegirArchivo} style={{ display: 'none' }} />
         </label>
+
+        {/* ⚠ EL SELECTOR DE ANDROID NO PUEDE ELEGIR UNA HOJA DE GOOGLE.
+            No es un archivo con bytes, es un documento del servicio: hay que
+            exportarlo. Ningún `accept` lo arregla, así que se dice aquí —sin
+            esto la persona ve su archivo en la lista, lo toca, no pasa nada, y
+            concluye que la app no sirve—. */}
+        <p style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: 0, textAlign: 'center' }}>
+          {AVISO_HOJA_DE_GOOGLE}
+        </p>
 
         <button type="button" onClick={onSkip} style={{
           alignSelf: 'center', background: 'none', border: 0, cursor: 'pointer',
