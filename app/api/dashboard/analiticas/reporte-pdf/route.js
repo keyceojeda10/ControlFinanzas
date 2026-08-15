@@ -49,10 +49,20 @@ export async function GET() {
 
   const ahora = new Date()
   const hoy = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }))
-  const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)
+  /* El mismo corte que la pantalla: el mes empieza a las 05:00 UTC, que es
+     medianoche en Bogotá. `new Date(año, mes, 1)` lo construye en la hora local
+     del servidor —UTC en producción— y arrancaba el mes a las 7 de la tarde del
+     día anterior. Ver la nota larga en dashboard/analiticas/route.js. */
+  const HORA_CORTE = 5
+  const claveMesBogota = (fecha) =>
+    new Date(new Date(fecha).getTime() - HORA_CORTE * 3600000).toISOString().slice(0, 7)
+  const inicioDeMes = (desplazamiento) =>
+    new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() + desplazamiento, 1, HORA_CORTE, 0, 0))
+
+  const mesActual = inicioDeMes(0)
+  const mesAnterior = inicioDeMes(-1)
   const mesesAtras = 6
-  const fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - mesesAtras + 1, 1)
+  const fechaInicio = inicioDeMes(-mesesAtras + 1)
 
   const [
     org,
@@ -292,7 +302,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         - pago.montoPagado * fraccionProporcional
       acumulado += pago.montoPagado
       if (pago.fechaPago < fechaInicio) continue
-      const mes = pago.fechaPago.toISOString().slice(0, 7)
+      const mes = claveMesBogota(pago.fechaPago)
       const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
       acc.interes += delta
       acc.capital -= delta
@@ -309,7 +319,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   ]))
   const gastoMap = Object.fromEntries(gastosMensuales.map(g => [g.mes, g]))
   const prestamoMap = Object.fromEntries(prestamosMensuales.map(p => [p.mes, p]))
-  const mesActualKey = mesActual.toISOString().slice(0, 7)
+  const mesActualKey = claveMesBogota(mesActual)
   const gastosMesActual = Number(gastoMap[mesActualKey]?.total || 0)
   // GANANCIA = INTERES cobrado - gastos. `recaudado` incluye la devolucion del
   // capital que el prestamista habia puesto, y recuperar plata propia no es

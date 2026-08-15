@@ -63,6 +63,17 @@ export async function GET() {
    * y el que ya se aplicó al libro de pagos del panel. En local no se ve: el
    * servidor de desarrollo corre en Bogotá y las dos cuentas coinciden. */
   const HORA_CORTE = 5
+
+  /* ⚠ LA MISMA CLAVE DE MES QUE USA EL SQL, Y POR ESO VIVE EN UN SOLO SITIO.
+   *
+   * La consulta base agrupa restando el corte, y la corrección por tabla lo
+   * hacía con `fechaPago.toISOString()`, que es UTC. Un pago del 1 de agosto a
+   * la 1:48 UTC —las 8:48 p.m. del 31 de julio en Bogotá— caía en julio por un
+   * lado y en agosto por el otro, y la corrección se sumaba a un mes que no era
+   * el suyo. Salieron $40.983 de diferencia entre las dos pantallas del mismo
+   * negocio, y solo se ven comparando las dos. */
+  const claveMesBogota = (fecha) =>
+    new Date(new Date(fecha).getTime() - HORA_CORTE * 3600000).toISOString().slice(0, 7)
   const inicioDeMes = (desplazamiento) =>
     new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth() + desplazamiento, 1, HORA_CORTE, 0, 0))
 
@@ -355,7 +366,7 @@ export async function GET() {
       // El desglose mensual solo cubre la ventana de la pantalla; la ruta usa
       // el acumulado de vida del prestamo, igual que hace la consulta SQL.
       if (pago.fechaPago < fechaInicio) continue
-      const mes = pago.fechaPago.toISOString().slice(0, 7)
+      const mes = claveMesBogota(pago.fechaPago)
       const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
       acc.interes += delta
       acc.capital -= delta          // lo que sube el interes, lo baja el capital
@@ -382,10 +393,7 @@ export async function GET() {
   })
 
   // Working days calculation
-  // `mesActual` es ahora las 05:00 UTC del día 1, así que su clave hay que
-  // leerla descontando el corte o daría el mes correcto por casualidad.
-  const mesActualKey = new Date(mesActual.getTime() - HORA_CORTE * 3600000)
-    .toISOString().slice(0, 7)
+  const mesActualKey = claveMesBogota(mesActual)
   /* ⚠ AQUI HABIA DOS IDIOMAS EN LA MISMA LINEA.
    *
    * `diasSinCobro` se guarda como un JSON de NUMEROS —`"[0]"` es «no se cobra
