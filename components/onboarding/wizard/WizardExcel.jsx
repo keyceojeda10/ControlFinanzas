@@ -185,7 +185,7 @@ export default function WizardExcel({ onComplete, onSkip }) {
             exportarlo. Ningún `accept` lo arregla, así que se dice aquí —sin
             esto la persona ve su archivo en la lista, lo toca, no pasa nada, y
             concluye que la app no sirve—. */}
-        <p style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: 0, textAlign: 'center' }}>
+        <p style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-3)', margin: 0, textAlign: 'center' }}>
           {AVISO_HOJA_DE_GOOGLE}
         </p>
 

@@ -111,7 +111,15 @@ function estadoDe(f, base) {
 }
 
 export default function LoteFotos({ rutas = [], onListo, onSalir }) {
+  /* ⚠ DOS ENTRADAS, NO UNA. La única que había llevaba `capture="environment"`
+     y el botón decía «Elegir las fotos»: en Android `capture` abre la CÁMARA
+     directamente y, con él puesto, el navegador IGNORA el `multiple`. O sea que
+     la pantalla prometía «hasta 30 fotos de una vez» y daba una foto por vez,
+     y quien ya tenía fotografiado el cuaderno no podía escoger nada.
+     Es el mismo reparto que ya usa la ficha del cliente: galería y cámara
+     separadas, cada una con su botón. */
   const inputRef = useRef(null)
+  const camaraRef = useRef(null)
   const [subiendo, setSubiendo] = useState(false)
   const [error, setError] = useState('')
   const [filas, setFilas] = useState([])
@@ -323,7 +331,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   if (!filas.length) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <input ref={inputRef} type="file" accept="image/*" multiple capture="environment"
+        <input ref={inputRef} type="file" accept="image/*" multiple
+          onChange={subir} style={{ display: 'none' }} />
+        <input ref={camaraRef} type="file" accept="image/*" capture="environment"
           onChange={subir} style={{ display: 'none' }} />
 
         <div style={{
@@ -353,6 +363,17 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           {subiendo ? 'Leyendo las fotos…' : 'Elegir las fotos'}
         </BotonPrimario>
 
+        {/* La cámara sigue estando, pero de segunda: casi todo el mundo
+            fotografía el cuaderno primero y sube después, y es la única vía que
+            admite las 30 de una vez. */}
+        {!subiendo && (
+          <button type="button" onClick={() => camaraRef.current?.click()} style={{
+            background: 'none', border: 0, cursor: 'pointer', font: 'inherit',
+            fontSize: 13, fontWeight: 700, color: 'var(--cf-ink-2)', padding: 8,
+            textDecoration: 'underline', textUnderlineOffset: 3,
+          }}>Tomarlas ahora con la cámara</button>
+        )}
+
         {subiendo && (
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', textAlign: 'center' }}>
             Puede tardar un minuto. No cierres la pantalla.
@@ -372,7 +393,9 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   // ══ LA REVISIÓN ══
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 96 }}>
-      <input ref={inputRef} type="file" accept="image/*" multiple capture="environment"
+      <input ref={inputRef} type="file" accept="image/*" multiple
+        onChange={subir} style={{ display: 'none' }} />
+      <input ref={camaraRef} type="file" accept="image/*" capture="environment"
         onChange={subir} style={{ display: 'none' }} />
 
       {/* Lo que se pone UNA vez y vale para todas */}
