@@ -18,9 +18,11 @@
 // único «crea tu primer cliente» obliga a los dos primeros a teclear cuarenta
 // préstamos a mano, y ahí es donde se abandona.
 //
-// La foto va primera y es la única dorada: es la más rápida —unos 20 minutos
-// para 40 préstamos— y la que más gente puede usar. «Empezar de cero» va última
-// a propósito: es la que menos cartera trae.
+// ⚠ ESTE PÁRRAFO DECÍA LO CONTRARIO DE LO QUE HACE LA PANTALLA. Describía el
+// orden viejo —la foto primera y dorada— y se quedó sin actualizar cuando el
+// dueño lo corrigió. El orden real, y el porqué con las cifras, está escrito
+// junto a cada tarjeta más abajo: escribir el primero, luego la foto, luego el
+// Excel. «Empezar de cero» ya no va última.
 //
 // ══ Y LA COLUMNA DERECHA NO ES DECORACIÓN ══════════════════════════════════
 //

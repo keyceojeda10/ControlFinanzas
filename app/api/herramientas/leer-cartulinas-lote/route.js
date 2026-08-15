@@ -28,6 +28,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { trackEvent } from '@/lib/analytics'
 import {
   PROMPT_LOTE, procesarImagen, normalizarCliente, semaforo, limiteDelDia,
 } from '@/lib/cartulina'
@@ -53,6 +54,17 @@ export async function POST(req) {
   if (!session?.user?.organizationId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
+
+  /* ⚠ ESTE LECTOR NO DEJABA RASTRO, Y AHORA ES EL DEL ASISTENTE.
+   *
+   * El de al lado (`leer-cartulina`) se instrumentó el 15 ago porque era el
+   * que colgaba del arranque. Al pasar el arranque a este, el embudo se
+   * quedaba ciego justo en el paso que se está arreglando.
+   *
+   * Mismo evento y mismos campos que el otro, con `via` para distinguirlos:
+   * así `scripts/embudo-arranque.mjs` los suma junto y también por separado,
+   * que es lo que dice si el cambio de cableado sirvió. */
+  const arranque = Date.now()
 
   const orgId = session.user.organizationId
   const org = await prisma.organization.findUnique({
@@ -80,6 +92,11 @@ export async function POST(req) {
 
   if (usadasHoy + fotos.length > limite) {
     const restantes = Math.max(0, limite - usadasHoy)
+    trackEvent({
+      organizationId: orgId, userId: session.user.id,
+      evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulinas-lote',
+      metadata: { ok: false, via: 'lote', motivo: 'limite', fotos: fotos.length, limite, usadas: usadasHoy, ms: Date.now() - arranque },
+    })
     return NextResponse.json({
       error: restantes > 0
         ? `Te quedan ${restantes} lecturas por hoy. Sube ${restantes} y sigue mañana, o escribe el resto a mano.`
@@ -146,6 +163,11 @@ export async function POST(req) {
   }
 
   if (!clientes.length) {
+    trackEvent({
+      organizationId: orgId, userId: session.user.id,
+      evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulinas-lote',
+      metadata: { ok: false, via: 'lote', motivo: 'ilegible', fotos: fotos.length, errores: fallos.slice(0, 3), ms: Date.now() - arranque },
+    })
     return NextResponse.json({
       error: fallos.length
         ? `No pudimos leer ninguna foto. ${fallos.map((f) => `Foto ${f.foto}: ${f.error}`).join('. ')}`
@@ -153,6 +175,20 @@ export async function POST(req) {
       fallos,
     }, { status: 422 })
   }
+
+  /* Lo que importa medir aquí NO es «leyó» sino CUÁNTOS sacó por foto: la
+     promesa del asistente es «40 préstamos, unos 20 minutos», y un lector que
+     devuelve un cliente por foto no la cumple aunque no falle. */
+  trackEvent({
+    organizationId: orgId, userId: session.user.id,
+    evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulinas-lote',
+    metadata: {
+      ok: true, via: 'lote', fotos: fotos.length, leidas: leidas,
+      clientes: clientes.length, fallidas: fallos.length, ms: Date.now() - arranque,
+      conNombre: clientes.filter((c) => c.nombre).length,
+      conMonto: clientes.filter((c) => c.montoPrestado != null).length,
+    },
+  })
 
   return NextResponse.json({
     ok: true,

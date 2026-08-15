@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import WizardProgress   from './wizard/WizardProgress'
 import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
-import WizardCartulina  from './wizard/WizardCartulina'
+import LoteFotos       from '@/components/migrador/LoteFotos'
 import TraerCartera from '@/components/pantallas/TraerCartera'
 import { ListoParaCobrar } from '@/components/pantallas/Onboarding'
 import { formatMoney } from '@/lib/i18n'
@@ -276,11 +276,62 @@ export default function OnboardingWizard({
         />
       )}
 
+      {/* ── ⚠ LA TARJETA PROMETÍA UN LECTOR Y LLEVABA AL OTRO ─────────────
+          Hay DOS lectores de fotos y hacen cosas distintas:
+
+            leer-cartulina        UN cliente, hasta 5 fotos que se FUSIONAN
+            leer-cartulinas-lote  30 fotos, hasta 30 clientes
+
+          La tarjeta dice «si tienes 40 préstamos en una libreta, unos 20
+          minutos» —y colgaba del primero, que no puede devolver más de uno—.
+          Cuarenta préstamos por ahí son cuarenta vueltas, no veinte minutos.
+
+          Medido en producción el 15 ago 2026, esto explica la contradicción
+          entre las dos cifras del proyecto: el 97% carga de a poco PORQUE la
+          vía en ráfaga nunca estuvo en el arranque —vive en /migrador, al que
+          llegan 104 de 483—. Y quien logra cargar rápido paga el 51%, el
+          segmento que mejor convierte de todos.
+
+          ⚠ NO se cambia el orden de la pantalla anterior: «escribe tu primer
+          cliente» sigue primera y dorada. De los 104 que abren el migrador
+          solo 29 (28%) consiguen cargar; poner ese paso de primeras sería
+          mudar el muro, no quitarlo. Lo que se arregla es que quien ELIGE la
+          foto reciba el lector que cumple lo que la tarjeta le prometió. */}
       {step === 2 && flujo && vioPlan && metodo === 'foto' && (
-        <WizardCartulina
-          onComplete={handleCartullinaDone}
-          onSkip={handleCartulinaSkip}
+        <LoteFotos
+          onSalir={handleCartulinaSkip}
+          /* `quedanFilas` es «algunas no se guardaron y siguen en pantalla»:
+             ahí NO se avanza, o el usuario pierde las filas con su motivo y
+             tendría que volver a fotografiarlas. */
+          onListo={({ creados, quedanFilas }) => {
+            if (quedanFilas) return
+            handleCartullinaDone({
+              clientesCreados: creados?.length ?? 0,
+              prestamosCreados: creados?.length ?? 0,
+              fallos: [],
+            })
+          }}
         />
+      )}
+
+      {/* ⚠ LA SALIDA QUE TRAÍA EL LECTOR VIEJO Y EL DE TANDA NO TIENE.
+          `WizardCartulina` remataba con dos escapes: «Tengo un Excel o CSV» y
+          «quiero registrar manualmente». El de tanda solo trae el segundo
+          —«Prefiero escribirlos a mano», y solo mientras no haya subido nada—.
+          Sin esto, quien entra por la foto y se acuerda de que tiene el Excel
+          se queda sin puerta, que es cómo un rediseño pierde funciones sin que
+          nadie lo note. Va al paso de Excel del propio asistente, no a
+          /carga-masiva: salir del arranque es de donde no se vuelve. */}
+      {step === 2 && flujo && vioPlan && metodo === 'foto' && (
+        <button
+          type="button"
+          onClick={() => { marcar('onb_metodo', { metodo: 'excel', flujo, desde: 'foto' }); setMetodo('excel') }}
+          style={{
+            alignSelf: 'center', marginTop: 14, background: 'none', border: 'none',
+            padding: '8px 4px', cursor: 'pointer', font: 'inherit',
+            fontSize: 13, color: 'var(--cf-ink-2)', textDecoration: 'underline',
+          }}
+        >Tengo un Excel o CSV</button>
       )}
 
       {/* ── T22-00 · EL CIERRE DEL ARCO ──

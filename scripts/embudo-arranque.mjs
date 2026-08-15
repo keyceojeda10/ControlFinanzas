@@ -86,28 +86,40 @@ if (met.length) {
 /* ── 3 · El lector de fotos ───────────────────────────────────────────────── */
 console.log(`\n  el lector de fotos:`)
 const lec = await q(`
-  SELECT JSON_EXTRACT(metadata, '$.ok') ok,
+  SELECT JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.via')) via,
+         JSON_EXTRACT(metadata, '$.ok') ok,
          JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.motivo')) motivo,
          COUNT(*) veces, COUNT(DISTINCT organizationId) negocios,
          ROUND(AVG(JSON_EXTRACT(metadata, '$.ms'))) ms
   FROM Evento WHERE evento = 'cartulina_leida' AND createdAt > DATE_SUB(NOW(), INTERVAL ? DAY)
-  GROUP BY ok, motivo ORDER BY veces DESC`, [DIAS])
+  GROUP BY via, ok, motivo ORDER BY veces DESC`, [DIAS])
 if (!lec.length) {
   console.log('    (nadie lo ha usado en esta ventana, o todavía sin datos)')
 } else {
   for (const l of lec) {
+    /* `via` separa los dos lectores. El de A UNO fusiona hasta 5 fotos en un
+       solo cliente; el de TANDA saca hasta 30. Desde el 15 ago el arranque
+       usa el de tanda, y esta línea es la que dice si sirvió. */
+    const cual = l.via === 'lote' ? 'tanda' : l.via === 'una' ? 'de a uno' : '?'
     const rot = String(l.ok) === 'true' ? 'leyó bien' : `falló · ${l.motivo ?? '?'}`
-    console.log(`    ${rot.padEnd(24)} ${String(l.veces).padStart(4)} veces · ${l.negocios} negocios · ${l.ms} ms de media`)
+    console.log(`    [${cual.padEnd(8)}] ${rot.padEnd(20)} ${String(l.veces).padStart(4)} veces · ${l.negocios} negocios · ${l.ms} ms de media`)
   }
   /* Que lea no basta: si saca el nombre y no el monto, el usuario tiene que
      escribirlo igual y la promesa de «con una foto» no se cumple. */
-  const [c] = await q(`
-    SELECT COUNT(*) n,
-      SUM(JSON_EXTRACT(metadata,'$.conNombre') = true) con_nombre,
-      SUM(JSON_EXTRACT(metadata,'$.conMonto') = true) con_monto
+  /* Que lea no basta, y en la tanda tampoco basta que acierte: la promesa es
+     «40 préstamos, unos 20 minutos», así que lo que decide es CUÁNTOS clientes
+     salen por foto. Uno por foto es el lector viejo con otro nombre. */
+  const [t] = await q(`
+    SELECT COUNT(*) lecturas,
+      SUM(JSON_EXTRACT(metadata,'$.clientes')) clientes,
+      SUM(JSON_EXTRACT(metadata,'$.fotos')) fotos
     FROM Evento WHERE evento='cartulina_leida' AND JSON_EXTRACT(metadata,'$.ok') = true
+      AND JSON_UNQUOTE(JSON_EXTRACT(metadata,'$.via')) = 'lote'
       AND createdAt > DATE_SUB(NOW(), INTERVAL ? DAY)`, [DIAS])
-  if (c.n) console.log(`    de las que leyó: con nombre ${pct(c.con_nombre, c.n)} · con monto ${pct(c.con_monto, c.n)}`)
+  if (t.lecturas) {
+    console.log(`    la tanda: ${t.clientes} clientes de ${t.fotos} fotos en ${t.lecturas} lecturas` +
+      ` · ${(t.clientes / Math.max(1, t.fotos)).toFixed(1)} clientes por foto`)
+  }
 }
 
 await cx.end()

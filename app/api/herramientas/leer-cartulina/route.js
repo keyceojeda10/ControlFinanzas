@@ -106,7 +106,7 @@ export async function POST(req) {
     trackEvent({
       organizationId: orgId, userId: session.user.id,
       evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
-      metadata: { ok: false, motivo: 'limite', fotos: fotos.length, limite, usadas: usadasHoy, ms: Date.now() - arranque },
+      metadata: { ok: false, via: 'una', motivo: 'limite', fotos: fotos.length, limite, usadas: usadasHoy, ms: Date.now() - arranque },
     })
     return NextResponse.json({
       error: restantes > 0
@@ -143,7 +143,7 @@ export async function POST(req) {
     trackEvent({
       organizationId: orgId, userId: session.user.id,
       evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
-      metadata: { ok: false, motivo: 'ilegible', fotos: fotos.length, errores: erroresFotos.slice(0, 3), ms: Date.now() - arranque },
+      metadata: { ok: false, via: 'una', motivo: 'ilegible', fotos: fotos.length, errores: erroresFotos.slice(0, 3), ms: Date.now() - arranque },
     })
     return NextResponse.json({
       error: erroresFotos.length
@@ -163,7 +163,7 @@ export async function POST(req) {
     organizationId: orgId, userId: session.user.id,
     evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
     metadata: {
-      ok: true, fotos: fotos.length, leidas: resultados.length,
+      ok: true, via: 'una', fotos: fotos.length, leidas: resultados.length,
       fallidas: erroresFotos.length, ms: Date.now() - arranque,
       // Si el lector saca el nombre pero no el monto, la pantalla siguiente
       // queda a medias y el usuario tiene que escribirlo igual.
