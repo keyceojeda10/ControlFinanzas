@@ -11,7 +11,7 @@
 // listado, el PDF del resumen y los cuatro Excel—, que funcionaban y no son
 // diseño.
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -162,15 +162,27 @@ export default function BajarPage() {
 
   /* ⚠ EL SALTO AL ANCLA LLEGA ANTES QUE LA TARJETA.
      El navegador salta al `#` en cuanto cambia la ruta, pero aquí las tarjetas
-     se pintan cuando llegan los conteos: para entonces el sitio al que saltó ya
-     no es el que era. «Todo en bruto» dejaba al prestamista arriba, con su
+     se pintan cuando llegan los datos, y para entonces el sitio al que saltó ya
+     no es el que era. «Todo en bruto» dejaba al prestamista arriba con su
      informe 470px más abajo — el mismo no-llego que el índice venía a arreglar.
-     Medido pulsando el renglón, no leyendo esto. */
+
+     Y son DOS datos que llegan por separado: los conteos y la cuenta de
+     clientes. Alinear solo con el primero seguía dejándolo a 359px, porque el
+     segundo estira la tarjeta de arriba y empuja a las de abajo. Medido
+     pulsando el renglón las dos veces, no leyendo esto.
+
+     `instant` y no `smooth`: en un enlace directo se quiere llegar, no ver el
+     viaje. Y `veces` corta a las dos realineadas, o cambiar el filtro de ruta
+     —que vuelve a pedir la cuenta— daría un tirón de vuelta al ancla con el
+     prestamista ya leyendo otra cosa. */
+  const vecesAlineado = useRef(0)
   useEffect(() => {
-    if (!conteos) return
+    if (!conteos || vecesAlineado.current >= 2) return
     const destino = window.location.hash && document.querySelector(window.location.hash)
-    if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [conteos])
+    if (!destino) return
+    vecesAlineado.current += 1
+    destino.scrollIntoView({ behavior: 'instant', block: 'start' })
+  }, [conteos, cuenta])
 
   const conAviso = useCallback(async (fn, poner) => {
     poner(true)
