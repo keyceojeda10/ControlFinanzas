@@ -284,7 +284,8 @@ export default function PantallaDeInforme() {
                 «Ruta…», «Juan…» y «$33…»: hasta el dinero salía cortado, que es
                 lo único que no se puede recortar en esta app. Se ve en la
                 captura; en el JSX la tabla parece correcta. */}
-            <div className="lg:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
+            <div className="lg:hidden">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
               {vista.tabla.filas.map((f, i) => {
                 const [primera, ...resto] = vista.tabla.columnas
                 return (
@@ -297,7 +298,7 @@ export default function PantallaDeInforme() {
                         <div key={c.clave} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
                           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{c.rotulo}</span>
                           <span className={c.tipo === 'texto' ? undefined : 'cf-num'}
-                            style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--cf-ink)', textAlign: 'right' }}>
+                            style={{ fontSize: 14, fontWeight: 500, color: 'var(--cf-ink)', textAlign: 'right' }}>
                             {c.tipo === 'dinero' ? formatMoney(Math.round(Number(f[c.clave]) || 0), pais)
                               : c.tipo === 'pct' ? `${f[c.clave] ?? 0}%`
                               : f[c.clave] == null || f[c.clave] === '' ? '—' : String(f[c.clave])}
@@ -308,6 +309,7 @@ export default function PantallaDeInforme() {
                   </Tarjeta>
                 )
               })}
+            </div>
             </div>
             </>
           ) : !vista.soloDescarga && (
