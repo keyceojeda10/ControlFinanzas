@@ -140,7 +140,7 @@ export default function MoratorioPage() {
   }
 
   return (
-    <div className="pb-32 max-w-2xl lg:max-w-4xl mx-auto space-y-3">
+    <div className="pb-24 max-w-2xl lg:max-w-4xl mx-auto space-y-3">
       {/* ── Lo que hay, en una frase ─────────────────────────────────── */}
       <div style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 'var(--cf-r-card)', padding: '15px 17px' }}>
         <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)' }}>
@@ -150,9 +150,16 @@ export default function MoratorioPage() {
               con tu tasa del {datos.tasa}% mensual y {datos.diasGracia} días de gracia.</>}
         </p>
         {lista.length > 0 && (
-          <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 6 }}>
-            Nada se cobra hasta que lo confirmes. Sube la deuda del cliente, no entra a caja.
-          </p>
+          <>
+            {/* El total arriba: es lo primero que se quiere saber, y con la lista
+                larga el botón del final queda lejos. */}
+            <p className="cf-fig" style={{ fontSize: 22, color: 'var(--cf-ink)', marginTop: 10 }}>
+              {formatMoney(totalMarcado)}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 4 }}>
+              Nada se cobra hasta que lo confirmes. Sube la deuda del cliente, no entra a caja.
+            </p>
+          </>
         )}
       </div>
 
@@ -228,34 +235,35 @@ export default function MoratorioPage() {
         )
       })}
 
-      {/* ── La barra de aplicar ──────────────────────────────────────── */}
+      {/* ── Aplicar, al final de la lista ────────────────────────────
+          Lo puse primero como barra FIJA abajo y la pastilla de navegación se
+          la comía: se veía asomar el borde dorado por detrás. Ya me pasó con el
+          botón de guardar al editar cliente, y la lección de entonces fue no
+          subir la barra sino quitar la causa.
+          Aquí la causa era la barra: esta pantalla no es una tarea —salirse no
+          pierde nada—, así que sacarle la pastilla tampoco tocaba. El botón va
+          en el flujo, después de lo que hay que revisar, que además es el orden
+          en que se hace: primero se mira a quién, luego se aplica. */}
       {lista.length > 0 && (
-        <div style={{
-          position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30,
-          padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
-          background: 'var(--cf-surface)', borderTop: '1px solid var(--cf-border)',
-        }}>
-          <div className="max-w-2xl lg:max-w-4xl mx-auto">
-            <button
-              type="button"
-              disabled={!seleccionados.length || aplicando}
-              onClick={() => setConfirmando(true)}
-              style={{
-                width: '100%', height: 48, borderRadius: 'var(--cf-r-control)', border: 0,
-                background: seleccionados.length ? 'var(--cf-gold)' : 'var(--cf-fill)',
-                color: seleccionados.length ? 'var(--cf-gold-ink)' : 'var(--cf-ink-3)',
-                fontSize: 15, fontWeight: 800,
-                cursor: seleccionados.length && !aplicando ? 'pointer' : 'default',
-              }}
-            >
-              {aplicando
-                ? `Aplicando… ${progreso.hechos} de ${progreso.total}`
-                : seleccionados.length
-                  ? `Aplicar ${formatMoney(totalMarcado)} a ${seleccionados.length} ${seleccionados.length === 1 ? 'préstamo' : 'préstamos'}`
-                  : 'No has marcado ninguno'}
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          disabled={!seleccionados.length || aplicando}
+          onClick={() => setConfirmando(true)}
+          style={{
+            width: '100%', height: 50, borderRadius: 'var(--cf-r-control)', border: 0,
+            marginTop: 6,
+            background: seleccionados.length ? 'var(--cf-gold)' : 'var(--cf-fill)',
+            color: seleccionados.length ? 'var(--cf-gold-ink)' : 'var(--cf-ink-3)',
+            fontSize: 15, fontWeight: 800,
+            cursor: seleccionados.length && !aplicando ? 'pointer' : 'default',
+          }}
+        >
+          {aplicando
+            ? `Aplicando… ${progreso.hechos} de ${progreso.total}`
+            : seleccionados.length
+              ? `Aplicar ${formatMoney(totalMarcado)} a ${seleccionados.length} ${seleccionados.length === 1 ? 'préstamo' : 'préstamos'}`
+              : 'No has marcado ninguno'}
+        </button>
       )}
 
       {/* ── La confirmación ──────────────────────────────────────────
