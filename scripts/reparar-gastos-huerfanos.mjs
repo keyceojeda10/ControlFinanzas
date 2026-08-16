@@ -26,11 +26,20 @@
  * En seco por defecto. Para escribir: `--aplicar`.
  */
 
-import { PrismaClient } from '../generated/prisma/client.js'
-import { registrarMovimientoCapital, gastoAsentadoSinRevertir } from '../lib/capital.js'
+/* ⚠ SE CORRE DESDE EL PORTATIL POR UN TUNEL, NO EN EL VPS.
+ * Alli el cliente de Prisma esta generado en TypeScript y el alias `@/` no
+ * existe fuera de Next, asi que un `node scripts/...` no arranca. Y hace falta
+ * el codigo REAL de la app: `registrarMovimientoCapital` encadena los saldos y
+ * mueve `Capital.saldo`. Con SQL a pelo el encadenado queda roto y el siguiente
+ * asiento arrastra el error.
+ *
+ *   ssh -f -N -L 3307:127.0.0.1:3306 root@...
+ *   DATABASE_URL='...127.0.0.1:3307/prestamos_db' npx vitest run .auditoria/reparar.test.js
+ */
+import { registrarMovimientoCapital, gastoAsentadoSinRevertir } from '@/lib/capital'
+const { prisma } = await import('@/lib/prisma')
 
-const APLICAR = process.argv.includes('--aplicar')
-const prisma = new PrismaClient()
+const APLICAR = process.env.APLICAR === 'si'
 const money = (n) => '$' + Math.round(n).toLocaleString('es-CO')
 
 const huerfanos = await prisma.$queryRawUnsafe(`
@@ -97,4 +106,3 @@ for (const h of huerfanos) {
 }
 
 console.log(`\n${APLICAR ? 'Devuelto' : 'Se devolvería'}: ${money(devuelto)}${saltados ? `  ·  saltados: ${saltados}` : ''}`)
-await prisma.$disconnect()
