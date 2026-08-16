@@ -23,7 +23,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getUtcOffset, formatMoney, formatFechaCorta } from '@/lib/i18n'
+import { getUtcOffset, formatMoney, formatFechaCorta, getCountryConfig } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
 import { calcularContador, rangoDePeriodo, PERIODOS_CONTADOR } from '@/lib/reportes/contador'
@@ -75,7 +75,12 @@ export async function GET(req) {
   // ── LA HOJA ───────────────────────────────────────────────────────────────
   const negocio = org?.nombre || 'Mi negocio'
   const fmt = (n) => formatMoney(n, country)
-  const pct = (v) => (v === null ? '—' : `${v}%`)
+  /* ⚠ EL SEPARATOR DECIMAL ES EL DEL PAÍS. Salía «5.7%» en una hoja donde el
+     dinero de al lado dice «$17.475»: en Colombia el punto son los miles, así
+     que ese 5.7 se lee como cinco mil setecientos. Lo vi en la hoja impresa,
+     no en el código — ahí `${v}%` parece correcto. */
+  const locale = getCountryConfig(country).locale
+  const pct = (v) => (v === null ? '—' : `${v.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`)
   const dia = (f) => formatFechaCorta(new Date(f), country)
   const doc = abrirDocumento({ pie: `Control Finanzas · ${negocio}` })
 
