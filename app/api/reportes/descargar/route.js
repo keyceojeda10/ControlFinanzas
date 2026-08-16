@@ -61,7 +61,11 @@ const HANDLERS = {
 const FILTROS = ['periodo', 'desde', 'hasta', 'fecha', 'rutas', 'mes', 'anio', 'orden', 'soloMora']
 
 function urlDelInforme(informe, entrada) {
-  const base = new URL(informe.ver, entrada.url)
+  /* ⚠ `entrada` YA es un `URL`, y `URL` no tiene `.url` — tiene `.origin` y
+     `.href`. Con `entrada.url` la base salía `undefined` y `new URL()` reventaba
+     con «Invalid URL» en los DIEZ informes. Compilaba y las pruebas pasaban: solo
+     se vio pidiendo las descargas contra el espejo. */
+  const base = new URL(informe.ver, entrada.origin)
   for (const k of FILTROS) {
     const v = entrada.searchParams.get(k)
     if (v != null && v !== '') base.searchParams.set(k, v)
