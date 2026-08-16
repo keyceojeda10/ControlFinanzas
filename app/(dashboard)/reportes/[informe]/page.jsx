@@ -248,8 +248,14 @@ export default function PantallaDeInforme() {
 
           {vista.tabla.filas.length > 0 ? (
             <>
-            {/* ── PC: LA TABLA ─────────────────────────────────────────── */}
-            <Tarjeta className="hidden lg:block" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* ── PC: LA TABLA ───────────────────────────────────────────
+                ⚠ La clase va en un `div` DE FUERA, no en la `Tarjeta`:
+                `Tarjeta` pone `display: flex` en línea y el estilo en línea le
+                gana a `.hidden` de Tailwind. Con la clase puesta en ella, en el
+                teléfono salían LAS DOS —la tabla recortada encima de las
+                fichas—. Se ve en la captura; en el JSX parecía correcto. */}
+            <div className="hidden lg:block">
+            <Tarjeta style={{ padding: 0, overflow: 'hidden' }}>
               <Tabla
                 /* `titulo` y `cifra`, que es como los llama `Tabla`. Con
                    `rotulo`/`alinear` la cabecera salía vacía y todo a la
@@ -271,6 +277,7 @@ export default function PantallaDeInforme() {
                 })}
               />
             </Tarjeta>
+            </div>
 
             {/* ── MÓVIL: UNA FICHA POR FILA ────────────────────────────────
                 ⚠ NO ES LA TABLA ENCOGIDA. En 412px, seis columnas dejaban
