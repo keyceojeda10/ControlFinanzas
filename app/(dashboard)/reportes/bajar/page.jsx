@@ -160,6 +160,18 @@ export default function BajarPage() {
     return () => { vivo = false }
   }, [ruta, orden, soloMora, cargandoSesion, esOwner])
 
+  /* ⚠ EL SALTO AL ANCLA LLEGA ANTES QUE LA TARJETA.
+     El navegador salta al `#` en cuanto cambia la ruta, pero aquí las tarjetas
+     se pintan cuando llegan los conteos: para entonces el sitio al que saltó ya
+     no es el que era. «Todo en bruto» dejaba al prestamista arriba, con su
+     informe 470px más abajo — el mismo no-llego que el índice venía a arreglar.
+     Medido pulsando el renglón, no leyendo esto. */
+  useEffect(() => {
+    if (!conteos) return
+    const destino = window.location.hash && document.querySelector(window.location.hash)
+    if (destino) destino.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [conteos])
+
   const conAviso = useCallback(async (fn, poner) => {
     poner(true)
     setError('')
