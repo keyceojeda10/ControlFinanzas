@@ -230,9 +230,19 @@ export default function RutaEscritorio({
             )}
           </div>
 
+          {/* ⚠ AQUÍ SE PERDÍA LA COLUMNA DE COBRAR.
+              Era `overflow: hidden` —puesto para que la tabla no se salga de las
+              esquinas redondeadas— y la tabla no cabe: `width: 100%` es un
+              MÍNIMO, y el contenido de las columnas la empuja más allá. Medido
+              en el DOM: tabla de 934px dentro de una tarjeta de 600. Los 334 de
+              más se recortaban sin scroll, así que el botón «Cobrar» no estaba
+              cortado: estaba fuera de alcance.
+              En el código se ve bien —`width: 100%` parece que encaja— y solo
+              aparece midiendo. `overflowY: hidden` conserva el recorte de las
+              esquinas, que es para lo que estaba el `overflow` original. */}
           <div style={{
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-            borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+            borderRadius: 'var(--cf-r-card)', overflowX: 'auto', overflowY: 'hidden',
           }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
