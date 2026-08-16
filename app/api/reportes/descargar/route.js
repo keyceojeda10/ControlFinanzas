@@ -44,6 +44,9 @@ import { GET as verCuentas } from '@/app/api/reportes/cuentas/route'
 import { GET as verResumen } from '@/app/api/reportes/resumen/route'
 import { GET as verCobradores } from '@/app/api/reportes/cobradores/route'
 import { GET as verSeguros } from '@/app/api/reportes/seguros/route'
+// Este no vive bajo `reportes/`: es la pantalla de analíticas. Se me olvidó y
+// «Cómo rindió el negocio» era el único de los diez que no bajaba.
+import { GET as verRendimiento } from '@/app/api/dashboard/analiticas/route'
 
 const HANDLERS = {
   entro: verIngresos,
@@ -55,6 +58,7 @@ const HANDLERS = {
   resumen: verResumen,
   cobradores: verCobradores,
   seguros: verSeguros,
+  rendimiento: verRendimiento,
 }
 
 /** Los parámetros de filtro que se pasan tal cual al API del informe. */
