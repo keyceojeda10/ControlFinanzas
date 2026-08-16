@@ -1063,7 +1063,20 @@ export default function RegistrarPago({
           aplicacion={tipo}
           // La hoja NO se desmonta al cambiar de aplicación: las tres opciones
           // que pinta se resuelven aquí dentro.
-          onAplicacion={(a) => setTipo(a.id)}
+          onAplicacion={(a) => {
+            /* ⚠ AL PASAR A «INTERÉS» EL MONTO SE VACÍA, no se hereda la cuota.
+               La hoja llega con la cuota puesta —$175.000— porque el caso normal
+               es cobrarla. En «Solo interés» esa herencia es peligrosa: el
+               bloque decía «Tu ganancia sube $175.000» y un toque de más subía
+               la deuda esa cantidad, y ahora además aplazaría el cobro.
+
+               Y contradecía lo que el propio servidor dice de este pago: «el
+               monto lo pone el prestamista porque es lo que pactó con ESE
+               cliente; adivinarlo sería inventar una cifra». Vaciarlo es
+               obligar a escribir los $50.000 que se pactaron. */
+            if (a.id === 'intereses' && subeLaDeuda) setMonto('')
+            setTipo(a.id)
+          }}
           explicacion={explicacionAplicacion}
           // La nota solo en capital e interés: en un cobro normal es un campo más
           // que estorba en la pantalla que se opera de pie.
