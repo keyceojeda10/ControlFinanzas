@@ -115,6 +115,16 @@ export default function RegistrarPago({
   // nueva, motor igual: rehacer de cero 1.058 líneas que ESCRIBEN PAGOS para
   // cambiar cómo se ve es la forma más rápida de perder un cobro en el campo.
   const [verFormularioCompleto, setVerFormularioCompleto] = useState(false)
+  /* «Cobrar el interés y aplazar el cobro» — el interruptor de la hoja de pago.
+     Encendido por defecto; la explicación de por qué está junto a `puedeAplazar`,
+     donde se pinta.
+
+     ⚠ VIVE AQUÍ ARRIBA Y NO JUNTO A SU INTERRUPTOR. Este componente tiene dos
+     `return` a media función —los del comprobante—, así que un hook declarado
+     después de ellos se deja de ejecutar en cuanto el pago se guarda. Eso es
+     exactamente lo que tiró la pantalla el 16 ago 2026. Todos los hooks de este
+     archivo van en este bloque, antes del primer `return`. */
+  const [aplazar, setAplazar] = useState(true)
   // Encendido por defecto, como lo dibuja la lámina, y RECORDADO: un cobrador que
   // lo apaga no quiere apagarlo cliente por cliente.
   const [enviarRecibo, setEnviarRecibo] = useState(true)
@@ -721,8 +731,23 @@ export default function RegistrarPago({
    *
    * ⚠ SOLO donde el interés sube la deuda. Con tabla de amortización el interés
    *   ya estaba pactado y aplazar movería un calendario que nadie renegoció. */
+  /* ⚠ `aplazar` NO SE DECLARA AQUÍ: es un hook y arriba hay dos salidas.
+   *
+   * Estaba en esta línea y rompía la pantalla justo al guardar el pago.
+   * Reportado el 16 ago 2026: «estoy tratando de pasar los pagos y no se le va
+   * el comprobante al cliente». Medido en producción: 15 caídas en una hora, en
+   * 4 negocios, 4 usuarios y 3 clases de teléfono distintos.
+   *
+   * El orden es el fallo: mientras se escribe el pago, `exitoso` es falso y este
+   * hook se ejecuta. Al guardarlo, `exitoso` pasa a true y el componente sale
+   * ANTES por el `return` del comprobante (línea ~564), así que el hook ya no
+   * corre. React cuenta un hook menos que en el render anterior y revienta con
+   * el error #300 — y el prestamista ve la pantalla de «no podemos conectarnos»
+   * EN LUGAR del recibo. El pago sí quedó guardado; lo que se cae es enseñarlo.
+   *
+   * La declaración se fue arriba con los demás `useState`. Aquí solo quedan los
+   * valores derivados, que son cuentas y pueden ir donde sea. */
   const puedeAplazar = tipo === 'intereses' && subeLaDeuda && Boolean(prestamo?.proximoCobro)
-  const [aplazar, setAplazar] = useState(true)
 
   const fechaAplazada = puedeAplazar
     ? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes)
