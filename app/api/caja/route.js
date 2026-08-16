@@ -776,6 +776,14 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     select: {
       tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true,
       descripcion: true, metodoPago: true, createdAt: true,
+      /* ⚠ `referenciaTipo` HACE FALTA AUNQUE NO SE PINTE.
+         `esReversoDeGasto` lo mira para restar de los gastos del día la
+         anulación de un gasto. Sin pedirlo llega `undefined`, el predicado no
+         acierta NUNCA y el día vuelve a decir «gastos que no cuadran» — sin un
+         solo error, con las tarjetas de los asientos perfectas en la base.
+         Me pasó al arreglarlo: los asientos estaban bien y la caja seguía rota.
+         Es la misma trampa que ya advierte `afectaCaja` con los saldos. */
+      referenciaTipo: true,
     },
     orderBy: { createdAt: 'asc' },
   })
