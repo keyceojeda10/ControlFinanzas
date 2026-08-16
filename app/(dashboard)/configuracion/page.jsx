@@ -31,7 +31,6 @@ import { getCountryList, COUNTRIES } from '@/lib/countries'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 import { puedeRetroceder } from '@/lib/armazon'
-import { GRACIA_MINIMA_POR_FRECUENCIA, graciaEfectiva } from '@/lib/calculos'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -739,34 +738,16 @@ function TabOrganizacion({ bloques, tema, onTema }) {
               onChange={(e) => setDiasGraciaMoratorio(e.target.value)}
               className={inputClass}
             />
-            {/* ⚠ ANTES DECÍA «días que deben pasar en mora antes de que se
-                empiece a calcular», y era FALSO para todo lo que no fuera
-                diario: el cálculo sube ese número según la frecuencia. Rincón
-                puso CERO, el sistema le aplicaba QUINCE en sus mensuales, y el
-                moratorio no le salía nunca — «aunque tiene intereses moratorio,
-                no se puede aplicar». Ahora la pantalla dice el número REAL, y lo
-                saca de la misma tabla que el cálculo. */}
+            {/* ⚠ ANTES DECÍA lo mismo pero era MENTIRA: el cálculo subía este
+                número según la frecuencia —15 días en mensual— sin avisar.
+                Rincón puso CERO, se le aplicaban QUINCE, y el moratorio no le
+                salía nunca: «aunque tiene intereses moratorio, no se puede
+                aplicar». El suelo oculto ya no existe; ahora vale lo que se
+                escriba aquí. */}
             <p className="text-[10px] text-[var(--cf-ink-3)] leading-snug px-0.5">
-              Días que deben pasar en mora antes de calcular el interés. Según la frecuencia
-              del préstamo se aplica un mínimo, así que el que cuenta de verdad es este:
+              Días que deben pasar en mora antes de calcular el interés. Vale igual para todas
+              las frecuencias: con 0, el moratorio aparece desde el primer día de atraso.
             </p>
-            <div className="flex flex-wrap gap-1.5 px-0.5">
-              {Object.keys(GRACIA_MINIMA_POR_FRECUENCIA).map((f) => {
-                const dias = graciaEfectiva(diasGraciaMoratorio, f)
-                const subido = dias > (Number(diasGraciaMoratorio) || 0)
-                return (
-                  <span key={f}
-                    className="text-[10px] px-2 py-1 rounded-[8px]"
-                    style={{
-                      background: subido ? 'color-mix(in srgb, var(--cf-gold) 12%, transparent)' : 'var(--cf-fill)',
-                      color: subido ? 'var(--cf-gold-dark)' : 'var(--cf-ink-3)',
-                    }}
-                  >
-                    {f.charAt(0).toUpperCase() + f.slice(1)}: <b>{dias}d</b>
-                  </span>
-                )
-              })}
-            </div>
           </div>
           {msgMora && <Alerta tipo={msgMora.tipo}>{msgMora.texto}</Alerta>}
           <Button
