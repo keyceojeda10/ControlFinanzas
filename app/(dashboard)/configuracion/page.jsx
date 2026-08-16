@@ -752,13 +752,18 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           {/* El atajo va AQUÍ, donde se configura, y no en la barra de abajo:
               se entra a esto desde «acabo de poner la tasa, ¿a quién le toca?».
               La barra de navegación no se toca. */}
-          <button
-            type="button"
-            onClick={() => router.push('/prestamos/moratorio')}
+          {/* ⚠ `<Link>` y no `router.push`: este bloque vive en
+              `TabOrganizacion`, que no tiene `router`. Lo escribí con
+              `router.push` y habría reventado al pulsarlo — «router is not
+              defined»—. No lo cazó el build ni el lint; lo cazó encender
+              `no-undef`, que hasta hoy estaba apagado. */}
+          <Link
+            href="/prestamos/moratorio"
             className="w-full flex items-center gap-3 text-left"
             style={{
               padding: '12px 14px', borderRadius: 'var(--cf-r-control)',
               background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+              textDecoration: 'none',
             }}
           >
             <span className="flex-1 min-w-0">
@@ -773,7 +778,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
               strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 5l7 7-7 7" />
             </svg>
-          </button>
+          </Link>
 
           {msgMora && <Alerta tipo={msgMora.tipo}>{msgMora.texto}</Alerta>}
           <Button

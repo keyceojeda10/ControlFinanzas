@@ -395,7 +395,7 @@ const MOVIMIENTOS_MANUALES = [
       setShowAjusteCaja(false)
       setAjusteMonto('')
       setAjusteDescripcion('')
-      setAjusteDireccion('ingreso')
+      setAjusteTipo(null)
       setExitoAjuste(true)
       await fetchData()
     } finally {
@@ -1341,7 +1341,7 @@ const MOVIMIENTOS_MANUALES = [
       sinonimos: ['ajuste', 'cuadrar', 'me sobro plata', 'me falto plata', 'no me cuadra',
         'sobrante', 'faltante', 'corregir la caja'],
       disponible: esOwner,
-      ejecutar: () => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteDireccion('ingreso') } },
+      ejecutar: () => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteTipo(null) } },
     { id: 'caja-cuadre', label: 'Ver el cuadre de los cobradores', pista: 'Quién entregó y quién no',
       sinonimos: ['cuadre', 'cierre de caja', 'cerrar el dia', 'entregar la plata',
         'que entrego cada cobrador', 'cuadre de cobradores'],
@@ -1839,7 +1839,7 @@ const MOVIMIENTOS_MANUALES = [
         }}>
           <button
             type="button"
-            onClick={() => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteDireccion('ingreso') }}
+            onClick={() => { setShowAjusteCaja(true); setErrorAjuste(''); setAjusteTipo(null) }}
             style={{
               height: 40, padding: '0 15px', borderRadius: 12, flex: 'none', cursor: 'pointer',
               background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
@@ -2313,7 +2313,7 @@ const MOVIMIENTOS_MANUALES = [
         onClose={() => {
           setShowAjusteCaja(false)
           setErrorAjuste('')
-          setAjusteDireccion('ingreso')
+          setAjusteTipo(null)
         }}
         title="Ajustar saldo general"
       >
@@ -2400,7 +2400,7 @@ const MOVIMIENTOS_MANUALES = [
               onClick={() => {
                 setShowAjusteCaja(false)
                 setErrorAjuste('')
-                setAjusteDireccion('ingreso')
+                setAjusteTipo(null)
               }}
               className="flex-1"
             >
