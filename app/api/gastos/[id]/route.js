@@ -97,6 +97,10 @@ export async function PATCH(req, { params }) {
         referenciaTipo: 'gasto',
         rutaId,
         creadoPorId: session.user.id,
+        /* ⚠ EL DÍA DEL GASTO, no el de hoy. Anular un gasto de ayer con fecha de
+           hoy deja el gasto en un día y su anulación en otro: se rompen LOS DOS
+           en vez de arreglar uno. */
+        fecha: gastoExistente.fecha,
       })
     }
 
@@ -141,6 +145,8 @@ export async function DELETE(req, { params }) {
         rutaId,
         creadoPorId: session.user.id,
         direccion: 'ingreso',
+        // El día del gasto, por lo mismo que arriba.
+        fecha: gasto.fecha,
       })
     }
     await tx.gastoMenor.delete({ where: { id } })
