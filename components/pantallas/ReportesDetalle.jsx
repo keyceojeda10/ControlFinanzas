@@ -17,6 +17,9 @@
       entró al lado. Antes era un título, un desplegable y una tabla: había que
       sumar mentalmente para saber si el mes iba bien. */
 
+import { BarraPartida } from '@/components/cf/primitivos2'
+import { formatMoney } from '@/lib/i18n'
+
 const CARBON = '#15161A'
 const CARBON_ORO = '#F5B824'
 const CARBON_VERDE = '#2FBE6A'
@@ -84,6 +87,9 @@ export function ComoVaEntrando({
   barras = [],
   desde, hasta,
   nota,
+  /* De lo que entró, cuánto fue ganancia y cuánto capital que vuelve.
+     `{ recaudado, interes, capital }` o null. */
+  reparto = null,
   vacio = 'Todavía no hay pagos en este período',
 }) {
   const tope = Math.max(...barras.map((b) => b.valor ?? 0), 1)
@@ -132,6 +138,23 @@ export function ComoVaEntrando({
             <span className="cf-num" style={{
               fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-2)',
             }}>{nota}</span>
+          )}
+
+          {/* ── DE CADA PESO QUE ENTRÓ, CUÁNTO ES SUYO ──
+              Pedido por Préstamos Rincón: «que en estos reportes estén de manera
+              clara y específica los recaudos del mes». El total dice cuánto pasó
+              por la mano; esto dice cuánto GANÓ, que es la pregunta.
+
+              La barra es `BarraPartida`, que ya existe: los colores viven ahí
+              dentro y esta pantalla no estrena ninguno. */}
+          {reparto && reparto.recaudado > 0 && (
+            <BarraPartida
+              style={{ marginTop: 2 }}
+              tramos={[
+                { etiqueta: 'Ganancia (interés)', valor: reparto.interes, texto: formatMoney(reparto.interes) },
+                { etiqueta: 'Capital que vuelve', valor: reparto.capital, texto: formatMoney(reparto.capital) },
+              ]}
+            />
           )}
         </>
       )}

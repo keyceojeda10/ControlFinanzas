@@ -92,6 +92,7 @@ export default function ReportesPage() {
 
   const [resumen,    setResumen]    = useState(null)
   const [ingresos,   setIngresos]   = useState([])
+  const [repartoIngresos, setRepartoIngresos] = useState(null)
   const [cartera,    setCartera]    = useState([])
   const [cobsData,   setCobsData]   = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -211,6 +212,10 @@ export default function ReportesPage() {
       if (!responses[0].ok) { setError(r.error ?? 'Error'); return }
       setResumen(r)
       setIngresos(Array.isArray(i.data) ? i.data : [])
+      /* De lo que entró, cuánto fue ganancia. Lo pidió Préstamos Rincón: «que en
+         estos reportes estén de manera clara y específica los recaudos del mes».
+         El total solo, para quien presta, es la mitad de la respuesta. */
+      setRepartoIngresos(i.totales ?? null)
       if (nivel >= 2) {
         setCartera(Array.isArray(c) ? c : [])
         setCobsData(Array.isArray(cb) ? cb : [])
@@ -438,6 +443,7 @@ export default function ReportesPage() {
         periodo={periodoIngresos}
         onPeriodo={setPeriodoIngresos}
         {...aGrafica(ingresos)}
+        reparto={repartoIngresos}
       />
 
       {/* ── EL CAPITAL, QUE NO ES LA CARTERA ──

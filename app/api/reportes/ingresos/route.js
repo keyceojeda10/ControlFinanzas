@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { interesPagoAPago, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -70,34 +71,88 @@ export async function GET(req) {
     fechaDesde = rangeIni.inicio
   }
 
-  const pagos = await prisma.pago.findMany({
+  /* ══ CUÁNTO DE LO QUE ENTRÓ ES GANANCIA ═══════════════════════════════════
+   *
+   * Pedido por Miguel Ángel (Préstamos Rincón) por el banner de sugerencias:
+   *
+   *   «Lo que más uso son los reportes, pero sí sería bueno que en estos
+   *    reportes estén de manera clara y específica los recaudos del mes.»
+   *
+   * Este informe daba el TOTAL y nada más. Y el total, para quien presta, es la
+   * mitad de la respuesta: de $1.184.696 que entraron, lo suyo es saber cuánto
+   * fue interés —lo que ganó— y cuánto era capital que ya era suyo y vuelve.
+   *
+   * ⚠ NO SE REPARTE POR PROPORCIÓN. La cuenta sale de `interesPagoAPago`, que
+   *   en los préstamos con tabla pregunta a la TABLA cuánto interés reconoce
+   *   cada pago. En «sobre saldo» las primeras cuotas son casi todo interés y
+   *   la proporción se queda corta: en su negocio, $141.889 contra $232.119
+   *   reales — un 64% de menos. Medido en producción: 526 préstamos con tabla
+   *   en 41 negocios.
+   *
+   * ⚠ Y hacen falta TODOS los pagos del préstamo, no solo los del período: el
+   *   interés de un pago depende de por dónde iba la tabla cuando entró. Con
+   *   solo los del mes, el primero se calcula como si fuera el primero de todos
+   *   y sale de más. */
+  const prestamos = await prisma.prestamo.findMany({
     where: {
-      prestamo: { organizationId: orgId, estado: { not: 'cancelado' } },
-      fechaPago: { gte: fechaDesde, lt: fechaHasta },
-      tipo: { notIn: ['recargo', 'descuento'] },
+      organizationId: orgId,
+      estado: { not: 'cancelado' },
+      pagos: {
+        some: {
+          fechaPago: { gte: fechaDesde, lt: fechaHasta },
+          tipo: { notIn: ['recargo', 'descuento'] },
+        },
+      },
     },
-    select: { montoPagado: true, fechaPago: true },
-    orderBy: { fechaPago: 'asc' },
+    select: SELECT_PARA_INTERES,
   })
 
-  // Agrupar por período - ajustar a Colombia
-  const grupos = {}
-  for (const p of pagos) {
-    let key
-    const f = toLocalDate(new Date(p.fechaPago))
-    if (periodo === 'mensual') {
-      key = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`
-    } else if (periodo === 'semanal') {
+  const claveDe = (fecha) => {
+    const f = toLocalDate(new Date(fecha))
+    if (periodo === 'mensual') return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`
+    if (periodo === 'semanal') {
       const startOfYear = new Date(f.getFullYear(), 0, 1)
       const week = Math.ceil(((f - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7)
-      key = `${f.getFullYear()}-S${String(week).padStart(2, '0')}`
-    } else {
-      key = formatLocalDate(p.fechaPago)
+      return `${f.getFullYear()}-S${String(week).padStart(2, '0')}`
     }
-    grupos[key] = (grupos[key] ?? 0) + p.montoPagado
+    return formatLocalDate(fecha)
   }
 
-  const data = Object.entries(grupos).map(([fecha, total]) => ({ fecha, total }))
+  const grupos = {}
+  const totales = { recaudado: 0, interes: 0, capital: 0 }
+  for (const pr of prestamos) {
+    for (const fila of interesPagoAPago({ prestamo: pr, cuotas: pr.cuotasAmortizacion, pagos: pr.pagos })) {
+      // Los de fuera del período ya cumplieron su papel: mover el acumulado.
+      if (!fila.fecha || fila.fecha < fechaDesde || fila.fecha >= fechaHasta) continue
+      const key = claveDe(fila.fecha)
+      const g = grupos[key] || (grupos[key] = { total: 0, interes: 0, capital: 0 })
+      g.total += fila.monto
+      g.interes += fila.interes
+      g.capital += fila.capital
+      totales.recaudado += fila.monto
+      totales.interes += fila.interes
+      totales.capital += fila.capital
+    }
+  }
 
-  return NextResponse.json({ periodo, data, desde: desde ?? fechaDesde.toISOString().slice(0, 10), hasta: hasta ?? fechaHasta.toISOString().slice(0, 10) })
+  const data = Object.entries(grupos)
+    .map(([fecha, g]) => ({
+      fecha,
+      total: Math.round(g.total),
+      interes: Math.round(g.interes),
+      capital: Math.round(g.capital),
+    }))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+
+  return NextResponse.json({
+    periodo,
+    data,
+    totales: {
+      recaudado: Math.round(totales.recaudado),
+      interes: Math.round(totales.interes),
+      capital: Math.round(totales.capital),
+    },
+    desde: desde ?? fechaDesde.toISOString().slice(0, 10),
+    hasta: hasta ?? fechaHasta.toISOString().slice(0, 10),
+  })
 }
