@@ -63,7 +63,7 @@ export async function GET(req) {
       select: { monto: true, fecha: true, description: true },
       orderBy: { fecha: 'asc' },
     }),
-    prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } }),
+    prisma.organization.findUnique({ where: { id: orgId }, select: { nombre: true } }),
   ])
 
   const r = calcularContador({ prestamos, gastos, desde, hasta, offsetHoras })
@@ -73,7 +73,7 @@ export async function GET(req) {
   }
 
   // ── LA HOJA ───────────────────────────────────────────────────────────────
-  const negocio = org?.name || 'Mi negocio'
+  const negocio = org?.nombre || 'Mi negocio'
   const fmt = (n) => formatMoney(n, country)
   const pct = (v) => (v === null ? '—' : `${v}%`)
   const dia = (f) => formatFechaCorta(new Date(f), country)

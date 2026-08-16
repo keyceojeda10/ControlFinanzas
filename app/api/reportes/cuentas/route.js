@@ -45,7 +45,7 @@ export async function GET(req) {
 
   const [cuentas, org] = await Promise.all([
     getSaldosPorCuenta(prisma, orgId, { desde, hasta }),
-    prisma.organization.findUnique({ where: { id: orgId }, select: { name: true } }),
+    prisma.organization.findUnique({ where: { id: orgId }, select: { nombre: true } }),
   ])
 
   const totales = cuentas.reduce(
@@ -58,7 +58,7 @@ export async function GET(req) {
   }
 
   // ── LA HOJA ───────────────────────────────────────────────────────────────
-  const negocio = org?.name || 'Mi negocio'
+  const negocio = org?.nombre || 'Mi negocio'
   const fmt = (n) => formatMoney(n, country)
   const dia = (f) => formatFechaCorta(new Date(f), country)
   const doc = abrirDocumento({ pie: `Control Finanzas · ${negocio}` })
