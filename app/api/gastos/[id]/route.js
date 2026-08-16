@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { registrarMovimientoCapital } from '@/lib/capital'
+import { registrarMovimientoCapital, gastoAsentadoSinRevertir } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 
 // Ruta a la que se imputa el gasto (sub-bolsa de capital): la primera ruta
@@ -69,15 +69,28 @@ export async function PATCH(req, { params }) {
         creadoPorId: session.user.id,
         // Los gastos de ruta se pagan casi siempre en efectivo (caja del cobrador).
         metodoPago: 'efectivo',
+        /* ⚠ LA FECHA DEL GASTO, NO LA DE HOY.
+           Un gasto de ayer registrado hoy dejaba el gasto en el día 15 y su
+           movimiento en el 16. La conciliación compara día contra día, así que
+           los DOS días salían descuadrados y el prestamista no tenía forma de
+           cuadrarlos. Reportado por Oswaldo Castilla: «se me olvidó cerrar
+           anoche». Medido: 20 gastos así en 6 negocios, $956.000. */
+        fecha: gastoExistente.fecha,
       })
     }
 
     // Si estaba aprobado y ahora se rechaza, reversar el egreso previo
-    if (estado === 'rechazado' && gastoExistente.estado === 'aprobado') {
+    /* ⚠ SE LE PREGUNTA AL LIBRO, NO AL ESTADO. Ver `gastoAsentadoSinRevertir`:
+       si el estado y el libro se separan, el movimiento se quedaba dentro para
+       siempre y la caja de ese día no cuadraba nunca. */
+    const debeDevolverAlRechazar = estado === 'rechazado'
+      ? await gastoAsentadoSinRevertir(tx, session.user.organizationId, id)
+      : 0
+    if (debeDevolverAlRechazar > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId: session.user.organizationId,
         tipo: 'ajuste',
-        monto: gastoExistente.monto,
+        monto: debeDevolverAlRechazar,
         direccion: 'ingreso',
         descripcion: `Reverso gasto rechazado: ${gastoExistente.description}`,
         referenciaId: id,
@@ -112,12 +125,16 @@ export async function DELETE(req, { params }) {
   const rutaId = await rutaDelGasto(prisma, session.user.organizationId, gasto.cobradorId)
 
   await prisma.$transaction(async (tx) => {
-    // Si estaba aprobado, revertir el egreso de capital con un movimiento opuesto
-    if (gasto.estado === 'aprobado') {
+    /* ⚠ LO QUE EL LIBRO TENGA ASENTADO, no lo que diga `estado`.
+       Con `if (gasto.estado === 'aprobado')`, cualquier desajuste entre el
+       estado y el libro dejaba el egreso dentro para siempre. Medido: 3 gastos
+       así en 3 negocios, $2.020.000, el mayor de julio. */
+    const debeDevolver = await gastoAsentadoSinRevertir(tx, session.user.organizationId, id)
+    if (debeDevolver > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId: session.user.organizationId,
         tipo: 'ajuste',
-        monto: gasto.monto,
+        monto: debeDevolver,
         descripcion: `Reverso gasto eliminado: ${gasto.description}`,
         referenciaId: id,
         referenciaTipo: 'gasto',
