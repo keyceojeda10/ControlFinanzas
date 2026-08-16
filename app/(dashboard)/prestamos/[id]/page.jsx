@@ -63,6 +63,7 @@ import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { MenuGestion } from '@/components/pantallas/MenuGestion'
 import { anotarReciente } from '@/lib/recientes'
+import CazadorDeErrores from '@/components/armazon/CazadorDeErrores'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -87,7 +88,34 @@ const tipoPagoBadge = {
 }
 
 
-export default function PrestamoDetallePage({ params }) {
+/* ⚠ ENVUELTA PARA SABER QUIÉN FALLA.
+ *
+ * Esta pantalla dio 25 «Minified React error #300» en hora y cuarto, desde tres
+ * negocios y ocho préstamos. No se reproduce: probé abrirla con cuatro formas de
+ * préstamo, el pago entero, las cuatro acciones del comprobante y el préstamo
+ * que ya no existe, y la regla de hooks de ESLint está limpia —comprobando
+ * además que ESLint no estuviera ciego, metiéndole una violación a propósito—.
+ *
+ * Lo que nos llegaba era la pila minificada de las TRIPAS de React (`at l7`,
+ * `at o_`): ni un nombre nuestro. `CazadorDeErrores` manda el árbol de
+ * componentes, que en producción trae los nombres minificados PERO con su
+ * archivo y su byte exacto — y eso sí se resuelve.
+ *
+ * ⚠ VA AQUÍ Y NO EN EL LAYOUT. Lo puse primero allí y no disparaba nunca:
+ *   `error.jsx` de Next envuelve la página y atrapa antes. Se vio porque
+ *   llegaban dos avisos y los dos eran de `error.jsx`.
+ *
+ * Cuando el próximo #300 diga qué componente es, esto sobra y se quita.
+ */
+export default function PrestamoDetallePage(props) {
+  return (
+    <CazadorDeErrores>
+      <PrestamoDetalleContenido {...props} />
+    </CazadorDeErrores>
+  )
+}
+
+function PrestamoDetalleContenido({ params }) {
   const { id }             = use(params)
   const router             = useRouter()
   // `?editar=<modo>` viene de la hoja de comparar calendarios, que vive en la ruta
