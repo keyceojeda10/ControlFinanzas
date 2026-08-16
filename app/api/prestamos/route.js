@@ -101,6 +101,29 @@ export async function GET(request) {
   const soloClavos = searchParams.get('clavo') === '1'
   const soloNuevos = searchParams.get('nuevos') === '1'
 
+  /* ══ LOS QUE VENCEN PRONTO ═══════════════════════════════════════════════
+   *
+   * Pedido por Miguel Ángel (Préstamos Rincón) por el banner de sugerencias:
+   *
+   *   «Los filtros que más se usan son los de próximos a vencer, bien sea en 5
+   *    días o 10 días. Esta aplicación no tiene ese filtro, tiene otros pero no
+   *    son los adecuados. O que automáticamente los primeros préstamos en la
+   *    lista sean los más cercanos a vencer.»
+   *
+   * Tenía razón: los chips eran Todos · Pendientes · Activos · En mora ·
+   * Renovar · Perdidos · De hoy · Completados · Cancelados. Ninguno contesta
+   * «¿a quién tengo que llamar esta semana?».
+   *
+   * ⚠ SIN LOS QUE YA ESTÁN EN MORA. Vencido no es «por vencer», y «En mora» es
+   *   el chip de al lado: si los dos trajeran lo mismo, uno de los dos sobra.
+   *   Aquí se contesta lo que todavía se puede evitar.
+   *
+   * La fecha sale de `calcularProximoCobro`, que es la única que manda en toda
+   * la app — la misma que pinta la ficha y la que agrupa la ruta. */
+  const porVencer = [5, 10].includes(Number(searchParams.get('porVencer')))
+    ? Number(searchParams.get('porVencer'))
+    : null
+
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
@@ -270,6 +293,9 @@ export async function GET(request) {
   // umbral que usa el panel para contarlos, para que el numero de la fila y el
   // largo de la lista coincidan.
   const RENOVAR_DESDE = 80
+  // El arranque del día del país, el mismo que usa «De hoy»: si se midiera desde
+  // «ahora», un cobro de esta tarde saldría con cero días y mañana con menos uno.
+  const inicioHoy = inicioDelDiaLocal(session.user.country ?? 'co')
   const criterio = soloMora ? ((p) => p.diasMora > 0)
     // MAS DE N, no «N o mas». Todas las etiquetas del producto dicen «mas de 30
     // dias» —la fila del panel, las opciones de la hoja— y el contador del panel
@@ -286,10 +312,24 @@ export async function GET(request) {
     // estando: se les sigue cobrando.
     : diasMoraMin != null ? ((p) => p.diasMora > diasMoraMin && !p.esClavo)
     : listosRenovar ? ((p) => p.estado === 'activo' && p.diasMora === 0 && p.porcentajePagado >= RENOVAR_DESDE)
+    /* Vivo, sin mora, y con su próximo cobro dentro de la ventana. El corte de
+       «hoy» va con el convenio de la casa —el día arranca a las 05:00Z— para que
+       un cobro de esta tarde no se caiga de la lista por el huso del servidor. */
+    : porVencer ? ((p) => {
+      if (p.estado !== 'activo' || p.diasMora > 0 || !p.proximoCobro) return false
+      const dias = Math.ceil((new Date(p.proximoCobro) - inicioHoy) / 86400000)
+      return dias >= 0 && dias <= porVencer
+    })
     : null
 
   if (criterio) {
-    const filtrados = resultado.filter(criterio)
+    let filtrados = resultado.filter(criterio)
+    /* «Que automáticamente los primeros préstamos en la lista sean los más
+       cercanos a vencer» — es la segunda mitad de lo que pidió, y sin ella el
+       filtro obliga a leer veinte fechas para encontrar la de mañana. */
+    if (porVencer) {
+      filtrados = [...filtrados].sort((a, b) => new Date(a.proximoCobro) - new Date(b.proximoCobro))
+    }
     if (page != null) {
       const desde = (page - 1) * limit
       return Response.json({

@@ -17,6 +17,7 @@ import { adaptarPrestamos, tresCifras, fechaCorta, fichaDe } from '@/lib/adaptad
 import { BarraFiltros, EncabezadoLista, BuscadorLista } from '@/components/pantallas/ListaClientes'
 import { TresCifras }                         from '@/components/pantallas/ListaPrestamos'
 import HojaFiltros, { ConmutadorVista, contarFiltros } from '@/components/pantallas/HojaFiltros'
+import { filtrarPrestamosGuardados } from '@/lib/adaptadores/filtro-prestamos'
 import { useMontado }                         from '@/hooks/useMontado'
 import { StaggeredList }                      from '@/components/ui/StaggeredList'
 import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
@@ -77,6 +78,20 @@ const ESTADOS = [
      Con los dos llamándose «Nuevo» serían dos cifras distintas con el mismo
      nombre; con nombres distintos, son dos preguntas distintas. */
   { value: 'nuevos',     label: 'De hoy' },
+  /* ── LOS QUE VENCEN PRONTO ──
+     Pedido por Miguel Ángel (Préstamos Rincón): «los filtros que más se usan
+     son los de próximos a vencer, bien sea en 5 días o 10 días. Esta aplicación
+     no tiene ese filtro, tiene otros pero no son los adecuados».
+
+     Van AQUÍ y no dentro de la hoja, por lo mismo que «Perdidos» y «De hoy»: un
+     filtro que hay que buscar es un filtro que no se usa. Son dos chips y no uno
+     con desplegable porque las dos ventanas que él nombra son las dos que se
+     miran, y un desplegable de dos opciones es un toque de más.
+
+     ⚠ NO traen los que ya están en mora: para eso está el chip de al lado.
+     Vencido no es «por vencer». */
+  { value: 'vence5',     label: 'Vence en 5 días', color: 'var(--cf-gold-dark)' },
+  { value: 'vence10',    label: 'Vence en 10 días' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
@@ -482,10 +497,11 @@ export default function PrestamosPage() {
         if (!cached) {
           const allPrestamos = await obtenerPrestamosOffline()
           if (allPrestamos.length > 0) {
-            let filtered = allPrestamos
-            const apiEstado = est === 'mora' ? 'activo' : est
-            if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
-            if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            /* Los chips derivados —mora, renovar, perdidos, de hoy, por vencer—
+               los resuelve `filtrarPrestamosGuardados`, la misma cuenta que hace
+               el servidor. Escrito aquí a mano, tres de ellos filtraban por un
+               estado que no existe y la lista salía vacía sin avisar. */
+            let filtered = filtrarPrestamosGuardados(allPrestamos, { est })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
@@ -513,6 +529,7 @@ export default function PrestamosPage() {
       // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
       // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
       const derivado = est === 'mora' || est === 'renovar' || est === 'clavo' || est === 'nuevos'
+        || est === 'vence5' || est === 'vence10'
       // ⚠ «Nuevos» NO fuerza `activo`: un préstamo metido hace dos horas puede
       // estar pendiente de aprobación, y ése es justo el que se busca al
       // revisar lo que entró hoy.
@@ -522,6 +539,11 @@ export default function PrestamosPage() {
       if (est === 'renovar') params.set('listosRenovar', '1')
       if (est === 'clavo') params.set('clavo', '1')
       if (est === 'nuevos') params.set('nuevos', '1')
+      // El servidor filtra por la fecha del próximo cobro Y los devuelve
+      // ordenados del más cercano al más lejano, que es la otra mitad de lo que
+      // pidió: «que automáticamente los primeros sean los más cercanos a vencer».
+      if (est === 'vence5') params.set('porVencer', '5')
+      if (est === 'vence10') params.set('porVencer', '10')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
@@ -550,10 +572,11 @@ export default function PrestamosPage() {
         if (!cached) {
           const allPrestamos = await obtenerPrestamosOffline()
           if (allPrestamos.length > 0) {
-            let filtered = allPrestamos
-            const apiEstado = est === 'mora' ? 'activo' : est
-            if (apiEstado) filtered = filtered.filter(pr => pr.estado === apiEstado)
-            if (est === 'mora') filtered = filtered.filter(pr => pr.diasMora > 0)
+            /* Los chips derivados —mora, renovar, perdidos, de hoy, por vencer—
+               los resuelve `filtrarPrestamosGuardados`, la misma cuenta que hace
+               el servidor. Escrito aquí a mano, tres de ellos filtraban por un
+               estado que no existe y la lista salía vacía sin avisar. */
+            let filtered = filtrarPrestamosGuardados(allPrestamos, { est })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
