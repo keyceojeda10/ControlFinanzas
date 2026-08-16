@@ -192,11 +192,9 @@ export default function PantallaDeInforme() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 900, margin: '0 auto' }}>
 
-      {/* QUÉ ES ESTE INFORME. Va arriba y siempre: es la mitad de la petición
-          —«que sepa qué es el reporte»— y lo que evita bajar el que no era. */}
-      <Tarjeta style={{ padding: '14px 16px' }}>
-        <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>{informe.contesta}</p>
-      </Tarjeta>
+      {/* ⚠ LA FRASE NO SE REPITE AQUÍ. `useCabecera` ya la pone de subtítulo,
+          y en la captura salía dos veces seguidas: en la cabecera y en una
+          tarjeta debajo diciendo exactamente lo mismo. */}
 
       {/* LOS FILTROS */}
       {(periodos.length > 1 || usaFecha) && (
@@ -249,7 +247,9 @@ export default function PantallaDeInforme() {
           )}
 
           {vista.tabla.filas.length > 0 ? (
-            <Tarjeta style={{ padding: 0, overflow: 'hidden' }}>
+            <>
+            {/* ── PC: LA TABLA ─────────────────────────────────────────── */}
+            <Tarjeta className="hidden lg:block" style={{ padding: 0, overflow: 'hidden' }}>
               <Tabla
                 /* `titulo` y `cifra`, que es como los llama `Tabla`. Con
                    `rotulo`/`alinear` la cabecera salía vacía y todo a la
@@ -271,6 +271,38 @@ export default function PantallaDeInforme() {
                 })}
               />
             </Tarjeta>
+
+            {/* ── MÓVIL: UNA FICHA POR FILA ────────────────────────────────
+                ⚠ NO ES LA TABLA ENCOGIDA. En 412px, seis columnas dejaban
+                «Ruta…», «Juan…» y «$33…»: hasta el dinero salía cortado, que es
+                lo único que no se puede recortar en esta app. Se ve en la
+                captura; en el JSX la tabla parece correcta. */}
+            <div className="lg:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
+              {vista.tabla.filas.map((f, i) => {
+                const [primera, ...resto] = vista.tabla.columnas
+                return (
+                  <Tarjeta key={i} style={{ padding: '13px 15px' }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)', marginBottom: 8 }}>
+                      {f[primera.clave] == null || f[primera.clave] === '' ? '—' : String(f[primera.clave])}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {resto.map((c) => (
+                        <div key={c.clave} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{c.rotulo}</span>
+                          <span className={c.tipo === 'texto' ? undefined : 'cf-num'}
+                            style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--cf-ink)', textAlign: 'right' }}>
+                            {c.tipo === 'dinero' ? formatMoney(Math.round(Number(f[c.clave]) || 0), pais)
+                              : c.tipo === 'pct' ? `${f[c.clave] ?? 0}%`
+                              : f[c.clave] == null || f[c.clave] === '' ? '—' : String(f[c.clave])}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </Tarjeta>
+                )
+              })}
+            </div>
+            </>
           ) : !vista.soloDescarga && (
             <EstadoVacio
               titulo="No hubo movimiento"
