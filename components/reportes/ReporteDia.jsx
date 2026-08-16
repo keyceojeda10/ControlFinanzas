@@ -63,11 +63,31 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
     }
   }, [fecha, rutasSeleccionadas])
 
+  /* ── SE CARGA SOLO AL ABRIR ────────────────────────────────────────────────
+   *
+   * Reportado por el dueño el 16 ago 2026: «en caja está ese botón que dice
+   * reporte, cuando le doy ahí solamente aparece un selector de fecha y no hace
+   * más nada».
+   *
+   * Era literal, y la causa eran dos condiciones que se cerraban entre sí:
+   *
+   *   · el reporte solo se cargaba con `rutasSeleccionadas.length > 0`, y para
+   *     un dueño esa lista arranca VACÍA (el auto-seleccionar de arriba es solo
+   *     para el cobrador),
+   *   · las pastillas para elegir ruta solo se pintan con MÁS DE UNA ruta,
+   *   · y el botón «Generar reporte» solo aparece si ya hay rutas elegidas.
+   *
+   * O sea: un dueño con una ruta o con ninguna no tenía forma de llegar al
+   * reporte. Ni pastillas que tocar, ni botón, ni carga automática. Solo el
+   * selector de fecha, que es exactamente lo que él fotografió.
+   *
+   * Sin filtro, `/api/reportes/dia` ya devuelve TODAS las rutas y además los
+   * clientes sin ruta asignada, que es lo que se quiere por defecto. Las
+   * pastillas siguen ahí para acotar cuando hay varias, y ahora recargan solas
+   * al tocarlas en vez de obligar a pulsar «Generar» otra vez. */
   useEffect(() => {
-    if (open && (rutasSeleccionadas.length > 0 || esCobrador)) {
-      cargarReporte()
-    }
-  }, [open, cargarReporte, esCobrador])
+    if (open) cargarReporte()
+  }, [open, cargarReporte])
 
   const toggleRuta = (id) => {
     setRutasSeleccionadas(prev =>
@@ -281,8 +301,9 @@ export default function ReporteDia({ open, onClose, rutasDisponibles = [], fecha
           </div>
         )}
 
-        {/* Botón generar (owner debe seleccionar rutas) */}
-        {esOwner && rutasSeleccionadas.length > 0 && !data && !loading && (
+        {/* Reintentar. Ya no es la ÚNICA forma de llegar al reporte —ese era el
+            fallo— sino la salida cuando la carga automática no trajo nada. */}
+        {!data && !loading && (
           <Button onClick={cargarReporte} size="sm" className="w-full">Generar reporte</Button>
         )}
 
