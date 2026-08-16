@@ -115,7 +115,8 @@ export function BajarInformacion({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {quienDebe && (
-        <div style={{
+        <div id="informe-listado-cobros" style={{
+          scrollMarginTop: 76,
           background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
           padding: '17px 19px', display: 'flex', flexDirection: 'column', gap: 13,
           // La destacada: es la que se baja todas las semanas.
@@ -189,7 +190,8 @@ export function BajarInformacion({
       {/* «Cómo me fue» es una FILA, no una tarjeta con su botón: se baja una vez
           al mes y no compite con la de arriba. */}
       {comoMeFue && (
-        <div style={{
+        <div id="informe-resumen" style={{
+          scrollMarginTop: 76,
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
         }}>
@@ -231,10 +233,12 @@ export function BajarInformacion({
       )}
 
       {datos.length > 0 && (
-        <div style={{
+        <div id="informe-crudo" style={{
+          scrollMarginTop: 76,
           background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
           borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
         }}>
+          <span id="informe-calle" style={{ scrollMarginTop: 76 }} />
           <div style={{ padding: '17px 19px 13px', display: 'flex', flexDirection: 'column', gap: 4 }}>
             <Rotulo>{datosTitulo}</Rotulo>
             <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>

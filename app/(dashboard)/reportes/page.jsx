@@ -11,6 +11,7 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import EmptyState              from '@/components/ui/EmptyState'
 import { nivelReportes }       from '@/lib/planes'
 import PlanGate               from '@/components/ui/PlanGate'
+import IndiceDeInformes       from '@/components/reportes/IndiceDeInformes'
 import { Reportes }             from '@/components/pantallas/Reportes'
 import { ComoVaEntrando, SegurosCobrados, CobrosDelMes } from '@/components/pantallas/ReportesDetalle'
 import { aGrafica, aSeguros, aCobrosMes } from '@/lib/adaptadores/reportes-detalle'
@@ -322,6 +323,13 @@ export default function ReportesPage() {
 
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto space-y-5">
+      {/* ── EL ÍNDICE ─────────────────────────────────────────
+          Va PRIMERO porque contesta la pregunta con la que se entra a esta
+          pantalla cuando no se entra a mirar cómo va el día: «¿dónde está el
+          informe que necesito?». Debajo sigue todo igual, y su primer renglón
+          baja justo a ello. */}
+      <IndiceDeInformes nivel={nivel} />
+
       {/* Header + filtro fechas como chips de periodo + date pickers */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3">
@@ -402,6 +410,7 @@ export default function ReportesPage() {
 
           Lo que NO se toca: la gráfica de ingresos, los seguros, el podio de
           cobradores, el listado en PDF y las exportaciones. */}
+      <div id="informe-entro" style={{ scrollMarginTop: 76 }} />
       {resumen && (
         <Reportes
           entroEtiqueta="Entró en el período"
@@ -476,6 +485,7 @@ export default function ReportesPage() {
       {/* ── T33-01 · Seguros cobrados ─────────────────────────
           El período era un `<select>` nativo, que en cada teléfono se ve
           distinto y en ninguno se ve como la app. */}
+      <div id="informe-seguros" style={{ scrollMarginTop: 76 }} />
       {nivel >= 2 && seguros && (
         <SegurosCobrados
           periodo={periodoSeguros}
@@ -492,6 +502,7 @@ export default function ReportesPage() {
           «Ya entró» sale de los pagos del mismo mes, y solo se enseña si se
           pudo pedir: en una pantalla de plata, un hueco es mejor que un número
           inventado. */}
+      <div id="informe-cobros-mes" style={{ scrollMarginTop: 76 }} />
       {nivel >= 1 && (
         <CobrosDelMes
           mes={mesCobros}
@@ -503,6 +514,7 @@ export default function ReportesPage() {
         />
       )}
 
+      <div id="informe-cobradores" style={{ scrollMarginTop: 76 }} />
       {/* ── 4. Top cobradores (podio visual) + lista completa ── */}
       {nivel < 2 && <UpgradeNudge titulo="Rendimiento de cobradores" planRequerido="standard" />}
       {nivel >= 2 && cobsData.length > 0 && (
