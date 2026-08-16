@@ -24,7 +24,8 @@ import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 import { Recibo } from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo } from '@/lib/calculos'
+import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
   montoCrudo, montoParaMostrar, montoCrudoConModo, montoParaMostrarConModo,
@@ -338,7 +339,7 @@ export default function RegistrarPago({
       const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}) }),
+        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
       // de dejar fallar el fetch. Tratarlo igual que offline.
@@ -701,6 +702,32 @@ export default function RegistrarPago({
   // ficha las incluye), así que el guardia de `elInteresSubeLaDeuda` no salta.
   const subeLaDeuda = elInteresSubeLaDeuda(prestamo ?? {})
 
+  /* ══ COBRAR EL INTERÉS Y APLAZAR, EN EL MISMO GESTO ══════════════════════
+   *
+   * «Yo tengo clientes que en la quincena no me pueden dar la cuota, pero me
+   *  dan el interés. Lo que hago es recibir el interés hoy y la cuota queda
+   *  para la próxima quincena, pero sigue siendo igual.»
+   *   — un prestamista, 16 ago 2026, explicando por qué seguía en Excel.
+   *
+   * El cobro del interés ya hacía su parte —la cuota no baja y la deuda sube—
+   * pero mover la fecha era irse a otra pantalla. Aquí se ofrece en el mismo
+   * sitio, y el servidor hace las dos cosas en la misma petición: si se hiciera
+   * en dos, la segunda podía fallar y dejar el interés cobrado sin el aplazo.
+   *
+   * ⚠ ENCENDIDO POR DEFECTO, PERO A LA VISTA Y CON LA FECHA ESCRITA. Cobrar
+   *   solo el interés en modo clásico ES comprar tiempo: si no se aplaza, el
+   *   cliente aparece debiendo mañana lo mismo que hoy. Se apaga con un toque
+   *   para el caso contrario —«me paga el interés y mañana trae la cuota»—.
+   *
+   * ⚠ SOLO donde el interés sube la deuda. Con tabla de amortización el interés
+   *   ya estaba pactado y aplazar movería un calendario que nadie renegoció. */
+  const puedeAplazar = tipo === 'intereses' && subeLaDeuda && Boolean(prestamo?.proximoCobro)
+  const [aplazar, setAplazar] = useState(true)
+
+  const fechaAplazada = puedeAplazar
+    ? siguientePeriodo(prestamo.proximoCobro, prestamo?.frecuencia, prestamo?.diaCobroMes)
+    : null
+
   // «¿A qué se aplica?» — las tres de la lámina.
   //
   // «Interés» SALE SIEMPRE desde el 2 ago 2026. Antes se escondía en cuota fija
@@ -1050,6 +1077,16 @@ export default function RegistrarPago({
             setMetodoPagoId(g.metodoPagoId)
             setPlataforma(g.nombreCuenta || '')
           }}
+          extraExplicacion={puedeAplazar && fechaAplazada ? (
+            <div style={{ marginTop: 9, paddingTop: 11, borderTop: '1px solid var(--cf-border)' }}>
+              <FilaInterruptor
+                etiqueta="Aplazar el próximo cobro"
+                explicacion={`La cuota de ${formatMoney(Math.round(cuotaDiaria ?? 0))} queda para el ${formatFechaCobroRelativa(fechaAplazada)}. No cambia de monto.`}
+                encendido={aplazar}
+                onCambiar={setAplazar}
+              />
+            </div>
+          ) : null}
           despues={filas}
           textoLoRaro="Abonar por días"
           onLoRaro={() => setVerAbonoDias(true)}

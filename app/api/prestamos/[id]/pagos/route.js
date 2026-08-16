@@ -25,6 +25,7 @@ import {
   obtenerDiasPorPeriodo,
   calcularInteresesPendientes,
   obtenerProximaCuotaTabla,
+  siguientePeriodo,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -123,7 +124,7 @@ export async function POST(request, { params }) {
   ])
 
   const body = await request.json()
-  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud } = body
+  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud, aplazarUnPeriodo } = body
   // Sanitizar coords del pago: si vienen fuera de rango, se guardan como null
   // (no rechazar el pago, MVP de geo es no-bloqueante).
   const coordsPago = sanitizarCoords(latitud, longitud)
@@ -838,6 +839,48 @@ export async function POST(request, { params }) {
 
   const diasExcluidosFinal = obtenerDiasSinCobro(prestamoFinal?.cliente, prestamoFinal?.cliente?.ruta, org)
 
+  /* ══ COBRAR EL INTERÉS Y APLAZAR, EN EL MISMO GESTO ══════════════════════
+   *
+   * «Yo tengo clientes que en la quincena no me pueden dar la cuota, pero me
+   *  dan el interés. Lo que hago es recibir el interés hoy y la cuota queda
+   *  para la próxima quincena, pero sigue siendo igual.»
+   *   — un prestamista, 16 ago 2026, explicando por qué seguía en Excel.
+   *
+   * La primera mitad ya funcionaba: el pago de solo interés sube la deuda y NO
+   * toca la cuota, así que el cliente sigue debiendo sus $175.000 y no $125.000.
+   * Lo que faltaba era la fecha, que había que mover por otra pantalla.
+   *
+   * ⚠ VA AQUÍ Y NO EN LA PANTALLA. `refrescarTotalesPrestamo` pone
+   *   `proximoCobroManual` en null en CADA cambio de pagos: hecho desde el
+   *   navegador en dos peticiones, la segunda podía fallar y dejar el interés
+   *   cobrado sin el aplazo. Así o se hacen las dos cosas o ninguna.
+   *
+   * ⚠ SOLO donde cobrar interés significa comprar tiempo. Con tabla de
+   *   amortización el interés ya estaba pactado y aplazar movería un calendario
+   *   que nadie renegoció.
+   */
+  let proximoCobroFinal = calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos)
+  let aplazadoA = null
+  if (aplazarUnPeriodo && tipo === 'intereses' && elInteresSubeLaDeuda(prestamoFinal) && proximoCobroFinal) {
+    const nueva = siguientePeriodo(proximoCobroFinal, prestamoFinal.frecuencia, prestamoFinal.diaCobroMes)
+    if (nueva) {
+      await prisma.prestamo.update({
+        where: { id: prestamoId },
+        data: { proximoCobroManual: nueva },
+      })
+      proximoCobroFinal = nueva
+      aplazadoA = nueva
+      logActividad({
+        session,
+        accion: 'editar_prestamo',
+        entidadTipo: 'prestamo',
+        entidadId: prestamoId,
+        detalle: `Cobro aplazado a ${nueva.toISOString().slice(0, 10)} al recibir solo el interés`,
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      })
+    }
+  }
+
   const tipoLabel = { completo: 'completo', parcial: 'parcial', capital: 'abono capital', recargo: 'recargo', descuento: 'descuento' }
   logActividad({ session, accion: 'registrar_pago', entidadTipo: 'pago', entidadId: prestamoId, detalle: `Pago ${tipoLabel[tipo] || tipo} $${montoFinal.toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId, evento: 'registrar_pago', metadata: { tipo, monto: montoFinal } })
@@ -862,7 +905,8 @@ export async function POST(request, { params }) {
     cuotasEnMora:     calcularCuotasEnMora(prestamoFinal, diasExcluidosFinal, festivos),
     montoEnMora:      calcularMontoEnMora(prestamoFinal, diasExcluidosFinal, festivos),
     montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(prestamoFinal, diasExcluidosFinal, festivos),
-    proximoCobro:     calcularProximoCobro(prestamoFinal, diasExcluidosFinal, festivos),
+    proximoCobro:     proximoCobroFinal,
+    aplazadoA,
     pagoHoy:          pagoHoy(prestamoFinal),
   }, { status: 201 })
 }

@@ -208,6 +208,11 @@ export default function RegistrarCobro({
   // `explicacion` = { titulo, texto, cifra: { etiqueta, valor } | null }. La
   // compone quien monta la hoja: aquí no se sabe qué hace cada tipo de pago.
   explicacion = null,
+  /* Va PEGADO a la explicación, no como un campo suelto más abajo: es una
+     consecuencia de lo que acaba de leer —«le compra tiempo»— y separarlo lo
+     convertiría en un interruptor que nadie relaciona con nada. Lo compone
+     quien monta la hoja; aquí no se sabe qué significa aplazar en este modo. */
+  extraExplicacion = null,
   medios = [], medio, onMedio,
   despues = [],
   // La nota solo se pinta si le dan `onNota`: en un pago normal no va.
@@ -297,6 +302,7 @@ export default function RegistrarCobro({
               }}>{explicacion.cifra.valor}</span>
             </div>
           )}
+          {extraExplicacion}
         </div>
       )}
 
