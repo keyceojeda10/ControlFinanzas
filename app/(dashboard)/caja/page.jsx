@@ -96,7 +96,33 @@ export default function CajaPage() {
   const [verPrestados, setVerPrestados] = useState(false)
   const [showGasto, setShowGasto] = useState(false)
   const [showAjusteCaja, setShowAjusteCaja] = useState(false)
-  const [ajusteDireccion, setAjusteDireccion] = useState('ingreso')
+/* ══ QUÉ PASÓ CON ESA PLATA ══════════════════════════════════════════════════
+ *
+ * Aquí solo había «Ingreso / Egreso», y las dos cosas se guardaban como
+ * `ajuste` — una corrección de caja. No había forma de decir «saqué plata del
+ * negocio».
+ *
+ * Lo destapó Oswaldo Castilla el 16 ago 2026: sacó $282.000 para comprarle una
+ * cicla a su mamá, no encontró dónde decirlo, lo registró como GASTO, y se pasó
+ * la mañana peleándose con el descuadre que eso le provocó. Su mensaje fue
+ * literal: «dame un retiro mi amigo».
+ *
+ * El servidor ya distinguía los tres tipos —`inyeccion`, `retiro`, `ajuste`—,
+ * la conciliación ya resta los retiros y la banda ya tiene su renglón «Plata
+ * que sacaste». Lo único que faltaba era preguntarlo.
+ *
+ * ⚠ SIN OPCIÓN POR DEFECTO, A PROPÓSITO. Antes salía «Ingreso» marcado y todo
+ *   caía en `ajuste`. Si ahora una de estas viniera marcada, a quien no mire el
+ *   selector le cambiaríamos el TIPO de sus movimientos sin que se entere. Que
+ *   lo diga él: es un gesto deliberado y son cuatro palabras.
+ */
+const MOVIMIENTOS_MANUALES = [
+  { id: 'inyeccion', rotulo: 'Metí plata',    pista: 'entra al negocio',   movimiento: 'inyeccion', direccion: 'ingreso', entra: true },
+  { id: 'retiro',    rotulo: 'Saqué plata',   pista: 'sale del negocio',   movimiento: 'retiro',    direccion: 'egreso',  entra: false },
+  { id: 'sobra',     rotulo: 'Sobra en caja', pista: 'corregir la cuenta', movimiento: 'ajuste',    direccion: 'ingreso', entra: true },
+  { id: 'falta',     rotulo: 'Falta en caja', pista: 'corregir la cuenta', movimiento: 'ajuste',    direccion: 'egreso',  entra: false },
+]
+  const [ajusteTipo, setAjusteTipo] = useState(null)
   const [ajusteMonto, setAjusteMonto] = useState('')
   const [ajusteDescripcion, setAjusteDescripcion] = useState('')
   const [guardandoAjuste, setGuardandoAjuste] = useState(false)
@@ -337,6 +363,10 @@ export default function CajaPage() {
     e.preventDefault()
     setErrorAjuste('')
 
+    if (!ajusteTipo) {
+      setErrorAjuste('Dinos qué pasó con esa plata')
+      return
+    }
     const montoNum = Number(ajusteMonto)
     if (!Number.isFinite(montoNum) || montoNum <= 0) {
       setErrorAjuste('Ingresa un monto válido mayor a 0')
@@ -349,8 +379,8 @@ export default function CajaPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          movimiento: 'ajuste',
-          direccion: ajusteDireccion,
+          movimiento: ajusteTipo.movimiento,
+          direccion: ajusteTipo.direccion,
           monto: montoNum,
           descripcion: ajusteDescripcion,
           fecha: fechaSeleccionada,
@@ -2304,33 +2334,38 @@ export default function CajaPage() {
 
           <div>
             <label className="block text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-[0.05em] mb-1.5">
-              Tipo de ajuste
+              ¿Qué pasó con esa plata?
             </label>
+            {/* Cuatro palabras en vez de «Ingreso / Egreso». Ver
+                MOVIMIENTOS_MANUALES: sin esto no había forma de decir «saqué
+                plata del negocio», y Oswaldo acabó registrándolo como gasto. */}
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setAjusteDireccion('ingreso')}
-                className={[
-                  'h-10 rounded-[12px] border text-sm font-semibold transition-all',
-                  ajusteDireccion === 'ingreso'
-                    ? 'bg-[var(--cf-green-pill-bg)] border-[color-mix(in_srgb,var(--cf-green-dark)_35%,transparent)] text-[var(--cf-green-dark)]'
-                    : 'bg-[var(--cf-card)] border-[var(--cf-border)] text-[var(--cf-ink-3)]',
-                ].join(' ')}
-              >
-                Ingreso
-              </button>
-              <button
-                type="button"
-                onClick={() => setAjusteDireccion('egreso')}
-                className={[
-                  'h-10 rounded-[12px] border text-sm font-semibold transition-all',
-                  ajusteDireccion === 'egreso'
-                    ? 'bg-[var(--cf-red-pill-bg)] border-[color-mix(in_srgb,var(--cf-red-dark)_35%,transparent)] text-[var(--cf-red-dark)]'
-                    : 'bg-[var(--cf-card)] border-[var(--cf-border)] text-[var(--cf-ink-3)]',
-                ].join(' ')}
-              >
-                Egreso
-              </button>
+              {MOVIMIENTOS_MANUALES.map((m) => {
+                const puesto = ajusteTipo?.id === m.id
+                const color = m.entra ? 'green' : 'red'
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setAjusteTipo(m)}
+                    className="rounded-[12px] border px-3 py-2 text-left transition-all"
+                    style={{
+                      background: puesto ? `var(--cf-${color}-pill-bg)` : 'var(--cf-card)',
+                      borderColor: puesto
+                        ? `color-mix(in srgb, var(--cf-${color}-dark) 35%, transparent)`
+                        : 'var(--cf-border)',
+                    }}
+                  >
+                    <span className="block text-sm font-semibold"
+                      style={{ color: puesto ? `var(--cf-${color}-dark)` : 'var(--cf-ink)' }}>
+                      {m.rotulo}
+                    </span>
+                    <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                      {m.pista}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
