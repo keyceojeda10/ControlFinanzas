@@ -49,6 +49,23 @@ const ESTADOS = [
   { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
   { value: 'mora',       label: 'En mora',  color: 'var(--cf-red-dark)' },
+  /* ── LOS QUE VENCEN PRONTO ──
+     Pedido por Miguel Ángel (Préstamos Rincón): «los filtros que más se usan
+     son los de próximos a vencer, bien sea en 5 días o 10 días. Esta aplicación
+     no tiene ese filtro, tiene otros pero no son los adecuados».
+
+     ⚠ VAN PEGADOS A «EN MORA», no al final. Los puse primero después de «De
+     hoy» y la captura enseñó por qué está mal: en 412px caben tres chips, así
+     que quedaban en la séptima y octava posición, fuera de pantalla. Un filtro
+     que hay que buscar es un filtro que no se usa — es el mismo argumento que
+     metió aquí a «Perdidos» y «De hoy», y me lo salté.
+
+     Y van aquí porque son la MISMA pregunta que «En mora», del otro lado: una
+     es lo que ya se pasó y la otra lo que todavía se puede evitar. Por eso los
+     nombres van en paralelo —«En mora · En 5 días · En 10 días»— y por eso son
+     cortos: en una fila que se desliza, cada letra empuja al siguiente. */
+  { value: 'vence5',     label: 'En 5 días',  color: 'var(--cf-gold-dark)' },
+  { value: 'vence10',    label: 'En 10 días' },
   // «Renovar»: al dia y por encima del 80% pagado. Lo pide T02-06 como cuarto
   // chip, y es donde esta el crecimiento del negocio — prestarle de nuevo a
   // quien ya casi termino de pagar. No es un estado en la base: lo resuelve el
@@ -78,20 +95,6 @@ const ESTADOS = [
      Con los dos llamándose «Nuevo» serían dos cifras distintas con el mismo
      nombre; con nombres distintos, son dos preguntas distintas. */
   { value: 'nuevos',     label: 'De hoy' },
-  /* ── LOS QUE VENCEN PRONTO ──
-     Pedido por Miguel Ángel (Préstamos Rincón): «los filtros que más se usan
-     son los de próximos a vencer, bien sea en 5 días o 10 días. Esta aplicación
-     no tiene ese filtro, tiene otros pero no son los adecuados».
-
-     Van AQUÍ y no dentro de la hoja, por lo mismo que «Perdidos» y «De hoy»: un
-     filtro que hay que buscar es un filtro que no se usa. Son dos chips y no uno
-     con desplegable porque las dos ventanas que él nombra son las dos que se
-     miran, y un desplegable de dos opciones es un toque de más.
-
-     ⚠ NO traen los que ya están en mora: para eso está el chip de al lado.
-     Vencido no es «por vencer». */
-  { value: 'vence5',     label: 'Vence en 5 días', color: 'var(--cf-gold-dark)' },
-  { value: 'vence10',    label: 'Vence en 10 días' },
   { value: 'completado', label: 'Completados' },
   { value: 'cancelado',  label: 'Cancelados' },
 ]
