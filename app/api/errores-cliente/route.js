@@ -44,6 +44,12 @@ export async function POST(req) {
     digest: corta(body.digest, 60),
     navegador: corta(body.navegador, 200),
     stack: corta(body.stack, 2000),
+    /* ⚠ ESTE ES EL QUE DICE QUIÉN FALLÓ. `stack` viene minificado y son las
+       tripas de React —`at l7`, `at o_`—: ni un nombre nuestro. El árbol de
+       componentes lo pone React y lo manda `CazadorDeErrores`. Sin él, los 25
+       «error #300» de hoy no se pueden atribuir a ninguna pantalla. */
+    componentStack: corta(body.componentStack, 1200),
+    origen: corta(body.origen, 20),
     org: session.user?.organizationId ?? null,
     usuario: session.user?.id ?? null,
   }
