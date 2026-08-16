@@ -18,7 +18,7 @@
 // superiores), así que aquí solo queda el fondo y la lógica de versión.
 
 import { useEffect, useState } from 'react'
-import { NOVEDADES, NOVEDADES_VERSION } from '@/lib/novedades'
+import { NOVEDADES, NOVEDADES_VERSION, novedadVigente } from '@/lib/novedades'
 import { Novedades } from '@/components/pantallas/Cargando'
 
 const LS_KEY = 'cf:novedades:visto'
@@ -30,11 +30,23 @@ export default function NovedadesModal() {
   useEffect(() => {
     try {
       const visto = Number(localStorage.getItem(LS_KEY) || 0)
-      if (NOVEDADES_VERSION > visto) {
-        // pequeño delay para no competir con el render inicial / otros modales
-        const t = setTimeout(() => setAbierto(true), 600)
-        return () => clearTimeout(t)
+      if (NOVEDADES_VERSION <= visto) return
+
+      /* ⚠ Y QUE LA NOVEDAD SIGA SIENDO NUEVA.
+         Antes bastaba con que la versión fuera mayor que la vista, así que la
+         del 18 de julio llevaba un mes abriéndose sola encima del panel — y a
+         quien se registró después le salía como novedad algo que para él era
+         simplemente cómo es la app. Ver `novedadVigente` en lib/novedades.js. */
+      if (!novedadVigente(NOVEDADES[0])) {
+        // Caducada: se da por vista EN SILENCIO. Ni se abre ahora ni se queda
+        // esperando a saltar cuando a alguien se le ocurra limpiar el navegador.
+        localStorage.setItem(LS_KEY, String(NOVEDADES_VERSION))
+        return
       }
+
+      // pequeño delay para no competir con el render inicial / otros modales
+      const t = setTimeout(() => setAbierto(true), 600)
+      return () => clearTimeout(t)
     } catch {}
   }, [])
 
