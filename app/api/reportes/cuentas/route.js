@@ -48,13 +48,26 @@ export async function GET(req) {
     prisma.organization.findUnique({ where: { id: orgId }, select: { nombre: true } }),
   ])
 
+  /* ⚠ LAS QUE NO SE MOVIERON NO SE PINTAN, PERO SE NOMBRAN.
+     En la primera hoja de Rincón salían seis filas y tres iban a cero —y dos se
+     llamaban «Efectivo», porque tiene un método de pago con ese nombre además
+     del efectivo implícito—. En un extracto de MOVIMIENTOS, una fila entera de
+     ceros no dice nada y dos filas con el mismo rótulo hacen dudar de la hoja.
+
+     Esconderlas sin más sería el error contrario: ya me pasó tapando los KPI en
+     cero y el cliente con más cobradores se quedó con la pantalla vacía. Por eso
+     van nombradas abajo: quien busque su cuenta la encuentra, y sabe que el
+     sistema la vio. */
+  const quietas = cuentas.filter((c) => c.entradas === 0 && c.salidas === 0)
+  const movidas = cuentas.filter((c) => c.entradas !== 0 || c.salidas !== 0)
+
   const totales = cuentas.reduce(
     (a, c) => ({ entradas: a.entradas + c.entradas, salidas: a.salidas + c.salidas, neto: a.neto + c.neto }),
     { entradas: 0, salidas: 0, neto: 0 },
   )
 
   if (searchParams.get('formato') !== 'pdf') {
-    return NextResponse.json({ periodo, desde, hasta, cuentas, totales })
+    return NextResponse.json({ periodo, desde, hasta, cuentas, totales, sinMovimiento: quietas.map((c) => c.nombre) })
   }
 
   // ── LA HOJA ───────────────────────────────────────────────────────────────
@@ -76,7 +89,7 @@ export async function GET(req) {
     { rotulo: 'Quedó', valor: fmt(totales.neto), tono: totales.neto >= 0 ? 'bueno' : 'malo' },
   ], y)
 
-  if (!cuentas.length) {
+  if (!movidas.length) {
     /* ⚠ Un extracto en blanco parece un fallo del sistema. Decir por qué está
        vacío es la diferencia entre «no funciona» y «no hubo movimiento». */
     y = doc.nota('No hubo movimientos en este período.', y, { tono: 'acento' })
@@ -92,7 +105,7 @@ export async function GET(req) {
       { clave: 'salidas', titulo: 'Salió', ancho: 2, fuente: 'cifra' },
       { clave: 'neto', titulo: 'Quedó', ancho: 2, fuente: 'cifra' },
     ],
-    filas: cuentas.map((c) => ({
+    filas: movidas.map((c) => ({
       cuenta: c.nombre,
       entradas: fmt(c.entradas),
       salidas: fmt(c.salidas),
@@ -110,7 +123,7 @@ export async function GET(req) {
       { clave: 'gastos', titulo: 'Gastos', ancho: 1.6, fuente: 'cifra' },
       { clave: 'retirado', titulo: 'Sacado', ancho: 1.6, fuente: 'cifra' },
     ],
-    filas: cuentas.map((c) => ({
+    filas: movidas.map((c) => ({
       cuenta: c.nombre,
       recaudado: fmt(c.recaudado),
       inyectado: fmt(c.inyectado),
@@ -122,10 +135,17 @@ export async function GET(req) {
 
   /* La fila «Sin registrar» aparece cuando un movimiento viejo no dice por
      dónde entró. Sin explicarla, se lee como una cuenta que nadie reconoce. */
-  if (cuentas.some((c) => c.tipoCuenta === 'sin_registrar')) {
+  if (movidas.some((c) => c.tipoCuenta === 'sin_registrar')) {
     y = doc.nota(
       '«Sin registrar» son movimientos anotados antes de que el sistema pidiera la cuenta. '
       + 'No están perdidos: solo no se sabe por dónde entraron o salieron.',
+      y,
+    )
+  }
+
+  if (quietas.length) {
+    y = doc.nota(
+      `No tuvieron ningún movimiento en este período: ${quietas.map((c) => c.nombre).join(', ')}.`,
       y,
     )
   }
