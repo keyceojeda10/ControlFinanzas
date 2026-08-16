@@ -65,14 +65,14 @@ function Renglon({ informe, bloqueado }) {
     >
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
             {informe.titulo}
           </span>
           {bloqueado && <Candado />}
         </span>
         {/* Lo que contesta. Envuelve, no se recorta: recortarlo devuelve el
             problema —hay que abrirlo para saber si es el que se buscaba. */}
-        <span style={{ fontSize: 11.5, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>
+        <span style={{ fontSize: 12, lineHeight: 1.35, color: 'var(--cf-ink-3)' }}>
           {bloqueado ? `Con otro plan · ${informe.contesta}` : informe.contesta}
         </span>
       </span>
@@ -103,7 +103,7 @@ export default function IndiceDeInformes({ nivel = 0 }) {
         <h2 style={{ fontSize: 14, fontWeight: 800, color: 'var(--cf-ink)' }}>
           ¿Qué necesitas sacar?
         </h2>
-        <p style={{ fontSize: 11.5, color: 'var(--cf-ink-3)', marginTop: 2 }}>
+        <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 2 }}>
           Todos los informes del negocio, en un solo sitio.
         </p>
       </header>
