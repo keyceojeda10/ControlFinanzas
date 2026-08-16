@@ -2315,11 +2315,12 @@ const MOVIMIENTOS_MANUALES = [
           setErrorAjuste('')
           setAjusteTipo(null)
         }}
-        title="Ajustar saldo general"
+        title="Movimiento de plata"
       >
         <form onSubmit={registrarAjusteCaja} className="space-y-4">
           <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
-            Registra un ajuste de saldo como ingreso o egreso para cuadrar el saldo general.
+            Plata que entra o sale del negocio sin ser un cobro ni un préstamo. También
+            sirve para corregir la caja cuando no cuadra.
           </p>
 
           <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
