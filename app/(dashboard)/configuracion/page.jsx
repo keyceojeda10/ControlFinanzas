@@ -749,6 +749,32 @@ function TabOrganizacion({ bloques, tema, onTema }) {
               las frecuencias: con 0, el moratorio aparece desde el primer día de atraso.
             </p>
           </div>
+          {/* El atajo va AQUÍ, donde se configura, y no en la barra de abajo:
+              se entra a esto desde «acabo de poner la tasa, ¿a quién le toca?».
+              La barra de navegación no se toca. */}
+          <button
+            type="button"
+            onClick={() => router.push('/prestamos/moratorio')}
+            className="w-full flex items-center gap-3 text-left"
+            style={{
+              padding: '12px 14px', borderRadius: 'var(--cf-r-control)',
+              background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
+            }}
+          >
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                Ver a quién le tocaría
+              </span>
+              <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                La lista completa, y aplicarlo de una vez
+              </span>
+            </span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
+              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
           {msgMora && <Alerta tipo={msgMora.tipo}>{msgMora.texto}</Alerta>}
           <Button
             onClick={async () => {
