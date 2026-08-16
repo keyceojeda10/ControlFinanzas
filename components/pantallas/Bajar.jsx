@@ -102,9 +102,49 @@ function Boton({ onClick, ocupado, tono = 'oro', children }) {
   )
 }
 
+/* ── LOS INFORMES CON PERÍODO ────────────────────────────────────────────────
+ *
+ * «Para el contador» y «Movimientos por cuenta», los dos que pidió Rincón. Se
+ * piden por mes, trimestre, semestre o año, así que la tarjeta lleva su selector
+ * DENTRO, encima del botón: es la misma lección de la tarjeta de arriba, donde
+ * los filtros estaban sueltos y había que bajar el PDF para ver qué traía.
+ *
+ * ⚠ Va aquí y no como una tarjeta suelta en la página: si se escribe aparte,
+ *   dentro de dos meses una tendrá el selector arriba y la otra abajo. */
+function InformeConPeriodo({ informe }) {
+  return (
+    <div id={`informe-${informe.id}`} style={{
+      scrollMarginTop: 76,
+      background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+      borderRadius: 'var(--cf-r-card)', overflow: 'hidden',
+      padding: '17px 19px', display: 'flex', flexDirection: 'column', gap: 13,
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Rotulo>{informe.titulo}</Rotulo>
+        <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-2)' }}>
+          {informe.nota}
+        </span>
+      </div>
+
+      <Selector
+        etiqueta="Período"
+        valor={informe.periodo}
+        onCambio={informe.onPeriodo}
+        opciones={informe.periodos}
+      />
+
+      <Boton onClick={informe.onBajar} ocupado={informe.bajando} tono="claro">
+        <IconoBajar color="var(--cf-ink)" /> {informe.bajando ? 'Generando…' : 'Bajar PDF'}
+      </Boton>
+    </div>
+  )
+}
+
 export function BajarInformacion({
   quienDebe,
   comoMeFue,
+  // Los que se piden por período. Ver `InformeConPeriodo`.
+  informes = [],
   datos = [],
   datosTitulo = 'Tus datos en crudo',
   datosNota = 'Excel para el contador o para hacer tus propias cuentas.',
@@ -231,6 +271,8 @@ export function BajarInformacion({
           )}
         </div>
       )}
+
+      {informes.map((i) => <InformeConPeriodo key={i.id} informe={i} />)}
 
       {datos.length > 0 && (
         <div id="informe-crudo" style={{

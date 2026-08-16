@@ -21,6 +21,16 @@ import { formatMoney } from '@/lib/i18n'
 import { nivelReportes } from '@/lib/planes'
 
 /** Primer y último día del mes en curso, que es el período por defecto. */
+/* ⚠ Las claves son las de `PERIODOS_CONTADOR` del servidor, que tiene lista
+   blanca: si aquí se escribe otra, el papel sale del mes por defecto con el
+   título del período que se pidió. */
+const PERIODOS_INFORME = [
+  { valor: 'mes', texto: 'Este mes' },
+  { valor: 'trimestre', texto: 'Últimos 3 meses' },
+  { valor: 'semestre', texto: 'Últimos 6 meses' },
+  { valor: 'anio', texto: 'Últimos 12 meses' },
+]
+
 function mesActual() {
   const hoy = new Date()
   const p = (n) => String(n).padStart(2, '0')
@@ -85,6 +95,11 @@ export default function BajarPage() {
 
   const [rutas, setRutas] = useState([])
   const [conteos, setConteos] = useState(null)
+  /* Los dos que pidió Rincón. Cada uno con SU período: quien baja el del
+     contador por trimestre no quiere que eso le cambie el de las cuentas. */
+  const [periodoContador, setPeriodoContador] = useState('mes')
+  const [periodoCuentas, setPeriodoCuentas] = useState('mes')
+  const [bajandoInforme, setBajandoInforme] = useState('')
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
@@ -274,6 +289,36 @@ export default function BajarPage() {
             setBajandoResumen,
           ),
         }}
+        informes={[
+          {
+            id: 'contador',
+            titulo: 'Para el contador',
+            nota: 'Gastos contra utilidad, y utilidad contra capital recuperado.',
+            periodos: PERIODOS_INFORME,
+            periodo: periodoContador, onPeriodo: setPeriodoContador,
+            bajando: bajandoInforme === 'contador',
+            onBajar: () => conAviso(
+              async () => guardar(await pedirArchivo(
+                `/api/reportes/contador?formato=pdf&periodo=${periodoContador}`,
+                `para-el-contador-${periodoContador}.pdf`, 'application/pdf')),
+              (v) => setBajandoInforme(v ? 'contador' : ''),
+            ),
+          },
+          {
+            id: 'cuentas',
+            titulo: 'Movimientos por cuenta',
+            nota: 'Qué entró y qué salió por cada cuenta y por efectivo.',
+            periodos: PERIODOS_INFORME,
+            periodo: periodoCuentas, onPeriodo: setPeriodoCuentas,
+            bajando: bajandoInforme === 'cuentas',
+            onBajar: () => conAviso(
+              async () => guardar(await pedirArchivo(
+                `/api/reportes/cuentas?formato=pdf&periodo=${periodoCuentas}`,
+                `movimientos-por-cuenta-${periodoCuentas}.pdf`, 'application/pdf')),
+              (v) => setBajandoInforme(v ? 'cuentas' : ''),
+            ),
+          },
+        ]}
         bloqueado={alcanzaElPlan ? null : { plan: 'Básico', href: '/configuracion/plan' }}
         datos={[
           /* ── LA CUENTA COMPLETA VA PRIMERA ──────────────────────────────
