@@ -147,11 +147,30 @@ export default function PantallaDeInforme() {
    * Se enseñan las primeras y se dice cuántas faltan, con `PieTabla`, que es la
    * pieza que la app ya usa para esto. El PDF y el Excel siguen bajando TODAS:
    * el tope es de la pantalla, no del informe. */
-  const TOPE_EN_PANTALLA = 50
-  const filasVisibles = useMemo(
-    () => (verTodas ? (vista?.tabla.filas ?? []) : (vista?.tabla.filas ?? []).slice(0, TOPE_EN_PANTALLA)),
-    [vista, verTodas],
+  /* ⚠ Y EL TOPE DEL MÓVIL SE MIDE EN CELDAS, NO EN FILAS.
+   *
+   * Cortar a 50 filas no bastó: en el teléfono cada fila es una FICHA con un
+   * renglón por columna, así que 50 × 24 seguían dando 33.419px. En PC la misma
+   * fila ocupa una línea y 50 caben de sobra.
+   *
+   * Por eso son dos cortes distintos: la tabla de PC va por filas y las fichas
+   * del móvil por celdas. Un informe de tres columnas sigue enseñando cincuenta;
+   * uno de veinticuatro enseña diez, que es lo que cabe leer. */
+  const TOPE_FILAS_PC = 50
+  const TOPE_CELDAS_MOVIL = 240
+  // En su propio `useMemo`: si no, cambia de identidad en cada render y los
+  // dos de abajo se recalculan siempre (lo avisa el linter).
+  const todas = useMemo(() => vista?.tabla.filas ?? [], [vista])
+  const nCols = Math.max(1, vista?.tabla.columnas.length ?? 1)
+  const filasPC = useMemo(
+    () => (verTodas ? todas : todas.slice(0, TOPE_FILAS_PC)),
+    [todas, verTodas],
   )
+  const filasMovil = useMemo(() => {
+    if (verTodas) return todas
+    const cabe = Math.min(TOPE_FILAS_PC, Math.max(5, Math.floor(TOPE_CELDAS_MOVIL / nCols)))
+    return todas.slice(0, cabe)
+  }, [todas, nCols, verTodas])
 
   const bajar = async (formato) => {
     if (!informe) return
@@ -296,7 +315,7 @@ export default function PantallaDeInforme() {
                   titulo: c.rotulo,
                   cifra: c.alinear === 'der',
                 }))}
-                filas={filasVisibles.map((f) => {
+                filas={filasPC.map((f) => {
                   const salida = {}
                   for (const c of vista.tabla.columnas) {
                     const v = f[c.clave]
@@ -307,10 +326,10 @@ export default function PantallaDeInforme() {
                   return salida
                 })}
               />
-              {vista.tabla.filas.length > filasVisibles.length && (
+              {todas.length > filasPC.length && (
                 <PieTabla
-                  visibles={filasVisibles.length}
-                  deTotal={vista.tabla.filas.length}
+                  visibles={filasPC.length}
+                  deTotal={todas.length}
                   onVerTodos={() => setVerTodas(true)}
                 />
               )}
@@ -324,7 +343,7 @@ export default function PantallaDeInforme() {
                 captura; en el JSX la tabla parece correcta. */}
             <div className="lg:hidden">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
-              {filasVisibles.map((f, i) => {
+              {filasMovil.map((f, i) => {
                 const [primera, ...resto] = vista.tabla.columnas
                 return (
                   <Tarjeta key={i} style={{ padding: '13px 15px' }}>
@@ -347,11 +366,11 @@ export default function PantallaDeInforme() {
                   </Tarjeta>
                 )
               })}
-              {vista.tabla.filas.length > filasVisibles.length && (
+              {todas.length > filasMovil.length && (
                 <Tarjeta style={{ padding: 0 }}>
                   <PieTabla
-                    visibles={filasVisibles.length}
-                    deTotal={vista.tabla.filas.length}
+                    visibles={filasMovil.length}
+                    deTotal={todas.length}
                     onVerTodos={() => setVerTodas(true)}
                   />
                 </Tarjeta>
