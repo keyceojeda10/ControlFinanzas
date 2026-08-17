@@ -30,6 +30,7 @@ import { formatMoney } from '@/lib/i18n'
 import { nivelReportes } from '@/lib/planes'
 import { buscarInforme, informeBloqueado, PERIODOS } from '@/lib/reportes/catalogo'
 import { vistaDe } from '@/lib/reportes/vistas'
+import { soloDePantalla } from '@/lib/reportes/columnas-crudas'
 import { Tarjeta, FilaTarjeta, TiraCifras, Chip, BotonPrimario, BotonSecundario, EstadoVacio } from '@/components/cf/primitivos'
 import { Tabla, PieTabla, PilaEsqueletos } from '@/components/cf/primitivos2'
 
@@ -161,7 +162,11 @@ export default function PantallaDeInforme() {
   // En su propio `useMemo`: si no, cambia de identidad en cada render y los
   // dos de abajo se recalculan siempre (lo avisa el linter).
   const todas = useMemo(() => vista?.tabla.filas ?? [], [vista])
-  const nCols = Math.max(1, vista?.tabla.columnas.length ?? 1)
+  /* Las que caben. En los informes normales no quita ninguna; en los volcados
+     deja fuera las que harían ilegible la tabla — el Excel se las lleva. */
+  const columnas = useMemo(() => soloDePantalla(vista?.tabla.columnas ?? []), [vista])
+  const ocultas = (vista?.tabla.columnas.length ?? 0) - columnas.length
+  const nCols = Math.max(1, columnas.length)
   const filasPC = useMemo(
     () => (verTodas ? todas : todas.slice(0, TOPE_FILAS_PC)),
     [todas, verTodas],
@@ -310,14 +315,14 @@ export default function PantallaDeInforme() {
                 /* `titulo` y `cifra`, que es como los llama `Tabla`. Con
                    `rotulo`/`alinear` la cabecera salía vacía y todo a la
                    izquierda: se ve en la pantalla, no en el JSX. */
-                columnas={vista.tabla.columnas.map((c) => ({
+                columnas={columnas.map((c) => ({
                   clave: c.clave,
                   titulo: c.rotulo,
                   cifra: c.alinear === 'der',
                 }))}
                 filas={filasPC.map((f) => {
                   const salida = {}
-                  for (const c of vista.tabla.columnas) {
+                  for (const c of columnas) {
                     const v = f[c.clave]
                     salida[c.clave] = c.tipo === 'dinero' ? formatMoney(Math.round(Number(v) || 0), pais)
                       : c.tipo === 'pct' ? `${v ?? 0}%`
@@ -344,7 +349,7 @@ export default function PantallaDeInforme() {
             <div className="lg:hidden">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
               {filasMovil.map((f, i) => {
-                const [primera, ...resto] = vista.tabla.columnas
+                const [primera, ...resto] = columnas
                 return (
                   <Tarjeta key={i} style={{ padding: '13px 15px' }}>
                     <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)', marginBottom: 8 }}>
@@ -421,6 +426,8 @@ export default function PantallaDeInforme() {
         </div>
         <p style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 8, lineHeight: 1.5 }}>
           Baja exactamente lo que estás viendo arriba, con el filtro que elegiste.
+          {/* Decirlo, o parecería que el archivo trae menos de lo que trae. */}
+          {ocultas > 0 && ` El Excel trae además otras ${ocultas} columnas que aquí no caben.`}
         </p>
       </Tarjeta>
     </div>

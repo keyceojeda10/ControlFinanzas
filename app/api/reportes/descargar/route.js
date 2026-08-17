@@ -28,6 +28,7 @@ import { prisma } from '@/lib/prisma'
 import { buscarInforme } from '@/lib/reportes/catalogo'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { vistaDe } from '@/lib/reportes/vistas'
+import { soloDePantalla } from '@/lib/reportes/columnas-crudas'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 import { formatMoney, formatFechaCorta } from '@/lib/i18n'
 import * as XLSX from 'xlsx'
@@ -157,13 +158,16 @@ function aPdf({ informe, vista, negocio, pais, rotuloPeriodo }) {
   if (vista.tabla.filas.length) {
     y = doc.seccion('El detalle', y)
     y = doc.tabla({
-      columnas: vista.tabla.columnas.map((c) => ({
+      /* ⚠ EL MISMO CORTE QUE LA PANTALLA. «Cartera completa» son 24 columnas y
+         en una hoja carta salen a 30 puntos cada una: todo recortado. El Excel
+         de abajo SÍ se las lleva todas — ahí sí caben. */
+      columnas: soloDePantalla(vista.tabla.columnas).map((c) => ({
         clave: c.clave, rotulo: c.rotulo, ancho: c.ancho,
         alinear: c.alinear === 'der' ? 'right' : 'left',
       })),
       filas: vista.tabla.filas.map((f) => {
         const salida = {}
-        for (const c of vista.tabla.columnas) salida[c.clave] = celda(f[c.clave], c.tipo, { dinero, pais })
+        for (const c of soloDePantalla(vista.tabla.columnas)) salida[c.clave] = celda(f[c.clave], c.tipo, { dinero, pais })
         return salida
       }),
     }, y)
