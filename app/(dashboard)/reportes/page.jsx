@@ -4,7 +4,6 @@
 import { formatMoney } from '@/lib/i18n'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { Card }                from '@/components/ui/Card'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -87,7 +86,6 @@ export default function ReportesPage() {
   useCabecera({ titulo: 'Reportes', subtitulo: 'Análisis de tu cartera y cobradores' })
 
   const { session, esOwner, loading: authLoading } = useAuth()
-  const router = useRouter()
 
     const plan = session?.user?.plan ?? 'starter'
 
@@ -676,44 +674,16 @@ export default function ReportesPage() {
         </div>
       )}
 
-      {/* ── BAJAR INFORMACIÓN · T33-02 ─────────────────────────
-          Aquí vivían TRES tarjetas de descarga —el listado «quién me debe», el
-          resumen en PDF y los cuatro Excel—, 193 líneas al final de una página
-          de 3.700 píxeles. Después de todo el scroll, y con los filtros del
-          listado sueltos y sin resultado a la vista: se elegía ruta, orden y
-          mora sin saber cuántos clientes iban a salir, así que se bajaba el PDF
-          para ver qué traía y, si no era eso, otra vez.
+      {/* ⚠ AQUÍ HABÍA UN BOTÓN A `/reportes/bajar`, Y SE FUE CON ELLA.
+          «Si esos reportes de bajar van a quedar diferentes a todos los
+          reportes que hicimos, hay que unificarlos también» — el dueño, 16 ago
+          2026. Sus cinco descargas son ahora informes normales del índice de
+          arriba: Cartera completa, Clientes, Pagos uno por uno, Ficha de
+          cobradores y Todo en bruto. Cada uno con su pantalla, su filtro y sus
+          dos formatos, como el resto.
 
-          Ahora son su propia pantalla, con los filtros dentro de la tarjeta,
-          encima del botón y con la cuenta hecha. Bajar un Excel para el
-          contador no es «mirar cómo va el negocio»: es otra tarea. */}
-      <button
-        type="button"
-        onClick={() => router.push('/reportes/bajar')}
-        className="w-full rounded-[20px] px-4 py-4 cf-card-shadow flex items-center gap-3 text-left"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-      >
-        <span className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
-          style={{ background: 'var(--cf-fill)' }}>
-          <svg className="w-[18px] h-[18px]" fill="none" stroke="var(--cf-ink-2)" strokeWidth={2}
-            strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <path d="M12 4v11M8 12l4 4 4-4M5 20h14" />
-          </svg>
-        </span>
-        <span className="flex-1 min-w-0">
-          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>
-            Bajar información
-          </span>
-          <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
-            Quién me debe, cómo me fue y tus datos en Excel
-          </span>
-        </span>
-        <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" strokeWidth={2.2}
-          strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <path d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+          No se deja un botón apuntando al índice: sería un renglón que lleva al
+          sitio donde ya estás. */}
     </div>
   )
 }
-

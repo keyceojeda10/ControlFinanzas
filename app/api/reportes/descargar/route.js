@@ -47,6 +47,9 @@ import { GET as verSeguros } from '@/app/api/reportes/seguros/route'
 // Este no vive bajo `reportes/`: es la pantalla de analíticas. Se me olvidó y
 // «Cómo rindió el negocio» era el único de los diez que no bajaba.
 import { GET as verRendimiento } from '@/app/api/dashboard/analiticas/route'
+/* Los cuatro volcados comparten API: se distinguen por el `tipo`, que ya viene
+   dentro de `informe.ver`. Antes eran los cinco Excel de `/reportes/bajar`. */
+import { GET as verDatos } from '@/app/api/reportes/datos/route'
 
 const HANDLERS = {
   entro: verIngresos,
@@ -59,6 +62,10 @@ const HANDLERS = {
   cobradores: verCobradores,
   seguros: verSeguros,
   rendimiento: verRendimiento,
+  cartera: verDatos,
+  'volcado-clientes': verDatos,
+  'volcado-pagos': verDatos,
+  'volcado-cobradores': verDatos,
 }
 
 /** Los parámetros de filtro que se pasan tal cual al API del informe. */

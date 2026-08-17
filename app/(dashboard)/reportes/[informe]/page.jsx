@@ -115,7 +115,11 @@ export default function PantallaDeInforme() {
     setCargando(true); setError('')
     try {
       const qs = parametrosDe(informe, periodo, { fecha })
-      const res = await fetch(`${informe.ver}${qs.toString() ? `?${qs}` : ''}`)
+      /* ⚠ `ver` PUEDE TRAER YA SU PROPIA CONSULTA. Los cuatro volcados comparten
+         API y se distinguen por `?tipo=`, así que pegar «?periodo=…» detrás daba
+         `datos?tipo=pagos?desde=…`: un segundo `?` que el servidor lee como
+         parte del valor. La rama de descarga ya lo hacía bien; esta no. */
+      const res = await fetch(`${informe.ver}${qs.toString() ? `${informe.ver.includes('?') ? '&' : '?'}${qs}` : ''}`)
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error || 'No se pudo armar el informe')
