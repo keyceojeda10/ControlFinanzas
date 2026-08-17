@@ -306,7 +306,13 @@ export function Tabla({ columnas = [], filas = [], total, subtotales, pie, alto,
       {/* Cabecera */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        height: 42, padding: '0 24px', flex: 'none',
+        /* Con encabezados que bajan de renglón la altura fija los recortaría por
+           abajo: pasa a mínima. Sin columnas que envuelvan queda igual que
+           siempre, en 42. */
+        ...(columnas.some((c) => c.envuelve)
+          ? { minHeight: 42, paddingTop: 8, paddingBottom: 8 }
+          : { height: 42 }),
+        padding: '0 24px', flex: 'none',
         background: 'var(--cf-fill)',
         borderTop: '1px solid var(--cf-border)',
         borderBottom: '1px solid var(--cf-border)',
@@ -317,7 +323,11 @@ export function Tabla({ columnas = [], filas = [], total, subtotales, pie, alto,
             fontSize: 11, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase',
             color: 'var(--cf-ink-3)',
             textAlign: c.cifra ? 'right' : 'left',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            /* «MONTO PRES…» no dice qué columna es. El encabezado sigue la misma
+               regla que su columna: si ella baja de renglón, él también. */
+            ...(c.envuelve
+              ? { whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25 }
+              : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
           }}>{c.titulo}</span>
         ))}
       </div>

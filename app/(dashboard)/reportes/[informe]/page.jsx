@@ -323,7 +323,9 @@ export default function PantallaDeInforme() {
                      que llevan nombres y direcciones, y esta app no recorta lo
                      que identifica a una persona. Las cifras y las fechas no lo
                      necesitan — son cortas y así la fila no crece de balde. */
-                  envuelve: c.tipo === 'texto',
+                  // Los textos por su contenido; las cifras por su ROTULO, que es
+                  // el que salía como «MONTO PRES…».
+                  envuelve: c.tipo === 'texto' || c.rotulo.length > 10,
                 }))}
                 filas={filasPC.map((f) => {
                   const salida = {}
