@@ -31,7 +31,7 @@ import { nivelReportes } from '@/lib/planes'
 import { buscarInforme, informeBloqueado, PERIODOS } from '@/lib/reportes/catalogo'
 import { vistaDe } from '@/lib/reportes/vistas'
 import { Tarjeta, FilaTarjeta, TiraCifras, Chip, BotonPrimario, BotonSecundario, EstadoVacio } from '@/components/cf/primitivos'
-import { Tabla, PilaEsqueletos } from '@/components/cf/primitivos2'
+import { Tabla, PieTabla, PilaEsqueletos } from '@/components/cf/primitivos2'
 
 /* El día de Colombia, no el del navegador: un cobrador en otro huso vería otro
    «hoy» que el servidor. Mismo criterio que el resto de la app. */
@@ -109,6 +109,7 @@ export default function PantallaDeInforme() {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
   const [bajando, setBajando] = useState(null)
+  const [verTodas, setVerTodas] = useState(false)
 
   const cargar = useCallback(async () => {
     if (!informe?.ver || bloqueado) return
@@ -135,6 +136,22 @@ export default function PantallaDeInforme() {
   useEffect(() => { cargar() }, [cargar])
 
   const vista = useMemo(() => (crudo ? vistaDe(String(id), crudo) : null), [crudo, id])
+
+  /* ⚠ LA PANTALLA SE CORTA; LA DESCARGA NO.
+   *
+   * «Cartera completa» son 24 columnas y en un negocio real 77 filas: sin tope,
+   * el móvil salía de **51.103 píxeles** —una ficha por fila con 24 renglones
+   * cada una— y ni siquiera llegaba a pintar el botón de bajar. Ya pasó antes
+   * con una lista de 36.000px.
+   *
+   * Se enseñan las primeras y se dice cuántas faltan, con `PieTabla`, que es la
+   * pieza que la app ya usa para esto. El PDF y el Excel siguen bajando TODAS:
+   * el tope es de la pantalla, no del informe. */
+  const TOPE_EN_PANTALLA = 50
+  const filasVisibles = useMemo(
+    () => (verTodas ? (vista?.tabla.filas ?? []) : (vista?.tabla.filas ?? []).slice(0, TOPE_EN_PANTALLA)),
+    [vista, verTodas],
+  )
 
   const bajar = async (formato) => {
     if (!informe) return
@@ -279,7 +296,7 @@ export default function PantallaDeInforme() {
                   titulo: c.rotulo,
                   cifra: c.alinear === 'der',
                 }))}
-                filas={vista.tabla.filas.map((f) => {
+                filas={filasVisibles.map((f) => {
                   const salida = {}
                   for (const c of vista.tabla.columnas) {
                     const v = f[c.clave]
@@ -290,6 +307,13 @@ export default function PantallaDeInforme() {
                   return salida
                 })}
               />
+              {vista.tabla.filas.length > filasVisibles.length && (
+                <PieTabla
+                  visibles={filasVisibles.length}
+                  deTotal={vista.tabla.filas.length}
+                  onVerTodos={() => setVerTodas(true)}
+                />
+              )}
             </Tarjeta>
             </div>
 
@@ -300,7 +324,7 @@ export default function PantallaDeInforme() {
                 captura; en el JSX la tabla parece correcta. */}
             <div className="lg:hidden">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)' }}>
-              {vista.tabla.filas.map((f, i) => {
+              {filasVisibles.map((f, i) => {
                 const [primera, ...resto] = vista.tabla.columnas
                 return (
                   <Tarjeta key={i} style={{ padding: '13px 15px' }}>
@@ -323,6 +347,15 @@ export default function PantallaDeInforme() {
                   </Tarjeta>
                 )
               })}
+              {vista.tabla.filas.length > filasVisibles.length && (
+                <Tarjeta style={{ padding: 0 }}>
+                  <PieTabla
+                    visibles={filasVisibles.length}
+                    deTotal={vista.tabla.filas.length}
+                    onVerTodos={() => setVerTodas(true)}
+                  />
+                </Tarjeta>
+              )}
             </div>
             </div>
             </>
