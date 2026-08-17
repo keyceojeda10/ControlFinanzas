@@ -350,7 +350,11 @@ export function Tabla({ columnas = [], filas = [], total, subtotales, pie, alto,
             <div key={f.id ?? `${idt}-${g}-${i}`}
               onClick={f.onClick}
               style={{
-                display: 'flex', alignItems: 'center', gap: 14,
+                display: 'flex',
+                // Con una celda que baja de renglón, `center` deja las cifras
+                // flotando a media altura del nombre: se alinean arriba.
+                alignItems: columnas.some((c) => c.envuelve) ? 'flex-start' : 'center',
+                gap: 14,
                 // `flex: none` — la receta lo marca explícito: «nunca flex:1».
                 // Con altura fija en la tabla, unas filas flexibles se reparten
                 // el sobrante y todas dejan de medir lo mismo.
@@ -372,7 +376,19 @@ export function Tabla({ columnas = [], filas = [], total, subtotales, pie, alto,
                   // Cuando la celda mezcla barra y número, la receta pide 18px
                   // de separación para que el número no toque la barra.
                   ...(c.barra ? { paddingLeft: 18 } : null),
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  /* ⚠ `envuelve` ES LA EXCEPCIÓN DE LA REGLA DE IDENTIDAD.
+                     Lo que identifica a una persona —su nombre, su dirección,
+                     su cédula— NUNCA lleva puntos suspensivos: baja de renglón.
+                     En la tabla de la cartera salían «Carlos Arte…» y «Carlos
+                     chap…», y con varios Carlos eso es no saber de quién se
+                     habla. La regla está escrita en el proyecto; aquí faltaba
+                     la forma de cumplirla.
+                     Va como opción, no por defecto: las columnas de cifras
+                     siguen sin envolverse, que es lo que mantiene la fila de
+                     una sola línea donde no hace falta. */
+                  ...(c.envuelve
+                    ? { whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.3, paddingTop: 8, paddingBottom: 8 }
+                    : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
                 }}>{f[c.clave]}</span>
               ))}
             </div>

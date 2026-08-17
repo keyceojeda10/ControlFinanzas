@@ -319,6 +319,11 @@ export default function PantallaDeInforme() {
                   clave: c.clave,
                   titulo: c.rotulo,
                   cifra: c.alinear === 'der',
+                  /* Los textos bajan de renglón en vez de recortarse: son los
+                     que llevan nombres y direcciones, y esta app no recorta lo
+                     que identifica a una persona. Las cifras y las fechas no lo
+                     necesitan — son cortas y así la fila no crece de balde. */
+                  envuelve: c.tipo === 'texto',
                 }))}
                 filas={filasPC.map((f) => {
                   const salida = {}
