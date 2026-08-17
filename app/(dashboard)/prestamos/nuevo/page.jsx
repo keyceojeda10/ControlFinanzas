@@ -13,7 +13,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
-import ResumenCalculo                              from '@/components/prestamos/ResumenCalculo'
+import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
 import CuotasExtraEditor                           from '@/components/prestamos/CuotasExtraEditor'
@@ -647,6 +647,7 @@ function NuevoPrestamo() {
     const t = setTimeout(() => setAvisoCuotaVisible(true), 900)
     return () => clearTimeout(t)
   }, [cuotaInsuficiente, cuotaManual])
+
 
   // ── UNA SOLA COMPROBACION, NO CINCO ──
   //
@@ -1632,6 +1633,7 @@ function NuevoPrestamo() {
                       </p>
                     </div>
                   )}
+
                 </div>
               )}
             </div>
@@ -1845,6 +1847,15 @@ function NuevoPrestamo() {
                           </p>
                         </div>
                       )}
+
+                      {/* Va junto al del plazo extendido a proposito: los dos
+                          cuentan una consecuencia de lo que uno escribio, no un
+                          error. Ver components/prestamos/AvisoUltimaCuota. */}
+                      <AvisoUltimaCuota
+                        calculo={calculo}
+                        onCuota={(v) => setCuotaManual(String(v))}
+                        onPlazo={(n) => setPlazoUnidades(String(n))}
+                      />
 
                       {/* Info calculada — read only */}
                       <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}>

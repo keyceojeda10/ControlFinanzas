@@ -341,7 +341,12 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
           )}
         </div>
 
-        <ResumenCalculo calculo={calculo} visible={!!calculo} />
+        <ResumenCalculo
+          calculo={calculo}
+          visible={!!calculo}
+          onCuotaQueCuadra={(v) => setCuotaManual(String(v))}
+          onPlazoQueCuadra={(nn) => setPlazoUnidades(String(nn))}
+        />
 
         {!calculo && (
           <div className="flex items-start gap-2 px-3 py-2.5 rounded-[10px]"

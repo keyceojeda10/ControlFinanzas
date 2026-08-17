@@ -8,7 +8,7 @@ import { Modal }   from '@/components/ui/Modal'
 import { Button }  from '@/components/ui/Button'
 import { Input }   from '@/components/ui/Input'
 import MoneyInput  from '@/components/ui/MoneyInput'
-import ResumenCalculo    from '@/components/prestamos/ResumenCalculo'
+import AvisoUltimaCuota  from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import CuotasExtraEditor   from '@/components/prestamos/CuotasExtraEditor'
 import { calcularPrestamo } from '@/lib/calculos'
@@ -365,6 +365,13 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
                 </p>
               </div>
             </div>
+            {/* Corregir un prestamo a saldo es justo donde se topa uno con la
+                ultima cuota descuadrada. Ver AvisoUltimaCuota. */}
+            <AvisoUltimaCuota
+              calculo={resumen}
+              onCuota={(v) => setCuotaManual(String(v))}
+              onPlazo={(n) => setPeriodos(String(n))}
+            />
           </div>
         )}
 

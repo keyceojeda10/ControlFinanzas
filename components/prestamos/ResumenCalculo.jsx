@@ -2,6 +2,7 @@
 
 import { formatMoney } from '@/lib/i18n'
 import TablaAmortizacion from './TablaAmortizacion'
+import AvisoUltimaCuota from './AvisoUltimaCuota'
 
 const fmt = (v) => formatMoney(v)
 
@@ -12,7 +13,7 @@ const fmtFecha = (d) => {
   })
 }
 
-export default function ResumenCalculo({ calculo, visible = true }) {
+export default function ResumenCalculo({ calculo, visible = true, onCuotaQueCuadra, onPlazoQueCuadra }) {
     if (!visible) return null
 
   const { totalAPagar, cuotaDiaria, ultimaCuota, totalInteres, fechaFin, frecuencia, numPeriodos, modoInteres } = calculo ?? {}
@@ -35,7 +36,11 @@ export default function ResumenCalculo({ calculo, visible = true }) {
     mensual:   'Cuota mensual',
   }[frecuencia] ?? 'Cuota'
 
-  const tieneUltimaCuotaDiferente = ultimaCuota && cuotaDiaria && ultimaCuota !== cuotaDiaria && numPeriodos > 1
+  /* Cuando la diferencia es la normal —unos pesos de redondeo— basta la linea
+     gris. Cuando esta desencajada, lo cuenta el aviso de abajo con las cifras y
+     las salidas: repetirlo aqui en 10px seria decirlo dos veces y mal. */
+  const tieneUltimaCuotaDiferente = ultimaCuota && cuotaDiaria && ultimaCuota !== cuotaDiaria
+    && numPeriodos > 1 && !calculo?.ultimaDesencajada
 
   const items = [
     { label: 'Total a pagar',  value: fmt(totalAPagar),  accent: 'var(--cf-gold)' },
@@ -75,6 +80,7 @@ export default function ResumenCalculo({ calculo, visible = true }) {
           </div>
         ))}
       </div>
+      <AvisoUltimaCuota calculo={calculo} onCuota={onCuotaQueCuadra} onPlazo={onPlazoQueCuadra} />
       {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(modoInteres) && (
         <TablaAmortizacion tabla={calculo?.tablaAmortizacion} frecuencia={frecuencia} />
       )}
