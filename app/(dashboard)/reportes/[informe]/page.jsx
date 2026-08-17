@@ -150,7 +150,17 @@ export default function PantallaDeInforme() {
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `${informe.id}-${periodo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`
+      /* ⚠ LA EXTENSIÓN SALE DE LO QUE LLEGÓ, NO DE LO QUE SE PIDIÓ.
+         Antes se ponía `.pdf` salvo que el botón dijera Excel, y «Todo en
+         bruto» —que baja por su propia ruta y siempre da un xlsx— se guardaba
+         como `.pdf`: un archivo que no abre en ningún programa. Se mira el
+         tipo de la respuesta, que es lo único que no puede mentir. */
+      const tipo = res.headers.get('content-type') ?? ''
+      const ext = tipo.includes('spreadsheet') || tipo.includes('excel') ? 'xlsx'
+        : tipo.includes('pdf') ? 'pdf'
+        : tipo.includes('csv') ? 'csv'
+        : (formato === 'excel' ? 'xlsx' : 'pdf')
+      a.download = `${informe.id}-${periodo}.${ext}`
       a.click()
       URL.revokeObjectURL(a.href)
     } catch (e) {
@@ -333,8 +343,19 @@ export default function PantallaDeInforme() {
           Bajar este informe
         </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <BotonPrimario onClick={() => bajar('pdf')} disabled={!!bajando} style={{ flex: '1 1 140px' }}>
-            {bajando === 'pdf' ? 'Armando…' : 'PDF'}
+          {/* Los que bajan por su propia ruta tienen UN formato y lo declaran:
+              poner «PDF» en el botón del volcado en bruto era prometer un papel
+              y entregar una hoja de cálculo. */}
+          <BotonPrimario
+            onClick={() => bajar(informe.formatoPropio ?? 'pdf')}
+            disabled={!!bajando}
+            style={{ flex: '1 1 140px' }}
+          >
+            {/* `bajando` a secas ponía «Armando…» en ESTE botón mientras se
+                armaba el Excel del de al lado. */}
+            {bajando === (informe.formatoPropio ?? 'pdf')
+              ? 'Armando…'
+              : (informe.formatoPropio === 'excel' ? 'Excel' : 'PDF')}
           </BotonPrimario>
           {informe.ver && (
             <BotonSecundario onClick={() => bajar('excel')} disabled={!!bajando} style={{ flex: '1 1 140px' }}>
