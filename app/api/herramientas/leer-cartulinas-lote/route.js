@@ -131,7 +131,7 @@ export async function POST(req) {
         /* 2000px y 4096 tokens: una hoja de cuaderno con treinta renglones no
            cabe en los 1600/1024 de una cartulina suelta — los números de la
            última columna se pierden y la respuesta se corta a la mitad. */
-        const json = await procesarImagen(buffer, mime, PROMPT_LOTE, { lado: 2000, maxTokens: 4096 })
+        const json = await procesarImagen(buffer, mime, PROMPT_LOTE, { lado: 2000, maxTokens: 12288 })
         // El modelo a veces devuelve el array pelado en vez del objeto.
         const lista = Array.isArray(json) ? json : (json?.clientes ?? [])
         const tipo = Array.isArray(json) ? (lista.length > 1 ? 'lista' : 'cartulina') : (json?.tipo ?? 'cartulina')
