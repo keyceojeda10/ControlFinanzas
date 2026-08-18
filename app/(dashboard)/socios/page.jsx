@@ -144,7 +144,10 @@ export default function SociosPage() {
   ]
 
   return (
-    <div style={{ height: '100%', minHeight: 0 }}>
+    /* Sin `height: 100%`: el propio componente lleva escrito que acotarlo al
+       alto de la ventana es lo que obligaba a la caja de dentro a deslizarse
+       por su cuenta. Crece con su contenido. */
+    <div>
       <ListaSocios
         cabecera={cabeceraSocios(socios)}
         puesto={puesto}
@@ -162,15 +165,21 @@ export default function SociosPage() {
         ))}
         onSocio={(s) => router.push(`/socios/${s.id}`)}
         onNuevo={() => router.push('/socios/nuevo')}
+        /* ⚠ ENTRE LAS CIFRAS Y LA LISTA, no al final.
+           Decía aquí que iba debajo «porque el listado es corto y una caja por
+           delante empuja lo que se viene a mirar». Lo que se viene a mirar es
+           el bloque oscuro con lo que pusieron, y ese sigue primero: lo que se
+           empuja es la lista.
+           Con un socio la pantalla mide media ventana y la caja quedaba colgada
+           al fondo con 170px de nada debajo — «sale prácticamente abajo del
+           todo», 18 de agosto. */
+        antesDeLaLista={
+          <div style={{ padding: '2px 0 0' }}>
+            <RegistrarAcciones clave="socios" acciones={accionesSocios} />
+            <QueNecesitas ejemplos={['agregar un socio']} />
+          </div>
+        }
       />
-
-      {/* Debajo de la lista, no encima: el listado de socios es corto -tres o
-          cuatro nombres- y meter una caja de búsqueda por delante del título
-          empuja hacia abajo lo único que se viene a mirar aquí. */}
-      <div style={{ padding: '4px 16px 20px' }}>
-        <RegistrarAcciones clave="socios" acciones={accionesSocios} />
-        <QueNecesitas ejemplos={['agregar un socio']} />
-      </div>
     </div>
   )
 }

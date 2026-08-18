@@ -255,6 +255,16 @@ export function ListaSocios({
   cabecera, onAtras, onNuevo,
   puesto, tuParte, pendiente, onRepartir,
   sociosTitulo, socios = [], onSocio,
+  /* ⚠ EL BUSCADOR VA AQUÍ, NO AL FINAL. Reportado el 18 de agosto: «sale
+     prácticamente abajo del todo». Con un socio la pantalla mide media
+     ventana, así que la caja de «¿qué necesitas hacer aquí?» quedaba colgada
+     al fondo, sola, con 170px de nada debajo.
+
+     Y no es solo que se viera mal: la lista de socios CRECE, así que un punto
+     de entrada puesto detrás de ella se aleja un poco más con cada socio que
+     se agrega. Va entre las cifras —lo que uno viene a mirar, que sigue
+     primero— y la lista. */
+  antesDeLaLista,
 }) {
   return (
     // Sin `height: 100%`: acotaba la pantalla al alto de la ventana, que es lo
@@ -324,6 +334,8 @@ export function ListaSocios({
         {puesto && <LoQuePusieron {...puesto} />}
         {tuParte && <TuParte {...tuParte} />}
         {pendiente && <GananciaSinRepartir {...pendiente} onRepartir={onRepartir} />}
+
+        {antesDeLaLista}
 
         {socios.length > 0 && (
           <>
