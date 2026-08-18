@@ -1211,8 +1211,23 @@ model Sugerencia {
   archivos       String?  @db.Text // JSON: rutas dentro del almacén, fuera de la web
   createdAt      DateTime @default(now())
 
+  /// ── QUÉ SE HIZO CON ELLA ──────────────────────────────────────────────────
+  /// El banner trajo 7 sugerencias de 4 negocios en tres días y ninguna tenía
+  /// dónde anotarse: la tabla solo guardaba lo que escribieron. Sin esto, saber
+  /// cuáles quedaban por atender era volver a leerlas todas y acordarse — y la
+  /// primera tanda se estuvo tres días sin contestar por eso.
+  ///
+  /// `nueva` sin tocar · `vista` leída · `hecha` construida o ya existía ·
+  /// `descartada` no se va a hacer. Va como texto y no como enum de Prisma a
+  /// propósito: un enum obliga a migrar la base para añadir un estado, y este
+  /// campo lo va a leer una persona, no una regla de negocio.
+  estado         String   @default("nueva")
+  respuesta      String?  @db.Text // lo que se le contestó, para no repetirse
+  respondidaEn   DateTime?
+
   @@index([organizationId])
   @@index([createdAt])
+  @@index([estado])
 }
 
 /// ══ EL LIBRO DE PAGOS DEL SAAS ══════════════════════════════════════════════

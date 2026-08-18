@@ -45,6 +45,9 @@ export async function GET(request) {
       fuente: f.fuente,
       rol: f.rol,
       createdAt: f.createdAt,
+      estado: f.estado,
+      respuesta: f.respuesta,
+      respondidaEn: f.respondidaEn,
       negocio: porOrg[f.organizationId]?.nombre ?? '(negocio borrado)',
       plan: porOrg[f.organizationId]?.plan ?? null,
       persona: porUsuario[f.userId] ?? '(usuario borrado)',
@@ -58,5 +61,45 @@ export async function GET(request) {
     negocios: orgIds.length,
     porRol: filas.reduce((acc, f) => ({ ...acc, [f.rol]: (acc[f.rol] ?? 0) + 1 }), {}),
     sugerencias,
+    // Para la tira de arriba: cuántas quedan sin mirar.
+    porEstado: filas.reduce((acc, f) => ({ ...acc, [f.estado]: (acc[f.estado] ?? 0) + 1 }), {}),
   })
+}
+
+/* ══ ANOTAR QUÉ SE HIZO CON UNA ══════════════════════════════════════════════
+ *
+ * El banner trajo 7 sugerencias de 4 negocios en tres días y ninguna tenía
+ * dónde anotarse: la pantalla las listaba y ya. Saber cuáles quedaban por
+ * atender era releerlas todas y acordarse, y así se pasaron tres días sin
+ * contestarle a nadie.
+ *
+ * No manda nada al cliente: eso lo hace el dueño por WhatsApp, que es por donde
+ * ellos escriben. Esto es su libreta. */
+const ESTADOS = ['nueva', 'vista', 'hecha', 'descartada']
+
+export async function PATCH(request) {
+  const session = await getServerSession(authOptions)
+  if (session?.user?.rol !== 'superadmin') {
+    return Response.json({ error: 'No autorizado' }, { status: 403 })
+  }
+
+  const { id, estado, respuesta } = await request.json().catch(() => ({}))
+  if (!id) return Response.json({ error: 'Falta cuál' }, { status: 400 })
+  if (estado !== undefined && !ESTADOS.includes(estado)) {
+    return Response.json({ error: `Estado que no existe: ${estado}` }, { status: 400 })
+  }
+
+  const datos = {}
+  if (estado !== undefined) datos.estado = estado
+  if (respuesta !== undefined) {
+    datos.respuesta = respuesta || null
+    /* La fecha la pone la respuesta, no el estado: interesa cuándo se le
+       contestó, no cuándo se movió la ficha de sitio. Al borrar el texto se
+       borra también, para que no quede una fecha de algo que no se dijo. */
+    datos.respondidaEn = respuesta ? new Date() : null
+  }
+  if (!Object.keys(datos).length) return Response.json({ error: 'Nada que cambiar' }, { status: 400 })
+
+  const fila = await prisma.sugerencia.update({ where: { id }, data: datos })
+  return Response.json({ ok: true, id: fila.id, estado: fila.estado, respuesta: fila.respuesta, respondidaEn: fila.respondidaEn })
 }

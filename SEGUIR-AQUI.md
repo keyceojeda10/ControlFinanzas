@@ -32,24 +32,33 @@ pantallas que calculan (`components/prestamos/AvisoUltimaCuota.jsx`):
   vez de prometer que «cuadra», que es lo que iba a escribir hasta que el
   recálculo me desmintió.
 
-## 2 · Contestarles a los siete que escribieron ← EMPEZANDO
+## ~~2 · Contestarles a los siete que escribieron~~ ← HECHO, 17 ago
 
-El banner trajo **7 sugerencias de 4 negocios en tres días** y **ninguna tiene
-respuesta**: `Sugerencia` no tiene ni estado ni respuesta, así que nadie sabe
-cuáles están atendidas.
+`Sugerencia` ya lleva **estado y respuesta** (`nueva · vista · hecha · no se
+hace`), y el panel de superadmin deja marcarlas, filtrar «Sin atender» y anotar
+qué se le contestó. Las columnas están aplicadas y verificadas en producción.
 
-| negocio | qué pidió | estado |
-|---|---|---|
-| Préstamos Rincón | el fallo del francés | **hecho** — hay que decírselo |
-| Préstamos Rincón | interés moratorio que no se puede aplicar | **ya está hecho** — hay que decírselo |
-| Préstamos Rincón | los filtros de préstamos que más se usan | por mirar |
-| Crediya | «cómo ver cuánto…» + «más libertad de ejecutar dentro» | por leer entero |
-| Créditos jh · Don Pacho | «Está bien» · «X» | nada que hacer |
+Los siete textos, ya redactados para mandar por WhatsApp, están en
+**`RESPUESTAS-SUGERENCIAS.md`**. Resumen: de los 5 puntos de Rincón, 3 ya
+existían y no se le había dicho; el del francés se arregló hoy.
 
-**Terminado cuando:** cada una tiene respuesta y el panel deja marcarlas, para
-que la siguiente tanda no se pierda igual.
+⚠ **Mandarlos sigue siendo suyo**: la app no le escribe a nadie.
 
-## 3 · Cerrar el panel de superadmin
+## Lo que salió de contestarles ← lo siguiente, después del 3 y el 4
+
+Tres cosas que pidieron ellos y no están (detalle y porqué en
+`RESPUESTAS-SUGERENCIAS.md`):
+
+1. **Cobrar el interés que aún no se ha vencido.** `calcularInteresesPendientes`
+   solo cuenta hasta hoy, así que a Crediya le sale «No hay intereses pendientes
+   para pagar» cuando su cliente paga la quincena por adelantado. Le pasa todas
+   las quincenas.
+2. **Filtro «próximos a vencer» (5 y 10 días)** en préstamos. Rincón dice que es
+   el que más usa; los de hoy miran el atraso, no lo que va a vencer.
+3. **Interés por período en `fijo` y `unico`.** El más grande: toca cómo se
+   guarda el préstamo. Medir antes de prometerlo.
+
+## 3 · Cerrar el panel de superadmin ← EMPEZANDO
 
 Quedó en **13 entradas**. `Usuarios` ya existe, pero `Organizaciones`,
 `Suscripciones`, `Retención` y `Activación` siguen al lado — que eran justo las
