@@ -75,8 +75,24 @@ recientes=$(cat "${LOGS}"/cf-error-*.log 2>/dev/null \
   | grep -F '[ERROR-CLIENTE]' \
   | awk -v d="$desde" '{ ts = $1 " " substr($2, 1, 8); if (ts >= d) print }')
 
-total=$(printf '%s' "$recientes" | grep -c . || true)
-[ "${total:-0}" -eq 0 ] && exit 0   # ⚠ silencio cuando no hay nada
+# ⚠ LOS QUE SE ARREGLAN SOLOS VAN APARTE.
+#
+# El «Loading chunk … failed» le sale a quien tiene la app abierta cuando
+# desplegamos: su navegador pide un trozo de la versión vieja. La pantalla se
+# recupera SOLA —comprobado el 18 ago cortando un trozo a propósito: una recarga
+# y vuelve con su contenido— así que no es una pantalla rota, es un parpadeo.
+#
+# Mezclados con los de verdad, tapan: el 7 de agosto fueron 13 de 13. Si el
+# aviso dice «13 pantallas rotas» y doce eran parpadeos, a la tercera mañana
+# nadie lo abre.
+autocurados=$(printf '%s\n' "$recientes" | grep -cE 'ChunkLoadError|Loading chunk|dynamically imported' || true)
+graves=$(printf '%s\n' "$recientes" | grep -vE 'ChunkLoadError|Loading chunk|dynamically imported' || true)
+total=$(printf '%s' "$graves" | grep -c . || true)
+
+# Si solo hubo parpadeos, no se molesta a nadie.
+[ "${total:-0}" -eq 0 ] && exit 0   # ⚠ silencio cuando no hay nada de verdad
+
+recientes="$graves"
 
 # Agrupado por mensaje. Se recortan los identificadores largos para que veinte
 # fallos del mismo tipo no salgan como veinte líneas distintas.
@@ -111,7 +127,8 @@ pantallas=$(printf '%s\n' "$recientes" \
 personas=$(printf '%s\n' "$recientes" | grep -oE '"org":"[^"]*' | sort -u | grep -c . || true)
 
 texto="⚠ Pantallas rotas en las últimas ${HORAS}h: ${total}
-(en ${personas} negocios)
+(en ${personas} negocios)${autocurados:+
++ ${autocurados} que se arreglaron solas al recargar, tras un despliegue}
 
 Qué pasó:
 ${resumen}

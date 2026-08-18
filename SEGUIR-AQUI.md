@@ -84,22 +84,38 @@ puede volver— sin revivir nada.
 porque alguien se quejó ese mismo día.** 95 pantallas rotas en la ruta y el
 arreglo llegó el día 95. Eso es exactamente lo que el vigilante viene a cambiar.
 
-## 4 · El ChunkLoadError ← EMPEZANDO
+## ~~4 · El ChunkLoadError~~ ← HECHO, 18 ago
 
-**86 veces.** Sale cuando alguien tiene la pantalla abierta y desplegamos: su
-navegador pide un trozo de la versión vieja que ya no existe. Ayer subimos diez
-veces.
+Ya estaba arreglado desde el **15 de agosto** (`cfe4e451`), y los números lo
+confirman: con MÁS despliegues que nunca, pasó de 18 al día a 1–2.
 
-No es grave —recargando se arregla— pero es ruido que tapa los errores de
-verdad, y al usuario le sale una pantalla rota sin motivo.
+| día | commits | errores de trozo |
+|---|---|---|
+| 6 ago | — | **18** |
+| 7 ago | 51 | 13 |
+| 15 ago (entra el arreglo) | 28 | 1 |
+| 16 ago | 36 | 1 |
+| 17 ago | 26 | 2 |
 
----
+**Comprobado que la recuperación funciona**, cortando a propósito el trozo de
+una pantalla: dos cargas de documento —la de entrada y la de recuperación—, la
+pantalla vuelve con su contenido entero y no hay bucle.
+
+Y ahora **no tapan a los de verdad en el aviso**: van contados aparte («+91 que
+se arreglaron solas»), y si en un día solo hubo parpadeos, el vigilante calla.
+El 7 de agosto fueron 13 de 13: un aviso que dice «13 pantallas rotas» cuando
+doce eran parpadeos deja de abrirse a la tercera mañana.
+
+⚠ Dos trampas al medirlo: cortar un trozo COMPARTIDO no rompe nada (Next sigue
+pintando) y `framenavigated` cuenta las navegaciones internas de Next, así que
+una recuperación limpia daba 4 y mi umbral la llamaba «bucle».
 
 ## Después, lo que está a medias (de las notas del proyecto)
 
 Por orden de lo que más duele:
 
-1. **Línea de crédito** — a medio construir: sin integrar a caja, capital ni
+1. ~~**Modo abreviado**~~ ← EMPEZANDO — 13 pantallas lo ignoran
+2. **Línea de crédito** — a medio construir: sin integrar a caja, capital ni
    reportes, y sin el cron de cortes.
 2. **13 pantallas ignoran el modo abreviado** — el interruptor está encendido y
    no hace nada. Ya generó un reporte.
