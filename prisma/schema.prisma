@@ -164,6 +164,7 @@ model Organization {
   botLeads           BotLead[]
   capital            Capital?
   movimientosCapital MovimientoCapital[]
+  devengosInteres    DevengoInteres[]
   actividadLogs      ActividadLog[]
   gruposCobro        GrupoCobro[]
   festivos           Festivo[]
@@ -375,6 +376,17 @@ model Prestamo {
   fechaInicio    DateTime
   fechaFin       DateTime
   diasPlazo      Int
+  /// PRÉSTAMO ABIERTO: se cobra solo el interés del período y el capital queda
+  /// pendiente sin fecha de vencimiento. Solo tiene sentido con modoInteres
+  /// 'solo_interes' y se valida en el API.
+  ///
+  /// Por defecto `false`: los 10.218 préstamos que ya existen nacen con el
+  /// comportamiento de siempre, bit por bit, sin migrar un solo dato.
+  ///
+  /// `fechaFin` y `diasPlazo` se siguen guardando —son NOT NULL y los leen 79
+  /// archivos— pero en un abierto NO deciden nada: son el primer período, y la
+  /// pantalla enseña «Abierto» en vez de una fecha.
+  sinPlazo       Boolean        @default(false)
   seguro         Boolean        @default(false)
   montoSeguro    Float?
   estado         EstadoPrestamo @default(activo)
@@ -424,6 +436,7 @@ model Prestamo {
   socio        Socio?       @relation(fields: [socioId], references: [id])
   pagos        Pago[]
   cuotasAmortizacion CuotaAmortizacion[]
+  devengos           DevengoInteres[]
 
   @@index([organizationId])
   @@index([clienteId])
@@ -443,6 +456,36 @@ model Prestamo {
 // sobre saldo restante). En lineal_dinamico, la tabla se recalcula tras cada pago.
 // Es la fuente de verdad para mora/saldo/desglose de estos modos, en vez del
 // cuotaDiaria fijo que usan los demas modos.
+/// EL INTERÉS YA DEVENGADO DE UN PRÉSTAMO ABIERTO.
+///
+/// Un apunte por préstamo y por período. Cuando el período cierra, su interés
+/// SUBE LA DEUDA (`totalAPagar`), igual que un recargo — la mecánica que ya
+/// existe y está probada— y aquí queda el rastro de por qué subió.
+///
+/// ⚠ LA CLAVE ÚNICA (prestamoId, periodo) ES LA DEFENSA, no una optimización.
+/// Devengar dos veces es el fallo que mató a la línea de crédito: tras un corte
+/// volvía a cobrar el mes entero. Con esta clave, correr el cron dos veces —o
+/// dos ejecuciones a la vez— no puede cobrar dos veces ni aunque el código
+/// falle.
+model DevengoInteres {
+  id             String   @id @default(cuid())
+  prestamoId     String
+  organizationId String
+  /// El día en que cerró el período, 'YYYY-MM-DD' en hora del país.
+  periodo        String
+  /// El capital sobre el que se calculó. Se guarda para poder explicar la
+  /// cifra meses después sin tener que reconstruir los abonos.
+  capitalBase    Float
+  interes        Float
+  createdAt      DateTime @default(now())
+
+  prestamo     Prestamo     @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([prestamoId, periodo])
+  @@index([organizationId])
+}
+
 model CuotaAmortizacion {
   id            String   @id @default(cuid())
   prestamoId    String

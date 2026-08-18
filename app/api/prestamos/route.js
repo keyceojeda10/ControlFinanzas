@@ -4,6 +4,7 @@ import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
 import {
+  fechaDePeriodo,
   calcularPrestamo,
   calcularDiasMora,
   calcularMontoEnMora,
@@ -399,7 +400,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
   // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
   // viene, se asume efectivo (el caso mas comun en gota a gota).
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
@@ -442,7 +443,12 @@ export async function POST(request) {
   if (!clienteId)     return Response.json({ error: 'El cliente es requerido' },          { status: 400 })
   if (!montoPrestado) return Response.json({ error: 'El monto es requerido' },            { status: 400 })
   if (tasaInteres == null || tasaInteres === '') return Response.json({ error: 'La tasa de interés es requerida' }, { status: 400 })
-  if (!diasPlazo)     return Response.json({ error: 'El plazo es requerido' },            { status: 400 })
+  /* ⚠ EL PLAZO DEJA DE SER OBLIGATORIO EN UN ABIERTO, y solo ahí. Es el
+     requisito que trajo el cliente nuevo —«probé GLOBO pero me exige un plazo y
+     una fecha final, y mi modelo no funciona así»— y la razón de existir de
+     todo esto. En los siete modos restantes se sigue exigiendo igual. */
+  const pideAbierto = modoInteres === 'solo_interes' && !!sinPlazo
+  if (!diasPlazo && !pideAbierto) return Response.json({ error: 'El plazo es requerido' }, { status: 400 })
   if (!fechaInicio)   return Response.json({ error: 'La fecha de inicio es requerida' },  { status: 400 })
 
   // Bloquear fechas futuras: si el cobrador se equivoca con la fecha el prestamo
@@ -512,7 +518,26 @@ export async function POST(request) {
   }
   // Validar modo de interes; si viene cuotaManual el calculo lo trata como manual.
   const modoValido = ['fijo', 'unico', 'saldo', 'manual', 'lineal', 'solo_interes', 'lineal_dinamico'].includes(modoInteres) ? modoInteres : 'fijo'
+
+  /* ══ PRÉSTAMO ABIERTO ══════════════════════════════════════════════════════
+   * Solo en Globo. La bandera no se «cree» venga de donde venga: si llega en
+   * cualquier otro modo se ignora, y así el radio de impacto de todo esto es un
+   * modo y no la app. Es lo mismo que hace `calcularPrestamo`, y va en los dos
+   * sitios a propósito: la pantalla no es una frontera de confianza. */
+  const esAbierto = modoValido === 'solo_interes' && !!sinPlazo
+
+  /* ⚠ SIN DÍA DE CORTE EN LOS ABIERTOS, DE MOMENTO. El día de corte prorratea
+   * el primer período, y ese prorrateo todavía no está fijado por una prueba
+   * para el devengo. Antes que dejarlo pasar y cobrar de más el primer mes, se
+   * ignora: el primer período es un período entero desde que se entregó. */
+  if (esAbierto && (diaCobroMes || diaCobroMes2)) {
+    return Response.json({
+      error: 'Un préstamo abierto todavía no admite día de corte fijo. Quita el día de corte o ponle un plazo.',
+    }, { status: 400 })
+  }
+
   const calc = calcularPrestamo({
+    ...(esAbierto && { sinPlazo: true }),
     montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoValido,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
     interesAdelantado: modoValido === 'solo_interes' && !!interesAdelantado,
@@ -546,7 +571,15 @@ export async function POST(request) {
     }, { status: 400 })
   }
 
-  const { totalAPagar, cuotaDiaria, fechaFin } = calc
+  const { totalAPagar, cuotaDiaria, fechaFin: fechaFinCalc } = calc
+  /* En un abierto, el «fin» es el primer corte de interés. Ver la nota de
+     `diasPlazo` más abajo. */
+  const fechaFin = esAbierto
+    ? fechaDePeriodo(1, {
+        fechaInicio: new Date(`${fechaInicio}T05:00:00.000Z`),
+        freq, diasPeriodo: calc.diasPeriodo,
+      })
+    : fechaFinCalc
   const modoInteresFinal = calc.modoInteres  // 'manual' si hubo cuotaManual
 
   // Validar abono vs total
@@ -622,7 +655,8 @@ export async function POST(request) {
         cuotaDiaria,
         frecuencia:    freq,
         modoInteres:   modoInteresFinal,
-        interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado,
+        interesAdelantado: modoInteresFinal === 'solo_interes' && !!interesAdelantado && !esAbierto,
+        sinPlazo: esAbierto,
         ...(typeof nombreProducto === 'string' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim().slice(0, 100) }),
         diaCobroSemana: diaCobroSemanaDb,
         diaCobroMes:    diaCobroMesDb,
@@ -634,7 +668,13 @@ export async function POST(request) {
         ...(calc.primerCobro ? { primerCobro: calc.primerCobro } : {}),
         ...(socioId && { socioId }),
         ...(Array.isArray(calc.capitalExtra) && calc.capitalExtra.length > 0 && { capitalExtra: calc.capitalExtra }),
-        diasPlazo:     calc.numPeriodos * calc.diasPeriodo,
+        /* ⚠ EN UN ABIERTO, `diasPlazo` Y `fechaFin` SON EL PRIMER PERÍODO, no
+           un vencimiento. Las dos columnas son NOT NULL y las leen 79
+           archivos: hacerlas nulas era el cambio grande que este diseño evita.
+           Guardan el primer corte de interés, que es cierto, y la pantalla
+           enseña «Abierto» en vez de una fecha. Sin esto, un abierto sin plazo
+           en el cuerpo grababa `NaN` y la fila no entraba. */
+        diasPlazo:     esAbierto ? calc.diasPeriodo : calc.numPeriodos * calc.diasPeriodo,
         fechaInicio:   new Date(`${fechaInicio}T05:00:00.000Z`),
         fechaFin,
         seguro:        !!seguro,

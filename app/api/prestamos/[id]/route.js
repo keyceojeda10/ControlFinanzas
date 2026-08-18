@@ -44,6 +44,11 @@ async function obtenerPrestamo(id, session) {
         },
       },
       cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+      /* Los devengos de un préstamo abierto: sin ellos `interesCobrableAhora`
+         no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
+         préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
+         de menos no da error, da una decisión mal tomada en silencio. */
+      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
       socio: { select: { id: true, nombre: true } },
     },
   })
@@ -508,6 +513,23 @@ export async function PATCH(request, { params }) {
   // conservar diasPlazo. NO toca cuota, total ni pagos. La mora / proximo
   // cobro / estado se recalculan solos al leer el prestamo.
   if (modo === 'corregirInicio') {
+    /* ⚠ EN UN ABIERTO CON INTERÉS YA DEVENGADO, LA FECHA DE INICIO NO SE MUEVE.
+     *
+     * Lo destapó mi propia prueba del espejo. El período devengado se identifica
+     * por su FECHA, y esa fecha sale del calendario que arranca en `fechaInicio`.
+     * Al moverla, los períodos ya asentados dejan de coincidir con su clave y el
+     * cron los vuelve a devengar con otra fecha: el cliente pagaría dos veces el
+     * mismo mes. En la prueba se vio como $628.000 donde tocaban $539.000.
+     *
+     * No se arregla «recalculando las claves»: eso reescribiría plata ya
+     * cobrada. Se bloquea y se dice por qué. */
+    const devengados = await prisma.devengoInteres.count({ where: { prestamoId: id } })
+    if (p.sinPlazo && devengados > 0) {
+      return Response.json({
+        error: `No se puede mover la fecha de inicio: este préstamo abierto ya tiene ${devengados} ${devengados === 1 ? 'mes de interés cobrado' : 'meses de interés cobrados'}. Mover la fecha volvería a cobrarlos.`,
+      }, { status: 400 })
+    }
+
     const puedeGestionar = session.user.rol === 'owner'
       ? true
       : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
