@@ -27,11 +27,11 @@ const hace = (date) => {
 }
 
 const colorActividad = (date) => {
-  if (!date) return 'var(--color-text-muted)'
+  if (!date) return 'var(--cf-ink-3)'
   const horas = (Date.now() - new Date(date).getTime()) / 3600000
-  if (horas <= 24) return 'var(--color-success)'
+  if (horas <= 24) return 'var(--cf-green-dark)'
   if (horas <= 168) return '#f59e0b'
-  return 'var(--color-danger)'
+  return 'var(--cf-red-dark)'
 }
 
 function waUrl(tel, msg) {
@@ -65,37 +65,37 @@ export default function RetencionPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-[25px] font-semibold text-[white]">Retencion</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Retencion</h1>
+        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">
           Usuarios vencidos, por vencer y sin activar
         </p>
       </div>
 
       {/* Resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-danger) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-red-dark) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Vencidos</p>
-          <p className="text-lg font-bold text-[var(--color-danger)]">{resumen.totalVencidos ?? '-'}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Vencidos</p>
+          <p className="text-lg font-bold text-[var(--cf-red-dark)]">{resumen.totalVencidos ?? '-'}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, #f59e0b0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f59e0b05 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, #f59e0b05 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Por vencer (7d)</p>
-          <p className="text-lg font-bold text-[var(--color-warning)]">{resumen.totalPorVencer ?? '-'}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Por vencer (7d)</p>
+          <p className="text-lg font-bold text-[var(--cf-gold-dark)]">{resumen.totalPorVencer ?? '-'}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-info) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-blue) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Sin actividad</p>
-          <p className="text-lg font-bold text-[var(--color-info)]">{resumen.totalSinActividad ?? '-'}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Sin actividad</p>
+          <p className="text-lg font-bold text-[var(--cf-blue)]">{resumen.totalSinActividad ?? '-'}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Vencidos con uso</p>
-          <p className="text-lg font-bold text-[var(--color-success)]">{resumen.vencidosConUso ?? '-'}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Vencidos con uso</p>
+          <p className="text-lg font-bold text-[var(--cf-green-dark)]">{resumen.vencidosConUso ?? '-'}</p>
         </div>
       </div>
 
@@ -107,8 +107,8 @@ export default function RetencionPage() {
             onClick={() => setTab(t.key)}
             className={`px-3 py-1.5 rounded-[8px] text-xs font-medium whitespace-nowrap transition-all ${
               tab === t.key
-                ? 'bg-[var(--color-info)] text-[var(--color-text-primary)]'
-                : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[white]'
+                ? 'bg-[var(--cf-blue)] text-[var(--cf-ink)]'
+                : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]'
             }`}
           >
             {t.label}
@@ -121,20 +121,20 @@ export default function RetencionPage() {
       {tab === 'vencidos' && lista.filter(v => v.prestamos >= 3).length > 0 && (
         <div className="rounded-[12px] p-3 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 10%, transparent), color-mix(in srgb, var(--color-danger) 4%, transparent))',
-            border: '1px solid color-mix(in srgb, var(--color-danger) 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-red-dark) 10%, transparent), color-mix(in srgb, var(--cf-red-dark) 4%, transparent))',
+            border: '1px solid color-mix(in srgb, var(--cf-red-dark) 25%, transparent)',
           }}
         >
           <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-            style={{ color: 'var(--color-danger)' }}
+            style={{ color: 'var(--cf-red-dark)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
               {lista.filter(v => v.prestamos >= 3).length} vencido{lista.filter(v => v.prestamos >= 3).length !== 1 ? 's' : ''} con uso real
             </p>
-            <p className="text-xs leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
               Estos usuarios tienen prestamos activos y dejaron de pagar. Son los mas faciles de recuperar — contactalos hoy.
             </p>
           </div>
@@ -144,20 +144,20 @@ export default function RetencionPage() {
       {tab === 'sinActividad' && lista.length > 0 && (
         <div className="rounded-[12px] p-3 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 10%, transparent), color-mix(in srgb, var(--color-info) 4%, transparent))',
-            border: '1px solid color-mix(in srgb, var(--color-info) 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-blue) 10%, transparent), color-mix(in srgb, var(--cf-blue) 4%, transparent))',
+            border: '1px solid color-mix(in srgb, var(--cf-blue) 25%, transparent)',
           }}
         >
           <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-            style={{ color: 'var(--color-info)' }}
+            style={{ color: 'var(--cf-blue)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
               {lista.length} registro{lista.length !== 1 ? 's' : ''} sin actividad
             </p>
-            <p className="text-xs leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
               Se registraron hace mas de 24h y no han creado ningun prestamo. Necesitan ayuda para arrancar.
             </p>
           </div>
@@ -166,13 +166,13 @@ export default function RetencionPage() {
 
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : lista.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)] text-center py-8">
+        <p className="text-sm text-[var(--cf-ink-3)] text-center py-8">
           {tab === 'vencidos' ? 'No hay vencidos recientes' : tab === 'porVencer' ? 'Nadie vence en los proximos 7 dias' : 'Todos los registros recientes ya crearon prestamos'}
         </p>
       ) : (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden">
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] overflow-hidden">
           {/* Header desktop */}
-          <div className="hidden sm:grid grid-cols-[2fr_0.7fr_0.8fr_0.8fr_0.8fr_1.2fr] gap-2 px-4 py-2.5 text-[10px] text-[var(--color-text-muted)] font-medium uppercase border-b border-[var(--color-border)]">
+          <div className="hidden sm:grid grid-cols-[2fr_0.7fr_0.8fr_0.8fr_0.8fr_1.2fr] gap-2 px-4 py-2.5 text-[10px] text-[var(--cf-ink-3)] font-medium uppercase border-b border-[var(--cf-border)]">
             <span>Organizacion</span>
             <span className="text-center">Plan</span>
             <span className="text-center">Uso</span>
@@ -189,34 +189,34 @@ export default function RetencionPage() {
             const waLink = waUrl(org.ownerTelefono, msg)
 
             return (
-              <div key={org.id} className="grid grid-cols-2 sm:grid-cols-[2fr_0.7fr_0.8fr_0.8fr_0.8fr_1.2fr] gap-2 px-4 py-3 border-b border-[var(--color-border)] last:border-0 items-center">
+              <div key={org.id} className="grid grid-cols-2 sm:grid-cols-[2fr_0.7fr_0.8fr_0.8fr_0.8fr_1.2fr] gap-2 px-4 py-3 border-b border-[var(--cf-border)] last:border-0 items-center">
                 <div>
-                  <Link href={`/admin/organizaciones/${org.id}`} className="text-sm font-medium text-[white] hover:text-[var(--color-info)]">
+                  <Link href={`/admin/organizaciones/${org.id}`} className="text-sm font-medium text-[var(--cf-ink)] hover:text-[var(--cf-blue)]">
                     {org.nombre}
                   </Link>
                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                     {org.algunVezPago ? (
                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                        style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }}
+                        style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--cf-green-dark)' }}
                       >
                         PAGANTE
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                        style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-info)' }}
+                        style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--cf-blue)' }}
                       >
                         TRIAL
                       </span>
                     )}
                     {org.waChurnSent && (
                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                        style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-warning)' }}
+                        style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--cf-gold-dark)' }}
                       >
                         WA ENVIADO
                       </span>
                     )}
                     {org.ownerEmail && (
-                      <p className="text-[10px] text-[var(--color-text-muted)] truncate">{org.ownerEmail}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] truncate">{org.ownerEmail}</p>
                     )}
                   </div>
                 </div>
@@ -224,25 +224,25 @@ export default function RetencionPage() {
                   <Badge variant={planBadge[org.plan]}>{org.plan}</Badge>
                 </div>
                 <div className="text-center">
-                  <p className="text-[11px] text-[var(--color-text-primary)] font-medium">{org.clientes}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">{org.prestamos} prest.</p>
+                  <p className="text-[11px] text-[var(--cf-ink)] font-medium">{org.clientes}</p>
+                  <p className="text-[11px] text-[var(--cf-ink-3)]">{org.prestamos} prest.</p>
                 </div>
                 <div className="text-center">
                   {tab === 'sinActividad' ? (
                     <>
-                      <p className="text-xs text-[var(--color-text-muted)]">
+                      <p className="text-xs text-[var(--cf-ink-3)]">
                         {new Date(org.createdAt).toLocaleDateString('es-CO')}
                       </p>
-                      <p className="text-[10px] font-bold text-[var(--color-info)]">
+                      <p className="text-[10px] font-bold text-[var(--cf-blue)]">
                         hace {Math.floor((Date.now() - new Date(org.createdAt).getTime()) / 86400000)}d
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-xs text-[var(--color-text-muted)]">
+                      <p className="text-xs text-[var(--cf-ink-3)]">
                         {new Date(org.fechaVencimiento).toLocaleDateString('es-CO')}
                       </p>
-                      <p className={`text-[10px] font-bold ${org.diasVencido > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-warning)]'}`}>
+                      <p className={`text-[10px] font-bold ${org.diasVencido > 0 ? 'text-[var(--cf-red-dark)]' : 'text-[var(--cf-gold-dark)]'}`}>
                         {org.diasVencido > 0 ? `${org.diasVencido}d vencido` : `${Math.abs(org.diasVencido)}d restantes`}
                       </p>
                     </>
@@ -260,7 +260,7 @@ export default function RetencionPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[10px] font-medium transition-all"
-                      style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--color-success)' }}
+                      style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--cf-green-dark)' }}
                     >
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>

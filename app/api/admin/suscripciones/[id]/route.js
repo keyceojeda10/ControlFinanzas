@@ -24,6 +24,16 @@ function calcularNuevaFecha(base, dias, diaFijo) {
   return fecha
 }
 
+/* ⚠ EL CAMBIO Y SU REGISTRO VAN JUNTOS O NO VAN.
+ *
+ * Antes se actualizaba la suscripción y DESPUÉS se escribía el AdminLog. Si el
+ * log fallaba —lo cacé en el espejo el 17 ago—, la fila ya estaba cambiada y el
+ * API devolvía 500: el dueño leía «Error» sobre un cambio que sí se había
+ * aplicado, y lo natural es volver a pulsar. Quitar 5 días dos veces son 10.
+ *
+ * Con la transacción, o se mueve la fecha y queda anotado quién la movió, o no
+ * se mueve nada. En un panel que toca lo que la gente paga, un cambio sin
+ * rastro es tan malo como un cambio a medias. */
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.rol !== 'superadmin') {
@@ -72,16 +82,15 @@ export async function PATCH(req, { params }) {
         where: { id: sub.organization.id },
         data: { waChurnSent: false, waPreVencSent: false },
       }),
+      prisma.adminLog.create({
+        data: {
+          adminId:        session.user.id,
+          organizacionId: sub.organization.id,
+          accion:         'renovar_suscripcion',
+          detalle:        `Suscripción de "${orgNombre}" renovada ${diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`} hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
+        },
+      }),
     ])
-    const label = diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: sub.organization.id,
-        accion:         'renovar_suscripcion',
-        detalle:        `Suscripción de "${orgNombre}" renovada ${label} hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
-      },
-    })
     return NextResponse.json({ ok: true, mensaje: `Suscripción renovada hasta ${nuevaFecha.toISOString().slice(0, 10)}` })
   }
 
@@ -110,23 +119,31 @@ export async function PATCH(req, { params }) {
     const base  = dias < 0 ? vence : (vence > ahora ? vence : ahora)
     const nuevaFecha = calcularNuevaFecha(base, dias, diaFijo)
 
-    await prisma.suscripcion.update({
-      where: { id },
-      /* Restar puede dejarla vencida, y entonces tiene que DECIRLO: una fila que
-         venció ayer y sigue marcada «activa» es la que hace que el panel enseñe
-         un MRR que nadie va a pagar. */
-      data: { fechaVencimiento: nuevaFecha, estado: nuevaFecha > ahora ? 'activa' : 'vencida' },
-    })
     const label = diaFijo ? `${dias}d (día fijo: ${diaFijo})` : `${dias} días`
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: sub.organization.id,
-        accion:         dias < 0 ? 'recortar_suscripcion' : 'extender_suscripcion',
-        detalle:        `Extensión de ${label} aplicada a "${orgNombre}" hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
-      },
+    await prisma.$transaction([
+      prisma.suscripcion.update({
+        where: { id },
+        /* Restar puede dejarla vencida, y entonces tiene que DECIRLO: una fila
+           que venció ayer y sigue marcada «activa» es la que hace que el panel
+           enseñe un MRR que nadie va a pagar. */
+        data: { fechaVencimiento: nuevaFecha, estado: nuevaFecha > ahora ? 'activa' : 'vencida' },
+      }),
+      prisma.adminLog.create({
+        data: {
+          adminId:        session.user.id,
+          organizacionId: sub.organization.id,
+          accion:         dias < 0 ? 'recortar_suscripcion' : 'extender_suscripcion',
+          detalle:        `Extensión de ${label} aplicada a "${orgNombre}" hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
+        },
+      }),
+    ])
+    // Quitar días y ponerlos son la misma acción por dentro; el mensaje no.
+    return NextResponse.json({
+      ok: true,
+      mensaje: dias < 0
+        ? `Le quitaste ${Math.abs(dias)} días: ahora vence el ${nuevaFecha.toISOString().slice(0, 10)}${nuevaFecha > ahora ? '' : ' y queda VENCIDA'}`
+        : `Extendida hasta ${nuevaFecha.toISOString().slice(0, 10)}`,
     })
-    return NextResponse.json({ ok: true, mensaje: `Extendida hasta ${nuevaFecha.toISOString().slice(0, 10)}` })
   }
 
   /* ── LA FECHA EXACTA, CON CALENDARIO ──────────────────────────────────────
@@ -155,18 +172,20 @@ export async function PATCH(req, { params }) {
     }
 
     const ahora = new Date()
-    await prisma.suscripcion.update({
-      where: { id },
-      data: { fechaVencimiento: nuevaFecha, estado: nuevaFecha > ahora ? 'activa' : 'vencida' },
-    })
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: sub.organization.id,
-        accion:         'fechar_suscripcion',
-        detalle:        `Vencimiento de "${orgNombre}" puesto a mano en ${texto} (antes ${new Date(sub.fechaVencimiento).toISOString().slice(0, 10)})`,
-      },
-    })
+    await prisma.$transaction([
+      prisma.suscripcion.update({
+        where: { id },
+        data: { fechaVencimiento: nuevaFecha, estado: nuevaFecha > ahora ? 'activa' : 'vencida' },
+      }),
+      prisma.adminLog.create({
+        data: {
+          adminId:        session.user.id,
+          organizacionId: sub.organization.id,
+          accion:         'fechar_suscripcion',
+          detalle:        `Vencimiento de "${orgNombre}" puesto a mano en ${texto} (antes ${new Date(sub.fechaVencimiento).toISOString().slice(0, 10)})`,
+        },
+      }),
+    ])
     return NextResponse.json({ ok: true, mensaje: `Vence el ${texto}` })
   }
 
@@ -188,31 +207,30 @@ export async function PATCH(req, { params }) {
          barreras: cambiar solo la suscripción dejaría al negocio con el plan
          viejo en la app y el nuevo en el panel. */
       prisma.organization.update({ where: { id: sub.organization.id }, data: { plan } }),
+      prisma.adminLog.create({
+        data: {
+          adminId:        session.user.id,
+          organizacionId: sub.organization.id,
+          accion:         'cambiar_plan',
+          detalle:        `Plan de "${orgNombre}": ${antes} → ${plan}`,
+        },
+      }),
     ])
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: sub.organization.id,
-        accion:         'cambiar_plan',
-        detalle:        `Plan de "${orgNombre}": ${antes} → ${plan}`,
-      },
-    })
     return NextResponse.json({ ok: true, mensaje: `Ahora es ${plan}` })
   }
 
   if (accion === 'cancelar') {
-    await prisma.suscripcion.update({
-      where: { id },
-      data: { estado: 'cancelada' },
-    })
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: sub.organization.id,
-        accion:         'cancelar_suscripcion',
-        detalle:        `Suscripción de "${orgNombre}" cancelada`,
-      },
-    })
+    await prisma.$transaction([
+      prisma.suscripcion.update({ where: { id }, data: { estado: 'cancelada' } }),
+      prisma.adminLog.create({
+        data: {
+          adminId:        session.user.id,
+          organizacionId: sub.organization.id,
+          accion:         'cancelar_suscripcion',
+          detalle:        `Suscripción de "${orgNombre}" cancelada`,
+        },
+      }),
+    ])
     return NextResponse.json({ ok: true, mensaje: 'Suscripción cancelada' })
   }
 

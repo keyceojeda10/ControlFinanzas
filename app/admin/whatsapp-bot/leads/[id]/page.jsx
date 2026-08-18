@@ -6,12 +6,12 @@ import Link from 'next/link'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 
 const ESTADO_COLORS = {
-  pendiente: 'var(--color-accent)',
-  contactado: 'var(--color-info)',
-  interesado: 'var(--color-success)',
-  no_interesado: 'var(--color-text-muted)',
-  cerrado: 'var(--color-purple)',
-  bloqueado: 'var(--color-danger)',
+  pendiente: 'var(--cf-gold)',
+  contactado: 'var(--cf-blue)',
+  interesado: 'var(--cf-green-dark)',
+  no_interesado: 'var(--cf-ink-3)',
+  cerrado: 'var(--cf-blue)',
+  bloqueado: 'var(--cf-red-dark)',
 }
 
 const ESTADOS = ['pendiente', 'contactado', 'interesado', 'no_interesado', 'cerrado', 'bloqueado']
@@ -128,7 +128,7 @@ export default function BotLeadDetalle() {
     return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard /><SkeletonCard /></div>
   }
 
-  if (!lead) return <p className="text-[var(--color-danger)] text-sm">Lead no encontrado</p>
+  if (!lead) return <p className="text-[var(--cf-red-dark)] text-sm">Lead no encontrado</p>
 
   const tel = (lead.telefono || '').replace(/\D/g, '')
 
@@ -136,79 +136,79 @@ export default function BotLeadDetalle() {
     <div className="max-w-3xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Link href="/admin/whatsapp-bot/leads" className="text-[var(--color-text-muted)] hover:text-white transition-all">
+        <Link href="/admin/whatsapp-bot/leads" className="text-[var(--cf-ink-3)] hover:text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="text-[25px] font-semibold text-[white] flex-1 truncate">{lead.nombre}</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)] flex-1 truncate">{lead.nombre}</h1>
         <a
           href={`https://wa.me/${tel}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(16,185,129,0.12)] text-[var(--color-success)] hover:bg-[rgba(16,185,129,0.2)] transition-all"
+          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(16,185,129,0.12)] text-[var(--cf-green-dark)] hover:bg-[rgba(16,185,129,0.2)] transition-all"
         >
           WhatsApp
         </a>
       </div>
 
       {/* Info card */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--cf-border)] rounded-[20px] p-4 bg-[var(--cf-card)]">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Teléfono</p>
-            <p className="text-white font-mono-display text-xs">{lead.telefono}</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Teléfono</p>
+            <p className="text-[var(--cf-ink)] font-mono-display text-xs">{lead.telefono}</p>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Estado</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Estado</p>
             <span
               className="text-xs font-medium capitalize"
-              style={{ color: ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)' }}
+              style={{ color: ESTADO_COLORS[lead.estado] || 'var(--cf-ink-3)' }}
             >
               {lead.estado?.replace('_', ' ')}
             </span>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Temperatura</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Temperatura</p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="w-16 h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
                 <div
                   className="h-full rounded-full"
                   style={{
                     width: `${lead.temperatura}%`,
-                    background: lead.temperatura > 70 ? 'var(--color-danger)' : lead.temperatura > 40 ? 'var(--color-accent)' : 'var(--color-info)',
+                    background: lead.temperatura > 70 ? 'var(--cf-red-dark)' : lead.temperatura > 40 ? 'var(--cf-gold)' : 'var(--cf-blue)',
                   }}
                 />
               </div>
-              <span className="text-xs text-white">{lead.temperatura}/100</span>
+              <span className="text-xs text-[var(--cf-ink)]">{lead.temperatura}/100</span>
             </div>
           </div>
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Bot</p>
-            <span className={`text-xs font-medium ${lead.botActivo ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Bot</p>
+            <span className={`text-xs font-medium ${lead.botActivo ? 'text-[var(--cf-green-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
               {lead.botActivo ? 'Activo' : 'Apagado'}
             </span>
           </div>
           {lead.cantClientes && (
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Clientes</p>
-              <p className="text-xs text-white">{lead.cantClientes}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Clientes</p>
+              <p className="text-xs text-[var(--cf-ink)]">{lead.cantClientes}</p>
             </div>
           )}
           {lead.metodoActual && (
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Método</p>
-              <p className="text-xs text-white">{lead.metodoActual}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Método</p>
+              <p className="text-xs text-[var(--cf-ink)]">{lead.metodoActual}</p>
             </div>
           )}
           <div>
-            <p className="text-[10px] text-[var(--color-text-muted)]">Creado</p>
-            <p className="text-xs text-white">{formatFecha(lead.createdAt)}</p>
+            <p className="text-[10px] text-[var(--cf-ink-3)]">Creado</p>
+            <p className="text-xs text-[var(--cf-ink)]">{formatFecha(lead.createdAt)}</p>
           </div>
           {lead.fechaContacto && (
             <div>
-              <p className="text-[10px] text-[var(--color-text-muted)]">Contactado</p>
-              <p className="text-xs text-white">{formatFecha(lead.fechaContacto)}</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)]">Contactado</p>
+              <p className="text-xs text-[var(--cf-ink)]">{formatFecha(lead.fechaContacto)}</p>
             </div>
           )}
         </div>
@@ -219,7 +219,7 @@ export default function BotLeadDetalle() {
         <select
           value={lead.estado}
           onChange={e => cambiarEstado(e.target.value)}
-          className="px-3 py-1.5 rounded-[8px] text-xs bg-[var(--color-bg-card)] border border-[var(--color-border)] text-white focus:outline-none"
+          className="px-3 py-1.5 rounded-[8px] text-xs bg-[var(--cf-card)] border border-[var(--cf-border)] text-[var(--cf-ink)] focus:outline-none"
         >
           {ESTADOS.map(e => (
             <option key={e} value={e}>{e.replace('_', ' ')}</option>
@@ -229,24 +229,24 @@ export default function BotLeadDetalle() {
           onClick={toggleBot}
           className={`px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all ${
             lead.botActivo
-              ? 'bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)]'
-              : 'bg-[rgba(16,185,129,0.12)] text-[var(--color-success)]'
+              ? 'bg-[rgba(239,68,68,0.12)] text-[var(--cf-red-dark)]'
+              : 'bg-[rgba(16,185,129,0.12)] text-[var(--cf-green-dark)]'
           }`}
         >
           {lead.botActivo ? 'Apagar bot' : 'Encender bot'}
         </button>
         <button
           onClick={eliminar}
-          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(239,68,68,0.06)] text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.15)] transition-all ml-auto"
+          className="px-3 py-1.5 rounded-[8px] text-xs font-medium bg-[rgba(239,68,68,0.06)] text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.15)] transition-all ml-auto"
         >
           Eliminar
         </button>
       </div>
 
       {/* Chat */}
-      <div className="border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-[var(--color-border)]">
-          <h2 className="text-sm font-semibold text-[white]">Conversación ({mensajes.length})</h2>
+      <div className="border border-[var(--cf-border)] rounded-[20px] bg-[var(--cf-card)] overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-[var(--cf-border)]">
+          <h2 className="text-sm font-semibold text-[var(--cf-ink)]">Conversación ({mensajes.length})</h2>
         </div>
         <div ref={chatRef} onScroll={handleScroll} className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           {mensajes.map(msg => {
@@ -261,12 +261,12 @@ export default function BotLeadDetalle() {
                   }`}
                 >
                   {msg.tipoMensaje !== 'chat' && (
-                    <span className="text-[10px] text-[var(--color-text-muted)] block mb-0.5">
+                    <span className="text-[10px] text-[var(--cf-ink-3)] block mb-0.5">
                       [{msg.tipoMensaje}]
                     </span>
                   )}
                   <p className="whitespace-pre-wrap break-words">{msg.texto}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1 text-right">
+                  <p className="text-[11px] text-[var(--cf-ink-3)] mt-1 text-right">
                     {formatFecha(msg.createdAt)}
                   </p>
                 </div>
@@ -274,7 +274,7 @@ export default function BotLeadDetalle() {
             )
           })}
           {mensajes.length === 0 && (
-            <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Sin mensajes aún</p>
+            <p className="text-sm text-[var(--cf-ink-3)] text-center py-6">Sin mensajes aún</p>
           )}
         </div>
       </div>

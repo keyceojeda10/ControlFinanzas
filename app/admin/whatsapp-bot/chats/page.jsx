@@ -5,8 +5,8 @@ import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 
 const ESTADO_COLORS = {
-  pendiente: 'var(--color-accent)', contactado: 'var(--color-info)', interesado: 'var(--color-success)',
-  no_interesado: 'var(--color-text-muted)', cerrado: 'var(--color-purple)', bloqueado: 'var(--color-danger)',
+  pendiente: 'var(--cf-gold)', contactado: 'var(--cf-blue)', interesado: 'var(--cf-green-dark)',
+  no_interesado: 'var(--cf-ink-3)', cerrado: 'var(--cf-blue)', bloqueado: 'var(--cf-red-dark)',
 }
 
 const FILTROS = [
@@ -69,32 +69,32 @@ export default function ChatsPage() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-[25px] font-semibold text-white">Chats</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Conversaciones del bot comercial</p>
+          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Chats</h1>
+          <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">Conversaciones del bot comercial</p>
         </div>
-        <Link href="/admin/whatsapp-bot" className="text-xs text-[var(--color-info)] hover:underline">Ver panel</Link>
+        <Link href="/admin/whatsapp-bot" className="text-xs text-[var(--cf-blue)] hover:underline">Ver panel</Link>
       </div>
 
       <div className="flex gap-4 h-[calc(100vh-180px)] min-h-[500px]">
         {/* LISTA DE CHATS */}
-        <div className={`${activo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[340px] shrink-0 border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden`}>
+        <div className={`${activo ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[340px] shrink-0 border border-[var(--cf-border)] rounded-[20px] bg-[var(--cf-card)] overflow-hidden`}>
           {/* Buscador */}
-          <div className="p-2 border-b border-[var(--color-border)]">
+          <div className="p-2 border-b border-[var(--cf-border)]">
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Buscar nombre o teléfono"
-              className="w-full px-3 py-2 rounded-[8px] bg-[rgba(255,255,255,0.04)] text-sm text-white placeholder:text-[var(--color-text-muted)] outline-none"
+              className="w-full px-3 py-2 rounded-[8px] bg-[rgba(255,255,255,0.04)] text-sm text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)] outline-none"
             />
           </div>
           {/* Filtros */}
-          <div className="flex gap-1 p-2 border-b border-[var(--color-border)] overflow-x-auto">
+          <div className="flex gap-1 p-2 border-b border-[var(--cf-border)] overflow-x-auto">
             {FILTROS.map(f => (
               <button
                 key={f.id}
                 onClick={() => setFiltro(f.id)}
                 className={`px-2.5 py-1 rounded-full text-[11px] whitespace-nowrap transition-all ${
-                  filtro === f.id ? 'bg-[var(--color-accent)] text-black font-medium' : 'bg-[rgba(255,255,255,0.06)] text-[var(--color-text-muted)]'
+                  filtro === f.id ? 'bg-[var(--cf-gold)] text-black font-medium' : 'bg-[rgba(255,255,255,0.06)] text-[var(--cf-ink-3)]'
                 }`}
               >
                 {f.label}
@@ -102,9 +102,9 @@ export default function ChatsPage() {
             ))}
           </div>
           {/* Lista */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[var(--color-border)]">
-            {loading && <p className="p-4 text-sm text-[var(--color-text-muted)]">Cargando...</p>}
-            {!loading && chats.length === 0 && <p className="p-4 text-sm text-[var(--color-text-muted)] text-center">Sin chats</p>}
+          <div className="flex-1 overflow-y-auto divide-y divide-[var(--cf-border)]">
+            {loading && <p className="p-4 text-sm text-[var(--cf-ink-3)]">Cargando...</p>}
+            {!loading && chats.length === 0 && <p className="p-4 text-sm text-[var(--cf-ink-3)] text-center">Sin chats</p>}
             {chats.map(c => (
               <button
                 key={c.id}
@@ -113,27 +113,27 @@ export default function ChatsPage() {
               >
                 <div className="relative shrink-0">
                   <Avatar nombre={c.nombre} size={42} />
-                  {c.botActivo && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--color-success)] border-2 border-[var(--color-bg-card)]" title="Bot activo" />}
+                  {c.botActivo && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[var(--cf-green-dark)] border-2 border-[var(--cf-card)]" title="Bot activo" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-white font-medium truncate">{c.nombre}</span>
-                    <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">{horaCorta(c.ultimaActividad)}</span>
+                    <span className="text-sm text-[var(--cf-ink)] font-medium truncate">{c.nombre}</span>
+                    <span className="text-[10px] text-[var(--cf-ink-3)] shrink-0">{horaCorta(c.ultimaActividad)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[12px] text-[var(--color-text-muted)] truncate">{previewTexto(c.ultimoMensaje)}</span>
+                    <span className="text-[12px] text-[var(--cf-ink-3)] truncate">{previewTexto(c.ultimoMensaje)}</span>
                     <span className="flex items-center gap-1 shrink-0">
                       {textoVentana(c.ventanaMs) && (
                         <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
-                          c.ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
-                          : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
-                          : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
+                          c.ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--cf-green-dark)]'
+                          : c.ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--cf-gold)]'
+                          : 'bg-[rgba(239,68,68,0.15)] text-[var(--cf-red-dark)]'
                         }`} title="Ventana WhatsApp restante">
                           {textoVentana(c.ventanaMs)}
                         </span>
                       )}
-                      {c.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente</span>}
-                      {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-danger)]" title={`Temp ${c.temperatura}`} />}
+                      {c.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--cf-green-dark)] font-medium">Cliente</span>}
+                      {c.temperatura >= 60 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--cf-red-dark)]" title={`Temp ${c.temperatura}`} />}
                     </span>
                   </div>
                 </div>
@@ -143,10 +143,10 @@ export default function ChatsPage() {
         </div>
 
         {/* PANEL DE CHAT */}
-        <div className={`${activo ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] overflow-hidden`}>
+        <div className={`${activo ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-[var(--cf-border)] rounded-[20px] bg-[var(--cf-card)] overflow-hidden`}>
           {activo
             ? <ChatPanel lead={activo} onBack={() => setActivo(null)} onUpdate={cargarChats} />
-            : <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-muted)]">Selecciona un chat</div>}
+            : <div className="flex-1 flex items-center justify-center text-sm text-[var(--cf-ink-3)]">Selecciona un chat</div>}
         </div>
       </div>
     </div>
@@ -317,47 +317,47 @@ function ChatPanel({ lead, onBack, onUpdate }) {
   return (
     <>
       {/* Cabecera */}
-      <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--color-border)]">
-        <button onClick={onBack} className="md:hidden text-[var(--color-text-muted)]">
+      <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[var(--cf-border)]">
+        <button onClick={onBack} className="md:hidden text-[var(--cf-ink-3)]">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
         </button>
         <Avatar nombre={lead.nombre} size={38} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-white font-medium truncate">{lead.nombre}</span>
-            {lead.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--color-success)] font-medium">Cliente registrado</span>}
+            <span className="text-sm text-[var(--cf-ink)] font-medium truncate">{lead.nombre}</span>
+            {lead.registrado && <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[rgba(16,185,129,0.15)] text-[var(--cf-green-dark)] font-medium">Cliente registrado</span>}
           </div>
-          <span className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1.5">
+          <span className="text-[11px] text-[var(--cf-ink-3)] flex items-center gap-1.5">
             {lead.telefono} · temp {lead.temperatura}
             {ventanaMs > 0 && (
               <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]'
-                : ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
-                : 'bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)]'
+                ventanaMs > 6 * 3600000 ? 'bg-[rgba(16,185,129,0.15)] text-[var(--cf-green-dark)]'
+                : ventanaMs > 2 * 3600000 ? 'bg-[rgba(245,197,24,0.15)] text-[var(--cf-gold)]'
+                : 'bg-[rgba(239,68,68,0.15)] text-[var(--cf-red-dark)]'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${
-                  ventanaMs > 6 * 3600000 ? 'bg-[var(--color-success)]'
-                  : ventanaMs > 2 * 3600000 ? 'bg-[var(--color-accent)]'
-                  : 'bg-[var(--color-danger)]'
+                  ventanaMs > 6 * 3600000 ? 'bg-[var(--cf-green-dark)]'
+                  : ventanaMs > 2 * 3600000 ? 'bg-[var(--cf-gold)]'
+                  : 'bg-[var(--cf-red-dark)]'
                 }`} />
                 Ventana {textoVentana(ventanaMs)}
               </span>
             )}
-            {!ventanaMs && <span className="text-[10px] text-[var(--color-text-muted)] opacity-50">Sin ventana</span>}
+            {!ventanaMs && <span className="text-[10px] text-[var(--cf-ink-3)] opacity-50">Sin ventana</span>}
           </span>
         </div>
         {/* Toggle bot */}
         <button
           onClick={toggleBot}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
-            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[var(--color-success)]' : 'bg-[rgba(136,136,136,0.15)] text-[var(--color-text-muted)]'
+            botActivo ? 'bg-[rgba(16,185,129,0.15)] text-[var(--cf-green-dark)]' : 'bg-[rgba(136,136,136,0.15)] text-[var(--cf-ink-3)]'
           }`}
           title="Prender/apagar el bot para este chat"
         >
-          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[var(--color-success)]' : 'bg-[var(--color-text-muted)]'}`} />
+          <span className={`w-2 h-2 rounded-full ${botActivo ? 'bg-[var(--cf-green-dark)]' : 'bg-[var(--cf-ink-3)]'}`} />
           Bot {botActivo ? 'ON' : 'OFF'}
         </button>
-        <a href={`https://wa.me/${(lead.telefono || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-[var(--color-text-muted)] hover:text-white" title="Abrir en WhatsApp">
+        <a href={`https://wa.me/${(lead.telefono || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]" title="Abrir en WhatsApp">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 00-8.6 15l-1.4 5 5.1-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z"/></svg>
         </a>
       </div>
@@ -365,29 +365,29 @@ function ChatPanel({ lead, onBack, onUpdate }) {
       {/* Mensajes */}
       <div ref={chatRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-[rgba(0,0,0,0.15)]">
         {mensajes.map(m => <Burbuja key={m.id} m={m} leadId={lead.id} />)}
-        {mensajes.length === 0 && <p className="text-center text-sm text-[var(--color-text-muted)] mt-6">Sin mensajes aún</p>}
+        {mensajes.length === 0 && <p className="text-center text-sm text-[var(--cf-ink-3)] mt-6">Sin mensajes aún</p>}
       </div>
 
       {/* Aviso ventana cerrada */}
-      {aviso && <div className="px-3 py-2 text-[11px] text-[var(--color-accent)] bg-[rgba(245,197,24,0.08)] border-t border-[var(--color-border)]">{aviso}</div>}
+      {aviso && <div className="px-3 py-2 text-[11px] text-[var(--cf-gold)] bg-[rgba(245,197,24,0.08)] border-t border-[var(--cf-border)]">{aviso}</div>}
 
       {/* Input */}
-      <div className="flex items-center gap-2 p-2 border-t border-[var(--color-border)]">
+      <div className="flex items-center gap-2 p-2 border-t border-[var(--cf-border)]">
         <input ref={fileRef} type="file" accept="image/*,audio/*,application/pdf" onChange={enviarArchivo} className="hidden" />
         {grabando ? (
           <>
-            <button onClick={cancelarGrabacion} className="text-[var(--color-danger)] hover:opacity-80 p-1.5" title="Cancelar nota de voz">
+            <button onClick={cancelarGrabacion} className="text-[var(--cf-red-dark)] hover:opacity-80 p-1.5" title="Cancelar nota de voz">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
             <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-[20px] bg-[rgba(239,68,68,0.12)]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)] animate-pulse" />
-              <span className="text-sm text-[var(--color-danger)] flex-1">Grabando...</span>
-              <span className="text-[11px] text-[var(--color-text-muted)]">Cancelar o enviar</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--cf-red-dark)] animate-pulse" />
+              <span className="text-sm text-[var(--cf-red-dark)] flex-1">Grabando...</span>
+              <span className="text-[11px] text-[var(--cf-ink-3)]">Cancelar o enviar</span>
             </div>
           </>
         ) : (
           <>
-            <button onClick={() => fileRef.current?.click()} disabled={enviando} className="text-[var(--color-text-muted)] hover:text-white p-1.5" title="Adjuntar">
+            <button onClick={() => fileRef.current?.click()} disabled={enviando} className="text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] p-1.5" title="Adjuntar">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
             </button>
             <input
@@ -395,17 +395,17 @@ function ChatPanel({ lead, onBack, onUpdate }) {
               onChange={e => setTexto(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
               placeholder="Escribe un mensaje..."
-              className="flex-1 px-3 py-2 rounded-[20px] bg-[rgba(255,255,255,0.05)] text-sm text-white placeholder:text-[var(--color-text-muted)] outline-none"
+              className="flex-1 px-3 py-2 rounded-[20px] bg-[rgba(255,255,255,0.05)] text-sm text-[var(--cf-ink)] placeholder:text-[var(--cf-ink-3)] outline-none"
             />
           </>
         )}
         {/* Boton: si hay texto -> enviar; si no -> grabar/parar nota de voz */}
         {texto.trim() && !grabando ? (
-          <button onClick={enviar} disabled={enviando} className="bg-[var(--color-success)] disabled:opacity-40 text-white rounded-full p-2" title="Enviar">
+          <button onClick={enviar} disabled={enviando} className="bg-[var(--cf-green-dark)] disabled:opacity-40 text-[var(--cf-ink)] rounded-full p-2" title="Enviar">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         ) : (
-          <button onClick={toggleGrabacion} disabled={enviando} className={`rounded-full p-2 text-white disabled:opacity-40 ${grabando ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-success)]'}`} title={grabando ? 'Detener y enviar' : 'Grabar nota de voz'}>
+          <button onClick={toggleGrabacion} disabled={enviando} className={`rounded-full p-2 text-[var(--cf-ink)] disabled:opacity-40 ${grabando ? 'bg-[var(--cf-red-dark)]' : 'bg-[var(--cf-green-dark)]'}`} title={grabando ? 'Detener y enviar' : 'Grabar nota de voz'}>
             {grabando ? (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
             ) : (
@@ -423,7 +423,7 @@ function Burbuja({ m, leadId }) {
   const align = esLead ? 'items-start' : 'items-end'
   const color = esLead
     ? 'bg-[rgba(255,255,255,0.07)] text-white'
-    : (m.rol === 'admin' ? 'bg-[var(--color-accent)] text-black' : 'bg-[var(--color-success)] text-white')
+    : (m.rol === 'admin' ? 'bg-[var(--cf-gold)] text-black' : 'bg-[var(--cf-green-dark)] text-white')
   const mediaUrl = m.mediaPath ? `/api/admin/whatsapp-bot/media/${m.mediaPath}` : null
 
   return (
@@ -448,7 +448,7 @@ function Burbuja({ m, leadId }) {
           <p className="text-[13px] whitespace-pre-wrap break-words">{m.texto}</p>
         )}
       </div>
-      <span className="text-[11px] text-[var(--color-text-muted)] mt-0.5 px-1 flex items-center gap-1">
+      <span className="text-[11px] text-[var(--cf-ink-3)] mt-0.5 px-1 flex items-center gap-1">
         {new Date(m.createdAt).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
         {!esLead && <EstadoEntrega m={m} />}
       </span>
@@ -461,7 +461,7 @@ function Burbuja({ m, leadId }) {
 function EstadoEntrega({ m }) {
   if (m.estadoEntrega === 'fallido') {
     return (
-      <span className="text-[var(--color-danger)] flex items-center gap-0.5" title={m.errorEntrega || 'No entregado'}>
+      <span className="text-[var(--cf-red-dark)] flex items-center gap-0.5" title={m.errorEntrega || 'No entregado'}>
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/></svg>
         No entregado
       </span>

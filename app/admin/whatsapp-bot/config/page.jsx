@@ -47,25 +47,25 @@ export default function WhatsAppBotConfig() {
     return <div className="max-w-3xl mx-auto space-y-4"><SkeletonCard /><SkeletonCard /></div>
   }
 
-  if (!config) return <p className="text-[var(--color-danger)] text-sm">Error cargando configuración</p>
+  if (!config) return <p className="text-[var(--cf-red-dark)] text-sm">Error cargando configuración</p>
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <div className="flex items-center gap-2">
-        <Link href="/admin/whatsapp-bot" className="text-[var(--color-text-muted)] hover:text-white transition-all">
+        <Link href="/admin/whatsapp-bot" className="text-[var(--cf-ink-3)] hover:text-white transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="text-[25px] font-semibold text-[white]">Configuración del Bot</h1>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Configuración del Bot</h1>
       </div>
 
       {/* Bot activo toggle */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
+      <div className="border border-[var(--cf-border)] rounded-[20px] p-4 bg-[var(--cf-card)]">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-white">Bot activo</h2>
-            <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">
+            <h2 className="text-sm font-semibold text-[var(--cf-ink)]">Bot activo</h2>
+            <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
               Cuando esta apagado, los mensajes se guardan pero no se responden
             </p>
           </div>
@@ -82,9 +82,9 @@ export default function WhatsAppBotConfig() {
           conectan de verdad; lo que se quito es la promesa falsa. */}
 
       {/* Delays de seguimiento (estos SI se aplican, en lib/bot-v2/sender.js) */}
-      <div className="border border-[var(--color-border)] rounded-[20px] p-4 bg-[var(--color-bg-card)]">
-        <h2 className="text-sm font-semibold text-white mb-1">Espaciado entre seguimientos</h2>
-        <p className="text-[11px] text-[var(--color-text-muted)] mb-3">
+      <div className="border border-[var(--cf-border)] rounded-[20px] p-4 bg-[var(--cf-card)]">
+        <h2 className="text-sm font-semibold text-[var(--cf-ink)] mb-1">Espaciado entre seguimientos</h2>
+        <p className="text-[11px] text-[var(--cf-ink-3)] mb-3">
           Pausa aleatoria entre un seguimiento y el siguiente, para no enviarlos en rafaga.
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -93,13 +93,13 @@ export default function WhatsAppBotConfig() {
             { key: 'delayMaxMs', label: 'Delay máximo (ms)', type: 'number' },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[10px] text-[var(--color-text-muted)] mb-1 block">{f.label}</label>
+              <label className="text-[10px] text-[var(--cf-ink-3)] mb-1 block">{f.label}</label>
               <input
                 type={f.type}
                 step={f.step}
                 value={config[f.key] ?? ''}
                 onChange={e => set(f.key, f.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-                className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--color-border)] text-sm text-white focus:outline-none"
+                className="w-full px-3 py-2 rounded-[8px] bg-[#0a0a0a] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] focus:outline-none"
               />
             </div>
           ))}
@@ -111,7 +111,7 @@ export default function WhatsAppBotConfig() {
         <button
           onClick={guardar}
           disabled={saving}
-          className="px-6 py-2.5 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.25)] transition-all"
+          className="px-6 py-2.5 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.25)] transition-all"
         >
           {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar cambios'}
         </button>

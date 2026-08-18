@@ -41,8 +41,8 @@ export default function AdminSoportePage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Soporte</h1>
-          <p className="text-xs text-[var(--color-text-muted)]">{tickets.length} tickets</p>
+          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Soporte</h1>
+          <p className="text-xs text-[var(--cf-ink-3)]">{tickets.length} tickets</p>
         </div>
         {contactosPendientes.length > 0 && (
           <Badge variant="yellow">
@@ -59,8 +59,8 @@ export default function AdminSoportePage() {
             onClick={() => setFiltro(f)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all shrink-0 ${
               filtro === f
-                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
-                : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] border border-[var(--color-border)]'
+                ? 'bg-[var(--cf-gold)] text-[#1a1a2e]'
+                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] border border-[var(--cf-border)]'
             }`}
           >
             {f === 'todos' ? 'Todos' : ESTADO_BADGE[f]?.label || f}
@@ -72,7 +72,7 @@ export default function AdminSoportePage() {
         <div className="space-y-3"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div>
       ) : tickets.length === 0 ? (
         <Card className="text-center py-12">
-          <p className="text-sm text-[var(--color-text-muted)]">No hay tickets {filtro !== 'todos' ? `con estado "${ESTADO_BADGE[filtro]?.label}"` : ''}</p>
+          <p className="text-sm text-[var(--cf-ink-3)]">No hay tickets {filtro !== 'todos' ? `con estado "${ESTADO_BADGE[filtro]?.label}"` : ''}</p>
         </Card>
       ) : (
         <div className="space-y-2">
@@ -81,7 +81,7 @@ export default function AdminSoportePage() {
             const mensajesNuevos = t._count?.mensajes || 0
             return (
               <Link key={t.id} href={`/admin/soporte/${t.id}`}>
-                <Card className="hover:border-[color-mix(in_srgb,var(--color-accent)_30%,transparent)] transition-all cursor-pointer">
+                <Card className="hover:border-[color-mix(in_srgb,var(--cf-gold)_30%,transparent)] transition-all cursor-pointer">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -91,20 +91,20 @@ export default function AdminSoportePage() {
                           <Badge variant="yellow">Contactar</Badge>
                         )}
                         {mensajesNuevos > 0 && (
-                          <span className="w-5 h-5 rounded-full bg-[var(--color-accent)] text-[#1a1a2e] text-[10px] font-bold flex items-center justify-center">
+                          <span className="w-5 h-5 rounded-full bg-[var(--cf-gold)] text-[#1a1a2e] text-[10px] font-bold flex items-center justify-center">
                             {mensajesNuevos}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate">{t.asunto}</p>
-                      <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                      <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{t.asunto}</p>
+                      <p className="text-xs text-[var(--cf-ink-3)] mt-1">
                         {t.organization?.nombre} — {t.user?.nombre}
                         {t.solicitaContacto && t.telefonoContacto && (
-                          <span className="ml-2 text-[var(--color-warning)]">Tel: {t.telefonoContacto}</span>
+                          <span className="ml-2 text-[var(--cf-gold-dark)]">Tel: {t.telefonoContacto}</span>
                         )}
                       </p>
                     </div>
-                    <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">
+                    <span className="text-[10px] text-[var(--cf-ink-3)] shrink-0">
                       {new Date(t.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>

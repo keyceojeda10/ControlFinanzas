@@ -58,18 +58,18 @@ function TiraFotosDonadas() {
     <Card className="mb-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Fotos donadas para el lector</p>
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">
-            {d.total} <span className="text-sm font-normal text-[var(--color-text-muted)]">de {d.meta}</span>
+          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Fotos donadas para el lector</p>
+          <p className="text-2xl font-bold text-[var(--cf-ink)]">
+            {d.total} <span className="text-sm font-normal text-[var(--cf-ink-3)]">de {d.meta}</span>
           </p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">
+          <p className="text-[10px] text-[var(--cf-ink-3)]">
             {d.negocios.length} {d.negocios.length === 1 ? 'negocio' : 'negocios'}
             {d.ultima ? ` · última ${haceTiempo(d.ultima)}` : ''}
           </p>
         </div>
         <div className="text-right">
           <Badge variant={d.viva ? 'yellow' : 'green'}>{d.viva ? 'Abierta' : 'Cerrada'}</Badge>
-          <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+          <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
             {d.viva
               ? `Cierra ${cierra.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' })}`
               : 'Ya se retiró del panel'}
@@ -77,23 +77,23 @@ function TiraFotosDonadas() {
         </div>
       </div>
 
-      <div className="h-1.5 rounded-full mt-3 overflow-hidden" style={{ background: 'var(--color-border)' }}>
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--color-accent)' }} />
+      <div className="h-1.5 rounded-full mt-3 overflow-hidden" style={{ background: 'var(--cf-border)' }}>
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--cf-gold)' }} />
       </div>
 
       {/* Qué forma tienen los registros: decide para qué hay que construir. */}
       {Object.keys(d.porForma).length > 0 && (
         <div className="flex gap-3 mt-3 flex-wrap">
           {Object.entries(d.porForma).map(([k, n]) => (
-            <span key={k} className="text-[11px] text-[var(--color-text-muted)]">
-              <strong className="text-[var(--color-text-primary)]">{n}</strong> {FORMA[k] ?? k}
+            <span key={k} className="text-[11px] text-[var(--cf-ink-3)]">
+              <strong className="text-[var(--cf-ink)]">{n}</strong> {FORMA[k] ?? k}
             </span>
           ))}
         </div>
       )}
 
       {d.negocios.length > 0 && (
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-2">
+        <p className="text-[11px] text-[var(--cf-ink-3)] mt-2">
           {d.negocios.slice(0, 6).map(n => `${n.nombre} (${n.fotos})`).join(' · ')}
           {d.negocios.length > 6 ? ` y ${d.negocios.length - 6} más` : ''}
         </p>
@@ -116,7 +116,7 @@ export default function ActivacionPage() {
   }, [])
 
   if (loading) return <div className="max-w-5xl mx-auto"><SkeletonCard /><SkeletonCard /></div>
-  if (!data) return <p className="text-sm text-[var(--color-text-muted)] text-center py-12">Error cargando datos</p>
+  if (!data) return <p className="text-sm text-[var(--cf-ink-3)] text-center py-12">Error cargando datos</p>
 
   const { resumen } = data
   const hoy = new Date()
@@ -142,29 +142,29 @@ export default function ActivacionPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Panel de Activación</h1>
-        <p className="text-xs text-[var(--color-text-muted)]">Monitorea registros, activación y trial de usuarios</p>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Panel de Activación</h1>
+        <p className="text-xs text-[var(--cf-ink-3)]">Monitorea registros, activación y trial de usuarios</p>
       </div>
 
       {/* Resumen cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Hoy / Ayer</p>
-          <p className="text-2xl font-bold text-[var(--color-accent)]">{resumen.registrosHoy} <span className="text-sm font-normal text-[var(--color-text-muted)]">/ {resumen.registrosAyer}</span></p>
+          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Hoy / Ayer</p>
+          <p className="text-2xl font-bold text-[var(--cf-gold)]">{resumen.registrosHoy} <span className="text-sm font-normal text-[var(--cf-ink-3)]">/ {resumen.registrosAyer}</span></p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Esta semana</p>
-          <p className="text-2xl font-bold text-[var(--color-text-primary)]">{resumen.registrosSemana}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Esta semana</p>
+          <p className="text-2xl font-bold text-[var(--cf-ink)]">{resumen.registrosSemana}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Activación</p>
-          <p className="text-2xl font-bold text-[var(--color-success)]">{resumen.tasaActivacion}%</p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">{resumen.totalActivos} activos de {resumen.total}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Activación</p>
+          <p className="text-2xl font-bold text-[var(--cf-green-dark)]">{resumen.tasaActivacion}%</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">{resumen.totalActivos} activos de {resumen.total}</p>
         </Card>
         <Card>
-          <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Trial por vencer</p>
-          <p className="text-2xl font-bold text-[var(--color-warning)]">{resumen.trialPorVencer}</p>
-          <p className="text-[10px] text-[var(--color-text-muted)]">Próximos 3 días</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Trial por vencer</p>
+          <p className="text-2xl font-bold text-[var(--cf-gold-dark)]">{resumen.trialPorVencer}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Próximos 3 días</p>
         </Card>
       </div>
 
@@ -178,8 +178,8 @@ export default function ActivacionPage() {
             onClick={() => setFiltro(f.key)}
             className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all ${
               filtro === f.key
-                ? 'bg-[var(--color-accent)] text-[#1a1a2e]'
-                : 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border)] hover:text-[var(--color-text-primary)]'
+                ? 'bg-[var(--cf-gold)] text-[#1a1a2e]'
+                : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:text-[var(--cf-ink)]'
             }`}
           >
             {f.label}
@@ -194,7 +194,7 @@ export default function ActivacionPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[var(--color-border)] text-[var(--color-text-muted)]">
+              <tr className="border-b border-[var(--cf-border)] text-[var(--cf-ink-3)]">
                 <th className="text-left px-4 py-3 font-medium">Usuario</th>
                 <th className="text-left px-3 py-3 font-medium hidden sm:table-cell">Registro</th>
                 <th className="text-center px-3 py-3 font-medium">Clientes</th>
@@ -206,36 +206,36 @@ export default function ActivacionPage() {
             </thead>
             <tbody>
               {filtrados.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-8 text-[var(--color-text-muted)]">Sin resultados</td></tr>
+                <tr><td colSpan={7} className="text-center py-8 text-[var(--cf-ink-3)]">Sin resultados</td></tr>
               ) : filtrados.map(u => {
                 const est = ESTADO_CONFIG[u.estado] || ESTADO_CONFIG.inactivo
                 const waLink = whatsappLink(u.ownerTelefono, u.ownerNombre)
                 return (
-                  <tr key={u.id} className="border-b border-[#1a1a1a] hover:bg-[var(--color-bg-card)] transition-colors">
+                  <tr key={u.id} className="border-b border-[#1a1a1a] hover:bg-[var(--cf-card)] transition-colors">
                     <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-[var(--color-text-primary)] truncate max-w-[180px]">{u.ownerNombre || u.orgNombre}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[180px]">{u.ownerEmail}</p>
+                      <p className="text-sm font-medium text-[var(--cf-ink)] truncate max-w-[180px]">{u.ownerNombre || u.orgNombre}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)] truncate max-w-[180px]">{u.ownerEmail}</p>
                     </td>
                     <td className="px-3 py-3 hidden sm:table-cell">
-                      <p className="text-[var(--color-text-muted)]">{haceTiempo(u.createdAt)}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(u.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
+                      <p className="text-[var(--cf-ink-3)]">{haceTiempo(u.createdAt)}</p>
+                      <p className="text-[10px] text-[var(--cf-ink-3)]">{new Date(u.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}</p>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className={`font-bold ${u.clientes > 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}`}>{u.clientes}</span>
+                      <span className={`font-bold ${u.clientes > 0 ? 'text-[var(--cf-ink)]' : 'text-[var(--cf-ink-3)]'}`}>{u.clientes}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className={`font-bold ${u.prestamos > 0 ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'}`}>{u.prestamos}</span>
+                      <span className={`font-bold ${u.prestamos > 0 ? 'text-[var(--cf-ink)]' : 'text-[var(--cf-ink-3)]'}`}>{u.prestamos}</span>
                     </td>
                     <td className="px-3 py-3 text-center">
                       <Badge variant={est.variant}>{est.label}</Badge>
                     </td>
                     <td className="px-3 py-3 text-center">
                       {u.diasTrial > 0 ? (
-                        <span className={`text-[11px] font-bold ${u.diasTrial <= 3 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-muted)]'}`}>
+                        <span className={`text-[11px] font-bold ${u.diasTrial <= 3 ? 'text-[var(--cf-gold-dark)]' : 'text-[var(--cf-ink-3)]'}`}>
                           {u.diasTrial}d
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[var(--color-text-muted)]">Vencido</span>
+                        <span className="text-[10px] text-[var(--cf-ink-3)]">Vencido</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -245,7 +245,7 @@ export default function ActivacionPage() {
                             href={waLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-[8px] bg-[var(--color-success)]/10 text-[var(--color-success)] hover:bg-[var(--color-success)]/20 transition-all"
+                            className="p-1.5 rounded-[8px] bg-[var(--cf-green-dark)]/10 text-[var(--cf-green-dark)] hover:bg-[var(--cf-green-dark)]/20 transition-all"
                             title="WhatsApp"
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -256,7 +256,7 @@ export default function ActivacionPage() {
                         )}
                         <a
                           href={`/admin/organizaciones/${u.id}`}
-                          className="p-1.5 rounded-[8px] bg-[rgba(245,197,24,0.1)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
+                          className="p-1.5 rounded-[8px] bg-[rgba(245,197,24,0.1)] text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
                           title="Ver detalle"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

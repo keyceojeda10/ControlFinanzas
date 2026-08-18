@@ -8,10 +8,27 @@ import { usePathname } from 'next/navigation'
 import { signOut }     from 'next-auth/react'
 import { Badge }       from '@/components/ui/Badge'
 
-/* ⚠ «Negocio», «Dashboard» y «Métricas» eran TRES entradas para la misma
-   pregunta, con cifras que no coincidian entre si. Ahora es UNA: `inicio`.
-   Las tres rutas viejas siguen existiendo hasta que la tanda de Usuarios se
-   lleve por delante lo que quede; lo que se quita aqui es el menu. */
+/* ══ TRECE ENTRADAS, Y NUEVE CABEN ═══════════════════════════════════════════
+ *
+ * «Es un panel de superadministrador que no superadministra nada en absoluto.
+ *  Hay un monton de paneles, pero con datos iguales que se duplican y son igual
+ *  de irrelevantes.»  — el dueño, 16 ago 2026
+ *
+ * Primero se fundieron «Negocio», «Dashboard» y «Metricas», que eran TRES
+ * entradas para la misma pregunta con cifras que no coincidian entre si: ahora
+ * son `inicio`.
+ *
+ * Ahora salen del menu las cuatro que `usuarios` absorbio —Organizaciones,
+ * Suscripciones, Retencion y Activacion—: las cinco consultaban la MISMA tabla
+ * para contestar variantes de la misma pregunta, y la misma organizacion salia
+ * «activa» en una y «muerta» en otra. La definicion vive ahora en un solo sitio,
+ * `lib/admin/segmentos.js`, y lo que cambia entre vistas es el filtro.
+ *
+ * ⚠ LAS RUTAS SIGUEN VIVAS, solo se quitan del menu. La ficha de un negocio
+ * —`/admin/organizaciones/[id]`, con renovar, quitar dias, poner fecha y cambiar
+ * de plan— es a donde lleva cada renglon de la lista de Usuarios: borrar la ruta
+ * seria quitarle a `usuarios` justo lo que la hace util. Y quien tenga una de
+ * esas paginas guardada la sigue abriendo. */
 const nav = [
   {
     href: '/admin/inicio',
@@ -52,26 +69,8 @@ const nav = [
       </svg>
     ),
   },
-  {
-    href: '/admin/organizaciones',
-    label: 'Organizaciones',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/suscripciones',
-    label: 'Suscripciones',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
+
+
   {
     href: '/admin/soporte',
     label: 'Soporte',
@@ -97,26 +96,8 @@ const nav = [
       </svg>
     ),
   },
-  {
-    href: '/admin/retencion',
-    label: 'Retencion',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/activacion',
-    label: 'Activacion',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-  },
+
+
   {
     href: '/admin/leads',
     label: 'Leads',
@@ -178,7 +159,7 @@ export default function AdminLayout({ children }) {
           <Image src="/logo-full.svg" alt="Control Finanzas" width={150} height={38} priority />
           <div className="flex items-center gap-2 mt-2">
             <Badge variant="purple">SUPERADMIN</Badge>
-            <span className="text-[10px] text-[var(--color-text-secondary)]">Admin</span>
+            <span className="text-[10px] text-[var(--cf-ink-2)]">Admin</span>
           </div>
         </div>
 
@@ -192,8 +173,8 @@ export default function AdminLayout({ children }) {
                 className={[
                   'flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium transition-all',
                   active
-                    ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
-                    : 'text-[var(--color-text-muted)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)]',
+                    ? 'bg-[color-mix(in_srgb,var(--cf-gold)_12%,transparent)] text-[var(--cf-gold)]'
+                    : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)]',
                 ].join(' ')}
               >
                 {icon}
@@ -206,7 +187,7 @@ export default function AdminLayout({ children }) {
         <div className="px-3 py-4 border-t border-[var(--cf-border)]">
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-[12px] text-sm font-medium text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] transition-all w-full"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -221,12 +202,12 @@ export default function AdminLayout({ children }) {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[var(--cf-border)] bg-[var(--cf-surface)]">
           <Image src="/logo-icon.svg" alt="CF" width={28} height={28} />
-          <span className="text-sm font-bold text-white ml-1">Admin</span>
+          <span className="text-sm font-bold text-[var(--cf-ink)] ml-1">Admin</span>
           <div className="flex items-center gap-2">
             <Badge variant="purple">SUPERADMIN</Badge>
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="p-1.5 rounded-[8px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              className="p-1.5 rounded-[8px] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
               title="Cerrar sesión"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,8 +241,8 @@ export default function AdminLayout({ children }) {
                       className={[
                         'flex flex-col items-center gap-1 py-3 px-1 rounded-[12px] text-[11px] font-medium transition-all',
                         active
-                          ? 'bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)] text-[var(--color-accent)]'
-                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--cf-fill)]',
+                          ? 'bg-[color-mix(in_srgb,var(--cf-gold)_12%,transparent)] text-[var(--cf-gold)]'
+                          : 'text-[var(--cf-ink-3)] hover:text-white hover:bg-[var(--cf-fill)]',
                       ].join(' ')}
                     >
                       {icon}
@@ -284,7 +265,7 @@ export default function AdminLayout({ children }) {
                 href={href}
                 className={[
                   'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
-                  active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)]',
+                  active ? 'text-[var(--cf-gold)]' : 'text-[var(--cf-ink-2)]',
                 ].join(' ')}
               >
                 {icon}
@@ -297,7 +278,7 @@ export default function AdminLayout({ children }) {
             onClick={() => setMoreOpen(v => !v)}
             className={[
               'flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-all',
-              moreActive || moreOpen ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-secondary)]',
+              moreActive || moreOpen ? 'text-[var(--cf-gold)]' : 'text-[var(--cf-ink-2)]',
             ].join(' ')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -63,18 +63,18 @@ function buildWhatsappLink(lead) {
 
 function LeadCardSkeleton() {
   return (
-    <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] p-4 space-y-3 animate-pulse">
+    <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] p-4 space-y-3 animate-pulse">
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-2 flex-1">
-          <div className="h-4 w-36 bg-[var(--color-bg-hover)] rounded" />
-          <div className="h-3 w-24 bg-[var(--color-bg-hover)] rounded" />
+          <div className="h-4 w-36 bg-[var(--cf-fill)] rounded" />
+          <div className="h-3 w-24 bg-[var(--cf-fill)] rounded" />
         </div>
-        <div className="h-5 w-16 bg-[var(--color-bg-hover)] rounded-full" />
+        <div className="h-5 w-16 bg-[var(--cf-fill)] rounded-full" />
       </div>
-      <div className="h-3 w-full bg-[var(--color-bg-hover)] rounded" />
+      <div className="h-3 w-full bg-[var(--cf-fill)] rounded" />
       <div className="flex gap-2 pt-1">
-        <div className="h-11 flex-1 bg-[var(--color-bg-hover)] rounded-[12px]" />
-        <div className="h-11 w-24 bg-[var(--color-bg-hover)] rounded-[12px]" />
+        <div className="h-11 flex-1 bg-[var(--cf-fill)] rounded-[12px]" />
+        <div className="h-11 w-24 bg-[var(--cf-fill)] rounded-[12px]" />
       </div>
     </div>
   )
@@ -101,27 +101,27 @@ function LeadCard({ lead, onDelete }) {
       {/* Row 1: nombre + tiempo + estado */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-[var(--color-text-primary)] leading-tight truncate">
+          <p className="text-[15px] font-bold text-[var(--cf-ink)] leading-tight truncate">
             {lead.nombre}
           </p>
           {lead.telefono && (
-            <p className="text-xs text-[var(--color-text-muted)] mt-0.5">{lead.telefono}</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">{lead.telefono}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] text-[var(--color-text-muted)]">{haceTiempo(lead.createdAt)} {formatHora(lead.createdAt)}</span>
+          <span className="text-[11px] text-[var(--cf-ink-3)]">{haceTiempo(lead.createdAt)} {formatHora(lead.createdAt)}</span>
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
           {confirmDelete ? (
             <div className="flex gap-1">
               <button
                 onClick={handleDelete}
-                className="p-1.5 rounded-[8px] bg-[rgba(239,68,68,0.15)] text-[var(--color-danger)] text-[10px] font-bold"
+                className="p-1.5 rounded-[8px] bg-[rgba(239,68,68,0.15)] text-[var(--cf-red-dark)] text-[10px] font-bold"
               >
                 Si
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="p-1.5 rounded-[8px] bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] text-[10px]"
+                className="p-1.5 rounded-[8px] bg-[var(--cf-fill)] text-[var(--cf-ink-3)] text-[10px]"
               >
                 No
               </button>
@@ -129,7 +129,7 @@ function LeadCard({ lead, onDelete }) {
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="p-1 rounded-[6px] text-[var(--color-text-muted)] hover:text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
+              className="p-1 rounded-[6px] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.08)] transition-all"
               title="Eliminar"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +148,7 @@ function LeadCard({ lead, onDelete }) {
             <Badge variant="gray">{lead.cantClientes} clientes</Badge>
           )}
           {lead.orgVinculada && (
-            <span className="text-[11px] text-[var(--color-success)] font-medium">
+            <span className="text-[11px] text-[var(--cf-green-dark)] font-medium">
               Org: {lead.orgVinculada}
             </span>
           )}
@@ -166,7 +166,7 @@ function LeadCard({ lead, onDelete }) {
               flex-1 flex items-center justify-center gap-2
               min-h-[48px] rounded-[12px]
               bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.25)]
-              text-[var(--color-success)] text-sm font-semibold
+              text-[var(--cf-green-dark)] text-sm font-semibold
               active:scale-[0.98] transition-all
             "
           >
@@ -180,7 +180,7 @@ function LeadCard({ lead, onDelete }) {
             className="
               flex-1 flex items-center justify-center gap-2
               min-h-[48px] rounded-[12px]
-              bg-[#1f1f1f] border border-[var(--color-border)]
+              bg-[#1f1f1f] border border-[var(--cf-border)]
               text-[#444444] text-sm font-semibold cursor-not-allowed select-none
             "
           >
@@ -197,7 +197,7 @@ function LeadCard({ lead, onDelete }) {
             flex items-center justify-center gap-1.5
             min-h-[48px] px-5 rounded-[12px]
             bg-[rgba(245,197,24,0.12)] border border-[rgba(245,197,24,0.25)]
-            text-[var(--color-accent)] text-sm font-semibold
+            text-[var(--cf-gold)] text-sm font-semibold
             active:scale-[0.98] transition-all whitespace-nowrap
           "
         >
@@ -222,10 +222,10 @@ function StatsGrid({ stats, loading }) {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3 animate-pulse"
+            className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[20px] px-4 py-3 animate-pulse"
           >
-            <div className="h-2.5 w-14 bg-[var(--color-bg-hover)] rounded mb-2" />
-            <div className="h-7 w-10 bg-[var(--color-bg-hover)] rounded" />
+            <div className="h-2.5 w-14 bg-[var(--cf-fill)] rounded mb-2" />
+            <div className="h-7 w-10 bg-[var(--cf-fill)] rounded" />
           </div>
         ))}
       </div>
@@ -236,22 +236,22 @@ function StatsGrid({ stats, loading }) {
     {
       label: 'Hoy',
       value: stats?.totalHoy ?? 0,
-      color: 'var(--color-accent)',
+      color: 'var(--cf-gold)',
     },
     {
       label: 'Total',
       value: stats?.total ?? 0,
-      color: 'var(--color-text-primary)',
+      color: 'var(--cf-ink)',
     },
     {
       label: 'Contactados',
       value: stats?.porEstado?.contactado ?? 0,
-      color: 'var(--color-info)',
+      color: 'var(--cf-blue)',
     },
     {
       label: 'Conversión',
       value: stats?.tasaConversion != null ? `${stats.tasaConversion}%` : '0%',
-      color: 'var(--color-success)',
+      color: 'var(--cf-green-dark)',
     },
   ]
 
@@ -260,9 +260,9 @@ function StatsGrid({ stats, loading }) {
       {items.map(({ label, value, color }) => (
         <div
           key={label}
-          className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[20px] px-4 py-3 text-center"
+          className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[20px] px-4 py-3 text-center"
         >
-          <p className="text-[11px] text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
+          <p className="text-[11px] text-[var(--cf-ink-3)] uppercase tracking-wide">{label}</p>
           <p className="text-2xl font-bold mt-1 leading-none" style={{ color }}>
             {value}
           </p>
@@ -324,8 +324,8 @@ export default function LeadsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Leads</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Facebook Ads</p>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Leads</h1>
+        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">Facebook Ads</p>
       </div>
 
       {/* Stats */}
@@ -340,9 +340,9 @@ export default function LeadsPage() {
           placeholder="Buscar por nombre o teléfono..."
           className="
             flex-1 h-11 px-4 rounded-[12px]
-            border border-[var(--color-border)] bg-[var(--color-bg-card)]
-            text-sm text-[var(--color-text-primary)] placeholder-[#444444]
-            focus:outline-none focus:border-[var(--color-accent)]/40
+            border border-[var(--cf-border)] bg-[var(--cf-card)]
+            text-sm text-[var(--cf-ink)] placeholder-[#444444]
+            focus:outline-none focus:border-[var(--cf-gold)]/40
           "
         />
         <button
@@ -350,7 +350,7 @@ export default function LeadsPage() {
           className="
             h-11 px-4 rounded-[12px]
             bg-[rgba(245,197,24,0.12)] border border-[rgba(245,197,24,0.25)]
-            text-[var(--color-accent)] text-sm font-medium
+            text-[var(--cf-gold)] text-sm font-medium
             active:scale-[0.97] transition-all
           "
         >
@@ -362,9 +362,9 @@ export default function LeadsPage() {
             onClick={() => { setQ(''); setInputQ('') }}
             className="
               h-11 px-4 rounded-[12px]
-              border border-[var(--color-border)]
-              text-[var(--color-text-muted)] text-sm
-              hover:text-[var(--color-text-primary)] transition-colors
+              border border-[var(--cf-border)]
+              text-[var(--cf-ink-3)] text-sm
+              hover:text-[var(--cf-ink)] transition-colors
             "
           >
             Limpiar
@@ -385,8 +385,8 @@ export default function LeadsPage() {
                 className={[
                   'flex items-center gap-1.5 h-9 px-4 rounded-full text-sm font-medium whitespace-nowrap transition-all',
                   active
-                    ? 'bg-[rgba(245,197,24,0.15)] border border-[rgba(245,197,24,0.3)] text-[var(--color-accent)]'
-                    : 'bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-hover)]',
+                    ? 'bg-[rgba(245,197,24,0.15)] border border-[rgba(245,197,24,0.3)] text-[var(--cf-gold)]'
+                    : 'bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-border-strong)]',
                 ].join(' ')}
               >
                 {label}
@@ -395,8 +395,8 @@ export default function LeadsPage() {
                     className={[
                       'inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1',
                       active
-                        ? 'bg-[rgba(245,197,24,0.25)] text-[var(--color-accent)]'
-                        : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)]',
+                        ? 'bg-[rgba(245,197,24,0.25)] text-[var(--cf-gold)]'
+                        : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)]',
                     ].join(' ')}
                   >
                     {count}
@@ -411,10 +411,10 @@ export default function LeadsPage() {
       {/* Error */}
       {error && (
         <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
-          <p className="text-sm text-[var(--color-danger)]">{error}</p>
+          <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>
           <button
             onClick={fetchLeads}
-            className="mt-2 text-xs text-[var(--color-danger)]/70 underline underline-offset-2"
+            className="mt-2 text-xs text-[var(--cf-red-dark)]/70 underline underline-offset-2"
           >
             Reintentar
           </button>
@@ -438,7 +438,7 @@ export default function LeadsPage() {
           {(filtroEstado || q) && (
             <button
               onClick={() => { setFiltroEstado(''); setQ(''); setInputQ('') }}
-              className="mt-3 text-xs text-[var(--color-accent)]/70 underline underline-offset-2"
+              className="mt-3 text-xs text-[var(--cf-gold)]/70 underline underline-offset-2"
             >
               Limpiar filtros
             </button>

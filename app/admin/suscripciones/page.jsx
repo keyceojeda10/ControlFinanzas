@@ -30,11 +30,11 @@ const hace = (date) => {
 }
 
 const colorActividad = (date) => {
-  if (!date) return 'var(--color-text-muted)'
+  if (!date) return 'var(--cf-ink-3)'
   const horas = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60)
-  if (horas <= 24) return 'var(--color-success)'
+  if (horas <= 24) return 'var(--cf-green-dark)'
   if (horas <= 168) return '#f59e0b'
-  return 'var(--color-danger)'
+  return 'var(--cf-red-dark)'
 }
 
 export default function SuscripcionesPage() {
@@ -90,35 +90,35 @@ export default function SuscripcionesPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-5">
       <div>
-        <h1 className="text-[25px] font-semibold text-[white]">Suscripciones</h1>
-        <p className="text-sm text-[var(--color-text-muted)] mt-0.5">Gestión de suscripciones de la plataforma</p>
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Suscripciones</h1>
+        <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">Gestión de suscripciones de la plataforma</p>
       </div>
 
       {/* Resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-success) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-success) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Activas</p>
-          <p className="text-lg font-bold text-[var(--color-success)]">{activas}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Activas</p>
+          <p className="text-lg font-bold text-[var(--cf-green-dark)]">{activas}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, #f59e0b0A 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, #f59e0b05 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, #f59e0b05 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Por vencer</p>
-          <p className="text-lg font-bold text-[var(--color-warning)]">{porVencer}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Por vencer</p>
+          <p className="text-lg font-bold text-[var(--cf-gold-dark)]">{porVencer}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-info) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-blue) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Trials por vencer</p>
-          <p className="text-lg font-bold text-[var(--color-info)]">{trialsPorVencer}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Trials por vencer</p>
+          <p className="text-lg font-bold text-[var(--cf-blue)]">{trialsPorVencer}</p>
         </div>
-        <div className="border border-[var(--color-border)] rounded-[20px] px-3 py-3 text-center"
-          style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-danger) 4%, transparent) 0%, var(--color-bg-card) 40%, var(--color-bg-card) 70%, color-mix(in srgb, var(--color-danger) 2%, transparent) 100%)' }}
+        <div className="border border-[var(--cf-border)] rounded-[20px] px-3 py-3 text-center"
+          style={{ background: 'var(--cf-card) 70%, color-mix(in srgb, var(--cf-red-dark) 2%, transparent) 100%)' }}
         >
-          <p className="text-[10px] text-[var(--color-text-muted)]">Vencidas</p>
-          <p className="text-lg font-bold text-[var(--color-danger)]">{vencidas}</p>
+          <p className="text-[10px] text-[var(--cf-ink-3)]">Vencidas</p>
+          <p className="text-lg font-bold text-[var(--cf-red-dark)]">{vencidas}</p>
         </div>
       </div>
 
@@ -130,8 +130,8 @@ export default function SuscripcionesPage() {
             onClick={() => setTab(t.key)}
             className={`px-3 py-1.5 rounded-[8px] text-xs font-medium whitespace-nowrap transition-all ${
               tab === t.key
-                ? 'bg-[var(--color-info)] text-[var(--color-text-primary)]'
-                : 'bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[white]'
+                ? 'bg-[var(--cf-blue)] text-[var(--cf-ink)]'
+                : 'bg-[var(--cf-fill)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)]'
             }`}
           >
             {t.label}
@@ -143,20 +143,20 @@ export default function SuscripcionesPage() {
       {tab === 'trialPorVencer' && subs.length > 0 && (
         <div className="rounded-[12px] p-3 flex items-start gap-3"
           style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--color-info) 10%, transparent), color-mix(in srgb, var(--color-info) 4%, transparent))',
-            border: '1px solid color-mix(in srgb, var(--color-info) 25%, transparent)',
+            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-blue) 10%, transparent), color-mix(in srgb, var(--cf-blue) 4%, transparent))',
+            border: '1px solid color-mix(in srgb, var(--cf-blue) 25%, transparent)',
           }}
         >
           <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24"
-            style={{ color: 'var(--color-info)' }}
+            style={{ color: 'var(--cf-blue)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
               {subs.length} trial{subs.length !== 1 ? 's' : ''} por vencer en los próximos 7 días
             </p>
-            <p className="text-xs leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            <p className="text-xs leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
               Estos son tus prospectos más calientes. Llámalos o escríbeles por WhatsApp antes de que pierdan el acceso.
             </p>
           </div>
@@ -165,10 +165,10 @@ export default function SuscripcionesPage() {
 
       {/* Tabla */}
       {loading ? <SkeletonTable rows={5} /> : subs.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-muted)] text-center py-8">No hay suscripciones</p>
+        <p className="text-sm text-[var(--cf-ink-3)] text-center py-8">No hay suscripciones</p>
       ) : (
-        <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-[16px] overflow-hidden">
-          <div className="hidden sm:grid grid-cols-[2fr_0.7fr_0.8fr_1fr_0.8fr_1.4fr] gap-2 px-4 py-2.5 text-[10px] text-[var(--color-text-muted)] font-medium uppercase border-b border-[var(--color-border)]">
+        <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] overflow-hidden">
+          <div className="hidden sm:grid grid-cols-[2fr_0.7fr_0.8fr_1fr_0.8fr_1.4fr] gap-2 px-4 py-2.5 text-[10px] text-[var(--cf-ink-3)] font-medium uppercase border-b border-[var(--cf-border)]">
             <span>Organización</span>
             <span className="text-center">Plan</span>
             <span className="text-center">Uso</span>
@@ -180,27 +180,27 @@ export default function SuscripcionesPage() {
           {subs.map((s) => {
             const wa = waUrlVencer(s)
             return (
-            <div key={s.id} className="grid grid-cols-2 sm:grid-cols-[2fr_0.7fr_0.8fr_1fr_0.8fr_1.4fr] gap-2 px-4 py-3 border-b border-[var(--color-border)] last:border-0 items-center">
+            <div key={s.id} className="grid grid-cols-2 sm:grid-cols-[2fr_0.7fr_0.8fr_1fr_0.8fr_1.4fr] gap-2 px-4 py-3 border-b border-[var(--cf-border)] last:border-0 items-center">
               <div>
-                <Link href={`/admin/organizaciones/${s.organizacionId}`} className="text-sm font-medium text-[white] hover:text-[var(--color-info)]">
+                <Link href={`/admin/organizaciones/${s.organizacionId}`} className="text-sm font-medium text-[var(--cf-ink)] hover:text-[var(--cf-blue)]">
                   {s.organizacion}
                 </Link>
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                   {s.esTrial ? (
                     <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                      style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-info)' }}
+                      style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--cf-blue)' }}
                     >
                       TRIAL
                     </span>
                   ) : (
                     <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]"
-                      style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--color-success)' }}
+                      style={{ background: 'rgba(34,197,94,0.15)', color: 'var(--cf-green-dark)' }}
                     >
                       PAGADO · <span className="font-mono-display">{formatMoney(s.montoCOP)}</span>
                     </span>
                   )}
                   {s.ownerEmail && (
-                    <p className="text-[10px] text-[var(--color-text-muted)] truncate">{s.ownerEmail}</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)] truncate">{s.ownerEmail}</p>
                   )}
                 </div>
               </div>
@@ -208,14 +208,14 @@ export default function SuscripcionesPage() {
                 <Badge variant={planBadge[s.plan]}>{s.plan}</Badge>
               </div>
               <div className="text-center">
-                <p className="text-[11px] text-[var(--color-text-primary)] font-medium">{s.clientes}</p>
-                <p className="text-[11px] text-[var(--color-text-muted)]">{s.prestamos} préstamo{s.prestamos !== 1 ? 's' : ''}</p>
+                <p className="text-[11px] text-[var(--cf-ink)] font-medium">{s.clientes}</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)]">{s.prestamos} préstamo{s.prestamos !== 1 ? 's' : ''}</p>
               </div>
               <div className="text-center">
-                <p className="text-xs text-[var(--color-text-muted)]">
+                <p className="text-xs text-[var(--cf-ink-3)]">
                   {new Date(s.fechaVencimiento).toLocaleDateString('es-CO')}
                 </p>
-                <p className={`text-[10px] font-bold ${s.diasRestantes > 7 ? 'text-[var(--color-success)]' : s.diasRestantes > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]'}`}>
+                <p className={`text-[10px] font-bold ${s.diasRestantes > 7 ? 'text-[var(--cf-green-dark)]' : s.diasRestantes > 0 ? 'text-[var(--cf-gold-dark)]' : 'text-[var(--cf-red-dark)]'}`}>
                   {s.diasRestantes > 0 ? `${s.diasRestantes}d` : `${Math.abs(s.diasRestantes)}d vencida`}
                 </p>
               </div>
@@ -231,7 +231,7 @@ export default function SuscripcionesPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] text-[10px] font-medium transition-all"
-                    style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--color-success)' }}
+                    style={{ background: 'rgba(34,197,94,0.12)', color: 'var(--cf-green-dark)' }}
                     title="Contactar por WhatsApp"
                   >
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -243,14 +243,14 @@ export default function SuscripcionesPage() {
                 <button
                   onClick={() => ejecutar(s.id, 'renovar')}
                   disabled={!!accionando}
-                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[var(--color-success)] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(16,185,129,0.12)] text-[var(--cf-green-dark)] hover:bg-[rgba(16,185,129,0.2)] transition-all disabled:opacity-50"
                 >
                   {accionando === `${s.id}-renovar` ? '…' : '+30d'}
                 </button>
                 <button
                   onClick={() => ejecutar(s.id, 'gracia')}
                   disabled={!!accionando}
-                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(245,158,11,0.12)] text-[var(--color-warning)] hover:bg-[rgba(245,158,11,0.2)] transition-all disabled:opacity-50"
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(245,158,11,0.12)] text-[var(--cf-gold-dark)] hover:bg-[rgba(245,158,11,0.2)] transition-all disabled:opacity-50"
                 >
                   {accionando === `${s.id}-gracia` ? '…' : '+7d'}
                 </button>
@@ -259,7 +259,7 @@ export default function SuscripcionesPage() {
                     if (confirm(`¿Cancelar suscripción de "${s.organizacion}"?`)) ejecutar(s.id, 'cancelar')
                   }}
                   disabled={!!accionando || s.estado === 'cancelada'}
-                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(239,68,68,0.12)] text-[var(--color-danger)] hover:bg-[rgba(239,68,68,0.2)] transition-all disabled:opacity-50"
+                  className="px-2 py-1 rounded-[6px] text-[10px] font-medium bg-[rgba(239,68,68,0.12)] text-[var(--cf-red-dark)] hover:bg-[rgba(239,68,68,0.2)] transition-all disabled:opacity-50"
                 >
                   {accionando === `${s.id}-cancelar` ? '…' : 'Cancelar'}
                 </button>

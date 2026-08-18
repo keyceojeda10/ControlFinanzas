@@ -69,16 +69,27 @@ Tres cosas que pidieron ellos y no están (detalle y porqué en
 3. **Interés por período en `fijo` y `unico`.** El más grande: toca cómo se
    guarda el préstamo. Medir antes de prometerlo.
 
-## 3 · Cerrar el panel de superadmin ← EMPEZANDO
+## ~~3 · Cerrar el panel de superadmin~~ ← HECHO, 17 ago
 
-Quedó en **13 entradas**. `Usuarios` ya existe, pero `Organizaciones`,
-`Suscripciones`, `Retención` y `Activación` siguen al lado — que eran justo las
-cuatro que iban a fundirse en ella.
+**El menú bajó de 13 a 9.** Salieron Organizaciones, Suscripciones, Retención y
+Activación: las cinco consultaban la misma tabla para contestar variantes de la
+misma pregunta. ⚠ Sus **rutas siguen vivas** —la ficha de un negocio es a donde
+lleva cada renglón de Usuarios— y una prueba lo fija.
 
-**Terminado cuando:** el menú baja a 9 y ninguna función se pierde por el camino
-(la trampa conocida: `negocio` llevaba el marcador de conversión de las pruebas).
+**«La ficha se ve fea» tenía causa en el código:** `text-[white]` a pelo y la
+paleta del tema OSCURO (`--color-bg-card: #16171c`) sobre una app que quedó en
+claro. Letra blanca sobre fondo blanco. Barridas las 20 pantallas del panel.
 
-## 4 · Rango de fechas en los informes
+**Y ya se puede actuar desde la ficha**: quitar días, poner la fecha con
+calendario y cambiar de plan. Comprobado contra la base, incluidos los frenos
+(plan inventado y −9.999 días se rechazan sin tocar nada).
+
+⚠ Lo cazó el espejo: la suscripción se actualizaba, el registro fallaba después
+y el API devolvía 500 — el dueño leía «Error» sobre un cambio que **sí** se
+había aplicado, y lo natural es volver a pulsar. Ahora el cambio y su registro
+van en la misma transacción.
+
+## 4 · Rango de fechas en los informes ← EMPEZANDO
 
 Hoy solo hay presets y todos acaban **hoy**: no se puede pedir «del 1 al 15 de
 julio» ni «el mes pasado». El motor ya lo acepta (`rangoDe` respeta

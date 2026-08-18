@@ -92,8 +92,8 @@ export default function AdminSugerenciasPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-[25px] font-semibold text-[var(--color-text-primary)]">Lo que pide la gente</h1>
-        <p className="text-xs text-[var(--color-text-muted)]">
+        <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Lo que pide la gente</h1>
+        <p className="text-xs text-[var(--cf-ink-3)]">
           {datos?.total ?? 0} respuestas de {datos?.negocios ?? 0} negocios
           {datos?.porRol && Object.keys(datos.porRol).length > 0 && (
             <> · {Object.entries(datos.porRol).map(([r, n]) => `${n} ${ROL[r] ?? r}`).join(' · ')}</>

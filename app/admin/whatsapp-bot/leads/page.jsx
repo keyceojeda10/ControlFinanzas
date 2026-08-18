@@ -6,21 +6,21 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 
 const ESTADOS = [
   { key: '', label: 'Todos' },
-  { key: 'pendiente', label: 'Pendientes', color: 'var(--color-accent)' },
-  { key: 'contactado', label: 'Contactados', color: 'var(--color-info)' },
-  { key: 'interesado', label: 'Interesados', color: 'var(--color-success)' },
-  { key: 'no_interesado', label: 'No interesado', color: 'var(--color-text-muted)' },
-  { key: 'cerrado', label: 'Cerrados', color: 'var(--color-purple)' },
-  { key: 'bloqueado', label: 'Bloqueados', color: 'var(--color-danger)' },
+  { key: 'pendiente', label: 'Pendientes', color: 'var(--cf-gold)' },
+  { key: 'contactado', label: 'Contactados', color: 'var(--cf-blue)' },
+  { key: 'interesado', label: 'Interesados', color: 'var(--cf-green-dark)' },
+  { key: 'no_interesado', label: 'No interesado', color: 'var(--cf-ink-3)' },
+  { key: 'cerrado', label: 'Cerrados', color: 'var(--cf-blue)' },
+  { key: 'bloqueado', label: 'Bloqueados', color: 'var(--cf-red-dark)' },
 ]
 
 const ESTADO_COLORS = {
-  pendiente: 'var(--color-accent)',
-  contactado: 'var(--color-info)',
-  interesado: 'var(--color-success)',
-  no_interesado: 'var(--color-text-muted)',
-  cerrado: 'var(--color-purple)',
-  bloqueado: 'var(--color-danger)',
+  pendiente: 'var(--cf-gold)',
+  contactado: 'var(--cf-blue)',
+  interesado: 'var(--cf-green-dark)',
+  no_interesado: 'var(--cf-ink-3)',
+  cerrado: 'var(--cf-blue)',
+  bloqueado: 'var(--cf-red-dark)',
 }
 
 function tiempoRelativo(fecha) {
@@ -64,12 +64,12 @@ export default function WhatsAppBotLeads() {
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[25px] font-semibold text-[white]">Leads del Bot</h1>
-          <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{total} leads en total</p>
+          <h1 className="text-[25px] font-semibold text-[var(--cf-ink)]">Leads del Bot</h1>
+          <p className="text-sm text-[var(--cf-ink-3)] mt-0.5">{total} leads en total</p>
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="px-3 py-2 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.12)] text-[var(--color-accent)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
+          className="px-3 py-2 rounded-[10px] text-sm font-medium bg-[rgba(245,197,24,0.12)] text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.2)] transition-all"
         >
           + Lead manual
         </button>
@@ -83,8 +83,8 @@ export default function WhatsAppBotLeads() {
             onClick={() => { setEstado(e.key); setPagina(1) }}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
               estado === e.key
-                ? 'bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]'
-                : 'bg-[rgba(136,136,136,0.08)] text-[var(--color-text-muted)] hover:text-white'
+                ? 'bg-[rgba(245,197,24,0.15)] text-[var(--cf-gold)]'
+                : 'bg-[rgba(136,136,136,0.08)] text-[var(--cf-ink-3)] hover:text-white'
             }`}
           >
             {e.label}
@@ -98,14 +98,14 @@ export default function WhatsAppBotLeads() {
         placeholder="Buscar por nombre o teléfono..."
         value={busqueda}
         onChange={e => { setBusqueda(e.target.value); setPagina(1) }}
-        className="w-full px-3 py-2 rounded-[10px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-[white] placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)]"
+        className="w-full px-3 py-2 rounded-[10px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder-[#555] focus:outline-none focus:border-[var(--cf-gold)]"
       />
 
       {/* Lista */}
       {loading ? (
         <div className="space-y-2"><SkeletonCard /><SkeletonCard /></div>
       ) : (
-        <div className="border border-[var(--color-border)] rounded-[20px] bg-[var(--color-bg-card)] divide-y divide-[var(--color-border)]">
+        <div className="border border-[var(--cf-border)] rounded-[20px] bg-[var(--cf-card)] divide-y divide-[var(--cf-border)]">
           {leads.map(lead => (
             <Link
               key={lead.id}
@@ -114,10 +114,10 @@ export default function WhatsAppBotLeads() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm text-[white] font-medium truncate">{lead.nombre}</p>
-                  {lead.botActivo && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)] shrink-0" />}
+                  <p className="text-sm text-[var(--cf-ink)] font-medium truncate">{lead.nombre}</p>
+                  {lead.botActivo && <span className="w-1.5 h-1.5 rounded-full bg-[var(--cf-green-dark)] shrink-0" />}
                 </div>
-                <p className="text-[11px] text-[var(--color-text-muted)]">{lead.telefono}</p>
+                <p className="text-[11px] text-[var(--cf-ink-3)]">{lead.telefono}</p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 {/* Temperatura */}
@@ -127,27 +127,27 @@ export default function WhatsAppBotLeads() {
                       className="h-full rounded-full"
                       style={{
                         width: `${lead.temperatura}%`,
-                        background: lead.temperatura > 70 ? 'var(--color-danger)' : lead.temperatura > 40 ? 'var(--color-accent)' : 'var(--color-info)',
+                        background: lead.temperatura > 70 ? 'var(--cf-red-dark)' : lead.temperatura > 40 ? 'var(--cf-gold)' : 'var(--cf-blue)',
                       }}
                     />
                   </div>
-                  <span className="text-[10px] text-[var(--color-text-muted)] w-6 text-right">{lead.temperatura}</span>
+                  <span className="text-[10px] text-[var(--cf-ink-3)] w-6 text-right">{lead.temperatura}</span>
                 </div>
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize"
                   style={{
-                    color: ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)',
-                    background: `color-mix(in srgb, ${ESTADO_COLORS[lead.estado] || 'var(--color-text-muted)'} 10%, transparent)`,
+                    color: ESTADO_COLORS[lead.estado] || 'var(--cf-ink-3)',
+                    background: `color-mix(in srgb, ${ESTADO_COLORS[lead.estado] || 'var(--cf-ink-3)'} 10%, transparent)`,
                   }}
                 >
                   {lead.estado?.replace('_', ' ')}
                 </span>
-                <span className="text-[10px] text-[var(--color-text-muted)]">{tiempoRelativo(lead.createdAt)}</span>
+                <span className="text-[10px] text-[var(--cf-ink-3)]">{tiempoRelativo(lead.createdAt)}</span>
               </div>
             </Link>
           ))}
           {leads.length === 0 && (
-            <p className="px-4 py-8 text-sm text-[var(--color-text-muted)] text-center">Sin leads</p>
+            <p className="px-4 py-8 text-sm text-[var(--cf-ink-3)] text-center">Sin leads</p>
           )}
         </div>
       )}
@@ -158,17 +158,17 @@ export default function WhatsAppBotLeads() {
           <button
             onClick={() => setPagina(p => Math.max(1, p - 1))}
             disabled={pagina === 1}
-            className="px-3 py-1 rounded-[8px] text-xs bg-[rgba(136,136,136,0.08)] text-[var(--color-text-muted)] disabled:opacity-30"
+            className="px-3 py-1 rounded-[8px] text-xs bg-[rgba(136,136,136,0.08)] text-[var(--cf-ink-3)] disabled:opacity-30"
           >
             Anterior
           </button>
-          <span className="text-xs text-[var(--color-text-muted)] self-center">
+          <span className="text-xs text-[var(--cf-ink-3)] self-center">
             {pagina} / {Math.ceil(total / 50)}
           </span>
           <button
             onClick={() => setPagina(p => p + 1)}
             disabled={pagina >= Math.ceil(total / 50)}
-            className="px-3 py-1 rounded-[8px] text-xs bg-[rgba(136,136,136,0.08)] text-[var(--color-text-muted)] disabled:opacity-30"
+            className="px-3 py-1 rounded-[8px] text-xs bg-[rgba(136,136,136,0.08)] text-[var(--cf-ink-3)] disabled:opacity-30"
           >
             Siguiente
           </button>
@@ -219,10 +219,10 @@ function ModalCrearLead({ onClose, onCreado }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
       <div
-        className="relative bg-[#111] border border-[var(--color-border)] rounded-[16px] p-5 w-full max-w-md mx-4"
+        className="relative bg-[#111] border border-[var(--cf-border)] rounded-[16px] p-5 w-full max-w-md mx-4"
         onClick={e => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold text-white mb-4">Crear lead manual</h2>
+        <h2 className="text-base font-semibold text-[var(--cf-ink)] mb-4">Crear lead manual</h2>
         <form onSubmit={guardar} className="space-y-3">
           {[
             { key: 'nombre', label: 'Nombre', placeholder: 'Juan Pérez' },
@@ -231,22 +231,22 @@ function ModalCrearLead({ onClose, onCreado }) {
             { key: 'metodoActual', label: 'Método actual', placeholder: 'Libreta / Excel / Sistema' },
           ].map(f => (
             <div key={f.key}>
-              <label className="text-[11px] text-[var(--color-text-muted)] mb-1 block">{f.label}</label>
+              <label className="text-[11px] text-[var(--cf-ink-3)] mb-1 block">{f.label}</label>
               <input
                 type="text"
                 value={form[f.key]}
                 onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                 placeholder={f.placeholder}
-                className="w-full px-3 py-2 rounded-[8px] bg-[var(--color-bg-card)] border border-[var(--color-border)] text-sm text-white placeholder-[#555] focus:outline-none focus:border-[var(--color-accent)]"
+                className="w-full px-3 py-2 rounded-[8px] bg-[var(--cf-card)] border border-[var(--cf-border)] text-sm text-[var(--cf-ink)] placeholder-[#555] focus:outline-none focus:border-[var(--cf-gold)]"
               />
             </div>
           ))}
-          {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
+          {error && <p className="text-xs text-[var(--cf-red-dark)]">{error}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 rounded-[8px] text-sm bg-[rgba(136,136,136,0.08)] text-[var(--color-text-muted)]">
+            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 rounded-[8px] text-sm bg-[rgba(136,136,136,0.08)] text-[var(--cf-ink-3)]">
               Cancelar
             </button>
-            <button type="submit" disabled={saving} className="flex-1 px-3 py-2 rounded-[8px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[var(--color-accent)]">
+            <button type="submit" disabled={saving} className="flex-1 px-3 py-2 rounded-[8px] text-sm font-medium bg-[rgba(245,197,24,0.15)] text-[var(--cf-gold)]">
               {saving ? 'Guardando...' : 'Crear'}
             </button>
           </div>
