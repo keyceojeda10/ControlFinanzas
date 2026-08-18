@@ -1,0 +1,13 @@
+Don Miguel Ángel, le contesto sus cinco puntos, y perdone la demora.
+
+*1. El sistema francés.* Corregido. Lo que pasaba no era que la cuenta estuviera mal: cuando usted escribe la cuota A MANO y además fija el plazo, la última tiene que recoger la diferencia — por eso salía en $0 o disparada. El problema es que la pantalla no se lo decía. Ahora, apenas ocurre, le sale un aviso con las dos salidas: la cuota exacta que deja todas iguales, o en cuántos cobros se salda con la suya y de cuánto quedaría el último. Un toque y se aplica.
+
+*2. El filtro de «próximos a vencer».* Ya está, en 5 y en 10 días, en los filtros de Préstamos. Y no le va a mezclar los que ya están en mora: eso es otra pestaña.
+
+*3. Los recaudos del mes* están en Informes → «Los cobros del mes», cliente por cliente, y se bajan en PDF y en Excel.
+
+*4. Los extractos para declarar,* los dos que pidió: «Para el contador» (gastos contra utilidad, y utilidad contra capital recuperado) en mensual, trimestral, semestral y anual; y «Movimientos por cuenta», con lo que entró y salió por cada banco y por efectivo. Además ahora puede pedir cualquier tramo de fechas, no solo el mes: «del 1 al 15 de julio», por ejemplo.
+
+*5. El interés moratorio* ya se puede aplicar; venía de antes y no le avisamos.
+
+Me queda una duda suya: lo de los cálculos inexactos en el recaudo de intereses. ¿Me pasa el nombre de un cliente donde lo vea? Con un caso concreto lo reviso a fondo.

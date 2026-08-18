@@ -1,0 +1,11 @@
+Yainer, gracias por lo que escribió — de sus tres puntos salieron dos arreglos que le estaban afectando a mucha más gente.
+
+*1. Ver cuánto ganó de interés de una fecha a otra.* Ya está. En Informes → «Lo que entró» ahora puede escribir *Desde* y *Hasta* y pedir el tramo exacto que quiera: del 1 al 15, el mes pasado, lo que sea. Le separa lo recaudado del interés, día por día.
+
+*2. Que usted decida qué va a capital y qué a interés.* Tenía toda la razón, y la causa era esta: la app solo dejaba registrar el interés YA VENCIDO. Si su cliente le paga la quincena por adelantado, no había nada vencido y le decía que no tenía interés por registrar. Ya no: puede recibirle el interés de la quincena que viene. Y cuando el monto no cabe, ahora le dice cuánto cabe en vez de recortárselo callado.
+
+Al medirlo resultó que no era solo usted: *el 71% de los préstamos con tabla estaban igual, en 22 negocios.* Un préstamo al día no tiene nada vencido, así que «pagar interés» solo funcionaba con los clientes atrasados — justo al revés de para quién sirve.
+
+*3. El interés por quincena en los de interés fijo.* Aquí necesito que me ayude: usted escribió «solo muestra cuando la modalidad es mensual o quincenal», y no sé si habla de la frecuencia de cobro o de otra pantalla. ¿Me manda una captura de dónde lo mira y de un cliente concreto? Con eso lo reviso.
+
+Y lo de llevarlo «como en el Excel»: mándeme una foto de su hoja. Si me dice qué columnas mira primero, eso es lo que hay que poner en pantalla.
