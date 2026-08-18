@@ -52,22 +52,28 @@ Escribir «ya está arreglado» con la mitad rota es quemar la respuesta: el cli
 entra a comprobarlo, se encuentra otro fallo y la siguiente vez no reporta. Los
 textos se quedan guardados y se mandan **cuando no quede nada de la lista**.
 
-## Lo que salió de contestarles ← lo siguiente, después del 3 y el 4
-
-Tres cosas que pidieron ellos y no están (detalle y porqué en
-`RESPUESTAS-SUGERENCIAS.md`):
+## Lo que salió de contestarles
 
 1. ~~**Cobrar el interés que aún no se ha vencido.**~~ **HECHO, 17 ago.** Y no
    era solo Crediya: medido contra producción, **271 de los 382 préstamos vivos
-   con tabla (71%) estaban bloqueados en 22 negocios**. La razón es sencilla y
-   vuelve del revés la idea de partida: un préstamo AL DÍA no tiene nada
-   vencido, así que «pagar interés» solo funcionaba con los atrasados.
-   `interesCobrableAhora` suma lo vencido más la cuota que viene, y la regla,
-   que estaba escrita en cuatro sitios, vive ahora en uno.
-2. **Filtro «próximos a vencer» (5 y 10 días)** en préstamos. Rincón dice que es
-   el que más usa; los de hoy miran el atraso, no lo que va a vencer.
-3. **Interés por período en `fijo` y `unico`.** El más grande: toca cómo se
-   guarda el préstamo. Medir antes de prometerlo.
+   con tabla (71%) estaban bloqueados en 22 negocios**. Un préstamo AL DÍA no
+   tiene nada vencido, así que «pagar interés» solo funcionaba con los
+   atrasados. La regla, que estaba escrita en cuatro sitios, vive ahora en uno.
+
+2. ~~**Filtro «próximos a vencer» (5 y 10 días)**.~~ **Ya estaba hecho**
+   (`95b22ede`) y hoy se comprobó contra datos: 77 préstamos → 4 en 10 días → 3
+   en 5, los de 5 dentro de los de 10 y **ninguno solapa con «En mora»**
+   (vencido no es «por vencer»).
+
+3. ~~**Interés por período en `fijo` y `unico`.**~~ **Contestado por el punto 4,
+   sin tocar nada más.** Medido contra el espejo: en julio hubo pagos de 21
+   préstamos `fijo` ($7.418.900 de $9.733.907), y «Lo que entró» con rango a
+   mano separa **interés $2.562.821 · capital $7.171.086**, día por día. La suma
+   cuadra al peso con los cinco modos de la base.
+
+   ⚠ Queda **una sola duda por preguntarle a Crediya**: dijo «solo muestra
+   cuando la modalidad es mensual o quincenal», y eso no se sabe si habla de la
+   frecuencia o de otra pantalla. Sin un cliente concreto no se puede mirar.
 
 ## ~~3 · Cerrar el panel de superadmin~~ ← HECHO, 17 ago
 
