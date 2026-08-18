@@ -14,6 +14,7 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 // El cuaderno entero de una sentada. Ver la nota larga del componente: el 73 %
 // de los negocios se queda en cinco clientes tecleando de uno en uno.
 import LoteFotos from '@/components/migrador/LoteFotos'
+import { montoConTasa } from '@/lib/cartulina-datos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -758,13 +759,18 @@ export default function MigradorPage() {
       if (d['cédula'] || d.cedula) nueva.cedula = d['cédula'] || d.cedula
       if (d['teléfono'] || d.telefono) nueva.telefono = d['teléfono'] || d.telefono
       if (d['dirección'] || d.direccion) nueva.direccion = d['dirección'] || d.direccion
-      if (d.montoPrestado) nueva.monto = String(d.montoPrestado)
+      /* El capital casi nunca está escrito en la cartulina: está el total y el
+         plan de cobro. Se deriva con la tasa que ya trae la ficha. */
+      const capital = montoConTasa(d, nueva.tasa)
+      if (capital) nueva.monto = String(capital)
       if (d.tasaInteres) nueva.tasa = String(d.tasaInteres)
       if (d.frecuencia && DIAS_POR_PERIODO[d.frecuencia]) {
         nueva.frecuencia = d.frecuencia
         nueva.plazoUnidades = PLAZO_DEFAULT[d.frecuencia]
       }
-      if (d.diasPlazo) {
+      // «8 x 150» son 8 COBROS, no 8 días. Si viene, manda sobre el plazo.
+      if (d.numeroCuotas) nueva.plazoUnidades = String(d.numeroCuotas)
+      else if (d.diasPlazo) {
         const porPeriodo = DIAS_POR_PERIODO[nueva.frecuencia] || 1
         nueva.plazoUnidades = String(Math.round(Number(d.diasPlazo) / porPeriodo))
       }
@@ -775,6 +781,8 @@ export default function MigradorPage() {
       }
 
       setFicha(nueva)
+      // Si el papel traía dos préstamos, se dice cuál se tomó.
+      if (d._avisoTotal) setOcrError(d._avisoTotal)
       irA('formulario')
     } catch {
       setOcrError('Error de conexión al leer la foto')

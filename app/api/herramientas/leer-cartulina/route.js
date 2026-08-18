@@ -177,6 +177,9 @@ export async function POST(req) {
     fotosProcesadas: resultados.length,
     advertencias: [
       ...(datos._advertencia ? [datos._advertencia] : []),
+      // Dos préstamos en la misma cartulina: se dice cuál se tomó, en vez de
+      // elegir en silencio la cifra que está escrita más grande.
+      ...(datos._avisoTotal ? [datos._avisoTotal] : []),
       ...erroresFotos,
     ],
     uso: { usadas: usadasHoy + resultados.length, limite },

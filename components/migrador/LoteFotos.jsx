@@ -44,6 +44,7 @@ import { useState, useRef, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { formatMoney } from '@/lib/i18n'
+import { montoConTasa } from '@/lib/cartulina-datos'
 
 const FRECUENCIAS = [
   { key: 'diario', label: 'Diario' },
@@ -167,14 +168,23 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         cedula: c.cedula ?? '',
         telefono: c.telefono ?? '',
         direccion: c.direccion ?? '',
-        monto: c.montoPrestado ?? '',
+        /* ⚠ EL CAPITAL SALE DEL TOTAL Y DE LA TASA DE ARRIBA.
+           Las cartulinas de verdad casi nunca escriben lo entregado: escriben el
+           total y el plan de cobro. Mirando solo `montoPrestado`, la lectura
+           salía bien y la fila llegaba vacía igual. Ver `montoConTasa`. */
+        monto: montoConTasa(c, base.tasa) ?? '',
         // El default se aplica al pintar, no al guardar: así, si el usuario
         // cambia la tasa de arriba, las filas que el OCR no leyó la siguen.
         tasa: c.tasaInteres ?? '',
         frecuencia: c.frecuencia ?? '',
-        plazoUnidades: c.diasPlazo && c.frecuencia
-          ? Math.max(1, Math.round(c.diasPlazo / (DIAS_POR_PERIODO[c.frecuencia] || 1)))
-          : '',
+        /* «8 x 150» dice el número de cobros directamente y sin dividir nada.
+           Antes solo se miraba `diasPlazo`, y el lector confundía los 8 cobros
+           con 8 días: un préstamo de ocho semanas quedaba a ocho días. */
+        plazoUnidades: c.numeroCuotas
+          ? String(c.numeroCuotas)
+          : c.diasPlazo && c.frecuencia
+            ? Math.max(1, Math.round(c.diasPlazo / (DIAS_POR_PERIODO[c.frecuencia] || 1)))
+            : '',
         fechaInicio: c.fechaInicio ?? '',
         // El estado en que va: lo que el OCR haya podido leer de las cuotas
         // tachadas, o el saldo que el prestamista se sabe de memoria.
