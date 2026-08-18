@@ -71,15 +71,47 @@ coinciden al peso.**
 
 ---
 
+## Las inyecciones de la noche: NO son un parche (medido)
+
+La sospecha razonable era que esas 40 inyecciones de $9.774.894 en 21 días
+fueran él cuadrando a mano lo que el sistema debía hacer solo. **El libro dice
+que no**, y conviene saberlo antes de pedirle que deje de hacerlas.
+
+Si estuviera parcheando para que el capital igualara la cifra del cuadre, casi
+todas tendrían que dejar la ruta EXACTAMENTE en esa cifra:
+
+| | |
+|---|---|
+| Días con inyección | 42 |
+| **Dejan el capital en la cifra que decía el cuadre** | **2** |
+| **La ruta ya venía en NEGATIVO antes de inyectar** | **31** |
+| La dejan exactamente en cero | 5 |
+| La dejan en una cifra redonda de miles | 17 |
+
+Y las rutas se van al rojo de verdad: **40 de 210 noches·ruta (19%)** cerraron
+en negativo en 21 días, casi todas entre el 29 de julio y el 6 de agosto.
+
+    RUTA #4   9 noches en rojo   la peor, −$875.328
+    RUTA #2   8 noches           −$608.748
+    RUTA #5   7 noches           −$705.068
+
+**Conclusión: esas inyecciones son plata de verdad repuesta a rutas que se
+quedaron sin base.** Son la operación normal del negocio, no un rodeo. ⚠ **No
+hay que pedirle que las deje de hacer**: sería pedirle que deje de fondear a sus
+cobradores.
+
+Lo que sí se automatizó es lo que él pedía en el video —«que este número sea
+igualito al del lado allá»—, y era el cuadre sin contar sus propios retiros.
+
 ## Lo que hay que preguntarle
 
-**Las inyecciones de la noche.** En 21 días hay **40 inyecciones por
-$9.774.894** en sus rutas, casi todas entre las 20:00 y las 23:00 y casi todas
-con la nota «vase» (base), «CUADRE» o «CUADRAR VASE».
+Una sola, y concreta: en el video dice *«me toca llegar y inyectarle plata para
+que este saldo suba a 794»*. Eso sí sería un parche. **¿Alguna vez metió plata
+que no entregó de verdad, solo para que el número cuadrara?**
 
-Desde el libro **no se puede distinguir** cuáles eran plata de verdad que él le
-repuso al cobrador y cuáles eran para forzar el número. Solo él lo sabe. Lo que
-sí se puede decir: **desde hoy ya no hace falta ninguna por ese motivo**, y si
-sigue haciéndolas el capital le va a quedar inflado.
+Por el libro parece que no —de 42 días con inyección, solo 2 acabaron en la
+cifra del cuadre— pero la intención no se lee en una tabla. Si la respuesta es
+que sí, hay que mirar esas para no dejar capital inflado. Si es que no, no hay
+nada que tocar.
 
-Si quiere revisarlas, están en Mi plata → movimientos, con su hora y su nota.
+Y en cualquier caso: **desde hoy ninguna hace falta por ese motivo.**
