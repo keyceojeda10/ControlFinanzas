@@ -50,6 +50,54 @@ el abono a capital y la liquidación anticipada.
 Los 195 préstamos vivos que ya están en Globo se benefician el mismo día, sin
 migrar un solo registro.
 
+## LA DECISIÓN DE DISEÑO, que es donde se gana o se pierde esto
+
+El problema de fondo no es quitar una fecha: es que **en un préstamo abierto el
+total no se puede saber**. Hoy `saldoPendiente = totalAPagar − pagado`, y esa
+resta la usan 79 archivos.
+
+Hay dos caminos y solo uno es barato:
+
+**(a) Cambiar la fórmula del saldo** para los abiertos: capital restante +
+interés devengado sin pagar. Toca la función central del dinero y los 79
+archivos pasan a tener dos verdades.
+
+**(b) Que el interés SUBA LA DEUDA cuando vence el período** — igual que ya hace
+un recargo. `totalAPagar` crece, `pagado` crece cuando paga, y la resta de
+siempre sigue valiendo **sin tocar un solo archivo de los 79**.
+
+**Se hace (b).** No es un atajo: es lo que de verdad pasa. Cuando termina el mes
+el cliente DEBE ese interés, lo pague o no. Y el proyecto ya tiene esa mecánica
+montada y probada —el recargo sube `totalAPagar` sin tocar plazo ni cuota— así
+que se reutiliza en vez de inventar una segunda contabilidad.
+
+### Lo que eso obliga, y hay que hacerlo bien
+
+El devengo lo dispara un **cron diario**, como los otros veinte que ya corren.
+Y un cron que mueve plata tiene un único fallo grave posible: **devengar dos
+veces**. Es exactamente el que tenía la línea de crédito.
+
+Por eso el devengo es **idempotente por construcción**: un apunte por préstamo y
+por período, con la clave `(prestamoId, periodo)` única en la base. Correr el
+cron dos veces el mismo día no puede cobrar dos veces, ni aunque se lance a
+mano, ni aunque se solapen dos ejecuciones.
+
+⚠ Y el interés se calcula **sobre el capital que había en ese período**, no
+sobre el de hoy: si el cliente abonó a capital a mitad de mes, el mes siguiente
+paga menos. Es la diferencia entre cobrar bien y cobrar de más.
+
+### Por qué NO se toca lo que ya existe
+
+- `sinPlazo` es un campo nuevo con valor por defecto `false`: los 10.218
+  préstamos de hoy nacen con el comportamiento de siempre, bit por bit.
+- Solo se puede activar en modo Globo, validado en el API.
+- El préstamo abierto **no lleva tabla de amortización**, y
+  `tieneTablaAmortizacion` ya exige filas: sin tabla, los 89 sitios que
+  ramifican por modo caen solos en el camino «sin tabla».
+- La puerta: la foto de los **195 Globo vivos** (`.auditoria/foto/`), 11 cifras
+  cada uno, $943.169.627 en saldos. Se vuelve a tomar después y si se mueve
+  una, no sale.
+
 ## Qué hay que resolver de verdad (no es solo quitar un campo)
 
 1. **Sin fecha fin**: la tabla de amortización de Globo termina con una cuota
