@@ -5,6 +5,39 @@ desplegado el mismo día** (`7404a89c`).
 
 ---
 
+## Para mandarle (listo para copiar)
+
+> Don Carlos, ya quedó. Lo encontramos con su video y lo corregimos hoy mismo;
+> ya está en la app, solo tiene que refrescarla.
+>
+> *Qué era.* La cuenta del cuadre no estaba contando lo que usted saca o le mete
+> a una ruta. Solo sumaba lo que salió, lo que cobró, lo que prestó y lo que
+> gastó. Por eso el número del cuadre y el de «Capital por ruta» se separaban
+> exactamente por lo que usted hubiera movido.
+>
+> *Su ruta 2.* La diferencia eran $326.000, que es el retiro que usted hizo el
+> lunes a las 7:54 de la mañana. El número bueno era el de $468.000: era el
+> único que estaba contando ese retiro. El del cuadre le estaba pidiendo al
+> cobrador una plata que usted ya se había llevado.
+>
+> *Sus dos preguntas.* No hay que hacerle ajuste a ninguna ruta: el arreglo vale
+> para las diez a la vez, y ya lo comprobamos en las suyas. Y puede seguir
+> cobrando normal desde ya — los abonos nunca fueron el problema, suben las dos
+> cifras por igual.
+>
+> Una cosa más: ahora, cuando usted saca o mete plata a una ruta, le aparece
+> escrito en el cuadre («Le sacaste a esta ruta»), para que no le vuelva a
+> cambiar un número sin decirle por qué.
+>
+> Y lo que sí siga haciendo: cuando una ruta se le quede sin base y le tenga que
+> reponer, hágalo igual que siempre. Eso está bien y no tiene nada que ver.
+>
+> Solo dígame una cosa para cerrar: ¿alguna vez metió plata que no entregó de
+> verdad, solo para que el número cuadrara? Por los movimientos parece que no,
+> pero si pasó alguna vez la miramos para que no le quede capital de más.
+
+---
+
 ## Qué pasaba
 
 Su RUTA #2, en la pantalla, decía dos cosas a la vez:
