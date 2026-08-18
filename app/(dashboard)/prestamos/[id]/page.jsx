@@ -590,6 +590,9 @@ function PrestamoDetalleContenido({ params }) {
               ? `${formatMoney(Math.round(prestamo.cuotaDiaria))} ${({ diario: 'diarios', semanal: 'semanales', quincenal: 'quincenales', mensual: 'mensuales' }[prestamo.frecuencia] ?? '')}`.trim()
               : null,
             prestamo.diasMora > 0 ? `${prestamo.diasMora} día${prestamo.diasMora === 1 ? '' : 's'} de atraso` : 'al día',
+            /* Que se sepa de un vistazo, sin abrir nada: es la diferencia entre
+               un préstamo que termina y uno que no. */
+            prestamo.sinPlazo && prestamo.modoInteres === 'solo_interes' ? 'abierto' : null,
           ].filter(Boolean).join(' · ') || null
     ) : null,
   })
@@ -675,7 +678,15 @@ function PrestamoDetalleContenido({ params }) {
   // completo. Los numeros feos se dejan feos: «39 semanas» no se redondea a 40,
   // porque el dueño va a cobrar 39 veces y un plazo redondeado es un plazo
   // mentiroso.
+  /* Un préstamo abierto: sin plazo ni fecha de vencimiento. Se deriva una vez y
+     lo usan los tres textos de abajo, para que no puedan discrepar. */
+  const esAbierto = !!prestamo?.sinPlazo && modoInteres === 'solo_interes'
+
   const plazoPactadoTexto = (() => {
+    /* ⚠ UN ABIERTO NO TIENE PLAZO PACTADO. Con `diasPlazo` = el primer corte,
+       este renglón decía «1 cuota mensual», que es exactamente lo contrario de
+       lo que es: un préstamo que dura hasta que el cliente abone el capital. */
+    if (esAbierto) return 'sin plazo · hasta que abone el capital'
     const porPeriodo = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }[frecuencia] ?? 1
     const n = cuotasAmortizacion.length > 0
       ? cuotasAmortizacion.length
@@ -707,12 +718,29 @@ function PrestamoDetalleContenido({ params }) {
   // se leía desde Bogotá —UTC−5— como el 1 de marzo a las 19:00, y la ficha
   // decía un día menos. Es el mismo fallo del comprobante que reportó un
   // prestamista. Ver `formatFechaCalendario` en lib/i18n.
-  const fechaVencTexto = fechaFin
-    ? new Date(fechaFin).toLocaleDateString('es-CO', {
-      weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
-    })
-    : null
+  /* ⚠ UN PRÉSTAMO ABIERTO NO VENCE, Y DECIR UNA FECHA AQUÍ ES MENTIR.
+     Su `fechaFin` es el PRIMER corte de interés —las dos columnas son NOT NULL
+     y las leen 79 archivos, así que se guardan igual— pero en pantalla eso se
+     lee como «vence tal día», y no vence: el capital se queda hasta que el
+     cliente lo abone. Medido en el espejo: la ficha decía `2026-08-18` de un
+     préstamo sin final. */
+  const fechaVencTexto = esAbierto
+    ? 'Abierto · sin fecha de vencimiento'
+    : fechaFin
+      ? new Date(fechaFin).toLocaleDateString('es-CO', {
+        weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+      })
+      : null
   const diasParaVencerTexto = (() => {
+    /* Lo que sí corre es el próximo interés, que es lo que el cobrador va a
+       pedir. «Faltan N días» sobre una fecha que no vence no dice nada. */
+    if (esAbierto) {
+      if (!proximoCobro) return null
+      const d = Math.ceil((new Date(proximoCobro) - Date.now()) / 86400000)
+      if (d > 0) return `próximo interés en ${d} día${d === 1 ? '' : 's'}`
+      if (d === 0) return 'el interés se cobra hoy'
+      return `interés atrasado ${Math.abs(d)} día${Math.abs(d) === 1 ? '' : 's'}`
+    }
     if (!fechaFin) return null
     const dias = Math.ceil((new Date(fechaFin) - Date.now()) / 86400000)
     if (dias > 0) return `en ${dias} día${dias === 1 ? '' : 's'}`

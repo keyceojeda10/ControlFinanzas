@@ -89,6 +89,13 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
+      /* ⚠ SOLO AQUÍ Y EN LA LECTURA FINAL, LAS DOS FUERA DE LA TRANSACCIÓN.
+         Lo metí en las TRECE consultas de esta ruta con un reemplazo global, y
+         once caían DENTRO del `$transaction`: once viajes más a la base por
+         cada pago. La transacción pasó de caber en sus 5 segundos a tardar
+         5,35 y el abono a capital empezó a dar 500 — reproducible, tres de
+         tres. El cálculo solo necesita los devengos para construir la
+         respuesta, no para escribir. */
       devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
     },
   })
@@ -336,11 +343,6 @@ export async function POST(request, { params }) {
       include: {
         pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
         cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
-      /* Los devengos de un préstamo abierto: sin ellos `interesCobrableAhora`
-         no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
-         préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
-         de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
       },
     })
     if (!prestamoLocked || prestamoLocked.estado !== 'activo') {
@@ -403,11 +405,6 @@ export async function POST(request, { params }) {
       include: {
         pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
         cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
-      /* Los devengos de un préstamo abierto: sin ellos `interesCobrableAhora`
-         no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
-         préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
-         de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
       },
     })
 
@@ -523,7 +520,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     } else if (tipo === 'capital') {
@@ -547,7 +543,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -567,7 +562,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -602,7 +596,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -632,7 +625,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -674,7 +666,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -706,7 +697,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -732,7 +722,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
@@ -770,7 +759,6 @@ export async function POST(request, { params }) {
          no sabe cuánto se debe y el botón dice «está todo pagado» sobre un
          préstamo que sí debe. Ver [[feedback_verificar_prisma_select]]: pedir
          de menos no da error, da una decisión mal tomada en silencio. */
-      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
         },
       })
     }
