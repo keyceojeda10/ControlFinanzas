@@ -120,19 +120,33 @@ paga menos. Es la diferencia entre cobrar bien y cobrar de más.
 
 No se despliega hasta que TODO esto pase, y cada punto se mide, no se opina:
 
-- [ ] `npm run prueba:dinero` con el modo nuevo añadido a los cinco actuales:
-      monta un negocio de mentira con la caja en cero y corre el día entero por
-      los endpoints reales. Tiene que cuadrar al peso.
-- [ ] Un año simulado de un préstamo abierto: 12 pagos de interés, dos abonos a
-      capital y el cierre. El interés cobrado tiene que dar exactamente
-      capital × tasa × meses, con el capital bajando en los abonos.
-- [ ] Día de cobro, mora y «cobros de hoy» comprobados contra el calendario en
-      las cuatro frecuencias, con festivos y días sin cobro.
-- [ ] Cero cuotas vencidas por el capital, en pantalla y en los informes.
-- [ ] Los 195 Globo vivos de producción, recalculados en solo lectura: ninguna
-      cifra puede moverse.
-- [ ] Las tres vías de pago —interés, capital, cuota— cada una con su efecto, y
-      el recibo y el estado de cuenta diciendo lo mismo que la ficha.
+- [x] `npm run prueba:dinero` con el modo nuevo: **los seis cuadran al peso**,
+      incluido `abierto`. Negocio de mentira, caja en cero, día entero por los
+      endpoints reales.
+- [x] Un año simulado: 12 meses con dos abonos dan **$463.000 exactos**
+      (69.000 + 6×49.000 + 5×20.000), y cada tramo cobra sobre el capital que
+      tocaba.
+- [x] Las **cuatro frecuencias** —diario, semanal, quincenal, mensual—: cuota,
+      un solo período devengado, próximo cobro y mora correctos en las cuatro.
+- [x] **Cero cuotas por el capital**: un abierto al día dice 0 pendientes y 0 en
+      mora aunque deba los $690.000. Antes decía «8 cuotas pendientes».
+- [x] Los **195 Globo vivos**, 11 cifras cada uno, recalculados en solo lectura
+      tras cada cambio: **ninguna se movió**.
+- [x] Las tres vías de pago, comprobadas en el servidor de pruebas del VPS (base
+      local): interés no toca capital, abono a capital lo baja entero, y el
+      pago completo salda y cierra.
+- [ ] El recibo y el estado de cuenta diciendo lo mismo que la ficha.
+- [ ] El cron en el crontab — **va con el despliegue, no antes**: hoy daría 404
+      porque el endpoint no está en producción.
+
+### La línea del crontab, lista para el despliegue
+
+```
+5 5 * * * /usr/bin/curl -s -X POST -H "x-cron-secret: $CRON_SECRET" http://localhost:3002/api/cron/devengo-abiertos >> /var/log/cron-devengo-abiertos.log 2>&1
+```
+
+05:05 UTC son las 00:05 de Bogotá: el período cierra al empezar su día y el
+devengo entra ahí. Correrlo dos veces no cobra dos veces.
 
 ## Y qué se hace con línea de crédito
 

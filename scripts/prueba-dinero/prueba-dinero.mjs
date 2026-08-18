@@ -265,11 +265,14 @@ async function ejecutarPaso({ paso, pag, ctx, libro, m, fecha, banderas, cx }) {
     const previsto = preverPrestamo({
       monto: paso.monto, tasa: paso.tasa, dias: paso.dias,
       frecuencia: paso.frecuencia, modoInteres: paso.modoInteres, fechaInicio: fecha,
+      sinPlazo: paso.sinPlazo,
     })
     const cuerpo = {
       clienteId: IDS.cliente(paso.cliente + 1),
       montoPrestado: paso.monto, tasaInteres: paso.tasa, diasPlazo: paso.dias,
       fechaInicio: fecha, frecuencia: paso.frecuencia, modoInteres: paso.modoInteres,
+      // El préstamo abierto: sin plazo ni fecha de vencimiento.
+      ...(paso.sinPlazo ? { sinPlazo: true } : {}),
       metodoPago: paso.metodoPago,
       // A QUÉ cuenta. Sin esto el desembolso cae en un cajón genérico
       // «Transferencia», separado del renglón de la cuenta real: el dueño

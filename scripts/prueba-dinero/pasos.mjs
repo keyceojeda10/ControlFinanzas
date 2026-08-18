@@ -14,6 +14,10 @@ export const MODOS = {
   solo_interes: { etiqueta: 'solo interés', modoInteres: 'solo_interes', tasa: 10, dias: 90, frecuencia: 'mensual' },
   saldo: { etiqueta: 'sobre saldo', modoInteres: 'saldo', tasa: 8, dias: 120, frecuencia: 'mensual' },
   lineal: { etiqueta: 'decreciente', modoInteres: 'lineal', tasa: 12, dias: 90, frecuencia: 'mensual' },
+  /* ⚠ EL PRÉSTAMO ABIERTO. No lleva `dias` porque no tiene plazo: es su razón
+     de ser. La caja tiene que tratarlo igual que a los demás —el desembolso
+     sale, el cobro entra— y lo que cambia es solo cómo se reparte por dentro. */
+  abierto: { etiqueta: 'abierto', modoInteres: 'solo_interes', sinPlazo: true, tasa: 10, dias: 30, frecuencia: 'mensual' },
 }
 
 export const MONTOS = {

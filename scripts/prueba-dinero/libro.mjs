@@ -66,10 +66,12 @@ export function totales(libro) {
 
 /* Lo que el préstamo VA a costar, preguntándoselo a la aplicación.
    No se teclea la fórmula: ver la cabecera del fichero. */
-export function preverPrestamo({ monto, tasa, dias, frecuencia, modoInteres, fechaInicio }) {
+export function preverPrestamo({ monto, tasa, dias, frecuencia, modoInteres, fechaInicio, sinPlazo }) {
   const r = calcularPrestamo({
     montoPrestado: monto, tasaInteres: tasa, diasPlazo: dias,
     fechaInicio, frecuencia, modoInteres,
+    // El abierto no tiene plazo; la bandera es lo único que lo distingue.
+    ...(sinPlazo ? { sinPlazo: true } : {}),
   })
   return {
     totalAPagar: r.totalAPagar,
