@@ -14,19 +14,29 @@ nadie.
 
 ---
 
-## 1 · Un vigilante de errores ← EMPEZANDO
+## ~~1 · Un vigilante de errores~~ ← HECHO, 18 ago
 
-`/api/errores-cliente` guarda cada pantalla rota en un archivo de registro **y
-ahí muere**: no hay pantalla que los enseñe, ni aviso, ni resumen.
+`scripts/vigilante-errores.sh`, instalado en `/opt/cf-backup/` y en el crontab a
+las **9:05** (cinco minutos después del vigilante del respaldo, para no mezclar
+los dos avisos). Manda por Telegram cuántas pantallas se rompieron en 24h, de
+qué tipo y en qué pantalla — y **calla cuando no hay ninguna**.
 
-Sin esto todo lo demás se repite: arreglamos lo que alguien se molesta en
-contarnos y el resto se sigue rompiendo en silencio.
+Lo que salió al probarlo con 30 días: **261 errores en 27 negocios**, ninguno
+reportado por nadie.
 
-**Terminado cuando:** cada mañana llega por Telegram —el mismo canal del
-vigilante del respaldo— cuántos errores hubo, de qué tipo y en qué pantalla; y
-calla cuando no hay ninguno.
+⚠ Tres cosas que aprendí montándolo:
 
-## 2 · React #300 en la hoja de pago
+- **`source .env` PISA lo que pasas por fuera.** Probándolo con el token vacío
+  para que imprimiera en pantalla, le mandó al dueño un Telegram de verdad. Un
+  guion de vigilancia que no se puede ensayar en seco se ensaya en la cara de
+  alguien. Ahora hay `VIGILANTE_SECO=1`.
+- **Sin agrupar no se lee**: cada trozo que no carga lleva su número y su URL,
+  así que el mismo problema salía en nueve renglones.
+- **Safari y Chrome dicen lo mismo con otras palabras** («Can't find variable:
+  X» / «X is not defined»): sin unirlos, 16 casos salían como 10 y 6, y el de 6
+  se ve pequeño y se ignora.
+
+## 2 · React #300 en la hoja de pago ← EMPEZANDO
 
 **25 veces, la última el 16 de agosto.** En la ficha del préstamo, y varias con
 `?openPago=1&fromRuta=1` — o sea abriendo la hoja de pago desde la ruta. Es el
