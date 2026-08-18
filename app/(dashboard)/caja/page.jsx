@@ -1751,6 +1751,16 @@ const MOVIMIENTOS_MANUALES = [
         cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
         lineas={banda ? banda.lineas.map((l) => ({ ...l, texto: formatMoney(l.monto) })) : null}
         descuadre={descuadre}
+        ajustesManuales={(stats.ajustesManuales ?? []).map((a) => ({ ...a, texto: formatMoney(a.monto) }))}
+        onDeshacerAjuste={async (a) => {
+          if (!confirm(`¿Deshacer la corrección de ${formatMoney(a.monto)}?\n\n${a.descripcion || ''}`)) return
+          const r = await fetch(`/api/caja/ajustes?id=${a.id}`, { method: 'DELETE' })
+            .then((x) => x.json()).catch(() => ({ error: 'No se pudo' }))
+          if (r.error) { alert(r.error); return }
+          alert(r.mensaje ?? 'Deshecho')
+          // Se recarga la caja entera: el saldo, la banda y el aviso cambian a la vez.
+          fetchData({ soft: true })
+        }}
         onExplicar={setCifraExplicada}
         prestado={formatMoney(prestadoHoy)}
         gastos={formatMoney(gastosHoy)}

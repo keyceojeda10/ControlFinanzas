@@ -119,6 +119,10 @@ export function CajaDia({
   lineas = null,
   onExplicar,
   descuadre = null, onVerDescuadre,
+  /* Los ajustes que la persona metió A MANO ese día, y qué hacer con ellos.
+     Ver el bloque de abajo: un cliente se fue porque le dijimos que los
+     borrara y no había por dónde. */
+  ajustesManuales = null, onDeshacerAjuste,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
   // `height: 100%` es para cuando la pantalla ES esta —el area de dentro
@@ -312,6 +316,60 @@ export function CajaDia({
               )}
             </button>
           ) : null}
+
+          {/* ══ LO QUE METISTE A MANO, Y CÓMO QUITARLO ══════════════════════
+              Oswaldo, 16 ago 2026. Registró la cicla de su mamá como gasto del
+              negocio, vio que la caja no cerraba y metió un ajuste manual de
+              +$282.000 para cuadrarla. Después le borramos el gasto —y el
+              borrado asienta su propio reverso— así que se quedó con los dos:
+              su caja decía $1.564.000 teniendo $1.282.000.
+
+              Se le contestó «puedes borrar los ajustes manuales que fuiste
+              metiendo». NO SE PODÍA: no existían ni en la pantalla ni en el
+              API. Contestó «entiendo hermano, pero sigue lo mismo» y esa noche
+              se fue del sistema.
+
+              Van aquí, pegados a «Correcciones», que es la línea que los suma y
+              donde él los estuvo buscando. */}
+          {ajustesManuales?.length > 0 && (
+            <div style={{
+              marginTop: 12, padding: '10px 12px', borderRadius: 12,
+              border: '1px solid var(--cf-border)', background: 'var(--cf-fill)', flex: 'none',
+            }}>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--cf-ink-3)' }}>
+                {ajustesManuales.length === 1 ? 'Corrección que metiste a mano' : 'Correcciones que metiste a mano'}
+              </p>
+              {ajustesManuales.map((a) => (
+                <div key={a.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, marginTop: 8,
+                  flexWrap: 'wrap',
+                }}>
+                  <span className="cf-fig" style={{
+                    fontSize: 14, fontWeight: 700,
+                    color: a.suma ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)',
+                  }}>
+                    {a.suma ? '+' : '−'}{a.texto}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--cf-ink-2)', overflowWrap: 'anywhere' }}>
+                    {a.descripcion || 'Ajuste de caja'}
+                  </span>
+                  {onDeshacerAjuste && (
+                    <button
+                      type="button"
+                      onClick={() => onDeshacerAjuste(a)}
+                      style={{
+                        height: 32, padding: '0 12px', borderRadius: 'var(--cf-r-control)',
+                        border: '1px solid var(--cf-border)', background: 'var(--cf-card)',
+                        color: 'var(--cf-ink-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', flex: 'none',
+                      }}
+                    >
+                      Deshacer
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* EL SALDO VA SOBRE BLANCO, cerrando el extracto. NO en un bloque
               oscuro: ese era una invencion mia.

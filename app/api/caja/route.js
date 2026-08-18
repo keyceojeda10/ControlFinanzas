@@ -774,6 +774,12 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
       ...(cobradorId ? { OR: [{ creadoPorId: cobradorId }, { rutaId: { in: await rutaIdsDe(organizationId, cobradorId) } }] } : {}),
     },
     select: {
+      /* ⚠ EL `id` VIAJA para poder DESHACER desde la pantalla.
+         Un cliente se fue el 16 ago por esto: metió un ajuste manual para
+         cuadrar la caja, le borramos el gasto —que asienta su propio reverso—
+         y quedó con la caja inflada. Se le dijo «borra los ajustes manuales» y
+         no había forma: sin el `id` aquí, la pantalla no puede ni nombrarlos. */
+      id: true,
       tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true,
       descripcion: true, metodoPago: true, createdAt: true,
       /* ⚠ `referenciaTipo` HACE FALTA AUNQUE NO SE PINTE.
@@ -784,6 +790,9 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
          Me pasó al arreglarlo: los asientos estaban bien y la caja seguía rota.
          Es la misma trampa que ya advierte `afectaCaja` con los saldos. */
       referenciaTipo: true,
+      /* Y `referenciaId`, que es lo que apunta del reverso a su original: sin
+         él no se puede saber cuál ya está deshecho y se ofrecerían otra vez. */
+      referenciaId: true,
     },
     orderBy: { createdAt: 'asc' },
   })
@@ -806,6 +815,22 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   // caso se queda en null y la apertura vale cero, que es lo que habia.
   const saldoPrevioDelDia = cobradorId ? null : baseInicialDia
 
+  /* Los ajustes que la persona metió A MANO ese día, para que la pantalla
+     pueda enseñárselos y ofrecer deshacerlos. Solo esos: un recaudo o un gasto
+     se deshacen desde su propia pantalla, con sus propias consecuencias. */
+  const yaDeshechos = new Set(movimientosDia
+    .filter((m) => m.referenciaTipo === 'caja_ajuste_reverso')
+    .map((m) => m.referenciaId))
+  const ajustesManuales = movimientosDia
+    .filter((m) => ['caja_ajuste', 'caja_capital_manual'].includes(m.referenciaTipo))
+    .filter((m) => !yaDeshechos.has(m.id))
+    .map((m) => ({
+      id: m.id,
+      monto: m.monto,
+      suma: m.saldoNuevo > m.saldoAnterior,
+      descripcion: m.descripcion,
+      createdAt: m.createdAt,
+    }))
   const conciliacion = conciliar({
     alcance: cobradorId ? ALCANCE.COBRADOR : ALCANCE.ORGANIZACION,
     libro: resumirLibro(movimientosDia, saldoPrevioDelDia),
@@ -831,6 +856,8 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     recogidaEfectivo,
     recogidaDigital,
     conciliacion,
+    // Para que la pantalla pueda ofrecer «deshacer» lo que se metió a mano.
+    ajustesManuales,
     gastos,
     desembolsadoDia,
     // Con qué se compone: el dueño no podía comprobar el número y tuvo que
