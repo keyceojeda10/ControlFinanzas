@@ -360,20 +360,28 @@ export default function ReportesPage() {
               </button>
             )
           })}
-          <div className="flex items-center gap-1.5 ml-auto">
+          {/* ⚠ LAS DOS FECHAS SE SALÍAN DE SU CAJA EN EL TELÉFONO, y en el JSX
+              se ve bien: `globals.css` fuerza `font-size:16px !important` a todo
+              `input` por debajo de 1024px —el antizoom de iOS— y pisa el
+              `text-[11px]` de aquí. Con 16px dentro de un alto de 28 y pegadas a
+              la derecha con `ml-auto`, la pareja no cabía en el renglón y se
+              desbordaba por el borde. Se arregla con lo que de verdad manda: el
+              ALTO y el reparto. En el teléfono ocupan su propio renglón y se
+              parten el ancho; desde `sm` vuelven a la derecha. */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto sm:ml-auto">
             <input
               type="date"
               value={desde}
               onChange={(e) => setDesde(e.target.value)}
-              className="h-7 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
+              className="h-9 sm:h-7 min-w-0 flex-1 sm:flex-none px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
               style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
             />
-            <span className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>—</span>
+            <span className="text-[10px] shrink-0" style={{ color: 'var(--cf-ink-3)' }}>—</span>
             <input
               type="date"
               value={hasta}
               onChange={(e) => setHasta(e.target.value)}
-              className="h-7 px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
+              className="h-9 sm:h-7 min-w-0 flex-1 sm:flex-none px-2 rounded-[8px] border bg-transparent text-[11px] focus:outline-none transition-all"
               style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }}
             />
           </div>

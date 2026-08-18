@@ -40,7 +40,7 @@ import {
   PagoMiniCard,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -610,6 +610,12 @@ function PrestamoDetalleContenido({ params }) {
   }[frecuencia] || 'diario'
 
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
+  /* Lo que de verdad entró hoy por este préstamo. Sale de la MISMA función que
+     decide si «pagó hoy», para que las dos no puedan discrepar. */
+  const cobradoHoyPrestamo = cobradoHoy({ pagos })
+  const pagosDeHoy = (pagos ?? []).filter((p) => !['recargo', 'descuento'].includes(p.tipo)
+    && new Date(p.fechaPago).toDateString() === new Date().toDateString()).length
+
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3
   const totalPagadoReal = Math.round(totalPagado || 0)
@@ -1441,11 +1447,22 @@ function PrestamoDetalleContenido({ params }) {
           </span>
           {/* Texto en 2 lineas */}
           <span className="flex-1 flex flex-col items-start min-w-0 text-left leading-tight">
+            {/* ⚠ «COBRADO HOY» Y NO «PAGO DIARIO REGISTRADO».
+                El rótulo viejo afirmaba que lo de abajo era LA CUOTA del día, y
+                con un cliente que se pone al día son seis cuotas juntas: el
+                rótulo mentía igual que la cifra. Y cuando fueron varios pagos se
+                dice, que si no «$240.000» parece un solo cobro enorme. */}
             <span className="text-[11px] font-semibold uppercase tracking-wider opacity-80" style={{ color: 'var(--cf-green-dark)' }}>
-              Pago {frecuenciaLabel} registrado
+              Cobrado hoy{pagosDeHoy > 1 ? ` · ${pagosDeHoy} pagos` : ''}
             </span>
+            {/* ⚠ LO QUE ENTREGÓ HOY, NO LA CUOTA.
+                Aquí decía `cuotaDiaria` y eso es otra cifra: un cliente atrasado
+                que paga TODO su atraso para ponerse al día entregó $240.000 y la
+                pantalla le decía «$40.000». Reportado por el dueño con ese caso
+                exacto. Y es la pantalla que uno abre justo después de cobrar,
+                para comprobar que quedó bien registrado. */}
             <span className="text-[18px] font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>
-              {formatMoney(cuotaDiaria)}
+              {formatMoney(cobradoHoyPrestamo)}
             </span>
           </span>
         </div>

@@ -437,13 +437,18 @@ export function Tabla({ columnas = [], filas = [], total, subtotales, pie, alto,
  *  No es cortesía: si el usuario suma la columna que está viendo, tiene que
  *  poder llegar al total. Un «ver más» pelado deja creyendo que lo que hay en
  *  pantalla ES todo, y con plata eso es una conclusión equivocada. */
-export function PieTabla({ visibles, deTotal, faltanMonto, onVerTodos }) {
+/* `suelto` = la franja va SOLA en su tarjeta, no cosida al pie de una tabla.
+   En el teléfono era su único hijo y salía CUADRADA dentro de una tarjeta
+   redonda: su fondo tapaba las esquinas, y encima llevaba una raya de arriba
+   que no separaba de nada. Suelta, hereda el radio y se quita la raya. */
+export function PieTabla({ visibles, deTotal, faltanMonto, onVerTodos, suelto = false }) {
   const faltan = Math.max(0, (deTotal ?? 0) - (visibles ?? 0))
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
-      padding: '12px 24px', flex: 'none',
-      borderTop: '1px solid var(--cf-border)',
+      padding: suelto ? '14px 16px' : '12px 24px', flex: 'none',
+      borderTop: suelto ? 0 : '1px solid var(--cf-border)',
+      borderRadius: suelto ? 'inherit' : 0,
       background: 'var(--cf-card)',
     }}>
       <span className="cf-num" style={{ fontSize: 12.5, color: 'var(--cf-ink-3)' }}>

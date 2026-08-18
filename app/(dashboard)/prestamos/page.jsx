@@ -180,29 +180,46 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
         </p>
       </div>
 
-      {/* Row 2: estado + modo + monto */}
-      <div className="flex items-center justify-between gap-1 mb-1.5">
-        <div className="flex items-center gap-1 min-w-0">
-          <span
-            className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
-            style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
-          >
-            <span className="w-1 h-1 rounded-full" style={{ background: color }} />
-            {label}
-          </span>
-          {p.modoInteres && MODO_TAG[p.modoInteres] && (
-            <span
-              className="text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
-              style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
-            >
-              {MODO_TAG[p.modoInteres]}
-            </span>
-          )}
-        </div>
-        <span className="text-[13px] font-mono-display font-bold truncate" style={{ color: p.diasMora > 0 ? color : 'var(--cf-ink)' }}>
-          {formatMoney(p.saldoPendiente)}
+      {/* ══ ROW 2 Y 3: LAS PASTILLAS ARRIBA, LA PLATA SOLA ═══════════════════
+          «En la vista de cuadritos las tarjetas no se entienden para nada: hay
+           números montados encima de etiquetas y todo es un caos.»
+                                                  — el dueño, 18 ago 2026
+
+          Tenía razón y la cuenta lo explica: en cuadrícula la tarjeta mide unos
+          180px, y aquí iban DOS pastillas más el monto en el mismo renglón. Las
+          pastillas eran `shrink-0` y el monto `truncate`, así que la del modo se
+          cortaba a media palabra —«Cuota fij»— y encima se le montaba
+          «$1.040....».
+
+          ⚠ LA PLATA NO SE RECORTA. Es la regla del proyecto y aquí se estaba
+          rompiendo dos veces: la cifra con puntos suspensivos y encima pisada.
+          Se le da su propio renglón, donde cabe entera y a mayor tamaño — que
+          además es lo que uno viene a mirar.
+
+          Y ninguna pastilla se pierde: el modo sigue ahí, solo que ahora puede
+          encogerse él, que es una etiqueta y no una cifra. */}
+      <div className="flex items-center gap-1 mb-1 min-w-0">
+        <span
+          className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
+          style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
+        >
+          <span className="w-1 h-1 rounded-full" style={{ background: color }} />
+          {label}
         </span>
+        {p.modoInteres && MODO_TAG[p.modoInteres] && (
+          <span
+            className="text-[11px] font-semibold px-1.5 py-px rounded-full min-w-0 truncate"
+            style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 10%, transparent)', color: 'var(--cf-ink-2)', border: '1px solid color-mix(in srgb, var(--cf-ink-2) 20%, transparent)' }}
+          >
+            {MODO_TAG[p.modoInteres]}
+          </span>
+        )}
       </div>
+
+      <p className="text-[15px] font-mono-display font-bold mb-1.5 leading-none whitespace-nowrap"
+        style={{ color: p.diasMora > 0 ? color : 'var(--cf-ink)' }}>
+        {formatMoney(p.saldoPendiente)}
+      </p>
 
       {/* Row 3: progress */}
       <div>

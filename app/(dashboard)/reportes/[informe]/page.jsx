@@ -117,6 +117,12 @@ export default function PantallaDeInforme() {
    * se le pase— y lo único que faltaba era el control. */
   const [rango, setRango] = useState({ desde: '', hasta: '' })
   const rangoPuesto = !!(rango.desde && rango.hasta)
+  /* ⚠ LAS DOS CAJAS NUNCA SALEN VACÍAS. Salían así, y dos controles de fecha en
+     blanco encima de unas cifras no dicen NADA: el prestamista no podía saber
+     de qué día a qué día era lo que estaba mirando. Ahora, mientras no escriba
+     un tramo, enseñan el que la pastilla está pidiendo — que es exactamente el
+     que se manda al servidor (`rangoDe` es la misma función). */
+  const rangoVista = rangoPuesto ? rango : rangoDe(periodo)
   const [crudo, setCrudo] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -289,9 +295,13 @@ export default function PantallaDeInforme() {
                   <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{rotulo}</span>
                   <input
                     type="date"
-                    value={rango[clave]}
+                    value={rangoVista[clave]}
                     max={hoyBogota()}
-                    onChange={(e) => setRango((r) => ({ ...r, [clave]: e.target.value }))}
+                    /* Se siembra con lo que se está viendo, no con lo que hay en
+                       el estado: tocando UNA sola caja el tramo ya queda
+                       completo y filtra. Antes había que rellenar las dos o no
+                       pasaba nada, y la primera parecía no responder. */
+                    onChange={(e) => setRango({ ...rangoVista, [clave]: e.target.value })}
                     className="cf-input"
                     style={{
                       height: 'var(--cf-h-field)', borderRadius: 'var(--cf-r-control)',
@@ -319,8 +329,8 @@ export default function PantallaDeInforme() {
                   se dice, en vez de dejar dos filtros peleándose en silencio. */}
               <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', flexBasis: '100%' }}>
                 {rangoPuesto
-                  ? 'Manda el rango. Quítalo para volver a los períodos de arriba.'
-                  : 'Rellena las dos para pedir un tramo exacto, como «del 1 al 15 de julio».'}
+                  ? 'Manda el tramo que escribiste. Quítalo para volver a los períodos de arriba.'
+                  : `Es el tramo que enseña «${(PERIODOS[String(periodo).toUpperCase()] ?? {}).rotulo ?? periodo}». Cambia una fecha para pedir otro, como «del 1 al 15 de julio».`}
               </span>
             </div>
           )}
@@ -344,6 +354,73 @@ export default function PantallaDeInforme() {
           )}
         </div>
       )}
+
+      {/* QUÉ TRAE EL PAPEL, en los que no tienen vista.
+          «Todo en bruto» y «Listado de cobros» no se pueden enseñar en
+          pantalla: son papeles. Su pantalla era un botón suelto —ni qué baja,
+          ni de cuándo— y quien no lo hubiera bajado antes no tenía forma de
+          saber si era el que buscaba. */}
+      {informe.trae?.length > 0 && (
+        <Tarjeta style={{ padding: 14 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
+            Qué trae
+          </p>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: 0, padding: 0, listStyle: 'none' }}>
+            {informe.trae.map((t, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span aria-hidden style={{
+                  width: 5, height: 5, borderRadius: 99, marginTop: 7, flex: 'none',
+                  background: 'var(--cf-gold)',
+                }} />
+                <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </Tarjeta>
+      )}
+
+      {/* LAS DESCARGAS, ARRIBA DEL TODO Y SIEMPRE LAS DOS.
+          Estaban al final, después de la lista: con 32 clientes había que
+          deslizar la pantalla entera para llegar al botón, y con mil, un rato.
+          Quien entra a un informe entra a BAJARLO: el botón va donde cae el
+          ojo, junto al filtro que acaba de elegir, y en el mismo sitio en los
+          doce informes. */}
+      <Tarjeta style={{ padding: 14 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
+          Bajar este informe
+        </p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {/* Los que bajan por su propia ruta tienen UN formato y lo declaran:
+              poner «PDF» en el botón del volcado en bruto era prometer un papel
+              y entregar una hoja de cálculo. */}
+          <BotonPrimario
+            onClick={() => bajar(informe.formatoPropio ?? 'pdf')}
+            disabled={!!bajando}
+            style={{ flex: '1 1 140px' }}
+          >
+            {/* `bajando` a secas ponía «Armando…» en ESTE botón mientras se
+                armaba el Excel del de al lado. */}
+            {bajando === (informe.formatoPropio ?? 'pdf')
+              ? 'Armando…'
+              : (informe.formatoPropio === 'excel' ? 'Excel' : 'PDF')}
+          </BotonPrimario>
+          {informe.ver && (
+            <BotonSecundario onClick={() => bajar('excel')} disabled={!!bajando} style={{ flex: '1 1 140px' }}>
+              {bajando === 'excel' ? 'Armando…' : 'Excel'}
+            </BotonSecundario>
+          )}
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 8, lineHeight: 1.5 }}>
+          {/* ⚠ EN LOS QUE NO TIENEN VISTA NO HAY NADA «ABAJO» NI NINGÚN FILTRO
+              QUE ELEGIR, y la frase de siempre mandaba a mirar una pantalla
+              vacía. Cada uno dice lo que de verdad hace. */}
+          {informe.ver
+            ? 'Baja exactamente lo que estás viendo abajo, con el filtro que elegiste.'
+            : 'Se arma en el momento con lo que tienes hoy. Puede tardar unos segundos.'}
+          {/* Decirlo, o parecería que el archivo trae menos de lo que trae. */}
+          {informe.ver && ocultas > 0 && ` El Excel trae además otras ${ocultas} columnas que aquí no caben.`}
+        </p>
+      </Tarjeta>
 
       {error && (
         <Tarjeta style={{ padding: '12px 14px', borderColor: 'var(--cf-red-pill-border)' }}>
@@ -441,8 +518,9 @@ export default function PantallaDeInforme() {
                 )
               })}
               {todas.length > filasMovil.length && (
-                <Tarjeta style={{ padding: 0 }}>
+                <Tarjeta style={{ padding: 0, overflow: 'hidden' }}>
                   <PieTabla
+                    suelto
                     visibles={filasMovil.length}
                     deTotal={todas.length}
                     onVerTodos={() => setVerTodas(true)}
@@ -465,40 +543,6 @@ export default function PantallaDeInforme() {
         </>
       )}
 
-      {/* LAS DESCARGAS, SIEMPRE ABAJO Y SIEMPRE LAS DOS.
-          En el mismo sitio en los doce informes: quien ya bajó uno sabe dónde
-          está el siguiente sin buscarlo. */}
-      <Tarjeta style={{ padding: 14 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', marginBottom: 10 }}>
-          Bajar este informe
-        </p>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {/* Los que bajan por su propia ruta tienen UN formato y lo declaran:
-              poner «PDF» en el botón del volcado en bruto era prometer un papel
-              y entregar una hoja de cálculo. */}
-          <BotonPrimario
-            onClick={() => bajar(informe.formatoPropio ?? 'pdf')}
-            disabled={!!bajando}
-            style={{ flex: '1 1 140px' }}
-          >
-            {/* `bajando` a secas ponía «Armando…» en ESTE botón mientras se
-                armaba el Excel del de al lado. */}
-            {bajando === (informe.formatoPropio ?? 'pdf')
-              ? 'Armando…'
-              : (informe.formatoPropio === 'excel' ? 'Excel' : 'PDF')}
-          </BotonPrimario>
-          {informe.ver && (
-            <BotonSecundario onClick={() => bajar('excel')} disabled={!!bajando} style={{ flex: '1 1 140px' }}>
-              {bajando === 'excel' ? 'Armando…' : 'Excel'}
-            </BotonSecundario>
-          )}
-        </div>
-        <p style={{ fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 8, lineHeight: 1.5 }}>
-          Baja exactamente lo que estás viendo arriba, con el filtro que elegiste.
-          {/* Decirlo, o parecería que el archivo trae menos de lo que trae. */}
-          {ocultas > 0 && ` El Excel trae además otras ${ocultas} columnas que aquí no caben.`}
-        </p>
-      </Tarjeta>
     </div>
   )
 }

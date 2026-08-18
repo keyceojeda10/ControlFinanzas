@@ -7,19 +7,43 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { rangoManual }      from '@/lib/reportes/contador'
 
+/* ══ EL PERÍODO SE LLAMA «hoy», NO «dia» ═════════════════════════════════════
+ *
+ * «Dice hoy cobrado en seguros $10.000 y no fue así: esa práctica de poner
+ *  seguro la hice UNA sola vez, y no fue hoy, fue hace mucho tiempo.»
+ *                                                    — el dueño, 18 ago 2026
+ *
+ * Tenía razón y la causa era una palabra. Esta función esperaba `dia` y la
+ * pantalla manda `hoy` —así se llama en `PERIODOS` del catálogo, y así dice el
+ * chip—. Ninguna condición casaba, se caía al `return null` del final… **y
+ * `null` significa SIN FILTRO**. O sea que «Hoy» enseñaba TODO: su único
+ * préstamo con seguro, del 28 de junio, contado como cobrado hoy.
+ *
+ * ⚠ EL FALLO NO ESTÁ EN LO QUE FILTRA, SINO EN LO QUE HACE CUANDO NO ENTIENDE.
+ * Un período desconocido caía en «todo», que es la respuesta más grande
+ * posible. Ahora lo desconocido cae en `mes`, que es el defecto declarado
+ * arriba: equivocarse hacia un mes enseña de más en un tramo acotado; caer en
+ * «todo» convierte cualquier error de nombre en una cifra inventada.
+ *
+ * Y los períodos se leen del catálogo, no de una lista escrita aquí: era eso
+ * justamente lo que se había desincronizado.
+ */
 function rangoFecha(periodo) {
   // Fechas en hora Colombia (UTC-5) -> convertir a UTC para el query
   const ahora = new Date(Date.now() - 5 * 3600 * 1000)
   const hoy0 = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 5, 0, 0))
-  if (periodo === 'dia') return { gte: hoy0 }
-  if (periodo === 'semana') {
-    const d = new Date(hoy0); d.setUTCDate(d.getUTCDate() - 7); return { gte: d }
+  const atras = (dias) => {
+    const d = new Date(hoy0); d.setUTCDate(d.getUTCDate() - dias); return { gte: d }
   }
-  if (periodo === 'mes') {
-    const d = new Date(hoy0); d.setUTCDate(d.getUTCDate() - 30); return { gte: d }
-  }
-  return null // 'todo' -> sin filtro
+  if (periodo === 'todo') return null
+  if (periodo === 'hoy' || periodo === 'dia') return { gte: hoy0 }   // «dia» por si queda algún enlace viejo
+  if (periodo === 'semana') return atras(7)
+  if (periodo === 'trimestre') return atras(90)
+  if (periodo === 'semestre') return atras(180)
+  if (periodo === 'anio') return atras(365)
+  return atras(30)   // «mes» y cualquier cosa que no se entienda
 }
 
 export async function GET(request) {
@@ -35,8 +59,12 @@ export async function GET(request) {
 
   const orgId = session.user.organizationId
   const { searchParams } = new URL(request.url)
-  const periodo = searchParams.get('periodo') || 'mes' // dia|semana|mes|todo
-  const rango = rangoFecha(periodo)
+  const periodo = searchParams.get('periodo') || 'mes'
+  /* El tramo escrito a mano manda sobre la pastilla, igual que en «Para el
+     contador» y «Movimientos por cuenta»: si alguien escribió dos fechas, es que
+     quiere ESAS. Lo pidió el dueño en el mismo reporte donde vio el fallo. */
+  const aMano = rangoManual(searchParams)
+  const rango = aMano ? { gte: aMano.desde, lt: aMano.hasta } : rangoFecha(periodo)
 
   const wherePrestamo = {
     seguro: true,
