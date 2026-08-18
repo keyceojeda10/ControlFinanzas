@@ -18,16 +18,25 @@ Las **seis** cosas que salieron de revisar la app con `ccaojd@gmail.com`:
 Medido en el espejo a 412 y 1440px: `node .auditoria/_ver-informes-18ago.mjs`.
 Pruebas: `lib/__tests__/informes-y-cuadricula-18ago.test.js`.
 
+## Desplegado también hoy (`207e0b80`)
+
+**T16-00 · en PC ya no hay que hacer wizard para prestar.** Era lo último que
+faltaba del rediseño. Cliente y condiciones van juntos en pantalla ancha, con la
+cuenta llenándose al escribir; confirmar sigue aparte porque ahí se firma.
+
+Comprobado creando el MISMO préstamo por los dos caminos en el espejo:
+`node .auditoria/_crear-igual-pc-y-movil.mjs` → **34 campos idénticos**.
+
 ## Lo siguiente
+
+0. **La campaña de fotos: cerrada, y llegaron CERO.** `/opt/cf-fotos-donadas`
+   está vacío. No hay nada que borrar antes del 31 de agosto y no hay a quién
+   avisar. Queda tachada.
 
 1. **Los mensajes a los cinco negocios que escribieron por el banner.**
    Están escritos y comprobados en `RESPUESTAS-SUGERENCIAS.md`, listos para
    copiar. ⚠ Los manda el dueño, no yo. El banner se apaga solo el 28 de agosto,
    así que pueden llegar más.
-
-2. **La campaña de fotos de cuadernos** se apaga sola a las 40 fotos o el lunes
-   10 de agosto — comprobar si ya se cerró. Se prometió **borrarlas antes del 31
-   de agosto** y avisar cuando el cargue por fotos esté listo.
 
 3. **Pendientes de fondo, sin fecha:** el wizard de préstamo en PC (T16-00),
    las 119 guías del bot de junio, las 1.462 filas de fechas con el convenio
