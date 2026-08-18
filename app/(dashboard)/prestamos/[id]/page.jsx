@@ -40,7 +40,7 @@ import {
   PagoMiniCard,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -352,6 +352,32 @@ function PrestamoDetalleContenido({ params }) {
     }
   }, [lastSyncedAt, fetchPrestamo])
 
+  /* ══ AL VOLVER A ESTA PANTALLA, SE VUELVE A PREGUNTAR ═════════════════════
+   *
+   * ⚠ ESTO ES LO QUE VIO EL DUEÑO EL 18 DE AGOSTO. Fotografió «Cobrado hoy ·
+   * 2 PAGOS $40.000» cuando en la base había $40.000 y $100.000. La cuenta era
+   * correcta —con esos dos pagos da $140.000, comprobado contra producción—:
+   * lo que estaba viejo era la PANTALLA.
+   *
+   * La ficha solo preguntaba al montarse y cuando entraba la cola de offline.
+   * Con dos pestañas abiertas —las suyas— o cobrando desde otra pantalla, esta
+   * se quedaba con los datos de antes hasta que se recargara a mano. Y una
+   * pantalla vieja de plata no se lee como vieja: se lee como equivocada.
+   *
+   * `soft` para que no parpadee: se repinta cuando llega la respuesta, sin
+   * vaciar antes lo que hay. */
+  useEffect(() => {
+    const alVolver = () => {
+      if (document.visibilityState === 'visible') fetchPrestamo({ soft: true })
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    window.addEventListener('focus', alVolver)
+    return () => {
+      document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener('focus', alVolver)
+    }
+  }, [fetchPrestamo])
+
   // ── Tarjeta clavo ───────────────────────────────────────────────
   async function confirmarClavo() {
     if (clavoEnviando) return
@@ -612,9 +638,12 @@ function PrestamoDetalleContenido({ params }) {
   const badge      = estadoBadge[estado] ?? estadoBadge.activo
   /* Lo que de verdad entró hoy por este préstamo. Sale de la MISMA función que
      decide si «pagó hoy», para que las dos no puedan discrepar. */
+  /* ⚠ LAS DOS, DE LA MISMA LISTA. La cuenta la hacía aquí con `toDateString()`
+     —la hora del teléfono— y la suma la hacía `cobradoHoy` con la de Colombia:
+     dos «hoy» distintos en la misma pastilla. Ahora las dos salen de
+     `pagosDelDia` y no se pueden contradecir. */
   const cobradoHoyPrestamo = cobradoHoy({ pagos })
-  const pagosDeHoy = (pagos ?? []).filter((p) => !['recargo', 'descuento'].includes(p.tipo)
-    && new Date(p.fechaPago).toDateString() === new Date().toDateString()).length
+  const pagosDeHoy = cuantosPagosHoy({ pagos })
 
   const estaActivo = estado === 'activo'
   const enMora     = diasMora > 3

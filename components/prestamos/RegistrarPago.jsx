@@ -333,15 +333,21 @@ export default function RegistrarPago({
         const porcentajeNuevo = prestamo?.totalAPagar > 0
           ? Math.round((totalPagadoNuevo / prestamo.totalAPagar) * 100)
           : 0
+        const pagoOffline = { montoPagado: m, tipo, fechaPago: new Date().toISOString(), offline: true }
         const prestamoActualizado = prestamo ? {
           ...prestamo,
           saldoPendiente: saldoNuevo,
           totalPagado: totalPagadoNuevo,
           porcentajePagado: porcentajeNuevo,
           pagoHoy: true,
+          /* ⚠ EL PAGO ENTRA EN LA LISTA, no solo en los totales. Se ponía
+             `pagoHoy: true` y `pagos` se quedaba como estaba, así que la
+             pastilla «Cobrado hoy» aparecía —porque pagoHoy era cierto— con la
+             suma de ANTES de este cobro. Sin red, el cobrador veía menos plata
+             de la que acababa de recibir. */
+          pagos: [pagoOffline, ...(prestamo.pagos ?? [])],
           estado: saldoNuevo <= 0 ? 'completado' : prestamo.estado,
         } : prestamo
-        const pagoOffline = { montoPagado: m, fechaPago: new Date().toISOString(), offline: true }
         setPagoGuardado(pagoOffline)
         setPrestamoAct(prestamoActualizado)
         setExitoso(true)
