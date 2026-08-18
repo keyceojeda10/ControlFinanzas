@@ -40,7 +40,7 @@ import {
   PagoMiniCard,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa, tieneTablaAmortizacion } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -866,14 +866,15 @@ function PrestamoDetalleContenido({ params }) {
   // corrio todo el interes, asi que cerrarlo hoy cuesta exactamente lo que
   // debe: la linea repetiria la cifra de arriba sin decir nada, y dos veces el
   // mismo numero en un bloque de plata se lee como un error.
-  // EL INTERES VENCIDO Y SIN PAGAR. Estaba calculado dentro del `onClick` del
-  // boton que abria el modal, asi que solo existia en el instante de pulsarlo.
-  // La hoja necesita el mismo numero para enseñarlo y para mandarlo.
-  const interesMonto = Math.round(
-    (prestamo?.cuotasAmortizacion ?? [])
-      .filter((f) => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
-      .reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0),
-  )
+  // EL INTERES QUE SE LE PUEDE RECIBIR HOY. Estaba calculado dentro del
+  // `onClick` del boton que abria el modal, asi que solo existia en el instante
+  // de pulsarlo. La hoja necesita el mismo numero para enseñarlo y para mandarlo.
+  //
+  // ⚠ Y AHORA SALE DE `interesCobrableAhora`, no de la regla escrita aqui. Esta
+  // contaba solo lo VENCIDO —igual que la hoja de pago, el atajo de cobro y el
+  // servidor, cada uno con su copia—, asi que a quien le pagaban el interes por
+  // adelantado le salia $0 en las cuatro. Reportado por Crediya el 14 de agosto.
+  const interesMonto = Math.round(interesCobrableAhora(prestamo))
 
   const pagarIntereses = async () => {
     if (!(interesMonto > 0)) return
@@ -2227,9 +2228,7 @@ function PrestamoDetalleContenido({ params }) {
               hoja y escribirlo; inventar aquí un número sería sugerir un cobro
               que nadie acordó. El botón «Interés» de la hoja sí sale en todos. */}
           {['lineal', 'lineal_dinamico', 'solo_interes', 'saldo'].includes(prestamo?.modoInteres) && (() => {
-            const interesesPend = prestamo?.cuotasAmortizacion
-              ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
-              ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
+            const interesesPend = interesCobrableAhora(prestamo)
             return interesesPend > 0 ? (
               <button
                 onClick={() => {

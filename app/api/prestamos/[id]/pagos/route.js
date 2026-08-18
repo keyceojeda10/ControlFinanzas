@@ -23,7 +23,7 @@ import {
   recalcularTablaSoloInteresDesdeSaldo,
   recalcularTablaSaldoDesdeSaldo,
   obtenerDiasPorPeriodo,
-  calcularInteresesPendientes,
+  interesCobrableAhora,
   obtenerProximaCuotaTabla,
   siguientePeriodo,
 } from '@/lib/calculos'
@@ -175,12 +175,32 @@ export async function POST(request, { params }) {
         }, { status: 400 })
       }
     } else {
-      const interesesPendientes = Math.round(calcularInteresesPendientes(prestamo))
-      if (interesesPendientes <= 0) {
-        return Response.json({ error: 'No hay intereses pendientes para pagar' }, { status: 400 })
+      /* ⚠ SE MIRA LO COBRABLE HOY, NO SOLO LO VENCIDO.
+       *
+       * Antes esto era `calcularInteresesPendientes`, que solo suma las cuotas
+       * cuya fecha ya llegó. A quien le pagan el interés de la quincena ANTES
+       * de que caiga le salía «No hay intereses pendientes para pagar» y tenía
+       * que llevar esos clientes en un cuaderno aparte. Lo reportó Crediya el
+       * 14 de agosto y le pasaba todas las quincenas.
+       *
+       * `interesCobrableAhora` suma además el interés de la cuota que viene:
+       * exactamente lo que el cliente está adelantando, ni un peso más. */
+      const cobrable = Math.round(interesCobrableAhora(prestamo))
+      if (cobrable <= 0) {
+        return Response.json({
+          error: 'Este préstamo no tiene interés por cobrar: está todo pagado.',
+        }, { status: 400 })
       }
-      if (montoFinal > interesesPendientes) {
-        montoFinal = interesesPendientes
+      /* ⚠ Y SE AVISA EN VEZ DE RECORTAR EN SILENCIO.
+       *
+       * Antes, pedir $75.000 cuando cabían $50.000 registraba $50.000 y no
+       * decía nada: el cliente entregaba una plata y quedaba anotada otra. Es
+       * la mitad de la queja de Crediya —«que yo pueda definir sin
+       * limitaciones»—: el sistema decidía por él y encima callado. */
+      if (montoFinal > cobrable) {
+        return Response.json({
+          error: `De interés se le puede recibir hasta ${cobrable}. Si le entregó más, lo que sobra va como abono a capital.`,
+        }, { status: 400 })
       }
     }
   }

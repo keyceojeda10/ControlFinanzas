@@ -24,7 +24,7 @@ import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 import { Recibo } from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa, siguientePeriodo } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
@@ -201,10 +201,20 @@ export default function RegistrarPago({
       return
     }
     if (tabInicial === 'intereses') {
-      const interesesPend = prestamo?.cuotasAmortizacion
-        ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
-        ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
-      setMonto(String(Math.round(interesesPend)))
+      /* ⚠ LA MISMA FUNCIÓN QUE EL SERVIDOR, NO UNA COPIA.
+       *
+       * Aquí vivía la regla escrita otra vez —«las cuotas cuya fecha ya
+       * llegó»— y por eso, a quien le pagaban el interés por adelantado, esta
+       * pantalla le prellenaba $0 y el servidor le contestaba «no hay
+       * intereses pendientes». El mismo fallo por dos caminos: arreglar solo
+       * uno habría dejado la pantalla mintiendo. */
+      /* ⚠ `fijarMonto`, NO `setMonto`: lo dice el comentario de su
+         definición. `monto` guarda la cifra real y `montoTecleado` el texto
+         que se escribió; quien fija una cifra desde un atajo tiene que
+         olvidar lo tecleado, o el campo sigue pintando lo viejo. Con
+         `setMonto` a secas, elegir «Interés» cambiaba el valor por dentro
+         y en pantalla seguía la cuota: lo vi en el espejo, no en el JSX. */
+      fijarMonto(String(Math.round(interesCobrableAhora(prestamo))))
       setTipo('intereses')
       setNota('')
       setDiasAbonados(null)
@@ -1099,7 +1109,16 @@ export default function RegistrarPago({
                monto lo pone el prestamista porque es lo que pactó con ESE
                cliente; adivinarlo sería inventar una cifra». Vaciarlo es
                obligar a escribir los $50.000 que se pactaron. */
-            if (a.id === 'intereses' && subeLaDeuda) setMonto('')
+            if (a.id === 'intereses') {
+              /* ⚠ Y CON TABLA SE PONE LO COBRABLE, que antes no se ponía nada.
+                 La casilla se quedaba con la CUOTA heredada —$266.667— y el
+                 servidor solo acepta el interés —$100.000—: el cobrador leía
+                 una cifra, confirmaba, y le salía un error. Aquí sí se puede
+                 proponer un número porque las filas lo dicen; en los modos sin
+                 tabla no existe y por eso ese camino vacía. */
+              if (subeLaDeuda) fijarMonto('')
+              else fijarMonto(String(Math.round(interesCobrableAhora(prestamo))))
+            }
             setTipo(a.id)
           }}
           explicacion={explicacionAplicacion}
@@ -1437,10 +1456,14 @@ export default function RegistrarPago({
                     if (key === 'capital' || key === 'recargo' || key === 'descuento' || key === 'intereses') {
                       setDiasAbonados(null)
                       if (key === 'intereses') {
-                        const interesesPend = prestamo?.cuotasAmortizacion
-                          ?.filter(f => new Date(f.fechaEsperada) <= new Date() && (f.pagado || 0) < f.cuotaTotal)
-                          ?.reduce((acc, f) => acc + Math.max(0, f.interes - (f.interesPagado || 0)), 0) ?? 0
-                        setMonto(String(Math.round(interesesPend)))
+                        // La misma función que el servidor. Ver arriba.
+                        /* ⚠ `fijarMonto`, NO `setMonto`: lo dice el comentario de su
+                           definición. `monto` guarda la cifra real y `montoTecleado` el texto
+                           que se escribió; quien fija una cifra desde un atajo tiene que
+                           olvidar lo tecleado, o el campo sigue pintando lo viejo. Con
+                           `setMonto` a secas, elegir «Interés» cambiaba el valor por dentro
+                           y en pantalla seguía la cuota: lo vi en el espejo, no en el JSX. */
+                        fijarMonto(String(Math.round(interesCobrableAhora(prestamo))))
                       } else {
                         fijarMonto('')
                       }

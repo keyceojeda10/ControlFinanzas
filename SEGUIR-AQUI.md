@@ -49,10 +49,13 @@ existían y no se le había dicho; el del francés se arregló hoy.
 Tres cosas que pidieron ellos y no están (detalle y porqué en
 `RESPUESTAS-SUGERENCIAS.md`):
 
-1. **Cobrar el interés que aún no se ha vencido.** `calcularInteresesPendientes`
-   solo cuenta hasta hoy, así que a Crediya le sale «No hay intereses pendientes
-   para pagar» cuando su cliente paga la quincena por adelantado. Le pasa todas
-   las quincenas.
+1. ~~**Cobrar el interés que aún no se ha vencido.**~~ **HECHO, 17 ago.** Y no
+   era solo Crediya: medido contra producción, **271 de los 382 préstamos vivos
+   con tabla (71%) estaban bloqueados en 22 negocios**. La razón es sencilla y
+   vuelve del revés la idea de partida: un préstamo AL DÍA no tiene nada
+   vencido, así que «pagar interés» solo funcionaba con los atrasados.
+   `interesCobrableAhora` suma lo vencido más la cuota que viene, y la regla,
+   que estaba escrita en cuatro sitios, vive ahora en uno.
 2. **Filtro «próximos a vencer» (5 y 10 días)** en préstamos. Rincón dice que es
    el que más usa; los de hoy miran el atraso, no lo que va a vencer.
 3. **Interés por período en `fijo` y `unico`.** El más grande: toca cómo se
