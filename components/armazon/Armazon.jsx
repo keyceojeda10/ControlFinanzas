@@ -245,7 +245,15 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         />
       )}
 
-      {children}
+      {/* ⚠ EL HUECO DEL PIE SE PUBLICA COMO MEDIDA, no como un bloque suelto.
+          Ver la nota de abajo: el bloque de 112px iba DESPUÉS de un contenedor
+          que ya medía una pantalla entera, así que toda pantalla corta se
+          deslizaba 168px para no enseñar nada. Con la medida aquí, el armazón
+          de dentro puede descontarla de su alto mínimo Y reservarla como
+          relleno: el hueco sigue existiendo y deja de sobrar. */}
+      <div style={{ '--cf-hueco-pie': armazon.pastilla ? '112px' : '0px' }}>
+        {children}
+      </div>
 
       {/* ── EL HUECO DEL PIE, PARA TODA LA APP ───────────────────────────────
           La pastilla flota fija sobre el contenido, así que sin este hueco se
@@ -263,7 +271,10 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           el panel: con 96 el último renglón aún rozaba.
 
           `lg:hidden` porque sentado no hay pastilla y el hueco sobraría. */}
-      {armazon.pastilla && <div className="h-[112px] lg:hidden" style={{ flex: 'none' }} aria-hidden />}
+      {/* Ya no va aquí un bloque: el hueco viaja como `--cf-hueco-pie` arriba y
+          lo reserva el propio contenedor de la pantalla, con `padding-bottom`.
+          Un bloque hermano SUMA altura siempre; un relleno dentro de una caja
+          que ya mide una pantalla, no. */}
 
       {/* La pastilla NO se oculta con CSS: no se monta. Un `display:none` deja
           los cinco destinos en el árbol y un lector de pantalla los sigue

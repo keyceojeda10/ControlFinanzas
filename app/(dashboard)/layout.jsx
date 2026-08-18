@@ -77,7 +77,22 @@ export default async function DashboardLayout({ children }) {
     {/* El país de la organización, para las 465 llamadas a `formatMoney` que no
         lo pasan. Ver el porqué en el propio componente. */}
     <PaisActivo country={session?.user?.country ?? 'co'} />
-    <div className="flex min-h-screen lg:h-screen" style={{ background: 'var(--cf-surface)' }}>
+    {/* ⚠ EL ALTO MÍNIMO DESCUENTA LA CABECERA Y EL HUECO DE LA PASTILLA.
+        Con `min-h-screen` a secas la cuenta salía 56 (cabecera) + 844 (esto) +
+        112 (el hueco) = 1012 en una ventana de 844: TODA pantalla corta se
+        deslizaba 168px para no enseñar nada. Reportado en Socios —«hay mucho
+        espacio en blanco, no sé por qué»— pero pasaba en las diez que medí.
+
+        `--cf-hueco-pie` lo pone el armazón: 112px cuando hay pastilla y 0
+        cuando no, que es lo que no podía saber esta capa. Y va también de
+        `padding-bottom`, para que el hueco siga estando en las pantallas
+        largas: es lo que evita que la pastilla se coma la última tarjeta.
+
+        Sentado no hay pastilla ni cabecera móvil, y manda `lg:h-screen`. */}
+    <div
+      className="flex min-h-[calc(100dvh-56px-var(--cf-hueco-pie,0px))] pb-[var(--cf-hueco-pie,0px)] lg:min-h-0 lg:h-screen lg:pb-0"
+      style={{ background: 'var(--cf-surface)' }}
+    >
       {/* La barra lateral NUNCA se oculta: quien usa PC esta revisando, no
           cobrando en la calle. La regla de supresion es exclusiva de movil.
 
