@@ -276,7 +276,11 @@ export default function SocioDetallePage() {
   ]
 
   return (
-    <div style={{ height: '100%', minHeight: 0 }}>
+    /* ⚠ SIN `height: 100%`. Era lo que estiraba la columna hasta el alto de la
+       ventana y abría un hueco de 108px entre «Registrar aporte» y los dos
+       botones de abajo — el vacío que él fotografió. La pantalla crece con su
+       contenido, como su hermana la lista. */
+    <div>
       <CuentaSocio
         leDebesEtiqueta="Su capital hoy"
         leDebes={fmt(Math.max(0, socio.totalAportes - (socio.totalRetiros || 0)))}
@@ -310,7 +314,12 @@ export default function SocioDetallePage() {
         }}
         onPagar={() => { setTipoAporte('retiro'); setModalAporte(true) }}
       >
-      <div className="pb-24 space-y-4">
+      {/* ⚠ SIN `pb-24`. Eran 96px de aire reservados para que la pastilla no
+          tapara el final, de cuando este bloque ERA el final. Ya no lo es
+          —debajo van «Mandarle su cuenta» y «Pagarle»— y el hueco de la
+          pastilla lo reserva el armazón para toda la app. Así que esos 96px
+          eran un agujero en mitad de la pantalla: es el vacío de la captura. */}
+      <div className="space-y-4">
       {/* Acciones (fuera del hero) */}
       <div className="flex justify-end">
         <Button
@@ -485,15 +494,25 @@ export default function SocioDetallePage() {
         </div>
       )}
 
-      </div>
-      </CuentaSocio>
+      {/* ⚠ EL BUSCADOR VA AQUÍ DENTRO, y no detrás de todo. Reportado dos
+          veces: «en páginas internas de la sección de socios sigue saliendo ese
+          buscador abajo del todo».
 
-      {/* Debajo de la cuenta: aqui se viene a MIRAR cuanto puso y cuanto se le
-          debe. La caja va donde termina de leerse eso, no tapandolo. */}
-      <div style={{ padding: '4px 16px 20px' }}>
+          Fuera de `CuentaSocio` caía DESPUÉS de «Mandarle su cuenta» y
+          «Pagarle», que son las dos acciones de esta pantalla: quedaba de
+          último renglón, pegado a la pastilla. Aquí dentro sale antes que
+          ellas, y las acciones cierran la pantalla, que es su sitio.
+
+          La razón vieja —«la caja va donde termina de leerse la cuenta, no
+          tapándola»— se respeta igual: sigue después de la cuenta y de los
+          movimientos. */}
+      <div style={{ paddingTop: 2 }}>
         <RegistrarAcciones clave="socio" acciones={accionesSocio} />
         <QueNecesitas ejemplos={['metio plata', 'le devolvi', 'editar']} />
       </div>
+
+      </div>
+      </CuentaSocio>
 
       {/* Modal registrar aporte/retiro */}
       <Modal open={modalAporte} onClose={() => setModalAporte(false)} title={tipoAporte === 'retiro' ? 'Registrar retiro' : 'Registrar aporte'}>
