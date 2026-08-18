@@ -10,6 +10,27 @@ no se pudo comprobar, se dice que se pregunta — no se afirma.
 
 ---
 
+## ⚠ Miguel Ángel escribió OTRA VEZ el 17, y hay que leer la hora
+
+> «adiciono se sigue prrsentando cuando se va acrear un prestamo, cuando se
+> escoje el intereses a saldo (sistema frances) siempre el calculo es incorrecto
+> en cuanto la ultima cuota queda en $0 o un valor inferior o incluso un valor
+> exageradamente grande y el valor de las cuotas por ende no son los que
+> corresponden»
+
+**Lo escribió 14 horas ANTES de que saliera el arreglo**: su mensaje es de las
+09:00 de Bogotá del 17 y el aviso se desplegó a las 23:44 de ese mismo día. O
+sea que «se sigue presentando» habla de la versión vieja, no de la que tiene
+ahora. No es una queja nueva: es el mismo punto 1, contado con más detalle.
+
+⚠ **Pero dice algo que el punto 1 no decía**: que «el valor de las cuotas por
+ende no son los que corresponden» — o sea, que las cuotas de en medio también
+saldrían mal, no solo la última. Eso NO se ha comprobado, y no se le puede
+afirmar ni negar sin un préstamo concreto suyo. En el mensaje de abajo se le
+pide, y no se da por resuelto.
+
+---
+
 ## Préstamos Rincón · Miguel Ángel — sus 5 puntos, los 5 resueltos
 
 | Lo que pidió | Cómo está |
@@ -49,9 +70,17 @@ no se pudo comprobar, se dice que se pregunta — no se afirma.
 >
 > *5. El interés moratorio* ya se puede aplicar; venía de antes y no le avisamos.
 >
-> Me queda una duda suya: lo de los cálculos inexactos en el recaudo de
-> intereses. ¿Me pasa el nombre de un cliente donde lo vea? Con un caso concreto
-> lo reviso a fondo.
+> Me quedan dos cosas suyas por resolver, y para las dos necesito lo mismo:
+>
+> - Los cálculos inexactos en el recaudo de intereses.
+> - Lo que agregó el domingo: que además de la última, *las demás cuotas
+>   tampoco son las que corresponden*. Eso no lo he podido reproducir, y no se
+>   lo voy a dar por arreglado sin verlo.
+>
+> ¿Me pasa el nombre de un cliente donde lo vea, con el monto y el plazo que le
+> puso? Con un caso concreto lo reviso a fondo. Y ojo: su mensaje del domingo
+> fue por la mañana y el arreglo salió esa misma noche, así que puede que lo que
+> vio ya no le esté pasando — dígame también si sigue igual.
 
 ---
 
