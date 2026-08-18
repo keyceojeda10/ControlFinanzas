@@ -227,6 +227,15 @@ function NuevoPrestamo() {
   const [modoInteres, setModoInteres] = useState(() => deLaUrl('modo', 'fijo'))
   const [modoPreferido, setModoPreferido] = useState(null)
   const [interesAdelantado, setInteresAdelantado] = useState(false)
+  /* ⚠ PRÉSTAMO ABIERTO: sin plazo ni fecha de vencimiento. Solo en Globo.
+     «Presto $690.000 al 10% mensual, el cliente paga solo los intereses y el
+      capital queda pendiente. Probé GLOBO pero me exige un plazo y una fecha
+      final, y mi modelo no funciona así.» — un cliente, 18 ago 2026. Y no era
+     raro: 25 negocios lo estaban forzando estirando el plazo hasta tres años. */
+  const [sinPlazo, setSinPlazo] = useState(false)
+  /* La bandera solo vale en Globo. Se deriva en vez de guardarse para que
+     cambiar de modo no deje un préstamo «abierto» de otro tipo por olvido. */
+  const esAbierto = modoInteres === 'solo_interes' && sinPlazo
   const [capitalExtra, setCapitalExtra] = useState([])
   // ── «TE QUEDAN $3.2M DISPONIBLES EN CAJA» (T16-00) ──
   // La lámina lo pone debajo del monto, y es la pregunta que el prestamista se
@@ -600,7 +609,8 @@ function NuevoPrestamo() {
       frecuencia,
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
       ...(cm > 0 && { cuotaManual: cm }),
-      interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado,
+      interesAdelantado: modoInteres === 'solo_interes' && interesAdelantado && !esAbierto,
+      ...(esAbierto && { sinPlazo: true }),
       ...(capitalExtra.length > 0 && { capitalExtra }),
       /* ⚠ LA MISMA CONDICIÓN QUE AL GUARDAR. Esta previsualización llevaba
          `modoDiaCobro === 'mes'`, que es el interruptor de QUINCENAL: en mensual
@@ -613,7 +623,7 @@ function NuevoPrestamo() {
     })
     lastValidCalculo.current = resultado
     return resultado
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, saldoCuotaPersonalizada, precioVenta, numCuotas, interesAdelantado, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, saldoCuotaPersonalizada, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -641,7 +651,8 @@ function NuevoPrestamo() {
         ...(modo === 'mercancia' && nombreProducto.trim() && { nombreProducto: nombreProducto.trim() }),
         ...(inyeccionPrevia && { inyeccionPrevia }),
         ...(seguro && Number(montoSeguro) > 0 && { seguro: true, montoSeguro: Number(montoSeguro) }),
-        ...(modoInteres === 'solo_interes' && interesAdelantado && { interesAdelantado: true }),
+        ...(modoInteres === 'solo_interes' && interesAdelantado && !esAbierto && { interesAdelantado: true }),
+        ...(esAbierto && { sinPlazo: true }),
         ...(capitalExtra.length > 0 && { capitalExtra }),
         ...(socioId && { socioId }),
         metodoPago: cuentaDesembolso.metodoPago,
@@ -714,7 +725,9 @@ function NuevoPrestamo() {
     if (modo === 'mercancia') {
       return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0 && !!calculo
     }
-    return Number(monto) > 0 && Number(tasa) >= 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
+    /* En un abierto no hay plazo que pedir: exigirlo dejaba el botón apagado
+       para siempre en el único modo que no lo necesita. */
+    return Number(monto) > 0 && Number(tasa) >= 0 && (esAbierto || Number(plazoUnidades) > 0) && !!fechaInicio && !!calculo
   }
 
   const puedeAvanzarPaso = () => {
@@ -1543,6 +1556,21 @@ function NuevoPrestamo() {
                   </div>
                 </div>
 
+                {/* ⚠ EN UN ABIERTO NO HAY CUOTAS QUE CONTAR. Pedirle un número
+                    al prestamista y luego no usarlo es peor que no pedirlo: se
+                    queda creyendo que su préstamo termina ahí. En su lugar se
+                    dice en una línea qué va a pasar. */}
+                {esAbierto ? (
+                  <div className="rounded-[14px] p-3.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Sin fecha de vencimiento</p>
+                    <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+                      {{ diario: 'Cada día', semanal: 'Cada semana', quincenal: 'Cada quincena', mensual: 'Cada mes' }[frecuencia] || 'Cada mes'} se le cobra el interés
+                      {calculo?.cuotaDiaria ? ` de ${formatMoney(calculo.cuotaDiaria)}` : ''} y el capital queda quieto.
+                      Cuando el cliente abone a capital, el interés del período siguiente baja solo.
+                      El préstamo se cierra cuando el capital llegue a cero.
+                    </p>
+                  </div>
+                ) : (
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Cuántas cuotas</label>
                   <div className="mt-1.5 flex items-center h-[68px] rounded-[14px] pl-4 pr-2.5 gap-2"
@@ -1584,12 +1612,14 @@ function NuevoPrestamo() {
                     ))}
                   </div>
                 </div>
+                )}
               </div>
 
               {Number(monto) > 0 && Number(tasa) > 0 && (
                 <p className="text-[12px] -mt-2" style={{ color: 'var(--cf-ink-3)' }}>
                   Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
-                  {frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : ''}
+                  {esAbierto ? ' · sin fecha de vencimiento'
+                    : (frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : '')}
                 </p>
               )}
 
@@ -1643,6 +1673,38 @@ function NuevoPrestamo() {
                 preferido={modoPreferido}
                 onGuardarPreferido={(m) => { guardarModoPreferido(m); setModoPreferido(m) }}
               />
+
+              {/* ══ EL PRÉSTAMO ABIERTO, JUSTO DEBAJO DE SU MODO ══════════════
+                  ⚠ ESTE ES EL SITIO. Lo puse primero en el panel «Resumen del
+                  préstamo · toca para editar», que también tiene un selector de
+                  modo, y en la pantalla no aparecía por ningún lado: el modo se
+                  elige AQUÍ, en las tarjetas grandes, y aquel panel es solo para
+                  retocar después. Lo cazó la prueba del navegador, no leyendo.
+
+                  Va debajo y no dentro de la tarjeta de Globo porque no es otro
+                  modo: es una variante del mismo, y meterla como sexta tarjeta
+                  obligaría a elegir entre «Globo» y «Globo abierto» a quien
+                  todavía no sabe cuál quiere. */}
+              {modoInteres === 'solo_interes' && (
+                <div className="rounded-[14px] p-3.5" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Sin fecha de vencimiento</p>
+                      <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                        El cliente paga solo el interés cada cobro y el capital queda pendiente
+                        hasta que él quiera abonarlo.
+                      </p>
+                    </div>
+                    <Toggle checked={sinPlazo} onChange={(v) => { setSinPlazo(v); if (v) setInteresAdelantado(false) }} />
+                  </div>
+                  {esAbierto && (
+                    <p className="text-[11px] mt-2.5 pt-2.5 leading-relaxed" style={{ color: 'var(--cf-ink-3)', borderTop: '1px solid var(--cf-hairline)' }}>
+                      No se le pide plazo ni fecha final. Cuando abone a capital, el interés del
+                      cobro siguiente baja solo. El préstamo se cierra cuando el capital llegue a cero.
+                    </p>
+                  )}
+                </div>
+              )}
 
               {cuotaManualActiva && (
                 <div>
@@ -1885,10 +1947,22 @@ function NuevoPrestamo() {
                         )}
 
                         {modoInteres === 'solo_interes' && (
-                          <div className="flex items-center justify-between py-1.5 px-1">
-                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
-                            <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
-                          </div>
+                          <>
+                            {/* ⚠ EL ABIERTO VA PRIMERO Y APAGA AL OTRO. El interés
+                                adelantado se cobra sobre la ÚLTIMA cuota, y en un
+                                abierto no hay última: dejar los dos encendidos
+                                sería ofrecer algo que no se puede cumplir. */}
+                            <div className="flex items-center justify-between py-1.5 px-1">
+                              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Sin fecha de vencimiento</span>
+                              <Toggle checked={sinPlazo} onChange={(v) => { setSinPlazo(v); if (v) setInteresAdelantado(false) }} />
+                            </div>
+                            {!sinPlazo && (
+                              <div className="flex items-center justify-between py-1.5 px-1">
+                                <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
+                                <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+                              </div>
+                            )}
+                          </>
                         )}
 
                         {cuotaManualActiva && (
@@ -2075,11 +2149,22 @@ function NuevoPrestamo() {
                   />
                 )}
 
+                {/* ⚠ SON DOS VISTAS DEL MISMO PANEL, y esto ya me mordió antes:
+                    arreglar una y dejar la otra. Los dos interruptores van en
+                    las dos. */}
                 {modoInteres === 'solo_interes' && (
-                  <div className="flex items-center justify-between py-1.5 px-1">
-                    <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
-                    <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between py-1.5 px-1">
+                      <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Sin fecha de vencimiento</span>
+                      <Toggle checked={sinPlazo} onChange={(v) => { setSinPlazo(v); if (v) setInteresAdelantado(false) }} />
+                    </div>
+                    {!sinPlazo && (
+                      <div className="flex items-center justify-between py-1.5 px-1">
+                        <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Interés adelantado</span>
+                        <Toggle checked={interesAdelantado} onChange={setInteresAdelantado} />
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Cuota manual — editable si modo manual */}
