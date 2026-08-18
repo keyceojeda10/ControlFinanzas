@@ -35,7 +35,35 @@ export async function GET() {
   // Si ya mandó algo, el banner cambia de texto en vez de desaparecer: quien
   // ayudó tiene que ver que llegó, y puede querer añadir otra cosa después.
   const mias = await prisma.sugerencia.count({ where: { userId: session.user.id } })
-  return Response.json({ viva, dias: diasQueQuedan(), mias })
+
+  /* ══ LA RESPUESTA VUELVE POR DONDE VINO ══════════════════════════════════
+   *
+   * «No se les puede contestar desde el banner, no por WhatsApp.» — el dueño,
+   * 18 ago 2026.
+   *
+   * Tenía razón y el fallo era de diseño mío: hice el campo `respuesta` como
+   * libreta privada del panel —«se guarda aquí, no se le envía»— y contestar
+   * quedó dependiendo de tener el WhatsApp de la persona. De los cinco que
+   * escribieron, a uno hubo que buscarle el número; y un cobrador que manda una
+   * queja desde la ruta no tiene por qué darle su teléfono a nadie.
+   *
+   * Escribieron desde el banner: la respuesta se lee en el banner.
+   *
+   * ⚠ Se devuelve aunque la campaña esté cerrada. El 28 de agosto el banner se
+   * apaga solo, y quien escribió el 27 tiene que poder leer lo que se le
+   * contestó el 29. */
+  const contestadas = await prisma.sugerencia.findMany({
+    where: {
+      userId: session.user.id,
+      respuesta: { not: null },
+      respuestaVistaEn: null,
+    },
+    select: { id: true, texto: true, respuesta: true, respondidaEn: true },
+    orderBy: { respondidaEn: 'desc' },
+    take: 3,
+  })
+
+  return Response.json({ viva, dias: diasQueQuedan(), mias, contestadas })
 }
 
 export async function POST(request) {
@@ -113,4 +141,23 @@ export async function POST(request) {
   })
 
   return Response.json({ ok: true, id: creada.id, transcrito: !!textoVoz })
+}
+
+
+/* Marcar que ya la leyó. Una tarjeta que no se puede cerrar es la que la gente
+   aprende a saltarse, y la siguiente respuesta ya no la mira. */
+export async function PATCH(request) {
+  const session = await getServerSession(authOptions)
+  if (!session) return Response.json({ error: 'No autorizado' }, { status: 401 })
+
+  const { id } = await request.json().catch(() => ({}))
+  if (!id) return Response.json({ error: 'Falta cuál' }, { status: 400 })
+
+  /* Por `userId` además del id: sin eso, cualquiera podría marcar como vista la
+     respuesta de otro con solo tener el identificador. */
+  const { count } = await prisma.sugerencia.updateMany({
+    where: { id, userId: session.user.id, respuestaVistaEn: null },
+    data: { respuestaVistaEn: new Date() },
+  })
+  return Response.json({ ok: count > 0 })
 }

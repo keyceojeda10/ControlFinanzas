@@ -1222,8 +1222,16 @@ model Sugerencia {
   /// propósito: un enum obliga a migrar la base para añadir un estado, y este
   /// campo lo va a leer una persona, no una regla de negocio.
   estado         String   @default("nueva")
-  respuesta      String?  @db.Text // lo que se le contestó, para no repetirse
+  /// ⚠ ESTO LO LEE QUIEN ESCRIBIÓ LA SUGERENCIA, no es una nota privada.
+  /// Nació como libreta del dueño y el 18 ago se cambió: «no se les puede
+  /// contestar desde el banner, no por WhatsApp». Escribieron desde ahí, así
+  /// que la respuesta tiene que volver por ahí — y no todos tienen el WhatsApp
+  /// del dueño ni tienen por qué.
+  respuesta      String?  @db.Text
   respondidaEn   DateTime?
+  /// Cuándo la vio. Sirve para dejar de avisarle: una tarjeta que no se puede
+  /// cerrar es la que la gente aprende a saltarse.
+  respuestaVistaEn DateTime?
 
   @@index([organizationId])
   @@index([createdAt])

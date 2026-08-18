@@ -24,9 +24,16 @@ const ROL = { owner: 'Dueño', cobrador: 'Cobrador', superadmin: 'Superadmin' }
  * días eso ya no se sostiene de memoria: la primera tanda se pasó tres días sin
  * contestar porque no había dónde ver cuáles quedaban.
  *
- * ⚠ ESTO NO LE ESCRIBE A NADIE. Es la libreta del dueño: él contesta por
- * WhatsApp, que es por donde ellos escriben. Lo que se guarda aquí es qué se
- * decidió y qué se le dijo, para no repetirse ni dejar a nadie colgado. */
+ * ⚠ 18 ago: ESTO SÍ LE LLEGA. Nació como libreta privada —«contesta por
+ * WhatsApp, que es por donde ellos escriben»— y el dueño lo corrigió: «no se
+ * les puede contestar desde el banner, no por WhatsApp». Tenía razón, y el
+ * fallo era de diseño: contestar quedaba dependiendo de tener el teléfono de la
+ * persona. De los cinco que escribieron hubo que buscarle el número a uno, y un
+ * cobrador que manda una queja desde la ruta no tiene por qué dar su WhatsApp
+ * para que le respondan.
+ *
+ * Lo que se escriba aquí aparece en SU pantalla de inicio, en la misma tarjeta
+ * donde escribió, hasta que pulse «Entendido». */
 const ESTADOS = [
   { id: 'nueva',      rotulo: 'Sin mirar',  tono: 'yellow' },
   { id: 'vista',      rotulo: 'Leída',      tono: 'blue' },
@@ -217,7 +224,7 @@ export default function AdminSugerenciasPage() {
                 <textarea
                   value={borrador[s.id] ?? s.respuesta ?? ''}
                   onChange={(ev) => setBorrador((b) => ({ ...b, [s.id]: ev.target.value }))}
-                  placeholder="Qué se le contestó (se guarda aquí, no se le envía)"
+                  placeholder="Escríbele la respuesta — la va a ver en su pantalla de inicio"
                   rows={2}
                   className="w-full mt-2 p-2.5 text-[13px] outline-none resize-y"
                   style={{
@@ -225,6 +232,9 @@ export default function AdminSugerenciasPage() {
                     border: '1px solid var(--cf-border)', color: 'var(--cf-ink)',
                   }}
                 />
+                <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
+                  Lo verá en su pantalla de inicio, sobre el texto que escribió.
+                </p>
                 <div className="flex items-center gap-2 mt-1.5">
                   <button
                     type="button"

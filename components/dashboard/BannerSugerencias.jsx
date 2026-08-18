@@ -283,12 +283,81 @@ export default function BannerSugerencias() {
   useEffect(() => { cargar() }, [cargar])
 
   if (!estado) return null
-  if (!estado.viva) return null
+
+  const contestadas = estado.contestadas ?? []
+
+  /* ⚠ LA RESPUESTA SE ENSEÑA AUNQUE LA CAMPAÑA HAYA CERRADO, y por eso va
+     ANTES del `return null` de `viva`. El banner se apaga solo el 28 de agosto;
+     quien escribió el 27 tiene que poder leer lo que se le contestó el 29. */
+  if (!estado.viva && contestadas.length === 0) return null
 
   const yaOpino = estado.mias > 0
 
   return (
     <>
+      {/* ══ TE CONTESTARON ══════════════════════════════════════════════════
+          «No se les puede contestar desde el banner, no por WhatsApp.»
+           — el dueño, 18 ago 2026.
+
+          Escribieron desde aquí; la respuesta vuelve aquí. Antes dependía de
+          tener el WhatsApp de la persona: de los cinco que escribieron hubo que
+          buscarle el número a uno, y un cobrador que manda una queja desde la
+          ruta no tiene por qué dar su teléfono para que le contesten. */}
+      {contestadas.map((c) => (
+        <div key={c.id} style={{
+          ...TARJETA,
+          borderColor: 'color-mix(in srgb, var(--cf-green-dark) 30%, transparent)',
+          background: 'color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card))',
+          marginBottom: 12,
+        }} className="px-4 py-3.5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{
+              borderRadius: 'var(--cf-r-icon)',
+              background: 'var(--cf-green-pill-bg)', color: 'var(--cf-green-dark)',
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p className="text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+                Te contestamos
+              </p>
+              {/* Lo que él escribió, recortado: sin esto, a los diez días no se
+                  acuerda de a cuál de sus mensajes le están respondiendo. */}
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                Sobre: «{String(c.texto).replace(/\s+/g, ' ').slice(0, 70)}
+                {String(c.texto).length > 70 ? '…' : ''}»
+              </p>
+              <p className="text-[13px] mt-2 whitespace-pre-wrap" style={{ color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>
+                {c.respuesta}
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await fetch('/api/sugerencias', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: c.id }),
+                  }).catch(() => {})
+                  cargar()
+                }}
+                className="mt-3 h-9 px-4 text-[13px] font-semibold"
+                style={{
+                  borderRadius: 'var(--cf-r-control)', border: '1px solid var(--cf-border)',
+                  background: 'var(--cf-card)', color: 'var(--cf-ink-2)', cursor: 'pointer',
+                }}
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {!estado.viva ? null : (
+      <>
       <div style={TARJETA} className="px-4 py-3.5 flex items-start gap-3">
         <div className="w-9 h-9 flex items-center justify-center shrink-0" style={{
           borderRadius: 'var(--cf-r-icon)',
@@ -332,6 +401,8 @@ export default function BannerSugerencias() {
           </button>
         </div>
       </div>
+      </>
+      )}
 
       <HojaOpinar open={abierto} onClose={() => setAbierto(false)} onListo={cargar} />
     </>
