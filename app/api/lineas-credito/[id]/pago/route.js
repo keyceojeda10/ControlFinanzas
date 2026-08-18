@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { registrarMovimientoCapital } from '@/lib/capital'
 import { aplicarPago }      from '@/lib/linea-credito'
 
 // ─── DELETE /api/lineas-credito/[id]/pago?pagoId=xxx ──────────────────────
@@ -93,7 +94,7 @@ export async function POST(request, { params }) {
     const linea = await prisma.lineaCredito.findFirst({
       where: { id: lineaId, organizationId },
       include: {
-        cliente:    { select: { id: true, rutaId: true } },
+        cliente:    { select: { id: true, rutaId: true, nombre: true } },
         desembolsos: {
           select: { monto: true, createdAt: true },
         },
@@ -126,18 +127,48 @@ export async function POST(request, { params }) {
     // ── Calcular distribucion del pago ─────────────────────────────────────
     const { montoAInteres, montoACapital, saldoRestante } = aplicarPago(linea, monto)
 
-    // ── Persistir el pago ──────────────────────────────────────────────────
-    const pago = await prisma.pagoLinea.create({
-      data: {
-        lineaCreditoId: lineaId,
+    /* ══ Y EL PAGO ENTRA A LA CAJA ═══════════════════════════════════════════
+     *
+     * La otra mitad de lo mismo: hasta hoy el cliente pagaba su línea y la caja
+     * no se enteraba. El desembolso salía sin restar y el pago entraba sin
+     * sumar, así que el saldo del negocio no reflejaba NADA de este módulo.
+     *
+     * Se asienta como un recaudo cualquiera, con su método de pago —efectivo o
+     * transferencia—, que es lo que hace que aparezca en «Movimientos por
+     * cuenta» y en el cuadre del día.
+     *
+     * ⚠ EL MONTO ENTERO, no solo el capital. A la caja entra lo que el cliente
+     *   entregó; el reparto entre interés y capital es cuenta de la línea, no
+     *   del efectivo. Asentar solo `montoACapital` dejaría el interés fuera de
+     *   la caja para siempre. */
+    const pago = await prisma.$transaction(async (tx) => {
+      const creado = await tx.pagoLinea.create({
+        data: {
+          lineaCreditoId: lineaId,
+          organizationId,
+          montoTotal:    monto,
+          montoAInteres,
+          montoACapital,
+          metodoPago:    metodoPago || null,
+          cobradorId:    rol === 'cobrador' ? userId : null,
+          nota,
+        },
+      })
+
+      await registrarMovimientoCapital(tx, {
         organizationId,
-        montoTotal:    monto,
-        montoAInteres,
-        montoACapital,
-        metodoPago:    metodoPago || null,
-        cobradorId:    rol === 'cobrador' ? userId : null,
-        nota,
-      },
+        tipo: 'recaudo',
+        monto,
+        descripcion: `Pago de línea de crédito${linea.cliente?.nombre ? ` de ${linea.cliente.nombre}` : ''}`,
+        referenciaId: creado.id,
+        referenciaTipo: 'linea_pago',
+        creadoPorId: userId,
+        // A su sub-bolsa también: lo cobrado en una ruta vuelve a esa ruta.
+        rutaId: linea.cliente?.rutaId ?? null,
+        metodoPago: metodoPago || null,
+      })
+
+      return creado
     })
 
     return Response.json(

@@ -124,7 +124,22 @@ Por orden de lo que más duele:
    gasto: el hueco no llegó a costar plata.
    ⚠ Y NO se tocó nada donde ya funcionaba: `MoneyInput` ya enseñaba «x1.000» y
    «= 40.000» desde siempre.
-2. **Línea de crédito** — a medio construir: sin integrar a caja, capital ni
+2. ~~**Línea de crédito**~~ ← **la mitad que importaba, HECHA el 18 ago.**
+   Estaba DESCONECTADA del libro: 6 desembolsos por $1.994.443 y 1 pago, con
+   CERO asientos de capital. Un negocio —EOFinancial Corp— tenía **$1.594.443
+   prestados por esta vía con su caja diciendo $3.870.043 sin descontarlos**: el
+   41% de lo que creía tener no estaba. Ya sale y entra de la caja, en la misma
+   transacción y bajando a la sub-bolsa de su ruta.
+
+   ⚠ **Lo histórico NO se tocó**: esos 7 movimientos siguen fuera del libro.
+   Es data de un cliente real y la decisión es del dueño.
+
+   ⚠ **Y NO se construyó el resto**, a propósito: lo usa UN negocio real, con
+   $2M, y no lo tocan desde el 25 de julio. Faltan el cron de cortes y los
+   informes; antes de invertir ahí conviene preguntarle a EOFinancial si lo
+   sigue queriendo.
+
+3. ~~lo viejo~~ — a medio construir: sin integrar a caja, capital ni
    reportes, y sin el cron de cortes.
 2. **13 pantallas ignoran el modo abreviado** — el interruptor está encendido y
    no hace nada. Ya generó un reporte.

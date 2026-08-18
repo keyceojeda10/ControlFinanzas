@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { puedeDesembolsar } from '@/lib/linea-credito'
+import { registrarMovimientoCapital } from '@/lib/capital'
 
 // ─── DELETE /api/lineas-credito/[id]/desembolso?desembolsoId=xxx ──────────
 // Solo admin, solo desembolsos creados hoy.
@@ -108,6 +109,13 @@ export async function POST(request, { params }) {
       include: {
         desembolsos: { select: { monto: true, createdAt: true } },
         pagosLinea:  { select: { montoACapital: true, montoAInteres: true, createdAt: true } },
+        /* El nombre va en el asiento del libro: «Desembolso de línea» a secas
+           obliga a abrir la línea para saber a quién se le dio la plata, y el
+           libro se lee para cuadrar la caja, no para investigar. */
+        /* `rutaId` además del nombre: todo movimiento de capital que pertenece
+           a una ruta tiene que bajar a SU sub-bolsa, o el capital por ruta deja
+           de cuadrar aunque el global cuadre. Hay una prueba que lo vigila. */
+        cliente:     { select: { nombre: true, rutaId: true } },
       },
     })
 
@@ -121,15 +129,48 @@ export async function POST(request, { params }) {
       return Response.json({ error: razon }, { status: 400 })
     }
 
-    // ── Crear el desembolso ─────────────────────────────────────────────────
-    const desembolso = await prisma.desembolsoLinea.create({
-      data: {
-        lineaCreditoId:  lineaId,
+    /* ══ EL DESEMBOLSO SALE DE LA CAJA ═══════════════════════════════════════
+     *
+     * Y hasta hoy no salía. Medido en producción el 18 ago 2026: seis
+     * desembolsos de línea por $1.994.443 y **ni un solo asiento en el libro de
+     * capital**. Un negocio —EOFinancial Corp— tenía $1.594.443 prestados por
+     * esta vía con la caja diciendo $3.870.043 sin descontarlos: el 41% de lo
+     * que creía tener no estaba.
+     *
+     * Es plata que sale al cliente igual que un desembolso de préstamo, así que
+     * se asienta igual: mismo `tipo`, misma transacción. Las dos cosas van
+     * juntas o no van — un desembolso guardado sin su asiento es exactamente el
+     * descuadre que se viene a arreglar.
+     *
+     * ⚠ `permitirNegativo: true` a propósito. Aquí NO se frena a nadie: la línea
+     * ya tiene su propio freno —`puedeDesembolsar`, que mira el cupo— y quien
+     * presta con la caja en rojo tiene un problema de capital que no se arregla
+     * bloqueándole el cobro. Ver la guarda de `registrarMovimientoManualCapital`.
+     */
+    const desembolso = await prisma.$transaction(async (tx) => {
+      const creado = await tx.desembolsoLinea.create({
+        data: {
+          lineaCreditoId:  lineaId,
+          organizationId,
+          monto,
+          nota,
+          registradoPorId: userId,
+        },
+      })
+
+      await registrarMovimientoCapital(tx, {
         organizationId,
+        tipo: 'desembolso',
         monto,
-        nota,
-        registradoPorId: userId,
-      },
+        descripcion: `Desembolso de línea de crédito${linea.cliente?.nombre ? ` a ${linea.cliente.nombre}` : ''}`,
+        referenciaId: creado.id,
+        referenciaTipo: 'linea_desembolso',
+        creadoPorId: userId,
+        rutaId: linea.cliente?.rutaId ?? null,
+        permitirNegativo: true,
+      })
+
+      return creado
     })
 
     return Response.json({ success: true, data: desembolso }, { status: 201 })
