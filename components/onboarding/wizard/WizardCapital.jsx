@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuth } from '@/hooks/useAuth'
 import { useState } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 
@@ -9,7 +10,20 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const montoNum = Number(monto.replace(/\D/g, '')) || 0
+  /* ⚠ EL MODO ABREVIADO, que aquí faltaba.
+   *
+   * Siete negocios lo tienen encendido: ahí «500» son $500.000. Este campo era
+   * un `<input>` propio y no lo aplicaba, así que quien arranca con el modo
+   * puesto teclea 500 y registra QUINIENTOS PESOS de capital inicial — la
+   * primera cifra de su negocio, y la que decide si la caja cuadra desde el
+   * primer día.
+   *
+   * Se lee de `useAuth` y NO de una prop, por lo mismo que en `AtajosCobro`: si
+   * dependiera de que quien monta la pantalla se acuerde de pasarla, se
+   * perdería en la siguiente. */
+  const { modoAbreviado } = useAuth()
+  const tecleado = Number(monto.replace(/\D/g, '')) || 0
+  const montoNum = modoAbreviado ? tecleado * 1000 : tecleado
 
   const handleChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '')
@@ -62,7 +76,9 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
   // Los atajos del diseño. SUMAN sobre lo que ya hay, no reemplazan: quien
   // teclea 2 millones y toca +1M espera 3, no 1.
   const ATAJOS = [500000, 1000000, 5000000]
-  const sumar = (n) => { setMonto(String(montoNum + n)); setError('') }
+  /* Los atajos suman en la escala que se ve: con el modo puesto, «+100.000»
+     debe subir el campo en 100, no en 100.000. */
+  const sumar = (n) => { setMonto(String(tecleado + (modoAbreviado ? n / 1000 : n))); setError('') }
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg mx-auto flex flex-col" style={{ gap: 20 }}>
@@ -104,7 +120,7 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
             type="text"
             inputMode="numeric"
             autoFocus
-            value={montoNum ? montoNum.toLocaleString('es-CO') : ''}
+            value={tecleado ? tecleado.toLocaleString('es-CO') : ''}
             onChange={handleChange}
             placeholder="0"
             style={{
@@ -115,8 +131,21 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
               color: 'var(--cf-ink)', padding: 0,
             }}
           />
+          {modoAbreviado && (
+            <span className="cf-fig" style={{ fontSize: 13, fontWeight: 700, color: 'var(--cf-gold)', flex: 'none' }}>
+              x1.000
+            </span>
+          )}
         </span>
       </label>
+      {/* Igual que `MoneyInput`: la conversión se VE antes de guardar. Una cifra
+          multiplicada por mil a espaldas de quien la escribe es la que aparece
+          semanas después como un descuadre que nadie sabe explicar. */}
+      {modoAbreviado && tecleado > 0 && (
+        <p className="cf-fig" style={{ fontSize: 12, fontWeight: 700, color: 'var(--cf-gold)', marginTop: 6 }}>
+          = {montoNum.toLocaleString('es-CO')}
+        </p>
+      )}
 
       {/* Atajos de 44px: se tocan con el pulgar en la calle. El diseño lo dice
           explícito —«no chips de 26px»— porque el tamaño ES la diferencia entre

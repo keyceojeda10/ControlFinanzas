@@ -114,7 +114,16 @@ una recuperación limpia daba 4 y mi umbral la llamaba «bucle».
 
 Por orden de lo que más duele:
 
-1. ~~**Modo abreviado**~~ ← EMPEZANDO — 13 pantallas lo ignoran
+1. ~~**Modo abreviado**~~ ← **HECHO, 18 ago.** No eran 13 pantallas: medidas
+   una por una, la mayoría de los diecisiete campos sospechosos eran TASAS —que
+   no se deben multiplicar, un 20% convertido sería 20.000%— o láminas de la
+   guía de estilos que nadie monta. Los de verdad eran **dos**: el monto del
+   gasto (se guardaba «40» como $40) y el capital inicial del arranque. Los dos
+   arreglados, y los dos enseñando ahora en qué se convierte.
+   ⚠ Lo tienen encendido **7 de 514 negocios**, y no habían registrado ni un
+   gasto: el hueco no llegó a costar plata.
+   ⚠ Y NO se tocó nada donde ya funcionaba: `MoneyInput` ya enseñaba «x1.000» y
+   «= 40.000» desde siempre.
 2. **Línea de crédito** — a medio construir: sin integrar a caja, capital ni
    reportes, y sin el cron de cortes.
 2. **13 pantallas ignoran el modo abreviado** — el interruptor está encendido y

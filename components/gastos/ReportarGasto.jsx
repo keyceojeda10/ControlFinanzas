@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import MoneyInput from '@/components/ui/MoneyInput'
 import { Input } from '@/components/ui/Input'
 import { encolarMutacion } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
@@ -171,14 +172,23 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
           </div>
         )}
 
-        <Input
+        {/* ⚠ `MoneyInput` Y NO UN `Input` A SECAS, por dos razones que costaron
+            caro por separado:
+
+            · EL MODO ABREVIADO. Siete negocios lo tienen encendido: ahí «40»
+              son $40.000. Este campo no lo aplicaba, así que un cobrador de esos
+              tecleaba 40 y se guardaba un gasto de CUARENTA PESOS. `MoneyInput`
+              lo convierte y además enseña «= 40.000» debajo, que es lo que
+              impide que la conversión pase a espaldas de quien escribe.
+
+            · `type="number"` RECHAZA el separador que no coincide con el idioma
+              del teléfono y el campo se queda vacío sin decir por qué. Ya está
+              fichado en el proyecto. */}
+        <MoneyInput
           label="Monto"
-          type="number"
-          inputMode="numeric"
           placeholder="0"
           value={monto}
           onChange={(e) => setMonto(e.target.value)}
-          prefix="$"
         />
 
         {error && <p className="text-sm text-[var(--cf-red-dark)]">{error}</p>}
