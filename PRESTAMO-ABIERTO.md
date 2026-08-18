@@ -135,7 +135,10 @@ No se despliega hasta que TODO esto pase, y cada punto se mide, no se opina:
 - [x] Las tres vías de pago, comprobadas en el servidor de pruebas del VPS (base
       local): interés no toca capital, abono a capital lo baja entero, y el
       pago completo salda y cierra.
-- [ ] El recibo y el estado de cuenta diciendo lo mismo que la ficha.
+- [x] **El recibo** ya no inventa un final. Tres campos lo hacían dividiendo el
+      total entre la cuota: «cuota actual» decía «1 de 11», «cuotas restantes»
+      decía 10 y «fecha de vencimiento» ponía el primer corte de interés. Ahora
+      los dos primeros callan y el tercero dice «sin vencimiento».
 - [ ] El cron en el crontab — **va con el despliegue, no antes**: hoy daría 404
       porque el endpoint no está en producción.
 
