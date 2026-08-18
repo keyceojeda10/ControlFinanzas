@@ -313,13 +313,46 @@ function NuevoPrestamo() {
   // Wizard: 3 pasos. 0 = Cliente, 1 = Plan (sub-pasos internos), 2 = Confirmar y firma.
   const [paso, setPaso] = useState(0)
 
+  /* ══ T16-00 · EN PC NO HAY QUE HACER WIZARD ═══════════════════════════════
+   *
+   * Medido a 1440px antes de tocar nada: el primer paso enseñaba TRES CLIENTES
+   * ocupando media pantalla, con dos tercios vacíos, y había que pulsar
+   * «Continuar» dos veces para llegar a escribir el monto. Al lado, el panel de
+   * la cuenta prometía «aquí verás la cuota» sin nada que enseñar todavía.
+   *
+   * En una pantalla ancha, elegir cliente y poner las condiciones caben juntos:
+   * son los DATOS del préstamo. Confirmar sigue aparte porque es otro acto —se
+   * firma— y porque ahí es donde se mira la tabla entera.
+   *
+   * ⚠ 1280px es `xl` de Tailwind, el mismo punto donde aparece la columna de la
+   *   cuenta. Si se cambia uno hay que cambiar el otro, o el formulario se
+   *   junta sin tener dónde enseñar el resultado.
+   *
+   * ⚠ VA POR `usePantallaAncha`, EL HOOK QUE YA HABÍA. Escribí el `matchMedia`
+   *   a mano sin ver que estaba tres líneas más abajo, ya importado en este
+   *   mismo archivo. Su efecto resuelve lo de siempre: leerlo al pintar hace
+   *   que el servidor diga una cosa y el navegador otra, y React tira el árbol
+   *   entero. El primer render dice «teléfono», que es el que no pierde nada. */
+  const unaPantalla = usePantallaAncha(1280)
+
   // Sub-pasos del wizard de datos (paso 1)
 
+  /* Los índices de `paso` NO cambian en PC: siguen siendo 0 · 1 · 2, y lo que
+     se hace es SALTARSE el 1 —su contenido ya está pintado dentro del 0—. Así
+     ningún `paso === 2` de los que hay repartidos por el archivo cambia de
+     significado, que es de donde salen los fallos silenciosos. */
   const PASOS = [
     { label: 'Cliente' },
     { label: 'Condiciones' },
     { label: 'Confirmar' },
   ]
+  const PASOS_PC = [
+    { label: 'Datos' },
+    { label: 'Confirmar' },
+  ]
+  /* Cliente y condiciones, en la misma pantalla. `verCondiciones` es lo único
+     que se ensancha: el bloque de condiciones se pinta también en el paso 0. */
+  const verCondiciones = paso === 1 || (unaPantalla && paso === 0)
 
   /* ── LA CABECERA ────────────────────────────────────────────────────────────
    *
@@ -348,9 +381,13 @@ function NuevoPrestamo() {
   useCabecera({
     // El título dice EN QUÉ PASO SE ESTÁ, no «Nuevo préstamo»: la espina ya
     // cuenta cuántos van, y el nombre del paso es lo que le falta al que teclea.
-    titulo: PASOS[paso]?.label ?? 'Nuevo préstamo',
-    paso: paso + 1,
-    total: PASOS.length,
+    //
+    // ⚠ EN PC LOS PASOS SON OTROS. Con `PASOS[paso]` la cabecera decía
+    // «Cliente» mientras la espina, dos dedos más abajo, decía «Datos» y el
+    // formulario entero estaba en pantalla: dos nombres para lo mismo.
+    titulo: (unaPantalla ? (paso === 0 ? PASOS_PC[0] : PASOS_PC[1]) : PASOS[paso])?.label ?? 'Nuevo préstamo',
+    paso: unaPantalla ? (paso === 0 ? 1 : 2) : paso + 1,
+    total: unaPantalla ? PASOS_PC.length : PASOS.length,
   })
 
   // Pre-llenar desde cartulina si venimos de importar
@@ -376,8 +413,15 @@ function NuevoPrestamo() {
       if (datos.yaAbonado)      setYaAbonado(String(datos.yaAbonado))
       // Limpiar después de consumir
       sessionStorage.removeItem('cf-cartulina-prestamo')
-      // Avanzar directo al paso 2 si ya tenemos cliente
-      if (datos.clienteId && clienteIdParam) setPaso(1)
+      /* Avanzar directo a las condiciones si ya tenemos cliente.
+         ⚠ EN PC NO HAY PASO 1: sus condiciones se pintan dentro del 0. Saltar
+         al 1 dejaba una pantalla sin el bloque de cliente y con el contador
+         diciendo «Confirmar».
+         ⚠ Y se lee `matchMedia` A MANO, no `unaPantalla`: este efecto corre en
+         el mismo montaje que el que lo calcula, así que todavía valdría
+         `false` y el salto se haría igual. */
+      const cabenJuntos = typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches
+      if (datos.clienteId && clienteIdParam) setPaso(cabenJuntos ? 0 : 1)
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -655,28 +699,44 @@ function NuevoPrestamo() {
   // en una pantalla, la del paso ya cubre casi todo —monto, plazo, fecha y que
   // el calculo salga— y solo faltaba subir lo especifico de mercancia, que
   // vivia en la del sub-paso 0.
+  /* Lo que hace falta para que las condiciones estén bien puestas. Estaba
+     escrito dentro del `if (paso === 1)` de abajo, y en PC hace falta también
+     en el 0: copiarlo habría sido tener dos verdades que se separan al primer
+     cambio.
+
+     ⚠ Va ANTES de `puedeAvanzarPaso`, que la llama. Las dos son `const`, así
+     que solo se leen al pintar y el orden no rompe nada hoy; escrito al revés
+     sí rompería el día que alguien la llame desde arriba. */
+  const condicionesListas = () => {
+    if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
+    // Mercancia: se vende mas caro de lo que costo, y en un numero de cuotas.
+    // Sin esto se podia «vender» con perdida y el calculo salia en negativo.
+    if (modo === 'mercancia') {
+      return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0 && !!calculo
+    }
+    return Number(monto) > 0 && Number(tasa) >= 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
+  }
+
   const puedeAvanzarPaso = () => {
     if (cuotaInsuficiente) return false
-    if (paso === 0) return !!clienteId
-    if (paso === 1) {
-      if (clienteSeleccionado?.montoMaximoPrestamo > 0 && Number(monto) > clienteSeleccionado.montoMaximoPrestamo) return false
-      // Mercancia: se vende mas caro de lo que costo, y en un numero de cuotas.
-      // Sin esto se podia «vender» con perdida y el calculo salia en negativo.
-      if (modo === 'mercancia') {
-        return Number(monto) > 0 && Number(precioVenta) > Number(monto) && Number(numCuotas) > 0 && !!calculo
-      }
-      return Number(monto) > 0 && Number(tasa) >= 0 && Number(plazoUnidades) > 0 && !!fechaInicio && !!calculo
-    }
+    /* ⚠ EN PC EL PASO 0 LLEVA LAS DOS COSAS. Con el `return !!clienteId` de
+       antes, «Revisar préstamo» se habilitaba con solo elegir cliente y saltaba
+       a la firma con el monto vacío. Se comprueban las dos, no una. */
+    if (paso === 0) return unaPantalla ? (!!clienteId && condicionesListas()) : !!clienteId
+    if (paso === 1) return condicionesListas()
     if (paso === 2) return !!calculo
     return true
   }
+  /* En PC el 1 no existe: su contenido vive dentro del 0. Saltárselo aquí, y no
+     esconder el botón, es lo que evita que «Atrás» devuelva a una pantalla en
+     blanco. */
   const irAlSiguientePaso = () => {
     if (!puedeAvanzarPaso()) return
-    setPaso(p => Math.min(PASOS.length - 1, p + 1))
+    setPaso(p => (unaPantalla && p === 0 ? 2 : Math.min(PASOS.length - 1, p + 1)))
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
   const irAlPasoAnterior = () => {
-    setPaso(p => Math.max(0, p - 1))
+    setPaso(p => (unaPantalla && p === 2 ? 0 : Math.max(0, p - 1)))
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
@@ -855,12 +915,19 @@ function NuevoPrestamo() {
       {/* Sin contador: el de dentro del paso 2 («Paso 1 de 5») es el que avanza
           al pulsar «Continuar». Con los dos, la pantalla decia «PASO 2 DE 3» y
           «Paso 1 de 5» a la vez. */}
+      {/* ⚠ EL CONTADOR TAMBIÉN CAMBIA. En PC son DOS pasos, no tres: decir
+          «paso 1 de 3» y no tener nunca un paso 2 al que ir es prometer una
+          pantalla que no existe. `paso` sigue valiendo 0·1·2 por dentro; aquí
+          se traduce, que es el único sitio donde el número se lee. */}
       <Stepper
-        steps={PASOS}
-        activeIndex={paso}
-        completedIndices={completedIndices}
+        steps={unaPantalla ? PASOS_PC : PASOS}
+        activeIndex={unaPantalla ? (paso === 0 ? 0 : 1) : paso}
+        completedIndices={completedIndices}   /* siempre es [0] o [], vale igual en los dos */
         contador={false}
-        onChange={(idx) => { if (idx <= paso) setPaso(idx) }}
+        onChange={(idx) => {
+          const destino = unaPantalla ? (idx === 0 ? 0 : 2) : idx
+          if (destino <= paso) setPaso(destino)
+        }}
       />
 
       {/* ══ T16-00 · LAS DOS COLUMNAS ══
@@ -1100,13 +1167,22 @@ function NuevoPrestamo() {
       })()}
 
       {/* PASO 2 — Wizard guiado con sub-pasos */}
-      {paso === 1 && (
-        <section className="mt-8 space-y-6">
+      {/* T16-00: en PC este bloque va DEBAJO del de cliente, no en otra pantalla. */}
+      {/* En PC este bloque va pegado al de cliente, en la misma hoja: sin una
+          raya se lee como un solo texto que no acaba. En el teléfono no hace
+          falta, porque es la pantalla siguiente. */}
+      {verCondiciones && (
+        <section className={`mt-8 space-y-6 ${verCondiciones && paso === 0 ? 'xl:mt-8 xl:pt-8 xl:border-t xl:border-[var(--cf-border)]' : ''}`}>
           {/* Barra de progreso del sub-paso */}
           <div>
             <div className="flex items-center justify-between mb-2">
+              {/* ⚠ EL NOMBRE, SOLO CUANDO NO SE VE YA. Servía de recordatorio de
+                  para quién es el préstamo cuando el cliente estaba en la
+                  pantalla ANTERIOR. En PC está tres dedos más arriba y
+                  resaltado, y sin cliente elegido salía un «Cliente» suelto en
+                  mitad del formulario que no era ni título ni dato. */}
               <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-                {clienteNombre || 'Cliente'}
+                {unaPantalla && paso === 0 ? '' : (clienteNombre || 'Cliente')}
               </p>
               {ultimoPrestamo && (
                 <button
@@ -2317,7 +2393,8 @@ function NuevoPrestamo() {
               disabled={paso <= 1 ? !puedeAvanzarPaso() : false}
               className="flex-[2]"
             >
-              {paso === 1 ? 'Revisar préstamo' : 'Continuar'}
+              {/* En PC el 0 ya lleva las condiciones: lo siguiente es revisar. */}
+              {paso === 1 || (unaPantalla && paso === 0) ? 'Revisar préstamo' : 'Continuar'}
             </Button>
           ) : (
             <Button
