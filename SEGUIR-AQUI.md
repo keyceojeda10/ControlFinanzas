@@ -1,159 +1,51 @@
-# Por dónde seguir — 18 de agosto de 2026
+# Lo que vio el dueño revisando la app — 18 de agosto de 2026
 
-Lo anterior (los 4 puntos del 17 ago: francés, sugerencias, panel, rango de
-fechas) está cerrado y en el historial de git.
+Ocho puntos, de la cuenta `ccaojd@gmail.com`. La prioridad la pongo yo, y el
+criterio es: **primero lo que informa mal de PLATA**, después lo que se usa
+todos los días, y al final el pulido de reportes.
 
-Esta lista sale de MEDIR, no de opinar: son los errores que la app ya está
-registrando en producción y que nadie mira, más lo que las notas del proyecto
-tienen a medias.
-
-⚠ **«Perfecto» no es la meta y perseguirlo rompe cosas sanas.** La meta es que
-nos enteremos NOSOTROS primero: hoy un cliente se molesta en escribir y por eso
-existe la queja; los otros 95 errores de la pantalla de rutas no los reportó
-nadie.
+Lo anterior (vigilante, errores viejos, ChunkLoadError, modo abreviado, líneas
+de crédito) está cerrado y en el historial.
 
 ---
 
-## ~~1 · Un vigilante de errores~~ ← HECHO, 18 ago
+## 1 · «PAGO DIARIO REGISTRADO $40.000» cuando pagó $240.000  ← EMPEZANDO
 
-`scripts/vigilante-errores.sh`, instalado en `/opt/cf-backup/` y en el crontab a
-las **9:05** (cinco minutos después del vigilante del respaldo, para no mezclar
-los dos avisos). Manda por Telegram cuántas pantallas se rompieron en 24h, de
-qué tipo y en qué pantalla — y **calla cuando no hay ninguna**.
+Punto 7 suyo. El cliente estaba atrasado y pagó **$240.000** para ponerse al
+día; la ficha dice «$40.000», que es la CUOTA, no lo que entregó.
 
-Lo que salió al probarlo con 30 días: **261 errores en 27 negocios**, ninguno
-reportado por nadie.
+Va primero porque es una cifra de plata mal puesta en la pantalla que se abre
+después de cobrar — justo cuando uno comprueba que quedó bien registrado.
 
-⚠ Tres cosas que aprendí montándolo:
+## 2 · «Hoy: cobrado en seguros $10.000» de un seguro viejo
 
-- **`source .env` PISA lo que pasas por fuera.** Probándolo con el token vacío
-  para que imprimiera en pantalla, le mandó al dueño un Telegram de verdad. Un
-  guion de vigilancia que no se puede ensayar en seco se ensaya en la cara de
-  alguien. Ahora hay `VIGILANTE_SECO=1`.
-- **Sin agrupar no se lee**: cada trozo que no carga lleva su número y su URL,
-  así que el mismo problema salía en nueve renglones.
-- **Safari y Chrome dicen lo mismo con otras palabras** («Can't find variable:
-  X» / «X is not defined»): sin unirlos, 16 casos salían como 10 y 6, y el de 6
-  se ve pequeño y se ignora.
+Punto 1 suyo. Ese seguro se cobró hace mucho, no hoy. O el filtro no filtra, o
+lo que se cuenta no es lo que dice el rótulo. Y no tiene rango de fechas.
 
-## 2 · React #300 — instrumentado y esperando
+## 3 · Las tarjetas de la cuadrícula, ilegibles
 
-**25 veces, la última el 16 de agosto.** Confirmado leyendo la propia
-`react-dom` instalada: el #300 es «se pintaron menos hooks de los esperados»
-también en React 19.
+Punto 8 suyo. En móvil, la vista comprimida de préstamos monta los números
+encima de las etiquetas: «Cuota fij$1.040....». Es la pantalla que más se abre.
 
-**No se puede reproducir.** Lo intenté con 8 préstamos × 2 formas de URL, y
-antes de mí otra sesión ya había descartado midiendo: cuatro modos de préstamo,
-el pago entero, las cuatro acciones del comprobante, el préstamo que no existe y
-la regla de hooks de ESLint. Mis dos barridos automáticos tampoco: uno no
-encontró nada y el otro dio 300 falsos positivos.
+## 4 · Los botones de descarga, enterrados al final
 
-**Lo que sí se hizo, que es lo que toca cuando no se reproduce: instrumentar.**
-`CazadorDeErrores` ya estaba puesto, pero su commit decía «a comprobar contra un
-build de producción» y esa comprobación **no se había hecho**. Ahora sí:
+Punto 2 suyo. Con 32 clientes hay que bajar 32 tarjetas para encontrar PDF y
+Excel; con mil, mil. Pasa en varias pantallas de informe, hay que barrerlas
+todas. Y la banda de «Ver todos» sale CUADRADA, contra el canon.
 
-- el cazador manda su aviso con árbol y `origen: 'cazador'` ✓
-- el árbol trae NUESTRO trozo con el byte exacto (`page-…js:1:27459`) ✓
-- `scripts/quien-reventó.mjs` lo traduce al componente, letra por letra ✓
+## 5 · Los selectores Desde/Hasta salen vacíos
 
-⚠ Lo comprobé haciendo reventar un componente a propósito. Dos trampas:
-reventar en el primer render ocurre en el SERVIDOR y el navegador nunca monta la
-barrera; y llegan DOS avisos —el del cazador y el de la pantalla de error—, así
-que midiendo el último se concluye que el cazador no sirve.
+Puntos 3 y 6 suyos, que son el mismo control. Al elegir «Mes» deberían mostrar
+el tramo; salen en blanco. Y en `/reportes` el de la derecha **se sale de su
+caja**. Los dos son míos, de ayer.
 
-**Terminado cuando:** el próximo #300 traiga el nombre y se arregle. Con el
-vigilante puesto, lo veremos a la mañana siguiente.
+## 6 · «Todo en bruto» y «Para el contador»
 
-## ~~3 · Los viejos están muertos~~ ← HECHO, 18 ago
+Puntos 4 y 5 suyos. El primero es una pantalla con un botón y nada más: sin
+contexto, sin fechas, sin PDF. El segundo se le parece tanto que el dueño
+pregunta si sobra uno de los dos. Hay que decidirlo, no maquillarlo.
 
-Eran cuatro, no tres, y **ninguno hacía falta tocarlo**. Cada arreglo lleva la
-fecha del ÚLTIMO error, que es la firma de que fue ese arreglo el que lo mató:
-
-| error | veces | último | lo mató |
-|---|---|---|---|
-| `Cannot access 'tU'` (ruta) | 95 | 4 ago | `d35ce3ea`, **4 ago 14:52** |
-| `onCerrarVisita is not defined` | 16 | 7 ago | `3011772d`, **7 ago 09:33** |
-| `formatFechaCalendario` | 1 | 5 ago | `c4ac7fc3`, **5 ago 00:17** |
-| `tutorial is not defined` | 3 | 11 ago | `94361cf5`, **11 ago 08:34** |
-
-Los tres primeros ya traían su prueba en el commit que los arregló. Se añade
-`errores-viejos-muertos.test.js`, que fija lo que los mataba —la única cosa que
-puede volver— sin revivir nada.
-
-⚠ **Lo importante no es que estén muertos: es que los cuatro se arreglaron
-porque alguien se quejó ese mismo día.** 95 pantallas rotas en la ruta y el
-arreglo llegó el día 95. Eso es exactamente lo que el vigilante viene a cambiar.
-
-## ~~4 · El ChunkLoadError~~ ← HECHO, 18 ago
-
-Ya estaba arreglado desde el **15 de agosto** (`cfe4e451`), y los números lo
-confirman: con MÁS despliegues que nunca, pasó de 18 al día a 1–2.
-
-| día | commits | errores de trozo |
-|---|---|---|
-| 6 ago | — | **18** |
-| 7 ago | 51 | 13 |
-| 15 ago (entra el arreglo) | 28 | 1 |
-| 16 ago | 36 | 1 |
-| 17 ago | 26 | 2 |
-
-**Comprobado que la recuperación funciona**, cortando a propósito el trozo de
-una pantalla: dos cargas de documento —la de entrada y la de recuperación—, la
-pantalla vuelve con su contenido entero y no hay bucle.
-
-Y ahora **no tapan a los de verdad en el aviso**: van contados aparte («+91 que
-se arreglaron solas»), y si en un día solo hubo parpadeos, el vigilante calla.
-El 7 de agosto fueron 13 de 13: un aviso que dice «13 pantallas rotas» cuando
-doce eran parpadeos deja de abrirse a la tercera mañana.
-
-⚠ Dos trampas al medirlo: cortar un trozo COMPARTIDO no rompe nada (Next sigue
-pintando) y `framenavigated` cuenta las navegaciones internas de Next, así que
-una recuperación limpia daba 4 y mi umbral la llamaba «bucle».
-
-## Después, lo que está a medias (de las notas del proyecto)
-
-Por orden de lo que más duele:
-
-1. ~~**Modo abreviado**~~ ← **HECHO, 18 ago.** No eran 13 pantallas: medidas
-   una por una, la mayoría de los diecisiete campos sospechosos eran TASAS —que
-   no se deben multiplicar, un 20% convertido sería 20.000%— o láminas de la
-   guía de estilos que nadie monta. Los de verdad eran **dos**: el monto del
-   gasto (se guardaba «40» como $40) y el capital inicial del arranque. Los dos
-   arreglados, y los dos enseñando ahora en qué se convierte.
-   ⚠ Lo tienen encendido **7 de 514 negocios**, y no habían registrado ni un
-   gasto: el hueco no llegó a costar plata.
-   ⚠ Y NO se tocó nada donde ya funcionaba: `MoneyInput` ya enseñaba «x1.000» y
-   «= 40.000» desde siempre.
-2. ~~**Línea de crédito**~~ ← **la mitad que importaba, HECHA el 18 ago.**
-   Estaba DESCONECTADA del libro: 6 desembolsos por $1.994.443 y 1 pago, con
-   CERO asientos de capital. Un negocio —EOFinancial Corp— tenía **$1.594.443
-   prestados por esta vía con su caja diciendo $3.870.043 sin descontarlos**: el
-   41% de lo que creía tener no estaba. Ya sale y entra de la caja, en la misma
-   transacción y bajando a la sub-bolsa de su ruta.
-
-   ⚠ **Lo histórico NO se tocó**: esos 7 movimientos siguen fuera del libro.
-   Es data de un cliente real y la decisión es del dueño.
-
-   ⚠ **Y NO se construyó el resto**, a propósito: lo usa UN negocio real, con
-   $2M, y no lo tocan desde el 25 de julio. Faltan el cron de cortes y los
-   informes; antes de invertir ahí conviene preguntarle a EOFinancial si lo
-   sigue queriendo.
-
-3. ~~lo viejo~~ — a medio construir: sin integrar a caja, capital ni
-   reportes, y sin el cron de cortes.
-2. **13 pantallas ignoran el modo abreviado** — el interruptor está encendido y
-   no hace nada. Ya generó un reporte.
-3. **28 de 96 rutas con capital negativo**, sin revisar.
-4. **Las 119 guías del bot**, de junio.
-5. **El wizard de préstamo en PC** (T16-00), lo único que falta del rediseño.
-6. **La tabla de escritorio de la parada de cobro**, cortada por la derecha.
-7. **1.462 filas con el convenio de fechas viejo.**
-
-## Lo que NO hay que hacer
-
-- Las 55 cajas de préstamos anulados (`CAJAS-ANULADOS-16AGO.md`): caso por caso
-  y solo si alguien reporta.
-- Las 76 fechas mensuales que se arrastran.
+---
 
 ## Cómo se cierra cada punto
 
