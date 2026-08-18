@@ -216,6 +216,15 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           {(cr.cobradoDigital ?? 0) > 0 && (
             <Renglon rotulo="Cobró por transferencia" monto={cr.cobradoDigital} />
           )}
+          {/* ⚠ LO QUE EL DUEÑO LE METIÓ A LA RUTA HOY. Faltaba, y por eso la
+              cifra de abajo no coincidía con «Capital por ruta»: se restaba
+              del capital y no se volvía a poner en la cuenta. */}
+          {(cr.inyecciones ?? 0) > 0 && (
+            <Renglon rotulo="Le metiste a esta ruta" monto={cr.inyecciones} />
+          )}
+          {(cr.correcciones ?? 0) > 0 && (
+            <Renglon rotulo="Correcciones a favor" monto={cr.correcciones} />
+          )}
           <div className="flex items-baseline justify-between gap-3 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
             <span className="text-[13px] font-bold" style={{ color: 'var(--cf-ink)' }}>Total que entra</span>
             {/* ⚠ NO es `cuentaEntro` del adaptador: ese suma solo el EFECTIVO,
@@ -256,6 +265,17 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               el bolsillo del cobrador: llega directa a la cuenta de la oficina.
               Sin esta línea la resta que él sigue con el dedo daba $179.000 de
               más y no coincidía con la cifra de abajo. */}
+          {/* ⚠ EL RENGLÓN QUE FALTABA, y es el del video del 18 de agosto:
+              «yo no entiendo este resultado de dónde sale». Su retiro de
+              $326.000 bajaba el capital de la ruta y no aparecía por ningún
+              lado en el cuadre, así que las dos cifras se separaban sin que
+              nada lo dijera. */}
+          {(cr.retiros ?? 0) > 0 && (
+            <Renglon rotulo="Le sacaste a esta ruta" monto={cr.retiros} />
+          )}
+          {(cr.correcciones ?? 0) < 0 && (
+            <Renglon rotulo="Correcciones en contra" monto={-cr.correcciones} />
+          )}
           {(cr.cobradoDigital ?? 0) > 0 && (
             <Renglon rotulo="Entró a la cuenta de la oficina" monto={cr.cobradoDigital} />
           )}

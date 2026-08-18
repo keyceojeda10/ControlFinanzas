@@ -325,6 +325,64 @@ export async function GET(request, { params }) {
     }
     deltaPorRuta.set(m.rutaId, prev + delta)
   }
+
+  /* ══ LO QUE EL DUEÑO METE O SACA A MANO, QUE FALTABA EN LA CUENTA ═══════════
+   *
+   * ⚠ ESTO ES EL FALLO QUE REPORTÓ PRESTA MIL EL 18 DE AGOSTO, en video.
+   *
+   * «La idea es que este número sea igualito al del lado allá. Que solamente
+   *  cambie si yo llego y le saco o le inyecto. Pero yo no entiendo este
+   *  resultado de dónde sale.»
+   *
+   * Su RUTA #2, medida: el cuadre decía que el cobrador tenía que entregar
+   * $794.000 y «Capital por ruta» decía $468.000. La diferencia, $326.000, era
+   * EXACTAMENTE un retiro que él había hecho esa mañana a las 07:54.
+   *
+   * La causa: `saldoAperturaDerivado` resta del capital TODO lo que se movió
+   * hoy —incluidos los retiros— para llegar al saldo con el que amaneció, y
+   * eso está bien. Pero la cuenta que reconstruye el día hacia adelante solo
+   * volvía a sumar cobros, préstamos y gastos. Los retiros, las inyecciones y
+   * las correcciones se restaban una vez y no se volvían a poner nunca.
+   *
+   * Medido en sus diez rutas: el 17 de agosto fallaban 2, y el 15 —el día en
+   * que hizo su ronda de retiros de la noche— **fallaban las diez**. La brecha
+   * es siempre, al peso, el neto de retiros + inyecciones + correcciones.
+   *
+   * ⚠ Y ES EL MISMO PATRÓN DEL 3 DE AGOSTO, un escalón más abajo: el comentario
+   *   de `quedaEnLaRuta` dice que «da EXACTO el saldoCapital» porque se
+   *   comprobó en dos rutas que ese día no tuvieron ningún retiro. La banda
+   *   general (`lineasDeLaBanda`) sí los cuenta desde siempre; era esta
+   *   pantalla la que no.
+   *
+   * `capital_inicial` va con las inyecciones: es plata que entra de fuera.
+   *
+   * El efectivo se separa porque «Tiene que entregar» son BILLETES: un retiro
+   * por transferencia baja el capital de la ruta pero no el fajo que lleva
+   * encima. Hoy no hay ni uno así en la base —los 261 con ruta son efectivo o
+   * sin método— pero el día que lo haya, la cuenta no se tuerce.
+   */
+  const esEfectivo = (m) => m.metodoPago !== 'transferencia'
+  let inyeccionesDia = 0, inyeccionesEfectivo = 0
+  let retirosDia = 0, retirosEfectivo = 0
+  let ajustesDia = 0, ajustesEfectivo = 0
+  for (const m of primerMovPorRuta) {
+    if (!m.rutaId) continue
+    if (m.tipo === 'inyeccion' || m.tipo === 'capital_inicial') {
+      inyeccionesDia += m.monto
+      if (esEfectivo(m)) inyeccionesEfectivo += m.monto
+    } else if (m.tipo === 'retiro') {
+      retirosDia += m.monto
+      if (esEfectivo(m)) retirosEfectivo += m.monto
+    } else if (m.tipo === 'ajuste') {
+      // Con su dirección real, la misma que usa el delta de arriba.
+      const d = m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)
+      ajustesDia += d
+      if (esEfectivo(m)) ajustesEfectivo += d
+    }
+  }
+  inyeccionesDia = Math.round(inyeccionesDia); inyeccionesEfectivo = Math.round(inyeccionesEfectivo)
+  retirosDia = Math.round(retirosDia); retirosEfectivo = Math.round(retirosEfectivo)
+  ajustesDia = Math.round(ajustesDia); ajustesEfectivo = Math.round(ajustesEfectivo)
   const saldoAperturaDerivado = rutas.reduce((acc, r) => {
     const delta = deltaPorRuta.get(r.id) || 0
     return acc + Math.round((r.saldoCapital || 0) - delta)
@@ -588,7 +646,13 @@ export async function GET(request, { params }) {
   // Lo que entro por transferencia NO esta aqui: ya esta en la cuenta bancaria,
   // el cobrador no lo carga encima.
   // En neto, por lo mismo que la cuenta: el absorbido nunca fue efectivo.
+  //
+  // ⚠ Y CON LO QUE EL DUEÑO METIÓ O SACÓ HOY. Es la misma corrección del 18 de
+  // agosto: esta cifra y la de `cuentaDelDia` tienen que ser LA MISMA, y si una
+  // cuenta los retiros y la otra no, la pantalla se contradice sola. Ver la
+  // nota larga donde se calculan.
   const efectivoEnMano = saldoAperturaTotal + (cobradoEfectivo - ajusteBruto) - (prestadoDia - ajusteBruto) - gastosDia
+    + inyeccionesEfectivo - retirosEfectivo + ajustesEfectivo
 
   // Con `capitalEsEfectivo` el negocio entiende que el cobrador carga TODA la
   // bolsa de la ruta, no solo lo del dia. Es otra pregunta y por eso es otra
@@ -989,11 +1053,19 @@ export async function GET(request, { params }) {
     entradas: [
       { id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto },
       { id: 'recaudoDigital', rotulo: 'Cobró por transferencia', monto: cobradoDigitalNeto },
+      /* ⚠ NO BASTA CON QUE LA CUENTA DÉ: TIENE QUE VERSE POR QUÉ. Su frase
+         entera fue «yo no entiendo este resultado de dónde sale». Un número
+         que cambia solo, aunque cambie bien, es el mismo problema con otra
+         cifra. Las líneas en cero no se pintan: `cuentaDelDia` las filtra. */
+      { id: 'inyecciones', rotulo: 'Le metiste a esta ruta', monto: inyeccionesEfectivo },
+      { id: 'correccionesMas', rotulo: 'Correcciones a favor', monto: ajustesEfectivo > 0 ? ajustesEfectivo : 0 },
     ],
     salidas: [
       // Solo el efectivo: lo que salió por transferencia no toca el fajo.
       { id: 'desembolsos', rotulo: 'Prestó en efectivo', monto: prestadoEfectivoNeto },
       { id: 'gastos', rotulo: 'Gastó', monto: gastosDia },
+      { id: 'retiros', rotulo: 'Le sacaste a esta ruta', monto: retirosEfectivo },
+      { id: 'correccionesMenos', rotulo: 'Correcciones en contra', monto: ajustesEfectivo < 0 ? -ajustesEfectivo : 0 },
       // El contrapeso: nunca estuvo en su bolsillo, ya está en la oficina.
       { id: 'aLaCuenta', rotulo: 'Entró a la cuenta de la oficina', monto: cobradoDigitalNeto },
     ],
@@ -1045,6 +1117,13 @@ export async function GET(request, { params }) {
     prestadoEfectivo: prestadoEfectivoNeto,
     prestadoDigital,
     gastos: gastosDia,
+    /* ── LO QUE EL DUEÑO METIÓ O SACÓ HOY, PARA QUE LA PANTALLA LO ESCRIBA ──
+       La pantalla arma sus renglones a mano desde estos campos, no desde
+       `lineas`: sin sacarlos aquí, la cifra de abajo cambiaría sola y arriba
+       no habría nada que lo explicara — que es exactamente la queja. */
+    inyecciones: inyeccionesEfectivo,
+    retiros: retirosEfectivo,
+    correcciones: ajustesEfectivo,
     // Lo que queda en la ruta contando lo que entró a la cuenta.
     //
     // Comprobado contra producción el 3 ago: da EXACTO el `saldoCapital` de la
@@ -1053,8 +1132,14 @@ export async function GET(request, { params }) {
     // capital, y el pendiente va a bajarlo, así que para «cuánto hay» los dos
     // cuentan. La tarjeta vieja restaba solo los pendientes sobre el capital ya
     // descontado, que es la misma cifra por otro camino.
+    /* ⚠ CON LOS RETIROS Y LAS INYECCIONES DEL DÍA. Sin ellos esta cifra se
+       separaba del `saldoCapital` de la ruta exactamente por lo que el dueño
+       hubiera metido o sacado — y él tiene las dos a la vista, una al lado de
+       la otra. Es la invariante que la prueba fija:
+           quedaEnLaRuta === Σ saldoCapital de sus rutas. */
     quedaEnLaRuta: Math.round(
       saldoAperturaTotal + cobradoEfectivoNeto + cobradoDigital - prestadoNeto - gastosDia
+      + inyeccionesDia - retirosDia + ajustesDia
     ),
     // Y de eso, lo que lleva en billetes: la cifra que entrega al cerrar.
     quedaEnEfectivo: cuentaSuma,
