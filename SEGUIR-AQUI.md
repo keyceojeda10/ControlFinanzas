@@ -32,7 +32,7 @@ pantallas que calculan (`components/prestamos/AvisoUltimaCuota.jsx`):
   vez de prometer que «cuadra», que es lo que iba a escribir hasta que el
   recálculo me desmintió.
 
-## ~~2 · Contestarles a los siete que escribieron~~ ← HECHO, 17 ago
+## ~~2 · El panel para no perder las sugerencias~~ ← HECHO, 17 ago
 
 `Sugerencia` ya lleva **estado y respuesta** (`nueva · vista · hecha · no se
 hace`), y el panel de superadmin deja marcarlas, filtrar «Sin atender» y anotar
@@ -42,7 +42,15 @@ Los siete textos, ya redactados para mandar por WhatsApp, están en
 **`RESPUESTAS-SUGERENCIAS.md`**. Resumen: de los 5 puntos de Rincón, 3 ya
 existían y no se le había dicho; el del francés se arregló hoy.
 
-⚠ **Mandarlos sigue siendo suyo**: la app no le escribe a nadie.
+⚠ **NO SE MANDA NINGUNO TODAVÍA.** Orden del dueño, 17 ago:
+
+> «Deja de concentrarte en pendejadas de enviar mensajes si todavía no están ni
+>  las cosas hechas. Termina todo lo que es prioritario, y al final, cuando ya
+>  todo esté completado y resuelto, es que vas a enviar los mensajes.»
+
+Escribir «ya está arreglado» con la mitad rota es quemar la respuesta: el cliente
+entra a comprobarlo, se encuentra otro fallo y la siguiente vez no reporta. Los
+textos se quedan guardados y se mandan **cuando no quede nada de la lista**.
 
 ## Lo que salió de contestarles ← lo siguiente, después del 3 y el 4
 
@@ -92,8 +100,15 @@ rango, y `.auditoria/_revisar-informes.mjs` sigue en verde.
 - **Las 76 fechas mensuales que se arrastran.** Decidido: no compensa mover
   fechas de cobro reales por un día al mes.
 
+## Lo ÚLTIMO de todo, cuando no quede nada
+
+- **Mandar las 7 respuestas** de `RESPUESTAS-SUGERENCIAS.md`. No antes.
+
 ## Lo que depende del dueño
 
+- **Reemplazar la clave de Gemini revocada**: una de las cinco de
+  `GEMINI_API_KEYS` contesta 403 «denied access». El lector ya la salta, pero
+  está pagando cinco y usando cuatro.
 - **Los permisos de la sesión** (`/permissions` o `.claude/settings.local.json`).
   No cambia nada del sistema; solo evita que se pare a preguntar en cada prueba.
 

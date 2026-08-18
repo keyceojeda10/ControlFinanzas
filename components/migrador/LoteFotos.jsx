@@ -190,6 +190,11 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         // tachadas, o el saldo que el prestamista se sabe de memoria.
         yaAbonado: c.montoPagadoHasta ?? '',
         saldoPendiente: c.saldoPendiente ?? '',
+        /* Lo que el lector tuvo que CORREGIR de la cartulina. Se guarda para
+           enseñarlo en la fila: una cifra ajustada sin decirlo es una cifra
+           inventada desde el punto de vista del prestamista, que tiene el papel
+           delante y ve otro número. */
+        _avisos: [c._avisoTotal, c._avisoAbonado].filter(Boolean),
         _ia: c,   // lo que trajo la IA, tal cual, para la telemetría
       }))
       // Se ACUMULAN: se sube el cuaderno por tandas, no de una sola vez.
@@ -580,6 +585,14 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
               : `${formatMoney(efectivo(f, base).monto ?? 0)} · ${efectivo(f, base).frecuencia} ${efectivo(f, base).tasa}%`}
             {f._foto ? ` · foto ${f._foto}` : ''}
           </span>
+          {/* ⚠ SE DICE LO QUE SE CORRIGIÓ. En la cartulina de Lorena hay dos
+              préstamos y el viejo está escrito arriba en grande: se toma el
+              vivo, pero el prestamista tiene el papel en la mano y ve el otro
+              número. Callarlo es pedirle que confíe a ciegas en la cifra de una
+              foto. */}
+          {f._avisos?.map((t, i) => (
+            <span key={i} style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-gold-dark)' }}>{t}</span>
+          ))}
         </div>
         {f._estado !== 'verde' && <Pastilla tono={f._estado === 'rojo' ? 'mora' : 'atraso'}>{ROTULO[f._estado]}</Pastilla>}
         <button type="button" onClick={onAbrir} aria-label={abierta ? 'Cerrar' : 'Abrir'}
