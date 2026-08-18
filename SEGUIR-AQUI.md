@@ -1,153 +1,94 @@
-# Por dónde seguir — 17 de agosto de 2026
+# Por dónde seguir — 18 de agosto de 2026
 
-Lista cerrada de lo que queda, en el orden en que hay que hacerlo. Se tacha a
-medida que se cierra, y **no se abre nada nuevo hasta terminar lo de arriba**.
+Lo anterior (los 4 puntos del 17 ago: francés, sugerencias, panel, rango de
+fechas) está cerrado y en el historial de git.
 
-La versión anterior de este archivo (2 ago, el barrido de anchos) está en el
-historial de git; aquello se cerró.
+Esta lista sale de MEDIR, no de opinar: son los errores que la app ya está
+registrando en producción y que nadie mira, más lo que las notas del proyecto
+tienen a medias.
+
+⚠ **«Perfecto» no es la meta y perseguirlo rompe cosas sanas.** La meta es que
+nos enteremos NOSOTROS primero: hoy un cliente se molesta en escribir y por eso
+existe la queja; los otros 95 errores de la pantalla de rutas no los reportó
+nadie.
+
+---
+
+## 1 · Un vigilante de errores ← EMPEZANDO
+
+`/api/errores-cliente` guarda cada pantalla rota en un archivo de registro **y
+ahí muere**: no hay pantalla que los enseñe, ni aviso, ni resumen.
+
+Sin esto todo lo demás se repite: arreglamos lo que alguien se molesta en
+contarnos y el resto se sigue rompiendo en silencio.
+
+**Terminado cuando:** cada mañana llega por Telegram —el mismo canal del
+vigilante del respaldo— cuántos errores hubo, de qué tipo y en qué pantalla; y
+calla cuando no hay ninguno.
+
+## 2 · React #300 en la hoja de pago
+
+**25 veces, la última el 16 de agosto.** En la ficha del préstamo, y varias con
+`?openPago=1&fromRuta=1` — o sea abriendo la hoja de pago desde la ruta. Es el
+único de los viejos que sigue vivo, y está en el camino de cobrar.
+
+React #300 es «se pintaron menos hooks de los esperados»: casi siempre un
+`return` que se salta hooks de más abajo.
+
+⚠ Mi primer barrido buscando hooks condicionales no encontró nada y el segundo
+marcó 300 falsos positivos. Hay que reproducirlo, no adivinarlo: el camino es
+abrir esa ficha con `?openPago=1&fromRuta=1` en el espejo.
+
+**Terminado cuando:** se reproduce, se corrige, y el registro deja de contarlo.
+
+## 3 · Confirmar que los tres viejos están muertos
+
+| error | veces | último |
+|---|---|---|
+| `Cannot access 'tU'` (pantalla de rutas) | 95 | 4 ago |
+| `onCerrarVisita is not defined` (cobros de hoy) | 10 | 7 ago |
+| `tutorial is not defined` (tutoriales) | 3 | 11 ago |
+| `formatFechaCalendario is not defined` | 1 | 5 ago |
+
+Llevan días sin aparecer: probablemente los mató algún arreglo posterior.
+**Comprobarlo antes de tocar nada** — tocar código que ya funciona es como se
+rompen cosas sanas.
+
+## 4 · El ChunkLoadError
+
+**86 veces.** Sale cuando alguien tiene la pantalla abierta y desplegamos: su
+navegador pide un trozo de la versión vieja que ya no existe. Ayer subimos diez
+veces.
+
+No es grave —recargando se arregla— pero es ruido que tapa los errores de
+verdad, y al usuario le sale una pantalla rota sin motivo.
 
 ---
 
-## ~~1 · El cálculo del sistema francés~~ ← HECHO, 17 ago
+## Después, lo que está a medias (de las notas del proyecto)
 
-**Lo que reportó Préstamos Rincón** (segunda vez): «la última cuota queda en $0,
-o un valor inferior, o incluso un valor exageradamente grande».
+Por orden de lo que más duele:
 
-**Lo que dijo la medida, antes de tocar nada:** 115 préstamos a saldo con tabla
-en producción, 22 con la última cuota fuera del ±10%… y **los 22 llevan cuota
-escrita a mano**. Ninguno de los que deja calcular. Los suyos salen al peso: 11
-de $120.700 y la última de $120.530.
-
-O sea que la cuenta no estaba mal. Monto, tasa, plazo y cuota son cuatro cifras
-y solo tres pueden ir libres: al fijar la cuota, la última recoge la diferencia.
-**Lo que sí estaba mal era la pantalla**, que en crear y en editar no decía la
-última cuota en ningún lado.
-
-Ahora un aviso lo dice con las dos cifras y ofrece las dos salidas, en las tres
-pantallas que calculan (`components/prestamos/AvisoUltimaCuota.jsx`):
-
-- **Todas de $X** — la cuota que deja las N iguales. Esta sí iguala.
-- **Cobrar N veces** — con su cuota, en cuántos cobros se salda **y de cuánto
-  sería el último**. ⚠ Esta NO iguala: deja una cola. Se dice con su cifra en
-  vez de prometer que «cuadra», que es lo que iba a escribir hasta que el
-  recálculo me desmintió.
-
-## ~~2 · El panel para no perder las sugerencias~~ ← HECHO, 17 ago
-
-`Sugerencia` ya lleva **estado y respuesta** (`nueva · vista · hecha · no se
-hace`), y el panel de superadmin deja marcarlas, filtrar «Sin atender» y anotar
-qué se le contestó. Las columnas están aplicadas y verificadas en producción.
-
-Los siete textos, ya redactados para mandar por WhatsApp, están en
-**`RESPUESTAS-SUGERENCIAS.md`**. Resumen: de los 5 puntos de Rincón, 3 ya
-existían y no se le había dicho; el del francés se arregló hoy.
-
-⚠ **NO SE MANDA NINGUNO TODAVÍA.** Orden del dueño, 17 ago:
-
-> «Deja de concentrarte en pendejadas de enviar mensajes si todavía no están ni
->  las cosas hechas. Termina todo lo que es prioritario, y al final, cuando ya
->  todo esté completado y resuelto, es que vas a enviar los mensajes.»
-
-Escribir «ya está arreglado» con la mitad rota es quemar la respuesta: el cliente
-entra a comprobarlo, se encuentra otro fallo y la siguiente vez no reporta. Los
-textos se quedan guardados y se mandan **cuando no quede nada de la lista**.
-
-## Lo que salió de contestarles
-
-1. ~~**Cobrar el interés que aún no se ha vencido.**~~ **HECHO, 17 ago.** Y no
-   era solo Crediya: medido contra producción, **271 de los 382 préstamos vivos
-   con tabla (71%) estaban bloqueados en 22 negocios**. Un préstamo AL DÍA no
-   tiene nada vencido, así que «pagar interés» solo funcionaba con los
-   atrasados. La regla, que estaba escrita en cuatro sitios, vive ahora en uno.
-
-2. ~~**Filtro «próximos a vencer» (5 y 10 días)**.~~ **Ya estaba hecho**
-   (`95b22ede`) y hoy se comprobó contra datos: 77 préstamos → 4 en 10 días → 3
-   en 5, los de 5 dentro de los de 10 y **ninguno solapa con «En mora»**
-   (vencido no es «por vencer»).
-
-3. ~~**Interés por período en `fijo` y `unico`.**~~ **Contestado por el punto 4,
-   sin tocar nada más.** Medido contra el espejo: en julio hubo pagos de 21
-   préstamos `fijo` ($7.418.900 de $9.733.907), y «Lo que entró» con rango a
-   mano separa **interés $2.562.821 · capital $7.171.086**, día por día. La suma
-   cuadra al peso con los cinco modos de la base.
-
-   ⚠ Queda **una sola duda por preguntarle a Crediya**: dijo «solo muestra
-   cuando la modalidad es mensual o quincenal», y eso no se sabe si habla de la
-   frecuencia o de otra pantalla. Sin un cliente concreto no se puede mirar.
-
-## ~~3 · Cerrar el panel de superadmin~~ ← HECHO, 17 ago
-
-**El menú bajó de 13 a 9.** Salieron Organizaciones, Suscripciones, Retención y
-Activación: las cinco consultaban la misma tabla para contestar variantes de la
-misma pregunta. ⚠ Sus **rutas siguen vivas** —la ficha de un negocio es a donde
-lleva cada renglón de Usuarios— y una prueba lo fija.
-
-**«La ficha se ve fea» tenía causa en el código:** `text-[white]` a pelo y la
-paleta del tema OSCURO (`--color-bg-card: #16171c`) sobre una app que quedó en
-claro. Letra blanca sobre fondo blanco. Barridas las 20 pantallas del panel.
-
-**Y ya se puede actuar desde la ficha**: quitar días, poner la fecha con
-calendario y cambiar de plan. Comprobado contra la base, incluidos los frenos
-(plan inventado y −9.999 días se rechazan sin tocar nada).
-
-⚠ Lo cazó el espejo: la suscripción se actualizaba, el registro fallaba después
-y el API devolvía 500 — el dueño leía «Error» sobre un cambio que **sí** se
-había aplicado, y lo natural es volver a pulsar. Ahora el cambio y su registro
-van en la misma transacción.
-
-## ~~4 · Rango de fechas en los informes~~ ← HECHO, 17 ago
-
-Los períodos armados **todos acababan hoy**: no se podía pedir «del 1 al 15 de
-julio» ni «el mes pasado». Ahora hay **Desde / Hasta** y un botón para quitarlo.
-
-Sale **solo en los informes cuyo API lo entiende** —lo dice el catálogo, no una
-lista escrita a mano— y son seis: `entro`, `contador`, `cuentas`, `resumen`,
-`cobradores` y `volcado-pagos`. A `contador` y `cuentas` se les añadió el
-soporte, que era una línea cada uno.
-
-Comprobado contra datos con `.auditoria/_probar-rango.mjs`: **los seis cambian
-de resultado** con el rango puesto. Un filtro que se pinta, se pulsa y no filtra
-se comporta igual que uno roto.
-
-⚠ El último día entra ENTERO (`lt: hasta` + un día): sin eso, pedir «del 1 al
-15» perdía todo lo cobrado el 15.
-
-Con esto queda contestado el punto 1 de Crediya: «cómo ver cuánto gané de
-interés de una fecha a otra fecha» → Informes → **Lo que entró**.
-
----
+1. **Línea de crédito** — a medio construir: sin integrar a caja, capital ni
+   reportes, y sin el cron de cortes.
+2. **13 pantallas ignoran el modo abreviado** — el interruptor está encendido y
+   no hace nada. Ya generó un reporte.
+3. **28 de 96 rutas con capital negativo**, sin revisar.
+4. **Las 119 guías del bot**, de junio.
+5. **El wizard de préstamo en PC** (T16-00), lo único que falta del rediseño.
+6. **La tabla de escritorio de la parada de cobro**, cortada por la derecha.
+7. **1.462 filas con el convenio de fechas viejo.**
 
 ## Lo que NO hay que hacer
 
-- **Las 55 cajas de préstamos anulados.** Documentado en
-  `CAJAS-ANULADOS-16AGO.md`. El código ya no las produce; lo histórico se
-  corrige caso por caso **solo si alguien reporta**.
-- **Las 76 fechas mensuales que se arrastran.** Decidido: no compensa mover
-  fechas de cobro reales por un día al mes.
-
-## Lo ÚLTIMO de todo, cuando no quede nada
-
-- **Mandar las 7 respuestas** de `RESPUESTAS-SUGERENCIAS.md`. No antes.
-
-## Lo que depende del dueño
-
-- **Reemplazar la clave de Gemini revocada**: una de las cinco de
-  `GEMINI_API_KEYS` contesta 403 «denied access». El lector ya la salta, pero
-  está pagando cinco y usando cuatro.
-- **Los permisos de la sesión** (`/permissions` o `.claude/settings.local.json`).
-  No cambia nada del sistema; solo evita que se pare a preguntar en cada prueba.
-
----
+- Las 55 cajas de préstamos anulados (`CAJAS-ANULADOS-16AGO.md`): caso por caso
+  y solo si alguien reporta.
+- Las 76 fechas mensuales que se arrastran.
 
 ## Cómo se cierra cada punto
 
-El método que ha funcionado esta semana, y que no se salta:
-
-1. **Medir contra producción en solo lectura ANTES de tocar.** Tres veces esta
-   semana el diagnóstico de partida era falso y la medición lo cazó.
-2. **Derivar la cifra esperada**, no escribirla a mano. Una prueba con un número
-   fijo marcó un fallo donde no lo había.
-3. **Mirar la captura.** El `?` doble, los 51.000px y la tabla ilegible no se
-   veían en el JSX.
+1. **Medir contra producción en solo lectura ANTES de tocar.**
+2. **Derivar la cifra esperada**, no escribirla a mano.
+3. **Mirar la captura**, no el JSX.
 4. Espejo → `npx vitest run` → `npx next build` → `npx eslint app components` →
    subir `CACHE_NAME` → desplegar → **verificar el commit en el VPS**.
