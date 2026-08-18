@@ -45,7 +45,12 @@ function buildIncludeDetalle() {
         totalDesembolsos: true,
         interesesGenerados: true,
         totalCargos: true,
-        totalPagado: true, abonadoCapital: true,
+        /* ⚠ AQUÍ NO VA `abonadoCapital`: ES UN CAMPO DE `Prestamo`, NO DE
+           `CorteLinea`. Se coló pegado a `totalPagado` —están así en catorce
+           sitios, todos sobre `Prestamo`— y aquí reventaba el `select` entero:
+           la ficha de CUALQUIER línea de crédito devolvía 500. Es el fallo
+           ruidoso de un campo inexistente; el silencioso es pedir de menos. */
+        totalPagado: true,
         saldoNuevo: true,
         pagoMinimo: true,
         createdAt: true,
