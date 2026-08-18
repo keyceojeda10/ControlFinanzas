@@ -64,20 +64,27 @@ que midiendo el último se concluye que el cazador no sirve.
 **Terminado cuando:** el próximo #300 traiga el nombre y se arregle. Con el
 vigilante puesto, lo veremos a la mañana siguiente.
 
-## 3 · Confirmar que los tres viejos están muertos ← EMPEZANDO
+## ~~3 · Los viejos están muertos~~ ← HECHO, 18 ago
 
-| error | veces | último |
-|---|---|---|
-| `Cannot access 'tU'` (pantalla de rutas) | 95 | 4 ago |
-| `onCerrarVisita is not defined` (cobros de hoy) | 10 | 7 ago |
-| `tutorial is not defined` (tutoriales) | 3 | 11 ago |
-| `formatFechaCalendario is not defined` | 1 | 5 ago |
+Eran cuatro, no tres, y **ninguno hacía falta tocarlo**. Cada arreglo lleva la
+fecha del ÚLTIMO error, que es la firma de que fue ese arreglo el que lo mató:
 
-Llevan días sin aparecer: probablemente los mató algún arreglo posterior.
-**Comprobarlo antes de tocar nada** — tocar código que ya funciona es como se
-rompen cosas sanas.
+| error | veces | último | lo mató |
+|---|---|---|---|
+| `Cannot access 'tU'` (ruta) | 95 | 4 ago | `d35ce3ea`, **4 ago 14:52** |
+| `onCerrarVisita is not defined` | 16 | 7 ago | `3011772d`, **7 ago 09:33** |
+| `formatFechaCalendario` | 1 | 5 ago | `c4ac7fc3`, **5 ago 00:17** |
+| `tutorial is not defined` | 3 | 11 ago | `94361cf5`, **11 ago 08:34** |
 
-## 4 · El ChunkLoadError
+Los tres primeros ya traían su prueba en el commit que los arregló. Se añade
+`errores-viejos-muertos.test.js`, que fija lo que los mataba —la única cosa que
+puede volver— sin revivir nada.
+
+⚠ **Lo importante no es que estén muertos: es que los cuatro se arreglaron
+porque alguien se quejó ese mismo día.** 95 pantallas rotas en la ruta y el
+arreglo llegó el día 95. Eso es exactamente lo que el vigilante viene a cambiar.
+
+## 4 · El ChunkLoadError ← EMPEZANDO
 
 **86 veces.** Sale cuando alguien tiene la pantalla abierta y desplegamos: su
 navegador pide un trozo de la versión vieja que ya no existe. Ayer subimos diez
