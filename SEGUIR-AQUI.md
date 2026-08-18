@@ -38,9 +38,9 @@ Comprobado creando el MISMO préstamo por los dos caminos en el espejo:
    copiar. ⚠ Los manda el dueño, no yo. El banner se apaga solo el 28 de agosto,
    así que pueden llegar más.
 
-3. **Pendientes de fondo, sin fecha:** el wizard de préstamo en PC (T16-00),
-   las 119 guías del bot de junio, las 1.462 filas de fechas con el convenio
-   viejo, y las 28 rutas con capital negativo.
+2. **Pendientes de fondo, sin fecha:** las 119 guías del bot, de junio; las
+   1.462 filas de fechas con el convenio viejo; y las 28 rutas con capital
+   negativo.
 
 ## Al medir, dos avisos
 
