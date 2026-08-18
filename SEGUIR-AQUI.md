@@ -36,22 +36,35 @@ reportado por nadie.
   X» / «X is not defined»): sin unirlos, 16 casos salían como 10 y 6, y el de 6
   se ve pequeño y se ignora.
 
-## 2 · React #300 en la hoja de pago ← EMPEZANDO
+## 2 · React #300 — instrumentado y esperando
 
-**25 veces, la última el 16 de agosto.** En la ficha del préstamo, y varias con
-`?openPago=1&fromRuta=1` — o sea abriendo la hoja de pago desde la ruta. Es el
-único de los viejos que sigue vivo, y está en el camino de cobrar.
+**25 veces, la última el 16 de agosto.** Confirmado leyendo la propia
+`react-dom` instalada: el #300 es «se pintaron menos hooks de los esperados»
+también en React 19.
 
-React #300 es «se pintaron menos hooks de los esperados»: casi siempre un
-`return` que se salta hooks de más abajo.
+**No se puede reproducir.** Lo intenté con 8 préstamos × 2 formas de URL, y
+antes de mí otra sesión ya había descartado midiendo: cuatro modos de préstamo,
+el pago entero, las cuatro acciones del comprobante, el préstamo que no existe y
+la regla de hooks de ESLint. Mis dos barridos automáticos tampoco: uno no
+encontró nada y el otro dio 300 falsos positivos.
 
-⚠ Mi primer barrido buscando hooks condicionales no encontró nada y el segundo
-marcó 300 falsos positivos. Hay que reproducirlo, no adivinarlo: el camino es
-abrir esa ficha con `?openPago=1&fromRuta=1` en el espejo.
+**Lo que sí se hizo, que es lo que toca cuando no se reproduce: instrumentar.**
+`CazadorDeErrores` ya estaba puesto, pero su commit decía «a comprobar contra un
+build de producción» y esa comprobación **no se había hecho**. Ahora sí:
 
-**Terminado cuando:** se reproduce, se corrige, y el registro deja de contarlo.
+- el cazador manda su aviso con árbol y `origen: 'cazador'` ✓
+- el árbol trae NUESTRO trozo con el byte exacto (`page-…js:1:27459`) ✓
+- `scripts/quien-reventó.mjs` lo traduce al componente, letra por letra ✓
 
-## 3 · Confirmar que los tres viejos están muertos
+⚠ Lo comprobé haciendo reventar un componente a propósito. Dos trampas:
+reventar en el primer render ocurre en el SERVIDOR y el navegador nunca monta la
+barrera; y llegan DOS avisos —el del cazador y el de la pantalla de error—, así
+que midiendo el último se concluye que el cazador no sirve.
+
+**Terminado cuando:** el próximo #300 traiga el nombre y se arregle. Con el
+vigilante puesto, lo veremos a la mañana siguiente.
+
+## 3 · Confirmar que los tres viejos están muertos ← EMPEZANDO
 
 | error | veces | último |
 |---|---|---|
