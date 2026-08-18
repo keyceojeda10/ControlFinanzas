@@ -1,0 +1,5 @@
+Don José, buena esa — y ya la tiene, solo que no está a la vista.
+
+Entre a *Configuración* y busque «Instalar la app». Desde ahí se le pone el icono en la pantalla de inicio del teléfono y se abre como cualquier otra app: a pantalla completa, sin la barra del navegador. Y una vez instalada le sigue funcionando aunque se quede sin señal: lo que registre se guarda en el teléfono y se sube solo cuando vuelve el internet.
+
+Lo que todavía no hay es descargarla desde la Play Store. Si le sale mal el paso de instalar, mándeme una captura de lo que ve y le digo dónde tocar.

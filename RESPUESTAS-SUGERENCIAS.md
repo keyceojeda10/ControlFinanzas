@@ -1,6 +1,8 @@
 # Qué contestarle a cada uno — 18 de agosto de 2026
 
-Las 7 sugerencias del banner, de 4 negocios. **Ya está todo hecho**, así que
+⚠ El banner sigue vivo y **se apaga solo el 28 de agosto**: pueden llegar más.
+
+Las 8 sugerencias del banner, de 5 negocios. **Ya está todo hecho**, así que
 ahora sí se pueden mandar. Los textos de abajo van listos para copiar.
 
 ⚠ Cada afirmación de estos mensajes está comprobada contra producción. Si algo
@@ -94,13 +96,40 @@ no se pudo comprobar, se dice que se pregunta — no se afirma.
 
 ---
 
+## Inversiones Anaya · José Anaya — «Crear propia app no navegador» (17 ago)
+
+**Ya se puede, y no lo sabe.** Comprobado: el manifiesto responde en producción
+(`/manifest.json`, `display: standalone`), y en Configuración hay un bloque
+«Instalar la app» que usa `beforeinstallprompt`. Instalada abre a pantalla
+completa, sin barra de navegador, con su icono.
+
+Lo que NO es: no está en Play Store. Eso no se le promete.
+
+### Para mandar
+
+> Don José, buena esa — y ya la tiene, solo que no está a la vista.
+>
+> Entre a *Configuración* y busque «Instalar la app». Desde ahí se le pone el
+> icono en la pantalla de inicio del teléfono y se abre como cualquier otra app:
+> a pantalla completa, sin la barra del navegador. Y una vez instalada le sigue
+> funcionando aunque se quede sin señal: lo que registre se guarda en el teléfono
+> y se sube solo cuando vuelve el internet.
+>
+> Lo que todavía no hay es descargarla desde la Play Store. Si le sale mal el
+> paso de instalar, mándeme una captura de lo que ve y le digo dónde tocar.
+
+---
+
 ## Créditos jh · Héctor — «Está bien»
 
-Nada que hacer. Marcar como leída.
+Nada que arreglar. Un renglón basta:
+
+> Don Héctor, gracias por contestar. Si algún día algo le estorba o le falta,
+> escríbame directo por aquí — con un caso concreto se arregla rápido.
 
 ## Inversiones Don Pacho · Gustavo — «X»
 
-Escribió una equis, probando el botón. Nada que hacer.
+Escribió una equis, probando el botón. Nada que hacer: marcar como leída.
 
 ---
 
