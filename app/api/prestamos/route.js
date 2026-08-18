@@ -249,6 +249,23 @@ export async function GET(request) {
     fechaFin:         p.fechaFin,
     estado:           p.estado,
     modoInteres:      p.modoInteres,
+    /* ⚠ LAS FILAS VIAJAN, y antes no.
+     *
+     * Se pedían a Prisma para las cuentas del servidor y NO se devolvían: la
+     * respuesta es una lista blanca de campos y esta faltaba. La hoja de pago
+     * las necesita —`elInteresSubeLaDeuda` no puede decidir sin ellas y
+     * REVIENTA a propósito en vez de adivinar—, así que el cobro rápido de un
+     * préstamo con tabla se abría en una pantalla de error y el prestamista se
+     * quedaba sin poder cobrarle a su cliente.
+     *
+     * Visto en los registros de producción el 17 ago: el préstamo del error
+     * tenía sus 8 filas en la base y se había creado ese mismo día. O sea que
+     * no era dato incompleto, era este `select`. Aparece también el 4 y el 10
+     * de agosto: llevaba dos semanas.
+     *
+     * En los modos sin tabla llega `[]`, que también vale: la guardia solo
+     * salta con `undefined`, que es «no me las pidieron». */
+    cuotasAmortizacion: p.cuotasAmortizacion,
     createdAt:        p.createdAt,
     ultimoPagoAt:     p.ultimoPagoAt,
     // Usa el campo denormalizado (mantenido por refrescarTotalesPrestamo).
