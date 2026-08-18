@@ -35,6 +35,33 @@ export async function DELETE(request, { params }) {
     }, { status: 400 })
   }
 
+  /* ⚠ EL REVERSO DE UN GASTO BORRADO NO SE PUEDE BORRAR.
+   *
+   * Es un `ajuste`, así que pasaba la lista de arriba — pero no es de nadie:
+   * lo pone el sistema para anular el asiento del gasto que se acaba de
+   * eliminar. Borrarlo deja huérfano al `gasto`, que sigue restando para
+   * siempre sin ningún gasto detrás, y la caja pierde esa plata sin explicación.
+   *
+   * Le pasó a un cliente el 16 de agosto de 2026, y es media explicación de por
+   * qué se fue. Su registro de actividad de esa mañana:
+   *
+   *   09:06  registrar_gasto              $282.000 - Cicla de mi mamá
+   *   09:07  movimiento_caja_manual       ajuste entrada $282.000
+   *   09:13  eliminar_gasto               Cicla de mi mamá
+   *   09:14  movimiento_caja_manual       ajuste salida $282.000
+   *   11:49  eliminar_movimiento_capital  Ajuste de caja manual (salida)
+   *   11:50  eliminar_movimiento_capital  Ajuste de caja manual (entrada)
+   *   11:50  eliminar_movimiento_capital  Reverso gasto eliminado  ← este
+   *   11:51  movimiento_caja_manual       ajuste entrada $282.000
+   *
+   * Estuvo dos horas y media poniendo y quitando correcciones para cuadrar una
+   * caja que se le descuadraba más con cada intento. */
+  if (movimiento.tipo === 'ajuste' && movimiento.referenciaTipo === 'gasto') {
+    return Response.json({
+      error: 'Esa corrección la puso el sistema al borrar un gasto, y no se puede quitar: si la quitas, el gasto borrado seguiría restando de tu caja para siempre.',
+    }, { status: 400 })
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
       const capital = await tx.capital.findUnique({ where: { organizationId } })

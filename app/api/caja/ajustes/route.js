@@ -110,9 +110,18 @@ export async function POST(request) {
  * Se le contestó por WhatsApp: «puedes borrar los ajustes manuales que fuiste
  * metiendo esta mañana, ya no hacen falta».
  *
- * ⚠ ESO NO SE PODÍA HACER. Este archivo solo tenía `POST`. Él contestó «entiendo
- * hermano, pero sigue lo mismo», mandó otra captura con la misma cifra mal, y
- * esa noche escribió «mano ya no voy a seguir con el sistema».
+ * ⚠ DESDE LA CAJA NO SE PODÍA: este archivo solo tenía `POST`. Sí había un
+ * borrado, pero en OTRA pantalla —«Mi plata»,
+ * `app/api/capital/movimientos/[id]`— y él lo encontró: su registro de
+ * actividad enseña tres borrados a las 11:49 y 11:50 de esa mañana. O sea que
+ * el consejo no era imposible, era en el sitio equivocado; y peor, uno de los
+ * tres que borró era el reverso que el propio sistema pone al eliminar un
+ * gasto, lo que le dejó el asiento del gasto huérfano restando solo.
+ *
+ * Contestó «entiendo hermano, pero sigue lo mismo», mandó otra captura con la
+ * misma cifra mal, y esa noche escribió «mano ya no voy a seguir con el
+ * sistema». Por eso el deshacer va DONDE SE VE el descuadre, y no en una
+ * pantalla que hay que saber que existe.
  *
  * ── POR QUÉ UN ASIENTO INVERSO Y NO UN `DELETE` ───────────────────────────
  *
