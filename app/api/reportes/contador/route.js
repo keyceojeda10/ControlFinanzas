@@ -26,7 +26,7 @@ import { prisma } from '@/lib/prisma'
 import { getUtcOffset, formatMoney, formatFechaCorta, getCountryConfig } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
-import { calcularContador, rangoDePeriodo, PERIODOS_CONTADOR } from '@/lib/reportes/contador'
+import { calcularContador, rangoDePeriodo, rangoManual, PERIODOS_CONTADOR } from '@/lib/reportes/contador'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 
 export async function GET(req) {
@@ -46,7 +46,9 @@ export async function GET(req) {
      y el papel diría «Trimestre» encima de las cifras de un mes. */
   const periodo = PERIODOS_CONTADOR[searchParams.get('periodo')] ? searchParams.get('periodo') : 'mes'
   const offsetHoras = Math.abs(getUtcOffset(country))
-  const { desde, hasta } = rangoDePeriodo(periodo, offsetHoras)
+  /* El rango a mano manda sobre la pastilla: si el prestamista escribió dos
+     fechas, es que quiere ESAS y no «el mes». */
+  const { desde, hasta } = rangoManual(searchParams, offsetHoras) ?? rangoDePeriodo(periodo, offsetHoras)
 
   const [prestamos, gastos, org] = await Promise.all([
     prisma.prestamo.findMany({

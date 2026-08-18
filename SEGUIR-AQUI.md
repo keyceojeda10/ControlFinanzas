@@ -89,17 +89,25 @@ y el API devolvía 500 — el dueño leía «Error» sobre un cambio que **sí**
 había aplicado, y lo natural es volver a pulsar. Ahora el cambio y su registro
 van en la misma transacción.
 
-## 4 · Rango de fechas en los informes ← EMPEZANDO
+## ~~4 · Rango de fechas en los informes~~ ← HECHO, 17 ago
 
-Hoy solo hay presets y todos acaban **hoy**: no se puede pedir «del 1 al 15 de
-julio» ni «el mes pasado». El motor ya lo acepta (`rangoDe` respeta
-`desde`/`hasta`); falta el control en la barra de filtros.
+Los períodos armados **todos acababan hoy**: no se podía pedir «del 1 al 15 de
+julio» ni «el mes pasado». Ahora hay **Desde / Hasta** y un botón para quitarlo.
 
-⚠ Añade un control a las 16 pantallas: se hace de una vez y se mide en captura,
-no se va poniendo informe a informe.
+Sale **solo en los informes cuyo API lo entiende** —lo dice el catálogo, no una
+lista escrita a mano— y son seis: `entro`, `contador`, `cuentas`, `resumen`,
+`cobradores` y `volcado-pagos`. A `contador` y `cuentas` se les añadió el
+soporte, que era una línea cada uno.
 
-**Terminado cuando:** los 7 informes que reciben `desde`/`hasta` dejan elegir el
-rango, y `.auditoria/_revisar-informes.mjs` sigue en verde.
+Comprobado contra datos con `.auditoria/_probar-rango.mjs`: **los seis cambian
+de resultado** con el rango puesto. Un filtro que se pinta, se pulsa y no filtra
+se comporta igual que uno roto.
+
+⚠ El último día entra ENTERO (`lt: hasta` + un día): sin eso, pedir «del 1 al
+15» perdía todo lo cobrado el 15.
+
+Con esto queda contestado el punto 1 de Crediya: «cómo ver cuánto gané de
+interés de una fecha a otra fecha» → Informes → **Lo que entró**.
 
 ---
 

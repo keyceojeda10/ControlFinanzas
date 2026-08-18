@@ -106,6 +106,17 @@ export default function PantallaDeInforme() {
 
   const [periodo, setPeriodo] = useState(informe?.periodos?.[0] ?? 'mes')
   const [fecha, setFecha] = useState(hoyBogota())
+  /* ══ EL RANGO A MANO ═════════════════════════════════════════════════════
+   *
+   * «Cómo ver cuánto gané de interés de una fecha a otra fecha. Me gustaría que
+   *  lo implementaran, o si ya está, que me dijeran dónde lo visualizo.»
+   *                                                    — Crediya, 14 ago 2026
+   *
+   * Los períodos armados TODOS acaban hoy: no se podía pedir «del 1 al 15 de
+   * julio» ni «el mes pasado». El motor ya lo aceptaba —`rangoDe` respeta lo que
+   * se le pase— y lo único que faltaba era el control. */
+  const [rango, setRango] = useState({ desde: '', hasta: '' })
+  const rangoPuesto = !!(rango.desde && rango.hasta)
   const [crudo, setCrudo] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
@@ -116,7 +127,7 @@ export default function PantallaDeInforme() {
     if (!informe?.ver || bloqueado) return
     setCargando(true); setError('')
     try {
-      const qs = parametrosDe(informe, periodo, { fecha })
+      const qs = parametrosDe(informe, periodo, { fecha, ...(rangoPuesto ? rango : {}) })
       /* ⚠ `ver` PUEDE TRAER YA SU PROPIA CONSULTA. Los cuatro volcados comparten
          API y se distinguen por `?tipo=`, así que pegar «?periodo=…» detrás daba
          `datos?tipo=pagos?desde=…`: un segundo `?` que el servidor lee como
@@ -132,7 +143,7 @@ export default function PantallaDeInforme() {
     } finally {
       setCargando(false)
     }
-  }, [informe, periodo, fecha, bloqueado])
+  }, [informe, periodo, fecha, rango, rangoPuesto, bloqueado])
 
   useEffect(() => { cargar() }, [cargar])
 
@@ -183,7 +194,7 @@ export default function PantallaDeInforme() {
     try {
       /* Los que no pasan por el traductor —el listado para imprimir y el
          volcado en bruto— bajan por su propia ruta, que ya existía. */
-      const qs = parametrosDe(informe, periodo, { fecha })
+      const qs = parametrosDe(informe, periodo, { fecha, ...(rangoPuesto ? rango : {}) })
       const url = informe.ver
         ? `/api/reportes/descargar?informe=${informe.id}&formato=${formato}&${qs}`
         : `${informe.bajar}${informe.bajar.includes('?') ? '&' : '?'}${qs}`
@@ -243,6 +254,10 @@ export default function PantallaDeInforme() {
 
   const periodos = (informe.periodos ?? []).map((p) => PERIODOS[p.toUpperCase()]).filter(Boolean)
   const usaFecha = (informe.params ?? []).includes('fecha') || (informe.params ?? []).includes('mes')
+  /* Solo los informes cuyo API entiende `desde`/`hasta`. Lo dice el catálogo,
+     no una lista escrita aquí: si mañana otro informe los acepta, le sale el
+     control solo. */
+  const usaRango = (informe.params ?? []).includes('desde') && (informe.params ?? []).includes('hasta')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 900, margin: '0 auto' }}>
@@ -252,7 +267,7 @@ export default function PantallaDeInforme() {
           tarjeta debajo diciendo exactamente lo mismo. */}
 
       {/* LOS FILTROS */}
-      {(periodos.length > 1 || usaFecha) && (
+      {(periodos.length > 1 || usaFecha || usaRango) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {periodos.length > 1 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--cf-gap-chips)' }}>
@@ -263,6 +278,53 @@ export default function PantallaDeInforme() {
               ))}
             </div>
           )}
+          {/* ⚠ EL RANGO A MANO, solo donde el informe lo entiende.
+              Ponerlo en los 16 sería ofrecer un control que en nueve de ellos
+              no cambia nada: un filtro que se pinta, se pulsa y no filtra se
+              comporta igual que uno roto. */}
+          {usaRango && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 10 }}>
+              {[['desde', 'Desde'], ['hasta', 'Hasta']].map(([clave, rotulo]) => (
+                <label key={clave} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{rotulo}</span>
+                  <input
+                    type="date"
+                    value={rango[clave]}
+                    max={hoyBogota()}
+                    onChange={(e) => setRango((r) => ({ ...r, [clave]: e.target.value }))}
+                    className="cf-input"
+                    style={{
+                      height: 'var(--cf-h-field)', borderRadius: 'var(--cf-r-control)',
+                      border: `1px solid ${rangoPuesto ? 'var(--cf-gold)' : 'var(--cf-border)'}`,
+                      background: 'var(--cf-card)', color: 'var(--cf-ink)',
+                      padding: '0 12px', fontSize: 14,
+                    }}
+                  />
+                </label>
+              ))}
+              {rangoPuesto && (
+                <button
+                  type="button"
+                  onClick={() => setRango({ desde: '', hasta: '' })}
+                  style={{
+                    height: 'var(--cf-h-field)', padding: '0 14px', cursor: 'pointer',
+                    borderRadius: 'var(--cf-r-control)', border: '1px solid var(--cf-border)',
+                    background: 'var(--cf-card)', color: 'var(--cf-ink-2)', fontSize: 13, fontWeight: 600,
+                  }}
+                >
+                  Quitar el rango
+                </button>
+              )}
+              {/* Con el rango puesto, las pastillas de arriba dejan de mandar:
+                  se dice, en vez de dejar dos filtros peleándose en silencio. */}
+              <span style={{ fontSize: 11, color: 'var(--cf-ink-3)', flexBasis: '100%' }}>
+                {rangoPuesto
+                  ? 'Manda el rango. Quítalo para volver a los períodos de arriba.'
+                  : 'Rellena las dos para pedir un tramo exacto, como «del 1 al 15 de julio».'}
+              </span>
+            </div>
+          )}
+
           {usaFecha && (
             <label style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>Día</span>

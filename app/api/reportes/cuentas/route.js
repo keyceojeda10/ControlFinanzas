@@ -25,7 +25,7 @@ import { prisma } from '@/lib/prisma'
 import { getUtcOffset, formatMoney, formatFechaCorta } from '@/lib/i18n'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { getSaldosPorCuenta } from '@/lib/capital'
-import { rangoDePeriodo, PERIODOS_CONTADOR } from '@/lib/reportes/contador'
+import { rangoDePeriodo, rangoManual, PERIODOS_CONTADOR } from '@/lib/reportes/contador'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 
 export async function GET(req) {
@@ -41,7 +41,9 @@ export async function GET(req) {
   const country = session.user.country ?? 'co'
   const { searchParams } = new URL(req.url)
   const periodo = PERIODOS_CONTADOR[searchParams.get('periodo')] ? searchParams.get('periodo') : 'mes'
-  const { desde, hasta } = rangoDePeriodo(periodo, Math.abs(getUtcOffset(country)))
+  /* El rango a mano manda sobre la pastilla: si el prestamista escribió dos
+     fechas, es que quiere ESAS y no «el mes». */
+  const { desde, hasta } = rangoManual(searchParams, Math.abs(getUtcOffset(country))) ?? rangoDePeriodo(periodo, Math.abs(getUtcOffset(country)))
 
   const [cuentas, org] = await Promise.all([
     getSaldosPorCuenta(prisma, orgId, { desde, hasta }),
