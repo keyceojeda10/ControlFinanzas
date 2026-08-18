@@ -104,37 +104,49 @@ coinciden al peso.**
 
 ---
 
-## Las inyecciones de la noche: NO son un parche (medido)
+## Las inyecciones de la noche: él confirma que cuadraba a mano
 
-La sospecha razonable era que esas 40 inyecciones de $9.774.894 en 21 días
-fueran él cuadrando a mano lo que el sistema debía hacer solo. **El libro dice
-que no**, y conviene saberlo antes de pedirle que deje de hacerlas.
+> «A mí me ha tocado sacarle y inyectarle para que los números cuadraran. Que
+> eso es lo que quiero: que solamente si yo necesito sacarle plata a la ruta,
+> yo voy y le saco y el número cambie.» — 18 ago 2026
 
-Si estuviera parcheando para que el capital igualara la cifra del cuadre, casi
-todas tendrían que dejar la ruta EXACTAMENTE en esa cifra:
+Con el saldo de la ruta reconstruido antes y después de cada una (55 en 21 días
+por $13.186.872), el patrón es este:
 
 | | |
 |---|---|
-| Días con inyección | 42 |
-| **Dejan el capital en la cifra que decía el cuadre** | **2** |
-| **La ruta ya venía en NEGATIVO antes de inyectar** | **31** |
-| La dejan exactamente en cero | 5 |
-| La dejan en una cifra redonda de miles | 17 |
+| La ruta estaba **en negativo** al inyectar | **37**, por $10.347.650 |
+| La ruta estaba en positivo | 18, por $2.839.222 |
 
-Y las rutas se van al rojo de verdad: **40 de 210 noches·ruta (19%)** cerraron
-en negativo en 21 días, casi todas entre el 29 de julio y el 6 de agosto.
+Y se repite una pareja muy concreta: **primero una inyección que deja la ruta
+EXACTAMENTE en cero, y acto seguido otra con la base de verdad.**
 
-    RUTA #4   9 noches en rojo   la peor, −$875.328
-    RUTA #2   8 noches           −$608.748
-    RUTA #5   7 noches           −$705.068
+    06 ago 22:02  RUTA #1    +$991.000   → $0     luego +$82.000  → $82.000
+    06 ago 22:23  RUTA #10 +$1.009.723   → $0     luego +$500.000 → $500.000
+    11 ago 07:41  RUTA #4    +$791.000   → $0     luego +$457.000 → $457.000
 
-**Conclusión: esas inyecciones son plata de verdad repuesta a rutas que se
-quedaron sin base.** Son la operación normal del negocio, no un rodeo. ⚠ **No
-hay que pedirle que las deje de hacer**: sería pedirle que deje de fondear a sus
-cobradores.
+⚠ **La primera de cada pareja NO se puede llamar plata falsa.** Que la ruta esté
+en −$991.000 significa que el cobrador prestó más de lo que llevaba, y esa plata
+salió de la oficina de verdad: la inyección la registra. Borrar el negativo y
+financiar el hueco son, en el libro, la misma operación.
 
-Lo que sí se automatizó es lo que él pedía en el video —«que este número sea
-igualito al del lado allá»—, y era el cuadre sin contar sus propios retiros.
+**Conclusión honesta: no se puede separar desde el libro, y afirmar que hay
+capital inflado sería inventarlo.** Lo que sí se puede decir es que desde hoy
+ninguna hace falta para cuadrar, así que las de mañana en adelante son limpias.
+
+La lista completa, con el saldo antes y después de cada una, sale de
+`.auditoria/` contra producción (guion `q17`).
+
+## Lo de fondo, que sigue abierto
+
+**Sus rutas se van al rojo mucho: 40 de 210 noches·ruta (19%) en 21 días.** Por
+eso le toca inyectar. Ninguna ruta tiene registrado un capital inicial —en toda
+la base hay UN solo movimiento `capital_inicial` con ruta—, así que las rutas se
+financian solo con inyecciones y el saldo arranca en cero.
+
+Es la misma historia de [[capital_negativo_no_es_bug]]: 98 de 107 negocios nunca
+registraron el capital inicial. **Eso es lo siguiente que hay que mirarle**, y
+es harina de otro costal: no es un fallo del cuadre.
 
 ## Lo que hay que preguntarle
 
