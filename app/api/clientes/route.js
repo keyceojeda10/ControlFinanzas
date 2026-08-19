@@ -176,6 +176,10 @@ export async function GET(request) {
           // Denormalizados: evitan iterar todos los pagos.
           totalPagado: true, abonadoCapital: true,
           ultimoPagoAt: true,
+          /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+             interés devengado sin pagar, y un campo que no se pide vale `undefined`
+             —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+          devengos: { select: { periodo: true, interes: true } },
           cuotasAmortizacion: {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
             orderBy: { numeroPeriodo: 'asc' },

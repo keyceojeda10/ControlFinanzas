@@ -60,6 +60,10 @@ export async function GET(request) {
         // calculaba por el camino de los prestamos simples: repartiendo lo pagado
         // entre `cuotaDiaria`, que en esos modos es solo la PRIMERA cuota. En
         // Decreciente esa cuota es la mas alta de todas, asi que la mora salia mal.
+        /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+           interés devengado sin pagar, y un campo que no se pide vale `undefined`
+           —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+        devengos: { select: { periodo: true, interes: true } },
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
           select: {

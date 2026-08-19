@@ -111,6 +111,10 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         organizationId,
         modoInteres: { in: MODOS_CON_TABLA },
         totalAPagar: { gt: 0 },
+        /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+           interés devengado sin pagar, y un campo que no se pide vale `undefined`
+           —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+        devengos: { select: { periodo: true, interes: true } },
         cuotasAmortizacion: { some: {} },
         /* ⚠ Los anulados TAMBIÉN fuera de la corrección, no solo de la consulta
            base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra

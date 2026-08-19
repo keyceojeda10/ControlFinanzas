@@ -85,6 +85,10 @@ export async function POST(request, { params }) {
     include: {
       cliente: { select: { id: true, nombre: true, rutaId: true, montoMaximoPrestamo: true } },
       pagos:   { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+      /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+         interés devengado sin pagar, y un campo que no se pide vale `undefined`
+         —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+      devengos: { select: { periodo: true, interes: true } },
       cuotasAmortizacion: { select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, pagado: true, interesPagado: true }, orderBy: { numeroPeriodo: 'asc' } },
     },
   })

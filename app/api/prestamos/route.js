@@ -180,6 +180,10 @@ export async function GET(request) {
         orderBy: { fechaPago: 'desc' },
         select: { id: true, montoPagado: true, fechaPago: true, tipo: true },
       },
+      /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+         interés devengado sin pagar, y un campo que no se pide vale `undefined`
+         —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+      devengos: { select: { periodo: true, interes: true } },
       cuotasAmortizacion: {
         orderBy: { numeroPeriodo: 'asc' },
         select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
@@ -290,9 +294,16 @@ export async function GET(request) {
     // equivocado. Es el 6,2% de la cartera, pero es justo donde el error no se
     // notaria al mirar.
     cuotasPendientes: calcularCuotasPendientes(p),
-    totalCuotas:      tieneTablaAmortizacion(p)
-      ? p.cuotasAmortizacion.length
-      : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0),
+    /* ⚠ UN ABIERTO NO TIENE CUOTAS, Y EL NÚMERO CRECÍA SOLO.
+       Reportado por Rhoders con la captura: «cuota 11/11» en un préstamo recién
+       creado y sin un solo pago. Sale de `total ÷ cuota` —759.000 ÷ 69.000— así
+       que cada mes que devenga interés inventa una cuota más: era 10/10 el día
+       anterior. En un préstamo sin plazo no hay última cuota que contar, y con
+       0 la tarjeta enseña solo el porcentaje. */
+    totalCuotas:      p.sinPlazo && p.modoInteres === 'solo_interes' ? 0
+      : tieneTablaAmortizacion(p)
+        ? p.cuotasAmortizacion.length
+        : (p.cuotaDiaria > 0 ? Math.ceil((p.totalAPagar || 0) / p.cuotaDiaria) : 0),
     esClavo:          p.esClavo,
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),

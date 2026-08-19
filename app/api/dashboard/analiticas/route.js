@@ -207,6 +207,10 @@ export async function GET() {
         // `capitalEnCalle()` calcula de menos sin avisar: los prestamos con
         // tabla darian interes 0 y los abonos explicitos no bajarian el capital.
         // Es plata mal contada por un campo que falta en un select.
+        /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+           interés devengado sin pagar, y un campo que no se pide vale `undefined`
+           —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+        devengos: { select: { periodo: true, interes: true } },
         cuotasAmortizacion: {
           select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, fechaEsperada: true },
         },

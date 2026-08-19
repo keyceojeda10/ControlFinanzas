@@ -225,6 +225,10 @@ export async function GET() {
       where: { organizationId, estado: 'activo', esClavo: false },
       select: {
         montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, modoInteres: true,
+        /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+           interés devengado sin pagar, y un campo que no se pide vale `undefined`
+           —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+        devengos: { select: { periodo: true, interes: true } },
         cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
         pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
       },

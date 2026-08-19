@@ -37,6 +37,10 @@ export async function GET(request) {
             // Los dos hacen falta para `interesGanado` y `capitalEnCalle`: sin
             // la tabla un decreciente reparte plano, y sin los abonos el
             // capital no baja lo que el prestamista dijo que bajaba.
+            /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+               interés devengado sin pagar, y un campo que no se pide vale `undefined`
+               —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+            devengos: { select: { periodo: true, interes: true } },
             cuotasAmortizacion: {
               orderBy: { numeroPeriodo: 'asc' },
               select: { numeroPeriodo: true, cuotaTotal: true, interes: true },

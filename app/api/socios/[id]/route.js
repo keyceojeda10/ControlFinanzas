@@ -34,6 +34,10 @@ export async function GET(request, { params }) {
             },
             // Sin la tabla, el interes de un decreciente sale repartido plano y
             // esta pantalla contradice al reparto de utilidades, que si la lee.
+            /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+               interés devengado sin pagar, y un campo que no se pide vale `undefined`
+               —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+            devengos: { select: { periodo: true, interes: true } },
             cuotasAmortizacion: {
               orderBy: { numeroPeriodo: 'asc' },
               select: { numeroPeriodo: true, cuotaTotal: true, interes: true },

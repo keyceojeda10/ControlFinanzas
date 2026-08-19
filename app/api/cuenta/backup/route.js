@@ -68,7 +68,10 @@ export async function GET() {
       prisma.cliente.findMany({ where: { organizationId: orgId } }),
       prisma.prestamo.findMany({
         where: { organizationId: orgId },
-        include: { cuotasAmortizacion: true },
+        /* Los devengos también: en un préstamo abierto son la única constancia
+           de cuánto interés nació y cuándo. Un respaldo sin ellos no permite
+           reconstruir la deuda. */
+        include: { cuotasAmortizacion: true, devengos: true },
       }),
       prisma.pago.findMany({ where: { organizationId: orgId } }),
       prisma.lineaCredito.findMany({ where: { organizationId: orgId } }),

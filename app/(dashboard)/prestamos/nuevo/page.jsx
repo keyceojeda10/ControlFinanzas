@@ -1610,7 +1610,31 @@ function NuevoPrestamo() {
                         }
                       >{v}</button>
                     ))}
+                    {/* ── «NO SÉ» ES UNA RESPUESTA, Y AQUÍ ES LA CORRECTA ──────
+                        Reportado por Rhoders el 19 ago 2026, en este mismo paso:
+                        «a cuántas cuotas debería salir uno que sea indefinido,
+                        porque no sé cuándo me va a pagar» · «no sé cuántas
+                        cuotas ponerle».
+
+                        El préstamo abierto YA existe y esta pantalla ya sabe
+                        enseñarlo —la rama de arriba— pero se enciende con el
+                        modo, que se elige en el paso SIGUIENTE, y con un
+                        interruptor que está en el resumen. Así que en el momento
+                        de la pregunta la única salida era inventarse un número.
+                        Le tocó preguntar por WhatsApp.
+
+                        Deja el Globo puesto, que es el único modo que admite no
+                        tener plazo; si después elige otro, la pregunta vuelve. */}
+                    <button type="button"
+                      onClick={() => { setModoInteres('solo_interes'); setSinPlazo(true); setInteresAdelantado(false) }}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                      style={{ background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px dashed var(--cf-border-strong)' }}
+                    >No sé</button>
                   </div>
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+                    Si no sabes cuándo te paga, toca <span style={{ fontWeight: 600 }}>No sé</span>: el
+                    préstamo queda sin fecha de vencimiento y solo cobra el interés de cada mes.
+                  </p>
                 </div>
                 )}
               </div>

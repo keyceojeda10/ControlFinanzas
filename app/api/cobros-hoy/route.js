@@ -144,6 +144,10 @@ export async function GET() {
           // «Ult. pago 21 jun», la cuarta columna de la tira de T03-01. Es la
           // que dice si el cliente esta frio o si se le vio la semana pasada.
           ultimoPagoAt: true,
+          /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
+             interés devengado sin pagar, y un campo que no se pide vale `undefined`
+             —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
+          devengos: { select: { periodo: true, interes: true } },
           cuotasAmortizacion: {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
             orderBy: { numeroPeriodo: 'asc' },
