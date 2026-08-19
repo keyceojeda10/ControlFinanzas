@@ -676,7 +676,13 @@ function PrestamoDetalleContenido({ params }) {
        5 cuotas» de un préstamo que no termina hasta que el cliente abone.
        Lo que sí falta —y es lo que el cobrador va a pedir— es el interés. */
     if (esAbierto) {
-      const debe = Math.round(montoEnMora || 0)
+      /* Lo que falta es el interés POR COBRAR, no el que está en mora: el día
+         que cierra el período ya hay que cobrarlo y todavía no hay atraso. Con
+         `montoEnMora` decía «nada» teniendo $69.000 que pedir. */
+      /* ⚠ SE LLAMA A LA FUNCIÓN, NO SE USA `interesMonto`: esa constante se
+         declara 300 líneas más abajo y leerla aquí es el mismo «Cannot access
+         before initialization» que ya me dejó la ficha en blanco hace un rato. */
+      const debe = Math.round(interesCobrableAhora(prestamo) || 0)
       return debe > 0 ? `${formatMoney(debe)} de interés` : 'nada'
     }
     if (cuotasAmortizacion.length > 0) {
