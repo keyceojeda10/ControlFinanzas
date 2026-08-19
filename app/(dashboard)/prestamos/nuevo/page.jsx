@@ -1920,7 +1920,11 @@ function NuevoPrestamo() {
                             </select>
                           } />
 
-                        <EditableRow label="Plazo" value={calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoL}` : `${plazoUnidades} ${unidadPlazoL}`} pencil={pencil}
+                        {/* ⚠ CON EL INTERRUPTOR PUESTO, «Plazo: 6 meses» ES LO
+                            CONTRARIO DE LO QUE SE ELIGIÓ, y está tres renglones
+                            encima del propio interruptor. Reportado en captura:
+                            «es bastante confuso». */}
+                        <EditableRow label="Plazo" value={esAbierto ? 'sin plazo' : (calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoL}` : `${plazoUnidades} ${unidadPlazoL}`)} pencil={pencil}
                           editor={
                             <div className="flex items-center gap-1.5">
                               <input type="number" inputMode="numeric" value={plazoUnidades} onChange={e => setPlazoUnidades(e.target.value)}
@@ -2009,14 +2013,30 @@ function NuevoPrestamo() {
 
                       {/* Info calculada — read only */}
                       <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}>
-                        <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cobros totales</span>
-                          <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>{cobrosTotales}</span>
-                        </div>
-                        <div className="flex items-center justify-between py-1.5">
-                          <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
-                          <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
-                        </div>
+                        {/* ⚠ EN UN ABIERTO NO HAY «COBROS TOTALES» NI GANANCIA
+                            TOTAL: no se sabe cuántos meses va a durar. Decir «6
+                            cobros» y «$0 (0%)» son dos cifras inventadas sobre
+                            un préstamo que puede durar años. Lo que sí se sabe
+                            —y es lo que gana— es el interés de cada cobro. */}
+                        {esAbierto ? (
+                          <div className="flex items-center justify-between py-1.5">
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganas cada cobro</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
+                              {formatMoney(Math.round(calculo?.cuotaDiaria || 0))}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between py-1.5">
+                              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cobros totales</span>
+                              <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>{cobrosTotales}</span>
+                            </div>
+                            <div className="flex items-center justify-between py-1.5">
+                              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
+                              <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
+                            </div>
+                          </>
+                        )}
                         {diasSinCobroCliente.length > 0 && (
                           <div className="flex items-center justify-between py-1.5">
                             <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Sin cobro</span>
@@ -2112,7 +2132,9 @@ function NuevoPrestamo() {
                 />
 
                 {/* Plazo — editable */}
-                <EditableRow label="Plazo" value={calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoLabel}` : `${plazoUnidades} ${unidadPlazoLabel}`}
+                {/* La otra vista del mismo panel. Ver la nota de arriba: son dos
+                    y arreglar una y dejar la otra ya me ha pasado. */}
+                <EditableRow label="Plazo" value={esAbierto ? 'sin plazo' : (calculo?.numPeriodos > Number(plazoUnidades) ? `${calculo.numPeriodos} ${unidadPlazoLabel}` : `${plazoUnidades} ${unidadPlazoLabel}`)}
                   pencil={pencilIcon}
                   editor={
                     <div className="flex items-center gap-1.5">
@@ -2300,12 +2322,16 @@ function NuevoPrestamo() {
                     </p>
                   </div>
                   <div className="text-right min-w-0">
+                    {/* ⚠ EN UN ABIERTO LA GANANCIA TOTAL NO SE PUEDE SABER: el
+                        préstamo dura lo que el cliente tarde en abonar. Salía
+                        «$0», que es la única cifra que seguro es falsa. Lo que
+                        sí se sabe es lo que gana en cada cobro. */}
                     <p className="text-[10.5px] font-bold uppercase tracking-[.08em]" style={{ color: 'var(--cf-ink-3)' }}>
-                      Ganancia
+                      {esAbierto ? 'Ganas cada cobro' : 'Ganancia'}
                     </p>
                     <p className="cf-fig text-[19px] leading-none mt-1 truncate"
                        style={{ letterSpacing: '-.02em', color: 'var(--cf-gold)' }}>
-                      {formatMoney(Math.round(calculo.totalInteres || 0))}
+                      {formatMoney(Math.round((esAbierto ? calculo.cuotaDiaria : calculo.totalInteres) || 0))}
                     </p>
                   </div>
                 </div>

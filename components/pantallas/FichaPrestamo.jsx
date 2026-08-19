@@ -464,7 +464,11 @@ export default function FichaPrestamo({
               </span>
 
               <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
-                {plazoTexto} · tu ganancia {ganancia}
+                {/* ⚠ EN UN ABIERTO LA GANANCIA TOTAL NO SE PUEDE SABER —dura lo
+                    que el cliente tarde en abonar— y salía «tu ganancia $0», que
+                    es la única cifra que seguro es falsa. Lo que se gana es la
+                    cuota de cada cobro, y eso ya sale arriba. */}
+                {plazoTexto}{ganancia && !/sin plazo/.test(String(plazoTexto)) ? ` · tu ganancia ${ganancia}` : ''}
               </span>
 
               {/* La tercera línea, y va en su propio renglón con el icono del

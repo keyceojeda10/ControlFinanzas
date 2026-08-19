@@ -663,7 +663,22 @@ function PrestamoDetalleContenido({ params }) {
   // «LE FALTAN 24 cuotas». Se deriva del saldo y la cuota, que es exacto en los
   // modos SIN tabla —la cuota no cambia— y es el 93,7% de la cartera. En los que
   // tienen tabla se cuentan las filas pendientes, que es el numero de verdad.
+  /* Un préstamo abierto: sin plazo ni fecha de vencimiento.
+     ⚠ VA AQUÍ ARRIBA, ANTES DEL PRIMERO QUE LO USA. Lo puse más abajo y
+     `cuotasFaltantesTexto` lo leía antes de existir: «Cannot access 'esAbierto'
+     before initialization» y la ficha entera en blanco. Es el mismo fallo que
+     este archivo ya avisa dos veces por insertar bloques a ojo. */
+  const esAbierto = !!prestamo?.sinPlazo && modoInteres === 'solo_interes'
+
   const cuotasFaltantesTexto = (() => {
+    /* ⚠ UN ABIERTO NO TIENE CUOTAS QUE FALTEN. Esta cuenta divide el saldo
+       entre la cuota, y en un abierto ese saldo es el CAPITAL: decía «le faltan
+       5 cuotas» de un préstamo que no termina hasta que el cliente abone.
+       Lo que sí falta —y es lo que el cobrador va a pedir— es el interés. */
+    if (esAbierto) {
+      const debe = Math.round(montoEnMora || 0)
+      return debe > 0 ? `${formatMoney(debe)} de interés` : 'nada'
+    }
     if (cuotasAmortizacion.length > 0) {
       const pend = cuotasAmortizacion.filter((c) => (c.pagado || 0) < c.cuotaTotal).length
       return `${pend} cuota${pend === 1 ? '' : 's'}`
@@ -678,10 +693,6 @@ function PrestamoDetalleContenido({ params }) {
   // completo. Los numeros feos se dejan feos: «39 semanas» no se redondea a 40,
   // porque el dueño va a cobrar 39 veces y un plazo redondeado es un plazo
   // mentiroso.
-  /* Un préstamo abierto: sin plazo ni fecha de vencimiento. Se deriva una vez y
-     lo usan los tres textos de abajo, para que no puedan discrepar. */
-  const esAbierto = !!prestamo?.sinPlazo && modoInteres === 'solo_interes'
-
   const plazoPactadoTexto = (() => {
     /* ⚠ UN ABIERTO NO TIENE PLAZO PACTADO. Con `diasPlazo` = el primer corte,
        este renglón decía «1 cuota mensual», que es exactamente lo contrario de
