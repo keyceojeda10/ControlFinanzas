@@ -139,10 +139,10 @@ No se despliega hasta que TODO esto pase, y cada punto se mide, no se opina:
       total entre la cuota: «cuota actual» decía «1 de 11», «cuotas restantes»
       decía 10 y «fecha de vencimiento» ponía el primer corte de interés. Ahora
       los dos primeros callan y el tercero dice «sin vencimiento».
-- [ ] El cron en el crontab — **va con el despliegue, no antes**: hoy daría 404
-      porque el endpoint no está en producción.
+- [x] **El cron, en el crontab** y probado corriendo la línea tal cual, no solo
+      escrita: devuelve su JSON. Sin el secreto, 401.
 
-### La línea del crontab, lista para el despliegue
+### La línea del crontab, YA PUESTA (18 ago 2026)
 
 ```
 5 5 * * * /usr/bin/curl -s -X POST -H "x-cron-secret: $CRON_SECRET" http://localhost:3002/api/cron/devengo-abiertos >> /var/log/cron-devengo-abiertos.log 2>&1
@@ -150,6 +150,22 @@ No se despliega hasta que TODO esto pase, y cada punto se mide, no se opina:
 
 05:05 UTC son las 00:05 de Bogotá: el período cierra al empezar su día y el
 devengo entra ahí. Correrlo dos veces no cobra dos veces.
+
+## DESPLEGADO el 18 de agosto de 2026 (`4b6fce3f`)
+
+| | |
+|---|---|
+| Esquema en producción | `sinPlazo` NOT NULL DEFAULT 0 y `DevengoInteres` con su clave única, aplicados A MANO y comprobados con `SHOW COLUMNS` |
+| Préstamos antes / después | **10.261 / 10.261**, y **0 abiertos**: ni una fila tocada |
+| Despliegue | COMPLETADO, `/login` 200 |
+| El cron | responde con el secreto, **401 sin él**, y la línea del crontab corre |
+
+⚠ El esquema se aplicó **a mano y antes del despliegue**, no por el `db push`
+del guion: ese lleva `|| echo WARN` y deja pasar el despliegue aunque la base no
+se sincronice. Ver [[feedback_deploy_no_se_detiene]].
+
+⚠ Nace apagado en la práctica: ningún préstamo existente es abierto y el cron no
+tiene nada que devengar hasta que alguien cree el primero.
 
 ## Y qué se hace con línea de crédito
 
