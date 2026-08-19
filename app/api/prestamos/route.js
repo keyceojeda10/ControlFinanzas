@@ -23,6 +23,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
+import { devengarAlCrear } from '@/lib/dinero/devengar'
 import { getLocalDateStr, inicioDelDiaLocal } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
@@ -762,6 +763,22 @@ export async function POST(request) {
 
     return nuevo
   })
+
+  /* ── EL ABIERTO CON FECHA HACIA ATRÁS DEVENGA YA, NO AL AMANECER ──────────
+   *
+   * Reportado por Rhoders (FACIL) el 19 ago 2026, con la captura tomada un
+   * minuto después de crear el préstamo: «debería salir en mora los intereses
+   * que se deben […] y no al día, porque aún no ha pagado los intereses».
+   *
+   * Prestó $690.000 al 10% con fecha de inicio del 1 de julio, así que el
+   * período que cerró el 1 de agosto ya se debía. El cron del devengo funciona
+   * —corrió ese día a las 00:05 y no había nada que asentar— pero **el préstamo
+   * se creó diez horas después**. Hasta el amanecer siguiente enseñaba una
+   * deuda que no era y un «al día» que era mentira.
+   *
+   * No revienta la creación si falla: el préstamo ya está guardado y el cron lo
+   * recoge esa noche. Ver lib/dinero/devengar.js. */
+  if (esAbierto && !esPendiente) await devengarAlCrear(prisma, prestamo.id)
 
   logActividad({ session, accion: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', entidadTipo: 'prestamo', entidadId: prestamo.id, detalle: `${esPendiente ? 'Solicitud de préstamo' : 'Préstamo'} $${Number(montoPrestado).toLocaleString('es-CO')} a ${cliente.nombre}${abono > 0 ? ` (en curso, abono previo $${abono.toLocaleString('es-CO')})` : ''}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId: session.user.id, evento: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })

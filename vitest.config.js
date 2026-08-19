@@ -12,7 +12,11 @@ export default defineConfig({
     //
     // Peor que el numero inflado: si esa otra sesion deja el arbol a medias, mis
     // pruebas fallan por algo que no he tocado, y perseguirlo es una tarde.
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.claude/**'],
+    /* `.auditoria/` son los guiones sueltos de investigación: van contra la base
+       por un túnel SSH y están fuera de git. Entraban en la suite, así que
+       `npx vitest run` salía en ROJO en cuanto no hubiera un túnel abierto —y
+       una suite que siempre grita deja de leerse. */
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.claude/**', '**/.auditoria/**'],
     // 5s no da con la maquina cargada. Estas pruebas no esperan a nada —leen
     // archivos y comparan cadenas— pero si el servidor de desarrollo y una
     // captura de Playwright estan compitiendo por CPU, un worker se queda sin

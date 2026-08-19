@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { devengosPendientes } from '@/lib/calculos'
+import { devengarPrestamoAbierto, SELECT_PARA_DEVENGAR } from '@/lib/dinero/devengar'
 
 /* ══ EL DEVENGO DE LOS PRÉSTAMOS ABIERTOS ═══════════════════════════════════
  *
@@ -40,49 +40,23 @@ export async function POST(req) {
 
   const abiertos = await prisma.prestamo.findMany({
     where: { sinPlazo: true, estado: 'activo', modoInteres: 'solo_interes' },
-    select: {
-      id: true, organizationId: true, montoPrestado: true, tasaInteres: true,
-      frecuencia: true, fechaInicio: true, modoInteres: true, sinPlazo: true,
-      totalAPagar: true, diaCobroMes: true, diaCobroMes2: true, primerCobro: true,
-      /* Solo los abonos a capital: son los únicos que cambian sobre cuánto se
-         cobra el interés del período siguiente. */
-      pagos: { where: { tipo: 'capital' }, select: { montoPagado: true, fechaPago: true, tipo: true } },
-      devengos: { select: { periodo: true } },
-      cuotasAmortizacion: { select: { numeroPeriodo: true } },
-    },
+    select: SELECT_PARA_DEVENGAR,
   })
 
   let asentados = 0, sumaInteres = 0, prestamosTocados = 0, choques = 0
   const ahora = Date.now()
 
+  /* ⚠ EL ASIENTO VIVE EN `lib/dinero/devengar.js`, NO AQUÍ. Desde el 19 ago hay
+     DOS disparadores —este cron y la creación del préstamo—, porque un abierto
+     con fecha retroactiva enseñaba «al día» hasta el amanecer siguiente. Dos
+     copias de una cuenta que sube deudas es la forma conocida de que un día
+     devenguen distinto. */
   for (const p of abiertos) {
-    const pendientes = devengosPendientes(p, ahora)
-    if (!pendientes.length) continue
-    let tocado = false
-
-    for (const d of pendientes) {
-      try {
-        await prisma.$transaction(async (tx) => {
-          await tx.devengoInteres.create({
-            data: {
-              prestamoId: p.id, organizationId: p.organizationId,
-              periodo: d.periodo, capitalBase: d.capitalBase, interes: d.interes,
-            },
-          })
-          await tx.prestamo.update({
-            where: { id: p.id },
-            data: { totalAPagar: { increment: d.interes } },
-          })
-        })
-        asentados++; sumaInteres += d.interes; tocado = true
-      } catch (e) {
-        /* P2002 = chocó con la clave única: ese período ya estaba asentado por
-           otra ejecución. No es un error, es la defensa funcionando. */
-        if (e?.code === 'P2002') { choques++; continue }
-        throw e
-      }
-    }
-    if (tocado) prestamosTocados++
+    const r = await devengarPrestamoAbierto(prisma, p, ahora)
+    asentados += r.asentados
+    sumaInteres += r.interes
+    choques += r.choques
+    if (r.asentados) prestamosTocados++
   }
 
   return NextResponse.json({
