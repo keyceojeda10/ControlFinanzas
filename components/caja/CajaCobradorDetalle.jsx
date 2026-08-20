@@ -214,7 +214,37 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               ve de un vistazo y se puede seguir con el dedo, que es justo lo
               que él hacía con la calculadora. */}
           {(cr.cobradoDigital ?? 0) > 0 && (
-            <Renglon rotulo="Cobró por transferencia" monto={cr.cobradoDigital} />
+            <>
+              <Renglon rotulo="Cobró por transferencia" monto={cr.cobradoDigital} />
+              {/* ── ⚠ LA CIFRA QUE ÉL SUMA CON EL DEDO ────────────────────
+                  PRESTA MIL, 20 ago 2026, sobre la RUTA #9: «si uno suma esos
+                  abonos solamente bota 119 […] pero la caja del administrador,
+                  mire, aparecen unos números ahí que no tienen lógica».
+
+                  Reconstruida la ruta a la hora de su captura, las dos cifras
+                  de la pantalla estaban BIEN: cobró $119.000, de los cuales
+                  $79.000 entraron a la cuenta, y en billetes llevaba $40.000.
+
+                  Lo que faltaba era el 119. Los dos renglones van separados
+                  porque él mismo los pidió así —«diferenciar cobros en
+                  efectivo, cobros en transferencia»— pero entonces la suma de
+                  los abonos, que es lo que él hace con la calculadora antes de
+                  abrir la pantalla, NO APARECÍA EN NINGÚN SITIO. Sumaba 119,
+                  buscaba 119 y encontraba 40, 79 y 66. Tres números que no era
+                  el suyo, y de ahí «no tienen lógica».
+
+                  No cambia ninguna resta: cierra los dos renglones de arriba.
+                  Y solo sale cuando hay transferencia — sin ella, «Cobró en
+                  efectivo» ya es el total y repetirlo sería ruido. */}
+              <div className="flex items-baseline justify-between gap-3 pl-3">
+                <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  Cobró en total
+                </span>
+                <span className="cf-fig text-[13.5px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  {formatMoney((cr.cobradoEfectivo ?? 0) + (cr.cobradoDigital ?? 0))}
+                </span>
+              </div>
+            </>
           )}
           {/* ⚠ LO QUE EL DUEÑO LE METIÓ A LA RUTA HOY. Faltaba, y por eso la
               cifra de abajo no coincidía con «Capital por ruta»: se restaba
