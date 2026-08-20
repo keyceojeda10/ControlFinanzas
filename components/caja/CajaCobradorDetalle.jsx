@@ -240,7 +240,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                 <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
                   Cobró en total
                 </span>
-                <span className="cf-fig text-[13.5px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                <span className="cf-fig text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
                   {formatMoney((cr.cobradoEfectivo ?? 0) + (cr.cobradoDigital ?? 0))}
                 </span>
               </div>
@@ -281,7 +281,32 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               efectivo le pedía al cobrador un billete que nunca puso — el mismo
               error del lado del cobro, al revés. En este negocio hay 6 casos. */}
           {(cr.prestadoDigital ?? 0) > 0 && (
-            <Renglon rotulo="Prestó por transferencia" monto={cr.prestadoDigital} />
+            <>
+              <Renglon rotulo="Prestó por transferencia" monto={cr.prestadoDigital} />
+              {/* ── ⚠ EL OTRO NÚMERO QUE SACA CON CALCULADORA ─────────────
+                  PRESTA MIL, 20 ago 2026: «la idea es que me muestre ahí, por
+                  lo menos, cuánto cobró el cobrador y cuánto prestó. Así no me
+                  toca sacar cálculo con calculadora. Si prestó un millón, que
+                  me muestre prestó un millón; y si recogió dos millones, que
+                  me muestre dos millones».
+
+                  Es el mismo hueco que el del cobro, del otro lado de la
+                  cuenta: los dos renglones se separaron porque él los pidió
+                  —«préstamos en efectivo, préstamos en transferencia»— y al
+                  separarlos desapareció la cifra entera, que es la que él
+                  compara con lo que sabe de memoria.
+
+                  No cambia ninguna resta: cierra los dos renglones de arriba.
+                  Y solo sale cuando hubo transferencia. */}
+              <div className="flex items-baseline justify-between gap-3 pl-3">
+                <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  Prestó en total
+                </span>
+                <span className="cf-fig text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  {formatMoney((cr.prestadoEfectivo ?? cr.prestado ?? 0) + (cr.prestadoDigital ?? 0))}
+                </span>
+              </div>
+            </>
           )}
           {(cr.gastos ?? 0) > 0 && (
             <Renglon
@@ -714,6 +739,35 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                     <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink-2)]">{formatMoney(ruta.segurosDia)}</p>
                   </div>
                 </div>
+                {/* ── ⚠ DE LO PRESTADO, CUÁNTO SALIÓ DE VERDAD ────────────
+                    «Prestado» es el EFECTIVO que salió del fajo, que es lo que
+                    la caja necesita para cuadrar. Pero en una renovación el
+                    cliente ya debía parte, así que el valor de la cartulina es
+                    mayor y ES el número que el dueño suma con la calculadora.
+
+                    Medido el 20 ago en la ruta de JULIAN #7: cinco cartulinas
+                    por $550.000 de las que solo salieron $373.000. Veía 373 y
+                    sabía 550, y de ahí «hay un descuadre».
+
+                    Solo se pinta cuando las dos difieren — en una ruta sin
+                    renovaciones son la misma cifra y repetirla sería ruido. */}
+                {ruta.rutaId && (ruta.valorPrestadoDia ?? 0) > (ruta.prestadoDia ?? 0) && (
+                  <div className="mt-2 flex items-center gap-3 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                    <span>
+                      Cartulinas{' '}
+                      <strong className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                        {formatMoney(ruta.valorPrestadoDia)}
+                      </strong>
+                    </span>
+                    <span>
+                      Ya le debían{' '}
+                      <strong className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                        {formatMoney((ruta.valorPrestadoDia ?? 0) - (ruta.prestadoDia ?? 0))}
+                      </strong>
+                    </span>
+                  </div>
+                )}
+
                 {/* ── DE LO COBRADO, CUÁNTO ES EFECTIVO ────────────────────
                     Al cerrar el día el cobrador solo entrega el EFECTIVO: lo
                     digital ya está en la cuenta. Sin partirlo se le pide un fajo

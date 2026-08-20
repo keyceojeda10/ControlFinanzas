@@ -537,6 +537,7 @@ export async function GET(request, { params }) {
          diferencia entre ambas ES el descuadre acumulado, y verla es útil. */
       saldoApertura: Math.round((r.saldoCapital || 0) - (deltaPorRuta.get(r.id) || 0)),
       prestadoDia: 0,
+      valorPrestadoDia: 0,
       cobradoDia: 0,
       cobradoEfectivo: 0,
       cobradoDigital: 0,
@@ -557,7 +558,7 @@ export async function GET(request, { params }) {
       // se supo clasificar — que es la que mas mira quien busca un descuadre.
       porRutaMap.set('__otros__', {
         rutaId: null, nombre: 'Otros', saldoCapital: 0, capitalHabilitado: false,
-        saldoApertura: 0, prestadoDia: 0, cobradoDia: 0, cobradoEfectivo: 0,
+        saldoApertura: 0, prestadoDia: 0, valorPrestadoDia: 0, cobradoDia: 0, cobradoEfectivo: 0,
         cobradoDigital: 0, segurosDia: 0, recargosDia: 0, recargosCantidad: 0,
         capitalEnCalle: 0, conIntereses: 0,
       })
@@ -565,7 +566,28 @@ export async function GET(request, { params }) {
     return porRutaMap.get('__otros__')
   }
 
-  for (const d of desembolsos) bucket(d.rutaId).prestadoDia += d.monto || 0
+  /* ── ⚠ «PRESTADO» EN LA LISTA POR RUTA ERA SOLO EL EFECTIVO ───────────────
+     PRESTA MIL, 20 ago 2026: «la idea es que me muestre ahí cuánto cobró el
+     cobrador y cuánto prestó, así no me toca sacar cálculo con calculadora. Si
+     prestó un millón, que me muestre prestó un millón».
+
+     Medido ese mismo día en su base, la ruta de JULIAN #7:
+
+         5 cartulinas nuevas         $550.000   ← lo que él suma
+         salió de su fajo            $373.000   ← lo que decía «Prestado»
+
+     Los cinco eran RENOVACIONES: el cliente ya debía el resto, así que ese
+     billete nunca salió. Las dos cifras son ciertas y solo se veía una, que es
+     exactamente el mismo enredo del «119» del cobro.
+
+     `monto` (lo entregado) se queda mandando: es lo que la caja necesita para
+     cuadrar y alimenta la resta del flujo. Lo que se añade al lado es el valor
+     colocado, para que su suma tenga dónde caer. */
+  for (const d of desembolsos) {
+    const b = bucket(d.rutaId)
+    b.prestadoDia += d.monto || 0
+    b.valorPrestadoDia += d.montoPrestado || d.monto || 0
+  }
   for (const p of cobros) {
     const b = bucket(p.prestamo?.cliente?.ruta?.id)
     const monto = p.montoPagado || 0
@@ -755,6 +777,7 @@ export async function GET(request, { params }) {
   const porRuta = [...porRutaMap.values()].map((r) => ({
     ...r,
     prestadoDia: Math.round(r.prestadoDia),
+    valorPrestadoDia: Math.round(r.valorPrestadoDia || r.prestadoDia || 0),
     cobradoDia: Math.round(r.cobradoDia),
     cobradoEfectivo: Math.round(r.cobradoEfectivo || 0),
     cobradoDigital: Math.round(r.cobradoDigital || 0),
