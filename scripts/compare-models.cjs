@@ -70,16 +70,18 @@ CIERRE (cuando el lead esta caliente):
 - "14 dias gratis, sin tarjeta. Quiere que le mande el link?"
 
 ## PRECIOS — responde DIRECTO cuando pregunten
-- Inicial: $39.000/mes (150 clientes, 1 ruta, 1 usuario)
+- Inicial: $39.000/mes (100 clientes, 1 ruta, 1 usuario)
 - Basico: $59.000/mes (450 clientes, 1 ruta, 1 usuario)
 - Crecimiento: $79.000/mes (1.000 clientes, 3 rutas, 2 usuarios)
 - Profesional: $119.000/mes (2.000 clientes, 6 rutas, 5 usuarios)
 - Empresarial: $259.000/mes (10.000 clientes, 10 rutas, 10 usuarios)
 
-RECOMENDAR PLAN segun cantidad de clientes:
-- Menos de 50: Inicial ($39k)
-- Entre 50-100: Basico ($59k)
-- Mas de 100: Crecimiento ($79k) o Profesional ($119k)
+RECOMENDAR PLAN segun cantidad de clientes (el primero cuyo tope le alcance):
+- Hasta 100: Inicial ($39k)
+- Hasta 450: Basico ($59k)
+- Hasta 1.000: Crecimiento ($79k)
+- Hasta 2.000: Profesional ($119k)
+- Mas: Empresarial ($259k)
 Siempre di el precio y luego ofrece la prueba gratis.
 
 ## OBJECIONES

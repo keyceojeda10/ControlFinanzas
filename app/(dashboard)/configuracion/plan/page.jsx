@@ -8,13 +8,47 @@ import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { formatMoney, getPaymentGateway } from '@/lib/i18n'
 
-const planesBase = [
-  { key: 'starter',      nombre: 'Inicial',      features: ['1 usuario', 'Hasta 150 clientes', '1 ruta', 'Dashboard básico'] },
-  { key: 'basic',        nombre: 'Basico',        features: ['1 usuario', 'Hasta 450 clientes', '1 ruta', 'Control de cartera'] },
-  { key: 'growth',       nombre: 'Crecimiento',  badge: 'Popular', features: ['2 usuarios', 'Hasta 1,000 clientes', '3 rutas', 'Lucas IA (20/día)', 'Cierre de caja'] },
-  { key: 'standard',     nombre: 'Profesional',  features: ['5 usuarios', 'Hasta 2,000 clientes', '6 rutas', 'Lucas IA (60/día)', 'Reportes avanzados'] },
-  { key: 'professional', nombre: 'Empresarial',  features: ['10 usuarios', 'Hasta 10,000 clientes', '10 rutas', 'Lucas IA (200/día)', 'Reportes + exportación'] },
-]
+/* ══ LO QUE OFRECE CADA PLAN SE DERIVA, NO SE ESCRIBE ════════════════════════
+ *
+ * Reportado por el dueño el 19 ago 2026: «aquí en cambiar plan aún dice que el
+ * plan inicial es hasta 150 clientes cuando lo bajamos a 100».
+ *
+ * Y este archivo YA importaba `PLANES_CONFIG` —está arriba, línea 8— pero la
+ * lista de abajo estaba escrita a mano. Así que el tope se cambió en la fuente
+ * de verdad y la pantalla que se lo enseña al cliente ANTES DE COBRARLE siguió
+ * prometiendo 150.
+ *
+ * `lib/planes.js` lo dice en su primera línea: «TODOS los archivos deben
+ * importar de aquí en vez de hardcodear límites». Ya había pasado con «hasta 20
+ * clientes» y con «30 días de prueba»; esta es la tercera.
+ *
+ * Solo se escriben a mano las frases que NO son un número del plan —«Control de
+ * cartera», «Cierre de caja»—, porque esas no viven en la configuración. */
+const EXTRA_POR_PLAN = {
+  starter:      ['Dashboard básico'],
+  basic:        ['Control de cartera'],
+  growth:       ['Cierre de caja'],
+  standard:     ['Reportes avanzados'],
+  professional: ['Reportes + exportación'],
+}
+
+const cuantos = (n, uno, varios) => `${n.toLocaleString('es-CO')} ${n === 1 ? uno : varios}`
+
+const planesBase = ['starter', 'basic', 'growth', 'standard', 'professional'].map((key) => {
+  const c = PLANES_CONFIG[key]
+  return {
+    key,
+    nombre: c.nombre,
+    ...(key === 'growth' ? { badge: 'Popular' } : {}),
+    features: [
+      cuantos(c.maxUsuarios, 'usuario', 'usuarios'),
+      `Hasta ${c.maxClientes.toLocaleString('es-CO')} clientes`,
+      cuantos(c.maxRutas, 'ruta', 'rutas'),
+      ...(c.aiMensajesDia > 0 ? [`Lucas IA (${c.aiMensajesDia}/día)`] : []),
+      ...(EXTRA_POR_PLAN[key] ?? []),
+    ],
+  }
+})
 
 const planTestBase = { key: 'test', nombre: 'Test', features: ['Solo testing interno', 'NO usar en produccion'] }
 
