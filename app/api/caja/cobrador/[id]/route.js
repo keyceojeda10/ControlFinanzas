@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { cuentaDelDia, afectaElFajo } from '@/lib/dinero/conciliacion'
+import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia } from '@/lib/dinero/conciliacion'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
@@ -381,6 +381,10 @@ export async function GET(request, { params }) {
   let inyeccionesDia = 0, inyeccionesEfectivo = 0
   let retirosDia = 0, retirosEfectivo = 0
   let ajustesDia = 0, ajustesEfectivo = 0
+  /* Qué préstamos se desembolsaron HOY. Lo necesita `afectaElFajo` para
+     resolver la pareja de una edición: mirando un asiento suelto no hay forma
+     de saber si el billete que corrige salió hoy o hace tres semanas. */
+  const originalesDeHoy = desembolsosOriginalesDelDia(primerMovPorRuta)
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
     if (m.tipo === 'inyeccion' || m.tipo === 'capital_inicial') {
@@ -397,13 +401,13 @@ export async function GET(request, { params }) {
          capital de la ruta sí vuelve a su sitio— y el efectivo no. Ver
          `afectaElFajo`: sale del préstamo eliminado de PRESTA MIL, que le pedía
          al cobrador $40.000 que llevaban seis días fuera de su bolsillo. */
-      if (afectaElFajo(m)) ajustesEfectivo += d
+      if (afectaElFajo(m, originalesDeHoy)) ajustesEfectivo += d
     }
   }
   /* Qué asientos fueron los que movieron la bolsa y no el fajo, para poder
      escribirlo con nombre en vez de dejar una cifra huérfana. */
   const detalleCorreccionesDeLibro = primerMovPorRuta
-    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !afectaElFajo(m))
+    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !afectaElFajo(m, originalesDeHoy))
     .map((m) => ({
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',
