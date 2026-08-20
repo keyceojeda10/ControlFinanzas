@@ -142,6 +142,11 @@ export default function CobrarHoy({
   // ruta porque ésta es LA MISMA tarjeta: pasarlo en una pantalla y no en la
   // otra es cómo se llegó a tener dos comprobantes, uno arreglado y otro no.
   onAbrirCliente,
+  /* Cómo se llama en el DOM la tarjeta de cada fila: `id => 'cliente-x'`. Sin
+     ella no hay a dónde volver cuando se regresa de la ficha, y la lista
+     aparece arriba del todo. La ruta ya se lo pasaba a su `Carril`; aquí
+     faltaba, que es por lo que «Cobros de hoy» perdía el sitio. */
+  ancla,
   onEmpezar,
   sinMargen = false,
 }) {
@@ -213,6 +218,7 @@ export default function CobrarHoy({
                   cobrada={f.cobrada}
                   actual={f.id === idActual}
                   ultima={i === g.filas.length - 1}
+                  ancla={ancla ? ancla(f.id) : undefined}
                 >
                   <FilaCobro
                     {...f}

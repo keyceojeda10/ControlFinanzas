@@ -16,6 +16,7 @@ import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import { useSitioDeLaLista } from '@/hooks/useSitioDeLaLista'
 import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
 // El desplegable de la tarjeta: una ficha por préstamo. Vive en el adaptador de
@@ -92,7 +93,7 @@ function moodLabelCompacto(c) {
   return 'OK'
 }
 
-function ClienteCardCompacto({ cliente, esNuevo }) {
+function ClienteCardCompacto({ cliente, esNuevo, ancla, alSalir }) {
   const color = moodColorCompacto(cliente)
   const label = moodLabelCompacto(cliente)
   const saldo = Number(cliente.saldoPendienteTotal ?? 0)
@@ -102,6 +103,10 @@ function ClienteCardCompacto({ cliente, esNuevo }) {
     <Card
       as={Link}
       href={`/clientes/${cliente.id}`}
+      id={ancla}
+      data-ancla-lista=""
+      // Se dispara antes de que el `Link` navegue, y guardar es síncrono.
+      onClick={() => alSalir?.(cliente.id)}
       glowColor={color}
       padding={false}
       hoverable
@@ -218,6 +223,10 @@ function AvisoFiltroUrl() {
     </div>
   )
 }
+
+// El mismo id en la tarjeta y en la fila de la tabla: se vuelve igual desde
+// las dos vistas, y en escritorio la que se usa es la tabla.
+const ANCLA_CLIENTE = (id) => `cliente-${id}`
 
 export default function ClientesPage() {
   const router = useRouter()
@@ -658,6 +667,14 @@ export default function ClientesPage() {
    * Donde sí está es en la FICHA del cliente, que esconde de verdad: reagendar,
    * fijar el GPS, marcar festivo, el QR, inactivar sin borrar. */
 
+  /* Volver a la fila desde la que se entró a la ficha. Con 350 clientes,
+     aparecer arriba del todo al volver obliga a buscar el nombre otra vez. */
+  const guardarSitio = useSitioDeLaLista({
+    clave: 'clientes',
+    listo: !loading && clientes.length > 0,
+    ancla: ANCLA_CLIENTE,
+  })
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* Cartera vacía DE VERDAD, no "el filtro no devolvió nada". */}
@@ -878,8 +895,10 @@ export default function ClientesPage() {
           return (
             <button
               key={c.id}
+              id={ANCLA_CLIENTE(c.id)}
+              data-ancla-lista=""
               type="button"
-              onClick={() => { window.location.href = `/clientes/${c.id}` }}
+              onClick={() => { guardarSitio(c.id); window.location.href = `/clientes/${c.id}` }}
               className="grid items-center w-full text-left px-4 py-3"
               style={{
                 // ⚠ LAS MISMAS COLUMNAS QUE LA CABECERA, O NO CUADRAN. Aquí
@@ -973,11 +992,17 @@ export default function ClientesPage() {
             {filtrados.map((c, i) => (
               vista === 'compacta' ? (
                 <BadgeNuevo key={c.id} fecha={c.createdAt}>
-                  <ClienteCardCompacto cliente={c} esNuevo={isHoy(c.createdAt, country)} />
+                  <ClienteCardCompacto
+                    cliente={c}
+                    esNuevo={isHoy(c.createdAt, country)}
+                    ancla={ANCLA_CLIENTE(c.id)}
+                    alSalir={guardarSitio}
+                  />
                 </BadgeNuevo>
               ) : (
                 <TarjetaCliente
                   key={c.id}
+                  ancla={ANCLA_CLIENTE(c.id)}
                   {...adaptados[i]}
                   /* ── EL DESPLEGABLE ──
                      «Hay clientes que su tarjeta dice tres préstamos, pero no
@@ -992,7 +1017,7 @@ export default function ClientesPage() {
                      dentro. Arriba se queda el más cercano, que es cuándo hay
                      que volver a verle la cara. */
                   desglose={desgloseDe(c.prestamos, country)}
-                  onPrestamo={(f) => { window.location.href = `/prestamos/${f.id}` }}
+                  onPrestamo={(f) => { guardarSitio(c.id); window.location.href = `/prestamos/${f.id}` }}
                   onWhatsAppPrestamo={(f) => {
                     setWaPrestamo((c.prestamos || []).find((x) => x.id === f.id) ?? null)
                     setWaCliente(c)
@@ -1001,7 +1026,7 @@ export default function ClientesPage() {
                     const pr = (c.prestamos || []).find((x) => x.id === f.id)
                     if (pr) setCobroRapido({ cliente: c, prestamo: pr })
                   }}
-                  onClick={() => { window.location.href = `/clientes/${c.id}` }}
+                  onClick={() => { guardarSitio(c.id); window.location.href = `/clientes/${c.id}` }}
                 />
               )
             ))}

@@ -168,6 +168,11 @@ export default function TarjetaCliente({
   onCobrarPrestamo,        // cobro rápido de ESE préstamo
 
   onClick,
+  /* El id con el que la lista vuelve a encontrar esta tarjeta al regresar de la
+     ficha. `data-ancla-lista` le pone el `scroll-margin` para que no aterrice
+     pegada a la cabecera. La `Carril` de la ruta tiene su equivalente desde el
+     principio; aquí faltaba, y por eso clientes y préstamos perdían el sitio. */
+  ancla,
   style,
 }) {
   const color = COLOR_ESTADO[estado] || COLOR_ESTADO.aldia
@@ -184,6 +189,8 @@ export default function TarjetaCliente({
 
   return (
     <div
+      id={ancla}
+      data-ancla-lista={ancla ? '' : undefined}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}

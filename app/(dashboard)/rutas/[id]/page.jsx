@@ -8,7 +8,12 @@ import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActua
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
 import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
+import { desplazamientoActual, volverAlSitio, MS_RESALTADO } from '@/lib/sitio-de-la-lista'
 import { useArrastreLargo } from '@/hooks/useArrastreLargo'
+
+// El id que lleva puesta cada tarjeta en el DOM. Se declara una vez y se usa
+// en los dos sitios —al pintarla y al buscarla— para que no se puedan separar.
+const ANCLA_CLIENTE = (id) => `cliente-${id}`
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback, useMemo, use } from 'react'
 import { useRouter }                 from 'next/navigation'
@@ -452,44 +457,25 @@ export default function RutaDetallePage({ params }) {
       : (clienteRuta.prestamoActivo ? [clienteRuta.prestamoActivo] : []),
   })
 
-  /* Quién scrollea de verdad en esta pantalla. Se busca en vez de guardarse en
-     una `ref` porque el contenedor cambia según el modo de vista y el ancho, y
-     una referencia al de ayer devuelve 0 sin avisar. */
-  const contenedorDeLaLista = () => {
-    let mejor = null
-    for (const el of document.querySelectorAll('div, main, section')) {
-      if (el.scrollHeight > el.clientHeight + 40 && el.clientHeight > 300) {
-        if (!mejor || el.clientHeight > mejor.clientHeight) mejor = el
-      }
-    }
-    return mejor
-  }
-  const scrollTopDeLaLista = () => contenedorDeLaLista()?.scrollTop ?? window.scrollY
-
   /* ── VOLVER A DONDE SE IBA ─────────────────────────────────────────────
-     EL CLIENTE MANDA SOBRE LOS PÍXELES. La lista cambia entre que se sale y se
-     vuelve —al que se acaba de cobrar deja de tocarle y puede cambiarse de
-     sitio—, así que el desplazamiento guardado apunta a otra fila. Buscar la
-     ficha por su `id` acierta aunque la lista se haya movido; los píxeles
-     quedan de respaldo, para cuando esa ficha ya no está.
+     ⚠ LA MÁQUINA SE MUDÓ A `lib/sitio-de-la-lista`, ENTERA Y SIN CAMBIOS.
+     Buscar el contenedor que desplaza de verdad, guardar el sitio, volver por
+     el id del cliente y dejar los píxeles de respaldo: todo eso estaba escrito
+     AQUÍ DENTRO, y por eso «Cobros de hoy», la lista de clientes y la de
+     préstamos no lo tenían. Ahora las cuatro llaman a lo mismo.
 
-     Y el resaltado no es adorno: con doscientas tarjetas iguales, aterrizar en
-     el sitio correcto sin que nada diga cuál era obliga a releer nombres. */
+     Lo que se queda es lo propio de esta pantalla —el modo de vista, el
+     progreso del recorrido y la navegación al siguiente cliente—, abajo en
+     `guardarContextoRuta`. */
+  const scrollTopDeLaLista = () => desplazamientoActual()
+
   const volverASuSitio = (clienteId, savedY) => {
-    const el = document.getElementById(`cliente-${clienteId}`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'instant', block: 'center' })
-      setHighlightId(clienteId)
-      setTimeout(() => setHighlightId(null), 2200)
-      return
-    }
-    // `!= null` y no `if (savedY)`: la cadena «0» es un desplazamiento válido
-    // —el principio de la lista— y con la comprobación floja se descartaba.
-    const y = savedY != null ? parseInt(savedY, 10) : NaN
-    if (Number.isNaN(y)) return
-    const caja = contenedorDeLaLista()
-    if (caja) caja.scrollTop = y
-    else window.scrollTo(0, y)
+    const el = volverAlSitio({ itemId: clienteId, y: savedY }, { ancla: ANCLA_CLIENTE })
+    // Se resalta SOLO si aterrizó en la ficha. Por píxeles no se sabe en cuál
+    // se cayó, y marcar la de al lado señala a quien no es.
+    if (!el) return
+    setHighlightId(clienteId)
+    setTimeout(() => setHighlightId(null), MS_RESALTADO)
   }
 
   const guardarContextoRuta = (clienteRuta, idxRuta) => {
@@ -2549,7 +2535,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                  delante al sustituir la tarjeta: sin él `getElementById`
                  devuelve null, no se restaura nada y el cobrador aparece
                  arriba del todo con 200 clientes por debajo. */
-              ancla={`cliente-${fila.id}`}
+              ancla={ANCLA_CLIENTE(fila.id)}
               resaltada={highlightId === fila.id}
               orden={fila.orden}
               cobrada={fila.cobrada}
@@ -2567,7 +2553,17 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                    préstamos—. En la tarjeta compacta, además, era el único
                    destino posible: sin préstamo vivo el cobro rápido se sale
                    por su propio `return` y la tarjeta no hacía nada. */
-                onAbrirCliente={() => router.push(`/clientes/${fila.id}`)}
+                /* ⚠ GUARDA EL SITIO ANTES DE SALTAR.
+                   Este era el camino roto: `onClick` y `onMas` pasaban los dos
+                   por `navegarACobroCliente`, que guarda, y el nombre saltaba
+                   pelado. Al volver de la ficha la lista aparecía arriba del
+                   todo — con 322 clientes en una ruta, eso es bajar a mano.
+                   Y es justo el ÚNICO destino de la tarjeta compacta cuando el
+                   cliente no tiene préstamo vivo. */
+                onAbrirCliente={() => {
+                  guardarContextoRuta(porId.get(fila.id) ?? fila, i)
+                  router.push(`/clientes/${fila.id}`)
+                }}
                 onLlamar={porId.get(fila.id)?.telefono
                   ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
                   : undefined}

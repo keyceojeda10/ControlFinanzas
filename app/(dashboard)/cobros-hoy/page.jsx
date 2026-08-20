@@ -16,6 +16,10 @@ import {
   adaptarCobrosHoy, ORDENES, RANGOS_ATRASO, conteosAtraso, resumenSeleccion,
 } from '@/lib/adaptadores/cobros'
 import HojaFiltros from '@/components/pantallas/HojaFiltros'
+import { useSitioDeLaLista } from '@/hooks/useSitioDeLaLista'
+
+// El mismo id que le pone la ruta a su carril: es LA MISMA tarjeta.
+const ANCLA_CLIENTE = (id) => `cliente-${id}`
 
 export default function CobrosHoyPage() {
   // `orgNombre` y `ocultarSaldoWA` son para la hoja de WhatsApp: la firma del
@@ -310,6 +314,21 @@ export default function CobrosHoyPage() {
     } catch {}
   }
 
+  /* ── VOLVER AL CLIENTE DONDE IBA COBRANDO ──────────────────────────────
+     Esta pantalla no guardaba el sitio POR NINGÚN CAMINO: se entraba a una
+     ficha, se volvía, y la lista aparecía arriba del todo. Es la pantalla del
+     día del cobrador, así que le pasaba en cada cliente.
+
+     Va aquí arriba y no junto a `clientes` a propósito: abajo hay un `return`
+     de esqueleto, y un hook después de un `return` cambia de número entre
+     pintadas. Por eso `listo` se calcula sobre `data` en vez de sobre la lista
+     ya derivada. */
+  const guardarSitio = useSitioDeLaLista({
+    clave: 'cobros-hoy',
+    listo: !authLoading && !loading && (data?.clientes?.length ?? 0) > 0,
+    ancla: ANCLA_CLIENTE,
+  })
+
   if (authLoading || loading) return (
     <div className="max-w-2xl lg:max-w-[1180px] mx-auto space-y-3 px-1">
       <div className="rounded-[20px] h-28 animate-pulse" style={{ background: 'var(--cf-card)' }} />
@@ -489,6 +508,7 @@ export default function CobrosHoyPage() {
             if (confirm(`${c.nombre} no tiene dirección ni ubicación guardada, así que no hay a dónde llevarte.
 
 ¿Quieres abrir su ficha para ponérsela?`)) {
+              guardarSitio(c.id)
               window.location.href = `/clientes/${c.id}`
             }
           }
@@ -508,8 +528,12 @@ export default function CobrosHoyPage() {
           const c = clientes.find((x) => x.id === fila.id)
           if (c) setWaCliente(c)
         }}
-        onMas={(fila) => { window.location.href = `/clientes/${fila.id}` }}
-        onAbrirCliente={(fila) => { window.location.href = `/clientes/${fila.id}` }}
+        /* Los dos caminos a la ficha guardan el sitio antes de saltar. Van
+           por `window.location` —recarga entera— y aun así funciona: el sitio
+           viaja en `sessionStorage`, que sobrevive a la recarga. */
+        onMas={(fila) => { guardarSitio(fila.id); window.location.href = `/clientes/${fila.id}` }}
+        onAbrirCliente={(fila) => { guardarSitio(fila.id); window.location.href = `/clientes/${fila.id}` }}
+        ancla={ANCLA_CLIENTE}
       />
 
 

@@ -332,6 +332,24 @@ html[data-theme="light"] .cf-card-shadow {
   box-shadow: 0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.055);
 }
 
+/* ─── El aterrizaje al volver a la lista ──────────────────────
+   Se pone al elemento al que se vuelve después de entrar a una ficha, durante
+   2,2 segundos. Con trescientas tarjetas iguales, aterrizar en el sitio
+   correcto sin que nada diga cuál era obliga a releer nombres.
+
+   Es el MISMO anillo que la ruta le pone a su carril (`resaltada`); aquí es una
+   clase y no una prop porque las otras tres listas —cobros de hoy, clientes,
+   préstamos— no comparten componente, y una fila de tabla no tiene props.
+
+   `scroll-margin` para que el navegador no la deje pegada al borde de arriba,
+   debajo de la cabecera. */
+.cf-vuelta {
+  box-shadow: 0 0 0 3px var(--cf-gold-focus);
+  border-radius: var(--cf-r-card);
+  transition: box-shadow .2s ease-out;
+}
+[data-ancla-lista] { scroll-margin-top: 90px; scroll-margin-bottom: 90px; }
+
 /* ─── Stagger list animation ─────────────────────────────────
    Uso: aplica clase .stagger-item a cada hijo de una lista.
    El delay se controla via custom property --stagger-delay

@@ -32,7 +32,7 @@ const MODO_TAG = {
   lineal_dinamico: 'Dinamico', proporcional: 'Proporcional',
 }
 
-export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
+export default function PrestamoCard({ prestamo: p, actions, esNuevo, ancla, alSalir }) {
   const { palettes, pagado: pagadoColor } = useCardPalettes()
   const P               = palettes[moodKeyPrestamo(p, esNuevo)]
   const label           = moodLabel(p, esNuevo)
@@ -46,6 +46,9 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo }) {
     <Card
       as={Link}
       href={`/prestamos/${p.id}`}
+      id={ancla}
+      data-ancla-lista=""
+      onClick={() => alSalir?.(p.id)}
       padding={false}
       hoverable
       className="block px-4 py-4 group relative overflow-hidden"

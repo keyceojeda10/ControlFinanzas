@@ -11,6 +11,7 @@ import { Button }                             from '@/components/ui/Button'
 import { SkeletonCard }                       from '@/components/ui/Skeleton'
 import PrestamoCard                           from '@/components/prestamos/PrestamoCard'
 import TarjetaCliente                         from '@/components/cf/TarjetaCliente'
+import { useSitioDeLaLista }                  from '@/hooks/useSitioDeLaLista'
 import { BarraProgreso }                      from '@/components/cf/primitivos'
 import { ModoInteres, Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarPrestamos, tresCifras, fechaCorta, fichaDe } from '@/lib/adaptadores/prestamos'
@@ -152,7 +153,7 @@ function pMoodLabel(p) {
   return 'OK'
 }
 
-function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
+function PrestamoCardCompacto({ prestamo: p, esNuevo, ancla, alSalir }) {
   const color = pMoodColor(p)
   const label = pMoodLabel(p)
   const porcentaje = Math.max(0, Math.min(100, p.porcentajePagado ?? 0))
@@ -161,6 +162,9 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo }) {
     <Card
       as={Link}
       href={`/prestamos/${p.id}`}
+      id={ancla}
+      data-ancla-lista=""
+      onClick={() => alSalir?.(p.id)}
       glowColor={color}
       padding={false}
       hoverable
@@ -256,6 +260,10 @@ const IconGridP = (
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5zm12-12v4.5h4.5v-4.5h-4.5zm0 12v4.5h4.5v-4.5h-4.5z" />
   </svg>
 )
+
+// Aquí la fila es un préstamo, no una persona: el mismo cliente puede tener
+// tres, y volver «al cliente» dejaría al cobrador en la de arriba de las tres.
+const ANCLA_PRESTAMO = (id) => `prestamo-${id}`
 
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
@@ -683,6 +691,15 @@ export default function PrestamosPage() {
     ? prestamos.filter((p) => (p.frecuencia || 'diario') === frecuencia)
     : prestamos
 
+  /* Volver al préstamo desde el que se entró. Ojo con la paginación: si al
+     volver la lista trae menos filas, el préstamo puede ya no estar y se cae al
+     respaldo por píxeles, que es lo que hace la ruta desde siempre. */
+  const guardarSitio = useSitioDeLaLista({
+    clave: 'prestamos',
+    listo: !loading && prestamosVisibles.length > 0,
+    ancla: ANCLA_PRESTAMO,
+  })
+
   return (
     <div className="max-w-3xl lg:max-w-6xl mx-auto">
       {/* ── Cabecera de trabajo ──
@@ -859,8 +876,10 @@ export default function PrestamosPage() {
                     return (
                       <button
                         key={p.id}
+                        id={ANCLA_PRESTAMO(p.id)}
+                        data-ancla-lista=""
                         type="button"
-                        onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                        onClick={() => { guardarSitio(p.id); window.location.href = `/prestamos/${p.id}` }}
                         className="grid items-center w-full text-left px-4 py-3"
                         style={{
                           gridTemplateColumns: COLS, gap: 12,
@@ -963,11 +982,17 @@ export default function PrestamosPage() {
             return prestamosVisibles.map((p, i) => (
               vistaP === 'compacta' ? (
                 <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                  <PrestamoCardCompacto prestamo={p} esNuevo={isHoy(p.createdAt, country)} />
+                  <PrestamoCardCompacto
+                    prestamo={p}
+                    esNuevo={isHoy(p.createdAt, country)}
+                    ancla={ANCLA_PRESTAMO(p.id)}
+                    alSalir={guardarSitio}
+                  />
                 </BadgeNuevo>
               ) : (
                 <TarjetaCliente
                   key={p.id}
+                  ancla={ANCLA_PRESTAMO(p.id)}
                   {...adaptados[i]}
                   /* ── EL DESPLEGABLE, CON EL DESGLOSE LARGO ──
                      «Un dropdown que tenga un desglose mucho más bonito sin
@@ -986,7 +1011,7 @@ export default function PrestamosPage() {
                   }}
                   onWhatsAppPrestamo={() => setWaContext({ cliente: p.cliente, prestamo: p })}
                   onCobrarPrestamo={() => setCobroRapido(p)}
-                  onClick={() => { window.location.href = `/prestamos/${p.id}` }}
+                  onClick={() => { guardarSitio(p.id); window.location.href = `/prestamos/${p.id}` }}
                 />
               )
             ))
@@ -1087,12 +1112,18 @@ export default function PrestamosPage() {
                           icon: IconPagar,
                           label: 'Registrar pago',
                           color: 'var(--cf-green-dark)',
-                          onClick: () => { window.location.href = `/prestamos/${p.id}?openPago=1` },
+                          onClick: () => { guardarSitio(p.id); window.location.href = `/prestamos/${p.id}?openPago=1` },
                         })
                       }
                       return (
                         <BadgeNuevo key={p.id} fecha={p.createdAt}>
-                          <PrestamoCard prestamo={p} actions={cardActions} esNuevo={isHoy(p.createdAt, country)} />
+                          <PrestamoCard
+                            prestamo={p}
+                            actions={cardActions}
+                            esNuevo={isHoy(p.createdAt, country)}
+                            ancla={ANCLA_PRESTAMO(p.id)}
+                            alSalir={guardarSitio}
+                          />
                         </BadgeNuevo>
                       )
                     })}
