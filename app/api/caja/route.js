@@ -863,6 +863,15 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     // Con qué se compone: el dueño no podía comprobar el número y tuvo que
     // escribir a soporte para saber de dónde salía.
     desembolsosDia,
+    /* ⚠ LO PRESTADO EN BILLETES, aparte del total.
+       Un desembolso por transferencia no sale del fajo del cobrador. La tarjeta
+       que ve el administrador ya separaba las dos —«Prestó en efectivo»— y la
+       caja del propio cobrador no. Ver la nota de `enLaMano` en la pantalla. */
+    efectivoPrestadoDia: Math.round(
+      (desembolsosDia ?? [])
+        .filter((d) => d.metodoPago !== 'transferencia')
+        .reduce((a, d) => a + (d.monto || 0), 0)
+    ),
     // Dos cifras distintas del dia (se separan en renovaciones):
     valorPrestadoDia: prestadoDetalle.valorPrestado,
     efectivoEntregadoDia: prestadoDetalle.efectivoEntregado,

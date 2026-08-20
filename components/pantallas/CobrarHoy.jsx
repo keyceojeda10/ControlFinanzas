@@ -142,6 +142,7 @@ export default function CobrarHoy({
   // ruta porque ésta es LA MISMA tarjeta: pasarlo en una pantalla y no en la
   // otra es cómo se llegó a tener dos comprobantes, uno arreglado y otro no.
   onAbrirCliente,
+  onDeshacerCobro,
   /* Cómo se llama en el DOM la tarjeta de cada fila: `id => 'cliente-x'`. Sin
      ella no hay a dónde volver cuando se regresa de la ficha, y la lista
      aparece arriba del todo. La ruta ya se lo pasaba a su `Carril`; aquí
@@ -229,6 +230,12 @@ export default function CobrarHoy({
                     onMapa={onMapa ? () => onMapa(f) : undefined}
                     onMas={onMas ? () => onMas(f) : undefined}
                     onAbrirCliente={onAbrirCliente ? () => onAbrirCliente(f) : undefined}
+                    /* Solo si la página lo pasa Y la fila trae qué borrar: una
+                       parada cobrada sin `pagoHoyId` es la que ya no tiene pago
+                       de hoy que deshacer. */
+                    onDeshacerCobro={onDeshacerCobro && f.pagoHoyId
+                      ? () => onDeshacerCobro(f)
+                      : undefined}
                   />
                 </Carril>
               ))}

@@ -24,7 +24,7 @@ const ANCLA_CLIENTE = (id) => `cliente-${id}`
 export default function CobrosHoyPage() {
   // `orgNombre` y `ocultarSaldoWA` son para la hoja de WhatsApp: la firma del
   // mensaje y la preferencia de no mandar el saldo por chat.
-  const { user, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
+  const { user, esOwner, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
   const [data, setData]           = useState(null)
   const [loading, setLoading]     = useState(true)
   // A quién se le va a escribir. La hoja de plantillas se monta abajo.
@@ -35,6 +35,12 @@ export default function CobrosHoyPage() {
   const [pagando, setPagando]             = useState(null)
   const [pagoOk, setPagoOk]               = useState(null)
   const [undoPago, setUndoPago]           = useState(null)
+  /* ── DESHACER EL COBRO SIN CARRERA CONTRA EL RELOJ ────────────────────────
+     El toast de arriba dura 10 segundos. PRESTA MIL lo echó de menos al rato
+     de cobrar: «la vez pasada, ahí donde se coloca el abono, aparecía un
+     potecito». Ver el porqué largo en `components/cf/ParadaDeCobro.jsx`. */
+  const [confirmDeshacer, setConfirmDeshacer] = useState(null) // { pagoId, nombre, monto }
+  const [deshaciendo, setDeshaciendo]     = useState(false)
   const [confirmDuplicado, setConfirmDuplicado] = useState(null)
   const undoTimerRef = useRef(null)
   const [metaCumplida, setMetaCumplida] = useState(false)
@@ -533,6 +539,9 @@ export default function CobrosHoyPage() {
            viaja en `sessionStorage`, que sobrevive a la recarga. */
         onMas={(fila) => { guardarSitio(fila.id); window.location.href = `/clientes/${fila.id}` }}
         onAbrirCliente={(fila) => { guardarSitio(fila.id); window.location.href = `/clientes/${fila.id}` }}
+        onDeshacerCobro={esOwner
+          ? (fila) => setConfirmDeshacer({ pagoId: fila.pagoHoyId, nombre: fila.nombre, monto: fila.montoCobrado })
+          : undefined}
         ancla={ANCLA_CLIENTE}
       />
 
@@ -678,6 +687,60 @@ export default function CobrosHoyPage() {
                 style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
               >
                 Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal: deshacer el cobro de hoy de una parada ── */}
+      <Modal
+        open={!!confirmDeshacer}
+        onClose={() => setConfirmDeshacer(null)}
+        title="Deshacer el cobro"
+      >
+        {confirmDeshacer && (
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
+              Se borra el cobro de{' '}
+              <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{confirmDeshacer.monto}</span> de{' '}
+              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{confirmDeshacer.nombre}</span>.
+            </p>
+            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>
+              La deuda vuelve como estaba y la caja de hoy deja de contarlo.
+            </p>
+            {/* El lleno es «Cancelar» y el rojo va de contorno: borrar plata se
+                puede, pero hay que quererlo (T13-03). */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeshacer(null)}
+                className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
+                style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={deshaciendo}
+                onClick={async () => {
+                  if (deshaciendo) return
+                  setDeshaciendo(true)
+                  try {
+                    const res = await fetch(`/api/pagos/${confirmDeshacer.pagoId}`, { method: 'DELETE' })
+                    if (!res.ok) {
+                      const d = await res.json().catch(() => ({}))
+                      alert(d.error || 'No se pudo deshacer el cobro.')
+                      return
+                    }
+                    setConfirmDeshacer(null)
+                    fetchCobros()
+                  } catch {
+                    alert('No se pudo deshacer el cobro. Revisa la conexión.')
+                  } finally { setDeshaciendo(false) }
+                }}
+                className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all disabled:opacity-50"
+                style={{ background: 'transparent', color: 'var(--cf-red-dark)', border: '1px solid var(--cf-red-dark)' }}
+              >
+                {deshaciendo ? 'Deshaciendo…' : 'Deshacer el cobro'}
               </button>
             </div>
           </div>

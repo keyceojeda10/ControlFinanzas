@@ -567,6 +567,27 @@ const MOVIMIENTOS_MANUALES = [
   const saldoRealCaja = stats.saldoRealCajaConAjustes ?? stats.saldoRealCaja ?? (disponibleOperativo - desembolsadoDia)
   const cobradoHoy = Math.round(stats.cobradoHoy ?? stats.recogida ?? 0)
   const prestadoHoy = Math.round(stats.prestadoHoy ?? desembolsadoDia)
+
+  /* ══ EL FAJO NO CONTIENE NEQUI ═══════════════════════════════════════════
+   *
+   * Reportado por PRESTA MIL el 20 ago 2026 sobre la RUTA #9. Su cobrador
+   * había cobrado $119.000, de los cuales $79.000 entraron por transferencia y
+   * solo $40.000 en billetes. Esta pantalla le decía «Te queda en la mano
+   * $119.000» y le ofrecía entregar $119.000 — $79.000 que nunca tuvo en el
+   * bolsillo.
+   *
+   * ⚠ Y NO ES QUE FALTARA EL DATO: `recogidaEfectivo` y `recogidaDigital`
+   *   existen desde que se arregló la tarjeta que ve el ADMINISTRADOR, con este
+   *   comentario en `caja/route.js`: «una caja física no contiene Nequi […] el
+   *   fajo de la noche no puede cuadrar nunca». Se arregló una vista y no la
+   *   otra, y por eso las dos se contradecían: el administrador decía $66.000 y
+   *   el cobrador $119.000 el mismo día.
+   *
+   * Lo prestado también se separa: un desembolso por Nequi tampoco sale del
+   * fajo. */
+  const cobradoEfectivoHoy = Math.round(stats.recogidaEfectivo ?? cobradoHoy)
+  const cobradoDigitalHoy = Math.round(stats.recogidaDigital ?? 0)
+  const prestadoEfectivoHoy = Math.round(stats.efectivoPrestadoDia ?? prestadoHoy)
   // Dos cifras que NO son lo mismo y en renovaciones se separan:
   //   valorPrestadoDia    = el valor de las cartulinas que hizo hoy
   //   efectivoEntregadoDia = la plata que de verdad salio de la caja
@@ -578,6 +599,11 @@ const MOVIMIENTOS_MANUALES = [
   // salen de la misma función que la cifra (lib/dinero/desembolsado.js).
   const desembolsosDia = stats.desembolsosDia ?? []
   const gastosHoy = Math.round(stats.gastos || 0)
+  /* ⚠ VA DESPUÉS DE `gastosHoy`, NO ANTES. Lo escribí arriba junto a las otras
+     tres y `const` no se puede leer antes de su línea: la caja entera se caía
+     con «Cannot access before initialization». Es la tercera vez que este mismo
+     archivo me lo hace. */
+  const enLaMano = cobradoEfectivoHoy - prestadoEfectivoHoy - gastosHoy
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
@@ -625,7 +651,10 @@ const MOVIMIENTOS_MANUALES = [
   const saldoGeneralActual = cajaGeneral.saldoActual ?? 0
   const tasaRecaudo = stats.tasaRecaudo || 0
   const colorRecaudo = tasaRecaudo >= 80 ? 'var(--cf-green-dark)' : tasaRecaudo >= 50 ? 'var(--cf-gold)' : 'var(--cf-red-dark)'
-  const recaudadoRegistrado = cobradoHoy
+  /* El campo que rellena es «dinero en caja que vas a entregar», y el aviso de
+     encima dice «solo reportas cuánto dinero FÍSICO tienes». Ofrecer el total
+     con transferencias contradecía su propio rótulo dos renglones más arriba. */
+  const recaudadoRegistrado = enLaMano
   const pagosDelDia = cajaData?.pagosDia || []
   const resumenPagosDia = cajaData?.resumenPagosDia || {}
   const cantidadPagosDia = resumenPagosDia.cantidad ?? pagosDelDia.length
@@ -972,6 +1001,13 @@ const MOVIMIENTOS_MANUALES = [
             <div className="space-y-2">
               {[
                 { id: 'recaudo', label: 'Lo que cobraste', valor: cobradoHoy, signo: 1 },
+                /* En gris y sin signo, igual que los seguros: ya está DENTRO de
+                   lo cobrado. Pintarlo con signo haría que lo reste dos veces al
+                   cuadrar de cabeza. Está aquí para que se vea por qué el fajo
+                   no es lo mismo que lo cobrado. */
+                ...(cobradoDigitalHoy > 0
+                  ? [{ id: 'digital', label: 'De eso, por transferencia', valor: cobradoDigitalHoy, signo: 0 }]
+                  : []),
                 ...(segurosDia.monto > 0
                   ? [{ id: 'seguros', label: `De eso, seguros${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
                   : []),
@@ -1067,9 +1103,15 @@ const MOVIMIENTOS_MANUALES = [
               <div className="flex items-center justify-between gap-3 pt-2.5 mt-1 border-t border-[var(--cf-border)]">
                 <span className="text-sm font-semibold text-[var(--cf-ink-2)]">Te queda en la mano</span>
                 <span className="font-mono-display font-bold text-[15px]" style={{ color: 'var(--cf-ink)' }}>
-                  {formatMoney(cobradoHoy - prestadoHoy - gastosHoy)}
+                  {formatMoney(enLaMano)}
                 </span>
               </div>
+              {cobradoDigitalHoy > 0 && (
+                <p className="text-[11px] leading-snug text-[var(--cf-ink-3)]">
+                  Solo billetes. Los {formatMoney(cobradoDigitalHoy)} que entraron por
+                  transferencia ya están en la cuenta.
+                </p>
+              )}
               <p className="text-[11px] leading-snug text-[var(--cf-ink-3)]">
                 Sin contar lo que traías al empezar. Lo que tienes que entregar
                 sale abajo, en «entregar caja del día».

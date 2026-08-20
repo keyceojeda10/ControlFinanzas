@@ -226,6 +226,25 @@ export async function GET() {
       // derecha, que es lo que distingue una cuota de $12.000 sobre una deuda de
       // $160.000 de la misma cuota sobre una de $20.000.
       let ultimoCobroHoy = null
+      /* ── ⚠ EL «POTECITO» QUE SE PERDÍA A LOS 10 SEGUNDOS ──────────────────
+         Reportado por PRESTA MIL el 20 ago 2026:
+
+           «Desde el administrador fui a eliminar un abono, pero no me da la
+            opción. La vez pasada, ahí donde se coloca el abono, ahí aparecía
+            un potecito, uno le daba ahí y el abono lo eliminaba.»
+
+         Lo recordaba bien: el aviso de «Deshacer» existe, pero es un toast con
+         `setTimeout(…, 10000)`. A los 10 segundos —o al cambiar de pantalla—
+         se va, y ya no hay vuelta atrás sin abrir la ficha del préstamo.
+
+         Y el botón de la ficha SÍ le funciona (anula pagos a diario, incluso
+         el día que escribió). No faltaba el permiso: faltaba el botón DONDE SE
+         COBRA, que es donde uno se da cuenta de que puso mal la cifra.
+
+         Se devuelve el ÚLTIMO pago del día, no todos: deshacer significa
+         «quítame lo que acabo de meter», y con varios abonos el último es el
+         único predecible. */
+      let ultimoPagoHoyId = null
       let saldoCliente = 0
 
       for (const p of c.prestamos) {
@@ -238,7 +257,10 @@ export async function GET() {
         recaudadoHoyTotal += montoPagadoHoy
         for (const pg of pagosHoy) {
           if (['recargo', 'descuento'].includes(pg.tipo)) continue
-          if (!ultimoCobroHoy || pg.fechaPago > ultimoCobroHoy) ultimoCobroHoy = pg.fechaPago
+          if (!ultimoCobroHoy || pg.fechaPago > ultimoCobroHoy) {
+            ultimoCobroHoy = pg.fechaPago
+            ultimoPagoHoyId = pg.id
+          }
         }
 
         if (p.estado !== 'activo') continue
@@ -378,6 +400,7 @@ export async function GET() {
         // cobrador lo hizo a las 9:06.
         cobradoA: ultimoCobroHoy ? ultimoCobroHoy.toISOString() : null,
         montoCobradoHoy: Math.round(pagadoHoy),
+        pagoHoyId: ultimoPagoHoyId,
         saldoTotal: Math.round(saldoCliente),
         cobroPendienteHoy: pendienteHoyCliente,
         visitaCerradaHoy: cierreDeHoy.has(c.id),

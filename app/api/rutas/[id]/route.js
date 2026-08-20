@@ -298,6 +298,11 @@ export async function GET(request, { params }) {
     const _hoySinCobro = esHoySinCobro(diasExcluidos) || esHoyFestivo(festivos)
     let cuotaCliente = 0
     let pagadoHoy    = 0
+    /* El último cobro del día de TODO el cliente (puede tener varios préstamos),
+       para deshacerlo desde su propia parada. Ver el porqué en
+       `app/api/cobros-hoy/route.js`. */
+    let ultimoCobroHoyCliente = null
+    let pagoHoyIdCliente      = null
     let mora         = 0
     let cuotasEnMoraCliente = 0
     let montoEnMoraCliente = 0
@@ -356,6 +361,17 @@ export async function GET(request, { params }) {
       for (const pg of pagosHoy) pagoIdsRuta.push(pg.id)
       const cobrosReales = pagosHoy.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
       const montoPagadoHoy = cobrosReales.reduce((a, pg) => a + pg.montoPagado, 0)
+      /* El último cobro del día, para poder deshacerlo desde la propia parada.
+         Ver el porqué en `app/api/cobros-hoy/route.js`: el aviso de «Deshacer»
+         dura 10 segundos y PRESTA MIL lo echó de menos al rato de cobrar.
+         `pagos` viene `orderBy: { fechaPago: 'desc' }`, así que es el primero. */
+      const ultimoPagoHoyId = cobrosReales[0]?.id ?? null
+      for (const pg of cobrosReales) {
+        if (!ultimoCobroHoyCliente || pg.fechaPago > ultimoCobroHoyCliente) {
+          ultimoCobroHoyCliente = pg.fechaPago
+          pagoHoyIdCliente      = pg.id
+        }
+      }
       pagadoHoy    += montoPagadoHoy
       recaudadoHoy += montoPagadoHoy
 
@@ -476,6 +492,7 @@ export async function GET(request, { params }) {
           totalPagado: p.totalPagado ?? 0,
           pagadoHoy: montoPagadoHoy > 0,
           montoPagadoHoy: Math.round(montoPagadoHoy),
+          pagoHoyId: ultimoPagoHoyId,
           diasMora: 0,
           cuotasEnMora: 0,
           montoEnMora: 0,
@@ -540,6 +557,7 @@ export async function GET(request, { params }) {
         totalPagado: p.totalPagado ?? 0,
         pagadoHoy: montoPagadoHoy > 0,
         montoPagadoHoy: Math.round(montoPagadoHoy),
+        pagoHoyId: ultimoPagoHoyId,
         diasMora: moraPrestamo,
         cuotasEnMora: cuotasMoraPrestamo,
         montoEnMora: Math.round(montoMoraPrestamo),
@@ -613,6 +631,7 @@ export async function GET(request, { params }) {
       tieneClavo: c.prestamos.some((pr) => pr.esClavo && pr.estado === 'activo'),
       pagoHoy:   yaPageHoy,
       montoPagadoHoy: Math.round(pagadoHoy),
+      pagoHoyId: pagoHoyIdCliente,
       diasMora:  mora,
       cuotasEnMora: cuotasEnMoraCliente,
       montoEnMora: Math.round(montoEnMoraCliente),

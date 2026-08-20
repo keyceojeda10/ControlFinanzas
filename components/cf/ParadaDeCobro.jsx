@@ -188,6 +188,10 @@ export function FilaCobro({
   avisoMora, avisos = [], prestamos = [],
   cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
+  /* Borra el último cobro de HOY de esta parada. Solo se pasa a quien puede:
+     el API deja al owner siempre y al cobrador solo su propio pago y antes de
+     10 minutos, así que enseñárselo a todos sería ofrecer un 403. */
+  onDeshacerCobro,
   cobradoA, montoCobrado, cifras, pagadoPct, vida, onClick,
   /* ── ⚠ EL NOMBRE Y LA FOTO ABREN LA FICHA ────────────────────────────────
      Reportado por el dueño con el caso que lo hace evidente:
@@ -918,7 +922,7 @@ export function FilaCobro({
           que buscar al cliente por otro camino justo después de cobrarle.
           Lo que NO vuelve es el botón dorado: ahí ya no hay nada que cobrar hoy
           y un «Cobrar» sobre una fila tachada invita a cobrar dos veces. */}
-      {(onLlamar || onWhatsApp || onMapa || onMas) && (
+      {(onLlamar || onWhatsApp || onMapa || onMas || (cobrada && onDeshacerCobro)) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
           {/* ── DOS FILAS, Y NO UNA ────────────────────────────────────────
@@ -999,6 +1003,47 @@ export function FilaCobro({
               letterSpacing: '-.01em',
             }}
           >{contexto?.accion?.texto ?? 'Cobrar'}</button>
+          )}
+
+          {/* ── ⚠ EL «POTECITO» DE DESHACER, DONDE SE COBRA ──────────────────
+              Reportado por PRESTA MIL el 20 ago 2026:
+
+                «Desde el administrador fui a eliminar un abono, pero no me da
+                 la opción. La vez pasada, ahí donde se coloca el abono, ahí
+                 aparecía un potecito, uno le daba ahí y el abono lo eliminaba.»
+
+              Lo recordaba bien y no se lo habían quitado: el «Deshacer» es un
+              aviso flotante con `setTimeout(…, 10000)`. A los diez segundos
+              —o al cambiar de pantalla— se va, y a partir de ahí hay que
+              abrir la ficha del préstamo para corregir una cifra mal metida.
+
+              El botón de la ficha SÍ le funciona —anula pagos a diario, el
+              mismo día que escribió—, así que no faltaba el permiso: faltaba
+              el botón DONDE UNO SE DA CUENTA DEL ERROR, que es la parada que
+              acaba de cobrar.
+
+              Va en el renglón que suelta «Cobrar» al quedar cobrada, y no como
+              un icono más arriba: la fila de iconos es para llamar, escribir y
+              ubicar; borrar plata no se pone a 44px de «WhatsApp». */}
+          {cobrada && onDeshacerCobro && (
+          <button
+            type="button"
+            onClick={onDeshacerCobro}
+            style={{
+              width: '100%', height: 42, borderRadius: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              border: '1px solid var(--cf-border-strong)',
+              background: 'var(--cf-card)', color: 'var(--cf-red-dark)',
+              font: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              letterSpacing: '-.01em',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Deshacer el cobro
+          </button>
           )}
         </div>
       )}

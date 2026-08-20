@@ -983,6 +983,23 @@ export default function RutaDetallePage({ params }) {
     } catch {}
   }
 
+  const deshacerCobroDeParada = async () => {
+    if (!confirmDeshacer || deshaciendo) return
+    setDeshaciendo(true)
+    try {
+      const res = await fetch(`/api/pagos/${confirmDeshacer.pagoId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(d.error || 'No se pudo deshacer el cobro.')
+        return
+      }
+      setConfirmDeshacer(null)
+      fetchRuta()
+    } catch {
+      alert('No se pudo deshacer el cobro. Revisa la conexión.')
+    } finally { setDeshaciendo(false) }
+  }
+
   const abrirModalDSC = () => {
     try { setDiasSCRuta(JSON.parse(ruta?.diasSinCobro || '[]')) } catch { setDiasSCRuta([]) }
     setModalDiasSC(true)
@@ -1108,6 +1125,15 @@ export default function RutaDetallePage({ params }) {
   }
 
   const [confirmQuitar, setConfirmQuitar] = useState(null) // { id, nombre }
+  /* ── DESHACER EL COBRO DESDE LA PROPIA PARADA ─────────────────────────────
+     PRESTA MIL, 20 ago: «la vez pasada, ahí donde se coloca el abono, aparecía
+     un potecito». Era el aviso flotante de «Deshacer», que dura 10 segundos.
+     Ver el porqué largo en `components/cf/ParadaDeCobro.jsx`.
+     Solo al owner: el API deja al cobrador borrar únicamente su propio pago y
+     antes de 10 minutos, así que a él se le ofrecería un 403 la mayoría de las
+     veces. */
+  const [confirmDeshacer, setConfirmDeshacer] = useState(null) // { pagoId, nombre, monto }
+  const [deshaciendo, setDeshaciendo] = useState(false)
 
   /* ══ LO QUE SE PUEDE HACER EN ESTA RUTA ═══════════════════════════════════
    *
@@ -2570,6 +2596,13 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
                 onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
                 onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
+                onDeshacerCobro={esOwner && fila.pagoHoyId
+                  ? () => setConfirmDeshacer({
+                      pagoId: fila.pagoHoyId,
+                      nombre: fila.nombre,
+                      monto:  fila.montoCobrado,
+                    })
+                  : undefined}
                 onCerrarVisita={() => cerrarVisita(porId.get(fila.id))}
                 onReabrir={() => reabrirVisita(porId.get(fila.id))}
                 /* ── LO QUE HACE EL BOTÓN GRANDE CUANDO HOY NO HAY COBRO ──
@@ -3584,6 +3617,29 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       >
         <p className="text-sm text-[var(--cf-ink-3)]">
           <span className="text-[var(--cf-ink)] font-medium">{confirmQuitar?.nombre}</span> será removido de esta ruta. Podrás reasignarlo después.
+        </p>
+      </Modal>
+
+      {/* Modal: confirmar deshacer el cobro de hoy */}
+      <Modal
+        open={!!confirmDeshacer}
+        onClose={() => setConfirmDeshacer(null)}
+        title="Deshacer el cobro"
+        footer={
+          <PieGestion
+            peligro
+            textoCancelar="Cancelar"
+            onCancelar={() => setConfirmDeshacer(null)}
+            textoAceptar={deshaciendo ? 'Deshaciendo…' : 'Deshacer el cobro'}
+            onAceptar={deshacerCobroDeParada}
+          />
+        }
+      >
+        <p className="text-sm text-[var(--cf-ink-3)]">
+          Se borra el cobro de{' '}
+          <span className="text-[var(--cf-ink)] font-medium">{confirmDeshacer?.monto}</span> de{' '}
+          <span className="text-[var(--cf-ink)] font-medium">{confirmDeshacer?.nombre}</span>.
+          La deuda vuelve como estaba y la caja de hoy deja de contarlo.
         </p>
       </Modal>
 
