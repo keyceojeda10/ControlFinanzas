@@ -922,7 +922,7 @@ export function FilaCobro({
           que buscar al cliente por otro camino justo después de cobrarle.
           Lo que NO vuelve es el botón dorado: ahí ya no hay nada que cobrar hoy
           y un «Cobrar» sobre una fila tachada invita a cobrar dos veces. */}
-      {(onLlamar || onWhatsApp || onMapa || onMas || (cobrada && onDeshacerCobro)) && (
+      {(onLlamar || onWhatsApp || onMapa || onMas || onDeshacerCobro) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}
           onClick={(e) => e.stopPropagation()}>
           {/* ── DOS FILAS, Y NO UNA ────────────────────────────────────────
@@ -1022,10 +1022,17 @@ export function FilaCobro({
               el botón DONDE UNO SE DA CUENTA DEL ERROR, que es la parada que
               acaba de cobrar.
 
-              Va en el renglón que suelta «Cobrar» al quedar cobrada, y no como
-              un icono más arriba: la fila de iconos es para llamar, escribir y
-              ubicar; borrar plata no se pone a 44px de «WhatsApp». */}
-          {cobrada && onDeshacerCobro && (
+              Va en su propio renglón, debajo, y no como un icono más arriba: la
+              fila de iconos es para llamar, escribir y ubicar; borrar plata no
+              se pone a 44px de «WhatsApp».
+
+              ⚠ NO VA CONDICIONADO A `cobrada`, y esto lo cazó el espejo, no el
+              código: registré $1.000 sobre una cuota de $220.000 y la parada
+              se quedó PENDIENTE —con su abono dentro— así que el botón no
+              salía. Y ese es justo el error que más se comete: poner de menos.
+              Basta con que la página tenga un pago de hoy que deshacer, que es
+              lo que dice `pagoHoyId`. */}
+          {onDeshacerCobro && (
           <button
             type="button"
             onClick={onDeshacerCobro}

@@ -163,10 +163,24 @@ export default function CobrarHoy({
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 8,
       padding: sinMargen ? '8px 0 0' : '8px var(--cf-pad-screen) 0',
-      // Hueco para la barra de acción fija. Sin él, la última fila queda debajo
-      // del botón y no se puede tocar.
-      // El hueco del pie lo reserva el ARMAZON (112px). Estos 96 propios se
-      // sumaban a aquellos: 208px de blanco al final.
+      /* ── ⚠ HUECO PARA LA BARRA DE «EMPEZAR RUTA», Y SOLO CUANDO EXISTE ─────
+         El hueco del PIE lo reserva el armazón (112px), y por eso se quitaron
+         de aquí 96px fijos que se sumaban a aquellos: 208px de blanco al final.
+         Pero la barra de acción NO es el pie: va por encima, en `bottom: 18`
+         con `z-index: 45`, y solo se pinta con `pendientes > 0`.
+
+         Medido en el espejo a 412×900 con el desplazamiento al tope: la barra
+         empieza en y=820 y el último botón de la lista en y=821. O sea que
+         `elementFromPoint` sobre el último control devuelve la barra — está
+         tapado, y con él la acción por la que se abre esta pantalla.
+
+         No se sube la barra: se le da aire a la lista, que es la causa. Subir
+         lo que estorba en vez de quitar el estorbo ya me costó romper dos
+         pantallas sanas para arreglar una.
+
+         76 = 50 de alto del botón + 18 de `bottom` + 8 de respiro. Y va
+         condicionado, así que la ruta ya terminada no gana blanco de vuelta. */
+      paddingBottom: pendientes > 0 ? 76 : undefined,
     }}>
       {/* Los que no se han subido. Va arriba y en ámbar porque es lo único de
           esta pantalla que el cobrador no puede resolver caminando: si se queda
