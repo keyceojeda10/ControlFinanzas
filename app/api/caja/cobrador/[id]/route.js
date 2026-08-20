@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { cuentaDelDia } from '@/lib/dinero/conciliacion'
+import { cuentaDelDia, afectaElFajo } from '@/lib/dinero/conciliacion'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -296,7 +296,12 @@ export async function GET(request, { params }) {
             rutaId: { in: rutaIds },
             createdAt: { gte: inicio, lt: fin },
           },
-          select: { rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true, ajusteArranqueRuta: true, descripcion: true },
+          /* ⚠ `metodoPago` NO SE PEDÍA, y `esEfectivo` lo lee: sin él la comparación
+             era `undefined !== 'transferencia'`, o sea SIEMPRE efectivo. Un retiro
+             por transferencia le bajaba el fajo al cobrador sin haberle quitado un
+             billete. El campo que no se pide no da error: vale `undefined` y quien
+             lo lee decide mal en silencio. */
+          select: { rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true, ajusteArranqueRuta: true, descripcion: true, metodoPago: true },
         })
       : [],
   ])
@@ -377,9 +382,23 @@ export async function GET(request, { params }) {
       // Con su dirección real, la misma que usa el delta de arriba.
       const d = m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)
       ajustesDia += d
-      if (esEfectivo(m)) ajustesEfectivo += d
+      /* ⚠ EL REVERSO MUEVE LA BOLSA, NO EL FAJO. `ajustesDia` se los queda —el
+         capital de la ruta sí vuelve a su sitio— y el efectivo no. Ver
+         `afectaElFajo`: sale del préstamo eliminado de PRESTA MIL, que le pedía
+         al cobrador $40.000 que llevaban seis días fuera de su bolsillo. */
+      if (afectaElFajo(m)) ajustesEfectivo += d
     }
   }
+  /* Qué asientos fueron los que movieron la bolsa y no el fajo, para poder
+     escribirlo con nombre en vez de dejar una cifra huérfana. */
+  const detalleCorreccionesDeLibro = primerMovPorRuta
+    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !afectaElFajo(m))
+    .map((m) => ({
+      monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
+      descripcion: m.descripcion || 'Corrección',
+    }))
+    .filter((m) => m.monto !== 0)
+
   inyeccionesDia = Math.round(inyeccionesDia); inyeccionesEfectivo = Math.round(inyeccionesEfectivo)
   retirosDia = Math.round(retirosDia); retirosEfectivo = Math.round(retirosEfectivo)
   ajustesDia = Math.round(ajustesDia); ajustesEfectivo = Math.round(ajustesEfectivo)
@@ -1123,7 +1142,22 @@ export async function GET(request, { params }) {
        no habría nada que lo explicara — que es exactamente la queja. */
     inyecciones: inyeccionesEfectivo,
     retiros: retirosEfectivo,
+    /* Solo las que movieron BILLETES: los renglones de este bloque tienen que
+       restar hasta «Tiene que entregar», que es el fajo. */
     correcciones: ajustesEfectivo,
+    /* ── LO QUE VOLVIÓ AL CAPITAL SIN PASAR POR SUS MANOS ─────────────────
+       La otra mitad de la respuesta, y la razón de que este campo exista.
+
+       Al dueño de PRESTA MIL le desapareció de la cuenta la «corrección a
+       favor» de $40.000 del préstamo que él mismo borró, y si no se dice nada
+       parece que la plata se perdió. No se perdió: volvió al capital de la
+       ruta, que es donde tenía que volver. Lo que no puede es pedírsele al
+       cobrador, que no la tocó.
+
+       Se manda la cifra Y el motivo, porque un número sin nombre en esta
+       pantalla es de donde salen las preguntas. */
+    correccionesDeLibro: Math.round(ajustesDia - ajustesEfectivo),
+    correccionesDeLibroDetalle: detalleCorreccionesDeLibro,
     // Lo que queda en la ruta contando lo que entró a la cuenta.
     //
     // Comprobado contra producción el 3 ago: da EXACTO el `saldoCapital` de la

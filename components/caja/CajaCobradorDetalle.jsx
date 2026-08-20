@@ -352,6 +352,43 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               </p>
             </>
           )}
+
+          {/* ── LO QUE VOLVIÓ AL CAPITAL SIN PASAR POR SUS MANOS ───────────
+              PRESTA MIL, 20 de agosto: eliminó un préstamo mal hecho y a la
+              mañana siguiente su caja le pedía al cobrador $40.000 de más.
+              Eran los del préstamo borrado, que habían salido del fajo SEIS
+              DÍAS ANTES y volvían a entrar ese día.
+
+              El asiento está bien —el capital de la ruta sí tiene que volver a
+              su sitio—, así que ya no se le pide al cobrador pero tampoco
+              desaparece sin más: se dice aquí, con nombre, porque una cifra
+              que se esfuma de la cuenta es la siguiente pregunta. */}
+          {(cr.correccionesDeLibro ?? 0) !== 0 && (
+            <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  {cr.correccionesDeLibro > 0 ? 'Volvió al capital de la ruta' : 'Salió del capital de la ruta'}
+                </span>
+                <span className="cf-fig text-[14px] font-bold" style={{ color: 'var(--cf-ink-2)' }}>
+                  {formatMoney(Math.abs(cr.correccionesDeLibro))}
+                </span>
+              </div>
+              <p className="text-[11px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                No entra en la cuenta de arriba: esa plata no pasó por las manos
+                del cobrador hoy.
+              </p>
+              {(cr.correccionesDeLibroDetalle?.length ?? 0) > 0 && (
+                <ul className="mt-1.5 space-y-0.5">
+                  {cr.correccionesDeLibroDetalle.map((c, i) => (
+                    <li key={i} className="flex items-baseline justify-between gap-2 text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                      <span className="min-w-0 flex-1">{c.descripcion}</span>
+                      <span className="cf-fig shrink-0">{c.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(c.monto))}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
