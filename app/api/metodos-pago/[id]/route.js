@@ -27,6 +27,13 @@ export async function PATCH(request, { params }) {
     if (body.nombre !== undefined) data.nombre = body.nombre.trim()
     if (body.orden !== undefined) data.orden = body.orden
     if (body.activo !== undefined) data.activo = body.activo
+    /* ── DE QUIÉN ES LA PLATA QUE ENTRA POR ESTA CUENTA ────────────────────
+       Cambiarlo recalcula también lo YA cobrado a esta cuenta, y eso es lo
+       correcto: la cuenta es la misma que era, solo que ahora el sistema sabe
+       de quién es. El 99% de las transferencias guardan su `metodoPagoId`
+       (2.988 de 3.009 en los últimos 30 días), así que el histórico se
+       reacomoda solo. */
+    if (body.esDelCobrador !== undefined) data.esDelCobrador = Boolean(body.esDelCobrador)
 
     const actualizado = await prisma.metodoPago.update({
       where: { id },

@@ -8,6 +8,7 @@ import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin
 import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
 import { conciliar, resumirLibro, ALCANCE } from '@/lib/dinero/conciliacion'
+import { cuentasDelCobrador, entraAlFajo } from '@/lib/dinero/cuentas'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 // Una sola definición para los TRES sitios que cierran cajas. Ver el archivo:
 // estaba duplicada con los argumentos en orden distinto y el tercer sitio se
@@ -643,11 +644,19 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
   // contiene Nequi. En ese mismo cliente el 12% del recaudo entra por
   // transferencia ($35.261.200 en 736 pagos) y la caja lo cuenta como efectivo,
   // asi que el fajo de la noche no puede cuadrar nunca.
-  const pagosPorMedio = await prisma.pago.groupBy({
-    by: ['metodoPago'],
-    where: { ...wherePagos, tipo: { notIn: ['recargo', 'descuento'] } },
-    _sum: { montoPagado: true },
-  })
+  /* ── ⚠ SE AGRUPA TAMBIÉN POR CUENTA, NO SOLO POR MEDIO ────────────────────
+     Antes bastaba `metodoPago` porque TODA transferencia se daba por ajena al
+     fajo del cobrador. Desde que cada cuenta dice de quién es (`esDelCobrador`),
+     dos transferencias del mismo día pueden ir a lados distintos de la resta.
+     Ver el porqué largo en `lib/dinero/cuentas.js`. */
+  const [pagosPorMedio, cuentasCobrador] = await Promise.all([
+    prisma.pago.groupBy({
+      by: ['metodoPago', 'metodoPagoId'],
+      where: { ...wherePagos, tipo: { notIn: ['recargo', 'descuento'] } },
+      _sum: { montoPagado: true },
+    }),
+    cuentasDelCobrador(prisma, organizationId),
+  ])
 
   let recogida = 0, recogidaEfectivo = 0, recogidaDigital = 0
   for (const g of pagosPorMedio) {
@@ -655,8 +664,8 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     recogida += monto
     // Lo que no dice nada es efectivo: es el modo por defecto de un cobro en
     // la calle, y descartarlo perdia plata del desglose.
-    if (g.metodoPago === 'transferencia') recogidaDigital += monto
-    else recogidaEfectivo += monto
+    if (entraAlFajo(g.metodoPago, g.metodoPagoId, cuentasCobrador)) recogidaEfectivo += monto
+    else recogidaDigital += monto
   }
 
   // Calcular esperado real desde las cuotas diarias de préstamos activos
@@ -869,7 +878,7 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
        caja del propio cobrador no. Ver la nota de `enLaMano` en la pantalla. */
     efectivoPrestadoDia: Math.round(
       (desembolsosDia ?? [])
-        .filter((d) => d.metodoPago !== 'transferencia')
+        .filter((d) => entraAlFajo(d.metodoPago, d.metodoPagoId, cuentasCobrador))
         .reduce((a, d) => a + (d.monto || 0), 0)
     ),
     // Dos cifras distintas del dia (se separan en renovaciones):

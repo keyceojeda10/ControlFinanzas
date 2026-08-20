@@ -542,6 +542,22 @@ model MetodoPago {
   orden            Int      @default(0)
   activo           Boolean  @default(true)
   esPredeterminado Boolean  @default(false)
+  // ── ¿A QUIÉN LE LLEGA LA PLATA QUE ENTRA POR AQUÍ? ──────────────────────
+  //
+  // false (lo normal) = es una cuenta del NEGOCIO. El cobrador no la toca, así
+  //   que lo que entre aquí no va en el fajo que entrega en la noche.
+  // true = es la cuenta DEL COBRADOR. Él recibe la plata y después se la pasa
+  //   al negocio, así que sí la debe entregar y sí cuenta en su caja.
+  //
+  // Hasta ahora el sistema daba por hecho lo primero para todos, y ese supuesto
+  // solo estaba escrito en un comentario, con la frase de PRESTA MIL: «cuando
+  // llegan a entregar en la noche saben que ese dinero llegó a la cuenta de la
+  // oficina y el resto lo traen en efectivo». Cierto para ellos, no para todos:
+  // «puede que otros negocios trabaen distinto».
+  //
+  // ⚠ VA EN LA CUENTA, NO EN EL NEGOCIO. Un mismo negocio puede tener el Nequi
+  //   de la oficina Y el Daviplata del cobrador de la ruta 3.
+  esDelCobrador    Boolean  @default(false)
   createdAt        DateTime @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])

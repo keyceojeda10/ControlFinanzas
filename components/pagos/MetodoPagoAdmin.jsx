@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Toggle } from '@/components/ui/Toggle'
 
 const ICON_TRANSFER = (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -37,6 +38,27 @@ export default function MetodoPagoAdmin() {
   }
 
   useEffect(() => { fetchMetodos() }, [])
+
+  /* ── ¿DE QUIÉN ES LA PLATA QUE ENTRA POR ESTA CUENTA? ─────────────────────
+     Ver el porqué largo en `lib/dinero/cuentas.js`. Se guarda al vuelo y se
+     refresca desde el servidor: la cifra que cambia detrás es la caja del
+     cobrador, así que la pantalla no debe creerse su propio optimismo. */
+  const marcarDelCobrador = async (id, valor) => {
+    setError('')
+    setMetodos((prev) => prev.map((m) => (m.id === id ? { ...m, esDelCobrador: valor } : m)))
+    try {
+      const r = await fetch(`/api/metodos-pago/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ esDelCobrador: valor }),
+      })
+      if (!r.ok) throw new Error()
+      fetchMetodos()
+    } catch {
+      setError('No se pudo guardar. Revisa la conexión.')
+      fetchMetodos()
+    }
+  }
 
   const agregar = async () => {
     if (!nuevo.trim()) return
@@ -95,9 +117,10 @@ export default function MetodoPagoAdmin() {
         {metodos.map(m => (
           <div
             key={m.id}
-            className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-[10px] border"
+            className="px-3 py-2.5 rounded-[10px] border"
             style={{ borderColor: 'var(--cf-border)', background: 'var(--cf-fill)' }}
           >
+            <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-6 h-6 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)', color: 'var(--cf-ink-2)' }}>
                 {ICON_TRANSFER}
@@ -115,6 +138,30 @@ export default function MetodoPagoAdmin() {
             >
               {ICON_TRASH}
             </button>
+            </div>
+
+            {/* ── ⚠ LA PREGUNTA QUE DECIDE LA CAJA DE LA NOCHE ──────────────
+                Hasta ahora el sistema daba por hecho que TODA transferencia
+                llega a la oficina. Es lo que hace PRESTA MIL —«saben que ese
+                dinero llegó a la cuenta de la oficina y el resto lo traen en
+                efectivo»— pero no tiene por qué serlo en todos.
+
+                Apagado, la plata que entra aquí no va en el fajo que el
+                cobrador entrega. Encendido, sí: la recibió él y después se la
+                pasa al negocio.
+
+                Se responde una vez por cuenta y el sistema deja de adivinar. */}
+            <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+              <Toggle
+                size="sm"
+                checked={!!m.esDelCobrador}
+                onChange={(v) => marcarDelCobrador(m.id, v)}
+                label="Le llega al cobrador"
+                description={m.esDelCobrador
+                  ? 'La recibe el cobrador y después te la entrega, así que cuenta en su caja del día.'
+                  : 'Entra directo a tu cuenta. El cobrador no la toca, así que no se la pedimos al cerrar.'}
+              />
+            </div>
           </div>
         ))}
         {metodos.length === 0 && (

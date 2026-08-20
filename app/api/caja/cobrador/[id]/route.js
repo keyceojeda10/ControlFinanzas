@@ -9,6 +9,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { cuentaDelDia, afectaElFajo } from '@/lib/dinero/conciliacion'
+import { entraAlFajo } from '@/lib/dinero/cuentas'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -171,10 +172,15 @@ export async function GET(request, { params }) {
     // `MovimientoCapital`, que solo guarda el id.
     prisma.metodoPago.findMany({
       where: { organizationId },
-      select: { id: true, nombre: true },
+      // `esDelCobrador` decide de qué lado de la resta cae cada transferencia.
+      // Ver `lib/dinero/cuentas.js`.
+      select: { id: true, nombre: true, esDelCobrador: true },
     }),
   ])
   const metodosPorId = new Map(cuentasOrg.map((m) => [m.id, m.nombre]))
+  /* Las cuentas cuya plata la recibe el COBRADOR y por tanto sí entrega. Sale
+     de la misma consulta: no hay ida extra a la base. */
+  const cuentasCobrador = new Set(cuentasOrg.filter((m) => m.esDelCobrador).map((m) => m.id))
   if (!cobrador) {
     return Response.json({ error: 'Cobrador no encontrado' }, { status: 404 })
   }
@@ -224,6 +230,11 @@ export async function GET(request, { params }) {
         // $626.000. No cambiaba ningún total, pero hace desconfiar de la
         // pantalla entera. La FK sí sabe a qué cuenta entró.
         metodoPagoRef: { select: { nombre: true } },
+        /* ⚠ EL ID, ADEMÁS DEL NOMBRE. `entraAlFajo` decide por la CUENTA, no
+           por el rótulo, y un campo que existe y no se pide llega como
+           `undefined` sin que nada reviente: toda transferencia caería fuera
+           del fajo y la marca `esDelCobrador` no haría nada, en silencio. */
+        metodoPagoId: true,
         prestamo: {
           select: {
             esClavo: true,
@@ -499,7 +510,9 @@ export async function GET(request, { params }) {
   // Lo que no dice nada cuenta como efectivo: es el modo por defecto de un
   // cobro en la calle, y descartarlo perdia plata del desglose.
   const cobradoDigital = Math.round(
-    cobros.filter((p) => p.metodoPago === 'transferencia').reduce((a, p) => a + (p.montoPagado || 0), 0)
+    cobros
+      .filter((p) => !entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador))
+      .reduce((a, p) => a + (p.montoPagado || 0), 0)
   )
   const cobradoEfectivo = cobradoDia - cobradoDigital
 
@@ -596,8 +609,8 @@ export async function GET(request, { params }) {
     // el efectivo —lo digital ya esta en la cuenta—, asi que sin partirlo se le
     // pide un fajo que incluye plata que nunca toco. Mismo criterio que arriba:
     // lo que no dice nada cuenta como efectivo.
-    if (p.metodoPago === 'transferencia') b.cobradoDigital += monto
-    else b.cobradoEfectivo += monto
+    if (entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador)) b.cobradoEfectivo += monto
+    else b.cobradoDigital += monto
   }
   // Los recargos van a su ruta, pero NO suman al cobrado: un recargo sube la
   // deuda del cliente y nadie entrega un billete. Van en su propia cifra.
@@ -1059,8 +1072,12 @@ export async function GET(request, { params }) {
   //
   // El absorbido de renovaciones se descuenta del EFECTIVO, que es donde estaba
   // sumado (`prestadoDia` lo incluye vía `ajusteBruto`).
+  /* Mismo criterio que el cobro, y por la misma razón: si el desembolso salió
+     de una cuenta DEL COBRADOR, la plata sí era suya. Ver `lib/dinero/cuentas.js`. */
   const prestadoDigital = Math.round(
-    desembolsos.filter((d) => d.metodoPago === 'transferencia').reduce((a, d) => a + (d.monto || 0), 0)
+    desembolsos
+      .filter((d) => !entraAlFajo(d.metodoPago, d.metodoPagoId, cuentasCobrador))
+      .reduce((a, d) => a + (d.monto || 0), 0)
   )
   const prestadoEfectivoNeto = prestadoNeto - prestadoDigital
 

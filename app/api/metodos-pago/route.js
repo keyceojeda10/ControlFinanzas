@@ -37,7 +37,7 @@ export async function GET() {
     const metodos = await prisma.metodoPago.findMany({
       where: { organizationId, activo: true },
       orderBy: { orden: 'asc' },
-      select: { id: true, nombre: true, orden: true, esPredeterminado: true },
+      select: { id: true, nombre: true, orden: true, esPredeterminado: true, esDelCobrador: true },
     })
 
     return Response.json(metodos)
@@ -59,7 +59,7 @@ export async function POST(request) {
       return Response.json({ error: 'Sin permiso' }, { status: 403 })
     }
 
-    const { nombre } = await request.json()
+    const { nombre, esDelCobrador } = await request.json()
     if (!nombre?.trim()) {
       return Response.json({ error: 'Nombre requerido' }, { status: 400 })
     }
@@ -88,6 +88,7 @@ export async function POST(request) {
         organizationId,
         nombre: nombre.trim(),
         orden: (maxOrden._max.orden ?? -1) + 1,
+        esDelCobrador: Boolean(esDelCobrador),
       },
     })
 
