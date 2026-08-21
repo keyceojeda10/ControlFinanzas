@@ -220,10 +220,22 @@ ni «sistema francés».
 
 Caja · capital. Y el corto de 90 segundos para el bot de ventas.
 
-⚠ **Antes del vídeo de caja hay que arreglar el decorado.** `poblar-demo`
-desembolsa los trece préstamos con fecha de HOY, así que la caja del cobrador
-sale con «Te queda en la mano −$3.628.200». En un día de verdad nadie presta
-3,6 millones: los préstamos tienen que venir de días anteriores.
+**El decorado de la caja ya está arreglado** (21 ago): `poblar-demo` corre doce
+desembolsos a la fecha de arranque de su préstamo y deja UNO en el día, de un
+cliente de la ruta del cobrador. Su caja pasó de «−$3.628.200» a un día
+creíble: prestó $450.000 y cobra sobre eso.
+
+⚠ **Dos cosas que hay que resolver antes de grabar la caja:**
+
+1. La pantalla dice «Deberías tener en caja $177.500» y justo encima «Te queda
+   en la mano −$357.400». Lo primero es `esperadoDeCartera` —lo que TOCABA
+   cobrar hoy—, no lo que debe tener. Es un nombre, no una cuenta, y la caja
+   del cobrador es la referencia: lo decide el dueño, no yo.
+2. La caja del DUEÑO falla al cargar aproximadamente la mitad de las veces en
+   el espejo («No se pudo cargar la información», `net::ERR_ABORTED` sobre
+   `/api/caja`). El API responde bien llamado directo, así que apunta al túnel
+   lento del espejo — pero conviene medir cuánto tarda esa pantalla en
+   producción antes de grabarla.
 
 ⚠ **El bot tiene prohibido enviar vídeos** (`lib/bot-v2/prompts.js`). Esa regla
 se quita cuando estos existan y estén subidos, no antes.

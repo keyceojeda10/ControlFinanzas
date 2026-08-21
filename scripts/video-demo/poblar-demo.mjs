@@ -155,5 +155,47 @@ console.log(`  ${prestamos.filter(Boolean).length + idsSinRuta.length} préstamo
    La ruta arranca limpia y el cobro se graba EN VIVO, que es justo lo que hay
    que enseñar. El historial de una ficha se ve después de cobrar. */
 
+/* ══ LOS DESEMBOLSOS, FECHADOS HACIA ATRÁS ═══════════════════════════════
+ *
+ * ⚠ SIN ESTO LA CAJA DEL COBRADOR ES UN DISPARATE. «Lo que prestaste» del día
+ * son los `MovimientoCapital` de tipo `desembolso` con fecha de HOY, y aquí se
+ * crean los trece de una sentada: la caja abría con
+ *
+ *     Lo que cobraste      $21.800
+ *     Lo que prestaste  −$3.650.000
+ *     Te queda en la mano −$3.628.200
+ *
+ * En un día de verdad ningún cobrador entrega 3,6 millones. Se corren doce
+ * movimientos a la fecha de arranque de su préstamo y SE DEJA UNO en el día,
+ * que es lo normal: se prestó algo en la calle.
+ *
+ * No se toca `fechaInicio`: quién tiene cuota hoy no cambia, así que la ruta y
+ * «cobrar hoy» siguen enseñando los mismos ocho de siempre. Y no se inventa
+ * nada — se mueve la fecha de asientos que produjo el propio sistema. */
+console.log('· fechando los desembolsos hacia atrás…')
+/* ⚠ DOS IDENTIFICADORES DISTINTOS, y aquí me equivoqué la primera vez: el
+   `UPDATE Prestamo` llevaba el id del MOVIMIENTO, así que no tocaba ni una
+   fila. El guion decía «12 corridos» y la caja seguía en −$3.650.000. Como
+   `UPDATE` sin coincidencias no es un error, no avisó nadie: se vio mirando las
+   fechas en la base. */
+const [movs] = await cx.query(
+  `SELECT m.id movId, p.id prestamoId, p.fechaInicio, cl.rutaId FROM MovimientoCapital m
+     JOIN Prestamo p ON p.id = m.referenciaId
+     JOIN Cliente cl ON cl.id = p.clienteId
+    WHERE m.organizationId = ? AND m.tipo = 'desembolso'
+      AND m.referenciaTipo = 'prestamo' AND m.ajusteArranqueRuta = 0
+    ORDER BY m.createdAt`, [IDS.org])
+/* ⚠ EL QUE SE QUEDA EN EL DÍA TIENE QUE SER DE LA RUTA DEL COBRADOR. Al dejar
+   el último de la lista tocaba a un cliente sin ruta, así que su caja seguía
+   diciendo «Lo que prestaste $0»: el desembolso existía pero no era suyo. */
+const enElDia = [...movs].reverse().find((m) => m.rutaId === IDS.ruta) ?? movs[movs.length - 1]
+for (let i = 0; i < movs.length; i++) {
+  if (movs[i].movId === enElDia.movId) continue
+  const cuando = new Date(new Date(movs[i].fechaInicio).getTime() + 10 * 3600000)
+  await cx.execute('UPDATE MovimientoCapital SET createdAt = ? WHERE id = ?', [cuando, movs[i].movId])
+  await cx.execute('UPDATE Prestamo SET createdAt = ? WHERE id = ?', [cuando, movs[i].prestamoId])
+}
+console.log(`  ${movs.length - 1} corridos · 1 se queda en el día`)
+
 console.log('\n✓ negocio de demostración listo en', BASE)
 await cx.end()
