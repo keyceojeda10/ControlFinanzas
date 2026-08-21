@@ -76,3 +76,8 @@ nul
 *.key
 credentials.json
 service-account.json
+
+# Los tutoriales grabados: 156 MB de vídeo que no va a git.
+# Se generan con scripts/video-demo/ y se guardan aquí para que no los borre el
+# reinicio — /tmp se vacía y son ocho vídeos de varias horas de trabajo.
+.videos-tutoriales/
