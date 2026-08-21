@@ -20,17 +20,10 @@
 // escribía yo en el guion y bastaba tocar una espera para que la voz quedara
 // desfasada del rótulo.
 
-import { chromium } from 'playwright'
-import { mkdirSync, readdirSync } from 'fs'
 import { encode } from 'next-auth/jwt'
-import { preparar, subrayar, quitarSubrayado } from './efectos.mjs'
-import { dibujar } from './rotulos.mjs'
-import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.mjs'
+import { correr, SECRETO } from './grabador.mjs'
 import { conectar, IDS } from './montar-demo.mjs'
 
-const BASE = 'http://localhost:3016'
-const DIR = '/tmp/videos/02-cliente'
-const FINAL = '/tmp/videos/02-cliente.mp4'
 
 const CLIENTE = {
   nombre: 'Luis Fernando Ocampo',
@@ -44,7 +37,7 @@ const TOMAS = [
   {
     id: 'panel',
     titulo: 'El panel y el botón Crear',
-    async grabar({ ir, esperar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       empezar()
       await decir('Este es tu panel. Es lo primero que ves al entrar', 4.2)
@@ -52,12 +45,13 @@ const TOMAS = [
       await mirar('button[aria-label="Crear"]', { escala: 2.2, ms: 3600 })
       await decir('Abajo a la derecha, el botón del más', 3.8)
       await esperar(4000)
+      await reposo()
     },
   },
   {
     id: 'menu',
     titulo: 'El menú: ¿qué vas a hacer?',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await esperar(1200)
       empezar()
@@ -69,12 +63,14 @@ const TOMAS = [
       await mirar('text=Un cliente nuevo', { escala: 1.9, ms: 4000 })
       await decir('Y aquí, para meter un cliente nuevo', 3.8)
       await esperar(4000)
+      await tocar('Un cliente nuevo')
+      await reposo()
     },
   },
   {
     id: 'como',
     titulo: 'Dos formas de crearlo',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear')
       await esperar(1500)
@@ -88,12 +84,14 @@ const TOMAS = [
       await mirar('text=La IA lee la cartulina', { escala: 1.8, ms: 4200 })
       await decir('O tomarle foto a la cartulina y que el sistema la lea', 4.6)
       await esperar(4800)
+      await tocar('Crear manual')
+      await reposo()
     },
   },
   {
     id: 'quien',
     titulo: 'Quién es tu cliente',
-    async grabar({ ir, esperar, tocar, escribir, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, escribir, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Un cliente nuevo'); await esperar(1500)
@@ -107,12 +105,13 @@ const TOMAS = [
       await escribir('input[placeholder*="Juan García"]', CLIENTE.nombre)
       await decir('Lo escribes y ya tienes cliente', 3.6)
       await esperar(3800)
+      await reposo()
     },
   },
   {
     id: 'contacto',
     titulo: 'Cédula y celular',
-    async grabar({ ir, esperar, tocar, escribir, empezar, decir }) {
+    async grabar({ ir, esperar, tocar, escribir, empezar, decir, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Un cliente nuevo'); await esperar(1500)
@@ -125,12 +124,13 @@ const TOMAS = [
       await decir('Y con el celular le mandas el recibo por WhatsApp', 4.4)
       await escribir('input[placeholder*="3001234567"]', CLIENTE.celular)
       await esperar(3800)
+      await reposo()
     },
   },
   {
     id: 'donde',
     titulo: 'Dónde lo ubicamos',
-    async grabar({ ir, esperar, tocar, escribir, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, escribir, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Un cliente nuevo'); await esperar(1500)
@@ -146,12 +146,13 @@ const TOMAS = [
       await mirar('text=UBICACIÓN EN EL MAPA', { escala: 1.7, ms: 4000 })
       await decir('Y si quieres, le marcas el punto en el mapa', 4.0)
       await esperar(4200)
+      await reposo()
     },
   },
   {
     id: 'ruta',
     titulo: 'A qué ruta pertenece',
-    async grabar({ p, ir, esperar, tocar, escribir, empezar, decir, mirar }) {
+    async grabar({ p, ir, esperar, tocar, escribir, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Un cliente nuevo'); await esperar(1500)
@@ -164,12 +165,13 @@ const TOMAS = [
       await p.locator('select').first().selectOption({ label: 'Ruta Centro' }).catch(() => {})
       await decir('También es opcional: se la asignas después cuando quieras', 4.6)
       await esperar(4800)
+      await reposo()
     },
   },
   {
     id: 'crear',
     titulo: 'Crear el cliente',
-    async grabar({ p, ir, esperar, tocar, escribir, empezar, decir, mirar }) {
+    async grabar({ p, ir, esperar, tocar, escribir, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Recaudado|Buenos|Panel/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Un cliente nuevo'); await esperar(1500)
@@ -183,10 +185,22 @@ const TOMAS = [
       await mirar('button:has-text("Crear cliente")', { escala: 1.7, ms: 3800 })
       await decir('Cuando esté listo, «Crear cliente»', 3.8)
       await esperar(4000)
-      await tocar('Crear cliente')
-      await esperar(3400)
-      await decir('Y ya lo tienes en tu lista, listo para prestarle', 4.6)
-      await esperar(4800)
+      /* ⚠ AQUÍ TERMINA EL PROCESO. El vídeo se cortaba al pulsar el botón y no
+         se veía el resultado: dónde queda el cliente ni qué sale después. */
+      await tocar('Crear cliente', { espera: 4200 })
+      await decir('Y ya está creado', 3.4)
+      await esperar(3800)
+      /* ⚠ LO QUE SALE NO ES LA FICHA, ES UN DIÁLOGO con tres caminos. El primer
+         montaje rotulaba «esta es su ficha» encima de otra cosa: exactamente el
+         error de explicar algo distinto de lo que se ve. */
+      await mirar('button:has-text("Crear préstamo ahora")', { escala: 1.7, ms: 4400 })
+      await decir('Y te ofrece hacerle el préstamo de una vez', 4.4)
+      await esperar(4600)
+      await decir('O cargar otro cliente, o ver su ficha', 4.2)
+      await esperar(4400)
+      await decir('Hacerle el préstamo es el siguiente vídeo', 4.2)
+      await esperar(4400)
+      await reposo(3200)
     },
   },
 ]
@@ -205,142 +219,21 @@ const borrarCliente = async () => {
   return filas.length
 }
 
-async function grabar(indices) {
-  const nav = await chromium.launch()
-  const token = await encode({
-    token: {
-      sub: IDS.owner, id: IDS.owner, email: 'demo@ejemplo.com', name: 'Sofía Restrepo',
-      rol: 'owner', organizationId: IDS.org, plan: 'professional', country: 'co',
-      orgNombre: 'Créditos del Valle', rutaIds: [],
-    },
-    secret: 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c',
-  })
+const token = await encode({
+  token: {
+    sub: IDS.owner, id: IDS.owner, email: 'demo@ejemplo.com', name: 'Sofía Restrepo',
+    rol: 'owner', organizationId: IDS.org, plan: 'professional', country: 'co',
+    orgNombre: 'Créditos del Valle', rutaIds: [],
+  },
+  secret: SECRETO,
+})
 
-  for (const i of indices) {
-    const toma = TOMAS[i]
-    const dirGrab = `/tmp/grab-02/${toma.id}`
-    vaciar(dirGrab)
-    await borrarCliente()
-
-    const ctx = await nav.newContext({
-      viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
-      recordVideo: { dir: dirGrab, size: { width: 540, height: 960 } },
-    })
-    await ctx.addCookies([{ name: 'next-auth.session-token', value: token, domain: 'localhost', path: '/' }])
-    const p = await ctx.newPage()
-    const t0 = Date.now()
-    let desde = 0
-    const zooms = []
-    const rotulos = []
-    const ahora = () => (Date.now() - t0) / 1000 - desde
-
-    const util = {
-      p,
-      empezar: () => { desde = (Date.now() - t0) / 1000 },
-      esperar: (ms) => p.waitForTimeout(ms),
-
-      /** Un rótulo, anclado al instante REAL en que se dice. */
-      decir: async (texto, dura = 3.6) => { rotulos.push({ t: Math.max(0, ahora()), dura, texto }) },
-
-      /** Subraya y se acerca, también en el instante real. */
-      mirar: async (sel, { escala = 1.8, ms = 3600 } = {}) => {
-        const t = Math.max(0, ahora())
-        const caja = await subrayar(p, sel, { ms })
-        zooms.push({ t, dura: Math.max(2.4, ms / 1000 - 0.4), escala, ...caja })
-        await quitarSubrayado(p)
-        return caja
-      },
-
-      ir: async (ruta, espera) => {
-        await p.goto(BASE + ruta, { waitUntil: 'domcontentloaded' })
-        if (espera) {
-          await p.waitForFunction(
-            (re) => new RegExp(re).test(document.body.innerText),
-            espera.source, { timeout: 30000 },
-          ).catch(() => {})
-        }
-        await p.waitForTimeout(1400)
-        /* ⚠ NO GRABAR UNA PANTALLA VACÍA. Pasó con el panel: el negocio se monta
-           por SQL y sin la marca de onboarding terminado el `main` se queda con
-           tres nodos, sin que nada falle. El vídeo salía con el rótulo «Este es
-           tu panel» sobre un gris. */
-        const texto = await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').trim())
-        if (texto.length < 60) {
-          throw new Error(
-            `La pantalla ${ruta} se quedó vacía (${texto.length} caracteres).\n` +
-            'Reinicia el espejo o revisa el negocio de demostración.',
-          )
-        }
-        await preparar(p)
-      },
-
-      escribir: async (sel, texto) => {
-        const c = p.locator(sel).first()
-        await c.click()
-        await c.type(texto, { delay: 62 })
-        await p.waitForTimeout(700)
-      },
-
-      tocar: async (texto) => {
-        await p.locator(
-          `button:has-text("${texto}"), a:has-text("${texto}"), [role="button"]:has-text("${texto}"), ` +
-          `[aria-label="${texto}"]`,
-        ).first().click({ timeout: 10000 })
-        await p.waitForTimeout(1900)
-        await preparar(p).catch(() => {})
-      },
-    }
-
-    console.log(`· toma ${i + 1}/${TOMAS.length} — ${toma.titulo}`)
-    await toma.grabar(util)
-    await ctx.close()
-
-    const pngs = rotulos.length
-      ? await dibujar(rotulos.map((r) => r.texto), { dir: `/tmp/cf-rotulos/02-${toma.id}` })
-      : []
-    mkdirSync(DIR, { recursive: true })
-    montarToma({
-      entrada: ultimoWebm(dirGrab),
-      salida: `${DIR}/${String(i).padStart(2, '0')}-${toma.id}.mp4`,
-      zooms,
-      rotulos: rotulos.map((r, n) => ({ ...r, ...pngs[n] })),
-      desde,
-    })
-    console.log(`   ${rotulos.length} rótulos · ${zooms.length} acercamientos`)
-  }
-
-  await nav.close()
-}
-
-const args = process.argv.slice(2)
-const soloPegar = args.includes('--pegar')
-const iToma = args.indexOf('--toma')
-
-if (!soloPegar) {
-  const unaSola = iToma >= 0
-  if (!unaSola) vaciar(DIR)
-  const indices = unaSola ? [Number(args[iToma + 1]) - 1] : TOMAS.map((_, i) => i)
-  if (indices.some((i) => !TOMAS[i])) throw new Error(`toma fuera de rango (hay ${TOMAS.length})`)
-  await grabar(indices)
-  await borrarCliente()
-}
-
-const piezas = readdirSync(DIR).filter((f) => f.endsWith('.mp4')).sort().map((f) => `${DIR}/${f}`)
-if (!piezas.length) throw new Error('no hay tomas que pegar')
-pegar(piezas, FINAL)
-
-console.log(`\n✓ ${FINAL}`)
-console.log('\n── ESCALETA (para el guion de la voz) ──')
-let reloj = 0
-for (const pieza of piezas) {
-  const id = pieza.split('/').pop().replace(/^\d+-|\.mp4$/g, '')
-  const toma = TOMAS.find((t) => t.id === id)
-  const m = String(Math.floor(reloj / 60)).padStart(2, '0')
-  const sg = String(Math.floor(reloj % 60)).padStart(2, '0')
-  const d = duracion(pieza)
-  console.log(`  ${m}:${sg}  ${(toma?.titulo || id).padEnd(30)} ${d.toFixed(1)}s`)
-  reloj += d
-}
-const mf = String(Math.floor(reloj / 60)).padStart(2, '0')
-const sf = String(Math.floor(reloj % 60)).padStart(2, '0')
-console.log(`  ${mf}:${sf}  (fin)`)
+await correr({
+  nombre: 'cliente',
+  dir: '/tmp/videos/02-cliente',
+  final: '/tmp/videos/02-cliente.mp4',
+  tomas: TOMAS,
+  cookie: token,
+  antesDeToma: borrarCliente,
+})
+await borrarCliente()

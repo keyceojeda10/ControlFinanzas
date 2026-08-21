@@ -1,8 +1,8 @@
 # Vídeo 2 · Crear un cliente
 
-**Archivo:** `02-cliente.mp4` · **Duración:** 1:51 · vertical 1080×1920
+**Archivo:** `02-cliente.mp4` · **Duración:** 2:28 · vertical 1080×1920
 
-Ocho tomas. El préstamo va en el vídeo 3.
+Ocho tomas. El préstamo va en su propio vídeo, el 5.
 
 **Sobre el ritmo:** este vídeo se hizo tres veces. El segundo estaba bien
 explicado pero corría, y con la voz encima eso se paga caro — o se lee acelerado
@@ -15,7 +15,7 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 00:00 — 00:08 · El panel  · *caben ~21 palabras*
+### 00:00 — 00:11 · El panel · *~27 palabras*
 
 > Este es tu panel: lo primero que ves al entrar.
 >
@@ -23,7 +23,7 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 00:08 — 00:25 · El menú  · *caben ~38 palabras*
+### 00:11 — 00:33 · El menú · *~52 palabras*
 
 > Al tocarlo se abre todo lo que puedes hacer.
 >
@@ -34,7 +34,7 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 00:25 — 00:41 · Dos formas de crearlo  · *caben ~40 palabras*
+### 00:33 — 00:54 · Dos formas de crearlo · *~51 palabras*
 
 > Aquí tienes dos caminos.
 >
@@ -45,7 +45,7 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 00:41 — 00:58 · Quién es  · *caben ~40 palabras*
+### 00:54 — 01:11 · Quién es · *~41 palabras*
 
 > Lo primero es quién es.
 >
@@ -56,14 +56,14 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 00:58 — 01:06 · Cédula y celular  · *caben ~19 palabras*
+### 01:11 — 01:21 · Cédula y celular · *~23 palabras*
 
 > La cédula sirve para encontrarlo rápido. Y con el celular le mandas el recibo
 > por WhatsApp.
 
 ---
 
-### 01:06 — 01:22 · Dónde lo ubicamos  · *caben ~38 palabras*
+### 01:21 — 01:41 · Dónde lo ubicamos · *~47 palabras*
 
 > Ahora dónde vive, que es para poder visitarlo y para armar la ruta.
 >
@@ -74,7 +74,7 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 01:22 — 01:37 · La ruta  · *caben ~35 palabras*
+### 01:41 — 01:57 · La ruta · *~37 palabras*
 
 > Aquí decides a qué ruta pertenece. Si ya las tienes armadas, lo dejas puesto
 > desde ya y aparece en el recorrido del cobrador.
@@ -83,12 +83,16 @@ pantalla que se entiende sola no molesta a nadie; una frase atropellada, sí.
 
 ---
 
-### 01:37 — 01:51 · Crear  · *caben ~33 palabras*
+### 01:57 — 02:28 · Crear, y qué sale después · *~75 palabras*
 
 > Cuando esté listo, le das a «Crear cliente».
 >
-> Y ya está en tu lista, listo para prestarle. Eso lo vemos en el siguiente
-> vídeo.
+> Y ya está creado.
+>
+> Fíjate en lo que te ofrece: hacerle el préstamo de una vez, cargar otro
+> cliente, o ver su ficha.
+>
+> Hacerle el préstamo es lo que vemos en el siguiente vídeo.
 
 ---
 

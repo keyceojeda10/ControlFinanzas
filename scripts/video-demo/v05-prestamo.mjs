@@ -12,17 +12,10 @@
 // cuota igual cada vez», «le cobro solo el interés y el capital al final»— y eso
 // es justo lo que hay que enseñar: no hace falta entender la fórmula.
 
-import { chromium } from 'playwright'
-import { mkdirSync, readdirSync } from 'fs'
 import { encode } from 'next-auth/jwt'
-import { preparar, subrayar, quitarSubrayado } from './efectos.mjs'
-import { dibujar } from './rotulos.mjs'
-import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.mjs'
+import { correr, SECRETO } from './grabador.mjs'
 import { conectar, IDS } from './montar-demo.mjs'
 
-const BASE = 'http://localhost:3016'
-const DIR = '/tmp/videos/05-prestamo'
-const FINAL = '/tmp/videos/05-prestamo.mp4'
 const CLIENTE = 'Fabián Quintero'
 const MONTO = '400000'
 
@@ -53,7 +46,7 @@ const TOMAS = [
   {
     id: 'entrada',
     titulo: 'Dónde se crea un préstamo',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Buenos|Recaudado/i)
       empezar()
       await decir('Un préstamo se hace desde el mismo botón «Crear»', 4.4)
@@ -62,12 +55,14 @@ const TOMAS = [
       await mirar('text=Prestarle a alguien', { escala: 1.8, ms: 4200 })
       await decir('Aquí, en «sale plata»: «Prestarle a alguien»', 4.4)
       await esperar(4600)
+      await tocar('Prestarle a alguien')
+      await reposo()
     },
   },
   {
     id: 'cliente',
     titulo: 'A quién le prestas',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Buenos|Recaudado/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Prestarle a alguien')
@@ -80,13 +75,15 @@ const TOMAS = [
       await esperar(5000)
       await tocar(CLIENTE)
       await esperar(1800)
+      await tocar('Continuar')
+      await reposo()
     },
   },
   {
     id: 'monto',
     titulo: 'Cuánto le prestas',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar } = u
+      const { esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       empezar()
       await decir('Cuánto le entregas en la mano', 4.0)
@@ -95,14 +92,15 @@ const TOMAS = [
       await decir('Los montos de siempre están ahí, en un toque', 4.2)
       await esperar(4400)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
-      await esperar(2200)
+      await esperar(2600)
+      await reposo()
     },
   },
   {
     id: 'frecuencia',
     titulo: 'Cada cuánto te paga',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar } = u
+      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -111,13 +109,14 @@ const TOMAS = [
       await mirar('button:has-text("Diario")', { escala: 1.8, ms: 4000 })
       await decir('En diario cobra todos los días hábiles', 4.2)
       await esperar(4400)
+      await reposo()
     },
   },
   {
     id: 'interes',
     titulo: 'La tasa de interés',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar } = u
+      const { esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -126,13 +125,14 @@ const TOMAS = [
       await mirar('button:has-text("20%")', { escala: 1.9, ms: 4200 })
       await decir('Los porcentajes que más se usan están de atajo', 4.4)
       await esperar(4600)
+      await reposo()
     },
   },
   {
     id: 'cuotas',
     titulo: 'Cuántas cuotas, y el «No sé»',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar } = u
+      const { esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -143,13 +143,14 @@ const TOMAS = [
       await esperar(4400)
       await decir('El préstamo queda sin vencimiento y solo cobra el interés de cada mes', 4.8)
       await esperar(5000)
+      await reposo()
     },
   },
   {
     id: 'cuenta',
     titulo: 'La cuenta se hace sola',
     async grabar(u) {
-      const { p, esperar, escribir, empezar, decir, mirar } = u
+      const { p, esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -161,13 +162,14 @@ const TOMAS = [
       await esperar(4800)
       await decir('No tienes que sacar cuentas ni con calculadora', 4.4)
       await esperar(4600)
+      await reposo()
     },
   },
   {
     id: 'modo-que-es',
     titulo: 'El modo de interés: por qué importa',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar } = u
+      const { esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -177,13 +179,14 @@ const TOMAS = [
       await esperar(4400)
       await decir('Cómo cobras el interés: el mismo veinte por ciento puede ser tres cosas distintas', 5.2)
       await esperar(5400)
+      await reposo()
     },
   },
   {
     id: 'ayudante',
     titulo: 'El ayudante de dos preguntas',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar } = u
+      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -195,13 +198,14 @@ const TOMAS = [
       await esperar(2600)
       await decir('Te pregunta cómo le cobras a un cliente normal', 4.6)
       await esperar(4800)
+      await reposo()
     },
   },
   {
     id: 'en-tus-palabras',
     titulo: 'Las opciones, en tus palabras',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar } = u
+      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       await tocar('Responde 2 preguntas')
@@ -216,13 +220,14 @@ const TOMAS = [
       await mirar('text=Le cobro un interés fijo, una sola vez', { escala: 1.6, ms: 4800 })
       await decir('«Presto cien mil y me devuelve ciento veinte, se demore lo que se demore»', 5.2)
       await esperar(5400)
+      await reposo()
     },
   },
   {
     id: 'recomendado',
     titulo: 'El que usa casi todo el mundo',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar } = u
+      const { esperar, escribir, empezar, decir, mirar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -232,13 +237,14 @@ const TOMAS = [
       await esperar(4600)
       await decir('Es el que usa casi todo el mundo y el que viene puesto', 4.6)
       await esperar(4800)
+      await reposo()
     },
   },
   {
     id: 'revisar',
     titulo: 'Revisar y crear',
     async grabar(u) {
-      const { p, esperar, escribir, empezar, decir, mirar, tocar } = u
+      const { p, esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
       await hastaCondiciones(u)
       await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
@@ -246,134 +252,59 @@ const TOMAS = [
       await mirar('button:has-text("Revisar préstamo")', { escala: 1.7, ms: 4000 })
       await decir('Antes de crearlo, lo revisas', 4.0)
       await esperar(4200)
-      await tocar('Revisar préstamo')
-      await esperar(3400)
+      await tocar('Revisar préstamo', { espera: 3600 })
       await decir('Aquí ves cómo queda antes de entregar la plata', 4.6)
       await esperar(4800)
+      await reposo()
+    },
+  },
+  {
+    id: 'cierre',
+    titulo: 'Crear el préstamo y verlo vivo',
+    async grabar(u) {
+      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      await hastaCondiciones(u)
+      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await tocar('Revisar préstamo', { espera: 3200 })
+      empezar()
+      await esperar(1600)
+      await decir('Revisa que todo esté como quedaste con el cliente', 4.6)
+      await esperar(4800)
+      /* ⚠ AQUÍ SE CREA DE VERDAD. El vídeo se cortaba en la pantalla de revisar
+         y no se veía el préstamo hecho ni dónde queda. */
+      await tocar('Crear préstamo', { espera: 4600 }).catch(async () => {
+        await tocar('Confirmar', { espera: 4600 })
+      })
+      await decir('Y ya está: el préstamo queda hecho', 4.0)
+      await esperar(4400)
+      /* ⚠ ESTO NO LO SABÍA HASTA QUE EL VÍDEO LLEGÓ AL FINAL: al crear el
+         préstamo, el sistema arma solo el mensaje para el cliente —monto, cuota,
+         fechas y plazo— listo para mandar por WhatsApp. Es de lo mejor que hace
+         y estaba escondido detrás de un corte. */
+      await decir('Y te arma solo el mensaje para el cliente', 4.4)
+      await esperar(4600)
+      await decir('Con el monto, la cuota y las fechas, listo para mandar', 4.8)
+      await esperar(5000)
+      await reposo(3400)
     },
   },
 ]
 
-async function grabar(indices) {
-  const nav = await chromium.launch()
-  const token = await encode({
-    token: {
-      sub: IDS.owner, id: IDS.owner, email: 'demo@ejemplo.com', name: 'Sofía Restrepo',
-      rol: 'owner', organizationId: IDS.org, plan: 'professional', country: 'co',
-      orgNombre: 'Créditos del Valle', rutaIds: [],
-    },
-    secret: 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c',
-  })
+const token = await encode({
+  token: {
+    sub: IDS.owner, id: IDS.owner, email: 'demo@ejemplo.com', name: 'Sofía Restrepo',
+    rol: 'owner', organizationId: IDS.org, plan: 'professional', country: 'co',
+    orgNombre: 'Créditos del Valle', rutaIds: [],
+  },
+  secret: SECRETO,
+})
 
-  for (const i of indices) {
-    const toma = TOMAS[i]
-    const dirGrab = `/tmp/grab-05/${toma.id}`
-    vaciar(dirGrab)
-    await limpiarPrestamos()
-
-    const ctx = await nav.newContext({
-      viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
-      recordVideo: { dir: dirGrab, size: { width: 540, height: 960 } },
-    })
-    await ctx.addCookies([{ name: 'next-auth.session-token', value: token, domain: 'localhost', path: '/' }])
-    const p = await ctx.newPage()
-    const t0 = Date.now()
-    let desde = 0
-    const zooms = []
-    const rotulos = []
-    const ahora = () => (Date.now() - t0) / 1000 - desde
-
-    const util = {
-      p,
-      empezar: () => { desde = (Date.now() - t0) / 1000 },
-      esperar: (ms) => p.waitForTimeout(ms),
-      decir: async (texto, dura = 4.2) => { rotulos.push({ t: Math.max(0, ahora()), dura, texto }) },
-      mirar: async (sel, { escala = 1.7, ms = 4200 } = {}) => {
-        const t = Math.max(0, ahora())
-        const caja = await subrayar(p, sel, { ms })
-        zooms.push({ t, dura: Math.max(2.4, ms / 1000 - 0.4), escala, ...caja })
-        await quitarSubrayado(p)
-        return caja
-      },
-      ir: async (ruta, espera) => {
-        await p.goto(BASE + ruta, { waitUntil: 'domcontentloaded' })
-        if (espera) {
-          await p.waitForFunction(
-            (re) => new RegExp(re, 'i').test(document.body.innerText),
-            espera.source, { timeout: 30000 },
-          ).catch(() => {})
-        }
-        await p.waitForTimeout(1400)
-        const texto = await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').trim())
-        if (texto.length < 60) throw new Error(`La pantalla ${ruta} se quedó vacía.`)
-        await preparar(p)
-      },
-      escribir: async (sel, texto) => {
-        const c = p.locator(sel).first()
-        await c.click()
-        await c.type(texto, { delay: 62 })
-        await p.waitForTimeout(700)
-      },
-      tocar: async (texto) => {
-        await p.locator(
-          `button:has-text("${texto}"), a:has-text("${texto}"), [role="button"]:has-text("${texto}"), ` +
-          `[aria-label="${texto}"]`,
-        ).first().click({ timeout: 10000 })
-        await p.waitForTimeout(1900)
-        await preparar(p).catch(() => {})
-      },
-    }
-
-    console.log(`· toma ${i + 1}/${TOMAS.length} — ${toma.titulo}`)
-    await toma.grabar(util)
-    await ctx.close()
-
-    const pngs = rotulos.length
-      ? await dibujar(rotulos.map((r) => r.texto), { dir: `/tmp/cf-rotulos/05-${toma.id}` })
-      : []
-    mkdirSync(DIR, { recursive: true })
-    montarToma({
-      entrada: ultimoWebm(dirGrab),
-      salida: `${DIR}/${String(i).padStart(2, '0')}-${toma.id}.mp4`,
-      zooms,
-      rotulos: rotulos.map((r, n) => ({ ...r, ...pngs[n] })),
-      desde,
-    })
-    console.log(`   ${rotulos.length} rótulos · ${zooms.length} acercamientos`)
-  }
-
-  await nav.close()
-}
-
-const args = process.argv.slice(2)
-const soloPegar = args.includes('--pegar')
-const iToma = args.indexOf('--toma')
-
-if (!soloPegar) {
-  const unaSola = iToma >= 0
-  if (!unaSola) vaciar(DIR)
-  const indices = unaSola ? [Number(args[iToma + 1]) - 1] : TOMAS.map((_, i) => i)
-  if (indices.some((i) => !TOMAS[i])) throw new Error(`toma fuera de rango (hay ${TOMAS.length})`)
-  await grabar(indices)
-  await limpiarPrestamos()
-}
-
-const piezas = readdirSync(DIR).filter((f) => f.endsWith('.mp4')).sort().map((f) => `${DIR}/${f}`)
-if (!piezas.length) throw new Error('no hay tomas que pegar')
-pegar(piezas, FINAL)
-
-console.log(`\n✓ ${FINAL}`)
-console.log('\n── ESCALETA (para el guion de la voz) ──')
-let reloj = 0
-for (const pieza of piezas) {
-  const id = pieza.split('/').pop().replace(/^\d+-|\.mp4$/g, '')
-  const toma = TOMAS.find((t) => t.id === id)
-  const m = String(Math.floor(reloj / 60)).padStart(2, '0')
-  const sg = String(Math.floor(reloj % 60)).padStart(2, '0')
-  const d = duracion(pieza)
-  console.log(`  ${m}:${sg}  ${(toma?.titulo || id).padEnd(36)} ${d.toFixed(1)}s · caben ~${Math.floor(d * 2.4)} palabras`)
-  reloj += d
-}
-const mf = String(Math.floor(reloj / 60)).padStart(2, '0')
-const sf = String(Math.floor(reloj % 60)).padStart(2, '0')
-console.log(`  ${mf}:${sf}  (fin)`)
+await correr({
+  nombre: 'prestamo',
+  dir: '/tmp/videos/05-prestamo',
+  final: '/tmp/videos/05-prestamo.mp4',
+  tomas: TOMAS,
+  cookie: token,
+  antesDeToma: limpiarPrestamos,
+})
+await limpiarPrestamos()

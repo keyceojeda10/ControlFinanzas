@@ -1,6 +1,6 @@
 # Vídeo 1 · Cómo registrarse en el sistema
 
-**Archivo:** `01-registro.mp4` · **Duración:** 1:52 · vertical 1080×1920
+**Archivo:** `01-registro.mp4` · **Duración:** 2:24 · vertical 1080×1920
 
 Ocho tomas. Rehecho para igualar el ritmo del vídeo 2: la primera versión iba a
 6,3 segundos por bloque y esta va a 14, que es lo que hace falta para poner la
@@ -12,7 +12,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 00:00 — 00:10 · La pantalla de registro · *caben ~25 palabras*
+### 00:00 — 00:12 · La pantalla de registro · *~30 palabras*
 
 > Crear tu cuenta son cuatro pasos.
 >
@@ -20,7 +20,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 00:10 — 00:25 · Paso 1, tu nombre · *caben ~35 palabras*
+### 00:12 — 00:28 · Paso 1, tu nombre · *~38 palabras*
 
 > Lo primero, tu nombre.
 >
@@ -28,7 +28,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 00:25 — 00:37 · Paso 2, el negocio · *caben ~29 palabras*
+### 00:28 — 00:42 · Paso 2, el negocio · *~32 palabras*
 
 > Ahora el nombre de tu negocio.
 >
@@ -37,7 +37,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 00:37 — 00:53 · Paso 3, país y WhatsApp · *caben ~38 palabras*
+### 00:42 — 00:59 · Paso 3, país y WhatsApp · *~41 palabras*
 
 > Eliges tu país. El sistema trabaja en doce países, así que la moneda y las
 > fechas se ajustan solas al tuyo.
@@ -46,7 +46,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 00:53 — 01:09 · Paso 4, correo y contraseña · *caben ~36 palabras*
+### 00:59 — 01:16 · Paso 4, correo y contraseña · *~41 palabras*
 
 > El último paso son tus datos de entrada.
 >
@@ -56,7 +56,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 01:09 — 01:21 · La casilla de los términos · *caben ~29 palabras*
+### 01:16 — 01:31 · La casilla de los términos · *~34 palabras*
 
 > Ojo con este cuadrito: hay que aceptar los términos.
 >
@@ -66,7 +66,7 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 01:21 — 01:36 · Crear la cuenta · *caben ~37 palabras*
+### 01:31 — 01:48 · Crear la cuenta · *~40 palabras*
 
 > Y ya está: le das a «Crear cuenta gratis».
 >
@@ -74,13 +74,23 @@ segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen
 
 ---
 
-### 01:36 — 01:52 · La verificación · *caben ~38 palabras*
+### 01:48 — 02:02 · La verificación · *~35 palabras*
 
 > Al terminar te llega un código de seis dígitos por WhatsApp. Lo escribes ahí y
 > quedas verificado.
 >
-> Si no te llega, puedes pedirlo al correo. Y si tienes prisa, entras ya y
-> verificas después.
+> Si no te llega, puedes pedirlo al correo.
+
+---
+
+### 02:02 — 02:24 · Dónde te deja · *~51 palabras*
+
+> Y si tienes prisa, entras ya y verificas después.
+>
+> Ya estás dentro, y el sistema no te suelta en una pantalla vacía: te recibe con
+> una guía de primeros pasos.
+>
+> Eso es lo que vemos en el siguiente vídeo.
 
 ---
 

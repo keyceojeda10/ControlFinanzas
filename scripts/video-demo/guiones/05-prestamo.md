@@ -1,13 +1,13 @@
 # Vídeo 5 · Crear un préstamo y elegir bien el modo de interés
 
-**Archivo:** `05-prestamo.mp4` · **Duración:** 2:53 · vertical 1080×1920
+**Archivo:** `05-prestamo.mp4` · **Duración:** 3:43 · vertical 1080×1920
 
-Doce tomas. Es el vídeo más largo y el que más se va a ver: el modo de interés
+Trece tomas. Es el vídeo más largo y el que más se va a ver: el modo de interés
 cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 00:00 — 00:10 · Dónde se crea · *~25 palabras*
+### 00:00 — 00:15 · Dónde se crea · *~36 palabras*
 
 > Un préstamo se hace desde el mismo botón «Crear» de abajo.
 >
@@ -15,7 +15,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 00:10 — 00:29 · A quién le prestas · *~44 palabras*
+### 00:15 — 00:33 · A quién le prestas · *~43 palabras*
 
 > Lo primero es a quién.
 >
@@ -24,7 +24,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 00:29 — 00:43 · Cuánto le prestas · *~34 palabras*
+### 00:33 — 00:49 · Cuánto le prestas · *~38 palabras*
 
 > Cuánto le entregas en la mano.
 >
@@ -33,7 +33,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 00:43 — 00:54 · Cada cuánto te paga · *~27 palabras*
+### 00:49 — 01:02 · Cada cuánto te paga · *~31 palabras*
 
 > Ahora, cada cuánto te paga: diario, semanal, quincenal o mensual.
 >
@@ -41,13 +41,13 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 00:54 — 01:04 · La tasa · *~21 palabras*
+### 01:02 — 01:15 · La tasa · *~30 palabras*
 
 > El interés. Los porcentajes que más se usan también están de atajo.
 
 ---
 
-### 01:04 — 01:18 · Cuántas cuotas, y el «No sé» · *~33 palabras*
+### 01:15 — 01:32 · Cuántas cuotas, y el «No sé» · *~42 palabras*
 
 > Y en cuántas cuotas te lo paga.
 >
@@ -56,14 +56,14 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 01:18 — 01:29 · La cuenta se hace sola · *~28 palabras*
+### 01:32 — 01:47 · La cuenta se hace sola · *~34 palabras*
 
 > Y fíjate abajo, porque esto es lo que más tiempo ahorra: la cuota y el total te
 > los va calculando solo mientras escribes. Sin calculadora.
 
 ---
 
-### 01:29 — 01:41 · El modo de interés · *~28 palabras*
+### 01:47 — 02:02 · El modo de interés · *~37 palabras*
 
 > Ahora viene lo más importante de esta pantalla: cómo cobras el interés.
 >
@@ -72,7 +72,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 01:41 — 02:01 · El ayudante · *~47 palabras*
+### 02:02 — 02:23 · El ayudante · *~49 palabras*
 
 > Si no tienes claro cuál te toca, no adivines.
 >
@@ -81,7 +81,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 02:01 — 02:26 · Las opciones, en tus palabras · *~59 palabras*
+### 02:23 — 02:50 · Las opciones, en tus palabras · *~65 palabras*
 
 > «Le cobro una cuota igual cada vez»: el cliente paga lo mismo cada cobro hasta
 > terminar. Es el más común de lejos.
@@ -96,7 +96,7 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 02:26 — 02:38 · El recomendado · *~27 palabras*
+### 02:50 — 03:04 · El recomendado · *~33 palabras*
 
 > Y si sigues sin estar seguro, déjalo como viene: «cuota fija».
 >
@@ -104,18 +104,26 @@ cambia cuánto gana el negocio **con el mismo porcentaje**.
 
 ---
 
-### 02:38 — 02:53 · Revisar y crear · *~36 palabras*
+### 03:04 — 03:20 · Revisar · *~38 palabras*
 
 > Antes de crearlo, le das a «revisar préstamo» y ves cómo queda: cuánto le
 > entregas, cuánto te paga cada vez y cuánto te devuelve en total.
+
+---
+
+### 03:20 — 03:43 · Crear el préstamo · *~54 palabras*
+
+> Revisas que todo esté como quedaste con el cliente, y lo creas.
 >
-> Si está bien, lo creas y ya queda en la ruta.
+> Y mira esto, que es de lo mejor que hace: te arma solo el mensaje para
+> mandarle al cliente por WhatsApp. Con el monto, la cuota diaria, las fechas y
+> el plazo. Solo le das a enviar.
 
 ---
 
 ## Notas para quien narre
 
-- **Los dos bloques del ayudante (01:41 a 02:26) son el corazón del vídeo.** Ahí
+- **Los dos bloques del ayudante (02:02 a 02:50) son el corazón del vídeo.** Ahí
   hay que ir despacio y con ejemplos: son 45 segundos y sobra tiempo.
 - Lo que más engancha, dicho tal cual: **el mismo veinte por ciento puede
   significar tres cosas distintas**. Es lo que hace que alguien preste atención.
