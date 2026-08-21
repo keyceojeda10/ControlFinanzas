@@ -164,6 +164,26 @@ ni «sistema francés».
   acercarse a un selector de 104 px dejaba fuera el título de la pantalla.
 - **`:has-text()` es de Playwright, no del DOM.** Mide Playwright, pinta el
   navegador.
+- **⚠ TODO SELECTOR LLEVA `:visible`.** Media app pinta DOS ÁRBOLES —el de móvil
+  y el de escritorio, con `hidden lg:block`— con los mismos botones y las mismas
+  etiquetas. A 540px la copia de escritorio sigue en el DOM y va PRIMERA, así que
+  `.first()` la coge: la toma espera diez segundos a que un elemento invisible se
+  deje pulsar y aborta. Ya lo lleva `tocar()`; en los selectores que se escriben
+  a mano (`mirar`, `tocarSel`) hay que ponerlo. Costó tres intentos en el 7.
+- **Y `:not([disabled])` cuando haya varios iguales.** La flecha «Subir» de la
+  primera fila viene deshabilitada, y un botón deshabilitado no se pone
+  «enabled» nunca: la espera agota el tiempo entero.
+- **`:has-text()` es subcadena.** «Ordenar» caza también «Reordenar recorrido»,
+  que está antes en el DOM: la toma pulsaba otro botón y grababa otra pantalla
+  sin que nada fallara. Para eso está `tocarSel('button:text-is("Ordenar")')`.
+- **Un botón que se pulsa y no cambia nada es peor que no enseñarlo.** El filtro
+  «Hoy» de la ruta es un conmutador cuya etiqueta no cambia, y en la demo les
+  toca a los ocho: al pulsarlo la lista queda igual. Se subraya y se cuenta de
+  palabra.
+- **Ojo con lo que abre otra pestaña o saca un `confirm()`.** «Google Maps» hace
+  `window.open` y dejaría el vídeo fuera de la app; «Quitar de la ruta» usa el
+  `confirm()` del navegador, que Playwright descarta solo y cancela la acción sin
+  que se note.
 - **El registro admite 3 intentos por hora y por IP.** Grabando se agota; el
   contador vive en memoria del proceso, así que se reinicia el espejo.
 - Los campos se escriben **letra a letra**, no con `fill()`: tiene que verse que
@@ -180,11 +200,12 @@ ni «sistema francés».
 | 4 | Primeros pasos, con cobradores | — |
 | 5 | Crear un préstamo | 3:43 |
 | 6 | Todos los modos de interés | 4:53 |
+| 7 | Las rutas | 6:22 |
 
 ## Lo que falta
 
-Cobrar el día · rutas · cobradores · caja · capital · ajustes y extras. Y el
-corto de 90 segundos para el bot de ventas.
+Cobrar el día · cobradores · caja · capital · ajustes y extras. Y el corto de 90
+segundos para el bot de ventas.
 
 ⚠ **El bot tiene prohibido enviar vídeos** (`lib/bot-v2/prompts.js`). Esa regla
 se quita cuando estos existan y estén subidos, no antes.

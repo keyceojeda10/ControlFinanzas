@@ -12,7 +12,7 @@
 //   cualquier incoherencia se vería en pantalla.
 
 import { encode } from 'next-auth/jwt'
-import { conectar, montar, IDS, CLIENTES } from './montar-demo.mjs'
+import { conectar, montar, IDS, CLIENTES, CLIENTES_SIN_RUTA } from './montar-demo.mjs'
 
 const BASE = process.env.BASE || 'http://localhost:3016'
 const SECRETO = 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c'
@@ -53,7 +53,27 @@ for (const c of CLIENTES) {
   })
   ids.push(creado.id)
 }
-console.log(`  ${ids.length} clientes`)
+
+/* Los de la zona norte se crean SIN ruta: son la materia prima del vídeo de
+   rutas, donde se crea una ruta nueva y se les mete desde «Agregar cliente». */
+const idsSinRuta = []
+for (const c of CLIENTES_SIN_RUTA) {
+  const creado = await pedir(owner, 'POST', '/api/clientes', {
+    nombre: c.nombre, cedula: c.cedula, telefono: c.tel, direccion: c.dir,
+  })
+  idsSinRuta.push(creado.id)
+}
+console.log(`  ${ids.length} clientes en ruta · ${idsSinRuta.length} sin ruta`)
+
+/* ⚠ LAS COORDENADAS, DESPUÉS DE CREAR. El endpoint geocodifica la dirección y
+   estas son genéricas: los ocho acabaron repartidos por media Colombia y la
+   ruta decía «2.666,0 km». Se pisan aquí, ya apiñados por barrio. */
+for (const [lista, idl] of [[CLIENTES, ids], [CLIENTES_SIN_RUTA, idsSinRuta]]) {
+  for (let i = 0; i < lista.length; i++) {
+    await cx.execute('UPDATE Cliente SET latitud = ?, longitud = ? WHERE id = ?',
+      [lista[i].lat, lista[i].lng, idl[i]])
+  }
+}
 
 // ── Los préstamos ──────────────────────────────────────────────────────────
 // Montos y plazos variados para que la ruta no salga toda igual.
@@ -103,7 +123,26 @@ for (let i = 0; i < ids.length; i++) {
   })
   prestamos.push(creado.id ?? creado.prestamo?.id)
 }
-console.log(`  ${prestamos.filter(Boolean).length} préstamos`)
+/* Los de la zona norte también llevan préstamo: un cliente «sin ruta» de verdad
+   es alguien que ya está prestado y a quien nadie ha metido todavía en un
+   recorrido. Sin préstamo, la ruta nueva del vídeo saldría con cinco paradas
+   que no cobran nada. */
+const SIN_RUTA_PRESTAMOS = [
+  { monto: 350_000, tasa: 20, plazo: 20 },
+  { monto: 500_000, tasa: 20, plazo: 24 },
+  { monto: 200_000, tasa: 20, plazo: 20 },
+  { monto: 700_000, tasa: 20, plazo: 30 },
+  { monto: 300_000, tasa: 20, plazo: 24 },
+]
+for (let i = 0; i < idsSinRuta.length; i++) {
+  const p = SIN_RUTA_PRESTAMOS[i]
+  await pedir(owner, 'POST', '/api/prestamos', {
+    clienteId: idsSinRuta[i], montoPrestado: p.monto, tasaInteres: p.tasa,
+    diasPlazo: p.plazo, frecuencia: 'diario', modoInteres: 'plano',
+    fechaInicio: haceDias(1), metodoPago: 'efectivo',
+  })
+}
+console.log(`  ${prestamos.filter(Boolean).length + idsSinRuta.length} préstamos`)
 
 // ── Unos cobros de días pasados ────────────────────────────────────────────
 // Para que la ficha del cliente y los reportes tengan algo que enseñar.

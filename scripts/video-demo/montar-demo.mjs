@@ -32,15 +32,46 @@ export const IDS = {
 
 /* Nombres inventados a propósito: ninguno sale de la base. Direcciones
    genéricas de barrio, sin número real. */
+/* ⚠ LAS COORDENADAS SE PONEN A MANO, Y NO ES UN CAPRICHO.
+
+   El endpoint geocodifica la dirección al crear el cliente, y estas son
+   genéricas a propósito («Calle 12 · Barrio El Prado»). El buscador las repartió
+   por media Colombia —Cartagena, Cúcuta, Neiva, Pereira— y la cabecera de la
+   ruta decía «8 clientes · 2.666,0 km».
+
+   Una ruta ES clientes agrupados por zona: 2.666 km contradice la lección
+   entera del vídeo, y «Optimizar» sobre esa nube no significa nada. Van
+   apiñados en barrios contiguos, que es como se ve una ruta de verdad. */
 export const CLIENTES = [
-  { nombre: 'Marta Elena Ospina',   cedula: '41203877', tel: '3001234501', dir: 'Calle 12 · Barrio El Prado' },
-  { nombre: 'Jairo Antonio Peña',   cedula: '79114522', tel: '3001234502', dir: 'Carrera 8 · La Esperanza' },
-  { nombre: 'Yaneth Cardona',       cedula: '52830199', tel: '3001234503', dir: 'Calle 30 · San Nicolás' },
-  { nombre: 'Óscar Hincapié',       cedula: '10877344', tel: '3001234504', dir: 'Diagonal 4 · El Recreo' },
-  { nombre: 'Luz Dary Montoya',     cedula: '43655012', tel: '3001234505', dir: 'Calle 19 · Villa Rosa' },
-  { nombre: 'Fabián Quintero',      cedula: '98455170', tel: '3001234506', dir: 'Carrera 15 · Centro' },
-  { nombre: 'Rosalba Jiménez',      cedula: '32977641', tel: '3001234507', dir: 'Calle 7 · Los Almendros' },
-  { nombre: 'Wilmer Andrés Salas',  cedula: '80122459', tel: '3001234508', dir: 'Carrera 22 · El Bosque' },
+  { nombre: 'Marta Elena Ospina',   cedula: '41203877', tel: '3001234501', dir: 'Calle 12 · Barrio El Prado',  lat: 4.8121, lng: -75.6946 },
+  { nombre: 'Jairo Antonio Peña',   cedula: '79114522', tel: '3001234502', dir: 'Carrera 8 · La Esperanza',    lat: 4.8098, lng: -75.6912 },
+  { nombre: 'Yaneth Cardona',       cedula: '52830199', tel: '3001234503', dir: 'Calle 30 · San Nicolás',      lat: 4.8144, lng: -75.6889 },
+  { nombre: 'Óscar Hincapié',       cedula: '10877344', tel: '3001234504', dir: 'Diagonal 4 · El Recreo',      lat: 4.8072, lng: -75.6958 },
+  { nombre: 'Luz Dary Montoya',     cedula: '43655012', tel: '3001234505', dir: 'Calle 19 · Villa Rosa',       lat: 4.8159, lng: -75.6931 },
+  { nombre: 'Fabián Quintero',      cedula: '98455170', tel: '3001234506', dir: 'Carrera 15 · Centro',         lat: 4.8110, lng: -75.6974 },
+  { nombre: 'Rosalba Jiménez',      cedula: '32977641', tel: '3001234507', dir: 'Calle 7 · Los Almendros',     lat: 4.8055, lng: -75.6903 },
+  { nombre: 'Wilmer Andrés Salas',  cedula: '80122459', tel: '3001234508', dir: 'Carrera 22 · El Bosque',      lat: 4.8133, lng: -75.6857 },
+]
+
+/* Los que NO tienen ruta todavía, para el vídeo de rutas: se crea una ruta
+   nueva y se les mete. Están en OTRA zona —al norte, a un par de kilómetros—
+   porque si estuvieran mezclados con los de arriba, «agrupar por zona» no se
+   vería en el mapa ni en los kilómetros. */
+/* ⚠ TODOS EN EL MISMO BARRIO, y por dos razones.
+
+   `/api/rutas/recomendaciones` agrupa por PALABRA COMPARTIDA en la dirección y
+   pide dos o más clientes. Con un barrio distinto cada uno, la pantalla decía
+   «Todos los clientes con dirección parecida ya están agrupados» y el vídeo se
+   quedaba sin poder enseñar las sugerencias.
+
+   Y es como se escriben las direcciones de verdad: la calle cambia, el barrio
+   se repite. */
+export const CLIENTES_SIN_RUTA = [
+  { nombre: 'Gladys Restrepo',      cedula: '24788301', tel: '3001234509', dir: 'Calle 48 · Barrio La Floresta',     lat: 4.8331, lng: -75.6802 },
+  { nombre: 'Hernán Zapata',        cedula: '15602934', tel: '3001234510', dir: 'Carrera 31 · Barrio La Floresta',   lat: 4.8358, lng: -75.6841 },
+  { nombre: 'Diana Marcela Ruiz',   cedula: '39415776', tel: '3001234511', dir: 'Calle 52 · Barrio La Floresta',     lat: 4.8302, lng: -75.6779 },
+  { nombre: 'Álvaro Betancur',      cedula: '70933128', tel: '3001234512', dir: 'Diagonal 40 · Barrio La Floresta',  lat: 4.8377, lng: -75.6815 },
+  { nombre: 'Nubia Castaño',        cedula: '46201855', tel: '3001234513', dir: 'Carrera 27 · Barrio La Floresta',   lat: 4.8319, lng: -75.6866 },
 ]
 
 export async function conectar() {

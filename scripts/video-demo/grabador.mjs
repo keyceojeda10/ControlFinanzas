@@ -147,11 +147,29 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
         await p.waitForTimeout(700)
       },
 
+      /* Pulsar por SELECTOR, cuando el texto no basta.
+         ⚠ `:has-text()` es subcadena y sin acentos de caja: en la ficha de una
+         ruta, «Ordenar» caza también «Reordenar recorrido», que está antes en
+         el DOM. La toma pulsaba el botón equivocado y grababa otra pantalla sin
+         que nada fallara. Para esos casos: `button:text-is("Ordenar")`. */
+      tocarSel: async (selector, { espera = 1900 } = {}) => {
+        await p.locator(selector).first().click({ timeout: 10000 })
+        await p.waitForTimeout(espera)
+        await preparar(p).catch(() => {})
+      },
+
       tocar: async (texto, { espera = 1900 } = {}) => {
-        // Por texto O por `aria-label`: los iconos de la pastilla no llevan texto.
+        /* Por texto O por `aria-label`: los iconos de la pastilla no llevan texto.
+
+           ⚠ `:visible` EN LOS CUATRO. Media app pinta DOS ÁRBOLES —el de móvil
+           y el de escritorio, con `hidden lg:block`— y los dos llevan los mismos
+           botones con las mismas etiquetas. A 540px la copia de escritorio sigue
+           en el DOM y va PRIMERA, así que `.first()` cogía la invisible: la toma
+           se quedaba diez segundos esperando a que se dejara pulsar y abortaba.
+           Costó tres intentos en el vídeo de rutas antes de mirar el DOM. */
         await p.locator(
-          `button:has-text("${texto}"), a:has-text("${texto}"), [role="button"]:has-text("${texto}"), ` +
-          `[aria-label="${texto}"]`,
+          `button:has-text("${texto}"):visible, a:has-text("${texto}"):visible, ` +
+          `[role="button"]:has-text("${texto}"):visible, [aria-label="${texto}"]:visible`,
         ).first().click({ timeout: 10000 })
         await p.waitForTimeout(espera)
         await preparar(p).catch(() => {})
