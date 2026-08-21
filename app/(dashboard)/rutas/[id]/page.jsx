@@ -921,6 +921,27 @@ export default function RutaDetallePage({ params }) {
           saldo: data?.saldoPendiente ?? null,
           proximoCobro: data?.proximoCobro ?? null,
           numero: pagoId ? String(pagoId).slice(-6).toUpperCase() : null,
+          /* ⚠ EL PRÉSTAMO, TAL COMO LO DEVOLVIÓ EL PAGO. Y esto es lo que
+             arreglaba el comprobante.
+
+             Los botones de «guardar imagen» e «imprimir» lo sacaban de
+             `ruta.clientes[…].prestamosActivos[0]`, o sea del estado de la
+             pantalla. Ese estado se recarga con el `fetchRuta()` de aquí abajo,
+             pero al pulsar el botón seguía llegando el de ANTES del cobro: un
+             cliente que acababa de abonar $30.000 sobre $124.000 recibía un
+             papel que decía «Total pagado $0 · Saldo pendiente $124.000 ·
+             Progreso 0%», con el saldo intacto. Reportado por PRESTA MIL, y
+             reproducido aquí al peso: el API ya decía 19.400 y 446.200, y al
+             generador le llegaban 0 y 465.600.
+
+             La respuesta del POST trae `totalPagado`, `saldoPendiente` y
+             `porcentajePagado` ya recalculados. Es la única foto que no puede
+             ir atrasada, porque es la del servidor en el instante del cobro. */
+          prestamo: data ?? null,
+          // El id del pago: sin él, el comprobante sale sin «Referencia», que
+          // es por donde se reclama.
+          pagoId,
+          fechaPago: data?.pagos?.[0]?.fechaPago ?? new Date().toISOString(),
         })
         await fetchRuta()
         // Mostrar undo por 10 segundos
@@ -998,6 +1019,28 @@ export default function RutaDetallePage({ params }) {
     } catch {
       alert('No se pudo deshacer el cobro. Revisa la conexión.')
     } finally { setDeshaciendo(false) }
+  }
+
+  /**
+   * Lo que se le entrega al comprobante —imagen o impreso— tras un cobro
+   * rápido. UN SOLO SITIO: los dos botones pedían lo mismo por su cuenta y solo
+   * se arregló uno la primera vez que apareció este fallo.
+   *
+   * El préstamo sale de `reciboCobro`, que guarda la respuesta del POST, NO del
+   * estado de la pantalla: ver el porqué largo donde se rellena.
+   */
+  const datosDelComprobante = () => {
+    const c = ruta?.clientes?.find((x) => x.id === reciboCobro?.clienteId)
+    return {
+      cliente: c ?? { nombre: reciboCobro?.nombre },
+      prestamo: reciboCobro?.prestamo ?? c?.prestamosActivos?.[0] ?? null,
+      pago: {
+        id: reciboCobro?.pagoId ?? null,
+        montoPagado: reciboCobro?.monto,
+        fechaPago: reciboCobro?.fechaPago ?? new Date().toISOString(),
+      },
+      orgNombre,
+    }
   }
 
   const abrirModalDSC = () => {
@@ -1720,7 +1763,11 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
           // Sin exigir teléfono: la hoja ya avisa y deja copiar el mensaje,
           // que es más útil que no abrir nada.
-          if (c) setModalWA({ cliente: c, prestamo: c.prestamosActivos?.[0] ?? null })
+          /* El préstamo, de la respuesta del cobro. El recibo de WhatsApp leía
+             el estado de la pantalla igual que la imagen, así que decía el
+             mismo saldo viejo. Arreglar solo la imagen habría dejado el mismo
+             fallo por el otro camino, que ya pasó una vez con este recibo. */
+          if (c) setModalWA({ cliente: c, prestamo: reciboCobro?.prestamo ?? c.prestamosActivos?.[0] ?? null })
         }}
         onSiguiente={() => {
           setReciboCobro(null)
@@ -1739,24 +1786,8 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
            Las dos acciones viven en `lib/recibo-acciones.js` para que los tres
            caminos impriman lo mismo. */
-        onGuardarImagen={() => {
-          const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
-          guardarReciboImagen({
-            cliente: c ?? { nombre: reciboCobro.nombre },
-            prestamo: c?.prestamosActivos?.[0] ?? null,
-            pago: { montoPagado: reciboCobro.monto, fechaPago: new Date().toISOString() },
-            orgNombre,
-          })
-        }}
-        onImprimir={() => {
-          const c = ruta?.clientes?.find((x) => x.id === reciboCobro.clienteId)
-          imprimirRecibo({
-            cliente: c ?? { nombre: reciboCobro.nombre },
-            prestamo: c?.prestamosActivos?.[0] ?? null,
-            pago: { montoPagado: reciboCobro.monto, fechaPago: new Date().toISOString() },
-            orgNombre,
-          })
-        }}
+        onGuardarImagen={() => guardarReciboImagen(datosDelComprobante())}
+        onImprimir={() => imprimirRecibo(datosDelComprobante())}
         onCerrar={() => setReciboCobro(null)}
       />
     </div>,
