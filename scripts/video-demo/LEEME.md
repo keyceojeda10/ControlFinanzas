@@ -176,6 +176,14 @@ ni «sistema francés».
 - **`:has-text()` es subcadena.** «Ordenar» caza también «Reordenar recorrido»,
   que está antes en el DOM: la toma pulsaba otro botón y grababa otra pantalla
   sin que nada fallara. Para eso está `tocarSel('button:text-is("Ordenar")')`.
+- **Rótulo a la izquierda y cifra a la derecha ⇒ `mirar(sel, { fila: true })`.**
+  Acercarse a un rótulo estrecho pegado al margen centra el cuadro en él, se topa
+  con el borde y **las cifras se van fuera por la derecha**: salía «Lo que
+  cobraste» sin número y «−$» cortado. Con `fila` el halo sigue marcando la
+  palabra y el encuadre coge el renglón entero.
+- **Con `text=` no vale pegarle `:visible`**, es otro motor: se dice aparte con
+  `>> visible=true`. `text=SALDO EN CAJA` cazaba un `<span>` oculto de la copia
+  de escritorio y la toma esperaba a que se dejara ver.
 - **Lo efímero se enseña en cuanto aparece**, y ahí el rótulo va DESPUÉS. El
   aviso de «Deshacer» dura diez segundos: diciendo primero la frase, para cuando
   llegaba el subrayado el aviso ya no existía y la toma abortaba. Y **aparece
@@ -215,10 +223,11 @@ ni «sistema francés».
 | 8 | Los cobradores | 5:40 |
 | 9 | Cobrar el día | 4:39 |
 | 10 | Ajustes | 7:49 |
+| 11 | La caja | 4:41 |
 
 ## Lo que falta
 
-Caja · capital. Y el corto de 90 segundos para el bot de ventas.
+Capital. Y el corto de 90 segundos para el bot de ventas.
 
 **El decorado de la caja ya está arreglado** (21 ago): `poblar-demo` corre doce
 desembolsos a la fecha de arranque de su préstamo y deja UNO en el día, de un

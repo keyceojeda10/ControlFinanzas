@@ -113,11 +113,26 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
       /** Un rótulo, anclado al instante REAL en que se dice. */
       decir: async (texto, dura = 4.2) => { rotulos.push({ t: Math.max(0, ahora()), dura, texto }) },
 
-      /** Subraya y se acerca, también en el instante real. */
-      mirar: async (sel, { escala = 1.7, ms = 4200 } = {}) => {
+      /**
+       * Subraya y se acerca, también en el instante real.
+       *
+       * `fila: true` SUBRAYA EL RÓTULO PERO ENCUADRA EL RENGLÓN ENTERO.
+       *
+       * ⚠ Hace falta siempre que el nombre esté a la izquierda y la cifra a la
+       * derecha, que es como está escrita media aplicación. Acercándose a «Te
+       * queda en la mano» —un rótulo estrecho y pegado al margen— el cuadro se
+       * centra en él, se topa con el borde izquierdo y las cifras se van fuera
+       * por la derecha: salía «Lo que cobraste» sin número y «−$» cortado. Es
+       * la queja del dueño de siempre, «se corta, se desencuadra».
+       *
+       * El halo sigue marcando la palabra exacta; lo que se ensancha es el
+       * encuadre, así que se ve el renglón completo, rótulo y cifra.
+       */
+      mirar: async (sel, { escala = 1.7, ms = 4200, fila = false } = {}) => {
         const t = Math.max(0, ahora())
         const caja = await subrayar(p, sel, { ms })
-        zooms.push({ t, dura: Math.max(2.4, ms / 1000 - 0.4), escala, ...caja })
+        const encuadre = fila ? { ...caja, x: 16, w: 508 } : caja
+        zooms.push({ t, dura: Math.max(2.4, ms / 1000 - 0.4), escala, ...encuadre })
         await quitarSubrayado(p)
         return caja
       },
