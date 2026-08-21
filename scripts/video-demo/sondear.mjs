@@ -43,7 +43,7 @@ const info = await p.evaluate(() => {
       pista: limpiar(i.placeholder || ''), modo: i.inputMode || '',
     })),
     enlaces: [...document.querySelectorAll('a')].map((a) => limpiar(a.innerText)).filter(Boolean).slice(0, 12),
-    texto: limpiar(document.body.innerText).slice(0, 1500),
+    texto: limpiar(document.body.innerText).slice(0, 2600),
   }
 })
 
