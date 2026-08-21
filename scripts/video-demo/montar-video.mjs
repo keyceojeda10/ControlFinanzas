@@ -22,6 +22,7 @@
 
 import { execFileSync } from 'child_process'
 import { existsSync, readdirSync, writeFileSync, rmSync, mkdirSync } from 'fs'
+import { resolve, dirname } from 'path'
 
 const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: 'inherit' })
 
@@ -139,10 +140,20 @@ export function montarToma({
   return salida
 }
 
-/** Pega las tomas en el orden dado. */
+/**
+ * Pega las tomas en el orden dado.
+ *
+ * ⚠ RUTAS ABSOLUTAS, SIEMPRE. La lista de `concat` vive en /tmp y ffmpeg
+ * resuelve lo que hay dentro CONTRA LA CARPETA DE LA LISTA, no contra el
+ * directorio de trabajo. Con `scripts/video-demo/tomas/...` iba a buscar
+ * `/tmp/scripts/video-demo/tomas/...` y moría con «No such file or directory»
+ * después de haber grabado bien la toma — el error sale al final y parece del
+ * guion, cuando es de aquí.
+ */
 export function pegar(tomas, salida) {
   const lista = '/tmp/cf-tomas.txt'
-  writeFileSync(lista, tomas.map((t) => `file '${t}'`).join('\n'))
+  mkdirSync(dirname(resolve(salida)), { recursive: true })
+  writeFileSync(lista, tomas.map((t) => `file '${resolve(t)}'`).join('\n'))
   ff(['-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', salida])
   return salida
 }

@@ -133,11 +133,18 @@ export async function montar(cx) {
      VALUES (?, ?, 'professional', 'activa', NOW(), DATE_ADD(NOW(), INTERVAL 1 YEAR), 149000, NOW())`,
     ['zzvideodemo00000000000susc', IDS.org])
 
-  // Capital con el que arranca el negocio en el vídeo.
+  /* Capital con el que arranca el negocio en el vídeo.
+
+     ⚠ TIENE QUE SOBRAR DESPUÉS DE POBLAR. Estaba en 4.000.000 y `poblar-demo`
+     desembolsa 4.450.000 en diez préstamos: el negocio quedaba en −450.000 y la
+     pantalla de préstamo nuevo abría con «Te quedarías en −$850.000: es más de
+     lo que hay en caja» en ROJO, encima del monto. En un tutorial eso se lee
+     como un sistema roto, y salía en la cabecera de casi todas las tomas.
+     12 millones dejan ~7,5 libres, que es lo que se quiere enseñar. */
   await cx.execute(
     `INSERT INTO Capital (id, organizationId, saldo, createdAt, updatedAt)
-     VALUES (?, ?, 4000000, NOW(), NOW())`, [IDS.capital, IDS.org])
-  await cx.execute(`UPDATE Ruta SET saldoCapital = 4000000 WHERE id = ?`, [IDS.ruta])
+     VALUES (?, ?, 12000000, NOW(), NOW())`, [IDS.capital, IDS.org])
+  await cx.execute(`UPDATE Ruta SET saldoCapital = 12000000 WHERE id = ?`, [IDS.ruta])
 
   /* ⚠ SIN ESTO EL VÍDEO SALE CON DOS BANDERAS ROJAS ENCIMA: «Falta verificar tu
      correo» y «Agrega tu número de celular» acompañan al usuario por todas las
