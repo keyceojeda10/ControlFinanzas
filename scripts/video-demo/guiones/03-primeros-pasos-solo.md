@@ -1,6 +1,6 @@
 # Vídeo 3 · Primeros pasos, si cobras tú mismo
 
-**Archivo:** `03-primeros-pasos-solo.mp4` · **Duración:** 1:40 · vertical 1080×1920
+**Archivo:** `03-primeros-pasos-solo.mp4` · **Duración:** 02:27 · vertical 1080×1920
 
 La guía que sale nada más entrar por primera vez. Son cuatro preguntas.
 
@@ -11,7 +11,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 00:00 — 00:13 · La guía · *~32 palabras*
+### 00:00 — 00:15 · La guía · *~37 palabras*
 
 > Cuando entras por primera vez, el sistema no te suelta en una pantalla vacía:
 > te va guiando.
@@ -21,7 +21,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 00:13 — 00:28 · Paso 1, quién cobra · *~37 palabras*
+### 00:15 — 00:36 · Paso 1, quién cobra · *~49 palabras*
 
 > La primera pregunta es la que más cambia todo: quién sale a cobrar.
 >
@@ -31,7 +31,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 00:28 — 00:44 · Paso 2, con cuánto arrancas · *~38 palabras*
+### 00:36 — 00:55 · Paso 2, con cuánto arrancas · *~45 palabras*
 
 > Ahora te pregunta con cuánta plata arrancas. Es el efectivo que tienes hoy
 > disponible para prestar, no lo que ya tienes en la calle.
@@ -42,7 +42,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 00:44 — 00:56 · Paso 3, los catorce días · *~27 palabras*
+### 00:55 — 01:07 · Paso 3, los catorce días · *~29 palabras*
 
 > Tienes catorce días con todo abierto: clientes, préstamos, rutas, caja y
 > reportes.
@@ -51,7 +51,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 00:56 — 01:16 · Paso 3, qué plan sirve para qué · *~49 palabras*
+### 01:07 — 01:36 · Paso 3, qué plan sirve para qué · *~67 palabras*
 
 > Los planes no van por tiempo, van por el tamaño de tu cartera.
 >
@@ -65,7 +65,7 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 
 ---
 
-### 01:16 — 01:40 · Paso 4, traer tu cartera · *~56 palabras*
+### 01:36 — 02:01 · Paso 4, traer tu cartera · *~61 palabras*
 
 > Y lo último, que es lo importante: meter los préstamos que ya tienes. Mientras
 > tu cartera vieja no entre, la aplicación no te sirve de mucho.
@@ -77,6 +77,17 @@ las tareas que deja pendientes. Este es el de **«yo cobro»**. El otro es
 > Cuarenta préstamos son unos veinte minutos.
 >
 > Y si ya lo tienes en Excel, subes el archivo y se emparejan las columnas.
+
+---
+
+### 02:01 — 02:27 · Cómo termina y dónde te deja · *~62 palabras*
+
+> Vamos por el primero, que es el que casi todo el mundo usa.
+>
+> Y ya está: la guía te deja directo en la pantalla de crear tu primer cliente,
+> que es donde de verdad empieza todo.
+>
+> Eso es lo que vemos en el siguiente vídeo.
 
 ---
 

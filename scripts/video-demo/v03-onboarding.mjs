@@ -41,7 +41,7 @@ const TOMAS = [
   {
     id: 'llegada',
     titulo: 'La guía de primeros pasos',
-    async grabar({ ir, esperar, empezar, decir, mirar }) {
+    async grabar({ ir, esperar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       empezar()
       await decir('Nada más entrar, el sistema te guía', 4.0)
@@ -51,12 +51,13 @@ const TOMAS = [
       await esperar(4400)
       await decir('Todo lo que crees aquí lo puedes cambiar después', 4.4)
       await esperar(4600)
+      await reposo()
     },
   },
   {
     id: 'quien-cobra',
     titulo: 'Paso 1 · ¿quién cobra?',
-    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar }) {
+    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       empezar()
       await decir('La primera pregunta es la que más cambia todo', 4.4)
@@ -77,12 +78,14 @@ const TOMAS = [
         4.6,
       )
       await esperar(4800)
+      await tocar('Continuar')
+      await reposo()
     },
   },
   {
     id: 'capital',
     titulo: 'Paso 2 · con cuánto arrancas',
-    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir }) {
+    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       await tocar(ELEGIR); await esperar(900)
       await tocar('Continuar')
@@ -95,12 +98,14 @@ const TOMAS = [
       await mirar('text=tu caja va a quedar en negativo', { escala: 1.7, ms: 4600 })
       await decir('Si lo dejas en cero, tu caja arranca en negativo', 4.6)
       await esperar(4800)
+      await tocar('Continuar')
+      await reposo()
     },
   },
   {
     id: 'planes',
     titulo: 'Paso 3 · los catorce días y los planes',
-    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir }) {
+    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       await tocar(ELEGIR); await esperar(900)
       await tocar('Continuar')
@@ -112,12 +117,13 @@ const TOMAS = [
       await mirar('text=GRATIS 14 DÍAS', { escala: 1.8, ms: 4200 })
       await decir('No hay cobro automático: no se te descuenta nada', 4.4)
       await esperar(4600)
+      await reposo()
     },
   },
   {
     id: 'cual-plan',
     titulo: 'Paso 3 · qué plan sirve para qué',
-    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir }) {
+    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       await tocar(ELEGIR); await esperar(900)
       await tocar('Continuar')
@@ -149,12 +155,14 @@ const TOMAS = [
       await esperar(5000)
       await decir('No tienes que elegir ahora: te avisan cuando llegues al tope', 4.8)
       await esperar(5000)
+      await tocar('Cargar mi cartera')
+      await reposo()
     },
   },
   {
     id: 'cartera',
     titulo: 'Paso 4 · traer tu cartera',
-    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir }) {
+    async grabar({ p, ir, esperar, empezar, decir, mirar, tocar, escribir, reposo }) {
       await ir('/dashboard', /vamos a cargar tu cartera/i)
       await tocar(ELEGIR); await esperar(900)
       await tocar('Continuar')
@@ -172,6 +180,35 @@ const TOMAS = [
       await esperar(5000)
       await decir('Y si lo tienes en Excel, subes el archivo', 4.2)
       await esperar(4400)
+      await reposo()
+    },
+  },
+  {
+    id: 'cierre',
+    titulo: 'Cómo termina y dónde te deja',
+    async grabar(u) {
+      const { esperar, empezar, decir, mirar, tocar, ir, escribir, reposo } = u
+      await ir('/dashboard', /vamos a cargar tu cartera/i)
+      await tocar(ELEGIR); await esperar(900)
+      await tocar('Continuar')
+      await escribir('input[inputmode="decimal"], input[type="text"]', CAPITAL)
+      await tocar('Continuar')
+      await tocar('Cargar mi cartera')
+      empezar()
+      await esperar(1600)
+      await mirar('text=RECOMENDADO', { escala: 1.6, ms: 4000 })
+      await decir('Vamos por el primero, que es el que casi todos usan', 4.4)
+      await esperar(4600)
+      /* ⚠ AQUÍ SE TERMINA EL PROCESO, y era justo lo que faltaba: «el onboarding
+         no termina, no alcanza ni siquiera a darle al botón final para que la
+         gente vea cuál sería la siguiente pantalla». */
+      await tocar('Crear el primero')
+      await esperar(3400)
+      await decir('Y ya está: la guía te deja directo en crear tu primer cliente', 5.0)
+      await esperar(5200)
+      await decir('Eso es lo que vemos en el siguiente vídeo', 4.2)
+      await esperar(4400)
+      await reposo(3200)
     },
   },
 ]
@@ -210,6 +247,14 @@ async function grabar(indices) {
       p,
       empezar: () => { desde = (Date.now() - t0) / 1000 },
       esperar: (ms) => p.waitForTimeout(ms),
+
+      /* ── ⚠ NINGUNA TOMA CORTA EN SECO ────────────────────────────────────
+         Reportado al ver los cinco primeros: «todos los tutoriales están así
+         como cortados abruptamente al final». Cada toma termina con la pantalla
+         QUIETA sobre el resultado de lo que acaba de hacer, para que se vea
+         dónde quedó antes de pasar a lo siguiente. */
+      reposo: (ms = 2800) => p.waitForTimeout(ms),
+
       decir: async (texto, dura = 4.0) => { rotulos.push({ t: Math.max(0, ahora()), dura, texto }) },
       mirar: async (sel, { escala = 1.7, ms = 4200 } = {}) => {
         const t = Math.max(0, ahora())

@@ -1,6 +1,6 @@
 # Vídeo 4 · Primeros pasos, si tienes cobradores
 
-**Archivo:** `04-primeros-pasos-equipo.mp4` · **Duración:** 1:44 · vertical 1080×1920
+**Archivo:** `04-primeros-pasos-equipo.mp4` · **Duración:** 02:30 · vertical 1080×1920
 
 El mismo momento que el vídeo 3 —la guía que sale al entrar por primera vez—
 pero por el otro camino.
@@ -12,7 +12,7 @@ cobrador.
 
 ---
 
-### 00:00 — 00:14 · La guía · *~35 palabras*
+### 00:00 — 00:15 · La guía · *~37 palabras*
 
 > Cuando entras por primera vez, el sistema te va guiando en vez de soltarte en
 > una pantalla vacía.
@@ -22,7 +22,7 @@ cobrador.
 
 ---
 
-### 00:14 — 00:33 · Paso 1, quién cobra · *~45 palabras*
+### 00:15 — 00:36 · Paso 1, quién cobra · *~49 palabras*
 
 > La primera pregunta es la que más cambia todo: quién sale a cobrar.
 >
@@ -33,7 +33,7 @@ cobrador.
 
 ---
 
-### 00:33 — 00:51 · Paso 2, con cuánto arrancas · *~41 palabras*
+### 00:36 — 00:56 · Paso 2, con cuánto arrancas · *~48 palabras*
 
 > Ahora, con cuánta plata arrancas. Es el efectivo que tienes hoy para prestar.
 >
@@ -43,7 +43,7 @@ cobrador.
 
 ---
 
-### 00:51 — 01:02 · Paso 3, los catorce días · *~27 palabras*
+### 00:56 — 01:09 · Paso 3, los catorce días · *~29 palabras*
 
 > Catorce días con todo abierto: clientes, préstamos, rutas, cobradores, caja y
 > reportes.
@@ -52,7 +52,7 @@ cobrador.
 
 ---
 
-### 01:02 — 01:22 · Paso 3, qué plan sirve para qué · *~49 palabras*
+### 01:09 — 01:37 · Paso 3, qué plan sirve para qué · *~67 palabras*
 
 > Aquí los planes van por dos cosas: cuántos cobradores tienes y cuántos
 > clientes llevas.
@@ -68,7 +68,7 @@ cobrador.
 
 ---
 
-### 01:22 — 01:44 · Paso 4, traer tu cartera · *~52 palabras*
+### 01:37 — 02:03 · Paso 4, traer tu cartera · *~61 palabras*
 
 > Y lo último: meter los préstamos que ya tienes.
 >
@@ -81,9 +81,20 @@ cobrador.
 
 ---
 
+### 02:03 — 02:30 · Cómo termina y dónde te deja · *~65 palabras*
+
+> Vamos por el primero, que es el que casi todo el mundo usa.
+>
+> Y ya está: la guía te deja directo en la pantalla de crear tu primer cliente,
+> que es donde de verdad empieza todo.
+>
+> Eso es lo que vemos en el siguiente vídeo.
+
+---
+
 ## Notas para quien narre
 
-- **La diferencia con el vídeo 3 está en el minuto 1:02.** Si alguien ve los dos,
+- **La diferencia con el vídeo 3 está en el minuto 1:09.** Si alguien ve los dos,
   esa es la parte que no se repite.
 - Al terminar quedan **ocho tareas** en el panel, dos más que si cobras solo:
   crear una ruta y agregar un cobrador. Vale la pena decirlo al cerrar: «y en el
