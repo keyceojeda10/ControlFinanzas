@@ -85,8 +85,13 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
       viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
       recordVideo: { dir: dirGrab, size: { width: 540, height: 960 } },
     })
-    if (cookie) {
-      await ctx.addCookies([{ name: 'next-auth.session-token', value: cookie, domain: 'localhost', path: '/' }])
+    /* Una toma puede entrar con OTRA sesión (`toma.cookie`). Hace falta para
+       enseñar lo que ve el cobrador dentro de un vídeo que va del dueño: es la
+       mitad de la explicación —para qué sirve crearle una cuenta— y con una
+       sola sesión por vídeo había que grabarlo aparte y pegarlo a mano. */
+    const galleta = toma.cookie ?? cookie
+    if (galleta) {
+      await ctx.addCookies([{ name: 'next-auth.session-token', value: galleta, domain: 'localhost', path: '/' }])
     }
     const p = await ctx.newPage()
     const t0 = Date.now()

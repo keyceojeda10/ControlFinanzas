@@ -180,6 +180,13 @@ ni «sistema francés».
   «Hoy» de la ruta es un conmutador cuya etiqueta no cambia, y en la demo les
   toca a los ocho: al pulsarlo la lista queda igual. Se subraya y se cuenta de
   palabra.
+- **Una toma puede entrar con OTRA sesión** (`toma.cookie`). Hace falta para
+  enseñar lo que ve el cobrador dentro de un vídeo que va del dueño: es la mitad
+  de la explicación y antes había que grabarlo aparte.
+- **Fuera de cuadro lo que fecha el vídeo.** El banner de la campaña «¿Qué le
+  cambiarías a la app?» ocupaba un tercio de la pantalla del cobrador: cuando se
+  apague, el tutorial enseñará algo que ya no existe. Se arrastra antes de
+  `empezar()`.
 - **Ojo con lo que abre otra pestaña o saca un `confirm()`.** «Google Maps» hace
   `window.open` y dejaría el vídeo fuera de la app; «Quitar de la ruta» usa el
   `confirm()` del navegador, que Playwright descarta solo y cancela la acción sin
@@ -201,11 +208,12 @@ ni «sistema francés».
 | 5 | Crear un préstamo | 3:43 |
 | 6 | Todos los modos de interés | 4:53 |
 | 7 | Las rutas | 6:22 |
+| 8 | Los cobradores | 5:40 |
 
 ## Lo que falta
 
-Cobrar el día · cobradores · caja · capital · ajustes y extras. Y el corto de 90
-segundos para el bot de ventas.
+Cobrar el día · caja · capital · ajustes y extras. Y el corto de 90 segundos
+para el bot de ventas.
 
 ⚠ **El bot tiene prohibido enviar vídeos** (`lib/bot-v2/prompts.js`). Esa regla
 se quita cuando estos existan y estén subidos, no antes.
