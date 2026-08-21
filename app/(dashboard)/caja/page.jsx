@@ -1197,7 +1197,12 @@ const MOVIMIENTOS_MANUALES = [
             )}
             <div className="space-y-2">
               {[
-                { label: 'Deberias tener', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--cf-ink)]' },
+                /* «Tocaba cobrar», no «Deberías tener»: es el esperado del día.
+                   Con el nombre viejo, la «Diferencia» de abajo —que se pinta en
+                   ROJO cuando es negativa— se leía como «te falta plata», y lo
+                   que dice en realidad es que no le cobró a todo el mundo. Eso
+                   es un día normal, no un descuadre. */
+                { label: 'Tocaba cobrar', value: formatMoney(cierreHoy.totalEsperado), color: 'text-[var(--cf-ink)]' },
                 { label: 'Entregaste', value: formatMoney(cierreHoy.totalRecogido), color: 'text-[var(--cf-ink)]' },
                 { label: 'Gastos', value: formatMoney(cierreHoy.totalGastos || 0), color: 'text-[var(--cf-red-dark)]' },
                 { label: 'Prestado hoy', value: `${cierreDesembolsado > 0 ? '-' : ''}${formatMoney(cierreDesembolsado)}`, color: 'text-[var(--cf-gold-dark)]' },
@@ -1284,7 +1289,24 @@ const MOVIMIENTOS_MANUALES = [
             )}
             <form id="cf-cierre-del-dia" onSubmit={registrarCierre} className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-[var(--cf-ink-3)]">{esAyer ? 'Deberias tener (ayer)' : 'Deberias tener en caja'}</span>
+                {/* ⚠ ESTA CIFRA NO ES LO QUE TIENE QUE TENER EN LA MANO.
+
+                    Es `stats.esperado`, o sea `esperadoDeCartera`: LO QUE TOCABA
+                    COBRAR HOY. Se llamaba «Deberías tener en caja», y con un
+                    cobrador que no presta nada las dos cosas casi coinciden, así
+                    que el nombre pasaba desapercibido. En cuanto entrega plata
+                    en la calle se separan:
+
+                        Te queda en la mano   −$357.400   ← lo que de verdad tiene
+                        Deberías tener en caja $177.500   ← lo que tocaba cobrar
+
+                    Dos respuestas distintas a la misma pregunta, en la misma
+                    pantalla y a cuatro renglones de distancia. Lo que tiene que
+                    entregar es lo de arriba, y para eso está el botón «Usar».
+
+                    No se toca ninguna cuenta: solo se llama a la cifra por lo
+                    que es. Ver `lib/dinero/esperado.js`. */}
+                <span className="text-[var(--cf-ink-3)]">{esAyer ? 'Tocaba cobrar (ayer)' : 'Lo que tocaba cobrar hoy'}</span>
                 <span className="font-semibold font-mono-display text-[var(--cf-ink)]">{formatMoney(stats.esperado || 0)}</span>
               </div>
               <div className="rounded-[12px] px-3 py-2.5 space-y-2" style={{ background: 'var(--cf-gold-tint)', border: '1px solid color-mix(in srgb, var(--cf-gold-dark) 25%, transparent)' }}>
@@ -1969,7 +1991,7 @@ const MOVIMIENTOS_MANUALES = [
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-[11px]">
                   <div className="rounded-[8px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">
-                    <p className="text-[var(--cf-ink-3)] uppercase tracking-wide text-[10px]">Esperado</p>
+                    <p className="text-[var(--cf-ink-3)] uppercase tracking-wide text-[10px]">Tocaba cobrar</p>
                     <p className="font-semibold font-mono-display text-[var(--cf-ink)]">{formatMoney(cierreOwner.totalEsperado)}</p>
                   </div>
                   <div className="rounded-[8px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">
@@ -2264,7 +2286,7 @@ const MOVIMIENTOS_MANUALES = [
                         <div className="space-y-3 mt-3">
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">
-                              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Esperado</p>
+                              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Tocaba cobrar</p>
                               <p className="text-sm font-semibold font-mono-display text-[var(--cf-ink)]">{formatMoney(cierre.totalEsperado)}</p>
                             </div>
                             <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">

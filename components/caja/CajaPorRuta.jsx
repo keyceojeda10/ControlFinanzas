@@ -295,7 +295,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
                 display: 'flex', gap: 18, paddingTop: 10,
                 borderTop: '1px solid var(--cf-hairline)',
               }}>
-                {f.esperado && <Cifra etiqueta="Esperado hoy" valor={f.esperado} />}
+                {f.esperado && <Cifra etiqueta="Tocaba cobrar" valor={f.esperado} />}
                 {f.prestado && <Cifra etiqueta="Prestado" valor={f.prestado} />}
               </div>
             )}
