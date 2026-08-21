@@ -197,5 +197,16 @@ for (let i = 0; i < movs.length; i++) {
 }
 console.log(`  ${movs.length - 1} corridos · 1 se queda en el día`)
 
+/* ⚠ Y EL RESTO DE MOVIMIENTOS TAMBIÉN. No solo los desembolsos de préstamo:
+   el capital de arranque y los ajustes de ruta (`ajusteArranqueRuta`) también
+   nacen hoy, y la pestaña «Cuentas» —que enseña el movimiento del período— abría
+   con «Efectivo: entró $92.600 · salió $5.700.000» y un «TIENES EN TOTAL» de
+   menos cinco millones y medio, justo al lado de una caja del día que decía
+   «prestado −$450.000». Dos cifras del mismo día que no se parecen en nada. */
+await cx.execute(
+  `UPDATE MovimientoCapital SET createdAt = DATE_SUB(NOW(), INTERVAL 8 DAY)
+    WHERE organizationId = ? AND id <> ?`, [IDS.org, enElDia.movId])
+console.log('  el resto de movimientos, a hace 8 días')
+
 console.log('\n✓ negocio de demostración listo en', BASE)
 await cx.end()

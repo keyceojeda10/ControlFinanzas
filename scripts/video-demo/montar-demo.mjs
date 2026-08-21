@@ -177,6 +177,22 @@ export async function montar(cx) {
      VALUES (?, ?, 12000000, NOW(), NOW())`, [IDS.capital, IDS.org])
   await cx.execute(`UPDATE Ruta SET saldoCapital = 12000000 WHERE id = ?`, [IDS.ruta])
 
+  /* ⚠ Y EL CAPITAL, COMO MOVIMIENTO. Poner el saldo a mano deja la vista
+     «Cuentas» viendo solo salidas: «Efectivo: entró $92.600 · salió $5.700.000
+     · TIENES EN TOTAL −$5.607.400». Es realista —98 de cada 107 negocios de
+     verdad nunca registraron su capital inicial, ver `capital_negativo_no_es_bug`—
+     pero en un tutorial se lee como un negocio quebrado.
+
+     Va fechado un mes atrás: es la plata con la que se abrió, no la de hoy. */
+  await cx.execute(
+    `INSERT INTO MovimientoCapital
+       (id, capitalId, organizationId, tipo, monto, saldoAnterior, saldoNuevo,
+        descripcion, metodoPago, creadoPorId, createdAt)
+     VALUES (?, ?, ?, 'inyeccion', 12000000, 0, 12000000,
+             'Capital con el que arranca el negocio', 'efectivo', ?,
+             DATE_SUB(NOW(), INTERVAL 30 DAY))`,
+    ['zzvideodemo0000000000mov01', IDS.capital, IDS.org, IDS.owner])
+
   /* ⚠ SIN ESTO EL VÍDEO SALE CON DOS BANDERAS ROJAS ENCIMA: «Falta verificar tu
      correo» y «Agrega tu número de celular» acompañan al usuario por todas las
      pantallas hasta resolverlas. En una demostración se leen como un sistema a
