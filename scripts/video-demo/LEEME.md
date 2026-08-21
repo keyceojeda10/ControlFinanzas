@@ -43,6 +43,93 @@ URL=http://localhost:3016/clientes node scripts/video-demo/sondear.mjs
 URL=http://localhost:3016/registro node scripts/video-demo/sondear-publico.mjs
 ```
 
+## El formato, que no cambia
+
+Seis vídeos y tres rondas de correcciones del dueño después, esto es lo que
+funciona. **Un vídeo nuevo se ajusta a esto**, o desentona con la serie.
+
+### La forma
+
+| | |
+|---|---|
+| **Vertical 1080×1920**, 30 fps, H.264 | se ve en el móvil, que es donde lo abren |
+| **Sin voz**, con guion cronometrado al lado | la narración la graba el dueño |
+| **Una toma por sección de pantalla** | y cada una se puede rehacer sola |
+| **Duración** | 2:30 los sencillos, 4:00-5:00 los monográficos |
+| Rótulos negros sobre la imagen | dibujados aparte, nunca dentro de la página |
+| Subrayado dorado con el resto atenuado | y un cursor que se ve pulsar |
+
+### El ritmo
+
+**~2,4 palabras por segundo.** Es lo que se narra cómodo en español. Cada bloque
+del guion lleva escrito cuántas caben, y **hay que comprobarlo**: siete de los
+once bloques del vídeo 6 no cabían, y eso obliga al narrador a correr o el audio
+sale desfasado. Cuando un bloque se pasa, **se alarga la toma**, no se recorta la
+explicación — salvo que sobre prosa.
+
+> *«Si es muy rápido, después la voz toca ponerla muy rápido o va a salir audio
+> desfasado del vídeo.»*
+
+Y al revés: **si sobra tiempo, callar**. Dos segundos de silencio sobre una
+pantalla que se entiende sola no molestan a nadie.
+
+### Las seis reglas de cada toma
+
+Viven en la cabecera de `grabador.mjs`, que es quien las hace cumplir:
+
+1. **No se entra por URL** a una pantalla que el vídeo explica: se llega
+   tocando, por donde la toca el usuario.
+   > *«No pulsas el botón de donde la gente encuentra el crear el cliente.»*
+2. **Una sección de pantalla, una parada.**
+3. Las pausas se calculan contra lo que hay que decir.
+4. **Un acercamiento por parada.** El montaje avisa si dos quedan a menos de
+   1,2 s: se ve como un tirón.
+   > *«Mete como un zoom y después otro zoom y es como excesivo.»*
+5. **Ninguna toma corta en seco**: termina su acción y descansa sobre el
+   resultado (`reposo`).
+6. **Todo vídeo lleva una toma de CIERRE** que completa el proceso y enseña
+   dónde te deja.
+   > *«Todos los tutoriales están así como cortados abruptamente al final.»*
+
+### El orden dentro de una parada
+
+**Primero `decir`, después `mirar`.** Al revés el rótulo se sienta encima de la
+tarjeta que va a subrayar, y además aparece cuando el acercamiento ya terminó.
+Se ve en el fotograma; en el código parece correcto.
+
+```js
+await decir('Lo que se dice aquí', 4.4)   // sobre la pantalla limpia
+await esperar(4600)
+await mirar(modo('Cuota fija'), { escala: 1.7, ms: 4800 })
+await esperar(900)
+```
+
+Y **el arrastre hasta la sección va antes de `empezar()`**, o la toma abre cinco
+segundos sobre otra parte del formulario mientras el rótulo ya habla de otra
+cosa.
+
+### El guion de voz
+
+Un `.md` por vídeo en `guiones/`, con esta forma:
+
+- Encabezado con **archivo, duración** y de cuántas tomas consta.
+- Un bloque por toma: `### 01:52 — 02:23 · Toma 6 · Título · *~75 palabras*`,
+  y debajo la narración en cita (`>`).
+- **Notas para quien narre**: qué decir despacio y qué se malentiende.
+- **De dónde salen las cifras**, si el vídeo enseña números. No se escriben a
+  mano: se sacan de la función que las calcula y se contrastan contra la
+  pantalla. Si cambian, el vídeo miente.
+- **Lo que NO se dice, y por qué** — cuando hay algo que soporte debería saber
+  pero asusta en un tutorial.
+- Cómo rehacer un trozo.
+
+### El tono
+
+Tuteo. Sin palabras técnicas. **Se nombran las cosas como las nombra el
+prestamista**, no como se llaman por dentro: «el fajo», «la cartulina», «lo que
+te queda en la mano». En el vídeo de los modos no se dice ni una vez «balloon»
+ni «sistema francés».
+
 ## Reglas
 
 - **Ni un dato de cliente real.** Todo sale del negocio inventado «Créditos del
@@ -83,11 +170,21 @@ URL=http://localhost:3016/registro node scripts/video-demo/sondear-publico.mjs
   alguien está escribiendo.
 - La cuenta que se crea al grabar el registro **se borra antes y después**.
 
+## Los que hay
+
+| | Vídeo | Dura |
+|---|---|---|
+| 1 | Cómo registrarse | 2:24 |
+| 2 | Crear un cliente | 2:28 |
+| 3 | Primeros pasos, cobrando solo | — |
+| 4 | Primeros pasos, con cobradores | — |
+| 5 | Crear un préstamo | 3:43 |
+| 6 | Todos los modos de interés | 4:53 |
+
 ## Lo que falta
 
-Vídeos 2 a 8, según el plan acordado: cliente y préstamo · cobrar el día ·
-rutas · cobradores · caja · capital · ajustes y extras. Y el corto de 90
-segundos para el bot de ventas.
+Cobrar el día · rutas · cobradores · caja · capital · ajustes y extras. Y el
+corto de 90 segundos para el bot de ventas.
 
 ⚠ **El bot tiene prohibido enviar vídeos** (`lib/bot-v2/prompts.js`). Esa regla
 se quita cuando estos existan y estén subidos, no antes.
