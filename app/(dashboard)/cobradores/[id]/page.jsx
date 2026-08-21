@@ -34,6 +34,68 @@ function CobradorDetalleInner({ params }) {
   const [nuevaPass, setNuevaPass]       = useState('')
   const [reseteando, setReseteando]     = useState(false)
 
+  /* ══ ASIGNARLE UNA RUTA ════════════════════════════════════════════════
+   *
+   * ⚠ ESTO NO SE PODÍA HACER EN NINGUNA PANTALLA. La lista de cobradores avisa
+   * «una cuenta sin ruta no puede cobrar nada, asígnale una» y ofrece un botón
+   * «Asignar» que trae AQUÍ — y aquí solo ponía «Sin ruta asignada», sin nada
+   * que tocar. La ficha de la ruta tampoco: su «Cambiar el cobrador de la ruta»
+   * devuelve a /cobradores, o sea al mismo sitio. El círculo estaba cerrado y la
+   * única salida era crear una ruta NUEVA, que es donde sí se elige cobrador.
+   *
+   * En producción hay 6 cobradores activos sin ninguna ruta, y tres de ellos son
+   * del mismo negocio, que tiene 9 rutas y 2 esperando sin cobrador.
+   *
+   * El API ya lo hacía todo (`PATCH /api/rutas/[id]` con `cobradorId`, con su
+   * guarda de cierre del día y su `?forzar=1`). Solo faltaba con qué llamarlo.
+   *
+   * ⚠ Y SE LISTAN TODAS SUS RUTAS, no una. `Ruta.cobradorId` es uno-a-muchos y
+   * `/api/cobradores/[id]` devuelve `rutas[0]`: con dos rutas, la ficha enseñaba
+   * una y la otra quedaba invisible. Asignar a ciegas habría dejado cobradores
+   * con rutas que nadie ve. */
+  const [rutasOrg, setRutasOrg] = useState(null)
+  const [asignando, setAsignando] = useState(false)
+  const [errorRuta, setErrorRuta] = useState('')
+  const [forzarRuta, setForzarRuta] = useState(null) // { rutaId, mensaje }
+  const esOwner = session?.user?.rol === 'owner'
+
+  const fetchRutas = useCallback(async () => {
+    if (!esOwner) return
+    try {
+      const res = await fetch('/api/rutas')
+      setRutasOrg(res.ok ? await res.json() : [])
+    } catch { setRutasOrg([]) }
+  }, [esOwner])
+
+  useEffect(() => { fetchRutas() }, [fetchRutas])
+
+  /** Pone (o quita) este cobrador en una ruta. `null` la deja sin cobrador. */
+  const asignarRuta = async (rutaId, quien, forzar = false) => {
+    setAsignando(true)
+    setErrorRuta('')
+    try {
+      const res = await fetch(`/api/rutas/${rutaId}${forzar ? '?forzar=1' : ''}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cobradorId: quien }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        // 409: el cobrador anterior ya cerró caja o tiene pagos de hoy en esa
+        // ruta. No se pisa en silencio — se pregunta.
+        if (d?.cambioBloqueado) { setForzarRuta({ rutaId, quien, mensaje: d.error }); return }
+        setErrorRuta(d?.error || 'No se pudo asignar la ruta.')
+        return
+      }
+      setForzarRuta(null)
+      await Promise.all([fetchRutas(), fetchCobrador()])
+    } catch {
+      setErrorRuta('No se pudo asignar la ruta.')
+    } finally {
+      setAsignando(false)
+    }
+  }
+
   const fetchCobrador = useCallback(async () => {
     try {
       const res = await fetch(`/api/cobradores/${id}`)
@@ -104,6 +166,11 @@ function CobradorDetalleInner({ params }) {
 
   const ruta = data.ruta
   const clientes = ruta?.clientes ?? []
+  /* `rutas[0]` es lo que devuelve el API; las de verdad salen de `/api/rutas`,
+     que trae todas las del negocio con su cobrador. Mientras carga se enseña la
+     que ya venía, para que la tarjeta no parpadee de «con ruta» a «sin ruta». */
+  const susRutas = rutasOrg ? rutasOrg.filter((r) => r.cobrador?.id === id) : (ruta ? [ruta] : [])
+  const rutasLibres = rutasOrg ? rutasOrg.filter((r) => r.cobrador?.id !== id) : []
 
   /* ══ LO QUE SE PUEDE HACER CON ESTE COBRADOR ═════════════════════════════
    *
@@ -346,23 +413,106 @@ function CobradorDetalleInner({ params }) {
 
       {/* Ruta */}
       <Card>
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>Ruta asignada</p>
-        {ruta ? (
-          <Link href={`/rutas/${ruta.id}`} className="flex items-center gap-3 hover:bg-[var(--cf-card)] -mx-1 px-1 py-2 rounded-[12px] transition-colors">
-            <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[var(--cf-ink)]">{ruta.nombre}</p>
-              <p className="text-xs text-[var(--cf-ink-3)]">{clientes.length} clientes</p>
-            </div>
-          </Link>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>
+          {susRutas.length > 1 ? `Rutas asignadas (${susRutas.length})` : 'Ruta asignada'}
+        </p>
+
+        {susRutas.length > 0 ? (
+          <div className="flex flex-col gap-1">
+            {susRutas.map((r) => (
+              <div key={r.id} className="flex items-center gap-3">
+                <Link href={`/rutas/${r.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[var(--cf-card)] -mx-1 px-1 py-2 rounded-[12px] transition-colors">
+                  <div className="w-9 h-9 rounded-full bg-[rgba(245,197,24,0.15)] flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-[var(--cf-gold)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                  </div>
+                  {/* El nombre de la ruta NO se recorta: baja de renglón. */}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[var(--cf-ink)]">{r.nombre}</p>
+                    {/* ⚠ `cantidadClientes`, que es lo que devuelve `/api/rutas`.
+                        Escribí `r.clientes.length` de memoria: el campo no viene,
+                        daba `undefined`, y mi propio respaldo lo tapaba con un 0.
+                        La ruta con 5 clientes decía «0 clientes» y no falla nada.
+                        Se vio en la captura, no en el código. */}
+                    <p className="text-xs text-[var(--cf-ink-3)]">
+                      {`${r.cantidadClientes ?? (r.id === ruta?.id ? clientes.length : 0)} clientes`}
+                    </p>
+                  </div>
+                </Link>
+                {esOwner && (
+                  <button type="button" disabled={asignando}
+                    onClick={() => asignarRuta(r.id, null)}
+                    className="text-[11px] font-semibold shrink-0 px-2 py-1 rounded-[8px]"
+                    style={{ color: 'var(--cf-ink-3)', background: 'var(--cf-fill)' }}>
+                    Quitar
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
-          <p className="text-sm text-[var(--cf-gold-dark)]">Sin ruta asignada</p>
+          <p className="text-sm text-[var(--cf-gold-dark)]">
+            Sin ruta asignada{esOwner ? ': así no puede cobrar nada.' : ''}
+          </p>
+        )}
+
+        {/* El asignador. Solo el dueño, y solo si el negocio tiene alguna ruta
+            que este cobrador no lleve ya. */}
+        {esOwner && rutasLibres.length > 0 && (
+          <div className="flex flex-col gap-1.5 mt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--cf-ink-3)' }}>
+              {susRutas.length > 0 ? 'Darle otra ruta' : 'Darle una ruta'}
+            </span>
+            <select
+              value=""
+              disabled={asignando}
+              onChange={(e) => { if (e.target.value) asignarRuta(e.target.value, id) }}
+              className="w-full"
+              style={{
+                height: 46, padding: '0 12px', borderRadius: 'var(--cf-r-control)',
+                background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                font: 'inherit', fontSize: 15, color: 'var(--cf-ink)',
+              }}
+            >
+              <option value="">Elige una ruta…</option>
+              {rutasLibres.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.cobrador ? `${r.nombre} — la lleva ${r.cobrador.nombre}` : `${r.nombre} — sin cobrador`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {esOwner && rutasOrg?.length === 0 && (
+          <p className="text-[12px] mt-3" style={{ color: 'var(--cf-ink-3)' }}>
+            Todavía no tienes rutas. Crea una en «Rutas» y podrás asignársela aquí.
+          </p>
+        )}
+
+        {errorRuta && (
+          <p className="text-[12px] mt-2" style={{ color: 'var(--cf-red-dark)' }}>{errorRuta}</p>
         )}
       </Card>
+
+      {/* El cobrador anterior ya cerró caja o tiene pagos de hoy en esa ruta.
+          Cambiarlo fragmentaría el cierre, así que se pregunta en vez de
+          pisarlo — el API lo devuelve como 409 y aquí se ofrece el `forzar`. */}
+      {/* ⚠ Las props son las de ESTE ConfirmModal: `onCancel`, `confirmLabel` y
+          `confirmColor`. Escribí `onClose`, `confirmText` y `danger` de memoria,
+          y sin TypeScript eso no revienta: sale un modal que no se puede
+          cerrar. */}
+      <ConfirmModal
+        open={!!forzarRuta}
+        onCancel={() => setForzarRuta(null)}
+        onConfirm={() => asignarRuta(forzarRuta.rutaId, forzarRuta.quien, true)}
+        title="¿Cambiar el cobrador de todos modos?"
+        message={forzarRuta?.mensaje}
+        confirmLabel="Cambiar igual"
+        confirmColor="red"
+        loading={asignando}
+      />
 
       {/* Clientes de la ruta */}
       {clientes.length > 0 && (
