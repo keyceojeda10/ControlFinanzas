@@ -603,7 +603,16 @@ const MOVIMIENTOS_MANUALES = [
      tres y `const` no se puede leer antes de su línea: la caja entera se caía
      con «Cannot access before initialization». Es la tercera vez que este mismo
      archivo me lo hace. */
-  const enLaMano = cobradoEfectivoHoy - prestadoEfectivoHoy - gastosHoy
+  /* ── ⚠ Y LO QUE EL DUEÑO LE METIÓ O LE SACÓ HOY ───────────────────────────
+     Comparadas las dos cajas de PRESTA MIL con los datos del 20 ago, tres de
+     los diez cobradores no cuadraban con el administrador, y las tres
+     diferencias eran esto al peso: un retiro de $373.000 y dos inyecciones de
+     $101.000 y $109.000.
+
+     El administrador ya lo contaba; esta pantalla no. Si al cobrador le meten
+     $109.000 a media mañana, tiene $109.000 más que entregar y aquí no salía. */
+  const movidoPorElDueno = Math.round(stats.movidoPorElDuenoEfectivo ?? 0)
+  const enLaMano = cobradoEfectivoHoy - prestadoEfectivoHoy - gastosHoy + movidoPorElDueno
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
@@ -1013,6 +1022,16 @@ const MOVIMIENTOS_MANUALES = [
                   : []),
                 { id: 'desembolsos', label: 'Lo que prestaste', valor: prestadoHoy, signo: -1 },
                 { id: 'gastos', label: 'Gastos', valor: gastosHoy, signo: -1 },
+                /* Con su nombre y su signo: una cifra que cambia el total sin
+                   aparecer en la lista es de donde salen las preguntas. */
+                ...(movidoPorElDueno !== 0
+                  ? [{
+                      id: 'movidoDueno',
+                      label: movidoPorElDueno > 0 ? 'Te entregaron para la ruta' : 'Te recogieron de la ruta',
+                      valor: Math.abs(movidoPorElDueno),
+                      signo: movidoPorElDueno > 0 ? 1 : -1,
+                    }]
+                  : []),
               ].map(({ id, label, valor, signo }) => {
                 /* ── «LO QUE PRESTASTE» SE ABRE ────────────────────────
                    Reportado por el dueño de PRESTA MIL el 14 ago 2026:

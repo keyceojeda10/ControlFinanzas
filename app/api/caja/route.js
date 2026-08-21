@@ -881,6 +881,30 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
         .filter((d) => entraAlFajo(d.metodoPago, d.metodoPagoId, cuentasCobrador))
         .reduce((a, d) => a + (d.monto || 0), 0)
     ),
+    /* ── ⚠ LO QUE EL DUEÑO LE METIÓ O LE SACÓ HOY, EN BILLETES ──────────────
+       Comparadas las dos cajas de PRESTA MIL con los datos del 20 ago, tres de
+       los diez cobradores no cuadraban, y las tres diferencias eran esto al
+       peso:
+
+           CAMILO   retiro «vase»     $373.000  →  difería en  373.000
+           DIEGO    inyección «vase»  $101.000  →  difería en −101.000
+           JULIAN   inyección «vase»  $109.000  →  difería en −109.000
+
+       El administrador ya lo contaba —«Le metiste a esta ruta» / «Le sacaste a
+       esta ruta»— y la caja del cobrador no. Si al cobrador le meten $109.000
+       durante el día, tiene $109.000 más que entregar y su pantalla no se lo
+       decía.
+
+       Solo EFECTIVO, y solo de sus rutas: una inyección por transferencia no le
+       llena el bolsillo. Los `ajuste` se quedan fuera a propósito — los
+       manuales ya los lleva `ajustesManualDia` y los del sistema no son
+       billetes. */
+    movidoPorElDuenoEfectivo: Math.round(
+      (movimientosDia ?? [])
+        .filter((m) => ['inyeccion', 'capital_inicial', 'retiro'].includes(m.tipo))
+        .filter((m) => m.metodoPago !== 'transferencia')
+        .reduce((a, m) => a + (m.tipo === 'retiro' ? -(m.monto || 0) : (m.monto || 0)), 0)
+    ),
     // Dos cifras distintas del dia (se separan en renovaciones):
     valorPrestadoDia: prestadoDetalle.valorPrestado,
     efectivoEntregadoDia: prestadoDetalle.efectivoEntregado,
