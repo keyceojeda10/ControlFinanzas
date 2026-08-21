@@ -1,62 +1,83 @@
 # Vídeo 1 · Cómo registrarse en el sistema
 
-**Archivo:** `01-registro.mp4` · **Duración:** 38 s · vertical 1080×1920
+**Archivo:** `01-registro.mp4` · **Duración:** 1:52 · vertical 1080×1920
 
-Para grabar la voz en off. Los tiempos salen de la escaleta que imprime el
-propio guion de grabación al terminar, no de un cálculo a mano: si se rehace
-una toma y cambia de duración, se vuelve a correr y estos tiempos cambian solos.
+Ocho tomas. Rehecho para igualar el ritmo del vídeo 2: la primera versión iba a
+6,3 segundos por bloque y esta va a 14, que es lo que hace falta para poner la
+voz encima sin correr.
 
-**Cómo leerlo:** cada bloque empieza en su marca. Si sobra tiempo, callar —el
-silencio sobre una pantalla que se entiende sola no molesta—. Si falta, recortar
-la frase antes que acelerarla.
+**La cuenta de las palabras.** En español se narra cómodo a unas 2,4 palabras por
+segundo. Debajo de cada bloque va cuántas caben. El texto propuesto deja margen:
+**si sobra tiempo, callar.**
 
 ---
 
-### 00:00 — 00:02 · La pantalla de registro
+### 00:00 — 00:10 · La pantalla de registro · *caben ~25 palabras*
 
 > Crear tu cuenta son cuatro pasos.
-
----
-
-### 00:02 — 00:08 · Paso 1, tu nombre
-
-> Lo primero, tu nombre. Es el que vas a ver dentro de la aplicación.
-
----
-
-### 00:08 — 00:12 · Paso 2, el negocio
-
-> Después, el nombre de tu negocio. Este sí es importante: es el que ven tus
-> clientes en los recibos y el que ven tus cobradores cuando entran.
-
----
-
-### 00:12 — 00:18 · Paso 3, país y WhatsApp
-
-> Eliges tu país —el sistema trabaja en doce— y pones tu número de WhatsApp. Por
-> ahí te llega el código para verificar la cuenta.
-
----
-
-### 00:18 — 00:32 · Paso 4, correo, contraseña y términos
-
-> El último paso son tus datos de entrada. El correo va a ser tu usuario, así que
-> pon uno al que entres de verdad. Y una contraseña de mínimo ocho caracteres.
 >
-> *(pausa hasta que se acerque a la casilla, sobre 00:24)*
->
-> Ojo con este cuadrito: hay que aceptar los términos. Si no lo marcas, el botón
-> de abajo no te deja seguir.
->
-> *(sobre 00:28)*
->
-> Y ya está. Catorce días completos para probarlo, sin poner ninguna tarjeta.
+> Arriba te va diciendo por cuál vas.
 
 ---
 
-### 00:32 — 00:38 · La verificación
+### 00:10 — 00:25 · Paso 1, tu nombre · *caben ~35 palabras*
 
-> Al terminar te llega un código de seis dígitos por WhatsApp.
+> Lo primero, tu nombre.
+>
+> Es el que verás dentro de la aplicación cuando entres.
+
+---
+
+### 00:25 — 00:37 · Paso 2, el negocio · *caben ~29 palabras*
+
+> Ahora el nombre de tu negocio.
+>
+> Este sí importa: es el que ven tus clientes en los recibos y el que ven tus
+> cobradores cuando entran.
+
+---
+
+### 00:37 — 00:53 · Paso 3, país y WhatsApp · *caben ~38 palabras*
+
+> Eliges tu país. El sistema trabaja en doce países, así que la moneda y las
+> fechas se ajustan solas al tuyo.
+>
+> Y pones tu WhatsApp: por ahí te llega el código para verificar la cuenta.
+
+---
+
+### 00:53 — 01:09 · Paso 4, correo y contraseña · *caben ~36 palabras*
+
+> El último paso son tus datos de entrada.
+>
+> El correo va a ser tu usuario, así que pon uno al que entres de verdad.
+>
+> Y una contraseña de mínimo ocho caracteres.
+
+---
+
+### 01:09 — 01:21 · La casilla de los términos · *caben ~29 palabras*
+
+> Ojo con este cuadrito: hay que aceptar los términos.
+>
+> Si no lo marcas, el botón de abajo no te va a dejar seguir.
+
+*Es donde más gente se traba, y la pantalla no lo dice. Decirlo despacio.*
+
+---
+
+### 01:21 — 01:36 · Crear la cuenta · *caben ~37 palabras*
+
+> Y ya está: le das a «Crear cuenta gratis».
+>
+> Tienes catorce días completos para probarlo, sin poner ninguna tarjeta.
+
+---
+
+### 01:36 — 01:52 · La verificación · *caben ~38 palabras*
+
+> Al terminar te llega un código de seis dígitos por WhatsApp. Lo escribes ahí y
+> quedas verificado.
 >
 > Si no te llega, puedes pedirlo al correo. Y si tienes prisa, entras ya y
 > verificas después.
@@ -65,28 +86,27 @@ la frase antes que acelerarla.
 
 ## Notas para quien narre
 
-- **Tuteo**, como el resto de la aplicación.
-- **Sin palabras técnicas**: nada de «usuario», «formulario», «validar».
-- Ritmo tranquilo: es un tutorial, no un anuncio.
-- Lo único con énfasis: la casilla de términos y los catorce días sin tarjeta.
-- El bloque de 00:18 es el más largo (14 s) y lleva tres ideas. Hay sitio de
-  sobra para respirar entre ellas; las marcas entre paréntesis son dónde el
-  vídeo se acerca a cada cosa.
+- Tuteo, sin palabras técnicas.
+- Lo que conviene decir con énfasis: **la casilla de términos** y **los catorce
+  días sin tarjeta**.
+- No hace falta llenar los silencios.
 
 ## Lo que NO se dice, y por qué
 
-- **El registro admite tres cuentas por hora desde la misma conexión.** Si
-  alguien se equivoca varias veces le sale «Demasiados intentos» y tiene que
-  esperar. No va en el vídeo —asusta más de lo que ayuda— pero **soporte debería
-  saberlo**, porque parece una caída del sistema y no lo es.
-- No se enseña el código de verificación escribiéndose: llega a un WhatsApp real
-  y en la demostración el número es inventado.
+- **El registro admite tres cuentas por hora desde la misma conexión.** Al cuarto
+  intento sale «Demasiados intentos» y hay que esperar. No va en el vídeo
+  —asusta más de lo que ayuda— pero **soporte debería saberlo**: parece una
+  caída del sistema y no lo es.
+- No se enseña el código escribiéndose: llega a un WhatsApp real y en la
+  demostración el número es inventado.
 
 ## Si hay que rehacer un trozo
 
-Cada bloque de arriba es una toma independiente:
-
 ```bash
-node scripts/video-demo/v01-registro.mjs --toma 4   # solo «país y WhatsApp»
-node scripts/video-demo/v01-registro.mjs --pegar    # y volver a pegar
+node scripts/video-demo/v01-registro.mjs --toma 6   # solo «la casilla»
+node scripts/video-demo/v01-registro.mjs --pegar
 ```
+
+⚠ Para grabarlo entero hay que **reiniciar el espejo antes** (`bash
+.auditoria/arrancar-espejo.sh`): cada toma crea una cuenta y el límite es de
+tres por hora.
