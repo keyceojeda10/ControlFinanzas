@@ -54,6 +54,26 @@ export function montarToma({
   const k = salidaAncho / ancho
   const RAMPA = 0.55 // segundos de entrada y de salida del acercamiento
 
+  /* ⚠ DOS ACERCAMIENTOS PEGADOS SE VEN COMO UN TIRÓN. Reportado al ver el
+     vídeo 2: «a veces se ve que mete como un zoom y después otro zoom y es como
+     excesivo». Entre el final de uno y el principio del siguiente tiene que
+     haber vista normal, o la cámara parece que salta.
+
+     No se corrige en silencio: se avisa, porque lo que hay que arreglar es el
+     guion de la toma, no el montaje. */
+  const orden = [...zooms].sort((a, b) => a.t - b.t)
+  for (let i = 1; i < orden.length; i++) {
+    const finAnterior = orden[i - 1].t + orden[i - 1].dura + RAMPA
+    const hueco = orden[i].t - finAnterior
+    if (hueco < 1.2) {
+      console.warn(
+        `   ⚠ dos acercamientos a ${hueco.toFixed(1)}s uno de otro ` +
+        `(${orden[i - 1].t.toFixed(1)}s y ${orden[i].t.toFixed(1)}s). ` +
+        'Separa las paradas de esa toma: se ve como un tirón.',
+      )
+    }
+  }
+
   // ── El zoom, como una escala que depende del tiempo ──────────────────────
   // `on/fps` es el segundo de salida; se compone un trapecio por acercamiento.
   const trozos = zooms.map((z) => {
