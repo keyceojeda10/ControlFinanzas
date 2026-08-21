@@ -214,11 +214,11 @@ ni «sistema francés».
 | 7 | Las rutas | 6:22 |
 | 8 | Los cobradores | 5:40 |
 | 9 | Cobrar el día | 4:39 |
+| 10 | Ajustes | 7:49 |
 
 ## Lo que falta
 
-Caja · capital · ajustes y extras. Y el corto de 90 segundos para el bot de
-ventas.
+Caja · capital. Y el corto de 90 segundos para el bot de ventas.
 
 ⚠ **Antes del vídeo de caja hay que arreglar el decorado.** `poblar-demo`
 desembolsa los trece préstamos con fecha de HOY, así que la caja del cobrador
