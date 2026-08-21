@@ -8,7 +8,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia } from '@/lib/dinero/conciliacion'
+import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia } from '@/lib/dinero/conciliacion'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
@@ -385,6 +385,12 @@ export async function GET(request, { params }) {
      resolver la pareja de una edición: mirando un asiento suelto no hay forma
      de saber si el billete que corrige salió hoy o hace tres semanas. */
   const originalesDeHoy = desembolsosOriginalesDelDia(primerMovPorRuta)
+  /* ── ⚠ EL COBRO ANULADO HOY NO SE RESTA DOS VECES ─────────────────────────
+     Al anular un pago su fila de `Pago` se BORRA, así que ya no está en «lo
+     cobrado». Pero su asiento de recaudo se queda en el libro y encima se
+     escribe un reverso, y `ajustesDia` se lo lleva: el mismo pago restado dos
+     veces. Ver `cobrosRevertidosElMismoDia`. */
+  const reversosYaDescontados = cobrosRevertidosElMismoDia(primerMovPorRuta)
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
     if (m.tipo === 'inyeccion' || m.tipo === 'capital_inicial') {
@@ -396,18 +402,26 @@ export async function GET(request, { params }) {
     } else if (m.tipo === 'ajuste') {
       // Con su dirección real, la misma que usa el delta de arriba.
       const d = m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)
-      ajustesDia += d
+      /* El reverso de un cobro anulado HOY ya está descontado por la vía de
+         «lo cobrado», que salió de `Pago` y donde ese pago ya no existe.
+         Sumarlo aquí lo restaría por segunda vez: es el −$3.266.000 de la
+         RUTA #9. Si el pago era de un día ANTERIOR sí resta, porque aquella
+         plata entró de verdad y hoy se quita. */
+      const yaDescontado = reversosYaDescontados.has(m.id)
+      if (!yaDescontado) ajustesDia += d
       /* ⚠ EL REVERSO MUEVE LA BOLSA, NO EL FAJO. `ajustesDia` se los queda —el
          capital de la ruta sí vuelve a su sitio— y el efectivo no. Ver
          `afectaElFajo`: sale del préstamo eliminado de PRESTA MIL, que le pedía
          al cobrador $40.000 que llevaban seis días fuera de su bolsillo. */
-      if (afectaElFajo(m, originalesDeHoy)) ajustesEfectivo += d
+      if (!yaDescontado && afectaElFajo(m, originalesDeHoy)) ajustesEfectivo += d
     }
   }
   /* Qué asientos fueron los que movieron la bolsa y no el fajo, para poder
      escribirlo con nombre en vez de dejar una cifra huérfana. */
   const detalleCorreccionesDeLibro = primerMovPorRuta
-    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !afectaElFajo(m, originalesDeHoy))
+    // Los ya descontados por «lo cobrado» tampoco se nombran aquí: si no,
+    // «Salió del capital de la ruta» seguiría confesando los $3.393.000.
+    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !reversosYaDescontados.has(m.id) && !afectaElFajo(m, originalesDeHoy))
     .map((m) => ({
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',
