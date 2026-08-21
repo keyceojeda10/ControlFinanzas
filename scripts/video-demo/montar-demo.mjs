@@ -77,7 +77,7 @@ export async function limpiar(cx, { silencioso = false } = {}) {
   const tablas = [
     'ActividadLog', 'AdminLog', 'Notificacion', 'SesionActiva', 'UbicacionLog',
     'PushSubscription', 'PushLog', 'NotaSeguimiento', 'Evento', 'VisitaReagendada',
-    'MovimientoCapital', 'Pago', 'Prestamo', 'Cliente',
+    'Suscripcion', 'MovimientoCapital', 'Pago', 'Prestamo', 'Cliente',
     'CierreCaja', 'GastoMenor', 'MetodoPago', 'Ruta', 'Capital', 'User', 'Organization',
   ]
   const fallos = []
@@ -123,6 +123,16 @@ export async function montar(cx) {
     `INSERT INTO MetodoPago (id, organizationId, nombre, orden, activo, esPredeterminado, esDelCobrador, createdAt)
      VALUES (?, ?, 'Nequi', 0, 1, 1, 0, NOW())`, [IDS.cuenta, IDS.org])
 
+  /* ⚠ SIN SUSCRIPCIÓN EL PANEL SE QUEDA EN BLANCO. Y no falla nada: los datos
+     llegan (todas las llamadas responden 200) pero `main` se queda con tres
+     nodos y cero texto. Se vio comparando con un negocio real del espejo, que
+     sí la tiene. Grabar así habría producido un vídeo con el rótulo «Este es tu
+     panel, todo empieza aquí» sobre una pantalla gris. */
+  await cx.execute(
+    `INSERT INTO Suscripcion (id, organizationId, plan, estado, fechaInicio, fechaVencimiento, montoCOP, createdAt)
+     VALUES (?, ?, 'professional', 'activa', NOW(), DATE_ADD(NOW(), INTERVAL 1 YEAR), 149000, NOW())`,
+    ['zzvideodemo00000000000susc', IDS.org])
+
   // Capital con el que arranca el negocio en el vídeo.
   await cx.execute(
     `INSERT INTO Capital (id, organizationId, saldo, createdAt, updatedAt)
@@ -134,8 +144,24 @@ export async function montar(cx) {
      pantallas hasta resolverlas. En una demostración se leen como un sistema a
      medio configurar. */
   await cx.execute(
-    `UPDATE User SET emailVerificado = 1, telefono = '3001234500' WHERE organizationId = ?`,
-    [IDS.org])
+    `UPDATE User SET emailVerificado = 1, telefono = '3001234500',
+        onboardingCompletado = 1, terminosAceptados = 1, fechaAceptacionTerminos = NOW()
+     WHERE organizationId = ?`, [IDS.org])
+
+  /* ⚠ Y EL ONBOARDING, TERMINADO. Sin esto el PANEL SALE EN BLANCO: no falla
+     nada —todas las llamadas responden 200— pero el `main` se queda con tres
+     nodos y un `<div class="wizard-step-enter">` vacío, porque el sistema cree
+     que el negocio aún está configurándose.
+
+     Se ve comparando el HTML con el de un negocio real del espejo. Costó un
+     rato precisamente porque no hay ningún error: la pantalla simplemente está
+     vacía, y el vídeo salía con el rótulo «Este es tu panel» sobre un gris.
+
+     ⚠ El negocio se monta por SQL, así que le faltan las marcas que el registro
+     de verdad va poniendo. El vídeo DEL ONBOARDING no puede usar este atajo:
+     tiene que registrarse de verdad, como hace `v01-registro.mjs`. */
+  await cx.execute(
+    `UPDATE Organization SET onboardingStep = 99 WHERE id = ?`, [IDS.org])
 
   console.log(`· «${MARCA}» montado — Sofía Restrepo (dueña) · Andrés Vargas (Ruta Centro)`)
   return IDS
