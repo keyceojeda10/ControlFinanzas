@@ -176,6 +176,10 @@ ni «sistema francés».
 - **`:has-text()` es subcadena.** «Ordenar» caza también «Reordenar recorrido»,
   que está antes en el DOM: la toma pulsaba otro botón y grababa otra pantalla
   sin que nada fallara. Para eso está `tocarSel('button:text-is("Ordenar")')`.
+- **Lo efímero se enseña en cuanto aparece**, y ahí el rótulo va DESPUÉS. El
+  aviso de «Deshacer» dura diez segundos: diciendo primero la frase, para cuando
+  llegaba el subrayado el aviso ya no existía y la toma abortaba. Y **aparece
+  sobre los 8 s**, no al instante — medido, no supuesto.
 - **Un botón que se pulsa y no cambia nada es peor que no enseñarlo.** El filtro
   «Hoy» de la ruta es un conmutador cuya etiqueta no cambia, y en la demo les
   toca a los ocho: al pulsarlo la lista queda igual. Se subraya y se cuenta de
@@ -209,11 +213,17 @@ ni «sistema francés».
 | 6 | Todos los modos de interés | 4:53 |
 | 7 | Las rutas | 6:22 |
 | 8 | Los cobradores | 5:40 |
+| 9 | Cobrar el día | 4:39 |
 
 ## Lo que falta
 
-Cobrar el día · caja · capital · ajustes y extras. Y el corto de 90 segundos
-para el bot de ventas.
+Caja · capital · ajustes y extras. Y el corto de 90 segundos para el bot de
+ventas.
+
+⚠ **Antes del vídeo de caja hay que arreglar el decorado.** `poblar-demo`
+desembolsa los trece préstamos con fecha de HOY, así que la caja del cobrador
+sale con «Te queda en la mano −$3.628.200». En un día de verdad nadie presta
+3,6 millones: los préstamos tienen que venir de días anteriores.
 
 ⚠ **El bot tiene prohibido enviar vídeos** (`lib/bot-v2/prompts.js`). Esa regla
 se quita cuando estos existan y estén subidos, no antes.
