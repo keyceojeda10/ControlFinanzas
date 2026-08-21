@@ -2,29 +2,33 @@
 //
 // VÍDEO 1 · Cómo registrarse en el sistema
 //
-// Se graba el asistente real de `/registro`, los cuatro pasos, con los rótulos
-// que la pantalla dice de verdad. La narración va aparte, en `v01-registro.md`,
-// cronometrada contra las pausas de aquí abajo: si se cambia un tiempo hay que
-// cambiar el guion.
+// ── SE GRABA POR TOMAS ─────────────────────────────────────────────────────
 //
-// ⚠ Se registra una cuenta DE VERDAD, pero en el espejo y con datos inventados
-//   —correo `@ejemplo.invalid`, que por norma no existe—. Al final se borra.
+// Una toma por pantalla del asistente. Si una sale mal se rehace SOLO esa:
+//
+//     node scripts/video-demo/v01-registro.mjs            # todas y pega
+//     node scripts/video-demo/v01-registro.mjs --toma 3   # solo la 3
+//     node scripts/video-demo/v01-registro.mjs --pegar    # pega las que hay
+//
+// Las tomas quedan en `/tmp/videos/01-registro/` y el vídeo final sale de
+// pegarlas. Lo pidió el dueño al ver el primer montaje, y tiene razón: rehacer
+// 55 segundos por un rótulo mal puesto es absurdo.
+//
+// ⚠ Se registra una cuenta DE VERDAD, en el espejo, con un correo de
+//   `ejemplo.com` (reservado por norma para documentación). Se borra antes y
+//   después de grabar.
 
 import { chromium } from 'playwright'
-import { preparar, rotular, quitarRotulo, subrayar, quitarSubrayado, apuntador } from './efectos.mjs'
-import { montar, ultimoWebm } from './montar-video.mjs'
+import { mkdirSync, readdirSync } from 'fs'
+import { preparar, subrayar, quitarSubrayado } from './efectos.mjs'
+import { dibujar } from './rotulos.mjs'
+import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.mjs'
 import { conectar } from './montar-demo.mjs'
 
 const BASE = 'http://localhost:3016'
-const SALIDA = process.env.SALIDA || '/tmp/videos/01-registro.mp4'
-/* ⚠ UN CORREO QUE SE PUEDA LEER EN PANTALLA. Llevaba un `Date.now()` para que
-   fuera único y en el vídeo salía «nuevo.negocio.1787293124606@ejemplo.invalid»:
-   nadie escribe eso, y lo ve un cliente que está decidiendo si compra.
-   `ejemplo.com` está reservado por norma (RFC 2606) justo para documentación,
-   así que no es de nadie. La unicidad se consigue borrando antes, no ensuciando
-   el correo. */
+const DIR = '/tmp/videos/01-registro'
+const FINAL = '/tmp/videos/01-registro.mp4'
 const CORREO = 'carlos.mejia@ejemplo.com'
-
 const DATOS = {
   nombre: 'Carlos Andrés Mejía',
   negocio: 'Créditos La Cosecha',
@@ -32,8 +36,154 @@ const DATOS = {
   clave: 'MiClaveSegura2026',
 }
 
-/* Se borra ANTES: si quedó de una grabación anterior, el registro fallaría con
-   «ese correo ya está registrado» a mitad del vídeo. */
+// ── Las tomas ──────────────────────────────────────────────────────────────
+//
+// Cada una devuelve sus rótulos y acercamientos con el instante EN QUE OCURREN
+// DENTRO DE LA TOMA. Al ser independientes, los tiempos empiezan en cero en
+// cada una: por eso una toma se puede repetir sin tocar las demás.
+const TOMAS = [
+  {
+    id: 'entrada',
+    titulo: 'La pantalla de registro',
+    async grabar({ ir, esperar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      await esperar(3200)
+      return { rotulos: [{ t: 0.4, dura: 2.6, texto: 'Crear tu cuenta son cuatro pasos' }] }
+    },
+  },
+  {
+    id: 'nombre',
+    titulo: 'Paso 1 · tu nombre',
+    async grabar({ p, ir, esperar, escribir, seguir, empezar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      empezar()
+      await esperar(900)
+      const caja = await subrayar(p, 'input[type="text"]', { ms: 1700 })
+      await quitarSubrayado(p)
+      await escribir('input[type="text"]', DATOS.nombre)
+      await seguir('Continuar')
+      return {
+        rotulos: [{ t: 0.5, dura: 2.6, texto: 'Primero, tu nombre' }],
+        zooms: [{ t: 0.6, dura: 2.0, escala: 1.9, ...caja }],
+      }
+    },
+  },
+  {
+    id: 'negocio',
+    titulo: 'Paso 2 · el negocio',
+    async grabar({ ir, escribir, esperar, seguir, empezar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      await escribir('input[type="text"]', DATOS.nombre)
+      await seguir('Continuar')
+      empezar()
+      await esperar(1100)
+      await escribir('input[type="text"]', DATOS.negocio)
+      await seguir('Continuar')
+      return {
+        rotulos: [{
+          t: 0.3, dura: 3.4,
+          texto: 'El nombre de tu negocio: el que ven tus clientes y tus cobradores',
+        }],
+      }
+    },
+  },
+  {
+    id: 'whatsapp',
+    titulo: 'Paso 3 · país y WhatsApp',
+    async grabar({ p, ir, esperar, escribir, seguir, empezar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      await escribir('input[type="text"]', DATOS.nombre); await seguir('Continuar')
+      await escribir('input[type="text"]', DATOS.negocio); await seguir('Continuar')
+      empezar()
+      await esperar(1000)
+      const caja = await subrayar(p, 'select', { ms: 2200 })
+      await quitarSubrayado(p)
+      await escribir('input[type="tel"]', DATOS.telefono)
+      await esperar(900)
+      await seguir('Continuar')
+      return {
+        rotulos: [
+          { t: 0.4, dura: 2.8, texto: 'Elige tu país: el sistema trabaja en 12 países' },
+          { t: 3.8, dura: 2.6, texto: 'Tu WhatsApp: por ahí llega el código' },
+        ],
+        zooms: [{ t: 0.5, dura: 2.4, escala: 1.7, ...caja }],
+      }
+    },
+  },
+  {
+    id: 'cuenta',
+    titulo: 'Paso 4 · correo, contraseña y términos',
+    async grabar({ p, ir, esperar, escribir, seguir, empezar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      await escribir('input[type="text"]', DATOS.nombre); await seguir('Continuar')
+      await escribir('input[type="text"]', DATOS.negocio); await seguir('Continuar')
+      await escribir('input[type="tel"]', DATOS.telefono); await seguir('Continuar')
+      empezar()
+      await esperar(1000)
+      await escribir('input[type="email"]', CORREO)
+      await escribir('input[type="password"]', DATOS.clave)
+      await esperar(700)
+
+      /* ⚠ SIN LA CASILLA NO PASA, y hay que enseñarlo: el guion de sondeo se
+         quedó dando vueltas aquí porque el botón no hace nada hasta aceptarla. */
+      const caja = await subrayar(p, 'input[type="checkbox"]', { ms: 2400, margen: 14 })
+      await p.locator('input[type="checkbox"]').first().check().catch(() => {})
+      await esperar(800)
+      await quitarSubrayado(p)
+
+      const cajaBoton = await subrayar(p, 'button:has-text("Crear cuenta gratis")', { ms: 2200 })
+      await quitarSubrayado(p)
+      await seguir('Crear cuenta gratis')
+      await esperar(3000)
+
+      return {
+        rotulos: [
+          { t: 0.3, dura: 2.4, texto: 'Tu correo será tu usuario para entrar' },
+          { t: 5.4, dura: 2.8, texto: 'Acepta los términos: sin esto el botón no funciona' },
+          { t: 8.8, dura: 2.6, texto: 'Catorce días gratis, sin tarjeta' },
+        ],
+        zooms: [
+          { t: 5.5, dura: 2.4, escala: 2.2, ...caja },
+          { t: 8.9, dura: 2.2, escala: 1.7, ...cajaBoton },
+        ],
+      }
+    },
+  },
+  {
+    id: 'verificar',
+    titulo: 'La verificación',
+    async grabar({ p, ir, esperar, escribir, seguir, empezar }) {
+      await ir('/registro', /Paso 1 de 4/)
+      await escribir('input[type="text"]', DATOS.nombre); await seguir('Continuar')
+      await escribir('input[type="text"]', DATOS.negocio); await seguir('Continuar')
+      await escribir('input[type="tel"]', DATOS.telefono); await seguir('Continuar')
+      await escribir('input[type="email"]', CORREO)
+      await escribir('input[type="password"]', DATOS.clave)
+      await p.locator('input[type="checkbox"]').first().check().catch(() => {})
+      await seguir('Crear cuenta gratis')
+      await esperar(3200)
+      empezar()
+      await esperar(1200)
+      let z = null
+      try {
+        const caja = await subrayar(p, 'button:has-text("Verificar por correo")', { ms: 2400 })
+        z = { t: 3.4, dura: 2.2, escala: 1.8, ...caja }
+        await quitarSubrayado(p)
+      } catch { /* si cambia el rótulo, la toma sigue sin ese acercamiento */ }
+      await esperar(2600)
+      return {
+        rotulos: [
+          { t: 0.3, dura: 2.6, texto: 'Te llega un código por WhatsApp' },
+          { t: 3.4, dura: 2.6, texto: 'Si no llega, pídelo al correo' },
+          { t: 6.4, dura: 2.4, texto: 'O entra ya y verifica después' },
+        ],
+        zooms: z ? [z] : [],
+      }
+    },
+  },
+]
+
+// ── Utilidades ─────────────────────────────────────────────────────────────
 const borrarCuenta = async () => {
   const cx = await conectar()
   const [[u]] = await cx.query('SELECT organizationId FROM User WHERE email = ?', [CORREO])
@@ -46,141 +196,133 @@ const borrarCuenta = async () => {
   await cx.end()
   return Boolean(u)
 }
-if (await borrarCuenta()) console.log('· cuenta de la grabación anterior, borrada')
 
-const nav = await chromium.launch()
-const ctx = await nav.newContext({
-  viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
-  recordVideo: { dir: '/tmp/grab-01', size: { width: 540, height: 960 } },
-})
-const p = await ctx.newPage()
-const t0 = Date.now()
-const ap = apuntador(t0)
+/**
+ * Graba las tomas pedidas.
+ *
+ * ⚠ CADA TOMA ES SU PROPIO CONTEXTO —ahí es donde Playwright decide a qué
+ * archivo graba— pero el asistente es un camino: la toma 4 necesita que las
+ * anteriores ya se hayan rellenado. Se conserva el estado (`storageState`) y la
+ * URL, y la siguiente toma retoma donde quedó la anterior.
+ */
+async function grabar(indices) {
+  const nav = await chromium.launch()
 
-/* ── LA ESCALETA SE ANOTA SOLA ─────────────────────────────────────────────
-   El guion de narración tiene que cuadrar al segundo con lo que se ve, y
-   calcularlo sumando pausas a mano se desincroniza a la primera que se toque
-   una espera. Cada momento se apunta con su instante real y al final se
-   imprime la escaleta. */
-const escaleta = []
-const hito = (que) => { escaleta.push({ t: (Date.now() - t0) / 1000, que }); }
+  for (const i of indices) {
+    const toma = TOMAS[i]
+    const dirGrab = `/tmp/grab-01/${toma.id}`
+    vaciar(dirGrab)
 
-/* Escribir letra a letra, no `fill()`: en el vídeo tiene que VERSE que alguien
-   está escribiendo. `fill` planta el texto de golpe y parece un pegado. */
-const escribir = async (selector, texto) => {
-  const c = p.locator(selector).first()
-  await c.click()
-  await c.type(texto, { delay: 55 })
-  await p.waitForTimeout(500)
+    /* Cada toma arranca de cero: contexto nuevo, cuenta borrada y su propio
+       camino hasta la pantalla. Así se puede repetir una sola sin que dependa
+       de lo que hiciera la anterior. */
+    await borrarCuenta()
+    const ctx = await nav.newContext({
+      viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
+      recordVideo: { dir: dirGrab, size: { width: 540, height: 960 } },
+    })
+    const p = await ctx.newPage()
+    const t0 = Date.now()
+    let desde = 0
+
+    const util = {
+      p,
+      // Marca dónde acaba el camino de acceso y empieza la toma buena.
+      empezar: () => { desde = (Date.now() - t0) / 1000 },
+      esperar: (ms) => p.waitForTimeout(ms),
+      ir: async (ruta, espera) => {
+        await p.goto(BASE + ruta, { waitUntil: 'domcontentloaded' })
+        if (espera) {
+          await p.waitForFunction(
+            (re) => new RegExp(re).test(document.body.innerText),
+            espera.source, { timeout: 30000 },
+          )
+        }
+        await preparar(p)
+      },
+      escribir: async (sel, texto) => {
+        const c = p.locator(sel).first()
+        await c.click()
+        // Letra a letra: tiene que VERSE que alguien escribe.
+        await c.type(texto, { delay: 55 })
+        await p.waitForTimeout(450)
+      },
+      seguir: async (rotulo) => {
+        await p.locator(`button:has-text("${rotulo}")`).first().click()
+        await p.waitForTimeout(1700)
+        /* ⚠ EL REGISTRO ADMITE 3 CUENTAS POR HORA Y POR IP, y cada toma crea la
+           suya: a partir de la cuarta el asistente se queda en el paso 4 con
+           «Demasiados intentos» y la toma graba una pantalla equivocada sin que
+           nada falle. El contador vive en memoria del proceso, así que se
+           arregla reiniciando el espejo. */
+        const texto = await p.evaluate(() => document.body.innerText)
+        if (/Demasiados intentos/i.test(texto)) {
+          throw new Error(
+            'El registro está limitado (3 por hora). Reinicia el espejo:\n' +
+            '  bash .auditoria/arrancar-espejo.sh',
+          )
+        }
+      },
+    }
+
+    console.log(`· toma ${i + 1}/${TOMAS.length} — ${toma.titulo}`)
+    const { rotulos = [], zooms = [] } = (await toma.grabar(util)) || {}
+
+    await ctx.close()
+
+    const pngs = rotulos.length
+      ? await dibujar(rotulos.map((r) => r.texto), { dir: `/tmp/cf-rotulos/${toma.id}` })
+      : []
+    mkdirSync(DIR, { recursive: true })
+    montarToma({
+      entrada: ultimoWebm(dirGrab),
+      salida: `${DIR}/${String(i).padStart(2, '0')}-${toma.id}.mp4`,
+      zooms,
+      rotulos: rotulos.map((r, n) => ({ ...r, ...pngs[n] })),
+      desde,
+    })
+    console.log(`   prólogo recortado: ${desde.toFixed(1)}s`)
+  }
+
+  await nav.close()
 }
 
-const seguir = async (rotulo) => {
-  const b = p.locator(`button:has-text("${rotulo}")`).first()
-  await b.click()
-  await p.waitForTimeout(1800)
+// ── Arranque ───────────────────────────────────────────────────────────────
+const args = process.argv.slice(2)
+const soloPegar = args.includes('--pegar')
+const iToma = args.indexOf('--toma')
+
+if (!soloPegar) {
+  const unaSola = iToma >= 0
+  if (!unaSola) {
+    vaciar(DIR)
+    if (await borrarCuenta()) console.log('· cuenta de la grabación anterior, borrada')
+  }
+  const indices = unaSola ? [Number(args[iToma + 1]) - 1] : TOMAS.map((_, i) => i)
+  if (indices.some((i) => !TOMAS[i])) throw new Error(`toma fuera de rango (hay ${TOMAS.length})`)
+  await grabar(indices)
 }
 
-// ── 0 · La pantalla de entrada ─────────────────────────────────────────────
-await p.goto(`${BASE}/registro`, { waitUntil: 'domcontentloaded' })
-await p.waitForFunction(() => /Paso 1 de 4/.test(document.body.innerText), null, { timeout: 30000 })
-await p.waitForTimeout(1500)
-await preparar(p)
+const piezas = readdirSync(DIR).filter((f) => f.endsWith('.mp4')).sort().map((f) => `${DIR}/${f}`)
+if (!piezas.length) throw new Error('no hay tomas que pegar')
+pegar(piezas, FINAL)
 
-hito('entra a /registro · Paso 1 de 4')
-await rotular(p, 'Crear tu cuenta son cuatro pasos', { ms: 2600 })
-await quitarRotulo(p)
-
-// ── 1 · Tu nombre ──────────────────────────────────────────────────────────
-hito('PASO 1 · tu nombre')
-ap.apuntar(await subrayar(p, 'input[type="text"]', {
-  texto: 'Primero, tu nombre', ms: 2000,
-}), { escala: 2.0, dura: 2.2 })
-await quitarSubrayado(p)
-await escribir('input[type="text"]', DATOS.nombre)
-await seguir('Continuar')
-
-// ── 2 · El negocio ─────────────────────────────────────────────────────────
-hito('PASO 2 · el nombre del negocio')
-await rotular(p, 'El nombre de tu negocio: es el que ven tus clientes y tus cobradores', { ms: 3000 })
-await quitarRotulo(p)
-await escribir('input[type="text"]', DATOS.negocio)
-await seguir('Continuar')
-
-// ── 3 · WhatsApp y país ────────────────────────────────────────────────────
-hito('PASO 3 · país y WhatsApp')
-ap.apuntar(await subrayar(p, 'select', {
-  texto: 'Elige tu país. El sistema funciona en 12 países', ms: 2800,
-}), { escala: 2.2, dura: 2.4 })
-await quitarSubrayado(p)
-await escribir('input[type="tel"]', DATOS.telefono)
-await rotular(p, 'Tu WhatsApp: por ahí se verifica la cuenta', { ms: 2200 })
-await quitarRotulo(p)
-await seguir('Continuar')
-
-// ── 4 · Correo, contraseña y términos ──────────────────────────────────────
-hito('PASO 4 · correo y contraseña')
-await rotular(p, 'Tu correo será tu usuario para entrar', { ms: 2400 })
-await quitarRotulo(p)
-await escribir('input[type="email"]', CORREO)
-await escribir('input[type="password"]', DATOS.clave)
-await p.waitForTimeout(400)
-
-/* ⚠ SIN LA CASILLA NO PASA. El guion de sondeo se quedó dando vueltas en el
-   paso 4 porque el botón no hace nada hasta aceptar los términos, y eso hay
-   que enseñarlo: es donde la gente se atasca. */
-hito('la casilla de términos')
-ap.apuntar(await subrayar(p, 'input[type="checkbox"]', {
-  texto: 'Acepta los términos: sin esto el botón no funciona', ms: 2600, margen: 12,
-}), { escala: 2.4, dura: 2.4 })
-await p.locator('input[type="checkbox"]').first().check().catch(() => {})
-await p.waitForTimeout(700)
-await quitarSubrayado(p)
-
-hito('botón Crear cuenta gratis')
-ap.apuntar(await subrayar(p, 'button:has-text("Crear cuenta gratis")', {
-  texto: 'Y listo: catorce días gratis, sin tarjeta', ms: 2600,
-}), { escala: 1.8, dura: 2.4 })
-await quitarSubrayado(p)
-await seguir('Crear cuenta gratis')
-
-// ── 5 · Lo que sale después ────────────────────────────────────────────────
-await p.waitForTimeout(3500)
-const despues = await p.evaluate(() => document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 220))
-console.log('DESPUÉS DE CREAR:', despues)
-
-/* ⚠ AQUÍ NO SE ACABA, Y EL PRIMER MONTAJE MENTÍA. Ponía «ya estás dentro» y lo
-   que sale es la verificación: un código de 6 dígitos por WhatsApp, con la
-   opción de recibirlo por correo o saltarla. Es justo donde la gente se
-   atasca, así que se enseña. */
-hito('la verificación por WhatsApp')
-await rotular(p, 'Te llega un código por WhatsApp', { ms: 2600 })
-await quitarRotulo(p)
-// `apuntar` no devuelve promesa: el `.catch?.()` que puse reventaba aquí.
-try {
-  ap.apuntar(await subrayar(p, 'button:has-text("Verificar por correo")', {
-    texto: 'Si no te llega, pídelo por correo', ms: 2600,
-  }), { escala: 2.0, dura: 2.4 })
-} catch { /* si el botón cambia de rótulo, el vídeo sigue sin ese subrayado */ }
-await quitarSubrayado(p)
-await rotular(p, 'O entra ya y verifica después', { ms: 2400 })
-await p.waitForTimeout(900)
-
-await ctx.close()
-await nav.close()
-
-// ── Montaje ────────────────────────────────────────────────────────────────
-import { mkdirSync } from 'fs'
-mkdirSync('/tmp/videos', { recursive: true })
-montar({ entrada: ultimoWebm('/tmp/grab-01'), salida: SALIDA, marcas: ap.marcas })
-console.log('\n✓ vídeo:', SALIDA)
-console.log('  acercamientos:', ap.marcas.length)
-console.log('\n── ESCALETA ──')
-for (const h of escaleta) {
-  const m = String(Math.floor(h.t / 60)).padStart(2, '0')
-  const sg = String(Math.floor(h.t % 60)).padStart(2, '0')
-  console.log(`  ${m}:${sg}  ${h.que}`)
+console.log(`\n✓ ${FINAL}`)
+console.log('\n── ESCALETA (para el guion de la voz) ──')
+let reloj = 0
+for (const pieza of piezas) {
+  const id = pieza.split('/').pop().replace(/^\d+-|\.mp4$/g, '')
+  const toma = TOMAS.find((t) => t.id === id)
+  const m = String(Math.floor(reloj / 60)).padStart(2, '0')
+  const sg = String(Math.floor(reloj % 60)).padStart(2, '0')
+  const d = duracion(pieza)
+  console.log(`  ${m}:${sg}  ${(toma?.titulo || id).padEnd(38)} ${d.toFixed(1)}s`)
+  reloj += d
 }
-
-// ── Limpieza: la cuenta de mentira no se queda ─────────────────────────────
-await borrarCuenta()
-console.log('  cuenta de prueba borrada')
+const mf = String(Math.floor(reloj / 60)).padStart(2, '0')
+const sf = String(Math.floor(reloj % 60)).padStart(2, '0')
+console.log(`  ${mf}:${sf}  (fin)`)
+if (!soloPegar && iToma < 0) {
+  await borrarCuenta()
+  console.log('  cuenta de prueba borrada')
+}

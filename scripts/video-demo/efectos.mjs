@@ -103,8 +103,14 @@ export async function quitarRotulo(page) {
  * navegador revienta. Aquí se localiza con `locator`, se mide con
  * `boundingBox()` y al navegador solo le llegan cuatro números.
  */
-export async function subrayar(page, selector, { texto = null, ms = 1800, margen = 8 } = {}) {
+export async function subrayar(page, selector, { texto = null, ms = 1800, margen = 8, espera = 6000 } = {}) {
   const el = page.locator(selector).first()
+  /* ⚠ ESPERA CORTA Y A PROPÓSITO. Con los 30 s que trae Playwright de fábrica,
+     un subrayado que no encuentra su elemento se queda medio minuto quieto
+     DENTRO DE LA GRABACIÓN: la toma de la verificación salió de 81 segundos en
+     vez de 6, y como la llamada estaba en un `try` nadie se enteró. Un fallo
+     así tiene que doler rápido. */
+  await el.waitFor({ state: 'visible', timeout: espera })
   await el.scrollIntoViewIfNeeded().catch(() => {})
   await page.waitForTimeout(350)
   const caja = await el.boundingBox()

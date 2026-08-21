@@ -1,25 +1,24 @@
 // scripts/video-demo/montar-video.mjs
 //
-// El montaje: coge el .webm que soltó Playwright y le aplica los acercamientos
-// que se apuntaron durante la grabación.
+// El montaje de una TOMA: coge el .webm que soltó Playwright, le anima los
+// acercamientos y le pega los rótulos encima.
 //
-// ── POR QUÉ EL ZOOM SE HACE AQUÍ Y NO EN LA PÁGINA ─────────────────────────
+// ── UNA TOMA POR PANTALLA ──────────────────────────────────────────────────
 //
-// Un `transform: scale()` sobre el `body` saca de su sitio todo lo que esté en
-// `position: fixed` —la pastilla de navegación y el botón flotante— porque un
-// ancestro transformado se convierte en su contenedor. Se vería la barra
-// flotando en mitad de la pantalla.
+// Lo pidió el dueño después de ver el primero: «lo ideal sería ir grabando por
+// pantalla y luego pegarlo, para que si te equivocas en una pantalla la puedas
+// rehacer solo esa y no te toque rehacer todo el vídeo». Tiene razón, y además
+// es como se monta vídeo de verdad.
 //
-// ── POR QUÉ POR TRAMOS Y NO CON UNA EXPRESIÓN ──────────────────────────────
+// Cada toma sale a su propio `.mp4` y `pegar()` las une al final.
 //
-// El primer intento animaba la escala con `crop=w='iw/(1+...t...)'` y ffmpeg lo
-// rechaza: el recorte tiene que ser de TAMAÑO FIJO, solo su posición puede
-// variar por fotograma. («Error when evaluating the expression», y no escribe
-// nada.)
+// ── EL ZOOM SE ANIMA ───────────────────────────────────────────────────────
 //
-// Así que cada acercamiento es su propio tramo con un recorte constante, y los
-// tramos se pegan al final. Además queda mejor: un corte limpio a primer plano
-// es lo que hace un tutorial bien montado, no un zoom que repta.
+// La primera versión recortaba con `crop` a tamaño fijo y el acercamiento
+// entraba de golpe: «la animación de zoom es muy a golpe, no hay animación como
+// tal». `crop` no sirve —ffmpeg exige que el recorte sea de tamaño constante—
+// pero `zoompan` sí acepta una escala que cambia por fotograma, usando `on`
+// como número de fotograma de salida.
 
 import { execFileSync } from 'child_process'
 import { existsSync, readdirSync, writeFileSync, rmSync, mkdirSync } from 'fs'
@@ -27,84 +26,103 @@ import { existsSync, readdirSync, writeFileSync, rmSync, mkdirSync } from 'fs'
 const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: 'inherit' })
 
 export function duracion(fichero) {
-  const s = execFileSync('ffprobe', [
+  return Number(execFileSync('ffprobe', [
     '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', fichero,
-  ]).toString().trim()
-  return Number(s)
+  ]).toString().trim())
+}
+
+/** Cuánto se puede acercar sin dejar el detalle sin contexto alrededor. */
+function escalaSegura(caja, ancho, alto, pedida) {
+  /* ⚠ El aire NO puede ser fijo: con 28px, acercarse al selector de país —104px
+     de ancho— dejaba fuera el título de la pantalla y se veía una bandera
+     enorme y nada más. */
+  const aireX = Math.max(150, caja.w * 0.35)
+  const aireY = Math.max(150, caja.h * 0.35)
+  return Math.max(1.05, Math.min(pedida, ancho / (caja.w + aireX * 2), alto / (caja.h + aireY * 2)))
 }
 
 /**
- * @param marcas  [{ t, dura, escala, x, y, w, h }] en segundos y píxeles del vídeo
+ * Monta UNA toma.
+ *
+ * @param zooms   [{ t, dura, escala, x, y, w, h }] instante y caja EN EL VÍDEO GRABADO
+ * @param rotulos [{ t, dura, fichero, alto }] los PNG que dibuja `rotulos.mjs`
  */
-/* `ancho`/`alto` son los del vídeo grabado —el espacio en el que vienen las
-   coordenadas de las marcas— y `salidaAncho`/`salidaAlto` los del archivo final.
-   Se entrega al DOBLE: 540×960 subido a YouTube se ve pastoso, y como la página
-   se capturó con `deviceScaleFactor: 2` la nitidez está ahí para aprovecharla. */
-export function montar({
-  entrada, salida, marcas = [], ancho = 540, alto = 960, fps = 30,
-  salidaAncho = 1080, salidaAlto = 1920,
+export function montarToma({
+  entrada, salida, zooms = [], rotulos = [], desde = 0,
+  ancho = 540, alto = 960, salidaAncho = 1080, salidaAlto = 1920, fps = 30,
 }) {
-  const tmp = '/tmp/cf-montaje'
-  rmSync(tmp, { recursive: true, force: true })
-  mkdirSync(tmp, { recursive: true })
+  const k = salidaAncho / ancho
+  const RAMPA = 0.55 // segundos de entrada y de salida del acercamiento
 
-  const fin = duracion(entrada)
-  const orden = [...marcas].sort((a, b) => a.t - b.t)
-
-  // Los tramos, en orden: lo normal entre acercamiento y acercamiento.
-  const tramos = []
-  let cursor = 0
-  for (const m of orden) {
-    const desde = Math.max(cursor, m.t)
-    if (desde > cursor + 0.15) tramos.push({ desde: cursor, hasta: desde, zoom: null })
-    const hasta = Math.min(fin, desde + m.dura)
-    if (hasta > desde) tramos.push({ desde, hasta, zoom: m })
-    cursor = hasta
-  }
-  if (fin > cursor + 0.15) tramos.push({ desde: cursor, hasta: fin, zoom: null })
-
-  const piezas = []
-  tramos.forEach((tr, i) => {
-    const pieza = `${tmp}/p${String(i).padStart(2, '0')}.mp4`
-    const filtros = []
-    if (tr.zoom) {
-      /* ⚠ LA ESCALA PEDIDA ES UN MÁXIMO, NO UNA ORDEN. Un botón de 422px de
-         ancho con escala 1,9 recorta a 284: más estrecho que el propio botón,
-         así que se acerca tanto que lo corta por los lados. Se limita a lo que
-         quepa el elemento con aire alrededor. */
-      /* ⚠ EL AIRE NO PUEDE SER FIJO. Con 28px alrededor, acercarse al selector
-         de país —que mide 104 de ancho— dejaba fuera el título de la pantalla y
-         el campo del teléfono: se veía una bandera enorme y nada más. Un
-         acercamiento tiene que encuadrar el detalle Y lo justo para saber dónde
-         está. El aire crece con el elemento, con un mínimo generoso. */
-      const aireX = Math.max(150, tr.zoom.w * 0.35)
-      const aireY = Math.max(150, tr.zoom.h * 0.35)
-      const e = Math.max(1.05, Math.min(
-        tr.zoom.escala,
-        ancho / (tr.zoom.w + aireX * 2),
-        alto / (tr.zoom.h + aireY * 2),
-      ))
-      // Ancho y alto PARES: libx264 con yuv420p no acepta impares y aborta.
-      const w = Math.floor(ancho / e / 2) * 2
-      const h = Math.floor(alto / e / 2) * 2
-      const cx = tr.zoom.x + tr.zoom.w / 2
-      const cy = tr.zoom.y + tr.zoom.h / 2
-      // Y dentro del cuadro: una marca pegada al borde pediría píxeles que no existen.
-      const x = Math.round(Math.max(0, Math.min(ancho - w, cx - w / 2)))
-      const y = Math.round(Math.max(0, Math.min(alto - h, cy - h / 2)))
-      filtros.push(`crop=${w}:${h}:${x}:${y}`)
-    }
-    filtros.push(`scale=${salidaAncho}:${salidaAlto}:flags=lanczos`, `fps=${fps}`, 'format=yuv420p')
-    ff([
-      '-ss', String(tr.desde), '-to', String(tr.hasta), '-i', entrada,
-      '-vf', filtros.join(','),
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', pieza,
-    ])
-    piezas.push(pieza)
+  // ── El zoom, como una escala que depende del tiempo ──────────────────────
+  // `on/fps` es el segundo de salida; se compone un trapecio por acercamiento.
+  const trozos = zooms.map((z) => {
+    const e = escalaSegura(z, ancho, alto, z.escala)
+    const sube = `min(1,max(0,(on/${fps}-${z.t})/${RAMPA}))`
+    const baja = `min(1,max(0,(${(z.t + z.dura + RAMPA).toFixed(2)}-on/${fps})/${RAMPA}))`
+    return `(${(e - 1).toFixed(4)})*min(${sube},${baja})`
   })
+  const zExpr = trozos.length ? `1+${trozos.join('+')}` : '1'
 
-  const lista = `${tmp}/lista.txt`
-  writeFileSync(lista, piezas.map((p) => `file '${p}'`).join('\n'))
+  // El centro salta a la caja del acercamiento activo; entre medias, el centro
+  // del cuadro. En coordenadas del vídeo YA escalado a la salida.
+  let cxExpr = '(iw/2)', cyExpr = '(ih/2)'
+  for (const z of zooms) {
+    const cx = ((z.x + z.w / 2) * k).toFixed(1)
+    const cy = ((z.y + z.h / 2) * k).toFixed(1)
+    const d0 = (z.t - RAMPA).toFixed(2), d1 = (z.t + z.dura + RAMPA).toFixed(2)
+    cxExpr = `if(between(on/${fps},${d0},${d1}),${cx},${cxExpr})`
+    cyExpr = `if(between(on/${fps},${d0},${d1}),${cy},${cyExpr})`
+  }
+
+  // Primero a la resolución de salida: el zoom trabaja sobre la imagen grande y
+  // así no se ven los píxeles al acercarse.
+  const base =
+    `scale=${salidaAncho}:${salidaAlto}:flags=lanczos,` +
+    `zoompan=z='${zExpr}':x='max(0,min(iw-iw/zoom,(${cxExpr})-(iw/zoom)/2))':` +
+    `y='max(0,min(ih-ih/zoom,(${cyExpr})-(ih/zoom)/2))':d=1:s=${salidaAncho}x${salidaAlto}:fps=${fps}`
+
+  // ── Los rótulos, encima y con la imagen ya recortada ─────────────────────
+  const entradas = ['-i', entrada]
+  const cadena = []
+  let etiqueta = '[base]'
+  cadena.push(`[0:v]${base}[base]`)
+
+  rotulos.forEach((r, i) => {
+    entradas.push('-i', r.fichero)
+    // Altura fija para TODOS: era la otra queja —«se desencuadra un poco a la
+    // izquierda, a la derecha, arriba o abajo»—.
+    // 280 y no 210: a 210 el rótulo rozaba el botón de «Continuar».
+    const y = salidaAlto - r.alto - 280
+    const sig = i === rotulos.length - 1 ? '[out]' : `[v${i}]`
+    cadena.push(
+      `${etiqueta}[${i + 1}:v]overlay=x=(W-w)/2:y=${y}:` +
+      `enable='between(t,${r.t},${(r.t + r.dura).toFixed(2)})'${sig}`,
+    )
+    etiqueta = sig
+  })
+  if (!rotulos.length) cadena[0] = `[0:v]${base}[out]`
+
+  /* ⚠ `desde` RECORTA EL PRÓLOGO. Cada toma tiene que llevarse sola hasta su
+     pantalla —el asistente de registro no conserva el paso al abrir un contexto
+     nuevo, así que la toma 4 no encontraba su selector— y ese camino se graba
+     igual. Se corta aquí, y por eso los tiempos de rótulos y acercamientos se
+     cuentan desde `empezar()`, no desde el principio del archivo. */
+  ff([
+    ...(desde > 0 ? ['-ss', String(desde)] : []),
+    ...entradas,
+    '-filter_complex', cadena.join(';'),
+    '-map', '[out]',
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p',
+    salida,
+  ])
+  return salida
+}
+
+/** Pega las tomas en el orden dado. */
+export function pegar(tomas, salida) {
+  const lista = '/tmp/cf-tomas.txt'
+  writeFileSync(lista, tomas.map((t) => `file '${t}'`).join('\n'))
   ff(['-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', '-movflags', '+faststart', salida])
   return salida
 }
@@ -112,7 +130,12 @@ export function montar({
 /** El .webm más reciente de una carpeta (Playwright los nombra con un hash). */
 export function ultimoWebm(dir) {
   if (!existsSync(dir)) throw new Error(`no existe ${dir}`)
-  const v = readdirSync(dir).filter((f) => f.endsWith('.webm'))
+  const v = readdirSync(dir).filter((f) => f.endsWith('.webm')).sort()
   if (!v.length) throw new Error(`no hay .webm en ${dir}`)
   return `${dir}/${v[v.length - 1]}`
+}
+
+export function vaciar(dir) {
+  rmSync(dir, { recursive: true, force: true })
+  mkdirSync(dir, { recursive: true })
 }
