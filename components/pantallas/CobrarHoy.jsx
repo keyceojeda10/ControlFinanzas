@@ -143,6 +143,8 @@ export default function CobrarHoy({
   // otra es cómo se llegó a tener dos comprobantes, uno arreglado y otro no.
   onAbrirCliente,
   onDeshacerCobro,
+  // «¿Y mañana?»: lleva a Préstamos con la ventana puesta. Ver abajo el porqué.
+  onManana,
   /* Cómo se llama en el DOM la tarjeta de cada fila: `id => 'cliente-x'`. Sin
      ella no hay a dónde volver cuando se regresa de la ficha, y la lista
      aparece arriba del todo. La ruta ya se lo pasaba a su `Carril`; aquí
@@ -256,6 +258,35 @@ export default function CobrarHoy({
             </div>
           </div>
         ))
+      )}
+
+      {/* ══ «¿Y MAÑANA?» ═══════════════════════════════════════════════════
+       *
+       * Pedido por el dueño: «si ya se acabó el día y el cliente quiere ver los
+       * cobros del día de mañana, no podría».
+       *
+       * ⚠ Y POR ESO ES UN ENLACE Y NO UN SELECTOR DE DÍA EN ESTA PANTALLA.
+       *
+       * «Cobrar hoy» no lista «los que vencen hoy»: lista a quien tiene ALGO
+       * PENDIENTE a día de hoy, arrastres incluidos —por eso sale el de cinco
+       * días de mora—. Moverla a mañana no contestaría «a quién le cobro
+       * mañana»: devolvería a todos los de hoy que no hayan pagado MÁS los
+       * nuevos, y con los botones de «Cobrar» encendidos para un día que aún no
+       * llegó. Un número engañoso y un riesgo de cobrar antes de tiempo.
+       *
+       * La pregunta de verdad es «qué préstamos tienen su próximo cobro el día
+       * X», y esa se contesta en Préstamos, que ya tiene las ventanas. Aquí solo
+       * hace falta la puerta: nadie encontraba esos chips. */}
+      {onManana && (
+        <div style={{ padding: '4px var(--cf-pad-screen) 96px' }}>
+          <button type="button" onClick={onManana} style={{
+            width: '100%', height: 46, borderRadius: 'var(--cf-r-control)',
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+            color: 'var(--cf-ink-2)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+          }}>
+            ¿Y mañana? Ver a quién le toca
+          </button>
+        </div>
       )}
 
       {/* ══ La barra de acción, fija abajo ══

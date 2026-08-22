@@ -454,6 +454,8 @@ export default function CobrosHoyPage() {
         orden={orden}
         onOrden={setOrden}
         onFiltros={() => setHojaFiltros(true)}
+        // La lista de mañana se contesta en Préstamos, con la ventana puesta.
+        onManana={() => { window.location.href = '/prestamos?estado=venceManana' }}
         nFiltros={(filtros.atraso ? 1 : 0) + (filtros.rutaId ? 1 : 0) + (filtros.ocultarCobrados ? 1 : 0)}
         hayGps={!!coords}
         sinSubir={sinSubir}
