@@ -47,7 +47,8 @@ import { useState, useEffect } from 'react'
 import { formatMoney } from '@/lib/i18n'
 
 export default function AvisoUltimaCuota({ calculo, onCuota, onPlazo }) {
-  const { cuotaDiaria, ultimaCuota, numPeriodos, cuotaQueCuadra, periodosParaSaldar, ultimaAlSaldar } = calculo ?? {}
+  const { cuotaDiaria, ultimaCuota, numPeriodos, cuotaQueCuadra, periodosParaSaldar, ultimaAlSaldar,
+    cuotaLaPusoElPrestamista } = calculo ?? {}
   /* Cambiar el plazo solo sirve si son otros: proponer «cobrar 6 veces»
      cuando ya son 6 es un botón que no hace nada. */
   const otroPlazo = periodosParaSaldar > 0 && periodosParaSaldar !== numPeriodos
@@ -80,7 +81,13 @@ export default function AvisoUltimaCuota({ calculo, onCuota, onPlazo }) {
       <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
         Con {formatMoney(cuotaDiaria)} en {numPeriodos} cobros, la última queda en{' '}
         <span className="font-mono-display font-semibold">{formatMoney(ultimaCuota)}</span>. No es un
-        error de la cuenta: al poner tú la cuota, es la última la que recoge la diferencia.
+        error de la cuenta:{' '}
+        {cuotaLaPusoElPrestamista
+          ? 'al poner tú la cuota, es la última la que recoge la diferencia.'
+          /* La cuota se sube a la centena para que sea un número redondo de
+             cobrar en la calle. Esos pesos de más se van sumando y la última
+             cuota queda con lo poco que falta. */
+          : 'la cuota se redondea hacia arriba para que sea un número fácil de cobrar, y esos pesos de más se van acumulando hasta la última.'}
       </p>
       {(cuotaQueCuadra > 0 || otroPlazo) && (
         <ul className="text-[11px] mt-1.5 space-y-0.5 list-disc pl-4" style={{ color: 'var(--cf-ink-2)' }}>
