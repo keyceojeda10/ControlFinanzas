@@ -65,8 +65,19 @@ const ESTADOS = [
      es lo que ya se pasó y la otra lo que todavía se puede evitar. Por eso los
      nombres van en paralelo —«En mora · En 5 días · En 10 días»— y por eso son
      cortos: en una fila que se desliza, cada letra empuja al siguiente. */
+  /* ⚠ «MAÑANA» NO ES «DE AQUÍ A UN DÍA»: es el día 1 y solo el día 1. Por eso
+     cada uno lleva su ventana entera —de qué día a qué día— en vez de un solo
+     número. Con un número, «mañana» arrastraba también los de hoy.
+
+     El dueño lo pidió así: «si el cliente quiere saber a quién le toca cobrar
+     mañana, o en un rango, o en 7 días, o en los próximos 15, así no puede
+     filtrar». Los de 5 y 10 ya estaban; lo que faltaba era todo lo demás. */
+  { value: 'venceHoy',   label: 'Hoy',        color: 'var(--cf-gold-dark)' },
+  { value: 'venceManana', label: 'Mañana',    color: 'var(--cf-gold-dark)' },
   { value: 'vence5',     label: 'En 5 días',  color: 'var(--cf-gold-dark)' },
   { value: 'vence10',    label: 'En 10 días' },
+  { value: 'vence15',    label: 'En 15 días' },
+  { value: 'vence30',    label: 'En 30 días' },
   // «Renovar»: al dia y por encima del 80% pagado. Lo pide T02-06 como cuarto
   // chip, y es donde esta el crecimiento del negocio — prestarle de nuevo a
   // quien ya casi termino de pagar. No es un estado en la base: lo resuelve el
@@ -557,7 +568,7 @@ export default function PrestamosPage() {
       // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
       // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
       const derivado = est === 'mora' || est === 'renovar' || est === 'clavo' || est === 'nuevos'
-        || est === 'vence5' || est === 'vence10'
+        || est.startsWith('vence')
       // ⚠ «Nuevos» NO fuerza `activo`: un préstamo metido hace dos horas puede
       // estar pendiente de aprobación, y ése es justo el que se busca al
       // revisar lo que entró hoy.
@@ -570,8 +581,20 @@ export default function PrestamosPage() {
       // El servidor filtra por la fecha del próximo cobro Y los devuelve
       // ordenados del más cercano al más lejano, que es la otra mitad de lo que
       // pidió: «que automáticamente los primeros sean los más cercanos a vencer».
-      if (est === 'vence5') params.set('porVencer', '5')
-      if (est === 'vence10') params.set('porVencer', '10')
+      /* La ventana, de qué día a qué día. `porVencerDesde` es 0 si no se manda,
+         así que «en N días» sigue queriendo decir «de hoy a N». */
+      const VENTANA = {
+        venceHoy:    [0, 0],
+        venceManana: [1, 1],
+        vence5:      [0, 5],
+        vence10:     [0, 10],
+        vence15:     [0, 15],
+        vence30:     [0, 30],
+      }[est]
+      if (VENTANA) {
+        params.set('porVencerDesde', String(VENTANA[0]))
+        params.set('porVencer', String(VENTANA[1]))
+      }
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)

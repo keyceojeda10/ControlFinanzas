@@ -122,9 +122,26 @@ export async function GET(request) {
    *
    * La fecha sale de `calcularProximoCobro`, que es la única que manda en toda
    * la app — la misma que pinta la ficha y la que agrupa la ruta. */
-  const porVencer = [5, 10].includes(Number(searchParams.get('porVencer')))
-    ? Number(searchParams.get('porVencer'))
+  /* ── A QUIÉN LE TOCA COBRAR, Y CUÁNDO ──────────────────────────────────
+   *
+   * `porVencer=N` = «los que vencen de aquí a N días». Estaba, pero solo
+   * aceptaba 5 y 10, y solo se ofrecían esos dos chips.
+   *
+   * El dueño lo pidió más ancho: «si el cliente quiere saber a quién le toca
+   * cobrar mañana, o en un rango de tiempo, o a quién le tiene que cobrar en 7
+   * días, en los próximos 15 días… así no puede filtrar».
+   *
+   * ⚠ «MAÑANA» NO ES «DE AQUÍ A UN DÍA». Con un solo número no se puede pedir
+   * un día suelto: `porVencer=1` trae los de hoy Y los de mañana. Por eso ahora
+   * hay DOS extremos, y «mañana» es 1 a 1. Sin `porVencerDesde` el borde de
+   * abajo es 0, así que las llamadas viejas —y los dos chips de siempre—
+   * siguen dando exactamente lo mismo. */
+  const nPorVencer = Number(searchParams.get('porVencer'))
+  const porVencer = Number.isInteger(nPorVencer) && nPorVencer >= 0 && nPorVencer <= 90
+    ? nPorVencer
     : null
+  const nDesde = Number(searchParams.get('porVencerDesde'))
+  const porVencerDesde = Number.isInteger(nDesde) && nDesde >= 0 && nDesde <= 90 ? nDesde : 0
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
@@ -345,10 +362,10 @@ export async function GET(request) {
     /* Vivo, sin mora, y con su próximo cobro dentro de la ventana. El corte de
        «hoy» va con el convenio de la casa —el día arranca a las 05:00Z— para que
        un cobro de esta tarde no se caiga de la lista por el huso del servidor. */
-    : porVencer ? ((p) => {
+    : porVencer != null ? ((p) => {
       if (p.estado !== 'activo' || p.diasMora > 0 || !p.proximoCobro) return false
       const dias = Math.ceil((new Date(p.proximoCobro) - inicioHoy) / 86400000)
-      return dias >= 0 && dias <= porVencer
+      return dias >= porVencerDesde && dias <= porVencer
     })
     : null
 
@@ -357,7 +374,7 @@ export async function GET(request) {
     /* «Que automáticamente los primeros préstamos en la lista sean los más
        cercanos a vencer» — es la segunda mitad de lo que pidió, y sin ella el
        filtro obliga a leer veinte fechas para encontrar la de mañana. */
-    if (porVencer) {
+    if (porVencer != null) {
       filtrados = [...filtrados].sort((a, b) => new Date(a.proximoCobro) - new Date(b.proximoCobro))
     }
     if (page != null) {
