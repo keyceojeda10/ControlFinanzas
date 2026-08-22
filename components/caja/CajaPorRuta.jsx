@@ -55,9 +55,26 @@ function Punto({ color, children }) {
   )
 }
 
-export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
+/**
+ * ⚠ `selector` VA ENTRE EL TOTAL Y LA LISTA, y es un hueco, no un componente.
+ *
+ * El dueño, 22 ago 2026: «un usuario que tenga diez rutas, como hay un caso,
+ * tiene que bajar hasta el final para poder seleccionar la que quiere ver».
+ * Tenía razón: el selector de cobrador iba después de las diez tarjetas.
+ *
+ * Subirlo del todo tampoco servía: el total del día es el titular de esta
+ * pantalla —es a lo que se entra— y taparlo con un `<select>` es cambiar un
+ * problema por otro. Así que va en medio: el total sigue siendo lo primero, y
+ * el selector se alcanza sin pasar por ninguna ruta.
+ *
+ * Es un hueco porque quien sabe qué poner ahí es la página (el `<select>` y el
+ * detalle del cobrador elegido). Aquí solo se decide DÓNDE.
+ */
+export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector = null }) {
   if (!filas.length) {
     return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {selector}
       <div style={{
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         borderRadius: 'var(--cf-r-card)', padding: '26px 20px', textAlign: 'center',
@@ -71,6 +88,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--cf-ink-3)' }}>
           Todavía no hay cobros ni préstamos hoy en ninguna ruta.
         </p>
+      </div>
       </div>
     )
   }
@@ -206,6 +224,8 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta }) {
           )}
         </div>
       )}
+
+      {selector}
 
       {/* ── ⚠ ESTE AVISO YO LO ESCRIBÍ MAL, Y ASUSTABA SIN MOTIVO ──────────
           Decía «salió plata que no se registró como entrada», que se lee como

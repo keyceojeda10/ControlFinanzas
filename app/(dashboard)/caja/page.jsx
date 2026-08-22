@@ -1569,7 +1569,7 @@ const MOVIMIENTOS_MANUALES = [
 
       {cajaTab === 'porruta' && (
         <div className="space-y-4">
-          {/* ══ EL SELECTOR ARRIBA, LA LISTA DEBAJO ═══════════════════════════
+          {/* ══ EL SELECTOR, ENTRE EL TOTAL Y LAS RUTAS ═══════════════════════
               El dueño, 22 ago 2026:
 
                 «En caja por ruta, el selector sale después de la lista de todas
@@ -1582,91 +1582,87 @@ const MOVIMIENTOS_MANUALES = [
               blanco hasta elegir a alguien — había que saber a quién buscar para
               ver algo. Por eso se puso la lista primero.
 
-              Lo que ha cambiado es que ese riesgo ya no existe: la lista de rutas
-              se pinta SIEMPRE, aquí mismo debajo. Con el selector arriba no hay
-              pantalla en blanco y no hay que bajar diez tarjetas. Las dos razones
-              se cumplen a la vez; no es revertir aquello, es que aquello ya no
-              hace falta.
+              Y del todo arriba tampoco: el total del día es el titular de esta
+              pantalla, es a lo que se entra, y taparlo con un `<select>` habría
+              sido cambiar un problema por otro.
+
+              Así que va en medio, en el hueco `selector` de `CajaPorRuta`: el
+              total sigue siendo lo primero y el selector se alcanza sin pasar
+              por ninguna ruta. Ninguna de las dos razones se pierde.
 
               Por lo mismo se fue el `EmptyState` de «Selecciona un cobrador»:
-              metía 120px entre el selector y la lista para decir lo que el
-              propio selector ya dice, y volvía a empujar la lista hacia abajo. */}
-
-          {/* Dos cosas del campo, que ya venían de antes:
-              · 48px de alto y no 40. Un `select` de 40 en un teléfono se falla
-                con el pulgar, y este abre la caja de OTRA persona.
-              · La explicación va DEBAJO. Arriba obligaba a leer dos líneas antes
-                de llegar a lo único que hay que hacer aquí, que es elegir. */}
-          <div style={{
-            background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
-            borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
-            display: 'flex', flexDirection: 'column', gap: 10,
-          }}>
-            <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
-              textTransform: 'uppercase', color: 'var(--cf-ink-3)',
-            }}>Caja por cobrador</span>
-
-            <select
-              value={cajaRutaCobradorId}
-              onChange={(e) => setCajaRutaCobradorId(e.target.value)}
-              style={{
-                width: '100%', height: 48, borderRadius: 14, padding: '0 12px',
-                background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)',
-                font: 'inherit', fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
-                outline: 'none', cursor: 'pointer',
-              }}
-            >
-              <option value="">— Elige un cobrador —</option>
-              {cobradoresParaFiltro.map((c) => (
-                <option key={c.id} value={c.id}>{c.nombre}{c.inactivo ? ' (inactivo)' : ''}</option>
-              ))}
-            </select>
-
-            <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
-              Su caja del día: lo que prestó, lo que cobró, los seguros, el efectivo
-              y el capital de cada ruta, con todos sus movimientos.
-            </span>
-          </div>
-
-          {/* ⚠ EL DETALLE VA PEGADO A SU SELECTOR, no al final de la pantalla.
-              Si se quedara debajo de la lista, elegir un cobrador no cambiaría
-              nada de lo que se ve y habría que bajar a buscarlo — que es el
-              mismo problema que se está arreglando, una pieza más abajo. */}
-          {cajaRutaLoading && <SkeletonCard />}
-          {cajaRutaError && (
-            <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
-              {cajaRutaError}
-            </div>
-          )}
-          {!cajaRutaLoading && !cajaRutaError && cajaRutaData && (
-            <>
-              <div className="flex items-center justify-between gap-2 px-1">
-                <p className="text-sm font-bold text-[var(--cf-ink)]">Caja de {cajaRutaData.cobrador?.nombre}</p>
-                {cajaRutaData.esRango ? null : (cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
-              </div>
-              <CajaCobradorDetalle data={cajaRutaData} onExplicar={setCifraExplicada} />
-              <Link
-                href={`/caja/cobrador/${cajaRutaCobradorId}?${periodo.modo === 'hoy' ? `fecha=${periodo.fecha || fechaSeleccionada}` : `desde=${periodo.desde}&hasta=${periodo.hasta}`}`}
-                className="block text-center text-xs font-semibold text-[var(--cf-gold)] hover:text-[var(--cf-gold-dark)] py-2 rounded-[12px] border border-[var(--cf-border)]"
-              >
-                Abrir en pantalla completa
-              </Link>
-            </>
-          )}
-
-          {/* ── T08-02 · LA CAJA POR RUTA ──
-              «La pestaña que faltaba. Cada ruta con lo recaudado partido en
-              efectivo y digital.»
-
-              La partición efectivo/digital es el punto: al cerrar el día el
-              cobrador solo entrega el EFECTIVO —lo digital ya está en la
-              cuenta—, así que sin separarlo se le pide una cifra que incluye
-              plata que nunca tocó. */}
+              metía 120px para decir lo que el propio selector ya dice, y volvía
+              a empujar la lista hacia abajo. */}
           <CajaPorRuta
             filas={filasPorRuta}
             totales={totalesPorRuta}
             onAbrirRuta={(f) => { window.location.href = `/rutas/${f.id}` }}
+            selector={(
+              <div className="space-y-4">
+                {/* Dos cosas del campo, que ya venían de antes:
+                    · 48px de alto y no 40. Un `select` de 40 en un teléfono se
+                      falla con el pulgar, y este abre la caja de OTRA persona.
+                    · La explicación va DEBAJO. Arriba obligaba a leer dos líneas
+                      antes de llegar a lo único que hay que hacer aquí. */}
+                <div style={{
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+                  borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
+                  display: 'flex', flexDirection: 'column', gap: 10,
+                }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+                    textTransform: 'uppercase', color: 'var(--cf-ink-3)',
+                  }}>Caja por cobrador</span>
+
+                  <select
+                    value={cajaRutaCobradorId}
+                    onChange={(e) => setCajaRutaCobradorId(e.target.value)}
+                    style={{
+                      width: '100%', height: 48, borderRadius: 14, padding: '0 12px',
+                      background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)',
+                      font: 'inherit', fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
+                      outline: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">— Elige un cobrador —</option>
+                    {cobradoresParaFiltro.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nombre}{c.inactivo ? ' (inactivo)' : ''}</option>
+                    ))}
+                  </select>
+
+                  <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+                    Su caja del día: lo que prestó, lo que cobró, los seguros, el efectivo
+                    y el capital de cada ruta, con todos sus movimientos.
+                  </span>
+                </div>
+
+                {/* ⚠ EL DETALLE VA PEGADO A SU SELECTOR, no al final de la
+                    pantalla. Si se quedara debajo de la lista, elegir un
+                    cobrador no cambiaría nada de lo que se ve y habría que bajar
+                    a buscarlo — el mismo problema una pieza más abajo. */}
+                {cajaRutaLoading && <SkeletonCard />}
+                {cajaRutaError && (
+                  <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
+                    {cajaRutaError}
+                  </div>
+                )}
+                {!cajaRutaLoading && !cajaRutaError && cajaRutaData && (
+                  <>
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <p className="text-sm font-bold text-[var(--cf-ink)]">Caja de {cajaRutaData.cobrador?.nombre}</p>
+                      {cajaRutaData.esRango ? null : (cajaRutaData.cerrado ? <Badge variant="green">Cerrado</Badge> : <Badge variant="yellow">Pendiente cierre</Badge>)}
+                    </div>
+                    <CajaCobradorDetalle data={cajaRutaData} onExplicar={setCifraExplicada} />
+                    <Link
+                      href={`/caja/cobrador/${cajaRutaCobradorId}?${periodo.modo === 'hoy' ? `fecha=${periodo.fecha || fechaSeleccionada}` : `desde=${periodo.desde}&hasta=${periodo.hasta}`}`}
+                      className="block text-center text-xs font-semibold text-[var(--cf-gold)] hover:text-[var(--cf-gold-dark)] py-2 rounded-[12px] border border-[var(--cf-border)]"
+                    >
+                      Abrir en pantalla completa
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           />
         </div>
       )}
