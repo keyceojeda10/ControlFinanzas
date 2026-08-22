@@ -1739,6 +1739,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       ancla={sinArrastre ? undefined : ANCLA_CLIENTE(fila.id)}
       resaltada={highlightId === fila.id}
       orden={fila.orden}
+      carrilSiempre={sinArrastre}
       cobrada={fila.cobrada}
       actual={actual}
       ultima={fila.ultima}

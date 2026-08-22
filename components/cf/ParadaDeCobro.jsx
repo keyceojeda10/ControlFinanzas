@@ -73,7 +73,16 @@ export function Carril({
   // Los dos estados del arrastre por pulsación larga. `resto` recoge los
   // manejadores del gesto (`useArrastreLargo`), que van en ESTE nodo porque es
   // el que se mide para saber sobre cuál se soltó.
-  levantada = false, destino = false, style, children, ...resto
+  levantada = false, destino = false, style, children,
+  /* ── EL NÚMERO TAMBIÉN EN ESCRITORIO ───────────────────────────────────────
+     Por defecto el carril es `lg:contents`: en PC la tarjeta se suelta en la
+     rejilla y el número desaparece, que es lo correcto en /cobros-hoy —ahí no
+     hay recorrido que numerar—. Pero en la ruta sí lo hay, y el dueño ya lo
+     rebatió una vez: «no sale qué número de lista es en ruta, y eso es
+     importantísimo». La tabla de escritorio tiene su columna `#`; las tarjetas
+     de escritorio la necesitan igual, o cambiar de vista pierde un dato. */
+  carrilSiempre = false,
+  ...resto
 }) {
   /* ── `tenue`: LLEVA NÚMERO, PERO NO ES PARADA DE HOY ──
      El dueño quiere a todos numerados —«así el primero fuera uno que estuviese
@@ -99,7 +108,7 @@ export function Carril({
         : { w: 30, bg: 'var(--cf-card)', bd: '2px solid var(--cf-border-strong)', fg: 'var(--cf-ink-2)' }
 
   return (
-    <div id={ancla} className="flex lg:contents" {...resto} style={{
+    <div id={ancla} className={carrilSiempre ? 'flex' : 'flex lg:contents'} {...resto} style={{
       gap: 10, alignItems: 'stretch',
       // El aterrizaje al volver de cobrar. `scroll-margin` para que no quede
       // pegada al borde de arriba cuando el navegador la trae a la vista.
@@ -132,7 +141,7 @@ export function Carril({
           `hidden sm:grid`, y luego `display:'flex'` en la caja del panel
           duplicando la gráfica en el teléfono. Hay una prueba que lo barre
           entero para que no haya una cuarta. */}
-      <div className="lg:hidden flex flex-col items-center" style={{ width: 34, flex: 'none' }}>
+      <div className={`${carrilSiempre ? '' : 'lg:hidden '}flex flex-col items-center`} style={{ width: 34, flex: 'none' }}>
         <span className="cf-num" style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           width: circulo.w, height: circulo.w, minWidth: circulo.w, minHeight: circulo.w,
@@ -144,7 +153,7 @@ export function Carril({
         </span>
         {/* El conector no va en la última: una línea que sale de la última
             parada y no llega a nada dice que falta algo. */}
-        {!ultima && (
+        {!ultima && !carrilSiempre && (
           <span aria-hidden style={{
             flex: 1, width: 2, minHeight: 8, marginTop: 4,
             borderRadius: 999, background: 'var(--cf-border-strong)',
