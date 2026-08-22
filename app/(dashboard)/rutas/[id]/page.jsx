@@ -46,7 +46,7 @@ import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
-import { Recibo }                    from '@/components/pantallas/Recibo'
+import { Recibo, CAPA_RECIBO }        from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
@@ -1735,13 +1735,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
   //
   // z-index por encima de la hoja de cobro (10001): el recibo la sustituye.
   const pantallaRecibo = reciboCobro && typeof document !== 'undefined' ? createPortal(
-    <div data-recibo="1" style={{
-      position: 'fixed', inset: 0, zIndex: 10002,
-      // `--cf-surface`, no `--cf-bg`: ese token NO EXISTE. Un nombre inventado
-      // no da error, simplemente no pinta — y la capa salia transparente con la
-      // lista de clientes viendose por detras. Lo caza `tokens-existen.test.js`.
-      background: 'var(--cf-surface)', overflowY: 'auto',
-    }}>
+    <div data-recibo="1" className={CAPA_RECIBO.className} style={CAPA_RECIBO.style}>
       <Recibo
         monto={formatMoney(reciboCobro.monto)}
         cliente={reciboCobro.nombre}

@@ -21,7 +21,7 @@ import HojaInferior        from '@/components/cf/HojaInferior'
 import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/RegistrarCobro'
 import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 // El comprobante del rediseño, el mismo que ya salía en el cobro desde la ruta.
-import { Recibo } from '@/components/pantallas/Recibo'
+import { Recibo, CAPA_RECIBO } from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
@@ -612,10 +612,7 @@ export default function RegistrarPago({
     if (!open || typeof document === 'undefined') return null
 
     return createPortal(
-      <div data-recibo="1" style={{
-        position: 'fixed', inset: 0, zIndex: 10002,
-        background: 'var(--cf-surface)', overflowY: 'auto',
-      }}>
+      <div data-recibo="1" className={CAPA_RECIBO.className} style={CAPA_RECIBO.style}>
         <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
           <Recibo
             /* `capital` e `intereses` se alcanzan desde el propio «¿A qué se

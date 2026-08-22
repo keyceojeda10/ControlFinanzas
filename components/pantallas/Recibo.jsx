@@ -42,6 +42,34 @@ function Fila({ etiqueta, valor, mono, cifra }) {
   )
 }
 
+/* ══ LA CAPA DEL COMPROBANTE ══════════════════════════════════════════════
+ *
+ * ⚠ ESTABA ESCRITA DOS VECES —en `RegistrarPago` y en la ficha de la ruta— y es
+ * exactamente como este recibo ya divergió antes: se arregla un camino y el otro
+ * se queda con el fallo. Vive aquí y la usan los dos.
+ *
+ * En el TELÉFONO ocupa todo, que es lo correcto: el cobrador acaba de cobrar y
+ * esto es lo único que le importa. En un MONITOR salía la misma página estirada
+ * de lado a lado —«Cliente ......... Fantasma 4» con metro y medio de puntos en
+ * medio— y el dueño lo reportó con captura: «se ve muy fea así estirada, cuando
+ * la mayoría de las cosas del sistema son modales». Desde `lg` el fondo se
+ * atenúa y el comprobante se centra, como la hoja de cobro de la que viene. */
+export const CAPA_RECIBO = {
+  /* ⚠ EL FONDO VA POR CLASE, NO EN EL `style`.
+     Un estilo en línea le gana SIEMPRE a la clase, así que con
+     `background: 'var(--cf-surface)'` inline el `lg:bg-…` no pintaba nada y la
+     capa seguía saliendo clara en el monitor. Es la misma trampa que ya está
+     escrita en la barra de acción de «Cobrar hoy», y volví a caer.
+
+     `--cf-surface`, no `--cf-bg`: ese token NO EXISTE, y un nombre inventado no
+     da error — la capa sale transparente y se ve la lista por detrás. Lo caza
+     `tokens-existen.test.js`. */
+  className: 'bg-[var(--cf-surface)] '
+    + 'lg:bg-[rgba(20,20,28,0.5)] lg:backdrop-blur-[2px] '
+    + 'lg:flex lg:items-center lg:justify-center',
+  style: { position: 'fixed', inset: 0, zIndex: 10002, overflowY: 'auto' },
+}
+
 export function Recibo({
   // ⚠ Sin valor por defecto: con `negocio` vacío se imprimía «Recibido por
   // Juan · Control Finanzas» en el recibo que ve el deudor. El emisor del
@@ -84,10 +112,17 @@ export function Recibo({
   progresoDia,
 }) {
   return (
-    <div style={{
-      height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
-      color: 'var(--cf-ink)',
-    }}>
+    <div
+      /* ⚠ `lg:w-[520px]` Y NO SOLO `max-w`: dentro de un contenedor flex el
+         `w-full` se encoge al contenido, y la tarjeta salía de 289px —más
+         estrecha que en el teléfono—. El ancho se fija. */
+      className={'w-full max-w-[520px] mx-auto '
+        + 'lg:w-[520px] lg:flex-none lg:h-auto lg:max-h-[88vh] lg:my-8 lg:overflow-hidden '
+        + 'lg:bg-[var(--cf-card)] lg:rounded-[20px] lg:shadow-2xl'}
+      style={{
+        height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column',
+        color: 'var(--cf-ink)',
+      }}>
       <div style={{
         flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 24px 0',
         display: 'flex', flexDirection: 'column', gap: 20,
