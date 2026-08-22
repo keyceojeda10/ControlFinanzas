@@ -982,10 +982,34 @@ export async function GET(request) {
       saldoRealCajaConAjustes: statsDiaRaw.saldoRealCaja,
     }
 
-  // Obtener gastos del día para mostrar en lista
+  /* Los gastos del día: LA LISTA que se enseña, y de paso los gastos de cada
+     ruta (`calcularGastosPorRutaDia` recibe justo este array).
+
+     ⚠ SIN LOS RECHAZADOS, Y ESTE FILTRO FALTABA.
+
+     Reportado por PRESTA MIL: «la ruta 9 ingresó unos gastos, acepté algunos y
+     rechacé otros, y en la caja de la ruta me siguen apareciendo todos».
+
+     El TOTAL de arriba ya los excluía (`whereGastosDia`, unos renglones más
+     arriba, pide `pendiente` o `aprobado`). La lista no, así que el dueño veía
+     una suma que no podía reconstruir sumando lo que le enseñaban — y los
+     gastos por ruta contaban plata que él había rechazado a mano.
+
+     Medido en su organización, el día 11 de agosto:
+
+         TOTAL de la caja   $142.000   (10 gastos aprobados)
+         LISTA de la caja   $262.000   (los mismos + uno rechazado de $120.000)
+
+     Tiene 29 rechazados por $658.000 desde julio, así que le pasaba a diario.
+
+     Es la MISMA regla que ya está escrita para los pagos veinte renglones más
+     abajo: «la lista tiene que traer los mismos que el total de arriba». El
+     rechazo en sí estaba bien: `PATCH /api/gastos/[id]` revierte su asiento de
+     capital, así que la plata nunca se descontó. Solo se seguía viendo. */
   const whereGastos = {
     organizationId,
     fecha: { gte: inicio, lt: fin },
+    estado: { in: ['pendiente', 'aprobado'] },
   }
   if (rol === 'cobrador') {
     whereGastos.cobradorId = userId
