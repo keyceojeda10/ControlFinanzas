@@ -45,6 +45,44 @@ const IconPagar = (
   </svg>
 )
 
+/* ══ ¿CUÁNDO LE COBRAS? ═══════════════════════════════════════════════════
+ *
+ * De qué día a qué día cae el próximo cobro. La ventana entera, no un solo
+ * número: «mañana» es el día 1 y SOLO el día 1 — con un número arrastraba
+ * también los de hoy.
+ *
+ * Vive aquí arriba porque la usan los dos sitios: la fila de chips y la sección
+ * de la hoja de filtros. Tenerla escrita dos veces es como acaban diciendo
+ * cosas distintas. */
+/* ⚠ SIN `export`: una página de Next solo puede exportar lo suyo, y con esto
+   el build fallaba con «does not match the required types of a Next.js Page». */
+const VENTANAS_COBRO = {
+  venceHoy:    [0, 0],
+  venceManana: [1, 1],
+  vence2:      [2, 2],
+  vence3:      [3, 3],
+  vence5:      [0, 5],
+  vence7:      [0, 7],
+  vence10:     [0, 10],
+  vence15:     [0, 15],
+  vence30:     [0, 30],
+}
+
+/* Lo que se ofrece dentro del filtro. Los sueltos («mañana», «en 2 días») son
+   para armar la lista de un día concreto; los «de aquí a N» para planear la
+   semana o la quincena. */
+const CUANDO_COBRAS = [
+  { valor: '',            nombre: 'Cualquier día' },
+  { valor: 'venceHoy',    nombre: 'Hoy' },
+  { valor: 'venceManana', nombre: 'Mañana' },
+  { valor: 'vence2',      nombre: 'Pasado mañana' },
+  { valor: 'vence3',      nombre: 'En 3 días' },
+  { valor: 'vence5',      nombre: 'De aquí a 5 días' },
+  { valor: 'vence7',      nombre: 'De aquí a una semana' },
+  { valor: 'vence15',     nombre: 'De aquí a 15 días' },
+  { valor: 'vence30',     nombre: 'De aquí a un mes' },
+]
+
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
   { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
@@ -65,6 +103,7 @@ const ESTADOS = [
      es lo que ya se pasó y la otra lo que todavía se puede evitar. Por eso los
      nombres van en paralelo —«En mora · En 5 días · En 10 días»— y por eso son
      cortos: en una fila que se desliza, cada letra empuja al siguiente. */
+
   /* ⚠ «MAÑANA» NO ES «DE AQUÍ A UN DÍA»: es el día 1 y solo el día 1. Por eso
      cada uno lleva su ventana entera —de qué día a qué día— en vez de un solo
      número. Con un número, «mañana» arrastraba también los de hoy.
@@ -435,6 +474,20 @@ export default function PrestamosPage() {
   // también: no son filtros, pero son decisiones de cómo mirar la lista, y
   // ocupaban otros 85px arriba para algo que se cambia una vez al mes.
   const gruposFiltro = [
+    /* ⚠ VA EL PRIMERO, Y VA AQUÍ DENTRO.
+       Se hizo antes como chips en la fila de arriba y el dueño no los encontró:
+       «no veo lo de los filtros por fecha de cobro… en filtro no hay una sección
+       que diga cobras mañana, en dos días, en cinco días, o en un mes». Los
+       chips siguen estando como atajo, pero quien busca un filtro abre el
+       filtro, y ahí es donde tiene que estar la lista completa.
+
+       Es la primera pregunta de la mañana —«¿a quién le cobro?»— así que va
+       arriba del todo, antes que la frecuencia o la ruta. */
+    { id: 'cuando', titulo: '¿Cuándo le cobras?',
+      valor: estado.startsWith('vence') ? estado : '',
+      // Al quitarlo se vuelve a «activos», que es de donde salió.
+      onCambiar: (v) => { setEstado(v || 'activo'); setPage(1) },
+      opciones: CUANDO_COBRAS },
     { id: 'frecuencia', titulo: 'Cada cuánto se cobra', valor: frecuencia,
       onCambiar: (v) => { setFrecuencia(v); setPage(1) },
       // Con el título encima, «Toda frecuencia» sobra: ahí va «Cualquiera».
@@ -583,14 +636,7 @@ export default function PrestamosPage() {
       // pidió: «que automáticamente los primeros sean los más cercanos a vencer».
       /* La ventana, de qué día a qué día. `porVencerDesde` es 0 si no se manda,
          así que «en N días» sigue queriendo decir «de hoy a N». */
-      const VENTANA = {
-        venceHoy:    [0, 0],
-        venceManana: [1, 1],
-        vence5:      [0, 5],
-        vence10:     [0, 10],
-        vence15:     [0, 15],
-        vence30:     [0, 30],
-      }[est]
+      const VENTANA = VENTANAS_COBRO[est]
       if (VENTANA) {
         params.set('porVencerDesde', String(VENTANA[0]))
         params.set('porVencer', String(VENTANA[1]))
