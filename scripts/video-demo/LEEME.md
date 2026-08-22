@@ -181,6 +181,12 @@ ni «sistema francés».
   con el borde y **las cifras se van fuera por la derecha**: salía «Lo que
   cobraste» sin número y «−$» cortado. Con `fila` el halo sigue marcando la
   palabra y el encuadre coge el renglón entero.
+- **El orden de creación manda sobre las fechas.** `saldoAnterior` y
+  `saldoNuevo` de cada movimiento se calculan al crearlo; si después se reparten
+  las fechas sin respetar ese orden, la pantalla de Capital enseña la columna del
+  saldo dando saltos. Por eso `poblar-demo` crea primero los préstamos de fuera
+  de la ruta: así el que se queda con fecha de hoy es el ÚLTIMO creado y la
+  cadena cuadra sin reescribir un solo asiento.
 - **Con `text=` no vale pegarle `:visible`**, es otro motor: se dice aparte con
   `>> visible=true`. `text=SALDO EN CAJA` cazaba un `<span>` oculto de la copia
   de escritorio y la toma esperaba a que se dejara ver.
@@ -224,10 +230,15 @@ ni «sistema francés».
 | 9 | Cobrar el día | 4:39 |
 | 10 | Ajustes | 7:49 |
 | 11 | La caja | 4:41 |
+| 12 | El capital | 4:16 |
 
 ## Lo que falta
 
-Capital. Y el corto de 90 segundos para el bot de ventas.
+**La serie está completa.** Queda el corto de 90 segundos para el bot de ventas.
+
+⚠ Los doce salen **sin voz y sin editar**: el dueño les graba la narración y los
+monta antes de subirlos. Hasta entonces el bot sigue con la prohibición de
+enviarlos.
 
 **El decorado de la caja ya está arreglado** (21 ago): `poblar-demo` corre doce
 desembolsos a la fecha de arranque de su préstamo y deja UNO en el día, de un
