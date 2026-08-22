@@ -75,6 +75,10 @@ export default function Simulador({
   montoMarcador = 'Ej: 500.000',
   frecuencia = 'Diario', frecuencias = ['Diario', 'Semanal', 'Quincenal', 'Mensual'],
   modo = 'Cuota fija', recomendado = true,
+  /* Lo que haya que decir SOBRE EL MODO va pegado al modo. Hoy es el aviso de
+     «el % se cobra en cada cobro»; puesto al final de la pantalla quedaba
+     debajo del botón de crear, o sea después de la decisión. */
+  notaModo = null,
   onFrecuencia, onCambiarModo, onCrear, onMandar, onTabla,
   sinDatos,
   // El relleno lateral lo pone el armazon. Sin esto eran 40px por lado en la
@@ -189,6 +193,7 @@ export default function Simulador({
               fontSize: 12.5, fontWeight: 700, color: 'var(--cf-gold-dark)',
             }}>Cambiar</button>
           </div>
+          {notaModo}
         </div>
 
         <Tarjeta style={{ background: 'var(--cf-card-alt)' }}>

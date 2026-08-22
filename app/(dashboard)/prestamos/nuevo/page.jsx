@@ -14,7 +14,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
-import ModoInteresSelector                         from '@/components/prestamos/ModoInteresSelector'
+import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
 import CuotasExtraEditor                           from '@/components/prestamos/CuotasExtraEditor'
 import Stepper                                     from '@/components/ui/Stepper'
@@ -2235,8 +2235,18 @@ function NuevoPrestamo() {
                     <div className="flex justify-between">
                       <span style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
                       <span className="font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.totalInteres)}</span>
-                    </div>
+                      {/* Lo último que se lee antes de confirmar. Si el modo
+                      multiplica el interés por el número de cobros, aquí es
+                      donde tiene que verse. */}
+                  <AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
+                    { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />
+                </div>
                   )}
+                  {/* Lo último que se lee antes de confirmar. Si el modo
+                      multiplica el interés por el número de cobros, aquí es
+                      donde tiene que verse. */}
+                  <AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
+                    { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />
                 </div>
               </div>
             </SectionCard>

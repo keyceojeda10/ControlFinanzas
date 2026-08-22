@@ -81,6 +81,76 @@ function calcularEjemplo(modo, { monto, tasa, frecuencia, diasPlazo }) {
   } catch { return null }
 }
 
+/* ── EL AVISO QUE FALTABA ──────────────────────────────────────────────────
+ *
+ * Los tres modos con `base: 'periodo'` cobran el porcentaje ENTERO en cada
+ * cobro. La pantalla ya lo dice —«El % es por cada cobro»— y la cuenta obedece
+ * a esa etiqueta: no hay ningún fallo de cálculo. Lo que pasa es que nadie lee
+ * esa línea como «treinta veces».
+ *
+ * Medido en producción (agosto 2026): de 10.469 préstamos, 446 usan estos
+ * modos y cinco cayeron en diario o semanal. Dos los cancelaron al ver la
+ * cifra. Uno lleva desde el 6 de agosto sin un pago: $300.000 prestados que
+ * pedían SIETE VECES esa plata. Y a otro cliente le llevan cobrados $596.674
+ * sobre $200.000, que es correcto y es una barbaridad.
+ *
+ * Así que se avisa cuando el resultado ya no tiene defensa: el interés iguala o
+ * supera a lo que se entrega. Con eso, «Globo mensual a 3 cobros» —que es un
+ * uso legítimo y da 60%— no molesta a nadie, y el diario a 30 cobros salta.
+ *
+ * No bloquea. Es su negocio y su tasa; lo que no puede pasar es que se entere
+ * el día que el cliente no vuelve. */
+export function avisoDelPorcentaje(modo, ej, { monto, tasa }) {
+  const m = MODOS.find((x) => x.key === modo)
+  if (!m || m.base !== 'periodo' || !ej) return null
+  const prestado = Number(monto)
+  const interes = Number(ej.totalInteres)
+  if (!prestado || !interes || ej.numPeriodos <= 1) return null
+  if (interes < prestado) return null
+  return {
+    cobros: ej.numPeriodos,
+    tasa: Number(tasa),
+    interes,
+    prestado,
+    veces: Math.round((interes / prestado) * 10) / 10,
+  }
+}
+
+const AVISO_ICONO = (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-px">
+    <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+  </svg>
+)
+
+/** El cartel, igual en la lista, en el asistente y junto al total.
+ *
+ * ⚠ SE EXPORTA A PROPÓSITO. Dentro del selector no basta: el simulador enseña
+ * los modos en una hoja que SE CIERRA al elegir, así que el aviso se pintaba y
+ * desaparecía en el mismo gesto. Un aviso que solo existe donde nadie lo mira
+ * es lo mismo que no tenerlo — y en este repo ya pasó con el modo abreviado.
+ * Por eso va también donde está el total, que es lo que se lee antes de dar el
+ * préstamo. */
+export function AvisoPorCobro({ aviso }) {
+  if (!aviso) return null
+  return (
+    <div className="flex items-start gap-2 mt-2 rounded-[10px] p-2.5"
+      /* Los tres tokens del aviso rojo del sistema. `--cf-red-darker` es
+         justamente «texto rojo dentro de aviso rojo»: existe para esto. */
+      style={{ background: 'var(--cf-red-bg)', border: '1px solid var(--cf-red-border)',
+        color: 'var(--cf-red-darker)' }}>
+      {AVISO_ICONO}
+      <p className="text-[11px] leading-snug">
+        <span className="font-bold">El {aviso.tasa}% se cobra {aviso.cobros} veces, una en cada cobro.</span>{' '}
+        Son <span className="font-semibold tabular-nums">{formatMoney(aviso.interes)}</span> de interés
+        sobre <span className="tabular-nums">{formatMoney(aviso.prestado)}</span> prestados
+        — <span className="font-semibold">{aviso.veces} veces</span> lo que entregas.
+        Si querías cobrar el {aviso.tasa}% una sola vez, el modo es «Interés de una sola vez».
+      </p>
+    </div>
+  )
+}
+
 const CHECK = (
   <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" /></svg>
 )
@@ -165,6 +235,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
         <p className="text-[11px] mt-2.5 leading-snug rounded-[8px] p-2" style={{ background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}>
           <span className="font-semibold" style={{ color: 'var(--cf-ink-3)' }}>Cómo se calcula: </span>{md?.formula}
         </p>
+        <AvisoPorCobro aviso={avisoDelPorcentaje(sugerido, ej, ctx)} />
         <div className="flex flex-col gap-2 mt-4">
           {onGuardarPreferido ? (
             <>
@@ -234,6 +305,10 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
                 <span className="font-semibold">Cómo se calcula: </span>{m.formula}
               </p>
             )}
+            {/* ⚠ Solo en el modo ELEGIDO. En las siete tarjetas a la vez sería
+                ruido rojo permanente y se dejaría de leer, que es peor que no
+                ponerlo. */}
+            {activo && <AvisoPorCobro aviso={avisoDelPorcentaje(m.key, ej, ctx)} />}
           </div>
         </div>
       </button>

@@ -28,7 +28,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Simulador from '@/components/pantallas/Simulador'
 import HojaInferior from '@/components/cf/HojaInferior'
-import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
+import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion from '@/components/prestamos/TablaAmortizacion'
 import { Toggle } from '@/components/ui/Toggle'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -221,6 +221,11 @@ export default function SimuladorPage() {
         modo={MODOS[modoInteres] ?? modoInteres}
         recomendado={modoInteres === 'fijo'}
         onCambiarModo={() => setHojaModos(true)}
+        /* El aviso del «% por cada cobro» va AQUÍ y no solo dentro de la lista
+           de modos: esa lista es una hoja que se cierra al elegir, así que el
+           aviso se pintaba y desaparecía en el mismo gesto. */
+        notaModo={<AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
+          { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />}
 
         onCrear={calculo ? crear : null}
         onMandar={calculo ? mandar : null}
