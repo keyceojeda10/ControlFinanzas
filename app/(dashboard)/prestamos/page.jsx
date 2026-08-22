@@ -332,6 +332,12 @@ export default function PrestamosPage() {
   // Llega del panel: «N prestamos con mas de 30 dias de mora». El enlace existia
   // y no filtraba nada porque ni la pagina ni el endpoint lo entendian.
   const [diasMoraMin, setDiasMoraMin] = useState(() => searchParams?.get('diasMoraMin') || '')
+  /* El rango a mano, la otra mitad de «¿cuándo le cobras?». Las ventanas fijas
+     cubren lo de todos los días; esto cubre «del 3 al 17», que es como se pide
+     una quincena de verdad. Viven en la URL como los demás para que el filtro
+     se pueda enlazar y sobreviva al botón de atrás. */
+  const [cobraDesde, setCobraDesde] = useState(() => searchParams?.get('cobraDesde') || '')
+  const [cobraHasta, setCobraHasta] = useState(() => searchParams?.get('cobraHasta') || '')
 
   // TODOS los filtros viven en la URL, no solo estado y frecuencia.
   //
@@ -352,7 +358,7 @@ export default function PrestamosPage() {
     // filtro puesto Y visible: un filtro activo que no se ve hace que la lista
     // parezca corta sin motivo.
     if (searchParams?.get('listosRenovar') === '1') setEstado('renovar')
-    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias', 'diasMoraMin']
+    const clave = ['estado', 'frecuencia', 'rutaId', 'renovacion', 'modoInteres', 'sinPagosDias', 'diasMoraMin', 'cobraDesde', 'cobraHasta']
       .map(g).join('|')
     if (clave !== paramsPrevios.current) {
       paramsPrevios.current = clave
@@ -363,6 +369,8 @@ export default function PrestamosPage() {
       setModoInteres(g('modoInteres'))
       setSinPagosDias(g('sinPagosDias'))
       setDiasMoraMin(g('diasMoraMin'))
+      setCobraDesde(g('cobraDesde'))
+      setCobraHasta(g('cobraHasta'))
     }
   }, [searchParams])
   const [loading,   setLoading]   = useState(true)
@@ -473,6 +481,27 @@ export default function PrestamosPage() {
   // Los filtros que salieron de la cabecera. "Agrupar" y la vista van aquí
   // también: no son filtros, pero son decisiones de cómo mirar la lista, y
   // ocupaban otros 85px arriba para algo que se cambia una vez al mes.
+  /* ── UNA SOLA PREGUNTA, DOS MANERAS DE CONTESTARLA ──────────────────────
+   * Las ventanas fijas y el rango a mano preguntan lo mismo: de qué día a qué
+   * día cae el próximo cobro. Con las dos puestas a la vez el servidor tendría
+   * que decidir cuál gana, y quien mira la pantalla vería «Hoy» encendido y una
+   * lista de la quincena que viene.
+   *
+   * Así que se apagan la una a la otra, aquí, en el único sitio por donde pasan
+   * las dos. */
+  const elegirVentana = (v) => {
+    setEstado(v || 'activo'); setCobraDesde(''); setCobraHasta(''); setPage(1)
+  }
+  const elegirRango = (d, h) => {
+    setCobraDesde(d); setCobraHasta(h); setPage(1)
+    if (d || h) setEstado((e) => (e.startsWith('vence') ? 'activo' : e))
+  }
+
+  /* ⚠ VA AQUÍ ARRIBA Y NO MÁS ABAJO: `gruposFiltro` lo usa, y un `const`
+     declarado después de quien lo lee no es un error de compilación — es la
+     pantalla EN BLANCO con «Cannot access before initialization». Pasa el
+     build, pasan las pruebas, y solo se ve abriendo la pantalla. Cuarta vez en
+     este repo; la primera que la caza el guión de capturas. */
   const gruposFiltro = [
     /* ⚠ VA EL PRIMERO, Y VA AQUÍ DENTRO.
        Se hizo antes como chips en la fila de arriba y el dueño no los encontró:
@@ -486,8 +515,13 @@ export default function PrestamosPage() {
     { id: 'cuando', titulo: '¿Cuándo le cobras?',
       valor: estado.startsWith('vence') ? estado : '',
       // Al quitarlo se vuelve a «activos», que es de donde salió.
-      onCambiar: (v) => { setEstado(v || 'activo'); setPage(1) },
+      onCambiar: elegirVentana,
       opciones: CUANDO_COBRAS },
+    /* La otra mitad de lo que pidió: «poderle colocar el rango de fecha». Va
+       pegado debajo de las ventanas, sin título propio que compita, porque es
+       la misma pregunta —y separado en otro bloque parecería otro filtro. */
+    { id: 'cuandoRango', tipo: 'fechas', titulo: 'O entre dos fechas',
+      desde: cobraDesde, hasta: cobraHasta, onCambiar: elegirRango },
     { id: 'frecuencia', titulo: 'Cada cuánto se cobra', valor: frecuencia,
       onCambiar: (v) => { setFrecuencia(v); setPage(1) },
       // Con el título encima, «Toda frecuencia» sobra: ahí va «Cualquiera».
@@ -545,6 +579,11 @@ export default function PrestamosPage() {
   const limpiarFiltros = () => {
     setFrecuencia(''); setModoInteres(''); setRutaId('')
     setSinPagosDias(''); setRenovacion(''); setDiasMoraMin(''); setAgrupar(false); setPage(1)
+    // Y la pregunta de arriba: el rango y la ventana fija, que es la misma cosa
+    // escrita de dos maneras. Dejar una puesta al «limpiar» es de donde sale
+    // «lo quité todo y la lista sigue corta».
+    setCobraDesde(''); setCobraHasta('')
+    setEstado((e) => (e.startsWith('vence') ? 'activo' : e))
   }
   useEffect(() => {
     try {
@@ -560,11 +599,13 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '', sinPagos = '' } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '', sinPagos = '', desde = '', hasta = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${sinPagos || ''}:${p}`
+    // ⚠ El rango entra en la clave. Sin él, lo guardado de un rango se pinta
+    // como si fuera el resultado del siguiente.
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${sinPagos || ''}:${desde || ''}:${hasta || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -593,7 +634,7 @@ export default function PrestamosPage() {
                los resuelve `filtrarPrestamosGuardados`, la misma cuenta que hace
                el servidor. Escrito aquí a mano, tres de ellos filtraban por un
                estado que no existe y la lista salía vacía sin avisar. */
-            let filtered = filtrarPrestamosGuardados(allPrestamos, { est })
+            let filtered = filtrarPrestamosGuardados(allPrestamos, { est, desde, hasta })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
@@ -641,6 +682,11 @@ export default function PrestamosPage() {
         params.set('porVencerDesde', String(VENTANA[0]))
         params.set('porVencer', String(VENTANA[1]))
       }
+      /* El rango a mano. No se manda junto con una ventana fija porque son la
+         misma pregunta: la pantalla se encarga de que solo haya uno puesto. */
+      if (desde) params.set('cobraDesde', desde)
+      if (hasta) params.set('cobraHasta', hasta)
+      if ((desde || hasta) && !params.get('estado')) params.set('estado', 'activo')
       if (frec) params.set('frecuencia', frec)
       if (ruta) params.set('rutaId', ruta)
       if (creador) params.set('creadoPorId', creador)
@@ -673,7 +719,7 @@ export default function PrestamosPage() {
                los resuelve `filtrarPrestamosGuardados`, la misma cuenta que hace
                el servidor. Escrito aquí a mano, tres de ellos filtraban por un
                estado que no existe y la lista salía vacía sin avisar. */
-            let filtered = filtrarPrestamosGuardados(allPrestamos, { est })
+            let filtered = filtrarPrestamosGuardados(allPrestamos, { est, desde, hasta })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
             if (q) {
               const ql = q.toLowerCase()
@@ -706,9 +752,9 @@ export default function PrestamosPage() {
   // escondia todos los prestamos que habia cargado el dueño. En una cartera
   // chica, donde carga el dueño, el filtro devolvia la lista VACIA — por eso
   // parecia que filtrar por ruta "no se podia".
-  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres, sinPagos: sinPagosDias }
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres, sinPagos: sinPagosDias, desde: cobraDesde, hasta: cobraHasta }
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Estado -> URL. Sin esto el filtro no se puede compartir ni conservar al
   // volver atras. La comparacion contra la URL actual evita el bucle
@@ -721,17 +767,19 @@ export default function PrestamosPage() {
     if (renovacion)   q.set('renovacion', renovacion)
     if (modoInteres)  q.set('modoInteres', modoInteres)
     if (sinPagosDias) q.set('sinPagosDias', sinPagosDias)
+    if (cobraDesde)   q.set('cobraDesde', cobraDesde)
+    if (cobraHasta)   q.set('cobraHasta', cobraHasta)
     const nueva = q.toString()
     if (nueva !== (searchParams?.toString() || '')) {
       router.replace(nueva ? `/prestamos?${nueva}` : '/prestamos', { scroll: false })
     }
-  }, [estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setPage(1)
     const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, filtrosExtra), 300)
     return () => clearTimeout(t)
-  }, [buscar, estado, frecuencia, rutaId, renovacion, modoInteres, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buscar, estado, frecuencia, rutaId, renovacion, modoInteres, cobraDesde, cobraHasta, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cambio de página
   useEffect(() => {
@@ -831,7 +879,7 @@ export default function PrestamosPage() {
             había algo detrás. */}
         <BarraFiltros
           activo={estado}
-          onCambiar={(v) => { setEstado(v); setPage(1) }}
+          onCambiar={(v) => { setEstado(v); setCobraDesde(''); setCobraHasta(''); setPage(1) }}
           onMasFiltros={() => setHojaFiltros(true)}
           hayMasFiltros={nFiltros > 0}
           // `montado &&`: esOwner sale de la sesión, que en el servidor no

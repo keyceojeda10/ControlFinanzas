@@ -30,6 +30,8 @@ export function contarFiltros(grupos = []) {
     // «Ordenar por» NO cuenta: siempre hay uno elegido, así que sumaría un
     // filtro permanente que no filtra nada.
     if (g.tipo === 'orden' || g.tipo === 'vistas') return n
+    // Un rango cuenta UNA vez aunque lleve las dos fechas: es un solo filtro.
+    if (g.tipo === 'fechas') return n + (g.desde || g.hasta ? 1 : 0)
     return n + (g.valor !== '' && g.valor != null ? 1 : 0)
   }, 0)
 }
@@ -223,6 +225,55 @@ function FilaInterruptor({ nombre, activo, onCambiar }) {
   )
 }
 
+/**
+ * ── EL RANGO A MANO ──
+ * «Poderle colocar el rango de fecha»: cuando ninguna de las ventanas fijas
+ * sirve —una quincena que arranca el jueves, la semana de un puente— se
+ * escriben las dos fechas.
+ *
+ * Las dos son opcionales a propósito. Solo «desde» = de esa fecha en adelante;
+ * solo «hasta» = de hoy a esa fecha. Un rango que no enseña nada hasta tener
+ * los dos extremos se abandona a medio llenar.
+ *
+ * ⚠ `type="date"` y no un calendario propio: el del teléfono ya sabe el idioma,
+ * el formato del país y cómo abrirse con el pulgar. Y ⚠ `min` en «hasta» para
+ * que no se pueda pedir un rango al revés, que devuelve vacío sin explicar por
+ * qué.
+ */
+function RangoDeFechas({ desde, hasta, onCambiar }) {
+  const campo = {
+    height: 42, width: '100%', minWidth: 0, padding: '0 12px',
+    borderRadius: 10, border: '1px solid var(--cf-border)',
+    background: 'var(--cf-card)', color: 'var(--cf-ink)',
+    fontSize: 14, fontFamily: 'inherit',
+  }
+  const rotulo = { fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)', marginBottom: 4 }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ flex: 1, minWidth: 0 }}>
+          <div style={rotulo}>Desde</div>
+          <input type="date" value={desde || ''} style={campo}
+            onChange={(e) => onCambiar?.(e.target.value, hasta || '')} />
+        </label>
+        <label style={{ flex: 1, minWidth: 0 }}>
+          <div style={rotulo}>Hasta</div>
+          <input type="date" value={hasta || ''} min={desde || undefined} style={campo}
+            onChange={(e) => onCambiar?.(desde || '', e.target.value)} />
+        </label>
+      </div>
+      {(desde || hasta) && (
+        <button type="button" onClick={() => onCambiar?.('', '')}
+          style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0,
+            cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)',
+            textDecoration: 'underline' }}>
+          Quitar las fechas
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function HojaFiltros({
   abierta, onCerrar, grupos = [], onLimpiar,
   // T03-02 la titula «Filtrar y ordenar», porque además de filtrar ordena. El
@@ -247,7 +298,9 @@ export default function HojaFiltros({
                 {g.titulo}
               </span>
             )}
-            {g.tipo === 'interruptores' ? (
+            {g.tipo === 'fechas' ? (
+              <RangoDeFechas desde={g.desde} hasta={g.hasta} onCambiar={g.onCambiar} />
+            ) : g.tipo === 'interruptores' ? (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {g.opciones.map((o) => (
                   <FilaInterruptor

@@ -24,7 +24,7 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { devengarAlCrear } from '@/lib/dinero/devengar'
-import { getLocalDateStr, inicioDelDiaLocal } from '@/lib/i18n'
+import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { enviarPushOrg } from '@/lib/push'
@@ -178,7 +178,33 @@ export async function GET(request) {
    * Con esto, todo criterio que se evalue en JS trae los activos completos y se
    * pagina DESPUES, ya filtrado — que es lo unico que hace que el contador del
    * chip y el largo de la lista digan lo mismo. */
-  const filtraEnJs = soloMora || diasMoraMin != null || listosRenovar || porVencer != null
+  /* ── EL RANGO A MANO ──────────────────────────────────────────────────
+   * «Poderle colocar el rango de fecha»: dos fechas del calendario en vez de
+   * una ventana fija. Es la MISMA pregunta que los chips —de qué día a qué día
+   * cae el próximo cobro— así que acaba en el MISMO criterio; lo único que
+   * cambia es cómo se escribe la ventana.
+   *
+   * Se aceptan sueltas: solo «desde» = de esa fecha en adelante; solo «hasta» =
+   * de hoy a esa fecha. Obligar a poner las dos para ver algo es de las cosas
+   * que hacen que un filtro se abandone a medio llenar.
+   *
+   * ⚠ Se valida el formato ANTES de convertir, por lo mismo que `leerDia`:
+   * `new Date('cualquier cosa')` no revienta, devuelve `Invalid Date`, y toda
+   * comparación con él es `false` — o sea, una lista vacía sin un solo error. */
+  const leerFecha = (nombre) => {
+    const crudo = searchParams.get(nombre)
+    if (crudo == null) return null
+    const limpio = crudo.trim()
+    return /^\d{4}-\d{2}-\d{2}$/.test(limpio) ? limpio : null
+  }
+  const cobraDesde = leerFecha('cobraDesde')
+  const cobraHasta = leerFecha('cobraHasta')
+  const hayRangoFechas = cobraDesde != null || cobraHasta != null
+  // Las dos maneras de decir lo mismo. A partir de aquí el resto del endpoint
+  // pregunta por ESTO y no por cuál de las dos vino.
+  const hayVentana = porVencer != null || hayRangoFechas
+
+  const filtraEnJs = soloMora || diasMoraMin != null || listosRenovar || hayVentana
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
@@ -203,7 +229,7 @@ export async function GET(request) {
     // vencer: los tres criterios lo exigen en JS. Se fuerza aqui para que el
     // filtro sea correcto aunque el llamador no mande estado, y para no traerse
     // los saldados sin necesidad ahora que estas consultas van sin paginar.
-    ...((soloMora || listosRenovar || porVencer != null) && { estado: 'activo' }),
+    ...((soloMora || listosRenovar || hayVentana) && { estado: 'activo' }),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
@@ -382,7 +408,15 @@ export async function GET(request) {
   const RENOVAR_DESDE = 80
   // El arranque del día del país, el mismo que usa «De hoy»: si se midiera desde
   // «ahora», un cobro de esta tarde saldría con cero días y mañana con menos uno.
-  const inicioHoy = inicioDelDiaLocal(session.user.country ?? 'co')
+  const pais = session.user.country ?? 'co'
+  const inicioHoy = inicioDelDiaLocal(pais)
+  /* Los dos extremos de la ventana, ya en días desde hoy, vengan de los chips o
+     de las dos fechas. `getLocalDayRange` es el mismo convenio que usa el resto
+     del sistema: un 'YYYY-MM-DD' es un DÍA DEL CALENDARIO del país, no un
+     instante — leerlo como medianoche UTC contesta por el día anterior. */
+  const enDias = (f) => Math.round((getLocalDayRange(f, pais).inicio - inicioHoy) / 86400000)
+  const ventanaDesde = hayRangoFechas ? (cobraDesde != null ? enDias(cobraDesde) : 0) : porVencerDesde
+  const ventanaHasta = hayRangoFechas ? (cobraHasta != null ? enDias(cobraHasta) : Infinity) : porVencer
   const criterio = soloMora ? ((p) => p.diasMora > 0)
     // MAS DE N, no «N o mas». Todas las etiquetas del producto dicen «mas de 30
     // dias» —la fila del panel, las opciones de la hoja— y el contador del panel
@@ -402,10 +436,10 @@ export async function GET(request) {
     /* Vivo, sin mora, y con su próximo cobro dentro de la ventana. El corte de
        «hoy» va con el convenio de la casa —el día arranca a las 05:00Z— para que
        un cobro de esta tarde no se caiga de la lista por el huso del servidor. */
-    : porVencer != null ? ((p) => {
+    : hayVentana ? ((p) => {
       if (p.estado !== 'activo' || p.diasMora > 0 || !p.proximoCobro) return false
       const dias = Math.ceil((new Date(p.proximoCobro) - inicioHoy) / 86400000)
-      return dias >= porVencerDesde && dias <= porVencer
+      return dias >= ventanaDesde && dias <= ventanaHasta
     })
     : null
 
@@ -414,7 +448,7 @@ export async function GET(request) {
     /* «Que automáticamente los primeros préstamos en la lista sean los más
        cercanos a vencer» — es la segunda mitad de lo que pidió, y sin ella el
        filtro obliga a leer veinte fechas para encontrar la de mañana. */
-    if (porVencer != null) {
+    if (hayVentana) {
       filtrados = [...filtrados].sort((a, b) => new Date(a.proximoCobro) - new Date(b.proximoCobro))
     }
     if (page != null) {
