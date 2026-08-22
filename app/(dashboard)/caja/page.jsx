@@ -1569,33 +1569,34 @@ const MOVIMIENTOS_MANUALES = [
 
       {cajaTab === 'porruta' && (
         <div className="space-y-4">
-          {/* ── T08-02 · LA CAJA POR RUTA ──
-              «La pestaña que faltaba. Cada ruta con lo recaudado partido en
-              efectivo y digital.»
+          {/* ══ EL SELECTOR ARRIBA, LA LISTA DEBAJO ═══════════════════════════
+              El dueño, 22 ago 2026:
 
-              Antes esto empezaba con un `<select>` y media pantalla en blanco
-              hasta elegir un cobrador: había que saber a quién buscar para ver
-              algo. Ahora se ven TODAS las rutas de una, y el selector se queda
-              debajo para el detalle de una persona, que es otra pregunta.
+                «En caja por ruta, el selector sale después de la lista de todas
+                 las rutas. Un usuario que tenga diez rutas, como hay un caso,
+                 tiene que bajar hasta el final para poder seleccionar la que
+                 quiere ver.»
 
-              La partición efectivo/digital es el punto: al cerrar el día el
-              cobrador solo entrega el EFECTIVO —lo digital ya está en la
-              cuenta—, así que sin separarlo se le pide una cifra que incluye
-              plata que nunca tocó. */}
-          <CajaPorRuta
-            filas={filasPorRuta}
-            totales={totalesPorRuta}
-            onAbrirRuta={(f) => { window.location.href = `/rutas/${f.id}` }}
-          />
+              ⚠ ESTABA ABAJO A PROPÓSITO, y el porqué sigue siendo válido: antes
+              la pestaña empezaba con un `<select>` vacío y media pantalla en
+              blanco hasta elegir a alguien — había que saber a quién buscar para
+              ver algo. Por eso se puso la lista primero.
 
-          {/* El selector de cobrador, con los tokens del rediseño. Dos cosas
-              cambian ademas del color:
+              Lo que ha cambiado es que ese riesgo ya no existe: la lista de rutas
+              se pinta SIEMPRE, aquí mismo debajo. Con el selector arriba no hay
+              pantalla en blanco y no hay que bajar diez tarjetas. Las dos razones
+              se cumplen a la vez; no es revertir aquello, es que aquello ya no
+              hace falta.
 
-              · El campo sube de 40px a 48. Un `select` de 40 en un telefono se
-                falla con el pulgar, y este abre la caja de OTRA persona.
-              · La explicacion baja DEBAJO del selector. Arriba obligaba a leer
-                dos lineas antes de llegar a lo unico que hay que hacer aqui, que
-                es elegir un nombre. */}
+              Por lo mismo se fue el `EmptyState` de «Selecciona un cobrador»:
+              metía 120px entre el selector y la lista para decir lo que el
+              propio selector ya dice, y volvía a empujar la lista hacia abajo. */}
+
+          {/* Dos cosas del campo, que ya venían de antes:
+              · 48px de alto y no 40. Un `select` de 40 en un teléfono se falla
+                con el pulgar, y este abre la caja de OTRA persona.
+              · La explicación va DEBAJO. Arriba obligaba a leer dos líneas antes
+                de llegar a lo único que hay que hacer aquí, que es elegir. */}
           <div style={{
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
             borderRadius: 'var(--cf-r-card)', padding: '16px 18px',
@@ -1628,6 +1629,10 @@ const MOVIMIENTOS_MANUALES = [
             </span>
           </div>
 
+          {/* ⚠ EL DETALLE VA PEGADO A SU SELECTOR, no al final de la pantalla.
+              Si se quedara debajo de la lista, elegir un cobrador no cambiaría
+              nada de lo que se ve y habría que bajar a buscarlo — que es el
+              mismo problema que se está arreglando, una pieza más abajo. */}
           {cajaRutaLoading && <SkeletonCard />}
           {cajaRutaError && (
             <div className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
@@ -1649,14 +1654,20 @@ const MOVIMIENTOS_MANUALES = [
               </Link>
             </>
           )}
-          {!cajaRutaLoading && !cajaRutaError && !cajaRutaData && cajaRutaCobradorId === '' && (
-            <EmptyState
-              pose="guia"
-              titulo="Selecciona un cobrador"
-              hint="Elige un cobrador de la lista para ver su caja detallada."
-              size={64}
-            />
-          )}
+
+          {/* ── T08-02 · LA CAJA POR RUTA ──
+              «La pestaña que faltaba. Cada ruta con lo recaudado partido en
+              efectivo y digital.»
+
+              La partición efectivo/digital es el punto: al cerrar el día el
+              cobrador solo entrega el EFECTIVO —lo digital ya está en la
+              cuenta—, así que sin separarlo se le pide una cifra que incluye
+              plata que nunca tocó. */}
+          <CajaPorRuta
+            filas={filasPorRuta}
+            totales={totalesPorRuta}
+            onAbrirRuta={(f) => { window.location.href = `/rutas/${f.id}` }}
+          />
         </div>
       )}
 
