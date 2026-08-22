@@ -215,6 +215,18 @@ ni «sistema francés».
   alguien está escribiendo.
 - La cuenta que se crea al grabar el registro **se borra antes y después**.
 
+## Dónde están
+
+**`~/Desktop/videos-tutoriales/`** — los trece vídeos, sus trece guiones, este
+LEEME, y una carpeta `tomas-NN` por vídeo con sus tomas sueltas (por si al
+editar hay que recortar una sin volver a montar el vídeo entero).
+
+⚠ **UNA SOLA CARPETA.** Hubo un tiempo con dos —esa y una oculta dentro del
+proyecto— y el dueño abrió la del Escritorio, vio cinco vídeos y preguntó por qué
+faltaban ocho: la oculta era la que se estaba llenando. Ya no existe. Lo que
+`correr()` deja en `/tmp/videos` es temporal y **se borra al reiniciar**: al
+terminar un vídeo, copiarlo aquí.
+
 ## Los que hay
 
 | | Vídeo | Dura |
