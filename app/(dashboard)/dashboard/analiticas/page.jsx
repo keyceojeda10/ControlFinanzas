@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
@@ -195,23 +196,14 @@ export default function AnaliticasPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const router = useRouter()
   const [sinPlan, setSinPlan] = useState(false)
   const [showAllAlertas, setShowAllAlertas] = useState(false)
-  const [descargando, setDescargando] = useState(false)
 
-  const descargarPDF = async () => {
-    setDescargando(true)
-    try {
-      const res = await fetch('/api/dashboard/analiticas/reporte-pdf')
-      if (!res.ok) throw new Error('Error generando reporte')
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `rendimiento-${new Date().toISOString().slice(0, 7)}.pdf`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    } catch {} finally { setDescargando(false) }
-  }
+  /* El mismo PDF vive como informe «Cómo rindió el negocio», con su pantalla y
+     con Excel además del PDF. Bajarlo también desde aquí, por su cuenta, es la
+     segunda vía que acaba dando otra cifra. El botón se queda y lleva allí. */
+  const verInformeDeRendimiento = () => router.push('/reportes/rendimiento?periodo=mes')
 
   const country = session?.user?.country || 'CO'
   const fmt = useCallback(v => formatMoney(v, country), [country])
@@ -316,14 +308,13 @@ export default function AnaliticasPage() {
             unica accion de esta pantalla. */}
         <div />
         <button
-          onClick={descargarPDF}
-          disabled={descargando}
+          onClick={verInformeDeRendimiento}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] bg-[var(--cf-fill)] text-[var(--cf-ink-2)] hover:bg-[var(--cf-border-strong)] transition-colors text-[12px] font-medium disabled:opacity-50"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
           </svg>
-          {descargando ? 'Generando...' : 'PDF'}
+          Informe
         </button>
       </div>
 

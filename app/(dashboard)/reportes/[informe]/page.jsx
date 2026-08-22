@@ -23,7 +23,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { formatMoney } from '@/lib/i18n'
@@ -104,8 +104,30 @@ export default function PantallaDeInforme() {
   const nivel = nivelReportes(plan)
   const bloqueado = informe ? informeBloqueado(informe, nivel) : false
 
-  const [periodo, setPeriodo] = useState(informe?.periodos?.[0] ?? 'mes')
-  const [fecha, setFecha] = useState(hoyBogota())
+  /* ── SE PUEDE LLEGAR CON EL INFORME YA PUESTO ────────────────────────────
+   *
+   * «Hay reportes por todos lados. Hay reportes en caja, hay reportes en
+   *  reportes, hay reportes en cómo va el negocio.» Los botones de esas
+   *  pantallas no se quitan —la gente ya los busca ahí— pero dejan de ser una
+   *  segunda forma de bajar lo mismo: ahora traen aquí con el período puesto.
+   *
+   * Que es también lo que hacía falta para poder mandar un enlace a alguien:
+   * `/reportes/dia?periodo=hoy` abre lo que dice y no la pantalla pelada.
+   *
+   * ⚠ Solo se acepta un período que ESTE informe ofrezca. Con uno cualquiera la
+   * pastilla se quedaba sin marcar y la pantalla pedía al servidor un tramo que
+   * nadie podía ver escrito. */
+  const urlParams = useSearchParams()
+  const periodoPedido = urlParams?.get('periodo')
+  const periodoInicial = (informe?.periodos ?? []).includes(periodoPedido)
+    ? periodoPedido
+    : (informe?.periodos?.[0] ?? 'mes')
+
+  const [periodo, setPeriodo] = useState(periodoInicial)
+  const [fecha, setFecha] = useState(() => {
+    const f = urlParams?.get('fecha')
+    return /^\d{4}-\d{2}-\d{2}$/.test(f ?? '') ? f : hoyBogota()
+  })
   /* ══ EL RANGO A MANO ═════════════════════════════════════════════════════
    *
    * «Cómo ver cuánto gané de interés de una fecha a otra fecha. Me gustaría que
@@ -115,7 +137,13 @@ export default function PantallaDeInforme() {
    * Los períodos armados TODOS acaban hoy: no se podía pedir «del 1 al 15 de
    * julio» ni «el mes pasado». El motor ya lo aceptaba —`rangoDe` respeta lo que
    * se le pase— y lo único que faltaba era el control. */
-  const [rango, setRango] = useState({ desde: '', hasta: '' })
+  const [rango, setRango] = useState(() => {
+    // Un tramo a mano también se puede enlazar, y solo si viene ENTERO: media
+    // fecha deja la pantalla pidiendo un rango que no existe.
+    const d = urlParams?.get('desde'), h = urlParams?.get('hasta')
+    const bien = (x) => /^\d{4}-\d{2}-\d{2}$/.test(x ?? '')
+    return bien(d) && bien(h) ? { desde: d, hasta: h } : { desde: '', hasta: '' }
+  })
   const rangoPuesto = !!(rango.desde && rango.hasta)
   /* ⚠ LAS DOS CAJAS NUNCA SALEN VACÍAS. Salían así, y dos controles de fecha en
      blanco encima de unas cifras no dicen NADA: el prestamista no podía saber

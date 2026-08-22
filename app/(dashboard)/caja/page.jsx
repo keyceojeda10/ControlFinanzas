@@ -751,13 +751,24 @@ const MOVIMIENTOS_MANUALES = [
   const cantidadPagosFiltrados = filtroCobrador ? pagosDelDiaFiltrados.length : cantidadPagosDia
 
   const cobradoresParaFiltro = cajaData?.cobradores || []
-  const descargarCSV = () => {
-    const qs = new URLSearchParams({
-      desde: fechaSeleccionada,
-      hasta: fechaSeleccionada,
-    })
+  /* ── EL BOTÓN SE QUEDA; LO QUE CAMBIA ES A DÓNDE LLEVA ───────────────────
+   *
+   * «Hay reportes por todos lados. Hay reportes en caja, hay reportes en
+   *  reportes, hay reportes en cómo va el negocio. Si la gente va a buscar un
+   *  reporte específico, de pronto ni siquiera está en el apartado de
+   *  reportes.»
+   *
+   * Esto bajaba un CSV por su cuenta, en paralelo al informe «El día» que hace
+   * lo mismo desde la pantalla de informes. Dos formas de bajar lo mismo son,
+   * tarde o temprano, dos cifras distintas.
+   *
+   * No se quita —la gente ya lo busca aquí—: abre el informe con ESTE día
+   * puesto, donde además puede elegir PDF o Excel y ver antes lo que se lleva.
+   * `atajoDesde: '/caja'` en el catálogo ya lo decía; faltaba el cable. */
+  const verInformeDelDia = () => {
+    const qs = new URLSearchParams({ periodo: 'hoy', fecha: fechaSeleccionada })
     if (filtroCobrador) qs.set('cobrador', filtroCobrador)
-    window.location.href = `/api/pagos/export?${qs.toString()}`
+    router.push(`/reportes/dia?${qs.toString()}`)
   }
 
   const pagosDiaCard = (
@@ -772,9 +783,9 @@ const MOVIMIENTOS_MANUALES = [
           {!esCobrador && pagosDelDia.length > 0 && (
             <button
               type="button"
-              onClick={descargarCSV}
-              title="Descargar CSV"
-              aria-label="Descargar CSV"
+              onClick={verInformeDelDia}
+              title="Ver el informe del día"
+              aria-label="Ver el informe del día"
               className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)] transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
