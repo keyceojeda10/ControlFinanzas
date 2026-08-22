@@ -136,12 +136,27 @@ export async function GET(request) {
    * hay DOS extremos, y «mañana» es 1 a 1. Sin `porVencerDesde` el borde de
    * abajo es 0, así que las llamadas viejas —y los dos chips de siempre—
    * siguen dando exactamente lo mismo. */
-  const nPorVencer = Number(searchParams.get('porVencer'))
-  const porVencer = Number.isInteger(nPorVencer) && nPorVencer >= 0 && nPorVencer <= 90
-    ? nPorVencer
-    : null
-  const nDesde = Number(searchParams.get('porVencerDesde'))
-  const porVencerDesde = Number.isInteger(nDesde) && nDesde >= 0 && nDesde <= 90 ? nDesde : 0
+  /* ⚠⚠ `Number(null)` ES 0, Y ESO DEJÓ LA PANTALLA DE PRÉSTAMOS EN CERO.
+   *
+   * Sin el parámetro en la URL, `searchParams.get('porVencer')` devuelve `null`,
+   * `Number(null)` da 0, y `Number.isInteger(0)` es cierto: la guarda daba por
+   * bueno un `porVencer = 0` que nadie pidió. Con la ventana 0 a 0 el listado se
+   * recortaba a «los que vencen HOY y no deben nada», así que el dueño abría
+   * Préstamos y veía «0 activos · EN LA CALLE $0».
+   *
+   * La versión vieja no tenía el fallo por casualidad: `[5, 10].includes(0)` es
+   * falso. Al abrir el rango a cualquier número, el cero dejó de ser inofensivo.
+   *
+   * Se mira la CADENA antes de convertirla: sin parámetro, o vacío, no hay
+   * filtro. Y el 0 sigue siendo válido cuando SÍ lo piden («hoy»). */
+  const leerDia = (nombre) => {
+    const crudo = searchParams.get(nombre)
+    if (crudo == null || crudo.trim() === '') return null
+    const n = Number(crudo)
+    return Number.isInteger(n) && n >= 0 && n <= 90 ? n : null
+  }
+  const porVencer = leerDia('porVencer')
+  const porVencerDesde = leerDia('porVencerDesde') ?? 0
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
