@@ -886,7 +886,7 @@ export default function ClientesPage() {
           a?.cifras?.find((x) => (clave && x.clave === clave) || x.etiqueta === etiqueta) ?? null
 
         const filaTabla = (c, a, i) => {
-          const atraso = dameCifra(a, 'Atraso')
+          const atraso = dameCifra(a, 'Atraso', 'atraso')
           const cumple = dameCifra(a, 'Cumple')
           const pagado = dameCifra(a, 'Pagado')
           const prox   = dameCifra(a, 'Cobra el', 'cobro')

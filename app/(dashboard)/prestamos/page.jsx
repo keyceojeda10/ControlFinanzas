@@ -941,7 +941,11 @@ export default function PrestamosPage() {
             // ESTADO— y salen del ADAPTADOR, no del objeto crudo: asi la tabla
             // y la tarjeta dicen lo mismo. Leerlo del crudo ya me dejo una
             // tabla entera de «$0» en clientes.
-              const dame = (a, etq) => a?.cifras?.find((x) => x.etiqueta === etq) ?? null
+              /* Por CLAVE cuando la hay: el rótulo de «Atraso» cambia a «Le
+                 falta» según si lleva días de mora, y buscándolo por su texto
+                 la columna se quedaba vacía sin dar ningún error. */
+              const dame = (a, etq, clave) =>
+                a?.cifras?.find((x) => (clave && x.clave === clave) || x.etiqueta === etq) ?? null
               const color = (c) => c?.tono === 'contra' ? 'var(--cf-red-dark)'
                 : c?.tono === 'favor' ? 'var(--cf-green-dark)' : 'var(--cf-ink)'
               // Cliente y modalidad se estiran; las cifras van a ancho FIJO. Si
@@ -989,7 +993,7 @@ export default function PrestamosPage() {
                   </div>
                   {prestamosVisibles.map((p, i) => {
                     const a = adaptados[i]
-                    const atraso = dame(a, 'Atraso')
+                    const atraso = dame(a, 'Atraso', 'atraso')
                     return (
                       <button
                         key={p.id}
