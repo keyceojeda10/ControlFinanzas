@@ -158,6 +158,28 @@ export async function GET(request) {
   const porVencer = leerDia('porVencer')
   const porVencerDesde = leerDia('porVencerDesde') ?? 0
 
+  /* ⚠⚠ EL FILTRO CORRIA SOBRE UNA PAGINA DE 20, NO SOBRE LA CARTERA.
+   *
+   * `soloMora` era el UNICO que se libraba de la paginacion en SQL, y el
+   * comentario de abajo explicaba muy bien por que… para uno solo. Los otros
+   * tres criterios que tambien se resuelven en JS —los dias de mora, los listos
+   * para renovar y la ventana de cobro— seguian recibiendo la pagina ya
+   * recortada por la base y filtrandola despues.
+   *
+   * Lo que se veia: el dueño escogia «Hoy» y le salia CERO teniendo 43 clientes
+   * para cobrar hoy; escogia «Mañana» y cero; y a partir del quinto dia
+   * empezaban a aparecer algunos. No era casualidad: la lista viene ordenada por
+   * fecha de creacion, asi que esos 20 primeros son los ultimos prestamos
+   * creados, y entre ellos no habia ninguno que venciera hoy.
+   *
+   * Es el MISMO defecto que ya se corrigio para la mora («los morosos de la
+   * pagina 2 eran invisibles»); se arreglo aquel caso y se dejaron los otros.
+   *
+   * Con esto, todo criterio que se evalue en JS trae los activos completos y se
+   * pagina DESPUES, ya filtrado — que es lo unico que hace que el contador del
+   * chip y el largo de la lista digan lo mismo. */
+  const filtraEnJs = soloMora || diasMoraMin != null || listosRenovar || porVencer != null
+
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
     return Response.json(page != null ? { prestamos: [], total: 0, page, totalPages: 0 } : [])
@@ -177,9 +199,11 @@ export async function GET(request) {
     organizationId,
     ...(clienteId && { clienteId }),
     ...(estado    ? { estado } : rol === 'cobrador' ? { estado: { not: 'pendiente_aprobacion' } } : {}),
-    // Solo un prestamo activo puede estar en mora. Se fuerza aqui para que el
-    // filtro sea correcto aunque el llamador no mande estado.
-    ...(soloMora && { estado: 'activo' }),
+    // Solo un prestamo activo puede estar en mora, listo para renovar o por
+    // vencer: los tres criterios lo exigen en JS. Se fuerza aqui para que el
+    // filtro sea correcto aunque el llamador no mande estado, y para no traerse
+    // los saldados sin necesidad ahora que estas consultas van sin paginar.
+    ...((soloMora || listosRenovar || porVencer != null) && { estado: 'activo' }),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
@@ -224,10 +248,11 @@ export async function GET(request) {
     orderBy: [
       { createdAt: 'desc' },
     ],
-    // Con soloMora no se pagina en SQL: hay que calcular la mora de todos los
-    // activos antes de saber cuales entran. Se pagina abajo, ya filtrado. Es el
-    // mismo costo que /api/mora, que tambien recorre todos los activos.
-    ...(page != null && !soloMora && { take: limit, skip: (page - 1) * limit }),
+    // Cuando el filtro se resuelve en JS no se pagina en SQL: hay que calcular
+    // la mora y el proximo cobro de TODOS los activos antes de saber cuales
+    // entran. Se pagina abajo, ya filtrado. Es el mismo costo que /api/mora,
+    // que tambien recorre todos los activos.
+    ...(page != null && !filtraEnJs && { take: limit, skip: (page - 1) * limit }),
   })
 
   // Config org para días sin cobro + festivos
