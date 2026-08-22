@@ -50,6 +50,7 @@ import { SINONIMOS_GESTION, EXTRAS_PRESTAMO } from '@/lib/acciones/prestamo'
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
 import { formatMoney } from '@/lib/i18n'
+import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
@@ -125,7 +126,7 @@ function PrestamoDetalleContenido({ params }) {
   // mismo enlace muerto que ya me pasó con ?diasMoraMin=30.
   const parametros         = useSearchParams()
   const modoPedido         = parametros.get('editar')
-  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
+  const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado, country } = useAuth()
 
   const { lastSyncedAt }   = useOffline()
 
@@ -629,6 +630,7 @@ function PrestamoDetalleContenido({ params }) {
     cuotasAmortizacion = [],
     creadoPor,
     moratorio = null,
+    createdAt: entregadoEl,
   } = prestamo
 
   const frecuenciaLabel = {
@@ -654,6 +656,13 @@ function PrestamoDetalleContenido({ params }) {
   const montoPrestadoRedondeado = Math.round(montoPrestado || 0)
   const saldoFinancieroPendiente = Math.max(0, montoPrestadoRedondeado - totalPagadoReal)
   const hayCobrosRegistrados = totalPagadoReal > 0
+  /* ⚠ SI EL PRÉSTAMO SE ENTREGÓ OTRO DÍA, QUITARLO NO DEVUELVE LA PLATA.
+     Los días cerrados ya se contaron y se entregaron; el reverso solo deshace lo
+     del día abierto. Las dos cajas de abajo prometían lo contrario —«vuelven a
+     caja X», «la caja queda como si nunca hubiera existido»— y era exactamente
+     la promesa que infló la ruta 8 de PRESTA MIL en $186.000.
+     Ver lib/dinero/reverso-del-dia.js. */
+  const salioOtroDia = !!entregadoEl && !esDelDiaAbierto(entregadoEl, country)
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
@@ -2119,6 +2128,21 @@ function PrestamoDetalleContenido({ params }) {
             Desaparece del cliente y de los informes. No se puede deshacer.
           </p>
 
+          {salioOtroDia && (
+            <div
+              className="rounded-[14px] px-3 py-2.5 space-y-1.5"
+              style={{ background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)' }}
+            >
+              <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                El capital no sube: esta plata salió otro día
+              </p>
+              <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
+                Se entregó el {fmtFecha(entregadoEl)} y ese día ya se cuadró. Si el cliente
+                devolvió el dinero, regístralo como un cobro antes de quitarlo.
+              </p>
+            </div>
+          )}
+
           {hayCobrosRegistrados && (
             <div
               className="rounded-[14px] px-3 py-2.5 space-y-1.5"
@@ -2128,7 +2152,9 @@ function PrestamoDetalleContenido({ params }) {
                 Se borran también sus cobros: {formatMoney(totalPagadoReal)}
               </p>
               <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
-                La caja queda como si el préstamo nunca hubiera existido. Si esa plata
+                {salioOtroDia
+                  ? 'Se quitan los cobros de hoy. Los de días anteriores ya están cuadrados y se quedan como están.'
+                  : 'La caja queda como si el préstamo nunca hubiera existido.'} Si esa plata
                 sí entró, no lo elimines: cancélalo.
               </p>
             </div>
@@ -2198,6 +2224,21 @@ function PrestamoDetalleContenido({ params }) {
                 Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
               </p>
 
+              {salioOtroDia && (
+                <div
+                  className="rounded-[14px] px-3 py-2.5 space-y-1.5"
+                  style={{ background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)' }}
+                >
+                  <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                    El capital no sube: esta plata salió otro día
+                  </p>
+                  <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
+                    Se entregó el {fmtFecha(entregadoEl)} y ese día ya se cuadró. Si el cliente
+                    devolvió el dinero, regístralo como un cobro antes de quitarlo.
+                  </p>
+                </div>
+              )}
+
               {/* ── YA NO SE ELIGE: CON COBROS SOLO CABE DEVOLVER LO PENDIENTE ──
                   Aquí había dos opciones y una de ellas decía «conserva los cobros
                   ya registrados y regresa el monto completo prestado». Eso es
@@ -2212,7 +2253,7 @@ function PrestamoDetalleContenido({ params }) {
                   pregunta y se dice qué va a pasar. Y se señala la salida buena
                   para el caso que de verdad tenía: ELIMINAR el préstamo, que sí
                   revierte los cobros. */}
-              {hayCobrosRegistrados && (
+              {hayCobrosRegistrados && !salioOtroDia && (
                 <div
                   className="rounded-[14px] px-3 py-2.5 space-y-1.5"
                   style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}

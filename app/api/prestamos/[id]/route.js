@@ -24,6 +24,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto } from '@/lib/dinero/revertir-renovacion'
+import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 
@@ -308,6 +309,10 @@ export async function PATCH(request, { params }) {
     let montoReversion = 0
     let saldoNoRecuperado = 0
     let revivido = null
+    /* Lo que NO volvió al capital porque el préstamo salió un día ya cerrado. Se
+       guarda para DECIRLO: el prestamista tiene que saber por qué su capital no
+       subió al anular, igual que al borrar. */
+    let capitalNoDevuelto = 0
 
     const referenciaTipoCancelacion = modoReversionSolicitado === 'devolver_todo'
       ? REF_CANCELACION_DEVOLVER_TODO
@@ -342,7 +347,30 @@ export async function PATCH(request, { params }) {
          capital por el saldo que la renovación absorbió y que nunca salió. */
       const salio = await efectivoQueSalio(tx, p)
       saldoNoRecuperado = Math.max(0, Math.min(salio - totalPagosReales, saldoPendienteRestante))
-      montoReversion = modoReversionSolicitado === 'devolver_todo' ? salio : saldoNoRecuperado
+
+      /* ⚠ Y SOLO SI LA PLATA SALIÓ HOY — la misma regla que el borrado de abajo.
+         Anular es la OTRA vía de quitar el préstamo, y devolvía al capital de hoy
+         un desembolso de hace semanas exactamente igual. En PRESTA MIL hay tres
+         así: $153.000 en la ruta 8, $174.000 en la 6 y $100.000 en la 7, todos de
+         préstamos entregados el 24 de junio.
+
+         Arreglar una vía y dejar la otra es el error que ya costó dos días con el
+         comprobante. Ver lib/dinero/reverso-del-dia.js. */
+      const desembolsoMov = await tx.movimientoCapital.findFirst({
+        where: {
+          organizationId: session.user.organizationId,
+          referenciaId: id,
+          referenciaTipo: 'prestamo',
+          tipo: 'desembolso',
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true },
+      })
+      const salioHoy = esDelDiaAbierto(desembolsoMov?.createdAt ?? p.createdAt, session.user.country || 'co')
+
+      const devolveria = modoReversionSolicitado === 'devolver_todo' ? salio : saldoNoRecuperado
+      montoReversion = salioHoy ? devolveria : 0
+      if (!salioHoy) capitalNoDevuelto = Math.round(devolveria)
 
       const actualizadoPrestamo = await tx.prestamo.update({
         where: { id },
@@ -388,7 +416,9 @@ export async function PATCH(request, { params }) {
       entidadId: id,
       detalle: reversoAplicado
         ? `Estado cambiado a ${estado} con reverso de capital (${modoReversionSolicitado === 'devolver_todo' ? 'devolver todo' : 'devolver restante'}) por $${Math.round(montoReversion).toLocaleString('es-CO')}`
-        : `Estado cambiado a ${estado} (reverso de capital ya existente)`,
+        : capitalNoDevuelto > 0
+          ? `Estado cambiado a ${estado}. NO se devolvieron $${capitalNoDevuelto.toLocaleString('es-CO')} al capital: el préstamo se entregó otro día y esa plata ya salió de la caja`
+          : `Estado cambiado a ${estado} (reverso de capital ya existente)`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 
@@ -397,6 +427,7 @@ export async function PATCH(request, { params }) {
       reversoCapitalAplicado: reversoAplicado,
       modoReversionCapitalAplicado: modoReversionSolicitado,
       montoReversionCapital: Math.round(montoReversion),
+      capitalNoDevuelto: capitalNoDevuelto || null,
       totalPagadoReal: Math.round(totalPagosReales),
       saldoNoRecuperado: Math.round(saldoNoRecuperado),
       // Para que la pantalla pueda decir «volvió el préstamo anterior con $X».
@@ -1099,6 +1130,16 @@ export async function DELETE(request, { params }) {
   const rutaDelCliente = p.cliente?.rutaId || null
 
   let renovacionRevivida = null
+  /* Lo que NO se le devolvió al capital porque salió un día ya cerrado. Se
+     guarda para poder DECIRLO: el prestamista tiene que saber por qué su
+     capital no subió al borrar. */
+  let noSeDevolvio = 0
+  /* El país decide dónde corta el día. Se lee de la sesión, como en las otras
+     dos veces que este archivo lo necesita (líneas 558 y 838): `obtenerPrestamo`
+     NO trae la organización, así que `p.organization?.country` habría sido
+     siempre `undefined` — el fallo silencioso de siempre, y aquí habría dejado
+     el corte en Colombia para todo el mundo sin avisar. */
+  const pais = session.user.country || 'co'
 
   await prisma.$transaction(async (tx) => {
     /* ⚠ EL SALDO VIEJO VUELVE ANTES DE QUE EL PRÉSTAMO NUEVO DESAPAREZCA.
@@ -1122,9 +1163,25 @@ export async function DELETE(request, { params }) {
 
        Preguntándole al libro cuánto volvió ya, los tres casos salen solos.
        Ver `capitalYaDevuelto`. */
+    /* ⚠ Y SOLO SI LA PLATA SALIÓ HOY. Reportado por PRESTA MIL el 21 ago 2026:
+       su ruta 8 decía $775.000 y el cobrador entregaba $589.000. La diferencia
+       eran los $186.000 de un préstamo desembolsado el 24 de JUNIO y borrado esa
+       noche: el reverso devolvía al capital de hoy un dinero que salió hace dos
+       meses y que no está en ninguna parte.
+
+       Los días cerrados ya se contaron y se entregaron. Ver
+       `lib/dinero/reverso-del-dia.js`, que lleva la regla y las medidas. */
+    const desembolso = await tx.movimientoCapital.findFirst({
+      where: { organizationId, referenciaId: id, referenciaTipo: 'prestamo', tipo: 'desembolso' },
+      orderBy: { createdAt: 'asc' },
+      select: { createdAt: true },
+    })
+    const salioHoy = esDelDiaAbierto(desembolso?.createdAt ?? p.createdAt, pais)
+
     const salio = await efectivoQueSalio(tx, p)
     const yaDevuelto = await capitalYaDevuelto(tx, p)
-    const faltaDevolver = Math.max(0, Math.round(salio - yaDevuelto))
+    const faltaDevolver = salioHoy ? Math.max(0, Math.round(salio - yaDevuelto)) : 0
+    if (!salioHoy) noSeDevolvio = Math.max(0, Math.round(salio - yaDevuelto))
     if (faltaDevolver > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -1144,7 +1201,13 @@ export async function DELETE(request, { params }) {
     // por pagos permanecen. Si luego se elimina el prestamo, los pagos se
     // borran pero sus MovimientoCapital quedan huerfanos inflando el capital
     // permanentemente. Aqui los reversamos.
-    const pagosReales = p.pagos.filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+    /* La MISMA regla para el otro lado: un pago de un día cerrado ya entró en la
+       caja de ese día. Quitarlo hoy le baja el capital al prestamista por plata
+       que sí recibió. Si el préstamo es de junio y le entró un pago hoy, se
+       quita el pago de hoy y no se devuelve el desembolso de junio. */
+    const pagosReales = p.pagos
+      .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
+      .filter(pg => esDelDiaAbierto(pg.createdAt ?? pg.fechaPago, pais))
     for (const pg of pagosReales) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -1159,7 +1222,9 @@ export async function DELETE(request, { params }) {
       })
     }
 
-    const descuentos = p.pagos.filter(pg => pg.tipo === 'descuento')
+    const descuentos = p.pagos
+      .filter(pg => pg.tipo === 'descuento')
+      .filter(pg => esDelDiaAbierto(pg.createdAt ?? pg.fechaPago, pais))
     for (const pg of descuentos) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -1184,16 +1249,30 @@ export async function DELETE(request, { params }) {
     accion: 'eliminar_prestamo',
     entidadTipo: 'prestamo',
     entidadId: id,
-    detalle: renovacionRevivida
-      ? `Préstamo de ${p.cliente.nombre} eliminado — era una renovación: al anterior (${renovacionRevivida.id}) se le devolvió su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
-      : `Préstamo de ${p.cliente.nombre} eliminado`,
+    detalle: [
+      `Préstamo de ${p.cliente.nombre} eliminado`,
+      renovacionRevivida
+        ? `era una renovación: al anterior (${renovacionRevivida.id}) se le devolvió su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
+        : null,
+      noSeDevolvio > 0
+        ? `NO se devolvieron $${noSeDevolvio.toLocaleString('es-CO')} al capital: ese desembolso es de un día ya cerrado`
+        : null,
+    ].filter(Boolean).join(' — '),
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
   return Response.json({
     ok: true,
-    message: renovacionRevivida
-      ? `Préstamo eliminado. Volvió el anterior con su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
-      : 'Préstamo eliminado',
+    message: [
+      'Préstamo eliminado',
+      renovacionRevivida
+        ? `Volvió el anterior con su saldo de $${renovacionRevivida.devuelto.toLocaleString('es-CO')}`
+        : null,
+      /* Se dice, no se calla: el capital no sube y hay que saber por qué. */
+      noSeDevolvio > 0
+        ? `Los $${noSeDevolvio.toLocaleString('es-CO')} no vuelven al capital porque salieron un día que ya se cuadró`
+        : null,
+    ].filter(Boolean).join('. '),
+    capitalNoDevuelto: noSeDevolvio || null,
     // Para que la pantalla pueda decirlo sin adivinar.
     prestamoAnteriorRevivido: renovacionRevivida
       ? { id: renovacionRevivida.id, saldoDevuelto: renovacionRevivida.devuelto }

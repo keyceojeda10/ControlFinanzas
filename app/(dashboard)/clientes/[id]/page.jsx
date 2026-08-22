@@ -1188,7 +1188,7 @@ export default function ClienteDetallePage({ params }) {
       <ConfirmModal
         open={!!confirmDeletePrestamo}
         title="Eliminar préstamo"
-        message={mensajeBorrarPrestamo(cliente?.prestamos, confirmDeletePrestamo)}
+        message={mensajeBorrarPrestamo(cliente?.prestamos, confirmDeletePrestamo, country)}
         confirmLabel="Eliminar"
         confirmColor="red"
         onConfirm={() => _doDeletePrestamo(confirmDeletePrestamo)}
