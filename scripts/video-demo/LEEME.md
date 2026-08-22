@@ -231,10 +231,17 @@ ni «sistema francés».
 | 10 | Ajustes | 7:49 |
 | 11 | La caja | 4:41 |
 | 12 | El capital | 4:16 |
+| 13 | **El corto de ventas** | 1:20 |
 
 ## Lo que falta
 
-**La serie está completa.** Queda el corto de 90 segundos para el bot de ventas.
+**Nada de grabar.** Los doce tutoriales y el corto de ventas están hechos.
+
+El corto **no se grabó**: son trece pedazos recortados de los otros, y se rehace
+en un minuto con `node scripts/video-demo/v13-corto-ventas.mjs` si hay que
+cambiar el orden. ⚠ Sus segundos son de ESTA versión de los tutoriales: si se
+rehace alguno, hay que volver a buscar sus tramos limpios con
+`tramos-limpios.mjs`.
 
 ⚠ Los doce salen **sin voz y sin editar**: el dueño les graba la narración y los
 monta antes de subirlos. Hasta entonces el bot sigue con la prohibición de
