@@ -393,6 +393,17 @@ export default function RutaDetallePage({ params }) {
   const [vistaPlana, setVistaPlana] = useState(() => {
     try { return localStorage.getItem('cf-ruta-vistaPlana') !== 'agrupada' } catch { return true }
   })
+  /* ── TABLA O TARJETAS, PERO SOLO EN PC ─────────────────────────────────
+     La clave lleva `:pc` como en clientes y en préstamos: son dos vistas para
+     dos pantallas distintas, y elegir tarjetas sentado no puede cambiarle nada
+     al teléfono, que es donde se cobra. */
+  const [vistaPC, setVistaPC] = useState(() => {
+    try { return localStorage.getItem('cf-ruta-vista:pc') === 'tarjetas' ? 'tarjetas' : 'tabla' } catch { return 'tabla' }
+  })
+  const cambiarVistaPC = (v) => {
+    setVistaPC(v)
+    try { localStorage.setItem('cf-ruta-vista:pc', v) } catch {}
+  }
   /* ══ LOS GRUPOS SE PLIEGAN ══════════════════════════════════════════════
    *
    * Reportado con el caso que lo hace obvio, y es de ruta grande:
@@ -1605,6 +1616,221 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
     }
   }, [id])
 
+  /* ══ LA PARADA, UNA SOLA VEZ PARA LAS DOS PANTALLAS ═══════════════════════
+   *
+   * Todo esto vivía DENTRO de la rama de móvil, así que el escritorio no podía
+   * pintar la misma tarjeta ni aunque quisiera: solo tenía la tabla. El dueño lo
+   * pidió con las dos capturas al lado —«la vista de tarjeta de móvil está mucho
+   * mejor construida, tiene más opciones»— y la salida NO era copiarla arriba.
+   * Copiar la tarjeta es el fallo del comprobante otra vez: se arregla una y la
+   * otra se queda como estaba.
+   *
+   * Así que sube aquí tal cual y las dos ramas la llaman. Lo único que cambia
+   * entre ellas es el arrastre, que en escritorio no va (ver `sinArrastre`).
+   */
+  // El cliente crudo por id: la tarjeta recibe la fila ya adaptada
+  // —textos, no campos— y las acciones necesitan el original (telefono,
+  // coordenadas, prestamoActivo).
+  const porId = new Map(clientesFiltrados.map((c) => [c.id, c]))
+
+  const abrirWhatsApp = (c) => {
+    const p = c.prestamosActivos?.[0]
+    setModalWA({
+      cliente: { id: c.id, nombre: c.nombre, telefono: c.telefono, cedula: c.cedula, direccion: c.direccion },
+      prestamo: p ? {
+        ...p,
+        estado: c.estado === 'completado' ? 'completado' : 'activo',
+        porcentajePagado: p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0,
+      } : null,
+    })
+  }
+
+  /* ── CERRAR Y REABRIR LA VISITA DEL DÍA ─────────────────────────
+     Se anota como `VisitaReagendada`, que ya existía con sus motivos
+     y hasta ahora no la leía nadie. `pago_parcial` es el motivo nuevo:
+     los otros cuatro dicen por qué NO pagó, y aquí sí pagó.
+
+     La fecha reagendada es el próximo cobro que ya tiene calculado —o
+     mañana si no hay—: es lo que pasa de todas formas, y pedirla en la
+     puerta es un paso más de pie en la calle. */
+  const cerrarVisita = async (c) => {
+    const hoyIso = new Date().toISOString()
+    const prox = c.proximoCobroAt ?? new Date(Date.now() + 86400000).toISOString()
+    try {
+      const res = await fetch('/api/visitas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteId: c.id, prestamoId: c.prestamoActivo ?? null, rutaId: ruta?.id,
+          fechaOriginal: hoyIso, fechaReagendada: prox, motivo: 'pago_parcial',
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(d?.error || 'No se pudo cerrar la visita')
+        return
+      }
+      await fetchRuta()
+    } catch {
+      // El cobrador acaba de decidir algo sobre este cliente: si no
+      // quedó guardado tiene que saberlo, no descubrirlo al recargar.
+      alert('Sin conexión: la visita no quedó cerrada. Vuelve a intentarlo.')
+    }
+  }
+
+  const reabrirVisita = async (c) => {
+    try {
+      const res = await fetch(`/api/visitas?clienteId=${c.id}&hoy=1`, { method: 'DELETE' })
+      if (!res.ok) { alert('No se pudo volver a abrir la visita'); return }
+      await fetchRuta()
+    } catch {
+      alert('Sin conexión: no se pudo volver a abrir la visita.')
+    }
+  }
+
+  const abrirMapa = (c) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.latitud},${c.longitud}`, '_blank', 'noopener,noreferrer')
+  }
+
+  /* ── LA PARADA (Adenda 5 · E07 + E08) ──────────────────────────
+     Era otra tarjeta distinta a la de /cobros-hoy, siendo LA MISMA
+     parada de LA MISMA ruta. La lámina la retrata entera: el número de
+     orden como marca de agua al 8% detrás del texto, nueve cifras
+     —tres saldos, tres barras, tres columnas y la franja de mora— y
+     «ninguna es la que se va a pedir». Más un riel lateral de color y
+     un `bg-[rgba(255,255,255,0.02)]` fijo, que en tema claro es un gris
+     invisible sobre blanco.
+
+     Ahora es `FilaCobro`, la misma que pinta /cobros-hoy, y el número
+     sale al carril de `Carril`. Arreglar una arregla las dos: por no
+     tenerlo así, el recibo de WhatsApp se reportó roto dos días
+     seguidos. */
+  /* `sinArrastre` es para el escritorio.
+     El gesto es una pulsación LARGA con el dedo y en PC no hay forma de hacerlo;
+     para eso está «Reordenar recorrido», que es su propia pantalla. Y hay una
+     razón más fuerte: `arrastre.lista` es UN solo `ref`, y las dos vistas están
+     montadas a la vez —`hidden lg:block` esconde por CSS, no desmonta—, así que
+     colgarlo también de las tarjetas de PC dejaría al móvil midiendo el nodo
+     equivocado. Sin error, sin pista y solo en el teléfono. */
+  const renderCard = (fila, { actual, sinArrastre = false } = {}) => {
+    // El índice REAL dentro de `clientesFiltrados`, que es el que
+    // entiende `moverParadaEnRuta`. Agrupar no renumera —el número es la
+    // posición en la ruta— así que sale del propio `orden`.
+    const i = fila.orden - 1
+    const g = sinArrastre ? {} : arrastre.gestos(i)
+    return (
+    <Carril
+      key={fila.id}
+      {...g}
+      tenue={fila.zona !== 'hoy'}
+      levantada={!sinArrastre && arrastre.arrastrando?.desde === i}
+      destino={!sinArrastre && arrastre.arrastrando != null
+        && arrastre.arrastrando.hasta === i
+        && arrastre.arrastrando.desde !== i}
+      /* ⚠ EL ANCLA DE VOLVER. `ruta-scroll-<id>` guarda a quién se
+         entró y al volver se busca por este `id`. Me lo llevé por
+         delante al sustituir la tarjeta: sin él `getElementById`
+         devuelve null, no se restaura nada y el cobrador aparece
+         arriba del todo con 200 clientes por debajo.
+
+         ⚠ En escritorio NO: el `id` tiene que ser único en la página y las dos
+         vistas están montadas a la vez. Dos nodos con el mismo `id` y
+         `getElementById` devuelve el primero, que es el que está escondido. */
+      ancla={sinArrastre ? undefined : ANCLA_CLIENTE(fila.id)}
+      resaltada={highlightId === fila.id}
+      orden={fila.orden}
+      cobrada={fila.cobrada}
+      actual={actual}
+      ultima={fila.ultima}
+    >
+      <FilaCobro
+        {...fila}
+        activa={actual}
+        onClick={() => abrirPagoRapido(porId.get(fila.id))}
+        /* ── EL NOMBRE Y LA FOTO LLEVAN A LA FICHA ──
+           A la ficha del cliente, NO al cobro: `onMas` y `onClick` ya
+           van los dos al cobro por caminos distintos, y lo que faltaba
+           era ver a la persona —su historial, sus datos, sus otros
+           préstamos—. En la tarjeta compacta, además, era el único
+           destino posible: sin préstamo vivo el cobro rápido se sale
+           por su propio `return` y la tarjeta no hacía nada. */
+        /* ⚠ GUARDA EL SITIO ANTES DE SALTAR.
+           Este era el camino roto: `onClick` y `onMas` pasaban los dos
+           por `navegarACobroCliente`, que guarda, y el nombre saltaba
+           pelado. Al volver de la ficha la lista aparecía arriba del
+           todo — con 322 clientes en una ruta, eso es bajar a mano.
+           Y es justo el ÚNICO destino de la tarjeta compacta cuando el
+           cliente no tiene préstamo vivo. */
+        onAbrirCliente={() => {
+          guardarContextoRuta(porId.get(fila.id) ?? fila, i)
+          router.push(`/clientes/${fila.id}`)
+        }}
+        onLlamar={porId.get(fila.id)?.telefono
+          ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
+          : undefined}
+        onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
+        onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
+        onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
+        onDeshacerCobro={esOwner && fila.pagoHoyId
+          ? () => setConfirmDeshacer({
+              pagoId: fila.pagoHoyId,
+              nombre: fila.nombre,
+              monto:  fila.montoCobrado,
+            })
+          : undefined}
+        onCerrarVisita={() => cerrarVisita(porId.get(fila.id))}
+        onReabrir={() => reabrirVisita(porId.get(fila.id))}
+        /* ── LO QUE HACE EL BOTÓN GRANDE CUANDO HOY NO HAY COBRO ──
+           Cobrar antes / Cobrar (recuperación) / Prestarle / Sacar de
+           la ruta. Con «Cobrar» en los cuatro, el cobrador le pide la
+           cuota a quien no debe nada. */
+        onAccion={() => {
+          const c = porId.get(fila.id)
+          if (fila.contexto?.zona === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${fila.id}`)
+          else if (fila.contexto?.zona === 'inactivo') setConfirmQuitar({ id: fila.id, nombre: fila.nombre })
+          else abrirPagoRapido(c)
+        }}
+      />
+    </Carril>
+    )
+  }
+
+  /* Las paradas ya adaptadas: las MISMAS para la tabla de escritorio, para las
+     tarjetas de escritorio y para la lista de móvil. Estaban dentro de la rama
+     de móvil y por eso la tabla se calculaba sus propias filas por otro camino:
+     dos cuentas del mismo número es como acaban diciendo cosas distintas. */
+  const conMoratorio = clientesFiltrados.map((c) => ({
+    ...c,
+    // El moratorio depende de la CONFIGURACIÓN DE LA RUTA (tasa y días
+    // de gracia), no del cliente, así que no puede salir del adaptador
+    // compartido: se resuelve aquí y viaja ya resuelto.
+    moratorioPendiente: c.diasMora > 0
+      && (ruta?.configMoratorio?.tasaMoratorio ?? 0) > 0
+      && c.diasMora > (ruta.configMoratorio.diasGracia || 5),
+  }))
+  /* ── UNA SOLA LISTA, TODOS DENTRO ──────────────────────────────
+     Antes esto devolvía `{ visitas, tambien }` y la pantalla pintaba
+     las visitas numeradas y a los demás en un fondo de saco sin número
+     ni datos. El dueño lo rebatió con la pantalla delante: «salen hasta
+     abajo, sin ninguna numeración, sin ningún dato de sus préstamos,
+     sin ningún contexto, nada».
+
+     `visitas` sigue saliendo, pero solo para CONTAR: el «Empezar
+     recorrido · 67» y las paradas por hacer cuentan cobros, no
+     clientes, y ahí la regla de la lámina sigue en pie. */
+  const { filas, visitas } = paradasDeRuta(conMoratorio, { formatear: (n) => formatMoney(n) })
+  const pendientes = visitas.filter((f) => !f.cobrada)
+  // La parada actual es la PRIMERA sin cobrar de toda la lista, no la
+  // primera de cada grupo: es donde el cobrador está parado ahora.
+  const idActual = pendientes[0]?.id
+
+  /* Lo que enseña el escritorio con cada pastilla: «Hoy» son las paradas del
+     día y «Todos» la ruta entera. Sale de las mismas `filas` que la tabla, para
+     que cambiar de vista no cambie a quién se ve. */
+  const filasEscritorio = modoVista === 'auditoria' ? filas : filas.filter((f) => f.zona === 'hoy')
+
+
+
 
   const clientesConCoords = ruta?.clientes?.filter((c) => c.latitud != null && c.longitud != null).length ?? 0
 
@@ -2084,6 +2310,31 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         chipActivo={modoVista === 'auditoria' ? 'auditoria' : 'trabajo'}
         onChip={(v) => setModoVista(v)}
         onReordenar={() => setModoVista('ordenar')}
+        vista={vistaPC}
+        onVista={cambiarVistaPC}
+        /* ── LAS MISMAS TARJETAS DEL TELÉFONO, AQUÍ ────────────────────────
+           `renderCard` es la que pinta la lista de móvil; se llama igual y con
+           las mismas `filas`. Lo único distinto es `sinArrastre`, porque el
+           gesto es una pulsación larga con el dedo.
+
+           La rejilla se acomoda sola: una columna en pantallas justas y dos
+           cuando caben 420px cada una. Sin `auto-fit` habría que elegir un
+           número de columnas y en el portátil del dueño saldrían dos tarjetas
+           espachurradas. */
+        tarjetas={(
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+            gap: 10, alignItems: 'start',
+          }}>
+            {filasEscritorio.map((f) => renderCard(f, { actual: f.id === idActual, sinArrastre: true }))}
+            {filasEscritorio.length === 0 && (
+              <p style={{ padding: '26px 16px', textAlign: 'center', fontSize: 13, color: 'var(--cf-ink-3)' }}>
+                Ningún cliente tiene cobro con este filtro.
+              </p>
+            )}
+          </div>
+        )}
         onQuitar={(f) => setConfirmQuitar({ id: f.id, nombre: f.nombre })}
         filas={(modoVista === 'auditoria'
           ? (ruta.clientes ?? [])
@@ -2489,161 +2740,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             <p className="text-sm text-[var(--cf-ink-2)]">Sin clientes asignados</p>
           </div>
         ) : (() => {
-          // El cliente crudo por id: la tarjeta recibe la fila ya adaptada
-          // —textos, no campos— y las acciones necesitan el original (telefono,
-          // coordenadas, prestamoActivo).
-          const porId = new Map(clientesFiltrados.map((c) => [c.id, c]))
-
-          const abrirWhatsApp = (c) => {
-            const p = c.prestamosActivos?.[0]
-            setModalWA({
-              cliente: { id: c.id, nombre: c.nombre, telefono: c.telefono, cedula: c.cedula, direccion: c.direccion },
-              prestamo: p ? {
-                ...p,
-                estado: c.estado === 'completado' ? 'completado' : 'activo',
-                porcentajePagado: p.totalAPagar > 0 ? Math.round((p.totalPagado / p.totalAPagar) * 100) : 0,
-              } : null,
-            })
-          }
-
-          /* ── CERRAR Y REABRIR LA VISITA DEL DÍA ─────────────────────────
-             Se anota como `VisitaReagendada`, que ya existía con sus motivos
-             y hasta ahora no la leía nadie. `pago_parcial` es el motivo nuevo:
-             los otros cuatro dicen por qué NO pagó, y aquí sí pagó.
-
-             La fecha reagendada es el próximo cobro que ya tiene calculado —o
-             mañana si no hay—: es lo que pasa de todas formas, y pedirla en la
-             puerta es un paso más de pie en la calle. */
-          const cerrarVisita = async (c) => {
-            const hoyIso = new Date().toISOString()
-            const prox = c.proximoCobroAt ?? new Date(Date.now() + 86400000).toISOString()
-            try {
-              const res = await fetch('/api/visitas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  clienteId: c.id, prestamoId: c.prestamoActivo ?? null, rutaId: ruta?.id,
-                  fechaOriginal: hoyIso, fechaReagendada: prox, motivo: 'pago_parcial',
-                }),
-              })
-              if (!res.ok) {
-                const d = await res.json().catch(() => ({}))
-                alert(d?.error || 'No se pudo cerrar la visita')
-                return
-              }
-              await fetchRuta()
-            } catch {
-              // El cobrador acaba de decidir algo sobre este cliente: si no
-              // quedó guardado tiene que saberlo, no descubrirlo al recargar.
-              alert('Sin conexión: la visita no quedó cerrada. Vuelve a intentarlo.')
-            }
-          }
-
-          const reabrirVisita = async (c) => {
-            try {
-              const res = await fetch(`/api/visitas?clienteId=${c.id}&hoy=1`, { method: 'DELETE' })
-              if (!res.ok) { alert('No se pudo volver a abrir la visita'); return }
-              await fetchRuta()
-            } catch {
-              alert('Sin conexión: no se pudo volver a abrir la visita.')
-            }
-          }
-
-          const abrirMapa = (c) => {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${c.latitud},${c.longitud}`, '_blank', 'noopener,noreferrer')
-          }
-
-          /* ── LA PARADA (Adenda 5 · E07 + E08) ──────────────────────────
-             Era otra tarjeta distinta a la de /cobros-hoy, siendo LA MISMA
-             parada de LA MISMA ruta. La lámina la retrata entera: el número de
-             orden como marca de agua al 8% detrás del texto, nueve cifras
-             —tres saldos, tres barras, tres columnas y la franja de mora— y
-             «ninguna es la que se va a pedir». Más un riel lateral de color y
-             un `bg-[rgba(255,255,255,0.02)]` fijo, que en tema claro es un gris
-             invisible sobre blanco.
-
-             Ahora es `FilaCobro`, la misma que pinta /cobros-hoy, y el número
-             sale al carril de `Carril`. Arreglar una arregla las dos: por no
-             tenerlo así, el recibo de WhatsApp se reportó roto dos días
-             seguidos. */
-          const renderCard = (fila, { actual } = {}) => {
-            // El índice REAL dentro de `clientesFiltrados`, que es el que
-            // entiende `moverParadaEnRuta`. Agrupar no renumera —el número es la
-            // posición en la ruta— así que sale del propio `orden`.
-            const i = fila.orden - 1
-            const g = arrastre.gestos(i)
-            return (
-            <Carril
-              key={fila.id}
-              {...g}
-              tenue={fila.zona !== 'hoy'}
-              levantada={arrastre.arrastrando?.desde === i}
-              destino={arrastre.arrastrando != null
-                && arrastre.arrastrando.hasta === i
-                && arrastre.arrastrando.desde !== i}
-              /* ⚠ EL ANCLA DE VOLVER. `ruta-scroll-<id>` guarda a quién se
-                 entró y al volver se busca por este `id`. Me lo llevé por
-                 delante al sustituir la tarjeta: sin él `getElementById`
-                 devuelve null, no se restaura nada y el cobrador aparece
-                 arriba del todo con 200 clientes por debajo. */
-              ancla={ANCLA_CLIENTE(fila.id)}
-              resaltada={highlightId === fila.id}
-              orden={fila.orden}
-              cobrada={fila.cobrada}
-              actual={actual}
-              ultima={fila.ultima}
-            >
-              <FilaCobro
-                {...fila}
-                activa={actual}
-                onClick={() => abrirPagoRapido(porId.get(fila.id))}
-                /* ── EL NOMBRE Y LA FOTO LLEVAN A LA FICHA ──
-                   A la ficha del cliente, NO al cobro: `onMas` y `onClick` ya
-                   van los dos al cobro por caminos distintos, y lo que faltaba
-                   era ver a la persona —su historial, sus datos, sus otros
-                   préstamos—. En la tarjeta compacta, además, era el único
-                   destino posible: sin préstamo vivo el cobro rápido se sale
-                   por su propio `return` y la tarjeta no hacía nada. */
-                /* ⚠ GUARDA EL SITIO ANTES DE SALTAR.
-                   Este era el camino roto: `onClick` y `onMas` pasaban los dos
-                   por `navegarACobroCliente`, que guarda, y el nombre saltaba
-                   pelado. Al volver de la ficha la lista aparecía arriba del
-                   todo — con 322 clientes en una ruta, eso es bajar a mano.
-                   Y es justo el ÚNICO destino de la tarjeta compacta cuando el
-                   cliente no tiene préstamo vivo. */
-                onAbrirCliente={() => {
-                  guardarContextoRuta(porId.get(fila.id) ?? fila, i)
-                  router.push(`/clientes/${fila.id}`)
-                }}
-                onLlamar={porId.get(fila.id)?.telefono
-                  ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
-                  : undefined}
-                onWhatsApp={porId.get(fila.id)?.telefono ? () => abrirWhatsApp(porId.get(fila.id)) : undefined}
-                onMapa={porId.get(fila.id)?.latitud != null ? () => abrirMapa(porId.get(fila.id)) : undefined}
-                onMas={() => abrirClienteDesdeRuta(porId.get(fila.id), i)}
-                onDeshacerCobro={esOwner && fila.pagoHoyId
-                  ? () => setConfirmDeshacer({
-                      pagoId: fila.pagoHoyId,
-                      nombre: fila.nombre,
-                      monto:  fila.montoCobrado,
-                    })
-                  : undefined}
-                onCerrarVisita={() => cerrarVisita(porId.get(fila.id))}
-                onReabrir={() => reabrirVisita(porId.get(fila.id))}
-                /* ── LO QUE HACE EL BOTÓN GRANDE CUANDO HOY NO HAY COBRO ──
-                   Cobrar antes / Cobrar (recuperación) / Prestarle / Sacar de
-                   la ruta. Con «Cobrar» en los cuatro, el cobrador le pide la
-                   cuota a quien no debe nada. */
-                onAccion={() => {
-                  const c = porId.get(fila.id)
-                  if (fila.contexto?.zona === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${fila.id}`)
-                  else if (fila.contexto?.zona === 'inactivo') setConfirmQuitar({ id: fila.id, nombre: fila.nombre })
-                  else abrirPagoRapido(c)
-                }}
-              />
-            </Carril>
-            )
-          }
 
 
           // MODO ORDENAR: lista plana con drag-and-drop (comportamiento original).
@@ -3131,30 +3227,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
              cobros», hace los diez que había de verdad y se cree atrasado
              yendo al día. Antes las tres secciones numeraban sobre la ruta
              entera, así que el que hoy no tocaba también gastaba número. */
-          const conMoratorio = clientesFiltrados.map((c) => ({
-            ...c,
-            // El moratorio depende de la CONFIGURACIÓN DE LA RUTA (tasa y días
-            // de gracia), no del cliente, así que no puede salir del adaptador
-            // compartido: se resuelve aquí y viaja ya resuelto.
-            moratorioPendiente: c.diasMora > 0
-              && (ruta?.configMoratorio?.tasaMoratorio ?? 0) > 0
-              && c.diasMora > (ruta.configMoratorio.diasGracia || 5),
-          }))
-          /* ── UNA SOLA LISTA, TODOS DENTRO ──────────────────────────────
-             Antes esto devolvía `{ visitas, tambien }` y la pantalla pintaba
-             las visitas numeradas y a los demás en un fondo de saco sin número
-             ni datos. El dueño lo rebatió con la pantalla delante: «salen hasta
-             abajo, sin ninguna numeración, sin ningún dato de sus préstamos,
-             sin ningún contexto, nada».
-
-             `visitas` sigue saliendo, pero solo para CONTAR: el «Empezar
-             recorrido · 67» y las paradas por hacer cuentan cobros, no
-             clientes, y ahí la regla de la lámina sigue en pie. */
-          const { filas, visitas } = paradasDeRuta(conMoratorio, { formatear: (n) => formatMoney(n) })
-          const pendientes = visitas.filter((f) => !f.cobrada)
-          // La parada actual es la PRIMERA sin cobrar de toda la lista, no la
-          // primera de cada grupo: es donde el cobrador está parado ahora.
-          const idActual = pendientes[0]?.id
 
           /* El rótulo es AHORA EL PLEGADOR, y no un botón al lado: es la única
              pieza fija de la sección, la que se sigue viendo con cien tarjetas

@@ -26,6 +26,7 @@
 // que mueve plata sigue en la página.
 
 import { formatMoney } from '@/lib/i18n'
+import { ConmutadorVista } from '@/components/pantallas/HojaFiltros'
 
 const COL = {
   padding: '11px 14px',
@@ -121,6 +122,18 @@ export default function RutaEscritorio({
   onReordenar,
   onQuitar,   // (fila) => saca al cliente de la ruta. Sin ella el botón no sale.
   filas = [],               // [{ id, orden, iniciales, nombre, donde, diasMora, cuotaHoy, atraso, cumple, debe, cobrada }]
+  /* ── LA MISMA LISTA, EN TARJETAS ────────────────────────────────────────
+     El dueño, con las dos capturas al lado: «en clientes y en préstamos se
+     puede cambiar de lista a tarjeta, pero dentro de las rutas solo sale
+     lista, y la tarjeta de móvil está mucho mejor construida, tiene más
+     opciones». Tenía razón: la tabla enseña seis cifras y la tarjeta enseña
+     además el progreso, el último pago, los avisos y los botones de llamar,
+     WhatsApp y mapa.
+
+     `tarjetas` llega ya pintado desde la página —son las MISMAS `FilaCobro`
+     del teléfono— porque copiarlas aquí sería tener dos tarjetas para lo
+     mismo, que es de donde salen los arreglos a medias. */
+  vista = 'tabla', onVista, tarjetas = null,
   onCobrar, onFila,
   onWhatsApp, // (fila) => abre la hoja de plantillas. Sin ella el botón no sale.
   // El carril derecho
@@ -228,6 +241,19 @@ export default function RutaEscritorio({
                 }}
               >Reordenar recorrido</button>
             )}
+            {/* El mismo conmutador de clientes y préstamos, no uno nuevo: tres
+                controles que hacen lo mismo con tres formas distintas es lo que
+                obliga a aprender la aplicación pantalla por pantalla. */}
+            {onVista && (
+              <ConmutadorVista
+                valor={vista}
+                onCambiar={(v) => onVista(v || 'tabla')}
+                opciones={[
+                  { valor: 'tabla', nombre: 'Tabla', icono: 'tabla' },
+                  { valor: 'tarjetas', nombre: 'Tarjetas', icono: 'lista' },
+                ]}
+              />
+            )}
           </div>
 
           {/* ⚠ AQUÍ SE PERDÍA LA COLUMNA DE COBRAR.
@@ -240,6 +266,7 @@ export default function RutaEscritorio({
               En el código se ve bien —`width: 100%` parece que encaja— y solo
               aparece midiendo. `overflowY: hidden` conserva el recorte de las
               esquinas, que es para lo que estaba el `overflow` original. */}
+          {vista === 'tarjetas' && tarjetas ? tarjetas : (
           <div style={{
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
             borderRadius: 'var(--cf-r-card)', overflowX: 'auto', overflowY: 'hidden',
@@ -381,6 +408,7 @@ export default function RutaEscritorio({
               </p>
             )}
           </div>
+          )}
         </div>
 
         {/* ── EL CARRIL DEL DUEÑO ── */}
