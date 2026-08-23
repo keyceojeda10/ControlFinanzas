@@ -229,6 +229,13 @@ export async function DELETE(request, { params }) {
         referenciaId: prestamo.id,
         referenciaTipo: 'pago',
         rutaId: rutaIdReverso,
+        /* ⚠ POR LA MISMA CUENTA POR LA QUE ENTRÓ.
+           Iba sin cuenta, y sin cuenta el libro lo trata como efectivo: anular
+           un cobro por Nequi le bajaba el efectivo al cobrador y le dejaba un
+           faltante de caja que no existía. También descuadraba la vista de
+           «Cuentas», que reparte por aquí. */
+        metodoPago: pago.metodoPago || null,
+        metodoPagoId: pago.metodoPagoId || null,
         creadoPorId: session.user.id,
       })
     } else if (pago.tipo === 'descuento') {
