@@ -93,34 +93,32 @@ const hastaLaRuta = async (u) => {
   await u.esperar(3200)
 }
 
+/* El ritmo lo pone la voz: `narrar(i)` dura lo que dura su frase y la pantalla
+   se mueve DENTRO de ella. Ver la nota larga de `grabador.mjs`.
+
+     node scripts/video-demo/voz.mjs 07-rutas --solo-audio
+     SIN_ROTULOS=1 LOCUCION=07-rutas node scripts/video-demo/v07-rutas.mjs */
 const TOMAS = [
   /* ══ CÓMO SE LLEGA, QUE FALTABA ═══════════════════════════════════════════
-   *
    * El dueño, con media edición hecha: «dice "vamos a crear las rutas", pero no
-   * dice cómo llega al apartado. Llega ahí a la pantalla y empieza a explicar».
-   *
-   * La causa era `hastaRutas(u)` ANTES de `empezar()`: el camino se recorría de
-   * verdad y quedaba fuera de la grabación. Se arregló con clips sueltos que se
-   * pegaban al montar, pero al rehacer este vídeo entero la escena entra DENTRO
-   * como primera toma — un solo fichero, sin nada que pegar después. */
+   * dice cómo llega al apartado». La causa era `hastaRutas(u)` ANTES de
+   * `empezar()`: el camino se recorría de verdad y quedaba fuera de la
+   * grabación. Ahora entra como primera toma, dentro del propio vídeo. */
   {
     id: 'como_llegar',
     titulo: 'Cómo llegar a las rutas',
     async grabar(u) {
-      const { ir, esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { ir, esperar, empezar, narrar, tocarSel, reposo } = u
       await ir('/dashboard', /Buenos|Buenas|Recaudado/i)
       await esperar(1200)
       empezar()
-      await esperar(1400)
-      await decir('Las rutas están en la barra de abajo, en el mapita', 4.4)
-      await esperar(1400)
-      await mirar('a[href="/rutas"]:visible', { escala: 2.4, ms: 3400 })
-      await esperar(2600)
-      await tocarSel('a[href="/rutas"]:visible')
-      await esperar(3200)
-      await decir('Y aquí las tienes todas', 3.4)
-      await esperar(3600)
-      await reposo(3000)
+      await esperar(700)
+      await narrar(0, {
+        mirar: 'a[href="/rutas"]:visible', escala: 2.4,
+        hacer: async () => { await tocarSel('a[href="/rutas"]:visible'); await esperar(2000) },
+      })
+      await narrar(1)
+      await reposo(1400)
     },
   },
 
@@ -128,335 +126,266 @@ const TOMAS = [
     id: 'que_es',
     titulo: 'Qué es una ruta y dónde está',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Una ruta es un grupo de clientes que cobra la misma persona', 5.0)
-      await esperar(5200)
-      await mirar(`[role="button"]:has-text("${RUTA_VIEJA}")`, { escala: 1.5, ms: 4800 })
-      await esperar(2600)
-      await decir('De un vistazo: quién la lleva, cuántos cobros y cuánto entró', 5.2)
-      await esperar(5400)
-      await reposo(3200)
+      await narrar(0, { mirar: `[role="button"]:has-text("${RUTA_VIEJA}")`, escala: 1.5, fila: true })
+      await narrar(1)
+      await reposo(1400)
     },
   },
+
   {
     id: 'sin_ruta',
     titulo: 'Los clientes que no están en ninguna ruta',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Si tienes clientes fuera de toda ruta, te lo dice arriba', 5.0)
-      await esperar(5200)
-      await mirar('text=clientes sin ruta asignada', { escala: 1.8, ms: 4600 })
-      await esperar(2600)
-      await decir('Y abajo salen juntos, para que no se te pierda ninguno', 5.0)
-      await esperar(1600)
-      await mirar('text=Sin ruta', { escala: 1.8, ms: 4600 })
-      await esperar(2600)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=clientes sin ruta asignada', escala: 1.8 })
+      await narrar(1, { mirar: 'text=Sin ruta', escala: 1.8, fila: true })
+      await narrar(2)
+      await reposo(1400)
     },
   },
+
   {
     id: 'crear',
     titulo: 'Crear una ruta',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, escribir, reposo } = u
+      const { esperar, empezar, narrar, escribir, tocarSel, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Para crear una, el botón del más, arriba a la derecha', 4.8)
-      await esperar(5000)
-      await mirar('[aria-label="Nueva ruta"]:visible', { escala: 2.0, ms: 4200 })
-      await esperar(1200)
-      await tocarSel('[aria-label="Nueva ruta"]:visible')
-      await esperar(2600)
-      await decir('Lo primero, el nombre. Ponle el del barrio', 4.4)
-      await esperar(4600)
-      await escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
-      await esperar(2400)
-      await decir('Así es como la va a buscar el cobrador en su teléfono', 4.8)
-      await esperar(5000)
-      await reposo(3200)
+      await narrar(0, {
+        mirar: '[aria-label="Nueva ruta"]:visible', escala: 2.0,
+        hacer: async () => { await tocarSel('[aria-label="Nueva ruta"]:visible'); await esperar(1800) },
+      })
+      await narrar(1, {
+        hacer: async () => {
+          await escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
+          await esperar(1200)
+        },
+      })
+      await narrar(2)
+      await reposo(1400)
     },
   },
+
   {
     id: 'quien_cobra',
-    titulo: 'Quién la recorre y el capital',
+    titulo: 'Quién la cobra y con cuánto arranca',
+    dosRutas: false,
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, escribir, reposo, p } = u
+      const { esperar, empezar, narrar, escribir, tocar, tocarSel, reposo } = u
       await hastaRutas(u)
       await tocarSel('[aria-label="Nueva ruta"]:visible'); await esperar(2200)
       await escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
-      await esperar(1200)
       empezar()
-      await decir('Después, quién la recorre', 3.6)
-      await esperar(3800)
-      await mirar('text=Quién la recorre', { escala: 1.9, ms: 4400 })
-      await p.selectOption('select', { label: 'Andrés Vargas' }).catch(() => {})
-      await esperar(2600)
-      await decir('Puedes dejarla sin cobrador si la cobras tú', 4.4)
-      await esperar(4600)
-      await mirar('text=Capital de la ruta', { escala: 1.8, ms: 4400 })
-      await esperar(1200)
-      await decir('Y ponerle un capital de arranque, que es opcional', 4.6)
-      await esperar(4800)
-      await tocar('Crear ruta')
-      await esperar(3400)
-      await reposo(3800)
+      await narrar(0, { mirar: 'text=Quién la recorre', escala: 1.9 })
+      await narrar(1)
+      await narrar(2, { mirar: 'text=Capital de la ruta', escala: 1.8 })
+      await narrar(3, {
+        hacer: async () => { await tocar('Crear ruta'); await esperar(2600) },
+      })
+      await reposo(1600)
     },
   },
+
   {
     id: 'agregar',
-    titulo: 'Meterle clientes a la ruta',
+    titulo: 'Meterle los clientes',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, escribir, tocar, tocarSel, reposo } = u
       await hastaRutas(u)
       await tocarSel('[aria-label="Nueva ruta"]:visible'); await esperar(2200)
-      await u.escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
-      await esperar(900)
-      // Al crear, el sistema te mete DENTRO de la ruta nueva; no hay que volver
-      // a la lista a buscarla.
+      await escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
       await tocar('Crear ruta'); await esperar(4200)
       empezar()
-      await decir('La ruta nace vacía. Ahora hay que meterle los clientes', 5.0)
-      await esperar(5200)
-      await mirar('button:has-text("Agregar"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(1000)
-      await tocar('Agregar')
-      await esperar(2800)
-      await decir('Salen los que no están en ninguna ruta. Los buscas o los marcas', 5.4)
-      await esperar(5600)
-      await reposo(3400)
+      await narrar(0)
+      await narrar(1, {
+        mirar: 'button:has-text("Agregar"):visible', escala: 1.8,
+        hacer: async () => { await tocar('Agregar'); await esperar(2200) },
+      })
+      await narrar(2)
+      await reposo(1400)
     },
   },
+
   {
     id: 'asignar',
-    titulo: 'Marcarlos y asignarlos',
+    titulo: 'Marcarlos y meterlos',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, reposo, p } = u
+      const { esperar, empezar, narrar, escribir, tocar, tocarSel, reposo, p } = u
       await hastaRutas(u)
       await tocarSel('[aria-label="Nueva ruta"]:visible'); await esperar(2200)
-      await u.escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
-      await esperar(900)
+      await escribir('input[placeholder*="Nombre de la ruta"]', RUTA_NUEVA)
       await tocar('Crear ruta'); await esperar(4200)
       await tocar('Agregar'); await esperar(2600)
       empezar()
-      await decir('Marcas los que van en esta ruta', 3.8)
-      await esperar(1400)
-      for (const n of ['Gladys Restrepo', 'Hernán Zapata', 'Diana Marcela Ruiz',
-        'Álvaro Betancur', 'Nubia Castaño']) {
-        await p.locator(`text=${n}`).first().click({ timeout: 6000 }).catch(() => {})
-        await esperar(650)
-      }
-      await esperar(2200)
-      await mirar('button:has-text("Agregar ("):visible', { escala: 1.9, ms: 4200 })
-      await esperar(1000)
-      await decir('Y el botón te va contando cuántos llevas', 4.2)
-      await esperar(4400)
-      await tocar('Agregar (')
-      await esperar(3600)
-      await decir('Ya están dentro, con su préstamo y su cuota', 4.4)
-      await esperar(4600)
-      await reposo(3800)
+      /* ⚠ EL CONTADOR NO EXISTE HASTA QUE SE MARCA A ALGUIEN.
+         El botón dice «Agregar» a secas y solo pasa a «Agregar (2)» con clientes
+         marcados. La toma vieja lo buscaba sin marcar nada y se quedaba seis
+         segundos esperando un rótulo que no iba a llegar. Y encima es lo que la
+         frase cuenta —«marcas los que van en esta ruta»—, así que marcar en
+         cámara no es un apaño: es la toma. */
+      await narrar(0, {
+        hacer: async () => {
+          for (const quien of ['Nubia Castaño', 'Álvaro Betancur']) {
+            await p.locator(`.fixed.inset-0 >> text=${quien}`).first().click().catch(() => {})
+            await esperar(700)
+          }
+        },
+      })
+      await narrar(1, { mirar: '.fixed.inset-0 button:has-text("Agregar (")', escala: 1.9 })
+      await narrar(2, {
+        hacer: async () => {
+          await tocarSel('.fixed.inset-0 button:has-text("Agregar (")')
+          await esperar(2600)
+        },
+      })
+      await reposo(1600)
     },
   },
+
   {
     id: 'sugerencias',
-    titulo: 'El atajo: las sugerencias',
+    titulo: 'El atajo: agrupar por barrio',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocar, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Y hay un atajo que hace todo esto de un toque', 4.4)
-      await esperar(4600)
-      await mirar('button:has-text("Ver sugerencias"):visible', { escala: 1.9, ms: 4200 })
-      await esperar(1000)
-      await tocar('Ver sugerencias')
-      await esperar(3000)
-      await decir('El sistema mira las direcciones y te agrupa los del mismo barrio', 5.4)
-      await esperar(5600)
-      await mirar('text=5 clientes', { escala: 1.7, ms: 4600 })
-      await esperar(2600)
-      await decir('Le cambias el nombre si quieres, eliges cobrador, y ya está', 5.2)
-      await esperar(5400)
-      await reposo(3600)
+      await narrar(0, {
+        mirar: 'button:has-text("Ver sugerencias"):visible', escala: 1.9,
+        hacer: async () => { await tocar('Ver sugerencias'); await esperar(2200) },
+      })
+      await narrar(1, { mirar: 'text=5 clientes', escala: 1.7 })
+      await narrar(2)
+      await reposo(1600)
     },
   },
+
   {
     id: 'botones',
-    titulo: 'Los botones de la ruta',
+    titulo: 'Dentro de una ruta',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaLaRuta(u)
       empezar()
-      await decir('Dentro de una ruta hay bastante. Vamos por partes', 4.6)
-      await esperar(4800)
-      await mirar('text=LO QUE TIENES PUESTO AQUÍ', { escala: 1.6, ms: 4600 })
-      await esperar(2400)
-      await decir('Arriba, la plata: cuánto tienes puesto y cuánto llevas hoy', 5.2)
-      await esperar(5400)
-      await mirar('button:has-text("Imprimir hoja"):visible', { escala: 1.6, ms: 4600 })
-      await esperar(2400)
-      await decir('«Imprimir hoja» te saca el recorrido en papel para la calle', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0)
+      await narrar(1, { mirar: 'text=LO QUE TIENES PUESTO AQUÍ', escala: 1.6 })
+      await narrar(2, { mirar: 'button:has-text("Imprimir hoja"):visible', escala: 1.6 })
+      await reposo(1400)
     },
   },
+
   {
     id: 'mapa',
     titulo: 'Optimizar y el mapa',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaLaRuta(u)
       empezar()
-      await decir('«Optimizar» te reordena las paradas por cercanía', 4.8)
-      await esperar(5000)
-      await mirar('button:has-text("Optimizar"):visible', { escala: 1.9, ms: 4400 })
-      await esperar(2400)
-      await decir('Y «Google Maps» abre el recorrido entero en el navegador', 5.2)
-      await esperar(1600)
-      await mirar('button:has-text("Google Maps"):visible', { escala: 1.9, ms: 4400 })
-      await esperar(2400)
-      await decir('Para eso hace falta que los clientes tengan su punto puesto', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0, { mirar: 'button:has-text("Optimizar"):visible', escala: 1.9 })
+      await narrar(1, { mirar: 'button:has-text("Google Maps"):visible', escala: 1.9 })
+      await narrar(2)
+      await reposo(1400)
     },
   },
+
   {
     id: 'ordenar',
-    titulo: 'Ordenar el recorrido',
+    titulo: 'Las tres vistas de los clientes',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocarSel, reposo } = u
       await hastaLaRuta(u)
       empezar()
-      await decir('Abajo están los clientes, y tienen tres formas de verse', 4.8)
-      await esperar(5000)
-      await mirar('button:text-is("Cobros"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(1600)
-      await decir('«Cobros» es la del día a día: a quién le toca hoy', 4.8)
-      await esperar(5000)
-      await tocarSel('button:text-is("Ordenar"):visible')
-      await esperar(2600)
-      await decir('«Ordenar» es para armar el recorrido: se arrastra y se suelta', 5.4)
-      await esperar(5600)
-      await decir('El orden que dejes aquí es el que ve el cobrador en la calle', 5.2)
-      await esperar(5400)
-      await reposo(3600)
+      await narrar(0, { mirar: 'button:text-is("Cobros"):visible', escala: 1.8 })
+      await narrar(1)
+      await narrar(2, {
+        hacer: async () => { await tocarSel('button:text-is("Ordenar"):visible'); await esperar(2200) },
+      })
+      await narrar(3)
+      await reposo(1600)
     },
   },
+
   {
     id: 'auditoria',
-    titulo: 'Auditoría, y la ruta comprimida',
-    /* ⚠ «Hoy» SE ENSEÑA, NO SE PULSA. Es un conmutador cuya etiqueta no cambia,
-       y en el negocio de la demostración les toca a los ocho a propósito
-       (`poblar-demo` lo explica): al pulsarlo la lista queda igual. Un botón que
-       se pulsa y no pasa nada en pantalla es peor que no enseñarlo. Se subraya y
-       se cuenta de palabra. */
+    titulo: 'Auditoría, y las dos vistas del día',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocarSel, reposo } = u
       await hastaLaRuta(u)
       empezar()
-      await decir('«Auditoría» es la del dueño: quién pagó y quién no', 4.8)
-      await esperar(1600)
-      await tocarSel('button:text-is("Auditoría"):visible')
-      await esperar(3200)
-      await decir('Una lista apretada, para revisar sin entrar en cada uno', 5.0)
-      await esperar(1600)
-      await mirar('button:has-text("Pendientes"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(2400)
-      await decir('Y los filtra: los que pagaron, los que faltan, los que abonaron a medias', 5.8)
-      await esperar(6000)
-      await tocarSel('button:text-is("Cobros"):visible')
-      await esperar(2600)
-      await decir('Al lado tienes la ruta comprimida y la ruta completa', 4.8)
-      await esperar(1600)
-      await mirar('button:has-text("Hoy"):visible', { escala: 2.0, ms: 4400 })
-      await esperar(2400)
-      await decir('«Hoy» deja solo las paradas del día; quitándolo, la ruta entera', 5.4)
-      await esperar(5600)
-      await reposo(3600)
+      await narrar(0, {
+        hacer: async () => { await tocarSel('button:text-is("Auditoría"):visible'); await esperar(2200) },
+      })
+      await narrar(1, {
+        hacer: async () => { await tocarSel('button:text-is("Cobros"):visible'); await esperar(1800) },
+      })
+      await narrar(2, { mirar: 'button:has-text("Hoy"):visible', escala: 2.0 })
+      await reposo(1600)
     },
   },
+
   {
     id: 'recorrido',
-    titulo: 'Empezar el recorrido',
+    titulo: 'Empezar recorrido',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocar, reposo } = u
       await hastaLaRuta(u)
       empezar()
-      await decir('Y esto es lo que usa el cobrador en la calle', 4.4)
-      await esperar(4600)
-      await mirar('button:has-text("Empezar recorrido"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(1200)
-      await tocar('Empezar recorrido')
-      await esperar(3600)
-      await decir('Una parada a la vez, con lo que tiene que cobrar delante', 5.2)
-      await esperar(5400)
-      await decir('Sin listas ni buscar: termina una y pasa a la siguiente', 5.0)
-      await esperar(5200)
-      await reposo(4000)
+      await narrar(0, {
+        mirar: 'button:has-text("Empezar recorrido"):visible', escala: 1.8,
+        hacer: async () => { await tocar('Empezar recorrido'); await esperar(2600) },
+      })
+      await narrar(1)
+      await narrar(2)
+      await reposo(1800)
     },
   },
+
   {
     id: 'ordenar_rutas',
-    titulo: 'Ordenar las rutas entre sí',
+    titulo: 'Ordenar las rutas entre ellas',
     dosRutas: true,
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocarSel, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Cuando ya tienes varias, también las puedes ordenar', 4.8)
-      await esperar(5000)
-      await mirar('button:text-is("Ordenar"):visible', { escala: 1.9, ms: 4400 })
-      await esperar(1200)
-      await tocarSel('button:text-is("Ordenar"):visible')
-      await esperar(2800)
-      await decir('Las subes y las bajas hasta dejarlas como las trabajas', 5.0)
-      await esperar(2000)
-      /* Se PULSAN. Enseñar las flechas sin moverlas dejaba un botón en pantalla
-         y nada pasando, que es la misma queja de siempre. Baja una y sube la
-         otra, para que se vea el intercambio y quede como estaba. */
-      /* ⚠ `:not([disabled])`. La flecha de subir de la PRIMERA ruta viene
-         deshabilitada —no hay nada encima— y `.first()` la cogía: un botón
-         deshabilitado nunca se pone «enabled», así que la espera agotaba los
-         diez segundos y la toma abortaba. */
-      await tocarSel('[aria-label="Bajar"]:not([disabled]):visible')
-      await esperar(2400)
-      await tocarSel('[aria-label="Subir"]:not([disabled]):visible', { espera: 2600 })
-      await esperar(2200)
-      await decir('También hay copia de seguridad de tus rutas, aquí arriba', 5.0)
-      await esperar(1600)
-      await mirar('button:has-text("Guardar copia"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(2400)
-      await tocarSel('button:text-is("Trabajo"):visible')
-      await esperar(2600)
-      await decir('Y vuelves a «Trabajo», que es la vista de todos los días', 4.8)
-      await esperar(5000)
-      await reposo(3600)
+      await narrar(0, {
+        mirar: 'button:text-is("Ordenar"):visible', escala: 1.9,
+        hacer: async () => { await tocarSel('button:text-is("Ordenar"):visible'); await esperar(2000) },
+      })
+      await narrar(1, {
+        hacer: async () => {
+          await tocarSel('[aria-label="Bajar"]:not([disabled]):visible')
+          await esperar(1200)
+          await tocarSel('[aria-label="Subir"]:not([disabled]):visible', { espera: 1600 })
+        },
+      })
+      await narrar(2, { mirar: 'button:has-text("Guardar copia"):visible', escala: 1.8 })
+      await narrar(3, {
+        hacer: async () => { await tocarSel('button:text-is("Trabajo"):visible'); await esperar(1800) },
+      })
+      await reposo(1600)
     },
   },
+
   {
     id: 'cierre',
     titulo: 'Dónde te deja',
     dosRutas: true,
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocar, reposo } = u
       await hastaRutas(u)
       empezar()
-      await decir('Y ya está: dos rutas, cada una con su gente y su cobrador', 5.2)
-      await esperar(5400)
-      await mirar('text=RECAUDADO HOY', { escala: 1.6, ms: 4600 })
-      await esperar(2400)
-      await decir('Arriba, lo de todas juntas: lo que llevas y lo que falta', 5.0)
-      await esperar(5200)
-      await mirar('button:has-text("Salir a cobrar"):visible', { escala: 1.8, ms: 4400 })
-      await esperar(1400)
-      await tocar('Salir a cobrar')
-      await esperar(3600)
-      await decir('Y «Salir a cobrar» te lleva derecho al día', 4.4)
-      await esperar(4600)
-      await reposo(4200)
+      await narrar(0, { mirar: 'text=RECAUDADO HOY', escala: 1.6 })
+      await narrar(1)
+      await narrar(2, {
+        mirar: 'button:has-text("Salir a cobrar"):visible', escala: 1.8,
+        hacer: async () => { await tocar('Salir a cobrar'); await esperar(2600) },
+      })
+      await reposo(2200)
     },
   },
 ]
@@ -472,8 +401,8 @@ const cookie = await encode({
 
 await correr({
   nombre: 'rutas',
-  dir: '/tmp/videos/07-rutas',
-  final: '/tmp/videos/07-rutas.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-07',
+  final: '/home/keyce/Desktop/videos-tutoriales/07-rutas.mp4',
   tomas: TOMAS,
   cookie,
   antesDeToma: (toma) => limpiar(Boolean(toma.dosRutas)),

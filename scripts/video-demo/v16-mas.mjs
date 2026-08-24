@@ -53,24 +53,26 @@ const bajarHasta = async (u, sel) => {
   await u.esperar(1400)
 }
 
+/* El ritmo lo pone la voz: `narrar(i)` dura lo que dura su frase y la pantalla
+   se mueve DENTRO de ella. Ver la nota larga de `grabador.mjs`.
+
+     node scripts/video-demo/voz.mjs 16-mas --solo-audio
+     SIN_ROTULOS=1 LOCUCION=16-mas node scripts/video-demo/v16-mas.mjs */
 const TOMAS = [
   {
     id: 'donde',
     titulo: 'Dónde está «Más»',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocarSel, reposo } = u
       await enElPanel(u)
       empezar()
-      await esperar(1400)
-      await decir('El último icono de la barra, el de los cuatro cuadritos', 4.6)
-      await esperar(1400)
-      await mirar('a[href="/mas"]:visible', { escala: 2.4, ms: 3400 })
-      await esperar(2600)
-      await tocarSel('a[href="/mas"]:visible')
-      await esperar(3200)
-      await decir('Aquí vive todo lo que no cabe abajo. Vamos a verlo entero', 4.8)
-      await esperar(5000)
-      await reposo(3200)
+      await esperar(700)
+      await narrar(0, {
+        mirar: 'a[href="/mas"]:visible', escala: 2.4,
+        hacer: async () => { await tocarSel('a[href="/mas"]:visible'); await esperar(1800) },
+      })
+      await narrar(1)
+      await reposo(1400)
     },
   },
 
@@ -78,19 +80,13 @@ const TOMAS = [
     id: 'mi_plata',
     titulo: 'Mi plata',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, reposo } = u
       await hastaMas(u)
       empezar()
-      await decir('Lo primero: mi plata. Es tu capital', 4.0)
-      await esperar(1400)
-      await mirar('text=Mi plata', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2600)
-      await decir('Cuánto tienes listo para prestar y cuánto está en la calle', 5.0)
-      await esperar(2000)
-      await asomarse(u, 'Mi plata', 5000)
-      await decir('Aquí metes plata al negocio o la sacas, y queda anotado', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=Mi plata', escala: 1.7, fila: true })
+      await narrar(1, { hacer: async () => { await asomarse(u, 'Mi plata', 2600) } })
+      await narrar(2)
+      await reposo(1400)
     },
   },
 
@@ -98,19 +94,13 @@ const TOMAS = [
     id: 'caja',
     titulo: 'La caja',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, reposo } = u
       await hastaMas(u)
       empezar()
-      await decir('Después la caja, que es el día', 3.8)
-      await esperar(1400)
-      await mirar('text=¿Cómo va el negocio?', { escala: 1.6, ms: 4000, fila: true })
-      await esperar(2600)
-      await decir('Cuánto entró hoy, cuánto salió y qué te tiene que entregar cada cobrador', 5.6)
-      await esperar(2000)
-      await asomarse(u, 'Caja', 5200)
-      await decir('Es donde se cuadra la noche. La caja no es tu capital: es el día', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=¿Cómo va el negocio?', escala: 1.6, fila: true })
+      await narrar(1, { hacer: async () => { await asomarse(u, 'Caja', 2800) } })
+      await narrar(2)
+      await reposo(1400)
     },
   },
 
@@ -118,20 +108,13 @@ const TOMAS = [
     id: 'simulador_reportes',
     titulo: 'Simulador y reportes',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, mirar, reposo } = u
       await hastaMas(u)
       empezar()
-      await decir('El simulador es para responder antes de prestar', 4.4)
-      await esperar(1400)
-      await mirar('text=Cuánto quedaría de cuota', { escala: 1.6, ms: 4000, fila: true })
-      await esperar(2600)
-      await decir('Le metes el monto y te dice de cuánto le quedaría la cuota', 5.0)
-      await esperar(5200)
-      await mirar('text=Reportes', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2400)
-      await decir('Y los reportes, para bajarte los números del negocio', 4.6)
-      await esperar(4800)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=Cuánto quedaría de cuota', escala: 1.6, fila: true })
+      await narrar(1)
+      await narrar(2, { mirar: 'text=Reportes', escala: 1.7, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -139,20 +122,13 @@ const TOMAS = [
     id: 'gastos_cobradores',
     titulo: 'Gastos y cobradores',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaMas(u)
       empezar()
-      await decir('Gastos: la gasolina, los almuerzos, lo que se va del negocio', 5.0)
-      await esperar(1600)
-      await mirar('text=Gastos', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2800)
-      await decir('Sin anotarlos, la ganancia que te enseña el sistema está inflada', 5.2)
-      await esperar(5400)
-      await mirar('text=Cobradores', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2400)
-      await decir('Y cobradores: tu gente, con lo que lleva recaudado cada uno', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=Gastos', escala: 1.7, fila: true })
+      await narrar(1)
+      await narrar(2, { mirar: 'text=Cobradores', escala: 1.7, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -160,21 +136,19 @@ const TOMAS = [
     id: 'perdidos_socios',
     titulo: 'Perdidos, socios y quién hizo qué',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, mirar, reposo } = u
       await hastaMas(u)
       await bajarHasta(u, 'text=Perdidos')
       empezar()
-      await decir('Perdidos: los que ya diste por perdidos, apartados', 4.6)
-      await esperar(1600)
-      await mirar('text=Perdidos', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2800)
-      await decir('Socios, si el capital no es todo tuyo, para saber de quién es cada parte', 5.6)
-      await esperar(1800)
-      await mirar('text=Quién hizo qué', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2600)
-      await decir('Y quién hizo qué: cada movimiento, con nombre y hora', 4.8)
-      await esperar(5000)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=Perdidos', escala: 1.7, fila: true })
+      await narrar(1, {
+        hacer: async () => {
+          await mirar('text=Socios', { escala: 1.7, ms: 2400, fila: true })
+          await esperar(300)
+        },
+      })
+      await narrar(2, { mirar: 'text=Quién hizo qué', escala: 1.7, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -182,21 +156,14 @@ const TOMAS = [
     id: 'cargar',
     titulo: 'Cargar lo que ya tienes',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaMas(u)
       await bajarHasta(u, 'text=CARGAR DATOS')
       empezar()
-      await decir('Si vienes de un cuaderno o de un Excel, esto es para ti', 5.0)
-      await esperar(1600)
-      await mirar('text=Le tomas foto y se pasa solo', { escala: 1.6, ms: 4200, fila: true })
-      await esperar(2800)
-      await decir('Le tomas foto a la hoja del cuaderno y se pasa solo', 4.8)
-      await esperar(5000)
-      await mirar('text=Importar Excel', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2400)
-      await decir('O subes el Excel, si ya lo llevabas en el computador', 4.6)
-      await esperar(4800)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=CARGAR DATOS', escala: 1.6 })
+      await narrar(1, { mirar: 'text=Le tomas foto y se pasa solo', escala: 1.6, fila: true })
+      await narrar(2, { mirar: 'text=Importar Excel', escala: 1.7, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -204,21 +171,14 @@ const TOMAS = [
     id: 'cuenta',
     titulo: 'Configuración, soporte y tutoriales',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaMas(u)
       await bajarHasta(u, 'text=CUENTA')
       empezar()
-      await decir('Y abajo del todo, tres cosas', 4.0)
-      await esperar(1400)
-      await mirar('text=Configuración', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2600)
-      await decir('Configuración, que es cómo trabaja el sistema contigo. Tiene su vídeo', 5.6)
-      await esperar(5800)
-      await mirar('text=Tutoriales', { escala: 1.7, ms: 4000, fila: true })
-      await esperar(2400)
-      await decir('Soporte, para escribirnos. Y tutoriales, que es donde estás ahora', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=CUENTA', escala: 1.6 })
+      await narrar(1, { mirar: 'text=Configuración', escala: 1.7, fila: true })
+      await narrar(2, { mirar: 'text=Tutoriales', escala: 1.7, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -226,15 +186,19 @@ const TOMAS = [
     id: 'cierre',
     titulo: 'Dónde te deja',
     async grabar(u) {
-      const { esperar, empezar, decir, reposo } = u
+      const { esperar, empezar, narrar, reposo, p } = u
       await hastaMas(u)
       empezar()
-      await esperar(2000)
-      await decir('Eso es todo lo que hay detrás de esos cuatro cuadritos', 4.8)
-      await esperar(5000)
-      await decir('No hace falta aprendérselo: con saber que está aquí, basta', 5.0)
-      await esperar(5200)
-      await reposo(4000)
+      await esperar(600)
+      /* Se sube la pantalla despacio mientras se cierra: repasar la lista entera
+         dice «esto es todo lo que hay» mejor que el rótulo solo. */
+      await narrar(0, {
+        hacer: async () => { await p.mouse.wheel(0, 300); await esperar(700) },
+      })
+      await narrar(1, {
+        hacer: async () => { await p.mouse.wheel(0, -300); await esperar(700) },
+      })
+      await reposo(2000)
     },
   },
 ]

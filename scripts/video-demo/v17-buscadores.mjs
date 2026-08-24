@@ -66,25 +66,27 @@ const dejarUnReciente = async (u) => {
   await u.esperar(2600)
 }
 
+/* El ritmo lo pone la voz: `narrar(i)` dura lo que dura su frase. Ver la nota
+   larga de `grabador.mjs`.
+
+     node scripts/video-demo/voz.mjs 17-buscadores --solo-audio
+     SIN_ROTULOS=1 LOCUCION=17-buscadores node scripts/video-demo/v17-buscadores.mjs */
 const TOMAS = [
   {
     id: 'la_lupa',
     titulo: 'La lupa: dónde está y qué abre',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, reposo } = u
       await enElPanel(u)
       empezar()
-      await esperar(1400)
-      await decir('En el sistema hay cuatro buscadores, y no hacen lo mismo', 5.0)
-      await esperar(5200)
-      await decir('El primero es la lupa de arriba', 3.4)
-      await esperar(1400)
-      await mirar('[aria-label="Buscar"]:visible', { escala: 2.4, ms: 3600 })
-      await esperar(2600)
-      await abrirLupa(u)
-      await decir('En el computador se abre con la tecla control y la K', 4.6)
-      await esperar(4800)
-      await reposo(3400)
+      await esperar(700)
+      await narrar(0)
+      await narrar(1, {
+        mirar: '[aria-label="Buscar"]:visible', escala: 2.4,
+        hacer: async () => { await abrirLupa(u) },
+      })
+      await narrar(2)
+      await reposo(1600)
     },
   },
 
@@ -92,22 +94,15 @@ const TOMAS = [
     id: 'en_reposo',
     titulo: 'Lo que ofrece sin escribir nada',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await enElPanel(u)
       await dejarUnReciente(u)
       await abrirLupa(u)
       empezar()
-      await decir('Sin escribir nada ya te ofrece dos cosas', 4.2)
-      await esperar(4400)
-      await mirar('text=ÚLTIMOS QUE ABRISTE', { escala: 1.6, ms: 4200 })
-      await esperar(2800)
-      await decir('Los últimos clientes que abriste, para volver de un toque', 4.8)
-      await esperar(2000)
-      await mirar('text=IR DIRECTO A', { escala: 1.6, ms: 4200 })
-      await esperar(2600)
-      await decir('Y atajos a las pantallas: la caja, tu plata, los gastos, los reportes', 5.6)
-      await esperar(5800)
-      await reposo(3400)
+      await narrar(0)
+      await narrar(1, { mirar: 'text=ÚLTIMOS QUE ABRISTE', escala: 1.6 })
+      await narrar(2, { mirar: 'text=IR DIRECTO A', escala: 1.6 })
+      await reposo(1600)
     },
   },
 
@@ -115,19 +110,23 @@ const TOMAS = [
     id: 'buscar_persona',
     titulo: 'Escribe un nombre',
     async grabar(u) {
-      const { esperar, empezar, decir, escribir, reposo } = u
+      const { esperar, empezar, narrar, escribir, reposo, p } = u
       await enElPanel(u)
+      await dejarUnReciente(u)
       await abrirLupa(u)
       empezar()
-      await decir('Escribe un nombre, o una cédula, o un teléfono', 4.4)
-      await esperar(1600)
-      await escribir(CAMPO, 'Marta')
-      await esperar(3600)
-      await decir('Y te lo encuentra con lo que te debe, sin entrar a ningún lado', 5.2)
-      await esperar(5400)
-      await decir('Esta es la única que te saca de la pantalla y te lleva a él', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      /* Se escribe DOS veces —un nombre y una cédula— porque la frase nombra las
+         tres formas y con una sola búsqueda no se ve que acepta el número. */
+      await narrar(0, {
+        hacer: async () => {
+          await escribir(CAMPO, 'Marta'); await esperar(1800)
+          await p.locator(CAMPO).first().fill(''); await esperar(400)
+          await escribir(CAMPO, '46201'); await esperar(1600)
+        },
+      })
+      await narrar(1)
+      await narrar(2)
+      await reposo(1600)
     },
   },
 
@@ -135,19 +134,22 @@ const TOMAS = [
     id: 'buscar_accion',
     titulo: 'O escribe lo que quieres hacer',
     async grabar(u) {
-      const { esperar, empezar, decir, escribir, reposo } = u
+      const { esperar, empezar, narrar, escribir, reposo, p } = u
       await enElPanel(u)
       await abrirLupa(u)
       empezar()
-      await decir('Y esto es lo que casi nadie sabe: también busca lo que quieres hacer', 5.6)
-      await esperar(1800)
-      await escribir(CAMPO, 'renovar')
-      await esperar(3800)
-      await decir('Escribes renovar y te saca la guía de cómo se renueva, con capturas', 5.6)
-      await esperar(5800)
-      await decir('Hay una guía para casi todo. No hace falta saber dónde está', 5.0)
-      await esperar(5200)
-      await reposo(3600)
+      await narrar(0)
+      await narrar(1, {
+        hacer: async () => { await escribir(CAMPO, 'renovar'); await esperar(2400) },
+      })
+      /* Y una segunda palabra: que se vea que no es un truco de una sola. */
+      await narrar(2, {
+        hacer: async () => {
+          await p.locator(CAMPO).first().fill(''); await esperar(400)
+          await escribir(CAMPO, 'cancelar'); await esperar(2200)
+        },
+      })
+      await reposo(1600)
     },
   },
 
@@ -155,22 +157,18 @@ const TOMAS = [
     id: 'el_de_la_lista',
     titulo: 'El de cada lista: filtra, no te lleva',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, escribir, tocarSel, reposo } = u
+      const CAMPO_LISTA = 'input[placeholder="Nombre o cédula"]:visible'
+      const { esperar, empezar, narrar, escribir, tocarSel, reposo } = u
       await enElPanel(u)
       await tocarSel('a[href="/clientes"]:visible')
-      await esperar(3200)
+      await esperar(3000)
       empezar()
-      await decir('El segundo buscador es el de cada lista', 4.2)
-      await esperar(1400)
-      await mirar('input[placeholder="Nombre o cédula"]:visible', { escala: 1.8, ms: 3800 })
-      await esperar(2600)
-      await decir('Este NO te lleva a ningún lado: filtra lo que estás viendo', 5.0)
-      await esperar(1800)
-      await escribir('input[placeholder="Nombre o cédula"]:visible', 'Marta')
-      await esperar(3400)
-      await decir('Se queda aquí y deja solo los que coinciden', 4.4)
-      await esperar(4600)
-      await reposo(3400)
+      await narrar(0, { mirar: CAMPO_LISTA, escala: 1.8 })
+      await narrar(1, {
+        hacer: async () => { await escribir(CAMPO_LISTA, 'Marta'); await esperar(1800) },
+      })
+      await narrar(2)
+      await reposo(1600)
     },
   },
 
@@ -178,18 +176,20 @@ const TOMAS = [
     id: 'en_prestamos',
     titulo: 'El mismo, en préstamos',
     async grabar(u) {
-      const { esperar, empezar, decir, escribir, tocarSel, reposo } = u
+      const CAMPO_LISTA = 'input[placeholder="Nombre o cédula"]:visible'
+      const { esperar, empezar, narrar, escribir, tocar, tocarSel, reposo } = u
       await enElPanel(u)
       await tocarSel('a[href="/prestamos"]:visible')
-      await esperar(3400)
+      await esperar(3200)
       empezar()
-      await decir('En préstamos hay otro igual, y busca por el cliente del préstamo', 5.4)
-      await esperar(1800)
-      await escribir('input[placeholder="Nombre o cédula"]:visible', 'Marta')
-      await esperar(3400)
-      await decir('Y se combina con los filtros: en mora, y de esos, este', 4.8)
-      await esperar(5000)
-      await reposo(3400)
+      await narrar(0, {
+        hacer: async () => { await escribir(CAMPO_LISTA, 'Marta'); await esperar(1800) },
+      })
+      /* Y se combina con un filtro, que es literalmente lo que dice la frase. */
+      await narrar(1, {
+        hacer: async () => { await tocar('En mora'); await esperar(1800) },
+      })
+      await reposo(1600)
     },
   },
 
@@ -197,27 +197,22 @@ const TOMAS = [
     id: 'que_necesitas',
     titulo: '¿Qué necesitas hacer aquí?',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, escribir, tocarSel, tocar, reposo, p } = u
+      const CAJA = 'input[placeholder*="necesitas"]'
+      const { esperar, empezar, narrar, escribir, tocarSel, tocar, reposo, p } = u
       await enElPanel(u)
       await tocarSel('a[href="/clientes"]:visible')
       await esperar(3000)
       await tocar(CLIENTE)
       await esperar(3800)
-      await p.locator('input[placeholder*="necesitas"]').first()
-        .scrollIntoViewIfNeeded().catch(() => {})
-      await esperar(1400)
+      await p.locator(CAJA).first().scrollIntoViewIfNeeded().catch(() => {})
+      await esperar(1200)
       empezar()
-      await decir('El tercero es este, y sale dentro de las fichas', 4.4)
-      await esperar(1400)
-      await mirar('input[placeholder*="necesitas"]', { escala: 1.7, ms: 4000 })
-      await esperar(2600)
-      await decir('Este no busca cosas: busca lo que puedes hacer en esta pantalla', 5.2)
-      await esperar(1800)
-      await escribir('input[placeholder*="necesitas"]', 'cancelar')
-      await esperar(3600)
-      await decir('Escribes lo que quieres y te lo deja hecho, o te explica cómo', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0, { mirar: CAJA, escala: 1.7 })
+      await narrar(1, {
+        hacer: async () => { await escribir(CAJA, 'cancelar'); await esperar(2400) },
+      })
+      await narrar(2)
+      await reposo(1600)
     },
   },
 
@@ -225,21 +220,15 @@ const TOMAS = [
     id: 'cierre',
     titulo: 'Cuál usar para qué',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, reposo } = u
       await enElPanel(u)
       empezar()
-      await esperar(1600)
-      await decir('Resumiendo, y con esto no te equivocas', 4.2)
-      await esperar(4400)
-      await decir('Si buscas a alguien o no sabes dónde está algo: la lupa de arriba', 5.4)
-      await esperar(1600)
-      await mirar('[aria-label="Buscar"]:visible', { escala: 2.4, ms: 3600 })
-      await esperar(3000)
-      await decir('Si quieres reducir una lista que ya tienes delante: el de la lista', 5.2)
-      await esperar(5400)
-      await decir('Y si quieres hacer algo y no encuentras el botón: el de la ficha', 5.2)
-      await esperar(5400)
-      await reposo(3800)
+      await esperar(700)
+      await narrar(0)
+      await narrar(1, { mirar: '[aria-label="Buscar"]:visible', escala: 2.4 })
+      await narrar(2)
+      await narrar(3)
+      await reposo(2000)
     },
   },
 ]

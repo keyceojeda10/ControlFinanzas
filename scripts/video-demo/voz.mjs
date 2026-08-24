@@ -271,7 +271,15 @@ const soloAudio = args.includes('--solo-audio')
 if (soloAudio) {
   const key0 = clave()
   const s0 = await saldo(key0)
-  const todas0 = tomasDe(video)
+  /* ⚠ LAS TOMAS SALEN DE LA LOCUCIÓN, NO DE LOS `.mp4` QUE HAYA.
+     Con `tomasDe()` el audio se generaba contra los ficheros ya grabados, y eso
+     falla justo cuando más falta hace: el vídeo 16 tenía cinco tomas en disco
+     —de una grabación que se cortó a medias— y se generó audio para cinco de
+     nueve, sin decir nada. El vídeo 7 se quedó sin la toma nueva por lo mismo.
+     Aquí se genera lo que hay que DECIR; los vídeos vienen después. */
+  const todas0 = readdirSync(`${VIDEOS}/locucion/por-toma/${video}`)
+    .filter((f) => /^toma-\d\d\.txt$/.test(f)).sort()
+    .map((f, i) => ({ n: i + 1 }))
   let chars = 0
   for (const t of todas0) {
     const parrafos = parrafosDe(video, t.n)
