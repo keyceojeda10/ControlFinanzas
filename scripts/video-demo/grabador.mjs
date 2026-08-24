@@ -130,9 +130,17 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma, locucion 
     vaciar(dirGrab)
     if (antesDeToma) await antesDeToma(toma, i)
 
+    /* ⚠ `toma.userAgent` CAMBIA EL NAVEGADOR QUE CREE SER.
+       Hace falta para el vídeo 21: la aplicación enseña los pasos de instalación
+       según el navegador, y por defecto salen los de ESCRITORIO —«busca el icono
+       en la barra de direcciones… Windows o Mac»—, que en un vídeo vertical para
+       el teléfono sería mentir. Con el `userAgent` de un iPhone o de un Android,
+       la propia aplicación pinta las instrucciones de verdad: no hay nada
+       inventado en pantalla. */
     const ctx = await nav.newContext({
       viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, serviceWorkers: 'block',
       recordVideo: { dir: dirGrab, size: { width: 540, height: 960 } },
+      ...(toma.userAgent ? { userAgent: toma.userAgent } : {}),
     })
     /* Una toma puede entrar con OTRA sesión (`toma.cookie`). Hace falta para
        enseñar lo que ve el cobrador dentro de un vídeo que va del dueño: es la
