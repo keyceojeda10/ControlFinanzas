@@ -34,6 +34,16 @@ import { conectar, IDS } from './montar-demo.mjs'
 /* El día de la demostración: cuatro cobros hechos por el endpoint real, para
    que las cifras del mes sean las que el sistema produce. Y sin residuos de la
    toma anterior. */
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
+
 const limpiar = async () => {
   const cx = await conectar()
   const [ps] = await cx.query(
@@ -68,7 +78,7 @@ const limpiar = async () => {
 /** Del panel al capital: vive en «Más», con el nombre «Mi plata». */
 const hastaCapital = async ({ ir, tocarSel, esperar }) => {
   await ir('/dashboard', /Buenos|Recaudado/i)
-  await tocarSel('a[href="/mas"]:visible')
+  await tocarSel(`${MENU} a[href="/mas"]`)
   await esperar(2600)
   await tocarSel('button:has-text("Mi plata"):visible, a:has-text("Mi plata"):visible')
   await esperar(5000)

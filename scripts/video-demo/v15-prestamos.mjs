@@ -28,6 +28,16 @@ import { encode } from 'next-auth/jwt'
 import { correr, SECRETO } from './grabador.mjs'
 import { IDS } from './montar-demo.mjs'
 
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
+
 const CLIENTE = 'Marta Elena Ospina'
 
 const enElPanel = async ({ ir, esperar }) => {
@@ -38,7 +48,7 @@ const enElPanel = async ({ ir, esperar }) => {
 /** La lista, por la pestaña de la barra, que es por donde se llega. */
 const hastaPrestamos = async (u) => {
   await enElPanel(u)
-  await u.tocarSel('a[href="/prestamos"]:visible')
+  await u.tocarSel(`${MENU} a[href="/prestamos"]`)
   await u.esperar(3200)
 }
 
@@ -69,8 +79,8 @@ const TOMAS = [
       empezar()
       await esperar(700)
       await narrar(0, {
-        mirar: 'a[href="/prestamos"]:visible', escala: 2.4,
-        hacer: async () => { await tocarSel('a[href="/prestamos"]:visible'); await esperar(2000) },
+        mirar: `${MENU} a[href="/prestamos"]`, escala: 2.4,
+        hacer: async () => { await tocarSel(`${MENU} a[href="/prestamos"]`); await esperar(2000) },
       })
       await narrar(1)
       await reposo(1400)

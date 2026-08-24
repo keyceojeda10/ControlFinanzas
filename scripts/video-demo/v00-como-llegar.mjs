@@ -49,6 +49,16 @@ import { encode } from 'next-auth/jwt'
 import { correr, SECRETO } from './grabador.mjs'
 import { IDS } from './montar-demo.mjs'
 
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
+
 const CLIENTE = 'Fabián Quintero'
 const MONTO = '400000'
 
@@ -173,9 +183,9 @@ const TOMAS = [
       await enElPanel(u)
       await decir('Los cobradores están en «más», el último de la barra', 4.6)
       await esperar(1200)
-      await mirar('a[href="/mas"]:visible', { escala: 2.4, ms: 3400 })
+      await mirar(`${MENU} a[href="/mas"]`, { escala: 2.4, ms: 3400 })
       await esperar(2600)
-      await tocarSel('a[href="/mas"]:visible')
+      await tocarSel(`${MENU} a[href="/mas"]`)
       await esperar(2800)
       await decir('Aquí dentro está todo lo que no cabe abajo', 4.2)
       await esperar(2200)
@@ -199,9 +209,9 @@ const TOMAS = [
       await enElPanel(u)
       await decir('Los ajustes también están en «más»', 4.0)
       await esperar(1200)
-      await mirar('a[href="/mas"]:visible', { escala: 2.4, ms: 3400 })
+      await mirar(`${MENU} a[href="/mas"]`, { escala: 2.4, ms: 3400 })
       await esperar(2600)
-      await tocarSel('a[href="/mas"]:visible')
+      await tocarSel(`${MENU} a[href="/mas"]`)
       await esperar(2800)
       await mirar('button:has-text("Configuración"):visible, a:has-text("Configuración"):visible',
         { escala: 1.8, ms: 3800 })
@@ -244,9 +254,9 @@ const TOMAS = [
       await enElPanel(u)
       await decir('Tu capital está en «más»', 3.6)
       await esperar(1200)
-      await mirar('a[href="/mas"]:visible', { escala: 2.4, ms: 3400 })
+      await mirar(`${MENU} a[href="/mas"]`, { escala: 2.4, ms: 3400 })
       await esperar(2400)
-      await tocarSel('a[href="/mas"]:visible')
+      await tocarSel(`${MENU} a[href="/mas"]`)
       await esperar(2800)
       await mirar('button:has-text("Mi plata"):visible, a:has-text("Mi plata"):visible',
         { escala: 1.8, ms: 3800 })

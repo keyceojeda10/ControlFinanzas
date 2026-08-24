@@ -35,6 +35,16 @@ import { encode } from 'next-auth/jwt'
 import { correr, SECRETO } from './grabador.mjs'
 import { IDS } from './montar-demo.mjs'
 
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
+
 const CLIENTE = 'Marta Elena Ospina'
 
 const enElPanel = async ({ ir, esperar }) => {
@@ -58,11 +68,11 @@ const CAMPO = 'input:visible'
    Se descubrió grabando; sondeando a mano no se ve, porque a mano uno ya ha
    estado paseando por la aplicación. */
 const dejarUnReciente = async (u) => {
-  await u.tocarSel('a[href="/clientes"]:visible')
+  await u.tocarSel(`${MENU} a[href="/clientes"]`)
   await u.esperar(2600)
   await u.tocar(CLIENTE)
   await u.esperar(3200)
-  await u.tocarSel('a[href="/dashboard"]:visible')
+  await u.tocarSel(`${MENU} a[href="/dashboard"]`)
   await u.esperar(2600)
 }
 
@@ -160,7 +170,7 @@ const TOMAS = [
       const CAMPO_LISTA = 'input[placeholder="Nombre o cédula"]:visible'
       const { esperar, empezar, narrar, escribir, tocarSel, reposo } = u
       await enElPanel(u)
-      await tocarSel('a[href="/clientes"]:visible')
+      await tocarSel(`${MENU} a[href="/clientes"]`)
       await esperar(3000)
       empezar()
       await narrar(0, { mirar: CAMPO_LISTA, escala: 1.8 })
@@ -179,7 +189,7 @@ const TOMAS = [
       const CAMPO_LISTA = 'input[placeholder="Nombre o cédula"]:visible'
       const { esperar, empezar, narrar, escribir, tocar, tocarSel, reposo } = u
       await enElPanel(u)
-      await tocarSel('a[href="/prestamos"]:visible')
+      await tocarSel(`${MENU} a[href="/prestamos"]`)
       await esperar(3200)
       empezar()
       await narrar(0, {
@@ -200,7 +210,7 @@ const TOMAS = [
       const CAJA = 'input[placeholder*="necesitas"]'
       const { esperar, empezar, narrar, escribir, tocarSel, tocar, reposo, p } = u
       await enElPanel(u)
-      await tocarSel('a[href="/clientes"]:visible')
+      await tocarSel(`${MENU} a[href="/clientes"]`)
       await esperar(3000)
       await tocar(CLIENTE)
       await esperar(3800)

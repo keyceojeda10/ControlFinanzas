@@ -36,6 +36,16 @@ import { conectar, IDS } from './montar-demo.mjs'
 
 /* El día arranca LIMPIO en cada toma: el cobro se graba en vivo, que es de lo
    que va el vídeo, y una toma no puede empezar con lo que hizo la anterior. */
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
+
 const limpiar = async () => {
   const cx = await conectar()
   const [p] = await cx.query(
@@ -61,7 +71,7 @@ const limpiar = async () => {
  */
 const hastaElDia = async ({ ir, tocarSel, tocar, esperar }) => {
   await ir('/dashboard', /Buenas|Recaudado/i)
-  await tocarSel('a[href="/rutas"]:visible')
+  await tocarSel(`${MENU} a[href="/rutas"]`)
   await esperar(3000)
   await tocar('Salir a cobrar')
   await esperar(3400)
@@ -86,7 +96,7 @@ const TOMAS = [
       empezar()
       await decir('El día del cobrador empieza en «rutas»', 3.8)
       await esperar(4000)
-      await u.tocarSel('a[href="/rutas"]:visible')
+      await u.tocarSel(`${MENU} a[href="/rutas"]`)
       await esperar(3000)
       await mirar('button:has-text("Salir a cobrar"):visible', { escala: 1.8, ms: 4400 })
       await esperar(1600)

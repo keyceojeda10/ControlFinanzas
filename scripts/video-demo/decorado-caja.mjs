@@ -136,3 +136,28 @@ export async function cobradorActivo(encendido) {
   await cx.query('UPDATE User SET activo = ? WHERE id = ?', [encendido ? 1 : 0, IDS.cobrador])
   await cx.end()
 }
+
+/**
+ * Se lleva el decorado al terminar.
+ *
+ * ⚠ HACE FALTA, y me lo enseñó el vídeo 15: el préstamo de 450.000 que monta
+ *   `montarElDia` se quedó vivo después de grabar la caja, y al volver a grabar
+ *   préstamos la lista abría con un cliente «NUEVO» de $540.000 que no es del
+ *   negocio de mentira. El decorado de un vídeo no puede aparecer en otro.
+ */
+export async function quitarElDecorado() {
+  const cx = await conectar()
+  const [ps] = await cx.query(
+    `SELECT id FROM Prestamo WHERE organizationId = ? AND nombreProducto = 'VIDEO-CAJA'`, [IDS.org])
+  const ids = ps.map((x) => x.id)
+  if (ids.length) {
+    await cx.query('DELETE FROM Pago WHERE prestamoId IN (?)', [ids])
+    await cx.query('DELETE FROM MovimientoCapital WHERE referenciaId IN (?)', [ids])
+    await cx.query('DELETE FROM Prestamo WHERE id IN (?)', [ids])
+  }
+  await cx.query(
+    `DELETE m FROM MovimientoCapital m
+      LEFT JOIN Prestamo p ON p.id = m.referenciaId
+      WHERE m.organizationId = ? AND m.referenciaTipo = 'prestamo' AND p.id IS NULL`, [IDS.org])
+  await cx.end()
+}

@@ -29,7 +29,17 @@
 import { encode } from 'next-auth/jwt'
 import { correr, SECRETO, BASE } from './grabador.mjs'
 import { IDS } from './montar-demo.mjs'
-import { borrarElDia, montarElDia, cobradorActivo } from './decorado-caja.mjs'
+import { borrarElDia, montarElDia, cobradorActivo, quitarElDecorado } from './decorado-caja.mjs'
+
+/* ⚠ LA BARRA DE ABAJO SE APUNTA POR EL `nav`, NO POR EL `href` A SECAS.
+   Reportado por el dueño viendo el vídeo 15: «no está señalando bien el icono;
+   señala un texto y no el icono de los préstamos en el menú».
+   En el panel hay DOS enlaces visibles a `/prestamos`: el «Ver todos →» de una
+   tarjeta (y=1874) y el icono de la barra (y=890). `.first()` coge el de la
+   tarjeta porque va antes en el DOM, y `:visible` no ayuda: los dos lo están.
+   Hoy solo pasa con préstamos, pero cualquier «Ver todos» que se añada mañana
+   rompe el de al lado, así que se acota a la barra en todos. */
+const MENU = 'nav[aria-label="Navegación principal"]'
 
 const galleta = (rol) => encode({
   token: {
@@ -56,7 +66,7 @@ const limpiar = async () => {
 const hastaCaja = async (u) => {
   await u.ir('/dashboard', /Buenos|Buenas|Recaudado/i)
   await u.esperar(1200)
-  await u.tocarSel('a[href="/mas"]:visible')
+  await u.tocarSel(`${MENU} a[href="/mas"]`)
   await u.esperar(2400)
   await u.tocarSel('button:has-text("Caja"):visible, a:has-text("Caja"):visible')
   await u.esperar(4200)
@@ -235,11 +245,17 @@ const TOMAS = [
 
 const cookie = await galleta('owner')
 
-await correr({
-  nombre: 'caja con cobradores',
-  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-19',
-  final: '/home/keyce/Desktop/videos-tutoriales/19-caja-cobradores.mp4',
-  tomas: TOMAS,
-  cookie,
-  antesDeToma: limpiar,
-})
+try {
+  await correr({
+    nombre: 'caja con cobradores',
+    dir: '/home/keyce/Desktop/videos-tutoriales/tomas-19',
+    final: '/home/keyce/Desktop/videos-tutoriales/19-caja-cobradores.mp4',
+    tomas: TOMAS,
+    cookie,
+    antesDeToma: limpiar,
+  })
+} finally {
+  // El decorado no se queda vivo para el siguiente vídeo. Ver `quitarElDecorado`.
+  await quitarElDecorado()
+  console.log('· decorado de caja retirado')
+}
