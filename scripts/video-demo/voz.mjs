@@ -134,7 +134,11 @@ function tomasDe(video) {
      párrafo se iba a la toma de al lado. Excluirlos uno a uno no vale, porque
      el siguiente derivado que se invente vuelve a romperlo; se acepta solo el
      patrón bueno. */
-  return readdirSync(dir).filter((f) => /^\d\d-[\wáéíóúñ]+\.mp4$/i.test(f)).sort()
+  /* ⚠ EL ID LLEVA GUIONES: `07-modo-que-es.mp4`, `09-en-tus-palabras.mp4`.
+     Sin el guion en la clase, el vídeo 5 salía con ONCE tomas en vez de trece y
+     las dos que faltaban ni se generaban. Y los derivados (`.sub.mp4`,
+     `.voz.mp4`) siguen fuera porque el punto no entra en la clase. */
+  return readdirSync(dir).filter((f) => /^\d\d-[\w\-áéíóúñ]+\.mp4$/i.test(f)).sort()
     .map((f, i) => ({
       n: i + 1,
       mp4: `${dir}/${f}`,

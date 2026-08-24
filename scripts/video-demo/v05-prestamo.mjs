@@ -34,272 +34,290 @@ const limpiarPrestamos = async () => {
 }
 
 /** Camino común hasta la pantalla de condiciones. */
-const hastaCondiciones = async ({ ir, tocar, esperar }) => {
+const hastaCondiciones = async ({ ir, tocar, esperar, escribir, p }) => {
   await ir('/dashboard', /Buenos|Recaudado/i)
   await tocar('Crear'); await esperar(1200)
-  await tocar('Prestarle a alguien'); await esperar(1600)
+  await tocar('Prestarle a alguien')
+  /* ⚠ AL CLIENTE SE LLEGA BUSCÁNDOLO, NO PULSÁNDOLO EN «RECIENTES».
+     Antes era `tocar(CLIENTE)` a secas y hoy revienta: RECIENTES solo enseña
+     TRES, y desde que se grabó este vídeo esos tres son otros. Diez segundos
+     esperando a un botón que no existe, y el error sale como si fuera del
+     guion. Buscar por el nombre no depende de qué estuvo reciente. */
+  await p.waitForSelector('text=Elige el cliente', { timeout: 25000 }).catch(() => {})
+  await esperar(800)
+  await escribir('input[placeholder*="Buscar por nombre"]', 'Fabi')
+  await esperar(1400)
   await tocar(CLIENTE); await esperar(900)
   await tocar('Continuar')
 }
 
+/* == EL RITMO LO PONE LA VOZ ==============================================
+ *
+ * Reescrito con `narrar(i)`: cada parada dura lo que dura SU FRASE, leida del
+ * mp3 ya generado, y lo que la pantalla hace ocurre DENTRO de la frase. Ver la
+ * nota larga de `grabador.mjs`; el motivo, medido en el video 14, fue 76
+ * segundos de pantalla quieta en 3:57.
+ *
+ * ATENCION: UNA PARADA, UNA FRASE DE LA LOCUCION. Donde el guion tenia dos
+ * rotulos para un solo parrafo, los dos acercamientos van dentro del mismo
+ * `narrar`: si no, `narrar(1)` pediria un parrafo que no existe y la toma
+ * revienta al grabar.
+ *
+ *     node scripts/video-demo/voz.mjs 05-prestamo --solo-audio
+ *     SIN_ROTULOS=1 LOCUCION=05-prestamo node scripts/video-demo/v05-prestamo.mjs
+ */
+/* El campo del monto. Vive aquí arriba y no debajo del array: un `const`
+   declarado después de quien lo usa es la clase de despiste que en este repo ya
+   ha dejado tres pantallas en blanco. */
+const CAMPO = 'input[inputmode="decimal"], input[type="text"]'
+
 const TOMAS = [
   {
     id: 'entrada',
-    titulo: 'Dónde se crea un préstamo',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
+    titulo: 'Donde se crea un prestamo',
+    async grabar(u) {
+      const { ir, esperar, tocar, empezar, narrar, reposo } = u
       await ir('/dashboard', /Buenos|Recaudado/i)
       await esperar(1200)
       empezar()
-      /* ⚠ EL PANEL, QUIETO, ANTES DE TOCAR NADA.
-         Esta toma SÍ enseñaba el camino, pero duraba un suspiro: `empezar()` y
-         acto seguido el toque, así que el panel se veía tres décimas y el dueño
-         lo dio por perdido —«no dice cómo llega»—. Se ve en el fotograma diez
-         del vídeo viejo: la hoja ya está abierta.
-         Ahora se para, se señala el botón y luego se pulsa. */
-      await esperar(1400)
-      await decir('Un préstamo se hace desde el mismo botón «Crear»', 4.4)
-      await esperar(1400)
-      await mirar('button[aria-label="Crear"]', { escala: 2.4, ms: 3400 })
-      await esperar(2600)
-      await tocar('Crear')
-      await esperar(3400)
-      await mirar('text=Prestarle a alguien', { escala: 1.8, ms: 4200 })
-      await decir('Aquí, en «sale plata»: «Prestarle a alguien»', 4.4)
-      await esperar(4600)
-      await tocar('Prestarle a alguien')
-      await reposo()
+      /* EL PANEL, QUIETO, ANTES DE TOCAR NADA.
+         Esta toma SI ensenaba el camino, pero duraba un suspiro: `empezar()` y
+         acto seguido el toque, asi que el panel se veia tres decimas y el dueno
+         lo dio por perdido. Se ve en el fotograma diez del video viejo: la hoja
+         ya esta abierta. */
+      await esperar(700)
+      await narrar(0, {
+        mirar: 'button[aria-label="Crear"]', escala: 2.4,
+        hacer: async () => { await tocar('Crear'); await esperar(2000) },
+      })
+      await narrar(1, {
+        mirar: 'text=Prestarle a alguien', escala: 1.8,
+        hacer: async () => { await tocar('Prestarle a alguien'); await esperar(1800) },
+      })
+      await reposo(1600)
     },
   },
   {
     id: 'cliente',
-    titulo: 'A quién le prestas',
-    async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
+    titulo: 'A quien le prestas',
+    async grabar(u) {
+      const { ir, esperar, tocar, empezar, narrar, reposo, escribir, p } = u
       await ir('/dashboard', /Buenos|Recaudado/i)
       await tocar('Crear'); await esperar(1200)
       await tocar('Prestarle a alguien')
+      await p.waitForSelector('text=Elige el cliente', { timeout: 25000 }).catch(() => {})
       empezar()
-      await esperar(1600)
-      await decir('Lo primero: a quién', 3.6)
-      await esperar(3800)
-      await mirar('text=RECIENTES', { escala: 1.7, ms: 4000 })
-      await decir('Los últimos salen de primeras; los demás, buscando por nombre o cédula', 4.8)
-      await esperar(5000)
-      await tocar(CLIENTE)
-      await esperar(1800)
-      await tocar('Continuar')
-      await reposo()
+      await esperar(700)
+      await narrar(0, { mirar: 'text=RECIENTES', escala: 1.7 })
+      /* Se busca y se elige DENTRO de la frase que habla de buscar: antes se
+         decia «los demas, buscando por nombre o cedula» sobre una lista quieta
+         y el toque venia cuando ya se habia callado. */
+      await narrar(1, {
+        hacer: async () => {
+          await escribir('input[placeholder*="Buscar por nombre"]', 'Fabi')
+          await esperar(1600)
+          await tocar(CLIENTE); await esperar(1400)
+          await tocar('Continuar'); await esperar(1600)
+        },
+      })
+      await reposo(1600)
     },
   },
   {
     id: 'monto',
-    titulo: 'Cuánto le prestas',
+    titulo: 'Cuanto le prestas',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { esperar, escribir, empezar, narrar, reposo } = u
       await hastaCondiciones(u)
       empezar()
-      await decir('Cuánto le entregas en la mano', 4.0)
-      await esperar(4200)
-      await mirar('button:has-text("500k")', { escala: 1.9, ms: 4000 })
-      await decir('Los montos de siempre están ahí, en un toque', 4.2)
-      await esperar(4400)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
-      await esperar(2600)
-      await reposo()
+      await narrar(0, { hacer: async () => { await escribir(CAMPO, MONTO); await esperar(1400) } })
+      await narrar(1, { mirar: 'button:has-text("500k")', escala: 1.9 })
+      await reposo(1400)
     },
   },
   {
     id: 'frecuencia',
-    titulo: 'Cada cuánto te paga',
+    titulo: 'Cada cuanto te paga',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, escribir, empezar, narrar, tocar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await decir('Cada cuánto te paga: diario, semanal, quincenal o mensual', 4.8)
-      await esperar(5000)
-      await mirar('button:has-text("Diario")', { escala: 1.8, ms: 4000 })
-      await decir('En diario cobra todos los días hábiles', 4.2)
-      await esperar(4400)
-      await reposo()
+      /* Se tocan DOS frecuencias mientras se nombran las cuatro: con una sola no
+         se ve que la cuota de abajo cambia al cambiarlas. */
+      await narrar(0, {
+        hacer: async () => {
+          await tocar('Semanal'); await esperar(1500)
+          await tocar('Diario'); await esperar(1300)
+        },
+      })
+      await narrar(1, { mirar: 'button:has-text("Diario")', escala: 1.8 })
+      await reposo(1400)
     },
   },
   {
     id: 'interes',
-    titulo: 'La tasa de interés',
+    titulo: 'La tasa de interes',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { esperar, escribir, empezar, narrar, mirar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await decir('Ahora el interés', 3.4)
-      await esperar(3600)
-      await mirar('button:has-text("20%")', { escala: 1.9, ms: 4200 })
-      await decir('Los porcentajes que más se usan están de atajo', 4.4)
-      await esperar(4600)
-      await reposo()
+      // Un solo parrafo en la locucion y dos cosas que ensenar: van juntas.
+      await narrar(0, {
+        mirar: 'button:has-text("20%")', escala: 1.9,
+        hacer: async () => {
+          await esperar(300)
+          await mirar('button:has-text("10%")', { escala: 1.9, ms: 2000 })
+        },
+      })
+      await reposo(1400)
     },
   },
   {
     id: 'cuotas',
-    titulo: 'Cuántas cuotas, y el «No sé»',
+    titulo: 'Cuantas cuotas, y el No se',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { escribir, empezar, narrar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await decir('Y en cuántas cuotas te lo paga', 4.0)
-      await esperar(4200)
-      await mirar('button:has-text("No sé")', { escala: 1.9, ms: 4600 })
-      await decir('Si no sabes cuándo te paga, toca «No sé»', 4.2)
-      await esperar(4400)
-      await decir('El préstamo queda sin vencimiento y solo cobra el interés de cada mes', 4.8)
-      await esperar(5000)
-      await reposo()
+      await narrar(0, { mirar: 'button:has-text("30")', escala: 1.9 })
+      await narrar(1, { mirar: 'button:has-text("No sé")', escala: 1.9 })
+      await reposo(1400)
     },
   },
   {
     id: 'cuenta',
     titulo: 'La cuenta se hace sola',
     async grabar(u) {
-      const { p, esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { esperar, escribir, empezar, narrar, mirar, reposo, p } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
       empezar()
-      await esperar(1600)
-      await mirar('text=Total a pagar', { escala: 1.7, ms: 4600 }).catch(async () => {
-        await mirar('text=CUOTA', { escala: 1.7, ms: 4600 })
+      /* La cifra se calcula MIENTRAS se escribe, asi que el monto se teclea
+         dentro de la frase que lo cuenta. Antes se escribia antes de empezar y
+         el rotulo hablaba de un numero que ya estaba puesto. */
+      await narrar(0, {
+        hacer: async () => {
+          await escribir(CAMPO, MONTO)
+          await esperar(1600)
+          await p.locator('text=CUOTA DIARIA').first().scrollIntoViewIfNeeded().catch(() => {})
+          await esperar(500)
+          await mirar('text=TOTAL A PAGAR', { escala: 1.7, ms: 3000, fila: true })
+            .catch(async () => { await mirar('text=CUOTA DIARIA', { escala: 1.7, ms: 3000, fila: true }) })
+        },
       })
-      await decir('Fíjate abajo: la cuota y el total salen solos', 4.6)
-      await esperar(4800)
-      await decir('No tienes que sacar cuentas ni con calculadora', 4.4)
-      await esperar(4600)
-      await reposo()
+      await reposo(1600)
     },
   },
   {
     id: 'modo-que-es',
-    titulo: 'El modo de interés: por qué importa',
+    titulo: 'El modo de interes: por que importa',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { escribir, empezar, narrar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await esperar(1400)
-      await mirar('text=¿Cómo cobra el interés?', { escala: 1.7, ms: 4400 })
-      await decir('Y ahora lo más importante de esta pantalla', 4.2)
-      await esperar(4400)
-      await decir('Cómo cobras el interés: el mismo veinte por ciento puede ser tres cosas distintas', 5.2)
-      await esperar(5400)
-      await reposo()
+      await narrar(0, { mirar: 'text=¿Cómo cobra el interés?', escala: 1.7 })
+      await narrar(1)
+      await reposo(1400)
     },
   },
   {
     id: 'ayudante',
     titulo: 'El ayudante de dos preguntas',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, escribir, empezar, narrar, tocar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await esperar(1200)
-      await mirar('text=Responde 2 preguntas', { escala: 1.7, ms: 4400 })
-      await decir('Si no sabes cuál te toca, no adivines', 4.2)
-      await esperar(4400)
-      await tocar('Responde 2 preguntas')
-      await esperar(2600)
-      await decir('Te pregunta cómo le cobras a un cliente normal', 4.6)
-      await esperar(4800)
-      await reposo()
+      await narrar(0, { mirar: 'text=Responde 2 preguntas', escala: 1.7 })
+      await narrar(1, {
+        hacer: async () => { await tocar('Responde 2 preguntas'); await esperar(2000) },
+      })
+      await reposo(1400)
     },
   },
   {
     id: 'en-tus-palabras',
     titulo: 'Las opciones, en tus palabras',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, escribir, empezar, narrar, tocar, mirar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       await tocar('Responde 2 preguntas')
-      empezar()
       await esperar(1600)
-      await mirar('text=Le cobro una cuota igual cada vez', { escala: 1.6, ms: 4600 })
-      await decir('«Le cobro una cuota igual cada vez»: el más común', 4.6)
-      await esperar(4800)
-      await mirar('text=Le cobro solo el interés', { escala: 1.6, ms: 4600 })
-      await decir('«Solo el interés, y el capital al final, de una»', 4.6)
-      await esperar(4800)
-      await mirar('text=Le cobro un interés fijo, una sola vez', { escala: 1.6, ms: 4800 })
-      await decir('«Presto cien mil y me devuelve ciento veinte, se demore lo que se demore»', 5.2)
-      await esperar(5400)
-      await reposo()
+      empezar()
+      await narrar(0, { mirar: 'text=Le cobro una cuota igual cada vez', escala: 1.6 })
+      await narrar(1, { mirar: 'text=Le cobro solo el interés', escala: 1.6 })
+      await narrar(2, { mirar: 'text=Le cobro un interés fijo, una sola vez', escala: 1.6 })
+      /* El cuarto parrafo cierra la idea y la pantalla lo acompana volviendo a
+         la lista entera. */
+      await narrar(3, {
+        hacer: async () => {
+          await mirar('text=Le cobro una cuota igual cada vez', { escala: 1.3, ms: 2600, fila: true })
+        },
+      })
+      await reposo(1600)
     },
   },
   {
     id: 'recomendado',
     titulo: 'El que usa casi todo el mundo',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { escribir, empezar, narrar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await esperar(1400)
-      await mirar('text=RECOMENDADO', { escala: 1.7, ms: 4400 })
-      await decir('Si no estás seguro, déjalo en «cuota fija»', 4.4)
-      await esperar(4600)
-      await decir('Es el que usa casi todo el mundo y el que viene puesto', 4.6)
-      await esperar(4800)
-      await reposo()
+      await narrar(0, { mirar: 'text=RECOMENDADO', escala: 1.7 })
+      await narrar(1)
+      await reposo(1400)
     },
   },
   {
     id: 'revisar',
     titulo: 'Revisar y crear',
     async grabar(u) {
-      const { p, esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, escribir, empezar, narrar, tocar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       empezar()
-      await esperar(1200)
-      await mirar('button:has-text("Revisar préstamo")', { escala: 1.7, ms: 4000 })
-      await decir('Antes de crearlo, lo revisas', 4.0)
-      await esperar(4200)
-      await tocar('Revisar préstamo', { espera: 3600 })
-      await decir('Aquí ves cómo queda antes de entregar la plata', 4.6)
-      await esperar(4800)
-      await reposo()
+      await narrar(0, {
+        mirar: 'button:has-text("Revisar préstamo")', escala: 1.7,
+        hacer: async () => { await tocar('Revisar préstamo', { espera: 2600 }); await esperar(1400) },
+      })
+      await reposo(1800)
     },
   },
   {
     id: 'cierre',
-    titulo: 'Crear el préstamo y verlo vivo',
+    titulo: 'Crear el prestamo y verlo vivo',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, escribir, empezar, narrar, tocar, reposo } = u
       await hastaCondiciones(u)
-      await escribir('input[inputmode="decimal"], input[type="text"]', MONTO)
+      await escribir(CAMPO, MONTO)
       await tocar('Revisar préstamo', { espera: 3200 })
       empezar()
-      await esperar(1600)
-      await decir('Revisa que todo esté como quedaste con el cliente', 4.6)
-      await esperar(4800)
-      /* ⚠ AQUÍ SE CREA DE VERDAD. El vídeo se cortaba en la pantalla de revisar
-         y no se veía el préstamo hecho ni dónde queda. */
-      await tocar('Crear préstamo', { espera: 4600 }).catch(async () => {
-        await tocar('Confirmar', { espera: 4600 })
+      await esperar(700)
+      /* AQUI SE CREA DE VERDAD. El video se cortaba en la pantalla de revisar y
+         no se veia el prestamo hecho ni donde queda. */
+      await narrar(0, {
+        hacer: async () => {
+          await tocar('Crear préstamo', { espera: 4200 }).catch(async () => {
+            await tocar('Confirmar', { espera: 4200 })
+          })
+        },
       })
-      await decir('Y ya está: el préstamo queda hecho', 4.0)
-      await esperar(4400)
-      /* ⚠ ESTO NO LO SABÍA HASTA QUE EL VÍDEO LLEGÓ AL FINAL: al crear el
-         préstamo, el sistema arma solo el mensaje para el cliente —monto, cuota,
-         fechas y plazo— listo para mandar por WhatsApp. Es de lo mejor que hace
-         y estaba escondido detrás de un corte. */
-      await decir('Y te arma solo el mensaje para el cliente', 4.4)
-      await esperar(4600)
-      await decir('Con el monto, la cuota y las fechas, listo para mandar', 4.8)
-      await esperar(5000)
-      await reposo(3400)
+      /* ESTO NO LO SABIA HASTA QUE EL VIDEO LLEGO AL FINAL: al crear el
+         prestamo, el sistema arma solo el mensaje para el cliente -monto,
+         cuota, fechas y plazo- listo para mandar por WhatsApp. Es de lo mejor
+         que hace y estaba escondido detras de un corte. */
+      await narrar(1)
+      await reposo(2400)
     },
   },
 ]
+
 
 const token = await encode({
   token: {
@@ -312,8 +330,8 @@ const token = await encode({
 
 await correr({
   nombre: 'prestamo',
-  dir: '/tmp/videos/05-prestamo',
-  final: '/tmp/videos/05-prestamo.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-05',
+  final: '/home/keyce/Desktop/videos-tutoriales/05-prestamo.mp4',
   tomas: TOMAS,
   cookie: token,
   antesDeToma: limpiarPrestamos,
