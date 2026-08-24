@@ -48,8 +48,19 @@ const TOMAS = [
     titulo: 'Dónde se crea un préstamo',
     async grabar({ ir, esperar, tocar, empezar, decir, mirar, reposo }) {
       await ir('/dashboard', /Buenos|Recaudado/i)
+      await esperar(1200)
       empezar()
+      /* ⚠ EL PANEL, QUIETO, ANTES DE TOCAR NADA.
+         Esta toma SÍ enseñaba el camino, pero duraba un suspiro: `empezar()` y
+         acto seguido el toque, así que el panel se veía tres décimas y el dueño
+         lo dio por perdido —«no dice cómo llega»—. Se ve en el fotograma diez
+         del vídeo viejo: la hoja ya está abierta.
+         Ahora se para, se señala el botón y luego se pulsa. */
+      await esperar(1400)
       await decir('Un préstamo se hace desde el mismo botón «Crear»', 4.4)
+      await esperar(1400)
+      await mirar('button[aria-label="Crear"]', { escala: 2.4, ms: 3400 })
+      await esperar(2600)
       await tocar('Crear')
       await esperar(3400)
       await mirar('text=Prestarle a alguien', { escala: 1.8, ms: 4200 })

@@ -66,24 +66,44 @@ const bajarHasta = async (u, sel) => {
   await u.esperar(1400)
 }
 
+/* ══ EL RITMO LO PONE LA VOZ, NO EL RELOJ ═══════════════════════════════════
+ *
+ * El dueño, viendo la primera muestra con audio: «el vídeo tiene un ritmo
+ * demasiado lento» y «que se puedan ver más interacciones, no solamente como un
+ * clic en un botón y ya está».
+ *
+ * Medido en la toma 1 de la versión anterior: 18,1 segundos de imagen y 7,2 de
+ * voz. Once de silencio. Y en el vídeo entero, 3:57 de imagen para 2:41 de
+ * narración: **76 segundos mirando una pantalla quieta**.
+ *
+ * La causa no era descuido: las esperas se calcularon contra las palabras que
+ * CABÍAN a 2,4 por segundo, y la narración se escribió con margen a propósito.
+ * Dos decisiones razonables que juntas dejan el vídeo muerto.
+ *
+ * Ahora cada parada es `narrar(i)`: coge la frase i de la locución, lee cuánto
+ * dura su audio YA GENERADO y espera exactamente eso. Y lo que la pantalla hace
+ * —el acercamiento, el toque, el desplazamiento— ocurre DENTRO de la frase, no
+ * después de callar.
+ *
+ * ⚠ Hay que generar el audio antes:
+ *     node scripts/video-demo/voz.mjs 14-clientes --solo-audio
+ *     SIN_ROTULOS=1 LOCUCION=14-clientes node scripts/video-demo/v14-clientes.mjs
+ */
 const TOMAS = [
   {
     id: 'donde',
     titulo: 'Dónde están tus clientes',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { esperar, empezar, narrar, tocarSel, reposo } = u
       await enElPanel(u)
       empezar()
-      await esperar(1400)
-      await decir('Tus clientes están en la barra de abajo, en el segundo icono', 4.8)
-      await esperar(1400)
-      await mirar('a[href="/clientes"]:visible', { escala: 2.4, ms: 3400 })
-      await esperar(2600)
-      await tocarSel('a[href="/clientes"]:visible')
-      await esperar(3200)
-      await decir('Y aquí están todos, uno debajo de otro', 4.0)
-      await esperar(4200)
-      await reposo(3200)
+      await esperar(700)
+      await narrar(0, {
+        mirar: 'a[href="/clientes"]:visible', escala: 2.4,
+        hacer: async () => { await tocarSel('a[href="/clientes"]:visible'); await esperar(1600) },
+      })
+      await narrar(1)
+      await reposo(1400)
     },
   },
 
@@ -91,18 +111,19 @@ const TOMAS = [
     id: 'la_ficha_de_la_lista',
     titulo: 'Lo que dice cada uno sin abrirlo',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, mirar, esperar, reposo, p } = u
       await hastaClientes(u)
       empezar()
-      await decir('Cada uno te dice lo suyo sin tener que abrirlo', 4.4)
-      await esperar(4600)
-      await mirar('text=Wilmer Andrés Salas', { escala: 1.5, ms: 4400, fila: true })
-      await esperar(2600)
-      await decir('Cuánto debe, cuántos días lleva atrasado y de qué ruta es', 5.0)
-      await esperar(5200)
-      await decir('Y abajo: el atraso, cómo va cumpliendo y cuánto lleva pagado', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      await narrar(0)
+      await narrar(1, { mirar: 'text=Wilmer Andrés Salas', escala: 1.5, fila: true })
+      // Se baja mientras habla: así se ve que la lista sigue, y no un cartel fijo.
+      await narrar(2, {
+        hacer: async () => {
+          await p.mouse.wheel(0, 260); await esperar(500)
+          await mirar('text=Nubia Castaño', { escala: 1.4, ms: 2600, fila: true })
+        },
+      })
+      await reposo(1400)
     },
   },
 
@@ -110,18 +131,22 @@ const TOMAS = [
     id: 'buscador',
     titulo: 'Buscar a uno',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, escribir, reposo } = u
+      const { empezar, narrar, escribir, esperar, reposo, p } = u
+      const CAMPO = 'input[placeholder="Nombre o cédula"]:visible'
       await hastaClientes(u)
       empezar()
-      await decir('Arriba tienes el buscador de esta lista', 4.0)
-      await esperar(1400)
-      await mirar('input[placeholder="Nombre o cédula"]:visible', { escala: 1.8, ms: 3800 })
-      await esperar(2600)
-      await decir('Busca por nombre o por cédula, y va filtrando mientras escribes', 5.2)
-      await esperar(2200)
-      await escribir('input[placeholder="Nombre o cédula"]:visible', 'Marta')
-      await esperar(3400)
-      await reposo(3400)
+      await narrar(0, { mirar: CAMPO, escala: 1.8 })
+      /* Se escribe DOS veces: primero un nombre, se borra y luego una cédula.
+         Con una sola búsqueda no se ve que también acepta el número, que es la
+         mitad de lo que dice la frase. */
+      await narrar(1, {
+        hacer: async () => {
+          await escribir(CAMPO, 'Marta'); await esperar(1500)
+          await p.locator(CAMPO).first().fill(''); await esperar(400)
+          await escribir(CAMPO, '70933'); await esperar(1600)
+        },
+      })
+      await reposo(1600)
     },
   },
 
@@ -129,20 +154,21 @@ const TOMAS = [
     id: 'filtros',
     titulo: 'Los filtros',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
+      const { empezar, narrar, tocar, esperar, reposo } = u
       await hastaClientes(u)
       empezar()
-      await decir('Debajo del buscador están los filtros, con su número al lado', 5.0)
-      await esperar(1600)
-      await mirar('button:has-text("En mora"):visible', { escala: 1.8, ms: 3800 })
-      await esperar(2600)
-      await decir('Así ves solo a los que están en mora, o solo a los que están al día', 5.2)
-      await esperar(2000)
-      await tocar('En mora')
-      await esperar(3000)
-      await decir('El número te dice cuántos hay antes de tocarlo', 4.2)
-      await esperar(4400)
-      await reposo(3200)
+      await narrar(0, { mirar: 'button:has-text("En mora"):visible', escala: 1.8 })
+      // Dos filtros, no uno: se ve que la lista cambia de verdad al cambiarlos.
+      await narrar(1, {
+        hacer: async () => {
+          await tocar('En mora'); await esperar(1600)
+          await tocar('Al día'); await esperar(1600)
+        },
+      })
+      await narrar(2, {
+        hacer: async () => { await tocar('Todos'); await esperar(1200) },
+      })
+      await reposo(1400)
     },
   },
 
@@ -150,20 +176,22 @@ const TOMAS = [
     id: 'vistas',
     titulo: 'Cómo se ven',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { empezar, narrar, tocarSel, esperar, reposo } = u
       await hastaClientes(u)
       empezar()
-      await decir('Y puedes cambiar cómo se ven', 3.6)
-      await esperar(1400)
-      await mirar('[aria-label="Cuadrícula"]:visible', { escala: 2.4, ms: 3400 })
-      await esperar(2400)
-      await tocarSel('[aria-label="Cuadrícula"]:visible')
-      await esperar(3000)
-      await decir('En cuadrícula caben muchos más de un vistazo', 4.4)
-      await esperar(4600)
-      await decir('Y en el computador tienes además la tabla', 4.0)
-      await esperar(4200)
-      await reposo(3400)
+      await narrar(0, { mirar: '[aria-label="Cuadrícula"]:visible', escala: 2.4 })
+      await narrar(1, {
+        hacer: async () => {
+          await tocarSel('[aria-label="Cuadrícula"]:visible'); await esperar(2000)
+        },
+      })
+      // Y se vuelve a fichas, para que se entienda que es un conmutador.
+      await narrar(2, {
+        hacer: async () => {
+          await tocarSel('[aria-label="Fichas completas"]:visible'); await esperar(1400)
+        },
+      })
+      await reposo(1400)
     },
   },
 
@@ -171,18 +199,14 @@ const TOMAS = [
     id: 'abrir',
     titulo: 'La ficha del cliente',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
+      const { empezar, narrar, tocar, esperar, reposo } = u
       await hastaClientes(u)
       empezar()
-      await decir('Y tocando a cualquiera entras en su ficha', 4.2)
-      await esperar(2200)
-      await tocar(CLIENTE)
-      await esperar(3800)
-      await decir('Arriba, lo que te importa: cuánto te debe y cuánto es la cuota', 5.2)
-      await esperar(1600)
-      await mirar('text=SALDO TOTAL PENDIENTE', { escala: 1.6, ms: 4400, fila: true })
-      await esperar(3600)
-      await reposo(3400)
+      await narrar(0, {
+        hacer: async () => { await tocar(CLIENTE); await esperar(2600) },
+      })
+      await narrar(1, { mirar: 'text=SALDO TOTAL PENDIENTE', escala: 1.6, fila: true })
+      await reposo(1400)
     },
   },
 
@@ -190,17 +214,13 @@ const TOMAS = [
     id: 'lucas',
     titulo: 'Lo que te sugiere Lucas',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'text=Lucas te sugiere')
       empezar()
-      await decir('Debajo, Lucas te dice cómo va este cliente', 4.2)
-      await esperar(1400)
-      await mirar('text=Lucas te sugiere', { escala: 1.6, ms: 4200 })
-      await esperar(2800)
-      await decir('No es un número: es qué hacer con él, escrito', 4.4)
-      await esperar(4600)
-      await reposo(3200)
+      await narrar(0, { mirar: 'text=Lucas te sugiere', escala: 1.6 })
+      await narrar(1)
+      await reposo(1400)
     },
   },
 
@@ -208,19 +228,18 @@ const TOMAS = [
     id: 'prestamos',
     titulo: 'Sus préstamos',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, mirar, esperar, reposo } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'text=PRÉSTAMOS ACTIVOS')
       empezar()
-      await decir('Después van sus préstamos', 3.4)
-      await esperar(1400)
-      await mirar('text=PRÉSTAMOS ACTIVOS', { escala: 1.6, ms: 4000 })
-      await esperar(2600)
-      await decir('Si tiene varios, salen todos aquí, y entras a cualquiera tocándolo', 5.2)
-      await esperar(5400)
-      await decir('Y el botón de abajo es para hacerle uno nuevo', 4.2)
-      await esperar(4400)
-      await reposo(3200)
+      await narrar(0, { mirar: 'text=PRÉSTAMOS ACTIVOS', escala: 1.6 })
+      await narrar(1, {
+        hacer: async () => {
+          await mirar('text=Prestado el', { escala: 1.4, ms: 2600, fila: true })
+        },
+      })
+      await narrar(2, { mirar: 'button:has-text("Nuevo préstamo"):visible', escala: 1.7 })
+      await reposo(1400)
     },
   },
 
@@ -228,19 +247,29 @@ const TOMAS = [
     id: 'acciones',
     titulo: 'Todo lo que puedes hacerle',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, mirar, esperar, reposo } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'button:has-text("Historial"):visible')
       empezar()
-      await decir('Y esta fila es todo lo que puedes hacerle a este cliente', 5.0)
-      await esperar(1600)
-      await mirar('button:has-text("Historial"):visible', { escala: 1.5, ms: 4400, fila: true })
-      await esperar(3000)
-      await decir('Mandarle un mensaje, reagendarle la visita, arreglarle la ubicación', 5.2)
-      await esperar(5400)
-      await decir('Ver su historial, sacarle el QR, editarlo, inactivarlo o eliminarlo', 5.4)
-      await esperar(5600)
-      await reposo(3400)
+      await narrar(0, { mirar: 'button:has-text("Historial"):visible', escala: 1.5, fila: true })
+      /* Se van señalando de tres en tres mientras se nombran. Antes era un solo
+         acercamiento a toda la fila y el rótulo cantaba nueve cosas sobre una
+         imagen quieta. */
+      await narrar(1, {
+        hacer: async () => {
+          await mirar('button:has-text("Enviar por WhatsApp"):visible', { escala: 1.5, ms: 1900, fila: true })
+          await esperar(300)
+          await mirar('button:has-text("Actualizar ubicación"):visible', { escala: 1.5, ms: 1900, fila: true })
+        },
+      })
+      await narrar(2, {
+        hacer: async () => {
+          await mirar('button:has-text("QR"):visible', { escala: 1.5, ms: 1800, fila: true })
+          await esperar(300)
+          await mirar('button:has-text("Inactivar"):visible', { escala: 1.5, ms: 1800, fila: true })
+        },
+      })
+      await reposo(1400)
     },
   },
 
@@ -248,18 +277,14 @@ const TOMAS = [
     id: 'borrar',
     titulo: 'Cómo se borra un cliente',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      const { empezar, narrar, tocarSel, esperar, mirar, reposo } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'button:has-text("Eliminar"):visible')
       empezar()
-      await decir('Esto es lo que más nos preguntan: cómo se borra un cliente', 5.0)
-      await esperar(1600)
-      await mirar('button:has-text("Eliminar"):visible', { escala: 2.0, ms: 4000 })
-      await esperar(2800)
-      await tocarSel('button:has-text("Eliminar"):visible')
-      await esperar(3000)
-      await decir('Te pregunta antes, porque esto no se puede deshacer', 4.6)
-      await esperar(4800)
+      await narrar(0, { mirar: 'button:has-text("Eliminar"):visible', escala: 2.0 })
+      await narrar(1, {
+        hacer: async () => { await tocarSel('button:has-text("Eliminar"):visible'); await esperar(1800) },
+      })
       /* ⚠ SE PULSA DE VERDAD, Y ES SEGURO: este cliente tiene un préstamo
          activo, así que el sistema RECHAZA el borrado. Es justo lo que hay que
          enseñar —el «no me deja»— y no se pierde nada.
@@ -268,11 +293,18 @@ const TOMAS = [
          el de detrás también lo está, el selector lo cogía primero y Playwright
          se quedaba diez segundos diciendo que «el overlay intercepta el clic».
          Se ancla al `.fixed.inset-0`, que es la caja del modal. */
-      await tocarSel('.fixed.inset-0 button:has-text("Eliminar")')
-      await esperar(3600)
-      await decir('Y si tiene préstamos abiertos, no te deja: te dice qué hacer con ellos', 5.6)
-      await esperar(5800)
-      await reposo(4000)
+      await narrar(2, {
+        hacer: async () => { await tocarSel('.fixed.inset-0 button:has-text("Eliminar")'); await esperar(2200) },
+      })
+      await narrar(3, {
+        hacer: async () => {
+          await mirar('.fixed.inset-0 button:has-text("Trasladar a otro cliente")', { escala: 1.5, ms: 2600, fila: true })
+          await esperar(300)
+          await mirar('.fixed.inset-0 button:has-text("Eliminar préstamo")', { escala: 1.5, ms: 2600, fila: true })
+        },
+      })
+      await narrar(4)
+      await reposo(1800)
     },
   },
 
@@ -280,21 +312,24 @@ const TOMAS = [
     id: 'portal',
     titulo: 'El portal y el tope',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, mirar, esperar, reposo, p } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'text=PORTAL DEL CLIENTE')
       empezar()
-      await decir('Más abajo hay dos cosas que casi nadie usa y valen mucho', 5.0)
-      await esperar(1600)
-      await mirar('text=PORTAL DEL CLIENTE', { escala: 1.6, ms: 4000 })
-      await esperar(2600)
-      await decir('El portal: le das un PIN y él ve sus pagos desde su celular', 5.0)
-      await esperar(2400)
-      await mirar('text=TOPE DE PRÉSTAMO', { escala: 1.6, ms: 4000 })
-      await esperar(2600)
-      await decir('Y el tope: hasta cuánto le puedes prestar a este, y no más', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=PORTAL DEL CLIENTE', escala: 1.6 })
+      await narrar(1, {
+        hacer: async () => {
+          await mirar('button:has-text("Activar portal"):visible', { escala: 1.6, ms: 2600 })
+        },
+      })
+      await narrar(2, {
+        hacer: async () => {
+          await p.locator('text=TOPE DE PRÉSTAMO').first().scrollIntoViewIfNeeded().catch(() => {})
+          await esperar(600)
+          await mirar('text=TOPE DE PRÉSTAMO', { escala: 1.6, ms: 2600 })
+        },
+      })
+      await reposo(1400)
     },
   },
 
@@ -302,19 +337,14 @@ const TOMAS = [
     id: 'cierre',
     titulo: 'Dónde te deja',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await hastaLaFicha(u)
       await bajarHasta(u, 'text=CÓMO PAGA')
       empezar()
-      await decir('Y al final, cómo ha pagado mes a mes', 4.2)
-      await esperar(1400)
-      await mirar('text=CÓMO PAGA >> visible=true', { escala: 1.6, ms: 4200 })
-      await esperar(2800)
-      await decir('Eso es la ficha entera. Cada cosa está donde la ves', 4.6)
-      await esperar(4800)
-      await decir('Y si no encuentras algo, el buscador de arriba lo sabe', 4.6)
-      await esperar(4800)
-      await reposo(3800)
+      await narrar(0, { mirar: 'text=CÓMO PAGA >> visible=true', escala: 1.6 })
+      await narrar(1)
+      await narrar(2)
+      await reposo(2200)
     },
   },
 ]

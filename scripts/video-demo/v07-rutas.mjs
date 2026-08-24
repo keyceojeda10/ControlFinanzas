@@ -94,6 +94,36 @@ const hastaLaRuta = async (u) => {
 }
 
 const TOMAS = [
+  /* ══ CÓMO SE LLEGA, QUE FALTABA ═══════════════════════════════════════════
+   *
+   * El dueño, con media edición hecha: «dice "vamos a crear las rutas", pero no
+   * dice cómo llega al apartado. Llega ahí a la pantalla y empieza a explicar».
+   *
+   * La causa era `hastaRutas(u)` ANTES de `empezar()`: el camino se recorría de
+   * verdad y quedaba fuera de la grabación. Se arregló con clips sueltos que se
+   * pegaban al montar, pero al rehacer este vídeo entero la escena entra DENTRO
+   * como primera toma — un solo fichero, sin nada que pegar después. */
+  {
+    id: 'como_llegar',
+    titulo: 'Cómo llegar a las rutas',
+    async grabar(u) {
+      const { ir, esperar, empezar, decir, mirar, tocarSel, reposo } = u
+      await ir('/dashboard', /Buenos|Buenas|Recaudado/i)
+      await esperar(1200)
+      empezar()
+      await esperar(1400)
+      await decir('Las rutas están en la barra de abajo, en el mapita', 4.4)
+      await esperar(1400)
+      await mirar('a[href="/rutas"]:visible', { escala: 2.4, ms: 3400 })
+      await esperar(2600)
+      await tocarSel('a[href="/rutas"]:visible')
+      await esperar(3200)
+      await decir('Y aquí las tienes todas', 3.4)
+      await esperar(3600)
+      await reposo(3000)
+    },
+  },
+
   {
     id: 'que_es',
     titulo: 'Qué es una ruta y dónde está',

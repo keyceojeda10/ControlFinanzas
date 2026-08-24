@@ -22,7 +22,10 @@
 //     dónde te deja.
 
 import { chromium } from 'playwright'
-import { mkdirSync, readdirSync, writeFileSync } from 'fs'
+import { mkdirSync, readdirSync, writeFileSync, readFileSync, existsSync } from 'fs'
+import { execFileSync } from 'child_process'
+
+const VIDEOS = '/home/keyce/Desktop/videos-tutoriales'
 import { preparar, subrayar, quitarSubrayado } from './efectos.mjs'
 import { dibujar } from './rotulos.mjs'
 import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.mjs'
@@ -40,7 +43,7 @@ export const SECRETO = 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c'
  * @param cookie      valor de `next-auth.session-token`, o null para pantallas públicas
  * @param antesDeToma opcional: se llama antes de grabar cada toma (limpiar datos, etc.)
  */
-export async function correr({ nombre, dir, final, tomas, cookie = null, antesDeToma = null }) {
+export async function correr({ nombre, dir, final, tomas, cookie = null, antesDeToma = null, locucion = process.env.LOCUCION || null }) {
   const args = process.argv.slice(2)
   const soloPegar = args.includes('--pegar')
   const iToma = args.indexOf('--toma')
@@ -50,7 +53,7 @@ export async function correr({ nombre, dir, final, tomas, cookie = null, antesDe
     if (!unaSola) vaciar(dir)
     const indices = unaSola ? [Number(args[iToma + 1]) - 1] : tomas.map((_, i) => i)
     if (indices.some((i) => !tomas[i])) throw new Error(`toma fuera de rango (hay ${tomas.length})`)
-    await grabarTomas({ dir, tomas, indices, cookie, antesDeToma })
+    await grabarTomas({ dir, tomas, indices, cookie, antesDeToma, locucion })
   }
 
   const piezas = readdirSync(dir).filter((f) => f.endsWith('.mp4')).sort().map((f) => `${dir}/${f}`)
@@ -75,7 +78,34 @@ export async function correr({ nombre, dir, final, tomas, cookie = null, antesDe
   return final
 }
 
-async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
+/**
+ * Los párrafos de una toma con su duración real.
+ *
+ * Sin audio generado devuelve las duraciones a `null` y `narrar` cae a lo
+ * declarado: se puede grabar sin haber pagado la voz todavía, aunque el ritmo
+ * será el viejo.
+ */
+function cargarLocucion(locucion, n) {
+  if (!locucion) return []
+  const f = `${VIDEOS}/locucion/por-toma/${locucion}/toma-${String(n).padStart(2, '0')}.txt`
+  if (!existsSync(f)) return []
+  const textos = readFileSync(f, 'utf8').trim().split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean)
+  const dirAudio = `/tmp/cf-voz/${locucion}/${String(n).padStart(2, '0')}`
+  return textos.map((texto, i) => {
+    const mp3 = `${dirAudio}/p${i}.mp3`
+    let dura = 4.2
+    if (existsSync(mp3)) {
+      dura = Number(execFileSync('ffprobe',
+        ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', mp3]).toString().trim())
+    } else if (i === 0) {
+      console.warn(`   ⚠ sin audio para la toma ${n}: el ritmo será el estimado. ` +
+        `Corre antes: node scripts/video-demo/voz.mjs ${locucion} --solo-audio`)
+    }
+    return { texto, dura }
+  })
+}
+
+async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma, locucion }) {
   const nav = await chromium.launch()
 
   for (const i of indices) {
@@ -103,6 +133,11 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
     const rotulos = []
     const ahora = () => (Date.now() - t0) / 1000 - desde
 
+    /* ── LA LOCUCIÓN DE ESTA TOMA, SI LA HAY ──
+       Los párrafos salen de `locucion/por-toma/<video>/toma-NN.txt` y su
+       duración del mp3 que `voz.mjs --solo-audio` dejó en la caché. */
+    const parrafos = cargarLocucion(locucion, i + 1)
+
     const util = {
       p,
       /** Marca dónde acaba el camino de acceso y empieza la toma buena. */
@@ -115,6 +150,50 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
 
       /** Un rótulo, anclado al instante REAL en que se dice. */
       decir: async (texto, dura = 4.2) => { rotulos.push({ t: Math.max(0, ahora()), dura, texto }) },
+
+      /* ══ NARRAR: LA FRASE MANDA SOBRE EL RELOJ ═══════════════════════════
+       *
+       * El dueño, con la primera muestra con voz delante: «el vídeo tiene un
+       * ritmo demasiado lento». Medido en esa toma: 18,1 segundos de imagen y
+       * 7,2 de voz. Once de silencio.
+       *
+       * Las esperas del guion estaban calculadas contra las palabras que CABÍAN
+       * a 2,4 por segundo, no contra las que de verdad se dicen. Y la narración
+       * se escribió con margen a propósito. Dos decisiones razonables que juntas
+       * dejaban la mitad del vídeo muerto.
+       *
+       * `narrar(i)` coge el párrafo i de la locución, lee CUÁNTO DURA su mp3 ya
+       * generado, lo pone de rótulo y espera exactamente eso. No estima nada.
+       *
+       * Y el acercamiento va DENTRO de la frase, no después: `mirar` se dispara
+       * a los 0,6s y dura lo que le quede a la voz. Antes se decía la frase, se
+       * esperaba, y LUEGO se hacía el zoom — dos tiempos muertos por parada.
+       *
+       * ⚠ Necesita el audio hecho:
+       *     node scripts/video-demo/voz.mjs <locucion> --solo-audio
+       *   Sin él, `narrar` cae a la duración declarada y avisa. */
+      narrar: async (i, { mirar: sel, escala = 1.7, fila = false, pausa = 0.35, dura: forzada, hacer } = {}) => {
+        const p = parrafos[i]
+        if (!p) throw new Error(`la toma pide el párrafo ${i + 1} y la locución tiene ${parrafos.length}`)
+        const d = forzada ?? p.dura
+        const t0 = Date.now()
+        util.decir(p.texto, d)
+        const gastado = () => Date.now() - t0
+        const alFinal = (d + pausa) * 1000
+
+        await util.esperar(500)
+        if (sel) {
+          const ms = Math.min(4400, Math.max(2000, (d - 0.9) * 1000))
+          await util.mirar(sel, { escala, ms, fila })
+        }
+        /* `hacer` es la razón de la segunda queja: «que se puedan ver más
+           interacciones, no solamente como un clic en un botón y ya está». La
+           acción ocurre MIENTRAS se habla, no después de callar. */
+        if (hacer) await hacer()
+
+        const queda = alFinal - gastado()
+        if (queda > 0) await util.esperar(queda)
+      },
 
       /**
        * Subraya y se acerca, también en el instante real.

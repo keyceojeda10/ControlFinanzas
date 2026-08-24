@@ -90,19 +90,32 @@ async function saldo(key) {
  * suenan a una sola locución.
  */
 async function decirlo(key, texto, { antes = '', despues = '' } = {}) {
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOZ}?output_format=mp3_44100_128`, {
-    method: 'POST',
-    headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: texto,
-      model_id: MODELO,
-      voice_settings: AJUSTES,
-      previous_text: antes || undefined,
-      next_text: despues || undefined,
-    }),
-  })
+  /* ⚠ `with-timestamps` EN VEZ DEL NORMAL, Y CUESTA LO MISMO.
+     Devuelve el audio Y a qué segundo suena cada letra. Con eso los subtítulos
+     salen clavados —no repartidos a ojo por número de caracteres— y son las
+     palabras que de verdad se dicen, no un resumen escrito aparte. Pedir el
+     audio sin las marcas era tirar un dato gratis. */
+  const r = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${VOZ}/with-timestamps?output_format=mp3_44100_128`, {
+      method: 'POST',
+      headers: { 'xi-api-key': key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: texto,
+        model_id: MODELO,
+        voice_settings: AJUSTES,
+        previous_text: antes || undefined,
+        next_text: despues || undefined,
+      }),
+    })
   if (!r.ok) throw new Error(`ElevenLabs dice ${r.status}: ${(await r.text()).slice(0, 300)}`)
-  return Buffer.from(await r.arrayBuffer())
+  const d = await r.json()
+  const a = d.alignment || d.normalized_alignment || {}
+  return {
+    audio: Buffer.from(d.audio_base64, 'base64'),
+    letras: a.characters || [],
+    desde: a.character_start_times_seconds || [],
+    hasta: a.character_end_times_seconds || [],
+  }
 }
 
 /** Los párrafos de una toma, tal como los dejó `locucion/regenerar.py`. */
@@ -115,10 +128,13 @@ function parrafosDe(video, n) {
 /** Las tomas de un vídeo, en orden, con su fichero y sus marcas. */
 function tomasDe(video) {
   const dir = `${VIDEOS}/tomas-${video.slice(0, 2)}`
-  /* ⚠ FUERA LOS `.voz.mp4`, que también acaban en `.mp4`.
-     La segunda pasada los contaba como tomas nuevas: la lista crecía, los
-     números bailaban y cada párrafo se iba a la toma de al lado. */
-  return readdirSync(dir).filter((f) => f.endsWith('.mp4') && !f.endsWith('.voz.mp4')).sort()
+  /* ⚠ SOLO LAS TOMAS DE VERDAD: `NN-id.mp4`.
+     Los derivados —`.voz.mp4`, `.sub.mp4`— también acaban en `.mp4` y se
+     contaban como tomas nuevas: la lista crecía, los números bailaban y cada
+     párrafo se iba a la toma de al lado. Excluirlos uno a uno no vale, porque
+     el siguiente derivado que se invente vuelve a romperlo; se acepta solo el
+     patrón bueno. */
+  return readdirSync(dir).filter((f) => /^\d\d-[\wáéíóúñ]+\.mp4$/i.test(f)).sort()
     .map((f, i) => ({
       n: i + 1,
       mp4: `${dir}/${f}`,
@@ -152,14 +168,18 @@ async function ponerVozA(key, video, toma, { soloContar = false, gastado = { cha
   const piezas = []
   for (let i = 0; i < parrafos.length; i++) {
     const mp3 = `${tmp}/p${i}.mp3`
-    if (!existsSync(mp3)) {
+    const marcasLetras = `${tmp}/p${i}.letras.json`
+    if (!existsSync(mp3) || !existsSync(marcasLetras)) {
       // Se cachea: rehacer una toma no vuelve a pagar los párrafos que no
       // cambiaron, y el plan cuenta caracteres.
-      writeFileSync(mp3, await decirlo(key, parrafos[i], {
+      const v = await decirlo(key, parrafos[i], {
         antes: parrafos[i - 1] || '', despues: parrafos[i + 1] || '',
-      }))
+      })
+      writeFileSync(mp3, v.audio)
+      writeFileSync(marcasLetras, JSON.stringify(
+        { texto: parrafos[i], letras: v.letras, desde: v.desde, hasta: v.hasta }))
     }
-    piezas.push({ mp3, dura: dur(mp3), ancla: anclas[i] })
+    piezas.push({ mp3, letras: marcasLetras, dura: dur(mp3), ancla: anclas[i] })
   }
 
   // ── Las posiciones definitivas, sin solaparse ──
@@ -199,6 +219,12 @@ async function ponerVozA(key, video, toma, { soloContar = false, gastado = { cha
      el vídeo perdía su `reposo` final —de 18,1s a 17,1s—. Toda toma termina
      quieta sobre el resultado A PROPÓSITO, y eso es lo primero que se llevaba
      por delante. Se rellena el audio con silencio hasta el final del vídeo. */
+  /* El mapa de la toma: dónde acabó cada párrafo y dónde están sus marcas de
+     letras. Lo lee `subtitulos.mjs`, que así no tiene que adivinar nada. */
+  writeFileSync(`${dirname(toma.mp4)}/${basename(toma.mp4, '.mp4')}.voz.json`, JSON.stringify({
+    parrafos: piezas.map((p, i) => ({ desde: Number(p.desde.toFixed(3)), dura: p.dura, letras: p.letras, texto: parrafos[i] })),
+  }, null, 2))
+
   const largoFinal = dur(video1)
   ff([
     '-i', video1, ...entradas,
@@ -217,6 +243,61 @@ const video = args[0]
 if (!video) throw new Error('falta el vídeo: node voz.mjs 14-clientes')
 const iToma = args.indexOf('--toma')
 const soloContar = args.includes('--cuanto')
+const soloAudio = args.includes('--solo-audio')
+
+/* ══ EL AUDIO SE HACE ANTES QUE EL VÍDEO ═══════════════════════════════════
+ *
+ * El dueño, viendo la primera muestra: «el vídeo tiene un ritmo demasiado
+ * lento». Y tenía razón, con números: la toma duraba 18,1s y la voz solo
+ * hablaba 7,2. Once segundos de silencio.
+ *
+ * La causa es que las esperas del guion se calcularon contra las palabras que
+ * CABÍAN a 2,4 por segundo, y la narración se escribió con margen a propósito
+ * («si sobra tiempo, callar»). Las dos decisiones eran razonables y juntas
+ * dejaban el vídeo muerto.
+ *
+ * Con `--solo-audio` los mp3 se generan primero y quedan en la caché. Entonces
+ * la grabación puede preguntar cuánto dura CADA FRASE y esperar exactamente
+ * eso. No hay que estimar nada.
+ *
+ *     node scripts/video-demo/voz.mjs 14-clientes --solo-audio
+ *     SIN_ROTULOS=1 LOCUCION=14-clientes node scripts/video-demo/v14-clientes.mjs
+ *     node scripts/video-demo/voz.mjs 14-clientes
+ */
+if (soloAudio) {
+  const key0 = clave()
+  const s0 = await saldo(key0)
+  const todas0 = tomasDe(video)
+  let chars = 0
+  for (const t of todas0) {
+    const parrafos = parrafosDe(video, t.n)
+    chars += parrafos.reduce((a, x) => a + x.length, 0)
+  }
+  if (chars > s0.quedan) {
+    console.error(`⚠ ${video} pide ${chars} caracteres y solo quedan ${s0.quedan}. No se genera nada.`)
+    process.exit(1)
+  }
+  console.log(`audio de ${video} · ${todas0.length} tomas · ${chars} caracteres`)
+  for (const t of todas0) {
+    const parrafos = parrafosDe(video, t.n)
+    const tmp = `/tmp/cf-voz/${video}/${String(t.n).padStart(2, '0')}`
+    mkdirSync(tmp, { recursive: true })
+    for (let i = 0; i < parrafos.length; i++) {
+      const mp3 = `${tmp}/p${i}.mp3`
+      const letras = `${tmp}/p${i}.letras.json`
+      if (existsSync(mp3) && existsSync(letras)) continue
+      const v = await decirlo(key0, parrafos[i], {
+        antes: parrafos[i - 1] || '', despues: parrafos[i + 1] || '',
+      })
+      writeFileSync(mp3, v.audio)
+      writeFileSync(letras, JSON.stringify({ texto: parrafos[i], letras: v.letras, desde: v.desde, hasta: v.hasta }))
+    }
+    process.stdout.write(`  toma ${t.n} ✓  `)
+  }
+  console.log(`
+✓ audio en /tmp/cf-voz/${video}`)
+  process.exit(0)
+}
 
 const key = clave()
 const s = await saldo(key)
