@@ -25,10 +25,20 @@ const limpiarPrestamos = async () => {
   const [[c]] = await cx.query(
     'SELECT id FROM Cliente WHERE organizationId = ? AND nombre = ?', [IDS.org, CLIENTE])
   if (c) {
-    // Solo los creados hoy por la grabación: los del negocio de mentira se quedan.
-    await cx.execute(
-      `DELETE FROM Prestamo WHERE clienteId = ? AND montoPrestado = ? AND DATE(createdAt) = CURDATE()`,
-      [c.id, Number(MONTO)]).catch(() => {})
+    /* ⚠ Y SUS MOVIMIENTOS, no solo la fila.
+       Borraba el `Prestamo` y dejaba su desembolso en el libro. El resultado se
+       vio tres vídeos después: la caja del dueño abría con un aviso rojo —«hoy
+       la cuenta no cierra: $400.000 de préstamos que no cuadran»— y parecía un
+       fallo del sistema. Era esta limpieza a medias. */
+    const [mios] = await cx.query(
+      `SELECT id FROM Prestamo WHERE clienteId = ? AND montoPrestado = ? AND DATE(createdAt) = CURDATE()`,
+      [c.id, Number(MONTO)])
+    const ids = mios.map((x) => x.id)
+    if (ids.length) {
+      await cx.query('DELETE FROM Pago WHERE prestamoId IN (?)', [ids]).catch(() => {})
+      await cx.query('DELETE FROM MovimientoCapital WHERE referenciaId IN (?)', [ids]).catch(() => {})
+      await cx.query('DELETE FROM Prestamo WHERE id IN (?)', [ids]).catch(() => {})
+    }
   }
   await cx.end()
 }

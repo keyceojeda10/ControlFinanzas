@@ -33,7 +33,23 @@ import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.
 // Con `SIN_ROTULOS=1` la imagen sale limpia y las marcas se guardan igual.
 const SIN_ROTULOS = process.env.SIN_ROTULOS === '1'
 
-export const BASE = 'http://localhost:3016'
+/* ⚠ POR DÓNDE SE GRABA, Y POR QUÉ SE PUEDE CAMBIAR.
+ *
+ * Por defecto el espejo local (`arrancar-espejo.sh`), que habla con la base del
+ * VPS por un túnel. Eso vale para mirar pantallas, pero NO para escribir: al
+ * registrar un pago, la transacción hace decenas de idas y venidas y cada una
+ * cruza el túnel. Medido: 5.530 ms para un timeout de 5.000 → «A commit cannot
+ * be executed on an expired transaction», y el decorado de la caja se quedaba
+ * sin los cuatro cobros del día. El error salía como un 500 genérico.
+ *
+ * Con `BASE_VIDEO=http://localhost:3105` se graba contra el espejo que corre EN
+ * el VPS (`cf-test`, puerto 3005), donde la base es local: solo cruza el túnel
+ * lo que ve el navegador.
+ *
+ *     ssh -f -N -L 3105:127.0.0.1:3005 root@69.62.87.141
+ *     BASE_VIDEO=http://localhost:3105 SIN_ROTULOS=1 LOCUCION=11-caja node .../v11-caja.mjs
+ */
+export const BASE = process.env.BASE_VIDEO || 'http://localhost:3016'
 export const SECRETO = 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c'
 
 /**

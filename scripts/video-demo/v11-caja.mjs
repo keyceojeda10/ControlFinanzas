@@ -35,7 +35,7 @@
 //  · «Ajustar saldo» del capital: es del vídeo de capital.
 
 import { encode } from 'next-auth/jwt'
-import { correr, SECRETO } from './grabador.mjs'
+import { correr, SECRETO, BASE } from './grabador.mjs'
 import { conectar, IDS } from './montar-demo.mjs'
 
 const galleta = (rol) => encode({
@@ -57,6 +57,22 @@ const galleta = (rol) => encode({
    las que el sistema produce y no las que yo escriba. */
 const limpiar = async () => {
   const cx = await conectar()
+  /* ⚠ EL PRÉSTAMO DEL VÍDEO SE VA PRIMERO, Y CON SUS PAGOS.
+     Va al principio por dos razones que aprendí de golpe:
+       · Borrarlo después reventaba con `ER_ROW_IS_REFERENCED_2`: la toma
+         anterior le había registrado un cobro y la clave ajena no deja.
+       · Y si sigue vivo cuando se eligen los cuatro préstamos a cobrar, entra
+         en el sorteo —es del primer cliente de la ruta— y el «cobrado» del día
+         deja de ser los 92.600 que dice la voz. */
+  const [viejos] = await cx.query(
+    `SELECT id FROM Prestamo WHERE organizationId = ? AND nombreProducto = 'VIDEO-CAJA'`, [IDS.org])
+  if (viejos.length) {
+    const ids = viejos.map((x) => x.id)
+    await cx.query('DELETE FROM Pago WHERE prestamoId IN (?)', [ids])
+    await cx.query('DELETE FROM MovimientoCapital WHERE referenciaId IN (?)', [ids])
+    await cx.query('DELETE FROM Prestamo WHERE id IN (?)', [ids])
+  }
+
   const [ps] = await cx.query(
     `SELECT p.id, p.cuotaDiaria FROM Prestamo p JOIN Cliente c ON c.id = p.clienteId
       WHERE c.rutaId = ? ORDER BY c.ordenRuta LIMIT 4`, [IDS.ruta])
@@ -78,10 +94,44 @@ const limpiar = async () => {
   const H = { cookie: `next-auth.session-token=${await galleta('cobrador')}`,
     'Content-Type': 'application/json' }
   for (const p of ps) {
-    await fetch(`http://localhost:3016/api/prestamos/${p.id}/pagos`, {
+    await fetch(`${BASE}/api/prestamos/${p.id}/pagos`, {
       method: 'POST', headers: H,
       body: JSON.stringify({ montoPagado: p.cuotaDiaria, tipo: 'completo', metodoPago: 'efectivo' }),
     }).catch(() => {})
+  }
+
+  /* ══ Y UN DESEMBOLSO DE HOY, QUE ES MEDIO VÍDEO ═════════════════════════════
+   *
+   * La toma 3 dice «prestó cuatrocientos cincuenta mil en la calle, y esa plata
+   * salió de su bolsillo», y la 4 abre ese renglón para enseñar a quién. Sin un
+   * préstamo entregado HOY, «Lo que prestaste» vale $0, el renglón no se abre y
+   * la toma se queda diez segundos esperando a que un texto se deje pulsar.
+   *
+   * Antes salía por casualidad: la demo se pobló con préstamos de «hoy», y
+   * aquel hoy ya pasó. Un decorado que depende del día en que se montó se
+   * rompe solo. Ahora se crea aquí, con el importe exacto que dice la voz:
+   * 92.600 cobrados − 450.000 prestados = −357.400 «en la mano», que es
+   * literalmente lo que narra la toma 3. */
+  const cx2 = await conectar()
+  const [[cli]] = await cx2.query(
+    `SELECT id FROM Cliente WHERE rutaId = ? ORDER BY ordenRuta LIMIT 1`, [IDS.ruta])
+  await cx2.end()
+  if (cli) {
+    const r = await fetch(`${BASE}/api/prestamos`, {
+      method: 'POST', headers: H,
+      body: JSON.stringify({
+        clienteId: cli.id, montoPrestado: 450000, tasaInteres: 20, diasPlazo: 30,
+        frecuencia: 'diario', modoInteres: 'plano', metodoPago: 'efectivo',
+        // ⚠ `fechaInicio` es obligatoria y el endpoint responde 400 sin ella.
+        //   El `.catch(() => {})` se lo tragaba y el renglón salía en $0.
+        fechaInicio: new Date().toISOString().slice(0, 10),
+        nombreProducto: 'VIDEO-CAJA',
+      }),
+    })
+    /* Se AVISA si falla, no se traga. Con el `.catch` mudo, el decorado salía
+       incompleto y el fallo aparecía tres tomas después como un selector que no
+       se dejaba pulsar. */
+    if (!r.ok) console.warn(`   ⚠ no se pudo crear el desembolso del día: ${r.status} ${(await r.text()).slice(0, 120)}`)
   }
 }
 
@@ -101,255 +151,146 @@ const cajaDueno = async ({ ir, tocarSel, esperar }) => {
   await esperar(5000)
 }
 
+/* ══ ESTE VÍDEO ES SOLO LA CAJA DEL COBRADOR ═══════════════════════════════
+ *
+ * El dueño, después de verlo montado:
+ *
+ *   «Ese vídeo es bastante confuso. Ahí está la caja del administrador solo,
+ *    sin cobradores, y está la caja del administrador con cobradores, y en el
+ *    vídeo se revolvieron todos. Era una locura, no se entendía nada.»
+ *
+ * Tenía razón, y no era una impresión: las tres pantallas son distintas de
+ * verdad. «Cuadre» solo existe si hay cobradores (`caja/page.jsx:1537`) y «Mi
+ * cierre del día» solo le sale al dueño si él mismo cobra (`:1972`). El vídeo
+ * enseñaba pantallas que a media audiencia no le aparecen nunca.
+ *
+ * Así que se parte en tres, y este se queda con las seis tomas del cobrador:
+ *
+ *   · 11 · La caja del cobrador          ← este
+ *   · 18 · La caja si cobras tú solo     `v18-caja-solo.mjs`
+ *   · 19 · La caja con cobradores        `v19-caja-cobradores.mjs`
+ *
+ * El ritmo lo pone la voz (`narrar`). Ver la nota larga de `grabador.mjs`.
+ *
+ *     node scripts/video-demo/voz.mjs 11-caja --solo-audio
+ *     SIN_ROTULOS=1 LOCUCION=11-caja node scripts/video-demo/v11-caja.mjs
+ */
 const TOMAS = [
   {
     id: 'que_es',
-    titulo: 'Qué es la caja',
+    titulo: 'Qué es la caja del cobrador',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await cajaCobrador(u)
       empezar()
-      await decir('La caja es donde el día se cuadra y la plata cambia de manos', 5.4)
-      await esperar(5600)
-      await mirar('text=PAGOS DEL DÍA', { escala: 1.7, ms: 4600 })
-      await esperar(2600)
-      await decir('Esta es la del cobrador, y es la que manda: la que él vive', 5.0)
-      await esperar(5200)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=PAGOS DEL DÍA', escala: 1.7 })
+      await narrar(1)
+      await reposo(1400)
     },
   },
+
   {
     id: 'pagos',
     titulo: 'Lo que cobró, uno por uno',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, mirar, reposo, p } = u
       await cajaCobrador(u)
       empezar()
-      await decir('Arriba, cada cobro del día con su hora y cómo le pagaron', 5.0)
-      await esperar(5200)
-      await mirar('text=4 registros', { escala: 1.9, ms: 4600, fila: true })
-      await esperar(2600)
-      await decir('Si algo no cuadra, aquí se ve cuál fue y se abre su préstamo', 5.2)
-      await esperar(5400)
-      await reposo(3400)
+      await narrar(0, { mirar: 'text=4 registros', escala: 1.9, fila: true })
+      /* Se baja por la lista mientras se cuenta: el renglón que se nombra —«se
+         ve cuál fue»— solo se entiende viendo pasar los cobros. */
+      await narrar(1, {
+        hacer: async () => {
+          await p.mouse.wheel(0, 220); await esperar(600)
+          await mirar('text=PAGOS DEL DÍA', { escala: 1.5, ms: 2400 })
+        },
+      })
+      await reposo(1400)
     },
   },
+
   {
     id: 'tu_dia',
-    titulo: 'Prestar saca plata del bolsillo',
+    titulo: 'La cuenta del día, en cuatro renglones',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await cajaCobrador(u)
       empezar()
-      await decir('Y abajo, la cuenta del día en cuatro renglones', 4.6)
-      await esperar(4800)
-      await mirar('text=TU DÍA HASTA AHORA', { escala: 1.6, ms: 4800, fila: true })
-      await esperar(2800)
-      await decir('Cobró noventa y dos mil seiscientos. Hasta ahí, fácil', 4.8)
-      await esperar(5000)
-      await decir('Pero prestó cuatrocientos cincuenta mil en la calle, y esa plata salió de su mano', 6.0)
-      await esperar(6200)
-      await mirar('text=Te queda en la mano', { escala: 1.8, ms: 4800, fila: true })
-      await esperar(2800)
-      await decir('Por eso le queda menos trescientos cincuenta y siete mil: puso de lo suyo', 5.6)
-      await esperar(5800)
-      await reposo(3600)
+      /* ⚠ DOS ACERCAMIENTOS EN ESTA TOMA, NO CUATRO.
+         Puse uno por renglón y el montaje avisó: «dos acercamientos a 1,1s uno
+         de otro, se ve como un tirón». Las cuatro frases son cortas y los zooms
+         se montaban unos sobre otros. Se quedan el primero, que sitúa el bloque,
+         y el de «Te queda en la mano», que es la cifra que el vídeo viene a
+         explicar. Los dos de en medio se cuentan sin mover la cámara. */
+      await narrar(0, { mirar: 'text=TU DÍA HASTA AHORA', escala: 1.6, fila: true })
+      await narrar(1)
+      await narrar(2)
+      /* ⚠ `fila: true` EN «Te queda en la mano», SIEMPRE. Es un rótulo estrecho
+         y pegado al margen: sin ensanchar el encuadre, la cifra se sale por la
+         derecha y sale «Te queda en la mano» sin número, que es justo lo que
+         este renglón viene a explicar. */
+      await narrar(3, { mirar: 'text=Te queda en la mano', escala: 1.8, fila: true })
+      await reposo(1600)
     },
   },
+
   {
     id: 'prestaste',
     titulo: 'De dónde salió cada peso',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, empezar, narrar, tocar, reposo } = u
       await cajaCobrador(u)
       empezar()
-      await decir('Y ese renglón se abre, que es lo que evita discusiones', 5.0)
-      await esperar(5200)
-      await tocar('Lo que prestaste')
-      await esperar(3000)
-      await decir('Te dice a quién le prestó y cuánto, préstamo por préstamo', 5.0)
-      await esperar(1800)
-      await mirar('text=Lo que prestaste >> visible=true', { escala: 1.7, ms: 4600, fila: true })
-      await esperar(2600)
-      await decir('La suma de la lista es exactamente el número de arriba', 4.8)
-      await esperar(5000)
-      await reposo(3600)
+      await narrar(0, {
+        hacer: async () => { await tocar('Lo que prestaste'); await esperar(2200) },
+      })
+      await narrar(1, { mirar: 'text=Lo que prestaste >> visible=true', escala: 1.7, fila: true })
+      await narrar(2)
+      await reposo(1600)
     },
   },
+
   {
     id: 'gasto',
     titulo: 'El pasaje y el almuerzo',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
+      const { esperar, empezar, narrar, tocar, reposo } = u
       await cajaCobrador(u)
       empezar()
-      await decir('Si gastó algo del día, va aquí abajo', 4.2)
-      await esperar(4400)
-      await mirar('button:has-text("Reportar gasto menor"):visible', { escala: 1.8, ms: 4600 })
-      await esperar(1600)
-      await tocar('Reportar gasto menor')
-      await esperar(3200)
-      await decir('El pasaje, el almuerzo, la gasolina de la moto', 4.4)
-      await esperar(4600)
-      await decir('Se descuenta solo de lo que tiene que entregar, sin apuntarlo aparte', 5.4)
-      await esperar(5600)
-      await reposo(3600)
+      await narrar(0, {
+        mirar: 'button:has-text("Reportar gasto menor"):visible', escala: 1.8,
+        hacer: async () => { await tocar('Reportar gasto menor'); await esperar(2400) },
+      })
+      await narrar(1)
+      await reposo(1600)
     },
   },
+
   {
     id: 'entregar',
     titulo: 'Las dos cifras de la noche',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { empezar, narrar, reposo } = u
       await cajaCobrador(u)
       empezar()
-      await decir('Y llega la noche. Aquí hay dos cifras y no son la misma', 5.2)
-      await esperar(5400)
-      await mirar('text=Lo que tocaba cobrar hoy', { escala: 1.8, ms: 4800, fila: true })
-      await esperar(2800)
-      await decir('Esta es la meta del día: lo que le tocaba cobrar si todos pagaban', 5.4)
-      await esperar(5600)
-      await mirar('text=Usar', { escala: 2.0, ms: 4600, fila: true })
-      await esperar(2600)
-      await decir('Y esta es la que entrega: lo que de verdad tiene en la mano', 5.0)
-      await esperar(5200)
-      await decir('Cuenta los billetes, escribe cuánto trae, y entrega', 4.6)
-      await esperar(4800)
-      await reposo(3800)
+      await narrar(0)
+      await narrar(1, { mirar: 'text=Lo que tocaba cobrar hoy', escala: 1.8, fila: true })
+      await narrar(2, { mirar: 'text=Usar', escala: 2.0, fila: true })
+      await narrar(3)
+      await reposo(2200)
     },
-  },
-  {
-    id: 'dueno',
-    titulo: 'La misma caja, desde el otro lado',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
-      await cajaDueno(u)
-      empezar()
-      await decir('Ahora la otra mitad: lo que ve el dueño', 4.2)
-      await esperar(4400)
-      await mirar('text=CÓMO SE ARMA EL SALDO', { escala: 1.7, ms: 4800, fila: true })
-      await esperar(2800)
-      await decir('Lo mismo, pero de todas las rutas juntas y sin salir a la calle', 5.2)
-      await esperar(5400)
-      await decir('Y las cifras que comparten tienen que dar idénticas', 4.8)
-      await esperar(5000)
-      await reposo(3400)
-    },
-    rol: 'owner',
-  },
-  {
-    id: 'pestanas',
-    titulo: 'Las cuatro vistas',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
-      await cajaDueno(u)
-      empezar()
-      await decir('Arriba tiene cuatro maneras de mirar el mismo día', 4.8)
-      await esperar(5000)
-      await mirar('button:has-text("Por ruta"):visible', { escala: 1.8, ms: 4800 })
-      await esperar(2800)
-      await decir('El día completo, ruta por ruta, cuenta por cuenta, y el cuadre', 5.2)
-      await esperar(5400)
-      await reposo(3400)
-    },
-    rol: 'owner',
-  },
-  {
-    id: 'cuadre',
-    titulo: 'Quién ya entregó',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
-      await cajaDueno(u)
-      await tocar('Cuadre')
-      await esperar(4200)
-      empezar()
-      await decir('El cuadre es el que se mira cada noche', 4.4)
-      await esperar(4600)
-      await mirar('text=CUADRE DEL DÍA', { escala: 1.7, ms: 4800 })
-      await esperar(2800)
-      await decir('Quién ya entregó y quién no, y cuánto dice el sistema que trae', 5.4)
-      await esperar(5600)
-      await mirar('text=SISTEMA', { escala: 1.9, ms: 4600, fila: true })
-      await esperar(2600)
-      await decir('Cuentas los billetes, confirmas, y si hay diferencia queda anotada', 5.4)
-      await esperar(5600)
-      await reposo(3600)
-    },
-    rol: 'owner',
-  },
-  {
-    id: 'por_ruta',
-    titulo: 'La caja de cada cobrador',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
-      await cajaDueno(u)
-      await tocar('Por ruta')
-      await esperar(4200)
-      empezar()
-      await decir('Y si tienes varios, aquí abres la caja de uno solo', 5.0)
-      await esperar(5200)
-      await mirar('text=CAJA POR COBRADOR', { escala: 1.7, ms: 4800 })
-      await esperar(2800)
-      await decir('Su día entero: lo que prestó, lo que cobró y todos sus movimientos', 5.4)
-      await esperar(5600)
-      await reposo(3400)
-    },
-    rol: 'owner',
-  },
-  {
-    id: 'cuentas',
-    titulo: 'Cuánto hay en cada cuenta',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, tocar, reposo } = u
-      await cajaDueno(u)
-      await tocar('Cuentas')
-      await esperar(4200)
-      empezar()
-      await decir('«Cuentas» separa el efectivo de lo que entró por Nequi o al banco', 5.6)
-      await esperar(5800)
-      await mirar('text=Dinero por cuenta', { escala: 1.7, ms: 4800 })
-      await esperar(2800)
-      await decir('Y ojo, que es el movimiento del período, no el saldo del banco', 5.2)
-      await esperar(5400)
-      await reposo(3400)
-    },
-    rol: 'owner',
-  },
-  {
-    id: 'cierre',
-    titulo: 'Las dos tienen que decir lo mismo',
-    async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
-      await cajaDueno(u)
-      empezar()
-      await decir('Y esto es lo único que hay que recordar de todo el vídeo', 5.0)
-      await esperar(5200)
-      /* ⚠ CON `text=` NO VALE PEGARLE `:visible`: es otro motor de selección.
-         `text=SALDO EN CAJA` cazaba un <span> oculto de la copia de escritorio y
-         la toma se quedaba esperando a que se dejara ver. Se dice aparte, con
-         `>> visible=true`, o se apunta a otro texto que solo exista una vez. */
-      await mirar('text=disponible para prestar >> visible=true', { escala: 1.7, ms: 4800, fila: true })
-      await esperar(2800)
-      await decir('Son dos preguntas: lo que el cobrador lleva encima esta noche', 5.0)
-      await esperar(5200)
-      await decir('Y el capital de la ruta, que incluye lo que está en el banco', 5.0)
-      await esperar(5200)
-      await decir('Cada pantalla puede enseñar más detalle. Lo que comparten, idéntico', 5.4)
-      await esperar(5600)
-      await reposo(4200)
-    },
-    rol: 'owner',
   },
 ]
 
 const cobrador = await galleta('cobrador')
 const dueno = await galleta('owner')
+// Ya no hay tomas del dueño en este vídeo: se fueron al 18 y al 19.
 for (const t of TOMAS) if (t.rol === 'owner') t.cookie = dueno
 
 await correr({
   nombre: 'la caja',
-  dir: '/tmp/videos/11-caja',
-  final: '/tmp/videos/11-caja.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-11',
+  final: '/home/keyce/Desktop/videos-tutoriales/11-caja.mp4',
   tomas: TOMAS,
   cookie: cobrador,
   antesDeToma: limpiar,
