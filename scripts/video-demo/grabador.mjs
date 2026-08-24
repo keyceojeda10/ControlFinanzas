@@ -22,10 +22,13 @@
 //     dónde te deja.
 
 import { chromium } from 'playwright'
-import { mkdirSync, readdirSync } from 'fs'
+import { mkdirSync, readdirSync, writeFileSync } from 'fs'
 import { preparar, subrayar, quitarSubrayado } from './efectos.mjs'
 import { dibujar } from './rotulos.mjs'
 import { montarToma, pegar, ultimoWebm, vaciar, duracion } from './montar-video.mjs'
+
+// Con `SIN_ROTULOS=1` la imagen sale limpia y las marcas se guardan igual.
+const SIN_ROTULOS = process.env.SIN_ROTULOS === '1'
 
 export const BASE = 'http://localhost:3016'
 export const SECRETO = 'prueba-rediseno-2026-no-usar-en-produccion-8f3a1c'
@@ -204,14 +207,36 @@ async function grabarTomas({ dir, tomas, indices, cookie, antesDeToma }) {
       ? await dibujar(rotulos.map((r) => r.texto), { dir: `/tmp/cf-rotulos/${toma.id}` })
       : []
     mkdirSync(dir, { recursive: true })
+    const base = `${dir}/${String(i).padStart(2, '0')}-${toma.id}`
+
+    /* ══ LAS MARCAS DE LA TOMA, EN UN FICHERO AL LADO ═══════════════════════
+     *
+     * Cada `decir()` sabe EL SEGUNDO EXACTO en que se dice, y hasta ahora ese
+     * dato moría aquí: se quemaba en la imagen y se perdía. Guardándolo, la voz
+     * de ElevenLabs se puede colocar en el mismo instante que el rótulo, y
+     * entonces lo que se oye pasa justo cuando pasa lo que se ve.
+     *
+     * Es lo que pidió el dueño al pasar su clave: «que la voz vaya
+     * correspondiente con los pasos que se van haciendo». */
+    writeFileSync(`${base}.marcas.json`, JSON.stringify({
+      toma: toma.id, titulo: toma.titulo,
+      rotulos: rotulos.map((r) => ({ t: Number(r.t.toFixed(2)), dura: r.dura, texto: r.texto })),
+      zooms: zooms.map((z) => ({ t: Number(z.t.toFixed(2)), dura: z.dura })),
+    }, null, 2))
+
+    /* ⚠ `SIN_ROTULOS=1` deja la imagen LIMPIA.
+     * Con voz, el rótulo repite lo que se está oyendo, y encima tapa la parte
+     * baja de la pantalla. Los subtítulos, si se quieren, se ponen después en
+     * el editor: un vídeo limpio se puede subtitular, uno quemado no se puede
+     * limpiar. */
     montarToma({
       entrada: ultimoWebm(dirGrab),
-      salida: `${dir}/${String(i).padStart(2, '0')}-${toma.id}.mp4`,
+      salida: `${base}.mp4`,
       zooms,
-      rotulos: rotulos.map((r, n) => ({ ...r, ...pngs[n] })),
+      rotulos: SIN_ROTULOS ? [] : rotulos.map((r, n) => ({ ...r, ...pngs[n] })),
       desde,
     })
-    console.log(`   ${rotulos.length} rótulos · ${zooms.length} acercamientos`)
+    console.log(`   ${rotulos.length} rótulos${SIN_ROTULOS ? ' (no quemados)' : ''} · ${zooms.length} acercamientos`)
   }
 
   await nav.close()
