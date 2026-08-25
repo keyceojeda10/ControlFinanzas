@@ -531,6 +531,23 @@ export default function RutaDetallePage({ params }) {
     }))
   }
 
+  /* ⚠ TODA SALIDA DE ESTA PANTALLA PASA POR AQUÍ.
+     El fallo que reportó el cobrador el 24 ago 2026 es que guardar el sitio
+     estaba escrito destino por destino, así que el que se añadiera después
+     salía pelado. Le pasó con «Prestarle»: en la vista AGRUPADA hay un grupo
+     «Listos para prestarles» que le pone el botón delante, presta desde ahí y
+     al volver la ruta aparecía arriba del todo. En la vista plana no lo notaba
+     porque llega por el nombre del cliente, que sí guardaba.
+
+     Es el mismo fallo del comprobante de pago: arreglar una vía y dejar la
+     otra. Medido en el navegador antes de tocar nada —el sessionStorage venía
+     vacío por el botón y lleno por el nombre, en LAS DOS vistas—, así que no
+     era cosa de agrupar: era del botón. */
+  const irGuardando = (clienteRuta, idxRuta, url) => {
+    guardarContextoRuta(clienteRuta, idxRuta)
+    router.push(url)
+  }
+
   const navegarACobroCliente = (clienteRuta, idxRuta, prestamoIdForzado = null) => {
     if (!clienteRuta) return
     guardarContextoRuta(clienteRuta, idxRuta)
@@ -1762,10 +1779,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
            todo — con 322 clientes en una ruta, eso es bajar a mano.
            Y es justo el ÚNICO destino de la tarjeta compacta cuando el
            cliente no tiene préstamo vivo. */
-        onAbrirCliente={() => {
-          guardarContextoRuta(porId.get(fila.id) ?? fila, i)
-          router.push(`/clientes/${fila.id}`)
-        }}
+        onAbrirCliente={() => irGuardando(porId.get(fila.id) ?? fila, i, `/clientes/${fila.id}`)}
         onLlamar={porId.get(fila.id)?.telefono
           ? () => { window.location.href = `tel:${porId.get(fila.id).telefono}` }
           : undefined}
@@ -1787,7 +1801,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
            cuota a quien no debe nada. */
         onAccion={() => {
           const c = porId.get(fila.id)
-          if (fila.contexto?.zona === 'sindeuda') router.push(`/prestamos/nuevo?clienteId=${fila.id}`)
+          if (fila.contexto?.zona === 'sindeuda') irGuardando(porId.get(fila.id) ?? fila, i, `/prestamos/nuevo?clienteId=${fila.id}`)
           else if (fila.contexto?.zona === 'inactivo') setConfirmQuitar({ id: fila.id, nombre: fila.nombre })
           else abrirPagoRapido(c)
         }}
@@ -3189,7 +3203,9 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                                 <div className="flex gap-2 pt-1">
                                   <button
                                     type="button"
-                                    onClick={() => router.push(`/clientes/${c.id}`)}
+                                    /* La tercera vía, en la vista de auditoría. Con `-1` el
+                                       índice lo busca ella sola. */
+                                    onClick={() => irGuardando(c, -1, `/clientes/${c.id}`)}
                                     className="flex-1 py-2 text-[12px] font-semibold rounded-[8px] transition-colors"
                                     style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
                                   >
