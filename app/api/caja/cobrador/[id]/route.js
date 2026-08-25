@@ -312,7 +312,25 @@ export async function GET(request, { params }) {
              por transferencia le bajaba el fajo al cobrador sin haberle quitado un
              billete. El campo que no se pide no da error: vale `undefined` y quien
              lo lee decide mal en silencio. */
-          select: { rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true, ajusteArranqueRuta: true, descripcion: true, metodoPago: true },
+          /* ⚠ `id` Y `referenciaId` SON OBLIGATORIOS, Y NO ESTABAN. Es el mismo
+             fallo silencioso de una línea más arriba, un escalón peor:
+             `cobrosRevertidosElMismoDia` y `desembolsosOriginalesDelDia`
+             indexan por `referenciaId` y devuelven un conjunto de `id`. Sin
+             pedirlos, las dos leían `undefined`, devolvían el conjunto VACÍO y
+             no excluían nada — sin un error, sin un log, sin una prueba en
+             rojo: la prueba de agosto comprobaba que la LLAMADA estaba escrita,
+             no que hiciera algo.
+
+             Lo reportó PRESTA MIL el 24 de agosto en dos vídeos, una ruta cada
+             uno. En su RUTA #7 el capital decía $162.000 y el desglose $132.000
+             —los $30.000 de un pago anulado a las 19:11— y en la #8, $436.000
+             contra $321.000: los $100.000 y los $15.000 que anuló a las 19:54 y
+             a las 19:55. «Ese valor no corresponde a nada.» */
+          select: {
+            id: true, referenciaId: true,
+            rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true,
+            ajusteArranqueRuta: true, descripcion: true, metodoPago: true,
+          },
         })
       : [],
   ])
@@ -1219,18 +1237,30 @@ export async function GET(request, { params }) {
     // Lo que queda en la ruta contando lo que entró a la cuenta.
     //
     // Comprobado contra producción el 3 ago: da EXACTO el `saldoCapital` de la
-    // ruta en las dos que reportó (#5 $254.785 y #8 $494.167). Se resta
-    // `gastosDia` entero —aprobados y pendientes—: el aprobado ya bajó el
-    // capital, y el pendiente va a bajarlo, así que para «cuánto hay» los dos
-    // cuentan. La tarjeta vieja restaba solo los pendientes sobre el capital ya
-    // descontado, que es la misma cifra por otro camino.
+    // ruta en las dos que reportó (#5 $254.785 y #8 $494.167).
     /* ⚠ CON LOS RETIROS Y LAS INYECCIONES DEL DÍA. Sin ellos esta cifra se
        separaba del `saldoCapital` de la ruta exactamente por lo que el dueño
        hubiera metido o sacado — y él tiene las dos a la vista, una al lado de
        la otra. Es la invariante que la prueba fija:
            quedaEnLaRuta === Σ saldoCapital de sus rutas. */
+    /* ⚠ SOLO LOS GASTOS APROBADOS, Y ES LA MISMA DIVISIÓN DE SIEMPRE: el
+       gasto pendiente ya salió del FAJO —el cobrador puso el billete— pero no
+       ha salido de la BOLSA, porque el asiento no se escribe hasta aprobarlo.
+       Medido: de 814 gastos aprobados, los 814 tienen su asiento; de los
+       pendientes, ninguno.
+
+       Restarlo aquí separaba esta cifra del `saldoCapital` justo mientras el
+       dueño no hubiera aprobado, que es el rato en que el cobrador mira la
+       pantalla. Su RUTA #4 el 24 de agosto: capital $151.000, desglose
+       $129.000, y los $22.000 eran dos gastos sin aprobar de esa misma tarde.
+
+       No se pierde de vista: la pantalla ya los enseña aparte, con su nombre y
+       su importe («2 gastos pendientes por aprobar»), y en cuanto se aprueban
+       bajan el capital y esta cifra los sigue. `efectivoEnMano` SÍ los resta
+       enteros, que es la otra pregunta: ahí el billete no está. */
     quedaEnLaRuta: Math.round(
-      saldoAperturaTotal + cobradoEfectivoNeto + cobradoDigital - prestadoNeto - gastosDia
+      saldoAperturaTotal + cobradoEfectivoNeto + cobradoDigital - prestadoNeto
+      - (gastosDia - gastosPendientesDia)
       + inyeccionesDia - retirosDia + ajustesDia
     ),
     // Y de eso, lo que lleva en billetes: la cifra que entrega al cerrar.
