@@ -393,13 +393,35 @@ export function BotonTexto({ children, style, ...props }) {
 }
 
 /** Barra de acción inferior. Ocupa el sitio de la pastilla cuando no está.
-    El 22 inferior es el área del indicador del teléfono. */
-export function BarraAccion({ children, style }) {
+    El 22 inferior es el área del indicador del teléfono.
+
+    ── ⚠ `suelta` NO ES UNA VARIANTE DE ESTILO, ES EL ARREGLO DE UN FALLO ─────
+
+    El fondo y el borde de arriba solo tienen sentido cuando la barra está
+    PEGADA al pie: entonces separa la acción del contenido que pasa por debajo.
+    Si el padre no le da altura —o sea, en toda pantalla montada con
+    `sinMargen`, que fluye en el documento— no se pega a nada y queda como un
+    rectángulo blanco suelto en medio de una página de tarjetas redondeadas.
+
+    El dueño lo ha reportado TRES VECES, y las dos primeras se arreglaron a
+    mano, cada una en su pantalla:
+
+      · `TablaAmortizacion` — «salen en una caja cuadrada que se ve rara»
+      · `Socios`
+      · el Simulador, 25 ago 2026, con la flecha roja pintada encima
+
+    Arreglarlo en la pantalla y no aquí es lo que hizo que volviera dos veces.
+    Ahora quien fluye pasa `suelta` y se acabó: los botones ya traen su propio
+    borde y su propio fondo, así que sobre el fondo de la página se leen igual
+    de bien y sin la caja. */
+export function BarraAccion({ children, suelta = false, className, style }) {
   return (
-    <div style={{
-      background: 'var(--cf-card)',
-      borderTop: '1px solid rgba(20,20,28,.09)',
-      padding: '14px 20px 22px',
+    <div className={className} style={{
+      ...(suelta ? { paddingTop: 4 } : {
+        background: 'var(--cf-card)',
+        borderTop: '1px solid rgba(20,20,28,.09)',
+        padding: '14px 20px 22px',
+      }),
       display: 'flex', gap: 10, flex: 'none',
       ...style,
     }}>{children}</div>

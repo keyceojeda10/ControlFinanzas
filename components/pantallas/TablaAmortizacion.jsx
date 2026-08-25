@@ -38,7 +38,7 @@
 // color. Repetirlos doce veces es ruido. «ganancia» va en `#B07D00` con peso
 // 600, que es lo que la ata al tramo dorado sin necesitar el punto.
 
-import { BotonSecundario, Pastilla } from '@/components/cf/primitivos'
+import { BarraAccion, BotonSecundario, Pastilla } from '@/components/cf/primitivos'
 
 const NEGRO = '#15161A'
 const ORO   = '#E7A400'
@@ -380,23 +380,24 @@ export default function TablaAmortizacion({
           Y la barra solo cuando hay algo que compartir o imprimir: montada dentro
           de la ficha sobraba, la ficha tiene la suya y salían dos pegadas, igual
           que los cuatro botones de cobrar que dejó el montaje de FichaPrestamo. */}
-      {/* ⚠ ESTO ERA UNA `<BarraAccion>`, que es la barra FIJA del pie: fondo
-          blanco, filete arriba y esquinas rectas, pensada para ir pegada al
-          borde de la pantalla. Aquí el padre no le da altura, así que no se
-          pega a nada y caía al final del contenido como un rectángulo blanco
-          suelto en medio de una página de tarjetas redondeadas. El dueño:
-          «salen en una caja cuadrada que se ve rara».
+      {/* ⚠ `BarraAccion suelta`, NO la barra normal. La normal es la FIJA del
+          pie —fondo blanco, filete arriba, esquinas rectas— y aquí el padre no
+          le da altura, así que no se pegaba a nada y caía como un rectángulo
+          blanco suelto en medio de una página de tarjetas redondeadas. El
+          dueño: «salen en una caja cuadrada que se ve rara».
 
-          Los dos botones ya traen su propio borde y su propio fondo, así que
-          sobre el fondo de la página se leen igual de bien y sin la caja. */}
-      {/* `cf-no-print`: los botones salían DENTRO del PDF, y un papel que se le
+          Esto estaba resuelto A MANO aquí, y por eso el mismo fallo volvió a
+          salir en el Simulador el 25 de agosto. La solución vive ahora en el
+          propio `BarraAccion`.
+
+          `cf-no-print`: los botones salían DENTRO del PDF, y un papel que se le
           manda al cliente con un botón «Imprimir» dibujado encima no es un
           papel. Ver el bloque `@media print` de `globals.css`. */}
       {conBarra && (
-        <div className="cf-no-print" style={{ display: 'flex', gap: 10, flex: 'none', paddingTop: 4 }}>
+        <BarraAccion suelta className="cf-no-print">
           {onCompartir && <BotonSecundario style={{ flex: 1 }} onClick={onCompartir}>Compartir tabla</BotonSecundario>}
           {onImprimir && <BotonSecundario style={{ flex: 1 }} onClick={onImprimir}>Imprimir</BotonSecundario>}
-        </div>
+        </BarraAccion>
       )}
     </div>
   )

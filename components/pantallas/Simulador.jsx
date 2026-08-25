@@ -210,7 +210,11 @@ export default function Simulador({
       {/* El atajo que no existía. Nadie simula por deporte: simula porque tiene
           un cliente enfrente, y hoy al aceptar hay que teclear otra vez los
           mismos cuatro datos. */}
-      <BarraAccion>
+      {/* ⚠ `suelta` CUANDO LA PANTALLA FLUYE. Con `sinMargen` el contenedor no
+          tiene altura, así que la barra no se pega a nada y su fondo blanco
+          queda como una caja cuadrada en medio de la página — reportado el 25
+          ago con la flecha pintada encima. Ver la nota de `BarraAccion`. */}
+      <BarraAccion suelta={sinMargen}>
         <BotonPrimario onClick={onCrear}>Crear este préstamo</BotonPrimario>
       </BarraAccion>
     </div>
