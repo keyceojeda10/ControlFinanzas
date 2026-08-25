@@ -503,6 +503,66 @@ export default function CapitalTab() {
         </div>
       )}
 
+      {/* ── LA PLATA QUE SALIÓ Y NO VOLVIÓ ──────────────────────────────────
+          «No entendí lo del préstamo de Frank» — Crediya, 25 ago 2026, después
+          de hacer la resta a mano y ver que le faltaban $597.461.
+
+          Cuando se borra un préstamo desembolsado en un día YA CERRADO, el
+          capital no vuelve a la caja a propósito: devolverlo hoy rompería el
+          cuadre de aquel día. Pero desaparecía del total sin una sola línea que
+          lo dijera, y de ahí salen las preguntas. Ahora sale con su nombre, su
+          importe y el porqué. */}
+      {(resumen?.capitalNoDevuelto?.monto ?? 0) > 0 && (
+        /* ⚠ NEUTRO, NO ROJO. El rojo dice «algo está mal» y aquí no lo está:
+           es plata que salió de verdad hace meses y el sistema hace bien en no
+           devolverla sola. Lo que faltaba era CONTARLO, no dar una alarma. */
+        <div className="rounded-[16px] px-5 py-4"
+          style={{
+            background: 'var(--cf-card)',
+            border: '1px solid var(--cf-border-strong)',
+          }}
+        >
+          <div className="flex items-start gap-2.5">
+            <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="var(--cf-ink-3)" strokeWidth={1.9}
+              viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
+                  Salió y no volvió
+                </p>
+                <p className="text-base font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
+                  {formatMoney(resumen.capitalNoDevuelto.monto)}
+                </p>
+              </div>
+              <p className="text-xs mt-1" style={{ color: 'var(--cf-ink-3)' }}>
+                Préstamos que borraste después del día en que los entregaste. Esa plata
+                salió de verdad, así que no se devuelve sola: hacerlo hoy dañaría el
+                cuadre de aquel día.
+              </p>
+              <div className="mt-2.5 space-y-1">
+                {resumen.capitalNoDevuelto.casos.map((c, i) => (
+                  <div key={i} className="flex items-baseline justify-between gap-3">
+                    {/* Nunca recortado: es lo que identifica al cliente. */}
+                    <span className="text-[12px] min-w-0" style={{ color: 'var(--cf-ink-2)', overflowWrap: 'anywhere' }}>{c.nombre}</span>
+                    <span className="text-[12px] font-semibold font-mono-display shrink-0" style={{ color: 'var(--cf-ink-2)' }}>
+                      {formatMoney(c.monto)}
+                    </span>
+                  </div>
+                ))}
+                {(resumen.capitalNoDevuelto.mas ?? 0) > 0 && (
+                  <p className="text-[12px] pt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                    y {resumen.capitalNoDevuelto.mas} préstamo{resumen.capitalNoDevuelto.mas === 1 ? '' : 's'} más
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {resumen?.configurado && (
         <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">

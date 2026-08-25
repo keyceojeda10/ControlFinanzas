@@ -236,6 +236,73 @@ export async function GET() {
   ])
   const carteraTotal = Math.max(0, (carteraAgregada._sum.totalAPagar ?? 0) - (carteraAgregada._sum.totalPagado ?? 0))
   const capitalEnCalle = prestamosVivos.reduce((acc, p) => acc + capitalEnCalleDe(p), 0)
+
+  /* ══ LA PLATA QUE SALIÓ Y NO VOLVIÓ ═══════════════════════════════════════
+   *
+   * «No entendí lo del préstamo de Frank» — Crediya, 25 ago 2026, después de
+   * hacer la resta a mano: esperaba $51.586.706 de patrimonio y veía
+   * $50.989.245.
+   *
+   * Su préstamo a FRANK ALMANZA salió el 13 de agosto por $500.000 y él borró
+   * el préstamo el 19. Al borrarlo el sistema le devolvió el pago de $75.000
+   * —ése era de ese momento— pero NO el desembolso, porque venía de un día ya
+   * cerrado: devolverlo hoy rompería la caja del 13 y el cuadre de aquel día.
+   * Eso es a propósito, ver `esDelDiaAbierto`.
+   *
+   * Lo que NO era a propósito es que esos $500.000 desaparecieran del total sin
+   * una sola línea que lo dijera. «Una cifra que cambia un total sin aparecer
+   * en la lista es de donde salen las preguntas.»
+   *
+   * ── CÓMO SE MIDE ──
+   * Se netean TODOS los asientos de cada préstamo que ya no existe. Si la suma
+   * da negativo, esa plata salió y no volvió. Sus tres borrados, al peso:
+   *
+   *     Nelson Cantillo  −2.119.000 +1.000.001 +2.119.000 −1.000.001 =        0
+   *     Zully Villamizar   −450.000   +450.000                       =        0
+   *     FRANK ALMANZA    −1.000.000 +1.000.000  −500.000 +75.000 −75.000 = −500.000
+   *
+   * El filtro son los `referenciaId` que alguna vez tuvieron un DESEMBOLSO:
+   * así se sabe que son préstamos y no gastos ni inyecciones, que apuntan a
+   * otra cosa con el mismo campo. */
+  const noDevuelto = await prisma.$queryRaw`
+    SELECT m.referenciaId AS id,
+           MAX(CASE WHEN m.tipo = 'desembolso' THEN m.descripcion END) AS descripcion,
+           MIN(m.createdAt) AS cuando,
+           SUM(CASE WHEN m.saldoNuevo >= m.saldoAnterior THEN m.monto ELSE -m.monto END) AS neto
+      FROM MovimientoCapital m
+     WHERE m.organizationId = ${organizationId}
+       AND m.referenciaId IS NOT NULL
+       AND EXISTS (SELECT 1 FROM MovimientoCapital d
+                    WHERE d.referenciaId = m.referenciaId
+                      AND d.organizationId = m.organizationId
+                      AND d.tipo = 'desembolso')
+       AND NOT EXISTS (SELECT 1 FROM Prestamo p WHERE p.id = m.referenciaId)
+     GROUP BY m.referenciaId
+    HAVING neto < -0.5
+     ORDER BY neto ASC
+     LIMIT 500`
+
+  /* El nombre sale de la descripción del desembolso —«Desembolso préstamo a
+     FRANK ALMANZA»—, que es lo único que queda de un préstamo borrado. Sin
+     nombre la cifra vuelve a ser huérfana, que es el fallo que esto arregla. */
+  /* ⚠ SE ENSEÑAN LOS PRIMEROS, NO LOS 50. Un negocio de la base tiene 51
+     préstamos así, de una limpieza de junio: cincuenta y un renglones en rojo
+     en la pantalla que abre cada mañana es alarmar, no informar. Va el total
+     entero, los cuatro más grandes con su nombre, y cuántos quedan detrás —que
+     es lo que hace falta para reconocer de qué se trata. */
+  const TOPE_LISTA = 4
+  const casosTodos = noDevuelto.map((x) => ({
+    nombre: String(x.descripcion || '')
+      .replace(/^Desembolso (préstamo a|por renovación -)\s*/i, '').trim() || 'Préstamo borrado',
+    monto: Math.round(Math.abs(Number(x.neto) || 0)),
+    cuando: x.cuando ?? null,
+  }))
+  const capitalNoDevuelto = {
+    monto: Math.round(casosTodos.reduce((a, x) => a + x.monto, 0)),
+    cuantos: casosTodos.length,
+    casos: casosTodos.slice(0, TOPE_LISTA),
+    mas: Math.max(0, casosTodos.length - TOPE_LISTA),
+  }
   const prestamosActivosTotal = carteraAgregada._count ?? 0
   const carteraSinRutaTotal = Math.max(0, (carteraSinRuta._sum.totalAPagar ?? 0) - (carteraSinRuta._sum.totalPagado ?? 0))
   const prestamosSinRuta = carteraSinRuta._count ?? 0
@@ -263,6 +330,7 @@ export async function GET() {
         gastoHistorico: Math.round(gastoHistorico),
       },
     },
+    capitalNoDevuelto,
     cartera: {
       total: Math.round(carteraTotal),
       capitalEnCalle: Math.round(capitalEnCalle),
