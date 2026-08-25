@@ -41,6 +41,12 @@ function fmtFechaHora(d) {
 // Dibuja el recibo termico en un canvas y lo devuelve.
 // Exportada por la misma razón que `generarHTMLRecibo`: la imagen del recibo se
 // pide desde los tres caminos y tiene que salir idéntica en todos.
+/* ⚠ LAS PIEZAS DE ABAJO SE EXPORTAN, NO SE COPIAN. La imagen de la simulación
+ * (`lib/simulacion-imagen.js`) dibuja con las mismas: si se duplicaran, el día
+ * que cambie el dorado cambiaría en un papel y no en el otro, y el cliente
+ * recibiría dos documentos del mismo negocio con dos estilos. Es la misma razón
+ * por la que `dibujarRecibo` ya estaba exportada.
+ */
 /* ══ LOS COLORES DE LA MARCA, EN HEX ═══════════════════════════════════════
  *
  * ⚠ CANVAS NO RESUELVE `var(--cf-…)`, y NO AVISA. `ctx.strokeStyle =
@@ -52,7 +58,7 @@ function fmtFechaHora(d) {
  *
  * Aquí van en hex, copiados de `app/tokens-2026.css`. Si cambia el dorado en
  * la app, cambia aquí. */
-const TINTA = {
+export const TINTA = {
   gold: '#E7A400', goldInk: '#3A2900', goldTint: '#FDF3D6',
   ink: '#15161A', ink2: '#4A4E57', ink3: '#63676F', ink4: '#8E929A',
   green: '#12A150', greenTint: '#E8F6EE',
@@ -63,7 +69,7 @@ const TINTA = {
 /* Las familias REALES que está usando la página. `next/font` genera un nombre
    de familia distinto en cada compilación (`__Manrope_abc123`), así que no se
    puede escribir a mano: se lee del DOM. Si algo falla, sans del sistema. */
-function familias() {
+export function familias() {
   try {
     const raiz = getComputedStyle(document.documentElement)
     const manrope = raiz.getPropertyValue('--font-manrope').trim()
@@ -132,7 +138,7 @@ function punteado(ctx, x1, y, x2) {
 }
 
 /** Un rectángulo redondeado, con salida para navegadores sin `roundRect`. */
-function caja(ctx, x, y, w, h, r) {
+export function caja(ctx, x, y, w, h, r) {
   const radio = Math.min(r, h / 2, w / 2)
   ctx.beginPath()
   if (ctx.roundRect) ctx.roundRect(x, y, w, h, radio)
@@ -167,7 +173,7 @@ function visto(ctx, cx, cy, r, color) {
  * «reclam» y se acababa el mundo. Es el dato por el que el cliente sabe a quién
  * le pagó: no puede quedar cortado.
  */
-function renglones(ctx, texto, ancho, maximo = 3) {
+export function renglones(ctx, texto, ancho, maximo = 3) {
   const palabras = String(texto).split(/\s+/).filter(Boolean)
   const lineas = []
   let actual = ''
@@ -193,7 +199,7 @@ function renglones(ctx, texto, ancho, maximo = 3) {
  * ⚠ MUY FLOJO A PROPÓSITO. Es papel tapiz, no decoración: en cuanto se ve, le
  * quita sitio a la cifra, que es lo único que este papel tiene que responder.
  */
-function garabatos(ctx, w, h, alfa = 0.055) {
+export function garabatos(ctx, w, h, alfa = 0.055) {
   const PASO = 96
   ctx.save()
   ctx.globalAlpha = alfa
@@ -266,7 +272,7 @@ function fila(ctx, L, R, y, rotulo, valor, SANS, MONO) {
 }
 
 /** La línea fina que separa bloques. */
-function hairline(ctx, x1, y, x2) {
+export function hairline(ctx, x1, y, x2) {
   ctx.save()
   ctx.strokeStyle = TINTA.borderSoft
   ctx.lineWidth = 1

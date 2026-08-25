@@ -36,6 +36,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
+import { compartirSimulacionImagen } from '@/lib/simulacion-imagen'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -69,7 +70,7 @@ export default function SimuladorPage() {
   // No escribe en la base, pero el botón «crear este préstamo» se lleva estas
   // cifras. Si aquí «40» son 40 y en el formulario de préstamo son $40.000, el
   // simulador enseña una cuota que luego no cuadra con la real.
-  const { modoAbreviado } = useAuth()
+  const { modoAbreviado, orgNombre } = useAuth()
   const [montoTecleado, setMontoTecleado] = useState(null)
   const [cuotaTecleada, setCuotaTecleada] = useState(null)
   const [tasa, setTasa] = useState('20')
@@ -159,6 +160,35 @@ export default function SimuladorPage() {
       modo: modoInteres,
     })
     router.push(`/prestamos/nuevo?${p}`)
+  }
+
+  /* ── LA TABLA, COMO SE VE ────────────────────────────────────────────
+     «Cuando se comparte la simulación normalmente se comparte en texto; sería
+     bueno que se compartiera como se ve en la tabla» — Préstamos Rincón.
+
+     El texto de arriba (`textoCompartir`) NO se quita: sigue siendo lo que
+     hace falta cuando lo que se quiere es pegar cifras en un chat. Esto es la
+     otra pregunta —enseñarle al cliente el desglose— y por eso vive DENTRO de
+     la hoja del desglose, que es donde él lo estaba mirando. */
+  const mandarTabla = () => {
+    if (!calculo?.tablaAmortizacion?.length) return
+    const ok = compartirSimulacionImagen({
+      tabla: calculo.tablaAmortizacion,
+      frecuencia,
+      orgNombre: orgNombre || '',
+      cuotaTexto,
+      cuotaPie: `${freqInfo.cada} · ${numCuotas} ${numCuotas === 1 ? 'vez' : 'veces'}`,
+      resumen: [
+        ['Monto del crédito', formatMoney(Number(monto) || 0)],
+        ['Total a pagar', formatMoney(calculo.totalAPagar)],
+        ['Interés', formatMoney(calculo.totalInteres)],
+        ['Termina el', fmtFecha(calculo.fechaFin)],
+      ],
+    })
+    if (!ok) {
+      setAviso('No se pudo armar la imagen.')
+      setTimeout(() => setAviso(''), 2500)
+    }
   }
 
   const cambiarFrecuencia = (etiqueta) => {
@@ -288,6 +318,25 @@ export default function SimuladorPage() {
         subtitulo={calculo
           ? `${numCuotas} ${numCuotas === 1 ? 'cobro' : 'cobros'} · termina el ${fmtFecha(calculo.fechaFin)}`
           : null}
+        accion={calculo?.tablaAmortizacion?.length ? (
+          <button
+            type="button"
+            onClick={mandarTabla}
+            className="w-full h-12 rounded-[12px] text-[15px] font-bold inline-flex items-center justify-center gap-2"
+            style={{
+              background: 'var(--cf-fill)', color: 'var(--cf-ink)',
+              border: '1px solid var(--cf-border-strong)',
+            }}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+              <path d="M12 3v13" />
+              <path d="m7 11 5 5 5-5" />
+            </svg>
+            Mandar esta tabla
+          </button>
+        ) : null}
       >
         {calculo && (
           <TablaAmortizacion tabla={calculo.tablaAmortizacion} frecuencia={frecuencia} />
