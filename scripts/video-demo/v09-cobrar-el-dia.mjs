@@ -321,8 +321,8 @@ const cookie = await encode({
 
 await correr({
   nombre: 'cobrar el día',
-  dir: '/tmp/videos/09-cobrar-el-dia',
-  final: '/tmp/videos/09-cobrar-el-dia.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-09',
+  final: '/home/keyce/Desktop/videos-tutoriales/09-cobrar-el-dia.mp4',
   tomas: TOMAS,
   cookie,
   antesDeToma: limpiar,

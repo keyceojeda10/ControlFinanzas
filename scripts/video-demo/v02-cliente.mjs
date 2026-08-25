@@ -230,8 +230,8 @@ const token = await encode({
 
 await correr({
   nombre: 'cliente',
-  dir: '/tmp/videos/02-cliente',
-  final: '/tmp/videos/02-cliente.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-02',
+  final: '/home/keyce/Desktop/videos-tutoriales/02-cliente.mp4',
   tomas: TOMAS,
   cookie: token,
   antesDeToma: borrarCliente,

@@ -2,9 +2,19 @@
 //
 // VÍDEO 1 · Cómo registrarse en el sistema
 //
-//     node scripts/video-demo/v01-registro.mjs            # todas y pega
-//     node scripts/video-demo/v01-registro.mjs --toma 3   # solo la 3
-//     node scripts/video-demo/v01-registro.mjs --pegar
+//     node scripts/video-demo/voz.mjs 01-registro --solo-audio
+//     BASE_VIDEO=http://localhost:3105 SIN_ROTULOS=1 LOCUCION=01-registro \
+//       node scripts/video-demo/v01-registro.mjs
+//
+//     ... --toma 3    solo la 3        ... --pegar   solo volver a pegar
+//
+// ⚠ EL AUDIO VA PRIMERO. `narrar` mide la duración de cada mp3 para saber
+//   cuánto dura cada frase; sin los mp3 usa 4,2 s estimados y el ritmo vuelve
+//   a quedar largo, que es de lo que se quejó el dueño («el ritmo está muy
+//   lento»: 3:57 de vídeo con 2:26 de voz, 76 segundos de silencio).
+//
+// ⚠ SE REESCRIBIÓ A `narrar()` el 25 ago 2026. Antes era `decir()` + `esperar()`
+//   con los tiempos a mano, que es lo que dejaba los huecos.
 //
 // ⚠ Se registra una cuenta DE VERDAD, en el espejo, con un correo de
 //   `ejemplo.com` (reservado por norma para documentación). Se borra antes y
@@ -38,168 +48,156 @@ const TOMAS = [
     id: 'entrada',
     titulo: 'La pantalla de registro',
     async grabar(u) {
-      const { esperar, empezar, decir, mirar, reposo } = u
+      const { esperar, empezar, narrar, reposo } = u
       await hastaPaso(u, 1)
       empezar()
-      await decir('Crear tu cuenta son cuatro pasos', 4.0)
-      await esperar(4400)
-      await mirar('text=Paso 1 de 4', { escala: 1.8, ms: 3800 })
-      await decir('Arriba te va diciendo por cuál vas', 3.8)
-      await esperar(4000)
-      await reposo()
+      await esperar(600)
+      await narrar(0)
+      await narrar(1, { mirar: 'text=Paso 1 de 4', escala: 1.8 })
+      await reposo(1400)
     },
   },
   {
     id: 'nombre',
     titulo: 'Paso 1 · tu nombre',
     async grabar(u) {
-      const { esperar, escribir, tocar, empezar, decir, mirar, reposo } = u
+      const { esperar, escribir, tocar, empezar, narrar, reposo } = u
       await hastaPaso(u, 1)
       empezar()
-      await mirar('input[type="text"]', { escala: 1.9, ms: 3800 })
-      await decir('Lo primero, tu nombre', 3.4)
-      await esperar(3800)
-      await escribir('input[type="text"]', D.nombre)
-      await decir('Es el que verás dentro de la aplicación', 4.0)
-      await esperar(4200)
+      await esperar(500)
+      await narrar(0, { mirar: 'input[type="text"]', escala: 1.9 })
+      await narrar(1, { hacer: async () => { await escribir('input[type="text"]', D.nombre) } })
       // Se pulsa y se VE pasar al siguiente paso.
       await tocar('Continuar')
-      await reposo()
+      await reposo(1400)
     },
   },
   {
     id: 'negocio',
     titulo: 'Paso 2 · el negocio',
     async grabar(u) {
-      const { esperar, escribir, tocar, empezar, decir, reposo } = u
+      const { esperar, escribir, tocar, empezar, narrar, reposo } = u
       await hastaPaso(u, 2)
       empezar()
-      await decir('Ahora el nombre de tu negocio', 3.6)
-      await esperar(4000)
-      await escribir('input[type="text"]', D.negocio)
-      await decir('Este sí importa: es el que ven tus clientes y tus cobradores', 4.8)
-      await esperar(5000)
+      await esperar(500)
+      await narrar(0, { hacer: async () => { await escribir('input[type="text"]', D.negocio) } })
+      await narrar(1)
       await tocar('Continuar')
-      await reposo()
+      await reposo(1400)
     },
   },
   {
     id: 'whatsapp',
     titulo: 'Paso 3 · país y WhatsApp',
     async grabar(u) {
-      const { esperar, escribir, tocar, empezar, decir, mirar, reposo } = u
+      const { esperar, escribir, tocar, empezar, narrar, reposo } = u
       await hastaPaso(u, 3)
       empezar()
-      await mirar('select', { escala: 1.7, ms: 4200 })
-      await decir('Eliges tu país: el sistema trabaja en doce', 4.2)
-      await esperar(4600)
-      await escribir('input[type="tel"]', D.telefono)
-      await decir('Y tu WhatsApp: por ahí te llega el código para verificar', 4.8)
-      await esperar(5000)
+      await esperar(500)
+      await narrar(0, { mirar: 'select', escala: 1.7 })
+      await narrar(1, { hacer: async () => { await escribir('input[type="tel"]', D.telefono) } })
       await tocar('Continuar')
-      await reposo()
+      await reposo(1400)
     },
   },
   {
     id: 'cuenta',
     titulo: 'Paso 4 · correo y contraseña',
     async grabar(u) {
-      const { esperar, escribir, empezar, decir, reposo } = u
+      const { esperar, escribir, empezar, narrar, reposo } = u
       await hastaPaso(u, 4)
       empezar()
-      await decir('El último paso son tus datos de entrada', 4.0)
-      await esperar(4200)
-      await escribir('input[type="email"]', CORREO)
-      await decir('El correo va a ser tu usuario: pon uno al que entres de verdad', 4.8)
-      await esperar(4600)
-      await escribir('input[type="password"]', D.clave)
-      await decir('Y una contraseña de mínimo ocho caracteres', 4.0)
-      await esperar(4400)
-      await reposo()
+      await esperar(500)
+      await narrar(0)
+      await narrar(1, { hacer: async () => { await escribir('input[type="email"]', CORREO) } })
+      await narrar(2, { hacer: async () => { await escribir('input[type="password"]', D.clave) } })
+      await reposo(1500)
     },
   },
   {
     id: 'terminos',
     titulo: 'La casilla de los términos',
     async grabar(u) {
-      const { p, esperar, escribir, empezar, decir, mirar, reposo } = u
+      const { p, esperar, escribir, empezar, narrar, reposo } = u
       await hastaPaso(u, 4)
       await escribir('input[type="email"]', CORREO)
       await escribir('input[type="password"]', D.clave)
       empezar()
+      await esperar(500)
       /* Es donde más gente se traba: el botón no hace nada hasta marcarla, y no
          lo dice. Merece su propia parada. */
-      await mirar('input[type="checkbox"]', { escala: 2.2, ms: 4600 })
-      await decir('Ojo con este cuadrito: hay que aceptar los términos', 4.4)
-      await esperar(4800)
-      await p.locator('input[type="checkbox"]').first().check().catch(() => {})
-      await decir('Si no lo marcas, el botón de abajo no te deja seguir', 4.6)
-      await esperar(4800)
-      await reposo()
+      await narrar(0, { mirar: 'input[type="checkbox"]', escala: 2.2 })
+      await narrar(1, {
+        hacer: async () => { await p.locator('input[type="checkbox"]').first().check().catch(() => {}) },
+      })
+      await reposo(1600)
     },
   },
   {
     id: 'crear',
     titulo: 'Crear la cuenta',
     async grabar(u) {
-      const { p, esperar, escribir, tocar, empezar, decir, mirar, reposo } = u
+      const { p, esperar, escribir, tocar, empezar, narrar, reposo } = u
       await hastaPaso(u, 4)
       await escribir('input[type="email"]', CORREO)
       await escribir('input[type="password"]', D.clave)
       await p.locator('input[type="checkbox"]').first().check().catch(() => {})
       empezar()
-      await mirar('button:has-text("Crear cuenta gratis")', { escala: 1.7, ms: 4000 })
-      await decir('Y ya está: «Crear cuenta gratis»', 3.8)
-      await esperar(4200)
-      await tocar('Crear cuenta gratis', { espera: 3200 })
-      await decir('Catorce días completos, sin poner ninguna tarjeta', 4.4)
-      await esperar(4600)
-      await reposo()
+      await esperar(500)
+      await narrar(0, {
+        mirar: 'button:has-text("Crear cuenta gratis")', escala: 1.7,
+        hacer: async () => { await tocar('Crear cuenta gratis', { espera: 3200 }) },
+      })
+      await narrar(1)
+      await reposo(1600)
     },
   },
   {
     id: 'verificar',
     titulo: 'La verificación',
     async grabar(u) {
-      const { p, esperar, escribir, tocar, empezar, decir, mirar, reposo } = u
+      const { p, esperar, escribir, tocar, empezar, narrar, mirar, reposo } = u
       await hastaPaso(u, 4)
       await escribir('input[type="email"]', CORREO)
       await escribir('input[type="password"]', D.clave)
       await p.locator('input[type="checkbox"]').first().check().catch(() => {})
       await tocar('Crear cuenta gratis', { espera: 3400 })
       empezar()
-      await decir('Al terminar te llega un código de seis dígitos por WhatsApp', 4.8)
-      await esperar(5000)
-      try {
-        await mirar('button:has-text("Verificar por correo")', { escala: 1.8, ms: 4000 })
-        await decir('Si no te llega, puedes pedirlo al correo', 4.0)
-        await esperar(4400)
-      } catch { /* si cambia el rótulo, la toma sigue sin ese acercamiento */ }
-      await reposo()
+      await esperar(500)
+      await narrar(0)
+      /* ⚠ EL ACERCAMIENTO VA DENTRO DE `hacer` Y CON `.catch`, no en `mirar`:
+         si el rótulo cambia, `narrar` no lo perdona y se cae la toma entera.
+         Antes esto era un `try/catch` alrededor del `decir`. */
+      await narrar(1, {
+        hacer: async () => {
+          await mirar('button:has-text("Verificar por correo")', { escala: 1.8, ms: 3000 })
+            .catch(() => {})
+        },
+      })
+      await reposo(1600)
     },
   },
   {
     id: 'cierre',
     titulo: 'Dónde te deja',
     async grabar(u) {
-      const { p, esperar, escribir, tocar, empezar, decir, mirar, reposo } = u
+      const { p, esperar, escribir, tocar, empezar, narrar, reposo } = u
       await hastaPaso(u, 4)
       await escribir('input[type="email"]', CORREO)
       await escribir('input[type="password"]', D.clave)
       await p.locator('input[type="checkbox"]').first().check().catch(() => {})
       await tocar('Crear cuenta gratis', { espera: 3400 })
       empezar()
-      await mirar('button:has-text("Saltar por ahora")', { escala: 1.8, ms: 4000 })
-      await decir('Y si tienes prisa, entras ya y verificas después', 4.4)
-      await esperar(4600)
+      await esperar(500)
       /* ⚠ AQUÍ TERMINA EL PROCESO. El vídeo se cortaba en la verificación y no
          se veía a dónde llega uno. Ahora se entra y se enseña la guía de
          primeros pasos, que es el vídeo siguiente. */
-      await tocar('Saltar por ahora', { espera: 4200 })
-      await decir('Ya estás dentro, y el sistema te recibe con una guía', 4.8)
-      await esperar(5000)
-      await decir('Eso es lo que vemos en el siguiente vídeo', 4.2)
-      await esperar(4400)
+      await narrar(0, {
+        mirar: 'button:has-text("Saltar por ahora")', escala: 1.8,
+        hacer: async () => { await tocar('Saltar por ahora', { espera: 4200 }) },
+      })
+      await narrar(1)
+      await narrar(2)
       await reposo(3200)
     },
   },
@@ -219,8 +217,8 @@ const borrarCuenta = async () => {
 
 await correr({
   nombre: 'registro',
-  dir: '/tmp/videos/01-registro',
-  final: '/tmp/videos/01-registro.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-01',
+  final: '/home/keyce/Desktop/videos-tutoriales/01-registro.mp4',
   tomas: TOMAS,
   antesDeToma: borrarCuenta,
 })

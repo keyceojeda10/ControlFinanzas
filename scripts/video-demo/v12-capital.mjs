@@ -292,8 +292,8 @@ const cookie = await encode({
 
 await correr({
   nombre: 'el capital',
-  dir: '/tmp/videos/12-capital',
-  final: '/tmp/videos/12-capital.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-12',
+  final: '/home/keyce/Desktop/videos-tutoriales/12-capital.mp4',
   tomas: TOMAS,
   cookie,
   antesDeToma: limpiar,

@@ -418,8 +418,8 @@ TOMAS.find((t) => t.id === 'que_ve').cookie = await galleta('cobrador')
 
 await correr({
   nombre: 'cobradores',
-  dir: '/tmp/videos/08-cobradores',
-  final: '/tmp/videos/08-cobradores.mp4',
+  dir: '/home/keyce/Desktop/videos-tutoriales/tomas-08',
+  final: '/home/keyce/Desktop/videos-tutoriales/08-cobradores.mp4',
   tomas: TOMAS,
   cookie,
   antesDeToma: limpiar,
