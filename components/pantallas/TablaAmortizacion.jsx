@@ -156,7 +156,10 @@ export default function TablaAmortizacion({
                 Pastilla GRIS, no texto dorado: el único dorado de esta pantalla es
                 el anillo de la cuota que viene. */}
             {onComparar && (
-              <button type="button" onClick={onComparar} style={{
+              /* Tampoco se imprime: en un papel es un botón que no se puede pulsar.
+                 ⚠ Comentario JS a secas, sin llaves: aquí dentro ya estamos en
+                 una expresión y las llaves lo volverían un objeto literal. */
+              <button type="button" onClick={onComparar} className="cf-no-print" style={{
                 display: 'inline-flex', alignItems: 'center', height: 32, padding: '0 12px',
                 borderRadius: 11, background: 'var(--cf-fill)', border: '1px solid var(--cf-border)',
                 fontSize: 12, fontWeight: 700, color: 'var(--cf-ink-2)', cursor: 'pointer', flex: 'none',
@@ -217,6 +220,10 @@ export default function TablaAmortizacion({
               key={c.id ?? i}
               type={pulsable ? 'button' : undefined}
               onClick={pulsable ? () => onTocarCuota(c) : undefined}
+              /* Que no se parta entre dos páginas al imprimir: media cuota
+                 arriba y media abajo no se puede leer. Lo vi en el PDF, no en
+                 el JSX. */
+              data-tarjeta=""
               style={{
                 flex: 'none', display: 'flex', flexDirection: 'column', gap: 10,
                 background: 'var(--cf-card)', borderRadius: 'var(--cf-r-card)',
@@ -382,8 +389,11 @@ export default function TablaAmortizacion({
 
           Los dos botones ya traen su propio borde y su propio fondo, así que
           sobre el fondo de la página se leen igual de bien y sin la caja. */}
+      {/* `cf-no-print`: los botones salían DENTRO del PDF, y un papel que se le
+          manda al cliente con un botón «Imprimir» dibujado encima no es un
+          papel. Ver el bloque `@media print` de `globals.css`. */}
       {conBarra && (
-        <div style={{ display: 'flex', gap: 10, flex: 'none', paddingTop: 4 }}>
+        <div className="cf-no-print" style={{ display: 'flex', gap: 10, flex: 'none', paddingTop: 4 }}>
           {onCompartir && <BotonSecundario style={{ flex: 1 }} onClick={onCompartir}>Compartir tabla</BotonSecundario>}
           {onImprimir && <BotonSecundario style={{ flex: 1 }} onClick={onImprimir}>Imprimir</BotonSecundario>}
         </div>

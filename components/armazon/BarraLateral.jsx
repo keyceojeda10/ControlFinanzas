@@ -260,7 +260,7 @@ export default function BarraLateral({
     // Solo escritorio. `display` NO puede ir en el estilo en linea: le ganaria
     // a `hidden` y la barra saldria tambien en el telefono, encima de la
     // pastilla.
-    <aside className="hidden lg:flex" style={{
+    <aside className="hidden lg:flex cf-no-print" style={{
       flex: 'none',
       width: 'var(--cf-w-sidebar)', minWidth: 'var(--cf-w-sidebar)',
       height: '100dvh', position: 'sticky', top: 0,

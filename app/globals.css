@@ -1256,3 +1256,49 @@ html[data-theme="light"] [class*="ring-[#333"] { --tw-ring-color: var(--color-bo
 /* Hover border oscuros */
 html[data-theme="light"] [class*="hover:border-[#3"]:hover,
 html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(245, 197, 24, 0.35) !important; }
+
+/* ══ IMPRIMIR ══════════════════════════════════════════════════════════════
+ *
+ * No había una sola regla de impresión en toda la app, así que `window.print()`
+ * imprimía la pantalla TAL CUAL: la pastilla de navegación flotando encima del
+ * contenido, el botón «Imprimir» dibujado dentro del propio PDF y las tarjetas
+ * partidas por la mitad entre página y página.
+ *
+ * Reportado el 25 ago 2026 con la captura de la vista previa: «mira cómo se ve
+ * cuando le doy imprimir». Va aquí y no en la pantalla de la tabla porque
+ * cualquier pantalla que alguien mande a la impresora tiene el mismo problema.
+ */
+/* En pantalla no se ve; solo sale en el papel. */
+.cf-solo-print { display: none; }
+
+@media print {
+  /* Al revés: lo que SOLO existe en el papel. La cabecera de la app se queda
+     fuera, así que sin esto un PDF de la tabla sale sin decir de quién es —y
+     «sin el nombre, una tabla compartida no se sabe a quién pertenece». */
+  .cf-solo-print { display: block !important; }
+
+  /* El cromo de la app no es parte del papel. */
+  .cf-no-print,
+  nav[data-imprimir="no"],
+  [role="dialog"],
+  [data-hoja-inferior] { display: none !important; }
+
+  /* Fondo blanco y tinta negra: los tokens del tema oscuro gastan un cartucho
+     y salen ilegibles en papel. */
+  html, body {
+    background: #fff !important;
+    /* Sin esto Chrome descarta los fondos y las barras de progreso de la tabla
+       salen en blanco, que es justo lo que dice cuánto se lleva pagado. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* El hueco que reserva la pastilla no hace falta sin pastilla. */
+  * { --cf-hueco-pie: 0px !important; }
+
+  /* Una fila de la tabla partida entre dos páginas no se puede leer. */
+  article, section, li,
+  [data-fila], [data-tarjeta] { break-inside: avoid; page-break-inside: avoid; }
+
+  @page { margin: 12mm; }
+}

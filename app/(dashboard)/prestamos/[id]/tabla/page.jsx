@@ -21,13 +21,17 @@ import HojaInferior from '@/components/cf/HojaInferior'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { adaptarTabla, adaptarComparacion } from '@/lib/adaptadores/tabla'
 import { calcularPrestamo } from '@/lib/calculos'
+import { compartirTablaImagen } from '@/lib/simulacion-imagen'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function TablaPrestamoPage() {
   const { id } = useParams()
   const router = useRouter()
+  const { orgNombre } = useAuth()
   const [prestamo, setPrestamo] = useState(null)
   const [error, setError] = useState('')
   const [comparando, setComparando] = useState(false)
+  const [aviso, setAviso] = useState('')
 
   useEffect(() => {
     let vivo = true
@@ -69,18 +73,66 @@ export default function TablaPrestamoPage() {
 
   return (
     <>
+      {aviso && (
+        <p className="cf-no-print text-[13px] mb-2 text-center" style={{ color: 'var(--cf-ink-2)' }}>{aviso}</p>
+      )}
+
+      {/* ── LA CABECERA DEL PAPEL ──────────────────────────────────────────
+          En pantalla el título y de quién es la tabla los pone el armazón, y el
+          armazón no se imprime. Sin esto el PDF salía con doce tarjetas de
+          cifras y ni un nombre: «sin el nombre, una tabla compartida no se sabe
+          a quién pertenece» (`adaptarTabla`). */}
+      <div className="cf-solo-print" style={{ marginBottom: 14 }}>
+        <p style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: '#63676F', margin: 0 }}>
+          Tabla del préstamo
+        </p>
+        <p style={{ fontSize: 17, fontWeight: 700, color: '#15161A', margin: '4px 0 0' }}>
+          {datos.subtitulo}
+        </p>
+        {orgNombre && (
+          <p style={{ fontSize: 12, color: '#63676F', margin: '2px 0 0' }}>{orgNombre}</p>
+        )}
+      </div>
+
       <TablaAmortizacion
         {...datos}
         onComparar={() => setComparando(true)}
+        /* ── ⚠ EL BOTÓN QUE «NO HACE NADA» ────────────────────────────────
+           Reportado el 25 ago 2026: «si le doy al botón compartir tabla no hace
+           nada». Y era cierto en escritorio: `navigator.share` no existe, así
+           que caía al portapapeles Y COPIABA EN SILENCIO. Un botón que copia
+           sin decirlo es indistinguible de uno roto — la lección ya estaba
+           escrita en el simulador («al portapapeles Y SE DICE») y esta pantalla
+           no se enteró.
+
+           Ahora manda la tabla COMO SE VE, en imagen, que es para lo que existe
+           esta pantalla —«metida como acordeón dentro de la ficha no se puede
+           mandar al cliente»— y lo que pidió Préstamos Rincón para el
+           simulador. El texto plano se queda de respaldo, y avisando. */
         onCompartir={() => {
-          // `navigator.share` no existe en escritorio ni en todos los navegadores.
-          // Sin la guardia, tocar el botón lanza un TypeError y no pasa nada — que
-          // es el patrón del control muerto con otra ropa.
-          if (typeof navigator !== 'undefined' && navigator.share) {
-            navigator.share({ title: 'Tabla del préstamo', text: datos.textoParaCompartir }).catch(() => {})
-          } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-            navigator.clipboard.writeText(datos.textoParaCompartir).catch(() => {})
+          const filas = prestamo?.cuotasAmortizacion
+          const pagadas = new Map((datos.cuotas ?? []).map((c) => [c.id, c.pagada]))
+          const ok = Array.isArray(filas) && filas.length > 0 && compartirTablaImagen({
+            tabla: filas.map((f) => ({ ...f, pagada: pagadas.get(f.numeroPeriodo) ?? false })),
+            frecuencia: prestamo?.frecuencia,
+            orgNombre: orgNombre || '',
+            cuotaTexto: datos.cuotas[0]?.cuota ?? '',
+            cuotaPie: datos.subtitulo,
+            resumen: [
+              ['Capital prestado', datos.capital],
+              ['Ganancia', datos.ganancia],
+              ['Total a pagar', datos.total],
+            ],
+          })
+          if (ok) return
+          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(datos.textoParaCompartir)
+              .then(() => setAviso('Copiado. Pégalo en el chat del cliente.'))
+              .catch(() => setAviso('Este aparato no deja copiar ni compartir.'))
+          } else {
+            setAviso('Este aparato no deja copiar ni compartir.')
           }
+          setTimeout(() => setAviso(''), 2800)
         }}
         onImprimir={() => window.print()}
       />

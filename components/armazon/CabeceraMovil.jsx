@@ -173,7 +173,7 @@ function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos
     // el grupo casi 20px y el avatar quedaba pegado al borde.
     //
     // Los 6 no aprietan nada: el área táctil son los 40px del botón, no el hueco.
-    <header className="flex lg:hidden" style={{ ...base, padding: '0 18px 0 20px', gap: 6 }}>
+    <header className="flex lg:hidden cf-no-print" style={{ ...base, padding: '0 18px 0 20px', gap: 6 }}>
       <Glifo />
       {/* El ÚNICO encogible de la fila (regla global 2), y va vacío a propósito. */}
       <span style={{ flex: 1 }} />
@@ -188,7 +188,7 @@ function Navegacion({ iniciales, avatarId, nombre, hayAvisos, onBuscar, onAvisos
    A la derecha van las acciones DE ESE OBJETO, no las de la app. */
 function Detalle({ titulo, subtitulo, onVolver, acciones = null }) {
   return (
-    <header className="flex lg:hidden" style={{ ...base, padding: '0 12px 0 8px' }}>
+    <header className="flex lg:hidden cf-no-print" style={{ ...base, padding: '0 12px 0 8px' }}>
       <button type="button" onClick={onVolver} aria-label="Volver"
         style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', flex: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40 }}>
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,7 +229,7 @@ function Tarea({ titulo, paso = 0, total = 0, onCerrar }) {
     // hueco de la espina (9) mas la espina (3) — no van ADEMAS. Sumandolos
     // aparte el contenido pide 68px dentro de una caja de 56 y la cabecera se
     // ve apretada: es exactamente lo que pasaba.
-    <header className="flex lg:hidden" style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
+    <header className="flex lg:hidden cf-no-print" style={{ ...base, padding: '8px 20px 0', alignItems: 'stretch', gap: 0, flexDirection: 'column', justifyContent: 'flex-start' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button type="button" onClick={onCerrar} aria-label="Cerrar"
           style={{

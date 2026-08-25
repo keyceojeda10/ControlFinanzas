@@ -66,6 +66,8 @@ export default function PastillaNav({ onCrear }) {
   return (
     <nav
       aria-label="Navegación principal"
+      /* No se imprime: flota fija y salía encima del contenido en el PDF. */
+      data-imprimir="no"
       // Solo movil: en escritorio navega la barra lateral, y las dos a la vez
       // son dos barras de navegacion compitiendo en la misma pantalla.
       // `display` va en la clase, no aqui: en linea le ganaria a lg:hidden y la
