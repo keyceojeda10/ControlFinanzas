@@ -823,7 +823,7 @@ export async function POST(request, { params }) {
       })
     }
 
-    // Descuento: refleja la perdida como ajuste negativo del capital
+    // Descuento: queda apuntado lo que se le perdonó al cliente.
     if (tipo === 'descuento') {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -835,6 +835,14 @@ export async function POST(request, { params }) {
         rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
         direccion: 'egreso',
+        /* ⚠ SE APUNTA, NO MUEVE LA CAJA. Ver la nota larga de
+           `registrarMovimientoCapital`: perdonar deuda no saca un billete de
+           ningún sitio. La pérdida ya la enseña la CARTERA —bajar
+           `totalAPagar` baja lo que queda en la calle— y restarla también del
+           capital la cuenta dos veces. Medido: a GERMAN EDUARDO le prestó
+           $120.000, no le pagaron nada, perdonó todo, y el libro le restaba
+           $240.000. A Abigail Castro, $440.000 sobre $200.000 prestados. */
+        noMueveCapital: true,
       })
     }
 

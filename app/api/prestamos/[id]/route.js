@@ -1236,6 +1236,9 @@ export async function DELETE(request, { params }) {
         referenciaTipo: 'pago',
         rutaId: rutaDelCliente,
         creadoPorId: session.user.id,
+        /* A la par con el descuento: si aquél no mueve la caja, deshacerlo
+           tampoco puede meter una plata que nunca salió. */
+        noMueveCapital: true,
       })
     }
 
