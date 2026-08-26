@@ -157,6 +157,10 @@ export async function GET() {
     if (mov.tipo === 'inyeccion') acc.inyecciones += mov.monto
     if (mov.tipo === 'retiro') acc.retiros += mov.monto
     if (mov.tipo === 'ajuste') {
+      /* ⚠ El que dejó el saldo donde estaba no movió capital, y con los dos
+         saldos iguales `>=` lo leería como ingreso. Es el interés perdonado,
+         que se apunta pero no baja la caja. */
+      if (Math.round(mov.saldoAnterior) === Math.round(mov.saldoNuevo)) return acc
       const esIngreso = mov.saldoNuevo >= mov.saldoAnterior
       acc.ajustes += esIngreso ? mov.monto : -mov.monto
     }

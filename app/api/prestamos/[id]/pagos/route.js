@@ -838,8 +838,17 @@ export async function POST(request, { params }) {
       })
     }
 
-    // Liquidacion: registrar el interes futuro PERDONADO como ajuste (egreso),
-    // para que la contabilidad refleje cuanto se condono al cerrar anticipado.
+    /* Liquidación: queda escrito CUÁNTO se condonó al cerrar por anticipado,
+       pero NO baja el capital.
+
+       ⚠ `noMueveCapital`. Ese interés nunca estuvo en la caja: el cliente
+       devolvió el capital entero y el prestamista renunció a cobrar lo que
+       faltaba. Restarlo inventaba una pérdida, y era permanente y acumulativa
+       porque `disponibleHoy = Capital.saldo`.
+
+       Crediya, 26 ago 2026: prestó $900.000 a Jose Bermejo, le devolvieron
+       $900.000 y el libro dejaba el préstamo en −$306.973. Ver la nota larga
+       de `registrarMovimientoCapital`. */
     if (tipo === 'liquidacion' && interesPerdonado > 0) {
       await registrarMovimientoCapital(tx, {
         organizationId,
@@ -851,6 +860,7 @@ export async function POST(request, { params }) {
         rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
         direccion: 'egreso',
+        noMueveCapital: true,
       })
     }
 

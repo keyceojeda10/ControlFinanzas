@@ -346,6 +346,15 @@ export async function GET(request, { params }) {
   const deltaPorRuta = new Map()
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
+    /* ⚠ EL ASIENTO QUE NO MOVIÓ NADA NO ENTRA EN EL DELTA. Con los dos saldos
+       iguales, la dirección se lee `saldoNuevo >= saldoAnterior` y saldría como
+       INGRESO: le sumaría a la ruta una plata que nadie metió.
+       El interés perdonado se apunta así desde el 26 ago —no baja el capital
+       porque nunca estuvo en la caja—, y `ajusteArranqueRuta` queda fuera de
+       esta guarda porque ése SÍ mueve la bolsa de la ruta a propósito. */
+    if (!m.ajusteArranqueRuta
+        && typeof m.saldoAnterior === 'number' && typeof m.saldoNuevo === 'number'
+        && Math.round(m.saldoAnterior) === Math.round(m.saldoNuevo)) continue
     const prev = deltaPorRuta.get(m.rutaId) || 0
     let delta = 0
     if (TIPOS_INGRESO.has(m.tipo)) delta = m.monto
