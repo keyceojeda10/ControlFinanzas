@@ -2,8 +2,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
-import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
-import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
+import { repartoSql, interesProporcionalDelPago, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { interesPagoAPago } from '@/lib/dinero/interes-cobrado'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
@@ -289,9 +290,19 @@ export async function GET() {
     prisma.prestamo.findMany({
       where: {
         organizationId,
-        modoInteres: { in: MODOS_CON_TABLA },
         totalAPagar: { gt: 0 },
-        cuotasAmortizacion: { some: {} },
+        /* ⚠ Y TAMBIÉN LOS QUE LLEVAN PAGOS DECLARADOS, TENGAN TABLA O NO.
+         *
+         * Un abono a capital es 100% capital y un pago de solo interés es 100%
+         * interés, y el reparto plano del SQL no aplica el techo de interés
+         * cuando esos dos se mezclan con pagos corrientes: se pasa. Sin esta
+         * rama, un préstamo `fijo` sin tabla con un abono a capital se quedaba
+         * fuera de la corrección y las dos pantallas seguían discrepando.
+         * Medido el 27 ago 2026: 91 préstamos en 26 negocios de 10.658 vivos. */
+        OR: [
+          { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
+          { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
+        ],
         /* ⚠ Los anulados TAMBIÉN fuera de la corrección, no solo de la consulta
            base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra
            volvía a subir por la puerta de la corrección. Lo cazó comparar las dos
@@ -302,6 +313,9 @@ export async function GET() {
         id: true,
         montoPrestado: true,
         totalAPagar: true,
+        /* `interesPagoAPago` decide con él si usa la tabla o el reparto plano.
+           Sin pedirlo llega `undefined` y se equivoca EN SILENCIO. */
+        modoInteres: true,
         // La correccion por ruta se suma sobre una base SQL que solo cuenta
         // ACTIVOS no clavos. Sin estos dos campos se corregia con prestamos
         // completados y clavos que no estaban en la cifra corregida.
@@ -315,7 +329,8 @@ export async function GET() {
         pagos: {
           where: { tipo: { notIn: ['recargo', 'descuento'] } },
           orderBy: { fechaPago: 'asc' },
-          select: { montoPagado: true, fechaPago: true },
+          // El `tipo` manda: un abono a capital es 100% capital.
+          select: { montoPagado: true, fechaPago: true, tipo: true },
         },
       },
     }),
@@ -349,17 +364,30 @@ export async function GET() {
   const correccionTablaPorMes = {}   // 'YYYY-MM' -> { interes, capital }
   const correccionTablaPorRuta = {}  // rutaId     -> interes
   for (const prestamo of prestamosConTabla) {
-    const cuotas = prestamo.cuotasAmortizacion
-    if (!cuotas.length) continue
-    // La MISMA fraccion que usa el SQL de arriba. Tiene que salir de la misma
-    // funcion o la correccion resta contra una cifra que nadie calculo asi.
-    const fraccionProporcional = fraccionInteres(prestamo)
-    let acumulado = 0
-    for (const pago of prestamo.pagos) {
-      const segunTabla = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
-      const segunProporcion = pago.montoPagado * fraccionProporcional
+    const cuotas = prestamo.cuotasAmortizacion || []
+    const pagos = prestamo.pagos || []
+    if (!pagos.length) continue
+
+    /* ⚠ LAS DOS MITADES DE LA RESTA SALEN DE UNA FUNCIÓN CADA UNA, Y NINGUNA
+     * SE ESCRIBE AQUÍ.
+     *
+     *   · lo bueno  → `interesPagoAPago`, la misma que usa el informe del
+     *     contador. Sabe de tipos declarados y aplica el techo de interés.
+     *   · lo que hay → `interesProporcionalDelPago`, el calco en JS de lo que
+     *     genera `repartoSql`, o sea EXACTAMENTE lo que la consulta ya sumó.
+     *
+     * Antes se restaba «monto × fracción» a secas, y el SQL no siempre pone
+     * eso: para un abono a capital pone cero. La resta se pasaba, y la misma
+     * organización veía «ganancia $3.230.648» en esta pantalla y «$2.500.993»
+     * en el informe del contador con el mismo recaudado. Medido préstamo a
+     * préstamo: 15 de 104 divergían, $760.764, y TODOS tenían abonos a capital. */
+    const filas = interesPagoAPago({ prestamo, cuotas, pagos })
+
+    for (let i = 0; i < pagos.length; i++) {
+      const pago = pagos[i]
+      const segunTabla = filas[i]?.interes ?? 0
+      const segunProporcion = interesProporcionalDelPago(prestamo, pago)
       const delta = segunTabla - segunProporcion
-      acumulado += pago.montoPagado
 
       // Solo los que la consulta de rutas cuenta. Corregir una cifra con
       // prestamos que no estan dentro de ella la deja peor que sin corregir.
