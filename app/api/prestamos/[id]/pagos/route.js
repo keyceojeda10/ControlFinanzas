@@ -26,6 +26,8 @@ import {
   interesCobrableAhora,
   obtenerProximaCuotaTabla,
   siguientePeriodo,
+  esAbiertoConDevengo,
+  periodoEnCursoAbierto,
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -276,9 +278,16 @@ export async function POST(request, { params }) {
   if (!['recargo', 'descuento', 'liquidacion'].includes(tipo)) {
     montoFinal = Math.min(montoFinal, saldoActual)
   }
-  // La liquidacion no puede superar el saldo pendiente (no tiene sentido cobrar mas)
-  if (tipo === 'liquidacion' && montoFinal > saldoActual) {
-    montoFinal = Math.round(saldoActual)
+  /* La liquidacion no puede superar el saldo pendiente (no tiene sentido cobrar
+     mas) — salvo en un ABIERTO, donde el interes del periodo que esta corriendo
+     todavia no esta en el saldo: la deuda solo sube cuando el periodo cierra.
+     Sin este techo mas alto, cerrar hoy un prestamo de 18 dias cobraba capital
+     pelado, que es justo el hueco reportado el 26 ago 2026. */
+  const techoLiquidacion = saldoActual + (esAbiertoConDevengo(prestamo)
+    ? (periodoEnCursoAbierto(prestamo)?.interesPeriodo ?? 0)
+    : 0)
+  if (tipo === 'liquidacion' && montoFinal > techoLiquidacion) {
+    montoFinal = Math.round(techoLiquidacion)
   }
 
   // Idempotencia offline: si la nota incluye [offline:ISO], ese ISO es unique key.
@@ -338,16 +347,82 @@ export async function POST(request, { params }) {
     await tx.$queryRaw`
       SELECT id FROM Prestamo WHERE id = ${prestamoId} FOR UPDATE
     `
-    const prestamoLocked = await tx.prestamo.findUnique({
+    const incluirParaLock = {
+      pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+      cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
+      /* Los devengos: sin ellos no se sabe que periodo esta corriendo ni cuanto
+         capital queda vivo en un abierto, y la decision se toma mal EN SILENCIO
+         — ver [[feedback_verificar_prisma_select]]. */
+      devengos: { select: { periodo: true, interes: true, capitalBase: true }, orderBy: { periodo: 'asc' } },
+    }
+    let prestamoLocked = await tx.prestamo.findUnique({
       where: { id: prestamoId },
-      include: {
-        pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
-        cuotasAmortizacion: { orderBy: { numeroPeriodo: 'asc' } },
-      },
+      include: incluirParaLock,
     })
     if (!prestamoLocked || prestamoLocked.estado !== 'activo') {
       throw new Error('PRESTAMO_NO_ACTIVO')
     }
+
+    /* ══ COBRAR EL PERIODO QUE ESTA CORRIENDO ADELANTA EL CORTE ══════════════
+     *
+     * En un abierto la deuda solo sube cuando el periodo cierra. Si el
+     * prestamista cobra hoy el interes del mes en curso —«hay veces que se
+     * pasan dieciocho dias y el no quiere cobrar dieciocho dias de interes como
+     * prorrateo, sino les cobra directamente el mes», 26 ago 2026— ese periodo
+     * hay que ASENTARLO AHORA: si no, el pago bajaria el saldo por debajo del
+     * capital y el prestamo diria que se debe menos de lo que se presto.
+     *
+     * Se asienta con la fecha de cierre como clave, la misma que usaria el
+     * cron: cuando llegue el dia vera el periodo puesto y no lo cobrara dos
+     * veces. Es la clave unica que ya evito el desastre de la linea de credito.
+     *
+     * ⚠ CUANTO SE ASIENTA DEPENDE DE SI EL PRESTAMO SIGUE VIVO:
+     *   · cobrando interes — el periodo ENTERO. Se cierra por su valor real; si
+     *     el cliente entrego menos, queda debiendo la diferencia. Asentar solo
+     *     lo cobrado REGALARIA los dias que faltan, porque la clave unica
+     *     impide volver a tocar ese periodo.
+     *   · liquidando — solo lo que se cobra. El prestamo se cierra ahi y los
+     *     dias que no corrieron no llegan a nacer: es exactamente la modalidad
+     *     «proporcional» de la pantalla de liquidacion. */
+    if (['intereses', 'liquidacion'].includes(tipo) && esAbiertoConDevengo(prestamoLocked)) {
+      const enCurso = periodoEnCursoAbierto(prestamoLocked)
+      if (enCurso) {
+        const debido = Math.max(0, Math.round(
+          calcularSaldoPendiente(prestamoLocked) - (calcularCapitalRestante(prestamoLocked) ?? 0),
+        ))
+        const pideDelPeriodo = Math.max(0, Math.round(montoFinal) - debido)
+        if (pideDelPeriodo > 0) {
+          const aAsentar = tipo === 'liquidacion'
+            ? Math.min(enCurso.interesPeriodo, pideDelPeriodo)
+            : enCurso.interesPeriodo
+          if (aAsentar > 0) {
+            try {
+              await tx.devengoInteres.create({
+                data: {
+                  prestamoId, organizationId,
+                  periodo: enCurso.periodo,
+                  capitalBase: enCurso.capitalBase,
+                  interes: aAsentar,
+                },
+              })
+              await tx.prestamo.update({
+                where: { id: prestamoId },
+                data: { totalAPagar: { increment: aAsentar } },
+              })
+              prestamoLocked = await tx.prestamo.findUnique({
+                where: { id: prestamoId },
+                include: incluirParaLock,
+              })
+            } catch (e) {
+              /* P2002 = ese periodo ya estaba asentado por el cron o por otro
+                 cobro a la vez. No es un error, es la defensa funcionando. */
+              if (e?.code !== 'P2002') throw e
+            }
+          }
+        }
+      }
+    }
+
     const saldoLocked = calcularSaldoPendiente(prestamoLocked)
 
     // Re-acotar el monto al saldo real ya committeado por otras tx.
