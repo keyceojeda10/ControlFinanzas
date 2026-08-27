@@ -3,8 +3,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
-import { repartoSql, interesProporcionalDelPago, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
-import { interesPagoAPago } from '@/lib/dinero/interes-cobrado'
+import { repartoSql, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
@@ -316,6 +316,9 @@ export async function GET() {
         /* `interesPagoAPago` decide con él si usa la tabla o el reparto plano.
            Sin pedirlo llega `undefined` y se equivoca EN SILENCIO. */
         modoInteres: true,
+        /* Lo que la consulta de rutas usa como base: `pr.totalPagado × fracción`.
+           Sin él la corrección por ruta no puede restar lo que esa consulta puso. */
+        totalPagado: true,
         // La correccion por ruta se suma sobre una base SQL que solo cuenta
         // ACTIVOS no clavos. Sin estos dos campos se corregia con prestamos
         // completados y clavos que no estaban en la cifra corregida.
@@ -381,25 +384,23 @@ export async function GET() {
      * organización veía «ganancia $3.230.648» en esta pantalla y «$2.500.993»
      * en el informe del contador con el mismo recaudado. Medido préstamo a
      * préstamo: 15 de 104 divergían, $760.764, y TODOS tenían abonos a capital. */
-    const filas = interesPagoAPago({ prestamo, cuotas, pagos })
+    /* Las dos correcciones salen de UNA función, compartida con el PDF de esta
+       misma pantalla y con el reparto a socios. Las tres llevaban su propia
+       copia del mismo bucle, y por eso el 27 de agosto una decía una cifra y
+       otra decía otra. Ver `correccionDelReparto`. */
+    const { porPago, porVida } = correccionDelReparto(prestamo)
 
-    for (let i = 0; i < pagos.length; i++) {
-      const pago = pagos[i]
-      const segunTabla = filas[i]?.interes ?? 0
-      const segunProporcion = interesProporcionalDelPago(prestamo, pago)
-      const delta = segunTabla - segunProporcion
+    // La rentabilidad por ruta se apoya en `REPARTO_VIDA`, que mira el préstamo
+    // entero: su corrección es otra. Solo los que esa consulta cuenta.
+    if (prestamo.estado === 'activo' && !prestamo.esClavo) {
+      const rutaId = prestamo.cliente?.rutaId || null
+      correccionTablaPorRuta[rutaId] = (correccionTablaPorRuta[rutaId] || 0) + porVida
+    }
 
-      // Solo los que la consulta de rutas cuenta. Corregir una cifra con
-      // prestamos que no estan dentro de ella la deja peor que sin corregir.
-      if (prestamo.estado === 'activo' && !prestamo.esClavo) {
-        const rutaId = prestamo.cliente?.rutaId || null
-        correccionTablaPorRuta[rutaId] = (correccionTablaPorRuta[rutaId] || 0) + delta
-      }
-
-      // El desglose mensual solo cubre la ventana de la pantalla; la ruta usa
-      // el acumulado de vida del prestamo, igual que hace la consulta SQL.
-      if (pago.fechaPago < fechaInicio) continue
-      const mes = claveMesBogota(pago.fechaPago)
+    for (const { fechaPago, delta } of porPago) {
+      // El desglose mensual solo cubre la ventana de la pantalla.
+      if (fechaPago < fechaInicio) continue
+      const mes = claveMesBogota(fechaPago)
       const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
       acc.interes += delta
       acc.capital -= delta          // lo que sube el interes, lo baja el capital

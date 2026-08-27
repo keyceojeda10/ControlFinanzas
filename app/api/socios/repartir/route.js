@@ -23,7 +23,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
-import { repartoSql, fraccionInteres } from '@/lib/dinero/reparto'
+import { repartoSql } from '@/lib/dinero/reparto'
+import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 
 // De este numero depende cuanta plata se le asigna a cada socio. La formula
 // tiene que ser LA MISMA que la de analiticas y la del PDF, no una copia que se
@@ -110,17 +111,24 @@ export async function GET() {
       prisma.prestamo.findMany({
         where: {
           organizationId: orgId,
-          modoInteres: { in: MODOS_CON_TABLA },
           totalAPagar: { gt: 0 },
+          /* ⚠ Y TAMBIÉN LOS QUE LLEVAN PAGOS DECLARADOS, TENGAN TABLA O NO. De
+             este número depende cuánta plata se le asigna a cada socio, así que
+             un abono a capital contado como ganancia se reparte de verdad. */
+          OR: [
+            { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
+            { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
+          ],
           /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
              interés devengado sin pagar, y un campo que no se pide vale `undefined`
              —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
           devengos: { select: { periodo: true, interes: true } },
-          cuotasAmortizacion: { some: {} },
         },
         select: {
           montoPrestado: true,
           totalAPagar: true,
+          modoInteres: true,
+          totalPagado: true,
           cuotasAmortizacion: {
             orderBy: { numeroPeriodo: 'asc' },
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
@@ -128,7 +136,8 @@ export async function GET() {
           pagos: {
             where: { tipo: { notIn: ['recargo', 'descuento'] } },
             orderBy: { fechaPago: 'asc' },
-            select: { montoPagado: true, fechaPago: true },
+            // El `tipo` manda: un abono a capital es 100 % capital.
+            select: { montoPagado: true, fechaPago: true, tipo: true },
           },
         },
       }),
@@ -141,17 +150,13 @@ export async function GET() {
 
     // Correccion por tabla: la DIFERENCIA contra el reparto plano. Un prestamo
     // que no entre aca conserva su cifra proporcional.
+    /* La MISMA función que usan analíticas y su PDF. Antes cada uno llevaba su
+       copia del bucle, y el 27 de agosto se vio lo que cuesta: dos pantallas
+       decían cifras distintas del mismo mes. Ver `correccionDelReparto`. */
     let correccion = 0
     for (const prestamo of prestamosConTabla) {
-      const cuotas = prestamo.cuotasAmortizacion
-      if (!cuotas.length) continue
-      const fraccion = fraccionInteres(prestamo)
-      let acumulado = 0
-      for (const pago of prestamo.pagos) {
-        const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
-          - pago.montoPagado * fraccion
-        acumulado += pago.montoPagado
-        if (pago.fechaPago >= desde && pago.fechaPago < hasta) correccion += delta
+      for (const { fechaPago, delta } of correccionDelReparto(prestamo).porPago) {
+        if (fechaPago >= desde && fechaPago < hasta) correccion += delta
       }
     }
 

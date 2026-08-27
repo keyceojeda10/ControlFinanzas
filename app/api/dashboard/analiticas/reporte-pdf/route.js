@@ -3,7 +3,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
-import { repartoSql, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { repartoSql, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO } from '@/lib/papel/tokens'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
@@ -109,8 +110,15 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
     prisma.prestamo.findMany({
       where: {
         organizationId,
-        modoInteres: { in: MODOS_CON_TABLA },
         totalAPagar: { gt: 0 },
+        /* ⚠ Y TAMBIÉN LOS QUE LLEVAN PAGOS DECLARADOS, TENGAN TABLA O NO. El
+           reparto plano no aplica el techo de interés cuando un abono a capital
+           se mezcla con pagos corrientes: se pasa. La misma rama que en
+           `app/api/dashboard/analiticas/route.js`. */
+        OR: [
+          { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
+          { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
+        ],
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
@@ -124,6 +132,8 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
       },
       select: {
         montoPrestado: true,
+        modoInteres: true,
+        totalPagado: true,
         totalAPagar: true,
         cuotasAmortizacion: {
           orderBy: { numeroPeriodo: 'asc' },
@@ -132,7 +142,8 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         pagos: {
           where: { tipo: { notIn: ['recargo', 'descuento'] } },
           orderBy: { fechaPago: 'asc' },
-          select: { montoPagado: true, fechaPago: true },
+          // El `tipo` manda: un abono a capital es 100 % capital.
+          select: { montoPagado: true, fechaPago: true, tipo: true },
         },
       },
     }),
@@ -297,16 +308,12 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   // de analiticas, para que las dos muestren el mismo numero.
   const correccionTablaPorMes = {}
   for (const prestamo of prestamosConTabla) {
-    const cuotas = prestamo.cuotasAmortizacion
-    if (!cuotas.length) continue
-    const fraccionProporcional = fraccionInteres(prestamo)
-    let acumulado = 0
-    for (const pago of prestamo.pagos) {
-      const delta = interesDelPagoSegunTabla(cuotas, acumulado, pago.montoPagado)
-        - pago.montoPagado * fraccionProporcional
-      acumulado += pago.montoPagado
-      if (pago.fechaPago < fechaInicio) continue
-      const mes = claveMesBogota(pago.fechaPago)
+    /* La MISMA función que usa la pantalla de la que este PDF es la copia
+       impresa. Antes cada uno llevaba su bucle, y por eso podían decir cifras
+       distintas del mismo mes. Ver `correccionDelReparto`. */
+    for (const { fechaPago, delta } of correccionDelReparto(prestamo).porPago) {
+      if (fechaPago < fechaInicio) continue
+      const mes = claveMesBogota(fechaPago)
       const acc = correccionTablaPorMes[mes] || (correccionTablaPorMes[mes] = { interes: 0, capital: 0 })
       acc.interes += delta
       acc.capital -= delta
