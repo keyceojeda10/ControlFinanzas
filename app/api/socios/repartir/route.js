@@ -38,11 +38,26 @@ import { porcentajeParticipacion, repartirExacto } from '@/lib/socios'
 const MODOS_CON_TABLA = ['lineal', 'solo_interes', 'lineal_dinamico', 'saldo']
 
 // Rango del mes en curso en hora de Colombia.
+/* ⚠ EL MES SE CORTA EN BOGOTÁ, NO DONDE ESTÉ EL SERVIDOR.
+ *
+ * Decía `new Date(hoy.getFullYear(), hoy.getMonth(), 1)`, y ese constructor usa
+ * el huso LOCAL: en producción, que corre en UTC, el mes le empezaba a las 7 de
+ * la tarde del día 31 anterior. Todo lo demás del sistema corta en Bogotá
+ * —`DATE_SUB(fechaPago, INTERVAL 5 HOUR)`—, así que el reparto a socios metía
+ * en el mes cobros que las otras pantallas ponían en el anterior.
+ *
+ * Medido el 27 ago 2026 en la frontera del 1 de agosto: 133 pagos,
+ * $13.966.457 recaudados y $2.607.857 de interés, en 20 negocios. Y no es un
+ * caso raro: 3.830 de los 27.194 pagos del mes caen entre las 00 y las 05 UTC.
+ *
+ * De este número sale cuánta plata se le asigna a cada socio. */
 function rangoMesActual() {
   const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }))
-  const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-  const hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
-  const periodo = `${desde.getFullYear()}-${String(desde.getMonth() + 1).padStart(2, '0')}`
+  const y = hoy.getFullYear(), m = hoy.getMonth()
+  // Las 00:00 de Bogotá del día 1 son las 05:00Z: el convenio del proyecto.
+  const desde = new Date(Date.UTC(y, m, 1, 5, 0, 0))
+  const hasta = new Date(Date.UTC(y, m + 1, 1, 5, 0, 0))
+  const periodo = `${y}-${String(m + 1).padStart(2, '0')}`
   return { desde, hasta, periodo }
 }
 
@@ -102,6 +117,11 @@ export async function GET() {
         WHERE p.organizationId = ${orgId}
           AND p.fechaPago >= ${desde} AND p.fechaPago < ${hasta}
           AND p.tipo NOT IN ('recargo', 'descuento')
+          /* ⚠ LOS ANULADOS FUERA, COMO EN LAS OTRAS TRES PANTALLAS. Sin esto el
+             reparto a socios contaba como ganancia los cobros de préstamos
+             cancelados y analíticas no: medido el 27 ago 2026, $535.191 de
+             diferencia en 3 negocios sobre el mes en curso. */
+          AND pr.estado <> 'cancelado'
       `,
       // ...y los prestamos CON tabla, para corregir su parte leyendola de la
       // tabla en vez de repartirla plana. Sin esto, esta pantalla y la de
@@ -119,10 +139,13 @@ export async function GET() {
             { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
             { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
           ],
-          /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
-             interés devengado sin pagar, y un campo que no se pide vale `undefined`
-             —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
-          devengos: { select: { periodo: true, interes: true } },
+          /* ⚠ AQUÍ NO VAN LOS DEVENGOS, Y ESTA CONSULTA LLEVABA ROTA DESDE EL 19
+             DE AGOSTO POR PONERLOS. `devengos: { select: … }` dentro de un `where`
+             es `Unknown argument 'select'`: Prisma revienta y el endpoint devuelve
+             500. Nadie lo vio porque nadie había abierto esta pantalla — en los logs
+             de PM2 del 31 jul al 27 ago no hay ni un acierto ni un error suyo.
+             Estos préstamos solo alimentan `correccionDelReparto`, que no mira los
+             devengos, así que no hacen falta en el `select` tampoco. */
         },
         select: {
           montoPrestado: true,
