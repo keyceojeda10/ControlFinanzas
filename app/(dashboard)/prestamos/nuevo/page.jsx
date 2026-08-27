@@ -10,6 +10,7 @@ import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
 import { calcularPrestamo } from '@/lib/calculos'
+import { fechaDePeriodo } from '@/lib/dinero/calendario'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
@@ -590,6 +591,36 @@ function NuevoPrestamo() {
       setPlazoUnidades(numCuotas)
     }
   }, [numCuotas, modo])
+
+  /* LOS DOS PRIMEROS COBROS DEL QUINCENAL, EN CRISTIANO.
+   *
+   * `fechaDePeriodo` cuenta las apariciones REALES de los dias de cobro desde
+   * la entrega, y es la MISMA que pone las fechas en la tabla y la que contesta
+   * «proximo cobro». Repetir la cuenta aqui seria abrir un calendario nuevo, y
+   * de ahi salio el fallo del quincenal corrido: el prestamo decia una fecha en
+   * su tabla y otra en la pantalla.
+   *
+   * Las fechas se leen en UTC porque asi se guardan (T05:00Z = medianoche en
+   * Bogota); con la zona del navegador un cobro del dia 1 se lee dia 31. */
+  const dosPrimerosCobros = useMemo(() => {
+    if (frecuencia !== 'quincenal' || modoDiaCobro !== 'mes') return null
+    const d1 = Number(diaCobroMes)
+    if (!Number.isInteger(d1) || d1 < 1 || d1 > 31) return null
+    const d2 = Number(diaCobroMes2)
+    const inicio = new Date(`${fechaInicio}T05:00:00.000Z`)
+    if (Number.isNaN(inicio.getTime())) return null
+    const escribir = (f) => f && f.toLocaleDateString('es-CO', {
+      timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long',
+    })
+    const args = {
+      fechaInicio: inicio, freq: 'quincenal', diasPeriodo: 15,
+      diaCobroMes: d1,
+      ...(Number.isInteger(d2) && d2 >= 1 && d2 <= 31 ? { diaCobroMes2: d2 } : {}),
+    }
+    try {
+      return [escribir(fechaDePeriodo(1, args)), escribir(fechaDePeriodo(2, args))]
+    } catch { return null }
+  }, [frecuencia, modoDiaCobro, diaCobroMes, diaCobroMes2, fechaInicio])
 
   // Cálculo en tiempo real — usa el ultimo resultado valido como fallback
   // para que el panel de resumen no desaparezca al editar campos (ej: borrar
@@ -1465,14 +1496,45 @@ function NuevoPrestamo() {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3">
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
                       <Input type="number" inputMode="numeric" value={diaCobroMes}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
                         label="Primer cobro" placeholder="Ej: 5" min={1} max={31} />
                       <Input type="number" inputMode="numeric" value={diaCobroMes2}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes2(v) }}
                         label="Segundo cobro" placeholder="Ej: 20" min={1} max={31} />
-                    </div>
+                      </div>
+                      {/* ── LOS DOS PRIMEROS COBROS, ESCRITOS ─────────────────
+                          «Escogía el día, el primer día, escogía el segundo día
+                          y me mandaba para otro mes.» Pidió poder poner día Y
+                          MES, y lo que necesitaba era VER en qué fechas iba a
+                          cobrar: un «16» a secas no dice si cae este mes o el
+                          que viene, y de eso depende si el préstamo nace en
+                          mora. Poner el mes a mano sería una tercera fuente de
+                          verdad para el calendario, que es de donde salió el
+                          fallo que esto acompaña.
+
+                          ⚠ SALE DE `fechaDePeriodo`, la misma que pone las
+                          fechas en la tabla y la que contesta «próximo cobro».
+                          Una cuenta propia aquí volvería a ser dos calendarios.
+
+                          El mismo bloque que ya existe para mensual, que nació
+                          de lo mismo: «un prestamista lo hacía a mano en cada
+                          préstamo porque el sistema no se lo enseñaba». */}
+                      {dosPrimerosCobros && (
+                        <div className="mt-2 rounded-[10px] border p-2.5"
+                          style={{ borderColor: 'var(--cf-border-soft)', background: 'var(--cf-fill)' }}>
+                          <p className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                            Le cobras el {dosPrimerosCobros[0]}
+                            {dosPrimerosCobros[1] ? ` y el ${dosPrimerosCobros[1]}` : ''}
+                          </p>
+                          <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                            Cuenta desde el dia que entregas. Si el mes no tiene ese dia, se cobra el ultimo.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
