@@ -216,6 +216,17 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
 
   // Saldo total: suma de saldoPendiente de todos los prestamos activos
   const saldoTotal = prestamosActivos.reduce((acc, p) => acc + (p?.saldoPendiente ?? 0), 0)
+  /* ⚠ LO QUE COSTARÍA CERRARLOS TODOS HOY, PORQUE SI NO LAS DOS PANTALLAS NO
+     SUMAN. La ficha de cada préstamo enseña «si lo cancela hoy» —el interés que
+     va corriendo día a día en un préstamo abierto— y aquí solo se sumaba el
+     saldo del libro. Un prestamista abrió los tres créditos de un cliente, sumó
+     los tres y le dieron $947.419 donde esta ficha decía $850.000: «si yo sumo
+     todo eso me da 941.710 pesos a la fecha, más no me da 850.000».
+
+     La cifra grande NO cambia —su rótulo dice «saldo total pendiente» y eso es
+     lo que el libro dice que debe—. Lo que faltaba era la otra, con su nombre. */
+  const cerrarHoyTotal = prestamosActivos.reduce((acc, p) => acc + (p?.cerrarHoy ?? p?.saldoPendiente ?? 0), 0)
+  const corriendo = Math.round(cerrarHoyTotal - saldoTotal)
   const totalAPagar = prestamosActivos.reduce((acc, p) => acc + (p?.totalAPagar ?? 0), 0)
   const totalPagado = totalAPagar - saldoTotal
   const pctPagado = totalAPagar > 0 ? Math.round((totalPagado / totalAPagar) * 100) : 0
@@ -468,6 +479,20 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 style={{ width: `${pctPagado}%`, background: '#2FBE6A' }}
               />
             </div>
+
+            {/* Solo cuando hay interés corriendo: en un préstamo con plazo las
+                dos cifras son la misma y repetirla se lee como un error. */}
+            {corriendo > 0 && (
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,.10)' }}>
+                <p className="text-[11px]" style={{ color: '#8A8E98' }}>Si los cancela hoy</p>
+                <p className="font-mono-display font-bold leading-none mt-1" style={{ color: '#F3F3F6', fontSize: 20 }}>
+                  {formatMoney(cerrarHoyTotal)}
+                </p>
+                <p className="text-[11px] mt-1" style={{ color: '#8A8E98' }}>
+                  lleva {formatMoney(corriendo)} de interés corrido desde el último cobro
+                </p>
+              </div>
+            )}
 
             {/* ══ E05 · LA TIRA DE CUATRO CIFRAS ═══════════════════════════
                 Es la información con la que se decide si prestarle otra vez, y

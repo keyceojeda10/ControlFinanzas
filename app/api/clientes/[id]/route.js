@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, calcularEstadoCliente } from '@/lib/calculos'
+import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, calcularEstadoCliente, calcularLiquidacionAnticipada } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { geocodeAddress }   from '@/lib/geocoding'
@@ -95,6 +95,16 @@ export async function GET(request, { params }) {
     // Enriquecer préstamos con cálculos. Si alguno falla, devolver el prestamo
     // sin enriquecer en lugar de tirar 500 (para que el cliente no se quede
     // sin poder abrir la pagina por un edge case en un solo prestamo).
+    /* Lo que costaría cerrar ESE préstamo hoy. Si el cálculo falla se devuelve
+       el saldo pelado: nunca una cifra inventada. */
+    const cierreHoyDe = (p, diasExcluidos, festivos) => {
+      try {
+        const liq = calcularLiquidacionAnticipada(p, new Date(), diasExcluidos, festivos)
+        const v = Math.round(liq?.proporcional?.restanteHoy ?? liq?.restanteHoy ?? 0)
+        return Number.isFinite(v) && v > 0 ? v : Math.round(calcularSaldoPendiente(p))
+      } catch { return Math.round(calcularSaldoPendiente(p)) }
+    }
+
     const prestamosEnriquecidos = cliente.prestamos.map((p) => {
       try {
         // diasSinCobro se resuelve por préstamo (máxima prioridad en jerarquía)
@@ -105,6 +115,19 @@ export async function GET(request, { params }) {
           saldoPendiente:      calcularSaldoPendiente(p),
           porcentajePagado:    calcularPorcentajePagado(p),
           proximoCobro:        calcularProximoCobro(p, diasExcluidos, festivos),
+          /* ⚠ LO QUE CUESTA CERRARLO HOY, PARA QUE LAS DOS PANTALLAS SUMEN LO
+           * MISMO. La ficha del préstamo enseña «si lo cancela hoy» desde el 26
+           * de agosto —el interés que va corriendo día a día en un préstamo
+           * abierto— y la ficha del cliente seguía sumando solo el saldo del
+           * libro. Un prestamista abrió los tres créditos de un cliente, sumó
+           * los tres «si lo cancela hoy» y le dieron $947.419 donde su ficha
+           * decía $850.000. Los $97.419 eran el interés corrido de los tres.
+           *
+           * Sale de `calcularLiquidacionAnticipada`, que es la MISMA función
+           * que alimenta la ficha del préstamo: dos fuentes para la misma cifra
+           * es cómo se llega a que dos pantallas digan cosas distintas. Fuera
+           * del abierto vale lo mismo que el saldo y no cambia nada. */
+          cerrarHoy:           cierreHoyDe(p, diasExcluidos, festivos),
         }
       } catch (err) {
         console.error(`[GET /api/clientes/${id}] error enriqueciendo prestamo ${p.id}:`, err)
@@ -114,6 +137,7 @@ export async function GET(request, { params }) {
           saldoPendiente:   p.totalAPagar ?? 0,
           porcentajePagado: 0,
           proximoCobro:     null,
+          cerrarHoy:        p.totalAPagar ?? 0,
           _enriqueceError:  true,
         }
       }
