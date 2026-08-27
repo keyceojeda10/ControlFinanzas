@@ -390,7 +390,18 @@ export async function POST(request, { params }) {
         const debido = Math.max(0, Math.round(
           calcularSaldoPendiente(prestamoLocked) - (calcularCapitalRestante(prestamoLocked) ?? 0),
         ))
-        const pideDelPeriodo = Math.max(0, Math.round(montoFinal) - debido)
+        /* ⚠ CUANTO DE ESTE COBRO ES INTERES DEL PERIODO EN CURSO — Y LAS DOS
+           PREGUNTAS NO SON LA MISMA. En un cobro de interes, el monto ES
+           interes y solo hay que descontar lo que ya se debia. En una
+           LIQUIDACION el monto lleva el capital dentro, asi que se descuenta
+           el saldo entero; restando solo `debido` salia que pedia el millon de
+           capital como interes y el corte se asentaba por el mes completo
+           cobrando seis dias. Lo caza el espejo, no las pruebas: $200.000
+           apuntados como interes ganado donde se cobraron $38.710. */
+        const yaCubierto = tipo === 'liquidacion'
+          ? Math.round(calcularSaldoPendiente(prestamoLocked))
+          : debido
+        const pideDelPeriodo = Math.max(0, Math.round(montoFinal) - yaCubierto)
         if (pideDelPeriodo > 0) {
           const aAsentar = tipo === 'liquidacion'
             ? Math.min(enCurso.interesPeriodo, pideDelPeriodo)
