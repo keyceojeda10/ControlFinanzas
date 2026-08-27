@@ -3,8 +3,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
-import { interesGanado, fraccionInteres } from '@/lib/dinero/reparto'
-import { tieneTablaAmortizacion, interesDelPagoSegunTabla } from '@/lib/calculos'
+import { interesGanado, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { tieneTablaAmortizacion, interesDelPagoSegunTabla, calcularDiasMora } from '@/lib/calculos'
 
 export async function GET(request, { params }) {
   try {
@@ -103,6 +103,43 @@ export async function GET(request, { params }) {
 
     const interesesTotales = prestamosConInteres.reduce((acc, p) => acc + p.interesesCobrados, 0)
 
+    /* ⚠ Y «CUÁNTO TIENE ESTE SOCIO EN LA CALLE» TENÍA DOS.
+     *
+     * Es el mismo cuento del interés que cuenta el comentario de arriba, con el
+     * capital: la lista (`/api/socios`) ya lo arregló y esta ficha se quedó
+     * sumando `montoPrestado` de TODOS los préstamos no cancelados — incluidos
+     * los ya pagados y por su monto original.
+     *
+     * El comentario de la lista describe literalmente el fallo que seguía aquí:
+     * «lo que del socio sigue AFUERA, no lo que salió algún día; con
+     * `Σ montoPrestado` la tarjeta decía que tenía en la calle plata que el
+     * cliente ya le había devuelto».
+     *
+     * Medido en producción el 27 ago 2026: 2 socios, 35 préstamos, la ficha
+     * inflaba $4.533.334. Uno tiene sus DOS préstamos pagados y su ficha decía
+     * $1.800.000 en la calle donde su tarjeta decía $0.
+     *
+     * Se calcula aquí y no en la pantalla para que haya UNA cuenta, que es lo
+     * que ya se hizo con el interés. */
+    const activos = socio.prestamos.filter((p) => p.estado === 'activo')
+    const capitalEnCalle = Math.round(activos.reduce((acc, p) => acc + capitalEnCalleDe(p), 0))
+
+    /* ⚠ Y «CUÁNTO TIENE EN MORA» DECÍA CERO SIEMPRE.
+     *
+     * La pantalla filtraba por `p.diasMora > 0` y este API NUNCA ha devuelto
+     * `diasMora`: `undefined ?? 0` es 0, el filtro deja la lista vacía y la
+     * tarjeta escribe «$0 en mora» tenga lo que tenga. No revienta, no avisa —
+     * es la trampa del campo que no se pide, con el socio mirando la cifra.
+     *
+     * Va con el capital VIVO, no con `montoPrestado`, para que las dos cifras
+     * de la misma tarjeta se puedan comparar: con el monto original «en mora»
+     * podía salir MAYOR que «en la calle», que no significa nada. */
+    const capitalEnMora = Math.round(
+      activos
+        .filter((p) => calcularDiasMora(p) > 0)
+        .reduce((acc, p) => acc + capitalEnCalleDe(p), 0),
+    )
+
     return Response.json({
       id: socio.id,
       nombre: socio.nombre,
@@ -115,6 +152,8 @@ export async function GET(request, { params }) {
       totalRetiros: Math.round(totalRetiros),
       balanceNeto: Math.round(totalAportes - totalRetiros),
       interesesCobrados: interesesTotales,
+      capitalEnCalle,
+      capitalEnMora,
       aportes: socio.aportes,
       prestamos: prestamosConInteres,
     })

@@ -221,7 +221,15 @@ export default function SocioDetallePage() {
   const retirosAnio = (socio.aportes || []).filter(a => a.tipo === 'retiro' && new Date(a.fecha).getFullYear() === anioLiquidacion).reduce((a, b) => a + b.monto, 0)
   const roiAnio = aportesAnio > 0 ? Math.round((interesesAnio / aportesAnio) * 100) : (socio.totalAportes > 0 ? Math.round((interesesAnio / socio.totalAportes) * 100) : 0)
 
-  const capitalEnCalle = socio.prestamos.reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
+  /* ⚠ LO CONTESTA EL API, NO SE SUMA AQUI.
+   *
+   * Aqui decia `Σ montoPrestado` sobre TODOS los prestamos no cancelados: los
+   * pagados contaban, y por su monto original. La lista del socio ya lo tenia
+   * bien y esta ficha no, asi que el mismo socio salia con dos capitales.
+   *
+   * Medido en produccion el 27 ago 2026: $4.533.334 de mas entre 2 socios. Uno
+   * tiene sus DOS prestamos pagados y aqui salia con $1.800.000 en la calle. */
+  const capitalEnCalle = socio.capitalEnCalle ?? 0
 
   // ── T45-03 · La cuenta del socio ──
   //
@@ -245,8 +253,10 @@ export default function SocioDetallePage() {
     monto: fmt(a.monto),
   }))
 
-  const enMora = socio.prestamos.filter((p) => (p.diasMora ?? 0) > 0)
-    .reduce((acc, p) => acc + (p.montoPrestado ?? 0), 0)
+  /* ⚠ TAMBIEN LA CONTESTA EL API. Aqui se filtraba por `p.diasMora`, que este
+   * API nunca ha devuelto: `undefined ?? 0` es 0, el filtro dejaba la lista
+   * vacia y la tarjeta escribia «$0 en mora» tuviera lo que tuviera. */
+  const enMora = socio.capitalEnMora ?? 0
 
   /* ══ LO QUE SE PUEDE HACER CON ESTE SOCIO ================================
    *
