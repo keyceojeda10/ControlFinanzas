@@ -970,6 +970,18 @@ export async function PATCH(request, { params }) {
       diaCobroMes:   diaCobroMesUsar,
       diaCobroMes2:  diaCobroMes2Usar,
       interesAdelantado: p.interesAdelantado,
+      /* ⚠ UN ABIERTO SE RECALCULA COMO ABIERTO. Sin la bandera, el cálculo cae
+       * en el Globo CON plazo y devuelve otra cosa: la cuota deja de ser el
+       * interés del período y pasa a ser capital + interés, y el total estrena
+       * un mes que nadie devengó — que el cron vuelve a cobrar al cerrar el
+       * período, o sea dos meses por uno corrido.
+       *
+       * No es hipotético: en la cuenta de un cliente había 9 préstamos así,
+       * $830.000, cortando entre el 1 y el 24 de septiembre. En su registro se
+       * ve la pelea — creaba, editaba, borraba y volvía a crear el mismo
+       * préstamo durante una hora, porque al tocarlo la cuota le saltaba de
+       * $100.000 a $1.100.000. */
+      sinPlazo: p.sinPlazo,
       ...(Array.isArray(nuevoCapitalExtra) && nuevoCapitalExtra.length > 0 && { capitalExtra: nuevoCapitalExtra }),
     })
 
@@ -998,6 +1010,12 @@ export async function PATCH(request, { params }) {
       }, { status: 400 })
     }
 
+    /* Lo ya devengado, para devolvérselo al total: ver la nota en `totalAPagar`.
+       Fuera del abierto siempre es 0 y la suma no cambia nada. */
+    const devengadoAbierto = (p.sinPlazo && modoInteresUsar === 'solo_interes')
+      ? Math.round((p.devengos ?? []).reduce((a, d) => a + (Number(d.interes) || 0), 0))
+      : 0
+
     const dataUpdate = {
       montoPrestado: montoNuevo,
       tasaInteres:   tasaInteres ?? p.tasaInteres,
@@ -1010,9 +1028,15 @@ export async function PATCH(request, { params }) {
       modoInteres:   modoInteresUsar,
       cuotaDiaria:   calc.cuotaDiaria,
       // Si hay pagos, el total es lo ya pagado + el nuevo saldo recalculado.
-      totalAPagar:   hayPagos
+      /* ⚠ EL INTERÉS YA DEVENGADO NO SE RECALCULA: SE CONSERVA. En un abierto
+       * el cálculo devuelve solo el capital, porque el interés no nace del
+       * plazo sino de los períodos que fueron cerrando. Ese interés ya está
+       * asentado, con su fecha y su clave única, y algunos meses ya se
+       * cobraron. Dejarlo salir de `calc` borraría de un plumazo los $2.400.000
+       * de un préstamo de mayo por corregirle el nombre del producto. */
+      totalAPagar:   (hayPagos
         ? (p.totalPagado || 0) + calc.totalAPagar
-        : calc.totalAPagar,
+        : calc.totalAPagar) + devengadoAbierto,
       diaCobroSemana: diaCobroSemana !== undefined ? diaCobroSemana : p.diaCobroSemana,
       diaCobroMes:    diaCobroMes    !== undefined ? diaCobroMes    : p.diaCobroMes,
       diaCobroMes2:   diaCobroMes2   !== undefined ? diaCobroMes2   : p.diaCobroMes2,
