@@ -7,6 +7,10 @@ import { esId }             from '@/lib/ids'
 import { calcularPrestamo, calcularEstadoCliente } from '@/lib/calculos'
 import { agruparPorCliente } from '@/lib/carga-masiva'
 import { registrarMovimientoCapital } from '@/lib/capital'
+
+/* La cuenta por la que se da por movida la plata de una importación. El mismo
+   defecto que `app/api/prestamos/route.js` aplica cuando nadie elige. */
+const CUENTA_CARGA_MASIVA = 'efectivo'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { logActividad }     from '@/lib/activity-log'
 import { trackEvent }       from '@/lib/analytics'
@@ -203,6 +207,13 @@ export async function POST(request) {
               // ninguna ruta, y la sub-bolsa queda desviada desde el primer día.
               rutaId: rutaFinal || null,
               creadoPorId: session.user.id,
+              /* ⚠ SIN ESTO LA IMPORTACIÓN ENTERA CAE EN «SIN REGISTRAR».
+                 `resolverKey` (lib/capital.js) manda ahí todo movimiento con la
+                 cuenta en NULL. La importación no pregunta por cuenta —y no
+                 debe: son cientos de filas—, así que va el mismo defecto que
+                 usa el asistente cuando el prestamista no elige. Medido el 26
+                 ago 2026: 212 desembolsos sin cuenta en 30 días salían de aquí. */
+              metodoPago: CUENTA_CARGA_MASIVA,
             })
 
             // Abono previo
@@ -233,6 +244,9 @@ export async function POST(request) {
                 referenciaTipo: 'prestamo',
                 rutaId: rutaFinal || null,
                 creadoPorId: session.user.id,
+                // La misma cuenta que el desembolso de esta misma fila: las dos
+                // mitades del mismo acto no pueden ir a cubos distintos.
+                metodoPago: CUENTA_CARGA_MASIVA,
               })
             }
           }

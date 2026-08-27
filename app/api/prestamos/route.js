@@ -24,6 +24,8 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent } from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { devengarAlCrear } from '@/lib/dinero/devengar'
+import { TIPOS_ABONO_PREVIO, sePreguntaElTipo, NOTA_ABONO_PREVIO_MANUAL } from '@/lib/dinero/abono-previo'
+import { devengosPendientes } from '@/lib/calculos'
 import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
@@ -503,7 +505,7 @@ export async function POST(request) {
 
   const { organizationId, rol } = session.user
   const body = await request.json()
-  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
+  const { clienteId, montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, yaAbonado, cuotaManual, inyeccionPrevia, diaCobroSemana, diaCobroMes, diaCobroMes2, seguro, montoSeguro, modoInteres, nombreProducto, interesAdelantado, capitalExtra, socioId, sinPlazo, tipoAbonoPrevio, metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
   // Cuenta de la que sale el desembolso (para el desglose por cuenta). Si no
   // viene, se asume efectivo (el caso mas comun en gota a gota).
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
@@ -629,6 +631,32 @@ export async function POST(request) {
    * sitios a propósito: la pantalla no es una frontera de confianza. */
   const esAbierto = modoValido === 'solo_interes' && !!sinPlazo
 
+  /* ══ DE QUÉ FUE EL ABONO PREVIO ═══════════════════════════════════════════
+   *
+   * «El sistema no está preguntando si esos abonos son a intereses, si son a
+   * capital o qué tipo de abonos es» (26 ago 2026). Hasta hoy se guardaba
+   * siempre como 'completo' — 1.272 préstamos, $435.946.278 — y en un abierto
+   * eso es la diferencia entre que el mes siguiente valga $120.000 o $200.000,
+   * para siempre.
+   *
+   * ⚠ SOLO SE ADMITE DONDE LA RESPUESTA HACE LO QUE DICE. Ver la tabla medida
+   * en lib/dinero/abono-previo.js: en `unico` marcar «capital» le regala un mes
+   * al cliente y en `saldo`/`lineal` lo mete en 31 días de mora, porque
+   * `periodosCubiertos` cuenta lo pagado entre la cuota y la cuota baja al
+   * bajar el capital. El abierto es el único que sale limpio. En los demás
+   * modos se RECHAZA en vez de degradar a 'completo' en silencio: un valor que
+   * el servidor ignora es como se llega a que la pantalla prometa una cosa y la
+   * base guarde otra. */
+  const tipoAbono = tipoAbonoPrevio || 'completo'
+  if (!TIPOS_ABONO_PREVIO.includes(tipoAbono)) {
+    return Response.json({ error: 'Tipo de abono previo no válido' }, { status: 400 })
+  }
+  if (tipoAbono !== 'completo' && !sePreguntaElTipo({ modoInteres: modoValido, sinPlazo: esAbierto })) {
+    return Response.json({
+      error: 'Solo se puede decir a qué se abonó en un préstamo abierto (Globo sin fecha de vencimiento).',
+    }, { status: 400 })
+  }
+
   /* ⚠ SIN DÍA DE CORTE EN LOS ABIERTOS, DE MOMENTO. El día de corte prorratea
    * el primer período, y ese prorrateo todavía no está fijado por una prueba
    * para el devengo. Antes que dejarlo pasar y cobrar de más el primer mes, se
@@ -688,6 +716,63 @@ export async function POST(request) {
   // Validar abono vs total
   if (abono > totalAPagar) {
     return Response.json({ error: 'El abono no puede ser mayor al total a pagar' }, { status: 400 })
+  }
+
+  /* ══ CADA TIPO DE ABONO TIENE SU PROPIO TECHO ═════════════════════════════
+   *
+   * En un abierto la deuda arranca siendo SOLO EL CAPITAL: el interés nace
+   * cuando cada período cierra. Así que el tope de arriba —el total a pagar— no
+   * dice nada útil aquí, y sin estos dos el préstamo puede nacer debiendo menos
+   * de lo que se prestó, que es la señal de que las cuentas ya no cuadran.
+   *
+   *   · a CAPITAL: no se puede abonar más capital del que hay.
+   *   · a INTERÉS: no se puede haber pagado más interés del que ha corrido.
+   *     Lo que ha corrido se pregunta a `devengosPendientes`, que es la misma
+   *     función que va a asentar esos períodos un momento después
+   *     (`devengarAlCrear`), así que la guardia y el hecho no pueden discrepar. */
+  if (esAbierto && abono > 0 && tipoAbono !== 'completo') {
+    const capital = Number(montoPrestado)
+    if (tipoAbono === 'capital' && abono > capital) {
+      return Response.json({
+        error: `Como abono a capital no puede pasar de $${Math.round(capital).toLocaleString('es-CO')}, que es lo que prestaste.`,
+      }, { status: 400 })
+    }
+    if (tipoAbono === 'intereses') {
+      const corridos = devengosPendientes({
+        modoInteres: 'solo_interes', sinPlazo: true,
+        montoPrestado: capital, tasaInteres: Number(tasaInteres),
+        frecuencia: freq, fechaInicio,
+        diaCobroMes: diaCobroMesDb, diaCobroMes2: diaCobroMes2Db,
+        primerCobro: calc.primerCobro ?? null,
+        pagos: [], devengos: [], cuotasAmortizacion: [],
+      })
+      const techo = corridos.reduce((a, d) => a + (Number(d.interes) || 0), 0)
+      if (abono > techo) {
+        return Response.json({
+          error: techo > 0
+            ? `De interés solo han corrido $${Math.round(techo).toLocaleString('es-CO')} desde el ${fechaInicio}. Si le pagó más, parte fue a capital.`
+            : `Todavía no ha corrido ningún período de interés desde el ${fechaInicio}, así que ese abono no pudo ser de interés.`,
+        }, { status: 400 })
+      }
+    }
+  }
+
+  /* ⚠ EL MISMO PERMISO QUE EN LA HOJA DE PAGO. Registrar un pago de solo
+     interés en un préstamo sin tabla SUBE la deuda de un cliente real, y por eso
+     `app/api/prestamos/[id]/pagos/route.js` se lo prohíbe al cobrador que no
+     tiene el permiso de gestionar préstamos. La creación la puede hacer un
+     cobrador, así que sin esto el selector le abría por la puerta de atrás lo
+     que el flujo normal le cierra por delante. */
+  if (esAbierto && abono > 0 && tipoAbono === 'intereses' && rol === 'cobrador') {
+    const quien = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { puedeGestionarPrestamos: true },
+    })
+    if (!quien?.puedeGestionarPrestamos) {
+      return Response.json({
+        error: 'No tienes permiso para registrar abonos de solo interés.',
+      }, { status: 403 })
+    }
   }
 
   // Leer config de modo estricto de la organización
@@ -827,9 +912,11 @@ export async function POST(request) {
             organizationId,
             cobradorId:     session.user.id,
             montoPagado:    abono,
-            tipo:           'completo',
+            /* Lo que dijo el prestamista que fue ese abono. Siempre 'completo'
+               fuera de un préstamo abierto — ver la validación de más arriba. */
+            tipo:           tipoAbono,
             fechaPago:      new Date(`${fechaInicio}T05:00:00.000Z`),
-            nota:           'Abono previo (préstamo en curso)',
+            nota:           NOTA_ABONO_PREVIO_MANUAL,
           },
         })
         await refrescarTotalesPrestamo(tx, nuevo.id)
@@ -845,6 +932,24 @@ export async function POST(request) {
           // mismo olvido que dejó las 9 rutas de PRESTA MIL sin cuadrar.
           rutaId: cliente?.rutaId || null,
           creadoPorId: session.user.id,
+          /* ⚠ LA MISMA CUENTA QUE EL DESEMBOLSO DE ESTA MISMA CREACIÓN.
+           *
+           * Sin esto el movimiento nacía con `metodoPago` en NULL, y
+           * `resolverKey` (lib/capital.js) manda lo desconocido al cubo «Sin
+           * registrar». O sea: las DOS MITADES DEL MISMO ACTO iban a cubos
+           * distintos —el desembolso a la cuenta que eligió el prestamista, el
+           * abono a ninguna—, que es el patrón exacto del que salieron las dos
+           * pantallas diciendo $66.000 y $119.000.
+           *
+           * Medido en el espejo el 26 ago 2026: 1.269 movimientos,
+           * $450.724.723, TODOS con la cuenta en NULL. A un negocio le cayeron
+           * $33.495.100 en «Sin registrar» el día que migró su cartera.
+           *
+           * Va la del desembolso y no una pregunta nueva porque es el mismo
+           * hecho: si dice que entregó el préstamo en efectivo, el abono que ya
+           * le habían pagado también lo tiene en efectivo. */
+          metodoPago: cuentaDesembolso,
+          metodoPagoId: cuentaDesembolsoId,
         })
       }
     } else if (abono > 0) {
@@ -855,9 +960,11 @@ export async function POST(request) {
           organizationId,
           cobradorId:     session.user.id,
           montoPagado:    abono,
-          tipo:           'completo',
+          /* Lo que dijo el prestamista que fue ese abono. Siempre 'completo'
+             fuera de un préstamo abierto — ver la validación de más arriba. */
+          tipo:           tipoAbono,
           fechaPago:      new Date(`${fechaInicio}T05:00:00.000Z`),
-          nota:           'Abono previo (préstamo en curso)',
+          nota:           NOTA_ABONO_PREVIO_MANUAL,
         },
       })
       await refrescarTotalesPrestamo(tx, nuevo.id)

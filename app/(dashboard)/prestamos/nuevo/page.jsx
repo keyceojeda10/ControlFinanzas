@@ -13,6 +13,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
@@ -213,6 +214,9 @@ function NuevoPrestamo() {
   const [nombreProducto, setNombreProducto] = useState('')
   // Préstamo en curso (migración)
   const [esEnCurso, setEsEnCurso] = useState(false)
+  /* A qué se abonó ese pago previo. Solo se pregunta en el préstamo abierto,
+     que es donde la respuesta hace lo que dice — ver lib/dinero/abono-previo.js. */
+  const [tipoAbonoPrevio, setTipoAbonoPrevio] = useState('completo')
   const [yaAbonado, setYaAbonado] = useState('')
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
@@ -237,6 +241,14 @@ function NuevoPrestamo() {
      cambiar de modo no deje un préstamo «abierto» de otro tipo por olvido. */
   const esAbierto = modoInteres === 'solo_interes' && sinPlazo
   const [capitalExtra, setCapitalExtra] = useState([])
+
+  /* ⚠ SI DEJA DE SER ABIERTO, LA RESPUESTA SE OLVIDA. El API rechaza cualquier
+     tipo que no sea 'completo' fuera del abierto, así que dejarla puesta al
+     cambiar de modo daría un 400 al guardar sobre una opción que ya no se ve.
+     Es el mismo patrón del interruptor que se queda encendido sin hacer nada. */
+  useEffect(() => {
+    if (!esAbierto) setTipoAbonoPrevio('completo')
+  }, [esAbierto])
   // ── «TE QUEDAN $3.2M DISPONIBLES EN CAJA» (T16-00) ──
   // La lámina lo pone debajo del monto, y es la pregunta que el prestamista se
   // hace justo ahí: si presta esto, ¿con qué se queda?
@@ -645,6 +657,7 @@ function NuevoPrestamo() {
         ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
         ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
         ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+        ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
         ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
         ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
         modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -780,6 +793,7 @@ function NuevoPrestamo() {
       ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
       ...(esEnCurso && Number(yaAbonado) > 0 && { yaAbonado: Number(yaAbonado) }),
+      ...(esEnCurso && Number(yaAbonado) > 0 && esAbierto && { tipoAbonoPrevio }),
       ...(calculo?.cuotaDiaria > 0 && (cuotaManualActiva || modo === 'mercancia') && { cuotaManual: calculo.cuotaDiaria }),
       ...(modoInteres === 'saldo' && Number(cuotaManual) > 0 && { cuotaManual: Number(cuotaManual) }),
       modoInteres: modo === 'mercancia' ? 'manual' : modoInteres,
@@ -1876,6 +1890,48 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto ya abonado</label>
                   <div className="mt-1.5"><MoneyInput value={yaAbonado} onChange={(e) => setYaAbonado(e.target.value)} placeholder="0" /></div>
+
+                  {/* ══ ¿A QUÉ SE ABONÓ? ═══════════════════════════════════════
+                      «El sistema no está preguntando si esos abonos son a
+                      intereses, si son a capital o qué tipo de abonos es»
+                      (26 ago 2026). Solo aparece en el préstamo ABIERTO: es el
+                      único modo donde la respuesta hace lo que dice y nada más.
+                      En los demás, marcar «capital» le regala un mes al cliente
+                      o lo mete en 31 días de mora según el modo — la tabla
+                      medida está en lib/dinero/abono-previo.js.
+
+                      El renglón de debajo lleva CIFRAS, no una explicación: es
+                      lo que deja al prestamista cotejarlo contra su cuaderno sin
+                      tocar nada, y lo que evita que conteste en automático. */}
+                  {esAbierto && Number(yaAbonado) > 0 && (() => {
+                    const cap = Math.max(0, Number(monto) || 0)
+                    const ab = Math.min(Number(yaAbonado) || 0, cap)
+                    const t = (Number(tasa) || 0) / 100
+                    const mes = Math.round(cap * t)
+                    const mesNuevo = Math.round((cap - ab) * t)
+                    const consecuencia = {
+                      completo: `Se toma como el interés que ya corrió. Te sigue debiendo ${formatMoney(cap)}.`,
+                      capital: `Bajó lo que te debe a ${formatMoney(cap - ab)}. El mes pasa de ${formatMoney(mes)} a ${formatMoney(mesNuevo)}.`,
+                      intereses: `Solo te pagó la ganancia. Te sigue debiendo ${formatMoney(cap)} y el mes sigue en ${formatMoney(mes)}.`,
+                    }[tipoAbonoPrevio]
+                    return (
+                      <div className="mt-3">
+                        <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿A qué se abonó?</label>
+                        <div className="mt-1.5">
+                          <GrupoSegmentado
+                            opciones={[
+                              { id: 'completo', nombre: 'Cuotas' },
+                              { id: 'capital', nombre: 'Capital' },
+                              { id: 'intereses', nombre: 'Interés' },
+                            ]}
+                            valor={tipoAbonoPrevio}
+                            onElegir={setTipoAbonoPrevio}
+                          />
+                        </div>
+                        <p className="text-xs mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>{consecuencia}</p>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 

@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { registrarMovimientoCapital } from '@/lib/capital'
+import { abonoPrevioDe } from '@/lib/dinero/abono-previo'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
 import { enviarPush } from '@/lib/push'
@@ -23,15 +24,28 @@ export async function POST(request, { params }) {
     where: { id: prestamoId, organizationId, estado: 'pendiente_aprobacion' },
     include: {
       cliente: { select: { id: true, nombre: true, rutaId: true } },
-      pagos: { select: { id: true, montoPagado: true, tipo: true } },
+      pagos: { select: { id: true, montoPagado: true, tipo: true, nota: true } },
     },
   })
   if (!prestamo) {
     return Response.json({ error: 'Préstamo no encontrado o ya fue procesado' }, { status: 404 })
   }
 
+  /* ⚠ SIN CUENTA, LA PLATA CAE EN «SIN REGISTRAR». `resolverKey` (lib/capital.js)
+     manda a ese cubo todo movimiento con `metodoPago` en NULL, y aquí no lo
+     pasaba NINGUNO de los dos —ni el desembolso—. La cuenta que eligió el
+     cobrador al pedir el préstamo no se guarda en ninguna columna de `Prestamo`,
+     así que al aprobar ya no se puede recuperar: se usa el mismo defecto que el
+     resto del sistema. Medido en el espejo: cero préstamos han pasado por
+     aprobación hasta hoy, así que esto no reescribe historia, la evita. */
+  const CUENTA_AL_APROBAR = 'efectivo'
+
   const rutaIdCapital = prestamo.cliente?.rutaId || null
-  const abonoPrevio = prestamo.pagos.find(p => p.tipo === 'completo')
+  /* ⚠ POR LA NOTA, NO POR EL TIPO. Buscarlo por `tipo === 'completo'` cogía el
+     primer cobro normal del préstamo si ya tenía alguno, y dejaría de
+     encontrarlo el día que el abono se pueda marcar como capital o interés.
+     `esAbonoPrevio` es el único sitio que decide esto — ver lib/dinero/abono-previo.js. */
+  const abonoPrevio = abonoPrevioDe(prestamo)
 
   const updated = await prisma.$transaction(async (tx) => {
     const capRow = await tx.$queryRaw`
@@ -58,6 +72,7 @@ export async function POST(request, { params }) {
       referenciaTipo: 'prestamo',
       rutaId: rutaIdCapital,
       creadoPorId: session.user.id,
+      metodoPago: CUENTA_AL_APROBAR,
     })
 
     if (abonoPrevio && Number(abonoPrevio.montoPagado) > 0) {
@@ -72,6 +87,7 @@ export async function POST(request, { params }) {
         // función, dos llamadas seguidas.
         rutaId: rutaIdCapital,
         creadoPorId: session.user.id,
+        metodoPago: CUENTA_AL_APROBAR,
       })
     }
 
