@@ -119,11 +119,13 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
           { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
           { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
         ],
-        /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
-           interés devengado sin pagar, y un campo que no se pide vale `undefined`
-           —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
-        devengos: { select: { periodo: true, interes: true } },
-        cuotasAmortizacion: { some: {} },
+        /* ⚠ AQUÍ NO VAN LOS DEVENGOS, Y ESTA CONSULTA LLEVABA ROTA DESDE EL 19
+           DE AGOSTO POR PONERLOS. `devengos: { select: … }` dentro de un `where`
+           es `Unknown argument 'select'`: Prisma revienta y el endpoint devuelve
+           500. Nadie lo vio porque nadie había abierto esta pantalla — en los logs
+           de PM2 del 31 jul al 27 ago no hay ni un acierto ni un error suyo.
+           Estos préstamos solo alimentan `correccionDelReparto`, que no mira los
+           devengos, así que no hacen falta en el `select` tampoco. */
         /* ⚠ Los anulados TAMBIÉN fuera de la corrección, no solo de la consulta
            base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra
            volvía a subir por la puerta de la corrección. Lo cazó comparar las dos
