@@ -343,18 +343,26 @@ export async function GET(request, { params }) {
   //            para determinar la dirección (positiva = ingreso a la ruta)
   const TIPOS_INGRESO = new Set(['recaudo', 'inyeccion', 'capital_inicial'])
   const TIPOS_EGRESO = new Set(['desembolso', 'gasto', 'retiro'])
+  /* ⚠ EL ASIENTO QUE NO MOVIÓ NADA NO TIENE DIRECCIÓN. Con los dos saldos
+     iguales, `saldoNuevo >= saldoAnterior` lo lee como INGRESO y le suma a la
+     ruta una plata que nadie metió. El interés perdonado se apunta así desde el
+     26 ago —no baja el capital porque nunca estuvo en la caja—, y
+     `ajusteArranqueRuta` queda fuera porque ése SÍ mueve la bolsa a propósito.
+
+     ⚠ Y VA EN LOS TRES SITIOS QUE LEEN LA DIRECCIÓN, no en uno. Estaba solo en
+     `deltaPorRuta`, y los otros dos bucles del mismo fichero la leen igual: es
+     el «arreglé una vía y dejé la otra» que este repo ya pagó dos veces con el
+     comprobante. Sin la guarda en el segundo, «Le queda en la ruta» se separa
+     de `Ruta.saldoCapital` por el importe entero del descuento y «Volvió al
+     capital de la ruta» escribe un ingreso que no existe. */
+  const noMovioNada = (m) => !m.ajusteArranqueRuta
+    && typeof m.saldoAnterior === 'number' && typeof m.saldoNuevo === 'number'
+    && Math.round(m.saldoAnterior) === Math.round(m.saldoNuevo)
+
   const deltaPorRuta = new Map()
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
-    /* ⚠ EL ASIENTO QUE NO MOVIÓ NADA NO ENTRA EN EL DELTA. Con los dos saldos
-       iguales, la dirección se lee `saldoNuevo >= saldoAnterior` y saldría como
-       INGRESO: le sumaría a la ruta una plata que nadie metió.
-       El interés perdonado se apunta así desde el 26 ago —no baja el capital
-       porque nunca estuvo en la caja—, y `ajusteArranqueRuta` queda fuera de
-       esta guarda porque ése SÍ mueve la bolsa de la ruta a propósito. */
-    if (!m.ajusteArranqueRuta
-        && typeof m.saldoAnterior === 'number' && typeof m.saldoNuevo === 'number'
-        && Math.round(m.saldoAnterior) === Math.round(m.saldoNuevo)) continue
+    if (noMovioNada(m)) continue
     const prev = deltaPorRuta.get(m.rutaId) || 0
     let delta = 0
     if (TIPOS_INGRESO.has(m.tipo)) delta = m.monto
@@ -420,6 +428,7 @@ export async function GET(request, { params }) {
   const reversosYaDescontados = cobrosRevertidosElMismoDia(primerMovPorRuta)
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
+    if (noMovioNada(m)) continue
     if (m.tipo === 'inyeccion' || m.tipo === 'capital_inicial') {
       inyeccionesDia += m.monto
       if (esEfectivo(m)) inyeccionesEfectivo += m.monto
@@ -448,7 +457,8 @@ export async function GET(request, { params }) {
   const detalleCorreccionesDeLibro = primerMovPorRuta
     // Los ya descontados por «lo cobrado» tampoco se nombran aquí: si no,
     // «Salió del capital de la ruta» seguiría confesando los $3.393.000.
-    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !reversosYaDescontados.has(m.id) && !afectaElFajo(m, originalesDeHoy))
+    .filter((m) => m.rutaId && m.tipo === 'ajuste' && !noMovioNada(m)
+      && !reversosYaDescontados.has(m.id) && !afectaElFajo(m, originalesDeHoy))
     .map((m) => ({
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',

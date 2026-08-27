@@ -181,24 +181,43 @@ export async function GET(request) {
     case 'movimientos': {
       const tipos = cifra === 'inyecciones' ? ['inyeccion', 'capital_inicial']
         : cifra === 'retiros' ? ['retiro'] : ['ajuste']
+      /* ⚠ LA LISTA TIENE QUE SUMAR EL TITULAR. Los tres renglones nuevos se
+         calculan con el DELTA de asientos que `afectaCaja` deja fuera; si la
+         lista siguiera filtrando por `afectaCaja` se abriría VACÍA debajo de
+         una cifra que no es cero. Es el mismo fallo que este repo ya arregló
+         una vez: «Correcciones enseñaba $60.000 y la lista sumaba $3.699.000». */
+      const esCorreccion = cifra === 'correcciones'
+      const esPerdon = cifra === 'perdonado' || cifra === 'perdonDeshecho'
       const movs = await prisma.movimientoCapital.findMany({
         where: {
           organizationId,
           createdAt: { gte: inicio, lt: fin },
           tipo: { in: tipos },
+          ...(esCorreccion ? { referenciaTipo: 'correccion' } : {}),
           ...(rutaIds.length ? { rutaId: { in: rutaIds } } : {}),
         },
         select: {
           id: true, monto: true, descripcion: true, createdAt: true,
           saldoAnterior: true, saldoNuevo: true,
+          /* ⚠ SIN PEDIRLO LLEGA `undefined` y el filtro de arriba no acierta
+             NUNCA, en silencio. Ver [[feedback_verificar_prisma_select]]. */
+          referenciaTipo: true,
         },
         orderBy: { createdAt: 'desc' },
         take: TOPE,
       })
-      filas = movs.filter(afectaCaja).map((m) => ({
+      const subeElSaldo = (m) => Math.round(m.saldoNuevo ?? 0) > Math.round(m.saldoAnterior ?? 0)
+      const pasa = esCorreccion ? (() => true)
+        : esPerdon ? ((m) => !afectaCaja(m)
+            && (cifra === 'perdonDeshecho' ? subeElSaldo(m) : !subeElSaldo(m))
+            && Math.round(m.saldoNuevo ?? 0) !== Math.round(m.saldoAnterior ?? 0))
+        : afectaCaja
+      filas = movs.filter(pasa).map((m) => ({
         id: m.id,
         titulo: m.descripcion || 'Movimiento sin motivo',
-        detalle: esIngreso(m) ? 'entró' : 'salió',
+        detalle: (esCorreccion || esPerdon)
+          ? (subeElSaldo(m) ? 'te lo devolvió al capital' : 'salió del capital')
+          : (esIngreso(m) ? 'entró' : 'salió'),
         monto: plata(m.monto),
         cuando: m.createdAt,
         ir: null,

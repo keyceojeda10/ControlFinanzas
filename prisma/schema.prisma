@@ -697,6 +697,7 @@ model MovimientoCapital {
   referenciaTipo     String?
   rutaId             String? // ruta a la que pertenece el movimiento (null = general)
   ajusteArranqueRuta Boolean        @default(false) // ajuste que solo afecta la sub-bolsa de la ruta, NO el saldo global (absorber prestamos previos)
+  noMueveCapital     Boolean        @default(false) // se apunta pero NO mueve el saldo (descuento, interes perdonado): perdonar deuda no saca un billete de ningun sitio
   // Cuenta por la que entro/salio el dinero (para el desglose "dinero por cuenta").
   // metodoPago: 'efectivo' | 'transferencia' (null = movimiento sin cuenta / historico).
   // metodoPagoId: FK a MetodoPago cuando es transferencia a una cuenta especifica.
