@@ -7,7 +7,7 @@ import { logActividad } from '@/lib/activity-log'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
-import { conciliar, resumirLibro, ALCANCE } from '@/lib/dinero/conciliacion'
+import { conciliar, resumirLibro, loQueSeMovio, ALCANCE } from '@/lib/dinero/conciliacion'
 import { cuentasDelCobrador, entraAlFajo } from '@/lib/dinero/cuentas'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } from '@/lib/i18n'
 // Una sola definición para los TRES sitios que cierran cajas. Ver el archivo:
@@ -724,7 +724,25 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
       orderBy: { createdAt: 'asc' },
       select: { saldoAnterior: true },
     })
-    baseInicialDia = primerMov ? Number(primerMov.saldoAnterior || 0) : saldoCapitalActual
+    /* ⚠ SE DERIVA DEL SALDO DE VERDAD, NO DE LA PRIMERA FOTO.
+     *
+     * Decía `primerMov.saldoAnterior`, y esa foto miente en cuanto la cadena
+     * del día no es contigua — basta con borrar un movimiento del medio o con
+     * que uno entre con la fecha de otro momento. El 27 de agosto de 2026 un
+     * prestamista vio TRES cifras distintas en la misma tarjeta por eso.
+     *
+     * `Capital.saldo` menos lo que se movió hoy es el mismo número cuando la
+     * cadena está sana, y el correcto cuando no lo está. Y es el que hace que
+     * «con lo que amaneciste» y la cifra grande cuenten la misma historia. */
+    const delDia = await prisma.movimientoCapital.findMany({
+      where: { organizationId, createdAt: { gte: inicio, lt: fin } },
+      select: { saldoAnterior: true, saldoNuevo: true },
+    })
+    /* La MISMA función que usa `resumirLibro` para derivar su apertura. Un
+       `SUM` en la base redondearía el total y no cada delta, y con asientos que
+       llevan fracciones de céntimo eso son dos cifras distintas en la misma
+       pantalla. */
+    baseInicialDia = primerMov ? saldoCapitalActual - loQueSeMovio(delDia) : saldoCapitalActual
   }
 
   const gastos = gastosDia._sum?.monto || 0
@@ -842,7 +860,11 @@ async function getStatsDia(organizationId, fecha, cobradorId = null, verSaldoCaj
     }))
   const conciliacion = conciliar({
     alcance: cobradorId ? ALCANCE.COBRADOR : ALCANCE.ORGANIZACION,
-    libro: resumirLibro(movimientosDia, saldoPrevioDelDia),
+    /* El tercer argumento es el punto de llegada. Solo en la vista del NEGOCIO:
+       en la de un cobrador los asientos vienen filtrados por sus rutas y
+       `Capital.saldo` es el de todos, así que derivar le achacaría a él lo que
+       movieron las demás. Ver la nota larga en `resumirLibro`. */
+    libro: resumirLibro(movimientosDia, saldoPrevioDelDia, cobradorId ? null : saldoCapitalActual),
     operaciones: {
       pagos: recogida,
       pagosEfectivo: recogidaEfectivo,
