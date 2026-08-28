@@ -1,5 +1,8 @@
 'use client'
 
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
+
 // components/cf/primitivos.jsx — Las piezas base del rediseño 2026.
 // Recetas de docs/design_handoff/03-COMPONENTES.md.
 //
@@ -393,6 +396,10 @@ const TONO_ESTRELLA_OSCURO = {
   rojo:  '#F0575C',
 }
 
+/* Lo que dice el globo si nadie pasa un texto. Vive aquí y no importado de
+   `lib/calificacion` para no atar las piezas de dibujo a la regla de negocio. */
+const TEXTO_NIVEL = { verde: 'Buen cliente', ambar: 'Se atrasa', rojo: 'Mal cliente' }
+
 const CAMINO_ESTRELLA =
   'M12 2.1l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.12l-5.88 3.09 1.12-6.55L2.48 9.02l6.58-.96L12 2.1z'
 
@@ -427,16 +434,120 @@ function Estrella({ color, tam = 20 }) {
  * La marca compacta: para la lista, la tabla y la parada de la ruta, donde el
  * espacio es oro y hay hasta 322 filas.
  */
-export function EstrellaCliente({ nivel, titulo, style, sobreOscuro = false }) {
+export function EstrellaCliente({ nivel, titulo, texto, style, sobreOscuro = false }) {
   const color = (sobreOscuro ? TONO_ESTRELLA_OSCURO : TONO_ESTRELLA)[nivel]
+  /* ⚠ LOS HOOKS, ANTES DEL RETURN CONDICIONAL. Un `useState` colado detrás de
+     un `return` ya tiró la pantalla del comprobante entera. */
+  const [globo, setGlobo] = useState(null)
+  const refBoton = useRef(null)
+  const refReloj = useRef(0)
+
+  const cerrar = useCallback(() => { clearTimeout(refReloj.current); setGlobo(null) }, [])
+
+  useEffect(() => {
+    if (!globo) return
+    /* Se va sola, y también con el primer gesto que hagas: mirar otra cosa ya
+       es decir «ya lo leí». Y si la lista se mueve, el globo se quedaría
+       apuntando al vacío. */
+    refReloj.current = setTimeout(cerrar, 2600)
+    /* ⚠ EL SCROLL NO CUENTA EN LOS PRIMEROS 350 ms. En un teléfono se toca la
+       estrella justo después de deslizar la lista, y la inercia sigue llegando
+       un instante: sin esta gracia el globo se abría y se cerraba en el mismo
+       gesto — desde fuera, un toque que no hace nada. Salió midiendo la parada
+       de la ruta, donde hay que bajar para llegar a la primera estrella. */
+    const nacio = Date.now()
+    const fuera = (e) => { if (e?.type === 'scroll' && Date.now() - nacio < 350) return; cerrar() }
+    window.addEventListener('scroll', fuera, true)
+    window.addEventListener('resize', fuera)
+    document.addEventListener('pointerdown', fuera)
+    return () => {
+      clearTimeout(refReloj.current)
+      window.removeEventListener('scroll', fuera, true)
+      window.removeEventListener('resize', fuera)
+      document.removeEventListener('pointerdown', fuera)
+    }
+  }, [globo, cerrar])
+
   if (!color) return null
+
+  const frase = texto ?? TEXTO_NIVEL[nivel]
+
+  /* ── EL «TAC» QUE EXPLICA EL COLOR ────────────────────────────────────────
+   *
+   *   «Mucha gente va a quedar azul. Solamente que le toquen encima si les da
+   *    curiosidad y les haga un pequeño tac.»
+   *
+   * El `title` del navegador no vale: en un teléfono no existe —no hay ratón
+   * que posar— y justo el teléfono es donde trabaja el cobrador.
+   *
+   * ⚠ Y NO PUEDE ABRIR LA FICHA. La estrella vive DENTRO de la tarjeta del
+   * cliente, que al tocarla navega. Sin frenar el toque aquí, la curiosidad te
+   * saca de la lista. */
+  const abrir = (e) => {
+    e.stopPropagation(); e.preventDefault()
+    const r = refBoton.current?.getBoundingClientRect()
+    if (!r) return
+    setGlobo({ x: r.left + r.width / 2, y: r.top })
+  }
+
   return (
-    <span title={titulo} aria-label={titulo} style={{
-      display: 'inline-flex', flex: 'none', alignItems: 'center', justifyContent: 'center',
-      width: 20, height: 20, ...style,
-    }}>
-      <Estrella color={color} />
-    </span>
+    <>
+      <button
+        ref={refBoton}
+        type="button"
+        onClick={abrir}
+        onPointerDown={(e) => e.stopPropagation()}
+        title={titulo}
+        aria-label={titulo || frase}
+        className="cf-estrella-toque"
+        style={{
+          display: 'inline-flex', flex: 'none', alignItems: 'center', justifyContent: 'center',
+          width: 20, height: 20, padding: 0, border: 0, background: 'none', cursor: 'pointer',
+          ...style,
+        }}
+      >
+        <Estrella color={color} />
+      </button>
+      {globo && <GloboDeEstrella {...globo} color={color} frase={frase} />}
+    </>
+  )
+}
+
+/* La burbuja. Va en un PORTAL al `body` y no dentro de la fila: `position:
+   fixed` deja de ser fijo en cuanto un ancestro tiene `transform`, y las listas
+   de esta app entran animadas. Sin el portal, el globo aparecería desplazado
+   —o recortado— justo en las pantallas donde más se va a tocar. */
+function GloboDeEstrella({ x, y, color, frase }) {
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <span
+      role="status"
+      className="cf-globo-estrella"
+      style={{
+        position: 'fixed', left: x, top: y - 8, zIndex: 90,
+        transform: 'translate(-50%, -100%)',
+        /* Sin `pointerEvents` el globo se come el toque siguiente. */
+        pointerEvents: 'none',
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        maxWidth: 'calc(100vw - 24px)',
+        padding: '6px 10px', borderRadius: 'var(--cf-r-pill)',
+        background: 'var(--cf-ink)', color: 'var(--cf-surface)',
+        fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+        boxShadow: '0 6px 18px rgba(20,20,28,.22)',
+      }}
+    >
+      <span aria-hidden style={{
+        width: 7, height: 7, borderRadius: 999, background: color, flex: 'none',
+      }} />
+      {frase}
+      {/* El pico, que es lo que dice de QUIÉN habla el globo. */}
+      <span aria-hidden style={{
+        position: 'absolute', left: '50%', bottom: -4, width: 9, height: 9,
+        marginLeft: -4.5, background: 'var(--cf-ink)', transform: 'rotate(45deg)',
+        borderRadius: 1,
+      }} />
+    </span>,
+    document.body,
   )
 }
 
