@@ -330,7 +330,7 @@ export function EtiquetaClavo({ style }) {
   )
 }
 
-/* ══ LA ESTRELLA DE CÓMO PAGA ══════════════════════════════════════════════
+/* ══ LA MARCA DE CÓMO PAGA ═════════════════════════════════════════════════
  *
  * «Es como para que el cobrador sepa qué clientela está trabajando bien y cuál
  *  mal.» El nivel lo calcula `lib/calificacion.js` del historial.
@@ -345,57 +345,151 @@ export function EtiquetaClavo({ style }) {
  * primaria y el foco del campo. El ámbar de aquí es `--cf-gold-dark`, el mismo
  * que ya usan los avisos, no el dorado de las cifras.
  *
- * ⚠ EL NÚMERO VA DENTRO, y es cuántos préstamos ha terminado. Es la prueba
- * detrás del color —«verde con 5» pesa más que «verde con 1»— y además hace que
- * la marca no dependa SOLO del color: el cobrador trabaja al sol, y hay quien no
- * distingue el rojo del verde. */
+ * ══ POR QUÉ YA NO LLEVA UN NÚMERO DENTRO ═══════════════════════════════════
+ *
+ * Lo llevaba —cuántos préstamos había terminado— y el dueño lo rebatió:
+ *
+ *   «Primero no me gustó el número de adentro. No dice nada realmente.»
+ *
+ * Tiene razón, y hay una regla que lo explica: si un control necesita una
+ * etiqueta para entenderse, el mapeo es débil. Un «8» suelto dentro de una
+ * estrella no tiene unidad —¿ocho qué?— y obliga a leer el título para saberlo.
+ * El COLOR ya es el juicio; el conteo va donde hay sitio para decirlo con
+ * palabras, que es la ficha: «Buen cliente · 8 préstamos terminados».
+ *
+ * ══ Y POR QUÉ AHORA ES UN «ICONO CONTENEDOR» ═══════════════════════════════
+ *
+ *   «La estrella no es la más bonita tampoco, se ve muy sosa para el peso que
+ *    tiene en diseño el sistema. No se ve bonita y no se ve bien integrada.»
+ *
+ * Estaba suelta: una silueta plana flotando al lado de una pastilla, sin
+ * compartir con ella ni altura ni radio ni material. Ahora es la pieza que el
+ * sistema YA tiene para esto —«icono contenedor pequeño», radio 10 en
+ * `11-ESCALAS-Y-CONSISTENCIA.md`—, así que deja de ser una forma huérfana.
+ *
+ * El material sale de la superficie, no del símbolo: el contenedor lleva un
+ * degradado de su propio color (más claro arriba, como la luz que cae) y un
+ * filo claro en el borde superior. Es lo mismo que hace la app con sus barras
+ * translúcidas, a 22px.
+ *
+ * ⚠ RADIO 10, NO 999. La píldora está reservada a cinco cosas (avatar, punto de
+ * estado, pastilla de estado, barra de progreso y el botón +); un disco aquí
+ * sería la sexta. La estética del sistema es cuadrado redondeado.
+ */
 const TONO_ESTRELLA = {
-  verde: { fondo: 'var(--cf-green-dark)', texto: '#FFFFFF' },
-  ambar: { fondo: 'var(--cf-gold-dark)',  texto: '#FFFFFF' },
-  rojo:  { fondo: 'var(--cf-red-dark)',   texto: '#FFFFFF' },
+  verde: 'var(--cf-green-dark)',
+  ambar: 'var(--cf-gold-dark)',
+  rojo:  'var(--cf-red-dark)',
 }
 
 /* ⚠ LA TARJETA DEL ENCABEZADO ES OSCURA SIEMPRE, TAMBIÉN EN TEMA CLARO. Los
    tonos de arriba son los de «texto de color sobre blanco» (#0D7A3C y
-   compañía): sobre ese fondo la estrella se pierde. Los tokens claros SÍ se dan
-   la vuelta solos en tema oscuro, pero esa tarjeta no sigue el tema, así que
-   aquí hay que decirlo a mano. */
+   compañía): sobre ese fondo la marca se pierde. Los tokens claros SÍ se dan la
+   vuelta solos en tema oscuro, pero esa tarjeta no sigue el tema, así que aquí
+   hay que decirlo a mano. */
 const TONO_ESTRELLA_OSCURO = {
-  verde: { fondo: '#2FBE6A', texto: '#08130C' },
-  ambar: { fondo: '#F5B824', texto: '#1B1503' },
-  rojo:  { fondo: '#F0575C', texto: '#1E0A0B' },
+  verde: '#2FBE6A',
+  ambar: '#F5B824',
+  rojo:  '#F0575C',
 }
 
-export function EstrellaCliente({ nivel, numero, titulo, style, sobreOscuro = false }) {
-  const tono = (sobreOscuro ? TONO_ESTRELLA_OSCURO : TONO_ESTRELLA)[nivel]
-  if (!tono) return null
-  /* Con dos cifras el número no cabe dentro de la estrella sin encogerlo hasta
-     lo ilegible. De 10 en adelante se queda en 9: el número es la prueba detrás
-     del color y a partir de ahí ya no cambia lo que dice —«tiene historia de
-     sobra»—. El de verdad va en el título. */
-  const dentro = numero > 9 ? '9' : String(numero ?? '')
+const CAMINO_ESTRELLA =
+  'M12 2.1l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.12l-5.88 3.09 1.12-6.55L2.48 9.02l6.58-.96L12 2.1z'
+
+/* ⚠ EL MATERIAL VA EN LA ESTRELLA, NO EN UNA CAJA DETRÁS. Lo hice al revés
+   primero —un contenedor tintado con la estrella dentro— y salió peor: a 22px el
+   radio de icono se lee como un círculo, y una superficie clara encima de la
+   tarjeta blanca es apilar dos materiales claros, que es justo lo que hunde la
+   legibilidad. La estrella sólida ya tenía la presencia; lo que le faltaba era
+   volumen.
+
+   El volumen son dos cosas y nada más: un filo claro por dentro del contorno
+   —la luz posándose en el material— y una sombra del PROPIO color. Una sombra
+   gris sobre una pieza de 20px la ensucia; teñida la despega del papel.
+
+   Van como trazo del path y `drop-shadow`: ni degradados con un `id` repetido
+   cien veces en la lista, ni máscaras CSS, que en las GPU Mali de los teléfonos
+   baratos ya nos han dado un susto. */
+const SOMBRA_ESTRELLA = (color) =>
+  `drop-shadow(0 1px 1.5px color-mix(in srgb, ${color} 42%, transparent))`
+
+function Estrella({ color, tam = 20 }) {
+  return (
+    <svg width={tam} height={tam} viewBox="0 0 24 24" aria-hidden
+      style={{ filter: SOMBRA_ESTRELLA(color), display: 'block' }}>
+      <path d={CAMINO_ESTRELLA} fill={color}
+        stroke="rgba(255,255,255,.55)" strokeWidth="1.1" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/**
+ * La marca compacta: para la lista, la tabla y la parada de la ruta, donde el
+ * espacio es oro y hay hasta 322 filas.
+ */
+export function EstrellaCliente({ nivel, titulo, style, sobreOscuro = false }) {
+  const color = (sobreOscuro ? TONO_ESTRELLA_OSCURO : TONO_ESTRELLA)[nivel]
+  if (!color) return null
   return (
     <span title={titulo} aria-label={titulo} style={{
-      position: 'relative', display: 'inline-flex', flex: 'none',
-      width: 24, height: 24, alignItems: 'center', justifyContent: 'center',
-      ...style,
+      display: 'inline-flex', flex: 'none', alignItems: 'center', justifyContent: 'center',
+      width: 20, height: 20, ...style,
     }}>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill={tono.fondo} aria-hidden
-        style={{ position: 'absolute', inset: 0 }}>
-        <path d="M12 1.8l3.09 6.26 6.91 1-5 4.87 1.18 6.87L12 17.56l-6.18 3.25L7 13.94l-5-4.87 6.91-1L12 1.8z" />
-      </svg>
-      <span style={{
-        position: 'relative', fontSize: 11, fontWeight: 800, lineHeight: 1,
-        /* ⚠ SUBIDO, NO CENTRADO. Una estrella no es un círculo: por debajo del
-           centro se estrecha hasta la punta, y el número centrado se salía por
-           ahí —se vio en la captura, no en las medidas—. La banda ancha está
-           por encima del centro geométrico. */
-        color: tono.texto, marginTop: -1,
-        fontFamily: 'var(--font-manrope), system-ui', fontVariantNumeric: 'tabular-nums',
-      }}>
-        {dentro}
-      </span>
+      <Estrella color={color} />
     </span>
+  )
+}
+
+/**
+ * La marca con su palabra: para la ficha, donde SÍ hay sitio para decir qué
+ * significa el color en vez de dejar que se adivine.
+ *
+ * Aquí la pastilla tintada sí vale, porque no está sola: el texto la ancla y le
+ * da forma de etiqueta. Lo que no valía era la caja sin texto de la lista.
+ *
+ * ⚠ SIN NIVEL TAMBIÉN SE PINTA. Es el hueco de «Sin calificar», y existe porque
+ * el dueño encontró el agujero:
+ *
+ *   «Si no tienen estrella, tampoco hay un lugar donde asignársela, porque
+ *    dentro de la ficha, cuando tienen estrella, uno le pica y se la puede
+ *    asignar; pero si no tiene estrella, no se puede asignar.»
+ *
+ * Son 3.639 de 6.656 clientes —los que aún no han cerrado ningún préstamo—, y
+ * son justo los que su cliente quería marcar a mano porque los conoce de antes.
+ * Sin este hueco, la función no les llegaba.
+ */
+export function MarcaComoPaga({ nivel, texto, onClick, sobreOscuro = false, style }) {
+  const color = (sobreOscuro ? TONO_ESTRELLA_OSCURO : TONO_ESTRELLA)[nivel]
+  const vacia = !color
+  const tinta = sobreOscuro ? '#9AA0AB' : 'var(--cf-ink-3)'
+  const Elemento = onClick ? 'button' : 'span'
+  return (
+    <Elemento
+      {...(onClick ? { type: 'button', onClick } : {})}
+      className={onClick ? 'cf-marca-paga' : undefined}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6, flex: 'none',
+        height: 26, padding: '0 10px 0 6px', borderRadius: 'var(--cf-r-pill)',
+        font: 'inherit', cursor: onClick ? 'pointer' : undefined,
+        color: vacia ? tinta : color,
+        /* El borde punteado dice «esto está por rellenar» sin una sola palabra
+           de más, que es lo que hace un hueco frente a un botón. */
+        border: vacia
+          ? `1px dashed color-mix(in srgb, ${tinta} 45%, transparent)`
+          : `1px solid color-mix(in srgb, ${color} 24%, transparent)`,
+        background: vacia ? 'none' : `color-mix(in srgb, ${color} 13%, transparent)`,
+        ...style,
+      }}
+    >
+      {vacia ? (
+        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+          <path d={CAMINO_ESTRELLA} fill="none" stroke={tinta} strokeWidth="1.8" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <Estrella color={color} tam={17} />
+      )}
+      <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{texto}</span>
+    </Elemento>
   )
 }
 

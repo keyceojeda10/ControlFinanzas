@@ -10,7 +10,7 @@ import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
-import { EstrellaCliente } from '@/components/cf/primitivos'
+import { MarcaComoPaga } from '@/components/cf/primitivos'
 import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 
 const COLOR_OK   = 'var(--cf-gold)'
@@ -403,23 +403,23 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               </span>
               {/* CÓMO HA PAGADO, AL LADO DE CÓMO ESTÁ HOY. Son dos cosas
                   distintas y por eso van juntas y separadas: la pastilla dice
-                  el préstamo de ahora, la estrella dice el historial. Se pulsa
-                  —también el cobrador— y la hoja explica de dónde sale. */}
-              {calificacion && (
-                <button
-                  type="button"
-                  onClick={onAbrirCalificacion}
-                  aria-label={`Cómo paga: ${TEXTO_CALIFICACION[calificacion.nivel]}`}
-                  style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', display: 'inline-flex' }}
-                >
-                  <EstrellaCliente
-                    sobreOscuro
-                    nivel={calificacion.nivel}
-                    numero={calificacion.numero}
-                    titulo={`${TEXTO_CALIFICACION[calificacion.nivel]} · ${calificacion.numero} préstamo${calificacion.numero === 1 ? '' : 's'} terminado${calificacion.numero === 1 ? '' : 's'}`}
-                  />
-                </button>
-              )}
+                  el préstamo de ahora, la marca dice el historial.
+
+                  ⚠ AQUÍ SE PINTA SIEMPRE, TENGA MARCA O NO. En la lista y en la
+                  ruta solo sale cuando hay historial —3.639 huecos punteados
+                  serían ruido—, pero la ficha es el sitio donde se asigna, y sin
+                  el hueco no había forma de marcar justo a quien no tiene
+                  historial: «si no tiene estrella, no se puede asignar». Y son
+                  esos los que el prestamista conoce de antes y quiere marcar.
+
+                  La palabra va al lado porque aquí hay sitio: un color a secas
+                  obliga a adivinar qué significa. */}
+              <MarcaComoPaga
+                sobreOscuro
+                nivel={calificacion?.nivel}
+                texto={calificacion ? TEXTO_CALIFICACION[calificacion.nivel] : 'Sin calificar'}
+                onClick={onAbrirCalificacion}
+              />
               {stats && (
                 <span className="text-[10px]" style={{ color: '#8A8E98' }}>{stats}</span>
               )}

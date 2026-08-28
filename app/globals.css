@@ -1302,3 +1302,19 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
 
   @page { margin: 12mm; }
 }
+
+/* ══ LA MARCA DE «CÓMO PAGA» SE SIENTE AL TOCARLA ═══════════════════════════
+   El realce va en el pulsado, no en la soltada: esperar al `click` para dar
+   señal se lee como que la pantalla está muerta. Y baja, no sube, porque el
+   dedo empuja hacia dentro. */
+.cf-marca-paga {
+  transition: transform 100ms cubic-bezier(.22,1,.36,1), filter 100ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.cf-marca-paga:active { transform: scale(.96); filter: brightness(.97); }
+@media (prefers-reduced-motion: reduce) {
+  /* Menos movimiento NO es menos respuesta: se queda el cambio de brillo, que
+     confirma el toque sin desplazar nada. */
+  .cf-marca-paga { transition: filter 100ms ease-out; }
+  .cf-marca-paga:active { transform: none; }
+}

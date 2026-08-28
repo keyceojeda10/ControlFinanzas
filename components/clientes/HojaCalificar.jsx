@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import HojaInferior from '@/components/cf/HojaInferior'
-import { EstrellaCliente } from '@/components/cf/primitivos'
+import { MarcaComoPaga } from '@/components/cf/primitivos'
 import { NIVELES, TEXTO, PORQUE, explicacion } from '@/lib/calificacion'
 
 /* POR QUÉ ESTE CLIENTE TIENE ESA MARCA — Y, SI ES EL DUEÑO, CÓMO CORREGIRLA.
@@ -63,7 +63,7 @@ export default function HojaCalificar({
           background: 'var(--cf-fill)',
         }}>
           {calificacion?.automatico ? (
-            <EstrellaCliente nivel={calificacion.automatico} numero={calificacion.numero} />
+            <MarcaComoPaga nivel={calificacion.automatico} texto={TEXTO[calificacion.automatico]} />
           ) : null}
           <div style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
             {calificacion?.automatico ? (
@@ -106,17 +106,12 @@ export default function HojaCalificar({
                 opacity: guardando && guardando !== nivel ? 0.5 : 1,
               }}
             >
-              {/* Sin historial la estrella va SIN número, no con un cero: un 0
-                  dentro lo pintaría como el peor de la lista cuando solo es
-                  nuevo. Es la misma trampa que ya corrigió el cumplimiento. */}
-              <EstrellaCliente nivel={nivel} numero={calificacion?.numero || null} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
-                  {TEXTO[nivel]}
-                </span>
-                <span style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 1 }}>
-                  {PORQUE[nivel]}
-                </span>
+              {/* La MISMA pieza que va a quedar puesta en la ficha y en la
+                  calle: se elige mirando exactamente lo que se va a ver, no una
+                  muestra parecida. */}
+              <MarcaComoPaga nivel={nivel} texto={TEXTO[nivel]} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.35 }}>
+                {PORQUE[nivel]}
               </span>
               {puesto && (
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-3)' }}>puesto</span>

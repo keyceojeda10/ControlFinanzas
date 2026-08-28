@@ -654,8 +654,12 @@ export default function ClienteDetallePage({ params }) {
            `completado`, la estrella también los `cancelado`, que también
            terminaron—. Ahora el renglón SALE de la estrella y además dice qué
            significa el color, que es lo que faltaba por leer sin abrir nada. */
-        stats={cliente.calificacion
-          ? `${TEXTO_CALIFICACION[cliente.calificacion.nivel]} · ${cliente.calificacion.numero} préstamo${cliente.calificacion.numero === 1 ? '' : 's'} terminado${cliente.calificacion.numero === 1 ? '' : 's'}`
+        stats={cliente.calificacion?.numero
+          /* Solo el CONTEO: la palabra («Buen cliente») ya la dice la marca que
+             tiene justo encima, y repetirla aquí sería decir lo mismo dos veces
+             en dos renglones seguidos. Lo que aporta es la prueba detrás del
+             color, que es cuántos ha terminado. */
+          ? `${cliente.calificacion.numero} préstamo${cliente.calificacion.numero === 1 ? '' : 's'} terminado${cliente.calificacion.numero === 1 ? '' : 's'}`
           : (historial.length > 0
               ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
               : null)}

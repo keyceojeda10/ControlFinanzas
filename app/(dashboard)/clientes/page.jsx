@@ -987,7 +987,6 @@ export default function ClientesPage() {
                     {c.calificacion && (
                       <EstrellaCliente
                         nivel={c.calificacion.nivel}
-                        numero={c.calificacion.numero}
                         titulo={`${TEXTO_CALIFICACION[c.calificacion.nivel]} · ${c.calificacion.numero} préstamo${c.calificacion.numero === 1 ? '' : 's'} terminado${c.calificacion.numero === 1 ? '' : 's'}`}
                       />
                     )}

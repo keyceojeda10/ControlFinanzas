@@ -388,7 +388,6 @@ export default function TarjetaCliente({
               {calificacion?.nivel && (
                 <EstrellaCliente
                   nivel={calificacion.nivel}
-                  numero={calificacion.numero}
                   titulo={tituloCalificacion}
                 />
               )}

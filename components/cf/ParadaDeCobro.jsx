@@ -528,7 +528,6 @@ export function FilaCobro({
             {calificacion && (
               <EstrellaCliente
                 nivel={calificacion.nivel}
-                numero={calificacion.numero}
                 titulo={`${TEXTO_CALIFICACION[calificacion.nivel]} · ${calificacion.numero} préstamo${calificacion.numero === 1 ? '' : 's'} terminado${calificacion.numero === 1 ? '' : 's'}`}
               />
             )}
