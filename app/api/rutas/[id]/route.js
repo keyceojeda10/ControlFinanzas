@@ -3,6 +3,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { calificacionDe } from '@/lib/calificacion'
+import { historialPorCliente } from '@/lib/historial-cliente'
 import { esId }             from '@/lib/ids'
 import {
   calcularDiasMora,
@@ -175,6 +177,10 @@ export async function GET(request, { params }) {
      Ese modelo ya se escribía desde la ruta y no lo leía NADIE: anotar «no
      estaba» tampoco sacaba al cliente de la lista, así que el gesto no servía
      de nada. Se arregla aquí para los dos casos a la vez. */
+  /* El historial de pago, para la estrella de cada parada. Ver
+     `lib/historial-cliente.js`: una consulta agregada, no una por cliente. */
+  const historial = await historialPorCliente(organizationId)
+
   const cerradas = await prisma.visitaReagendada.findMany({
     where: {
       organizationId,
@@ -629,6 +635,10 @@ export async function GET(request, { params }) {
       // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
       estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
       tieneClavo: c.prestamos.some((pr) => pr.esClavo && pr.estado === 'activo'),
+      // Cómo ha pagado ANTES. La MISMA tarjeta se pinta en /cobros-hoy, así que
+      // el dato tiene que salir de los dos APIs o el cliente sale marcado en una
+      // pantalla y mudo en la otra — que es lo que ya pasó con el clavo.
+      calificacion: calificacionDe({ ...historial.get(c.id), manual: c.calificacionManual }),
       pagoHoy:   yaPageHoy,
       montoPagadoHoy: Math.round(pagadoHoy),
       pagoHoyId: pagoHoyIdCliente,

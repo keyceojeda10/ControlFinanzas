@@ -330,6 +330,75 @@ export function EtiquetaClavo({ style }) {
   )
 }
 
+/* ══ LA ESTRELLA DE CÓMO PAGA ══════════════════════════════════════════════
+ *
+ * «Es como para que el cobrador sepa qué clientela está trabajando bien y cuál
+ *  mal.» El nivel lo calcula `lib/calificacion.js` del historial.
+ *
+ * ⚠ POR QUÉ NO ES UN PUNTO NI UN ANILLO. Los dos sitios obvios están ocupados y
+ * por decisiones escritas: el punto junto al nombre es «de hoy», y el anillo del
+ * avatar es el estado de mora —«lo primero que se mira de cada fila»—. Un cuarto
+ * portador de color en el mismo sitio sería ruido; la estrella es una FORMA
+ * distinta, así que no compite con ninguno.
+ *
+ * ⚠ Y NO ES DORADA. `DESIGN.md`: el dorado se reserva al monto, la acción
+ * primaria y el foco del campo. El ámbar de aquí es `--cf-gold-dark`, el mismo
+ * que ya usan los avisos, no el dorado de las cifras.
+ *
+ * ⚠ EL NÚMERO VA DENTRO, y es cuántos préstamos ha terminado. Es la prueba
+ * detrás del color —«verde con 5» pesa más que «verde con 1»— y además hace que
+ * la marca no dependa SOLO del color: el cobrador trabaja al sol, y hay quien no
+ * distingue el rojo del verde. */
+const TONO_ESTRELLA = {
+  verde: { fondo: 'var(--cf-green-dark)', texto: '#FFFFFF' },
+  ambar: { fondo: 'var(--cf-gold-dark)',  texto: '#FFFFFF' },
+  rojo:  { fondo: 'var(--cf-red-dark)',   texto: '#FFFFFF' },
+}
+
+/* ⚠ LA TARJETA DEL ENCABEZADO ES OSCURA SIEMPRE, TAMBIÉN EN TEMA CLARO. Los
+   tonos de arriba son los de «texto de color sobre blanco» (#0D7A3C y
+   compañía): sobre ese fondo la estrella se pierde. Los tokens claros SÍ se dan
+   la vuelta solos en tema oscuro, pero esa tarjeta no sigue el tema, así que
+   aquí hay que decirlo a mano. */
+const TONO_ESTRELLA_OSCURO = {
+  verde: { fondo: '#2FBE6A', texto: '#08130C' },
+  ambar: { fondo: '#F5B824', texto: '#1B1503' },
+  rojo:  { fondo: '#F0575C', texto: '#1E0A0B' },
+}
+
+export function EstrellaCliente({ nivel, numero, titulo, style, sobreOscuro = false }) {
+  const tono = (sobreOscuro ? TONO_ESTRELLA_OSCURO : TONO_ESTRELLA)[nivel]
+  if (!tono) return null
+  /* Con dos cifras el número no cabe dentro de la estrella sin encogerlo hasta
+     lo ilegible. De 10 en adelante se queda en 9: el número es la prueba detrás
+     del color y a partir de ahí ya no cambia lo que dice —«tiene historia de
+     sobra»—. El de verdad va en el título. */
+  const dentro = numero > 9 ? '9' : String(numero ?? '')
+  return (
+    <span title={titulo} aria-label={titulo} style={{
+      position: 'relative', display: 'inline-flex', flex: 'none',
+      width: 24, height: 24, alignItems: 'center', justifyContent: 'center',
+      ...style,
+    }}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill={tono.fondo} aria-hidden
+        style={{ position: 'absolute', inset: 0 }}>
+        <path d="M12 1.8l3.09 6.26 6.91 1-5 4.87 1.18 6.87L12 17.56l-6.18 3.25L7 13.94l-5-4.87 6.91-1L12 1.8z" />
+      </svg>
+      <span style={{
+        position: 'relative', fontSize: 11, fontWeight: 800, lineHeight: 1,
+        /* ⚠ SUBIDO, NO CENTRADO. Una estrella no es un círculo: por debajo del
+           centro se estrecha hasta la punta, y el número centrado se salía por
+           ahí —se vio en la captura, no en las medidas—. La banda ancha está
+           por encima del centro geométrico. */
+        color: tono.texto, marginTop: -1,
+        fontFamily: 'var(--font-manrope), system-ui', fontVariantNumeric: 'tabular-nums',
+      }}>
+        {dentro}
+      </span>
+    </span>
+  )
+}
+
 /* ══ 5 · Botones ══ */
 const BOTON_BASE = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,

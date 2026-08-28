@@ -3,6 +3,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { calificacionDe }   from '@/lib/calificacion'
+import { historialPorCliente } from '@/lib/historial-cliente'
 import {
   LIMITES_PLAN, calcularEstadoCliente, calcularDiasMora, calcularSaldoPendiente,
   calcularPorcentajePagado, calcularProximoCobro, formatFechaCobroContextual,
@@ -101,6 +103,10 @@ export async function GET(request) {
   const moraMin = Number(searchParams.get('mora') || 0) || 0
   const pagaHoy = searchParams.get('pagaHoy') === '1'
   const sinPrestamo = searchParams.get('sinPrestamo') === '1'
+  /* Cómo ha pagado antes: verde, ámbar o rojo. Va en el SERVIDOR y no en el
+     navegador porque la lista viene paginada de 50 en 50, y un filtro que solo
+     mira la página en la que estás miente sobre la cartera. */
+  const califFiltro = searchParams.get('calificacion')?.trim() ?? ''
   // `estado` (al dia / mora / cancelado) es de la misma familia: lo calcula
   // `calcularEstadoCliente()` DESPUES de traer las filas, no es una columna.
   // Filtrarlo en el navegador sobre la pagina de 50 es justo lo que hacia la
@@ -112,7 +118,7 @@ export async function GET(request) {
   const soloConteos = searchParams.get('soloConteos') === '1'
   /* `soloConteos` tambien entra: los conteos nuevos miran `prestamosActivos` y
      `prestamosTotales`, que solo existen despues de la pasada completa. */
-  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo || !!estadoFiltro || soloConteos
+  const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo || !!estadoFiltro || soloConteos || !!califFiltro
 
   const condiciones = [
     { organizationId },
@@ -150,6 +156,7 @@ export async function GET(request) {
       createdAt:  true,
       diasSinCobro: true,
       montoMaximoPrestamo: true,
+      calificacionManual: true,
       ruta:       { select: { id: true, nombre: true, diasSinCobro: true } },
       prestamos: {
         where:  { estado: 'activo' },
@@ -209,6 +216,11 @@ export async function GET(request) {
     // Sin `take/skip` cuando hay filtro calculado: se corta despues, ya filtrado.
     ...(page != null && !filtraCalculado && { take: limit, skip: (page - 1) * limit }),
   })
+
+  /* El historial de pago, para la estrella. La consulta vive en
+     `lib/historial-cliente.js` porque la misma estrella se pinta en la lista,
+     en la ficha y en la parada de la ruta. */
+  const porCliente = await historialPorCliente(organizationId)
 
   const [org, festivos] = await Promise.all([
     prisma.organization.findUnique({
@@ -422,6 +434,9 @@ export async function GET(request) {
       proximoCobro: proximoCobroMin,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
       tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
+      // Cómo ha pagado lo anterior. `null` en quien no ha terminado ninguno:
+      // sin historial no hay estrella, y son 4.675 de 7.624 clientes.
+      calificacion: calificacionDe({ ...porCliente.get(c.id), manual: c.calificacionManual }),
       // Los de toda su vida, para separar «ya pago» de «nunca le preste».
       prestamosTotales: c._count?.prestamos ?? 0,
     }
@@ -507,6 +522,13 @@ export async function GET(request) {
       // Es al que hay que volver a prestarle, y hasta ahora no habia forma de
       // encontrarlo sin recorrer la lista entera a mano.
       if (sinPrestamo && Number(c.prestamosActivos ?? 0) > 0) return false
+      /* «sin» es el cliente al que todavía no se le puede juzgar: 4.675 de
+         7.624. Es un grupo de verdad y hay que poder pedirlo, no solo los tres
+         colores. */
+      if (califFiltro) {
+        const n = c.calificacion?.nivel ?? 'sin'
+        if (n !== califFiltro) return false
+      }
       return true
     })
   }

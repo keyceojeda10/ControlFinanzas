@@ -10,6 +10,7 @@ import { geocodeAddress }   from '@/lib/geocoding'
 import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { validateDocument, getDocumentConfig } from '@/lib/i18n'
+import { calificacionDe } from '@/lib/calificacion'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -46,6 +47,8 @@ export async function GET(request, { params }) {
       include: {
         ruta: { select: { id: true, nombre: true, diasSinCobro: true } },
         creadoPor: { select: { id: true, nombre: true } },
+        // Quién puso la calificación a mano, para poder decirlo en la ficha.
+        calificacionPor: { select: { nombre: true } },
         prestamos: {
           orderBy: { createdAt: 'desc' },
           include: {
@@ -161,7 +164,36 @@ export async function GET(request, { params }) {
       estadoCalculado = cliente.estado || 'activo'
     }
 
-    return Response.json({ ...cliente, estado: estadoCalculado, prestamos: prestamosEnriquecidos, lineasCredito: lineasEnriquecidas })
+    /* CÓMO HA PAGADO LO ANTERIOR. Mismo cálculo que la lista —la regla vive en
+       `lib/calificacion.js`— pero para un solo cliente. Si aquí se contara
+       distinto, la estrella de la lista y la de la ficha dirían cosas distintas
+       del mismo cliente, que es el fallo que este repo lleva toda la semana
+       arreglando en otras cifras. */
+    const [h] = await prisma.$queryRaw`
+      SELECT COUNT(*) AS terminados,
+             SUM(p.esClavo = 1) AS clavos,
+             MAX(DATEDIFF(
+               (SELECT MAX(g.fechaPago) FROM Pago g WHERE g.prestamoId = p.id AND g.montoPagado > 0),
+               p.fechaFin
+             )) AS peorRetraso
+      FROM Prestamo p
+      WHERE p.clienteId = ${cliente.id} AND p.estado IN ('completado', 'cancelado')
+    `
+    const calificacion = calificacionDe({
+      terminados: Number(h?.terminados ?? 0),
+      clavos: Number(h?.clavos ?? 0),
+      peorRetraso: Number(h?.peorRetraso ?? 0),
+      manual: cliente.calificacionManual,
+    })
+
+    return Response.json({
+      ...cliente,
+      estado: estadoCalculado,
+      prestamos: prestamosEnriquecidos,
+      lineasCredito: lineasEnriquecidas,
+      calificacion,
+      calificacionPor: cliente.calificacionPor?.nombre ?? null,
+    })
   } catch (err) {
     console.error(`[GET /api/clientes/${id}] error fatal:`, err)
     return Response.json({ error: 'Error interno al cargar el cliente', detalle: err?.message }, { status: 500 })

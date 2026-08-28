@@ -10,6 +10,8 @@ import { direccionIncompleta, telefonoLegible } from '@/lib/direcciones'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
+import { EstrellaCliente } from '@/components/cf/primitivos'
+import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 
 const COLOR_OK   = 'var(--cf-gold)'
 const COLOR_HOT  = 'var(--cf-gold-dark)'
@@ -186,7 +188,7 @@ function FotoLightbox({ src, alt, onClose }) {
   )
 }
 
-export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada }) {
+export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats, onWhatsApp, puedeSubirFoto = false, onFotoActualizada, calificacion, onAbrirCalificacion }) {
   const color = moodColorFromCliente(cliente, prestamosActivos)
   const label = moodLabel(cliente, prestamosActivos)
   const tieneFoto = !!cliente?.fotoUrl
@@ -399,6 +401,25 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
                 {label}
               </span>
+              {/* CÓMO HA PAGADO, AL LADO DE CÓMO ESTÁ HOY. Son dos cosas
+                  distintas y por eso van juntas y separadas: la pastilla dice
+                  el préstamo de ahora, la estrella dice el historial. Se pulsa
+                  —también el cobrador— y la hoja explica de dónde sale. */}
+              {calificacion && (
+                <button
+                  type="button"
+                  onClick={onAbrirCalificacion}
+                  aria-label={`Cómo paga: ${TEXTO_CALIFICACION[calificacion.nivel]}`}
+                  style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', display: 'inline-flex' }}
+                >
+                  <EstrellaCliente
+                    sobreOscuro
+                    nivel={calificacion.nivel}
+                    numero={calificacion.numero}
+                    titulo={`${TEXTO_CALIFICACION[calificacion.nivel]} · ${calificacion.numero} préstamo${calificacion.numero === 1 ? '' : 's'} terminado${calificacion.numero === 1 ? '' : 's'}`}
+                  />
+                </button>
+              )}
               {stats && (
                 <span className="text-[10px]" style={{ color: '#8A8E98' }}>{stats}</span>
               )}

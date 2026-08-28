@@ -31,6 +31,8 @@ import ReagendarVisitaModal from '@/components/visitas/ReagendarVisitaModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { Modal } from '@/components/ui/Modal'
 import QrClienteModal from '@/components/clientes/QrClienteModal'
+import HojaCalificar from '@/components/clientes/HojaCalificar'
+import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 import dynamic from 'next/dynamic'
 import { anotarReciente } from '@/lib/recientes'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -92,6 +94,7 @@ export default function ClienteDetallePage({ params }) {
   const [modalWA, setModalWA] = useState(false)
   const [modalReagendar, setModalReagendar] = useState(false)
   const [modalQR, setModalQR] = useState(false)
+  const [modalCalificar, setModalCalificar] = useState(false)
   const [rutaNav, setRutaNav]   = useState(null)
   const [festivoHoy, setFestivoHoy] = useState(null)
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
@@ -536,6 +539,11 @@ export default function ClienteDetallePage({ params }) {
       sinonimos: ['eliminar', 'borrar cliente', 'quitar cliente'],
       disponible: esOwner,
       ejecutar: () => setShowConfirmDelete(true) },
+    { id: 'cli-calificar', label: 'Calificar cómo paga este cliente', pista: 'Buen cliente, se atrasa o mal cliente',
+      sinonimos: ['calificar', 'estrella', 'buen cliente', 'mal cliente', 'como paga',
+        'marcar como bueno', 'ponerle color', 'semaforo'],
+      disponible: esOwner,
+      ejecutar: () => setModalCalificar(true) },
     { id: 'cli-inactivo', label: 'Activar o desactivar el cliente', pista: 'Dejar de cobrarle sin borrarlo',
       sinonimos: ['inactivar', 'desactivar', 'suspender', 'dejar de cobrarle', 'pausar'],
       disponible: esOwner,
@@ -639,12 +647,23 @@ export default function ClienteDetallePage({ params }) {
       <ClienteHeroCard
         cliente={cliente}
         prestamosActivos={prestamosActivos}
-        stats={historial.length > 0
-          ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
-          : null}
+        /* ⚠ LA MISMA CIFRA QUE LA ESTRELLA, O NINGUNA. Aquí decía «6 préstamos
+           completados antes» justo debajo de una estrella que decía 8: dos
+           números sobre lo mismo, pegados y en desacuerdo, que es de donde
+           salen las preguntas. Contaban universos distintos —éste solo los
+           `completado`, la estrella también los `cancelado`, que también
+           terminaron—. Ahora el renglón SALE de la estrella y además dice qué
+           significa el color, que es lo que faltaba por leer sin abrir nada. */
+        stats={cliente.calificacion
+          ? `${TEXTO_CALIFICACION[cliente.calificacion.nivel]} · ${cliente.calificacion.numero} préstamo${cliente.calificacion.numero === 1 ? '' : 's'} terminado${cliente.calificacion.numero === 1 ? '' : 's'}`
+          : (historial.length > 0
+              ? `${historial.filter(p => p.estado === 'completado').length} préstamo${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} completado${historial.filter(p => p.estado === 'completado').length === 1 ? '' : 's'} antes`
+              : null)}
         onWhatsApp={cliente.telefono ? () => setModalWA(true) : null}
         puedeSubirFoto={(puedeEditarClientes || esOwner) && planTieneFotos(plan)}
         onFotoActualizada={(url) => setCliente(prev => ({ ...prev, fotoUrl: url }))}
+        calificacion={cliente.calificacion}
+        onAbrirCalificacion={() => setModalCalificar(true)}
       />
 
       {/* ⚠ ESTABA DEBAJO DE TODOS LOS PRÉSTAMOS.
@@ -1139,6 +1158,17 @@ export default function ClienteDetallePage({ params }) {
         open={modalQR}
         onClose={() => setModalQR(false)}
         cliente={cliente}
+      />
+
+      {/* La abre cualquiera —el cobrador para saber POR QUÉ está ese color—,
+          pero los botones de cambiarla solo los ve el dueño. */}
+      <HojaCalificar
+        abierta={modalCalificar}
+        onCerrar={() => setModalCalificar(false)}
+        cliente={{ ...cliente, calificacionPor: cliente.calificacionPor ? { nombre: cliente.calificacionPor } : null }}
+        calificacion={cliente.calificacion}
+        puedeCalificar={esOwner}
+        onGuardado={() => fetchCliente({ soft: true })}
       />
 
       <Modal

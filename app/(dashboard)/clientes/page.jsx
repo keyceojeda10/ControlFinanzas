@@ -16,6 +16,8 @@ import ClienteCard       from '@/components/clientes/ClienteCard'
 import BadgeNuevo, { NuevoChip } from '@/components/ui/BadgeNuevo'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
+import { EstrellaCliente } from '@/components/cf/primitivos'
+import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 import { useSitioDeLaLista } from '@/hooks/useSitioDeLaLista'
 import { Dato, CreadoPor, EtiquetaNuevo, TRAZO } from '@/components/cf/Metadatos'
 import { adaptarClientes } from '@/lib/adaptadores/clientes'
@@ -318,6 +320,7 @@ export default function ClientesPage() {
   const [moraMin, setMoraMin] = useState('')
   const [pagaHoy, setPagaHoy] = useState(false)
   const [sinPrestamo, setSinPrestamo] = useState(false)
+  const [califFiltro, setCalifFiltro] = useState('')
   // Cartera vacia DE VERDAD, no "el filtro no devolvio nada": son dos
   // pantallas distintas. Una dice como empezar; la otra, como volver atras.
   const carteraVacia = !loading && !error && clientes.length === 0 &&
@@ -433,6 +436,17 @@ export default function ClientesPage() {
       onCambiar: (v) => { setMoraMin(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Cualquiera' }, { valor: '7', nombre: 'Más de 7 días' },
         { valor: '15', nombre: 'Más de 15 días' }, { valor: '30', nombre: 'Más de 30 días' }] },
+    /* CÓMO HA PAGADO ANTES. No es lo mismo que «lleva atrasado», que mira el
+       préstamo de HOY: aquí se pregunta por el historial, que es lo que decide
+       si volver a prestarle. «Todavía sin historial» es un grupo de verdad —la
+       mayoría de la cartera— y por eso se puede pedir. */
+    { id: 'calificacion', titulo: 'Cómo ha pagado antes', valor: califFiltro,
+      onCambiar: (v) => { setCalifFiltro(v); setPage(1) },
+      opciones: [{ valor: '', nombre: 'Cualquiera' },
+        { valor: 'verde', nombre: 'Buen cliente' },
+        { valor: 'ambar', nombre: 'Se atrasa' },
+        { valor: 'rojo',  nombre: 'Mal cliente' },
+        { valor: 'sin',   nombre: 'Todavía sin historial' }] },
     { id: 'sinPrestamo', titulo: 'Sin nada que cobrarle', valor: sinPrestamo ? 'si' : '',
       onCambiar: (v) => { setSinPrestamo(v === 'si'); setPage(1) },
       // El cliente que ya terminó y no debe nada: es al que hay que volver a
@@ -534,6 +548,7 @@ export default function ClientesPage() {
     if (calculados.mora) params.set('mora', String(calculados.mora))
     if (calculados.pagaHoy) params.set('pagaHoy', '1')
     if (calculados.sinPrestamo) params.set('sinPrestamo', '1')
+    if (calculados.calificacion) params.set('calificacion', calculados.calificacion)
     params.set('page', String(p))
     params.set('limit', String(LIMIT))
     const enCamino = navigator.onLine
@@ -638,9 +653,9 @@ export default function ClientesPage() {
   // Carga de clientes con debounce
   useEffect(() => {
     const t = setTimeout(() => fetchClientes(buscar, page, rutaIdFiltro,
-      { soft: refreshKey > 0, calculados: { estado, mora: moraMin, pagaHoy, sinPrestamo } }), 280)
+      { soft: refreshKey > 0, calculados: { estado, mora: moraMin, pagaHoy, sinPrestamo, calificacion: califFiltro } }), 280)
     return () => clearTimeout(t)
-  }, [fetchClientes, buscar, page, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo])
+  }, [fetchClientes, buscar, page, rutaIdFiltro, refreshKey, estado, moraMin, pagaHoy, sinPrestamo, califFiltro])
 
   // Refresh silencioso cuando hay nueva sincronización global.
   useEffect(() => {
@@ -764,7 +779,7 @@ export default function ClientesPage() {
           abierta={hojaFiltros}
           onCerrar={() => setHojaFiltros(false)}
           onLimpiar={() => { setRutaIdFiltro(''); setMoraMin('')
-            setPagaHoy(false); setSinPrestamo(false); setPage(1) }}
+            setPagaHoy(false); setSinPrestamo(false); setCalifFiltro(''); setPage(1) }}
           grupos={gruposFiltro}
         />
 
@@ -933,7 +948,19 @@ export default function ClientesPage() {
                 // dato —«vencido»— se iba a un segundo renglón de la rejilla:
                 // la fila pasaba de 62px a 91 y cabían la mitad de clientes. Se
                 // ve midiendo el DOM, no leyendo el JSX.
-                gridTemplateColumns: '1fr 118px 176px 116px 108px 88px 82px 100px',
+                /* ⚠ 64px SALIERON DE «CREÓ», «CUMPLE» Y «PAGADO» PARA PAGAR LA
+                   ESTRELLA. Los 24px de la marca más su hueco los ponía el
+                   nombre, que es la única columna elástica: siete nombres largos
+                   se partían en dos renglones y esas filas pasaban de 64px a 82
+                   —cabían menos clientes en la pantalla—. El nombre no se
+                   recorta (es lo que identifica a la persona), así que el ancho
+                   sale de donde sobra.
+
+                   Y de dónde sobra se MIDIÓ, no se supuso: reservado contra el
+                   texto más ancho de las 50 filas. «Creó» usaba 139 de 176,
+                   «Cumple» 37 de 88 y «Pagado» 28 de 82. Mi primer intento se lo
+                   quitó todo a «Creó» y lo dejó a 5px de partirse. */
+                gridTemplateColumns: '1fr 118px 144px 116px 108px 72px 66px 100px',
                 gap: 12,
                 background: 'var(--cf-card)',
                 border: 0,
@@ -953,6 +980,17 @@ export default function ClientesPage() {
                 <span className="min-w-0">
                   <span className="flex items-center gap-2 min-w-0">
                     <span className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)', minWidth: 0, overflowWrap: 'anywhere' }}>{a?.nombre}</span>
+                    {/* ⚠ TAMBIÉN AQUÍ: en escritorio la que se usa es la tabla,
+                        y una marca que solo está en la ficha de móvil no la ve
+                        el dueño, que trabaja en PC. La barra de la izquierda es
+                        cómo está HOY; esto es cómo ha pagado antes. */}
+                    {c.calificacion && (
+                      <EstrellaCliente
+                        nivel={c.calificacion.nivel}
+                        numero={c.calificacion.numero}
+                        titulo={`${TEXTO_CALIFICACION[c.calificacion.nivel]} · ${c.calificacion.numero} préstamo${c.calificacion.numero === 1 ? '' : 's'} terminado${c.calificacion.numero === 1 ? '' : 's'}`}
+                      />
+                    )}
                     <EtiquetaNuevo nuevo={a?.nuevo} />
                   </span>
                   {/* Cédula y teléfono, NO el `contexto` entero: ése termina en
@@ -993,7 +1031,7 @@ export default function ClientesPage() {
                 // medía el doble y cabían la mitad de clientes. Las cifras
                 // también van fijas: con `fr` bailan de sitio al pasar de página
                 // y dejan de poder compararse de un vistazo.
-                gridTemplateColumns: '1fr 118px 176px 116px 108px 88px 82px 100px', gap: 12,
+                gridTemplateColumns: '1fr 118px 144px 116px 108px 72px 66px 100px', gap: 12,
                   background: 'var(--cf-surface)', borderBottom: '1px solid var(--cf-border)',
                   paddingLeft: 19,
                 }}>

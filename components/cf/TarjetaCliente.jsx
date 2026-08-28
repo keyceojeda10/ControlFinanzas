@@ -51,7 +51,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
-import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo } from './primitivos'
+import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EstrellaCliente } from './primitivos'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 import DesglosePrestamos from './DesglosePrestamos'
 
@@ -131,6 +131,13 @@ export default function TarjetaCliente({
      del cliente — que son dos de las cinco pantallas donde el dueño no podía
      saber cuál de los dos préstamos era el perdido. */
   clavo = false,
+  /* ── CÓMO HA PAGADO LO ANTERIOR ──
+     `{ nivel, numero }` de `lib/calificacion.js`. La compone el adaptador desde
+     el historial, así que sale igual en la lista, en la ficha del cliente y en
+     la parada de la ruta — que son los tres sitios donde se ve un cliente y
+     donde este repo ya pagó tres veces arreglar un camino y dejar los otros. */
+  calificacion = null,
+  tituloCalificacion,
   monto,
   // Debajo del monto y alineado a su derecha: «de $1.200.000» en préstamos,
   // «3 préstamos» en clientes.
@@ -368,6 +375,23 @@ export default function TarjetaCliente({
                 </Pastilla>
               )}
               {clavo && <EtiquetaClavo />}
+              {/* ⚠ AQUÍ, Y POR LA MISMA RAZÓN QUE EL CLAVO: la estrella dice
+                  cómo PAGÓ LO ANTERIOR y la pastilla cómo va HOY. Un buen
+                  cliente puede estar en mora esta semana, y las dos cosas hacen
+                  falta — la estrella nunca tapa el estado ni al revés.
+
+                  Va después del clavo porque el clavo es más urgente: si el
+                  préstamo está dado por perdido, el historial ya no decide nada.
+
+                  Solo se pinta cuando hay algo que decir: sin préstamos
+                  terminados no hay estrella, y son 4.675 de 7.624 clientes. */}
+              {calificacion?.nivel && (
+                <EstrellaCliente
+                  nivel={calificacion.nivel}
+                  numero={calificacion.numero}
+                  titulo={tituloCalificacion}
+                />
+              )}
               {/* ⚠ ESTA LÍNEA YA NO SE RECORTA, Y ES UN CAMBIO DELIBERADO.
                   Arriba está escrito por qué iba a una sola línea: las tarjetas
                   cambiaban de alto según lo larga que fuera la dirección, y una

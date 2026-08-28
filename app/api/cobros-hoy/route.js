@@ -5,6 +5,8 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { calificacionDe } from '@/lib/calificacion'
+import { historialPorCliente } from '@/lib/historial-cliente'
 import {
   calcularDiasMora,
   calcularSaldoPendiente,
@@ -82,6 +84,10 @@ export async function GET() {
   //
   // pagos: solo los de HOY (filtramos en DB, no en JS) — evita traer meses de
   // historial. Los calculos de mora/saldo usan totalPagado (denormalizado).
+  /* El historial de pago de toda la organización, para la estrella. Una sola
+     consulta agregada; ver `lib/historial-cliente.js`. */
+  const historial = await historialPorCliente(organizationId)
+
   const clientes = await prisma.cliente.findMany({
     where: {
       organizationId,
@@ -101,6 +107,11 @@ export async function GET() {
       // sale sin el «donde», que en una pantalla para caminar es lo que hace
       // falta. Y no cuesta nada: es un VarChar(100) de la misma fila.
       referencia: true,
+      /* La corrección a mano de la estrella. ⚠ Un campo que existe y NO se pide
+         vale `undefined`, no da error y quien lo lee decide en silencio: sin
+         esto el cobrador vería el color calculado aunque el dueño lo hubiera
+         corregido, y la ruta diría una cosa y la lista otra. */
+      calificacionManual: true,
       // ── PARA LAS ACCIONES DE LA PARADA ACTUAL (T03-01) ──
       // La lámina le pone WhatsApp y Mapa al primer cobro pendiente, y sin
       // estos tres campos las dos acciones no pueden hacer nada: el botón de
@@ -394,6 +405,9 @@ export async function GET() {
         // tarjeta es la misma—. Sin el aviso se lee como un cliente cualquiera
         // al que se le sigue cobrando normal.
         tieneClavo: (c.prestamos ?? []).some((p) => p.esClavo && p.estado === 'activo'),
+        // Cómo ha pagado ANTES, que no es cómo está hoy. Es el dato que el
+        // cobrador no tenía en la calle.
+        calificacion: calificacionDe({ ...historial.get(c.id), manual: c.calificacionManual }),
         pagoHoy: yaPageHoy,
         // ISO: la hora se formatea en el CLIENTE. Hecho aca saldria en la zona
         // del servidor, y en produccion eso es UTC: «Cobrado 14:06» cuando el

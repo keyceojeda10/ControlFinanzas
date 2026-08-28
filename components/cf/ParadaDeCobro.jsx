@@ -19,7 +19,8 @@
 // estan en la ruta pero no son visita de hoy).
 
 import { useState } from 'react'
-import { EtiquetaClavo, TiraCifras } from '@/components/cf/primitivos'
+import { EtiquetaClavo, TiraCifras, EstrellaCliente } from '@/components/cf/primitivos'
+import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 
 export const COLOR_ESTADO = {
   mora:   'var(--cf-red)',
@@ -194,6 +195,13 @@ function FlechaFicha({ tam = 13 }) {
 /* ══ La fila de cobro ══ */
 export function FilaCobro({
   nombre, iniciales, estado = 'aldia', etiquetaEstado, donde, distancia,
+  /* CÓMO HA PAGADO ANTES, que no es cómo está hoy. La pastilla y el anillo
+     dicen el préstamo de ahora; esto dice el historial, que es lo que el
+     cobrador no tenía en la calle: «es como para que el cobrador sepa qué
+     clientela está trabajando bien y cuál mal». `null` en la mayoría —quien no
+     ha terminado ningún préstamo no lleva marca—, y por eso significa algo
+     cuando aparece. */
+  calificacion,
   avisoMora, avisos = [], prestamos = [],
   cuota, periodo, debe, cobrada = false, abonoHoy, cerradaPorHoy, abonadoAntesDeCerrar,
   onReabrir, onCerrarVisita,
@@ -516,6 +524,13 @@ export function FilaCobro({
                 background: p.bg, border: `1px solid ${p.bd}`, color: p.fg,
                 fontSize: 11, fontWeight: 700,
               }}>{textoPastilla}</span>
+            )}
+            {calificacion && (
+              <EstrellaCliente
+                nivel={calificacion.nivel}
+                numero={calificacion.numero}
+                titulo={`${TEXTO_CALIFICACION[calificacion.nivel]} · ${calificacion.numero} préstamo${calificacion.numero === 1 ? '' : 's'} terminado${calificacion.numero === 1 ? '' : 's'}`}
+              />
             )}
             {donde && (
               <span style={{

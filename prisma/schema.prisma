@@ -236,6 +236,7 @@ model User {
   asistenteMemorias AsistenteMemoria[]
   fotosDonadas      FotoDonada[]
   clientesCreadosPor Cliente[]         @relation("ClientesCreadosPor")
+  clientesCalificados Cliente[]        @relation("ClientesCalificadosPor")
   notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
   ubicacionLogs     UbicacionLog[]
   sesionesActivas   SesionActiva[]
@@ -318,6 +319,15 @@ model Cliente {
   direccion      String?
   referencia     String?       @db.VarChar(100)
   notas          String?       @db.Text
+  /// LA CALIFICACIÓN, SOLO CUANDO SE CORRIGE A MANO.
+  ///
+  /// El nivel se CALCULA del historial (ver `lib/calificacion.js`), así que no
+  /// se guarda: una marca guardada envejece —verde en agosto, te falla en
+  /// octubre y sigue verde—. Aquí solo vive la corrección del administrador,
+  /// que es la excepción: 'verde' | 'ambar' | 'rojo', o null si manda el cálculo.
+  calificacionManual   String?
+  calificacionPorId    String?    /// quién la corrigió, para poder decirlo
+  calificacionAt       DateTime?
   fotoUrl        String?
   latitud        Float?
   longitud       Float?
@@ -336,6 +346,7 @@ model Cliente {
   ruta               Ruta?              @relation(fields: [rutaId], references: [id])
   grupoCobro         GrupoCobro?        @relation(fields: [grupoCobroId], references: [id], onDelete: SetNull)
   creadoPor          User?              @relation("ClientesCreadosPor", fields: [creadoPorId], references: [id])
+  calificacionPor    User?              @relation("ClientesCalificadosPor", fields: [calificacionPorId], references: [id])
   prestamos          Prestamo[]
   visitasReagendadas VisitaReagendada[]
   lineasCredito      LineaCredito[]
