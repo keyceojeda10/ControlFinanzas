@@ -1335,3 +1335,33 @@ model PagoSuscripcion {
   @@index([organizationId])
   @@index([fecha])
 }
+
+/// LO QUE SALE POR WHATSAPP, APUNTADO.
+///
+/// ⚠ NACIÓ DE NO PODER CONTESTAR «¿SE MANDÓ O NO?». El 28 de agosto quedó la
+/// duda de si un envío a 36 organizaciones había salido, y no había forma de
+/// saberlo: `sendTemplate` no dejaba rastro en ninguna parte. Hicieron falta
+/// una hora de forense, los registros del sistema y la analítica de Meta por
+/// medias horas para concluir que NO había salido.
+///
+/// Se apunta en `postMessage`, que es el cuello por donde pasan TODOS los
+/// envíos —plantillas y texto libre—, así que no hay forma de mandar algo por
+/// fuera del registro.
+///
+/// Sin `organizationId`: quien manda no siempre sabe de qué organización es
+/// —el bot escribe a leads que aún no son nadie— y el teléfono ya cruza con
+/// todo. Añadirlo obligaría a tocar los veinte sitios que llaman.
+model EnvioWhatsapp {
+  id        String   @id @default(cuid())
+  telefono  String
+  tipo      String // template | texto
+  plantilla String?
+  wamid     String? // el id que asigna Meta; con él se cruzan los acuses de entrega
+  ok        Boolean  @default(false)
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([telefono, createdAt])
+  @@index([plantilla, createdAt])
+  @@index([createdAt])
+}

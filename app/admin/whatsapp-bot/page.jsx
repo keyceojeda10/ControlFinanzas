@@ -143,6 +143,15 @@ export default function WhatsAppBotDashboard() {
         >
           Ver chats
         </Link>
+        {/* ⚠ AQUÍ Y NO EN EL MENÚ PRINCIPAL. El menú se dejó en nueve entradas
+            a propósito —«un montón de paneles con datos iguales que se
+            duplican»— y esto es de WhatsApp, así que su sitio es éste. */}
+        <Link
+          href="/admin/whatsapp-bot/envios"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(59,130,246,0.12)] text-[var(--cf-blue)] hover:bg-[rgba(59,130,246,0.2)] transition-all"
+        >
+          Qué se ha enviado
+        </Link>
         <button
           onClick={toggleBot}
           disabled={toggleando}
