@@ -110,6 +110,8 @@ export async function GET(request) {
   // pagina. Con `soloConteos=1` se hace la pasada completa y se devuelven solo
   // los numeros, sin la lista — una peticion barata que da cifras ciertas.
   const soloConteos = searchParams.get('soloConteos') === '1'
+  /* `soloConteos` tambien entra: los conteos nuevos miran `prestamosActivos` y
+     `prestamosTotales`, que solo existen despues de la pasada completa. */
   const filtraCalculado = moraMin > 0 || pagaHoy || sinPrestamo || !!estadoFiltro || soloConteos
 
   const condiciones = [
@@ -191,6 +193,17 @@ export async function GET(request) {
         select: { id: true },
       },
       ...(rol !== 'cobrador' && { creadoPor: { select: { id: true, nombre: true } } }),
+      /* ⚠ CUANTOS PRESTAMOS HA TENIDO EN SU VIDA, NO CUANTOS TIENE.
+       *
+       * La relacion `prestamos` de arriba lleva `where: { estado: 'activo' }`,
+       * asi que desde ella un cliente que ya pago todo y uno al que nunca se le
+       * presto se ven IGUAL: los dos con la lista vacia. Y son dos preguntas
+       * distintas — a uno se le vuelve a prestar y al otro no se le ha prestado
+       * nunca. Es el mismo patron que dio «nunca» en rojo en 203 filas cuando
+       * la relacion `pagos` llevaba el `where` de hoy.
+       *
+       * `_count` cuenta la relacion ENTERA, sin el `where` del include. */
+      _count: { select: { prestamos: true } },
     },
     orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     // Sin `take/skip` cuando hay filtro calculado: se corta despues, ya filtrado.
@@ -409,6 +422,8 @@ export async function GET(request) {
       proximoCobro: proximoCobroMin,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
       tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
+      // Los de toda su vida, para separar «ya pago» de «nunca le preste».
+      prestamosTotales: c._count?.prestamos ?? 0,
     }
   })
 
@@ -423,9 +438,21 @@ export async function GET(request) {
   // Los conteos por estado, sobre la cartera ENTERA. Solo se calculan cuando ya
   // se ha hecho la pasada completa, asi que no cuestan nada extra.
   if (soloConteos) {
-    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0 }
+    /* Los conteos van EN LA MISMA PASADA y con la MISMA regla que el filtro de
+       arriba. Si se cuentan por un lado y se filtran por otro, la pastilla dice
+       «22» y la lista enseña 18 — que es de donde salen las preguntas. */
+    const conteos = { total: resultado.length, activo: 0, mora: 0, cancelado: 0,
+      meDeben: 0, yaPago: 0, sinPrestamo: 0 }
     for (const c of resultado) {
-      if (conteos[c.estado] !== undefined) conteos[c.estado] += 1
+      const vivos = Number(c.prestamosActivos ?? 0)
+      const todos = Number(c.prestamosTotales ?? 0)
+      if (c.estado === 'mora') conteos.mora += 1
+      if (c.estado === 'cancelado') conteos.cancelado += 1
+      if (vivos > 0) {
+        conteos.meDeben += 1
+        if (c.estado !== 'mora') conteos.activo += 1
+      } else if (todos > 0) conteos.yaPago += 1
+      else conteos.sinPrestamo += 1
     }
     return Response.json(conteos)
   }
@@ -434,7 +461,36 @@ export async function GET(request) {
   const hoyISO = new Date().toISOString().slice(0, 10)
   if (filtraCalculado) {
     filtrado = resultado.filter((c) => {
-      if (estadoFiltro && c.estado !== estadoFiltro) return false
+      /* ══ LOS CINCO ESTADOS, Y LO QUE CONTESTA CADA UNO ═══════════════════
+       *
+       * «Aquí salen todos y yo quiero que solo salgan los que me deben.»
+       *
+       * ⚠ Y «AL DÍA» NO CONTESTABA LO QUE PARECE. Iba por la columna
+       * `Cliente.estado`, que se pone en 'activo' al crear un préstamo y NO se
+       * vuelve atrás cuando el cliente termina de pagar. Medido el 27 ago 2026:
+       * 937 clientes (18%) marcados «al día» no debían un peso, en 114
+       * negocios. Son las fichas que salen con «OK» y sin cifra: el cobrador
+       * lee «22 al día» creyendo que 22 le deben y van corriendo.
+       *
+       *   me deben      tiene algún préstamo vivo. Al día + en mora.
+       *   al día        le debe Y no está atrasado. Ahora sí.
+       *   en mora       le debe y está atrasado. No se toca.
+       *   ya pagó       le prestó y terminó. A ESTE se le vuelve a prestar.
+       *   sin préstamo  está en la libreta y nunca se le prestó nada.
+       *
+       * Los dos últimos parecen uno solo —los dos «no deben»— y son preguntas
+       * distintas: 900 y 1.079 clientes, y solo el primero es plata nueva. */
+      if (estadoFiltro) {
+        const vivos = Number(c.prestamosActivos ?? 0)
+        const enMora = c.estado === 'mora'
+        if (estadoFiltro === 'meDeben') { if (vivos === 0) return false }
+        else if (estadoFiltro === 'activo') { if (vivos === 0 || enMora) return false }
+        else if (estadoFiltro === 'yaPago') {
+          if (vivos > 0 || Number(c.prestamosTotales ?? 0) === 0) return false
+        } else if (estadoFiltro === 'sinPrestamo') {
+          if (Number(c.prestamosTotales ?? 0) > 0) return false
+        } else if (c.estado !== estadoFiltro) return false
+      }
       // «Le toca pagar hoy»: la fecha del proximo cobro mas cercano es hoy o ya
       // paso. Incluye los atrasados a proposito — a esos tambien les toca, y
       // dejarlos fuera seria justo esconder a los que hay que ir a ver.

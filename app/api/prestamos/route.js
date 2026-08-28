@@ -62,6 +62,11 @@ export async function GET(request) {
     ? Math.min(diasMoraMinRaw, 3650)
     : null
   const listosRenovar = searchParams.get('listosRenovar') === '1'
+  /* «NI UN PESO»: lleva más de un mes fuera y no ha entrado un solo abono.
+     NO es lo mismo que «en mora» —un mensual de 20 días todavía no está en
+     mora y ya lleva 20 días sin dar nada— y es donde está la plata quieta:
+     medido el 27 ago 2026, 1.054 préstamos vivos por $1.176.809.287. */
+  const niUnPeso = searchParams.get('niUnPeso') === '1'
 
   const sinPagosDiasRaw = Number(searchParams.get('sinPagosDias'))
   const sinPagosDias = Number.isFinite(sinPagosDiasRaw) && sinPagosDiasRaw > 0
@@ -206,7 +211,12 @@ export async function GET(request) {
   // pregunta por ESTO y no por cuál de las dos vino.
   const hayVentana = porVencer != null || hayRangoFechas
 
-  const filtraEnJs = soloMora || diasMoraMin != null || listosRenovar || hayVentana
+  /* ⚠ `niUnPeso` VA AQUÍ, y por poco no lo pongo. Sin esto el endpoint pagina
+     PRIMERO y el criterio filtra solo la página 1: en el espejo la lista traía
+     32 donde la base decía 188. Es el defecto que este mismo comentario avisa
+     tres párrafos más arriba —«se arregló aquel caso y se dejaron los otros»—
+     y lo cazó el espejo, no las pruebas. */
+  const filtraEnJs = soloMora || diasMoraMin != null || listosRenovar || hayVentana || niUnPeso
 
   // Cobrador sin ruta asignada no ve nada (previene fuga de datos multi-tenant)
   if (rol === 'cobrador' && rutaIds.length === 0) {
@@ -231,7 +241,7 @@ export async function GET(request) {
     // vencer: los tres criterios lo exigen en JS. Se fuerza aqui para que el
     // filtro sea correcto aunque el llamador no mande estado, y para no traerse
     // los saldados sin necesidad ahora que estas consultas van sin paginar.
-    ...((soloMora || listosRenovar || hayVentana) && { estado: 'activo' }),
+    ...((soloMora || listosRenovar || hayVentana || niUnPeso) && { estado: 'activo' }),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
     ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
@@ -419,7 +429,13 @@ export async function GET(request) {
   const enDias = (f) => Math.round((getLocalDayRange(f, pais).inicio - inicioHoy) / 86400000)
   const ventanaDesde = hayRangoFechas ? (cobraDesde != null ? enDias(cobraDesde) : 0) : porVencerDesde
   const ventanaHasta = hayRangoFechas ? (cobraHasta != null ? enDias(cobraHasta) : Infinity) : porVencer
+  const HACE_UN_MES = inicioHoy.getTime() - 30 * 86400000
   const criterio = soloMora ? ((p) => p.diasMora > 0)
+    /* El mes se cuenta desde el arranque del día del país, el mismo corte que
+       usan «De hoy» y la ventana de vencimientos. Con «ahora» un préstamo
+       entregado hace 30 días entra o no según la hora a la que se mire. */
+    : niUnPeso ? ((p) => p.estado === 'activo' && Number(p.totalPagado ?? 0) <= 0
+        && p.fechaInicio && new Date(p.fechaInicio).getTime() < HACE_UN_MES)
     // MAS DE N, no «N o mas». Todas las etiquetas del producto dicen «mas de 30
     // dias» —la fila del panel, las opciones de la hoja— y el contador del panel
     // usa `> 30`. Con `>=` la lista traia 3 donde la fila decia 2: el mismo

@@ -50,8 +50,35 @@ const IconPagar = (
 
 const ESTADOS_CLIENTE = [
   { value: '',          label: 'Todos'     },
-  { value: 'activo',    label: 'Al día'    },
+  /* ── «QUE SOLO SALGAN LOS QUE ME DEBEN» ──
+     Con una captura de su lista y una flecha a «Todos 25»: ahí salen también
+     los que no le deben nada. Medido en producción: 1.979 de 7.624 clientes
+     (26%) no tienen préstamo vivo, y a 170 de 347 negocios les ensucia la
+     lista.
+
+     ⚠ VA EN SEGUNDA POSICIÓN, Y ESO NO ES UN DETALLE. A 412px caben TRES
+     pastillas: las que se ven sin deslizar son «Todos · Me deben · En mora»,
+     que son las tres preguntas de la mañana. Un filtro que hay que buscar es
+     un filtro que no se usa — está escrito en esta misma lista, dos veces.
+
+     ⚠ Y «AL DÍA» CAMBIÓ DE SIGNIFICADO. Iba por `Cliente.estado`, que se pone
+     en 'activo' al prestar y no se vuelve atrás al terminar de pagar: 937
+     clientes (18%) salían «al día» sin deber un peso. Ahora es «me debe Y va
+     corriendo», que es lo que el cobrador lee. */
+  { value: 'meDeben',   label: 'Me deben'  },
   { value: 'mora',      label: 'En mora',  color: 'var(--cf-red-dark)' },
+  { value: 'activo',    label: 'Al día'    },
+  /* ── LOS DOS QUE NO DEBEN, QUE NO SON EL MISMO ──
+     «los que no tienen préstamo para que las personas sepan qué cliente se le
+     puede hacer nuevamente un préstamo, o cuáles de clientes que registró no
+     tiene préstamos». Son dos preguntas y él nombró las dos: 900 ya pagaron
+     —a esos se les vuelve a prestar, y 75 negocios tienen a alguien hoy— y
+     1.079 nunca recibieron nada.
+
+     `sinPrestamo` YA EXISTÍA en el API, enterrado en el embudo como «Sin nada
+     que cobrarle», y juntaba a los dos en un solo montón. */
+  { value: 'yaPago',    label: 'Ya pagó'   },
+  { value: 'sinPrestamo', label: 'Sin préstamo' },
   /* ── LOS DOS QUE PIDIÓ EL DUEÑO ──
      «Sería bastante ideal que se pudiera identificar fácilmente si uno va a
      buscar un cliente nuevo, si va a buscar un cliente con clavo.»

@@ -88,6 +88,20 @@ const ESTADOS = [
   { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
   { value: 'mora',       label: 'En mora',  color: 'var(--cf-red-dark)' },
+  /* ── «NI UN PESO» ──
+     Lleva más de un mes entregado y no ha recibido un solo abono. NO lo cubre
+     «En mora»: un mensual de 20 días todavía no está atrasado y ya lleva 20
+     días sin dar nada, y ahí es donde está la plata quieta.
+
+     Medido en producción el 27 ago 2026: 1.054 préstamos vivos, $1.176.809.287
+     parados, en 280 negocios. (Otros 1.211 pagaban y dejaron de pagar; ésa es
+     otra pregunta y todavía no tiene pastilla.)
+
+     ⚠ VA PEGADO A «EN MORA» porque es la misma: por ahí no está entrando plata.
+     Puesta al final quedaba la 13ª de la fila —o sea, invisible—, que es el
+     defecto que el comentario de abajo describe. Empuja UNA posición a los de
+     vencer pronto, que ya había que deslizar para verlos igual. */
+  { value: 'niUnPeso',   label: 'Ni un peso', color: 'var(--cf-red-dark)' },
   /* ── LOS QUE VENCEN PRONTO ──
      Pedido por Miguel Ángel (Préstamos Rincón): «los filtros que más se usan
      son los de próximos a vencer, bien sea en 5 días o 10 días. Esta aplicación
@@ -661,8 +675,13 @@ export default function PrestamosPage() {
       // Ni «mora» ni «renovar» son estados en la base: se piden los activos y el
       // servidor filtra sobre lo ya calculado. Antes se filtraba aca, sobre la
       // pagina ya recortada, asi que los morosos de la pagina 2 no se veian.
+      /* ⚠ `niUnPeso` ENTRA AQUÍ. Los derivados se piden como «activos» y el
+         servidor filtra sobre lo ya calculado; mandarlo como `estado` daría un
+         enum inválido y el endpoint devolvería la lista entera sin filtrar —
+         «que es peor que un error, porque parece que funciona», como dice el
+         aviso de la lista de clientes. */
       const derivado = est === 'mora' || est === 'renovar' || est === 'clavo' || est === 'nuevos'
-        || est.startsWith('vence')
+        || est === 'niUnPeso' || est.startsWith('vence')
       // ⚠ «Nuevos» NO fuerza `activo`: un préstamo metido hace dos horas puede
       // estar pendiente de aprobación, y ése es justo el que se busca al
       // revisar lo que entró hoy.
@@ -672,6 +691,7 @@ export default function PrestamosPage() {
       if (est === 'renovar') params.set('listosRenovar', '1')
       if (est === 'clavo') params.set('clavo', '1')
       if (est === 'nuevos') params.set('nuevos', '1')
+      if (est === 'niUnPeso') params.set('niUnPeso', '1')
       // El servidor filtra por la fecha del próximo cobro Y los devuelve
       // ordenados del más cercano al más lejano, que es la otra mitad de lo que
       // pidió: «que automáticamente los primeros sean los más cercanos a vencer».
