@@ -604,9 +604,17 @@ function NuevoPrestamo() {
    * Bogota); con la zona del navegador un cobro del dia 1 se lee dia 31. */
   const dosPrimerosCobros = useMemo(() => {
     if (frecuencia !== 'quincenal' || modoDiaCobro !== 'mes') return null
-    const d1 = Number(diaCobroMes)
-    if (!Number.isInteger(d1) || d1 < 1 || d1 > 31) return null
-    const d2 = Number(diaCobroMes2)
+    /* ⚠ VALE CUALQUIERA DE LOS DOS CAMPOS. Antes se exigía el primero, así que
+       quien rellenaba solo «Segundo cobro» no veía ninguna fecha — y encima el
+       préstamo se guardaba torcido. Ahora se ve siempre, y eso enseña algo que
+       antes se descubría tarde: con UN solo día, un quincenal cobra una vez al
+       mes. Verlo escrito es lo que evita crearlo mal. */
+    const puestos = [Number(diaCobroMes), Number(diaCobroMes2)]
+      .filter((d) => Number.isInteger(d) && d >= 1 && d <= 31)
+      .sort((a, b) => a - b)
+    if (!puestos.length) return null
+    const d1 = puestos[0]
+    const d2 = puestos[1] ?? NaN
     const inicio = new Date(`${fechaInicio}T05:00:00.000Z`)
     if (Number.isNaN(inicio.getTime())) return null
     const escribir = (f) => f && f.toLocaleDateString('es-CO', {

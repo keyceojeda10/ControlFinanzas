@@ -560,6 +560,26 @@ export async function POST(request) {
     diaCobroMes2Db = v
   }
 
+  /* ⚠ UN SOLO DIA VA SIEMPRE EN EL PRIMERO.
+   *
+   * La pantalla deja rellenar «Segundo cobro» y dejar «Primer cobro» vacio, y
+   * asi se guardaba: `diaCobroMes: null, diaCobroMes2: 15`. Un segundo dia sin
+   * primero no significa nada, y el calendario lo ignoraba — el prestamo caia
+   * al «entrega + 15 dias» y asignaba otra fecha.
+   *
+   * Reportado el 28 ago 2026: «yo le digo al sistema la primer cuota es tal dia
+   * y el asigna otra». El calendario ya lo tolera —para los 5 prestamos que
+   * quedaron guardados asi— pero de aqui en adelante no vuelve a entrar torcido.
+   *
+   * Y si vienen los dos, se ordenan: «cobro el 30 y el 15» es el mismo
+   * calendario que «el 15 y el 30», y guardarlos al reves no cambia nada salvo
+   * lo que se lee en la ficha. */
+  if (freq === 'quincenal') {
+    const dias = [diaCobroMesDb, diaCobroMes2Db].filter((d) => Number.isInteger(d)).sort((a, b) => a - b)
+    diaCobroMesDb = dias[0] ?? null
+    diaCobroMes2Db = dias[1] ?? null
+  }
+
   // Validaciones
   if (!clienteId)     return Response.json({ error: 'El cliente es requerido' },          { status: 400 })
   if (!montoPrestado) return Response.json({ error: 'El monto es requerido' },            { status: 400 })

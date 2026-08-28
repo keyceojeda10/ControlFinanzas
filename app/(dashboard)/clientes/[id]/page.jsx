@@ -444,6 +444,28 @@ export default function ClienteDetallePage({ params }) {
 
   const badge = estadoBadge[cliente.estado] ?? estadoBadge.cancelado
   const prestamosActivos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
+
+  /* EL NÚMERO DE CADA PRÉSTAMO CON ESTE CLIENTE.
+   *
+   * ⚠ La tarjeta se titulaba solo con la fecha —«Prestado el 6 de agosto»— y
+   * eso no distingue nada cuando hay dos del mismo día. Medido en producción el
+   * 28 ago 2026: 341 clientes con dos o más préstamos vivos en 60 negocios, y
+   * de ésos **65 tienen dos empezados el MISMO día** en 31 negocios. Ahí el
+   * prestamista ve dos tarjetas idénticas y tiene que entrar a cada una.
+   *
+   * «Manejan dos tarjetas, ¿hay forma de enumerar los créditos?» — y la
+   * respuesta es que el número YA se calcula, solo que únicamente dentro de la
+   * ficha del préstamo.
+   *
+   * ⚠ MISMO CRITERIO QUE LA FICHA: por `createdAt` ascendente y contando TODOS
+   * los préstamos, no solo los vivos. Si aquí se contaran solo los activos, el
+   * mismo préstamo sería el #1 en la lista y el #3 al abrirlo. */
+  const numeroDelPrestamo = (() => {
+    const orden = [...(cliente.prestamos ?? [])]
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      .map((p) => p.id)
+    return (id) => orden.indexOf(id) + 1
+  })()
   const historial        = cliente.prestamos?.filter((p) => p.estado !== 'activo')  ?? []
 
   const getRutaCobroUrl = (clienteRuta) => {
@@ -712,7 +734,7 @@ export default function ClienteDetallePage({ params }) {
                   // ficha; repetirlo gasta la linea mas visible. Y ademas salia
                   // «Sin cliente», porque en esta pagina los prestamos llegan
                   // sin el cliente anidado — no hace falta, ya esta arriba.
-                  nombre={`Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
+                  nombre={`${prestamosActivos.length > 1 ? `Préstamo #${numeroDelPrestamo(p.id)} · ` : ''}Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
                   onClick={() => router.push(`/prestamos/${p.id}`)}
                 />
               ))
