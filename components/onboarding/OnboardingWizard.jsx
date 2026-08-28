@@ -14,6 +14,7 @@ import WizardPlan from './wizard/WizardPlan'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
+import { useCabecera } from '@/components/armazon/Armazon'
 
 /*
   Onboarding v4
@@ -78,6 +79,17 @@ export default function OnboardingWizard({
   const [capitalDone,   setCapitalDone]   = useState(false)
   const [capitalMonto,  setCapitalMonto]  = useState(0)
   const [showBounce,    setShowBounce]    = useState(false)
+
+  /* ⚠ ESTO ES UNA TAREA, NO UNA PANTALLA DE NAVEGACIÓN — y sin decirlo, la
+   * pastilla se sentaba ENCIMA del botón «Continuar» del primer paso a 360x640,
+   * el teléfono más barato y más común aquí. Quien tocaba ahí no continuaba: se
+   * iba a otra pantalla. A 390 y 412 quedaba libre, y por eso no se veía
+   * probando en un teléfono normal.
+   *
+   * El asistente se pinta dentro de `/dashboard`, que es navegación, así que
+   * heredaba su pastilla. `armazon.js` ya dice que una tarea no la lleva
+   * —«salirse a medias pierde datos»—; solo faltaba declararlo. */
+  useCabecera({ tarea: true })
 
   // El método de carga es un SUB-ESTADO del paso 2, no un paso nuevo. Meter un
   // paso corre la numeración y deja a medias a quien tenga progreso guardado

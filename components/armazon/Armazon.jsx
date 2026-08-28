@@ -101,13 +101,13 @@ export function VolverEscritorio() {
   )
 }
 
-export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver, onCerrar } = {}) {
+export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver, onCerrar, tarea } = {}) {
   const ctx = useContext(ArmazonContext)
   const registrar = ctx?.registrar
 
   // El ref lleva siempre lo último; la clave decide cuándo vale la pena avisar.
   const ultimo = useRef(null)
-  ultimo.current = { titulo, subtitulo, acciones, paso, total, onVolver, onCerrar }
+  ultimo.current = { titulo, subtitulo, acciones, paso, total, onVolver, onCerrar, tarea }
 
   // Los MANEJADORES van en la clave como «hay o no hay», no por identidad.
   //
@@ -119,6 +119,7 @@ export function useCabecera({ titulo, subtitulo, acciones, paso, total, onVolver
   const clave = [
     titulo ?? '', subtitulo ?? '', paso ?? '', total ?? '',
     onVolver ? 'v' : '', onCerrar ? 'c' : '',
+    tarea ? 't' : '',
   ].join('|')
 
   useEffect(() => {
@@ -198,6 +199,23 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
 
   const armazon = resolverArmazon(pathname)
 
+  /* ⚠ UNA TAREA A PANTALLA COMPLETA NO LLEVA PASTILLA, AUNQUE VIVA EN UNA RUTA
+   * DE NAVEGACIÓN.
+   *
+   * `armazon.js` ya lo dice para las rutas de tarea —«salirse a medias pierde
+   * datos»—, pero el asistente de arranque se pinta DENTRO de `/dashboard`,
+   * que es navegación. Así que heredaba la pastilla.
+   *
+   * Medido a 360x640 —el teléfono más barato, y el más común en este mercado—:
+   * la pastilla se sentaba ENCIMA del botón «Continuar» del primer paso. Quien
+   * tocaba ahí no continuaba, se iba a otra pantalla. A 390 y 412 quedaba libre,
+   * y por eso no se veía probando en un teléfono normal.
+   *
+   * Es el mismo fallo que ya costó dos pantallas sanas —la pastilla tapando
+   * «guardar»—, y allí la lección fue ésta: se quita la pastilla, no se sube el
+   * botón. La pantalla lo declara con `useCabecera({ tarea: true })`. */
+  const hayPastilla = armazon.pastilla && !dePantalla?.tarea
+
   // El nombre lo manda el LAYOUT, que es servidor y ya tiene la sesión.
   // `useSession()` devuelve null durante el render del servidor, así que
   // derivar de él las iniciales hacía que el servidor pintara "·" y el cliente
@@ -251,7 +269,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           deslizaba 168px para no enseñar nada. Con la medida aquí, el armazón
           de dentro puede descontarla de su alto mínimo Y reservarla como
           relleno: el hueco sigue existiendo y deja de sobrar. */}
-      <div style={{ '--cf-hueco-pie': armazon.pastilla ? '112px' : '0px' }}>
+      <div style={{ '--cf-hueco-pie': hayPastilla ? '112px' : '0px' }}>
         {children}
       </div>
 
@@ -279,7 +297,7 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
       {/* La pastilla NO se oculta con CSS: no se monta. Un `display:none` deja
           los cinco destinos en el árbol y un lector de pantalla los sigue
           anunciando en una pantalla donde no se puede navegar. */}
-      {armazon.pastilla && <PastillaNav onCrear={onCrear ?? (() => setMenuCrear(true))} />}
+      {hayPastilla && <PastillaNav onCrear={onCrear ?? (() => setMenuCrear(true))} />}
 
       {escaner && (
         <QrScanner
