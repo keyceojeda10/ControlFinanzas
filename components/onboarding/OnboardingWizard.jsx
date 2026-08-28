@@ -255,8 +255,21 @@ export default function OnboardingWizard({
           onFoto={() => { marcar('onb_metodo', { metodo: 'foto', flujo }); setMetodo('foto') }}
           onExcel={() => { marcar('onb_metodo', { metodo: 'excel', flujo }); setMetodo('excel') }}
           onCero={() => {
+            /* ⚠ PASO 50, NO 2. Quien elige empezar de cero SE VA del asistente
+             * a crear su primer cliente: no se quedó atascado, avanzó por otra
+             * puerta. Guardando 2 quedaba marcado como detenido para siempre,
+             * y al volver aterrizaba otra vez en la pantalla de planes.
+             *
+             * Medido el 28 ago 2026: de las 88 organizaciones «detenidas en el
+             * paso 2», 19 tienen entre 1 y 5 clientes cargados — son éstas. El
+             * 60% de quienes eligen método eligen éste, así que el número que
+             * mide si el arranque funciona venía inflado por su propia gente.
+             *
+             * 50 es «ya vio el asistente»: lo apaga y enciende la lista de
+             * misiones, que es exactamente lo que necesita quien se va a cargar
+             * su cartera a mano. */
             marcar('onb_metodo', { metodo: 'cero', flujo })
-            persistStep(2, flujo)
+            persistStep(50, flujo)
             window.location.href = '/clientes/nuevo'
           }}
           pasos={[

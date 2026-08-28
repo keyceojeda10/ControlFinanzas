@@ -4,7 +4,7 @@ import bcrypt           from 'bcryptjs'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
-import { registroLimiter, getClientIp } from '@/lib/rate-limit'
+import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit'
 import { DIAS_PRUEBA } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
@@ -20,10 +20,17 @@ function generarCodigoReferido() {
 
 export async function POST(req) {
   try {
-    // Rate limiting: 3 registros por IP por hora
+    /* ⚠ ARRIBA SOLO SE FRENA EL MARTILLEO, NO EL QUE SE EQUIVOCA.
+     *
+     * Aquí estaba el limite de CUENTAS —3 por IP y hora— y se consumia en cada
+     * intento, antes de validar nada: escribir mal el celular dos veces y la
+     * contraseña una dejaba a alguien fuera UNA HORA sin haber creado cuenta.
+     * Lo vi recorriendo el asistente: segundo intento, 429. Y aqui mucha gente
+     * sale por la IP del operador, asi que se lleva por delante a vecinos.
+     *
+     * El limite de cuentas creadas se cobra abajo, cuando ya paso todo. */
     const ip = getClientIp(req)
-    const rl = registroLimiter(ip)
-    if (!rl.ok) {
+    if (!registroIntentos(ip).ok) {
       return NextResponse.json({ success: false, error: 'Demasiados intentos. Intenta más tarde.' }, { status: 429 })
     }
 
@@ -114,6 +121,16 @@ export async function POST(req) {
     }
 
     // Crear organización + owner + suscripción de prueba en transacción
+    /* EL LIMITE DE VERDAD, cobrado cuando la cuenta se va a crear de verdad.
+       Sigue siendo 3 por IP y hora: crear cuentas en masa no se puede. Lo que
+       ya no cuesta es equivocarse escribiendo. */
+    if (!registroLimiter(ip).ok) {
+      return NextResponse.json({
+        success: false,
+        error: 'Ya se crearon varias cuentas desde esta conexión. Intenta en una hora.',
+      }, { status: 429 })
+    }
+
     const resultado = await prisma.$transaction(async (tx) => {
       // CUÁNDO SE ACABA LA PRUEBA, calculado UNA VEZ. Se escribe en dos columnas
       // —`planDemoHasta` de la organización y el vencimiento de la suscripción— y

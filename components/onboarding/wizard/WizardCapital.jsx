@@ -176,10 +176,17 @@ export default function WizardCapital({ onComplete, alreadyDone, savedMonto = 0 
       )}
 
       {/* La consecuencia, dicha ANTES de que pase. No es una advertencia
-          genérica: dice qué va a salir mal y dónde se arregla. */}
+          genérica: dice qué va a salir mal y dónde se arregla.
+
+          ⚠ ANTES DECÍA «si lo dejas en cero… puedes corregirlo después», y eso
+          se lee como que Continuar acepta el cero. No lo acepta: responde
+          «Ingresa un monto mayor a 0». La salida existe y está justo debajo
+          —«Lo registro después»—, pero esta frase mandaba al control que no
+          era. Recorriendo el asistente a 412px, las dos salidas SÍ se ven en
+          los tres tamaños de teléfono: el problema era solo dónde apuntaba. */}
       <p style={{ fontSize: 12.5, color: 'var(--cf-ink-3)', margin: 0, lineHeight: 1.5 }}>
-        Si lo dejas en cero, tu caja va a quedar en negativo el primer día que
-        prestes. Puedes corregirlo después en Caja.
+        Si no lo sabes ahora, toca «Lo registro después». Dejarlo en cero aquí
+        no te deja seguir: el sistema necesita una cifra o saber que la darás luego.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
