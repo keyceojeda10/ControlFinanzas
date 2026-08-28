@@ -244,21 +244,77 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
         cobrando igual.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
-        <button type="button" onClick={onCargar} style={{
-          width: '100%', height: 'var(--cf-h-btn)', border: 0,
-          borderRadius: 'var(--cf-r-control)', cursor: 'pointer',
-          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
-          fontSize: 15, fontWeight: 700,
-        }}>
-          Cargar mi cartera
-        </button>
-        <button type="button" onClick={onPagar} style={{
-          background: 'none', border: 0, cursor: 'pointer',
-          fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
-        }}>
-          Pagar un plan desde ya
-        </button>
+      {/* ══ ⚠ LA SALIDA VA FIJA, PORQUE ESTABA FUERA DE LA PANTALLA ═════════
+        *
+        * Esta pantalla mide 942px y su única acción estaba al final. Medido en
+        * el espejo, con una cuenta recién registrada:
+        *
+        *   360x640  gama baja          asoman  0px de 52 — deslizar 354px
+        *   390x664  iPhone             asoman  0px       — deslizar 274px
+        *   412x740  Android común      asoman  0px       — deslizar 198px
+        *   412x900  muy alto           asoman 14px       — deslizar  38px
+        *
+        * En NINGÚN teléfono real se veía. Lo que sí se veía era una lista de
+        * precios —$39.000, $59.000, $79.000— a alguien que acababa de
+        * registrarse para una prueba gratis, sin nada que le dijera cómo
+        * seguir. El botón nunca estuvo roto: pulsándolo avanza perfecto.
+        *
+        * Y ESO ES LO QUE ATASCÓ EL ARRANQUE. Medido en producción el 28 ago
+        * 2026: 88 de 184 organizaciones de agosto (48%) detenidas en este paso,
+        * 69 de ellas con CERO clientes cargados. La completitud del onboarding
+        * pasó del 82% en junio al 8% en agosto, y la caída arranca la semana
+        * del 13 de julio — justo cuando esta pantalla entró en el paso 2.
+        *
+        * ⚠ NO ERA LA PASTILLA. Quitarla libera ~90px y el botón estaba a 886
+        * en una ventana de 740: no habría bastado. La causa es que la pantalla
+        * es larga y la salida vivía al fondo. Por eso se fija la salida en vez
+        * de recortar la pantalla, que es información que el cliente sí quiere.
+        *
+        * El hueco de abajo deja sitio a la barra fija Y a la pastilla, que se
+        * pinta encima de todo con `--cf-nav-inset`. */}
+      {/* ⚠ `sticky`, NO `fixed`, Y NO ES UN CAPRICHO.
+        *
+        * La primera versión era `position: fixed` y NO SE PEGABA: el botón
+        * seguía a 903 en una ventana de 740. La causa la dio el navegador, no
+        * el JSX — `DIV.wizard-step-enter` lleva un `transform` de identidad,
+        * resto de la animación de entrada, y un ancestro con transform crea un
+        * contenedor nuevo al que el `fixed` se ancla en vez de a la pantalla.
+        * Le pasa a TODO lo que se pinte dentro del asistente.
+        *
+        * `sticky` sí se ancla al recorrido, así que se pega abajo mientras haya
+        * pantalla por debajo y descansa en su sitio al final. */}
+      <div style={{
+        position: 'sticky',
+        bottom: 'calc(var(--cf-nav-inset) + 72px + env(safe-area-inset-bottom, 0px))',
+        marginLeft: 'calc(-1 * var(--cf-pad-screen))',
+        marginRight: 'calc(-1 * var(--cf-pad-screen))',
+        display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center',
+        padding: '26px var(--cf-pad-screen) 4px',
+        /* Opaco DEBAJO del botón y desvanecido arriba. Sin la parte opaca, el
+           botón se leía encima de la tarjeta amarilla y la cortaba por la
+           mitad; sin el desvanecido, la barra parece el final de la pantalla y
+           nadie desliza a leer los planes. `--cf-surface` es el fondo real de
+           esta pantalla, medido en el DOM, no el blanco de las tarjetas. */
+        background: 'linear-gradient(to top, var(--cf-surface) 0%, var(--cf-surface) 74%, transparent 100%)',
+        zIndex: 40,
+      }}>
+        <div style={{ width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column',
+          gap: 10, alignItems: 'center' }}>
+          <button type="button" onClick={onCargar} style={{
+            width: '100%', height: 'var(--cf-h-btn)', border: 0,
+            borderRadius: 'var(--cf-r-control)', cursor: 'pointer',
+            background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+            fontSize: 15, fontWeight: 700,
+          }}>
+            Cargar mi cartera
+          </button>
+          <button type="button" onClick={onPagar} style={{
+            background: 'none', border: 0, cursor: 'pointer',
+            fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+          }}>
+            Pagar un plan desde ya
+          </button>
+        </div>
       </div>
     </div>
   )
