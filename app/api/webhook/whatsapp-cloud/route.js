@@ -213,7 +213,7 @@ async function devolverIntentoSiThrottle(wamid, errorEntrega) {
     },
   })
 
-  if (accionTrasThrottle(rebotes) === 'dejar-de-insistir') {
+  if (accionTrasThrottle(rebotes, codigo) === 'dejar-de-insistir') {
     // Meta ya lo dijo dos veces: a esta persona no le llegan mensajes de
     // marketing. Se dejan de programar seguimientos PROACTIVOS, pero botActivo
     // queda true — si algun dia escribe, el bot le contesta normal (esa via es
@@ -273,7 +273,13 @@ const UMBRAL_FALLOS_ABSOLUTO = 15  // o 15 mensajes perdidos en 24h, sin importa
 // Codigos de Meta que significan "no lo entregue por politica/throttle", NO "el
 // numero no existe". El mensaje se puede volver a intentar mas adelante, asi que
 // NO debe consumir un intento de seguimiento.
-const CODIGOS_THROTTLE = new Set([131049, 130472, 131050])
+/* ⚠ EL 131026 ENTRA AQUI, Y NO ESTABA. «Message undeliverable»: el numero no
+   tiene WhatsApp o no acepta mensajes de empresas. Al quedarse fuera de esta
+   lista NO se le aplicaba ningun freno, asi que el lead seguia recibiendo la
+   secuencia entera de seguimientos: 105 reintentos en 30 dias para acertar 15
+   (14 %), y 90 rebotes que degradan la reputacion del numero para todos los
+   demas. Dentro de la lista, se planta a los dos rebotes como el resto. */
+const CODIGOS_THROTTLE = new Set([131049, 130472, 131050, 131026])
 
 // Codigos que significan "Meta te corto", no "ese numero no existe".
 // Estos NO pueden esperar a que falle el 30% del trafico: cuando aparecen, el
