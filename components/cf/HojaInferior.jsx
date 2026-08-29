@@ -142,11 +142,16 @@ export default function HojaInferior({
   const pintar = useCallback((y, alto) => {
     const caja = refCaja.current
     if (!caja) return
-    caja.style.transform = `translateY(${Math.max(0, y)}px)`
+    /* ⚠ SIN RECORTAR A CERO. Lo tenía con `Math.max(0, y)` y eso se comía la
+       resistencia entera: tiraba 160px hacia arriba y la hoja subía 0 —el tope
+       seco que precisamente se quería evitar—. Quien limita cuánto sube es
+       `resistencia()` en el propio gesto, no este recorte. */
+    caja.style.transform = `translateY(${y}px)`
     /* El velo se aclara conforme la hoja baja: el movimiento de en medio dice
-       hacia dónde va la cosa, en vez de interpolar a ciegas. */
+       hacia dónde va la cosa, en vez de interpolar a ciegas. Aquí sí se acota,
+       porque una opacidad mayor que 1 no significa nada. */
     if (refVelo.current && alto > 0) {
-      refVelo.current.style.opacity = String(Math.max(0, 1 - (Math.max(0, y) / alto) * 0.9))
+      refVelo.current.style.opacity = String(Math.min(1, Math.max(0, 1 - (Math.max(0, y) / alto) * 0.9)))
     }
   }, [])
 
@@ -194,7 +199,11 @@ export default function HojaInferior({
     const caja = refCaja.current
     if (!caja) return
     cancelAnimationFrame(refAnim.current)
-    e.currentTarget.setPointerCapture?.(e.pointerId)
+    /* ⚠ EN UN `try`: `setPointerCapture` LANZA si el puntero ya no existe —un
+       toque que se cancela, un evento sintético—, y esa excepción se llevaba el
+       gesto entero por delante. Sin la captura el arrastre sigue funcionando
+       mientras el dedo no se salga del elemento, que es el caso normal. */
+    try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* sin captura, igual se arrastra */ }
     const alto = caja.getBoundingClientRect().height || 1
     const desde = dondeEsta(caja)
     refGesto.current = { y0: e.clientY, desde, alto, historia: [[performance.now(), e.clientY]] }
@@ -321,12 +330,16 @@ export default function HojaInferior({
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 60 }}>
-      <div ref={refVelo} onClick={onCerrar} style={{
+      <div ref={refVelo} onClick={onCerrar} className="cf-velo-llega" style={{
         position: 'absolute', inset: 0,
         background: escritorio ? 'var(--cf-scrim-modal)' : 'var(--cf-scrim)',
       }} />
 
-      <div ref={refCaja} role="dialog" aria-modal="true" style={escritorio ? {
+      <div ref={refCaja} role="dialog" aria-modal="true"
+        /* Solo en escritorio: en teléfono el recorrido lo hace el muelle, y una
+           animación CSS encima pelearía con el `transform` que él escribe. */
+        className={escritorio ? 'cf-modal-llega' : undefined}
+        style={escritorio ? {
         position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
         width: 520, maxHeight: alturaMaxima,
         background: 'var(--cf-surface)',

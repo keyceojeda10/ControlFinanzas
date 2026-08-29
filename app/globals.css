@@ -1336,3 +1336,113 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
   .cf-globo-estrella { animation: cf-globo-aparece 120ms ease-out; }
   @keyframes cf-globo-aparece { from { opacity: 0 } to { opacity: 1 } }
 }
+
+/* ══ QUE LA APP RESPONDA AL TOCARLA, NO AL SOLTARLA ═════════════════════════
+ *
+ * «En el momento en que aparece el retardo, la sensación de estar tocando la
+ *  cosa se cae por un precipicio.»
+ *
+ * Casi nada de esta app daba señal hasta que levantabas el dedo. Con una lista
+ * lenta —y en un teléfono de gama baja en la calle lo es— eso se lee como que
+ * la pantalla se quedó colgada, y el cobrador vuelve a tocar. Dos veces.
+ *
+ * ⚠ VA EN UNA CAPA, Y ESO ES LO QUE HACE QUE NO ROMPA NADA. Cualquier regla
+ * suelta del proyecto —las de `.cf-btn-*`, las de los primitivos— gana SIEMPRE
+ * a una regla dentro de `@layer`, sin importar la especificidad. Así esto solo
+ * llega a lo que hoy no tiene nada, y donde ya hay un pulsado pensado, manda el
+ * de antes. Y si un navegador viejo no entiende `@layer`, ignora el bloque
+ * entero: se queda como estaba, no se rompe.
+ *
+ * ⚠ Y LA ESCALA ES MÍNIMA A PROPÓSITO (.985). Esta regla cae por igual sobre un
+ * chip de 60px y sobre la tarjeta de un cliente de 400: el 3% que sienta bien a
+ * un botón es un salto en una tarjeta. Los controles pequeños llevan el suyo,
+ * más marcado, en su propio componente.
+ */
+@layer cf-toque {
+  button,
+  [role="button"],
+  a[data-toque],
+  summary {
+    transition: transform 110ms cubic-bezier(.22, 1, .36, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:active:not(:disabled),
+  [role="button"]:active,
+  a[data-toque]:active,
+  summary:active {
+    transform: scale(.985);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button, [role="button"], a[data-toque], summary { transition: none; }
+    button:active:not(:disabled),
+    [role="button"]:active,
+    a[data-toque]:active,
+    summary:active { transform: none; }
+  }
+}
+
+/* Los controles pequeños del sistema —botones, chips— piden más que el 1,5 %
+   de la capa base: en una pieza de 40px eso no se siente. Va FUERA de la capa
+   para que gane a la regla general, que es justo lo que se quiere aquí. */
+.cf-pulsa { transition: transform 110ms cubic-bezier(.22,1,.36,1); -webkit-tap-highlight-color: transparent; }
+.cf-pulsa:active:not(:disabled) { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .cf-pulsa { transition: none; }
+  .cf-pulsa:active:not(:disabled) { transform: none; }
+}
+
+/* ══ LAS DOS PREFERENCIAS QUE NO MIRÁBAMOS ═════════════════════════════════
+ *
+ * «Menos movimiento» ya se respeta en toda la app. Estas dos no, y la app SÍ
+ * tiene superficies difuminadas (`.glass`, el velo de los modales, la barra):
+ * quien las tiene activadas las ve borrosas y no puede hacer nada.
+ *
+ * ⚠ Van al final del fichero y sin `!important`: solo pisan al que no haya
+ * dicho lo contrario más abajo, y solo dentro de su preferencia. Para quien no
+ * la tiene puesta —casi todo el mundo— este bloque no existe.
+ */
+@media (prefers-reduced-transparency: reduce) {
+  /* El difuminado deja de ser difuminado: fondo sólido y nada de blur. Se ve
+     menos elegante y se lee mejor, que es exactamente lo que se pidió. */
+  .glass, .glass-strong, [style*="backdrop-filter"], [style*="backdropFilter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .glass, .glass-strong { background: var(--cf-surface); }
+}
+
+@media (prefers-contrast: more) {
+  /* Bordes definidos donde hoy hay filetes de opacidad baja: con contraste alto
+     un borde al 10 % simplemente no existe. */
+  :root {
+    --cf-hairline: color-mix(in srgb, var(--cf-ink) 38%, transparent);
+    --cf-border: color-mix(in srgb, var(--cf-ink) 46%, transparent);
+    --cf-border-soft: color-mix(in srgb, var(--cf-ink) 34%, transparent);
+    --cf-ink-3: color-mix(in srgb, var(--cf-ink) 78%, transparent);
+    --cf-ink-4: color-mix(in srgb, var(--cf-ink) 66%, transparent);
+  }
+  .cf-marca-paga, .cf-pulsa { border-width: 1px; }
+}
+
+/* ══ EL MODAL DE ESCRITORIO TAMBIÉN LLEGA, NO APARECE ═══════════════════════
+ *
+ * En teléfono la hoja sube con su muelle. En escritorio el mismo componente
+ * salía de golpe, en un solo cuadro: sin recorrido no hay forma de saber de
+ * dónde vino, y la pantalla da un respingo.
+ *
+ * Aquí NO hace falta muelle: no es un gesto, nadie lo va a agarrar a medio
+ * camino. Una entrada corta y sin rebote —«un rebote en algo que apareció solo
+ * se siente mal»— es lo que corresponde.
+ *
+ * ⚠ La escala se compone CON el centrado: ese `translate(-50%,-50%)` es lo que
+ * mantiene el modal en el centro, y pisarlo lo manda fuera de la pantalla. */
+.cf-modal-llega { animation: cf-modal-llega 200ms cubic-bezier(.22, 1, .36, 1); }
+@keyframes cf-modal-llega {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(.965); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.cf-velo-llega { animation: cf-velo-llega 200ms ease-out; }
+@keyframes cf-velo-llega { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) {
+  .cf-modal-llega { animation: cf-velo-llega 140ms ease-out; }
+}

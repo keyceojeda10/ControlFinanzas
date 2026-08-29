@@ -403,29 +403,40 @@ const TEXTO_NIVEL = { verde: 'Buen cliente', ambar: 'Se atrasa', rojo: 'Mal clie
 const CAMINO_ESTRELLA =
   'M12 2.1l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.12l-5.88 3.09 1.12-6.55L2.48 9.02l6.58-.96L12 2.1z'
 
-/* ⚠ EL MATERIAL VA EN LA ESTRELLA, NO EN UNA CAJA DETRÁS. Lo hice al revés
-   primero —un contenedor tintado con la estrella dentro— y salió peor: a 22px el
-   radio de icono se lee como un círculo, y una superficie clara encima de la
-   tarjeta blanca es apilar dos materiales claros, que es justo lo que hunde la
-   legibilidad. La estrella sólida ya tenía la presencia; lo que le faltaba era
-   volumen.
+/* ⚠ ES UN SELLO, NO UNA SILUETA. Elegido por el dueño entre seis formas, vistas
+   a 20px dentro de una fila de verdad —que es donde se decide— y no en grande.
 
-   El volumen son dos cosas y nada más: un filo claro por dentro del contorno
-   —la luz posándose en el material— y una sombra del PROPIO color. Una sombra
-   gris sobre una pieza de 20px la ensucia; teñida la despega del papel.
+   Por qué gana: es la única de las seis que se ve a un metro y con sol, que es
+   la distancia a la que un cobrador mira su teléfono de pie en la puerta de un
+   cliente. El disco lleno da una mancha de color continua; una silueta de cinco
+   puntas, a ese tamaño, se deshace en picos.
 
-   Van como trazo del path y `drop-shadow`: ni degradados con un `id` repetido
-   cien veces en la lista, ni máscaras CSS, que en las GPU Mali de los teléfonos
-   baratos ya nos han dado un susto. */
+   Y resuelve solo el problema del color: la FORMA del disco se distingue de la
+   pastilla alargada que tiene al lado aunque no se distingan los colores —hay
+   cobradores que no separan el rojo del verde—.
+
+   ⚠ Sigue sin ser una caja debajo de un símbolo: aquí el disco ES la pieza. Lo
+   que no funcionaba era un contenedor TENUE bajo una estrella de color, que es
+   apilar dos superficies claras. Un disco de color pleno con la estrella
+   recortada en blanco es lo contrario: una sola superficie, con la forma dentro.
+
+   El material son dos cosas: un filo claro arriba —la luz posándose— y una
+   sombra del PROPIO color, nunca gris, que sobre una pieza de 20px la ensucia. */
 const SOMBRA_ESTRELLA = (color) =>
-  `drop-shadow(0 1px 1.5px color-mix(in srgb, ${color} 42%, transparent))`
+  `drop-shadow(0 1px 1.5px color-mix(in srgb, ${color} 45%, transparent))`
 
 function Estrella({ color, tam = 20 }) {
   return (
     <svg width={tam} height={tam} viewBox="0 0 24 24" aria-hidden
       style={{ filter: SOMBRA_ESTRELLA(color), display: 'block' }}>
-      <path d={CAMINO_ESTRELLA} fill={color}
-        stroke="rgba(255,255,255,.55)" strokeWidth="1.1" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="11" fill={color} />
+      {/* El filo, por dentro del borde: media luna clara arriba, no un aro
+          entero, que se leería como un contorno dibujado. */}
+      <path d="M12 1A11 11 0 0 1 23 12 11 11 0 0 0 12 1.9 11 11 0 0 0 1 12 11 11 0 0 1 12 1z"
+        fill="rgba(255,255,255,.5)" />
+      <g transform="translate(12 12) scale(.62) translate(-12 -12)">
+        <path d={CAMINO_ESTRELLA} fill="#fff" />
+      </g>
     </svg>
   )
 }
@@ -593,8 +604,16 @@ export function MarcaComoPaga({ nivel, texto, onClick, sobreOscuro = false, styl
       }}
     >
       {vacia ? (
-        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
-          <path d={CAMINO_ESTRELLA} fill="none" stroke={tinta} strokeWidth="1.8" strokeLinejoin="round" />
+        /* El mismo sello, sin rellenar: el disco en trazo discontinuo y la
+           estrella hueca dentro. Que la FORMA sea la misma es lo que hace que
+           se lea como «esto está por poner» y no como otra cosa distinta. */
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+          <circle cx="12" cy="12" r="10.6" fill="none" stroke={tinta} strokeWidth="1.5"
+            strokeDasharray="2.6 2.4" opacity=".62" />
+          <g transform="translate(12 12) scale(.56) translate(-12 -12)">
+            <path d={CAMINO_ESTRELLA} fill="none" stroke={tinta} strokeWidth="2.6"
+              strokeLinejoin="round" opacity=".72" />
+          </g>
         </svg>
       ) : (
         <Estrella color={color} tam={17} />
@@ -614,7 +633,7 @@ const BOTON_BASE = {
 /** UNO SOLO por pantalla. Su texto dice la acción con su cifra: "Aplicar $15.000". */
 export function BotonPrimario({ children, style, ...props }) {
   return (
-    <button type="button" {...props} style={{
+    <button type="button" className="cf-pulsa" {...props} style={{
       ...BOTON_BASE,
       height: 'var(--cf-h-btn)', border: 0,
       background: 'var(--cf-gold)',
@@ -627,7 +646,7 @@ export function BotonPrimario({ children, style, ...props }) {
 
 export function BotonSecundario({ children, cancelar = false, style, ...props }) {
   return (
-    <button type="button" {...props} style={{
+    <button type="button" className="cf-pulsa" {...props} style={{
       ...BOTON_BASE,
       height: 'var(--cf-h-btn-2)',
       background: 'var(--cf-card)',
@@ -643,7 +662,7 @@ export function BotonSecundario({ children, cancelar = false, style, ...props })
     acción NO destructiva ("seguir cobrando") y esto queda en contorno rojo. */
 export function BotonDestructivo({ children, style, ...props }) {
   return (
-    <button type="button" {...props} style={{
+    <button type="button" className="cf-pulsa" {...props} style={{
       ...BOTON_BASE,
       height: 'var(--cf-h-btn-2)',
       background: 'var(--cf-card)',
@@ -657,7 +676,7 @@ export function BotonDestructivo({ children, style, ...props }) {
 
 export function BotonTexto({ children, style, ...props }) {
   return (
-    <button type="button" {...props} style={{
+    <button type="button" className="cf-pulsa" {...props} style={{
       background: 'none', border: 0, padding: 0, cursor: 'pointer',
       fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
       fontFamily: 'var(--font-manrope), system-ui',
@@ -790,7 +809,7 @@ export function BarraProgreso({ porcentaje = 0, tono = 'oro', alto = 5, sobreOsc
  */
 export function Chip({ children, activo = false, conteo, chico = false, style, ...props }) {
   return (
-    <button type="button" {...props} style={{
+    <button type="button" className="cf-pulsa" {...props} style={{
       display: 'inline-flex', alignItems: 'center', gap: 6,
       /* Relleno 14 y letra 13, de T02-05 y T02-06. Tenia 12 y 12. */
       height: chico ? 34 : 'var(--cf-h-chip)',
