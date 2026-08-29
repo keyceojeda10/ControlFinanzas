@@ -239,8 +239,32 @@ async function devolverIntentoSiThrottle(wamid, errorEntrega) {
   console.warn(`[WA Cloud] Throttle ${codigo} en ${lead.nombre}: intento devuelto (${lead.intentosSeguimiento} -> ${intentos}), reintento en 24h (rebote ${rebotes}/${MAX_REBOTES_THROTTLE})`)
 }
 
-let ultimaAlertaFallos = 0
-let ultimaAlertaCorte = 0
+/* ⚠ LA MARCA NO PUEDE VIVIR EN MEMORIA: HAY DOS INSTANCIAS.
+ *
+ * `pm2` corre `cf` con dos procesos, y cada uno tenía su propia variable. La
+ * primera alerta la mandaba una instancia y ocho minutos después la otra
+ * mandaba la MISMA, porque su reloj estaba a cero. Pasó el 29 de agosto de
+ * 2026: dos avisos idénticos a las 7:11 y las 7:19.
+ *
+ * Es el mismo patrón que el `connection_limit`: lo que se cuenta por proceso se
+ * MULTIPLICA por el número de instancias.
+ *
+ * Se guarda en disco, que las dos instancias comparten. Un fichero es
+ * proporcional al problema —una tabla nueva para deduplicar avisos sería
+ * pagar una migración por esto— y si algún día hay dos servidores, entonces sí
+ * tocará la tabla. */
+import { readFileSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
+
+const marcaDe = (nombre) => join(tmpdir(), `cf-alerta-${nombre}.txt`)
+
+function ultimaVez(nombre) {
+  try { return Number(readFileSync(marcaDe(nombre), 'utf8')) || 0 } catch { return 0 }
+}
+function apuntarVez(nombre) {
+  try { writeFileSync(marcaDe(nombre), String(Date.now())) } catch { /* sin disco, se avisa de más: mejor que de menos */ }
+}
 
 // Umbrales de la alerta de fallos de entrega. Se dispara por cualquiera de los dos.
 const UMBRAL_TASA_FALLOS = 0.15    // 15% en 24h (antes 30%: inalcanzable)
@@ -268,8 +292,8 @@ async function verificarCorte(errorEntrega) {
   if (!motivo) return
 
   // Una alerta por hora: suficiente para enterarse el mismo dia, sin inundar.
-  if (Date.now() - ultimaAlertaCorte < 3600000) return
-  ultimaAlertaCorte = Date.now()
+  if (Date.now() - ultimaVez('corte') < 3600000) return
+  apuntarVez('corte')
 
   const { alertarCorteMeta } = await import('@/lib/bot/alertas')
   await alertarCorteMeta(codigo, motivo).catch(() => {})
@@ -281,7 +305,7 @@ async function verificarTasaFallos(errorEntrega) {
     console.error('[WA Cloud] Error alertando corte:', e.message)
   )
 
-  if (Date.now() - ultimaAlertaFallos < 6 * 3600000) return
+  if (Date.now() - ultimaVez('fallos') < 6 * 3600000) return
 
   const hace24h = new Date(Date.now() - 24 * 3600000)
   const [fallidos, total] = await Promise.all([
@@ -301,7 +325,7 @@ async function verificarTasaFallos(errorEntrega) {
   // por tasa O por volumen absoluto: 15 fallos en un dia ya es algo que mirar.
   if (tasaFallo < UMBRAL_TASA_FALLOS && fallidos < UMBRAL_FALLOS_ABSOLUTO) return
 
-  ultimaAlertaFallos = Date.now()
+  apuntarVez('fallos')
   const pct = Math.round(tasaFallo * 100)
   const { alertarFallosEntrega } = await import('@/lib/bot/alertas')
   await alertarFallosEntrega(fallidos, total, pct, errorEntrega)
