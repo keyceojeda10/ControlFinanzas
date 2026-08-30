@@ -183,10 +183,56 @@ async function procesarStatus(status) {
 // Meta acepta el envio con HTTP 200 y avisa del rechazo MINUTOS DESPUES por este
 // webhook — cuando el sender ya incremento intentosSeguimiento. Resultado medido:
 // un mensaje que Meta nunca entrego quemaba un intento como si hubiera llegado, y
+const esCorteDeCuenta = (codigo) => Object.hasOwn(CODIGOS_CORTE, String(codigo))
+
+/* Devuelve el intento sin tocar la cuenta de rebotes del lead ni cortarle los
+   seguimientos: en cuanto la cuenta vuelva, ese lead sigue en la fila con los
+   intentos que tenia. */
+async function devolverIntentoPorCorte(wamid, codigo) {
+  const conv = await prisma.botConversacion.findFirst({
+    where: { wamid }, select: { botLeadId: true },
+  })
+  if (!conv?.botLeadId) return
+
+  const lead = await prisma.botLead.findUnique({
+    where: { id: conv.botLeadId },
+    select: { id: true, nombre: true, intentosSeguimiento: true, estado: true },
+  })
+  if (!lead) return
+  if (!['contactado', 'interesado'].includes(lead.estado)) return
+
+  const intentos = Math.max(0, (lead.intentosSeguimiento || 0) - 1)
+  await prisma.botLead.update({
+    where: { id: lead.id },
+    data: {
+      intentosSeguimiento: intentos,
+      // Media hora: lo justo para no machacar mientras dura el corte, y para
+      // que en cuanto se arregle el pago la fila arranque sola.
+      proximoSeguimiento: new Date(Date.now() + 30 * 60 * 1000),
+    },
+  })
+  console.warn(`[WA Cloud] Corte ${codigo} en ${lead.nombre}: intento devuelto (${lead.intentosSeguimiento} -> ${intentos}), NO cuenta como rebote suyo`)
+}
+
 // 35 personas se quedaron sin recibir NADA (5 de ellas ya nos habian escrito).
 // Si el fallo es por throttle/politica, se devuelve el intento y se reprograma.
 async function devolverIntentoSiThrottle(wamid, errorEntrega) {
   const codigo = Number((String(errorEntrega || '').match(/^(\d+)/) || [])[1])
+
+  /* ⚠ UN CORTE DE LA CUENTA NO ES CULPA DEL LEAD, Y NO PUEDE GASTARLE INTENTOS.
+   *
+   * Los codigos de CORTE —131042 facturacion, 131031 restringida, 368
+   * bloqueada— no estaban aqui, asi que cada mensaje que rebotaba durante un
+   * corte quemaba un intento como si hubiera llegado. Medido el 30 ago 2026, en
+   * pleno corte por facturacion: el bot llevaba 16 horas mudo, 25 de 25
+   * mensajes fallando, y cada media hora un lead perdia otro de sus tres
+   * intentos contra un muro. Cuando el pago se arregle, esos leads ya no
+   * tendrian a quien escribirles.
+   *
+   * Se devuelve el intento SIEMPRE y no se cuenta como rebote suyo: el numero
+   * del lead esta perfecto, la que esta cortada es nuestra cuenta. */
+  if (esCorteDeCuenta(codigo)) return devolverIntentoPorCorte(wamid, codigo)
+
   if (!CODIGOS_THROTTLE.has(codigo)) return
 
   const conv = await prisma.botConversacion.findFirst({
