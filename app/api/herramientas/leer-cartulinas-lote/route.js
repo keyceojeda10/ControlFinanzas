@@ -30,7 +30,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { trackEvent } from '@/lib/analytics'
 import {
-  PROMPT_LOTE, procesarImagen, normalizarCliente, semaforo, limiteDelDia,
+  PROMPT_LOTE, procesarImagen, normalizarCliente, escalaDeLaHoja, semaforo, limiteDelDia,
 } from '@/lib/cartulina'
 import { dudasDe, cuadreDelTotal } from '@/lib/cartulina-dudas'
 
@@ -141,7 +141,11 @@ export async function POST(req) {
            pesos completos no está medio en miles: si el lector la reconoció, esa
            marca manda sobre el umbral de $10.000, que no puede distinguir
            «14500» = catorce mil de «14500» = catorce millones abreviados. */
-        const escala = ['miles', 'pesos'].includes(json?.escala) ? json.escala : null
+        /* ⚠ Y la marca del lector NO es la última palabra: `escalaDeLaHoja` la
+           contrasta con las cifras de la propia tabla y la desmiente cuando los
+           ceros ya venían puestos. Ver el comentario largo de esa función. */
+        const declarada = ['miles', 'pesos'].includes(json?.escala) ? json.escala : null
+        const escala = escalaDeLaHoja(lista, declarada)
 
         const leidos = lista
           .map((c) => ({ crudo: c, normal: normalizarCliente(c, escala) }))
