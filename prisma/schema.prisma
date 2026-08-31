@@ -99,6 +99,14 @@ model Organization {
   waOnboardingStep  Int            @default(0)
   waChurnSent       Boolean        @default(false)
   waActivacionSent  Boolean        @default(false)
+  /* ⚠ «CREÓ UN PRÉSTAMO» NO ES «YA ARRANCÓ».
+     `waActivacionSent` marca el aviso de quien se registró y NO prestó. Pero
+     medido el 31 ago 2026: de los que sí prestaron, 83 negocios no registraron
+     JAMÁS un cobro — el 80% no volvió después del primer día y tienen 2,6
+     clientes de media, contra 41,9 los que sobreviven. A ésos no les hablaba
+     nadie: el siguiente aviso que reciben es el de prueba vencida, semanas
+     después. Esta marca es la del aviso que tapa ese hueco. */
+  waPrimerCobroSent Boolean        @default(false)
   waPreVencSent     Boolean        @default(false)
   diasSinCobro      String?
 
