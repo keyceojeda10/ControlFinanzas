@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export function Modal({ open, onClose, title, subtitle, children, size = 'md', footer, padding = true }) {
+export function Modal({ open, onClose, onVolver, title, subtitle, children, size = 'md', footer, padding = true }) {
   const overlayRef = useRef(null)
   const dialogRef = useRef(null)
   const previousFocusRef = useRef(null)
@@ -114,10 +114,18 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md', f
 
              Esto vale para TODOS los modales de la app, que pasan por aquí. El
              `vh` se deja delante como respaldo para quien no entienda `dvh`. */
-          'max-h-[90vh] max-h-[90dvh] flex flex-col',
+          'flex flex-col',
           'animate-slide-up sm:animate-modal-in',
           sizes[size] ?? sizes.md,
         ].join(' ')}
+        /* ⚠ EL TOPE DE ALTURA VA EN UN TOKEN, NO EN DOS CLASES DE TAILWIND.
+           Aquí había una clase en «vh» y otra en «dvh», puestas en ese orden
+           creyendo que la segunda pisa a la primera. No: en CSS manda el orden
+           de la HOJA, y Tailwind emitía la de «dvh» ANTES. Con la misma
+           especificidad gana la última, así que mandaba justo la que se quería
+           evitar, y en Safari de iPhone la cabecera se salía por arriba.
+           El token lleva el `@supports` que decide bien; ver los tokens. */
+        style={{ maxHeight: 'var(--cf-alto-modal)' }}
       >
         {/* ══ ⚠ LA X NO FLOTA ═══════════════════════════════════════════════
             Aquí había un CÍRCULO `absolute top-3 right-3`, y el hueco que le
@@ -151,11 +159,32 @@ export function Modal({ open, onClose, title, subtitle, children, size = 'md', f
         )}
 
         {title && (
-          <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+          <div className="flex items-center gap-2 px-5 py-4 shrink-0" style={{ borderBottom: '1px solid var(--cf-border)' }}>
             {/* El subtítulo no es adorno: en «Renovar» dice de QUIÉN es el
                 préstamo que se cierra. Antes vivía dentro del cuerpo porque la
                 cabecera no sabía pintarlo. */}
-            <div className="min-w-0 flex flex-col gap-0.5">
+            {/* ⚠ LA FLECHA DE VOLVER, CUANDO SE LLEGÓ DESDE UN MENÚ.
+             «Ninguna de esas opciones de gestión permite volver hacia atrás, al
+              menú general de la gestión. Solo permite salirse, y al salirse
+              vuelve a la pantalla general del préstamo.»   — el dueño, 31 ago
+
+             Van las DOS salidas y significan cosas distintas: la flecha vuelve
+             al menú de donde salió, la X cierra y deja la pantalla. Sin la
+             flecha, corregir dos cosas seguidas obliga a rehacer el camino
+             entero cada vez. */}
+            {onVolver && (
+              <button
+                onClick={onVolver}
+                aria-label="Volver"
+                className="w-9 h-11 -ml-2 flex items-center justify-center rounded-lg shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cf-gold)]/65 transition-colors"
+                style={{ color: 'var(--cf-ink-2)' }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+            <div className="min-w-0 flex-1 flex flex-col gap-0.5">
               <h2 id="cf-modal-title" className="text-base font-semibold tracking-[0.01em]" style={{ color: 'var(--cf-ink)' }}>{title}</h2>
               {subtitle && (
                 <span className="text-[13px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>{subtitle}</span>

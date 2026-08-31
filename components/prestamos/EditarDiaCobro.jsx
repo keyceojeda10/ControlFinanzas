@@ -35,7 +35,9 @@ const DIAS_SEMANA = [
   { value: '0', label: 'Domingo' },
 ]
 
-export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, onSuccess }) {
+export default function EditarDiaCobro({
+  /* La flecha de volver al menú de Gestión, si se llegó desde ahí. */
+  onVolver, prestamoId, prestamo, open, onClose, onSuccess }) {
   const frecuencia = prestamo?.frecuencia || 'diario'
   const esSemana = frecuencia === 'semanal' || frecuencia === 'quincenal'
   const esMes = frecuencia === 'mensual'
@@ -138,7 +140,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
 
   if (!esSemana && !esMes) {
     return (
-      <Modal open={open} onClose={handleClose} title="Día de cobro">
+      <Modal onVolver={onVolver} open={open} onClose={handleClose} title="Día de cobro">
         <p className="text-sm text-[var(--cf-ink-3)]">
           La frecuencia diaria no admite un día fijo de cobro.
         </p>
@@ -169,6 +171,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
 
     return (
       <HojaInferior
+      onVolver={onVolver}
         abierta={open}
         onCerrar={handleClose}
         titulo="Cambiar el día de cobro"
@@ -206,7 +209,7 @@ export default function EditarDiaCobro({ prestamoId, prestamo, open, onClose, on
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Día de cobro">
+    <Modal onVolver={onVolver} open={open} onClose={handleClose} title="Día de cobro">
       <div className="space-y-4">
         <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
           {modo === 'semana'

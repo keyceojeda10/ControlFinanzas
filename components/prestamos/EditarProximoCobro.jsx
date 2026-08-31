@@ -44,7 +44,9 @@ function aISO(d) {
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
 }
 
-export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose, onSuccess }) {
+export default function EditarProximoCobro({
+  /* La flecha de volver al menú de Gestión, si se llegó desde ahí. */
+  onVolver, prestamoId, prestamo, open, onClose, onSuccess }) {
   const [fecha, setFecha] = useState('')
   const [cuando, setCuando] = useState('tres')
   const [motivo, setMotivo] = useState(null)
@@ -139,6 +141,7 @@ export default function EditarProximoCobro({ prestamoId, prestamo, open, onClose
 
   return (
     <HojaInferior
+      onVolver={onVolver}
       abierta={open}
       onCerrar={handleClose}
       titulo="Aplazar el cobro"

@@ -247,7 +247,7 @@ export default function BottomNav({ onOpenLucas, lucasOpen = false }) {
                altura. `dvh` es la altura que de verdad queda con la barra del
                navegador puesta — con `vh` a secas, en Safari de iPhone la hoja
                se extiende por debajo de lo que se ve. */
-            className="absolute bottom-0 left-0 right-0 rounded-t-[20px] overflow-hidden animate-slide-up cf-sheet max-h-[75vh] max-h-[75dvh]"
+            className="absolute bottom-0 left-0 right-0 rounded-t-[20px] overflow-hidden animate-slide-up cf-sheet max-h-[75dvh]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-center pt-3 pb-1.5">

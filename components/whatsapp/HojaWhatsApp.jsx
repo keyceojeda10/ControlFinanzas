@@ -336,8 +336,8 @@ export default function HojaWhatsApp({
            `dvh` es la altura dinámica —la que de verdad queda— y se ajusta sola
            cuando la barra aparece y desaparece. El `vh` se deja delante como
            respaldo para los navegadores que no lo entienden. */
-        className="relative flex w-full mt-auto max-h-[92vh] max-h-[92dvh]
-                   sm:m-auto sm:max-w-[460px] sm:max-h-[86vh] sm:max-h-[86dvh]
+        className="relative flex w-full mt-auto max-h-[92dvh]
+                   sm:m-auto sm:max-w-[460px] sm:max-h-[86dvh]
                    sm:rounded-[var(--cf-r-sheet)] sm:overflow-hidden"
       >
         <Plantillas

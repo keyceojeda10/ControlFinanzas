@@ -1460,7 +1460,7 @@ function DeleteClienteModal({ cliente, prestamos, onClose, onDeletePrestamo, onT
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-md bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] max-h-[85dvh]"
+        className="w-full sm:max-w-md bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85dvh]"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
         onClick={e => e.stopPropagation()}
       >

@@ -274,7 +274,7 @@ export function InstallGuideModal({ onClose }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/70 px-0 sm:px-4" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-[var(--cf-surface)] border-t border-x sm:border border-[var(--cf-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85vh] max-h-[85dvh] sm:max-h-[80vh] sm:max-h-[80dvh]"
+        className="w-full sm:max-w-sm bg-[var(--cf-surface)] border-t border-x sm:border border-[var(--cf-border)] rounded-t-[20px] sm:rounded-[20px] flex flex-col max-h-[85dvh] sm:max-h-[80dvh]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
         onClick={(e) => e.stopPropagation()}
       >

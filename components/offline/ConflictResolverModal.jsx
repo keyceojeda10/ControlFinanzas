@@ -29,7 +29,7 @@ export default function ConflictResolverModal({ mutacion, onResolve, onClose }) 
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg max-h-[85vh] max-h-[85dvh] overflow-y-auto bg-[var(--cf-surface)] border border-[var(--cf-red-dark)] rounded-2xl shadow-2xl">
+      <div className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto bg-[var(--cf-surface)] border border-[var(--cf-red-dark)] rounded-2xl shadow-2xl">
         <div className="sticky top-0 bg-[var(--cf-surface)] border-b border-[var(--cf-border)] px-4 py-3">
           <div className="flex items-start gap-2">
             <svg className="w-5 h-5 text-[var(--cf-red-dark)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

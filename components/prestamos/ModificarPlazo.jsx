@@ -35,6 +35,8 @@ const diffDays = (desde, hasta) => {
 }
 
 export default function ModificarPlazo({
+  /* La flecha de volver al menú de Gestión, si se llegó desde ahí. */
+  onVolver,
   prestamoId,
   prestamo,
   open,
@@ -227,6 +229,7 @@ export default function ModificarPlazo({
 
     return (
       <HojaInferior
+      onVolver={onVolver}
         abierta={open}
         onCerrar={handleClose}
         titulo="Modificar el plazo"
@@ -265,7 +268,7 @@ export default function ModificarPlazo({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title="Modificar plazo">
+    <Modal onVolver={onVolver} open={open} onClose={handleClose} title="Modificar plazo">
       <div className="space-y-4">
         {/* Toggle de modo */}
         <div>

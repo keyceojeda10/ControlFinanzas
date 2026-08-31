@@ -26,6 +26,8 @@ function diasAUnidades(dias, frecuencia) {
 }
 
 export default function RenovarPrestamo({
+  /* La flecha de volver al menú de Gestión, si se llegó desde ahí. */
+  onVolver,
   prestamoId,
   saldoPendiente,
   capitalRestante,
@@ -220,6 +222,7 @@ export default function RenovarPrestamo({
        estuvo dentro, el modal no tenía cabecera y se le pintaba una X
        flotante que al deslizar caía encima del capital adeudado. */
     <Modal
+      onVolver={onVolver}
       open={open}
       onClose={handleClose}
       title={soloModo ? 'Cambiar el modo de cobro' : 'Renovar el préstamo'}

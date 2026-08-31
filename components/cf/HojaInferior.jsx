@@ -52,6 +52,8 @@ export default function HojaInferior({
   onCerrar,
   titulo,
   subtitulo,
+  /* Si viene, la cabecera pinta una flecha a la izquierda del título. */
+  onVolver,
   children,
   accion,                  // la barra de acción inferior
   // `undefined` = que lo decida sola por el ancho. Se puede forzar pasando
@@ -60,7 +62,10 @@ export default function HojaInferior({
   // inferior de una pantalla de 1440: el patrón es de teléfono y en escritorio
   // no se lee como un modal, se lee como algo roto.
   escritorio: escritorioProp,
-  alturaMaxima = '88vh',
+  /* ⚠ EN `dvh`, NO EN `vh`. Mismo fallo que tenía `Modal`: en Safari de iPhone
+     `100vh` es más alto que lo que se ve, así que una hoja larga se sale por
+     arriba justo por donde está el título. El token trae el `@supports`. */
+  alturaMaxima = 'var(--cf-alto-hoja)',
 }) {
   // La detección va en un EFECTO, no en el primer render: leer matchMedia al
   // pintar hace que el servidor diga una cosa y el cliente otra, y React tira
@@ -282,6 +287,23 @@ export default function HojaInferior({
         background: escritorio ? 'var(--cf-card)' : 'transparent',
         borderBottom: escritorio ? '1px solid var(--cf-border)' : 'none',
       }}>
+        {/* ⚠ LA FLECHA DE VOLVER, CUANDO SE LLEGÓ DESDE UN MENÚ.
+             «Ninguna de esas opciones de gestión permite volver hacia atrás, al
+              menú general de la gestión. Solo permite salirse, y al salirse
+              vuelve a la pantalla general del préstamo.»   — el dueño, 31 ago
+
+             Van las DOS salidas y significan cosas distintas: la flecha vuelve
+             al menú de donde salió, la X cierra y deja la pantalla. Sin la
+             flecha, corregir dos cosas seguidas obliga a rehacer el camino
+             entero cada vez. */}
+        {onVolver && (
+          <button type="button" onClick={onVolver} aria-label="Volver"
+            style={{ background: 'none', border: 0, padding: 4, cursor: 'pointer', flex: 'none', marginTop: 1, marginLeft: -6 }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{
             display: 'block',

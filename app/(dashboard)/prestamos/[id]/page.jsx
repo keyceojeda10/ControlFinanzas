@@ -151,6 +151,26 @@ function PrestamoDetalleContenido({ params }) {
   const [modalPago,    setModalPago]    = useState(false)
   const [modalAtajosCobro, setModalAtajosCobro] = useState(false)
   const [modalGestionPrestamo, setModalGestionPrestamo] = useState(false)
+  /* ══ VOLVER AL MENÚ DE GESTIÓN ═════════════════════════════════════════
+   *
+   * «Ninguna de esas opciones de gestión permite volver hacia atrás, al menú
+   *  general de la gestión. Solo permite salirse, y al salirse vuelve a la
+   *  pantalla general del préstamo.»                    — el dueño, 31 ago 2026
+   *
+   * Se marca al lanzar la acción DESDE el menú, y solo entonces la hoja pinta
+   * su flecha. Una hoja abierta desde un chip o desde el buscador no la pinta,
+   * porque ahí no hay menú al que volver.
+   *
+   * ⚠ LA MARCA SE BORRA AL CERRAR, SIEMPRE. Si se quedara puesta, la siguiente
+   * hoja abierta desde cualquier otro sitio enseñaría una flecha que llevaría a
+   * un menú del que nunca salió. */
+  const [vinoDeGestion, setVinoDeGestion] = useState(false)
+  /* Fábricas, no hooks: `useCallback` aquí no memoriza nada útil, porque cada
+     llamada devuelve una función NUEVA y el hijo recibe otra identidad igual. */
+  const cerrarHoja = (setter) => () => { setter(false); setVinoDeGestion(false) }
+  const volverAGestion = (setter) => () => {
+    setter(false); setVinoDeGestion(false); setModalGestionPrestamo(true)
+  }
   const [presetPago,   setPresetPago]   = useState(null)
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
@@ -2528,7 +2548,7 @@ function PrestamoDetalleContenido({ params }) {
           consejo={diasMora >= 15 && cuotaDiaria > 0
             ? `Con ${diasMora} días de atraso, lo que suele funcionar es bajar la cuota antes que el recargo. Un cliente que no puede pagar ${formatMoney(Math.round(cuotaDiaria))} tampoco va a pagar ${formatMoney(Math.round(cuotaDiaria * 2))}.`
             : null}
-          onAccion={(a) => { setModalGestionPrestamo(false); a.hacer?.() }}
+          onAccion={(a) => { setModalGestionPrestamo(false); setVinoDeGestion(true); a.hacer?.() }}
         />
       </HojaInferior>
 
@@ -2554,7 +2574,8 @@ function PrestamoDetalleContenido({ params }) {
         return (
           <HojaInferior
             abierta={modalClavo}
-            onCerrar={() => setModalClavo(false)}
+            onCerrar={cerrarHoja(setModalClavo)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalClavo) : undefined}
             titulo="Mover a perdidos"
             subtitulo={[
               cliente?.nombre,
@@ -2689,7 +2710,8 @@ function PrestamoDetalleContenido({ params }) {
           API es el mismo POST /pagos con `tipo` y `nota`. */}
       <HojaInferior
         abierta={modalRecargo}
-        onCerrar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
+        onCerrar={() => { setModalRecargo(false); setVinoDeGestion(false); setAjusteMonto(''); setAjusteNota('') }}
+        onVolver={vinoDeGestion ? () => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota(''); setVinoDeGestion(false); setModalGestionPrestamo(true) } : undefined}
         titulo="Recargo por mora"
         subtitulo={cliente?.nombre}
         accion={
@@ -2717,7 +2739,8 @@ function PrestamoDetalleContenido({ params }) {
 
       <HojaInferior
         abierta={modalDescuento}
-        onCerrar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
+        onCerrar={() => { setModalDescuento(false); setVinoDeGestion(false); setAjusteMonto(''); setAjusteNota('') }}
+        onVolver={vinoDeGestion ? () => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota(''); setVinoDeGestion(false); setModalGestionPrestamo(true) } : undefined}
         titulo="Descuento"
         subtitulo={cliente?.nombre}
         accion={
@@ -2825,7 +2848,8 @@ function PrestamoDetalleContenido({ params }) {
         return (
           <HojaInferior
             abierta={modalLiquidacion}
-            onCerrar={() => setModalLiquidacion(false)}
+            onCerrar={cerrarHoja(setModalLiquidacion)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalLiquidacion) : undefined}
             titulo="Quiere pagar todo hoy"
             subtitulo={[
               cliente?.nombre,
@@ -2934,7 +2958,8 @@ function PrestamoDetalleContenido({ params }) {
         // no puede decir por dónde entregó y todo se cuenta como efectivo.
         metodosPago={metodosPagoOrg}
         open={modalRenovar}
-        onClose={() => setModalRenovar(false)}
+        onClose={cerrarHoja(setModalRenovar)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalRenovar) : undefined}
       />
 
       {/* La MISMA hoja, con la otra pregunta: cambiar el modo es renovar por el
@@ -2951,7 +2976,8 @@ function PrestamoDetalleContenido({ params }) {
         metodosPago={metodosPagoOrg}
         soloModo
         open={modalCambiarModo}
-        onClose={() => setModalCambiarModo(false)}
+        onClose={cerrarHoja(setModalCambiarModo)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalCambiarModo) : undefined}
       />
 
       {/* Modal de modificar plazo */}
@@ -2959,7 +2985,8 @@ function PrestamoDetalleContenido({ params }) {
         prestamoId={id}
         prestamo={prestamo}
         open={modalPlazo}
-        onClose={() => setModalPlazo(false)}
+        onClose={cerrarHoja(setModalPlazo)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalPlazo) : undefined}
         onSuccess={fetchPrestamo}
       />
 
@@ -2968,7 +2995,8 @@ function PrestamoDetalleContenido({ params }) {
         prestamoId={id}
         prestamo={prestamo}
         open={modalDiaCobro}
-        onClose={() => setModalDiaCobro(false)}
+        onClose={cerrarHoja(setModalDiaCobro)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalDiaCobro) : undefined}
         onSuccess={fetchPrestamo}
       />
 
@@ -2976,7 +3004,8 @@ function PrestamoDetalleContenido({ params }) {
         prestamoId={id}
         prestamo={prestamo}
         open={modalProximoCobro}
-        onClose={() => setModalProximoCobro(false)}
+        onClose={cerrarHoja(setModalProximoCobro)}
+        onVolver={vinoDeGestion ? volverAGestion(setModalProximoCobro) : undefined}
         onSuccess={fetchPrestamo}
       />
 
@@ -2987,10 +3016,14 @@ function PrestamoDetalleContenido({ params }) {
         open={modalEditar || Boolean(modoPedido)}
         onClose={() => {
           setModalEditar(false)
+          setVinoDeGestion(false)
           // Y se limpia el parametro: si se queda, cerrar el modal y volver atras
           // lo vuelve a abrir, y el dueño no puede salir de la pantalla.
           if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)
         }}
+        /* ⚠ SOLO SI SE ABRIÓ DESDE EL MENÚ. Esta hoja también se abre por un
+           parámetro de la URL (`modoPedido`), y ahí no hay menú al que volver. */
+        onVolver={vinoDeGestion && !modoPedido ? volverAGestion(setModalEditar) : undefined}
         onSuccess={() => {
           setModalEditar(false)
           if (modoPedido) router.replace(`/prestamos/${prestamo?.id}`)

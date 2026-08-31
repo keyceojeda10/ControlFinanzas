@@ -246,3 +246,35 @@ html[data-theme="dark"]  .cf-campo::placeholder {
   font-weight: 600;
   line-height: 1;
 }
+
+/* ══ LA ALTURA DE LOS MODALES Y LAS HOJAS ═══════════════════════════════════
+ *
+ * ⚠ ESTO ESTABA ARREGLADO EN EL CÓDIGO Y NO LLEGABA A APLICARSE.
+ *
+ * `Modal.jsx` llevaba `max-h-[90vh] max-h-[90dvh]` con un comentario que
+ * explicaba, con razón, por qué hace falta `dvh`: en Safari de iPhone `100vh`
+ * es la altura SIN la barra del navegador, así que `90vh` es MÁS ALTO que lo
+ * que se ve. Y como el modal se ancla abajo, lo que se sale es lo de ARRIBA:
+ * la cabecera con el título y la X.
+ *
+ * Pero en CSS no manda el orden de las clases en el atributo, manda el orden
+ * en la hoja. Y Tailwind emitía `.max-h-[90dvh]` en la posición 18567 y
+ * `.max-h-[90vh]` en la 18601 — misma especificidad, gana la última. O sea:
+ * mandaba el `vh`, que era justo el que se quería evitar.
+ *
+ * El dueño lo volvió a fotografiar el 31 ago 2026 en «Renovar el préstamo» y
+ * en «Cambiar el modo de cobro»: el título cortado por la mitad. El de
+ * liquidar salía bien por ser más corto, no por estar mejor hecho.
+ *
+ * Con `@supports` el respaldo sigue existiendo para quien no entienda `dvh`,
+ * pero el orden ya no depende de cómo Tailwind ordene su hoja. */
+:root {
+  --cf-alto-modal: 90vh;
+  --cf-alto-hoja: 88vh;
+}
+@supports (height: 1dvh) {
+  :root {
+    --cf-alto-modal: 90dvh;
+    --cf-alto-hoja: 88dvh;
+  }
+}

@@ -316,7 +316,7 @@ export default function GlobalSearch() {
           de paso dan sitio para cerrar tocando fuera.
           En escritorio sigue siendo una tarjeta centrada. */}
       <div
-        className="relative w-full mt-14 sm:mt-0 sm:max-w-lg sm:mx-4 sm:rounded-[16px] overflow-hidden sm:max-h-[76vh] sm:max-h-[76dvh] flex"
+        className="relative w-full mt-14 sm:mt-0 sm:max-w-lg sm:mx-4 sm:rounded-[16px] overflow-hidden sm:max-h-[76dvh] flex"
         style={{ background: 'var(--cf-surface)', boxShadow: '0 -12px 32px rgba(20,20,28,.2)' }}
       >
         <BusquedaGlobal

@@ -34,7 +34,9 @@ const periodosADias = (periodos, freq) => periodos * (DIAS_POR_PERIODO[freq] || 
 // enseña que en «Sobre saldo» el cliente pagaria menos, y al elegirlo abre este
 // modal YA en ese modo. Sin el, elegir un calendario dejaba al dueño en un modal
 // con el modo viejo puesto y teniendo que acordarse de cual habia elegido.
-export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, socios = [], modoInicial }) {
+export default function EditarPrestamo({
+  /* La flecha de volver al menú de Gestión, si se llegó desde ahí. */
+  onVolver, prestamo, open, onClose, onSuccess, socios = [], modoInicial }) {
   // Los hooks SIEMPRE se llaman (regla de React). Si no hay préstamo el modal no se abre.
   const p = prestamo || {}
   const hayPagos = (p.pagos || []).filter(
@@ -144,6 +146,7 @@ export default function EditarPrestamo({ prestamo, open, onClose, onSuccess, soc
 
   return (
     <Modal
+      onVolver={onVolver}
       open={open}
       onClose={onClose}
       title="Corregir el préstamo"
