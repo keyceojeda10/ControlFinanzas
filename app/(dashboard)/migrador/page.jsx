@@ -751,7 +751,15 @@ export default function MigradorPage() {
     try {
       const res = await fetch('/api/herramientas/leer-cartulina', { method: 'POST', body: fd })
       const json = await res.json()
-      if (!res.ok) { setOcrError(json.error ?? 'No pudimos leer la foto'); setOcrLoading(false); return }
+      if (!res.ok) {
+        setOcrError(json.error ?? 'No pudimos leer la foto')
+        /* ⚠ AQUÍ EL SITIO BUENO ESTÁ A UN TOQUE: el lector de tandas es otra
+           vista de esta MISMA pantalla. Decirle «esta foto no es para este
+           lector» sin llevarle sería mandarle a buscar por el menú lo que tiene
+           al lado. */
+        if (json.codigo === 'ES_LISTA') { setOcrLoading(false); irA('lote'); return }
+        setOcrLoading(false); return
+      }
 
       const d = json.datos || {}
       const nueva = { ...fichaVacia(defaults) }

@@ -16,6 +16,8 @@ export default function NuevoClientePage() {
   const [metodo, setMetodo] = useState(null) // null = selector, 'manual' | 'foto'
   const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrError, setOcrError] = useState('')
+  // A dónde mandarle cuando la foto no es para este lector.
+  const [ocrIrA, setOcrIrA] = useState('')
   const [ocrAdvertencias, setOcrAdvertencias] = useState([])
   const fotoInputRef = useRef(null)
   const fotoCameraRef = useRef(null)
@@ -70,6 +72,11 @@ export default function NuevoClientePage() {
 
       if (!res.ok) {
         setOcrError(json.error ?? 'No pudimos leer la foto')
+        /* ⚠ SI LA FOTO ERA UNA LISTA, SE DA EL CAMINO, NO SOLO LA MALA NOTICIA.
+           Este lector registra de uno en uno; una tabla de cuarenta préstamos
+           tiene su propio lector. Decir «aquí no» sin decir «allí sí» deja al
+           prestamista con la foto en la mano y sin salida. */
+        setOcrIrA(json.codigo === 'ES_LISTA' ? (json.irA ?? '/migrador') : '')
         setOcrLoading(false)
         return
       }
@@ -221,6 +228,14 @@ export default function NuevoClientePage() {
             </svg>
             {ocrError}
           </div>
+        )}
+
+        {ocrIrA && (
+          <button type="button" onClick={() => router.push(ocrIrA)}
+            className="mt-2 w-full px-4 py-3 rounded-xl text-sm font-bold"
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', border: 0 }}>
+            Llevarme a «Pasar mi cartera»
+          </button>
         )}
 
         {ocrAdvertencias.length > 0 && (

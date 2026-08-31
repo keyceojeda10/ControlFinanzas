@@ -118,6 +118,8 @@ export async function POST(req) {
 
   const resultados = []
   const erroresFotos = []
+  /* ¿Alguna de las fotos era una hoja con varias personas? */
+  let esLista = false
 
   for (let i = 0; i < fotos.length; i++) {
     const foto = fotos[i]
@@ -129,6 +131,12 @@ export async function POST(req) {
 
     try {
       const crudo = await procesarImagen(buffer, mime, PROMPT_UNO)
+      /* ⚠ SI LA FOTO TRAE VARIOS CLIENTES, ESTE LECTOR NO ES EL SUYO.
+         Fusiona todo en uno y nunca devuelve más de uno, así que con la foto de
+         una tabla devolvía `{}` —nada, sin decir por qué— o un solo cliente con
+         el saldo deducido a ojo. Se apunta para decírselo abajo con esas
+         palabras, en vez de dejar la pantalla muda. */
+      if (crudo?.tipo === 'lista') esLista = true
       // ⚠ NORMALIZADO AQUÍ, no en cada pantalla. El prompt pide «cedula» sin
       // tilde y el modelo devuelve «cédula» a menudo; las pantallas hacían
       // `d['cédula'] || d.cedula` a mano campo por campo, y `WizardCartulina`
@@ -137,6 +145,30 @@ export async function POST(req) {
     } catch (e) {
       erroresFotos.push(`Foto ${i + 1}: ${e.message}`)
     }
+  }
+
+  /* ⚠ UNA LISTA NO SE LEE A MEDIAS: SE MANDA AL LECTOR QUE SABE.
+   *
+   * Reportado el 31 ago 2026: un cliente subía la tabla de sus cuarenta
+   * préstamos y «el sistema no reconoce nada». Era literal — este endpoint
+   * devolvía un objeto vacío— y lo usan TRES de las cuatro pantallas de fotos.
+   *
+   * Devolver el primer cliente de los cuarenta sería peor que no devolver nada:
+   * el prestamista guardaría uno creyendo que están todos. Se para aquí y se
+   * dice a dónde ir, que es lo único útil que se puede hacer. */
+  if (esLista) {
+    trackEvent({
+      organizationId: orgId, userId: session.user.id,
+      evento: 'cartulina_leida', pagina: '/api/herramientas/leer-cartulina',
+      metadata: { ok: false, via: 'una', motivo: 'es_lista', fotos: fotos.length, ms: Date.now() - arranque },
+    })
+    return NextResponse.json({
+      error: 'Esta foto tiene varios clientes, y aquí se registra uno a uno. Pásala por «Pasar mi cartera» y los saca todos de una vez.',
+      codigo: 'ES_LISTA',
+      /* La pantalla lo usa para poner el botón que lleva allí: decir a dónde ir
+         sin dar el camino es dejar el trabajo a medias. */
+      irA: '/migrador',
+    }, { status: 422 })
   }
 
   if (!resultados.length) {

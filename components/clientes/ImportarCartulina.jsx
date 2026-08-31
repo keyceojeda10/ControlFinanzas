@@ -35,6 +35,11 @@ export default function ImportarCartulina({ onDatosExtraidos }) {
       if (!res.ok) {
         setEstado('error')
         setMensajeError(json.error ?? 'No pudimos leer la cartulina')
+        /* Este componente vive dentro de otras pantallas y no sabe navegar, así
+           que no pone botón: el mensaje del servidor ya dice por dónde ir. Lo
+           que NO puede pasar —y pasaba— es que una foto con cuarenta clientes
+           se quede en «no pudimos leer la cartulina», que manda a repetir la
+           foto una y otra vez con más luz. */
         return
       }
 
