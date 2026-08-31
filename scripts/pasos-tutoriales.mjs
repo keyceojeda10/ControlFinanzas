@@ -170,6 +170,37 @@ export const PASOS = [
       en: 'prestamo', toques: ['Pagos', 'Compartir'] },
   ] },
 
+  /* ── LAS DOS QUE PIDEN LOS NÚMEROS ────────────────────────────────────
+     Medido en 90 días de `ActividadLog`: editar un préstamo lo hacen 97
+     negocios (1.388 veces) y eliminarlo, 100 (787 veces). Eran las dos
+     acciones más usadas del menú de gestión que NO tenían guía.
+
+     ⚠ NINGUNO DE ESTOS PASOS CONFIRMA NADA. El guion solo pulsa lo que está
+     en `toques`, así que se abre la hoja y se fotografía; el préstamo de la
+     vitrina sigue ahí para la siguiente tirada. */
+  { id: 'editar-prestamo', pasos: [
+    { pie: 'Abre el préstamo y toca «Gestión»', en: 'prestamo',
+      senal: { rotulo: 'Gestión', texto: 'Todo lo que se cambia vive aquí' } },
+    { pie: 'Toca «Editar el préstamo»', en: 'prestamo', toques: ['Gestión'],
+      senal: { rotulo: 'Editar el préstamo', texto: 'El monto, el interés y la fecha' } },
+    /* ⚠ EL PIE DICE LO QUE SE VE. La captura sale del préstamo de la vitrina,
+       que YA tiene cobros, así que el monto y el interés aparecen bloqueados.
+       Decir «cambia el monto» encima de una pantalla que lo prohíbe sería
+       enseñar lo contrario de lo que pasa. */
+    { pie: 'Con cobros hechos, el monto y el interés quedan bloqueados: la fecha sí se mueve',
+      en: 'prestamo', toques: ['Gestión', 'Editar el préstamo'] },
+  ] },
+
+  { id: 'eliminar-prestamo', pasos: [
+    { pie: 'Abre el préstamo y toca «Gestión»', en: 'prestamo',
+      senal: { rotulo: 'Gestión', texto: 'Borrar está al final de la lista' } },
+    { pie: '«Eliminar el préstamo» va abajo del todo, en rojo', en: 'prestamo',
+      toques: ['Gestión'],
+      senal: { rotulo: 'Eliminar el préstamo', texto: 'Es para el que nunca debió existir' } },
+    { pie: 'Antes de borrar te dice qué se lleva: los cobros y la plata que vuelve a la caja',
+      en: 'prestamo', toques: ['Gestión', 'Eliminar el préstamo'] },
+  ] },
+
   { id: 'cancelar-prestamo', pasos: [
     { pie: 'Abre el préstamo y toca «Gestión»', en: 'prestamo',
       senal: { rotulo: 'Gestión', texto: 'Al final de la lista' } },

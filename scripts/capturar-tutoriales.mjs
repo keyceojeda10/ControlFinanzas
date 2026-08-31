@@ -301,6 +301,15 @@ for (const guia of LISTA) {
         const pg = paso.vitrina === 'vacia' ? await vitrinaVacia() : p
         await ir(direccionDe(paso), 6500, pg)
         for (const t of (paso.toques ?? [])) { await tocar(t, pg); await quitarTemporales(pg) }
+        /* ⚠ SIN EL ARO DE FOCO. Los modales llevan el foco al primer botón al
+           abrirse —normalmente la X— y `focus-visible` le pinta el anillo
+           dorado. En un teléfono, tocando con el dedo, ese anillo NO sale: solo
+           aparece porque aquí se pulsa por guion. Fotografiarlo lleva la vista
+           justo al botón de cerrar, que es lo contrario de lo que enseña el
+           paso. Se quita el foco, no el estilo: la pantalla sigue siendo la de
+           verdad. */
+        await pg.evaluate(() => document.activeElement?.blur?.())
+        await pg.waitForTimeout(200)
         if (paso.senal) await senalar(pg, { ...paso.senal, numero: i + 1 })
         await pg.screenshot({ path: `public/tutoriales/${archivo}` })
         if (paso.senal) await borrarSenales(pg)
