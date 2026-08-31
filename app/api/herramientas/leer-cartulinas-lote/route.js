@@ -32,6 +32,7 @@ import { trackEvent } from '@/lib/analytics'
 import {
   PROMPT_LOTE, procesarImagen, normalizarCliente, semaforo, limiteDelDia,
 } from '@/lib/cartulina'
+import { dudasDe, cuadreDelTotal } from '@/lib/cartulina-dudas'
 
 /* Cuántas fotos entran de una vez. Treinta es un cuaderno entero; por encima
    la espera se hace larga y conviene partir en dos tandas. */
@@ -136,15 +137,37 @@ export async function POST(req) {
         const lista = Array.isArray(json) ? json : (json?.clientes ?? [])
         const tipo = Array.isArray(json) ? (lista.length > 1 ? 'lista' : 'cartulina') : (json?.tipo ?? 'cartulina')
 
+        /* ⚠ LA ESCALA ES DE LA HOJA, NO DE CADA RENGLÓN. Una tabla escrita en
+           pesos completos no está medio en miles: si el lector la reconoció, esa
+           marca manda sobre el umbral de $10.000, que no puede distinguir
+           «14500» = catorce mil de «14500» = catorce millones abreviados. */
+        const escala = ['miles', 'pesos'].includes(json?.escala) ? json.escala : null
+
         const leidos = lista
-          .map(normalizarCliente)
+          .map((c) => ({ crudo: c, normal: normalizarCliente(c, escala) }))
           // Sin nombre NI monto no hay nada que revisar: es un renglón vacío
           // del cuaderno, no un cliente. Colarlo obliga a borrarlo a mano.
-          .filter((c) => c.nombre || c.montoPrestado)
-          .map((c) => ({ ...c, _foto: i + 1, _estado: semaforo(c) }))
+          .filter(({ normal }) => normal.nombre || normal.montoPrestado)
+          .map(({ crudo, normal }, idx, todos) => ({
+            ...normal,
+            _foto: i + 1,
+            _estado: semaforo(normal),
+            /* ⚠ QUÉ CELDA MIRAR, NO «REVISA LA FILA». Con cuarenta renglones,
+               un semáforo por fila obliga a repasarlos todos: más trabajo que
+               teclearlos. Aquí se dice el campo y se enseña lo que dice el
+               papel al lado de lo que entendimos. */
+            _dudas: dudasDe(normal, crudo, {
+              anterior: todos[idx - 1]?.normal, siguiente: todos[idx + 1]?.normal,
+            }),
+          }))
 
         clientes.push(...leidos)
-        porFoto.push({ foto: i + 1, tipo, encontrados: leidos.length })
+        porFoto.push({
+          foto: i + 1, tipo, encontrados: leidos.length, escala,
+          /* El total escrito en la hoja. Es lo que deja comprobar AL PESO si se
+             quedó alguien sin leer: ver `cuadreDelTotal`. */
+          totalDeclarado: Number(json?.totalDeclarado) || null,
+        })
       } catch (e) {
         fallos.push({ foto: i + 1, error: e.message })
       }
@@ -190,10 +213,28 @@ export async function POST(req) {
     },
   })
 
+  /* ⚠ EL CUADRE CONTRA EL TOTAL DEL PAPEL.
+   *
+   * Estas hojas traen su propia suma abajo. Comparar lo leído con ella dice AL
+   * PESO si falta alguien, y ninguna heurística de confianza consigue eso:
+   * medido contra la captura del 31 ago 2026, el lector sacó 21 clientes que
+   * sumaban 79.814.000 donde la hoja decía 86.814.000, y los 7.000.000 de
+   * diferencia eran exactamente los tres préstamos que se había dejado.
+   *
+   * Se cuadra por foto y no en total: cada hoja tiene el suyo. */
+  const cuadres = porFoto
+    .filter((p) => p.totalDeclarado)
+    .map((p) => ({
+      foto: p.foto,
+      ...cuadreDelTotal(p.totalDeclarado, clientes.filter((c) => c._foto === p.foto)),
+    }))
+    .filter((c) => c && !c.cuadra)
+
   return NextResponse.json({
     ok: true,
     clientes,
     porFoto,
+    cuadres,
     fallos,
     uso: { usadas: usadasHoy + leidas, limite },
   })

@@ -80,6 +80,17 @@ const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
  * Ahora hay UN resolvedor y lo usan los tres. Si mañana se añade un campo con
  * defecto, entra aquí y los tres lo heredan.
  */
+/* Los modos, con los MISMOS nombres que la lista de préstamos: si aquí se
+   llamaran distinto, el mismo préstamo tendría dos nombres según dónde se mire. */
+const MODOS = [
+  { valor: 'fijo', nombre: 'Cuota fija' },
+  { valor: 'unico', nombre: 'De una vez' },
+  { valor: 'solo_interes', nombre: 'Globo (solo interés)' },
+  { valor: 'saldo', nombre: 'Sobre saldo' },
+  { valor: 'lineal', nombre: 'Decreciente' },
+  { valor: 'lineal_dinamico', nombre: 'Dinámico' },
+]
+
 function efectivo(f, base) {
   const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null }
   const frecuencia = f.frecuencia || base.frecuencia
@@ -90,6 +101,13 @@ function efectivo(f, base) {
     // valor de arriba, igual que si no viniera.
     tasa: num(f.tasa) ?? num(base.tasa),
     frecuencia,
+    /* ⚠ EL MODO, POR PRÉSTAMO Y NO SOLO PARA LA TANDA ENTERA.
+       «El modo de interés no se puede seleccionar ahora mismo en cada préstamo
+       que se extrae». Y hace falta: en la tabla que mandó el cliente conviven
+       préstamos de cuota fija con otros donde el cliente paga solo el interés
+       cada mes y el capital no baja nunca —eso es Globo—. Importarlos todos
+       como cuota fija hace que el sistema crea que la deuda se salda sola. */
+    modoInteres: f.modoInteres || base.modoInteres || 'fijo',
     plazoUnidades: num(f.plazoUnidades) ?? PLAZO_DEFAULT[frecuencia],
   }
 }
@@ -195,11 +213,20 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
            inventada desde el punto de vista del prestamista, que tiene el papel
            delante y ve otro número. */
         _avisos: [c._avisoTotal, c._avisoAbonado].filter(Boolean),
+        /* Qué CELDA mirar y qué dice el papel. Ver `lib/cartulina-dudas.js`. */
+        _dudas: c._dudas ?? [],
+        // El día del mes, cuando el papel traía eso en vez de una fecha.
+        diaCobro: c.diaCobro ?? '',
         _ia: c,   // lo que trajo la IA, tal cual, para la telemetría
       }))
       // Se ACUMULAN: se sube el cuaderno por tandas, no de una sola vez.
       setFilas((prev) => [...prev, ...nuevas])
-      setAviso({ porFoto: json.porFoto ?? [], fallos: json.fallos ?? [], uso: json.uso })
+      setAviso({
+        porFoto: json.porFoto ?? [], fallos: json.fallos ?? [], uso: json.uso,
+        /* El cuadre contra el total escrito en la hoja: lo único que detecta AL
+           PESO si se quedó alguien sin leer. Ver `cuadreDelTotal`. */
+        cuadres: json.cuadres ?? [],
+      })
     } catch (e) {
       // Aquí sí es la red: el `fetch` ni llegó.
       setError(`No se pudo enviar: ${e?.message ?? 'sin conexión'}. Prueba con menos fotos.`)
@@ -237,7 +264,11 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
       const tanda = creables.slice(i, i + A_LA_VEZ)
       await Promise.all(tanda.map(async (f) => {
         try {
-          const { monto, tasa, frecuencia, plazoUnidades: plazo } = efectivo(f, base)
+          /* ⚠ `modoInteres` sale de `efectivo`, que ya cae al de la tanda si la
+             fila no tiene el suyo. Antes se cogía `base.modoInteres` a pelo, así
+             que aunque la fila dijera «Globo» se guardaba el de arriba: el
+             selector de la fila no habría hecho nada. */
+          const { monto, tasa, frecuencia, plazoUnidades: plazo, modoInteres } = efectivo(f, base)
           const diasPlazo = plazo * (DIAS_POR_PERIODO[frecuencia] || 1)
 
           const resC = await fetch('/api/clientes', {
@@ -264,7 +295,11 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
               diasPlazo,
               fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
               frecuencia,
-              modoInteres: base.modoInteres,
+              modoInteres,
+              /* El día del mes en que cobra, cuando el papel solo traía eso.
+                 `Prestamo.diaCobroMes` ya existe: sin pasarlo, el préstamo
+                 estrena un calendario que no es el que el prestamista cobra. */
+              ...(Number.isInteger(f.diaCobro) && { diaCobroMes: f.diaCobro }),
               ...(Number(f.yaAbonado) > 0 && { yaAbonado: Number(f.yaAbonado) }),
             }),
           })
@@ -282,7 +317,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             direccion: f.direccion?.trim() ?? '',
             monto, tasa,
             frecuencia, plazoUnidades: plazo,
-            modoInteres: base.modoInteres,
+            modoInteres,
             fechaInicio: f.fechaInicio || new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10),
             diasSinCobro: [],
             clienteId: dataC.id, prestamoId: dataP.id,
@@ -488,6 +523,25 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
         </button>
       </div>
 
+      {/* ── ⚠ EL CUADRE CONTRA EL TOTAL DE LA HOJA ──────────────────────────
+          Estas tablas traen su propia suma abajo, y compararla con lo leído es
+          lo ÚNICO que dice al peso si falta alguien. Medido contra la captura
+          real de un cliente el 31 ago 2026: el lector sacó 21 clientes que
+          sumaban $79.814.000 donde la hoja decía $86.814.000, y esos $7.000.000
+          de diferencia eran EXACTAMENTE los tres préstamos que se había dejado
+          —dos clientes enteros y el segundo préstamo de un tercero—.
+
+          Ninguna medida de confianza encuentra eso. Una resta sí. */}
+      {aviso?.cuadres?.map((c) => (
+        <div key={c.foto} style={{
+          padding: '11px 13px', borderRadius: 12, fontSize: 13, lineHeight: 1.45,
+          background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)',
+          color: 'var(--cf-gold-text-2)',
+        }}>
+          <b>Foto {c.foto}:</b> {c.texto}
+        </div>
+      ))}
+
       {aviso?.fallos?.length > 0 && (
         <div style={{
           padding: '11px 13px', borderRadius: 12, fontSize: 12, lineHeight: 1.45,
@@ -593,6 +647,34 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
           {f._avisos?.map((t, i) => (
             <span key={i} style={{ fontSize: 11, lineHeight: 1.35, color: 'var(--cf-gold-dark)' }}>{t}</span>
           ))}
+
+          {/* ── QUÉ DATO MIRAR, Y QUÉ DICE EL PAPEL ──
+              «Que diga qué número puede no corresponder para que el cliente sepa
+              exactamente dónde tiene que arreglar.» Con cuarenta renglones, un
+              semáforo por FILA obliga a repasarlos todos —más trabajo que
+              teclearlos—. Aquí va el campo por su nombre y, entre comillas, lo
+              que dice la foto: el prestamista la tiene delante y lo confirma de
+              un vistazo, sin tener que adivinar qué entendimos mal. */}
+          {f._dudas?.map((d, i) => (
+            <span key={`d${i}`} style={{
+              fontSize: 11, lineHeight: 1.4, color: 'var(--cf-ink-2)',
+              display: 'flex', gap: 5, alignItems: 'baseline',
+            }}>
+              <span aria-hidden style={{
+                width: 5, height: 5, borderRadius: 999, flex: 'none',
+                background: 'var(--cf-gold-dark)', transform: 'translateY(-2px)',
+              }} />
+              <span>
+                {d.texto}
+                {d.dato && (
+                  <> {' '}<span className="cf-num" style={{
+                    color: 'var(--cf-ink)', fontWeight: 700,
+                    background: 'var(--cf-fill)', padding: '1px 5px', borderRadius: 5,
+                  }}>{d.dato}</span></>
+                )}
+              </span>
+            </span>
+          ))}
         </div>
         {f._estado !== 'verde' && <Pastilla tono={f._estado === 'rojo' ? 'mora' : 'atraso'}>{ROTULO[f._estado]}</Pastilla>}
         <button type="button" onClick={onAbrir} aria-label={abierta ? 'Cerrar' : 'Abrir'}
@@ -642,6 +724,30 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
               {FRECUENCIAS.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
             </select>
           </label>
+
+          {/* ── EL MODO, POR PRÉSTAMO ──
+              Antes solo se elegía para la tanda entera, y en una misma libreta
+              conviven los dos casos: unos pagan cuota fija y otros pagan solo el
+              interés cada mes con el capital intacto. Meter a los segundos como
+              cuota fija hace que el sistema crea que la deuda se salda sola, y
+              esa es la diferencia entre una cartera correcta y una inventada. */}
+          <label>
+            <EtiquetaCampo>Cómo le cobras</EtiquetaCampo>
+            <select value={f.modoInteres || base.modoInteres || 'fijo'}
+              onChange={(e) => onEditar('modoInteres', e.target.value)} style={campo}>
+              {MODOS.map((m) => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
+            </select>
+          </label>
+
+          {/* El día del mes, cuando el papel solo traía eso y no una fecha. */}
+          {(f.diaCobro || (f.frecuencia || base.frecuencia) === 'mensual') && (
+            <label>
+              <EtiquetaCampo>Qué día del mes le cobras</EtiquetaCampo>
+              <input type="text" inputMode="numeric" value={f.diaCobro ?? ''} placeholder="Ej: 26"
+                onChange={(e) => onEditar('diaCobro', e.target.value.replace(/\D/g, '').slice(0, 2))}
+                style={campo} />
+            </label>
+          )}
 
           {/* ── EN QUÉ PUNTO VA ──
               El dato que decide si la migración sirve: un préstamo a medias
