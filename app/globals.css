@@ -1461,6 +1461,10 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
   grid-template-columns: repeat(var(--cf-chips-n, 3), minmax(0, 1fr));
   gap: 9px;
 }
+/* ⚠ SOLO CUANDO SON CUATRO. Bajar a dos columnas a bulto dejaba los casos de
+ * TRES chips —cliente sin WhatsApp, o préstamo todavía sin pagos— con dos
+ * arriba y uno abajo, y un hueco al lado que se lee como un botón que falta.
+ * Tres caben en fila hasta en 320px; el que no cabe es el cuarto. */
 @media (max-width: 389px) {
-  .cf-chips-acciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cf-chips-acciones[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

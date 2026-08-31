@@ -530,11 +530,14 @@ export function ChipsAccionesSecundarias({ acciones }) {
        recortar sin dejar de nombrar la cosa.
 
        `flex-wrap` a secas dejaba «Pagos» solo y estirado en un segundo renglón.
-       La rejilla parte en dos por dos, que es lo que se lee como un bloque. El
-       número de columnas va en `--cf-chips-n` y la media query de
-       `globals.css` lo baja a 2 en pantallas estrechas: una fila de 390px en
-       adelante, dos por dos por debajo. */
-    <div className="cf-chips-acciones" style={{ '--cf-chips-n': acciones.length }}>
+       La rejilla parte en dos por dos, que es lo que se lee como un bloque.
+
+       ⚠ `data-n` NO ES DECORATIVO: sin él la media query bajaba a dos columnas
+       SIEMPRE, y con tres chips —un cliente sin WhatsApp, o un préstamo aún sin
+       pagos— quedaban dos arriba y uno abajo con un hueco al lado, como si
+       faltara un botón. Solo se parte cuando hay CUATRO; con tres caben los
+       tres en fila hasta en 320px. */
+    <div className="cf-chips-acciones" data-n={acciones.length} style={{ '--cf-chips-n': acciones.length }}>
       {acciones.map((a, i) => (
         <button
           key={i}
