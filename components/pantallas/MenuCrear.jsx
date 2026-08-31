@@ -84,6 +84,9 @@ const I = {
   prestar:  <><rect x="2.5" y="6.5" width="13" height="9" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M18 11h4M19.5 8.5L22 11l-2.5 2.5" /></>,
   gasto:    <><path d="M5.5 3h13v18l-2.2-1.6-2.1 1.6-2.2-1.6L9.8 21l-2.1-1.6L5.5 21z" /><path d="M9 8h6M9 12h6" /></>,
   cliente:  <><circle cx="10" cy="8" r="3.4" /><path d="M3.5 20a6.5 6.5 0 0113 0" /><path d="M18 8v6M15 11h6" /></>,
+  /* El MISMO trazo que usa «Más» para «Pasar mi cuaderno»: la misma cosa en dos
+     sitios tiene que verse igual, o parecen dos funciones distintas. */
+  cartera:  <><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5" /><path d="M7.5 7.5L12 3l4.5 4.5M12 3v13.5" /></>,
   cobrar:   <><path d="M9 11l3 3 6-6" /><path d="M21 12a9 9 0 11-4.2-7.6" /></>,
   caja:     <><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z" /><path d="M3 7.5L12 12l9-4.5M12 12v9" /></>,
   miplata:  <><rect x="2.5" y="6" width="19" height="13" rx="2.5" /><path d="M2.5 10.5h19M17 15h1.5" /></>,
@@ -215,7 +218,22 @@ export default function MenuCrear({
     },
     {
       id: 'crear', rotulo: 'Crear',
-      filas: <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} />,
+      filas: <>
+        <Accion icono="cliente" nombre="Un cliente nuevo" alto={54} primera onClick={ir('/clientes/nuevo')} />
+        {/* ── ⚠ PASAR LA CARTERA, AQUÍ Y NO SOLO EN «MÁS» ──────────────────
+            Estaba únicamente en «Más herramientas», entre otras once entradas.
+            Y es la acción que decide si el prestamista se queda: el 73 % se
+            atasca en cinco clientes o menos, y quien no pasa su cuaderno no
+            llega a usar nada de lo demás.
+
+            Va en «Crear» y no en «Ir a» porque eso es lo que hace: crea
+            clientes, solo que de treinta en treinta. Una sola entrada y no dos
+            —foto y Excel— porque el migrador ya pregunta por cuál entras: dos
+            aquí serían dos decisiones antes de empezar. */}
+        <Accion icono="cartera" nombre="Pasar mi cartera"
+          cifra="De una foto, del cuaderno o de un Excel"
+          alto={54} onClick={ir('/migrador')} />
+      </>,
     },
   ]
 
