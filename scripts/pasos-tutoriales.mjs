@@ -107,7 +107,12 @@ export const PASOS = [
     { pie: 'Primero eliges a quién le prestas', en: '/prestamos/nuevo',
       senal: { rotulo: 'Continuar', texto: 'Elige el cliente y sigue' } },
     { pie: 'Después el monto, el interés y cada cuánto le cobras', en: '/prestamos/nuevo',
-      toques: ['A'], senal: { rotulo: 'Continuar', texto: 'La app calcula la cuota sola' } },
+      /* ⚠ POR NOMBRE, NO POR INICIAL. Decía `toques: ['A']` —la letra del avatar
+         del primer cliente de la vitrina vieja— y con la vitrina rehecha no hay
+         ninguno que empiece por A en esa lista, así que el paso se quedaba sin
+         captura. Steven Olmos es el cliente de la vitrina; la ficha del selector
+         empieza por la letra del avatar, de ahí la S pegada. */
+      toques: ['SSteven Olmos'], senal: { rotulo: 'Continuar', texto: 'La app calcula la cuota sola' } },
   ] },
 
   { id: 'registrar-pago', pasos: [
@@ -140,6 +145,29 @@ export const PASOS = [
       toques: ['Gestión'], senal: { rotulo: 'Renovar el préstamo', texto: 'Cierra el viejo y abre uno nuevo' } },
     { pie: 'Escribe el TOTAL del nuevo préstamo, no lo que le vas a entregar',
       en: 'prestamo', toques: ['Gestión', 'Renovar el préstamo'] },
+  ] },
+
+  /* ── LAS DOS DEL 31 AGO 2026 ──────────────────────────────────────────
+     Funciones nuevas de ese día. El dueño: «si hay que crear los pequeños
+     tutoriales que van ligados a esas funciones, como son nuevas, hay que
+     hacerlas». Sin guía, una función nueva solo la usa quien ya sabe que
+     existe. */
+  { id: 'cambiar-modo-cobro', pasos: [
+    { pie: 'Abre el préstamo del cliente y toca «Gestión»', en: 'prestamo',
+      senal: { rotulo: 'Gestión', texto: 'El modo de cobro se cambia aquí dentro' } },
+    { pie: 'Busca «Cambiar el modo de cobro». A la derecha dice en cuál está hoy', en: 'prestamo',
+      toques: ['Gestión'], senal: { rotulo: 'Cambiar el modo de cobro', texto: 'Dice el modo de ahora' } },
+    { pie: 'El capital pasa solo. Elige el modo nuevo y confirma: no sale ni entra dinero',
+      en: 'prestamo', toques: ['Gestión', 'Cambiar el modo de cobro'] },
+  ] },
+
+  { id: 'gestionar-pagos', pasos: [
+    { pie: 'Dentro del préstamo, toca «Pagos»', en: 'prestamo',
+      senal: { rotulo: 'Pagos', texto: 'Ver, compartir, corregir o borrar' } },
+    { pie: 'Cada pago trae sus botones: compartir, cambiar la fecha y borrarlo', en: 'prestamo',
+      toques: ['Pagos'], senal: { rotulo: 'Compartir', texto: 'Manda el recibo de ESE pago' } },
+    { pie: 'En «Compartir» sale mandar el recibo como imagen, por WhatsApp o imprimirlo',
+      en: 'prestamo', toques: ['Pagos', 'Compartir'] },
   ] },
 
   { id: 'cancelar-prestamo', pasos: [
