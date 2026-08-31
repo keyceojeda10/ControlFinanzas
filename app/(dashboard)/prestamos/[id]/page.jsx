@@ -1552,7 +1552,7 @@ function PrestamoDetalleContenido({ params }) {
       )}
 
       {/* ── 5. ACCIONES SECUNDARIAS COMO CHIPS ─────────────────── */}
-      {(mostrarAtajosCobro || mostrarGestionPrestamo || cliente?.telefono) && (
+      {(mostrarAtajosCobro || mostrarGestionPrestamo || cliente?.telefono || pagos.length > 0) && (
         <ChipsAccionesSecundarias
           acciones={[
             // ── «ENVIAR POR WHATSAPP», SIEMPRE Y A LA VISTA ──────────────
@@ -1599,6 +1599,38 @@ function PrestamoDetalleContenido({ params }) {
               color: 'var(--cf-ink-2)',
               icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.425-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" /></svg>,
               onClick: () => setModalGestionPrestamo(true),
+            }] : []),
+            /* ── LA PUERTA A LOS PAGOS ────────────────────────────────────
+             *
+             * «Han habido clientes que me dicen que dónde pueden borrar los
+             *  pagos que han quedado mal, para volverlos a hacer, y no lo
+             *  encuentran fácilmente.»              — el dueño, 31 ago 2026
+             *
+             * Medido en el espejo con un préstamo activo de 14 pagos, a
+             * 412×900: «Gestionar los pagos» cae a 1.676px — 1,9 pantallas de
+             * deslizamiento — Y ADEMÁS llega cerrado. Para corregir un cobro
+             * mal registrado había que bajar casi dos pantallas y adivinar que
+             * ese acordeón se abre.
+             *
+             * La sección NO se mueve: es larga y debajo de la ficha empujaría
+             * la cifra que explica la pantalla. Lo que se abre es una puerta a
+             * 0,4 pantallas, donde ya está mirando el ojo. Un toque abre el
+             * acordeón y lleva la vista, igual que «Ver todos» de la ficha.
+             *
+             * «Pagos» a secas por lo mismo que «WhatsApp» y «Abonos»: el chip
+             * solo pinta el rótulo —el sublabel se quedó en el `title`— y a
+             * cuatro columnas cualquier cosa más larga sale con puntos. */
+            ...(pagos.length > 0 ? [{
+              label: 'Pagos',
+              sublabel: 'Ver, corregir o borrar un cobro',
+              color: 'var(--cf-green-dark)',
+              icon: <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></svg>,
+              onClick: () => {
+                setHistorialOpen(true)
+                setTimeout(() => {
+                  document.getElementById('cf-historial-pagos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }, 60)
+              },
             }] : []),
           ]}
         />
@@ -1946,7 +1978,12 @@ function PrestamoDetalleContenido({ params }) {
           </div>
         </div>
 
+        {/* ⚠ LAS DOS VÍAS, NO UNA. El mismo candado de `cliente?.telefono`
+            estaba aquí: el estado de cuenta tampoco se podía mandar a nadie sin
+            número. Arreglar solo la tarjeta y dejar ésta es exactamente cómo el
+            fallo del comprobante se reportó tres veces seguidas. */}
         <div className="space-y-2 mb-4">
+          <BotonCompartir tipo="historial" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
           {cliente?.telefono && (
             <BotonWhatsApp tipo="historial" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
           )}
@@ -1975,18 +2012,30 @@ function PrestamoDetalleContenido({ params }) {
                   {/* Botones de accion (comprobante, editar fecha, anular) */}
                   <div className="flex items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-border)' }}>
                     {!esAjuste && (
+                      /* ⚠ ESTE BOTÓN PARECÍA UNA ALARMA.
+                         En la captura del dueño sale «⚠ Compartir» en ámbar
+                         dentro de la tarjeta de un pago correcto: era este
+                         avión de papel, que a 12px con el dorado encima se lee
+                         como un triángulo de aviso. Un pago bien registrado no
+                         puede tener nada que parezca una advertencia.
+
+                         Y el dorado sobraba por canon: `DESIGN.md` lo reserva a
+                         tres cosas —el monto principal, la acción primaria y el
+                         campo con foco— y compartir no es ninguna. Ahora es el
+                         icono de compartir de verdad, en gris, y al abrirse se
+                         marca con el relleno neutro, como el resto. */
                       <button
                         onClick={() => setComprobante(comprobanteAbierto ? null : pago.id)}
                         className={[
                           'flex items-center gap-1 px-2 h-7 rounded-[8px] text-[10px] font-medium transition-colors',
                           comprobanteAbierto
-                            ? 'text-[var(--cf-gold)] bg-[rgba(245,197,24,0.1)]'
-                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-gold)] hover:bg-[rgba(245,197,24,0.08)]',
+                            ? 'text-[var(--cf-ink)] bg-[var(--cf-fill)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)]',
                         ].join(' ')}
-                        title="Enviar comprobante"
+                        title="Compartir el recibo de este pago"
                       >
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
                         </svg>
                         Compartir
                       </button>
@@ -2000,11 +2049,21 @@ function PrestamoDetalleContenido({ params }) {
                     {session?.user?.rol === 'owner' && (
                       <button
                         onClick={() => setEditandoFecha(editandoFecha === pago.id ? null : pago.id)}
+                        /* ⚠ EN TOKENS, NO EN `rgba(...)` DE LA PALETA VIEJA.
+                           Este botón salía con un recuadro azul encendido en
+                           las CATORCE tarjetas, aunque no se estuviera editando
+                           ninguna fecha. No era esta clase: en `globals.css`
+                           hay un apaño de la migración a claro que casa por
+                           SUBCADENA —`[class*="bg-[rgba(59,130,246"]`— y por
+                           tanto casa también con la variante `hover:`, y la
+                           pinta con `!important` haya o no puntero encima.
+                           Alcanza a 41 sitios en 19 ficheros; aquí se esquiva
+                           usando tokens, que es lo que pide `DESIGN.md`. */
                         className={[
                           'w-9 h-9 flex items-center justify-center rounded-[8px] transition-colors',
                           editandoFecha === pago.id
-                            ? 'text-[var(--cf-ink-2)] bg-[rgba(59,130,246,0.1)]'
-                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink-2)] hover:bg-[rgba(59,130,246,0.08)]',
+                            ? 'text-[var(--cf-ink)] bg-[var(--cf-fill)]'
+                            : 'text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:bg-[var(--cf-fill)]',
                         ].join(' ')}
                         title="Editar fecha"
                       >
@@ -2029,9 +2088,38 @@ function PrestamoDetalleContenido({ params }) {
                       </button>
                     )}
                   </div>
-                  {/* Panel de comprobante expandible */}
+                  {/* ── EL PANEL DE COMPARTIR ────────────────────────────────
+                      ⚠ AQUÍ COMPARTIR NO COMPARTÍA.
+
+                      «El botón compartir solamente saca la lista para imprimir;
+                       si queremos compartir un movimiento en específico, una
+                       transacción, por imagen o por WhatsApp, no deja.»
+                                                    — el dueño, 31 ago 2026
+
+                      Y tenía razón por una línea: el ÚNICO botón que compartía
+                      colgaba de `cliente?.telefono &&`. Sin teléfono se quedaba
+                      solo «Imprimir» debajo de un botón que dice «Compartir».
+                      Son 588 clientes (7,5 %) y 495 préstamos activos.
+
+                      La máquina de compartir en imagen ya existía y estaba
+                      enterrada DOS niveles: había que pulsar «Imprimir», abrir
+                      el modal, y ahí dentro salía «Compartir». Nadie la
+                      encontraba, y con razón.
+
+                      Ahora la imagen va PRIMERA y no depende de nada: la hoja
+                      nativa deja mandarla por WhatsApp, Telegram, correo o
+                      guardarla. WhatsApp directo se queda —es un toque menos
+                      cuando hay número— y va después, no en lugar de. */}
                   {comprobanteAbierto && (
                     <div className="pb-3 pl-1 space-y-2">
+                      <BotonCompartirRecibo
+                        cliente={cliente}
+                        prestamo={prestamo}
+                        pago={{ id: pago.id, montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                        orgNombre={orgNombre}
+                        camposRecibo={camposRecibo}
+                        label="Mandar el recibo como imagen"
+                      />
                       {cliente?.telefono && (
                         <BotonWhatsApp
                           tipo="pago"

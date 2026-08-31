@@ -11,6 +11,7 @@ import { formatMoney } from '@/lib/i18n'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
+import { Pastilla } from '@/components/cf/primitivos'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 //
@@ -28,9 +29,18 @@ import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataform
 // una TERCERA copia del formateo, y la encontré recorriendo el DOM en el
 // navegador: arreglar el comprobante y la ficha no bastó porque esta pantalla
 // trae su propio helper. Ver `formatFechaCalendario` en lib/i18n.
-const fmtFecha = (d) => d
-  ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
-  : '—'
+/* ⚠ SIN EL «de» NI EL PUNTO. El ICU nuevo escribe «6 de ago. de 2026» en
+   `month:'short'`: dos preposiciones y una abreviatura para decir una fecha, en
+   una tarjeta donde el sitio se le está quitando al monto. Se arma a mano, igual
+   que en `lib/simulacion-imagen.js`, que ya tropezó con esto.
+   Solo la usa `PagoMiniCard`; no hay otra pantalla que dependa de este formato. */
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+const fmtFecha = (d) => {
+  if (!d) return '—'
+  const f = new Date(d)
+  if (Number.isNaN(f.getTime())) return '—'
+  return `${f.getDate()} ${MESES_CORTOS[f.getMonth()]} ${f.getFullYear()}`
+}
 
 const fmtFechaCorta = (d) => d
   ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' })
@@ -799,34 +809,60 @@ const ORDINAL = {
 
 // ─── 8. Mini card de un pago en el historial ─────────────────────
 export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) {
-  const tipoColors = {
-    completo:    { bg: 'var(--cf-green-dark)', label: 'Completo' },
-    parcial:     { bg: 'var(--cf-gold)',  label: 'Parcial' },
-    capital:     { bg: 'var(--cf-ink-2)',  label: 'A Capital' },
-    recargo:     { bg: 'var(--cf-red-dark)',  label: 'Recargo' },
-    descuento:   { bg: 'var(--cf-ink-2)',    label: 'Descuento' },
-    intereses:   { bg: 'var(--cf-gold-dark)',              label: 'Intereses' },
-    liquidacion: { bg: '#6366f1',              label: 'Liquidación' },
+  /* ══ LA TARJETA DE UN PAGO ═════════════════════════════════════════════════
+   *
+   * «Esas tarjetas quedaron con el diseño de la versión anterior; no contrasta
+   *  bien con lo nuevo que tenemos.»                    — el dueño, 31 ago 2026
+   *
+   * Tenía nombre en el canon. Esta tarjeta se pintaba con un
+   * `linear-gradient` teñido del color del tipo de pago MÁS un borde también
+   * teñido, y eso es exactamente lo que prohíbe la regla 4 de `DESIGN.md`:
+   *
+   *   «El estado va en el acento, nunca en el fondo. La superficie de la
+   *    tarjeta es SIEMPRE blanca. Esto corrige el defecto principal del diseño
+   *    anterior: tarjetas teñidas formando un muro donde nada destacaba porque
+   *    todo destacaba.»
+   *
+   * Con quince pagos seguidos el muro era literal: quince rectángulos verdes.
+   *
+   * DÓNDE VA AHORA EL COLOR — tres portadores, que es el tope que fija
+   * `TarjetaCliente`, y ni uno más:
+   *   1. el anillo de 2px del icono   (igual que el avatar de la lista)
+   *   2. la pastilla con el nombre del tipo
+   *   3. el signo del monto, SOLO en recargo y descuento
+   *
+   * ⚠ EL MONTO YA NO SE TIÑE DEL COLOR DEL TIPO. Era el cuarto portador y el
+   * más ruidoso: una columna de quince cifras verdes donde la vista no
+   * encuentra ninguna. Va en tinta, que es lo que deja ver la que se sale. */
+  const TONOS = {
+    completo:    { color: 'var(--cf-green-dark)', pastilla: 'aldia',     label: 'Completo' },
+    parcial:     { color: 'var(--cf-gold)',       pastilla: 'atraso',    label: 'Parcial' },
+    capital:     { color: 'var(--cf-ink-2)',      pastilla: 'neutro',    label: 'A capital' },
+    recargo:     { color: 'var(--cf-red-dark)',   pastilla: 'mora',      label: 'Recargo' },
+    descuento:   { color: 'var(--cf-ink-2)',      pastilla: 'neutro',    label: 'Descuento' },
+    intereses:   { color: 'var(--cf-gold-dark)',  pastilla: 'atraso',    label: 'Intereses' },
+    liquidacion: { color: '#6366f1',              pastilla: 'neutro',    label: 'Liquidación' },
   }
-  const tipoInfo = tipoColors[pago.tipo] || tipoColors.parcial
-  const tipoIntereses = pago.tipo === 'intereses'
+  const t = TONOS[pago.tipo] || TONOS.parcial
+  const signo = pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''
 
   return (
     <div
-      className="rounded-[12px] p-3 transition-all hover:scale-[1.005]"
+      className="rounded-[12px] p-3 transition-colors"
       style={{
-        background: `linear-gradient(135deg, color-mix(in srgb, ${tipoInfo.bg} 10%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-        border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 22%, var(--cf-border))`,
+        background: 'var(--cf-card)',
+        border: '1px solid var(--cf-border)',
       }}
     >
       <div className="flex items-center gap-3">
-        {/* Icono circular del tipo */}
+        {/* El anillo de estado. El relleno es gris de siempre: el color vive en
+            el borde y en el trazo, nunca en la superficie. */}
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
           style={{
-            background: `color-mix(in srgb, ${tipoInfo.bg} 18%, transparent)`,
-            color: tipoInfo.bg,
-            border: `1px solid color-mix(in srgb, ${tipoInfo.bg} 30%, transparent)`,
+            background: 'var(--cf-fill)',
+            color: t.color,
+            border: `2px solid ${t.color}`,
           }}
         >
           {pago.tipo === 'recargo' ? (
@@ -846,41 +882,34 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
 
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span
-              className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-              style={{
-                background: `color-mix(in srgb, ${tipoInfo.bg} 15%, transparent)`,
-                color: tipoInfo.bg,
-              }}
-            >
-              {tipoInfo.label}
-            </span>
+            <Pastilla tono={t.pastilla}>{t.label}</Pastilla>
             {pago.cuotaNumero && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--cf-ink-2)' }}>
-                Cuota {pago.cuotaNumero}
-              </span>
+              <Pastilla tono="neutro" numerica>Cuota {pago.cuotaNumero}</Pastilla>
             )}
             {isOffline && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,197,24,0.15)', color: 'var(--cf-gold-dark)' }}>
-                offline
-              </span>
+              <Pastilla tono="atraso">Sin enviar</Pastilla>
             )}
           </div>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+          <div className="flex items-center gap-1.5 mt-1 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
+            <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span>{fmtFecha(pago.fechaPago)}</span>
+            <span className="cf-num">{fmtFecha(pago.fechaPago)}</span>
             {pago.metodoPago && (() => {
+              /* El medio de pago SÍ conserva su color de marca: Nequi morado,
+                 Daviplata rojo. No es estado del pago, es de quién es la cuenta
+                 —lo que decide si entra al fajo— y por eso no cuenta como un
+                 cuarto portador del estado. */
               const platInfo = pago.metodoPago === 'transferencia' ? getPlataformaInfo(pago.plataforma) : null
               const badgeColor = platInfo?.color || (pago.metodoPago === 'transferencia' ? 'var(--cf-ink-2)' : 'var(--cf-green-dark)')
-              const badgeBg = platInfo?.bg || (pago.metodoPago === 'transferencia'
-                ? 'color-mix(in srgb, var(--cf-ink-2) 12%, transparent)'
-                : 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)')
               return (
                 <span
                   className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
-                  style={{ background: badgeBg, color: badgeColor }}
+                  style={{
+                    background: 'var(--cf-fill)',
+                    border: '1px solid var(--cf-border)',
+                    color: badgeColor,
+                  }}
                 >
                   {platInfo
                     ? <PlataformaIcon plataforma={pago.plataforma} size={10} />
@@ -900,10 +929,10 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
 
         <div className="text-right shrink-0">
           <p
-            className="text-[15px] font-bold font-mono-display leading-none"
-            style={{ color: pago.tipo === 'descuento' ? 'var(--cf-ink-2)' : tipoInfo.bg }}
+            className="cf-num text-[15px] font-bold leading-none"
+            style={{ color: signo ? t.color : 'var(--cf-ink)' }}
           >
-            {pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''}{formatMoney(pago.montoPagado)}
+            {signo}{formatMoney(pago.montoPagado)}
           </p>
         </div>
       </div>
