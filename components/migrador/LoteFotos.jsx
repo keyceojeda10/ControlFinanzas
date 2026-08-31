@@ -40,7 +40,7 @@
 // amortización. Cuesta dos peticiones por cliente; a cambio, la plata queda
 // bien.
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { formatMoney } from '@/lib/i18n'
@@ -117,15 +117,31 @@ function efectivo(f, base) {
    dejaría roja y el usuario no sabría que ya está bien. Misma regla que
    `semaforo()` en `lib/cartulina.js`; se repite aquí porque esa vive en el
    servidor y esto corre mientras se teclea. */
+/* En estos modos NO hay «cuántos cobros»: el cliente paga el interés hasta que
+   devuelve el capital, y el papel no lo dice porque no existe. Pedirlo sería
+   marcar en ámbar un dato que nadie puede rellenar. */
+const MODOS_SIN_PLAZO = ['solo_interes']
+
 function estadoDe(f, base) {
   const e = efectivo(f, base)
   if (!e.nombre || !e.monto) return 'rojo'
+
   /* ⚠ ÁMBAR SOLO POR LO QUE NO SE PUEDE RESOLVER. La tasa y el plazo ahora
      SIEMPRE tienen valor —el de arriba o el del defecto— así que marcarlos en
-     ámbar sería pedir revisar algo que ya está decidido. Lo que sí merece una
-     mirada es que el OCR no leyera la frecuencia ni el plazo de ESA fila: son
-     los dos que cambian cuánto se le cobra. */
-  if (!f.frecuencia || !(Number(f.plazoUnidades) > 0)) return 'ambar'
+     ámbar sería pedir revisar algo que ya está decidido. */
+
+  /* Lo primero: si el lector dejó una duda concreta en esta fila, ahí sí hay
+     algo que mirar, y la fila lo dice con el campo por su nombre. */
+  if (f._dudas?.length) return 'ambar'
+
+  if (!f.frecuencia) return 'ambar'
+
+  /* ⚠ Y EL PLAZO SOLO SE PIDE DONDE EXISTE. Se vio en la pantalla, no en el
+     código: con la tabla de un cliente —cuarenta préstamos de interés mensual—
+     salían las SEIS filas diciendo «Revisar», incluidas las que estaban
+     perfectas, porque esa hoja no trae «cuántos cobros» en ninguna parte. Y si
+     todo está marcado, nada está marcado: el prestamista deja de mirar. */
+  if (!MODOS_SIN_PLAZO.includes(e.modoInteres) && !(Number(f.plazoUnidades) > 0)) return 'ambar'
   return 'verde'
 }
 
@@ -152,6 +168,27 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
      qué ruta va la cartera: no está escrito en la cartulina. Pedirlo por fila
      serían treinta veces la misma respuesta. */
   const [base, setBase] = useState({ tasa: '20', frecuencia: 'diario', modoInteres: 'fijo', rutaId: '' })
+
+  /* ⚠ EL HUECO DEL PIE SE MIDE, NO SE ESCRIBE A MANO.
+   *
+   * Era `paddingBottom: 96` y la barra mide más cuando aparece el aviso de
+   * «filas sin nombre o sin monto»: con la fila abierta, el pie tapaba los
+   * últimos campos y no se podían tocar. Se vio midiendo con `elementFromPoint`
+   * —en el JSX estaban perfectos— y lo agravé yo al añadir dos campos más.
+   *
+   * Un número fijo se queda corto cada vez que la barra crece, y crece por
+   * contenido. Midiéndola, el hueco se ajusta solo. */
+  const refPie = useRef(null)
+  const [altoPie, setAltoPie] = useState(112)
+  useEffect(() => {
+    const pie = refPie.current
+    if (!pie || typeof ResizeObserver === 'undefined') return
+    const medir = () => setAltoPie(Math.ceil(pie.getBoundingClientRect().height) + 16)
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(pie)
+    return () => ro.disconnect()
+  }, [])
 
   const subir = useCallback(async (e) => {
     const archivos = Array.from(e.target.files ?? [])
@@ -236,7 +273,16 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
   }, [])
 
   const editar = (id, campo, valor) =>
-    setFilas((prev) => prev.map((f) => (f._id === id ? { ...f, [campo]: valor } : f)))
+    setFilas((prev) => prev.map((f) => {
+      if (f._id !== id) return f
+      /* ⚠ CORREGIR UN CAMPO BORRA SU DUDA. Sin esto, el aviso se queda puesto
+         aunque ya lo hayas arreglado —y la fila en ámbar para siempre—, que es
+         la forma más rápida de enseñarle a alguien a ignorar los avisos.
+         `monto` cubre las dudas que hablan del importe; el resto casa por
+         nombre de campo. */
+      const dudas = (f._dudas ?? []).filter((d) => d.campo !== campo)
+      return { ...f, [campo]: valor, _dudas: dudas }
+    }))
   const quitar = (id) => setFilas((prev) => prev.filter((f) => f._id !== id))
 
   const conEstado = filas.map((f) => ({ ...f, _estado: estadoDe(f, base) }))
@@ -442,7 +488,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
 
   // ══ LA REVISIÓN ══
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 96 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: altoPie }}>
       <input ref={inputRef} type="file" accept="image/*" multiple
         onChange={subir} style={{ display: 'none' }} />
       <input ref={camaraRef} type="file" accept="image/*" capture="environment"
@@ -487,6 +533,30 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
             </select>
           </label>
         </div>
+
+        {/* ── ⚠ EL MODO, TAMBIÉN AQUÍ ARRIBA ────────────────────────────────
+            Estaba solo en el estado interno, con «cuota fija» fijo y sin forma
+            de cambiarlo. Se vio en la pantalla: con la tabla de un cliente
+            —cuarenta préstamos donde solo se cobra el interés cada mes— había
+            que entrar fila por fila a corregirlo cuarenta veces, o importarlos
+            todos mal.
+
+            Va donde va la tasa y la frecuencia, y por la misma razón que dice
+            esta tarjeta: no está escrito en el papel, se pone una vez, y la fila
+            que sea distinta lo cambia en la suya. */}
+        <label>
+          <EtiquetaCampo>Cómo les cobras</EtiquetaCampo>
+          <select
+            value={base.modoInteres}
+            onChange={(e) => setBase((b) => ({ ...b, modoInteres: e.target.value }))}
+            style={{
+              width: '100%', height: 46, padding: '0 12px', borderRadius: 'var(--cf-r-control)',
+              border: '1px solid var(--cf-border-strong)', background: 'var(--cf-card)',
+              color: 'var(--cf-ink)', font: 'inherit', fontSize: 15, fontWeight: 700,
+            }}>
+            {MODOS.map((m) => <option key={m.valor} value={m.valor}>{m.nombre}</option>)}
+          </select>
+        </label>
 
         {rutas.length > 0 && (
           <label>
@@ -567,7 +637,23 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
           <Fila
             key={f._id} f={f} base={base} rutas={rutas}
             abierta={abierta === f._id}
-            onAbrir={() => setAbierta(abierta === f._id ? null : f._id)}
+            onAbrir={(caja) => {
+              const abrir = abierta !== f._id
+              setAbierta(abrir ? f._id : null)
+              /* ⚠ AL ABRIR, LA FILA SE TRAE A LA VISTA.
+                 El pie es fijo, así que una fila abierta a media pantalla deja
+                 sus últimos campos DEBAJO de él: existen, se ven a medias y no
+                 se pueden tocar. Se cazó con `elementFromPoint`, no leyendo el
+                 JSX. El hueco del final no lo arregla —la fila está en medio de
+                 la lista, no al final—; traerla arriba, sí.
+
+                 En el cuadro siguiente, cuando el desplegable ya tiene su
+                 altura: hacerlo antes lo calcula sobre la fila cerrada. */
+              if (abrir && caja) {
+                requestAnimationFrame(() => requestAnimationFrame(() =>
+                  caja.scrollIntoView({ block: 'start', behavior: 'smooth' })))
+              }
+            }}
             onEditar={(campo, valor) => editar(f._id, campo, valor)}
             onQuitar={() => quitar(f._id)}
           />
@@ -575,7 +661,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
       </div>
 
       {/* El pie, fijo: es la acción por la que se abrió esta pantalla */}
-      <div style={{
+      <div ref={refPie} style={{
         position: 'fixed', left: 0, right: 0,
         bottom: 'calc(var(--cf-nav-inset, 0px) + env(safe-area-inset-bottom, 0px))',
         padding: '12px 16px 14px', background: 'var(--cf-card)',
@@ -602,6 +688,7 @@ export default function LoteFotos({ rutas = [], onListo, onSalir }) {
    monto. Abierta, todo lo demás. Con treinta filas, una tarjeta completa cada
    una es una pantalla de scroll infinito donde no se distingue cuál falta. */
 function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
+  const refCaja = useRef(null)
   const color = COLOR[f._estado]
   const campo = {
     width: '100%', height: 44, padding: '0 11px', borderRadius: 'var(--cf-r-pill)',
@@ -610,10 +697,14 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
   }
 
   return (
-    <div style={{
+    <div ref={refCaja} style={{
       borderRadius: 'var(--cf-r-card)', background: 'var(--cf-card)',
       border: `1px solid ${f._error ? 'var(--cf-red-pill-border)' : 'var(--cf-border)'}`,
       overflow: 'hidden',
+      /* ⚠ POR DEBAJO DE LA CABECERA, que también es fija. Con 12px la fila
+         subía tanto que su nombre quedaba tapado por el título de la pantalla:
+         se cambia un campo tapado abajo por otro tapado arriba. */
+      scrollMarginTop: 76,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px' }}>
         <span aria-hidden style={{
@@ -677,7 +768,7 @@ function Fila({ f, base, onAbrir, abierta, onEditar, onQuitar }) {
           ))}
         </div>
         {f._estado !== 'verde' && <Pastilla tono={f._estado === 'rojo' ? 'mora' : 'atraso'}>{ROTULO[f._estado]}</Pastilla>}
-        <button type="button" onClick={onAbrir} aria-label={abierta ? 'Cerrar' : 'Abrir'}
+        <button type="button" onClick={() => onAbrir(refCaja.current)} aria-label={abierta ? 'Cerrar' : 'Abrir'}
           style={{ background: 'none', border: 0, cursor: 'pointer', padding: 4, flex: 'none' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-ink-3)"
             strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
