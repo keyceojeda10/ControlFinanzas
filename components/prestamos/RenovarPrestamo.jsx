@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Renovar } from '@/components/pantallas/Renovar'
 import { useRouter } from 'next/navigation'
 import { Modal }    from '@/components/ui/Modal'
@@ -10,6 +10,7 @@ import { soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
+import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import { useCountry } from '@/hooks/useCountry'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -34,6 +35,26 @@ export default function RenovarPrestamo({
   // Las cuentas de la organización (Nequi, Bancolombia, Daviplata…). La ficha
   // del préstamo ya las carga: aquí solo se reciben.
   metodosPago = [],
+  /* ⚠ LA MISMA HOJA, OTRA PREGUNTA.
+   *
+   * «Una persona tiene un préstamo en modo Globo, o sea paga solo intereses.
+   *  Pero este cliente ha decidido comenzar a pagar por cuotas e interés a la
+   *  vez, o sea modo banco, intereses sobre saldos. ¿Desde ahí donde está
+   *  creado puedo hacerles el cambio?»            — un prestamista, 31 ago 2026
+   *
+   * No se puede cambiar sobre el préstamo vivo, y no por pereza: el mismo % vale
+   * cosas distintas en cada modo —entre el más caro y el más barato hay 6,6x— y
+   * los pagos ya hechos se repartieron con la regla vieja. Cambiar la etiqueta
+   * dejaría cifras calculadas con una regla dentro de un préstamo que dice otra.
+   *
+   * Lo que sí vale es lo que él mismo pidió: «coger el capital de la persona y
+   * solo cambiar el modo». Eso es EXACTAMENTE lo que ya hace renovar —cierra el
+   * viejo, abre uno con el capital, los deja enlazados, no crea pago falso y no
+   * mueve caja si no entregas nada—. Solo faltaba poder elegir el modo.
+   *
+   * Con `soloModo` la hoja se presenta como lo que es: sin atajos de «préstale
+   * más», con el total ya puesto en el capital y con el selector arriba. */
+  soloModo = false,
   open,
   onClose,
 }) {
@@ -89,25 +110,41 @@ export default function RenovarPrestamo({
 
   const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal', 'lineal_dinamico'].includes(prestamoAnterior?.modoInteres)
     ? prestamoAnterior.modoInteres : 'fijo'
-  const modoUsaTabla = ['solo_interes', 'lineal', 'lineal_dinamico'].includes(modoHeredado)
+
+  /* El modo del préstamo NUEVO. Arranca en el del viejo —renovar hereda, y eso
+     no cambia— pero ahora se puede mover. La API ya lo aceptaba: lo que lo
+     clavaba era esta pantalla. */
+  const [modo, setModo] = useState(modoHeredado)
+  const modoUsaTabla = ['solo_interes', 'lineal', 'lineal_dinamico'].includes(modo)
+  const cambiaDeModo = modo !== modoHeredado
+
+  /* Al abrir en «cambiar el modo» el total ya viene puesto en el capital: es la
+     respuesta a la pregunta, no algo que haya que teclear. Y el modo se vuelve a
+     sincronizar con el del préstamo por si la hoja se abrió antes de que
+     cargara. */
+  useEffect(() => {
+    if (!open) return
+    setModo(modoHeredado)
+    if (soloModo && saldo > 0) { setMontoTecleado(null); setMonto(String(Math.round(saldo))) }
+  }, [open, soloModo, saldo, modoHeredado])
 
   const calculo = useMemo(() => {
     if (!montoNum || !tasa || !diasPlazo) return null
     try {
-      const usarManual = cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo'
+      const usarManual = cuotaManualActiva && !modoUsaTabla && modo !== 'saldo'
       return calcularPrestamo({
         montoPrestado: montoNum,
         tasaInteres:   Number(tasa),
         diasPlazo,
         fechaInicio,
         frecuencia,
-        modoInteres:   usarManual ? 'manual' : modoHeredado,
+        modoInteres:   usarManual ? 'manual' : modo,
         ...(usarManual && { cuotaManual: Number(cuotaManual) }),
-        ...(modoHeredado === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
-        ...(modoHeredado === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
+        ...(modo === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
+        ...(modo === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
       })
     } catch { return null }
-  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modoHeredado, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
+  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modo, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el total del nuevo préstamo'); return }
@@ -137,11 +174,11 @@ export default function RenovarPrestamo({
           diasPlazo,
           fechaInicio,
           frecuencia,
-          modoInteres:   (cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo') ? 'manual' : modoHeredado,
-          ...((cuotaManualActiva && !modoUsaTabla && modoHeredado !== 'saldo') && { cuotaManual: Number(cuotaManual) }),
-          ...(modoHeredado === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
+          modoInteres:   (cuotaManualActiva && !modoUsaTabla && modo !== 'saldo') ? 'manual' : modo,
+          ...((cuotaManualActiva && !modoUsaTabla && modo !== 'saldo') && { cuotaManual: Number(cuotaManual) }),
+          ...(modo === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
-          ...(modoHeredado === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
+          ...(modo === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
           // Por dónde sale la diferencia. Sin elegir nada = efectivo.
           ...(cuentaEntrega?.metodoPago === 'transferencia' && {
             metodoPago: 'transferencia', metodoPagoId: cuentaEntrega.metodoPagoId,
@@ -164,6 +201,7 @@ export default function RenovarPrestamo({
 
   const handleClose = () => {
     setMonto('')
+    setModo(modoHeredado)
     setSeguro(false)
     setMontoSeguro('')
     setCuotaManual('')
@@ -184,8 +222,10 @@ export default function RenovarPrestamo({
     <Modal
       open={open}
       onClose={handleClose}
-      title="Renovar el préstamo"
-      subtitle={clienteNombre ? `Cierra el de ${clienteNombre} y abre uno nuevo` : 'Cierra el actual y abre uno nuevo'}
+      title={soloModo ? 'Cambiar el modo de cobro' : 'Renovar el préstamo'}
+      subtitle={soloModo
+        ? 'Se cierra este préstamo y se abre uno con el mismo capital. No sale ni entra dinero.'
+        : (clienteNombre ? `Cierra el de ${clienteNombre} y abre uno nuevo` : 'Cierra el actual y abre uno nuevo')}
     >
       <div className="space-y-4">
 
@@ -214,13 +254,15 @@ export default function RenovarPrestamo({
             setMonto(montoCrudoConModo(crudo, modoAbreviado))
           }}
           simbolo="$"
-          atajos={saldo > 0 ? [
+          atajos={saldo > 0 && !soloModo ? [
             { etiqueta: 'Solo el saldo', valor: String(Math.round(saldo)) },
             { etiqueta: `+ ${formatMoney(500000)}`, valor: String(Math.round(saldo + 500000)) },
             { etiqueta: 'El doble', valor: String(Math.round(saldo * 2)) },
           ] : []}
           onAtajo={(v) => fijarMonto(v)}
-          incluye={`El total INCLUYE lo que ya debe (${formatMoney(saldo)}). Escribe el total, no lo nuevo.`}
+          incluye={soloModo
+            ? `Es el capital que pasa al préstamo nuevo. Si además le prestas más, sube el total.`
+            : `El total INCLUYE lo que ya debe (${formatMoney(saldo)}). Escribe el total, no lo nuevo.`}
           antesDespues={calculo && cuotaAnterior > 0 ? {
             etiqueta: 'La cuota, antes y después',
             concepto: 'Cuota',
@@ -233,13 +275,59 @@ export default function RenovarPrestamo({
           entregaEtiqueta={cuentaEntrega?.metodoPago === 'transferencia'
             ? `Le entregas por ${cuentaEntrega.plataforma ?? 'transferencia'}`
             : 'Le entregas en efectivo'}
-          entrega={montoNum > 0 ? formatMoney(enMano) : null}
+          /* ⚠ NADA QUE ENTREGAR NO ES ENTREGAR CERO. Renovando por lo justo del
+             saldo no sale un peso, y el botón decía «Renovar y entregar $0». */
+          entrega={montoNum > 0 && enMano > 0 ? formatMoney(enMano) : null}
+          botonTexto={soloModo ? 'Cambiar el modo de cobro' : undefined}
           gananciaEtiqueta="Ganancia del nuevo"
           ganancia={calculo && calculo.totalAPagar > montoNum
             ? formatMoney(Math.round(calculo.totalAPagar - montoNum)) : null}
           onRenovar={handleSubmit}
           renovando={loading}
         >
+
+        {/* ══ CÓMO SE VA A COBRAR ═══════════════════════════════════════════
+            Se reusa `ModoInteresSelector`, el mismo de crear un préstamo, y no
+            una lista propia: es el ÚNICO sitio que dice qué significa el % en
+            cada modo —«por mes», «de todo el préstamo», «por cada cobro»— y esa
+            frase es la que evita el error de 6,6x. Una segunda lista aquí se
+            desincronizaría el día que cambie un modo.
+
+            En una renovación normal va dentro de «Más opciones»: quien renueva
+            casi nunca quiere cambiar de modo, y sacarlo a la vista sería
+            ofrecerle una decisión que no venía a tomar. */}
+        {soloModo && (
+          <div className="space-y-2">
+            <ModoInteresSelector
+              modoInteres={modo}
+              onChange={setModo}
+              calculo={calculo}
+              monto={montoNum}
+              tasa={Number(tasa) || 0}
+              frecuencia={frecuencia}
+              diasPlazo={diasPlazo}
+            />
+            {/* ⚠ LO QUE SE CAPITALIZA, DICHO ANTES DE PULSAR.
+                En un Globo ABIERTO el saldo es capital + el interés que ya
+                corrió y no se ha pagado, y ese interés pasa a ser capital del
+                préstamo nuevo: a partir de ahí genera interés él también. En un
+                Globo con plazo no ocurre —ahí se arrastra el capital pelado—
+                pero cuando ocurre hay que decirlo, no descubrirlo después. */}
+            {capitalRestante == null && saldoTotal > 0 && (
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                Pasan {formatMoney(saldoTotal)}: el capital más el interés que ya
+                se causó y no está pagado. Ese interés queda como capital del
+                préstamo nuevo.
+              </p>
+            )}
+            {cambiaDeModo && (
+              <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                El préstamo de ahora queda como completado y su historial se
+                conserva, enlazado desde el nuevo.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* ── POR DÓNDE SALE LA DIFERENCIA ──────────────────────────────────
             Solo aparece si de verdad hay algo que entregar: renovar por lo
@@ -330,6 +418,17 @@ export default function RenovarPrestamo({
 
         {masOpciones && (
           <div className="space-y-3">
+            {!soloModo && (
+              <ModoInteresSelector
+                modoInteres={modo}
+                onChange={setModo}
+                calculo={calculo}
+                monto={montoNum}
+                tasa={Number(tasa) || 0}
+                frecuencia={frecuencia}
+                diasPlazo={diasPlazo}
+              />
+            )}
             <Input
               label="Fecha de inicio"
               type="date"

@@ -56,6 +56,10 @@ export function Renovar({
   entregaEtiqueta = 'Le entregas en efectivo', entrega,
   gananciaEtiqueta = 'Ganancia del nuevo', ganancia,
   onRenovar, renovando, nota,
+  /* El texto del botón, cuando la hoja no está renovando sino cambiando el modo
+     de cobro. Sin esto decía «Renovar y entregar $0», que es lo contrario de lo
+     que pasa: en un cambio de modo no se entrega un peso. */
+  botonTexto,
   // ── LA RANURA DE LAS CONDICIONES ──
   // La lamina dibuja el DINERO: cuanto debe, cuanto sera el total y cuanto sale
   // del bolsillo. Pero renovar tambien fija tasa, plazo, frecuencia, fecha y
@@ -201,7 +205,7 @@ export function Renovar({
         fontSize: 16, fontWeight: 700,
         cursor: renovando ? 'progress' : 'pointer', opacity: renovando ? 0.6 : 1,
       }}>
-        {renovando ? 'Renovando…' : (entrega ? `Renovar y entregar ${entrega}` : 'Renovar')}
+        {renovando ? (botonTexto ? 'Cambiando…' : 'Renovando…') : (botonTexto ?? (entrega ? `Renovar y entregar ${entrega}` : 'Renovar'))}
       </button>
 
       {nota && (

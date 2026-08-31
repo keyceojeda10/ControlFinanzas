@@ -18,6 +18,7 @@ import RegistrarPago                  from '@/components/prestamos/RegistrarPago
 import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
+import { etiquetaModo }              from '@/lib/dinero/modos'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
 import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
 import EditarProximoCobro             from '@/components/prestamos/EditarProximoCobro'
@@ -206,6 +207,9 @@ function PrestamoDetalleContenido({ params }) {
   const [interesError,   setInteresError]   = useState('')
   const [pagandoInteres, setPagandoInteres] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
+  /* La MISMA hoja de renovar, abierta con otra pregunta. Ver el comentario largo
+     de `soloModo` en RenovarPrestamo. */
+  const [modalCambiarModo, setModalCambiarModo] = useState(false)
   const [modalPlazo,    setModalPlazo]    = useState(false)
   const [modalDiaCobro, setModalDiaCobro] = useState(false)
   const [modalProximoCobro, setModalProximoCobro] = useState(false)
@@ -1120,6 +1124,26 @@ function PrestamoDetalleContenido({ params }) {
         id: 'renovar', nombre: 'Renovar el préstamo',
         valor: porcentajePagado > 0 ? `${Math.round(porcentajePagado)}% pagado` : null,
         hacer: () => setModalRenovar(true),
+      })
+    }
+    /* ⚠ SE LLAMA POR LO QUE HACE, Y POR ESO ESTÁ AQUÍ Y NO DENTRO DE RENOVAR.
+     *
+     * Lo pidió un prestamista: un cliente en Globo decide empezar a pagar cuota
+     * e interés a la vez, y él pregunta si puede cambiarlo «desde ahí donde está
+     * creado». El motor ya existía —es renovar por el mismo capital, que no
+     * mueve caja— pero vivía detrás de una fila que dice «Renovar el préstamo»,
+     * y nadie que quiera cambiar el modo entra ahí.
+     *
+     * Es el mismo error que ya costó dos veces: la función existe, se llama de
+     * otra cosa, y el cliente jura que no está.
+     *
+     * El valor de la derecha enseña el modo de AHORA, que es la mitad de la
+     * pregunta: el resto de filas de esta hoja ya traen su valor actual. */
+    if (puedeGestionarPrestamos && estaActivo && !completado) {
+      cierra.push({
+        id: 'cambiar-modo', nombre: 'Cambiar el modo de cobro',
+        valor: etiquetaModo(prestamo?.modoInteres),
+        hacer: () => setModalCambiarModo(true),
       })
     }
     if (puedeAplicarDescuentos) {
@@ -2911,6 +2935,23 @@ function PrestamoDetalleContenido({ params }) {
         metodosPago={metodosPagoOrg}
         open={modalRenovar}
         onClose={() => setModalRenovar(false)}
+      />
+
+      {/* La MISMA hoja, con la otra pregunta: cambiar el modo es renovar por el
+          mismo capital. Dos instancias y no una con un flag porque cada una
+          tiene su propio estado de formulario, y compartirlo dejaría el total
+          de una metido en la otra. */}
+      <RenovarPrestamo
+        prestamoId={id}
+        saldoPendiente={saldoPendiente}
+        capitalRestante={capitalRestante}
+        prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
+        clienteNombre={cliente?.nombre}
+        montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
+        metodosPago={metodosPagoOrg}
+        soloModo
+        open={modalCambiarModo}
+        onClose={() => setModalCambiarModo(false)}
       />
 
       {/* Modal de modificar plazo */}
