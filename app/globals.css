@@ -1446,3 +1446,21 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
 @media (prefers-reduced-motion: reduce) {
   .cf-modal-llega { animation: cf-velo-llega 140ms ease-out; }
 }
+
+/* ══ LOS CHIPS DE ACCIÓN DEL DETALLE DE UN PRÉSTAMO ═════════════════════════
+ *
+ * Cuatro chips —WhatsApp · Abonos · Gestión · Pagos— caben en una fila de 390px
+ * en adelante. Por debajo, «WhatsApp» se cortaba, y ese rótulo ya se acortó una
+ * vez por lo mismo: no queda nada que recortar sin dejar de nombrar la cosa.
+ *
+ * `--cf-chips-n` lo pone el componente (`ChipsAccionesSecundarias`), que es el
+ * único que usa esta clase. En estrecho se baja a dos columnas y la fila se lee
+ * como un bloque de dos por dos, en vez de tres arriba y uno estirado abajo. */
+.cf-chips-acciones {
+  display: grid;
+  grid-template-columns: repeat(var(--cf-chips-n, 3), minmax(0, 1fr));
+  gap: 9px;
+}
+@media (max-width: 389px) {
+  .cf-chips-acciones { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -522,7 +522,19 @@ export function generarStatsContextuales({ prestamo, totalPagado, cuotasPagadas,
 export function ChipsAccionesSecundarias({ acciones }) {
   if (!acciones || acciones.length === 0) return null
   return (
-    <div style={{ display: 'flex', gap: 9 }}>
+    /* ⚠ ANTES DE ENCOGER, DOS POR DOS.
+       Con tres chips cabían; con el cuarto («Pagos», 31 ago) el rótulo
+       «WhatsApp» salía cortado por debajo de 390px — y 360 es de los anchos más
+       comunes en Android. Es la SEGUNDA vez que este chip se corta: ya se acortó
+       «Enviar por WhatsApp» a «WhatsApp» por lo mismo, y no queda nada que
+       recortar sin dejar de nombrar la cosa.
+
+       `flex-wrap` a secas dejaba «Pagos» solo y estirado en un segundo renglón.
+       La rejilla parte en dos por dos, que es lo que se lee como un bloque. El
+       número de columnas va en `--cf-chips-n` y la media query de
+       `globals.css` lo baja a 2 en pantallas estrechas: una fila de 390px en
+       adelante, dos por dos por debajo. */
+    <div className="cf-chips-acciones" style={{ '--cf-chips-n': acciones.length }}>
       {acciones.map((a, i) => (
         <button
           key={i}
@@ -530,7 +542,7 @@ export function ChipsAccionesSecundarias({ acciones }) {
           onClick={a.onClick}
           title={a.sublabel || a.label}
           style={{
-            flex: 1, minWidth: 0, height: 74, borderRadius: 16, cursor: 'pointer',
+            minWidth: 0, height: 74, borderRadius: 16, cursor: 'pointer',
             display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 7,
             background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
