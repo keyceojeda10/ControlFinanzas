@@ -61,23 +61,71 @@ const token = await encode({
   secret: SECRETO,
 })
 
+/* ══ DOS VITRINAS, NO UNA ═════════════════════════════════════════════════
+ *
+ * La llena («Créditos La Esperanza») sirve para casi todo. Pero varias guías
+ * enseñan la pantalla de PRIMERA VEZ —«Registrar capital inicial», la ruta que
+ * todavía no existe— y ese estado no puede convivir con un negocio que ya tiene
+ * préstamos: en cuanto hay un desembolso, el capital deja de estar sin
+ * configurar y el botón desaparece.
+ *
+ * Así que hay una segunda, «Mi Negocio Nuevo», SIN NADA dentro. Un paso pide
+ * la que necesita con `vitrina: 'vacia'`.
+ *
+ * ⚠ SU COMPROBACIÓN VA AL REVÉS. A la llena se le exige que sus clientes estén
+ * en la lista blanca; a la vacía se le exige estar VACÍA. Si algún día tuviera
+ * clientes, o la sesión apunta a otro sitio o alguien la usó para trabajar, y
+ * en los dos casos fotografiarla publicaría datos de alguien. */
+const ORG_VACIA = 'vitrina_org_vacia'
+const DUENO_VACIO = 'vitrina_user_vacio'
+
 const nav = await chromium.launch()
-const ctx = await nav.newContext({
-  viewport: { width: ANCHO, height: ALTO }, deviceScaleFactor: 2, isMobile: true,
-  storageState: { cookies: [{ name: 'next-auth.session-token', value: token, domain: 'localhost', path: '/', httpOnly: true, secure: false, sameSite: 'Lax' }], origins: [] },
-})
-const p = await ctx.newPage()
+const abrirVitrina = async (jwt) => {
+  const c = await nav.newContext({
+    viewport: { width: ANCHO, height: ALTO }, deviceScaleFactor: 2, isMobile: true,
+    storageState: { cookies: [{ name: 'next-auth.session-token', value: jwt, domain: 'localhost', path: '/', httpOnly: true, secure: false, sameSite: 'Lax' }], origins: [] },
+  })
+  return c.newPage()
+}
+const p = await abrirVitrina(token)
+
+/* La de cero se abre solo si alguna guía la pide: montarla siempre sería un
+   navegador más por nada en la mayoría de las tiradas. */
+let pVacia = null
+const vitrinaVacia = async () => {
+  if (pVacia) return pVacia
+  const jwt = await encode({
+    token: {
+      id: DUENO_VACIO, email: 'vitrina.nueva@ejemplo.test', nombre: 'Carlos Ramírez',
+      rol: 'owner', organizationId: ORG_VACIA, plan: 'professional', country: 'co',
+    },
+    secret: SECRETO,
+  })
+  pVacia = await abrirVitrina(jwt)
+  /* Hay que ATERRIZAR antes de preguntar: un `fetch('/api/…')` desde
+     `about:blank` no tiene origen contra el que resolver la ruta. */
+  await pVacia.goto(`${BASE}/dashboard`, { waitUntil: 'domcontentloaded', timeout: 90000 })
+  await pVacia.waitForTimeout(4000)
+  const cuantos = await pVacia.evaluate(async () => {
+    const r = await fetch('/api/clientes?limit=5')
+    const j = await r.json()
+    return (Array.isArray(j) ? j : (j.clientes ?? [])).length
+  }).catch(() => null)
+  if (cuantos === null) throw new Error('la vitrina de cero no responde: ¿existe la organización?')
+  if (cuantos > 0) throw new Error(`la vitrina de cero tiene ${cuantos} clientes: no está vacía, no se fotografía`)
+  return pVacia
+}
 
 /* Los avisos de bienvenida tapan la pantalla y saldrían en todas las fotos. */
-const despejar = async () => {
+const despejar = async (pg = p) => {
   for (let i = 0; i < 4; i++) {
-    await p.evaluate(() => {
+    await pg.evaluate(() => {
       for (const t of ['Entendido', 'Ahora no', 'Cerrar', 'Después']) {
         const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === t)
         if (b) { b.click(); return }
       }
     })
-    await p.waitForTimeout(350)
+    await pg.waitForTimeout(350)
   }
 }
 
@@ -115,8 +163,8 @@ const TEMPORALES = [
  *   2. Compara el texto de la página antes y después. Si se perdió más de un
  *      tercio, eso no fue una limpieza: fue un destrozo, y ABORTA.
  */
-const quitarTemporales = async () => {
-  const perdida = await p.evaluate((frases) => {
+const quitarTemporales = async (pg = p) => {
+  const perdida = await pg.evaluate((frases) => {
     const antes = document.body.innerText.length
     for (const f of frases) {
       const conLaFrase = [...document.querySelectorAll('div, p, span, button, a')]
@@ -144,12 +192,12 @@ const quitarTemporales = async () => {
   }
 }
 
-const ir = async (ruta, espera = 6500) => {
-  await p.goto(`${BASE}${ruta}`, { waitUntil: 'domcontentloaded', timeout: 90000 })
-  await p.waitForTimeout(espera)
-  await despejar()
-  await quitarTemporales()
-  await p.waitForTimeout(400)
+const ir = async (ruta, espera = 6500, pg = p) => {
+  await pg.goto(`${BASE}${ruta}`, { waitUntil: 'domcontentloaded', timeout: 90000 })
+  await pg.waitForTimeout(espera)
+  await despejar(pg)
+  await quitarTemporales(pg)
+  await pg.waitForTimeout(400)
 }
 
 // ── ⚠ LA GUARDIA. Antes de disparar nada. ──────────────────────────────────
@@ -199,8 +247,8 @@ const direccionDe = (paso) => {
 /* ⚠ «EMPIEZA POR», no igualdad. Los botones de esta app llevan la cifra
    pegada —«Empezar recorrido · 4», «Gestionar los pagos (5)»— y una
    comparación exacta falla el día que cambia el número, sin decir por qué. */
-const tocar = async (rotulo) => {
-  const dio = await p.evaluate((r) => {
+const tocar = async (rotulo, pg = p) => {
+  const dio = await pg.evaluate((r) => {
     const limpio = (s) => (s || '').replace(/\s+/g, ' ').trim()
     /* ⚠ Y SOLO LO QUE SE VE: el mismo botón está pintado dos veces —móvil y
        escritorio— y el oculto va primero en el DOM. Pulsarlo no hace nada y la
@@ -219,7 +267,7 @@ const tocar = async (rotulo) => {
     return true
   }, rotulo)
   if (!dio) throw new Error(`no encontré «${rotulo}»`)
-  await p.waitForTimeout(1700)
+  await pg.waitForTimeout(1700)
 }
 
 const SOLO = process.env.SOLO || ''
@@ -246,15 +294,20 @@ for (const guia of LISTA) {
         await q.screenshot({ path: `public/tutoriales/${archivo}` })
         await limpio.close()
       } else {
-        await ir(direccionDe(paso))
-        for (const t of (paso.toques ?? [])) { await tocar(t); await quitarTemporales() }
-        if (paso.senal) await senalar(p, { ...paso.senal, numero: i + 1 })
-        await p.screenshot({ path: `public/tutoriales/${archivo}` })
-        if (paso.senal) await borrarSenales(p)
+        /* ⚠ LA VITRINA QUE PIDA EL PASO. Casi todos van con la llena; los que
+           enseñan una pantalla de PRIMERA VEZ —capital sin configurar, la ruta
+           que aún no existe— piden la de cero, porque ese estado no puede
+           convivir con un negocio que ya tiene préstamos. */
+        const pg = paso.vitrina === 'vacia' ? await vitrinaVacia() : p
+        await ir(direccionDe(paso), 6500, pg)
+        for (const t of (paso.toques ?? [])) { await tocar(t, pg); await quitarTemporales(pg) }
+        if (paso.senal) await senalar(pg, { ...paso.senal, numero: i + 1 })
+        await pg.screenshot({ path: `public/tutoriales/${archivo}` })
+        if (paso.senal) await borrarSenales(pg)
 
         /* Que el archivo exista no basta: una pantalla de error también se
            fotografía tan ricamente. */
-        const texto = await p.evaluate(() => document.body.innerText.slice(0, 220))
+        const texto = await pg.evaluate(() => document.body.innerText.slice(0, 220))
         const m = texto.match(/(no se encontr\w*|no encontrad\w*|algo salió mal|Error al \w+)/i)
         if (m) throw new Error(`la pantalla dice «${m[0]}»`)
       }

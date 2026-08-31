@@ -14,7 +14,31 @@
 // podía regenerar, aunque las imágenes viejas siguieran sirviendo. Por eso esto
 // vive en el repo, al lado del guion que lo necesita.
 //
-// ── QUÉ SIEMBRA ────────────────────────────────────────────────────────────
+// ── SON DOS VITRINAS ───────────────────────────────────────────────────────
+//
+//   · «Créditos La Esperanza» (`vitrina_org_tutoriales`) — la LLENA. La que
+//     siembra este guion, y de la que sale casi todo.
+//   · «Mi Negocio Nuevo» (`vitrina_org_vacia`) — la de CERO. No se siembra
+//     NUNCA: su valor es estar vacía.
+//
+// La segunda existe porque varias guías enseñan la pantalla de PRIMERA VEZ
+// —«Registrar capital inicial», «Crear primera ruta»— y ese estado no puede
+// convivir con un negocio que ya tiene préstamos: en cuanto hay un desembolso
+// el capital deja de estar sin configurar y el botón desaparece. Con una sola
+// vitrina esos pasos se quedaban sin captura, y encima los rótulos cambian con
+// el estado («Nueva ruta» vs «Crear primera ruta»).
+//
+// Un paso la pide con `vitrina: 'vacia'` en `pasos-tutoriales.mjs`.
+//
+// ⚠ SU COMPROBACIÓN VA AL REVÉS que la de la llena: a la llena se le exige que
+// sus clientes estén en la lista blanca; a la vacía, estar VACÍA. Si algún día
+// tuviera clientes, o la sesión apunta a otro sitio o alguien la usó para
+// trabajar — y en los dos casos fotografiarla publicaría datos de alguien.
+//
+// La de cero se crea con el mismo SQL de abajo cambiando los ids y el nombre;
+// no necesita nada más.
+//
+// ── QUÉ SIEMBRA (la llena) ─────────────────────────────────────────────────
 //
 // Lo mínimo para que las 34 guías tengan algo que fotografiar, sin más:
 //   · los 8 clientes de la lista blanca de `capturar-tutoriales.mjs`

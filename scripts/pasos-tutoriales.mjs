@@ -208,10 +208,14 @@ export const PASOS = [
 
   /* ── COBRO Y RUTAS ──────────────────────────────────────────────────── */
   { id: 'crear-ruta', pasos: [
-    { pie: 'Entra a «Rutas» y toca el botón de ruta nueva', en: '/rutas',
-      senal: { rotulo: 'Nueva ruta', texto: 'Una ruta es un cobrador y su recorrido' } },
+    /* ⚠ LA GUÍA ENTERA VA EN LA VITRINA DE CERO, que es su contexto: explica
+       cómo crear una ruta, y en la llena ya hay una. El rótulo también cambia
+       con el estado —«Crear primera ruta» cuando no hay ninguna— y el paso 2
+       fallaba buscando «Nueva ruta», que solo existe cuando ya tienes rutas. */
+    { pie: 'Entra a «Rutas» y toca el botón de ruta nueva', en: '/rutas', vitrina: 'vacia',
+      senal: { rotulo: 'Crear primera ruta', texto: 'Una ruta es un cobrador y su recorrido' } },
     { pie: 'Ponle nombre, elige quién la cobra y qué clientes lleva',
-      en: '/rutas', toques: ['Asignar'] },
+      en: '/rutas', vitrina: 'vacia', toques: ['Crear primera ruta'] },
   ] },
 
   { id: 'enrutar-desenrutar', pasos: [
@@ -264,8 +268,14 @@ export const PASOS = [
   { id: 'capital', pasos: [
     { pie: 'Entra a «Mi plata». Es el fondo del que sale todo', en: '/capital',
       senal: { rotulo: 'Registrar movimiento', texto: 'Meter o sacar plata' } },
+    /* ⚠ ESTE PASO VA EN LA VITRINA DE CERO. «Registrar capital inicial» solo
+       sale cuando el capital NO está configurado, y en cuanto hay un préstamo
+       el desembolso ya lo configura: en la vitrina llena ese botón no existe y
+       el paso se quedaba sin captura. Es exactamente la pantalla de primera
+       vez que la guía quiere enseñar. */
     { pie: 'Si es la primera vez, registra el capital con el que arrancaste',
-      en: '/capital', senal: { rotulo: 'Registrar capital inicial', texto: 'Sin esto el saldo sale negativo' } },
+      en: '/capital', vitrina: 'vacia',
+      senal: { rotulo: 'Registrar capital inicial', texto: 'Sin esto el saldo sale negativo' } },
   ] },
 
   { id: 'socios', pasos: [
