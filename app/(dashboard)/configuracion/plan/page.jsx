@@ -138,7 +138,6 @@ export default function PlanPage() {
   const esSuscripcion = gateway === 'wompi' && modoPago === 'suscripcion'
   const periodoEfectivo = esSuscripcion ? 'mensual' : periodo
   const [descuentoOrg, setDescuentoOrg] = useState(0)
-  const [showPlanes,   setShowPlanes]   = useState(false)
   const [pagando,      setPagando]      = useState(null)
   const [errorPago,    setErrorPago]    = useState(null)
 
@@ -446,9 +445,6 @@ export default function PlanPage() {
               )}
             </div>
 
-            {/* Con qué se cobra solo. Solo sale si hay medio guardado: entonces
-                es un dato del plan, no un cartel. */}
-            <MedioDePagoGuardado />
 
             <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--cf-ink)' }}>
               {subCancelada
@@ -478,129 +474,60 @@ export default function PlanPage() {
         )
       })()}
 
-      {/* ── Uso actual ── */}
-      {(() => {
-        const cfg = PLANES_CONFIG[planActual] || PLANES_CONFIG.starter
-        const u = uso || {
-          clientes:      { usado: 0, limite: cfg.maxClientes },
-          usuarios:      { usado: 0, limite: cfg.maxUsuarios },
-          rutas:         { usado: 0, limite: cfg.maxRutas },
-          lucasMensajes: { usado: 0, limite: cfg.aiMensajesDia },
-        }
-        return (
-          <div className="rounded-[20px] cf-card-shadow overflow-hidden" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-              Uso actual
-            </p>
-            <UsageBar label="Clientes"   usado={u.clientes.usado}      limite={u.clientes.limite} />
-            <UsageBar label="Usuarios"   usado={u.usuarios.usado}      limite={u.usuarios.limite} />
-            <UsageBar label="Rutas"      usado={u.rutas.usado}         limite={u.rutas.limite} />
-            {u.lucasMensajes.limite > 0 && (
-              <UsageBar label="Lucas IA (hoy)" usado={u.lucasMensajes.usado} limite={u.lucasMensajes.limite} />
-            )}
-          </div>
-        )
-      })()}
+      {/* ══ PAGAR ════════════════════════════════════════════════════════
+          ⚠ VA ARRIBA, ANTES DEL USO Y SIN NADA QUE DESPLEGAR.
+          «El pago es lo primordial, lo que más se tiene que ver, que la gente
+          no batalle para pagar el plan» — el dueño, 1 sep 2026. Estaba debajo
+          del uso y detrás de un «Cambiar de plan» que había que abrir: para
+          pagar tocaba deslizar y adivinar.
 
-      {/* ── CÓMO SE PAGA ──────────────────────────────────────────────────
-          ⚠ VIVE AQUÍ, FUERA DEL DESPLEGABLE DE PLANES, A PROPÓSITO.
-          El botón que más se pulsa es «Renovar mi plan», no el de la lista de
-          planes. Si el interruptor viviera solo dentro de «Cambiar de plan», la
-          mayoría renovaría sin enterarse de que existe la suscripción — que es
-          justo el agujero que esto viene a tapar.
+          ⚠ Y NO DICE «PAGO ÚNICO». «Esa opción parece como si solamente pagara
+          una vez y no tuviera que pagar más nada» — el mismo día. Los dos
+          rótulos dicen QUIÉN paga: se cobra solo, o pagas tú. */}
+      <div className="rounded-[20px] cf-card-shadow p-4 space-y-3" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
+          Pagar mi plan
+        </p>
 
-          Y condiciona al selector de período, que va debajo: la suscripción es
-          mensual y esconde el otro. */}
-      {gateway === 'wompi' && (
-        <div className="space-y-2">
-          <div className="flex justify-center">
-            <div className="inline-flex rounded-[12px] p-1" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
+        {gateway === 'wompi' && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { key: 'suscripcion', label: 'Suscripción' },
-                { key: 'unico', label: 'Pago único' },
-              ].map(m => (
-                <button
-                  key={m.key}
-                  onClick={() => setModoPago(m.key)}
-                  className="px-4 py-2 rounded-[8px] text-[12px] font-semibold transition-all whitespace-nowrap"
-                  style={modoPago === m.key
-                    ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
-                    : { color: 'var(--cf-ink-3)' }
-                  }
-                >
-                  {m.label}
-                </button>
-              ))}
+                { key: 'suscripcion', label: 'Se cobra solo', pie: 'No vuelves a entrar' },
+                { key: 'unico',       label: 'Pago yo',       pie: 'Cada vez que venza' },
+              ].map(m => {
+                const activo = modoPago === m.key
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => setModoPago(m.key)}
+                    className="rounded-[12px] px-3 py-2.5 text-left transition-all active:scale-[0.98]"
+                    style={activo
+                      ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', border: '1px solid var(--cf-gold)' }
+                      : { background: 'var(--cf-surface)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
+                  >
+                    <span className="block text-[13px] font-semibold">{m.label}</span>
+                    <span className="block text-[11px]" style={{ opacity: 0.75 }}>{m.pie}</span>
+                  </button>
+                )
+              })}
             </div>
-          </div>
-          <p className="text-center text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
-            {esSuscripcion
-              ? 'Se cobra solo cada mes con tu tarjeta o tu Nequi. Lo quitas cuando quieras.'
-              : 'Pagas una vez y ya. Cuando venza, vuelves a pagar a mano.'}
-          </p>
-        </div>
-      )}
-
-      {/* ── Renovar plan actual ── */}
-      {!esTrial && !showPlanes && (
-        <button
-          onClick={() => esSuscripcion
-            ? setSuscribiendo(planActual)
-            : gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
-          disabled={pagando === planActual}
-          className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
-        >
-          {pagando === planActual ? (
-            <Spinner />
-          ) : gateway === 'manual' ? (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          )}
-          {esSuscripcion ? 'Suscribirme' : 'Renovar mi plan'}
-        </button>
-      )}
-
-      {/* ── Cambiar plan / Cancel CTAs ── */}
-      <div className="space-y-2">
-        <button
-          onClick={() => setShowPlanes(v => !v)}
-          className="w-full h-10 rounded-[12px] text-[12px] font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-          style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}
-        >
-          {showPlanes ? 'Ocultar planes' : 'Cambiar de plan'}
-        </button>
-
-        {tieneRecurrente && !subCancelada && (
-          <button
-            onClick={cancelarPlanWA}
-            className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors"
-            style={{ color: 'var(--cf-red-dark)' }}
-          >
-            Cancelar suscripción
-          </button>
-        )}
-      </div>
-
-      {/* ── Plan selector (expandable) ── */}
-      {showPlanes && (
-        <div className="space-y-5 pt-2">
-          <div className="text-center">
-            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
-              Cambiar plan
-            </h2>
-            <p className="text-[12px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-              El cambio aplica inmediatamente.
+            <p className="text-[12px] leading-relaxed" style={{ color: 'var(--cf-ink-3)' }}>
+              {esSuscripcion
+                ? 'Cada mes se cobra solo a tu tarjeta o a tu Nequi, sin que hagas nada. Lo quitas cuando quieras.'
+                : 'El plan se sigue venciendo cada mes. Cada vez que se venza tienes que entrar aquí y pagarlo a mano.'}
             </p>
-          </div>
+          </>
+        )}
 
-          {/* Period toggle — elige cuanto tiempo activar */}
-          {!esSuscripcion && (
+        {/* ⚠ EL PERÍODO VIVE EN LA MISMA TARJETA QUE EL BOTÓN. Estaba abajo,
+            entre los planes, y decidía el precio del botón de arriba: se veía
+            cambiar la cifra por algo que no se veía.
+
+            Fuera del bloque de Wompi a propósito: en los países de MercadoPago
+            y en los de cobro a mano no hay suscripción, pero el trimestral y el
+            anual sí existen. */}
+        {!esSuscripcion && (
           <div className="flex justify-center">
             <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
               {[
@@ -628,7 +555,59 @@ export default function PlanPage() {
               ))}
             </div>
           </div>
-          )}
+        )}
+
+        {(() => {
+          /* El precio va EN el botón: el que paga tiene que ver cuánto sin
+             buscarlo en otra tarjeta. */
+          const { conDescuento } = calcularPrecio(infoPlan.precio)
+          return (
+            <button
+              onClick={() => esSuscripcion
+                ? setSuscribiendo(planActual)
+                : gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
+              disabled={pagando === planActual}
+              className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+              style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
+            >
+              {pagando === planActual ? (
+                <Spinner />
+              ) : gateway === 'manual' ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              )}
+              {esSuscripcion ? 'Suscribirme' : 'Pagar mi plan'}
+              <span className="font-normal font-mono-display" style={{ opacity: 0.8 }}>
+                · {formatMoney(conDescuento)}{esSuscripcion ? '/mes' : ''}
+              </span>
+            </button>
+          )
+        })()}
+
+        {/* Con qué se cobra solo. Solo sale si hay medio guardado: entonces es
+            un dato del pago, no un cartel. */}
+        <MedioDePagoGuardado />
+      </div>
+
+      {/* ── LOS PLANES, SIEMPRE A LA VISTA ────────────────────────────────
+          Estaban detrás de un «Cambiar de plan» que había que pulsar. Quien
+          quiere subir de plan es justo quien más quiere pagar: esconderle la
+          lista es cobrarle menos. */}
+      {(
+        <div className="space-y-5 pt-2">
+          <div className="text-center">
+            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
+              Cambiar de plan
+            </h2>
+            <p className="text-[12px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
+              El cambio aplica de una vez.
+            </p>
+          </div>
 
           {esSuperadmin && (
             <p className="text-[10px] text-center" style={{ color: 'var(--cf-ink-3)' }}>
@@ -771,6 +750,40 @@ export default function PlanPage() {
         }}>
           {errorPago}
         </div>
+      )}
+
+      {/* ── Uso actual ── */}
+      {(() => {
+        const cfg = PLANES_CONFIG[planActual] || PLANES_CONFIG.starter
+        const u = uso || {
+          clientes:      { usado: 0, limite: cfg.maxClientes },
+          usuarios:      { usado: 0, limite: cfg.maxUsuarios },
+          rutas:         { usado: 0, limite: cfg.maxRutas },
+          lucasMensajes: { usado: 0, limite: cfg.aiMensajesDia },
+        }
+        return (
+          <div className="rounded-[20px] cf-card-shadow overflow-hidden" style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] px-4 pt-4 pb-2 font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
+              Uso actual
+            </p>
+            <UsageBar label="Clientes"   usado={u.clientes.usado}      limite={u.clientes.limite} />
+            <UsageBar label="Usuarios"   usado={u.usuarios.usado}      limite={u.usuarios.limite} />
+            <UsageBar label="Rutas"      usado={u.rutas.usado}         limite={u.rutas.limite} />
+            {u.lucasMensajes.limite > 0 && (
+              <UsageBar label="Lucas IA (hoy)" usado={u.lucasMensajes.usado} limite={u.lucasMensajes.limite} />
+            )}
+          </div>
+        )
+      })()}
+
+      {tieneRecurrente && !subCancelada && (
+        <button
+          onClick={cancelarPlanWA}
+          className="w-full h-10 rounded-[12px] text-[12px] font-medium flex items-center justify-center gap-1 transition-colors"
+          style={{ color: 'var(--cf-red-dark)' }}
+        >
+          Cancelar suscripción
+        </button>
       )}
 
       {/* ── Support ── */}
