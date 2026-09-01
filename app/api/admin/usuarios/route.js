@@ -30,6 +30,23 @@ import { segmentarOrganizaciones, SELECT_ORG_SEGMENTO, SEGMENTOS } from '@/lib/a
 /** Los internos no son clientes: falsean todos los conteos. */
 const EMAILS_INTERNOS = ['keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com', 'controlfinanzasgmail@gmail.com']
 
+/* ⚠ FUERA DE LAS CUENTAS NO ES FUERA DEL BUSCADOR.
+ *
+ * «Mi cuenta personal está suspendida, pero no la encuentro en el panel de
+ *  superadmin para activarla.»                          — el dueño, 1 sep 2026
+ *
+ * Y el panel le contestaba «Nadie con eso · No encuentro ccaojd@gmail.com en
+ * nombre, dueño, correo ni teléfono» — con la cuenta existiendo y bloqueada por
+ * suscripción vencida. La exclusión de arriba se aplicaba a TODA la consulta,
+ * así que las cuentas de casa no entraban en los conteos (bien: falsearían el
+ * MRR) pero tampoco en la búsqueda (mal: es justo cuando hacen falta).
+ *
+ * Quien escribe un correo entero en el buscador ya sabe a quién busca. Los
+ * conteos, el MRR y las pastillas siguen saliendo SOLO de los clientes de
+ * verdad —se calculan antes y aparte, así que esto no puede moverlos—; lo único
+ * que cambia es que una búsqueda explícita también mira en casa, y lo que
+ * encuentra viene marcado con `esInterna`. */
+
 const ORDENES = {
   // Por defecto: los que más plata mueven arriba. Es a quien no puedes perder.
   valor:      (a, b) => b.precio - a.precio || b.clientes - a.clientes,
@@ -63,6 +80,8 @@ export async function GET(req) {
     select: SELECT_ORG_SEGMENTO,
   })
 
+  /* Los conteos salen de aquí y solo de aquí: de los clientes de verdad. Las
+     cuentas de casa se buscan aparte, más abajo, y nunca entran en esta suma. */
   const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgs)
 
   /* El buscador va sobre las fichas ya armadas y no sobre Prisma a propósito:
@@ -71,6 +90,18 @@ export async function GET(req) {
      escribirla dos veces. */
   let lista = fichas
   if (busqueda) {
+    /* Las de casa entran SOLO cuando se está buscando algo. Se traen aquí y no
+       arriba para que no puedan colarse en `mrr` ni en `porSegmento` ni por
+       accidente el día que alguien mueva una línea. */
+    const internas = await prisma.organization.findMany({
+      where: { users: { some: { email: { in: EMAILS_INTERNOS } } } },
+      select: SELECT_ORG_SEGMENTO,
+    })
+    lista = [
+      ...lista,
+      ...segmentarOrganizaciones(internas).fichas.map((f) => ({ ...f, esInterna: true })),
+    ]
+
     // El teléfono se compara solo con dígitos, y solo si escribió al menos
     // cuatro: con dos, «31» le sale media agenda.
     const digitos = busqueda.replace(/\D/g, '')

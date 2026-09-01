@@ -228,6 +228,11 @@ function ListaUsuarios() {
                       <Pastilla tono={segmentos.find((s) => s.id === u.segmento)?.tono ?? 'neutro'}>
                         {segmentos.find((s) => s.id === u.segmento)?.rotulo ?? u.segmento}
                       </Pastilla>
+                      {/* ⚠ MARCADA, porque no cuenta como cliente. Las cuentas de
+                          casa solo salen cuando se las busca, y quedan fuera del
+                          MRR y de las pastillas de arriba. Sin este rótulo, ver
+                          una aquí haría dudar de si los conteos la incluyen. */}
+                      {u.esInterna && <Pastilla tono="neutro">Cuenta de casa</Pastilla>}
                     </div>
                     <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>{u.ownerNombre || 'sin nombre'}</span>
                     <Telefono numero={u.ownerTelefono} chico />
