@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
+import MedioDePagoGuardado from '@/components/pagos/MedioDePagoGuardado'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -271,6 +272,13 @@ export default function PlanPage() {
           </div>
         </div>
       )}
+
+      {/* ── QUE SE COBRE SOLO ──────────────────────────────────────────
+          Va ARRIBA de los planes a propósito. Medido el 1 sep 2026: de los que
+          pagaron en julio volvió en agosto el 64 %, y 25 de los 59 que han
+          pagado alguna vez pagaron una sola vez. El problema no es que no
+          quieran pagar: es que hay que acordarse cada mes. */}
+      <MedioDePagoGuardado />
 
       {/* ── Retorno Wompi ── */}
       {wompiRetorno && (

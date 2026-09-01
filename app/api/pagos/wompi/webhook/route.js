@@ -6,7 +6,9 @@
 // que era imposible saber si funcionaba. Ahora cada camino se registra con el
 // prefijo [wompi-webhook], y si entra plata que no se puede activar, avisa.
 import { NextResponse } from 'next/server'
-import { validarFirmaEvento, consultarTransaccion } from '@/lib/wompi'
+/* ⚠ `leerReferencia` vive en `lib/wompi.js`, al lado de la que la ESCRIBE.
+   Tenerla aquí copiada es como se separan: ver el comentario largo de allí. */
+import { validarFirmaEvento, consultarTransaccion, leerReferencia } from '@/lib/wompi'
 import { activarPlanPagado } from '@/lib/activar-suscripcion'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { alertarPagoSinActivar, alertarPagoRevertido } from '@/lib/alertas-pago'
@@ -15,18 +17,6 @@ import { prisma } from '@/lib/prisma'
 // Estados a los que puede caer una transaccion que YA estaba aprobada: una
 // anulacion, un contracargo o una devolucion.
 const ESTADOS_REVERSION = new Set(['VOIDED', 'DECLINED', 'ERROR'])
-
-function parseReferencia(ref) {
-  if (!ref || !ref.startsWith('cf-')) return null
-  const partes = ref.split('-')
-  if (partes.length < 5) return null
-  const ts = partes[partes.length - 1]
-  const periodo = partes[partes.length - 2]
-  const plan = partes[partes.length - 3]
-  const orgId = partes.slice(1, partes.length - 3).join('-')
-  if (!orgId || !plan || !periodo) return null
-  return { orgId, plan, periodo, ts }
-}
 
 export async function POST(req) {
   const rl = webhookLimiter(getClientIp(req))
@@ -117,7 +107,7 @@ export async function POST(req) {
     return NextResponse.json({ ok: true })
   }
 
-  const parsed = parseReferencia(referencia)
+  const parsed = leerReferencia(referencia)
   if (!parsed) {
     // Pago APROBADO cuya referencia no sabemos a que organizacion pertenece:
     // entro plata y no hay a quien activarsela. Requiere humano.
@@ -142,6 +132,20 @@ export async function POST(req) {
       gatewayId:      txEvento.id,
       referencia,
     })
+    /* ⚠ EL CONTADOR DE FALLOS SE PONE A CERO AQUÍ, Y SOLO AQUÍ.
+     *
+     * El cobro recurrente cuenta rechazos y se para a los tres. Pero «Wompi
+     * aceptó la petición» no es «el dinero entró»: la transacción nace PENDING
+     * y puede acabar DECLINED. Si el cron pusiera el contador a cero al
+     * enviarla, tres cobros que luego se caen contarían como tres éxitos y el
+     * cliente se quedaría sin cobrar y sin que nadie lo note.
+     *
+     * Aquí ya sabemos que el pago está APROBADO. */
+    await prisma.organization.update({
+      where: { id: parsed.orgId },
+      data: { cobroFallos: 0 },
+    }).catch((e) => console.error('[wompi-webhook] no pude reiniciar cobroFallos:', e.message))
+
     if (r.yaProcesado) {
       console.log(`[wompi-webhook] tx ${txEvento.id} ya procesada, ignorando (org ${parsed.orgId})`)
     } else {

@@ -107,6 +107,32 @@ model Organization {
      nadie: el siguiente aviso que reciben es el de prueba vencida, semanas
      después. Esta marca es la del aviso que tapa ese hueco. */
   waPrimerCobroSent Boolean        @default(false)
+
+  /* ══ COBRO RECURRENTE (Wompi) ═══════════════════════════════════════════
+   *
+   * Medido el 1 sep 2026: de los que pagaron en julio volvió a pagar en agosto
+   * el 64 %, y de los 59 negocios que han pagado alguna vez, 25 pagaron UNA
+   * sola vez. De 653 suscripciones, 648 son `pago_unico` y hay UNA sola
+   * recurrente en todo el sistema. 83 de 117 pagos entraron a mano.
+   *
+   * O sea: cada mes hay que volver a venderle a cada cliente, y un prestamista
+   * ocupado no vuelve a entrar a pagar — simplemente deja de pagar.
+   *
+   * `wompiFuentePagoId` es el `payment_source_id` de Wompi: el permiso, dado
+   * una vez por el cliente, para cobrarle después sin que él esté delante.
+   * Sirve para TARJETA y para NEQUI, que es lo que este público sí tiene. */
+  wompiFuentePagoId Int?
+  /** Lo que se le enseña al cliente: «VISA ····4242» o «Nequi ···3001». */
+  wompiFuenteRotulo String?
+  /** 'CARD' | 'NEQUI'. */
+  wompiFuenteTipo   String?
+  /** El correo con el que se creó la fuente: Wompi lo exige en cada cobro. */
+  wompiFuenteEmail  String?
+  /** Se puede tener la fuente guardada y el cobro apagado (el cliente lo pide). */
+  cobroAutomatico   Boolean        @default(true)
+  /** Intentos fallidos seguidos. Se pone a cero en cuanto uno entra. */
+  cobroFallos       Int            @default(0)
+  cobroUltimoIntento DateTime?
   waPreVencSent     Boolean        @default(false)
   diasSinCobro      String?
 
