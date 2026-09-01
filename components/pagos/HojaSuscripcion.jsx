@@ -31,6 +31,60 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
   const [publicKey, setPublicKey] = useState(null)
   const [error, setError] = useState(null)
 
+  /* ── NEQUI: el camino que de verdad usan ────────────────────────────────
+     De las últimas doce suscripciones cobradas por Wompi, ocho fueron con
+     Nequi y una sola con tarjeta. Y el widget no cierra el círculo en
+     Colombia: el push llega y el token nunca vuelve. Así que Nequi va por su
+     propio camino, con API documentada, y el widget queda para la tarjeta. */
+  const [tel, setTel] = useState('')
+  const [paso, setPaso] = useState('form')   // form · esperando · listo
+  const [rotulo, setRotulo] = useState('')
+  const sondeo = useRef(null)
+
+  useEffect(() => () => clearInterval(sondeo.current), [])
+
+  const pedirNequi = async () => {
+    setError(null)
+    const digitos = tel.replace(/\D/g, '').slice(-10)
+    if (digitos.length !== 10) { setError('El número de Nequi son diez dígitos.'); return }
+    setPaso('esperando')
+    try {
+      const r = await fetch('/api/pagos/wompi/nequi', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefono: digitos }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'No se pudo pedir la autorización')
+
+      /* Se pregunta cada cuatro segundos hasta que apruebe en su app. Wompi
+         caduca el token si no lo toca, así que a los tres minutos se para de
+         preguntar en vez de dejar el móvil girando para siempre. */
+      const hasta = Date.now() + 3 * 60000
+      sondeo.current = setInterval(async () => {
+        try {
+          const q = await fetch(`/api/pagos/wompi/nequi?token=${encodeURIComponent(d.tokenId)}`)
+          const e = await q.json()
+          if (e.guardado) {
+            clearInterval(sondeo.current)
+            setRotulo(e.rotulo || 'Nequi')
+            setPaso('listo')
+          } else if (e.estado === 'DECLINED' || e.estado === 'VOIDED') {
+            clearInterval(sondeo.current)
+            setPaso('form')
+            setError('No se autorizó desde Nequi. Puedes intentarlo otra vez.')
+          } else if (Date.now() > hasta) {
+            clearInterval(sondeo.current)
+            setPaso('form')
+            setError('Se pasó el tiempo de espera. Vuelve a intentarlo y acepta la notificación de Nequi.')
+          }
+        } catch { /* un fallo de red suelto no rompe la espera */ }
+      }, 4000)
+    } catch (e) {
+      setPaso('form')
+      setError(e.message)
+    }
+  }
+
   useEffect(() => {
     let vivo = true
     fetch('/api/pagos/wompi/fuente')
@@ -147,7 +201,7 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
           {[
             'Se cobra solo cada mes. No tienes que volver a entrar a pagar.',
             'Lo quitas cuando quieras, desde esta misma pantalla.',
-            'Los datos de tu tarjeta los guarda Wompi, no nosotros.',
+            'Tus datos los guarda Wompi, la pasarela. Nosotros no los vemos.',
           ].map((t) => (
             <li key={t} className="flex items-start gap-2 text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
               <svg className="w-4 h-4 shrink-0 mt-[1px]" fill="none" stroke="var(--cf-green-dark)" strokeWidth={2} viewBox="0 0 24 24">
@@ -167,26 +221,86 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
           </p>
         ) : (
           <>
-            {/* ⚠ El `plan` viaja en un campo oculto DENTRO del form del widget:
-                es lo único que le dice al receptor a qué plan pertenece el medio
-                que se acaba de guardar. */}
-            <form ref={formRef} action="/api/pagos/wompi/token" method="POST" className="flex justify-center">
-              <input type="hidden" name="plan" value={plan} />
-            </form>
-            {!publicKey && (
-              <p className="text-[12px] text-center" style={{ color: 'var(--cf-ink-3)' }}>Cargando…</p>
+            {paso === 'listo' ? (
+              <div className="rounded-[12px] px-3 py-3 text-center" style={{
+                background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, transparent)',
+              }}>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
+                  Listo, quedó guardado {rotulo}
+                </p>
+                <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                  Cada mes se cobra solo. Lo puedes quitar cuando quieras desde esta pantalla.
+                </p>
+                <button type="button" onClick={onCerrar}
+                  className="mt-2 h-9 px-4 rounded-[12px] text-[12px] font-bold"
+                  style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+                  Cerrar
+                </button>
+              </div>
+            ) : paso === 'esperando' ? (
+              <div className="rounded-[12px] px-3 py-3 text-center" style={{ background: 'var(--cf-fill)' }}>
+                <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
+                  Te llegó una notificación a Nequi
+                </p>
+                <p className="text-[12px] mt-1 leading-relaxed" style={{ color: 'var(--cf-ink-2)' }}>
+                  Ábrela y acepta para que quede guardado. Aquí me entero solo, no cierres esta ventana.
+                </p>
+                <p className="text-[11px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>Esperando tu confirmación…</p>
+              </div>
+            ) : (
+              <>
+                {/* ⚠ NEQUI PRIMERO, Y NO POR GUSTO: ocho de las últimas doce
+                    suscripciones se cobraron por ahí. La tarjeta va debajo. */}
+                <label className="block text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+                  Tu número de Nequi
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      value={tel}
+                      onChange={(e) => setTel(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="3001234567"
+                      className="flex-1 h-11 rounded-[12px] px-3 text-[15px]"
+                      style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }}
+                    />
+                    <button type="button" onClick={pedirNequi}
+                      className="h-11 px-4 rounded-[12px] text-[13px] font-bold whitespace-nowrap"
+                      style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+                      Guardar
+                    </button>
+                  </div>
+                </label>
+                <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                  Te llega una notificación a tu app de Nequi para que la autorices. No se cobra nada ahora.
+                </p>
+
+                {/* ⚠ EL WIDGET DE TARJETA SE QUEDA, PERO NO SE DEPENDE DE ÉL: en
+                    modo tokenización no devuelve el token en Colombia. Si algún
+                    día deja de pintar el botón, no se pierde nada. */}
+                <div className="pt-1" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+                  <p className="text-[11px] mt-2 mb-1" style={{ color: 'var(--cf-ink-3)' }}>O con tarjeta:</p>
+                  <form ref={formRef} action="/api/pagos/wompi/token" method="POST" className="flex justify-center">
+                    <input type="hidden" name="plan" value={plan} />
+                  </form>
+                  {!publicKey && (
+                    <p className="text-[12px] text-center" style={{ color: 'var(--cf-ink-3)' }}>Cargando…</p>
+                  )}
+                </div>
+              </>
             )}
           </>
         )}
 
-        <button
-          type="button"
-          onClick={onPagoUnico}
-          className="w-full h-10 rounded-[12px] text-[12px] font-medium"
-          style={{ color: 'var(--cf-ink-3)' }}
-        >
-          Prefiero pagar una sola vez
-        </button>
+        {paso === 'form' && (
+          <button
+            type="button"
+            onClick={onPagoUnico}
+            className="w-full h-10 rounded-[12px] text-[12px] font-medium"
+            style={{ color: 'var(--cf-ink-3)' }}
+          >
+            Prefiero pagar una sola vez
+          </button>
+        )}
       </div>
     </div>
   )
