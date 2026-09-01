@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
+import { ventanaAbierta } from '@/lib/bot/telefono'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -93,16 +94,11 @@ export async function POST(req) {
     const msg = construirMensaje(nombre, prestamos, clientes, diasVencido)
 
     try {
-      const botLead = await prisma.botLead.findUnique({ where: { telefono: owner.telefono } })
-      let ventana = false
-      if (botLead) {
-        const ultimo = await prisma.botConversacion.findFirst({
-          where: { botLeadId: botLead.id, rol: 'lead' },
-          orderBy: { createdAt: 'desc' },
-          select: { createdAt: true },
-        })
-        ventana = ultimo && Date.now() - new Date(ultimo.createdAt).getTime() < 24 * 3600000
-      }
+      /* ⚠ Mismo fallo que en el cron de onboarding: `owner.telefono` tiene diez
+         dígitos y `BotLead.telefono` doce, así que la búsqueda por igualdad no
+         encontraba nunca el lead y esto mandaba plantilla de pago aunque la
+         ventana gratuita estuviera abierta. */
+      const ventana = await ventanaAbierta(owner.telefono)
 
       if (ventana) {
         await wa.sendText(owner.telefono, msg)

@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { ventanaAbierta } from '@/lib/bot/telefono'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE_ONBOARDING = 'onboarding_seguimiento'
@@ -40,16 +41,12 @@ function mismoDia(d1, d2) {
 }
 
 async function enviarWA(telefono, texto, nombre) {
-  const botLead = await prisma.botLead.findUnique({ where: { telefono } })
-  let ventana = false
-  if (botLead) {
-    const ultimo = await prisma.botConversacion.findFirst({
-      where: { botLeadId: botLead.id, rol: 'lead' },
-      orderBy: { createdAt: 'desc' },
-      select: { createdAt: true },
-    })
-    ventana = ultimo && Date.now() - new Date(ultimo.createdAt).getTime() < 24 * 3600000
-  }
+  /* ⚠ `owner.telefono` trae diez dígitos y el lead doce, así que el
+     `findUnique` por igualdad que había aquí devolvía `null` SIEMPRE. La
+     ventana salía cerrada aunque estuviera abierta y esto mandaba una plantilla
+     de marketing —que se paga y que Meta limita con el 131049— en vez del texto
+     libre, que es gratis. `ventanaAbierta` cruza por los últimos diez. */
+  const ventana = await ventanaAbierta(telefono)
   if (ventana) {
     await wa.sendText(telefono, texto)
   } else {

@@ -8,8 +8,10 @@ import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit
 import { DIAS_PRUEBA } from '@/lib/planes'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
-import { sendTemplate } from '@/lib/bot/whatsapp-cloud'
+import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
+import { buscarLeads, ventanaAbierta } from '@/lib/bot/telefono'
+import { mensajeBienvenida, BOTONES_CARTERA } from '@/lib/bot/cartera-post-registro'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -234,16 +236,58 @@ export async function POST(req) {
       }).catch(e => console.error('[Registro] Fallo vincular lead FB:', e.message))
     }
 
-    // Vincular BotLead (WhatsApp) por teléfono → marcar como convertido + detectar fuente
-    prisma.botLead.findMany({
-      where: { telefono: telefonoLimpio, organizationId: null },
-      select: { id: true },
-    }).then(async (botLeads) => {
-      await prisma.botLead.updateMany({
-        where: { telefono: telefonoLimpio, organizationId: null },
-        data: { organizationId: resultado.org.id, estado: 'registrado' },
-      })
+    /* Vincular BotLead (WhatsApp) por teléfono → marcar como convertido + fuente.
+     *
+     * ⚠ POR LOS ÚLTIMOS DIEZ DÍGITOS, NUNCA POR IGUALDAD. Aquí se comparaba
+     * `telefono: telefonoLimpio` —diez dígitos, como los escribe el usuario—
+     * contra `BotLead.telefono`, que viene de WhatsApp con indicativo y tiene
+     * doce. Medido el 1 sep 2026: de los 220 leads enlazados, CERO coinciden en
+     * texto exacto con su usuario. Este bloque no enlazó a nadie nunca.
+     *
+     * Los enlaces que sí existen los hacía `verificarRegistro()` cuando la
+     * persona volvía a escribirle al bot — y 195 no volvieron. Por eso el bot le
+     * seguía mandando el link de registro a quien ya se había registrado. */
+    buscarLeads(telefonoLimpio, { organizationId: null }).then(async (botLeads) => {
+      if (botLeads.length) {
+        await prisma.botLead.updateMany({
+          where: { id: { in: botLeads.map(b => b.id) } },
+          data: { organizationId: resultado.org.id, estado: 'registrado' },
+        })
+      }
       for (const bl of botLeads) notificarEstadoLead(bl.id, 'converted').catch(() => {})
+
+      /* ══ EL BOT DEJA DE VENDER Y EMPIEZA A ACOMPAÑAR ══════════════════════
+       *
+       * Medido el 1 sep 2026: de las 475 organizaciones creadas desde junio,
+       * 201 nunca cargaron un cliente y 189 se quedaron entre uno y cinco. El
+       * 82 % no pasa del quinto. Y de todas las personas que han escrito al bot
+       * desde julio, DOS preguntaron cómo pasar sus clientes: nadie pide ayuda
+       * con algo que todavía no sabe que le va a costar.
+       *
+       * Por eso se ofrece aquí, sin que la pidan, en el minuto en que la cuenta
+       * nace — que además es cuando la persona todavía tiene el teléfono en la
+       * mano.
+       *
+       * ⚠ SOLO DENTRO DE LA VENTANA DE 24 h. Fuera de ella esto costaría una
+       * plantilla de marketing por cada registro, que es justo el gasto que se
+       * está tratando de bajar. Quien llega desde un anuncio de WhatsApp acaba
+       * de escribir, así que la ventana está abierta y el mensaje es gratis; a
+       * quien no, ya le escribe el cron de onboarding al día siguiente. */
+      if (botLeads.length) {
+        try {
+          if (await ventanaAbierta(telefonoLimpio)) {
+            const lead = botLeads[0]
+            const texto = mensajeBienvenida(String(nombre || '').trim().split(/\s+/)[0] || '')
+            const envio = await sendButtons(lead.telefono, texto, BOTONES_CARTERA)
+            await prisma.botConversacion.create({
+              data: { botLeadId: lead.id, rol: 'bot', texto, tipoMensaje: 'chat', wamid: wamidDe(envio) },
+            }).catch(() => {})
+            console.log(`[Registro] cartera ofrecida por WhatsApp a la org ${resultado.org.id}`)
+          }
+        } catch (e) {
+          console.error('[Registro] no pude ofrecer la carga de cartera:', e.message)
+        }
+      }
 
       let fuente = null
       if (leadAsociado) {

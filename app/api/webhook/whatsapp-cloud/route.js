@@ -17,6 +17,7 @@ import * as wa from '@/lib/bot/whatsapp-cloud'
 import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
+import { esBotonDeCartera, respuestaDeBoton } from '@/lib/bot/cartera-post-registro'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
@@ -454,6 +455,9 @@ async function guardarEntranteAtomico(data) {
 async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   let texto = ''
   let tipoMensaje = 'chat'
+  /* Qué botón pulsó, si pulsó alguno. Sin esto un botón llega como un mensaje
+     vacío: `msg.text` no existe en los mensajes interactivos. */
+  let botonId = null
   let imagenBase64 = null
   let imagenMime = null
   // Campos de media a persistir (ruta en disco) para verlos luego en el panel.
@@ -461,6 +465,17 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   if (tipo === 'text') {
     texto = msg.text?.body || ''
+  } else if (tipo === 'interactive') {
+    /* ⚠ UN BOTÓN NO VIENE EN `text.body`. Llega en
+       `interactive.button_reply` (o `list_reply` en las listas), y hasta hoy
+       este webhook no lo miraba: el mensaje se guardaba vacío y el bot se
+       quedaba callado justo con la persona que había hecho el gesto más claro
+       de todos. El título se usa como texto porque es, literalmente, lo que la
+       persona dijo. */
+    const pulsado = wa.botonPulsado(msg)
+    const deLista = msg.interactive?.list_reply
+    botonId = pulsado?.id || (deLista?.id ? String(deLista.id) : null)
+    texto = pulsado?.titulo || deLista?.title || ''
   } else if (tipo === 'audio') {
     tipoMensaje = 'audio'
     const dl = await wa.downloadMedia(msg.audio?.id)
@@ -503,6 +518,36 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
 
   // Marcar leido (no critico)
   wa.markRead(messageId).catch(() => {})
+
+  /* ⚠ EL CAMINO CONOCIDO SE CONTESTA SOLO, SIN MODELO NI ESPERA.
+     Los botones del momento post-registro tienen respuesta fija: no hay nada
+     que interpretar, así que ni se llama al modelo ni se aguantan los cinco
+     segundos del debounce. El modelo sigue atendiendo todo lo que sea texto
+     libre. */
+  if (botonId && esBotonDeCartera(botonId)) {
+    const r = respuestaDeBoton(botonId)
+    try {
+      const envio = await wa.sendText(lead.telefono, r.texto)
+      await prisma.botConversacion.create({
+        data: { botLeadId: lead.id, rol: 'bot', texto: r.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+      }).catch(() => {})
+    } catch (e) {
+      console.error('[WA Cloud] no pude contestar el botón:', e.message)
+    }
+    if (r.avisar) {
+      /* «Necesito ayuda» es de los que más pagan: quien escribe «no pude» se
+         registra en el 44 % de los casos y paga en el 10 %. No se le da un
+         teléfono, se avisa a un humano por el mismo camino de los leads
+         calientes. */
+      await alertarLeadCaliente(lead, 'pidió ayuda con la cartera tras registrarse', [])
+        .catch(e => console.error('[WA Cloud] no pude avisar:', e.message))
+      await prisma.botLead.update({
+        where: { id: lead.id }, data: { alertado: true, alertadoEn: new Date() },
+      }).catch(() => {})
+    }
+    console.log(`[WA Cloud] botón ${botonId} de ${lead.nombre} — contestado sin modelo`)
+    return
+  }
 
   if (botApagado) {
     console.log(`[WA Cloud] Lead ${lead.nombre} con bot apagado — mensaje guardado.`)
