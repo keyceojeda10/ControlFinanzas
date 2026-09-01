@@ -565,7 +565,12 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   if (botonId && esBotonDeCartera(botonId)) {
     const r = respuestaDeBoton(botonId)
     try {
-      const envio = await wa.sendText(lead.telefono, r.texto)
+      /* ⚠ CON SUS BOTONES. Ninguna rama puede morir en un mensaje suelto:
+         quien acaba de registrarse y se queda sin a dónde seguir es justo el
+         lead que se pierde en los próximos días. */
+      const envio = r.botones?.length
+        ? await wa.sendButtons(lead.telefono, r.texto, r.botones)
+        : await wa.sendText(lead.telefono, r.texto)
       await prisma.botConversacion.create({
         data: { botLeadId: lead.id, rol: 'bot', texto: r.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
       }).catch(() => {})

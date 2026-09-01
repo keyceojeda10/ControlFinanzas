@@ -63,7 +63,7 @@ export async function POST(req) {
   if (botonId && esBotonDeCartera(botonId)) {
     const r = respuestaDeCartera(botonId)
     return NextResponse.json({
-      respuestas: [{ texto: r.texto, botones: [] }],
+      respuestas: [{ texto: r.texto, botones: r.botones ?? [] }],
       via: 'post-registro',
       aviso: r.avisar ? 'se avisaría a un humano' : null,
     })
