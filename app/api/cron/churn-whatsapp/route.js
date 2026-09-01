@@ -9,6 +9,23 @@ import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
+/* ⚠ UNA VEZ POR CICLO, NO UNA VEZ EN LA VIDA.
+ *
+ * `waPreVencSent` y `waChurnSent` eran booleanos: quien gastaba el aviso no lo
+ * volvía a recibir NUNCA, aunque renovara y volviera a vencer. Se resetean al
+ * pagar (`activarPlanPagado`), pero con un booleano no hay forma de saber si el
+ * `true` que ves es de este vencimiento o de uno de hace tres meses.
+ *
+ * Medido el 1 sep 2026: 28 organizaciones lo tenían gastado, y **5 de las 12
+ * que vencían esa semana estaban silenciadas** — una de ellas venciendo ese
+ * mismo día. Y el desequilibrio que lo delata: en cinco días salió UN aviso de
+ * «vas a vencer» y VEINTIDÓS de «ya venciste». Estábamos avisando tarde.
+ *
+ * Ahora manda la fecha. Veinte días de enfriamiento: no repite dentro del mismo
+ * ciclo mensual y sí deja avisar en el siguiente. Los booleanos se siguen
+ * escribiendo porque el panel de retención los pinta. */
+const DIAS_ENFRIAMIENTO = 20
+
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE_PREVENC = 'plan_por_vencer_v2'
 const TEMPLATE_VENCIDO = 'plan_vencido_v2'
@@ -34,6 +51,12 @@ export async function POST(req) {
   const ahora = new Date()
   const en3d = new Date(ahora.getTime() + 3 * 86400000)
   const hace7d = new Date(ahora.getTime() - 7 * 86400000)
+  const desdeAviso = new Date(ahora.getTime() - DIAS_ENFRIAMIENTO * 86400000)
+  /* Una fecha `null` es «nunca avisado con el sistema nuevo»: entra. Es lo que
+     desbloquea a los que quedaron colgados con el booleano en `true`. */
+  const puedeRecibir = (campo) => ({
+    OR: [{ [campo]: null }, { [campo]: { lt: desdeAviso } }],
+  })
   const res = {
     preVenc: { candidatos: 0, enviados: 0, sinTelefono: 0, errores: 0 },
     vencido: { candidatos: 0, enviados: 0, sinTelefono: 0, errores: 0 },
@@ -46,7 +69,7 @@ export async function POST(req) {
     const orgsPre = await prisma.organization.findMany({
       where: {
         activo: true,
-        waPreVencSent: false,
+        ...puedeRecibir('waPreVencSentAt'),
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
@@ -87,7 +110,7 @@ export async function POST(req) {
 
         await prisma.organization.update({
           where: { id: org.id },
-          data: { waPreVencSent: true },
+          data: { waPreVencSent: true, waPreVencSentAt: ahora },
         })
         res.preVenc.enviados++
         console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d`)
@@ -103,7 +126,7 @@ export async function POST(req) {
     const orgsVenc = await prisma.organization.findMany({
       where: {
         activo: true,
-        waChurnSent: false,
+        ...puedeRecibir('waChurnSentAt'),
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
@@ -139,7 +162,7 @@ export async function POST(req) {
 
         await prisma.organization.update({
           where: { id: org.id },
-          data: { waChurnSent: true },
+          data: { waChurnSent: true, waChurnSentAt: ahora },
         })
         res.vencido.enviados++
         console.log(`[Churn WA] Vencido enviado a ${owner.nombre} (${org.nombre})`)

@@ -134,6 +134,15 @@ model Organization {
   cobroFallos       Int            @default(0)
   cobroUltimoIntento DateTime?
   waPreVencSent     Boolean        @default(false)
+  /* ⚠ LA FECHA MANDA, EL BOOLEANO SOLO INFORMA.
+     `waPreVencSent`/`waChurnSent` eran de una sola vez EN LA VIDA: quien
+     gastaba el aviso no volvía a recibirlo nunca, aunque renovara y volviera a
+     vencer. Medido el 1 sep 2026: 28 organizaciones lo habían gastado y 5 de
+     las 12 que vencían esa semana estaban silenciadas, una de ellas venciendo
+     ese mismo día. Con la fecha se puede avisar una vez POR CICLO. Los
+     booleanos se quedan porque el panel de retención los pinta. */
+  waPreVencSentAt   DateTime?
+  waChurnSentAt     DateTime?
   diasSinCobro      String?
 
   // ── «Cómo prestas por defecto» (Configuración) ──
