@@ -501,7 +501,7 @@ export default function PlanPage() {
                   <button
                     key={m.key}
                     onClick={() => setModoPago(m.key)}
-                    className="rounded-[12px] px-3 py-2.5 text-left transition-all active:scale-[0.98]"
+                    className="rounded-[12px] px-3 py-2.5 text-left transition-[background-color,color,border-color] duration-150 active:opacity-90"
                     style={activo
                       ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', border: '1px solid var(--cf-gold)' }
                       : { background: 'var(--cf-surface)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
@@ -538,7 +538,7 @@ export default function PlanPage() {
                 <button
                   key={p.key}
                   onClick={() => setPeriodo(p.key)}
-                  className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
+                  className="px-3 py-2 rounded-[8px] text-[12px] font-semibold transition-[background-color,color,border-color,transform] duration-150 flex items-center gap-1 whitespace-nowrap"
                   style={periodo === p.key
                     ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
                     : { color: 'var(--cf-ink-3)' }
@@ -561,13 +561,30 @@ export default function PlanPage() {
           /* El precio va EN el botón: el que paga tiene que ver cuánto sin
              buscarlo en otra tarjeta. */
           const { conDescuento } = calcularPrecio(infoPlan.precio)
+          /* ⚠ NI `transition-all` NI `active:scale` EN UN BOTÓN CUYO TEXTO
+             CAMBIA. Reportado con capturas el 1 sep 2026 desde un iPhone:
+             al cambiar de modo salía «Suscribirme in · $259.000» y «S
+             Pagar mi pla $259.000/mes» — los dos rótulos pintados uno
+             encima del otro.
+
+             `scale` obliga a WebKit a componer el botón en su propia capa,
+             y al cambiar el texto no la invalida: repinta el nuevo encima
+             del viejo. Tres cosas lo cierran, y ninguna cuesta nada:
+             enumerar las propiedades que transicionan, hundir el `scale`
+             a `opacity` —que no compone—, y un `key` que hace que React
+             tire el elemento entero y lo cree de nuevo.
+
+             ⚠ NO PUDE COMPROBARLO AQUÍ: WebKit no arranca en esta máquina
+             (le faltan librerías del sistema). Si el artefacto vuelve,
+             este comentario es el punto de partida, no el final. */
           return (
             <button
+              key={`pagar-${modoPago}-${periodoEfectivo}`}
               onClick={() => esSuscripcion
                 ? setSuscribiendo(planActual)
                 : gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
               disabled={pagando === planActual}
-              className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+              className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-[background-color,color,opacity] duration-150 active:opacity-90 disabled:opacity-60"
               style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
             >
               {pagando === planActual ? (
@@ -627,7 +644,7 @@ export default function PlanPage() {
               return (
                 <div
                   key={p.key}
-                  className="rounded-[12px] p-4 transition-all"
+                  className="rounded-[12px] p-4 transition-[background-color,color,border-color,transform] duration-150"
                   style={{
                     background: esActual ? 'color-mix(in srgb, var(--cf-gold) 4%, transparent)' : 'var(--cf-card)',
                     border: esActual
@@ -702,7 +719,7 @@ export default function PlanPage() {
                   ) : gateway === 'manual' ? (
                     <button
                       onClick={() => activarPlanWA(p.key)}
-                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-[background-color,color,border-color,transform] duration-150 active:scale-[0.98] flex items-center justify-center gap-1.5"
                       style={{ background: '#25D366', color: '#fff' }}
                     >
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -712,9 +729,10 @@ export default function PlanPage() {
                     </button>
                   ) : (
                     <button
+                      key={`plan-${p.key}-${modoPago}-${periodoEfectivo}`}
                       onClick={() => esSuscripcion ? setSuscribiendo(p.key) : activarPlanOnline(p.key)}
                       disabled={pagando === p.key}
-                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-60"
+                      className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-[background-color,color,opacity] duration-150 active:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-60"
                       style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
                     >
                       {pagando === p.key ? (
