@@ -18,10 +18,7 @@ import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { esBotonDeCartera, respuestaDeBoton } from '@/lib/bot/cartera-post-registro'
-import {
-  esDeAnuncio, esBotonDelFlujo, respuestaDeBoton as respuestaDeAnuncio,
-  saludoDeAnuncio, pareceAtascado, respuestaAtasco, datosDeConfianza,
-} from '@/lib/bot/flujo-anuncio'
+import { esDeAnuncio, decidirDesdeAnuncio } from '@/lib/bot/flujo-anuncio'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
@@ -781,25 +778,20 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
  * que dice, y la señal de atasco. Cualquier otra cosa es texto libre y la
  * atiende el modelo como siempre. */
 async function atenderDesdeAnuncio(lead, { botonId, texto }) {
-  let salida = null
-  let motivoAviso = null
+  /* ¿Es lo primero que le decimos? Se mira si el BOT ya habló, no si el lead
+     escribió: puede haber mandado tres mensajes seguidos antes de que
+     contestáramos. */
+  const yaHablamos = botonId ? 1 : await prisma.botConversacion.count({
+    where: { botLeadId: lead.id, rol: 'bot' },
+  })
 
-  if (botonId && esBotonDelFlujo(botonId)) {
-    const confianza = botonId === 'cf_confiable' ? await datosDeConfianza() : null
-    salida = respuestaDeAnuncio(botonId, { confianza })
-  } else if (!botonId) {
-    /* ¿Es lo primero que le decimos? Se mira si el bot ya habló, no si el lead
-       escribió: puede haber mandado tres mensajes seguidos antes de que
-       contestáramos. */
-    const yaHablamos = await prisma.botConversacion.count({
-      where: { botLeadId: lead.id, rol: 'bot' },
-    })
-    if (yaHablamos === 0) salida = saludoDeAnuncio()
-    else if (pareceAtascado(texto)) salida = respuestaAtasco()
-  }
-
+  /* ⚠ La decisión vive en `lib/bot/flujo-anuncio.js`, no aquí. Es la misma
+     función que ejecuta el simulador del panel: si el guion se decidiera en
+     este fichero, el simulador probaría una copia y ajustaríamos contra algo
+     que no es lo que sale por WhatsApp. */
+  const salida = await decidirDesdeAnuncio({ botonId, texto, yaHablamos })
   if (!salida) return false
-  motivoAviso = salida.avisar || null
+  const motivoAviso = salida.avisar || null
 
   try {
     const envio = salida.botones?.length

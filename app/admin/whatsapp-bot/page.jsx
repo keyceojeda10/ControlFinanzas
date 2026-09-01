@@ -170,6 +170,14 @@ export default function WhatsAppBotDashboard() {
         >
           {enviando ? 'Enviando...' : 'Ejecutar seguimientos'}
         </button>
+        {/* Escribirle al bot sin gastar un mensaje: la única forma de ajustar
+            un guion es leer lo que contesta y volver a probar. */}
+        <Link
+          href="/admin/whatsapp-bot/simulador"
+          className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(212,160,23,0.14)] text-[var(--cf-gold-dark)] hover:bg-[rgba(212,160,23,0.24)] transition-all"
+        >
+          Simulador
+        </Link>
         <Link
           href="/admin/whatsapp-bot/config"
           className="px-4 py-2 rounded-[10px] text-sm font-medium bg-[rgba(136,136,136,0.12)] text-[var(--cf-ink-3)] hover:bg-[rgba(136,136,136,0.2)] transition-all"
