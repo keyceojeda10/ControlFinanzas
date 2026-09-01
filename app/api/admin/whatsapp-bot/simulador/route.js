@@ -71,7 +71,7 @@ export async function POST(req) {
 
   /* ── El bot de los anuncios ─────────────────────────────────────────────── */
   if (modo === 'anuncio') {
-    const salida = await decidirDesdeAnuncio({ botonId, texto, yaHablamos })
+    const salida = await decidirDesdeAnuncio({ botonId, texto, yaHablamos, registrado })
     if (salida) {
       return NextResponse.json({
         respuestas: [{ texto: salida.texto, botones: salida.botones ?? [] }],

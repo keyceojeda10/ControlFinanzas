@@ -794,7 +794,11 @@ async function atenderDesdeAnuncio(lead, { botonId, texto }) {
      función que ejecuta el simulador del panel: si el guion se decidiera en
      este fichero, el simulador probaría una copia y ajustaríamos contra algo
      que no es lo que sale por WhatsApp. */
-  const salida = await decidirDesdeAnuncio({ botonId, texto, yaHablamos })
+  /* Si el lead ya tiene organización, está DENTRO: el precio se le contesta
+     con el link de pago, no con la prueba que ya tiene. */
+  const salida = await decidirDesdeAnuncio({
+    botonId, texto, yaHablamos, registrado: Boolean(lead.organizationId),
+  })
   if (!salida) return false
   const motivoAviso = salida.avisar || null
 
