@@ -58,7 +58,18 @@ const nextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(self)' },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://connect.facebook.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http://localhost capacitor://localhost https://api.groq.com https://api.mercadopago.com https://events.mercadopago.com https://http2.mlstatic.com https://www.facebook.com; frame-src https://sdk.mercadopago.com https://www.mercadopago.com.co https://www.youtube.com; object-src 'none'; base-uri 'self'" },
+          /* ⚠ WOMPI ESTABA FUERA DE LA LISTA, Y ESO ESCONDÍA UN BOTÓN ENTERO.
+           *
+           * El checkout de Wompi funcionaba —es un formulario que NAVEGA a su
+           * dominio, y eso no lo limita `script-src`— pero el widget que guarda
+           * el medio de pago es un `<script>` de `checkout.wompi.co` y un
+           * `<iframe>` suyo. Sin estar en `script-src` y `frame-src`, el
+           * navegador los bloquea EN SILENCIO: la tarjeta se pintaba y el botón
+           * no aparecía nunca.
+           *
+           * Reportado así por el dueño: «no veo ningún botón, solamente un
+           * aviso que dice lo de la suscripción». */
+          { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://connect.facebook.net https://checkout.wompi.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' http://localhost capacitor://localhost https://api.groq.com https://api.mercadopago.com https://events.mercadopago.com https://http2.mlstatic.com https://www.facebook.com https://checkout.wompi.co https://production.wompi.co; frame-src https://sdk.mercadopago.com https://www.mercadopago.com.co https://www.youtube.com https://checkout.wompi.co; object-src 'none'; base-uri 'self'" },
         ],
       },
     ]

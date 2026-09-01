@@ -1,29 +1,23 @@
 'use client'
-// components/pagos/MedioDePagoGuardado.jsx — «que se cobre solo».
+// components/pagos/MedioDePagoGuardado.jsx — con qué se cobra el plan solo.
 //
-// ══ POR QUÉ ════════════════════════════════════════════════════════════════
+// ⚠ ESTO NO ES UN AVISO, ES UN DATO DEL PLAN.
 //
-// Medido el 1 sep 2026: de los que pagaron en julio volvió a pagar en agosto el
-// 64 %, y 25 de los 59 negocios que han pagado alguna vez pagaron UNA sola vez.
-// Cada mes había que volver a venderle a cada cliente, y un prestamista ocupado
-// no vuelve a entrar a pagar: simplemente deja de pagar.
+// La primera versión era una tarjeta suelta arriba de la pantalla explicando la
+// suscripción. El dueño: «ese aviso feo que pusiste arriba», «solamente veo un
+// aviso que dice lo de la suscripción, pero no hay ningún botón». Tenía razón
+// dos veces: un cartel que no se puede pulsar no es una opción, es ruido; y
+// suscribirse tiene que ser un BOTÓN en el plan, no un texto aparte.
 //
-// ⚠ EL WIDGET SE MONTA COMO FORMULARIO, NO COMO BOTÓN NUESTRO. El modo
-// tokenización de Wompi no tiene callback de JavaScript: pinta su propio botón
-// dentro de un `<form>` y al terminar hace un POST a su `action`. Por eso aquí
-// hay un formulario con un `<script>` dentro y no un `onClick`.
-//
-// ⚠ Y EL SCRIPT SE INYECTA A MANO. React no ejecuta un `<script>` puesto en el
-// JSX: lo pinta como etiqueta muerta y el botón no aparece nunca. Hay que
-// crearlo con `document.createElement` y colgarlo del formulario.
+// Ahora esto vive DENTRO de la tarjeta del vencimiento y solo aparece cuando ya
+// hay un medio guardado — porque entonces sí es información: con qué se va a
+// cobrar y cómo quitarlo.
 
-import { useEffect, useRef, useState } from 'react'
-import { Tarjeta, Pastilla, BotonSecundario } from '@/components/cf/primitivos'
+import { useEffect, useState } from 'react'
 
 export default function MedioDePagoGuardado() {
   const [estado, setEstado] = useState(null)
   const [quitando, setQuitando] = useState(false)
-  const formRef = useRef(null)
 
   const cargar = () =>
     fetch('/api/pagos/wompi/fuente')
@@ -33,22 +27,8 @@ export default function MedioDePagoGuardado() {
 
   useEffect(() => { cargar() }, [])
 
-  /* El script del widget solo se cuelga cuando NO hay medio guardado y el que
-     mira es el dueño. Montarlo siempre pintaría un segundo botón encima de la
-     tarjeta que ya dice cuál está puesto. */
-  useEffect(() => {
-    const form = formRef.current
-    if (!form || !estado?.publicKey || !estado?.esDueno || estado?.fuente) return
-    if (form.querySelector('script')) return
-    const s = document.createElement('script')
-    s.src = 'https://checkout.wompi.co/widget.js'
-    s.setAttribute('data-render', 'button')
-    s.setAttribute('data-widget-operation', 'tokenize')
-    s.setAttribute('data-public-key', estado.publicKey)
-    form.appendChild(s)
-  }, [estado])
-
-  if (!estado?.configurado) return null
+  const f = estado?.fuente
+  if (!f) return null   // sin medio guardado no hay nada que contar
 
   const quitar = async () => {
     if (!confirm('¿Quitar el medio de pago? Volverás a pagar a mano cada mes.')) return
@@ -58,48 +38,31 @@ export default function MedioDePagoGuardado() {
     setQuitando(false)
   }
 
-  const f = estado.fuente
-
   return (
-    <Tarjeta style={{ gap: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>
-          Que se cobre solo
+    <div className="flex items-center gap-2 flex-wrap mt-2 pt-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
+      <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
+        Se cobra solo con <strong>{f.rotulo}</strong>
+      </span>
+      {/* Los rechazos se enseñan porque el cliente es el único que puede
+          arreglarlos: sin fondos, tarjeta vencida, Nequi sin saldo. */}
+      {f.fallos > 0 && (
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{
+          background: 'var(--cf-red-pill-bg)', border: '1px solid var(--cf-red-pill-border)', color: 'var(--cf-red-dark)',
+        }}>
+          {f.fallos} rechazado{f.fallos === 1 ? '' : 's'}
         </span>
-        {f && <Pastilla tono={f.activo ? 'aldia' : 'neutro'}>{f.activo ? 'Activo' : 'Pausado'}</Pastilla>}
-        {/* Los rechazos se enseñan porque el cliente es el único que puede
-            arreglarlos: sin fondos, tarjeta vencida, Nequi sin saldo. */}
-        {f?.fallos > 0 && <Pastilla tono="mora">{f.fallos} intento{f.fallos === 1 ? '' : 's'} rechazado{f.fallos === 1 ? '' : 's'}</Pastilla>}
-      </div>
-
-      {f ? (
-        <>
-          <p style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>
-            Se cobra con <strong>{f.rotulo}</strong> el día que vence tu plan. No tienes que hacer nada.
-          </p>
-          {estado.esDueno && (
-            <BotonSecundario onClick={quitar} disabled={quitando} style={{ alignSelf: 'flex-start' }}>
-              {quitando ? 'Quitando…' : 'Quitar el medio de pago'}
-            </BotonSecundario>
-          )}
-        </>
-      ) : (
-        <>
-          <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
-            Guarda tu tarjeta o tu Nequi una sola vez y el plan se renueva solo.
-            Lo puedes quitar cuando quieras.
-          </p>
-          {estado.esDueno ? (
-            /* El `action` es el receptor: el widget hace un POST de formulario
-               al terminar, no una llamada de JavaScript. */
-            <form ref={formRef} method="POST" action="/api/pagos/wompi/token" />
-          ) : (
-            <p style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>
-              Solo el dueño de la cuenta puede guardarlo.
-            </p>
-          )}
-        </>
       )}
-    </Tarjeta>
+      {estado.esDueno && (
+        <button
+          type="button"
+          onClick={quitar}
+          disabled={quitando}
+          className="text-[12px] underline disabled:opacity-50"
+          style={{ color: 'var(--cf-ink-3)' }}
+        >
+          {quitando ? 'Quitando…' : 'Quitar'}
+        </button>
+      )}
+    </div>
   )
 }

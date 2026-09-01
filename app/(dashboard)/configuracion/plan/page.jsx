@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import MedioDePagoGuardado from '@/components/pagos/MedioDePagoGuardado'
+import HojaSuscripcion     from '@/components/pagos/HojaSuscripcion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
@@ -102,6 +103,8 @@ export default function PlanPage() {
   const searchParams = useSearchParams()
   const { session, loading: authLoading } = useAuth()
   const wompiRetorno = searchParams.get('wompi') === 'retorno'
+  /* De vuelta del widget de Wompi: `guardado`, `error` o `no-autorizado`. */
+  const medioRetorno = searchParams.get('medio')
 
   const country = session?.user?.country ?? 'co'
   const esSuperadmin = session?.user?.rol === 'superadmin'
@@ -111,13 +114,33 @@ export default function PlanPage() {
   const [estado,       setEstado]       = useState(null)
   const [uso,          setUso]          = useState(null)
   const [loadEstado,   setLoadEstado]   = useState(true)
+  /* ⚠ SUSCRIPCIÓN POR DEFECTO, Y NO ES UN CAPRICHO DE DISEÑO.
+   *
+   * Medido el 1 sep 2026: de los que pagaron en julio volvió a pagar en agosto
+   * el 64 %, y 25 de los 59 negocios que han pagado alguna vez pagaron UNA sola
+   * vez. El problema no es que no quieran pagar: es que cada mes hay que
+   * acordarse, entrar y volver a pagar. Lo que la mayoría debería elegir tiene
+   * que venir elegido.
+   *
+   * El pago único no desaparece — quien lo quiera lo cambia de un toque. */
+  const [modoPago,     setModoPago]     = useState('suscripcion')
   const [periodo,      setPeriodo]      = useState('mensual')
+  const [suscribiendo, setSuscribiendo] = useState(null)
+
+  /* ⚠ LA SUSCRIPCIÓN ES MENSUAL, PUNTO. El cobro recurrente repite cada mes; si
+     se permitiera trimestral o anual, un cobro anual activaría UN MES, porque
+     la referencia que lee el webhook diría «mensual». Es un fallo de dinero, y
+     el trimestral y el anual ya se cobran por adelantado, así que no tienen la
+     fuga que esto viene a tapar. */
+  const gateway = getPaymentGateway(country)
+  /* Solo Wompi guarda medio de pago. Donde se cobra por MercadoPago o a mano
+     por WhatsApp no hay suscripción que ofrecer, así que ni se enseña. */
+  const esSuscripcion = gateway === 'wompi' && modoPago === 'suscripcion'
+  const periodoEfectivo = esSuscripcion ? 'mensual' : periodo
   const [descuentoOrg, setDescuentoOrg] = useState(0)
   const [showPlanes,   setShowPlanes]   = useState(false)
   const [pagando,      setPagando]      = useState(null)
   const [errorPago,    setErrorPago]    = useState(null)
-
-  const gateway = getPaymentGateway(country)
 
   useEffect(() => {
     if (authLoading) return
@@ -144,12 +167,12 @@ export default function PlanPage() {
 
   // ── Calculo de precios (conservado) ──
   const calcularPrecio = (precioBase) => {
-    const meses = periodo === 'anual' ? 12 : periodo === 'trimestral' ? 3 : 1
-    const mesesCobrados = periodo === 'anual' ? 10 : meses
-    const descuentoPeriodo = periodo === 'anual' ? 17 : periodo === 'trimestral' ? 10 : 0
+    const meses = periodoEfectivo === 'anual' ? 12 : periodoEfectivo === 'trimestral' ? 3 : 1
+    const mesesCobrados = periodoEfectivo === 'anual' ? 10 : meses
+    const descuentoPeriodo = periodoEfectivo === 'anual' ? 17 : periodoEfectivo === 'trimestral' ? 10 : 0
     const descuentoFinal = Math.max(descuentoOrg, descuentoPeriodo)
     const total = precioBase * meses
-    const conDescuento = periodo === 'anual'
+    const conDescuento = periodoEfectivo === 'anual'
       ? precioBase * mesesCobrados
       : Math.round(total * (1 - descuentoFinal / 100))
     const ahorro = total - conDescuento
@@ -161,7 +184,7 @@ export default function PlanPage() {
     const info = [...planes, planTest].find(p => p.key === planKey)
     if (!info) return
     const { conDescuento, meses } = calcularPrecio(info.precio)
-    const periodoLabel = periodo === 'anual' ? 'anual' : periodo === 'trimestral' ? 'trimestral' : 'mensual'
+    const periodoLabel = periodoEfectivo === 'anual' ? 'anual' : periodoEfectivo === 'trimestral' ? 'trimestral' : 'mensual'
     const orgRef = orgNombre ? ` para mi cuenta "${orgNombre}"` : ''
     const msg = `Hola, quiero activar el plan ${info.nombre} (${periodoLabel})${orgRef}. Valor: ${formatMoney(conDescuento)}${meses > 1 ? ` por ${meses} meses` : '/mes'}.`
     window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
@@ -181,7 +204,7 @@ export default function PlanPage() {
         const res = await fetch('/api/pagos/wompi/crear', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planKey, periodo }),
+          body: JSON.stringify({ plan: planKey, periodo: periodoEfectivo }),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Error creando pago')
@@ -213,7 +236,7 @@ export default function PlanPage() {
         const res = await fetch('/api/pagos/crear-preferencia', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planKey, periodo }),
+          body: JSON.stringify({ plan: planKey, periodo: periodoEfectivo }),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Error creando pago')
@@ -273,14 +296,65 @@ export default function PlanPage() {
         </div>
       )}
 
-      {/* ── QUE SE COBRE SOLO ──────────────────────────────────────────
-          Va ARRIBA de los planes a propósito. Medido el 1 sep 2026: de los que
-          pagaron en julio volvió en agosto el 64 %, y 25 de los 59 que han
-          pagado alguna vez pagaron una sola vez. El problema no es que no
-          quieran pagar: es que hay que acordarse cada mes. */}
-      <MedioDePagoGuardado />
-
       {/* ── Retorno Wompi ── */}
+      {/* ── DE VUELTA DEL WIDGET ─────────────────────────────────────────
+          Guardar el medio de pago NO cobra nada: el cobro llega cuando venza el
+          plan. Decirlo aquí evita las dos preguntas que si no llegan a soporte:
+          «¿ya me cobraron?» y «¿entonces cuándo?». */}
+      {medioRetorno && (() => {
+        /* Los tres finales posibles dicen cosas MUY distintas —«no te cobramos
+           nada», «te estamos cobrando» y «quedó guardado pero el cobro se
+           cayó»— y confundirlos genera exactamente las llamadas que este aviso
+           viene a evitar. */
+        const AVISOS = {
+          'guardado': {
+            bien: true,
+            titulo: 'Medio de pago guardado',
+            texto: 'No te cobramos nada ahora. El cobro sale solo el día que venza tu plan, y lo quitas cuando quieras.',
+          },
+          'cobrando': {
+            bien: true,
+            titulo: 'Suscripción activada',
+            texto: 'Estamos cobrando tu primer mes. En cuanto el banco lo confirme, el plan queda activo; si no se refleja, recarga la página.',
+          },
+          'guardado-sin-cobro': {
+            bien: false,
+            titulo: 'Guardamos el medio, pero el primer cobro no pasó',
+            texto: 'Tu tarjeta o tu Nequi quedaron guardados. El cobro lo rechazó el banco.',
+          },
+          'no-autorizado': {
+            bien: false,
+            titulo: 'Solo el dueño de la cuenta puede hacer esto',
+            texto: 'Pídele al dueño que guarde el medio de pago desde su usuario.',
+          },
+        }
+        const a = AVISOS[medioRetorno] ?? {
+          bien: false,
+          titulo: 'No se pudo guardar el medio de pago',
+          texto: 'Vuelve a intentarlo, o escríbenos por WhatsApp y lo dejamos listo.',
+        }
+        const tono = a.bien ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)'
+        const detalle = searchParams.get('detalle')
+        return (
+          <div className="rounded-[16px] px-4 py-3 flex items-start gap-3" style={{
+            background: `color-mix(in srgb, ${tono} 10%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${tono} 25%, transparent)`,
+          }}>
+            <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke={tono} strokeWidth={2} viewBox="0 0 24 24">
+              {a.bien
+                ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                : <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 3h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />}
+            </svg>
+            <div>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{a.titulo}</p>
+              <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                {a.texto}{detalle ? ` (${detalle})` : ''}
+              </p>
+            </div>
+          </div>
+        )
+      })()}
+
       {wompiRetorno && (
         <div
           className="rounded-[20px] cf-card-shadow px-5 py-4 flex items-start gap-3"
@@ -372,6 +446,10 @@ export default function PlanPage() {
               )}
             </div>
 
+            {/* Con qué se cobra solo. Solo sale si hay medio guardado: entonces
+                es un dato del plan, no un cartel. */}
+            <MedioDePagoGuardado />
+
             <p className="text-[14px] font-medium mb-1" style={{ color: 'var(--cf-ink)' }}>
               {subCancelada
                 ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
@@ -424,10 +502,51 @@ export default function PlanPage() {
         )
       })()}
 
+      {/* ── CÓMO SE PAGA ──────────────────────────────────────────────────
+          ⚠ VIVE AQUÍ, FUERA DEL DESPLEGABLE DE PLANES, A PROPÓSITO.
+          El botón que más se pulsa es «Renovar mi plan», no el de la lista de
+          planes. Si el interruptor viviera solo dentro de «Cambiar de plan», la
+          mayoría renovaría sin enterarse de que existe la suscripción — que es
+          justo el agujero que esto viene a tapar.
+
+          Y condiciona al selector de período, que va debajo: la suscripción es
+          mensual y esconde el otro. */}
+      {gateway === 'wompi' && (
+        <div className="space-y-2">
+          <div className="flex justify-center">
+            <div className="inline-flex rounded-[12px] p-1" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
+              {[
+                { key: 'suscripcion', label: 'Suscripción' },
+                { key: 'unico', label: 'Pago único' },
+              ].map(m => (
+                <button
+                  key={m.key}
+                  onClick={() => setModoPago(m.key)}
+                  className="px-4 py-2 rounded-[8px] text-[12px] font-semibold transition-all whitespace-nowrap"
+                  style={modoPago === m.key
+                    ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                    : { color: 'var(--cf-ink-3)' }
+                  }
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-center text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
+            {esSuscripcion
+              ? 'Se cobra solo cada mes con tu tarjeta o tu Nequi. Lo quitas cuando quieras.'
+              : 'Pagas una vez y ya. Cuando venza, vuelves a pagar a mano.'}
+          </p>
+        </div>
+      )}
+
       {/* ── Renovar plan actual ── */}
       {!esTrial && !showPlanes && (
         <button
-          onClick={() => gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
+          onClick={() => esSuscripcion
+            ? setSuscribiendo(planActual)
+            : gateway === 'manual' ? activarPlanWA(planActual) : activarPlanOnline(planActual)}
           disabled={pagando === planActual}
           className="w-full h-12 rounded-[12px] text-[14px] font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
           style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
@@ -443,7 +562,7 @@ export default function PlanPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
           )}
-          Renovar mi plan
+          {esSuscripcion ? 'Suscribirme' : 'Renovar mi plan'}
         </button>
       )}
 
@@ -481,6 +600,7 @@ export default function PlanPage() {
           </div>
 
           {/* Period toggle — elige cuanto tiempo activar */}
+          {!esSuscripcion && (
           <div className="flex justify-center">
             <div className="inline-flex rounded-[12px] p-1 overflow-x-auto" style={{ background: 'var(--cf-surface)', border: '1px solid var(--cf-border)' }}>
               {[
@@ -508,6 +628,7 @@ export default function PlanPage() {
               ))}
             </div>
           </div>
+          )}
 
           {esSuperadmin && (
             <p className="text-[10px] text-center" style={{ color: 'var(--cf-ink-3)' }}>
@@ -593,7 +714,7 @@ export default function PlanPage() {
                     }}>
                       Plan actual
                     </div>
-                  ) : esActual && periodo === 'mensual' && !subCancelada ? (
+                  ) : esActual && periodoEfectivo === 'mensual' && !subCancelada ? (
                     <div className="h-9 rounded-[12px] flex items-center justify-center text-[12px] font-semibold" style={{
                       background: 'var(--cf-fill)', color: 'var(--cf-ink-3)',
                     }}>
@@ -612,7 +733,7 @@ export default function PlanPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => activarPlanOnline(p.key)}
+                      onClick={() => esSuscripcion ? setSuscribiendo(p.key) : activarPlanOnline(p.key)}
                       disabled={pagando === p.key}
                       className="w-full h-9 rounded-[12px] text-[12px] font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 disabled:opacity-60"
                       style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
@@ -624,7 +745,14 @@ export default function PlanPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
                       )}
-                      {subCancelada && esActual ? 'Renovar plan' : 'Pagar'}
+                      {/* El rótulo dice lo que va a pasar. «Pagar» a secas no
+                          distingue un cobro que se repite de uno que no, y esa
+                          confusión se paga en devoluciones. */}
+                      {esSuscripcion ? 'Suscribirme'
+                        : subCancelada && esActual ? 'Renovar plan'
+                        : meses === 12 ? 'Pagar el año'
+                        : meses === 3 ? 'Pagar el trimestre'
+                        : 'Pagar un mes'}
                     </button>
                   )}
                 </div>
@@ -663,6 +791,24 @@ export default function PlanPage() {
           Soporte
         </a>
       </div>
+
+      {suscribiendo && (() => {
+        const info = [...planes, planTest].find(x => x.key === suscribiendo)
+        if (!info) return null
+        return (
+          <HojaSuscripcion
+            plan={suscribiendo}
+            nombre={info.nombre}
+            /* ⚠ CON EL DESCUENTO DE LA ORGANIZACIÓN YA APLICADO. El primer
+               cobro lo calcula el servidor con ese mismo descuento; enseñar
+               aquí el precio de lista sería prometer un número y cobrar otro,
+               que es de donde salen las llamadas a soporte. */
+            precioMensual={Math.round(info.precio * (1 - descuentoOrg / 100))}
+            onCerrar={() => setSuscribiendo(null)}
+            onPagoUnico={() => { setModoPago('unico'); setSuscribiendo(null) }}
+          />
+        )
+      })()}
     </div>
   )
 }

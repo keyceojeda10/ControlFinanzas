@@ -4,7 +4,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 import { hasOnlinePayment } from '@/lib/i18n'
-import { firmaIntegridad, wompiPublicKey, wompiConfigurado, WOMPI_CHECKOUT_URL } from '@/lib/wompi'
+import { firmaIntegridad, wompiPublicKey, wompiConfigurado, WOMPI_CHECKOUT_URL, referenciaDeCobro } from '@/lib/wompi'
 
 const BASE = process.env.NEXTAUTH_URL || 'https://app.control-finanzas.com'
 
@@ -51,8 +51,10 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Monto invalido' }, { status: 400 })
   }
 
-  const ts = Date.now()
-  const referencia = `cf-${orgId}-${plan}-${periodo}-${ts}`
+  /* ⚠ La referencia la escribe `referenciaDeCobro` y la lee `leerReferencia`,
+     las dos en `lib/wompi.js`. Escrita a mano aquí, cualquier cambio de formato
+     dejaba pagos APROBADOS que el webhook no sabía a quién activarle. */
+  const referencia = referenciaDeCobro(orgId, plan, periodo)
   const montoCentavos = Math.round(precioFinal * 100)
   const moneda = 'COP'
   const firma = firmaIntegridad(referencia, montoCentavos, moneda)

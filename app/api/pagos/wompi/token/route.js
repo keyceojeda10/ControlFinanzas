@@ -26,9 +26,66 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { crearFuenteDePago, wompiConfigurado } from '@/lib/wompi'
+import { crearFuenteDePago, cobrarConFuente, wompiConfigurado, referenciaDeCobro } from '@/lib/wompi'
+import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
 
 const DESTINO = '/configuracion/plan'
+
+/* El mismo candado que el cron: un intento de cobro cada 20 horas como mucho.
+   Aquí protege del doble clic y del cliente que guarda su medio dos veces. */
+const HORAS_ENTRE_INTENTOS = 20
+
+/* ⚠ POR QUÉ GUARDAR EL MEDIO A VECES COBRA, Y A VECES NO.
+ *
+ * Guardar la tarjeta no debería cobrar nada: el cobro sale cuando venza el
+ * plan. Pero hay un agujero: el cron solo mira a quien YA tiene una suscripción
+ * de pago activa. Quien está en prueba, o en el plan gratis, no tiene ninguna
+ * — así que se «suscribiría», no se le cobraría nunca, y el día que venza la
+ * prueba se quedaría fuera creyendo que estaba al día.
+ *
+ * Por eso: si NO hay un plan de pago vigente, este primer cobro se hace ahora,
+ * que es exactamente lo que espera quien acaba de pulsar «Suscribirme». Si sí
+ * lo hay, no se toca nada y el cron toma el relevo al vencer.
+ *
+ * Como todo lo demás, esto NO activa el plan: lo activa el webhook cuando el
+ * pago quede APROBADO. Un solo camino para activar. */
+async function primerCobroSiHaceFalta({ orgId, plan, fuenteId, email }) {
+  if (!plan || !PLANES_CONFIG[plan]) return null
+
+  const ahora = new Date()
+  const org = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: {
+      descuento: true, country: true, cobroUltimoIntento: true,
+      suscripciones: {
+        where: { estado: 'activa', montoCOP: { gt: 0 }, fechaVencimiento: { gt: ahora } },
+        take: 1, select: { id: true },
+      },
+    },
+  })
+  if (!org) return null
+  /* Ya tiene plan de pago vigente: pagó, y el cron lo renovará al vencer. */
+  if (org.suscripciones.length > 0) return null
+
+  const desde = new Date(ahora.getTime() - HORAS_ENTRE_INTENTOS * 3600000)
+  if (org.cobroUltimoIntento && org.cobroUltimoIntento > desde) {
+    console.warn(`[wompi-token] no cobro: ya hubo un intento hace menos de ${HORAS_ENTRE_INTENTOS} h (org ${orgId})`)
+    return null
+  }
+
+  const precio = getPrecioPlan(plan, org.country ?? 'co')
+  const monto = Math.round(precio * (1 - (org.descuento ?? 0) / 100))
+  if (!monto || monto <= 0) return null
+
+  /* Se apunta ANTES de llamar a Wompi: si esto se cae a mitad, el peor caso es
+     no reintentar hoy, que es mucho más barato que cobrar dos veces. */
+  await prisma.organization.update({ where: { id: orgId }, data: { cobroUltimoIntento: ahora } })
+
+  const referencia = referenciaDeCobro(orgId, plan, 'mensual')
+  const r = await cobrarConFuente({ fuenteId, montoCOP: monto, email, referencia })
+  console.log(`[wompi-token] primer cobro ${plan} $${monto} org ${orgId} — ${r.ok ? `tx ${r.id} (${r.estado})` : `RECHAZADO: ${r.motivo}`} ref ${referencia}`)
+  return r
+}
 
 /* Los nombres con los que Wompi podría mandar el token. El primero que venga
    con pinta de token (`tok_…`) gana. */
@@ -106,6 +163,24 @@ export async function POST(req) {
       },
     })
     console.log(`[wompi-token] guardado ${tipo} (${rotulo}) para org ${session.user.organizationId} — fuente ${fuente.id}`)
+
+    /* Si el primer cobro falla, el medio YA está guardado: no se deshace nada,
+       se le dice y punto. Deshacerlo dejaría al cliente sin suscripción por un
+       banco caído. */
+    let cobro = null
+    try {
+      cobro = await primerCobroSiHaceFalta({
+        orgId:    session.user.organizationId,
+        plan:     typeof campos.plan === 'string' ? campos.plan : null,
+        fuenteId: fuente.id,
+        email,
+      })
+    } catch (e) {
+      console.error('[wompi-token] fallo el primer cobro:', e.message)
+      return volver('guardado-sin-cobro', e.message.slice(0, 120))
+    }
+    if (cobro && !cobro.ok) return volver('guardado-sin-cobro', cobro.motivo?.slice(0, 120))
+    if (cobro) return volver('cobrando')
     return volver('guardado')
   } catch (e) {
     console.error('[wompi-token] Wompi rechazó la fuente:', e.message)
