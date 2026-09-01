@@ -18,16 +18,26 @@
 // superiores), así que aquí solo queda el fondo y la lógica de versión.
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { NOVEDADES, NOVEDADES_VERSION, novedadVigente } from '@/lib/novedades'
 import { Novedades } from '@/components/pantallas/Cargando'
 
 const LS_KEY = 'cf:novedades:visto'
 
+/* ⚠ NADA QUE SE ABRA SOLO PUEDE TAPAR LA PANTALLA DE PAGAR.
+   El modal del teléfono cayó justo encima del botón de suscribirse y el dueño
+   estuvo un día sin encontrarlo: «no hay una opción como tal, un botón o algo
+   que se haga». Éste está montado en el layout del panel y se abre solo cuando
+   hay novedad, así que le puede pasar lo mismo a cualquiera. */
+const RUTAS_SIN_MODAL = ['/configuracion/plan', '/pago', '/checkout']
+
 export default function NovedadesModal() {
   const [abierto, setAbierto] = useState(false)
   const [destacada, setDestacada] = useState(0)
+  const ruta = usePathname()
 
   useEffect(() => {
+    if (RUTAS_SIN_MODAL.some((r) => ruta?.startsWith(r))) return
     try {
       const visto = Number(localStorage.getItem(LS_KEY) || 0)
       if (NOVEDADES_VERSION <= visto) return
@@ -48,7 +58,7 @@ export default function NovedadesModal() {
       const t = setTimeout(() => setAbierto(true), 600)
       return () => clearTimeout(t)
     } catch {}
-  }, [])
+  }, [ruta])
 
   const cerrar = () => {
     try { localStorage.setItem(LS_KEY, String(NOVEDADES_VERSION)) } catch {}

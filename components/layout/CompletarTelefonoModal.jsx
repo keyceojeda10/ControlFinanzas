@@ -4,9 +4,13 @@
 // Solo se muestra a owners (cobradores no, no son nuestros "clientes" reales).
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCountry } from '@/hooks/useCountry'
 import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
+
+/* Donde el usuario está haciendo algo que no se puede interrumpir: pagar. */
+const RUTAS_SIN_MODAL = ['/configuracion/plan', '/pago', '/checkout']
 
 export default function CompletarTelefonoModal() {
   const { data: session, status } = useSession()
@@ -19,10 +23,26 @@ export default function CompletarTelefonoModal() {
   const [telefono, setTelefono] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const ruta = usePathname()
 
   useEffect(() => {
     if (status !== 'authenticated') return
     if (session?.user?.rol !== 'owner') return
+    /* ⚠ NUNCA ENCIMA DE LA PANTALLA DE PAGAR.
+     *
+     * Este modal es `fixed inset-0 z-[100]` y se come los clics de toda la
+     * página. Cayendo en «Mi plan» tapaba justo el botón de suscribirse, y el
+     * dueño estuvo un día entero sin encontrarlo: «no hay una opción como tal,
+     * un botón o algo que se haga para guardar el puto medio de pago».
+     * Comprobado con Playwright: el div interceptaba el clic.
+     *
+     * Le pasa a 70 de los 587 dueños, que son los que no tienen teléfono
+     * guardado — o sea, justo a quien más falta le hace que pueda pagar.
+     *
+     * El teléfono se le sigue pidiendo en cualquier otra pantalla. Aquí no:
+     * quien viene a pagar no puede tener un cartel delante pidiéndole otra
+     * cosa. */
+    if (RUTAS_SIN_MODAL.some((r) => ruta?.startsWith(r))) return
     // Skip si lo pospuso esta sesion
     try {
       if (sessionStorage.getItem('cf-skip-telefono') === '1') return
@@ -32,7 +52,7 @@ export default function CompletarTelefonoModal() {
       .then((data) => {
         if (!data?.telefono) setOpen(true)
       })
-  }, [status, session])
+  }, [status, session, ruta])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

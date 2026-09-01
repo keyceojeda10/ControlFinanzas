@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 const LS_KEY = 'cf:novedad-qr:visto'
 
@@ -45,17 +46,25 @@ const ICON_PATHS = {
   bolt: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z',
 }
 
+/* ⚠ NADA QUE SE ABRA SOLO PUEDE TAPAR LA PANTALLA DE PAGAR. El modal del
+   teléfono cayó encima del botón de suscribirse y el dueño estuvo un día sin
+   encontrarlo. Éste hoy no está montado en ninguna parte, pero si algún día se
+   monta, la regla es la misma. */
+const RUTAS_SIN_MODAL = ['/configuracion/plan', '/pago', '/checkout']
+
 export default function NovedadQrModal() {
   const [abierto, setAbierto] = useState(false)
   const [step, setStep] = useState(0)
+  const ruta = usePathname()
 
   useEffect(() => {
+    if (RUTAS_SIN_MODAL.some((r) => ruta?.startsWith(r))) return
     try {
       if (localStorage.getItem(LS_KEY)) return
       const t = setTimeout(() => setAbierto(true), 800)
       return () => clearTimeout(t)
     } catch {}
-  }, [])
+  }, [ruta])
 
   const cerrar = () => {
     try { localStorage.setItem(LS_KEY, '1') } catch {}
