@@ -18,7 +18,7 @@ import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { esBotonDeCartera, respuestaDeBoton } from '@/lib/bot/cartera-post-registro'
-import { esDeAnuncio, decidirDesdeAnuncio } from '@/lib/bot/flujo-anuncio'
+import { esDeAnuncio, decidirDesdeAnuncio, saludoDeAnuncio } from '@/lib/bot/flujo-anuncio'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
@@ -548,6 +548,68 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   // Marcar leido (no critico)
   wa.markRead(messageId).catch(() => {})
 
+  if (botApagado) {
+    console.log(`[WA Cloud] Lead ${lead.nombre} con bot apagado — mensaje guardado.`)
+    return
+  }
+
+  // Filtrar mensajes automaticos de empresa (bienvenida, autorespuesta, etc.)
+  // Estos llegan cuando el lead tiene su propio bot/negocio en WhatsApp.
+  // Se guardan en historial pero el bot NO responde.
+  if (esMensajeAutomatico(texto)) {
+    console.log(`[WA Cloud] Mensaje automatico detectado de ${lead.nombre} — guardado, no se responde.`)
+    return
+  }
+
+  const config = await prisma.botConfig.findFirst()
+  if (config && !config.botActivo) {
+    console.log('[WA Cloud] Bot global apagado — mensaje guardado.')
+    return
+  }
+
+  /* ⚠ TODO LO QUE CONTESTA VA DESPUÉS DE LAS GUARDAS DE APAGADO.
+     Estos tres bloques estaban ARRIBA, antes de mirar si el bot estaba
+     apagado para este lead o apagado del todo. O sea que un botón pulsado
+     seguía contestando aunque hubiera un humano atendiendo esa
+     conversación, y le pisaba la respuesta. */
+  /* ══ LA LLAVE PARA PROBARLO DESDE UN TELÉFONO ═══════════════════════════
+   *
+   * El flujo de los anuncios solo atiende a quien llega desde Click-to-WhatsApp
+   * (`desdeAnuncioWa`), así que hasta que la campaña arranque NADIE lo recibe y
+   * no había forma de verlo en un WhatsApp de verdad.
+   *
+   * Escribiendo «probar bot cf» al número del negocio, ese teléfono entra al
+   * flujo nuevo y le sale el saludo. Con «salir bot cf» vuelve al bot de
+   * siempre.
+   *
+   * ⚠ SE HIZO ASÍ Y NO CON UN UPDATE A MANO EN PRODUCCIÓN a propósito: es
+   * reversible, lo puede usar cualquiera del equipo las veces que quiera, y no
+   * deja la base tocada a dedo. La frase es lo bastante rara como para que no la
+   * escriba un cliente por accidente, y de todas formas lo único que hace es
+   * cambiar qué guion le contesta. */
+  const clave = (texto || '').trim().toLowerCase()
+  if (clave === 'probar bot cf' || clave === 'salir bot cf') {
+    const entrar = clave === 'probar bot cf'
+    await prisma.botLead.update({
+      where: { id: lead.id }, data: { desdeAnuncioWa: entrar },
+    }).catch(e => console.error('[WA Cloud] llave de prueba:', e.message))
+    console.log(`[WA Cloud] ${lead.nombre} ${entrar ? 'ENTRA al' : 'SALE del'} flujo de anuncios (llave de prueba)`)
+    const salida = entrar
+      ? saludoDeAnuncio()
+      : { texto: 'Listo, saliste del modo de prueba. Vuelves a hablar con el asistente de siempre.', botones: [] }
+    try {
+      const envio = salida.botones?.length
+        ? await wa.sendButtons(lead.telefono, salida.texto, salida.botones)
+        : await wa.sendText(lead.telefono, salida.texto)
+      await prisma.botConversacion.create({
+        data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+      }).catch(() => {})
+    } catch (e) {
+      console.error('[WA Cloud] no pude contestar la llave de prueba:', e.message)
+    }
+    return
+  }
+
   /* ══ EL BOT DE LOS ANUNCIOS ══════════════════════════════════════════════
      Solo para quien llega desde Click-to-WhatsApp (`anuncioId`). Todo lo demás
      —el formulario, quien escribe por su cuenta— sigue por el camino de
@@ -592,24 +654,6 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
     return
   }
 
-  if (botApagado) {
-    console.log(`[WA Cloud] Lead ${lead.nombre} con bot apagado — mensaje guardado.`)
-    return
-  }
-
-  // Filtrar mensajes automaticos de empresa (bienvenida, autorespuesta, etc.)
-  // Estos llegan cuando el lead tiene su propio bot/negocio en WhatsApp.
-  // Se guardan en historial pero el bot NO responde.
-  if (esMensajeAutomatico(texto)) {
-    console.log(`[WA Cloud] Mensaje automatico detectado de ${lead.nombre} — guardado, no se responde.`)
-    return
-  }
-
-  const config = await prisma.botConfig.findFirst()
-  if (config && !config.botActivo) {
-    console.log('[WA Cloud] Bot global apagado — mensaje guardado.')
-    return
-  }
 
   // Debounce: esperar 5s para agrupar mensajes rapidos del lead.
   // Si llegan mas mensajes en ese lapso, este handler se descarta y
