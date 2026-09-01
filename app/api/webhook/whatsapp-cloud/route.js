@@ -18,6 +18,10 @@ import { transcribirAudio } from '@/lib/bot/transcribe'
 import { responder } from '@/lib/bot-v2/agente'
 import { alertarLeadCaliente } from '@/lib/bot/alertas'
 import { esBotonDeCartera, respuestaDeBoton } from '@/lib/bot/cartera-post-registro'
+import {
+  esDeAnuncio, esBotonDelFlujo, respuestaDeBoton as respuestaDeAnuncio,
+  saludoDeAnuncio, pareceAtascado, respuestaAtasco, datosDeConfianza,
+} from '@/lib/bot/flujo-anuncio'
 import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
@@ -31,7 +35,16 @@ const APP_SECRET = process.env.WHATSAPP_APP_SECRET
 // API sale cuadrado; mandamos la imagen aparte para que se vea el banner grande).
 const BANNER_URL = (process.env.GUIAS_BASE_URL || 'https://app.control-finanzas.com') + '/og.png'
 
-const TIPOS_SOPORTADOS = new Set(['text', 'audio', 'image'])
+/* ⚠ `interactive` ES UN TIPO SOPORTADO, Y FALTABA.
+ *
+ * Aquí se descartan los tipos que el bot no sabe atender —ubicaciones,
+ * contactos, stickers—, y `interactive` estaba fuera. O sea: se escribió la
+ * rama que lee los botones, y el mensaje moría TRES FUNCIONES ANTES de
+ * llegar a ella. Las pruebas de fuente pasaban porque el código existía.
+ *
+ * Se vio simulando un webhook de verdad contra el espejo: el botón devolvía
+ * 200, no dejaba rastro en la conversación y no aparecía en ningún log. */
+const TIPOS_SOPORTADOS = new Set(['text', 'audio', 'image', 'interactive'])
 
 // Enfriamiento entre alertas de escalamiento del MISMO lead. Evita el extremo
 // de una sola alerta de por vida (leads que insisten quedaban en silencio) y el
@@ -401,7 +414,22 @@ async function procesarMensaje(msg) {
 // choca, recuperamos el registro que gano la carrera.
 async function resolverOCrearLead(telefono, fromRaw, msg) {
   const existente = await buscarLeadPorTelefono(telefono || fromRaw)
-  if (existente) return existente
+  if (existente) {
+    /* ⚠ Si ya existía y ahora escribe DESDE UN ANUNCIO, hay que apuntarlo: el
+       `anuncioId` es lo único que separa el tráfico entre los dos bots, y sin
+       esto alguien que ya estaba en la base seguiría cayendo en el flujo viejo
+       aunque hubiera llegado por la campaña nueva. */
+    const ref = msg.referral || null
+    if (ref && !existente.anuncioId) {
+      const anuncioId = ref.source_id || ''
+      await prisma.botLead.update({
+        where: { id: existente.id }, data: { anuncioId },
+      }).catch(e => console.error('[WA Cloud] no pude marcar el anuncio:', e.message))
+      console.log(`[WA Cloud] lead existente marcado como CTWA (ad: ${anuncioId || 'unknown'})`)
+      return { ...existente, anuncioId }
+    }
+    return existente
+  }
 
   const referral = msg.referral || null
   const nombrePerfil = msg.profile_name || msg.from_name || ''
@@ -519,6 +547,15 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   // Marcar leido (no critico)
   wa.markRead(messageId).catch(() => {})
 
+  /* ══ EL BOT DE LOS ANUNCIOS ══════════════════════════════════════════════
+     Solo para quien llega desde Click-to-WhatsApp (`anuncioId`). Todo lo demás
+     —el formulario, quien escribe por su cuenta— sigue por el camino de
+     siempre, intacto: si esto no rinde se apaga y no se ha perdido nada. */
+  if (esDeAnuncio(lead) && botonId) {
+    const atendido = await atenderDesdeAnuncio(lead, { botonId, texto })
+    if (atendido) return
+  }
+
   /* ⚠ EL CAMINO CONOCIDO SE CONTESTA SOLO, SIN MODELO NI ESPERA.
      Los botones del momento post-registro tienen respuesta fija: no hay nada
      que interpretar, así que ni se llama al modelo ni se aguantan los cinco
@@ -601,6 +638,15 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   if (ultimoBot && miMsg && ultimoBot.createdAt > miMsg.createdAt) {
     console.log(`[WA Cloud] Anti-doble: ${lead.nombre} ya tiene respuesta reciente, este handler se descarta.`)
     return
+  }
+
+  /* ⚠ EL SALUDO Y EL ATASCO VAN AQUÍ, NO ARRIBA. Un botón no llega en ráfaga,
+     pero el texto sí: quien escribe «hola» y «buenas» seguidos recibiría dos
+     saludos con botones si esto se resolviera antes del debounce. Aquí ya pasó
+     el agrupado de cinco segundos y el anti-doble. */
+  if (esDeAnuncio(lead)) {
+    const atendido = await atenderDesdeAnuncio(lead, { botonId: null, texto })
+    if (atendido) return
   }
 
   const historial = await prisma.botConversacion.findMany({
@@ -723,6 +769,60 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       data: { alertado: true, alertadoEn: new Date() },
     })
   }
+}
+
+/* Devuelve `true` si ya contestó y no hay que seguir al modelo.
+ *
+ * Tres cosas y en este orden: el botón que pulsó, el saludo si es lo primero
+ * que dice, y la señal de atasco. Cualquier otra cosa es texto libre y la
+ * atiende el modelo como siempre. */
+async function atenderDesdeAnuncio(lead, { botonId, texto }) {
+  let salida = null
+  let motivoAviso = null
+
+  if (botonId && esBotonDelFlujo(botonId)) {
+    const confianza = botonId === 'cf_confiable' ? await datosDeConfianza() : null
+    salida = respuestaDeAnuncio(botonId, { confianza })
+  } else if (!botonId) {
+    /* ¿Es lo primero que le decimos? Se mira si el bot ya habló, no si el lead
+       escribió: puede haber mandado tres mensajes seguidos antes de que
+       contestáramos. */
+    const yaHablamos = await prisma.botConversacion.count({
+      where: { botLeadId: lead.id, rol: 'bot' },
+    })
+    if (yaHablamos === 0) salida = saludoDeAnuncio()
+    else if (pareceAtascado(texto)) salida = respuestaAtasco()
+  }
+
+  if (!salida) return false
+  motivoAviso = salida.avisar || null
+
+  try {
+    const envio = salida.botones?.length
+      ? await wa.sendButtons(lead.telefono, salida.texto, salida.botones)
+      : await wa.sendText(lead.telefono, salida.texto)
+    await prisma.botConversacion.create({
+      data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+    }).catch(() => {})
+  } catch (e) {
+    console.error('[WA Cloud] flujo de anuncio, no pude contestar:', e.message)
+    /* Si no se pudo mandar, NO se da por atendido: que lo intente el modelo
+       antes que dejar a la persona sin respuesta. */
+    return false
+  }
+
+  if (motivoAviso) {
+    /* «No pude» y «quiero hablar con alguien» son de lo que más paga: 44 % de
+       registro y 10 % de pago. Se avisa a un humano por el mismo camino de los
+       leads calientes, en vez de darle un teléfono al que nadie escribe. */
+    await alertarLeadCaliente(lead, motivoAviso, []).catch(e => console.error('[WA Cloud] no pude avisar:', e.message))
+    await prisma.botLead.update({
+      where: { id: lead.id }, data: { alertado: true, alertadoEn: new Date(), temperatura: 80 },
+    }).catch(() => {})
+  }
+
+  console.log(`[WA Cloud] anuncio → ${lead.nombre}: ${botonId || (motivoAviso ? 'atasco' : 'saludo')}`)
+  return true
 }
 
 async function buscarLeadPorTelefono(phone) {
