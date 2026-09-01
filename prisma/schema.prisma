@@ -1010,6 +1010,14 @@ model BotLead {
   metodoActual        String?
   planInteres         String?
   anuncioId           String?
+  /* ⚠ NO SIRVE `anuncioId` PARA SABER SI VINO DE UN ANUNCIO DE WHATSAPP.
+     Lo escriben TRES sitios con significados distintos: el webhook del
+     formulario de Facebook (1.501 leads), el sync de leads (`fb_sync`) y el
+     webhook de WhatsApp. Usarlo como discriminador metía a todo el tráfico del
+     formulario en el bot nuevo. Este campo lo pone SOLO el webhook de WhatsApp
+     cuando el mensaje trae `referral`, que es lo que de verdad significa
+     «escribió desde un anuncio». */
+  desdeAnuncioWa      Boolean       @default(false)
   abVariante          String?
   estado              BotLeadEstado @default(pendiente)
   temperatura         Int           @default(0)

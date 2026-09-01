@@ -415,18 +415,19 @@ async function procesarMensaje(msg) {
 async function resolverOCrearLead(telefono, fromRaw, msg) {
   const existente = await buscarLeadPorTelefono(telefono || fromRaw)
   if (existente) {
-    /* ⚠ Si ya existía y ahora escribe DESDE UN ANUNCIO, hay que apuntarlo: el
-       `anuncioId` es lo único que separa el tráfico entre los dos bots, y sin
-       esto alguien que ya estaba en la base seguiría cayendo en el flujo viejo
-       aunque hubiera llegado por la campaña nueva. */
+    /* ⚠ Si ya existía y ahora escribe DESDE UN ANUNCIO, hay que apuntarlo:
+       `desdeAnuncioWa` es lo único que separa el tráfico entre los dos bots, y
+       sin esto alguien que ya estaba en la base seguiría cayendo en el flujo
+       viejo aunque hubiera llegado por la campaña nueva. */
     const ref = msg.referral || null
-    if (ref && !existente.anuncioId) {
+    if (ref && !existente.desdeAnuncioWa) {
       const anuncioId = ref.source_id || ''
       await prisma.botLead.update({
-        where: { id: existente.id }, data: { anuncioId },
+        where: { id: existente.id },
+        data: { desdeAnuncioWa: true, ...(anuncioId ? { anuncioId } : {}) },
       }).catch(e => console.error('[WA Cloud] no pude marcar el anuncio:', e.message))
       console.log(`[WA Cloud] lead existente marcado como CTWA (ad: ${anuncioId || 'unknown'})`)
-      return { ...existente, anuncioId }
+      return { ...existente, desdeAnuncioWa: true, anuncioId: anuncioId || existente.anuncioId }
     }
     return existente
   }
@@ -440,6 +441,9 @@ async function resolverOCrearLead(telefono, fromRaw, msg) {
         nombre: nombrePerfil || 'Lead WhatsApp',
         telefono: telefono || fromRaw,
         anuncioId: desdeAnuncio ? (referral.source_id || '') : undefined,
+        /* ⚠ Esto, y no `anuncioId`, es lo que dice «escribió desde un anuncio»:
+           `anuncioId` lo escriben también el formulario y el sync de leads. */
+        desdeAnuncioWa: desdeAnuncio,
         estado: 'interesado',
         temperatura: desdeAnuncio ? 50 : 40,
         fechaContacto: new Date(),
