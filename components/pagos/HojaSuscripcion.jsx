@@ -45,6 +45,41 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
     return () => { vivo = false }
   }, [])
 
+  /* ⚠ MIENTRAS LA HOJA ESTÁ ABIERTA, LA PÁGINA DE DETRÁS NO SE MUEVE.
+   *
+   * Reportado por el dueño tras guardar su medio de pago: «el pop up se
+   * desplaza demasiado hacia abajo, se puede correr demasiado hacia abajo». No
+   * era la hoja: era la pantalla del plan, que es larga y seguía haciendo
+   * scroll bajo el dedo, arrastrando la hoja con ella.
+   *
+   * ⚠ `overflow: hidden` SOLO NO BASTA, y está medido en este repo: con él
+   * puesto en `html` y `body`, la página seguía desplazándose. Lo comprobé otra
+   * vez aquí — con el body en `hidden`, un gesto de scroll movía la página
+   * 1.188 píxeles. Lo que la fija es la ALTURA: sin `height: 100%` el `<html>`
+   * sigue midiendo más que la ventana. Ver la nota larga en
+   * `app/(dashboard)/asistente/page.jsx`, que ya se topó con esto.
+   *
+   * Se guarda lo que había y se repone al cerrar: dejar el documento bloqueado
+   * deja la app muerta. */
+  useEffect(() => {
+    const html = document.documentElement
+    const body = document.body
+    const antes = {
+      hOverflow: html.style.overflow, hAlto: html.style.height,
+      bOverflow: body.style.overflow, bAlto: body.style.height,
+    }
+    html.style.overflow = 'hidden'
+    html.style.height = '100%'
+    body.style.overflow = 'hidden'
+    body.style.height = '100%'
+    return () => {
+      html.style.overflow = antes.hOverflow
+      html.style.height = antes.hAlto
+      body.style.overflow = antes.bOverflow
+      body.style.height = antes.bAlto
+    }
+  }, [])
+
   useEffect(() => {
     if (!publicKey || !formRef.current) return
     const form = formRef.current
@@ -69,9 +104,20 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onCerrar}
     >
+      {/* ⚠ Y LA HOJA TIENE TECHO, CON SU PROPIO SCROLL. Sin `max-height` crecía
+          con el contenido —el botón de Wompi tarda en aparecer y lo estira— y
+          se salía por abajo.
+
+          `dvh` va en el `style` y `vh` en la clase, no las dos en la clase: ya
+          nos pasó que `max-h-[90vh]` le ganaba a `[90dvh]` por el orden de la
+          hoja generada. Así el inline manda donde `dvh` existe, y donde no,
+          queda el `vh` de respaldo. */}
       <div
-        className="w-full sm:max-w-[380px] rounded-t-[20px] sm:rounded-[20px] p-5 space-y-4"
-        style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+        className="w-full sm:max-w-[380px] rounded-t-[20px] sm:rounded-[20px] p-5 space-y-4 max-h-[88vh] overflow-y-auto"
+        style={{
+          background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+          maxHeight: '88dvh', WebkitOverflowScrolling: 'touch',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
