@@ -794,13 +794,59 @@ export default function RutaDetallePage({ params }) {
     return () => clearInterval(interval)
   }, [showMap, ruta?.cobrador?.id])
 
+  /* ══ QUIÉN COBRA ESTA RUTA ════════════════════════════════════════════════
+   *
+   * ⚠ ESTO NO TENÍA BOTÓN, Y ERA LO MÁS PEDIDO. `cambiarCobrador` llevaba aquí
+   * escrita desde siempre sin que nada la llamara, y la acción del buscador
+   * mandaba a `/cobradores` con la idea de que el asignador «de verdad» vivía
+   * allí. No servía: en esa pantalla el botón «Asignar» solo sale para los
+   * cobradores que NO tienen ruta, así que reasignar era imposible.
+   *
+   * El dueño: «cuando ya la ruta está creada no hay un lugar para escoger el
+   * cobrador. Si uno quiere cambiar ese cobrador o asignar uno, no hay nada».
+   *
+   * No son dos sitios que puedan divergir: los dos llaman al mismo
+   * `PATCH /api/rutas/[id]`. Lo que había era una función huérfana. */
+  const [modalCobrador,     setModalCobrador]     = useState(false)
+  const [guardandoCobrador, setGuardandoCobrador] = useState(false)
+  const [errorCobrador,     setErrorCobrador]     = useState('')
+
   const cambiarCobrador = async (cobradorId) => {
-    await fetch(`/api/rutas/${id}`, {
+    const r = await fetch(`/api/rutas/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ cobradorId: cobradorId || null }),
     })
-    fetchRuta()
+    if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.error || 'No se pudo cambiar el cobrador')
+  }
+
+  /* ⚠ EL MODAL SE CIERRA CON EL GUARDADO, NO CON LA RECARGA. Esperaba también
+     a `fetchRuta()`, y esta ruta trae 205 clientes: medido en el espejo, el
+     modal seguía abierto y sin señal 2,5 s después de elegir, con el nombre
+     viejo todavía en pantalla. Eso es lo que hace que se toque dos veces.
+     El PATCH es lo que decide; la lista se refresca por detrás. */
+  const asignarCobrador = async (cobradorId) => {
+    setGuardandoCobrador(true)
+    setErrorCobrador('')
+    try {
+      await cambiarCobrador(cobradorId)
+      /* Lo que ya se sabe, en pantalla: el nombre cambia sin esperar al
+         servidor. ⚠ SOLO `id` y `nombre`, no el objeto entero de
+         `/api/cobradores`: el `cobrador` de la ruta trae además latitud,
+         longitud y `ubicacionUpdatedAt`, y volcar aquí la otra forma dejaría
+         al nuevo cobrador con el sitio del anterior debajo del nombre hasta
+         el refresco. Lo demás lo repone `fetchRuta()`. */
+      const elegido = cobradores.find((c) => c.id === cobradorId)
+      setRuta((prev) => (prev
+        ? { ...prev, cobrador: elegido ? { id: elegido.id, nombre: elegido.nombre } : null }
+        : prev))
+      setModalCobrador(false)
+      fetchRuta()
+    } catch (e) {
+      setErrorCobrador(e.message)
+    } finally {
+      setGuardandoCobrador(false)
+    }
   }
 
   // Pago rápido: abre modal para elegir método, luego registra 1 cuota
@@ -1213,9 +1259,10 @@ export default function RutaDetallePage({ params }) {
    * borrar una ruta ni cambiarle el cobrador DESDE la ruta. El modal de
    * confirmar el borrado también estaba, esperando a que alguien lo abriera.
    *
-   * Cambiar de cobrador se resuelve LLEVANDO a la ficha del cobrador, que es
-   * donde vive el asignador de verdad. Inventar aquí un segundo selector sería
-   * tener dos sitios para lo mismo, que es como empiezan a divergir.
+   * ⚠ Y LO DE «CAMBIAR DE COBRADOR SE RESUELVE LLEVANDO A /cobradores» ERA
+   * FALSO, aunque lo dijera este mismo comentario: allí el botón «Asignar»
+   * solo sale para los cobradores SIN ruta, así que reasignar no se podía. Ya
+   * se hace desde aquí, con la misma llamada al API.
    *
    * El resto son chips de una fila que se desplaza: en un móvil de 390px la
    * mitad nace fuera de la pantalla. */
@@ -1262,11 +1309,11 @@ export default function RutaDetallePage({ params }) {
       sinonimos: ['renombrar', 'cambiar el nombre', 'ponerle otro nombre'],
       disponible: esOwner,
       ejecutar: () => setEditandoNombre(true) },
-    { id: 'ruta-cobrador', label: 'Cambiar el cobrador de la ruta', pista: 'Se asigna desde el cobrador',
+    { id: 'ruta-cobrador', label: 'Cambiar el cobrador de la ruta', pista: 'En esta ruta',
       sinonimos: ['cambiar cobrador', 'asignar cobrador', 'quien cobra esta ruta',
-        'poner otro cobrador'],
+        'poner otro cobrador', 'quitar el cobrador', 'dejarla sin cobrador'],
       disponible: esOwner,
-      ejecutar: () => router.push('/cobradores') },
+      ejecutar: () => setModalCobrador(true) },
     { id: 'ruta-eliminar', label: 'Eliminar esta ruta', pista: 'No borra los clientes',
       sinonimos: ['eliminar ruta', 'borrar ruta', 'quitar la ruta'],
       disponible: esOwner,
@@ -1863,21 +1910,45 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
    */
   const accionesCabecera = useMemo(() => (
     esOwner && ruta && !editandoNombre ? (
-      <button
-        type="button"
-        onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
-        aria-label="Cambiar el nombre de la ruta"
-        style={{
-          width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', color: 'var(--cf-ink-3)', flex: 'none',
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      </button>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+        {/* ⚠ AQUÍ Y NO SOLO EN ESCRITORIO: el subtítulo de esta misma cabecera
+            es el único sitio de la app donde el teléfono dice quién cobra la
+            ruta, así que el botón para cambiarlo va pegado a ese dato. */}
+        <button
+          type="button"
+          onClick={() => setModalCobrador(true)}
+          aria-label={ruta.cobrador ? 'Cambiar el cobrador de la ruta' : 'Asignar un cobrador a la ruta'}
+          title={ruta.cobrador ? 'Cambiar el cobrador' : 'Asignar un cobrador'}
+          style={{
+            width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: ruta.cobrador ? 'var(--cf-ink-3)' : 'var(--cf-gold-dark)',
+            flex: 'none',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M16 20v-1.5a4 4 0 00-4-4H7a4 4 0 00-4 4V20" />
+            <circle cx="9.5" cy="7" r="3.5" />
+            <path d="M18 6.5v5M20.5 9h-5" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => { setNuevoNombre(ruta.nombre); setEditandoNombre(true) }}
+          aria-label="Cambiar el nombre de la ruta"
+          style={{
+            width: 40, height: 40, borderRadius: 12, border: 0, background: 'none',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--cf-ink-3)', flex: 'none',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </button>
+      </div>
     ) : null
   ), [esOwner, ruta, editandoNombre])
 
@@ -2298,9 +2369,21 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           `${paradasPorHacer} ${paradasPorHacer === 1 ? 'cobro programado hoy' : 'cobros programados hoy'}`,
           ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
         ].filter(Boolean).join(' · ')}
-        migaVolver={`Rutas · ${ruta.nombre}`}
-        onVolver={() => router.push('/rutas')}
+        /* ⚠ SIN `migaVolver`: EN PC SALÍAN DOS BOTONES DE VOLVER, uno encima
+           del otro. La misma queja del dueño —«no se puede volver atrás con un
+           botón a la ruta»— se arregló dos veces sin que ninguna supiera de la
+           otra: aquí con la miga, y en `VolverEscritorio` (Armazon.jsx), que
+           es la salida de TODAS las pantallas de detalle y sale sola encima de
+           esta. Se queda la del armazón, que es la que la gente ya conoce del
+           resto de la app. Si esta miga vuelve, vuelven los dos botones. */
         acciones={[
+          // Con rótulo, no solo el icono de la cabecera: en PC hay sitio y este
+          // es el botón que el dueño buscó y no encontró.
+          ...(esOwner ? [{
+            id: 'cobrador',
+            texto: ruta.cobrador ? 'Cambiar cobrador' : 'Asignar cobrador',
+            onClick: () => setModalCobrador(true),
+          }] : []),
           // Mismo 404 que arriba: en escritorio llevaba meses abriendo una
           // pestaña vacía. `window.print()` es lo que hace el botón de móvil.
           { id: 'imprimir', texto: 'Imprimir hoja', onClick: () => window.print() },
@@ -3656,6 +3739,78 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
             Esto afecta el capital de esta ruta y también el saldo general de tu negocio.
           </p>
+        </div>
+      </Modal>
+
+      {/* ── Modal: quién cobra esta ruta ─────────────────────────────────────
+           Un toque en el renglón asigna y cierra: elegir cobrador y luego
+           «Guardar» son dos gestos para una sola decisión.
+
+           ⚠ Se dice si el cobrador YA lleva otra ruta. Un cobrador puede
+           llevar varias —el modelo lo permite y hay quien lo hace a propósito—
+           pero asignarle una segunda sin enterarse es de donde salen los días
+           en que nadie pasa por media cartera. */}
+      <Modal
+        open={modalCobrador}
+        onClose={() => { setModalCobrador(false); setErrorCobrador('') }}
+        title="¿Quién cobra esta ruta?"
+        footer={<Button variant="secondary" onClick={() => { setModalCobrador(false); setErrorCobrador('') }}>Cerrar</Button>}
+      >
+        <div className="flex flex-col gap-2">
+          {errorCobrador && (
+            <div className="text-[var(--cf-red-dark)] text-sm bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-[12px] px-4 py-3">
+              {errorCobrador}
+            </div>
+          )}
+          {cobradores.filter(c => c.activo !== false).length === 0 && (
+            <p className="text-sm text-[var(--cf-ink-3)] py-2">
+              Todavía no has creado ningún cobrador. Puedes crearlo desde la pantalla de Cobradores.
+            </p>
+          )}
+
+          {[{ id: null, nombre: 'Sin cobrador', suelto: true },
+            ...cobradores.filter(c => c.activo !== false)].map((c) => {
+            const puesto = (ruta.cobrador?.id ?? null) === (c.id ?? null)
+            const otraRuta = c.ruta && c.ruta.id !== ruta.id ? c.ruta.nombre : null
+            return (
+              <button
+                key={c.id ?? 'ninguno'}
+                type="button"
+                disabled={guardandoCobrador || puesto}
+                onClick={() => asignarCobrador(c.id)}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-[12px] border text-left transition-colors"
+                style={{
+                  background: puesto ? 'var(--cf-gold-tint)' : 'var(--cf-card)',
+                  borderColor: puesto ? 'var(--cf-gold-border)' : 'var(--cf-border)',
+                  cursor: puesto ? 'default' : 'pointer',
+                  opacity: guardandoCobrador && !puesto ? 0.5 : 1,
+                }}
+              >
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold" style={{ color: c.suelto ? 'var(--cf-ink-3)' : 'var(--cf-ink)' }}>
+                    {c.nombre}
+                  </span>
+                  {otraRuta && (
+                    <span className="block text-[11px] mt-0.5 text-[var(--cf-ink-3)]">
+                      Ya cobra en {otraRuta}
+                    </span>
+                  )}
+                  {c.suelto && !puesto && (
+                    <span className="block text-[11px] mt-0.5 text-[var(--cf-ink-3)]">
+                      La ruta queda sin nadie asignado
+                    </span>
+                  )}
+                </span>
+                {puesto && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+                    strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ flex: 'none' }} aria-hidden="true">
+                    <path d="M4 12.5l5 5L20 6.5" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
         </div>
       </Modal>
 

@@ -1468,3 +1468,35 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
 @media (max-width: 389px) {
   .cf-chips-acciones[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ══ «CREAR COBRADOR» NO SE VA BAJO EL SCROLL ═══════════════════════════════
+ *
+ * El dueño: «al crear un cobrador, si no se tienen pocos, el botón está abajo…
+ * toca desplazarse hacia abajo. No es intuitivo y se le puede perder».
+ *
+ * ⚠ `sticky` y NO `fixed`, por lo mismo que en `WizardPlan`: se ancla al
+ * recorrido en vez de a la ventana, así que flota abajo mientras queden
+ * cobradores por debajo y DESCANSA EN SU SITIO al llegar al final. Con pocos
+ * cobradores no se mueve nada, se ve donde siempre.
+ *
+ * En móvil el `bottom` sube por encima de la pastilla, que se pinta encima de
+ * todo; en escritorio la pastilla es `lg:hidden` y ese hueco dejaría el botón
+ * flotando en mitad de la nada. El degradado va porque el contenido pasa por
+ * debajo a propósito: sin la parte opaca un nombre se leía cortado por detrás.
+ */
+.cf-crear-sticky {
+  position: sticky;
+  bottom: calc(var(--cf-nav-inset) + 62px + env(safe-area-inset-bottom, 0px));
+  padding: 18px 0 4px;
+  z-index: 20;
+  background: linear-gradient(
+    to top,
+    var(--cf-surface) 0%,
+    var(--cf-surface) 72%,
+    transparent 100%
+  );
+}
+
+@media (min-width: 1024px) {
+  .cf-crear-sticky { bottom: 16px; }
+}

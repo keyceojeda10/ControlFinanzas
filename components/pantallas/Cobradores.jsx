@@ -259,10 +259,26 @@ export function Cobradores({
         )}
       </div>
 
+      {/* ── «CREAR COBRADOR» NO SE VA BAJO EL SCROLL ─────────────────────────
+          El dueño: «al crear un cobrador, si no se tienen pocos, el botón está
+          abajo... toca desplazarse hacia abajo. No es intuitivo y se le puede
+          perder ese botón». Con tres cuentas se veía sin moverse; con nueve, no.
+
+          ⚠ `sticky`, NO `fixed`, y por lo mismo que en `WizardPlan`: se ancla
+          al recorrido en vez de a la ventana, así que flota abajo mientras
+          queden cobradores por debajo y DESCANSA EN SU SITIO al llegar al
+          final. Con pocos cobradores no se mueve nada: se ve donde siempre.
+
+          El `bottom` sube por encima de la pastilla —`--cf-nav-inset` + su
+          alto—, que se pinta encima de todo. Y el degradado va porque el
+          contenido pasa por debajo a propósito: sin la parte opaca, un nombre
+          se leía cortado por la mitad detrás del botón. */}
       {(onCrear || onRanking) && (
-        <div style={botonFlotante
-          ? { position: 'absolute', left: 16, right: 16, bottom: 18 }
-          : { flex: 'none', padding: '18px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div
+          className={botonFlotante ? undefined : 'cf-crear-sticky'}
+          style={botonFlotante
+            ? { position: 'absolute', left: 16, right: 16, bottom: 18 }
+            : { flex: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {onCrear && (
             <button type="button" onClick={onCrear} style={{
               width: '100%', height: 56, border: 'none', borderRadius: 999,

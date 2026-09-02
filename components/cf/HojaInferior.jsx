@@ -10,7 +10,7 @@
 // En escritorio el mismo contenido se presenta como modal centrado de 520px.
 // Es la única diferencia entre las dos presentaciones.
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react'
 import { paso, asentado, proyectar, resistencia, velocidadDe } from '@/lib/muelle'
 
 /* ── LA HOJA SE AGARRA Y SE TIRA ────────────────────────────────────────────
@@ -47,6 +47,40 @@ function dondeEsta(el) {
   try { return new DOMMatrixReadOnly(t).m42 } catch { return 0 }
 }
 
+/* ══ ¿PC O TELÉFONO? — Y HAY QUE SABERLO EN EL PRIMER CUADRO ═══════════════
+ *
+ * ⚠ ESTO ERA UN `useState(false)` + `useEffect`, Y ASÍ SE VEÍA EL FALLO. Con la
+ * detección en un efecto, TODA hoja nace creyendo que está en un teléfono:
+ * `position:absolute; bottom:0; transform:translateY(100%)`, o sea pegada abajo
+ * y fuera de la pantalla. El efecto la convertía en modal centrado un cuadro
+ * después.
+ *
+ * A las hojas que viven montadas no les pasa: para cuando se abren, el efecto
+ * corrió hace rato. Pero las que se montan AL ABRIRSE —las que van dentro de un
+ * `{estado && (…)}`, como «Quiere pagar todo hoy» y «Mover a perdidos»— pintan
+ * ese primer cuadro de verdad. Medido en el espejo, a 1440px:
+ *
+ *     Recargo por mora   (siempre montada)  → left:50% translate(-50%,-50%)  ok
+ *     Cerrar anticipado  (montada al abrir) → bottom:0 translateY(100%)      ⚠
+ *
+ * El dueño, con la captura: «se despliega hacia abajo del todo y no se alcanza
+ * a ver nada. No sale normal como los otros modales. Ya probé los otros modales
+ * y están bien». Los otros están bien por dónde están escritos, no por otra
+ * cosa — y eso no se sostiene solo.
+ *
+ * `useSyncExternalStore` es exactamente para esto: durante el render del
+ * servidor y la hidratación devuelve el valor de `anchoServidor` (falso, igual
+ * que antes, así que el desajuste que tiró el árbol tres veces sigue siendo
+ * imposible), y en cualquier montaje POSTERIOR —que es cuando se abre una
+ * hoja— lee el ancho de verdad ya en el primer render. */
+const mqAncha = typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)') : null
+const suscribirAncho = (alCambiar) => {
+  mqAncha?.addEventListener('change', alCambiar)
+  return () => mqAncha?.removeEventListener('change', alCambiar)
+}
+const anchoAhora     = () => !!mqAncha?.matches
+const anchoServidor  = () => false
+
 export default function HojaInferior({
   abierta,
   onCerrar,
@@ -67,17 +101,7 @@ export default function HojaInferior({
      arriba justo por donde está el título. El token trae el `@supports`. */
   alturaMaxima = 'var(--cf-alto-hoja)',
 }) {
-  // La detección va en un EFECTO, no en el primer render: leer matchMedia al
-  // pintar hace que el servidor diga una cosa y el cliente otra, y React tira
-  // el árbol entero. Ya me pasó tres veces en este rediseño.
-  const [anchaPantalla, setAnchaPantalla] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)')
-    const leer = () => setAnchaPantalla(mq.matches)
-    leer()
-    mq.addEventListener('change', leer)
-    return () => mq.removeEventListener('change', leer)
-  }, [])
+  const anchaPantalla = useSyncExternalStore(suscribirAncho, anchoAhora, anchoServidor)
   const escritorio = escritorioProp ?? anchaPantalla
 
   // Escape cierra, y el fondo no scrollea mientras la hoja está abierta.

@@ -151,7 +151,14 @@ export default function RutaEscritorio({
               mayúsculas y sin nada que lo distinga del texto de al lado. El
               dueño lo reportó como que no había forma de volver a la ruta «sino
               dándole al menú». La salida estaba; lo que faltaba era que
-              PARECIERA una salida. */}
+              PARECIERA una salida.
+
+              ⚠ Y LA PÁGINA DE LA RUTA YA NO LA PASA: aquella queja se arregló
+              DOS veces, aquí y en `VolverEscritorio` (Armazon.jsx), que sale
+              sola encima de esta en PC. Eran dos botones de volver, uno encima
+              del otro. El prop sigue existiendo para quien lo necesite; sin él
+              esto no se pinta. Antes de volver a pasarlo desde una pantalla,
+              mirar si el armazón ya le está poniendo el suyo. */}
           {migaVolver && (
             <button
               type="button"

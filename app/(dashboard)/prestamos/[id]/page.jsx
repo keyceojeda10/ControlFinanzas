@@ -12,7 +12,7 @@ import { Badge }                      from '@/components/ui/Badge'
 import { Button }                     from '@/components/ui/Button'
 import { Card }                       from '@/components/ui/Card'
 import { Modal }                      from '@/components/ui/Modal'
-import { SkeletonPrestamoDetalle }     from '@/components/ui/Skeleton'
+import { Skeleton, SkeletonPrestamoDetalle } from '@/components/ui/Skeleton'
 import MonedaCF                       from '@/components/ui/MonedaCF'
 import RegistrarPago                  from '@/components/prestamos/RegistrarPago'
 import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
@@ -2867,8 +2867,19 @@ function PrestamoDetalleContenido({ params }) {
               />
             }
           >
+            {/* ⚠ EL HUECO MIDE LO QUE VA A LLEGAR. Con un «Calculando…» de una
+                línea la hoja abría a 395px y a los 400 ms saltaba a 784: se
+                duplicaba en la cara del que la estaba mirando. Las cuatro
+                piezas y sus altos están medidos en el DOM con los datos ya
+                puestos (167 · 201 · 75 · 75), que es la única forma de que al
+                cargar no salte nada. Ver `Cargando.jsx`, que dice lo mismo. */}
             {liqCargando && (
-              <p style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>Calculando…</p>
+              <>
+                <Skeleton className="h-[167px] w-full rounded-[14px]" />
+                <Skeleton className="h-[201px] w-full rounded-[14px]" />
+                <Skeleton className="h-[75px] w-full rounded-[14px]" />
+                <Skeleton className="h-[75px] w-full rounded-[14px]" />
+              </>
             )}
 
             {/* El aviso de cálculo APROXIMADO. Va arriba y en ámbar: cerrar por una
