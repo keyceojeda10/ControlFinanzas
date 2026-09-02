@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import MedioDePagoGuardado from '@/components/pagos/MedioDePagoGuardado'
 import HojaSuscripcion     from '@/components/pagos/HojaSuscripcion'
@@ -101,7 +101,10 @@ export default function PlanPage() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { session, loading: authLoading } = useAuth()
+  const { session, loading: authLoading, updateSession } = useAuth()
+  /* ⚠ UNA SOLA VEZ. Refrescar la sesión cambia `session`, que vuelve a disparar
+     el efecto: sin este pestillo se pediría dos veces seguidas. */
+  const yaRefresque = useRef(false)
   const wompiRetorno = searchParams.get('wompi') === 'retorno'
   /* De vuelta del widget de Wompi: `guardado`, `error` o `no-autorizado`. */
   const medioRetorno = searchParams.get('medio')
@@ -149,8 +152,28 @@ export default function PlanPage() {
     ]).then(([est, u]) => {
       if (est) { setEstado(est); setDescuentoOrg(est.descuento ?? 0) }
       if (u) setUso(u)
+
+      /* ⚠ SI LA BASE DICE QUE YA PAGÓ PERO LA SESIÓN SIGUE DICIENDO VENCIDO,
+       * SE REFRESCA LA SESIÓN AQUÍ MISMO.
+       *
+       * El vencimiento viaja dentro del token y el middleware corta todas las
+       * `/api/*` con ese dato. Sin esto, quien acababa de pagar seguía viendo
+       * la app bloqueada y tenía que cerrar sesión y volver a entrar — «mucha
+       * gente paga y me escribe que el sistema sigue igual», el dueño.
+       *
+       * El arreglo de fondo está en `lib/auth.js` (un token vencido se refresca
+       * sin esperar los 15 minutos). Esto es lo que hace que se note SIN
+       * recargar: es la pantalla donde acaba de pagar. */
+      const sesionDiceVencido = session?.user?.suscripcionVencimiento
+        && new Date(session.user.suscripcionVencimiento) < new Date()
+      const baseDiceAlDia = est?.fechaVencimiento
+        && new Date(est.fechaVencimiento) > new Date()
+      if (sesionDiceVencido && baseDiceAlDia && !yaRefresque.current) {
+        yaRefresque.current = true
+        updateSession?.()
+      }
     }).catch(() => {}).finally(() => setLoadEstado(false))
-  }, [authLoading])
+  }, [authLoading, session?.user?.suscripcionVencimiento, updateSession])
 
   const planActual = uso?.plan ?? estado?.plan ?? session?.user?.plan ?? 'starter'
   const tieneRecurrente = estado?.tieneRecurrenteActiva
