@@ -81,6 +81,71 @@ const suscribirAncho = (alCambiar) => {
 const anchoAhora     = () => !!mqAncha?.matches
 const anchoServidor  = () => false
 
+/* ══ UNA SOLA ENTRADA DE HISTORIA PARA TODAS LAS HOJAS ══════════════════════
+ *
+ * Cada hoja metía SU entrada al abrirse y no la retiraba al cerrar. Retirarla
+ * con `history.back()` en el cierre se había probado y rompía el menú de
+ * gestión: cierra y abre otra hoja en el mismo toque, y como `back()` es
+ * asíncrono llegaba cuando la nueva ya estaba abierta y se la llevaba. Así
+ * que cada hoja abierta dejaba una entrada muerta. Tras pasearse por el menú
+ * —menú, recargo, volver al menú, descuento…— el historial tenía media docena
+ * de entradas `cfHoja` sin hoja detrás, y el «Volver» de la cabecera hace
+ * `router.back()`: consumía una entrada muerta por toque y no se movía.
+ *
+ * El dueño: «le tengo que dar un montón de veces, como si quedaran pantallas
+ * fantasmas... prácticamente se puede ver como si no sirviera el botón».
+ *
+ * Ahora la entrada es UNA, compartida a nivel de módulo:
+ *   · abre la primera hoja → `pushState`; abre otra encima → nada.
+ *   · «atrás» del teléfono → `popstate` cierra la hoja de arriba; si quedan
+ *     más, se vuelve a meter la entrada para que el siguiente «atrás» cierre
+ *     la siguiente.
+ *   · cierra la última hoja por la X o por un botón → se retira la entrada con
+ *     `history.back()`, pero DIFERIDO un tick y solo si sigue sin haber hojas:
+ *     cuando el menú cierra y abre otra en el mismo toque, la nueva ya está
+ *     contada para cuando corre el tick, y la entrada se reutiliza. Es justo
+ *     lo que hacía imposible retirarla antes.
+ *   · y solo si la entrada de arriba es la nuestra (`history.state.cfHoja`):
+ *     si desde la hoja se navegó a otra página, ahí arriba está la página
+ *     nueva y un `back()` la echaría.
+ */
+const pila = []            // { cerrar } de cada hoja abierta, en orden
+let entradaViva = false
+let retiradaPendiente = 0
+
+function meterEntrada() {
+  window.history.pushState({ cfHoja: true }, '')
+  entradaViva = true
+}
+
+function alPopstate() {
+  if (!entradaViva) return
+  entradaViva = false
+  pila[pila.length - 1]?.cerrar()
+  // La hoja que cierra sale de la pila en su cleanup, en el próximo render:
+  // se cuenta cuántas QUEDARÁN, no cuántas hay.
+  if (pila.length > 1) meterEntrada()
+}
+
+export function registrarHoja(hoja) {
+  if (pila.length === 0) window.addEventListener('popstate', alPopstate)
+  pila.push(hoja)
+  clearTimeout(retiradaPendiente)
+  if (!entradaViva) meterEntrada()
+  return () => {
+    const i = pila.indexOf(hoja)
+    if (i >= 0) pila.splice(i, 1)
+    if (pila.length > 0) return
+    window.removeEventListener('popstate', alPopstate)
+    clearTimeout(retiradaPendiente)
+    retiradaPendiente = setTimeout(() => {
+      if (pila.length > 0 || !entradaViva) return
+      entradaViva = false
+      if (window.history.state?.cfHoja) window.history.back()
+    }, 0)
+  }
+}
+
 export default function HojaInferior({
   abierta,
   onCerrar,
@@ -117,39 +182,24 @@ export default function HojaInferior({
     }
   }, [abierta, onCerrar])
 
-  // ── EL BOTÓN «ATRÁS» DEL TELÉFONO CIERRA LA HOJA ───────────────────────
-  //
-  // Reportado por un cobrador: «registro a un cliente y se me queda ahí, no me
-  // da arriba la flechita para salir atrás; si le doy con el celular se vuelve a
-  // salir afuera». Y es exacto: aquí solo se escuchaba `Escape` —una tecla, o
-  // sea SOLO en escritorio— así que en Android el «atrás» no encontraba nada que
-  // cerrar y se llevaba por delante la aplicación entera. En medio de una ruta,
-  // cobrando.
-  //
-  // Cómo funciona: al abrir se mete una entrada de historia; el «atrás» la
-  // consume y `popstate` cierra la hoja en vez de salir de la página.
-  // ⚠ NO SE LLAMA A `history.back()` AL CERRAR. Lo hacía, y rompió media
-  // pantalla de gestión: «Recargo», «Descuento», «Días sin cobro», «Cerrar
-  // anticipado» y «Mover a perdidos» no hacían nada.
-  //
-  // La secuencia: al pulsar una opción, el menú se cierra y ABRE otra hoja
-  // (`onAccion` hace `setModalGestion(false)` y luego `a.hacer()`). El `back()`
-  // del cierre es ASÍNCRONO —el navegador lo procesa en el siguiente ciclo— así
-  // que para cuando llega, la hoja nueva ya está abierta y se lleva la SUYA por
-  // delante. Se abría y se cerraba sola: desde fuera, un botón muerto.
-  //
-  // Y no hace falta: la entrada sobrante no molesta —el siguiente «atrás» la
-  // consume y el `popstate` no encuentra hoja abierta que cerrar—, mientras que
-  // retirarla a mano es justo lo que pisaba la hoja siguiente.
+  /* ── EL «ATRÁS» DEL TELÉFONO CIERRA LA HOJA ─────────────────────────────
+     Reportado por un cobrador: «registro a un cliente y se me queda ahí, no me
+     da arriba la flechita para salir atrás; si le doy con el celular se vuelve
+     a salir afuera». Aquí solo se escuchaba `Escape`, así que en Android el
+     «atrás» se llevaba la aplicación entera. Ver `registrarHoja` arriba: la
+     entrada de historia es UNA para todas las hojas, y se retira sola.
+
+     ⚠ `onCerrar` va por ref y las deps son SOLO `[abierta]`. Antes el efecto
+     dependía de `onCerrar`, que las páginas pasan como flecha en línea —una
+     función nueva en cada render—, así que CADA RE-RENDER DEL PADRE CON LA
+     HOJA ABIERTA METÍA OTRA ENTRADA: una por tecla escrita en un campo de la
+     hoja. De ahí salía «un montón de veces». */
+  const refCerrar = useRef(onCerrar)
+  useEffect(() => { refCerrar.current = onCerrar })
   useEffect(() => {
     if (!abierta || typeof window === 'undefined') return
-    window.history.pushState({ cfHoja: true }, '')
-    const alVolver = () => { onCerrar?.() }
-    window.addEventListener('popstate', alVolver)
-    return () => {
-      window.removeEventListener('popstate', alVolver)
-    }
-  }, [abierta, onCerrar])
+    return registrarHoja({ cerrar: () => refCerrar.current?.() })
+  }, [abierta])
 
   /* ⚠ TODOS LOS HOOKS ANTES DEL `return null`. Un `useState` colado detrás de
      un return condicional ya tiró la pantalla del comprobante entero, y ninguna
