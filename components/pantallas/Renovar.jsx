@@ -60,6 +60,11 @@ export function Renovar({
      de cobro. Sin esto decía «Renovar y entregar $0», que es lo contrario de lo
      que pasa: en un cambio de modo no se entrega un peso. */
   botonTexto,
+  /* ⚠ `sinBoton`: el botón lo pinta QUIEN ENVUELVE, en el pie fijo del modal.
+     Aquí dentro quedaba al final del cuerpo desplazable, y había que bajar
+     hasta el fondo para encontrarlo —lo contrario de los demás modales de
+     gestión, que llevan Cancelar y Guardar siempre a la vista—. */
+  sinBoton = false,
   // ── LA RANURA DE LAS CONDICIONES ──
   // La lamina dibuja el DINERO: cuanto debe, cuanto sera el total y cuanto sale
   // del bolsillo. Pero renovar tambien fija tasa, plazo, frecuencia, fecha y
@@ -199,14 +204,16 @@ export function Renovar({
 
       {/* EL BOTÓN REPITE LA CIFRA. Con un «Renovar» a secas habría que mirar
           arriba otra vez antes de pulsar, con el cliente delante. */}
-      <button type="button" onClick={onRenovar} disabled={renovando} style={{
-        height: 54, border: 'none', borderRadius: 14,
-        background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', font: 'inherit',
-        fontSize: 16, fontWeight: 700,
-        cursor: renovando ? 'progress' : 'pointer', opacity: renovando ? 0.6 : 1,
-      }}>
-        {renovando ? (botonTexto ? 'Cambiando…' : 'Renovando…') : (botonTexto ?? (entrega ? `Renovar y entregar ${entrega}` : 'Renovar'))}
-      </button>
+      {!sinBoton && (
+        <button type="button" onClick={onRenovar} disabled={renovando} style={{
+          height: 54, border: 'none', borderRadius: 14,
+          background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)', font: 'inherit',
+          fontSize: 16, fontWeight: 700,
+          cursor: renovando ? 'progress' : 'pointer', opacity: renovando ? 0.6 : 1,
+        }}>
+          {renovando ? (botonTexto ? 'Cambiando…' : 'Renovando…') : (botonTexto ?? (entrega ? `Renovar y entregar ${entrega}` : 'Renovar'))}
+        </button>
+      )}
 
       {nota && (
         <span style={{ fontSize: 12, lineHeight: 1.45, color: 'var(--cf-ink-3)', textAlign: 'center' }}>

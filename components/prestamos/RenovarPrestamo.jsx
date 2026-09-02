@@ -229,6 +229,24 @@ export default function RenovarPrestamo({
       subtitle={soloModo
         ? 'Se cierra este préstamo y se abre uno con el mismo capital. No sale ni entra dinero.'
         : (clienteNombre ? `Cierra el de ${clienteNombre} y abre uno nuevo` : 'Cierra el actual y abre uno nuevo')}
+      /* ⚠ LOS BOTONES VAN EN EL PIE FIJO, como en los demás modales de gestión.
+         Estaban al final del cuerpo desplazable —el de «Renovar» lo pintaba el
+         propio formulario y «Cancelar» iba detrás— y había que bajar hasta el
+         fondo para encontrarlos. El dueño: «tiene los botones dentro del mismo
+         modal y hay que desplazarse hacia abajo para verlo... no es igual que
+         los otros modales. Los botones estáticos abajo son lo bueno». Las dos
+         hojas de este componente —renovar y cambiar de modo— eran las dos que
+         fallaban. El botón sigue repitiendo la cifra que se entrega. */
+      footer={
+        <>
+          <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSubmit} loading={loading}>
+            {soloModo
+              ? 'Cambiar el modo de cobro'
+              : (montoNum > 0 && enMano > 0 ? `Renovar y entregar ${formatMoney(enMano)}` : 'Renovar')}
+          </Button>
+        </>
+      }
     >
       <div className="space-y-4">
 
@@ -287,6 +305,7 @@ export default function RenovarPrestamo({
             ? formatMoney(Math.round(calculo.totalAPagar - montoNum)) : null}
           onRenovar={handleSubmit}
           renovando={loading}
+          sinBoton
         >
 
         {/* ══ CÓMO SE VA A COBRAR ═══════════════════════════════════════════
@@ -579,14 +598,6 @@ export default function RenovarPrestamo({
         {error && <p className="text-sm" style={{ color: 'var(--cf-red-dark)' }}>{error}</p>}
 
         </Renovar>
-
-        {/* «Cancelar» de segunda: el boton principal lo pinta `Renovar`, y dos
-            botones del mismo tamaño hacen dudar cual es el que sigue. */}
-        <button type="button" onClick={handleClose} style={{
-          height: 44, border: 0, background: 'none', cursor: 'pointer',
-          font: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink-3)',
-          width: '100%',
-        }}>Cancelar</button>
 
       </div>
     </Modal>
