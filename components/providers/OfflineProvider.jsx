@@ -39,6 +39,44 @@ export default function OfflineProvider({ children }) {
   const lastAutoSyncAtRef = useRef(0)
   const swReloadPendienteRef = useRef(false)
 
+  /* ══ RECARGAR SOLO CUANDO NO SE PIERDE NADA ════════════════════════════════
+   *
+   * ⚠ ESTO ES LO QUE BORRABA EL LOGIN A MEDIO ESCRIBIR. `sw.js` hace
+   * `skipWaiting()` + `clients.claim()`, así que el service worker nuevo toma
+   * el mando en el acto y dispara `controllerchange` en todas las pestañas. Aquí
+   * se contestaba con `window.location.reload()` INMEDIATO, sin mirar qué
+   * estaba haciendo la persona. Y como el navegador busca service worker nuevo
+   * cada vez que se abre la app, con un despliegue al día —25 esta semana— era
+   * una recarga en cada entrada: al escribir la contraseña, al abrir un cliente,
+   * al tercer toque.
+   *
+   * El dueño: «para entrar al sistema toca escribir el usuario y contraseña dos
+   * veces... uno hace tres pasos y el sistema recarga y luego te devuelve a una
+   * pantalla que ya habías pasado».
+   *
+   * Recargar hace falta para tomar el código nuevo, pero NUNCA encima de la
+   * persona. Las dos señales —`controllerchange` y el mensaje `SW_UPDATED`—
+   * pasan por aquí y siguen la misma regla: si la pestaña está en segundo
+   * plano, ya; si está delante, cuando pase a segundo plano. Mientras tanto la
+   * página vieja sigue funcionando porque STATIC_CACHE conserva sus chunks
+   * (ver sw.js), y si aun así pide uno que ya no existe, `error.jsx` recarga
+   * solo en ese caso. */
+  const programarRecarga = useCallback(() => {
+    if (document.visibilityState === 'hidden') {
+      window.location.reload()
+      return
+    }
+    if (swReloadPendienteRef.current) return
+    swReloadPendienteRef.current = true
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') {
+        document.removeEventListener('visibilitychange', onHide)
+        window.location.reload()
+      }
+    }
+    document.addEventListener('visibilitychange', onHide)
+  }, [])
+
   // Safety: liberar syncingRef si lleva demasiado tiempo (sincro colgada)
   const SYNCING_REF_TTL_MS = 75_000 // 75s — mas que timeout interno de sincronizarTodo
   const checkStaleLock = () => {
@@ -331,14 +369,17 @@ export default function OfflineProvider({ children }) {
     // nueva se quedaba a medio camino: chunks nuevos servidos a una pagina
     // vieja, que es la otra mitad del «Element type is invalid».
     //
-    // `controllerchange` avisa justo en ese momento. Se recarga una vez, con
-    // guarda: sin ella, si algo vuelve a disparar el evento, la pagina entra
-    // en bucle de recargas y no se puede ni cerrar.
-    let recargando = false
+    // `controllerchange` avisa justo en ese momento. ⚠ SE PROGRAMA, NO SE
+    // RECARGA AQUÍ: ver `programarRecarga`. Y se distingue la PRIMERA
+    // instalación —una pestaña que no tenía controlador— porque `claim()`
+    // también dispara el evento ahí, y esa página vino fresca de la red: no
+    // hay nada que recargar. Era la recarga del login sin haber desplegado.
+    let teniaControlador = !!navigator.serviceWorker.controller
     const alCambiar = () => {
-      if (recargando) return
-      recargando = true
-      window.location.reload()
+      const primeraInstalacion = !teniaControlador
+      teniaControlador = true
+      if (primeraInstalacion) return
+      programarRecarga()
     }
     navigator.serviceWorker.addEventListener('controllerchange', alCambiar)
 
@@ -367,7 +408,7 @@ export default function OfflineProvider({ children }) {
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', alCambiar)
     }
-  }, [])
+  }, [programarRecarga])
 
   // Start auto-sync safety net (30s interval)
   useEffect(() => {
@@ -383,30 +424,15 @@ export default function OfflineProvider({ children }) {
         syncPendingThenFull({ silent: true })
       }
       if (e.data?.type === 'SW_UPDATED') {
-        // Hay version nueva activada. Recargar es necesario para tomar el
-        // codigo fresco, pero NUNCA interrumpiendo al usuario en plena vista
-        // (podria estar llenando un pago). Estrategia:
-        //   - pestana/app en segundo plano -> recargar ya (invisible)
-        //   - pestana visible -> diferir hasta que pase a segundo plano
+        // Hay version nueva activada. Misma regla que `controllerchange`, en
+        // el mismo sitio: ver `programarRecarga`.
         if (!navigator.serviceWorker.controller) return // primera instalacion: la pagina ya vino fresca de red
-        if (document.visibilityState === 'hidden') {
-          window.location.reload()
-          return
-        }
-        if (swReloadPendienteRef.current) return
-        swReloadPendienteRef.current = true
-        const onHide = () => {
-          if (document.visibilityState === 'hidden') {
-            document.removeEventListener('visibilitychange', onHide)
-            window.location.reload()
-          }
-        }
-        document.addEventListener('visibilitychange', onHide)
+        programarRecarga()
       }
     }
     navigator.serviceWorker.addEventListener('message', onMessage)
     return () => navigator.serviceWorker.removeEventListener('message', onMessage)
-  }, [syncPendingThenFull])
+  }, [syncPendingThenFull, programarRecarga])
 
   useEffect(() => {
     refreshPending()
