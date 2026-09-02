@@ -132,7 +132,7 @@ const NAV_MORE_OWNER = [
     ),
   },
   {
-    label: 'Mi plata',
+    label: 'Capital',
     href:  '/capital',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@ const NAV_MORE_OWNER = [
     ),
   },
   {
-    label: 'Quién hizo qué',
+    label: 'Historial',
     href:  '/actividad',
     icon: (
       <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

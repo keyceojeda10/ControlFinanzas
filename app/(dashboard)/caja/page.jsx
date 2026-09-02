@@ -1457,7 +1457,7 @@ const MOVIMIENTOS_MANUALES = [
       disponible: esOwner && cierres.some((c) => c.cobradorId === ownerId),
       llevarA: 'cf-cierre-owner',
       ejecutar: () => reabrirCierreOwner() },
-    { id: 'caja-capital', label: 'Meter o sacar plata del fondo', pista: 'Está en Mi plata, te llevo',
+    { id: 'caja-capital', label: 'Meter o sacar plata del fondo', pista: 'Está en Capital, te llevo',
       sinonimos: ['meter plata', 'sacar plata', 'meter capital', 'sacar capital', 'inyeccion',
         'retirar del fondo', 'capital'],
       disponible: puedeVerCapital,

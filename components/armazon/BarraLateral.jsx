@@ -57,7 +57,7 @@ const PRINCIPAL = [
 ]
 
 const HERRAMIENTAS = [
-  { href: '/capital',              nombre: 'Mi plata' },
+  { href: '/capital',              nombre: 'Capital' },
   { href: '/lineas-credito',       nombre: 'Líneas de crédito' },
   { href: '/gastos',               nombre: 'Gastos' },
   { href: '/reportes',             nombre: 'Reportes' },
@@ -67,7 +67,7 @@ const HERRAMIENTAS = [
   { href: '/migrador',             nombre: 'Pasar mi cuaderno' },
   { href: '/carga-masiva',         nombre: 'Importar Excel' },
   { href: '/clavos',               nombre: 'Perdidos' },
-  { href: '/actividad',            nombre: 'Quién hizo qué' },
+  { href: '/actividad',            nombre: 'Historial' },
   // Venía del grupo «Cuenta», que se fue: ver la nota de abajo. Configuración y
   // Soporte se quedaron cubiertos por HojaCuenta, pero Tutoriales no está ahí,
   // y quitarlo sin más lo dejaba sin ninguna vía desde la barra.

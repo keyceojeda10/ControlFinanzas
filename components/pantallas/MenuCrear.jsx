@@ -288,7 +288,7 @@ export default function MenuCrear({
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, flex: 'none' }}>
           <Destino icono="cobrar"  nombre="Cobrar hoy" cifra={cobrosCorto} onClick={ir('/cobros-hoy')} />
           <Destino icono="caja"    nombre="La caja"    cifra={cajaEstado} onClick={ir('/caja')} />
-          <Destino icono="miplata" nombre="Mi plata"   cifra={plataCorto} onClick={ir('/capital')} />
+          <Destino icono="miplata" nombre="Capital"    cifra={plataCorto} onClick={ir('/capital')} />
           {/* Era `/plan` — 404. La pantalla vive bajo configuracion. */}
           <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/configuracion/plan')} />
         </div>

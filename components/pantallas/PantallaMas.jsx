@@ -152,19 +152,26 @@ export default function PantallaMas({
   // entrado desde un computador no sabía que la función existe. En escritorio
   // no pasaba: la barra lateral la pinta siempre.
   //
-  // «Quién hizo qué» no tiene ese problema y se queda como estaba: si hay un
+  // «Historial» no tiene ese problema y se queda como estaba: si hay un
   // solo usuario, la pantalla que abre está vacía por definición y no hay nada
   // que hacer para llenarla desde ahí.
   const hayEquipo = usuarios > 1
 
+  /* ⚠ «CAPITAL» E «HISTORIAL», CON EL NOMBRE DE LA PANTALLA. Se llamaban
+     «Mi plata» y «Quién hizo qué» —los nombres «del usuario» de la lámina— pero
+     la pantalla de detrás decía «Capital» en su cabecera, la otra «Actividad»,
+     y el buscador Ctrl+K la llamaba «Historial»: tres nombres para lo mismo.
+     El dueño, 2 sep 2026: «en vez de entenderse fácilmente, se complica, se
+     enreda mucho. Capital e historial. Ya está». Un mismo nombre en el menú,
+     en la cabecera y en el buscador, o no es un nombre. */
   const herramientas = [
-    { icono: 'plata',      nombre: 'Mi plata',            cifra: plataLista && `${plataLista} listos para prestar`, destino: '/capital' },
+    { icono: 'plata',      nombre: 'Capital',             cifra: plataLista && `${plataLista} listos para prestar`, destino: '/capital' },
     /* ⚠ LA CAJA SOLO SE ALCANZABA DESDE EL BOTÓN +.
        Reportado por el dueño: «caja debería estar en el menú de los 4
        cuadritos porque es una opción muy importante y en móvil solo sale en el
        menú FAB».
 
-       Va SEGUNDA, pegada a «Mi plata», porque son las dos preguntas de dinero:
+       Va SEGUNDA, pegada a «Capital», porque son las dos preguntas de dinero:
        cuánto tengo para prestar y cuánto entró hoy. Separarlas obligaría a
        recorrer la lista para pasar de una a otra.
 
@@ -185,7 +192,7 @@ export default function PantallaMas({
     // cuántos hay, y cuando no hay ninguno lo dice también — que es
     // precisamente cuando la fila sirve para algo.
     { icono: 'socios', nombre: 'Socios', cifra: textoSocios(socios?.cantidad), destino: '/socios' },
-    hayEquipo && { icono: 'quien',  nombre: 'Quién hizo qué', cifra: null, destino: '/actividad' },
+    hayEquipo && { icono: 'quien',  nombre: 'Historial',      cifra: null, destino: '/actividad' },
   ].filter(Boolean)
 
   return (

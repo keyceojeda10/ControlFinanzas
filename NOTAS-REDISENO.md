@@ -165,7 +165,9 @@ No lo pude bajar entero: el MCP corta a 256 KiB y el archivo pesa ~1,8 MB.
   todavía**: el diseñador la va a rediseñar («son un emoji redondo con cara, la
   forma no dice nada del negocio»).
 - Los módulos secundarios usan **los nombres del usuario**: «¿Cómo va el
-  negocio?» y no analíticas, «Mi plata» y no capital.
+  negocio?» y no analíticas. ⚠ «Mi plata» y «Quién hizo qué» se fueron el
+  2 sep 2026 por decisión del dueño: ahora son **Capital** e **Historial**,
+  igual en menú, cabecera y buscador (ver DESIGN.md).
 
 **Bugs de diseño abiertos en producción**, del backlog: emojis en caja (9
 caritas tristes, una por cobrador), verde donde va dorado en la ficha de PC, y

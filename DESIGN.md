@@ -164,7 +164,15 @@ rasgos en tinta fija `#1a1a2e`, **no** se invierten en oscuro.
 
 **4 · Los módulos secundarios entran, con los nombres del usuario** — no los
 técnicos: *Líneas de crédito*, *Reportes*, *¿Cómo va el negocio?* (no
-"analíticas"), *Mi plata* (no "capital"), *Simulador*.
+"analíticas"), *Simulador*.
+
+> ⚠️ **Excepción decidida por el dueño el 2 sep 2026: *Capital* e *Historial*.**
+> La lámina decía «Mi plata» (y no capital) y «Quién hizo qué»; pero la
+> pantalla de detrás se titulaba «Capital», la otra «Actividad» y el buscador
+> Ctrl+K la llamaba «Historial»: tres nombres para lo mismo. «En vez de
+> entenderse fácilmente, se enreda mucho. Capital e historial. Ya está.»
+> **Un mismo nombre en el menú, en la cabecera y en el buscador.** No volver a
+> «Mi plata» ni a «Quién hizo qué» aunque la lámina los tenga.
 
 **5 · La moneda se va a rediseñar.** "Están bien, pero no me encantan." El
 diagnóstico del propio diseñador: son un emoji redondo con cara, y la forma no

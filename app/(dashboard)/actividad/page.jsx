@@ -144,7 +144,9 @@ const FILTROS_COMPLETOS = [
 ]
 
 export default function ActividadPage() {
-  useCabecera({ titulo: 'Actividad', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
+  // «Historial», como en el menú y en el buscador. Decía «Actividad» mientras
+  // el menú decía «Quién hizo qué»: tres nombres para una pantalla (2 sep 2026).
+  useCabecera({ titulo: 'Historial', subtitulo: 'Todo lo que pasa en tu negocio, en orden' })
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)

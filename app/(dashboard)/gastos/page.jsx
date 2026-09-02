@@ -416,7 +416,7 @@ export default function GastosPage() {
           </svg>
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Mi plata</span>
+          <span className="block text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>Capital</span>
           <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
             El fondo del que sale todo esto
           </span>

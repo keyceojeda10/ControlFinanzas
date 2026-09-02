@@ -60,7 +60,7 @@ import { IconoDeRuta } from '@/components/armazon/iconos'
 const ATAJOS = [
   { id: 'cobrar',   texto: 'Cobrar hoy',    href: '/cobros-hoy' },
   { id: 'caja',     texto: 'Caja',          href: '/caja' },
-  { id: 'capital',  texto: 'Mi plata',      href: '/capital',      soloDueno: true },
+  { id: 'capital',  texto: 'Capital',       href: '/capital',      soloDueno: true },
   { id: 'gastos',   texto: 'Gastos',        href: '/gastos' },
   { id: 'reportes', texto: 'Reportes',      href: '/reportes',     soloDueno: true },
   { id: 'equipo',   texto: 'Cobradores',    href: '/cobradores',   soloDueno: true },

@@ -945,7 +945,7 @@ export default function Estilo() {
         </div>
 
         <div id="mi-plata" style={{ ...MARCO, height: 'auto', minHeight: 700 }}>
-          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Mi plata" />
+          <CabeceraMovil variante={CABECERA.DETALLE} titulo="Capital" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 20px 20px' }}>
             <MiPlata
               total="$30.170.280"
@@ -1771,7 +1771,7 @@ export default function Estilo() {
             atajos={[
               { id: 'hoy', texto: 'Cobrar hoy', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></></svg> },
               { id: 'caja', texto: 'Caja', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="7" width="18" height="12" rx="2.5" /></svg> },
-              { id: 'plata', texto: 'Mi plata', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V9l8-5 8 5v11z" /></svg> },
+              { id: 'plata', texto: 'Capital', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V9l8-5 8 5v11z" /></svg> },
               { id: 'gastos', texto: 'Gastos', icono: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><><path d="M6 4h12v16H6z" /><path d="M9 9h6M9 13h4" /></></svg> },
             ]}
             onAbrir={() => {}} onAtajo={() => {}}
