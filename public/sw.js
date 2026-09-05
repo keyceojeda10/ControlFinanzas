@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1052'
+const CACHE_NAME   = 'cf-v1053'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -679,6 +679,11 @@ async function syncPagosFromSW() {
           diasAbonados: p.diasAbonados,
           metodoPago:   p.metodoPago,
           plataforma:   p.plataforma,
+          // Igual que lib/offline.js: fecha real, cuenta y marcador. Ver
+          // lib/pagos-sin-senal.js (aquí no se puede importar; misma regla).
+          fechaPago:    p.createdAt,
+          metodoPagoId: p.metodoPagoId ?? null,
+          offlineId:    p.createdAt,
         }),
       })
       if (res.ok) {
@@ -687,6 +692,11 @@ async function syncPagosFromSW() {
       } else if (res.status >= 400 && res.status < 500) {
         let errorMsg = `HTTP ${res.status}`
         try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
+        // Misma clasificación que lib/pagos-sin-senal.js: estos se reintentan.
+        const reintentable = [401, 403, 408, 409, 429].includes(res.status)
+        await idbUpdate(db, STORE_PAGOS, p.id, { failedPermanent: true, errorMsg, reintentable, status: res.status, ultimoIntentoAt: Date.now() })
+        failed++
+        continue
         await idbUpdate(db, STORE_PAGOS, p.id, { failedPermanent: true, errorMsg })
         failed++
       }

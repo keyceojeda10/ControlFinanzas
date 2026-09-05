@@ -7,6 +7,7 @@ import Link                           from 'next/link'
 import { useAuth }                    from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { useOffline }                 from '@/components/providers/OfflineProvider'
+import { explicarFallo }              from '@/lib/pagos-sin-senal'
 import { obtenerPrestamoOffline, resolverTempId }     from '@/lib/offline'
 import { Badge }                      from '@/components/ui/Badge'
 import { Button }                     from '@/components/ui/Button'
@@ -129,7 +130,7 @@ function PrestamoDetalleContenido({ params }) {
   const modoPedido         = parametros.get('editar')
   const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado, country } = useAuth()
 
-  const { lastSyncedAt }   = useOffline()
+  const { lastSyncedAt, pendingDetails, failedDetails, isOnline: haySenal = true, openSyncDrawer } = useOffline()
 
   const [prestamo,     setPrestamo]     = useState(null)
 
@@ -1359,6 +1360,44 @@ function PrestamoDetalleContenido({ params }) {
           seguidos no alarman el doble: se leen como uno solo y mal. Cuando el
           préstamo está dado por perdido, esa es LA noticia, y la mora entra
           dentro como el detalle que la sostiene. */}
+      {/* ══ UN COBRO DE ESTE PRÉSTAMO ESTÁ EN EL TELÉFONO, NO EN EL SISTEMA ══
+          Aquí abajo salían a la vez «Cobrado hoy $40.000» y «10 días en mora»,
+          y nada decía por qué. El cobro sin señal se ve donde se mira el
+          préstamo, con lo que significa y el botón que lo resuelve. */}
+      {(() => {
+        const enTelefono = (pendingDetails?.pagos || []).filter((p) => p.prestamoId === id)
+        const fallidos   = (failedDetails?.pagos || []).filter((p) => p.prestamoId === id)
+        if (enTelefono.length === 0 && fallidos.length === 0) return null
+        const fallo = fallidos.length > 0
+        const lista = fallo ? fallidos : enTelefono
+        const total = lista.reduce((a, p) => a + (Number(p.montoPagado) || 0), 0)
+        return (
+          <button type="button" onClick={() => openSyncDrawer?.()}
+            className="w-full text-left flex items-start gap-2.5 rounded-[16px] px-4 py-3"
+            style={fallo
+              ? { background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }
+              : { background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={fallo ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)'}
+              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+            </svg>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold" style={{ color: fallo ? 'var(--cf-red-dark)' : 'var(--cf-gold-text)' }}>
+                {fallo
+                  ? `Un cobro de ${formatMoney(total)} no se pudo subir`
+                  : `Cobro de ${formatMoney(total)} guardado en este teléfono, sin subir`}
+              </span>
+              <span className="block text-xs mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>
+                {fallo
+                  ? `${explicarFallo(lista[0])} Toca para reintentar.`
+                  : (haySenal ? 'Todavía no está en el sistema: por eso sigue en mora. Toca para subirlo ahora.'
+                              : 'Sin señal. Sube solo cuando vuelva; hasta entonces el cliente se ve pendiente.')}
+              </span>
+            </span>
+          </button>
+        )
+      })()}
+
       {esClavo && (
         <div className="flex items-start gap-2.5 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
           <span className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] shrink-0 mt-1.5" />

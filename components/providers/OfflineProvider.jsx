@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import SyncDrawer from '@/components/offline/SyncDrawer'
 import { OfflineContext, useOffline } from '@/components/providers/offline-context'
-import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion } from '@/lib/offline'
+import { iniciarAutoSync, obtenerPagosPendientes, obtenerPagosFallidos, eliminarPagoFallido, sincronizarPagos, sincronizarOrdenes, sincronizarTodo, obtenerSyncMeta, sincronizarCreaciones, obtenerClientesPendientes, obtenerPrestamosPendientes, obtenerClientesFallidos, obtenerPrestamosFallidos, obtenerMutacionesPendientes, obtenerMutacionesFallidas, obtenerMutacionesConflicto, sincronizarMutaciones, eliminarClienteFallido, eliminarPrestamoFallido, eliminarMutacion, reintentarMutacion, reencolarPagoFallido } from '@/lib/offline'
 import { ultimoEstadoConexion, hayInternetReal, invalidarCacheConexion } from '@/lib/connectivity'
 import { setMutationCallback } from '@/lib/fetch-timeout'
 
@@ -101,7 +101,9 @@ export default function OfflineProvider({ children }) {
       // préstamos recién creados), luego pagos, luego órdenes de ruta.
       const creResult = await sincronizarCreaciones()
       const mutResult = await sincronizarMutaciones()
-      const payResult = await sincronizarPagos()
+      // El manual («Sincronizar ahora», «Reintentar») fuerza también los
+      // fallidos reintentables; el automático los reintenta con espera.
+      const payResult = await sincronizarPagos({ forzarFallidos: !silent })
       const ordResult = await sincronizarOrdenes()
       totalSynced = creResult.synced + mutResult.synced + payResult.synced + ordResult.synced
       const totalFailed = creResult.failed + mutResult.failed + payResult.failed + ordResult.failed
@@ -225,6 +227,13 @@ export default function OfflineProvider({ children }) {
     try {
       if (tipo === 'mutacion') {
         await reintentarMutacion(id)
+      }
+      /* ⚠ LOS PAGOS NO TENÍAN REINTENTO. El único botón de un cobro fallido
+         era «Descartar»: borrar plata cobrada. Ahora vuelve a la cola y se
+         sube en el acto. */
+      if (tipo === 'pago') {
+        await reencolarPagoFallido(id)
+        await syncPendingThenFull({ silent: false, signalPages: true })
       }
       // Para pagos/clientes/prestamos fallidos, la estrategia es "descartar" en UI.
       // Un reintento requiere volver a encolar manualmente.
@@ -593,8 +602,8 @@ export default function OfflineProvider({ children }) {
   // que las cards muestren un badge "pendiente offline" sin N consultas.
   const pendientesIds = useMemo(() => {
     const s = new Set()
-    for (const p of pendingDetails.pagos || []) if (p.prestamoId) s.add(p.prestamoId)
-    for (const p of failedDetails.pagos || []) if (p.prestamoId) s.add(p.prestamoId)
+    for (const p of pendingDetails.pagos || []) { if (p.prestamoId) s.add(p.prestamoId); if (p.clienteId) s.add(p.clienteId) }
+    for (const p of failedDetails.pagos || []) { if (p.prestamoId) s.add(p.prestamoId); if (p.clienteId) s.add(p.clienteId) }
     for (const c of pendingDetails.clientes || []) if (c.tempId) s.add(c.tempId)
     for (const c of failedDetails.clientes || []) if (c.tempId) s.add(c.tempId)
     for (const p of pendingDetails.prestamos || []) { if (p.tempId) s.add(p.tempId); if (p.clienteId) s.add(p.clienteId) }

@@ -282,6 +282,7 @@ export default function CobrosHoyPage() {
           diasAbonados: tipoPago === 'completo' ? 1 : 0,
           metodoPago,
           ...(metodoPagoId ? { metodoPagoId } : {}),
+          clienteId,
           clienteNombre: nombre,
           ...(coords ?? {}),
         })

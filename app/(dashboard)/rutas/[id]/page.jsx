@@ -1074,6 +1074,7 @@ export default function RutaDetallePage({ params }) {
       try {
         await guardarPagoPendiente({
           prestamoId: prestamoActivo,
+          clienteId,
           montoPagado: cuota,
           tipo: esCuotaExacta ? 'completo' : 'parcial',
           diasAbonados: esCuotaExacta ? 1 : undefined,

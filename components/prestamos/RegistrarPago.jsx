@@ -322,6 +322,11 @@ export default function RegistrarPago({
           diasAbonados,
           metodoPago,
           plataforma,
+          // La cuenta y el cliente: sin la cuenta el cobro subía como
+          // transferencia sin dueño; sin el cliente, su tarjeta no podía decir
+          // que hay un cobro suyo esperando en este teléfono.
+          ...(metodoPagoId ? { metodoPagoId } : {}),
+          clienteId: cliente?.id ?? null,
           clienteNombre: cliente?.nombre,
           // Las coords viajan con el pago cuando sincronice.
           ...(coords ?? {}),

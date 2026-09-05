@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useOffline } from '@/components/providers/offline-context'
 import ConflictResolverModal from '@/components/offline/ConflictResolverModal'
+import { explicarFallo } from '@/lib/pagos-sin-senal'
 
 // Drawer lateral que lista todos los items pendientes y fallidos con acciones.
 export default function SyncDrawer({ open, onClose }) {
@@ -138,10 +139,13 @@ export default function SyncDrawer({ open, onClose }) {
                 <p className="text-[11px] uppercase tracking-wide text-[var(--cf-red-dark)] font-semibold mb-2">Fallidos</p>
               </div>
 
+              {/* ⚠ CON «REINTENTAR». Un cobro rechazado una vez —sesión, plan
+                  vencido, caja cerrada— solo se podía DESCARTAR, y el motivo
+                  salía en el idioma del servidor («HTTP 403»). */}
               <Section title="Pagos fallidos" items={failedDetails?.pagos} render={(p) => ({
-                main: `Pago de $${Number(p.montoPagado || 0).toLocaleString('es-CO')}`,
-                sub: p.errorMsg || 'Error',
-              })} onDiscard={(p) => descartarItem('pago', p.id)} failed={true} />
+                main: `Pago de $${Number(p.montoPagado || 0).toLocaleString('es-CO')}${p.clienteNombre ? ` · ${p.clienteNombre}` : ''}`,
+                sub: explicarFallo(p),
+              })} onRetry={(p) => reintentarItem('pago', p.id)} onDiscard={(p) => descartarItem('pago', p.id)} failed={true} />
 
               <Section title="Clientes fallidos" items={failedDetails?.clientes} render={(c) => ({
                 main: c.payload?.nombre || 'Cliente',
@@ -205,7 +209,9 @@ function Section({ title, items, render, onDiscard, onRetry, failed }) {
                     Reintentar
                   </button>
                 )}
-                <button onClick={() => onDiscard(it)} className="text-[11px] px-2 h-7 rounded-md border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)]">
+                {/* Descartar es borrar del teléfono algo que NO está en el
+                    sistema. Se pregunta, y se dice lo que significa. */}
+                <button onClick={() => { if (window.confirm(`${main}\n\nSe borra SOLO del teléfono: no quedará registrado en el sistema. ¿Descartar?`)) onDiscard(it) }} className="text-[11px] px-2 h-7 rounded-md border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-red-dark)]">
                   Descartar
                 </button>
               </div>
