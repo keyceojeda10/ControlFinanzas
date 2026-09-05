@@ -35,6 +35,7 @@ import { logActividad } from '@/lib/activity-log'
 import { enviarPushOrg } from '@/lib/push'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
+import { marcadorOffline, resolverFechaDelPago } from '@/lib/pagos-sin-senal'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
@@ -138,7 +139,7 @@ export async function POST(request, { params }) {
   ])
 
   const body = await request.json()
-  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud, aplazarUnPeriodo } = body
+  const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud, aplazarUnPeriodo, fechaPago: fechaPagoCuerpo, offlineId } = body
   // Sanitizar coords del pago: si vienen fuera de rango, se guardan como null
   // (no rechazar el pago, MVP de geo es no-bloqueante).
   const coordsPago = sanitizarCoords(latitud, longitud)
@@ -314,10 +315,55 @@ export async function POST(request, { params }) {
     }
   }
 
+  /* ══ COBROS QUE SUBEN DESDE LA COLA SIN SEÑAL ═══════════════════════════════
+   *
+   * Llegan con `offlineId` (la hora en que se guardaron en el teléfono) y con
+   * `fechaPago` (esa misma hora). Ver `lib/pagos-sin-senal.js`. Tres reglas:
+   *
+   *  1 · MISMO COBRO DOS VECES = UNA VEZ. Un reintento tras un timeout que sí
+   *      persistió creaba el pago dos veces; ahora el marcador en la nota lo
+   *      reconoce y contesta 200 sin crear nada.
+   *  2 · SIN EL 409 DE «DUPLICADO». Dos cuotas iguales cobradas sin señal en
+   *      días distintos subían seguidas y la segunda moría como duplicado —y
+   *      como el teléfono no tenía «Reintentar», se perdía—. Cada cobro de la
+   *      cola lo confirmó una persona en su momento; el marcador distingue uno
+   *      del otro.
+   *  3 · LA FECHA REAL. El abono del jueves a las 7:43 pm es plata del jueves,
+   *      no del viernes a las 12:03 cuando hubo señal: caja, mora y «al día»
+   *      lo leen de `fechaPago`. Una sola excepción: si es un cobrador y la
+   *      caja de ESE día ya está cerrada, se registra con hoy y la nota lo
+   *      dice — meter plata en una caja cerrada la descuadra sin que nadie se
+   *      entere. */
+  // ⚠ La regla 1 YA vive más arriba (la idempotencia por `[offline:…]` en la
+  // nota, que contesta `idempotente: true`); aquí no se repite. El marcador se
+  // usa para las reglas 2 y 3.
+  const marcador = offlineId ? marcadorOffline(String(offlineId)) : null
+  let fechaDelPago = new Date()
+  let notaFinal = nota
+  if (marcador) {
+    const r = resolverFechaDelPago({ fechaPago: fechaPagoCuerpo, ahora: fechaDelPago })
+    fechaDelPago = r.fecha
+    if (!r.motivo && rol === 'cobrador') {
+      // Mismo convenio que más abajo: la hora local es UTC menos el desfase.
+      const diaReal = new Date(fechaDelPago.getTime() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000).toISOString().slice(0, 10)
+      if (diaReal !== getLocalDateStr(session.user.country ?? 'co')) {
+        const { inicio, fin } = getLocalDayRange(diaReal, session.user.country ?? 'co')
+        const cierreEseDia = await prisma.cierreCaja.findFirst({
+          where: { organizationId, cobradorId: userId, fecha: { gte: inicio, lt: fin } },
+          select: { reabiertoEn: true },
+        })
+        if (cierreEseDia && !cierreEseDia.reabiertoEn) {
+          fechaDelPago = new Date()
+          notaFinal = `${nota ? nota + ' · ' : ''}cobrado el ${diaReal.split('-').reverse().join('/')}; la caja de ese día ya estaba cerrada`
+        }
+      }
+    }
+  }
+
   // Detección de duplicado: mismo préstamo + mismo monto + mismo tipo en los últimos 60s
   const url = new URL(request.url)
   const confirmarDuplicado = url.searchParams.get('confirmarDuplicado') === '1'
-  if (!confirmarDuplicado) {
+  if (!confirmarDuplicado && !marcador) {
     const hace60s = new Date(Date.now() - 60 * 1000)
     const reciente = await prisma.pago.findFirst({
       where: {
@@ -473,9 +519,9 @@ export async function POST(request, { params }) {
           metodoPago: metodoValido,
           plataforma: metodoValido === 'transferencia' ? (plataforma?.trim() || null) : null,
           metodoPagoId: metodoValido === 'transferencia' && metodoPagoId ? metodoPagoId : null,
-          nota: nota?.trim() || null,
+          nota: notaFinal?.trim() || null,
           cuotaNumero,
-          fechaPago: new Date(),
+          fechaPago: fechaDelPago,
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,
         },
@@ -959,6 +1005,12 @@ export async function POST(request, { params }) {
     }
 
     return prestamoActualizado
+  }, {
+    /* El límite de la transacción del pago. Prisma trae 5 s; en producción
+       sobra (base en la misma máquina). En el espejo, con la base al otro
+       lado de un túnel SSH, no llega, y sin esto no se puede verificar un
+       pago de punta a punta. Producción no define la variable. */
+    timeout: Number(process.env.PRISMA_TX_TIMEOUT_MS) || 5000,
   })
   } catch (err) {
     if (err?.message === 'PRESTAMO_NO_ACTIVO') {
