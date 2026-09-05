@@ -934,6 +934,10 @@ export async function POST(request, { params }) {
         descripcion: descRecaudo,
         referenciaId: prestamoId,
         referenciaTipo: 'pago',
+        // La MISMA fecha que la fila `Pago`: un cobro de la cola sin señal que
+        // sube al día siguiente es plata del día que se cobró también en la
+        // bolsa, no del día que hubo señal. Para un pago normal es «ahora».
+        fecha: fechaDelPago,
         rutaId: prestamo.cliente?.rutaId || null,
         creadoPorId: userId,
         /* ⚠ EL MISMO VALOR QUE LA FILA `Pago`, NO EL CRUDO DEL CUERPO.

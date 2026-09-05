@@ -201,7 +201,9 @@ function Section({ title, items, render, onDiscard, onRetry, failed }) {
             <li key={it.id || it.tempId || idx} className="rounded-lg border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 py-2 flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-[var(--cf-ink)] truncate">{main}</p>
-                <p className={`text-[11px] truncate ${failed ? 'text-[var(--cf-red-dark)]' : 'text-[var(--cf-ink-3)]'}`}>{sub}</p>
+                {/* Sin `truncate` en el motivo: «El plan estaba vencido cuando intentó…»
+                    recortado no dice qué tocar. */}
+                <p className={`text-[11px] ${failed ? 'text-[var(--cf-red-dark)]' : 'text-[var(--cf-ink-3)] truncate'}`} style={failed ? { lineHeight: 1.35 } : undefined}>{sub}</p>
               </div>
               <div className="flex gap-1 flex-shrink-0">
                 {onRetry && (

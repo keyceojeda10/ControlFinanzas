@@ -622,7 +622,7 @@ export default function OfflineProvider({ children }) {
       {(!isOnline || pendingCount > 0 || bulkSyncing || conflictos.length > 0 || failedTotal > 0) && (
         <button
           onClick={() => setDrawerOpen(true)}
-          className={`lg:hidden fixed bottom-[84px] right-3 z-[9998] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--cf-surface)] border text-[var(--cf-ink)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--cf-red-dark)] animate-pulse' : 'border-[var(--cf-border)]'}`}
+          className={`lg:hidden fixed bottom-[84px] right-3 z-[45] h-9 px-3 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-xl bg-[var(--cf-surface)] border text-[var(--cf-ink)] text-xs font-semibold ${(conflictos.length > 0 || failedTotal > 0) ? 'border-[var(--cf-red-dark)] animate-pulse' : 'border-[var(--cf-border)]'}`}
           aria-label="Estado de sincronización"
         >
           {bulkSyncing ? (
