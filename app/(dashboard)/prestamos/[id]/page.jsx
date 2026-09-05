@@ -58,7 +58,7 @@ import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
 import { adaptarTabla } from '@/lib/adaptadores/tabla'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
-import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento} from '@/lib/adaptadores/gestion'
+import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
@@ -214,6 +214,12 @@ function PrestamoDetalleContenido({ params }) {
   // pintando lo viejo encima del monto nuevo.
   const fijarAjuste = (v) => { setAjusteTecleado(null); setAjusteMonto(v) }
   const [ajusteNota, setAjusteNota] = useState('')
+  /* El recargo como «% del saldo»: la persona pone el porcentaje y la cifra la
+     saca `montoDesdePorcentaje`, que es la que viaja al API por el mismo camino
+     de siempre (`ajusteMonto`). El modo se recuerda dentro de la sesión: quien
+     cobra por porcentaje lo hace siempre. */
+  const [recargoModo, setRecargoModo] = useState('cifra')
+  const [recargoPct,  setRecargoPct]  = useState('')
   const [ajustando, setAjustando] = useState(false)
   const [ajusteError, setAjusteError] = useState('')
   const [modalRecargo,  setModalRecargo]  = useState(false)
@@ -1042,6 +1048,18 @@ function PrestamoDetalleContenido({ params }) {
     ]
   })()
 
+  const atajosPct = [5, 10, 15, 20].map((v) => ({ id: `p${v}`, etiqueta: `${v} %`, valor: v }))
+  const recargoPctNum = Math.max(0, Number(String(recargoPct).replace(',', '.')) || 0)
+  const recargoPorPct = montoDesdePorcentaje(saldoPendiente, recargoPctNum)
+  const fijarRecargoPct = (v) => {
+    setRecargoPct(String(v))
+    const n = Math.max(0, Number(String(v).replace(',', '.')) || 0)
+    fijarAjuste(String(montoDesdePorcentaje(saldoPendiente, n)))
+  }
+  const recargoEquivale = recargoModo === 'porcentaje' && recargoPctNum > 0 && recargoPorPct > 0
+    ? `${String(recargoPct).replace('.', ',')} % de ${formatMoney(Math.round(saldoPendiente))} = ${formatMoney(recargoPorPct)}`
+    : null
+
   /**
    * Manda el ajuste. MISMO CONTRATO que el formulario anterior: POST /pagos con
    * `tipo` y `nota`. Lo unico que cambia es la pantalla desde la que se manda.
@@ -1055,10 +1073,15 @@ function PrestamoDetalleContenido({ params }) {
     setAjustando(true)
     setAjusteError('')
     try {
+      // Si salió de un porcentaje, la nota lo dice: tres meses después nadie
+      // recuerda por qué el recargo fue de $220.500 y no una cifra redonda.
+      const nota = tipo === 'recargo' && recargoModo === 'porcentaje' && recargoPctNum > 0
+        ? `${ajusteNota.trim()} · ${String(recargoPct).replace('.', ',')} % sobre ${formatMoney(Math.round(saldoPendiente))}`
+        : ajusteNota.trim()
       const res = await fetch(`/api/prestamos/${id}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: ajusteNum, tipo, nota: ajusteNota.trim() }),
+        body: JSON.stringify({ montoPagado: ajusteNum, tipo, nota }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -1073,6 +1096,7 @@ function PrestamoDetalleContenido({ params }) {
       setModalDescuento(false)
       setAjusteMonto('')
       setAjusteNota('')
+      setRecargoPct('')
     } catch {
       setAjusteError('Sin conexión. El ajuste no quedó aplicado.')
     } finally {
@@ -2731,6 +2755,14 @@ function PrestamoDetalleContenido({ params }) {
           atajos={atajosAjuste}
           atajoActivo={atajosAjuste.find((a) => a.monto === ajusteNum)?.id ?? null}
           onAtajo={(a) => fijarAjuste(String(a.monto))}
+          modo={recargoModo}
+          onModo={(m) => { setRecargoModo(m); if (m === 'porcentaje' && recargoPctNum > 0) fijarRecargoPct(recargoPct) }}
+          porcentaje={recargoPct}
+          onPorcentaje={fijarRecargoPct}
+          atajosPorcentaje={atajosPct}
+          porcentajeActivo={atajosPct.find((a) => a.valor === recargoPctNum)?.id ?? null}
+          onAtajoPorcentaje={(a) => fijarRecargoPct(a.valor)}
+          equivale={recargoEquivale}
           motivo={ajusteNota}
           onMotivo={setAjusteNota}
           {...(adaptarRecargo({ saldoPendiente, cuotaDiaria, ...(prestamo ?? {}) }, ajusteNum) ?? {})}

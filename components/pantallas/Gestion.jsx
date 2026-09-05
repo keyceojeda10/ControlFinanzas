@@ -388,14 +388,51 @@ export function Recargo({
   monto, onMonto, atajos, atajoActivo, onAtajo,
   motivo, onMotivo,
   saldoAntes, saldoDespues, cuotaIgual, cobrosDeMas,
+  /* ══ «% DEL SALDO»: EL PORCENTAJE LO PONE LA PERSONA, LA CIFRA EL SISTEMA ══
+     La hoja solo aceptaba una cifra. Un prestamista quería «sumarle el 15 % a
+     lo que ya debe» y tenía que sacar la cuenta a mano. Con `onModo` aparece
+     el conmutador; sin él —la página de estilo— la hoja es la de siempre.
+     `equivale` es la frase que hace visible la cuenta: «15 % de $1.470.000 =
+     $220.500». */
+  modo = 'cifra', onModo,
+  porcentaje, onPorcentaje, atajosPorcentaje = [], porcentajeActivo, onAtajoPorcentaje,
+  equivale,
 }) {
+  const conPorcentaje = typeof onModo === 'function'
   return (
     <>
-      <CampoMonto
-        rotulo="Cuánto le cobras de más"
-        monto={monto} onMonto={onMonto}
-        atajos={atajos} atajoActivo={atajoActivo} onAtajo={onAtajo}
-      />
+      {conPorcentaje && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+          <Rotulo>¿Cómo lo calculas?</Rotulo>
+          <Opciones
+            opciones={[{ id: 'porcentaje', etiqueta: '% del saldo' }, { id: 'cifra', etiqueta: 'Una cifra' }]}
+            activo={modo}
+            onElegir={(o) => onModo(o.id)}
+          />
+        </div>
+      )}
+
+      {conPorcentaje && modo === 'porcentaje' ? (
+        <>
+          <CampoMonto
+            rotulo="Qué porcentaje del saldo"
+            moneda="%"
+            monto={porcentaje} onMonto={onPorcentaje}
+            atajos={atajosPorcentaje} atajoActivo={porcentajeActivo} onAtajo={onAtajoPorcentaje}
+          />
+          {equivale && (
+            <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)', flex: 'none' }}>
+              {equivale}
+            </span>
+          )}
+        </>
+      ) : (
+        <CampoMonto
+          rotulo="Cuánto le cobras de más"
+          monto={monto} onMonto={onMonto}
+          atajos={atajos} atajoActivo={atajoActivo} onAtajo={onAtajo}
+        />
+      )}
 
       <CampoTexto
         rotulo="Motivo (queda en el historial)"
