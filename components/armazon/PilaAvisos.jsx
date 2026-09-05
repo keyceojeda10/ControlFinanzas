@@ -21,6 +21,7 @@
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ordenarAvisos } from '@/lib/adaptadores/avisos'
 import CosasPorResolver from '@/components/armazon/CosasPorResolver'
+import { useOffline } from '@/components/providers/offline-context'
 import { pedirCompartido, olvidarCompartido } from '@/lib/pedir-compartido'
 
 // El contenido de cada aviso EN LA HOJA. La franja de arriba es una línea; aquí
@@ -222,6 +223,20 @@ export default function PilaAvisos({ children, onVerTodos }) {
     window.dispatchEvent(new CustomEvent('cf:avisos', { detail: cuantos }))
   }, [cuantos])
 
+  const { pendingCount = 0, failedDetails, isOnline = true, openSyncDrawer } = useOffline() || {}
+  const fallidos = ['pagos', 'clientes', 'prestamos', 'mutaciones'].reduce((n, k) => n + (failedDetails?.[k]?.length || 0), 0)
+  const avisoSinSubir = (fallidos > 0 || pendingCount > 0) ? {
+    id: 'sin-subir',
+    titulo: fallidos > 0
+      ? `${fallidos} ${fallidos === 1 ? 'cobro no se pudo subir' : 'cambios no se pudieron subir'}`
+      : `${pendingCount} ${pendingCount === 1 ? 'cobro guardado en el teléfono, sin subir' : 'cambios guardados en el teléfono, sin subir'}`,
+    nota: fallidos > 0
+      ? 'El servidor lo rechazó al subirlo. Míralo y toca «Reintentar»: hasta entonces no está en el sistema.'
+      : (isOnline ? 'Todavía no está en el sistema. Tócalo para subirlo ahora.' : 'Sin señal. Sube solo cuando vuelva; hasta entonces el cliente se ve pendiente.'),
+    accion: fallidos > 0 ? 'Ver y reintentar' : 'Subir ahora',
+    onAccion: () => { setHoja(false); openSyncDrawer?.() },
+  } : null
+
   return (
     <Ctx.Provider value={valor}>
       {children}
@@ -244,6 +259,10 @@ export default function PilaAvisos({ children, onVerTodos }) {
         </button>
       )}
 
+      {/* ⚠ LA CAMPANA DECÍA «NO TIENES AVISOS» CON UN COBRO SIN SUBIR. Un
+          prestamista registró un abono sin señal, el cliente amaneció en mora
+          y lo único que lo decía era una pastilla de 9px sobre la barra. Va
+          el PRIMERO: es plata que el sistema todavía no tiene. */}
       <CosasPorResolver
         abierta={hoja}
         onCerrar={() => setHoja(false)}
@@ -261,7 +280,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
           } catch {}
           setHoja(false)
         }}
-        items={perdedores.map((p) => {
+        items={[avisoSinSubir, ...perdedores.map((p) => {
           const c = CONTENIDO[p.id]
           if (!c) return null
           return {
@@ -270,7 +289,7 @@ export default function PilaAvisos({ children, onVerTodos }) {
             secundaria: c.secundaria,
             onSecundaria: c.destinoSecundario ? () => { window.location.href = c.destinoSecundario } : undefined,
           }
-        }).filter(Boolean)}
+        })].filter(Boolean)}
       />
     </Ctx.Provider>
   )

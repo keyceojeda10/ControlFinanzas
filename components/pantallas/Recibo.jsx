@@ -163,18 +163,25 @@ export function Recibo({
                 a capital y pagos de solo interés, y el comprobante viejo los
                 nombraba. Llamar «Pago registrado» a un recargo sería mentir en
                 el papel que el cliente se guarda. */}
+            {/* ⚠ SIN SEÑAL, EL TÍTULO DICE LA VERDAD. Decía «Pago registrado» en
+                grande y «guardado en el teléfono» en 13px ámbar debajo: el
+                cobrador leía el título, mandaba el recibo y seguía. Al día
+                siguiente el cliente seguía en mora y él, convencido de que
+                había registrado. El título es lo único que se lee. */}
             <span style={{
               fontFamily: 'var(--font-space-grotesk), system-ui',
               fontSize: 23, fontWeight: 600, letterSpacing: '-.02em', textAlign: 'center',
-            }}>{titulo}</span>
+              color: offline ? 'var(--cf-gold-text)' : undefined,
+            }}>{offline ? 'Guardado en el teléfono' : titulo}</span>
             {/* Fecha Y HORA. Dos pagos el mismo día son dos recibos distintos, y
                 sin la hora no se distinguen. */}
             {cuando && !offline && (
               <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>{cuando}</span>
             )}
             {offline && (
-              <span style={{ fontSize: 13, color: 'var(--cf-gold-dark)', textAlign: 'center' }}>
-                guardado en el teléfono · sube solo al recuperar señal
+              <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-2)', textAlign: 'center', maxWidth: 300 }}>
+                Sin señal. <strong>Todavía no está en el sistema</strong>: sube solo
+                cuando vuelva, y hasta entonces el cliente se verá pendiente.
               </span>
             )}
           </div>

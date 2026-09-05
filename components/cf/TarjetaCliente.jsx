@@ -52,6 +52,7 @@
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
 import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EstrellaCliente } from './primitivos'
+import OfflineBadge from '@/components/offline/OfflineBadge'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 import DesglosePrestamos from './DesglosePrestamos'
 
@@ -101,6 +102,8 @@ const MEDIDAS = {
 const RELLENO_LATERAL = { arriba: 15, der: 16, abajo: 15, izq: 16 }
 
 export default function TarjetaCliente({
+  // `id`: para decir si hay un cobro SUYO guardado en este teléfono sin subir.
+  id,
   nombre,
   iniciales,
   // La foto del cliente, si la subió. Va DENTRO del círculo de iniciales, no en
@@ -375,6 +378,11 @@ export default function TarjetaCliente({
                 </Pastilla>
               )}
               {clavo && <EtiquetaClavo />}
+              {/* ⚠ UN COBRO DE ESTE CLIENTE ESTÁ EN EL TELÉFONO, NO EN EL SISTEMA.
+                  La lista lo mostraba en mora sin decir por qué: el cobro sin
+                  señal solo se veía en una pastilla sobre la barra. Va junto al
+                  estado, que es la pregunta que responde. */}
+              <OfflineBadge id={id} texto="Cobro sin subir" />
               {/* ⚠ AQUÍ, Y POR LA MISMA RAZÓN QUE EL CLAVO: la estrella dice
                   cómo PAGÓ LO ANTERIOR y la pastilla cómo va HOY. Un buen
                   cliente puede estar en mora esta semana, y las dos cosas hacen
