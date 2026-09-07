@@ -13,7 +13,11 @@ import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
-const AB_TEMPLATES = { A: 'contacto_v3a', B: 'contacto_v3b' }
+/* ⚠ EL MISMO HOOK QUE MANDA `lib/bot/bridge.js`. El A/B de julio dejó aquí
+   las v3 (54 % responde, 8 % registra) mientras el primer contacto ya había
+   vuelto a contacto_v2 (64 % / 23,6 %). Las dos variantes apuntan a la misma
+   plantilla para no tocar el reparto ni las columnas de la medición. */
+const AB_TEMPLATES = { A: 'contacto_v2', B: 'contacto_v2' }
 const AB_TEXTOS = {
   A: nombre => `Hola ${nombre}, vimos su interes en Control Finanzas. Una pregunta rapida: usted lleva el control de sus cobros en libreta, en Excel o en alguna app?`,
   B: nombre => `Hola ${nombre}, le escribimos de Control Finanzas. Usted sabe exactamente cuanto le deben sus clientes hoy, o le toca sumar a mano?`,

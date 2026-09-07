@@ -97,7 +97,9 @@ export async function POST(req) {
       }
     }
 
-    console.log(`[Leads Sync] Revisados ${leads.length} leads, ${nuevos} nuevos`)
+    // Solo cuando hay algo: corría cada 5 min y escribía 288 líneas al día
+    // de «0 leads, 0 nuevos». Los leads entran por el webhook; esto es la red.
+    if (leads.length > 0 || nuevos > 0) console.log(`[Leads Sync] Revisados ${leads.length} leads, ${nuevos} nuevos`)
     return NextResponse.json({ revisados: leads.length, nuevos })
   } catch (err) {
     console.error('[Leads Sync] Error:', err.message)
