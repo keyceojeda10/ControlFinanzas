@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import WizardProgress   from './wizard/WizardProgress'
 import WizardWelcome    from './wizard/WizardWelcome'
 import WizardCapital    from './wizard/WizardCapital'
@@ -160,6 +160,18 @@ export default function OnboardingWizard({
   // «Paso 3 de 4» en el diseño: perfil, capital, cartera y listo. Antes decía
   // «de 2» porque solo contaba capital y cartulina, así que el asistente
   // prometía terminar dos pantallas antes de terminar.
+  /* ⚠ «VISTA» ADEMÁS DE «SIGUIÓ». De 17 registros de septiembre, 4 quedaron en
+     el paso 2 sin ningún evento: no se sabe si vieron la pantalla del plan y
+     se fueron, o si cerraron antes de que cargara. Sin eso no se puede
+     decidir si esa pantalla sobra. Un evento al mostrarse, una vez por
+     pantalla, y la cuenta sale sola: vistos − siguieron = los que se van ahí. */
+  useEffect(() => {
+    if (step === 2 && flujo && !vioPlan) marcar('onb_plan_visto', { flujo })
+  }, [step, flujo, vioPlan])
+  useEffect(() => {
+    if (step === 2 && flujo && vioPlan && !metodo) marcar('onb_cartera_vista', { flujo })
+  }, [step, flujo, vioPlan, metodo])
+
   const progressInfo = step <= 2 ? { current: step + 1, total: 4 } : null
 
   if (showBounce) {

@@ -27,7 +27,12 @@ import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 const DIAS_ENFRIAMIENTO = 20
 
 const CRON_SECRET = process.env.CRON_SECRET
-const TEMPLATE_PREVENC = 'plan_por_vencer_v2'
+/* Por variable de entorno para cambiar de plantilla SIN desplegar: la v3
+   («si dejas guardado tu Nequi, se renueva solo») quedó enviada a Meta el
+   6 sep 2026 y hasta que la aprueben no se puede usar. Cuando esté APPROVED:
+   `WA_TEMPLATE_PREVENC=plan_por_vencer_v3` en el .env del VPS y
+   `pm2 reload cf --update-env`. Sin la variable, la v2 de siempre. */
+const TEMPLATE_PREVENC = process.env.WA_TEMPLATE_PREVENC || 'plan_por_vencer_v2'
 const TEMPLATE_VENCIDO = 'plan_vencido_v2'
 const TEMPLATE_LANG = process.env.WHATSAPP_TEMPLATE_LANG || 'es'
 
