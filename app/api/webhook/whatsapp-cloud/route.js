@@ -238,6 +238,7 @@ async function devolverIntentoPorCorte(wamid, codigo) {
             botLeadId: lead.id, rol: 'bot',
             texto: `${MARCA_RESCATE} ${textoAperturaUtility(nombre, plantillaRescate)}`,
             wamid: wa.wamidDe(envio),
+            proveedor: 'plantilla', promptId: plantillaRescate,
           },
         })
         console.warn(`[WA Cloud] 130472 en ${lead.nombre}: rescatado con la plantilla de utilidad ${plantillaRescate}`)
@@ -641,7 +642,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
         ? await wa.sendButtons(lead.telefono, salida.texto, salida.botones)
         : await wa.sendText(lead.telefono, salida.texto)
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+        data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio), proveedor: 'fijo', promptId: 'llave-prueba' },
       }).catch(() => {})
     } catch (e) {
       console.error('[WA Cloud] no pude contestar la llave de prueba:', e.message)
@@ -673,7 +674,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
         ? await wa.sendButtons(lead.telefono, r.texto, r.botones)
         : await wa.sendText(lead.telefono, r.texto)
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'bot', texto: r.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+        data: { botLeadId: lead.id, rol: 'bot', texto: r.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio), proveedor: 'fijo', promptId: `cartera:${botonId}` },
       }).catch(() => {})
     } catch (e) {
       console.error('[WA Cloud] no pude contestar el botón:', e.message)
@@ -778,7 +779,9 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
         envio = await wa.sendText(lead.telefono, decision.mensaje)
       }
       await prisma.botConversacion.create({
-        data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje, wamid: wa.wamidDe(envio) },
+        // La traza viene del agente con las columnas exactas: etapa,
+        // clasificación, proveedor, prompt, respuesta cruda, violaciones…
+        data: { botLeadId: lead.id, rol: 'bot', texto: decision.mensaje, wamid: wa.wamidDe(envio), ...(decision.traza || {}) },
       })
       console.log(`[WA Cloud] -> ${lead.nombre}: ${decision.mensaje.slice(0, 70)}`)
     } catch (e) {
@@ -793,7 +796,7 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       const res = await enviarGuia(lead.telefono, decision.enviarGuia)
       if (res.ok) {
         await prisma.botConversacion.create({
-          data: { botLeadId: lead.id, rol: 'bot', texto: `[Guia enviada: ${res.slug} — ${res.enviadas}/${res.total} imagenes]`, tipoMensaje: 'image' },
+          data: { botLeadId: lead.id, rol: 'bot', texto: `[Guia enviada: ${res.slug} — ${res.enviadas}/${res.total} imagenes]`, tipoMensaje: 'image', proveedor: 'fijo', promptId: `guia:${res.slug}` },
         }).catch(() => {})
         console.log(`[WA Cloud] -> ${lead.nombre}: guia ${res.slug} (${res.enviadas}/${res.total})`)
       } else {
@@ -900,7 +903,7 @@ async function atenderDesdeAnuncio(lead, { botonId, texto }) {
       ? await wa.sendButtons(lead.telefono, salida.texto, salida.botones)
       : await wa.sendText(lead.telefono, salida.texto)
     await prisma.botConversacion.create({
-      data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+      data: { botLeadId: lead.id, rol: 'bot', texto: salida.texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio), proveedor: 'fijo', promptId: `anuncio:${botonId || 'texto'}` },
     }).catch(() => {})
   } catch (e) {
     console.error('[WA Cloud] flujo de anuncio, no pude contestar:', e.message)

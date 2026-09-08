@@ -102,7 +102,7 @@ export async function POST(request, { params }) {
         data: {
           botLeadId: id, rol: 'admin', texto: caption || `[${tipo}]`, tipoMensaje: tipo,
           mediaPath: saved?.path || null, mediaTipo: saved?.tipo || tipo, mediaMime: saved?.mime || mimetype,
-          wamid: wa.wamidDe(envioMedia),
+          wamid: wa.wamidDe(envioMedia), proveedor: 'admin',
         },
       })
       return NextResponse.json({ ok: true, tipo })
@@ -115,7 +115,7 @@ export async function POST(request, { params }) {
 
     const envio = await wa.sendText(lead.telefono, texto)
     await prisma.botConversacion.create({
-      data: { botLeadId: id, rol: 'admin', texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio) },
+      data: { botLeadId: id, rol: 'admin', texto, tipoMensaje: 'chat', wamid: wa.wamidDe(envio), proveedor: 'admin' },
     })
     return NextResponse.json({ ok: true })
   } catch (e) {

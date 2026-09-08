@@ -84,6 +84,7 @@ export async function POST(req) {
             rol: 'bot',
             texto: AB_TEXTOS[variante](nombre),
             wamid: wa.wamidDe(envio),
+            proveedor: 'plantilla', promptId: templateName, etapa: 'APERTURA',
           },
         })
 

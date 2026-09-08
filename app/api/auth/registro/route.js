@@ -280,7 +280,7 @@ export async function POST(req) {
             const texto = mensajeBienvenida(String(nombre || '').trim().split(/\s+/)[0] || '')
             const envio = await sendButtons(lead.telefono, texto, BOTONES_CARTERA)
             await prisma.botConversacion.create({
-              data: { botLeadId: lead.id, rol: 'bot', texto, tipoMensaje: 'chat', wamid: wamidDe(envio) },
+              data: { botLeadId: lead.id, rol: 'bot', texto, tipoMensaje: 'chat', wamid: wamidDe(envio), proveedor: 'fijo', promptId: 'bienvenida-cartera' },
             }).catch(() => {})
             console.log(`[Registro] cartera ofrecida por WhatsApp a la org ${resultado.org.id}`)
           }

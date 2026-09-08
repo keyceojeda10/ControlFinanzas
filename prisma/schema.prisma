@@ -1067,6 +1067,19 @@ model BotConversacion {
   estadoEntrega   String? // "enviado" | "entregado" | "leido" | "fallido" (ack de Meta via webhook statuses)
   estadoEntregaEn DateTime? // fecha del ultimo ack recibido
   errorEntrega    String?   @db.Text // detalle del error si estadoEntrega = "fallido"
+  /* ══ LA TRAZA (BOT v3 · sprint 1 · 8 sep 2026) ═══════════════════════════
+     Hasta hoy solo se guardaba el mensaje final. Las tres auditorías externas
+     pidieron lo mismo: sin la etapa, el prompt y la respuesta cruda no se
+     puede saber si falló el código que decide o el modelo que redacta. Solo
+     se rellenan en los mensajes del bot; en los del lead quedan a null. */
+  etapa           String?   @db.VarChar(24)  // SALUDO | VALOR | POST_LINK | PRECIOS | ...
+  clasificacion   String?   @db.VarChar(48)  // ventas | escalar:pide_humano | tutoriales:lead | ...
+  proveedor       String?   @db.VarChar(20)  // claude | deepseek | fijo | plantilla | admin
+  promptId        String?   @db.VarChar(48)  // nombre del prompt + hash corto de su texto
+  respuestaCruda  String?   @db.Text         // lo que dijo el modelo ANTES del sanitizador
+  violaciones     String?   @db.VarChar(255) // lo que marcó el detector, separado por comas
+  segundaPasada   Boolean   @default(false)  // hubo segunda llamada al modelo
+  latenciaMs      Int?                       // del modelo, no de Meta
   createdAt       DateTime  @default(now())
 
   botLead BotLead @relation(fields: [botLeadId], references: [id], onDelete: Cascade)
