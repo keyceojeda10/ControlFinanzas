@@ -807,7 +807,17 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
   // Actualizar estado
   const mandoLinkRegistro = decision.mensaje && /app\.control-finanzas\.com\/registro/i.test(decision.mensaje)
 
-  if (decision.escalar) {
+  if (decision.rechazo) {
+    // Dijo que no. No se le insiste más, pero el bot sigue encendido: si algún
+    // día escribe, se le contesta (lección de los 33 leads que escribieron al
+    // vacío). A Meta se le reporta como no cualificado, que es lo que es.
+    await prisma.botLead.update({
+      where: { id: lead.id },
+      data: { estado: 'no_interesado', proximoSeguimiento: null, botActivo: true },
+    })
+    notificarEstadoLead(lead.id, 'unqualified').catch(() => {})
+    console.log(`[WA Cloud] ${lead.nombre} dijo que no: sin más seguimientos.`)
+  } else if (decision.escalar) {
     if (lead.estado !== 'cerrado') {
       await prisma.botLead.update({
         where: { id: lead.id },
