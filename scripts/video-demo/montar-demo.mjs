@@ -42,15 +42,27 @@ export const IDS = {
    Una ruta ES clientes agrupados por zona: 2.666 km contradice la lección
    entera del vídeo, y «Optimizar» sobre esa nube no significa nada. Van
    apiñados en barrios contiguos, que es como se ve una ruta de verdad. */
+/* ⚠ CÉDULAS Y TELÉFONOS EVIDENTEMENTE FICTICIOS, Y NO ES UN DETALLE.
+ *
+ * El 8 sep 2026 YouTube RETIRÓ el vídeo 06 («Cómo crear un cliente») por su
+ * política de acoso: en el minuto 0:55 se veían un nombre completo y una cédula
+ * escritos en el formulario, y el filtro los leyó como datos de una persona
+ * real. No lo eran —ninguno de estos nombres ni cédulas existe en la base, se
+ * comprobó uno a uno—, pero eran lo bastante verosímiles para no distinguirse.
+ *
+ * Ahora las cédulas van 1000000NN y los teléfonos 30000000NN: siguen cabiendo
+ * en pantalla igual, y cualquiera que mire el vídeo ve que son de mentira.
+ * Los nombres se quedan, que son los que hacen que el vídeo parezca un negocio
+ * de verdad y solos no identifican a nadie. */
 export const CLIENTES = [
-  { nombre: 'Marta Elena Ospina',   cedula: '41203877', tel: '3001234501', dir: 'Calle 12 · Barrio El Prado',  lat: 4.8121, lng: -75.6946 },
-  { nombre: 'Jairo Antonio Peña',   cedula: '79114522', tel: '3001234502', dir: 'Carrera 8 · La Esperanza',    lat: 4.8098, lng: -75.6912 },
-  { nombre: 'Yaneth Cardona',       cedula: '52830199', tel: '3001234503', dir: 'Calle 30 · San Nicolás',      lat: 4.8144, lng: -75.6889 },
-  { nombre: 'Óscar Hincapié',       cedula: '10877344', tel: '3001234504', dir: 'Diagonal 4 · El Recreo',      lat: 4.8072, lng: -75.6958 },
-  { nombre: 'Luz Dary Montoya',     cedula: '43655012', tel: '3001234505', dir: 'Calle 19 · Villa Rosa',       lat: 4.8159, lng: -75.6931 },
-  { nombre: 'Fabián Quintero',      cedula: '98455170', tel: '3001234506', dir: 'Carrera 15 · Centro',         lat: 4.8110, lng: -75.6974 },
-  { nombre: 'Rosalba Jiménez',      cedula: '32977641', tel: '3001234507', dir: 'Calle 7 · Los Almendros',     lat: 4.8055, lng: -75.6903 },
-  { nombre: 'Wilmer Andrés Salas',  cedula: '80122459', tel: '3001234508', dir: 'Carrera 22 · El Bosque',      lat: 4.8133, lng: -75.6857 },
+  { nombre: 'Marta Elena Ospina',   cedula: '100000001', tel: '3000000001', dir: 'Calle 12 · Barrio El Prado',  lat: 4.8121, lng: -75.6946 },
+  { nombre: 'Jairo Antonio Peña',   cedula: '100000002', tel: '3000000002', dir: 'Carrera 8 · La Esperanza',    lat: 4.8098, lng: -75.6912 },
+  { nombre: 'Yaneth Cardona',       cedula: '100000003', tel: '3000000003', dir: 'Calle 30 · San Nicolás',      lat: 4.8144, lng: -75.6889 },
+  { nombre: 'Óscar Hincapié',       cedula: '100000004', tel: '3000000004', dir: 'Diagonal 4 · El Recreo',      lat: 4.8072, lng: -75.6958 },
+  { nombre: 'Luz Dary Montoya',     cedula: '100000005', tel: '3000000005', dir: 'Calle 19 · Villa Rosa',       lat: 4.8159, lng: -75.6931 },
+  { nombre: 'Fabián Quintero',      cedula: '100000006', tel: '3000000006', dir: 'Carrera 15 · Centro',         lat: 4.8110, lng: -75.6974 },
+  { nombre: 'Rosalba Jiménez',      cedula: '100000007', tel: '3000000007', dir: 'Calle 7 · Los Almendros',     lat: 4.8055, lng: -75.6903 },
+  { nombre: 'Wilmer Andrés Salas',  cedula: '100000008', tel: '3000000008', dir: 'Carrera 22 · El Bosque',      lat: 4.8133, lng: -75.6857 },
 ]
 
 /* Los que NO tienen ruta todavía, para el vídeo de rutas: se crea una ruta
@@ -67,11 +79,11 @@ export const CLIENTES = [
    Y es como se escriben las direcciones de verdad: la calle cambia, el barrio
    se repite. */
 export const CLIENTES_SIN_RUTA = [
-  { nombre: 'Gladys Restrepo',      cedula: '24788301', tel: '3001234509', dir: 'Calle 48 · Barrio La Floresta',     lat: 4.8331, lng: -75.6802 },
-  { nombre: 'Hernán Zapata',        cedula: '15602934', tel: '3001234510', dir: 'Carrera 31 · Barrio La Floresta',   lat: 4.8358, lng: -75.6841 },
-  { nombre: 'Diana Marcela Ruiz',   cedula: '39415776', tel: '3001234511', dir: 'Calle 52 · Barrio La Floresta',     lat: 4.8302, lng: -75.6779 },
-  { nombre: 'Álvaro Betancur',      cedula: '70933128', tel: '3001234512', dir: 'Diagonal 40 · Barrio La Floresta',  lat: 4.8377, lng: -75.6815 },
-  { nombre: 'Nubia Castaño',        cedula: '46201855', tel: '3001234513', dir: 'Carrera 27 · Barrio La Floresta',   lat: 4.8319, lng: -75.6866 },
+  { nombre: 'Gladys Restrepo',      cedula: '100000009', tel: '3000000009', dir: 'Calle 48 · Barrio La Floresta',     lat: 4.8331, lng: -75.6802 },
+  { nombre: 'Hernán Zapata',        cedula: '1000000010', tel: '3000000010', dir: 'Carrera 31 · Barrio La Floresta',   lat: 4.8358, lng: -75.6841 },
+  { nombre: 'Diana Marcela Ruiz',   cedula: '1000000011', tel: '3000000011', dir: 'Calle 52 · Barrio La Floresta',     lat: 4.8302, lng: -75.6779 },
+  { nombre: 'Álvaro Betancur',      cedula: '1000000012', tel: '3000000012', dir: 'Diagonal 40 · Barrio La Floresta',  lat: 4.8377, lng: -75.6815 },
+  { nombre: 'Nubia Castaño',        cedula: '1000000013', tel: '3000000013', dir: 'Carrera 27 · Barrio La Floresta',   lat: 4.8319, lng: -75.6866 },
 ]
 
 export async function conectar() {

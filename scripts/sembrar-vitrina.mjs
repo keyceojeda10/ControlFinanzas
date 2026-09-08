@@ -71,15 +71,19 @@ const DUENO = 'vitrina_user_tutoriales'
 /* ⚠ LOS NOMBRES SON LOS DE LA LISTA BLANCA de `capturar-tutoriales.mjs`. Si se
    cambian aquí y no allí, el guion de capturas aborta creyendo que son clientes
    reales — que es exactamente lo que esa guardia viene a evitar. */
+/* ⚠ Cédulas 1000000N y teléfonos 30000000NN: de mentira a simple vista.
+   Con datos verosímiles, YouTube retiró el vídeo 06 el 8 sep 2026 leyéndolos
+   como personales reales (no lo eran). Esta vitrina es la que sale en las
+   capturas y en las grabaciones, así que aquí vale la misma regla. */
 const CLIENTES = [
-  { nombre: 'Steven Olmos',            cedula: '1017234501', telefono: '3001234501', direccion: 'Calle 45 #12-30, Manrique' },
-  { nombre: 'Carlitos Chaparro',       cedula: '1017234502', telefono: '3001234502', direccion: 'Carrera 50 #78-14, Aranjuez' },
-  { nombre: 'María Fernanda Restrepo', cedula: '1017234503', telefono: '3001234503', direccion: 'Calle 10 #43-22, Poblado' },
-  { nombre: 'Jhoan Sebastián Cruz',    cedula: '1017234504', telefono: '3001234504', direccion: 'Carrera 80 #33-11, Laureles' },
-  { nombre: 'Marta Lucía Ríos',        cedula: '1017234505', telefono: '3001234505', direccion: 'Calle 103 #65-40, Castilla' },
-  { nombre: 'Julián Vélez',            cedula: '1017234506', telefono: '3001234506', direccion: 'Carrera 47 #96-18, Belén' },
-  { nombre: 'Ana Milena Guzmán',       cedula: '1017234507', telefono: '3001234507', direccion: 'Calle 30 #70-55, Envigado' },
-  { nombre: 'Diego Alejandro Peña',    cedula: '1017234508', telefono: '3001234508', direccion: 'Carrera 65 #48-09, Itagüí' },
+  { nombre: 'Steven Olmos',            cedula: '100000001', telefono: '3000000001', direccion: 'Calle 45 #12-30, Manrique' },
+  { nombre: 'Carlitos Chaparro',       cedula: '100000002', telefono: '3000000002', direccion: 'Carrera 50 #78-14, Aranjuez' },
+  { nombre: 'María Fernanda Restrepo', cedula: '100000003', telefono: '3000000003', direccion: 'Calle 10 #43-22, Poblado' },
+  { nombre: 'Jhoan Sebastián Cruz',    cedula: '100000004', telefono: '3000000004', direccion: 'Carrera 80 #33-11, Laureles' },
+  { nombre: 'Marta Lucía Ríos',        cedula: '100000005', telefono: '3000000005', direccion: 'Calle 103 #65-40, Castilla' },
+  { nombre: 'Julián Vélez',            cedula: '100000006', telefono: '3000000006', direccion: 'Carrera 47 #96-18, Belén' },
+  { nombre: 'Ana Milena Guzmán',       cedula: '100000007', telefono: '3000000007', direccion: 'Calle 30 #70-55, Envigado' },
+  { nombre: 'Diego Alejandro Peña',    cedula: '100000008', telefono: '3000000008', direccion: 'Carrera 65 #48-09, Itagüí' },
 ]
 
 /* ⚠ EL ÚLTIMO DE ESTA LISTA ES EL QUE SALE EN LAS OCHO GUÍAS DE PRÉSTAMO.

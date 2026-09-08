@@ -26,8 +26,11 @@ import { conectar, IDS } from './montar-demo.mjs'
 
 
 const CLIENTE = {
+  /* ⚠ La cédula es 100000001 a propósito: con una verosímil (era 71458203),
+     YouTube retiró este vídeo el 8 sep 2026 leyéndola como un dato personal
+     real. Ver la nota larga en montar-demo.mjs. */
   nombre: 'Luis Fernando Ocampo',
-  cedula: '71458203',
+  cedula: '100000001',
   celular: '3012223344',
   direccion: 'Calle 24 · Barrio La Palma',
   referencia: 'Frente a la panadería',
