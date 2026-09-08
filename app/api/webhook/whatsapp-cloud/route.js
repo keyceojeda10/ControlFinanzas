@@ -236,7 +236,7 @@ async function devolverIntentoPorCorte(wamid, codigo) {
         await prisma.botConversacion.create({
           data: {
             botLeadId: lead.id, rol: 'bot',
-            texto: `${MARCA_RESCATE} ${textoAperturaUtility(nombre)}`,
+            texto: `${MARCA_RESCATE} ${textoAperturaUtility(nombre, plantillaRescate)}`,
             wamid: wa.wamidDe(envio),
           },
         })
