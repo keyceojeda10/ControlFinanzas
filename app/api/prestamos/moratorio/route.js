@@ -80,7 +80,8 @@ export async function GET() {
       /* Cuando el cálculo choca con el tope —la mitad del saldo— la cifra deja
          de ser «lo que salió» y pasa a ser «lo máximo que se deja». Sin decirlo,
          el prestamista no entiende por qué dos préstamos parecidos dan lo mismo. */
-      topado: m.montoMoratorio >= m.tope && m.tope > 0,
+      topado: m.topado,
+      yaAplicado: m.yaAplicado,
     })
   }
 
