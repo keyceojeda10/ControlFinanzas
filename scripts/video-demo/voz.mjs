@@ -47,6 +47,17 @@ import { homedir } from 'os'
 import { dirname, basename } from 'path'
 
 const VIDEOS = '/home/keyce/Desktop/videos-tutoriales'
+
+/* ⚠ LA CACHÉ DE AUDIO NO VA EN /tmp. ES DINERO.
+ *
+ * Cada mp3 de aquí son caracteres ya pagados a ElevenLabs, y el plan los cuenta
+ * una vez al mes. Estuvo en `/tmp/cf-voz`, que el sistema borra al reiniciar:
+ * el 8 sep 2026 la caché estaba VACÍA con 30.499 caracteres ya gastados, así
+ * que rehacer una sola toma de un vídeo ya hecho habría vuelto a cobrarlos.
+ *
+ * Aquí sobrevive a los reinicios, y regrabar las tomas de un vídeo —que es
+ * gratis— ya no obliga a pagar otra vez su voz, mientras el texto no cambie. */
+const CACHE = `${VIDEOS}/.voz-cache`
 const VOZ = 'dXtC3XhB9GtPusIpNtQx'   // Hale · Great for Commercials
 const MODELO = 'eleven_multilingual_v2'
 
@@ -166,7 +177,7 @@ async function ponerVozA(key, video, toma, { soloContar = false, gastado = { cha
      seguidos desde el principio, que es lo que se podía hacer antes. */
   const anclas = parrafos.map((_, i) => (marcas[i] ? marcas[i].t : null))
 
-  const tmp = `/tmp/cf-voz/${video}/${String(toma.n).padStart(2, '0')}`
+  const tmp = `${CACHE}/${video}/${String(toma.n).padStart(2, '0')}`
   mkdirSync(tmp, { recursive: true })
 
   const piezas = []
@@ -292,7 +303,7 @@ if (soloAudio) {
   console.log(`audio de ${video} · ${todas0.length} tomas · ${chars} caracteres`)
   for (const t of todas0) {
     const parrafos = parrafosDe(video, t.n)
-    const tmp = `/tmp/cf-voz/${video}/${String(t.n).padStart(2, '0')}`
+    const tmp = `${CACHE}/${video}/${String(t.n).padStart(2, '0')}`
     mkdirSync(tmp, { recursive: true })
     for (let i = 0; i < parrafos.length; i++) {
       const mp3 = `${tmp}/p${i}.mp3`
@@ -307,7 +318,7 @@ if (soloAudio) {
     process.stdout.write(`  toma ${t.n} ✓  `)
   }
   console.log(`
-✓ audio en /tmp/cf-voz/${video}`)
+✓ audio en ${CACHE}/${video}`)
   process.exit(0)
 }
 

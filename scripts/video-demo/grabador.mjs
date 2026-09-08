@@ -106,7 +106,9 @@ function cargarLocucion(locucion, n) {
   const f = `${VIDEOS}/locucion/por-toma/${locucion}/toma-${String(n).padStart(2, '0')}.txt`
   if (!existsSync(f)) return []
   const textos = readFileSync(f, 'utf8').trim().split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean)
-  const dirAudio = `/tmp/cf-voz/${locucion}/${String(n).padStart(2, '0')}`
+  /* La caché de voz vive junto a los vídeos, no en /tmp: son caracteres ya
+     pagados y /tmp se borra al reiniciar (ver la nota en voz.mjs). */
+  const dirAudio = `/home/keyce/Desktop/videos-tutoriales/.voz-cache/${locucion}/${String(n).padStart(2, '0')}`
   return textos.map((texto, i) => {
     const mp3 = `${dirAudio}/p${i}.mp3`
     let dura = 4.2
