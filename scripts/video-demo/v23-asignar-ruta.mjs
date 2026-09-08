@@ -2,7 +2,15 @@
 //
 // VÍDEO 23 · Cómo asignarle una ruta a un cobrador
 //
-//     LOCUCION=23-asignar-ruta node scripts/video-demo/v23-asignar-ruta.mjs
+//     node scripts/video-demo/voz.mjs 23-asignar-ruta --solo-audio      # 1 · el audio
+//     SIN_ROTULOS=1 LOCUCION=23-asignar-ruta \
+//       node scripts/video-demo/v23-asignar-ruta.mjs                # 2 · grabar
+//     node scripts/video-demo/voz.mjs 23-asignar-ruta                  # 3 · voz
+//     node scripts/video-demo/subtitulos.mjs 23-asignar-ruta --quemar  # 4 · subtitulos
+//
+// ⚠ `SIN_ROTULOS=1` NO ES OPCIONAL. Sin él, el grabador QUEMA los rótulos
+//   negros en la imagen, y encima van los subtítulos: el vídeo sale con el
+//   mismo texto dos veces. Pasó con la primera versión de estos dos.
 //     node scripts/video-demo/v23-asignar-ruta.mjs --toma 2
 //     node scripts/video-demo/v23-asignar-ruta.mjs --pegar
 //

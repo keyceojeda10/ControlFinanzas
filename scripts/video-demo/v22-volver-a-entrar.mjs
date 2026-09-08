@@ -2,7 +2,15 @@
 //
 // VÍDEO 22 · Cómo volver a entrar
 //
-//     LOCUCION=22-volver-a-entrar node scripts/video-demo/v22-volver-a-entrar.mjs
+//     node scripts/video-demo/voz.mjs 22-volver-a-entrar --solo-audio      # 1 · el audio
+//     SIN_ROTULOS=1 LOCUCION=22-volver-a-entrar \
+//       node scripts/video-demo/v22-volver-a-entrar.mjs                # 2 · grabar
+//     node scripts/video-demo/voz.mjs 22-volver-a-entrar                  # 3 · voz
+//     node scripts/video-demo/subtitulos.mjs 22-volver-a-entrar --quemar  # 4 · subtitulos
+//
+// ⚠ `SIN_ROTULOS=1` NO ES OPCIONAL. Sin él, el grabador QUEMA los rótulos
+//   negros en la imagen, y encima van los subtítulos: el vídeo sale con el
+//   mismo texto dos veces. Pasó con la primera versión de estos dos.
 //     node scripts/video-demo/v22-volver-a-entrar.mjs --toma 3
 //     node scripts/video-demo/v22-volver-a-entrar.mjs --pegar
 //
