@@ -24,6 +24,7 @@ import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
 import { esMensajeAutomatico } from '@/lib/bot/filtros'
 import { accionTrasThrottle, MAX_REBOTES_THROTTLE, necesitaRescateUtility } from '@/lib/bot-v2/cadencia'
+import { textoAperturaUtility } from '@/lib/bot-v2/respuestas-fijas'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -220,8 +221,13 @@ async function devolverIntentoPorCorte(wamid, codigo) {
      impide un segundo intento. */
   const plantillaRescate = process.env.WA_TEMPLATE_RESCATE || null
   if (plantillaRescate) {
+    // Cuenta también la apertura de utilidad que manda el bridge desde el 7 sep:
+    // si ya recibió «recibimos tu solicitud», no se le manda dos veces.
     const rescatesPrevios = await prisma.botConversacion.count({
-      where: { botLeadId: lead.id, rol: 'bot', texto: { startsWith: MARCA_RESCATE } },
+      where: {
+        botLeadId: lead.id, rol: 'bot',
+        OR: [{ texto: { startsWith: MARCA_RESCATE } }, { texto: { contains: 'recibimos tu solicitud' } }],
+      },
     })
     if (necesitaRescateUtility({ codigo, rescatesPrevios, plantilla: plantillaRescate }) && lead.telefono) {
       try {
@@ -230,7 +236,7 @@ async function devolverIntentoPorCorte(wamid, codigo) {
         await prisma.botConversacion.create({
           data: {
             botLeadId: lead.id, rol: 'bot',
-            texto: `${MARCA_RESCATE} Hola ${nombre}, recibimos tu solicitud en Control Finanzas. ¿Quieres que te contemos por aquí cómo funciona? Responde a este mensaje y te atendemos.`,
+            texto: `${MARCA_RESCATE} ${textoAperturaUtility(nombre)}`,
             wamid: wa.wamidDe(envio),
           },
         })
