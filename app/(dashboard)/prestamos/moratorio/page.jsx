@@ -89,7 +89,9 @@ export default function MoratorioPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            monto: p.monto,
+            // `montoPagado`: con `monto` el API leía undefined y todos fallaban con
+            // «El monto debe ser mayor a 0» (Préstamos Rincón, 8 sep 2026).
+            montoPagado: Math.round(Number(p.monto)),
             tipo: 'recargo',
             nota: `Interés moratorio · ${p.diasEfectivos} días sobre ${formatMoney(p.montoBase)} en mora`,
           }),

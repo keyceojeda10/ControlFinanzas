@@ -3178,7 +3178,9 @@ function PrestamoDetalleContenido({ params }) {
                 const res = await fetch(`/api/prestamos/${id}/pagos`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ monto: moratorioMonto, tipo: 'recargo', nota: notaFull }),
+                  // `montoPagado`, como todo el que registra contra este API: con `monto` el
+                  // API leía undefined y contestaba «El monto debe ser mayor a 0» (8 sep 2026).
+                  body: JSON.stringify({ montoPagado: Math.round(Number(moratorioMonto)), tipo: 'recargo', nota: notaFull }),
                 })
                 if (!res.ok) {
                   const d = await res.json()
