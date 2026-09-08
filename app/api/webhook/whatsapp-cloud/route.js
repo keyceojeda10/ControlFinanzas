@@ -23,7 +23,7 @@ import { guardarMedia } from '@/lib/bot/media-store'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { enviarGuia } from '@/lib/bot/guias-sender'
 import { esMensajeAutomatico } from '@/lib/bot/filtros'
-import { accionTrasThrottle, MAX_REBOTES_THROTTLE } from '@/lib/bot-v2/cadencia'
+import { accionTrasThrottle, MAX_REBOTES_THROTTLE, necesitaRescateUtility } from '@/lib/bot-v2/cadencia'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -207,10 +207,40 @@ async function devolverIntentoPorCorte(wamid, codigo) {
 
   const lead = await prisma.botLead.findUnique({
     where: { id: conv.botLeadId },
-    select: { id: true, nombre: true, intentosSeguimiento: true, estado: true },
+    select: { id: true, nombre: true, telefono: true, intentosSeguimiento: true, estado: true },
   })
   if (!lead) return
   if (!['contactado', 'interesado'].includes(lead.estado)) return
+
+  /* ── EL 130472 SE RESCATA UNA VEZ CON LA PLANTILLA DE UTILIDAD ──────────
+     Ver `necesitaRescateUtility`. La plantilla se pone por variable de
+     entorno cuando Meta la apruebe (`WA_TEMPLATE_RESCATE=solicitud_recibida`);
+     sin la variable, esto no hace nada y el código sigue como antes. El
+     rescate queda escrito en la conversación con su marca, que es lo que
+     impide un segundo intento. */
+  const plantillaRescate = process.env.WA_TEMPLATE_RESCATE || null
+  if (plantillaRescate) {
+    const rescatesPrevios = await prisma.botConversacion.count({
+      where: { botLeadId: lead.id, rol: 'bot', texto: { startsWith: MARCA_RESCATE } },
+    })
+    if (necesitaRescateUtility({ codigo, rescatesPrevios, plantilla: plantillaRescate }) && lead.telefono) {
+      try {
+        const nombre = (lead.nombre || 'amigo').split(' ')[0]
+        const envio = await wa.sendTemplate(lead.telefono, plantillaRescate, { nombre }, process.env.WHATSAPP_TEMPLATE_LANG || 'es')
+        await prisma.botConversacion.create({
+          data: {
+            botLeadId: lead.id, rol: 'bot',
+            texto: `${MARCA_RESCATE} Hola ${nombre}, recibimos tu solicitud en Control Finanzas. ¿Quieres que te contemos por aquí cómo funciona? Responde a este mensaje y te atendemos.`,
+            wamid: wa.wamidDe(envio),
+          },
+        })
+        console.warn(`[WA Cloud] 130472 en ${lead.nombre}: rescatado con la plantilla de utilidad ${plantillaRescate}`)
+        return
+      } catch (e) {
+        console.error(`[WA Cloud] 130472 en ${lead.nombre}: el rescate no salió: ${e.message}`)
+      }
+    }
+  }
 
   const intentos = Math.max(0, (lead.intentosSeguimiento || 0) - 1)
   await prisma.botLead.update({
@@ -337,6 +367,9 @@ const UMBRAL_FALLOS_ABSOLUTO = 15  // o 15 mensajes perdidos en 24h, sin importa
    (14 %), y 90 rebotes que degradan la reputacion del numero para todos los
    demas. Dentro de la lista, se planta a los dos rebotes como el resto. */
 const CODIGOS_THROTTLE = new Set([131049, 130472, 131050, 131026])
+/* La marca con la que queda escrito un rescate por 130472. Se cuenta para no
+   repetirlo; el texto que sigue es el de la plantilla, para que el hilo se lea. */
+const MARCA_RESCATE = '[rescate utility]'
 
 // Codigos que significan "Meta te corto", no "ese numero no existe".
 // Estos NO pueden esperar a que falle el 30% del trafico: cuando aparecen, el

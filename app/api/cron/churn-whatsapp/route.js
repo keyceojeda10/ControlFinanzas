@@ -118,7 +118,8 @@ export async function POST(req) {
           data: { waPreVencSent: true, waPreVencSentAt: ahora },
         })
         res.preVenc.enviados++
-        console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d`)
+        // Con la plantilla: es la prueba de que el proceso leyó `WA_TEMPLATE_PREVENC`.
+        console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d · ${TEMPLATE_PREVENC}`)
       } catch (e) {
         res.preVenc.errores++
         console.error(`[Churn WA] Pre-venc error ${org.nombre}: ${e.message}`)

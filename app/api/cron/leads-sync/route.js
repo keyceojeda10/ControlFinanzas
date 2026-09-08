@@ -5,7 +5,13 @@ import { parseFieldData } from '@/lib/fb-leads'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 
 const PAGE_TOKEN = process.env.FB_PAGE_ACCESS_TOKEN
-const FORM_ID = process.env.FB_FORM_ID || '933400739047391'
+/* ⚠ EL FORMULARIO NO SE ADIVINA. Aquí iba un id fijo de marzo (el v1, con 0
+   leads en toda su vida) y desde el 28 de agosto los leads entran por otro:
+   el cron decía «0 leads, 0 nuevos» 288 veces al día mirando un formulario
+   vacío. Como red de seguridad no protegía nada. Ahora recorre TODOS los
+   formularios de la página que tienen leads; `FB_FORM_ID` lo restringe a uno
+   si hace falta. */
+const FORM_ID = process.env.FB_FORM_ID || null
 
 // Cron que consulta Facebook cada 5 min para capturar leads que el webhook no entregó
 export async function POST(req) {
@@ -22,17 +28,29 @@ export async function POST(req) {
   }
 
   try {
-    const fbRes = await fetch(
-      `https://graph.facebook.com/v21.0/${FORM_ID}/leads?fields=id,created_time,field_data&access_token=${PAGE_TOKEN}&limit=10`
-    )
-    const fbData = await fbRes.json()
-
-    if (fbData.error) {
-      console.error('[Leads Sync] Facebook API error:', fbData.error.message)
-      return NextResponse.json({ error: fbData.error.message }, { status: 502 })
+    let formIds = FORM_ID ? [FORM_ID] : []
+    if (formIds.length === 0) {
+      const fRes = await fetch(`https://graph.facebook.com/v21.0/me/leadgen_forms?fields=id,leads_count&limit=100&access_token=${PAGE_TOKEN}`)
+      const fData = await fRes.json()
+      if (fData.error) {
+        console.error('[Leads Sync] Facebook API error (formularios):', fData.error.message)
+        return NextResponse.json({ error: fData.error.message }, { status: 502 })
+      }
+      formIds = (fData.data || []).filter((f) => Number(f.leads_count) > 0).map((f) => f.id)
     }
 
-    const leads = fbData.data || []
+    const leads = []
+    for (const formId of formIds) {
+      const fbRes = await fetch(
+        `https://graph.facebook.com/v21.0/${formId}/leads?fields=id,created_time,field_data&access_token=${PAGE_TOKEN}&limit=10`
+      )
+      const fbData = await fbRes.json()
+      if (fbData.error) {
+        console.error(`[Leads Sync] Facebook API error (formulario ${formId}):`, fbData.error.message)
+        continue
+      }
+      leads.push(...(fbData.data || []))
+    }
     let nuevos = 0
 
     for (const fbLead of leads) {
