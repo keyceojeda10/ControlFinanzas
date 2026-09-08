@@ -13,7 +13,10 @@ export async function POST(req) {
   if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   try {
-    const resultado = await enviarSeguimientos(3)
+    /* 3 leads cada 30 min eran 144 al día: con picos de campaña la fila se
+       acumulaba y un lead perdía su ventana de 24 h por congestión (Kimi #7,
+       8 sep 2026). Entre envío y envío hay 30-60 s, así que 10 son ≤ 10 min. */
+    const resultado = await enviarSeguimientos(Number(process.env.BOT_SEGUIMIENTOS_LOTE) || 10)
     console.log(`[Bot Cron Followup] Resultado:`, resultado)
     return NextResponse.json(resultado)
   } catch (err) {
