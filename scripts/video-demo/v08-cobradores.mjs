@@ -47,7 +47,7 @@ import { conectar, IDS } from './montar-demo.mjs'
    rompe el de al lado, así que se acota a la barra en todos. */
 const MENU = 'nav[aria-label="Navegación principal"]'
 
-const NUEVO = { nombre: 'Pedro Ramírez', tel: '3009876543', correo: 'pedro@ejemplo.com', clave: 'ruta2026' }
+const NUEVO = { nombre: 'Pedro Ramírez', tel: '3000000012', correo: 'pedro@ejemplo.com', clave: 'ruta2026' }
 
 /* El cobrador que crea la grabación se borra ANTES de cada toma: cada toma se
    lleva sola desde el principio y el correo es único en todo el sistema, así

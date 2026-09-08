@@ -31,7 +31,7 @@ const CORREO = 'carlos.mejia@ejemplo.com'
 const D = {
   nombre: 'Carlos Andrés Mejía',
   negocio: 'Créditos La Cosecha',
-  telefono: '3009998877',
+  telefono: '3000000011',
   clave: 'MiClaveSegura2026',
 }
 

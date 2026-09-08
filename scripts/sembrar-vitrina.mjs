@@ -145,7 +145,7 @@ try {
 La organización y el dueño se crean UNA vez, por SQL:
 
   INSERT IGNORE INTO Organization (id, nombre, plan, telefono, ciudad, activo, createdAt, country, timezone, onboardingStep)
-  VALUES ('${ORG}', 'Créditos La Esperanza', 'professional', '3001112233', 'Medellín', 1, NOW(), 'co', 'America/Bogota', 99);
+  VALUES ('${ORG}', 'Créditos La Esperanza', 'professional', '3000000099', 'Medellín', 1, NOW(), 'co', 'America/Bogota', 99);
   -- ⚠ EL TELÉFONO DEL USUARIO NO ES ADORNO (va abajo, en User). Sin él,
   --   «Agrega tu número de celular» se abre encima de la pantalla y arruina la
   --   captura: el aro señala «Guardar y continuar» en vez de la fila que la
@@ -156,7 +156,7 @@ La organización y el dueño se crean UNA vez, por SQL:
   --   (Sin acentos graves aquí dentro: esto vive en una plantilla de texto y un
   --    acento grave la cierra. Ya rompió el guion una vez.)
   INSERT IGNORE INTO User (id, nombre, email, password, telefono, rol, organizationId, createdAt)
-  VALUES ('${DUENO}', 'Carlos Ramírez', 'vitrina@ejemplo.test', '(cualquier hash)', '3001112233', 'owner', '${ORG}', NOW());
+  VALUES ('${DUENO}', 'Carlos Ramírez', 'vitrina@ejemplo.test', '(cualquier hash)', '3000000099', 'owner', '${ORG}', NOW());
 `)
   process.exit(1)
 }

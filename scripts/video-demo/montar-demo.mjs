@@ -210,7 +210,7 @@ export async function montar(cx) {
      pantallas hasta resolverlas. En una demostración se leen como un sistema a
      medio configurar. */
   await cx.execute(
-    `UPDATE User SET emailVerificado = 1, telefono = '3001234500',
+    `UPDATE User SET emailVerificado = 1, telefono = '3000000000',
         onboardingCompletado = 1, terminosAceptados = 1, fechaAceptacionTerminos = NOW()
      WHERE organizationId = ?`, [IDS.org])
 

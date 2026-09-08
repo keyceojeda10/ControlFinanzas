@@ -42,7 +42,7 @@ export async function crearCuentaNueva() {
   await cx.execute(
     `INSERT INTO User (id, email, password, nombre, rol, organizationId, activo,
         emailVerificado, telefono, onboardingCompletado, terminosAceptados, createdAt)
-     VALUES (?, ?, ?, ?, 'owner', ?, 1, 1, '3005556677', 0, 1, NOW())`,
+     VALUES (?, ?, ?, ?, 'owner', ?, 1, 1, '3000000010', 0, 1, NOW())`,
     [CUENTA.owner, CUENTA.correo, HASH, CUENTA.nombre, CUENTA.org])
 
   /* La suscripción de prueba: sin ella el panel no pinta nada. Ver la nota en
