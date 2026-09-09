@@ -15,6 +15,7 @@ import {
   calcularInteresMoratorio,
   calcularPrestamo,
   calcularCapitalRestante,
+  minimoParaRenovar,
   pagoHoy,
   prestamoDevuelveMenosDeLoPrestado,
   mensajePrestamoConPerdida,
@@ -112,6 +113,10 @@ export async function GET(request, { params }) {
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
     capitalRestante:  calcularCapitalRestante(p),
+    /* ⚠ Lo que se liquida AL RENOVAR no es el capital: en los modos sin tabla
+       —el 94 % de la cartera— es la deuda. La pantalla de renovar decidía por
+       su cuenta y se separó del servidor; ahora recibe la cifra ya hecha. */
+    minimoRenovacion: minimoParaRenovar(p),
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     cuotasPendientes: calcularCuotasPendientes(p),

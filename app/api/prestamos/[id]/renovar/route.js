@@ -6,9 +6,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import {
-  calcularPrestamo, calcularSaldoPendiente, calcularCapitalRestante,
+  calcularPrestamo, calcularSaldoPendiente, minimoParaRenovar,
   prestamoDevuelveMenosDeLoPrestado, mensajePrestamoConPerdida,
-  tieneTablaAmortizacion,
 } from '@/lib/calculos'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
@@ -130,11 +129,12 @@ export async function POST(request, { params }) {
    * CON TABLA sí manda el capital: ahí el interés futuro no está devengado y
    * cobrarlo al renovar sería cobrar un interés que nunca corrió. Son el 6% de
    * la cartera y el comentario original hablaba de ellos.
-   */
-  const capitalRestante = calcularCapitalRestante(original)
-  const minimoRenovacion = tieneTablaAmortizacion(original) && capitalRestante != null
-    ? capitalRestante
-    : saldoPendiente
+   *
+   * ⚠ Y LA CUENTA VIVE EN `minimoParaRenovar`, NO AQUÍ. Estaba escrita a mano
+   * en este archivo y otra vez en la pantalla, y las dos se separaron: el
+   * servidor se arregló y la pantalla no, así que enseñaba una entrega que
+   * luego no se registraba. Si hay que cambiar la regla, se cambia allí. */
+  const minimoRenovacion = minimoParaRenovar(original)
 
   if (original.cliente.montoMaximoPrestamo && Number(montoPrestado) > original.cliente.montoMaximoPrestamo) {
     return Response.json({

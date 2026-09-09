@@ -30,7 +30,14 @@ export default function RenovarPrestamo({
   onVolver,
   prestamoId,
   saldoPendiente,
-  capitalRestante,
+  /* ⚠ LA CIFRA LA DECIDE EL SERVIDOR, NO ESTA PANTALLA.
+     Aquí se calculaba a mano —«si hay capital restante, ese; si no, el
+     saldo»— y esa regla dejó de ser la del servidor el 5 ago 2026. Desde
+     entonces la pantalla ofrecía entregar de más en el 86,6 % de los
+     préstamos, y el prestamista descubría la diferencia al confirmar.
+     `minimoRenovacion` sale de `minimoParaRenovar`, la misma función que usa
+     el endpoint que guarda. */
+  minimoRenovacion,
   prestamoAnterior,
   clienteNombre,
   montoMaximoPrestamo,
@@ -64,8 +71,11 @@ export default function RenovarPrestamo({
   const { formatMoney } = useCountry()
 
   const saldoTotal = Math.max(0, Number(saldoPendiente) || 0)
-  // Para globo/lineal, el minimo es el capital adeudado (sin intereses futuros)
-  const saldo = capitalRestante != null ? Math.max(0, Number(capitalRestante)) : saldoTotal
+  /* Con tabla de amortización el servidor liquida el capital (el interés futuro
+     no está devengado); sin ella, la deuda entera. Aquí no se decide: llega
+     hecho. Si falta —una ficha vieja en caché— se usa la deuda, que es el caso
+     del 94 % de la cartera y el que nunca entrega de más. */
+  const saldo = minimoRenovacion != null ? Math.max(0, Number(minimoRenovacion)) : saldoTotal
   const freqInicial = prestamoAnterior?.frecuencia ?? 'diario'
   const cuotaAnterior = prestamoAnterior?.cuotaDiaria ?? 0
   const montoAnterior = prestamoAnterior?.montoPrestado ?? 0
@@ -335,7 +345,7 @@ export default function RenovarPrestamo({
                 préstamo nuevo: a partir de ahí genera interés él también. En un
                 Globo con plazo no ocurre —ahí se arrastra el capital pelado—
                 pero cuando ocurre hay que decirlo, no descubrirlo después. */}
-            {capitalRestante == null && saldoTotal > 0 && (
+            {Math.round(saldo) === Math.round(saldoTotal) && saldoTotal > 0 && (
               <p className="text-[11px] leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
                 Pasan {formatMoney(saldoTotal)}: el capital más el interés que ya
                 se causó y no está pagado. Ese interés queda como capital del

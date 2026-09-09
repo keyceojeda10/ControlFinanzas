@@ -650,7 +650,7 @@ function PrestamoDetalleContenido({ params }) {
   const {
     cliente, estado, montoPrestado, totalAPagar, cuotaDiaria, frecuencia,
     tasaInteres, diasPlazo, fechaInicio, fechaFin, nombreProducto,
-    totalPagado, saldoPendiente, capitalRestante, porcentajePagado, diasMora,
+    totalPagado, saldoPendiente, capitalRestante, minimoRenovacion, porcentajePagado, diasMora,
     cuotasPendientes = 0,
     cuotasEnMora = 0,
     montoEnMora = 0,
@@ -3032,7 +3032,7 @@ function PrestamoDetalleContenido({ params }) {
       <RenovarPrestamo
         prestamoId={id}
         saldoPendiente={saldoPendiente}
-        capitalRestante={capitalRestante}
+        minimoRenovacion={minimoRenovacion}
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
@@ -3051,7 +3051,7 @@ function PrestamoDetalleContenido({ params }) {
       <RenovarPrestamo
         prestamoId={id}
         saldoPendiente={saldoPendiente}
-        capitalRestante={capitalRestante}
+        minimoRenovacion={minimoRenovacion}
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
