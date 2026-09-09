@@ -113,7 +113,11 @@ export async function POST(req) {
 
   let decision
   try {
-    decision = await responder(lead, historialAgente, { texto, tipoMensaje: 'chat' })
+    /* `forzarRegistrado` es lo que hace que el interruptor de arriba sirva de
+       algo: el teléfono del simulador es ficticio y `verificarRegistro` nunca lo
+       encuentra, así que sin esto todo se contestaba como si fuera un lead
+       nuevo y los caminos de cliente no se podían probar. */
+    decision = await responder(lead, historialAgente, { texto, tipoMensaje: 'chat', forzarRegistrado: Boolean(registrado) })
   } catch (e) {
     console.error('[simulador-bot]', e.message)
     return NextResponse.json({ error: `El agente falló: ${e.message}` }, { status: 500 })
