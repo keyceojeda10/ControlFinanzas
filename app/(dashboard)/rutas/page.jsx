@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import ListaRutas from '@/components/pantallas/ListaRutas'
 import RutasEscritorio from '@/components/pantallas/RutasEscritorio'
-import HojaInferior from '@/components/cf/HojaInferior'
+import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { adaptarRutas, adaptarSinRuta, resumenDelDia, bandaDelDia } from '@/lib/adaptadores/rutas'
 import Link                    from 'next/link'
 import { useRouter }           from 'next/navigation'
@@ -344,7 +344,12 @@ export default function RutasPage() {
       setCapitalRuta('')
       setOrigenCapital('nuevo')
       setShowForm(false)
-      router.push(`/rutas/${data.id}`)
+      /* ⚠ `salirDeHojaHacia` y NO `router.push`. El formulario de ruta nueva es
+         una `HojaInferior`, y al cerrarse retira su entrada del historial con
+         un `back()` diferido que aborta la navegación antes de que Next llegue
+         a empezarla — el mismo fallo que dejaba muertos los tres botones de
+         «Tu cuenta», medido el 9 sep 2026. Ver la nota en `HojaInferior.jsx`. */
+      salirDeHojaHacia(router, `/rutas/${data.id}`)
     } catch {
       setFormError('Error de conexión.')
     } finally {

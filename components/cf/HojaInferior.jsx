@@ -146,6 +146,32 @@ export function registrarHoja(hoja) {
   }
 }
 
+/* ⚠ NAVEGAR DESDE UNA HOJA NO ES «CERRARLA Y EMPUJAR».
+ *
+ * `setCuenta(false); router.push('/configuracion')` no llevaba a ninguna parte,
+ * y el motivo está justo arriba: al cerrarse la última hoja se retira su
+ * entrada con `history.back()` diferido un tick. En App Router el `push` NO
+ * toca el historial en el acto —pide antes el contenido de la página—, así que
+ * a los 0 ms la entrada de arriba sigue siendo la de la hoja, la guarda de
+ * `history.state.cfHoja` la da por buena, y el `back()` llega en mitad de la
+ * transición y la aborta.
+ *
+ * Medido el 9 sep 2026 con el historial instrumentado: tras tocar
+ * «Configuración» el registro es `pushState cfHoja` · `back()` · `popstate`, y
+ * **ni un solo `pushState` de Next**. La navegación no se deshacía: no llegaba
+ * a empezar. Los tres botones de «Tu cuenta» cerraban la hoja y dejaban al
+ * dueño donde estaba —«al darle no pasa nada y nos saca de ese menú»—.
+ *
+ * La salida es reemplazar en vez de retirar. La entrada de la hoja no es una
+ * página, es un marcador: la página destino ocupa su sitio. El historial queda
+ * [donde estaba] → [destino] y el «Volver» del destino va a donde estaba, que
+ * es justo lo que se espera. */
+export function salirDeHojaHacia(router, ruta) {
+  clearTimeout(retiradaPendiente)
+  entradaViva = false
+  router.replace(ruta)
+}
+
 export default function HojaInferior({
   abierta,
   onCerrar,

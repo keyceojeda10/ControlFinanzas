@@ -23,6 +23,7 @@ import { useTheme } from '@/lib/theme/ThemeProvider'
 import CabeceraMovil from '@/components/armazon/CabeceraMovil'
 import PastillaNav from '@/components/armazon/PastillaNav'
 import HojaCuenta from '@/components/armazon/HojaCuenta'
+import { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import MenuCrear from '@/components/pantallas/MenuCrear'
 import QrScanner from '@/components/qr/QrScanner'
 import { olvidarCompartido } from '@/lib/pedir-compartido'
@@ -320,9 +321,13 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
         conectado={conectado}
         tema={theme ?? 'system'}
         onCambiarTema={setTheme}
-        onConfiguracion={() => { setCuenta(false); router.push('/configuracion') }}
-        onPlan={() => { setCuenta(false); router.push('/configuracion/plan') }}
-        onSoporte={() => { setCuenta(false); router.push('/soporte') }}
+        /* ⚠ `salirDeHojaHacia` y NO `router.push`: la hoja retira su entrada del
+           historial con un `back()` diferido, y ese `back()` abortaba la
+           navegación antes de que Next llegara a empezarla. Ver la nota en
+           `components/cf/HojaInferior.jsx`. */
+        onConfiguracion={() => { setCuenta(false); salirDeHojaHacia(router, '/configuracion') }}
+        onPlan={() => { setCuenta(false); salirDeHojaHacia(router, '/configuracion/plan') }}
+        onSoporte={() => { setCuenta(false); salirDeHojaHacia(router, '/soporte') }}
         onCerrarSesion={() => {
           /* ── AL SALIR SE BORRA LO LEÍDO, NO LO PENDIENTE ──────────────────
              Dos personas comparten teléfono más de lo que uno cree: el cobrador
