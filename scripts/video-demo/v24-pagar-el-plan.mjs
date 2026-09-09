@@ -24,9 +24,14 @@
 //   RÁPIDA · el botón + de abajo a la derecha → «Mi plan», entra directo.
 //   LARGA  · los cuatro cuadritos → Configuración → Plan y pagos → Ver planes.
 //
-// ⚠ A `/configuracion/plan` NO se entra por su URL: se queda en blanco (7
-//   caracteres) y el grabador aborta. Y «Plan y pagos» es la pantalla del
-//   DETALLE de la suscripción; donde se paga es la de detrás, por «Ver planes».
+// ⚠ CORREGIDO EL 9 SEP: llegué a escribir aquí que a `/configuracion/plan` «no
+//   se entra por su URL». **Es falso.** Sí se entra; lo que pasa es que la
+//   pantalla tarda en traerse la suscripción: a 1,5 s solo ha pintado el título
+//   («Mi plan», 7 caracteres) y de ahí salió la conclusión equivocada. Medido:
+//   1,4 s hasta «PAGAR MI PLAN» con el servidor caliente. El enlace que el bot
+//   le manda al cliente (`EMPRESA.linkPago`) es bueno.
+//   Lo que sí es cierto: «Plan y pagos» es la pantalla del DETALLE de la
+//   suscripción; donde se paga es la de detrás, por «Ver planes».
 //
 // ── ⚠ SIN METER MIEDO, Y SIN TOCAR «SUSCRIBIRME» ───────────────────────────
 //
