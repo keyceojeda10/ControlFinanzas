@@ -14,7 +14,27 @@ export async function GET() {
      pagar seguia viendo que su plan no alcanza. `exigeNivelReportes`
      usa el token como atajo y solo pregunta a la base cuando va a
      decir que no. Ver lib/plan-servidor.js. */
-  const veto = await exigeNivelReportes(session, 2)
+  /* ══ NIVEL 1, NO 2 · ARREGLADO EL 9 SEP 2026 ══════════════════════════════
+   *
+   * Un cliente al que el dueño acababa de subir a Básico abrió «Lo que está en
+   * la calle», tocó bajar y le salió «Plan insuficiente». No era su cuenta: era
+   * este 2.
+   *
+   * El catálogo de informes dice que `calle` es **nivel 1** —y por eso la
+   * pantalla se lo ofrece, y por eso `descargar` le deja pasar—, pero este API,
+   * que es el que calcula los datos, seguía pidiendo 2. Así que el informe se
+   * anunciaba, se abría y reventaba al final: ni la tabla ni el PDF ni el Excel.
+   * Afectaba a los **102 negocios** de nivel 1 (80 básico + 22 crecimiento),
+   * no solo al que lo reportó.
+   *
+   * El 2 es de antes de que existiera el catálogo. Cuando en agosto el dueño
+   * bajó los reportes a Básico se tocó `exportar` y se quedó esto: el mismo
+   * fallo de [[feedback_arreglar_una_via_y_dejar_la_otra]].
+   *
+   * ⚠ Bajarlo NO abre nada nuevo: este mismo dato ya salía en nivel 1 por
+   * `/api/reportes/exportar?tipo=prestamos` y por `/api/reportes/datos?tipo=cartera`.
+   * Lo único que hace es dejar de mentir. */
+  const veto = await exigeNivelReportes(session, 1)
   if (veto) return veto
 
   const orgId = session.user.organizationId
