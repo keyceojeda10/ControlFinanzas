@@ -8,79 +8,128 @@
 //     node scripts/video-demo/voz.mjs 24-pagar-el-plan                   # 3 · voz
 //     node scripts/video-demo/subtitulos.mjs 24-pagar-el-plan --quemar   # 4 · subtitulos
 //
-// ⚠ `SIN_ROTULOS=1` NO ES OPCIONAL: sin él el rótulo se quema en la imagen y
-//   luego el subtítulo va encima, con el mismo texto dos veces.
+// ── ⚠ POR QUÉ ESTA VERSIÓN ES DISTINTA ─────────────────────────────────────
 //
-// ── POR QUÉ EXISTE ─────────────────────────────────────────────────────────
+// La primera la tumbó el dueño: «el vídeo está nefasto, la opción que señala
+// nunca aparece en la pantalla. Dice mi plan y nunca sale. Ni siquiera muestra
+// la referencia de dónde se mete para llegar a mi plan».
 //
-// «Pagar o renovar» es el 23 % de lo que preguntan los clientes registrados —34
-// de 204 preguntas medidas el 2 sep 2026, de 27 personas— y no había vídeo:
+// El fallo: los tres clics del camino iban encadenados dentro de UN solo
+// `hacer`, así que la cámara pasaba por «Más» y «Configuración» mientras la
+// pantalla cargaba y no se veía ninguna opción. **Un paso, una frase, un
+// acercamiento y una pausa**: primero se ve la opción, después se toca.
 //
-//     «Quiero pagar el sistema como hago?»   ·   «A dónde pago»
+// ── LAS DOS VÍAS, QUE ES LO QUE FALTABA ────────────────────────────────────
 //
-// ── ⚠ Y SIN METER MIEDO ────────────────────────────────────────────────────
+//   RÁPIDA · el botón + de abajo a la derecha → «Mi plan», entra directo.
+//   LARGA  · los cuatro cuadritos → Configuración → Plan y pagos → Ver planes.
 //
-// Lo pidió el dueño con esas palabras. Quien ve esto ya es cliente y está
-// buscando cómo pagarle: no hay que empujarlo, hay que quitarle la duda. Así
-// que el vídeo NO se para en la tarjeta de «tu plan vence el…» ni nombra días
-// restantes, y sí dice lo que tranquiliza: que el cobro automático se quita
-// cuando uno quiera y que hay una persona al otro lado.
+// ⚠ A `/configuracion/plan` NO se entra por su URL: se queda en blanco (7
+//   caracteres) y el grabador aborta. Y «Plan y pagos» es la pantalla del
+//   DETALLE de la suscripción; donde se paga es la de detrás, por «Ver planes».
 //
-// ── ⚠ NO SE TOCA «SUSCRIBIRME» ─────────────────────────────────────────────
+// ── ⚠ SIN METER MIEDO, Y SIN TOCAR «SUSCRIBIRME» ───────────────────────────
 //
-// Ese botón abre la pasarela de pago, que pide datos de tarjeta reales. El
-// vídeo llega hasta él y para: ahí el cliente ya sabe qué hacer.
+// No se nombra el vencimiento ni los días restantes, y la cámara no se para en
+// esa tarjeta. Y no se pulsa «Suscribirme»: abre la pasarela y pide una tarjeta
+// de verdad.
 
 import { encode } from 'next-auth/jwt'
 import { correr, SECRETO } from './grabador.mjs'
 import { IDS } from './montar-demo.mjs'
 
 const MENU = 'nav[aria-label="Navegación principal"]'
+const FAB = 'button[aria-label="Crear"]'
+const MI_PLAN = 'button:has-text("Mi plan"):visible, a:has-text("Mi plan"):visible'
 const AUTO = 'button:has-text("Se cobra solo")'
 const MANUAL = 'button:has-text("Pago yo")'
 
-/** Panel → «Más» → Configuración → «Plan y pagos».
- *
- * ⚠ POR EL MENÚ, NO POR LA URL. Entrando directo a `/configuracion/plan` la
- * pantalla se queda en blanco (7 caracteres) y el grabador aborta: monta sobre
- * el estado de configuración, que no existe si se llega de cero. Además es el
- * camino que hace el cliente, que es lo que el vídeo tiene que enseñar. */
+const enElPanel = async (u) => {
+  await u.ir('/dashboard', /Buenos|Buenas|Recaudado/i)
+  await u.esperar(1400)
+}
+
+/** La vía rápida: el botón + → «Mi plan». Entra directo a donde se paga. */
 const hastaElPlan = async (u) => {
-  await u.ir('/configuracion', /Configuraci[oó]n|Tu negocio/i)
+  await enElPanel(u)
+  await u.tocarSel(FAB)
   await u.esperar(1800)
-  await u.tocarSel('button:has-text("Plan y pagos"):visible, a:has-text("Plan y pagos"):visible')
-  await u.esperar(2400)
-  /* ⚠ SON DOS PANTALLAS. «Plan y pagos» enseña el DETALLE de la suscripción
-     —qué plan tiene, cuándo renueva, el historial—; donde se paga es la de
-     detrás, a la que se entra por «Ver planes». Yo apuntaba a la primera y la
-     toma se quedaba esperando un botón que allí no existe. */
-  await u.tocarSel('button:has-text("Ver planes"):visible, a:has-text("Ver planes"):visible')
-  /* Pide los datos de la suscripción al entrar: se espera al botón, no al reloj. */
+  await u.tocarSel(MI_PLAN)
   await u.p.waitForSelector(AUTO, { state: 'visible', timeout: 30000 }).catch(() => {})
   await u.esperar(1200)
 }
 
+/* ⚠ `mirar` OCURRE ANTES QUE `hacer` (grabador.mjs:211). O sea: el
+   acercamiento subraya lo que YA está en pantalla, y la acción pasa mientras se
+   habla. Apuntar a algo que aparece DESPUÉS del clic no funciona: la toma se
+   queda esperando seis segundos y aborta. Por eso, cuando hay que subrayar algo
+   que vive dentro de un menú, el menú se abre ANTES de `empezar()`. */
 const TOMAS = [
   {
-    id: 'donde_se_paga',
-    titulo: 'Dónde se paga',
+    id: 'el_boton_de_mas',
+    titulo: 'El botón de más',
     async grabar(u) {
       const { esperar, empezar, narrar, reposo, tocarSel } = u
-      await u.ir('/dashboard', /Buenos|Buenas|Recaudado/i)
-      await esperar(1200)
+      await enElPanel(u)
       empezar()
       await narrar(0)
+      // Se ve el botón subrayado, y se abre mientras se habla.
       await narrar(1, {
-        mirar: `${MENU} a[href="/mas"]`, escala: 2.2,
+        mirar: FAB, escala: 2.6,
+        hacer: async () => {
+          await tocarSel(FAB)
+          await esperar(2200)
+        },
+      })
+      await reposo(1600)
+    },
+  },
+
+  {
+    id: 'ahi_esta_mi_plan',
+    titulo: 'Ahí está: mi plan',
+    async grabar(u) {
+      const { esperar, empezar, narrar, reposo, tocarSel, p } = u
+      await enElPanel(u)
+      // El menú se abre ANTES de grabar: así el acercamiento cae sobre él.
+      await tocarSel(FAB)
+      await esperar(2000)
+      empezar()
+      await narrar(0, { mirar: MI_PLAN, escala: 2.0, fila: true })
+      await narrar(1, {
+        hacer: async () => {
+          await tocarSel(MI_PLAN)
+          await p.waitForSelector(AUTO, { state: 'visible', timeout: 30000 }).catch(() => {})
+          await esperar(1800)
+        },
+      })
+      await reposo(2000)
+    },
+  },
+
+  {
+    id: 'la_otra_forma',
+    titulo: 'La otra forma',
+    async grabar(u) {
+      const { esperar, empezar, narrar, reposo, tocarSel } = u
+      await enElPanel(u)
+      empezar()
+      await narrar(0, {
+        mirar: `${MENU} a[href="/mas"]`, escala: 2.4,
         hacer: async () => {
           await tocarSel(`${MENU} a[href="/mas"]`)
-          await esperar(1600)
+          await esperar(2400)
+        },
+      })
+      /* Ahora sí: «Configuración» está en pantalla, se subraya, y el clic pasa
+         mientras se habla. */
+      await narrar(1, {
+        mirar: 'button:has-text("Configuración"):visible, a:has-text("Configuración"):visible', escala: 1.9,
+        hacer: async () => {
           await tocarSel('button:has-text("Configuración"):visible, a:has-text("Configuración"):visible')
-          await esperar(2600)
-          await tocarSel('button:has-text("Plan y pagos"):visible, a:has-text("Plan y pagos"):visible')
-          await esperar(2600)
-          await tocarSel('button:has-text("Ver planes"):visible, a:has-text("Ver planes"):visible')
           await esperar(2800)
+          await tocarSel('button:has-text("Plan y pagos"):visible, a:has-text("Plan y pagos"):visible')
+          await esperar(2400)
         },
       })
       await reposo(1800)
@@ -89,16 +138,16 @@ const TOMAS = [
 
   {
     id: 'se_cobra_solo',
-    titulo: 'Dos formas, usted elige',
+    titulo: 'Que se cobre solo',
     async grabar(u) {
       const { esperar, empezar, narrar, reposo, p } = u
       await hastaElPlan(u)
-      /* ⚠ Se baja hasta «PAGAR MI PLAN» sin pararse en la tarjeta de arriba:
-         ahí está lo de «tu plan vence el…», que es justo lo que no se enseña. */
+      /* Se baja hasta «PAGAR MI PLAN» sin pararse en la tarjeta de arriba: ahí
+         está lo de «tu plan vence el…», que es lo que no se enseña. */
       await p.locator(AUTO).first().scrollIntoViewIfNeeded().catch(() => {})
-      await esperar(900)
+      await esperar(1000)
       empezar()
-      await narrar(0, { mirar: AUTO, escala: 1.8 })
+      await narrar(0, { mirar: AUTO, escala: 1.9 })
       await narrar(1, { mirar: 'text=Lo quitas cuando quieras >> visible=true', escala: 1.6, fila: true })
       await reposo(2000)
     },
@@ -106,38 +155,22 @@ const TOMAS = [
 
   {
     id: 'pago_yo',
-    titulo: 'O paga usted, cuando quiera',
+    titulo: 'O paga usted',
     async grabar(u) {
       const { esperar, empezar, narrar, reposo, tocarSel, p } = u
       await hastaElPlan(u)
       await p.locator(MANUAL).first().scrollIntoViewIfNeeded().catch(() => {})
-      await esperar(900)
+      await esperar(1000)
       empezar()
       await narrar(0, {
-        mirar: MANUAL, escala: 1.8,
+        mirar: MANUAL, escala: 1.9,
         hacer: async () => {
           await tocarSel(MANUAL)
           await esperar(2400)
         },
       })
-      await narrar(1)
-      await reposo(2000)
-    },
-  },
-
-  {
-    id: 'cada_cuanto',
-    titulo: 'Mensual, trimestral o anual',
-    async grabar(u) {
-      const { esperar, empezar, narrar, reposo, tocarSel, p } = u
-      await hastaElPlan(u)
-      await p.locator(MANUAL).first().scrollIntoViewIfNeeded().catch(() => {})
-      await esperar(700)
-      await tocarSel(MANUAL)
-      await esperar(2000)
-      empezar()
-      await narrar(0, { mirar: 'button:has-text("Trimestral"):visible', escala: 1.7, fila: true })
-      await narrar(1, { mirar: 'button:has-text("Anual"):visible', escala: 1.7, fila: true })
+      // Los periodos ya están en pantalla tras el clic de arriba.
+      await narrar(1, { mirar: 'button:has-text("Trimestral"):visible', escala: 1.7, fila: true })
       await reposo(2200)
     },
   },
@@ -149,13 +182,13 @@ const TOMAS = [
       const { esperar, empezar, narrar, reposo, p } = u
       await hastaElPlan(u)
       await p.locator('text=Cambiar de plan').first().scrollIntoViewIfNeeded().catch(() => {})
-      await esperar(1000)
+      await esperar(1200)
       empezar()
       await narrar(0, { mirar: 'text=Cambiar de plan >> visible=true', escala: 1.6, fila: true })
       await narrar(1, {
         hacer: async () => {
           await p.locator('text=Necesitas ayuda').first().scrollIntoViewIfNeeded().catch(() => {})
-          await esperar(1200)
+          await esperar(1400)
         },
         mirar: 'text=Necesitas ayuda >> visible=true', escala: 1.6, fila: true,
       })
