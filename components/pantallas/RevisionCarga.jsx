@@ -56,6 +56,9 @@ export default function RevisionCarga({
   deColumna = [],
   escala,                    // { sospecha, mediana, factor }
   onConfirmarEscala,         // (enMiles: boolean) => void
+  frecuenciaFalta = 0,       // cuántas filas no dicen cada cuánto se cobra
+  frecuenciaElegida = null,  // la que ha marcado, si ya marcó
+  onElegirFrecuencia,        // (frecuencia: string) => void
   onCorregir,                // (indice, campo, valor) => void
   onCrear, onOtraFoto,
   creando = false,
@@ -152,6 +155,49 @@ export default function RevisionCarga({
             }}>
               No, son pesos
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── CADA CUÁNTO SE COBRA ──
+          Lo otro que puede parar la importación entera. Un export real traía
+          124 clientes con nombre, cédula, monto e interés y ninguna columna de
+          periodicidad: sin ella no hay plazo, y las 124 filas se descartaban
+          con «no hay ninguna fila que se pueda importar» sin decir por qué.
+
+          No se adivina. La frecuencia cambia la cuota Y el interés —el mismo
+          20 % vale cosas distintas en cada una—, así que se pregunta una vez y
+          vale para las filas que no la traigan. */}
+      {frecuenciaFalta > 0 && (
+        <div style={{
+          padding: '14px 16px', borderRadius: 'var(--cf-r-card)',
+          background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)',
+        }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-gold-text)', margin: 0 }}>
+            ¿Cada cuánto le cobras a esta gente?
+          </p>
+          <p style={{ fontSize: 13, color: 'var(--cf-ink-2)', margin: '5px 0 0', lineHeight: 1.5 }}>
+            El archivo no lo dice, y sin eso no puedo crear los préstamos.{' '}
+            {frecuenciaFalta === total
+              ? 'Vale para todos los del archivo.'
+              : `Vale para ${frecuenciaFalta} de ${total}; a los demás les respeto lo que traen.`}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 11 }}>
+            {['diario', 'semanal', 'quincenal', 'mensual'].map((f) => {
+              const puesta = frecuenciaElegida === f
+              return (
+                <button key={f} type="button" onClick={() => onElegirFrecuencia?.(f)} style={{
+                  flex: '1 1 calc(50% - 4px)', height: 40, borderRadius: 'var(--cf-r-control)',
+                  cursor: 'pointer', fontSize: 14, fontWeight: 700,
+                  border: puesta ? 0 : '1px solid var(--cf-border-strong)',
+                  background: puesta ? 'var(--cf-gold)' : 'var(--cf-card)',
+                  color: puesta ? 'var(--cf-gold-ink)' : 'var(--cf-ink-2)',
+                }}>
+                  {f === 'diario' ? 'Diario' : f === 'semanal' ? 'Semanal'
+                    : f === 'quincenal' ? 'Quincenal' : 'Mensual'}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}

@@ -19,9 +19,19 @@ import { useCountry } from '@/hooks/useCountry'
 import { ACCEPT_TABLA, AVISO_HOJA_DE_GOOGLE } from '@/lib/archivos-tabla'
 
 export default function WizardExcel({ onComplete, onSkip }) {
-  const { formatMoney } = useCountry()
+  /* El país decide cuántos dígitos tiene un teléfono: 10 en Colombia, 9 en
+     Chile, 8 en Centroamérica. Sin pasarlo, un export chileno perdía 108 de
+     124 teléfonos buenos por no llegar a diez. */
+  const { formatMoney, country } = useCountry()
   const [lectura, setLectura] = useState(null)
   const [enMiles, setEnMiles] = useState(null)   // null = todavía no ha contestado
+  /* ⚠ CADA CUÁNTO COBRA, CUANDO EL ARCHIVO NO LO DICE.
+     Un export real traía 124 clientes con nombre, cédula, monto e interés pero
+     ninguna columna de periodicidad, y las 124 filas se descartaban con «no hay
+     ninguna fila que se pueda importar». No se adivina —la frecuencia cambia la
+     cuota Y el interés— así que se pregunta una vez y vale para todas las que
+     no lo traigan. */
+  const [frecuenciaElegida, setFrecuenciaElegida] = useState(null)
   const [error, setError] = useState('')
   const [creando, setCreando] = useState(false)
 
@@ -44,7 +54,7 @@ export default function WizardExcel({ onComplete, onSkip }) {
     try {
       const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' })
       const hoja = wb.Sheets[wb.SheetNames[0]]
-      const r = leerExcel(XLSX.utils.sheet_to_json(hoja, { header: 1, raw: false, defval: '' }))
+      const r = leerExcel(XLSX.utils.sheet_to_json(hoja, { header: 1, raw: false, defval: '' }), { pais: country })
       if (r.error) { setError(r.error); return }
       if (!r.filas.length) { setError('El archivo no tiene filas que pueda leer'); return }
       setLectura(r)
@@ -77,12 +87,22 @@ export default function WizardExcel({ onComplete, onSkip }) {
   // está, así que ya no falta nada.
   const filasCorregidas = () => filasEscaladas().map((f, i) => {
     const resueltos = (f.reparos ?? []).map((r) => r.campo).filter((c) => puesto(i, c) !== '')
-    if (!resueltos.length) return f
-    const nuevo = { ...f }
+    // La frecuencia elegida solo rellena a quien no la trae: si el archivo la
+    // dice, manda el archivo.
+    const conFrecuencia = !f.frecuencia && frecuenciaElegida
+      ? { ...f, frecuencia: frecuenciaElegida,
+        reparos: (f.reparos ?? []).filter((r) => r.campo !== 'frecuencia') }
+      : f
+    if (!resueltos.length) return conFrecuencia
+    const nuevo = { ...conFrecuencia }
     for (const campo of resueltos) nuevo[campo] = puesto(i, campo)
-    nuevo.reparos = (f.reparos ?? []).filter((r) => !resueltos.includes(r.campo))
+    nuevo.reparos = (conFrecuencia.reparos ?? []).filter((r) => !resueltos.includes(r.campo))
     return nuevo
   })
+
+  /* Cuántas filas se quedarían fuera solo por no decir cada cuánto se cobra.
+     Si son todas, el botón de crear no sirve de nada hasta que se conteste. */
+  const sinFrecuencia = (lectura?.filas ?? []).filter((f) => !f.frecuencia).length
 
   // LO QUE SE MUESTRA conserva los reparos, aunque ya estén escritos. Si se
   // quitaran, la tarjeta se cerraría en la primera tecla y el campo desaparecería
@@ -214,6 +234,9 @@ export default function WizardExcel({ onComplete, onSkip }) {
         // Contestada la pregunta, la franja se retira: ya no hay decisión que tomar.
         escala={enMiles === null ? vista.escala : null}
         onConfirmarEscala={setEnMiles}
+        frecuenciaFalta={sinFrecuencia}
+        frecuenciaElegida={frecuenciaElegida}
+        onElegirFrecuencia={setFrecuenciaElegida}
         onCorregir={corregir}
         onCrear={crear}
         creando={creando}
