@@ -126,11 +126,26 @@ export async function POST(req) {
     })
   }
 
+  /* La traza del BOT v3 (sprint 1): la misma que se guarda en `BotConversacion`
+     por cada mensaje. Aquí es lo que de verdad sirve para ajustar, porque dice
+     POR QUÉ contestó eso: qué etapa eligió, si la decidió el modelo semántico o
+     el árbol de regex, y si hubo que corregirle la respuesta y por qué. */
+  const t = decision.traza || {}
   return NextResponse.json({
     respuestas: [{ texto: decision.mensaje, botones: [] }],
     via: `modelo${decision.usage?.modelo ? ` · ${decision.usage.modelo}` : ''}`,
     temperatura: decision.temperatura,
     aviso: decision.escalar ? `se avisaría a un humano: ${decision.motivo || 'escalar'}` : null,
     costoUsd: decision.usage?.costoUsd ?? 0,
+    traza: {
+      etapa: t.etapa || null,
+      clasificacion: t.clasificacion || null,
+      proveedor: t.proveedor || null,
+      corregido: t.segundaPasada ? (t.violaciones || 'sí') : null,
+      latenciaMs: t.latenciaMs || null,
+      /* Lo que dijo el modelo ANTES de sanear y corregir. Solo se enseña si es
+         distinto de lo que saldría: si no, es ruido. */
+      crudo: t.respuestaCruda && t.respuestaCruda !== decision.mensaje ? t.respuestaCruda : null,
+    },
   })
 }

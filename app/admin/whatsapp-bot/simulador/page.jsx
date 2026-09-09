@@ -57,7 +57,7 @@ export default function SimuladorBot() {
       if (!res.ok) throw new Error(d.error || 'Falló el simulador')
       const nuevos = (d.respuestas ?? []).map((r) => ({
         rol: 'bot', texto: r.texto, botones: r.botones ?? [],
-        via: d.via, aviso: d.aviso, temperatura: d.temperatura, costoUsd: d.costoUsd,
+        via: d.via, aviso: d.aviso, temperatura: d.temperatura, costoUsd: d.costoUsd, traza: d.traza,
       }))
       if (!nuevos.length) {
         nuevos.push({ rol: 'bot', texto: '(el bot no contestó)', botones: [], via: d.via })
@@ -194,7 +194,52 @@ export default function SimuladorBot() {
                         {t.aviso}
                       </span>
                     )}
+                    {/* La traza: por qué contestó eso. `etapa` es la que eligió,
+                        `clasificacion` dice si lo decidió el modelo semántico
+                        —`ventas>precio(0.90)`— o el árbol de regex, y
+                        `corregido` los motivos por los que hubo que pedirle la
+                        respuesta otra vez. */}
+                    {t.traza?.etapa && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono-display"
+                        style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
+                        {t.traza.etapa}
+                      </span>
+                    )}
+                    {t.traza?.clasificacion && t.traza.clasificacion !== 'ventas' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono-display"
+                        style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
+                        {t.traza.clasificacion}
+                      </span>
+                    )}
+                    {t.traza?.latenciaMs > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono-display"
+                        style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
+                        {(t.traza.latenciaMs / 1000).toFixed(1)}s
+                      </span>
+                    )}
+                    {t.traza?.corregido && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{
+                        /* Dorado, que es el color de «esto pide una mirada».
+                           `--cf-gold-ink` es el texto SOBRE dorado, nunca blanco. */
+                        background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                      }}>
+                        corregido: {t.traza.corregido}
+                      </span>
+                    )}
                   </div>
+                )}
+                {/* Lo que dijo el modelo antes de corregirlo. Es lo que se mira
+                    cuando una respuesta sale rara: enseña si el fallo fue del
+                    modelo o de lo que hicimos con su texto. */}
+                {!mio && t.traza?.crudo && (
+                  <details className="mt-1">
+                    <summary className="text-[10px] cursor-pointer" style={{ color: 'var(--cf-ink-3)' }}>
+                      lo que dijo antes de corregirlo
+                    </summary>
+                    <p className="text-[11px] mt-1 whitespace-pre-wrap" style={{ color: 'var(--cf-ink-3)' }}>
+                      {t.traza.crudo}
+                    </p>
+                  </details>
                 )}
               </div>
             </div>
