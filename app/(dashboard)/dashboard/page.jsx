@@ -1228,12 +1228,16 @@ function BandaSuscripcion({ dias, cobro }) {
   if (dias === null || dias === undefined || dias > 30) return null
   /* Con el Nequi o la tarjeta guardados no hay nada que renovar: pedírselo es
      el «que debo pagar, que debo pagar» del 12 sep 2026. Se le dice a dónde se
-     cobra, sin rojo y sin botón de renovar. */
-  const automatico = cobro?.activo === true && !cobro.fallos
-  const urgente = !automatico && dias <= 7
+     cobra, sin rojo y sin botón de renovar. Con el cobro rechazado es al revés:
+     rojo siempre, porque al vencer se cierra el acceso. */
+  const automatico = cobro?.activo === true
+  const rechazado = Boolean(cobro?.rechazo)
+  const urgente = rechazado || (!automatico && dias <= 7)
   const pct = Math.max(4, Math.round((Math.max(dias, 0) / 30) * 100))
 
-  const mensaje = automatico
+  const mensaje = rechazado
+    ? `No pudimos cobrar a ${cobro.rotulo || 'tu medio de pago'}. Al vencer se cierra el acceso.`
+    : automatico
     ? `Se cobra solo a ${cobro.rotulo || 'tu medio de pago'}`
     : urgente
       ? 'Renueva para seguir creciendo'
@@ -1267,14 +1271,14 @@ function BandaSuscripcion({ dias, cobro }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-semibold text-[var(--cf-ink)]">
-            {automatico && dias <= 0 ? 'Cobro en curso' : `${dias} dias restantes`}
+            {automatico && dias <= 0 ? 'Cobro en curso' : `${dias} ${dias === 1 ? 'día restante' : 'días restantes'}`}
           </p>
           <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">{mensaje}</p>
         </div>
         <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full shrink-0 transition-all"
           style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, color: accentColor }}
         >
-          {automatico ? 'Automático' : 'Renovar'}
+          {rechazado ? 'Reintentar' : automatico ? 'Automático' : 'Renovar'}
         </span>
       </div>
     </a>

@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_USUARIOS }  from '@/lib/planes'
-import { selectCobro, cobroVivo } from '@/lib/cobro-automatico'
+import { selectResumenCobro, resumenCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -24,7 +24,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectCobro, wompiFuenteRotulo: true },
+      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectResumenCobro },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -43,11 +43,13 @@ export async function GET() {
   const diasTrial = enTrial ? Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60 * 24)) : 0
   /* El Nequi o la tarjeta guardados en Wompi. Sin esto los avisos de «tu plan
      vence» solo reconocían la recurrencia vieja de MercadoPago, y le pedían
-     pagar cada rato a quien ya había dejado el cobro puesto (12 sep 2026). */
+     pagar cada rato a quien ya había dejado el cobro puesto (12 sep 2026).
+     ⚠ Se mide contra `sub`, la misma suscripción que mira la puerta de acceso,
+     no contra `subPrincipal`: el rechazo decide si se cierra, y tiene que
+     decirlo igual aquí que allí. */
   const cobroAutomatico = {
-    activo: cobroVivo(org),
-    rotulo: org?.wompiFuenteRotulo ?? null,
-    fallos: org?.cobroFallos ?? 0,
+    ...resumenCobro(org, sub?.fechaVencimiento ?? null),
+    esDueno: session.user.rol === 'owner',
   }
 
   if (!sub) {
@@ -57,6 +59,7 @@ export async function GET() {
       estado:           'pendiente',
       fechaVencimiento: null,
       diasRestantes:    0,
+      accesoHasta:      null,
       mercadopagoId:    null,
       descuento,
       tipo:             null,
@@ -86,6 +89,9 @@ export async function GET() {
     estado:           subPrincipal.estado,
     fechaVencimiento: subPrincipal.fechaVencimiento,
     diasRestantes,
+    /* Hasta cuándo deja entrar la puerta: el vencimiento más la gracia, y sin
+       gracia si la pasarela rechazó el cobro. */
+    accesoHasta:      vencimientoEfectivo(sub.fechaVencimiento, org),
     mercadopagoId:    subPrincipal.mercadopagoId,
     descuento,
     tipo:             subPrincipal.tipo,

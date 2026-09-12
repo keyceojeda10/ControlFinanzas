@@ -1,28 +1,53 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
+import { PLANES_CONFIG } from '@/lib/planes'
 
 const WHATSAPP_SOPORTE = '573011993001'
 
+/* ⚠ CON EL COBRO AUTOMÁTICO PUESTO, ESTA PANTALLA NO SE SALTA.
+ *
+ * 12 sep 2026, el dueño: «si Nequi no encuentra dinero y rechaza, el sistema
+ * debería de cerrarse […] avisarle de que no hay saldo y que la aplicación se
+ * cerró. Un botón para reintentar ese pago automático, o comunicarse o cambiar
+ * el medio de pago, pero no poder darle acceso completo».
+ *
+ * Por eso aquí no hay «Más tarde» ni cierre: los tres botones llevan a pagar.
+ * El acceso vuelve cuando el pago está APROBADO, no al pulsar. */
 export default function SuscripcionVencida() {
   const [estado, setEstado] = useState(null)
+  const [cargado, setCargado] = useState(false)
   const { update } = useSession()
+
+  /* El token lleva el vencimiento: sin refrescarlo, el middleware devolvería a
+     esta misma pantalla a quien acaba de pagar. */
+  const entrar = useCallback(async () => {
+    try { await update() } catch {}
+    window.location.replace('/dashboard')
+  }, [update])
+
+  const { fase, mensaje, reintentar, esperar } = useReintentarCobro({ onPagado: entrar })
 
   useEffect(() => {
     fetch('/api/pagos/estado')
       .then((r) => r.json())
       .then(async (data) => {
-        if (data.diasRestantes > 0) {
-          try { await update() } catch {}
-          window.location.replace('/dashboard')
+        /* La misma cuenta que la puerta de acceso, gracia incluida. */
+        if (data.accesoHasta && new Date(data.accesoHasta) > new Date()) {
+          await entrar()
           return
         }
         setEstado(data)
+        if (data.cobroAutomatico?.pendiente && data.cobroAutomatico?.esDueno) esperar()
       })
       .catch(() => {})
+      /* Hasta saber si hay medio guardado no se pinta el botón principal: si no,
+         sale «Renovar mi plan» y medio segundo después cambia bajo el dedo. */
+      .finally(() => setCargado(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fechaVencimiento = estado?.fechaVencimiento
@@ -31,13 +56,27 @@ export default function SuscripcionVencida() {
       })
     : null
 
+  /* Días ENTEROS. Con un rechazo el acceso se cierra a la hora exacta del
+     vencimiento, así que esta pantalla sale a los pocos minutos: redondear hacia
+     arriba decía «hace 1 día» a quien venció hace dos horas. */
   const diasVencida = estado?.fechaVencimiento
-    ? Math.max(0, Math.ceil((new Date() - new Date(estado.fechaVencimiento)) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.floor((new Date() - new Date(estado.fechaVencimiento)) / (1000 * 60 * 60 * 24)))
     : 0
 
-  const planNombre = estado?.plan ?? null
+  /* La clave interna no es el nombre: `professional` se vende como Empresarial. */
+  const planNombre = estado?.plan ? (PLANES_CONFIG[estado.plan]?.nombre ?? estado.plan) : null
 
-  const waMsg = encodeURIComponent('Hola, mi suscripción de Control Finanzas vencio. Necesito ayuda para renovar.')
+  const cobro = estado?.cobroAutomatico ?? null
+  const rechazo = cobro?.rechazo ?? null
+  /* Con medio guardado se ofrece cobrar con él: con rechazo, y también cuando
+     venció sin que el cobro llegara a salir. */
+  const conMedio = Boolean(cobro?.conFuente)
+  const puedeCobrar = conMedio && cobro?.esDueno
+  const cobrando = fase === 'cobrando' || fase === 'pagado'
+
+  const waMsg = encodeURIComponent(rechazo
+    ? 'Hola, no pasó el cobro automático de mi plan de Control Finanzas y se cerró el acceso. Necesito ayuda.'
+    : 'Hola, mi suscripción de Control Finanzas vencio. Necesito ayuda para renovar.')
 
   return (
     <div className="cf-expired-page relative min-h-dvh flex flex-col items-center justify-center px-4 py-8 overflow-hidden"
@@ -100,7 +139,7 @@ export default function SuscripcionVencida() {
               </span>
             </div>
             <h1 className="text-2xl font-bold mb-1.5" style={{ color: 'var(--color-text-primary)' }}>
-              Tu suscripción venció
+              {rechazo ? 'No pudimos cobrar tu plan' : 'Tu suscripción venció'}
             </h1>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
               {fechaVencimiento
@@ -110,6 +149,33 @@ export default function SuscripcionVencida() {
                 : 'Tu plan ya no esta activo.'}
             </p>
           </div>
+
+          {/* ── EL MOTIVO, DICHO CLARO ──────────────────────────────────────
+              Quien tenía el cobro puesto cree que está al día. Si no se le dice
+              que el banco lo rechazó, lo que entiende es que el sistema falló. */}
+          {rechazo && (
+            <div className="rounded-[12px] p-3 mb-5"
+              style={{
+                background: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--color-danger) 28%, transparent)',
+              }}
+            >
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {cobro?.rotulo ? <>Intentamos cobrar a {cobro.rotulo}. </> : <>Intentamos cobrar tu plan. </>}
+                {rechazo.motivo}
+              </p>
+              <p className="text-[12px] leading-snug mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                Por eso se cerró el acceso. {cobro?.esDueno
+                  ? 'Recarga y reintenta el cobro, o cambia el medio de pago.'
+                  : 'Pídele al dueño de la cuenta que recargue y reintente el cobro.'}
+              </p>
+            </div>
+          )}
+          {!rechazo && conMedio && (
+            <p className="text-[12px] leading-snug text-center -mt-2 mb-5" style={{ color: 'var(--color-text-muted)' }}>
+              Tienes guardado {cobro?.rotulo || 'un medio de pago'}, pero el cobro de este mes no salió.
+            </p>
+          )}
 
           {/* Plan info */}
           {planNombre && (
@@ -156,6 +222,65 @@ export default function SuscripcionVencida() {
 
           {/* Botones */}
           <div className="flex flex-col gap-2.5">
+            {puedeCobrar && (
+              <>
+                <button
+                  type="button"
+                  onClick={reintentar}
+                  disabled={cobrando}
+                  className="relative h-12 rounded-[12px] font-bold text-sm transition-opacity flex items-center justify-center gap-2 disabled:opacity-70"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 75%, #f59e0b))',
+                    color: '#0a0a0a',
+                    boxShadow: '0 4px 14px color-mix(in srgb, var(--color-accent) 35%, transparent)',
+                  }}
+                >
+                  {cobrando ? (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden>
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                      <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                  )}
+                  {fase === 'pagado' ? 'Pago aprobado, entrando…'
+                    : cobrando ? 'Cobrando…'
+                    : rechazo ? 'Reintentar el cobro'
+                    : `Cobrar ahora con ${cobro?.rotulo || 'mi medio guardado'}`}
+                </button>
+
+                {/* Lo que pasó al pulsar. `aria-live` para que se oiga sin mover el foco. */}
+                <p aria-live="polite" className="text-[12px] leading-snug text-center min-h-[1em]"
+                  style={{ color: fase === 'rechazado' ? 'var(--color-danger)' : 'var(--color-text-muted)' }}
+                >
+                  {fase === 'cobrando' ? 'Estamos cobrando. Tarda unos segundos: no cierres esta pantalla.'
+                    : fase === 'rechazado' ? <>Otra vez rechazado. {mensaje}</>
+                    : mensaje}
+                </p>
+
+                <Link
+                  href="/configuracion/plan?suscribir=1"
+                  className="h-11 rounded-[12px] font-semibold text-sm transition-all flex items-center justify-center gap-2 cf-expired-surface"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                  </svg>
+                  Cambiar medio de pago
+                </Link>
+                <Link
+                  href="/configuracion/plan?modo=unico"
+                  className="h-10 rounded-[12px] font-medium text-[13px] flex items-center justify-center"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Pagar de otra forma
+                </Link>
+              </>
+            )}
+
+            {cargado && !puedeCobrar && (
             <Link
               href="/configuracion/plan"
               className="group relative h-12 rounded-[12px] overflow-hidden font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -176,6 +301,7 @@ export default function SuscripcionVencida() {
                 </svg>
               </span>
             </Link>
+            )}
 
             <a
               href={`https://wa.me/${WHATSAPP_SOPORTE}?text=${waMsg}`}

@@ -133,6 +133,16 @@ model Organization {
   /** Intentos fallidos seguidos. Se pone a cero en cuanto uno entra. */
   cobroFallos       Int            @default(0)
   cobroUltimoIntento DateTime?
+  /* El cobro en vuelo: se escribe ANTES de llamar a Wompi y se borra cuando la
+     transacción termina. Mientras exista no sale otro cobro (ver
+     lib/cobro-intento.js). */
+  cobroRefPendiente  String?
+  cobroTxPendiente   String?
+  /* ⚠ EL RECHAZO CIERRA. El vencimiento que había cuando la pasarela dijo que
+     no. Mientras la suscripción no pase de esa fecha, el cobro automático no
+     da gracia ni calla avisos (lib/cobro-automatico.js#rechazoVigente). */
+  cobroRechazoVence  DateTime?
+  cobroRechazoMotivo String?
   waPreVencSent     Boolean        @default(false)
   /* ⚠ LA FECHA MANDA, EL BOOLEANO SOLO INFORMA.
      `waPreVencSent`/`waChurnSent` eran de una sola vez EN LA VIDA: quien

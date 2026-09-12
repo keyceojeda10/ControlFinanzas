@@ -7,7 +7,7 @@ import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/l
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { enviarPushOrg } from '@/lib/push'
 import { registrarAdminLog } from '@/lib/admin-log'
-import { whereCobroVivo, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
+import { whereCobroSinRechazo, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -63,10 +63,10 @@ export async function POST(req) {
       where: {
         estado: 'activa',
         fechaVencimiento: { gte: desde, lte: hasta },
-        /* Con el Nequi o la tarjeta guardados no se avisa ni se marca vencida
-           mientras la pasarela lo intenta (lib/cobro-automatico.js). Al tercer
-           rechazo deja de estar vivo y entra aquí como cualquiera. */
-        organization: { is: { NOT: whereCobroVivo } },
+        /* Con el Nequi o la tarjeta guardados no se avisa mientras la pasarela
+           lo intenta (lib/cobro-automatico.js). Con un rechazo apuntado entra
+           aquí como cualquiera. */
+        organization: { is: { NOT: whereCobroSinRechazo } },
         // No avisar a suscripciones recurrentes autorizadas — MP cobra automáticamente
         NOT: {
           AND: [
@@ -128,11 +128,11 @@ export async function POST(req) {
       estado: 'activa',
       fechaVencimiento: { lt: inicioHoy },
       /* Con el Nequi o la tarjeta guardados no se marca vencida mientras la
-         pasarela lo intenta (lib/cobro-automatico.js). Al tercer rechazo deja
-         de estar vivo y entra como cualquiera; y pasada la gracia entra igual,
-         por si el cron de cobro no llegó a pasar. */
+         pasarela lo intenta (lib/cobro-automatico.js). Con un rechazo apuntado
+         entra como cualquiera; y pasada la gracia entra igual, por si el cron
+         de cobro no llegó a pasar. */
       OR: [
-        { organization: { is: { NOT: whereCobroVivo } } },
+        { organization: { is: { NOT: whereCobroSinRechazo } } },
         { fechaVencimiento: { lt: finDeGracia } },
       ],
       NOT: {

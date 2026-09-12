@@ -23,6 +23,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { pedirTokenNequi, estadoTokenNequi, crearFuenteDePago, wompiConfigurado } from '@/lib/wompi'
+import { cobrarAhoraSiToca } from '@/lib/cobro-intento'
+import { motivoLegible } from '@/lib/cobro-automatico'
 
 /** Guardar un medio de pago compromete plata del negocio: solo el dueño. */
 async function soloElDueno() {
@@ -68,7 +70,8 @@ export async function GET(req) {
   const { error, session } = await soloElDueno()
   if (error) return error
 
-  const tokenId = new URL(req.url).searchParams.get('token')
+  const params = new URL(req.url).searchParams
+  const tokenId = params.get('token')
   if (!tokenId) return NextResponse.json({ error: 'Falta el token' }, { status: 400 })
 
   let estado
@@ -114,11 +117,33 @@ export async function GET(req) {
       wompiFuenteEmail:  email,
       cobroAutomatico:   true,
       /* Empieza de cero: si venía de tres cobros fallidos con el medio viejo,
-         el nuevo no arrastra ese historial. */
+         el nuevo no arrastra ese historial. ⚠ El rechazo NO se borra: quitar y
+         volver a poner el Nequi no puede ser la forma de seguir dentro sin
+         pagar. Lo borra el pago. */
       cobroFallos:       0,
     },
   })
 
   console.log(`[wompi-nequi] GUARDADO ${rotulo} para org ${session.user.organizationId} — fuente ${fuente.id}`)
-  return NextResponse.json({ ok: true, estado, guardado: true, rotulo })
+
+  /* ⚠ Y SE COBRA AQUÍ SI TOCA. Antes este camino solo guardaba: quien estaba en
+     prueba, o venía de un rechazo, se «suscribía» y no se le cobraba nunca.
+     Las reglas son las de la tarjeta (`app/api/pagos/wompi/token`). El medio
+     queda guardado aunque el cobro falle. */
+  let cobro
+  try {
+    const r = await cobrarAhoraSiToca({
+      orgId:       session.user.organizationId,
+      planElegido: params.get('plan'),
+      origen:      'guardar-nequi',
+    })
+    cobro = {
+      resultado: r.resultado,
+      motivo: ['rechazado', 'error'].includes(r.resultado) ? motivoLegible(r.motivo) : null,
+    }
+  } catch (e) {
+    console.error('[wompi-nequi] falló el primer cobro:', e.message)
+    cobro = { resultado: 'error', motivo: 'No pudimos hacer el cobro ahora. Reinténtalo en unos minutos.' }
+  }
+  return NextResponse.json({ ok: true, estado, guardado: true, rotulo, cobro })
 }

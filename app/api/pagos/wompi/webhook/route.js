@@ -13,6 +13,7 @@ import { activarPlanPagado } from '@/lib/activar-suscripcion'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { alertarPagoSinActivar, alertarPagoRevertido } from '@/lib/alertas-pago'
 import { prisma } from '@/lib/prisma'
+import { contarRechazo, ESTADOS_RECHAZO } from '@/lib/cobro-intento'
 
 // Estados a los que puede caer una transaccion que YA estaba aprobada: una
 // anulacion, un contracargo o una devolucion.
@@ -70,6 +71,17 @@ export async function POST(req) {
     // cliente queda como estaba. Se registra para poder distinguir "llego y se
     // rechazo" de "nunca llego", que era imposible de saber.
     console.log(`[wompi-webhook] tx ${txEvento.id} en estado ${estado} — no activa nada (ref: ${referencia})`)
+
+    /* ⚠ EL RECHAZO DE UN COBRO AUTOMÁTICO CIERRA EL ACCESO AL VENCER. Solo
+       cuenta si esta referencia es el cobro en vuelo de la organización: un
+       checkout abandonado o un rechazo que ya se contó no tocan nada. */
+    if (ESTADOS_RECHAZO.has(estado)) {
+      const p = leerReferencia(referencia)
+      if (p) {
+        await contarRechazo(p.orgId, referencia, tx?.status_message || txEvento.status_message || estado)
+          .catch((e) => console.error('[wompi-webhook] no pude contar el rechazo:', e.message))
+      }
+    }
 
     // Caso distinto y mas delicado: que esta MISMA transaccion ya hubiera
     // activado un plan y ahora venga anulada. Ahi el cliente quedo con servicio
@@ -132,19 +144,13 @@ export async function POST(req) {
       gatewayId:      txEvento.id,
       referencia,
     })
-    /* ⚠ EL CONTADOR DE FALLOS SE PONE A CERO AQUÍ, Y SOLO AQUÍ.
-     *
-     * El cobro recurrente cuenta rechazos y se para a los tres. Pero «Wompi
-     * aceptó la petición» no es «el dinero entró»: la transacción nace PENDING
-     * y puede acabar DECLINED. Si el cron pusiera el contador a cero al
-     * enviarla, tres cobros que luego se caen contarían como tres éxitos y el
-     * cliente se quedaría sin cobrar y sin que nadie lo note.
-     *
-     * Aquí ya sabemos que el pago está APROBADO. */
-    await prisma.organization.update({
-      where: { id: parsed.orgId },
-      data: { cobroFallos: 0 },
-    }).catch((e) => console.error('[wompi-webhook] no pude reiniciar cobroFallos:', e.message))
+    /* El cobro en vuelo terminó. Los fallos y el rechazo los pone a cero
+       `activarPlanPagado` al aplicar el pago; esto cubre el reenvío de un
+       webhook ya procesado, que no pasa por ahí. */
+    await prisma.organization.updateMany({
+      where: { id: parsed.orgId, cobroRefPendiente: referencia },
+      data: { cobroRefPendiente: null, cobroTxPendiente: null },
+    }).catch((e) => console.error('[wompi-webhook] no pude liberar el cobro en vuelo:', e.message))
 
     if (r.yaProcesado) {
       console.log(`[wompi-webhook] tx ${txEvento.id} ya procesada, ignorando (org ${parsed.orgId})`)

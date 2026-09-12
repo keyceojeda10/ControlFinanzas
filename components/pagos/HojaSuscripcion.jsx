@@ -23,6 +23,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
+import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
 
 const WIDGET = 'https://checkout.wompi.co/widget.js'
 
@@ -39,7 +40,15 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
   const [tel, setTel] = useState('')
   const [paso, setPaso] = useState('form')   // form · esperando · listo
   const [rotulo, setRotulo] = useState('')
+  /* Lo que pasó con el cobro al guardar: `cobrarAhoraSiToca` cobra en el acto si
+     el plan ya no está pago o hay un rechazo por saldar. */
+  const [cobro, setCobro] = useState(null)
   const sondeo = useRef(null)
+  /* Aprobado: a la pantalla del plan SIN la query, que con `?suscribir=1`
+     volvería a abrir esta hoja. La recarga trae la fecha nueva y el token. */
+  const cobroEnCurso = useReintentarCobro({
+    onPagado: () => setTimeout(() => window.location.replace(window.location.pathname), 1200),
+  })
 
   useEffect(() => () => clearInterval(sondeo.current), [])
 
@@ -62,12 +71,14 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
       const hasta = Date.now() + 3 * 60000
       sondeo.current = setInterval(async () => {
         try {
-          const q = await fetch(`/api/pagos/wompi/nequi?token=${encodeURIComponent(d.tokenId)}`)
+          const q = await fetch(`/api/pagos/wompi/nequi?token=${encodeURIComponent(d.tokenId)}&plan=${encodeURIComponent(plan)}`)
           const e = await q.json()
           if (e.guardado) {
             clearInterval(sondeo.current)
             setRotulo(e.rotulo || 'Nequi')
+            setCobro(e.cobro ?? null)
             setPaso('listo')
+            if (['enviado', 'pendiente', 'aprobado'].includes(e.cobro?.resultado)) cobroEnCurso.esperar()
           } else if (e.estado === 'DECLINED' || e.estado === 'VOIDED') {
             clearInterval(sondeo.current)
             setPaso('form')
@@ -199,7 +210,7 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
 
         <ul className="space-y-2">
           {[
-            'Se cobra solo cada mes. No tienes que volver a entrar a pagar.',
+            'Se cobra solo cada mes, uno o dos días antes de que venza. No tienes que volver a entrar a pagar.',
             'Lo quitas cuando quieras, desde esta misma pantalla.',
             'Tus datos los guarda Wompi, la pasarela. Nosotros no los vemos.',
           ].map((t) => (
@@ -222,22 +233,10 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
         ) : (
           <>
             {paso === 'listo' ? (
-              <div className="rounded-[12px] px-3 py-3 text-center" style={{
-                background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, transparent)',
-              }}>
-                <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
-                  Listo, quedó guardado {rotulo}
-                </p>
-                <p className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                  Cada mes se cobra solo. Lo puedes quitar cuando quieras desde esta pantalla.
-                </p>
-                <button type="button" onClick={onCerrar}
-                  className="mt-2 h-9 px-4 rounded-[12px] text-[12px] font-bold"
-                  style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
-                  Cerrar
-                </button>
-              </div>
+              /* Cerrar recarga: la tarjeta del plan de detrás se pintó sin el medio
+                 recién guardado y seguiría diciendo que no hay ninguno. */
+              <PasoListo rotulo={rotulo} cobro={cobro} cobroEnCurso={cobroEnCurso}
+                onCerrar={() => window.location.replace(window.location.pathname)} />
             ) : paso === 'esperando' ? (
               <div className="rounded-[12px] px-3 py-3 text-center" style={{ background: 'var(--cf-fill)' }}>
                 <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
@@ -271,7 +270,7 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
                   </div>
                 </label>
                 <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
-                  Te llega una notificación a tu app de Nequi para que la autorices. No se cobra nada ahora.
+                  Te llega una notificación a tu app de Nequi para que la autorices. Si tu plan ya está pago, hoy no se cobra nada; si no, se cobra al autorizar.
                 </p>
 
                 {/* ⚠ EL WIDGET DE TARJETA SE QUEDA, PERO NO SE DEPENDE DE ÉL: en
@@ -299,6 +298,62 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
             style={{ color: 'var(--cf-ink-3)' }}
           >
             Prefiero pagar una sola vez
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── DESPUÉS DE GUARDAR ──────────────────────────────────────────────────
+   Tres finales que dicen cosas muy distintas, y confundirlos es lo que llena
+   soporte: «quedó guardado y no se cobró nada», «estamos cobrando» y «quedó
+   guardado pero el banco lo rechazó». El tercero sin decirlo deja a alguien
+   creyendo que está al día hasta que la app se le cierra. */
+function PasoListo({ rotulo, cobro, cobroEnCurso, onCerrar }) {
+  const { fase, mensaje, reintentar } = cobroEnCurso
+  const enviado = ['enviado', 'pendiente', 'aprobado'].includes(cobro?.resultado)
+  const rechazado = fase === 'rechazado' || fase === 'error'
+    || (fase === 'quieto' && ['rechazado', 'error'].includes(cobro?.resultado))
+  const motivo = mensaje ?? cobro?.motivo
+  const tono = rechazado ? 'var(--cf-red-dark)' : 'var(--cf-green-dark)'
+
+  let titulo = `Listo, quedó guardado ${rotulo}`
+  let texto = 'El cobro sale solo uno o dos días antes de que venza tu plan. Lo puedes quitar cuando quieras desde esta pantalla.'
+  if (fase === 'pagado') {
+    titulo = 'Pago aprobado'
+    texto = 'Tu plan quedó activo. Cada mes se cobra solo.'
+  } else if (rechazado) {
+    titulo = `Guardamos ${rotulo}, pero el cobro no pasó`
+    texto = motivo || 'El banco no aprobó el cobro.'
+  } else if (fase === 'cobrando' || (enviado && fase === 'quieto')) {
+    texto = 'Estamos cobrando tu plan. Tarda unos segundos: no cierres esta ventana.'
+  } else if (fase === 'tarda' || fase === 'espera') {
+    texto = mensaje
+  }
+
+  return (
+    <div className="rounded-[12px] px-3 py-3 text-center" style={{
+      background: `color-mix(in srgb, ${tono} 10%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${tono} 25%, transparent)`,
+    }}>
+      <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{titulo}</p>
+      <p aria-live="polite" className="text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{texto}</p>
+      <div className="mt-2 flex items-center justify-center gap-2 flex-wrap">
+        {(rechazado || fase === 'espera') && (
+          <button type="button" onClick={reintentar}
+            className="h-9 px-4 rounded-[12px] text-[12px] font-bold"
+            style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+            Reintentar el cobro
+          </button>
+        )}
+        {fase !== 'cobrando' && fase !== 'pagado' && (
+          <button type="button" onClick={onCerrar}
+            className="h-9 px-4 rounded-[12px] text-[12px] font-bold"
+            style={rechazado || fase === 'espera'
+              ? { border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }
+              : { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}>
+            Cerrar
           </button>
         )}
       </div>

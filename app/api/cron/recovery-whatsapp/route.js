@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { whereCobroVivo } from '@/lib/cobro-automatico'
+import { whereCobroSinRechazo } from '@/lib/cobro-automatico'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE = process.env.WHATSAPP_TEMPLATE_RECUPERACION || 'recuperacion_trial'
@@ -34,9 +34,9 @@ export async function POST(req) {
       where: {
         activo: true,
         waRecoverySent: false,
-        /* Con el cobro automático vivo no se le pide pagar: ver
-           lib/cobro-automatico.js. Si se rechaza tres veces, vuelve a entrar. */
-        NOT: whereCobroVivo,
+        /* Con el cobro automático puesto no se le pide pagar: ver
+           lib/cobro-automatico.js. Con un rechazo apuntado vuelve a entrar. */
+        NOT: whereCobroSinRechazo,
         suscripciones: {
           every: {
             OR: [

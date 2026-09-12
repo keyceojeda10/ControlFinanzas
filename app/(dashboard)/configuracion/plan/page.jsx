@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import MedioDePagoGuardado from '@/components/pagos/MedioDePagoGuardado'
+import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
 import HojaSuscripcion     from '@/components/pagos/HojaSuscripcion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
@@ -125,8 +126,10 @@ export default function PlanPage() {
    * acordarse, entrar y volver a pagar. Lo que la mayoría debería elegir tiene
    * que venir elegido.
    *
-   * El pago único no desaparece — quien lo quiera lo cambia de un toque. */
-  const [modoPago,     setModoPago]     = useState('suscripcion')
+   * El pago único no desaparece — quien lo quiera lo cambia de un toque. Desde
+   * la pantalla de acceso suspendido, «Pagar de otra forma» llega con
+   * `?modo=unico` y ya viene puesto. */
+  const [modoPago,     setModoPago]     = useState(() => searchParams.get('modo') === 'unico' ? 'unico' : 'suscripcion')
   const [periodo,      setPeriodo]      = useState('mensual')
   const [suscribiendo, setSuscribiendo] = useState(null)
 
@@ -180,6 +183,34 @@ export default function PlanPage() {
   const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
   const infoPlan = [...planes, planTest].find(p => p.key === planActual) || planes[0]
   const orgNombre = session?.user?.nombreOrganizacion || session?.user?.name || ''
+
+  /* «Cambiar medio de pago» desde la pantalla de acceso suspendido llega con
+     `?suscribir=1`: la hoja se abre sola, una vez y ya con el plan cargado, para
+     no hacerle buscar el botón a quien tiene la app cerrada. */
+  const yaAbriHoja = useRef(false)
+  useEffect(() => {
+    if (loadEstado || yaAbriHoja.current) return
+    if (searchParams.get('suscribir') !== '1' || gateway !== 'wompi') return
+    yaAbriHoja.current = true
+    setSuscribiendo(planActual)
+  }, [loadEstado, searchParams, gateway, planActual])
+
+  /* De vuelta del widget con `medio=cobrando`: el banco contesta segundos
+     después. Se espera aquí la respuesta para no dejar el «estamos cobrando»
+     colgado ni obligar a recargar para ver el plan activo. */
+  const cobroEnCurso = useReintentarCobro({
+    onPagado: async () => {
+      try { await updateSession?.() } catch {}
+      window.location.replace('/configuracion/plan')
+    },
+  })
+  const esperarCobro = cobroEnCurso.esperar
+  const yaEspere = useRef(false)
+  useEffect(() => {
+    if (medioRetorno !== 'cobrando' || yaEspere.current) return
+    yaEspere.current = true
+    esperarCobro()
+  }, [medioRetorno, esperarCobro])
 
   // Next plan up for upgrade CTA
   const planIndex = planes.findIndex(p => p.key === planActual)
@@ -320,9 +351,11 @@ export default function PlanPage() {
 
       {/* ── Retorno Wompi ── */}
       {/* ── DE VUELTA DEL WIDGET ─────────────────────────────────────────
-          Guardar el medio de pago NO cobra nada: el cobro llega cuando venza el
-          plan. Decirlo aquí evita las dos preguntas que si no llegan a soporte:
-          «¿ya me cobraron?» y «¿entonces cuándo?». */}
+          Guardar el medio cobra SOLO si el plan ya no está pago o hay un cobro
+          rechazado por saldar (ver `cobrarAhoraSiToca`). Si está al día no
+          cobra nada: el cobro sale uno o dos días antes de vencer. Decirlo aquí
+          evita las dos preguntas que si no llegan a soporte: «¿ya me cobraron?»
+          y «¿entonces cuándo?». */}
       {medioRetorno && (() => {
         /* Los tres finales posibles dicen cosas MUY distintas —«no te cobramos
            nada», «te estamos cobrando» y «quedó guardado pero el cobro se
@@ -332,17 +365,24 @@ export default function PlanPage() {
           'guardado': {
             bien: true,
             titulo: 'Medio de pago guardado',
-            texto: 'No te cobramos nada ahora. El cobro sale solo el día que venza tu plan, y lo quitas cuando quieras.',
+            texto: 'No te cobramos nada ahora. El cobro sale solo uno o dos días antes de que venza tu plan, y lo quitas cuando quieras.',
           },
           'cobrando': {
             bien: true,
             titulo: 'Suscripción activada',
-            texto: 'Estamos cobrando tu primer mes. En cuanto el banco lo confirme, el plan queda activo; si no se refleja, recarga la página.',
+            texto: cobroEnCurso.fase === 'tarda' || cobroEnCurso.fase === 'error'
+              ? cobroEnCurso.mensaje
+              : 'Estamos cobrando tu plan. En cuanto el banco lo confirme, el plan queda activo.',
+          },
+          'cobro-rechazado': {
+            bien: false,
+            titulo: 'El banco rechazó el cobro',
+            texto: `Tu medio quedó guardado, pero el cobro no pasó. ${cobroEnCurso.mensaje ?? ''}`.trim(),
           },
           'guardado-sin-cobro': {
             bien: false,
-            titulo: 'Guardamos el medio, pero el primer cobro no pasó',
-            texto: 'Tu tarjeta o tu Nequi quedaron guardados. El cobro lo rechazó el banco.',
+            titulo: 'Guardamos el medio, pero el cobro no pasó',
+            texto: 'Tu tarjeta o tu Nequi quedaron guardados, pero no se pudo cobrar.',
           },
           'no-autorizado': {
             bien: false,
@@ -350,7 +390,8 @@ export default function PlanPage() {
             texto: 'Pídele al dueño que guarde el medio de pago desde su usuario.',
           },
         }
-        const a = AVISOS[medioRetorno] ?? {
+        const clave = medioRetorno === 'cobrando' && cobroEnCurso.fase === 'rechazado' ? 'cobro-rechazado' : medioRetorno
+        const a = AVISOS[clave] ?? {
           bien: false,
           titulo: 'No se pudo guardar el medio de pago',
           texto: 'Vuelve a intentarlo, o escríbenos por WhatsApp y lo dejamos listo.',
@@ -631,7 +672,7 @@ export default function PlanPage() {
 
         {/* Con qué se cobra solo. Solo sale si hay medio guardado: entonces es
             un dato del pago, no un cartel. */}
-        <MedioDePagoGuardado />
+        <MedioDePagoGuardado onCambiar={gateway === 'wompi' ? () => setSuscribiendo(planActual) : undefined} />
       </div>
 
       {/* ── LOS PLANES, SIEMPRE A LA VISTA ────────────────────────────────

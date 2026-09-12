@@ -17,19 +17,27 @@
 // ══ LO QUE ESTE GUION NO HACE, A PROPÓSITO ═════════════════════════════════
 //
 // **No activa nada.** Dispara el cobro y se calla. Quien activa el plan es el
-// webhook de Wompi, exactamente igual que en el pago manual. Un solo camino
-// para activar es la única forma de que no se active dos veces ni ninguna: si
-// activáramos aquí Y en el webhook, un cobro aprobado sumaría dos meses.
+// webhook de Wompi (o `reconciliar`, si el webhook no llegó), siempre por
+// `activarPlanPagado`, que no activa dos veces el mismo pago.
 //
-// **No corta a nadie.** Un cobro fallido no suspende: cuenta el fallo y lo
-// vuelve a intentar. Cortarle el sistema a un prestamista por un rechazo de la
-// pasarela —que puede ser un banco caído— es peor que esperar un día más.
+// ══ Y LO QUE SÍ HACE DESDE EL 12 SEP 2026 ══════════════════════════════════
+//
+// **Cobra ANTES de que venza** (`HORAS_DE_ANTICIPO`). Una pasada al día: con
+// 48 h el primer intento sale entre 24 y 48 h antes, y si no había saldo queda
+// otro antes de la hora de corte. El dueño: «si el plan le vence a las siete y
+// el cron pasa a las ocho, va a tener una hora sin acceso y no sería correcto».
+//
+// **Un rechazo cierra.** Quien tenía el cobro puesto y la pasarela dijo que no
+// se queda sin acceso a la hora exacta del vencimiento, como quien paga a mano.
+// Se sigue intentando hasta `MAX_FALLOS`, con la pantalla de vencida delante y
+// su botón de «Reintentar».
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cobrarConFuente, wompiConfigurado, referenciaDeCobro } from '@/lib/wompi'
+import { wompiConfigurado } from '@/lib/wompi'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { MAX_FALLOS, whereCobroVivo, HORAS_DE_ANTICIPO, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
+import { MAX_FALLOS, HORAS_DE_ANTICIPO, HORAS_DE_REINTENTO, rechazoVigente } from '@/lib/cobro-automatico'
+import { lanzarCobro, reconciliar } from '@/lib/cobro-intento'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -38,10 +46,10 @@ const CRON_SECRET = process.env.CRON_SECRET
    tarjeta de verdad: un cron que cobra no se estrena a ciegas. */
 const ENCENDIDO = process.env.COBRO_RECURRENTE_ACTIVO === '1'
 
-/* Tres intentos y se para (`MAX_FALLOS`, en lib/cobro-automatico.js). Al
-   cuarto día el cliente ya sabe que algo pasa —le avisan el correo, el push y
-   WhatsApp— y seguir intentando contra una tarjeta sin fondos solo suma
-   rechazos, que ensucian la reputación del comercio. */
+/* Tres rechazos y se para (`MAX_FALLOS`, en lib/cobro-automatico.js). Para
+   entonces el cliente ya está delante de la pantalla de vencida, y seguir
+   intentando contra un Nequi sin saldo solo suma rechazos, que ensucian la
+   reputación del comercio. Él puede reintentar desde ahí cuando recargue. */
 
 /* Un intento al día como mucho. Sin esto, dos ejecuciones del cron en el mismo
    día cobrarían dos veces. */
@@ -65,28 +73,32 @@ export async function POST(req) {
   const ahora = new Date()
   const desdeIntento = new Date(ahora.getTime() - HORAS_ENTRE_INTENTOS * 3600000)
   const hastaVence = new Date(ahora.getTime() + HORAS_DE_ANTICIPO * 3600000)
-  const desdeVence = new Date(ahora.getTime() - HORAS_DE_GRACIA * 3600000)
-  const res = { candidatos: 0, cobrados: 0, rechazados: 0, errores: 0, saltados: 0 }
+  const desdeVence = new Date(ahora.getTime() - HORAS_DE_REINTENTO * 3600000)
+  const res = { candidatos: 0, cobrados: 0, rechazados: 0, errores: 0, saltados: 0, enCurso: 0, agotados: 0 }
 
   try {
     const orgs = await prisma.organization.findMany({
       where: {
         activo: true,
-        ...whereCobroVivo,
+        /* ⚠ SIN FILTRAR POR RECHAZO NI POR FALLOS: quien ya fue rechazado es
+           justo a quien hay que volver a intentar. El tope se mira abajo, sobre
+           el rechazo del periodo que toca. */
+        cobroAutomatico: true,
+        wompiFuentePagoId: { not: null },
         /* Un intento al día: `null` (nunca intentado) también entra. */
         OR: [
           { cobroUltimoIntento: null },
           { cobroUltimoIntento: { lt: desdeIntento } },
         ],
-        /* ⚠ LA VENTANA: VENCE ANTES DE LA PRÓXIMA PASADA, O VENCIÓ HACE POCO.
+        /* ⚠ LA VENTANA: VENCE EN LAS PRÓXIMAS 48 H, O VENCIÓ HACE MENOS DE 72.
            Antes era «ya venció» y fallaba dos veces (12 sep 2026):
            · un plan que vence a las 13:10 no se cobraba a las 13:00, y a las
              13:10 el cliente quedaba fuera con el cobro puesto;
            · al día siguiente, a las 08:00, `cron/suscripciones` lo marca
              `vencida`, y aquí solo se buscaba `activa`: NO SE COBRABA NUNCA.
-           Cobrar hasta 24 h antes no le cuesta días —`activarPlanPagado`
-           extiende desde la fecha de vencimiento— y lo `vencida` entra durante
-           la gracia para que los reintentos existan de verdad. */
+           Cobrar antes no le cuesta días —`activarPlanPagado` extiende desde la
+           fecha de vencimiento— y lo `vencida` entra para que los reintentos
+           existan de verdad. */
         suscripciones: {
           some: {
             estado: { in: ['activa', 'vencida'] },
@@ -97,7 +109,8 @@ export async function POST(req) {
       },
       select: {
         id: true, nombre: true, wompiFuentePagoId: true, wompiFuenteEmail: true,
-        cobroFallos: true,
+        cobroAutomatico: true, cobroFallos: true, cobroUltimoIntento: true,
+        cobroRefPendiente: true, cobroTxPendiente: true, cobroRechazoVence: true,
         suscripciones: {
           where: { estado: { in: ['activa', 'vencida'] }, montoCOP: { gt: 0 } },
           orderBy: { fechaVencimiento: 'desc' },
@@ -107,7 +120,7 @@ export async function POST(req) {
       },
     })
 
-    for (const org of orgs) {
+    for (let org of orgs) {
       const sub = org.suscripciones?.[0]
       if (!sub || !org.wompiFuenteEmail) { res.saltados++; continue }
 
@@ -118,51 +131,41 @@ export async function POST(req) {
          webhook extiende al aprobarse. */
       const vence = new Date(sub.fechaVencimiento)
       if (vence > hastaVence || vence < desdeVence) { res.saltados++; continue }
+
+      /* Un cobro anterior que no terminó de saberse: primero averiguar cómo
+         acabó. Si sigue en el aire, hoy no se manda otro. */
+      if (org.cobroRefPendiente) {
+        const estado = await reconciliar(org)
+        if (estado === 'aprobada') { res.saltados++; continue }
+        if (estado !== 'libre') { res.enCurso++; continue }
+        org = { ...org, ...(await prisma.organization.findUnique({
+          where: { id: org.id },
+          select: { cobroFallos: true, cobroRechazoVence: true },
+        })) }
+      }
+
+      const vigente = rechazoVigente(org, sub.fechaVencimiento)
+      if (vigente && org.cobroFallos >= MAX_FALLOS) { res.agotados++; continue }
       res.candidatos++
 
       /* La referencia lleva el MISMO formato que el pago manual, porque quien
-         la lee es el mismo webhook: `cf-{org}-{plan}-{periodo}-{ts}`. Cambiarla
-         aquí dejaría el cobro aprobado sin poder activarse. */
-      const referencia = referenciaDeCobro(org.id, sub.plan, 'mensual')
-
-      /* El intento se apunta ANTES de llamar a Wompi. Si el proceso se cae a
-         mitad, el peor caso es que hoy no se reintente; al revés —apuntarlo
-         después— el peor caso es cobrar dos veces. */
-      await prisma.organization.update({
-        where: { id: org.id },
-        data: { cobroUltimoIntento: ahora },
+         la lee es el mismo webhook: la escribe `lanzarCobro` con
+         `referenciaDeCobro`. El intento se apunta ANTES de llamar a Wompi. */
+      const r = await lanzarCobro({
+        org,
+        plan: sub.plan,
+        montoCOP: sub.montoCOP,
+        /* Un rechazo de otro periodo no gasta intentos de éste. */
+        reiniciarFallos: !vigente,
+        origen: 'cron',
       })
 
-      let r
-      try {
-        r = await cobrarConFuente({
-          fuenteId:   org.wompiFuentePagoId,
-          montoCOP:   sub.montoCOP,
-          email:      org.wompiFuenteEmail,
-          referencia,
-        })
-      } catch (e) {
-        res.errores++
-        console.error(`[cobro-recurrente] error llamando a Wompi para "${org.nombre}": ${e.message}`)
-        continue
-      }
-
-      if (!r.ok) {
-        const fallos = org.cobroFallos + 1
-        await prisma.organization.update({
-          where: { id: org.id },
-          data: { cobroFallos: fallos },
-        })
+      if (r.resultado === 'enviado') res.cobrados++
+      else if (r.resultado === 'rechazado') {
         res.rechazados++
-        console.warn(`[cobro-recurrente] RECHAZADO "${org.nombre}" (${fallos}/${MAX_FALLOS}): ${r.motivo}`)
-        continue
-      }
-
-      /* Aceptado NO es cobrado: nace `PENDING` y puede acabar en DECLINED. Por
-         eso el contador de fallos NO se pone a cero aquí — lo pone a cero el
-         webhook cuando el pago queda APROBADO de verdad. */
-      res.cobrados++
-      console.log(`[cobro-recurrente] enviado ${sub.plan} $${sub.montoCOP} de "${org.nombre}" — tx ${r.id} (${r.estado}) ref ${referencia}`)
+        console.warn(`[cobro-recurrente] RECHAZADO "${org.nombre}" (${(vigente ? org.cobroFallos : 0) + 1}/${MAX_FALLOS}): ${r.motivo}`)
+      } else if (r.resultado === 'pendiente') res.enCurso++
+      else res.errores++
     }
 
     return NextResponse.json({ ok: true, ...res })

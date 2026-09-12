@@ -6,19 +6,23 @@
 //   Se cierra con boton pero reaparece cada vez que abra la app.
 // - Ya vencida → banner fijo (no descartable) con enlace a renovar.
 // - Recurrente activa autorizada → no se muestra.
-// - Cobro automático de Wompi vivo (Nequi o tarjeta guardados) → no se muestra.
-//   Si la pasarela lo rechazó, sale una franja que lo dice, sin modal.
+// - Cobro automático de Wompi (Nequi o tarjeta guardados) → no se muestra.
+// - Si la pasarela lo rechazó → franja roja, sin modal, con la hora a la que se
+//   cierra el acceso y el botón para reintentar.
 //
 // ⚠ 12 sep 2026, un cliente con Nequi guardado: «cada rato me sale un anuncio
 // que debo pagar, que debo pagar, pero yo tengo ya automático eso el cobro».
 // Este aviso solo conocía la recurrencia vieja de MercadoPago. Quien decide si
-// se le cobra solo es `cobroVivo` (lib/cobro-automatico.js), vía /api/pagos/estado.
+// se le cobra solo es `cobroSinRechazo` (lib/cobro-automatico.js), vía
+// /api/pagos/estado. Y el mismo día, el dueño: si Nequi rechaza, «el sistema
+// debería de cerrarse». Por eso el rechazo no se calla: se cierra al vencer.
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { pedirCompartido } from '@/lib/pedir-compartido'
+import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
 
 function calcularTiempoRestante(fechaVencimiento) {
   const diff = new Date(fechaVencimiento) - new Date()
@@ -40,6 +44,8 @@ export default function SuscripcionBanner() {
   const [modalCerrado, setModalCerrado] = useState(false)
   const [countdown, setCountdown] = useState(null)
   const intervalRef = useRef(null)
+  /* Pagado: recarga entera, para que el token deje de llevar la fecha vieja. */
+  const cobroReintento = useReintentarCobro({ onPagado: () => window.location.reload() })
 
   const rol = session?.user?.rol
   const orgId = session?.user?.organizationId
@@ -94,13 +100,18 @@ export default function SuscripcionBanner() {
 
   if (esRecurrenteOk && !vencida) return null
 
-  /* ── COBRO AUTOMÁTICO VIVO ──
+  /* ── COBRO AUTOMÁTICO ──
      Mientras la pasarela lo intenta no hay nada que pedirle: ni modal ni
-     «renueva». Si ya lo rechazó una vez, eso sí se dice, porque es lo único
-     que él puede arreglar (saldo, o cambiar el medio). */
+     «renueva». Si lo rechazó, eso sí se dice, con la hora del cierre, porque es
+     lo único que él puede arreglar (saldo, o cambiar el medio). */
   const cobro = estado.cobroAutomatico
-  if (cobro?.activo) {
-    if (!cobro.fallos) return null
+  if (cobro?.activo) return null
+  if (cobro?.rechazo && !vencida) {
+    const { fase, mensaje, reintentar } = cobroReintento
+    const ocupado = fase === 'cobrando' || fase === 'pagado'
+    const cierre = estado.accesoHasta
+      ? new Date(estado.accesoHasta).toLocaleString('es-CO', { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })
+      : null
     return (
       <div
         className="border-b"
@@ -109,22 +120,43 @@ export default function SuscripcionBanner() {
           borderColor: 'color-mix(in srgb, var(--cf-red-dark) 25%, var(--cf-border))',
         }}
       >
-        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex-1 min-w-[12rem]">
             <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-red-dark)' }}>
               No pudimos cobrar a {cobro.rotulo || 'tu medio de pago'}
             </p>
-            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-              Lo volvemos a intentar mañana. Revisa que tenga saldo.
+            <p aria-live="polite" className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              {fase === 'cobrando' ? 'Estamos cobrando. Tarda unos segundos.'
+                : fase === 'pagado' ? 'Pago aprobado.'
+                : mensaje
+                  ? mensaje
+                  : <>{cobro.rechazo.motivo} {cierre ? `Si no se paga, el acceso se cierra el ${cierre.replace(/\.$/, '')}.` : 'Si no se paga, se cierra el acceso al vencer.'}</>}
             </p>
           </div>
-          <Link
-            href="/configuracion/plan"
-            className="shrink-0 h-8 px-3 rounded-[10px] text-[12px] font-semibold inline-flex items-center"
-            style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
-          >
-            Cambiar medio
-          </Link>
+          {cobro.esDueno ? (
+            <div className="shrink-0 flex flex-wrap justify-end gap-1.5">
+              <button
+                type="button"
+                onClick={reintentar}
+                disabled={ocupado}
+                className="h-8 px-3 rounded-[10px] text-[12px] font-semibold inline-flex items-center disabled:opacity-60"
+                style={{ background: 'var(--cf-red-dark)', color: '#fff' }}
+              >
+                {ocupado ? 'Cobrando…' : 'Reintentar'}
+              </button>
+              <Link
+                href="/configuracion/plan?suscribir=1"
+                className="h-8 px-3 rounded-[10px] text-[12px] font-semibold inline-flex items-center"
+                style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
+              >
+                Cambiar medio
+              </Link>
+            </div>
+          ) : (
+            <span className="shrink-0 text-[11px] max-w-[9rem] text-right leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              Avísale al dueño de la cuenta
+            </span>
+          )}
         </div>
       </div>
     )

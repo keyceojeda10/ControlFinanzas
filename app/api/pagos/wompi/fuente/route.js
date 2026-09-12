@@ -23,6 +23,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { crearFuenteDePago, wompiConfigurado, wompiPublicKey } from '@/lib/wompi'
+import { cobrarAhoraSiToca, ultimaSuscripcion } from '@/lib/cobro-intento'
+import { selectResumenCobro, resumenCobro, motivoLegible } from '@/lib/cobro-automatico'
 
 /** «VISA ····4242» / «Nequi ···3001»: lo justo para que reconozca cuál es. */
 function rotuloDe(tipo, publico = {}) {
@@ -42,13 +44,14 @@ export async function GET() {
   if (!session?.user?.organizationId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
-  const org = await prisma.organization.findUnique({
-    where: { id: session.user.organizationId },
-    select: {
-      wompiFuenteRotulo: true, wompiFuenteTipo: true,
-      cobroAutomatico: true, cobroFallos: true,
-    },
-  })
+  const [org, sub] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { ...selectResumenCobro, wompiFuenteTipo: true },
+    }),
+    ultimaSuscripcion(session.user.organizationId),
+  ])
+  const cobro = org ? resumenCobro(org, sub?.fechaVencimiento ?? null) : null
   return NextResponse.json({
     configurado: wompiConfigurado(),
     publicKey:   wompiPublicKey(),
@@ -57,7 +60,8 @@ export async function GET() {
     esDueno:     session.user.rol === 'owner',
     fuente: org?.wompiFuenteRotulo
       ? { rotulo: org.wompiFuenteRotulo, tipo: org.wompiFuenteTipo,
-          activo: org.cobroAutomatico, fallos: org.cobroFallos }
+          activo: org.cobroAutomatico, fallos: org.cobroFallos,
+          rechazo: cobro.rechazo, pendiente: cobro.pendiente }
       : null,
   })
 }
@@ -112,13 +116,27 @@ export async function POST(req) {
       wompiFuenteEmail:  email,
       cobroAutomatico:   true,
       /* Empieza de cero: si venía de tres cobros fallidos con el medio viejo,
-         el nuevo no arrastra ese historial. */
+         el nuevo no arrastra ese historial. ⚠ El rechazo NO se borra: lo
+         borra el pago. */
       cobroFallos:       0,
     },
   })
 
   console.log(`[wompi-fuente] guardada ${tipo} (${rotulo}) para org ${session.user.organizationId} — fuente ${fuente.id}`)
-  return NextResponse.json({ ok: true, rotulo, tipo, estado: fuente.estado })
+
+  /* Se cobra en el acto si toca; las reglas, en `cobrarAhoraSiToca`. */
+  let cobro
+  try {
+    const r = await cobrarAhoraSiToca({ orgId: session.user.organizationId, origen: 'guardar-fuente' })
+    cobro = {
+      resultado: r.resultado,
+      motivo: ['rechazado', 'error'].includes(r.resultado) ? motivoLegible(r.motivo) : null,
+    }
+  } catch (e) {
+    console.error('[wompi-fuente] falló el primer cobro:', e.message)
+    cobro = { resultado: 'error', motivo: 'No pudimos hacer el cobro ahora. Reinténtalo en unos minutos.' }
+  }
+  return NextResponse.json({ ok: true, rotulo, tipo, estado: fuente.estado, cobro })
 }
 
 /* Quitar el medio de pago tiene que ser tan fácil como ponerlo. No es cortesía:
@@ -141,6 +159,8 @@ export async function DELETE() {
       wompiFuenteEmail:  null,
       cobroAutomatico:   false,
       cobroFallos:       0,
+      /* ⚠ `cobroRechazoVence` se queda: sin medio no hay gracia, y si lo vuelve
+         a poner, el rechazo sigue ahí hasta que pague. */
     },
   })
   console.log(`[wompi-fuente] quitada para org ${session.user.organizationId}`)
