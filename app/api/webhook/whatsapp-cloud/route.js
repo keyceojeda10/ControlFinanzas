@@ -503,6 +503,90 @@ async function _procesarMensajeInternal(msg, fromRaw, tipo, messageId) {
   const botApagado = !lead.botActivo || lead.estado === 'cerrado'
 
   await _responderAlLead(msg, lead, tipo, messageId, botApagado)
+
+  /* La copia al motor nuevo va AQUÍ y no dentro: cuando esta línea se alcanza,
+     el bot de siempre ya decidió, ya envió y ya guardó. */
+  await copiarASombra({ lead, tipo, messageId, telefono })
+}
+
+/* ══ MODO SOMBRA DEL BOT NUEVO (12 sep 2026) ═══════════════════════════════
+ *
+ * Se manda una copia de cada turno —lo que dijo el lead y lo que el bot de
+ * siempre acaba de contestarle— a un servicio local que calcula qué habría
+ * respondido el motor nuevo y lo guarda. **No envía nada a nadie.**
+ *
+ * Vive en `http://127.0.0.1:3011`, solo escucha en local, corre bajo pm2 como
+ * `cf-bot-next-sombra` y es un proyecto aparte (`/home/cf-bot-next`): no toca
+ * este repositorio ni comparte base con él.
+ *
+ * ⚠ POR QUÉ SE LEE DE LA BASE Y NO SE LLAMA DESDE CADA RAMA.
+ *
+ * `_responderAlLead` tiene ocho salidas —la llave de prueba, el botón de
+ * cartera, el flujo de anuncios, el debounce, el anti-doble, el modelo…— y
+ * meter la llamada en cada una es exactamente el fallo que este repositorio ya
+ * ha pagado tres veces: se arregla una vía y se deja la otra. Todas las ramas
+ * que contestan escriben en `BotConversacion` con `rol: 'bot'`, así que
+ * preguntando por la última respuesta posterior al mensaje se capturan TODAS
+ * sin tocar ninguna. Y de paso se manda lo que de verdad salió, que es lo que
+ * hace que esto sea sombra y no una simulación.
+ *
+ * Si el bot no contestó —bot apagado, mensaje automático, handler descartado—
+ * se manda `""`, que es lo que el servicio espera para ese caso.
+ */
+function enviarASombra({ telefono, texto, wamid, respuestaBot }) {
+  if (process.env.SOMBRA_ACTIVA !== 'true') return
+  /* Fuego y olvido: sin `await`, con corte a los dos segundos y un `catch` que
+     se lo traga todo. El fallo de la sombra JAMÁS puede afectar al lead.
+
+     ⚠ Los dos segundos NO pierden el turno, y esto se comprobó antes de
+     escribirlo: el motor tarda ~8 s en contestar, pero registra el turno al
+     recibirlo. Cortando a los 2 s y reenviando el mismo `externalId` después,
+     el servicio responde `duplicate` — o sea que el primero quedó grabado. */
+  fetch('http://127.0.0.1:3011/api/shadow/turn', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-shadow-secret': process.env.SOMBRA_SECRETO },
+    body: JSON.stringify({ contactId: telefono, text: texto, externalId: wamid, botReply: respuestaBot ?? '' }),
+    signal: AbortSignal.timeout(2000),
+  }).catch(() => {})
+}
+
+/* Recoge de la base lo que de verdad pasó en este turno y se lo pasa a la
+   sombra. Todo va envuelto: si algo falla aquí, el lead ya fue atendido. */
+async function copiarASombra({ lead, tipo, messageId, telefono }) {
+  if (process.env.SOMBRA_ACTIVA !== 'true') return
+  /* ⚠ SOLO TEXTO, que es lo único que el motor nuevo sabe leer hoy. El audio
+     entra porque este webhook ya lo transcribe y lo que llega es texto; la
+     imagen y los botones se quedan fuera a propósito. Para ampliarlo, esta
+     línea. */
+  if (tipo !== 'text' && tipo !== 'audio') return
+  if (!messageId) return
+
+  try {
+    /* El texto tal y como lo vio el bot: en un audio es la transcripción, no
+       el `[nota de voz]` que se guarda cuando no se pudo transcribir. */
+    const entrante = await prisma.botConversacion.findFirst({
+      where: { botLeadId: lead.id, rol: 'lead', messageId },
+      select: { texto: true, createdAt: true },
+    })
+    if (!entrante?.texto || entrante.texto === '[nota de voz]') return
+
+    const respuesta = await prisma.botConversacion.findFirst({
+      where: { botLeadId: lead.id, rol: 'bot', createdAt: { gt: entrante.createdAt } },
+      orderBy: { createdAt: 'desc' },
+      select: { texto: true },
+    })
+
+    /* Solo el teléfono, el texto, el id del mensaje y lo que contestó el bot.
+       Nada de la organización, el plan ni la cartera. */
+    enviarASombra({
+      telefono,
+      texto: entrante.texto,
+      wamid: messageId,
+      respuestaBot: respuesta?.texto ?? '',
+    })
+  } catch (e) {
+    console.error('[Sombra] no pude copiar el turno:', e.message)
+  }
 }
 
 // Inserta el mensaje entrante de forma atomica. El constraint @unique en
