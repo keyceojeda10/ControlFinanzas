@@ -29,6 +29,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cobrarConFuente, wompiConfigurado, referenciaDeCobro } from '@/lib/wompi'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { MAX_FALLOS, whereCobroVivo, HORAS_DE_ANTICIPO, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -37,10 +38,10 @@ const CRON_SECRET = process.env.CRON_SECRET
    tarjeta de verdad: un cron que cobra no se estrena a ciegas. */
 const ENCENDIDO = process.env.COBRO_RECURRENTE_ACTIVO === '1'
 
-/* Tres intentos y se para. Al cuarto día el cliente ya sabe que algo pasa —le
-   avisan el correo, el push y WhatsApp— y seguir intentando contra una tarjeta
-   sin fondos solo suma rechazos, que ensucian la reputación del comercio. */
-const MAX_FALLOS = 3
+/* Tres intentos y se para (`MAX_FALLOS`, en lib/cobro-automatico.js). Al
+   cuarto día el cliente ya sabe que algo pasa —le avisan el correo, el push y
+   WhatsApp— y seguir intentando contra una tarjeta sin fondos solo suma
+   rechazos, que ensucian la reputación del comercio. */
 
 /* Un intento al día como mucho. Sin esto, dos ejecuciones del cron en el mismo
    día cobrarían dos veces. */
@@ -63,28 +64,34 @@ export async function POST(req) {
 
   const ahora = new Date()
   const desdeIntento = new Date(ahora.getTime() - HORAS_ENTRE_INTENTOS * 3600000)
+  const hastaVence = new Date(ahora.getTime() + HORAS_DE_ANTICIPO * 3600000)
+  const desdeVence = new Date(ahora.getTime() - HORAS_DE_GRACIA * 3600000)
   const res = { candidatos: 0, cobrados: 0, rechazados: 0, errores: 0, saltados: 0 }
 
   try {
     const orgs = await prisma.organization.findMany({
       where: {
         activo: true,
-        cobroAutomatico: true,
-        wompiFuentePagoId: { not: null },
-        cobroFallos: { lt: MAX_FALLOS },
+        ...whereCobroVivo,
         /* Un intento al día: `null` (nunca intentado) también entra. */
         OR: [
           { cobroUltimoIntento: null },
           { cobroUltimoIntento: { lt: desdeIntento } },
         ],
-        /* ⚠ SOLO SI YA VENCIÓ O VENCE HOY. Cobrar antes de tiempo es cobrarle
-           al cliente un mes que todavía no ha usado, y es la clase de error que
-           no se perdona. */
+        /* ⚠ LA VENTANA: VENCE ANTES DE LA PRÓXIMA PASADA, O VENCIÓ HACE POCO.
+           Antes era «ya venció» y fallaba dos veces (12 sep 2026):
+           · un plan que vence a las 13:10 no se cobraba a las 13:00, y a las
+             13:10 el cliente quedaba fuera con el cobro puesto;
+           · al día siguiente, a las 08:00, `cron/suscripciones` lo marca
+             `vencida`, y aquí solo se buscaba `activa`: NO SE COBRABA NUNCA.
+           Cobrar hasta 24 h antes no le cuesta días —`activarPlanPagado`
+           extiende desde la fecha de vencimiento— y lo `vencida` entra durante
+           la gracia para que los reintentos existan de verdad. */
         suscripciones: {
           some: {
-            estado: 'activa',
+            estado: { in: ['activa', 'vencida'] },
             montoCOP: { gt: 0 },
-            fechaVencimiento: { lte: ahora },
+            fechaVencimiento: { lte: hastaVence, gte: desdeVence },
           },
         },
       },
@@ -92,7 +99,7 @@ export async function POST(req) {
         id: true, nombre: true, wompiFuentePagoId: true, wompiFuenteEmail: true,
         cobroFallos: true,
         suscripciones: {
-          where: { estado: 'activa', montoCOP: { gt: 0 } },
+          where: { estado: { in: ['activa', 'vencida'] }, montoCOP: { gt: 0 } },
           orderBy: { fechaVencimiento: 'desc' },
           take: 1,
           select: { plan: true, montoCOP: true, fechaVencimiento: true },
@@ -103,6 +110,14 @@ export async function POST(req) {
     for (const org of orgs) {
       const sub = org.suscripciones?.[0]
       if (!sub || !org.wompiFuenteEmail) { res.saltados++; continue }
+
+      /* ⚠ LA VENTANA SE MIRA OTRA VEZ, EN LA MÁS RECIENTE. El `some` de arriba
+         casa con CUALQUIER suscripción del negocio: una vieja que quedó dentro
+         de la ventana lo metería aquí aunque la vigente ya esté pagada, y se le
+         cobraría dos veces. La que decide es la última, que es la que el
+         webhook extiende al aprobarse. */
+      const vence = new Date(sub.fechaVencimiento)
+      if (vence > hastaVence || vence < desdeVence) { res.saltados++; continue }
       res.candidatos++
 
       /* La referencia lleva el MISMO formato que el pago manual, porque quien

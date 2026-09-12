@@ -1224,16 +1224,22 @@ function ProximosARenovar({ alertas }) {
   )
 }
 
-function BandaSuscripcion({ dias }) {
+function BandaSuscripcion({ dias, cobro }) {
   if (dias === null || dias === undefined || dias > 30) return null
-  const urgente = dias <= 7
-  const pct = Math.max(4, Math.round((dias / 30) * 100))
+  /* Con el Nequi o la tarjeta guardados no hay nada que renovar: pedírselo es
+     el «que debo pagar, que debo pagar» del 12 sep 2026. Se le dice a dónde se
+     cobra, sin rojo y sin botón de renovar. */
+  const automatico = cobro?.activo === true && !cobro.fallos
+  const urgente = !automatico && dias <= 7
+  const pct = Math.max(4, Math.round((Math.max(dias, 0) / 30) * 100))
 
-  const mensaje = urgente
-    ? 'Renueva para seguir creciendo'
-    : dias <= 14
-      ? 'Tu negocio va bien, asegura la continuidad'
-      : 'Aprovecha al maximo tu plan'
+  const mensaje = automatico
+    ? `Se cobra solo a ${cobro.rotulo || 'tu medio de pago'}`
+    : urgente
+      ? 'Renueva para seguir creciendo'
+      : dias <= 14
+        ? 'Tu negocio va bien, asegura la continuidad'
+        : 'Aprovecha al maximo tu plan'
 
   const accentColor = urgente ? 'var(--cf-red-dark)' : 'var(--cf-gold)'
   const gradientBg = urgente
@@ -1256,19 +1262,19 @@ function BandaSuscripcion({ dias }) {
             />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold font-mono-display" style={{ color: accentColor }}>
-            {dias}
+            {Math.max(dias, 0)}
           </span>
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-semibold text-[var(--cf-ink)]">
-            {dias} dias restantes
+            {automatico && dias <= 0 ? 'Cobro en curso' : `${dias} dias restantes`}
           </p>
           <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">{mensaje}</p>
         </div>
         <span className="text-[11px] font-semibold px-3 py-1.5 rounded-full shrink-0 transition-all"
           style={{ background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, color: accentColor }}
         >
-          Renovar
+          {automatico ? 'Automático' : 'Renovar'}
         </span>
       </div>
     </a>
@@ -1854,7 +1860,7 @@ export default function DashboardPage() {
 
           {/* La banda de suscripcion, AQUI. Ver la nota de arriba: antes abria
               la pantalla y empujaba el hero fuera de la primera vista. */}
-          {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} />}
+          {esOwner && susInfo && <BandaSuscripcion dias={susInfo.diasRestantes} cobro={susInfo.cobroAutomatico} />}
 
           {/* ⚠ `DashboardAiTip` SE FUE DE AQUI.
               Repetia la mora que la tarjeta blanca ya dice tres centimetros mas

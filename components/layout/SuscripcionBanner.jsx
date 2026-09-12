@@ -6,6 +6,13 @@
 //   Se cierra con boton pero reaparece cada vez que abra la app.
 // - Ya vencida → banner fijo (no descartable) con enlace a renovar.
 // - Recurrente activa autorizada → no se muestra.
+// - Cobro automático de Wompi vivo (Nequi o tarjeta guardados) → no se muestra.
+//   Si la pasarela lo rechazó, sale una franja que lo dice, sin modal.
+//
+// ⚠ 12 sep 2026, un cliente con Nequi guardado: «cada rato me sale un anuncio
+// que debo pagar, que debo pagar, pero yo tengo ya automático eso el cobro».
+// Este aviso solo conocía la recurrencia vieja de MercadoPago. Quien decide si
+// se le cobra solo es `cobroVivo` (lib/cobro-automatico.js), vía /api/pagos/estado.
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
@@ -52,9 +59,10 @@ export default function SuscripcionBanner() {
   useEffect(() => {
     if (!estado?.fechaVencimiento) return
     const esRecurrenteOk =
-      estado.tipo === 'recurrente' &&
-      estado.mpStatus === 'authorized' &&
-      !estado.canceladaAt
+      (estado.tipo === 'recurrente' &&
+        estado.mpStatus === 'authorized' &&
+        !estado.canceladaAt) ||
+      estado.cobroAutomatico?.activo === true
     if (esRecurrenteOk) return
 
     const diasRestantes = estado.diasRestantes ?? 999
@@ -85,6 +93,42 @@ export default function SuscripcionBanner() {
   const critico = !vencida && estado.diasRestantes <= 1
 
   if (esRecurrenteOk && !vencida) return null
+
+  /* ── COBRO AUTOMÁTICO VIVO ──
+     Mientras la pasarela lo intenta no hay nada que pedirle: ni modal ni
+     «renueva». Si ya lo rechazó una vez, eso sí se dice, porque es lo único
+     que él puede arreglar (saldo, o cambiar el medio). */
+  const cobro = estado.cobroAutomatico
+  if (cobro?.activo) {
+    if (!cobro.fallos) return null
+    return (
+      <div
+        className="border-b"
+        style={{
+          background: 'color-mix(in srgb, var(--cf-red-dark) 8%, var(--cf-card))',
+          borderColor: 'color-mix(in srgb, var(--cf-red-dark) 25%, var(--cf-border))',
+        }}
+      >
+        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-red-dark)' }}>
+              No pudimos cobrar a {cobro.rotulo || 'tu medio de pago'}
+            </p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+              Lo volvemos a intentar mañana. Revisa que tenga saldo.
+            </p>
+          </div>
+          <Link
+            href="/configuracion/plan"
+            className="shrink-0 h-8 px-3 rounded-[10px] text-[12px] font-semibold inline-flex items-center"
+            style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
+          >
+            Cambiar medio
+          </Link>
+        </div>
+      </div>
+    )
+  }
   if (!vencida && !critico) return null
 
   // ── VENCIDA: banner fijo arriba ──

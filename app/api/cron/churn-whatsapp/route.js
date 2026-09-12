@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { whereCobroVivo } from '@/lib/cobro-automatico'
 
 /* ⚠ UNA VEZ POR CICLO, NO UNA VEZ EN LA VIDA.
  *
@@ -75,6 +76,9 @@ export async function POST(req) {
       where: {
         activo: true,
         ...puedeRecibir('waPreVencSentAt'),
+        /* Con el cobro automático vivo no se le pide pagar: ver
+           lib/cobro-automatico.js. Si se rechaza tres veces, vuelve a entrar. */
+        NOT: whereCobroVivo,
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {
@@ -133,6 +137,9 @@ export async function POST(req) {
       where: {
         activo: true,
         ...puedeRecibir('waChurnSentAt'),
+        /* Con el cobro automático vivo no se le pide pagar: ver
+           lib/cobro-automatico.js. Si se rechaza tres veces, vuelve a entrar. */
+        NOT: whereCobroVivo,
         users: { none: { email: { in: EMAILS_INTERNOS } } },
         suscripciones: {
           some: {

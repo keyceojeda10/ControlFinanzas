@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_USUARIOS }  from '@/lib/planes'
+import { selectCobro, cobroVivo } from '@/lib/cobro-automatico'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -23,7 +24,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true },
+      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectCobro, wompiFuenteRotulo: true },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -40,6 +41,14 @@ export async function GET() {
   const cobradoresExtra = org?.cobradoresExtra ?? 0
   const enTrial = !!(org?.planOriginal && org?.planDemoHasta && new Date(org.planDemoHasta) > new Date())
   const diasTrial = enTrial ? Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60 * 24)) : 0
+  /* El Nequi o la tarjeta guardados en Wompi. Sin esto los avisos de «tu plan
+     vence» solo reconocían la recurrencia vieja de MercadoPago, y le pedían
+     pagar cada rato a quien ya había dejado el cobro puesto (12 sep 2026). */
+  const cobroAutomatico = {
+    activo: cobroVivo(org),
+    rotulo: org?.wompiFuenteRotulo ?? null,
+    fallos: org?.cobroFallos ?? 0,
+  }
 
   if (!sub) {
     const plan = session.user.plan ?? 'starter'
@@ -61,6 +70,7 @@ export async function GET() {
       enTrial,
       diasTrial,
       planAlTerminar: enTrial ? org.planOriginal : null,
+      cobroAutomatico,
     })
   }
 
@@ -89,5 +99,6 @@ export async function GET() {
     enTrial,
     diasTrial,
     planAlTerminar: enTrial ? org.planOriginal : null,
+    cobroAutomatico,
   })
 }

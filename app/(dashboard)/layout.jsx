@@ -24,6 +24,7 @@ import UbicacionProvider from '@/components/providers/UbicacionProvider'
 import SesionTracker from '@/components/providers/SesionTracker'
 import { AccionesProvider } from '@/components/acciones/AccionesProvider'
 import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
+import { selectCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
 // El middleware no puede hacerlo (Edge runtime sin Prisma) y el JWT puede
@@ -46,9 +47,11 @@ async function bloquearSiVencida() {
       OR: [{ mpStatus: null }, { mpStatus: { not: 'pending' } }],
     },
     orderBy: { fechaVencimiento: 'desc' },
-    select: { fechaVencimiento: true },
+    select: { fechaVencimiento: true, organization: { select: selectCobro } },
   })
-  if (sub?.fechaVencimiento && new Date(sub.fechaVencimiento) < new Date()) {
+  // Con el cobro automático vivo no se echa a nadie mientras la pasarela lo
+  // intenta: la gracia vive en lib/cobro-automatico.js.
+  if (sub?.fechaVencimiento && new Date(vencimientoEfectivo(sub.fechaVencimiento, sub.organization)) < new Date()) {
     redirect('/suscripcion-vencida')
   }
 }
