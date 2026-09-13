@@ -5,6 +5,8 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { LIMITES_USUARIOS }  from '@/lib/planes'
 import { selectResumenCobro, resumenCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
+import { selectPrecio, montoDelCobro, estadoPreferencial } from '@/lib/precio-plan'
+import { ultimoPago } from '@/lib/cobro-intento'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -13,7 +15,7 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const [sub, org, subRecurrente] = await Promise.all([
+  const [sub, org, subRecurrente, pagada] = await Promise.all([
     // Suscripcion mas reciente, ignorando las pending (pago iniciado pero no completado)
     prisma.suscripcion.findFirst({
       where: {
@@ -24,7 +26,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { descuento: true, cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectResumenCobro },
+      select: { cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectResumenCobro, ...selectPrecio },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -35,9 +37,24 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
     }),
+    ultimoPago(orgId),
   ])
 
-  const descuento = org?.descuento ?? 0
+  /* ══ LO QUE PAGA, DICHO COMO LO COBRA EL SISTEMA ══════════════════════════
+     La pantalla del plan calculaba su propio precio con `descuento` %, que el
+     cobro automático no usaba: podía enseñar $39.000 y cobrar otra cosa. Ahora
+     las dos preguntan a lib/precio-plan.js. `preferencial` va sin la nota
+     interna del panel, y solo mientras dura. */
+  const planDelCobro = pagada?.plan ?? org?.planOriginal ?? org?.plan ?? null
+  const precio = org && planDelCobro ? montoDelCobro({ org, plan: planDelCobro, pagada, ultima: sub }) : null
+  const estadoPref = estadoPreferencial(org)
+  const preferencial = estadoPref === 'definitivo' || estadoPref === 'temporal'
+    ? { plan: org.precioPreferencialPlan, monto: org.precioPreferencial, hasta: org.precioPreferencialHasta }
+    : null
+  const proximoCobro = precio
+    ? { plan: planDelCobro, monto: precio.monto, lista: precio.lista, preferencial: precio.preferencial, hasta: precio.hasta }
+    : null
+  const inicioPeriodo = precio?.inicio ?? null
   const cobradoresExtra = org?.cobradoresExtra ?? 0
   const enTrial = !!(org?.planOriginal && org?.planDemoHasta && new Date(org.planDemoHasta) > new Date())
   const diasTrial = enTrial ? Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60 * 24)) : 0
@@ -61,7 +78,9 @@ export async function GET() {
       diasRestantes:    0,
       accesoHasta:      null,
       mercadopagoId:    null,
-      descuento,
+      preferencial,
+      proximoCobro,
+      inicioPeriodo,
       tipo:             null,
       mpStatus:         null,
       proximoCobroAt:   null,
@@ -93,7 +112,9 @@ export async function GET() {
        gracia si la pasarela rechazó el cobro. */
     accesoHasta:      vencimientoEfectivo(sub.fechaVencimiento, org),
     mercadopagoId:    subPrincipal.mercadopagoId,
-    descuento,
+    preferencial,
+    proximoCobro,
+    inicioPeriodo,
     tipo:             subPrincipal.tipo,
     mpStatus:         subPrincipal.mpStatus,
     proximoCobroAt:   subPrincipal.proximoCobroAt,

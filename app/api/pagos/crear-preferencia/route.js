@@ -5,7 +5,8 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { preferenceApi, PLANES, buildBackUrls, webhookUrl } from '@/lib/mercadopago'
 import { getCurrency, hasOnlinePayment } from '@/lib/i18n'
-import { getPrecioPlan } from '@/lib/planes'
+import { precioPeriodo, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
+import { ultimaSuscripcion } from '@/lib/cobro-intento'
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
@@ -20,7 +21,7 @@ export async function POST(req) {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { descuento: true, country: true },
+    select: selectPrecio,
   })
 
   const country = org?.country ?? 'co'
@@ -28,18 +29,15 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Pago en línea no disponible para tu país. Contacta soporte.' }, { status: 400 })
   }
 
-  const descuentoOrg       = org?.descuento ?? 0
-  const esAnual            = periodo === 'anual'
-  const esTrimestral       = periodo === 'trimestral'
-  const descuentoPeriodo   = esAnual ? 17 : esTrimestral ? 10 : 0
-  const descuentoFinal     = esAnual ? 0 : Math.max(descuentoOrg, descuentoPeriodo)
-  const meses              = esAnual ? 12 : esTrimestral ? 3 : 1
-  const mesesCobrados      = esAnual ? 10 : meses
-  const precioLocal        = getPrecioPlan(plan, country)
-  const precioBase         = precioLocal * meses
-  const precioFinal        = esAnual
-    ? precioLocal * mesesCobrados
-    : Math.round(precioBase * (1 - descuentoFinal / 100))
+  /* ⚠ EL PRECIO LO DICE lib/precio-plan.js, igual que al cobro automático.
+     Aquí vivía `lista × (1 − descuento %)`, un campo que no usaba nadie,
+     mientras el panel ponía precios a mano que ninguna pantalla conocía. El
+     periodo empieza donde lo extendería el pago: si el preferencial termina a
+     mitad de un trimestre, cada mes paga lo suyo. */
+  const ultima           = await ultimaSuscripcion(orgId)
+  const esAnual          = periodo === 'anual'
+  const esTrimestral     = periodo === 'trimestral'
+  const precioFinal      = precioPeriodo(org, plan, periodo, inicioDelPeriodo(ultima)).total
 
   const tituloItem = esAnual
     ? `Control Finanzas - Plan ${planInfo.nombre} (12 meses — 2 gratis)`

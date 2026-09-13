@@ -5,8 +5,24 @@ import bcrypt               from 'bcryptjs'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { enviarEmail, emailPagoAprobado } from '@/lib/email'
-import { PLANES_VALIDOS } from '@/lib/planes'
+import { PLANES_VALIDOS, PLANES_CONFIG } from '@/lib/planes'
 import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
+import { ultimoPago, ultimaSuscripcion } from '@/lib/cobro-intento'
+import { registrarAdminLog }  from '@/lib/admin-log'
+import {
+  MESES_PERIODO, ofertaPublica, pagoCuadra, inicioDelPeriodo, resumenPrecio,
+  leerPreferencial, describirPreferencial,
+} from '@/lib/precio-plan'
+
+/* Los cuatro campos del preferencial, vacíos. */
+const SIN_PREFERENCIAL = {
+  precioPreferencial: null,
+  precioPreferencialPlan: null,
+  precioPreferencialHasta: null,
+  precioPreferencialNota: null,
+}
+
+const pesos = (n) => `$${Number(n || 0).toLocaleString('es-CO')}`
 
 export async function GET(req, { params }) {
   const session = await getServerSession(authOptions)
@@ -58,10 +74,15 @@ export async function GET(req, { params }) {
     _count: true,
   })
 
+  /* ⚠ `precio` es lo que el cobro automático va a hacer de verdad: sale de la
+     misma función que el cron. La ficha no calcula precios por su cuenta. */
+  const pagada = await ultimoPago(id)
   return NextResponse.json({
     ...org,
     prestamosActivos: cartera._count,
     carteraActiva:    cartera._sum.totalAPagar ?? 0,
+    precio: resumenPrecio(org, { pagada, ultima: org.suscripciones?.[0] ?? null }),
+    cobroAutomaticoPuesto: !!(org.cobroAutomatico && org.wompiFuentePagoId),
   })
 }
 
@@ -137,21 +158,63 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Plan cambiado de ${planAnterior} a ${plan}` })
   }
 
-  if (accion === 'cambiarDescuento') {
-    const descuento = parseInt(body.descuento)
-    if (isNaN(descuento) || descuento < 0 || descuento > 100) {
-      return NextResponse.json({ error: 'Descuento debe ser entre 0 y 100' }, { status: 400 })
-    }
-    await prisma.organization.update({ where: { id }, data: { descuento } })
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: id,
-        accion:         'cambiar_descuento',
-        detalle:        `Descuento cambiado a ${descuento}% para "${org.nombre}"`,
-      },
+  /* ══ PRECIO PREFERENCIAL ══════════════════════════════════════════════════
+   *
+   * «Que en la plataforma de superadmin se pudiera gestionar y que avisara qué
+   *  clientes tienen precio preferencial, y si es por algún tiempo limitado,
+   *  para que el ajuste se haga automático al pasar el tiempo, o el valor que se
+   *  le dio fue definitivo.» — el dueño, 12 sep 2026.
+   *
+   * Aquí vivía `cambiarDescuento`, un % que el checkout aplicaba y el cobro
+   * automático no. No lo usaba nadie: los 10 precios especiales que había se
+   * pusieron escribiendo un monto a mano en «Asignar plan», sin rastro.
+   *
+   * Lo decide lib/precio-plan.js; aquí solo se guarda y se apunta.
+   */
+  if (accion === 'precioPreferencial') {
+    const [pagada, ultima] = await Promise.all([ultimoPago(id), ultimaSuscripcion(id)])
+    const leido = leerPreferencial(body, { inicio: inicioDelPeriodo(ultima), country: org.country })
+    if (leido.error) return NextResponse.json({ error: leido.error }, { status: 400 })
+
+    /* El «antes» sin su nota: la nota nueva ya va en «ahora», y las dos juntas
+       pasaban de los 191 caracteres del registro. */
+    const antes = org.precioPreferencial > 0
+      ? describirPreferencial({ ...org, precioPreferencialNota: null }, org.country)
+      : 'sin precio preferencial'
+    /* Decidir el precio es revisar el último pago: deja de salir «por revisar». */
+    await prisma.organization.update({
+      where: { id },
+      data: { ...leido.data, precioPagoRevisado: pagada?.montoCOP ?? null },
     })
-    return NextResponse.json({ ok: true, mensaje: `Descuento actualizado a ${descuento}%` })
+    const ahora = describirPreferencial(leido.data, org.country)
+    await registrarAdminLog({
+      adminId:        session.user.id,
+      organizacionId: id,
+      accion:         'precio_preferencial',
+      detalle:        `Precio preferencial de "${org.nombre}": ${ahora}. Antes: ${antes}`,
+    })
+    return NextResponse.json({ ok: true, mensaje: `Precio preferencial guardado: ${ahora}` })
+  }
+
+  /* Quitar el preferencial y «cobrar lista» a un pago por revisar son la misma
+     decisión: desde el próximo cobro, precio de lista. */
+  if (accion === 'quitarPrecioPreferencial') {
+    const pagada = await ultimoPago(id)
+    const tenia = org.precioPreferencial > 0
+    await prisma.organization.update({
+      where: { id },
+      data: { ...SIN_PREFERENCIAL, precioPagoRevisado: pagada?.montoCOP ?? null },
+    })
+    const detalle = tenia
+      ? `Precio preferencial quitado a "${org.nombre}" (era ${describirPreferencial(org, org.country)}). Próximos cobros a lista`
+      : `Pago de ${pesos(pagada?.montoCOP)} de "${org.nombre}" revisado: próximos cobros a lista`
+    await registrarAdminLog({
+      adminId:        session.user.id,
+      organizacionId: id,
+      accion:         'quitar_precio_preferencial',
+      detalle,
+    })
+    return NextResponse.json({ ok: true, mensaje: 'Desde el próximo cobro, precio de lista' })
   }
 
   if (accion === 'cambiarCobradores') {
@@ -332,25 +395,67 @@ export async function PATCH(req, { params }) {
       orderBy: { fechaVencimiento: 'desc' },
     })
 
-    let fechaVencimiento
+    // Por defecto: empezar desde HOY (nuevo plan pagado)
+    // Solo extender si el admin lo elige explícitamente Y es el mismo plan
+    const debeExtender = !!subExistente
+      && extender === true
+      && subExistente.estado === 'activa'
+      && new Date(subExistente.fechaVencimiento) > ahora
+      && subExistente.plan === planNuevo
+    const fechaVencimiento = new Date(debeExtender ? new Date(subExistente.fechaVencimiento) : ahora)
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
 
-    if (subExistente) {
-      // Por defecto: empezar desde HOY (nuevo plan pagado)
-      // Solo extender si el admin lo elige explícitamente Y es el mismo plan
-      const debeExtender = extender === true
-        && subExistente.estado === 'activa'
-        && new Date(subExistente.fechaVencimiento) > ahora
-        && subExistente.plan === planNuevo
+    /* ══ ¿Y LOS COBROS QUE VIENEN? ═════════════════════════════════════════
+     *
+     * Aquí se escribía un monto a mano y nada más. Así nacieron los 10 precios
+     * especiales que había el 12 sep 2026: nadie sabía cuáles eran, ni si eran
+     * para siempre, y el cobro automático repetía el monto sin fin.
+     *
+     * Ahora, si lo cobrado va por debajo del precio público del periodo y no es
+     * un preferencial que ya tenga, hay que decir qué pasa después: lista, o
+     * precio preferencial (definitivo o con fecha). Se valida ANTES de escribir
+     * nada: un preferencial mal puesto no deja un pago a medias.
+     */
+    const meses = MESES_PERIODO[periodoValido]
+    const oferta = ofertaPublica(planNuevo, periodoValido, org.country)
+    const cuadra = montoCOP === 0 || pagoCuadra(org, planNuevo, montoCOP)
+    const debajo = !cuadra && montoCOP < oferta - 1
+    const decision = ['lista', 'preferencial'].includes(body.proximosCobros) ? body.proximosCobros : null
+    if (debajo && !decision) {
+      return NextResponse.json({
+        error: `Cobraste ${pesos(montoCOP)} y el precio de ${PLANES_CONFIG[planNuevo].nombre} ${periodoValido} es ${pesos(oferta)}. Di si los próximos cobros van a lista o con precio preferencial.`,
+        requiereDecision: true,
+        oferta,
+      }, { status: 400 })
+    }
 
-      const baseDate = debeExtender ? new Date(subExistente.fechaVencimiento) : ahora
-      fechaVencimiento = new Date(baseDate)
-      fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
+    let datosPrecio = {}
+    let proximosLabel = null
+    if (debajo && decision === 'preferencial') {
+      const leido = leerPreferencial({
+        plan:   planNuevo,
+        precio: body.precioPreferencial ?? Math.round(montoCOP / meses),
+        hasta:  body.hastaPreferencial,
+        cobros: body.cobrosPreferencial,
+        nota:   body.notaPreferencial,
+      }, { inicio: fechaVencimiento, country: org.country })
+      if (leido.error) return NextResponse.json({ error: leido.error }, { status: 400 })
+      datosPrecio = leido.data
+      proximosLabel = `precio preferencial, ${describirPreferencial(leido.data, org.country)}`
+    } else if (debajo && decision === 'lista') {
+      if (org.precioPreferencialPlan === planNuevo) datosPrecio = { ...SIN_PREFERENCIAL }
+      proximosLabel = `a lista (${pesos(ofertaPublica(planNuevo, 'mensual', org.country))}/mes)`
+    }
+    /* Un monto que no cuadra y ya se decidió (o va por encima de lista, que el
+       cobro nunca repite) no sale «por revisar». */
+    if (!cuadra) datosPrecio.precioPagoRevisado = montoCOP
 
-      /* El apunte del libro va en la MISMA transacción que la suscripción: si
-         se da el servicio, la plata queda registrada, y si no, ninguna de las
-         dos cosas pasa. Este era el camino por el que entraron 82 de los 93
-         pagos y era el que menos rastro dejaba. Ver lib/libro-pagos.js. */
-      await prisma.$transaction(async (tx) => {
+    /* El apunte del libro va en la MISMA transacción que la suscripción: si
+       se da el servicio, la plata queda registrada, y si no, ninguna de las
+       dos cosas pasa. Este era el camino por el que entraron 82 de los 93
+       pagos y era el que menos rastro dejaba. Ver lib/libro-pagos.js. */
+    await prisma.$transaction(async (tx) => {
+      if (subExistente) {
         await tx.suscripcion.update({
           where: { id: subExistente.id },
           data: {
@@ -362,20 +467,7 @@ export async function PATCH(req, { params }) {
             montoCOP,
           },
         })
-        await registrarPagoSuscripcion(tx, {
-          organizationId: id,
-          plan:    planNuevo,
-          montoCOP,
-          periodo: periodoValido,
-          gateway: 'manual',
-          adminId: session.user.id,
-        })
-      })
-    } else {
-      fechaVencimiento = new Date(ahora)
-      fechaVencimiento.setDate(fechaVencimiento.getDate() + diasExtension)
-
-      await prisma.$transaction(async (tx) => {
+      } else {
         await tx.suscripcion.create({
           data: {
             organizationId:   id,
@@ -387,21 +479,20 @@ export async function PATCH(req, { params }) {
             montoCOP,
           },
         })
-        await registrarPagoSuscripcion(tx, {
-          organizationId: id,
-          plan:    planNuevo,
-          montoCOP,
-          periodo: periodoValido,
-          gateway: 'manual',
-          adminId: session.user.id,
-        })
+      }
+      await registrarPagoSuscripcion(tx, {
+        organizationId: id,
+        plan:    planNuevo,
+        montoCOP,
+        periodo: periodoValido,
+        gateway: 'manual',
+        adminId: session.user.id,
       })
-    }
-
-    // Actualizar plan de la organización y activarla
-    await prisma.organization.update({
-      where: { id },
-      data: { plan: planNuevo, activo: true },
+      // Actualizar plan de la organización y activarla, con su precio
+      await tx.organization.update({
+        where: { id },
+        data: { plan: planNuevo, activo: true, ...datosPrecio },
+      })
     })
 
     // Recompensa de referido (mismo flujo que webhook MP)
@@ -431,15 +522,17 @@ export async function PATCH(req, { params }) {
       }
     }
 
-    // AdminLog
+    /* ⚠ Después de la transacción: el pago YA está apuntado. Un registro que
+       falle aquí (el preferencial con nota pasa de 191 caracteres) respondía
+       500, y un 500 invita a asignar otra vez: el mismo pago dos veces en el
+       libro. `registrarAdminLog` recorta y no tira. */
     const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }[periodoValido]
-    await prisma.adminLog.create({
-      data: {
-        adminId:        session.user.id,
-        organizacionId: id,
-        accion:         'pago_directo',
-        detalle:        `Plan ${planNuevo} asignado (pago directo). Período: ${periodoLabel}. Monto: $${montoCOP.toLocaleString('es-CO')}. Vigente hasta: ${fechaVencimiento.toLocaleDateString('es-CO')}`,
-      },
+    await registrarAdminLog({
+      adminId:        session.user.id,
+      organizacionId: id,
+      accion:         'pago_directo',
+      detalle:        `Plan ${planNuevo} asignado (pago directo). Período: ${periodoLabel}. Monto: $${montoCOP.toLocaleString('es-CO')}. Vigente hasta: ${fechaVencimiento.toLocaleDateString('es-CO')}`
+        + (proximosLabel ? `. Próximos cobros: ${proximosLabel}` : ''),
     })
 
     // Enviar email de confirmación al owner (igual que webhook MP)

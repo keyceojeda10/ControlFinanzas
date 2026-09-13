@@ -55,7 +55,20 @@
 // porque «Yape» o «Banco Bogotá» no tienen logo y con un icono genérico las
 // cuatro casillas se verían iguales.
 
+import { useSyncExternalStore } from 'react'
 import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+
+/* Pantalla táctil = el dedo es el puntero principal. `pointer: coarse` y no el
+   ancho: una tableta ancha también se opera con el dedo, y un portátil con
+   pantalla táctil y ratón dice `fine`, que es lo que usa de verdad. */
+const CONSULTA_TACTIL = '(pointer: coarse)'
+function suscribirTactil(avisar) {
+  const mq = window.matchMedia(CONSULTA_TACTIL)
+  mq.addEventListener('change', avisar)
+  return () => mq.removeEventListener('change', avisar)
+}
+function esTactil() { return window.matchMedia(CONSULTA_TACTIL).matches }
 //
 // ── LO QUE NO ESTÁ AQUÍ: «NO PAGÓ» ──────────────────────────────────────────
 //
@@ -428,9 +441,10 @@ export default function RegistrarCobro({
  */
 export function PieRegistrarCobro({
   textoConfirmar = 'Confirmar', onConfirmar, confirmando = false, deshabilitado = false, error,
-  recibo = true, onRecibo,
+  recibo = true, onRecibo, deslizar = false,
 }) {
   const muerto = confirmando || deshabilitado
+  const tactil = useSyncExternalStore(suscribirTactil, esTactil, () => false)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
       {error && (
@@ -439,8 +453,19 @@ export function PieRegistrarCobro({
         </span>
       )}
 
-      {/* CON EL MONTO EN EL BOTÓN. «Confirmar» a secas obliga a subir a comprobar
-          qué se escribió, y ésta es la pantalla que se opera con una mano. */}
+      {/* En el teléfono se DESLIZA: el cobrador guarda con el pulgar y un toque de
+          más no puede ser un pago. Con ratón no hay ese riesgo y arrastrar sería
+          un estorbo, así que queda el botón. */}
+      {deslizar && tactil ? (
+        <DeslizarParaConfirmar
+          texto={textoConfirmar}
+          onConfirmar={() => onConfirmar?.()}
+          confirmando={confirmando}
+          deshabilitado={deshabilitado}
+        />
+      ) : (
+      /* CON EL MONTO EN EL BOTÓN. «Confirmar» a secas obliga a subir a comprobar
+          qué se escribió, y ésta es la pantalla que se opera con una mano. */
       <button type="button" onClick={onConfirmar} disabled={muerto} style={{
         height: 52, width: '100%', border: 'none', borderRadius: 14,
         background: ORO, color: 'var(--cf-gold-ink)', font: 'inherit',
@@ -448,6 +473,7 @@ export function PieRegistrarCobro({
         cursor: muerto ? 'not-allowed' : 'pointer',
         opacity: muerto ? 0.55 : 1,
       }}>{confirmando ? 'Guardando…' : textoConfirmar}</button>
+      )}
 
       {onRecibo && (
         <button type="button" onClick={() => onRecibo(!recibo)} aria-pressed={recibo} style={{

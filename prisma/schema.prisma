@@ -143,6 +143,28 @@ model Organization {
      da gracia ni calla avisos (lib/cobro-automatico.js#rechazoVigente). */
   cobroRechazoVence  DateTime?
   cobroRechazoMotivo String?
+
+  /* ══ PRECIO PREFERENCIAL ════════════════════════════════════════════════
+   *
+   * Medido el 12 sep 2026: de 50 planes pagados vigentes, 10 no pagaban el
+   * precio de lista —todos puestos a mano— y nada lo decía en ninguna parte.
+   * El cron cobraba «lo último que pagó», así que un precio de amigo se
+   * repetía para siempre y un trimestre se cobraba como si fuera un mes.
+   *
+   * El dueño: «que avisara qué clientes tienen precio preferencial y si es
+   * por algún tiempo limitado, para que el ajuste se haga automático al pasar
+   * el tiempo, o el valor que se le dio fue definitivo».
+   *
+   * La cuenta la saca lib/precio-plan.js, la ÚNICA que decide cuánto se cobra. */
+  /** Lo que paga al MES, en la moneda de su país. */
+  precioPreferencial     Int?
+  /** El plan al que aplica: si cambia de plan, el precio no le sigue. */
+  precioPreferencialPlan Plan?
+  /** El último instante con ese precio (fin del día en Bogotá). Null = definitivo. */
+  precioPreferencialHasta DateTime?
+  precioPreferencialNota String?
+  /** El `montoCOP` de un pago fuera de lista que el admin ya revisó: deja de avisar. */
+  precioPagoRevisado     Int?
   waPreVencSent     Boolean        @default(false)
   /* ⚠ LA FECHA MANDA, EL BOOLEANO SOLO INFORMA.
      `waPreVencSent`/`waChurnSent` eran de una sola vez EN LA VIDA: quien

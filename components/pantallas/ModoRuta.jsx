@@ -30,7 +30,7 @@
 // ajustes que T28-02 marca como «no automáticos». Con tokens salen solos, porque
 // el tema oscuro ya sube el oro a #F5B824 y aclara verde y rojo.
 
-import { Parada } from './DetalleRuta'
+import { Parada, ContadorVisitas } from './DetalleRuta'
 
 const TONO = {
   verde: { fondo: 'var(--cf-green-pill-bg)', borde: 'var(--cf-green-pill-border)', tinta: 'var(--cf-green-dark)' },
@@ -220,7 +220,7 @@ function BotonSecundario({ onClick, etiqueta, children }) {
 
 /* Es la misma gramática que el detalle —recaudado y falta— pero más compacta: aquí
    compite con la parada actual, que es lo que hay que mirar. */
-export function BandaDelDia({ recaudado, falta, progreso = 0 }) {
+export function BandaDelDia({ recaudado, falta, progreso = 0, visita }) {
   return (
     <div style={{
       background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
@@ -253,6 +253,12 @@ export function BandaDelDia({ recaudado, falta, progreso = 0 }) {
           borderRadius: 999, background: 'var(--cf-gold)', flex: 'none',
         }} />
       </div>
+
+      {/* Las puertas que faltan, EN LA MISMA BANDA que el dinero. Caminando es
+          la cuenta que más se mira, y aquí era la única pantalla que no la
+          llevaba: la cabecera decía «parada 7 de 19», que es por dónde vas en el
+          orden, no cuántas llevas hechas. */}
+      {visita && <ContadorVisitas {...visita} />}
     </div>
   )
 }

@@ -38,6 +38,7 @@ import { wompiConfigurado } from '@/lib/wompi'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { MAX_FALLOS, HORAS_DE_ANTICIPO, HORAS_DE_REINTENTO, rechazoVigente } from '@/lib/cobro-automatico'
 import { lanzarCobro, reconciliar } from '@/lib/cobro-intento'
+import { montoDelCobro, selectPrecio } from '@/lib/precio-plan'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -111,11 +112,14 @@ export async function POST(req) {
         id: true, nombre: true, wompiFuentePagoId: true, wompiFuenteEmail: true,
         cobroAutomatico: true, cobroFallos: true, cobroUltimoIntento: true,
         cobroRefPendiente: true, cobroTxPendiente: true, cobroRechazoVence: true,
+        /* ⚠ SIN ESTOS, `montoDelCobro` cobra lista a todos EN SILENCIO: el
+           país sale `co` y el preferencial no existe. */
+        ...selectPrecio,
         suscripciones: {
           where: { estado: { in: ['activa', 'vencida'] }, montoCOP: { gt: 0 } },
           orderBy: { fechaVencimiento: 'desc' },
           take: 1,
-          select: { plan: true, montoCOP: true, fechaVencimiento: true },
+          select: { plan: true, estado: true, montoCOP: true, fechaVencimiento: true },
         },
       },
     })
@@ -148,13 +152,23 @@ export async function POST(req) {
       if (vigente && org.cobroFallos >= MAX_FALLOS) { res.agotados++; continue }
       res.candidatos++
 
+      /* ⚠ UN MES, AL PRECIO DE ESE MES. Hasta el 12 sep 2026 aquí iba
+         `sub.montoCOP`, lo último pagado: quien pagó un trimestre recibía el
+         cobro del trimestre entero y el webhook le activaba UN mes; y un
+         precio especial no terminaba nunca. Lo decide lib/precio-plan.js. */
+      const precio = montoDelCobro({ org, plan: sub.plan, pagada: sub, ultima: sub, ahora })
+      if (!(precio.monto > 0)) { res.saltados++; continue }
+      if (precio.porRevisar) {
+        console.warn(`[cobro-recurrente] PRECIO POR REVISAR "${org.nombre}" (${org.id}): se cobra $${precio.monto} y la lista es $${precio.lista}`)
+      }
+
       /* La referencia lleva el MISMO formato que el pago manual, porque quien
          la lee es el mismo webhook: la escribe `lanzarCobro` con
          `referenciaDeCobro`. El intento se apunta ANTES de llamar a Wompi. */
       const r = await lanzarCobro({
         org,
         plan: sub.plan,
-        montoCOP: sub.montoCOP,
+        montoCOP: precio.monto,
         /* Un rechazo de otro periodo no gasta intentos de éste. */
         reiniciarFallos: !vigente,
         origen: 'cron',

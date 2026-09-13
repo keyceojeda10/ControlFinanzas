@@ -8,8 +8,9 @@ import HojaSuscripcion     from '@/components/pagos/HojaSuscripcion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
-import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
+import { PLANES_CONFIG } from '@/lib/planes'
 import { formatMoney, getPaymentGateway } from '@/lib/i18n'
+import { precioPeriodo, precioMensual } from '@/lib/precio-plan'
 
 /* ══ LO QUE OFRECE CADA PLAN SE DERIVA, NO SE ESCRIBE ════════════════════════
  *
@@ -112,8 +113,10 @@ export default function PlanPage() {
 
   const country = session?.user?.country ?? 'co'
   const esSuperadmin = session?.user?.rol === 'superadmin'
-  const planes = planesBase.map(p => ({ ...p, precio: getPrecioPlan(p.key, country) }))
-  const planTest = { ...planTestBase, precio: getPrecioPlan('test', country) }
+  /* Sin precio aquí: cada cifra sale de `calcularPrecio`, que sabe del
+     preferencial. Un `precio` suelto en la ficha es por donde se cuela la lista. */
+  const planes = planesBase
+  const planTest = planTestBase
 
   const [estado,       setEstado]       = useState(null)
   const [uso,          setUso]          = useState(null)
@@ -143,7 +146,6 @@ export default function PlanPage() {
      por WhatsApp no hay suscripción que ofrecer, así que ni se enseña. */
   const esSuscripcion = gateway === 'wompi' && modoPago === 'suscripcion'
   const periodoEfectivo = esSuscripcion ? 'mensual' : periodo
-  const [descuentoOrg, setDescuentoOrg] = useState(0)
   const [pagando,      setPagando]      = useState(null)
   const [errorPago,    setErrorPago]    = useState(null)
 
@@ -153,7 +155,7 @@ export default function PlanPage() {
       fetch('/api/pagos/estado').then(r => r.ok ? r.json() : null),
       fetch('/api/plan/uso').then(r => r.ok ? r.json() : null),
     ]).then(([est, u]) => {
-      if (est) { setEstado(est); setDescuentoOrg(est.descuento ?? 0) }
+      if (est) setEstado(est)
       if (u) setUso(u)
 
       /* ⚠ SI LA BASE DICE QUE YA PAGÓ PERO LA SESIÓN SIGUE DICIENDO VENCIDO,
@@ -218,25 +220,34 @@ export default function PlanPage() {
 
   const formatFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : ''
 
-  // ── Calculo de precios (conservado) ──
-  const calcularPrecio = (precioBase) => {
-    const meses = periodoEfectivo === 'anual' ? 12 : periodoEfectivo === 'trimestral' ? 3 : 1
-    const mesesCobrados = periodoEfectivo === 'anual' ? 10 : meses
-    const descuentoPeriodo = periodoEfectivo === 'anual' ? 17 : periodoEfectivo === 'trimestral' ? 10 : 0
-    const descuentoFinal = Math.max(descuentoOrg, descuentoPeriodo)
-    const total = precioBase * meses
-    const conDescuento = periodoEfectivo === 'anual'
-      ? precioBase * mesesCobrados
-      : Math.round(total * (1 - descuentoFinal / 100))
-    const ahorro = total - conDescuento
-    return { total, conDescuento, descuentoFinal, meses, ahorro }
+  /* ══ EL PRECIO LO DICE lib/precio-plan.js, EL MISMO QUE COBRA ══════════════
+     Hasta el 12 sep 2026 esta pantalla calculaba su propio precio con un
+     `descuento` % que el cobro automático no miraba: podía prometer una cifra y
+     cobrar otra. Ahora la cuenta es la del servidor, con el precio preferencial
+     que haya puesto el panel y desde la fecha en que empezaría lo que se paga. */
+  const orgPrecio = {
+    country,
+    precioPreferencial:      estado?.preferencial?.monto ?? null,
+    precioPreferencialPlan:  estado?.preferencial?.plan ?? null,
+    precioPreferencialHasta: estado?.preferencial?.hasta ?? null,
+  }
+  const inicioPeriodo = estado?.inicioPeriodo ? new Date(estado.inicioPeriodo) : new Date()
+  const calcularPrecio = (planKey) => {
+    const p = precioPeriodo(orgPrecio, planKey, periodoEfectivo, inicioPeriodo)
+    /* ⚠ SUSCRIBIRSE AL PLAN DEL COBRO COBRA `proximoCobro`, NO LA CUENTA DE
+       AQUÍ: el servidor también mira el último pago (un precio puesto a mano
+       que nadie revisó no sube solo). Enseñar otra cifra sería prometer un
+       número y cobrar otro. */
+    const cobro = esSuscripcion && estado?.proximoCobro?.plan === planKey ? estado.proximoCobro : null
+    const total = cobro ? cobro.monto : p.total
+    return { conDescuento: total, meses: p.meses, lista: p.lista, ahorro: p.lista * p.meses - total }
   }
 
   // ── Activar/renovar plan via WhatsApp (MercadoPago desactivado temporalmente) ──
   const activarPlanWA = (planKey) => {
     const info = [...planes, planTest].find(p => p.key === planKey)
     if (!info) return
-    const { conDescuento, meses } = calcularPrecio(info.precio)
+    const { conDescuento, meses } = calcularPrecio(info.key)
     const periodoLabel = periodoEfectivo === 'anual' ? 'anual' : periodoEfectivo === 'trimestral' ? 'trimestral' : 'mensual'
     const orgRef = orgNombre ? ` para mi cuenta "${orgNombre}"` : ''
     const msg = `Hola, quiero activar el plan ${info.nombre} (${periodoLabel})${orgRef}. Valor: ${formatMoney(conDescuento)}${meses > 1 ? ` por ${meses} meses` : '/mes'}.`
@@ -473,12 +484,40 @@ export default function PlanPage() {
           )
         })()}
 
-        <div className="flex items-baseline gap-1">
-          <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--cf-ink)' }}>
-            {formatMoney(infoPlan.precio)}
-          </span>
-          <span className="text-[12px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>/mes</span>
-        </div>
+        {(() => {
+          /* El precio de SU próximo mes: el preferencial si el panel se lo dio y
+             sigue en pie cuando empiece ese mes. Si termina, se dice cuándo y
+             cuánto viene después, para que el cambio no llegue de sorpresa. */
+          const mes = precioMensual(orgPrecio, planActual, inicioPeriodo)
+          const pref = estado?.preferencial?.plan === planActual ? estado.preferencial : null
+          const terminaAntes = pref?.hasta && !mes.preferencial
+          return (
+            <>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-[32px] font-bold leading-none font-mono-display" style={{ color: 'var(--cf-ink)' }}>
+                  {formatMoney(mes.monto)}
+                </span>
+                <span className="text-[12px] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>/mes</span>
+                {mes.monto < mes.lista && (
+                  <span className="text-[12px] line-through font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
+                    {formatMoney(mes.lista)}
+                  </span>
+                )}
+              </div>
+              {pref && (
+                <p className="text-[12px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
+                  {terminaAntes
+                    ? `Tu precio preferencial de ${formatMoney(pref.monto)} va hasta el ${formatFecha(pref.hasta)}. Desde tu próximo pago, ${formatMoney(mes.lista)}/mes.`
+                    : mes.preferencial && pref.hasta
+                    ? `Precio preferencial hasta el ${formatFecha(pref.hasta)}. Después, ${formatMoney(mes.lista)}/mes.`
+                    : mes.preferencial
+                    ? 'Precio preferencial.'
+                    : null}
+                </p>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {/* ── Vencimiento con barra de progreso ── */}
@@ -624,7 +663,7 @@ export default function PlanPage() {
         {(() => {
           /* El precio va EN el botón: el que paga tiene que ver cuánto sin
              buscarlo en otra tarjeta. */
-          const { conDescuento } = calcularPrecio(infoPlan.precio)
+          const { conDescuento } = calcularPrecio(infoPlan.key)
           /* ⚠ NI `transition-all` NI `active:scale` EN UN BOTÓN CUYO TEXTO
              CAMBIA. Reportado con capturas el 1 sep 2026 desde un iPhone:
              al cambiar de modo salía «Suscribirme in · $259.000» y «S
@@ -702,8 +741,8 @@ export default function PlanPage() {
               const esActual = p.key === planActual
               const esTest = p.key === 'test'
               const esRecurrActiva = tieneRecurrente && esActual && !subCancelada
-              const { conDescuento, descuentoFinal, meses, ahorro } = calcularPrecio(p.precio)
-              const tieneDesc = descuentoFinal > 0
+              const { conDescuento, meses, lista, ahorro } = calcularPrecio(p.key)
+              const tieneDesc = ahorro > 0
 
               return (
                 <div
@@ -738,7 +777,7 @@ export default function PlanPage() {
                       {tieneDesc ? (
                         <div>
                           <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-                            {formatMoney(p.precio * meses)}
+                            {formatMoney(lista * meses)}
                           </span>
                           <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--cf-ink)' }}>
                             {formatMoney(conDescuento)}
@@ -894,11 +933,13 @@ export default function PlanPage() {
           <HojaSuscripcion
             plan={suscribiendo}
             nombre={info.nombre}
-            /* ⚠ CON EL DESCUENTO DE LA ORGANIZACIÓN YA APLICADO. El primer
-               cobro lo calcula el servidor con ese mismo descuento; enseñar
-               aquí el precio de lista sería prometer un número y cobrar otro,
-               que es de donde salen las llamadas a soporte. */
-            precioMensual={Math.round(info.precio * (1 - descuentoOrg / 100))}
+            /* ⚠ LO QUE COBRARÁ EL SERVIDOR, con el precio preferencial y el
+               último pago ya mirados (`calcularPrecio` en modo suscripción).
+               Enseñar aquí el precio de lista sería prometer un número y
+               cobrar otro, que es de donde salen las llamadas a soporte. */
+            precioMensual={estado?.proximoCobro?.plan === info.key
+              ? estado.proximoCobro.monto
+              : precioPeriodo(orgPrecio, info.key, 'mensual', inicioPeriodo).total}
             onCerrar={() => setSuscribiendo(null)}
             onPagoUnico={() => { setModoPago('unico'); setSuscribiendo(null) }}
           />

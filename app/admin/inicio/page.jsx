@@ -59,6 +59,107 @@ function Telefono({ numero }) {
   )
 }
 
+const fechaCorta = (d) => new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' })
+
+const GRUPO = {
+  porRevisar: { rotulo: 'Por revisar', tono: 'atraso' },
+  temporal:   { rotulo: 'Temporal',    tono: 'aldia' },
+  definitivo: { rotulo: 'Definitivo',  tono: 'aldia' },
+  terminado:  { rotulo: 'Ya paga lista', tono: 'neutro' },
+}
+
+/* ══ PRECIOS PREFERENCIALES ═══════════════════════════════════════════════════
+ *
+ * «Que avisara qué clientes tienen precio preferencial, y si es por algún
+ *  tiempo limitado.» — el dueño, 12 sep 2026.
+ *
+ * Arriba los pagos que no son ningún precio conocido y que nadie ha decidido:
+ * mientras sigan así, el cobro automático cobra lo pagado y no la lista. Luego
+ * los temporales por fecha de fin, los definitivos y los que ya terminaron.
+ * La decisión se toma en la ficha de cada uno.
+ */
+function PreciosPreferenciales({ precios }) {
+  const filas = precios?.filas ?? []
+  const c = precios?.conteo ?? {}
+  const ayuda = filas.length === 0
+    ? 'Todos pagan precio de lista'
+    : [
+        c.porRevisar && `${c.porRevisar} por revisar`,
+        c.temporal && `${c.temporal} temporal${c.temporal === 1 ? '' : 'es'}${c.terminaPronto ? ` (${c.terminaPronto} termina${c.terminaPronto === 1 ? '' : 'n'} este mes)` : ''}`,
+        c.definitivo && `${c.definitivo} definitivo${c.definitivo === 1 ? '' : 's'}`,
+        c.terminado && `${c.terminado} terminado${c.terminado === 1 ? '' : 's'} hace poco`,
+      ].filter(Boolean).join(' · ')
+
+  return (
+    <Seccion ancha titulo="Precios preferenciales" ayuda={ayuda}>
+      {filas.length === 0 ? (
+        <EstadoVacio
+          titulo="Nadie paga distinto"
+          explicacion="Un precio preferencial se pone en la ficha del negocio, en «Precio»."
+        />
+      ) : (
+        <Tarjeta>
+          {filas.map((f, i) => {
+            const g = GRUPO[f.grupo]
+            const pais = f.country || 'co'
+            const cobro = f.proximoCobro
+            let detalle
+            if (f.grupo === 'porRevisar') {
+              /* Solo el cobro automático mira el último pago: pagando a mano sale
+                 lo del checkout (`aMano`). Decir «se le cobra $25.000» a secas
+                 era verdad a medias para quien no tiene el Nequi puesto. */
+              detalle = `Pagó ${formatMoney(f.ultimoPago?.montoCOP, pais)}. `
+                + (f.cobroAutomatico
+                  ? `El cobro automático le cobra ${formatMoney(cobro?.monto, pais)}/mes en vez de ${formatMoney(cobro?.lista, pais)}.`
+                  : `Con cobro automático pagaría ${formatMoney(cobro?.monto, pais)}/mes; a mano, ${formatMoney(cobro?.aMano, pais)}.`)
+                + ' Nadie ha dicho si es un precio preferencial.'
+            } else if (f.grupo === 'terminado') {
+              detalle = `Tenía ${formatMoney(f.preferencial.monto, pais)}/mes hasta el ${fechaCorta(f.preferencial.hasta)}. Ahora ${formatMoney(cobro?.lista, pais)}/mes.`
+            } else {
+              detalle = `${formatMoney(f.preferencial.monto, pais)}/mes en vez de ${formatMoney(cobro?.lista, pais)}`
+                + (f.grupo === 'temporal' ? `, hasta el ${fechaCorta(f.preferencial.hasta)}. Después, lista.` : ', sin fecha de fin.')
+            }
+            return (
+              <FilaTarjeta key={f.id} primera={i === 0}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, width: '100%', minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Link href={`/admin/organizaciones/${f.id}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)', textDecoration: 'none' }}>
+                        {f.nombre}
+                      </Link>
+                      {f.interna && <Pastilla>Cuenta interna</Pastilla>}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>{detalle}</span>
+                    {f.deOtroPlan && (
+                      <span style={{ fontSize: 12, color: 'var(--cf-red-dark)' }}>
+                        Es de otro plan y no se le aplica.
+                      </span>
+                    )}
+                    {cobro && (
+                      <span style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+                        {f.cobroAutomatico ? 'Próximo cobro' : 'Próximo pago'} {fechaCorta(cobro.fecha)}:{' '}
+                        <span className="cf-fig">{formatMoney(f.cobroAutomatico ? cobro.monto : cobro.aMano, pais)}</span>
+                        {f.cobroAutomatico ? ' · se cobra solo con Nequi' : ' · paga a mano'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 'none' }}>
+                    <Pastilla tono={f.grupo === 'temporal' && f.diasParaTerminar <= 30 ? 'atraso' : g.tono}>
+                      {f.grupo === 'temporal' && f.diasParaTerminar <= 30
+                        ? (f.diasParaTerminar <= 1 ? 'Termina hoy' : `Termina en ${f.diasParaTerminar} días`)
+                        : g.rotulo}
+                    </Pastilla>
+                  </div>
+                </div>
+              </FilaTarjeta>
+            )
+          })}
+        </Tarjeta>
+      )}
+    </Seccion>
+  )
+}
+
 export default function AdminInicio() {
   const [d, setD]       = useState(null)
   const [error, setErr] = useState(null)
@@ -195,6 +296,9 @@ export default function AdminInicio() {
           </Tarjeta>
         )}
       </Seccion>
+
+      {/* ── QUIÉN PAGA DISTINTO DE LA LISTA ──────────────────────────────── */}
+      <PreciosPreferenciales precios={d.precios} />
 
       {/* ── 3 · QUIÉN ESTÁ VIVO ──────────────────────────────────────────── */}
       <Seccion ancha titulo="Quién está usando el sistema" ayuda={`${vivos.totalReal} negocios de verdad, sin contar los que nunca arrancaron`}>

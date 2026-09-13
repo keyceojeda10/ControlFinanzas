@@ -75,6 +75,11 @@ export function Recibo({
   // Juan · Control Finanzas» en el recibo que ve el deudor. El emisor del
   // recibo es quien prestó, nunca el software.
   monto, cliente, saldo, proximoCobro, numero, recibidoPor, negocio = '',
+  // `saldoAntes` — lo que se debía JUSTO ANTES de este cobro, ya formateado.
+  // Con él la pantalla enseña la resta entera (antes → ahora) en vez de pedirle
+  // al cliente que se fíe del resultado. Sin cifra no se pinta: solo existe en
+  // el momento del cobro, y en un comprobante reimpreso no hay de dónde sacarla.
+  saldoAntes,
   cuando,
   onWhatsApp, onGuardarImagen, onImprimir, onSiguiente,
   telefono,
@@ -212,6 +217,11 @@ export function Recibo({
               medio de pago (Nequi, Bancolombia, efectivo…) esta línea es la que
               ata el recibo con el cuadre. */}
           {medioPago && <Fila etiqueta="Pagó con" valor={medioPago} />}
+          {/* LA RESTA SE LEE DE ARRIBA ABAJO: antes debía, pagó, queda. Va
+              pegada al saldo y con el mismo peso de cifra; separarlas o darle
+              menos importancia devuelve el problema de origen, que es que el
+              cliente solo ve el resultado. */}
+          {saldoAntes && <Fila etiqueta="Antes debía" valor={saldoAntes} cifra />}
           {saldo && <Fila etiqueta="Saldo pendiente" valor={saldo} cifra />}
           {proximoCobro && <Fila etiqueta="Próximo cobro" valor={proximoCobro} />}
 

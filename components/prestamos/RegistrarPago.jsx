@@ -23,6 +23,7 @@ import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 // El comprobante del rediseño, el mismo que ya salía en el cobro desde la ruta.
 import { Recibo, CAPA_RECIBO } from '@/components/pantallas/Recibo'
 import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
+import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
@@ -35,6 +36,7 @@ import {
   adaptarRecargo, atajosDeRecargo, adaptarDescuento, atajosDeDescuento,
 } from '@/lib/adaptadores/gestion'
 import { elInteresSubeLaDeuda }                            from '@/lib/dinero/modos'
+import { interesQueCompraUnPeriodo }                      from '@/lib/dinero/interes-periodo'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido }                              from '@/lib/geo'
 
@@ -342,6 +344,12 @@ export default function RegistrarPago({
         const prestamoActualizado = prestamo ? {
           ...prestamo,
           saldoPendiente: saldoNuevo,
+          /* SIN SEÑAL, EL «antes debía» SALE DE AQUÍ. Es el MISMO número del que
+             se restó `saldoNuevo` dos líneas arriba, así que el comprobante y la
+             pantalla cuentan la misma resta. Con red lo manda el servidor, medido
+             dentro de la transacción. Si el préstamo llegó sin saldo, no hay cifra
+             y la fila no se pinta: inventarla es peor que no ponerla. */
+          saldoAntesDelPago: prestamo?.saldoPendiente ?? null,
           totalPagado: totalPagadoNuevo,
           porcentajePagado: porcentajeNuevo,
           pagoHoy: true,
@@ -392,7 +400,11 @@ export default function RegistrarPago({
       }
       if (!res.ok) { setError(data.error ?? 'Error al registrar el pago'); return }
 
-      const pagoId = data.pagos?.[0]?.id ?? null
+      /* EL ID DEL PAGO QUE SE ACABA DE CREAR, dicho por el servidor. `pagos[0]`
+         se ordena por `fechaPago desc` y dos cobros del mismo segundo pueden
+         salir al revés; el comprobante ata su «Antes debía» a este id, así que
+         equivocarlo borra la fila del recibo. */
+      const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
       const pagoParaWA = { id: pagoId, montoPagado: m, fechaPago: new Date().toISOString(), metodoPago, plataforma }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
@@ -638,6 +650,8 @@ export default function RegistrarPago({
             monto={formatMoney(pagoGuardado.montoPagado)}
             cliente={cliente?.nombre ?? '—'}
             medioPago={medioPago}
+            saldoAntes={saldoAntesDeEstePago(prestamoWA, pagoGuardado) != null
+              ? formatMoney(saldoAntesDeEstePago(prestamoWA, pagoGuardado)) : null}
             saldo={prestamoWA?.saldoPendiente != null
               ? formatMoney(Math.round(prestamoWA.saldoPendiente)) : null}
             proximoCobro={prestamoWA?.proximoCobro
@@ -729,6 +743,23 @@ export default function RegistrarPago({
   // La hoja siempre recibe el préstamo con `cuotasAmortizacion` cargadas (la
   // ficha las incluye), así que el guardia de `elInteresSubeLaDeuda` no salta.
   const subeLaDeuda = elInteresSubeLaDeuda(prestamo ?? {})
+
+  /* ── LO QUE CUESTA COMPRAR UN PERÍODO ─────────────────────────────────────
+   *
+   * «Le compra tiempo» abre con el campo VACÍO a propósito —heredar la cuota
+   * subía la deuda $175.000 de un toque— pero eso dejaba al cobrador teclear de
+   * memoria, en la puerta, la única cifra que ahí significa algo. El sistema
+   * sabe la tasa, la frecuencia y el capital que queda vivo.
+   *
+   * ⚠ SIGUE SIN RELLENARSE SOLO. El servidor lo dice desde agosto: «el monto lo
+   *   pone el prestamista porque es lo que pactó con ESE cliente; adivinarlo
+   *   sería inventar una cifra». Esto no lo adivina: lo OFRECE con su nombre, y
+   *   hay que tocarlo. Quien pactó otra cosa escribe otra cosa.
+   *
+   * Y por eso el rótulo dice «Interés de una quincena» y no «pago mínimo»: no
+   * hay mínimo pactado en ninguna parte: hay lo que la tasa de este préstamo da
+   * por un período. */
+  const interesDelPeriodo = subeLaDeuda ? interesQueCompraUnPeriodo(prestamo) : null
 
   /* ══ COBRAR EL INTERÉS Y APLAZAR, EN EL MISMO GESTO ══════════════════════
    *
@@ -986,10 +1017,20 @@ export default function RegistrarPago({
     // significa nada: la gracia del abono es que el dueño elige cuánto. Ofrecer
     // «Cuota» ahí sugiere una cifra que no es la del tipo elegido, y esta es la
     // pantalla donde una cifra sugerida termina cobrada.
+    //
+    // La excepción es «Interés» cuando compra tiempo: ahí la pregunta SÍ tiene
+    // una respuesta que el sistema conoce —lo que la tasa da por un período— y
+    // es un atajo suyo, no uno de la cuota. Sale solo, sin los otros tres.
     const conAtajos = tipo === 'completo' || tipo === 'parcial'
     const atajos = conAtajos
       ? atajosDeMonto({ saldoPendiente, cuotaDiaria, montoAlDia, cancelarHoy })
-      : []
+      : tipo === 'intereses' && interesDelPeriodo
+        ? [{
+            id: 'interesperiodo',
+            etiqueta: `${interesDelPeriodo.etiqueta} ${formatMoney(interesDelPeriodo.monto)}`,
+            monto: interesDelPeriodo.monto,
+          }]
+        : []
     const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
 
     const { filas } = adaptarDespuesDelPago(
@@ -1089,6 +1130,7 @@ export default function RegistrarPago({
             error={error}
             recibo={enviarRecibo}
             onRecibo={cambiarRecibo}
+            deslizar
           />
         }
       >

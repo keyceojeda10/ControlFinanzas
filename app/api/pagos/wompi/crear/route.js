@@ -2,7 +2,9 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { PLANES_CONFIG, getPrecioPlan } from '@/lib/planes'
+import { PLANES_CONFIG } from '@/lib/planes'
+import { precioPeriodo, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
+import { ultimaSuscripcion } from '@/lib/cobro-intento'
 import { hasOnlinePayment } from '@/lib/i18n'
 import { firmaIntegridad, wompiPublicKey, wompiConfigurado, WOMPI_CHECKOUT_URL, referenciaDeCobro } from '@/lib/wompi'
 
@@ -27,25 +29,20 @@ export async function POST(req) {
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
-    select: { descuento: true, country: true },
+    select: selectPrecio,
   })
   const country = org?.country ?? 'co'
   if (!hasOnlinePayment(country)) {
     return NextResponse.json({ error: 'Pago en linea no disponible para tu pais.' }, { status: 400 })
   }
 
-  const descuentoOrg     = org?.descuento ?? 0
-  const esAnual          = periodo === 'anual'
-  const esTrimestral     = periodo === 'trimestral'
-  const descuentoPeriodo = esAnual ? 17 : esTrimestral ? 10 : 0
-  const descuentoFinal   = esAnual ? 0 : Math.max(descuentoOrg, descuentoPeriodo)
-  const meses            = esAnual ? 12 : esTrimestral ? 3 : 1
-  const mesesCobrados    = esAnual ? 10 : meses
-  const precioLocal      = getPrecioPlan(plan, country)
-  const precioBase       = precioLocal * meses
-  const precioFinal      = esAnual
-    ? precioLocal * mesesCobrados
-    : Math.round(precioBase * (1 - descuentoFinal / 100))
+  /* ⚠ EL PRECIO LO DICE lib/precio-plan.js, igual que al cobro automático.
+     Aquí vivía `lista × (1 − descuento %)`, un campo que no usaba nadie,
+     mientras el panel ponía precios a mano que ninguna pantalla conocía. El
+     periodo empieza donde lo extendería el pago: si el preferencial termina a
+     mitad de un trimestre, cada mes paga lo suyo. */
+  const ultima           = await ultimaSuscripcion(orgId)
+  const precioFinal      = precioPeriodo(org, plan, periodo, inicioDelPeriodo(ultima)).total
 
   if (!precioFinal || precioFinal <= 0) {
     return NextResponse.json({ error: 'Monto invalido' }, { status: 400 })

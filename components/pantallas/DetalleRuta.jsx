@@ -108,12 +108,42 @@ export function LoPuestoAqui({
   )
 }
 
+/* ── El contador del día ──────────────────────────────────────────────────────
+
+   «¿Cuántas puertas me faltan?» Es lo que el cobrador mira cada media hora, y
+   la ruta media tiene 38 clientes (la mayor, 335): sin un número no hay forma
+   de saberlo sin contar la lista a ojo.
+
+   Hasta ahora lo decía una línea gris de 12px entre el efectivo y el digital, y
+   contaba PAGOS. Aquí cuenta PUERTAS, y sale del mismo sitio que «Empezar
+   recorrido · N» — ver `loDeHoy`. Va en la misma banda que el dinero porque es
+   la otra mitad de la misma pregunta: cuánto llevo y cuánto me queda.
+
+   Lo usan la banda de la ruta y la del recorrido, y por eso vive aquí: cuando
+   cada pantalla tenía su cuenta, las dos decían cosas distintas. */
+export function ContadorVisitas({ total = 0, texto, completo }) {
+  return (
+    <div style={{
+      flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+    }}>
+      <Rotulo espaciado=".09em">Visitas de hoy</Rotulo>
+      <span className="cf-fig" style={{
+        fontFamily: 'var(--font-space-grotesk), system-ui',
+        fontSize: 15, fontWeight: 600, letterSpacing: '-.02em',
+        // Verde solo cuando no queda ninguna: es el único momento en que el
+        // número deja de ser un dato y pasa a ser una noticia.
+        color: completo ? 'var(--cf-green-dark)' : total > 0 ? 'var(--cf-ink)' : 'var(--cf-ink-3)',
+      }}>{texto}</span>
+    </div>
+  )
+}
+
 /* ── La banda blanca: lo de hoy ───────────────────────────────────────────── */
 
 export function LoDeHoy({
   recaudadoEtiqueta = 'Recaudado hoy', recaudado,
   faltaEtiqueta = 'Falta', falta,
-  progreso = 0, resumen,
+  progreso = 0, resumen, visita,
 }) {
   return (
     <div style={{
@@ -152,6 +182,8 @@ export function LoDeHoy({
           borderRadius: 999, background: 'var(--cf-gold)', flex: 'none',
         }} />
       </div>
+
+      {visita && <ContadorVisitas {...visita} />}
 
       {resumen && (
         <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{resumen}</span>

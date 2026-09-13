@@ -386,6 +386,22 @@ export async function POST(request, { params }) {
 
   // Registrar pago y actualizar estados en transacción
   let resultado
+  /* LO QUE SE DEBIA JUSTO ANTES DE ESTE PAGO, para el comprobante.
+   * Se toma DENTRO de la transaccion y con el prestamo bloqueado (`saldoLocked`),
+   * que es el mismo numero con el que se decide cuanto se aplica: cualquier otra
+   * lectura puede estar vieja. No se deriva restando en la pantalla porque un
+   * abono a capital y una liquidacion bajan el saldo MAS de lo pagado, y un
+   * recargo lo sube. Ver [[dos_cajas_mismo_numero]]: la cifra la da quien la sabe.
+   */
+  let saldoAntesDelPago = null
+  /* ⚠ Y DE QUÉ PAGO ES. Sin esto la cifra se pega al PRÉSTAMO, y el préstamo se
+   * queda en el estado de la ficha: al desplegar un cobro viejo de la lista y
+   * mandar su recibo, el papel decía «Antes debía» con el saldo previo del cobro
+   * de hace un minuto. Un número que no cuadra con la resta, en el papel que el
+   * cliente se guarda. Las tres superficies exigen que este id sea el del pago
+   * que están imprimiendo; si no, la fila no se pinta.
+   */
+  let saldoAntesDelPagoId = null
   try {
   resultado = await prisma.$transaction(async (tx) => {
     // 0. Lock del prestamo para evitar sobrepago por race condition.
@@ -481,6 +497,7 @@ export async function POST(request, { params }) {
     }
 
     const saldoLocked = calcularSaldoPendiente(prestamoLocked)
+    saldoAntesDelPago = saldoLocked
 
     // Re-acotar el monto al saldo real ya committeado por otras tx.
     if (!['recargo', 'descuento'].includes(tipo)) {
@@ -509,7 +526,7 @@ export async function POST(request, { params }) {
       ? obtenerProximaCuotaTabla(prestamo)?.numeroPeriodo ?? null
       : null
     if (!(tipo === 'liquidacion' && montoFinal === 0)) {
-      await tx.pago.create({
+      const filaPago = await tx.pago.create({
         data: {
           prestamoId,
           organizationId,
@@ -526,6 +543,7 @@ export async function POST(request, { params }) {
           longitud: coordsPago.longitud,
         },
       })
+      saldoAntesDelPagoId = filaPago.id
     }
 
     // 1b. Refrescar totalPagado/ultimoPagoAt denormalizados del prestamo.
@@ -1131,6 +1149,8 @@ export async function POST(request, { params }) {
     ...prestamoFinal,
     totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
+    saldoAntesDelPago,
+    saldoAntesDelPagoId,
     capitalRestante:  calcularCapitalRestante(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
     diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal, festivos),

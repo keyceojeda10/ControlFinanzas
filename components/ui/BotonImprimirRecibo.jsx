@@ -5,7 +5,7 @@
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento, nombreDocumento } from '@/lib/documento'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
-import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe } from '@/lib/recibo-derivados'
+import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe, saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,8 +34,30 @@ function getTipoPagoLabel(tipo) {
   return 'Pago'
 }
 
-export function resolverCampo(campo, cliente, prestamo) {
+/* ⚠ EL ÚNICO CAMPO QUE PUEDE NO SALIR.
+ *
+ * Todos los demás caen a «-» cuando falta el dato, y está bien: «Cédula: -»
+ * dice que ese cliente no tiene cédula cargada. «Antes debía: -» no dice nada,
+ * y sale en un papel que el cliente se guarda.
+ *
+ * `saldoAntesDelPago` solo existe en el instante del cobro —el servidor lo mide
+ * dentro de la transacción y `Pago` no lo guarda—, así que un comprobante
+ * REIMPRESO desde la ficha del préstamo no lo tiene. Ahí la fila desaparece en
+ * vez de enseñar un guion. Los tres renderizadores filtran este `null`.
+ *
+ * Volverlo a calcular restando el pago al saldo de hoy sería inventarlo: entre
+ * medias hubo más cobros.
+ *
+ * La regla —incluida la de que la cifra sea DE ESTE pago— vive en
+ * `saldoAntesDeEstePago`, que es la misma que usa el mensaje de WhatsApp. Este
+ * recibo ya se arregló una vez por un lado dejando el otro roto.
+ */
+export function resolverCampo(campo, cliente, prestamo, pago) {
   const saldo = prestamo.saldoPendiente ?? Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
+  if (campo === 'saldoAntes') {
+    const antes = saldoAntesDeEstePago(prestamo, pago)
+    return antes == null ? null : formatMoney(antes)
+  }
   const map = {
     saldoPendiente:  formatMoney(saldo),
     totalPagado:     formatMoney(prestamo.totalPagado ?? 0),
@@ -72,12 +94,13 @@ export function resolverCampo(campo, cliente, prestamo) {
   return map[campo] ?? '-'
 }
 
-function renderCamposCustom(campos, cliente, prestamo) {
+function renderCamposCustom(campos, cliente, prestamo, pago) {
   if (!Array.isArray(campos) || campos.length === 0) return ''
   return campos.map(c => {
-    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)
+    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo, pago)
+    if (val == null) return ''
     return `<div class="row"><span>${c.nombre}:</span><span>${val}</span></div>`
-  }).join('')
+  }).filter(Boolean).join('')
 }
 
 // Exportada: la usa también `lib/recibo-acciones.js`, para que los tres caminos
@@ -90,9 +113,10 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
     ? camposRecibo
     : getDefaultCampos()
   const filasCampos = camposAUsar.map(c => {
-    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)
+    const val = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo, pago)
+    if (val == null) return ''
     return `<div class="row"><span>${c.nombre}:</span><span>${val}</span></div>`
-  }).join('\n  ')
+  }).filter(Boolean).join('\n  ')
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

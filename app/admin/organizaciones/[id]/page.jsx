@@ -7,6 +7,8 @@ import { Button }               from '@/components/ui/Button'
 import { Badge }                from '@/components/ui/Badge'
 import { SkeletonCard }         from '@/components/ui/Skeleton'
 import { formatMoney }          from '@/lib/i18n'
+import PrecioPreferencial        from '@/components/admin/PrecioPreferencial'
+import AsignarPlanDirecto        from '@/components/admin/AsignarPlanDirecto'
 
 const LIMITES = {
   starter:      { usuarios: 1,  clientes: 150 },
@@ -24,9 +26,7 @@ export default function OrgDetallePage() {
   const [org,     setOrg]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [accionando, setAccionando] = useState('')
-  const [descuentoInput, setDescuentoInput] = useState('')
   const [demoDias, setDemoDias] = useState('1')
-  const [pagoDirecto, setPagoDirecto] = useState({ plan: 'starter', periodo: 'mensual', monto: '', extender: false })
   /* Arranca en el vencimiento que ya tiene: así el calendario abre por donde
      está y no en el mes de hoy, que casi nunca es lo que uno busca. */
   const [fechaVence, setFechaVence] = useState('')
@@ -63,10 +63,11 @@ export default function OrgDetallePage() {
       const data = await res.json()
       if (res.ok) {
         await fetchOrg()
-      } else {
-        alert(data.error ?? 'Error')
+        return true
       }
-    } catch { alert('Error de conexión') } finally {
+      alert(data.error ?? 'Error')
+      return false
+    } catch { alert('Error de conexión'); return false } finally {
       setAccionando('')
     }
   }
@@ -355,99 +356,9 @@ export default function OrgDetallePage() {
         </Card>
       )}
 
-      {/* Asignar plan — Pago directo */}
-      <Card>
-        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Asignar plan (pago directo)</p>
-        <p className="text-xs text-[var(--cf-ink-3)] mb-4">
-          Usa esto cuando el cliente te paga directamente (transferencia, efectivo, etc.). Se activa igual que si pagará por MercadoPago: actualiza suscripción, le llega email de confirmación y se procesan referidos.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[var(--cf-ink-3)]">Plan</label>
-            <select
-              value={pagoDirecto.plan}
-              onChange={(e) => setPagoDirecto(p => ({ ...p, plan: e.target.value }))}
-              className="h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-xs text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
-            >
-              <option value="starter">Inicial ($39.000/mes)</option>
-              <option value="basic">Básico ($59.000/mes)</option>
-              <option value="growth">Crecimiento ($79.000/mes)</option>
-              <option value="standard">Profesional ($119.000/mes)</option>
-              <option value="professional">Empresarial ($259.000/mes)</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[var(--cf-ink-3)]">Período</label>
-            <select
-              value={pagoDirecto.periodo}
-              onChange={(e) => setPagoDirecto(p => ({ ...p, periodo: e.target.value }))}
-              className="h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-xs text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
-            >
-              <option value="mensual">Mensual (30 días)</option>
-              <option value="trimestral">Trimestral (90 días)</option>
-              <option value="anual">Anual (365 días)</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[var(--cf-ink-3)]">Monto recibido ($)</label>
-            <input
-              type="number"
-              min="0"
-              value={pagoDirecto.monto}
-              onChange={(e) => setPagoDirecto(p => ({ ...p, monto: e.target.value }))}
-              placeholder="Ej: 39000"
-              className="w-32 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
-            />
-          </div>
-          <div className="flex flex-col justify-end">
-            <Button
-              size="sm"
-              loading={accionando === 'asignarPlan'}
-              onClick={() => {
-                if (!pagoDirecto.monto || parseInt(pagoDirecto.monto) <= 0) {
-                  alert('Ingresa el monto que recibiste')
-                  return
-                }
-                const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }[pagoDirecto.periodo]
-                const extMsg = pagoDirecto.extender ? '\n(Se extiende desde la fecha de vencimiento actual)' : '\n(Empieza desde hoy)'
-                if (confirm(`¿Asignar plan ${pagoDirecto.plan} (${periodoLabel}) a "${org.nombre}" por $${parseInt(pagoDirecto.monto).toLocaleString('es-CO')}?${extMsg}\n\nSe le enviará email de confirmación al cliente.`)) {
-                  ejecutarAccion('asignarPlan', {
-                    plan: pagoDirecto.plan,
-                    periodo: pagoDirecto.periodo,
-                    monto: pagoDirecto.monto,
-                    extender: pagoDirecto.extender,
-                  })
-                  setPagoDirecto(p => ({ ...p, monto: '', extender: false }))
-                }
-              }}
-            >
-              Asignar plan
-            </Button>
-          </div>
-        </div>
-        {sub && sub.estado === 'activa' && diasRestantes > 0 && sub.plan === pagoDirecto.plan && (
-          <label className="mt-3 flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={pagoDirecto.extender}
-              onChange={(e) => setPagoDirecto(p => ({ ...p, extender: e.target.checked }))}
-              className="w-4 h-4 rounded border-[var(--cf-border)] bg-[var(--cf-card)] accent-[var(--cf-gold)]"
-            />
-            <span className="text-xs text-[var(--cf-ink-3)]">
-              Extender desde vencimiento actual ({new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}) en vez de empezar desde hoy
-            </span>
-          </label>
-        )}
-        {sub && (
-          <div className="mt-3 bg-[rgba(245,197,24,0.08)] border border-[rgba(245,197,24,0.15)] rounded-[12px] px-4 py-2">
-            <p className="text-[11px] text-[var(--cf-gold)]">
-              Suscripción actual: {sub.plan} · Vence: {new Date(sub.fechaVencimiento).toLocaleDateString('es-CO')}
-              {diasRestantes !== null && ` (${diasRestantes > 0 ? diasRestantes + ' días restantes' : Math.abs(diasRestantes) + ' días vencida'})`}
-              {' '}— El nuevo plan empieza desde hoy{sub.estado === 'activa' && diasRestantes > 0 && sub.plan === pagoDirecto.plan ? ' (o puedes extender desde el vencimiento actual marcando la casilla arriba)' : ''}.
-            </p>
-          </div>
-        )}
-      </Card>
+      <PrecioPreferencial org={org} accionando={accionando} ejecutarAccion={ejecutarAccion} />
+
+      <AsignarPlanDirecto org={org} sub={sub} diasRestantes={diasRestantes} accionando={accionando} ejecutarAccion={ejecutarAccion} />
 
       {/* Demo Day */}
       <Card>
@@ -515,39 +426,13 @@ export default function OrgDetallePage() {
         )}
       </Card>
 
-      {/* Descuento y referidos */}
+      {/* Referidos. El «descuento %» que vivía aquí se fue el 12 sep 2026:
+          nadie lo cobraba igual (la hoja lo restaba, el cron no) y un descuento
+          sin fecha es justo lo que el dueño pidió quitar. Lo sustituye el
+          precio preferencial, arriba. */}
       <Card>
-        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Descuento y referidos</p>
+        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Referidos</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Descuento */}
-          <div className="space-y-2">
-            <p className="text-xs text-[var(--cf-ink-3)]">Descuento especial (%)</p>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={descuentoInput}
-                onChange={(e) => setDescuentoInput(e.target.value)}
-                placeholder={String(org.descuento ?? 0)}
-                className="w-20 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]"
-              />
-              <Button
-                size="sm"
-                loading={accionando === 'cambiarDescuento'}
-                onClick={() => {
-                  ejecutarAccion('cambiarDescuento', { descuento: descuentoInput || '0' })
-                  setDescuentoInput('')
-                }}
-              >
-                Aplicar
-              </Button>
-            </div>
-            {org.descuento > 0 && (
-              <p className="text-xs text-[var(--cf-green-dark)]">Descuento activo: {org.descuento}%</p>
-            )}
-          </div>
-
           {/* Referidos */}
           <div className="space-y-2">
             <p className="text-xs text-[var(--cf-ink-3)]">Código de referido</p>

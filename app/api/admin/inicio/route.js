@@ -1,7 +1,8 @@
 /* app/api/admin/inicio/route.js — la única pantalla de cabecera del panel.
  *
  * Sustituye a `stats` (Dashboard), `negocio` y `metricas`, que contestaban lo
- * mismo con cifras distintas. Responde CUATRO preguntas y ninguna más:
+ * mismo con cifras distintas. Responde CUATRO preguntas, y desde el 12 sep 2026
+ * una quinta (¿quién paga distinto de la lista?):
  *
  *   1. ¿Cuánto entró?          → del libro de pagos, no del MRR
  *   2. ¿Cuánto debería entrar? → MRR real + lo que vence esta semana
@@ -25,6 +26,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { segmentarOrganizaciones, SELECT_ORG_SEGMENTO } from '@/lib/admin/segmentos'
+import { clasificarPreferenciales, selectPreferenciales, wherePreferenciales } from '@/lib/admin/precios-preferenciales'
 
 /** Los internos no son clientes: falsean el conteo de registros y el de activos. */
 const EMAILS_INTERNOS = ['keycejob@gmail.com', 'ccaojd@gmail.com', 'owner@test.com', 'controlfinanzasgmail@gmail.com']
@@ -62,7 +64,7 @@ export async function GET() {
 
   const sinInternos = { users: { none: { email: { in: EMAILS_INTERNOS } } } }
 
-  const [orgsRaw, pagos, activosAhora, registrosHoy, registrosSemana, registrosMes] = await Promise.all([
+  const [orgsRaw, pagos, activosAhora, registrosHoy, registrosSemana, registrosMes, orgsPrecio] = await Promise.all([
     prisma.organization.findMany({ where: sinInternos, select: SELECT_ORG_SEGMENTO }),
     // El libro. Una fila por pago; esto es lo que no existía.
     prisma.pagoSuscripcion.findMany({
@@ -75,6 +77,9 @@ export async function GET() {
     prisma.organization.count({ where: { createdAt: { gte: inicioHoy },    ...sinInternos } }),
     prisma.organization.count({ where: { createdAt: { gte: inicioSemana }, ...sinInternos } }),
     prisma.organization.count({ where: { createdAt: { gte: inicioMes },    ...sinInternos } }),
+    /* ⚠ AQUÍ SÍ VAN LOS INTERNOS. La cuenta del dueño a $1.500 es justo la
+       clase de precio que tiene que salir: se marca como suya, no se esconde. */
+    prisma.organization.findMany({ where: wherePreferenciales(ahora), select: selectPreferenciales() }),
   ])
 
   const { fichas, mrr, porSegmento, totalReal } = segmentarOrganizaciones(orgsRaw, ahora)
@@ -148,5 +153,6 @@ export async function GET() {
       porSegmento,
     },
     aLlamar,
+    precios: clasificarPreferenciales(orgsPrecio, { ahora, emailsInternos: EMAILS_INTERNOS }),
   })
 }

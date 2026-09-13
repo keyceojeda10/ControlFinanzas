@@ -576,6 +576,13 @@ export default function RutaDetallePage({ params }) {
     return pendiente && !c.visitaCerradaHoy
   }).length
 
+  // ── EL CONTADOR DEL DÍA, DE UN SOLO SITIO ──
+  // «Visitas de hoy · 7 de 19». El 19 es lo que tocaba; el 7 sale de RESTAR las
+  // que quedan, o sea del mismo número que enseña «Empezar recorrido · 12». Si
+  // se contara aparte —los que pagaron, por ejemplo— la banda y el botón se
+  // contradirían en cuanto alguien anotara «no estaba».
+  const visitadasHoy = Math.max(0, (ruta?.clientesConCobroHoy ?? 0) - paradasPorHacer)
+
   const abrirClienteDesdeRuta = (clienteRuta, idxVista) => {
     if (!clienteRuta || !ruta?.clientes?.length) return
 
@@ -1020,6 +1027,9 @@ export default function RutaDetallePage({ params }) {
           // (lo dice la linea del `pagoId` de arriba).
           monto: Math.round(data?.pagos?.[0]?.montoPagado ?? cuota),
           saldo: data?.saldoPendiente ?? null,
+          // Lo que debía ANTES de este cobro, medido por el servidor dentro de
+          // la transacción. Con él el papel enseña la resta entera.
+          saldoAntes: data?.saldoAntesDelPago ?? null,
           proximoCobro: data?.proximoCobro ?? null,
           numero: pagoId ? String(pagoId).slice(-6).toUpperCase() : null,
           /* ⚠ EL PRÉSTAMO, TAL COMO LO DEVOLVIÓ EL PAGO. Y esto es lo que
@@ -2016,7 +2026,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       // del dia sin cobrar, y el recorrido pasaba de largo por su casa.
       // La API ya distingue las dos cosas — `pagoHoy` es «pago algo» y
       // `cobroPendienteHoy` es «le queda algo». La que manda es la segunda.
-      cobradoHoy: !c.cobroPendienteHoy,
+      // Y la visita que el cobrador dio por cerrada tampoco es una puerta por
+      // tocar: anotarle «no estaba» la sacaba de la lista de la pantalla
+      // anterior y del botón «Empezar recorrido», pero AQUÍ seguía en «Falta
+      // cobrar» hasta la noche. Es la misma cuenta en dos sitios, y una de las
+      // dos mentía.
+      cobradoHoy: !c.cobroPendienteHoy || Boolean(c.visitaCerradaHoy),
+      visitaCerrada: Boolean(c.visitaCerradaHoy),
+      motivoCierre: c.motivoCierre ?? null,
       montoACobrar: c.cuota,
       montoCobrado: c.montoPagadoHoy,
       debe: c.saldoPendiente,
@@ -2070,6 +2087,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       <Recibo
         monto={formatMoney(reciboCobro.monto)}
         cliente={reciboCobro.nombre}
+        saldoAntes={reciboCobro.saldoAntes != null ? formatMoney(Math.round(reciboCobro.saldoAntes)) : null}
         saldo={reciboCobro.saldo != null ? formatMoney(Math.round(reciboCobro.saldo)) : null}
         proximoCobro={reciboCobro.proximoCobro
           ? new Date(reciboCobro.proximoCobro).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -2255,6 +2273,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           recaudadoHoy: ruta?.recaudadoHoy,
           clientesConCobroHoy: ruta?.clientesConCobroHoy,
           clientesPagaronHoy: ruta?.clientesPagaronHoy,
+          clientesVisitadosHoy: visitadasHoy,
           recaudadoEfectivoHoy: ruta?.recaudadoEfectivoHoy,
           recaudadoDigitalHoy: ruta?.recaudadoDigitalHoy,
         }, (n) => formatMoney(n))}
@@ -2500,7 +2519,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         porCobrarHoy={formatMoney(Math.max(0, (ruta.esperadoHoy ?? 0) - (ruta.recaudadoHoy ?? 0)))}
         recaudadoHoy={formatMoney(ruta.recaudadoHoy ?? 0)}
         progreso={ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0}
-        conteoCobros={`${ruta.clientesPagaronHoy ?? 0} de ${ruta.clientesConCobroHoy ?? 0}`}
+        conteoCobros={`${visitadasHoy} de ${ruta.clientesConCobroHoy ?? 0} visitados`}
         cartera={[
           { texto: 'Pendiente por cobrar', valor: formatMoney(ruta.carteraTotal ?? 0) },
           { texto: 'Prestado (capital)', valor: formatMoney(ruta.capitalPendiente ?? 0) },
@@ -2577,6 +2596,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         recaudadoHoy: ruta.recaudadoHoy,
         clientesConCobroHoy: ruta.clientesConCobroHoy,
         clientesPagaronHoy: ruta.clientesPagaronHoy,
+        clientesVisitadosHoy: visitadasHoy,
         // ── «efectivo $34.500 · digital $0» (T27-02) ──
         // La API los calcula y los devuelve, y `loDeHoy` sabe pintarlos desde
         // que se escribió. Solo faltaba pasárselos: la banda decía «0 de 1

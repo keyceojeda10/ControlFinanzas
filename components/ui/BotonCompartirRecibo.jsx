@@ -337,7 +337,7 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   /* Las filas de dato, ya resueltas. El cliente y su documento salen de aquí:
      van arriba y en grande, que es lo primero que se mira al recibir el papel. */
   const filas = campos
-    .map((c) => [c.nombre, c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo)])
+    .map((c) => [c.nombre, c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo, pago)])
     .filter(([, v]) => v != null && String(v).trim() !== '' && String(v) !== '-' && String(v) !== '—')
 
   // El progreso se saca de las filas para pintarlo como barra, que dice más que
