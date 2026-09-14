@@ -343,7 +343,10 @@ export function Recibo({
         </button>
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" onClick={onGuardarImagen} style={SECUNDARIO}>Guardar imagen</button>
+          {/* «Ver el recibo», no «Guardar imagen»: desde el 14 sep 2026 esto
+              abre la vista previa, y desde ella se manda o se guarda. Un botón
+              dice lo que va a pasar al tocarlo. */}
+          <button type="button" onClick={onGuardarImagen} style={SECUNDARIO}>Ver el recibo</button>
           <button type="button" onClick={onImprimir} style={SECUNDARIO}>Imprimir</button>
         </div>
 

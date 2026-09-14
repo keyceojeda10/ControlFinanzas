@@ -47,7 +47,9 @@ import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
 import { Recibo, CAPA_RECIBO }        from '@/components/pantallas/Recibo'
-import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
+import { imprimirRecibo } from '@/lib/recibo-acciones'
+import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
+import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import HojaInferior                  from '@/components/cf/HojaInferior'
@@ -354,6 +356,8 @@ export default function RutaDetallePage({ params }) {
   //   «La accion dorada NO es "listo": es el nombre del siguiente, porque en la
   //    calle el cobro no termina, SIGUE. Volver a la lista queda de segunda.»
   const [reciboCobro, setReciboCobro] = useState(null)
+  /* La vista previa del recibo: el papel se ve antes de salir hacia el chat. */
+  const [previoAbierto, setPrevioAbierto] = useState(false)
   const [modalPagoRapido, setModalPagoRapido] = useState(null)
   // Con QUE paga, elegido arriba y valido para todas las tarjetas de abajo.
   // Efectivo por defecto, que es como se cobra en la calle: si no se toca, el
@@ -2129,9 +2133,18 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
 
            Las dos acciones viven en `lib/recibo-acciones.js` para que los tres
            caminos impriman lo mismo. */
-        onGuardarImagen={() => guardarReciboImagen(datosDelComprobante())}
+        /* Abre la VISTA PREVIA, no la hoja del teléfono: el cobrador ve el
+           papel antes de que salga hacia el chat del cliente. */
+        onGuardarImagen={() => setPrevioAbierto(true)}
         onImprimir={() => imprimirRecibo(datosDelComprobante())}
         onCerrar={() => setReciboCobro(null)}
+      />
+      {/* Montada SIEMPRE, no dentro de un `&&`: ver [[hoja_inferior_primer_cuadro]]. */}
+      <HojaReciboPrevio
+        abierta={previoAbierto}
+        onCerrar={() => setPrevioAbierto(false)}
+        dibujar={dibujarRecibo}
+        {...datosDelComprobante()}
       />
     </div>,
     document.body,

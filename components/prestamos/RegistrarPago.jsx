@@ -22,7 +22,9 @@ import RegistrarCobro, { PieRegistrarCobro } from '@/components/pantallas/Regist
 import AbonoPorDias from '@/components/pantallas/AbonoPorDias'
 // El comprobante del rediseño, el mismo que ya salía en el cobro desde la ruta.
 import { Recibo, CAPA_RECIBO } from '@/components/pantallas/Recibo'
-import { imprimirRecibo, guardarReciboImagen } from '@/lib/recibo-acciones'
+import { imprimirRecibo } from '@/lib/recibo-acciones'
+import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
+import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
@@ -158,6 +160,8 @@ export default function RegistrarPago({
   const [subiendoFoto, setSubiendoFoto] = useState(false)
   const [vistaComprobante, setVistaComprobante] = useState(false)
   const [modalWA, setModalWA] = useState(false)
+  /* La vista previa del recibo: el papel se ve antes de salir hacia el chat. */
+  const [previoAbierto, setPrevioAbierto] = useState(false)
   const [camposLocal, setCamposLocal] = useState(camposRecibo)
   const [editandoCampos, setEditandoCampos] = useState(false)
   const fotoInputRef = useRef(null)
@@ -688,9 +692,9 @@ export default function RegistrarPago({
                checklist de «qué campos salen en el impreso» sigue existiendo,
                pero es configuración del cliente y no tiene por qué interponerse
                cada vez que alguien quiere el papel. */
-            onGuardarImagen={() => guardarReciboImagen({
-              cliente, prestamo: prestamoWA, pago: pagoGuardado, orgNombre, camposRecibo: camposLocal,
-            })}
+            /* Abre la VISTA PREVIA, no la hoja del teléfono. El cobrador ve
+               el papel antes de que salga hacia el chat del cliente. */
+            onGuardarImagen={() => setPrevioAbierto(true)}
             onImprimir={() => imprimirRecibo({
               cliente, prestamo: prestamoWA, pago: pagoGuardado, orgNombre, camposRecibo: camposLocal,
             })}
@@ -711,6 +715,18 @@ export default function RegistrarPago({
             if (f) subirFotoEvidencia(f)
             e.target.value = ''
           }}
+        />
+
+        {/* Montada SIEMPRE, no dentro de un `&&`: ver [[hoja_inferior_primer_cuadro]]. */}
+        <HojaReciboPrevio
+          abierta={previoAbierto}
+          onCerrar={() => setPrevioAbierto(false)}
+          dibujar={dibujarRecibo}
+          cliente={cliente}
+          prestamo={prestamoWA}
+          pago={pagoGuardado}
+          orgNombre={orgNombre}
+          camposRecibo={camposLocal}
         />
 
         <HojaWhatsApp

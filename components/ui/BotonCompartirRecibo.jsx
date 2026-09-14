@@ -9,6 +9,7 @@
 // archivos) cae a descarga del PNG.
 'use client'
 
+import { useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
@@ -16,6 +17,7 @@ import { resolverCampo } from '@/components/ui/BotonImprimirRecibo'
 // El reparto interés/capital lo MIDE el servidor; aquí solo se comprueba que la
 // cifra sea de ESTE pago. Misma disciplina que `saldoAntesDeEstePago`.
 import { repartoDeEstePago, tituloDelTipoDePago, notaDelReparto } from '@/lib/recibo-derivados'
+import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 // Los iconos de línea y la rejilla viven aparte: son dibujo puro, se prueban
 // sin montar React y los reusa cualquier papel que se genere como imagen.
 import { ico, rejilla, monograma, encoge, apilada, raya } from '@/lib/recibo-dibujo'
@@ -606,45 +608,35 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
 }
 
 export default function BotonCompartirRecibo({ cliente, prestamo, pago, orgNombre = '', camposRecibo, label = 'Compartir recibo' }) {
-  const handleClick = () => {
-    let canvas
-    try {
-      canvas = dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo)
-    } catch {
-      return
-    }
-    const nombre = `Recibo-${(cliente?.nombre || 'pago').replace(/\s+/g, '-')}.png`
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      const file = new File([blob], nombre, { type: 'image/png' })
-      // Compartir nativo con archivo adjunto (movil): WhatsApp aparece en la hoja
-      // con la imagen ya pegada, sin pasar por descargas.
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: 'Comprobante de pago',
-            text: `Comprobante de pago${orgNombre ? ` - ${orgNombre}` : ''}`,
-          })
-        } catch { /* usuario cancelo */ }
-        return
-      }
-      // Fallback escritorio: descargar el PNG.
-      const link = document.createElement('a')
-      link.download = nombre
-      link.href = canvas.toDataURL('image/png')
-      link.click()
-    }, 'image/png')
-  }
+  /* ⚠ EL RECIBO SE VE ANTES DE MANDARSE. Este botón disparaba la hoja del
+     teléfono con el PNG ya adjunto, así que el cobrador no veía el papel hasta
+     que estaba en el chat del cliente y ya no había vuelta atrás. Ahora abre la
+     vista previa y desde ahí se manda o se guarda. Lo pidió el dueño el 14 sep
+     2026: «como en Nequi o así». */
+  const [previo, setPrevio] = useState(false)
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]"
-    >
-      {SHARE_ICON}
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setPrevio(true)}
+        className="flex-1 flex items-center justify-center gap-2 px-3 h-10 rounded-[12px] text-sm font-medium transition-all cursor-pointer bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] hover:text-[var(--cf-ink)] hover:border-[var(--cf-gold)]"
+      >
+        {SHARE_ICON}
+        {label}
+      </button>
+      {/* Montada SIEMPRE, no dentro de un `&&`: una hoja que nace en el mismo
+          cuadro en que se abre pinta su primer fotograma fuera de la pantalla. */}
+      <HojaReciboPrevio
+        abierta={previo}
+        dibujar={dibujarRecibo}
+        onCerrar={() => setPrevio(false)}
+        cliente={cliente}
+        prestamo={prestamo}
+        pago={pago}
+        orgNombre={orgNombre}
+        camposRecibo={camposRecibo}
+      />
+    </>
   )
 }
