@@ -44,6 +44,8 @@
 // rediseño. En su lugar, el bloque negro dice la verdad de lo que sí pasa.
 
 import { AntesDespues, Aviso, BotonSecundario } from '@/components/cf/primitivos'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import { useTactil } from '@/lib/tactil'
 
 const ORO = '#E7A400'
 
@@ -335,8 +337,46 @@ export function PieGestion({
   // `peligro` invierte los pesos: la acción destructiva se queda en rojo de
   // contorno y la que gana peso es la de NO hacerlo. Es lo que pide T13-03.
   peligro = false,
+  /* ── ⚠ `deslizar` SOLO DONDE SE MUEVE PLATA ───────────────────────────────
+   *
+   * Un recargo sube la deuda, un descuento la perdona, una liquidación cierra
+   * el préstamo y un gasto sale de la caja: son cifras que el cliente ve y
+   * reclama, y se confirman con el MISMO gesto que un cobro —deslizando— o el
+   * sistema queda, en palabras del dueño, «desalineado».
+   *
+   * No se enciende en las hojas que solo mueven fechas o plazos (aplazar, día
+   * de cobro, modificar plazo): ahí no entra ni sale un peso, y obligar a
+   * arrastrar para cambiar un día sería ceremonia sin motivo — y con el gesto
+   * en todas partes dejaría de significar «cuidado, esto es dinero».
+   *
+   * Y solo en el teléfono, como en el resto: ver `lib/tactil.js`.
+   */
+  deslizar = false,
 }) {
   const muerto = aceptando || deshabilitado
+  const tactil = useTactil()
+  if (deslizar && tactil && !peligro) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
+        {error && (
+          <span role="alert" style={{ fontSize: 13, color: 'var(--cf-red-dark)', textAlign: 'center' }}>
+            {error}
+          </span>
+        )}
+        <DeslizarParaConfirmar
+          texto={textoAceptar}
+          onConfirmar={() => onAceptar?.()}
+          confirmando={aceptando}
+          deshabilitado={deshabilitado}
+        />
+        <button type="button" onClick={onCancelar} style={{
+          height: 44, borderRadius: 14, cursor: 'pointer', width: '100%',
+          background: 'none', border: 0,
+          font: 'inherit', fontSize: 15, fontWeight: 600, color: 'var(--cf-ink-3)',
+        }}>{textoCancelar}</button>
+      </div>
+    )
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
       {error && (

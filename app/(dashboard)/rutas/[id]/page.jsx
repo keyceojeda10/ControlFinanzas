@@ -49,6 +49,7 @@ import RutaEscritorio                from '@/components/pantallas/RutaEscritorio
 import { Recibo, CAPA_RECIBO }        from '@/components/pantallas/Recibo'
 import { imprimirRecibo } from '@/lib/recibo-acciones'
 import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
+import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
@@ -290,7 +291,7 @@ function HistorialCobros({ rutaId }) {
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
-  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId } = useAuth()
+  const { esOwner, puedeGestionarRutas, puedeVerCapitalRuta, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg } = useAuth()
 
     const { lastSyncedAt } = useOffline()
 
@@ -1057,6 +1058,11 @@ export default function RutaDetallePage({ params }) {
           // es por donde se reclama.
           pagoId,
           fechaPago: data?.pagos?.[0]?.fechaPago ?? new Date().toISOString(),
+          /* Qué fue este cobro, en la palabra del sistema. Sin él el recibo no
+             puede titularlo y todos los cobros de la calle salen llamándose
+             igual. Sale de la respuesta, no de lo que se tecleó: el servidor
+             puede haber ajustado el pago. */
+          tipo: data?.pagos?.[0]?.tipo ?? (esCuotaExacta ? 'completo' : 'parcial'),
         })
         await fetchRuta()
         // Mostrar undo por 10 segundos
@@ -1145,6 +1151,16 @@ export default function RutaDetallePage({ params }) {
    * El préstamo sale de `reciboCobro`, que guarda la respuesta del POST, NO del
    * estado de la pantalla: ver el porqué largo donde se rellena.
    */
+  /* Los campos del recibo: cliente → negocio → fábrica, el mismo orden que la
+     ficha del préstamo. Va ANTES de quien lo usa: en este fichero ya se
+     estrelló tres veces una `const` leída por encima de su declaración. */
+  const camposDelRecibo = (cliente) => {
+    const delCliente = cliente?.camposRecibo
+    if (Array.isArray(delCliente) && delCliente.length > 0) return delCliente
+    if (Array.isArray(camposReciboOrg) && camposReciboOrg.length > 0) return camposReciboOrg
+    return getDefaultCampos()
+  }
+
   const datosDelComprobante = () => {
     const c = ruta?.clientes?.find((x) => x.id === reciboCobro?.clienteId)
     return {
@@ -1154,10 +1170,20 @@ export default function RutaDetallePage({ params }) {
         id: reciboCobro?.pagoId ?? null,
         montoPagado: reciboCobro?.monto,
         fechaPago: reciboCobro?.fechaPago ?? new Date().toISOString(),
+        /* ⚠ EL TIPO, o el recibo no puede titular «Abono a la cuota» y todos
+           los cobros de la calle salen llamándose igual. */
+        tipo: reciboCobro?.tipo ?? null,
       },
       orgNombre,
+      /* ⚠ LOS MISMOS CAMPOS QUE EN LA FICHA DEL PRÉSTAMO, y en el mismo orden
+         de prioridad: los del cliente mandan sobre los del negocio, y los del
+         negocio sobre los de fábrica. Esto no se pasaba, así que el recibo del
+         cobro en la calle ignoraba el checklist del prestamista y el mismo pago
+         daba dos papeles distintos según por dónde se pidiera. */
+      camposRecibo: camposDelRecibo(c),
     }
   }
+
 
   const abrirModalDSC = () => {
     try { setDiasSCRuta(JSON.parse(ruta?.diasSinCobro || '[]')) } catch { setDiasSCRuta([]) }

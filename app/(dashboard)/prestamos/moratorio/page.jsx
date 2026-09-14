@@ -29,6 +29,8 @@ import { useRouter } from 'next/navigation'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { formatMoney } from '@/lib/i18n'
 import { PilaEsqueletos } from '@/components/cf/primitivos2'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import { useTactil } from '@/lib/tactil'
 
 const Icono = ({ d, color = 'var(--cf-ink-3)', tam = 16 }) => (
   <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none" stroke={color}
@@ -46,6 +48,7 @@ export default function MoratorioPage() {
   const [error, setError] = useState('')
   const [marcados, setMarcados] = useState(() => new Set())
   const [confirmando, setConfirmando] = useState(false)
+  const tactil = useTactil()
   const [aplicando, setAplicando] = useState(false)
   const [progreso, setProgreso] = useState({ hechos: 0, total: 0 })
   const [resultado, setResultado] = useState(null)
@@ -293,16 +296,33 @@ export default function MoratorioPage() {
             <p style={{ fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 8 }}>
               Para deshacerlo hay que anular el recargo préstamo por préstamo.
             </p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-              <button type="button" onClick={() => setConfirmando(false)}
-                style={{ flex: 1, height: 46, borderRadius: 'var(--cf-r-control)', background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)', cursor: 'pointer' }}>
-                Cancelar
-              </button>
-              <button type="button" onClick={aplicar}
-                style={{ flex: 1, height: 46, borderRadius: 'var(--cf-r-control)', background: 'var(--cf-gold)', border: 0, fontSize: 14, fontWeight: 800, color: 'var(--cf-gold-ink)', cursor: 'pointer' }}>
-                Sí, aplicar
-              </button>
-            </div>
+            {/* ⚠ SUBE LA DEUDA DE VARIOS CLIENTES A LA VEZ, así que se
+                confirma como todo lo que mueve plata: deslizando en el
+                teléfono. Es además el único sitio donde un toque de más toca a
+                veinte personas en vez de a una. */}
+            {tactil ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 18 }}>
+                <DeslizarParaConfirmar
+                  texto={`Cobrar ${formatMoney(totalMarcado)} de mora`}
+                  onConfirmar={aplicar}
+                />
+                <button type="button" onClick={() => setConfirmando(false)}
+                  style={{ height: 44, borderRadius: 'var(--cf-r-control)', background: 'none', border: 0, fontSize: 15, fontWeight: 600, color: 'var(--cf-ink-3)', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                <button type="button" onClick={() => setConfirmando(false)}
+                  style={{ flex: 1, height: 46, borderRadius: 'var(--cf-r-control)', background: 'var(--cf-fill)', border: '1px solid var(--cf-border-strong)', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button type="button" onClick={aplicar}
+                  style={{ flex: 1, height: 46, borderRadius: 'var(--cf-r-control)', background: 'var(--cf-gold)', border: 0, fontSize: 14, fontWeight: 800, color: 'var(--cf-gold-ink)', cursor: 'pointer' }}>
+                  Sí, aplicar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -59,6 +59,8 @@ import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
 import { adaptarTabla } from '@/lib/adaptadores/tabla'
 import HojaInferior from '@/components/cf/HojaInferior'
 import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
@@ -129,6 +131,8 @@ function PrestamoDetalleContenido({ params }) {
   const parametros         = useSearchParams()
   const modoPedido         = parametros.get('editar')
   const { session, esOwner, esCobrador, puedeGestionarPrestamos, puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, camposRecibo: camposReciboOrg, modoAbreviado, country } = useAuth()
+  /* ¿Dedo o ratón? Decide si lo que mueve plata se desliza o se pulsa. */
+  const tactil = useTactil()
 
   const { lastSyncedAt, pendingDetails, failedDetails, isOnline: haySenal = true, openSyncDrawer } = useOffline()
 
@@ -995,6 +999,37 @@ function PrestamoDetalleContenido({ params }) {
   // servidor, cada uno con su copia—, asi que a quien le pagaban el interes por
   // adelantado le salia $0 en las cuatro. Reportado por Crediya el 14 de agosto.
   const interesMonto = Math.round(interesCobrableAhora(prestamo))
+
+  /* El recargo por mora. Sale de aquí y no de un `onClick` en línea para que el
+     botón y el deslizador hagan EXACTAMENTE lo mismo: escribirlo dos veces es
+     como se acaba con dos caminos que cobran distinto. */
+  const aplicarMoratorio = async () => {
+    setMoratorioEnviando(true)
+    setMoratorioError('')
+    try {
+      const nota = moratorioNota || `Interés moratorio: ${moratorio?.diasMoraEfectivos ?? 0} días`
+      const notaFull = moratorioMonto !== (moratorio?.montoMoratorio ?? 0)
+        ? `${nota} (calculado: ${formatMoney(moratorio?.montoMoratorio ?? 0)}, aplicado: ${formatMoney(moratorioMonto)})`
+        : nota
+      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // `montoPagado`, como todo el que registra contra este API: con `monto` el
+        // API leía undefined y contestaba «El monto debe ser mayor a 0» (8 sep 2026).
+        body: JSON.stringify({ montoPagado: Math.round(Number(moratorioMonto)), tipo: 'recargo', nota: notaFull }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || 'Error al aplicar recargo')
+      }
+      setModalMoratorio(false)
+      await fetchPrestamo()
+    } catch (e) {
+      setMoratorioError(e.message)
+    } finally {
+      setMoratorioEnviando(false)
+    }
+  }
 
   const pagarIntereses = async () => {
     if (!(interesMonto > 0)) return
@@ -2782,6 +2817,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
             onAceptar={() => aplicarAjuste('recargo')}
             textoAceptar={ajusteNum > 0 ? `Aplicar ${formatMoney(ajusteNum)}` : 'Aplicar'}
+            deslizar
             deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
             aceptando={ajustando}
             error={ajusteError}
@@ -2819,6 +2855,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
             onAceptar={() => aplicarAjuste('descuento')}
             textoAceptar={ajusteNum > 0 ? `Perdonar ${formatMoney(ajusteNum)}` : 'Perdonar'}
+            deslizar
             deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
             aceptando={ajustando}
             error={ajusteError}
@@ -2855,6 +2892,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalIntereses(false); setInteresError('') }}
             onAceptar={pagarIntereses}
             textoAceptar={interesMonto > 0 ? `Cobrar ${formatMoney(interesMonto)}` : 'Cobrar'}
+            deslizar
             deshabilitado={!(interesMonto > 0) || pagandoInteres}
             aceptando={pagandoInteres}
             error={interesError}
@@ -2931,6 +2969,7 @@ function PrestamoDetalleContenido({ params }) {
                 onCancelar={() => setModalLiquidacion(false)}
                 onAceptar={confirmarLiquidacion}
                 textoAceptar={liqMonto > 0 ? `Cerrar por ${formatMoney(Math.round(liqMonto))}` : 'Cerrar'}
+                deslizar
                 aceptando={liqEnviando}
                 deshabilitado={liqMonto < 0 || !liqNota.trim()}
                 error={liqError || (!liqNota.trim() && liqMonto > 0
@@ -3165,39 +3204,25 @@ function PrestamoDetalleContenido({ params }) {
           {moratorioError && (
             <p className="text-xs text-[var(--cf-red-dark)]">{moratorioError}</p>
           )}
-          <button
-            disabled={moratorioEnviando || moratorioMonto <= 0}
-            onClick={async () => {
-              setMoratorioEnviando(true)
-              setMoratorioError('')
-              try {
-                const nota = moratorioNota || `Interés moratorio: ${moratorio?.diasMoraEfectivos ?? 0} días`
-                const notaFull = moratorioMonto !== (moratorio?.montoMoratorio ?? 0)
-                  ? `${nota} (calculado: ${formatMoney(moratorio?.montoMoratorio ?? 0)}, aplicado: ${formatMoney(moratorioMonto)})`
-                  : nota
-                const res = await fetch(`/api/prestamos/${id}/pagos`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  // `montoPagado`, como todo el que registra contra este API: con `monto` el
-                  // API leía undefined y contestaba «El monto debe ser mayor a 0» (8 sep 2026).
-                  body: JSON.stringify({ montoPagado: Math.round(Number(moratorioMonto)), tipo: 'recargo', nota: notaFull }),
-                })
-                if (!res.ok) {
-                  const d = await res.json()
-                  throw new Error(d.error || 'Error al aplicar recargo')
-                }
-                setModalMoratorio(false)
-                await fetchPrestamo()
-              } catch (e) {
-                setMoratorioError(e.message)
-              } finally {
-                setMoratorioEnviando(false)
-              }
-            }}
-            className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-ink)] bg-[var(--cf-gold-dark)] hover:opacity-90 disabled:opacity-50 transition-all"
-          >
-            {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
-          </button>
+          {/* ⚠ EL MORATORIO TAMBIÉN SUBE LA DEUDA, así que se confirma como
+              todo lo que mueve plata: deslizando en el teléfono. Era el único
+              botón suelto que quedaba cobrando de un toque. */}
+          {tactil ? (
+            <DeslizarParaConfirmar
+              texto={`Aplicar ${formatMoney(moratorioMonto)} como recargo`}
+              confirmando={moratorioEnviando}
+              deshabilitado={moratorioMonto <= 0}
+              onConfirmar={aplicarMoratorio}
+            />
+          ) : (
+            <button
+              disabled={moratorioEnviando || moratorioMonto <= 0}
+              onClick={aplicarMoratorio}
+              className="w-full h-11 rounded-[12px] font-semibold text-sm text-[var(--cf-gold-ink)] bg-[var(--cf-gold-dark)] hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {moratorioEnviando ? 'Aplicando...' : `Aplicar ${formatMoney(moratorioMonto)} como recargo`}
+            </button>
+          )}
         </div>
       </Modal>
 

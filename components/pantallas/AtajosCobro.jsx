@@ -32,6 +32,8 @@
 
 import { useState } from 'react'
 import { EtiquetaClavo } from '@/components/cf/primitivos'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import { useTactil } from '@/lib/tactil'
 import { formatMoney } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
@@ -108,6 +110,19 @@ export default function AtajosCobro({
   // Y cuál tiene abierto el teclado de «Otro monto», con lo tecleado.
   const [montoAbierto, setMontoAbierto] = useState(null)
   const [monto, setMonto] = useState('')
+  /* ── ⚠ AQUÍ SE COBRABA DE UN TOQUE ────────────────────────────────────────
+   *
+   * «Cuota» llamaba a `onCobrarCuota` directamente: un roce en el bolsillo o al
+   * pasar la hoja registraba un pago que no existió, y esto es la pantalla que
+   * más se usa en la calle. En la hoja de cobro de la ficha eso ya se resolvió
+   * DESLIZANDO, y el dueño lo pidió igual en todas: «no que en un lado va a
+   * confirmar el pago rodándose hacia el lado y en otros lados no».
+   *
+   * Guarda el id del préstamo cuyo deslizador está abierto. Solo uno: dos
+   * pistas abiertas a la vez convierten la hoja en un formulario.
+   */
+  const [deslizarCuota, setDeslizarCuota] = useState(null)
+  const tactil = useTactil()
 
   // ── EL MODO ABREVIADO, TAMBIÉN AQUÍ ──
   // Con él encendido se escribe en MILES: «40» son $40.000. `MoneyInput` —el
@@ -206,7 +221,22 @@ export default function AtajosCobro({
               }}>{formatMoney(cuota, pais)}</span>
             </div>
 
-            {abierto ? (
+            {deslizarCuota === p.id ? (
+              /* ── LA CUOTA DEL DÍA, DESLIZANDO ──
+                 El mismo gesto que en la hoja de cobro de la ficha: un
+                 deslizamiento hasta el final no ocurre con el teléfono en el
+                 bolsillo. La cifra va EN LA PISTA —«Cobrar $16.000»— porque es
+                 lo único que distingue lo que está a punto de pasar. */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <DeslizarParaConfirmar
+                  texto={`Cobrar ${formatMoney(cuota, pais)}`}
+                  confirmando={ocupado}
+                  deshabilitado={ocupado || !(cuota > 0)}
+                  onConfirmar={() => { setDeslizarCuota(null); onCobrarCuota?.(p) }}
+                />
+                <Boton onClick={() => setDeslizarCuota(null)}>Atrás</Boton>
+              </div>
+            ) : abierto ? (
               // ── POR QUÉ NO PAGÓ ──
               // No es un campo libre: cuatro motivos que ya usa el sistema
               // (`VisitaReagendada`). Escribirlo a mano en la calle no se hace,
@@ -272,20 +302,39 @@ export default function AtajosCobro({
                     Se cobra <strong style={{ color: 'var(--cf-ink)' }}>{formatMoney(montoReal, pais)}</strong>
                   </p>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Boton
-                    tono="principal"
-                    disabled={ocupado || !(montoReal > 0)}
-                    onClick={() => {
-                      // `montoReal` ya viene multiplicado si el modo abreviado
-                      // está encendido. Lo que se cobra son SIEMPRE pesos.
-                      const n = montoReal
-                      setMontoAbierto(null); setMonto('')
-                      if (n > 0) onOtroMonto?.(p, n)
-                    }}
-                  >Cobrar</Boton>
-                  <Boton onClick={() => { setMontoAbierto(null); setMonto('') }}>Atrás</Boton>
-                </div>
+                {/* El abono también se DESLIZA: es la misma plata que la
+                    cuota, y confirmarla de dos formas distintas en la misma
+                    hoja es justo lo que había que quitar. */}
+                {tactil ? (
+                  <>
+                    <DeslizarParaConfirmar
+                      texto={montoReal > 0 ? `Cobrar ${formatMoney(montoReal, pais)}` : 'Escribe el monto'}
+                      confirmando={ocupado}
+                      deshabilitado={ocupado || !(montoReal > 0)}
+                      onConfirmar={() => {
+                        // `montoReal` ya viene multiplicado si el modo abreviado
+                        // está encendido. Lo que se cobra son SIEMPRE pesos.
+                        const n = montoReal
+                        setMontoAbierto(null); setMonto('')
+                        if (n > 0) onOtroMonto?.(p, n)
+                      }}
+                    />
+                    <Boton onClick={() => { setMontoAbierto(null); setMonto('') }}>Atrás</Boton>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Boton
+                      tono="principal"
+                      disabled={ocupado || !(montoReal > 0)}
+                      onClick={() => {
+                        const n = montoReal
+                        setMontoAbierto(null); setMonto('')
+                        if (n > 0) onOtroMonto?.(p, n)
+                      }}
+                    >Cobrar</Boton>
+                    <Boton onClick={() => { setMontoAbierto(null); setMonto('') }}>Atrás</Boton>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
@@ -302,7 +351,9 @@ export default function AtajosCobro({
                 <Boton
                   tono="principal"
                   disabled={ocupado || !(cuota > 0) || p.pagadoHoy}
-                  onClick={() => onCobrarCuota?.(p)}
+                  /* En el teléfono ABRE el deslizador; con ratón cobra, que es
+                     donde un toque de más no ocurre solo. */
+                  onClick={() => (tactil ? setDeslizarCuota(p.id) : onCobrarCuota?.(p))}
                 >
                   {p.pagadoHoy ? 'Ya cobrado' : 'Cuota'}
                 </Boton>

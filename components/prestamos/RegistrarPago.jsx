@@ -964,6 +964,7 @@ export default function RegistrarPago({
             error={error || (pasaDelTope
               ? `No puedes perdonar más de ${formatMoney(datos.tope)}: es todo lo que queda por cobrar.`
               : sinMotivo && montoNum > 0 ? 'Escribe el motivo: queda en el historial.' : null)}
+            deslizar
           />
         }
       >

@@ -55,20 +55,12 @@
 // porque «Yape» o «Banco Bogotá» no tienen logo y con un icono genérico las
 // cuatro casillas se verían iguales.
 
-import { useSyncExternalStore } from 'react'
 import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
-
-/* Pantalla táctil = el dedo es el puntero principal. `pointer: coarse` y no el
-   ancho: una tableta ancha también se opera con el dedo, y un portátil con
-   pantalla táctil y ratón dice `fine`, que es lo que usa de verdad. */
-const CONSULTA_TACTIL = '(pointer: coarse)'
-function suscribirTactil(avisar) {
-  const mq = window.matchMedia(CONSULTA_TACTIL)
-  mq.addEventListener('change', avisar)
-  return () => mq.removeEventListener('change', avisar)
-}
-function esTactil() { return window.matchMedia(CONSULTA_TACTIL).matches }
+/* ⚠ «¿DEDO O RATÓN?» VIVE EN `lib/tactil.js`, no aquí. Estaba escrito en este
+   fichero y privado, así que las otras pantallas de cobro no podían alcanzarlo
+   y confirmaban el dinero de otra forma. */
+import { useTactil } from '@/lib/tactil'
 //
 // ── LO QUE NO ESTÁ AQUÍ: «NO PAGÓ» ──────────────────────────────────────────
 //
@@ -444,7 +436,7 @@ export function PieRegistrarCobro({
   recibo = true, onRecibo, deslizar = false,
 }) {
   const muerto = confirmando || deshabilitado
-  const tactil = useSyncExternalStore(suscribirTactil, esTactil, () => false)
+  const tactil = useTactil()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
       {error && (

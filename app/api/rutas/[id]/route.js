@@ -631,6 +631,14 @@ export async function GET(request, { params }) {
       telefono:  c.telefono,
       latitud:   c.latitud,
       longitud:  c.longitud,
+      /* ⚠ LOS CAMPOS DEL RECIBO DE ESTE CLIENTE. Este `map` rearma el cliente
+         campo a campo, así que lo que no se copie aquí llega `undefined` a la
+         pantalla —el mismo silencio del `select` de Prisma al que le falta una
+         columna, ver [[feedback_verificar_prisma_select]]—. Sin él, el
+         comprobante del cobro desde la RUTA salía con los campos por defecto e
+         ignoraba el checklist del prestamista: el mismo pago daba un papel en
+         la ficha del préstamo y otro distinto en la calle. */
+      camposRecibo: c.camposRecibo ?? null,
       // El estado del cliente se basa en sus préstamos NO clavo (los clavos no
       // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
       estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
