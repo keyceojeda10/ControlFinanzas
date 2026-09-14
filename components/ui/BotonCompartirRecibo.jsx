@@ -13,10 +13,12 @@ import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { resolverCampo } from '@/components/ui/BotonImprimirRecibo'
-// ⚠ La paleta del bloque oscuro se IMPORTA, no se copia: sus colores son
-// distintos de los del tema claro a propósito (el dorado y el verde de la app
-// no contrastan sobre #15161A) y tenerlos dos veces es como se desincronizan.
-import { BLOQUE } from '@/components/cf/bloqueOscuro'
+// El reparto interés/capital lo MIDE el servidor; aquí solo se comprueba que la
+// cifra sea de ESTE pago. Misma disciplina que `saldoAntesDeEstePago`.
+import { repartoDeEstePago, tituloDelTipoDePago, notaDelReparto } from '@/lib/recibo-derivados'
+// Los iconos de línea y la rejilla viven aparte: son dibujo puro, se prueban
+// sin montar React y los reusa cualquier papel que se genere como imagen.
+import { ico, rejilla, monograma, encoge, apilada, raya } from '@/lib/recibo-dibujo'
 
 const SHARE_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -87,56 +89,6 @@ export function familias() {
 
 /* ══ LAS PIEZAS DEL PAPEL ══════════════════════════════════════════════════ */
 
-/**
- * La silueta de un ticket: esquinas redondeadas y el borde de arriba y el de
- * abajo MORDIDOS por semicírculos.
- *
- * Es lo que más hace por el parecido con un comprobante de verdad, y es una
- * sola ruta —no un rectángulo con círculos del color del fondo encima—: así la
- * sombra sigue el contorno dentado en vez de quedarse recta por detrás.
- *
- * `paso` sale de dividir el ancho: con un número fijo de dientes cambian de
- * tamaño según el ancho, y con un tamaño fijo el último queda cortado.
- */
-function siluetaTicket(ctx, x, y, w, h, r, radioDiente) {
-  const dientes = Math.max(4, Math.round(w / (radioDiente * 2.6)))
-  const paso = w / dientes
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  for (let i = 0; i < dientes; i++) {
-    const cx = x + paso * (i + 0.5)
-    ctx.lineTo(cx - radioDiente, y)
-    ctx.arc(cx, y, radioDiente, Math.PI, 0, true)   // muerde hacia dentro
-  }
-  ctx.lineTo(x + w - r, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-  ctx.lineTo(x + w, y + h - r)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-  for (let i = dientes - 1; i >= 0; i--) {
-    const cx = x + paso * (i + 0.5)
-    ctx.lineTo(cx + radioDiente, y + h)
-    ctx.arc(cx, y + h, radioDiente, 0, Math.PI, true)
-  }
-  ctx.lineTo(x + r, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-  ctx.lineTo(x, y + r)
-  ctx.quadraticCurveTo(x, y, x + r, y)
-  ctx.closePath()
-}
-
-/** El separador de puntitos, como el del papel térmico. */
-function punteado(ctx, x1, y, x2) {
-  ctx.save()
-  ctx.setLineDash([2, 5])
-  ctx.strokeStyle = TINTA.border
-  ctx.lineWidth = 1.5
-  ctx.beginPath()
-  ctx.moveTo(x1, y)
-  ctx.lineTo(x2, y)
-  ctx.stroke()
-  ctx.restore()
-}
-
 /** Un rectángulo redondeado, con salida para navegadores sin `roundRect`. */
 export function caja(ctx, x, y, w, h, r) {
   const radio = Math.min(r, h / 2, w / 2)
@@ -146,21 +98,6 @@ export function caja(ctx, x, y, w, h, r) {
   return ctx
 }
 
-/** El visto de «recibido», DIBUJADO y no un emoji: los emoji no se pintan igual
-    en cada teléfono y en varios salen como un cuadro hueco. */
-function visto(ctx, cx, cy, r, color) {
-  ctx.save()
-  ctx.strokeStyle = color
-  ctx.lineWidth = 2
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  ctx.beginPath()
-  ctx.moveTo(cx - r, cy)
-  ctx.lineTo(cx - r * 0.25, cy + r * 0.75)
-  ctx.lineTo(cx + r, cy - r * 0.8)
-  ctx.stroke()
-  ctx.restore()
-}
 
 /**
  * Parte un texto en renglones que quepan en `ancho`, sin cortar palabras.
@@ -247,29 +184,6 @@ export function garabatos(ctx, w, h, alfa = 0.055) {
   ctx.restore()
 }
 
-/** Una fila de dato: rótulo a la izquierda, valor a la derecha. */
-function fila(ctx, L, R, y, rotulo, valor, SANS, MONO) {
-  ctx.textAlign = 'left'
-  ctx.fillStyle = TINTA.ink3
-  ctx.font = `14px ${SANS}`
-  ctx.fillText(String(rotulo), L, y)
-
-  /* El valor encoge hasta caber en su mitad; no se recorta. Y va en la familia
-     de las cifras cuando es dinero, para que las columnas queden a plomo. */
-  const esCifra = /^[$\d]/.test(String(valor).trim())
-  const anchoRotulo = ctx.measureText(String(rotulo)).width
-  const disponible = (R - L) - anchoRotulo - 16
-  let t = 17
-  ctx.font = `600 ${t}px ${esCifra ? MONO : SANS}`
-  while (t > 11 && ctx.measureText(String(valor)).width > disponible) {
-    t -= 1
-    ctx.font = `600 ${t}px ${esCifra ? MONO : SANS}`
-  }
-  ctx.textAlign = 'right'
-  ctx.fillStyle = TINTA.ink
-  ctx.fillText(String(valor), R, y)
-  ctx.textAlign = 'left'
-}
 
 /** La línea fina que separa bloques. */
 export function hairline(ctx, x1, y, x2) {
@@ -283,50 +197,127 @@ export function hairline(ctx, x1, y, x2) {
   ctx.restore()
 }
 
-/* ══ EL COMPROBANTE ════════════════════════════════════════════════════════
+
+/* ══ EL COMPROBANTE · «H8 · Verde y oro» ═══════════════════════════════════
  *
- * El dueño trajo el de Nequi de referencia y de ahí vienen la SILUETA DENTADA
- * —lo que hace que se lea como un recibo y no como una tarjeta—, el ESTADO
- * arriba y los datos APILADOS, que con nombres largos no se pelean por el ancho
- * como sí lo hacían en dos columnas.
+ * El dueño eligió esta forma entre nueve el 13 sep 2026. Lo que la define:
  *
- * ── ⚠ LA VERSIÓN ANTERIOR ROMPÍA LA REGLA 1 DEL SISTEMA ───────────────────
+ *   · **La franja de estado.** Una banda verde llena de lado a lado que dice
+ *     PAGO RECIBIDO. Es lo único que se lee en la miniatura de WhatsApp, antes
+ *     de que nadie abra la imagen.
+ *   · **Cabecera de dos matices.** La trama de iconos va en el verde del
+ *     estado y uno de cada tres en el dorado de la marca. ⚠ Es la única
+ *     licencia sobre la regla del dorado: aquí es DIBUJO al 34 % de opacidad,
+ *     no una cifra ni un botón. El monto sigue siendo tinta.
+ *   · **El papel, degradado.** La misma trama sigue por el cuerpo del 5,5 % al
+ *     1,3 %, así que el recibo es una pieza y no una cabecera bonita pegada a
+ *     un formulario.
+ *   · **A qué se aplicó este pago.** Interés y capital, con su barra. Es la
+ *     diferencia entre «te pagué $200.000» y «de tus $200.000, $150.000
+ *     bajaron la deuda» — la frase que evita la llamada al cobrador.
  *
- * Tenía una banda dorada de cabecera. `components/cf/bloqueOscuro.js` lo dice
- * con todas las letras: **«el fondo dorado no es un estilo, es un error de
- * sistema»**. El dorado está reservado a tres cosas —el monto principal, la
- * acción primaria y el foco del campo activo— así que con el fondo entero
- * dorado el monto queda del color de su propia caja y el ojo no encuentra dónde
- * mirar. Por eso se veía plano: no había jerarquía, solo una franja de color.
+ * ── EL ORDEN DE PINTADO, QUE ES LO QUE LO HACE POSIBLE ────────────────────
  *
- * Ahora habla el idioma que el dueño ya ve todos los días en la app:
+ * El papel blanco NO se pinta al principio: el lienzo se deja transparente, se
+ * escribe el recibo entero y AL FINAL se meten la trama y el blanco POR DEBAJO
+ * con `destination-over`. Así no hay forma de que un dibujo tape una cifra, que
+ * es justo lo que hacía el fondo de garabatos anterior. Es la idea del papel de
+ * seguridad: la trama está impresa antes de que la máquina escriba encima.
  *
- *   · La cifra que resuelve el papel va en **bloque oscuro** (radio 20), y
- *     dentro va en **dorado**. Una por documento, como manda «una pantalla, una
- *     respuesta».
- *   · La superficie es **blanca**; el estado va en una **pastilla**, nunca
- *     tiñendo el fondo.
- *   · Los radios salen de la escala cerrada: 20 el bloque, 18 el papel, 999 la
- *     pastilla. No hay ninguno inventado.
+ * ── LO QUE ESTE PAPEL HACE, ADEMÁS DE PINTARSE ────────────────────────────
  *
- * ── LO QUE NO SE COPIA DE NEQUI, Y POR QUÉ ────────────────────────────────
- *
- *   · **El QR.** El único que existe —`/qr/{cliente}`— es del COBRADOR: abre la
- *     pantalla de cobro y pide sesión. En un papel que va al deudor por
- *     WhatsApp no sirve. El portal del cliente sí tiene enlace, pero se entra
- *     con teléfono y PIN: un QR a una puerta que quizá no puede abrir es peor
- *     que ninguno.
- *   · **La ilustración de fondo.** La de Nequi la hizo un ilustrador. La marca
- *     de agua de aquí son las tres barras del logo, geometría pura.
+ * Un rediseño pierde funciones en silencio, así que la lista va escrita:
+ *   1. El nombre del negocio en hasta tres renglones, sin recortar.
+ *   2. El nombre y el documento del cliente bajan de renglón, nunca se cortan.
+ *   3. Los campos los elige el prestamista, incluidos los de texto libre.
+ *   4. «Progreso» se saca de la lista y se pinta como barra.
+ *   5. La referencia son los últimos 8 del id del pago.
+ *   6. La línea legal: el software no es el acreedor.
+ *   7. Alto mínimo 16:9, y el aire que sobra se reparte entre las filas para
+ *      que no quede un palmo en blanco encima del pie.
  */
+
+const VERDE_HONDO = '#0B5F35'
+const ROJO = '#9A2C08'
+const AZUL = '#1D4E89'
+
+/* Los iconos de la trama. Fuera casa, tienda, teléfono y pin: a tamaño pequeño
+   leen como pegatinas. Quedan los del dinero. */
+const TRAMA_CABECERA = ['billete', 'moneda', 'recibo', 'grafico', 'hucha', 'bolsa', 'candado', 'visto', 'calendario', 'reloj']
+const TRAMA_PAPEL = ['billete', 'moneda', 'recibo', 'hucha', 'bolsa', 'calendario', 'grafico', 'candado']
+
+/** El icono de cada renglón es el de ESE dato, no un adorno. */
+const ICONO_DE_CAMPO = {
+  totalPagado: 'hucha', saldoAntes: 'reloj', saldoPendiente: 'bolsa',
+  totalAPagar: 'billete', cuota: 'calendario', montoPrestado: 'billete',
+  frecuencia: 'calendario', fechaVencimiento: 'calendario',
+  numeroCuota: 'recibo', cuotasRestantes: 'recibo',
+  diasMora: 'reloj', moraDiaria: 'reloj', totalMora: 'reloj',
+  excedente: 'moneda', excedenteAplicado: 'grafico',
+  clienteCedula: 'recibo', clienteTelefono: 'telefono',
+  ruta: 'pin', cobrador: 'persona',
+}
+
+/** `Pago.tipo` en palabras del cliente. Sin tipo es una cuota normal. */
+/** Una fila de dato: rótulo a la izquierda, valor a la derecha. */
+function fila(ctx, L, R, y, rotulo, valor, SANS, MONO, tam) {
+  const t = tam || 14
+  ctx.textAlign = 'left'
+  ctx.fillStyle = TINTA.ink3
+  ctx.font = `500 ${t}px ${SANS}`
+  ctx.fillText(String(rotulo), L, y)
+  ctx.textAlign = 'right'
+  ctx.fillStyle = TINTA.ink2
+  ctx.font = `700 ${t}px ${MONO}`
+  ctx.fillText(String(valor), R, y)
+  ctx.textAlign = 'left'
+}
+
+/**
+ * Un renglón de la tabla, con su icono.
+ *
+ * ⚠ SI EL VALOR NO CABE, BAJA DE RENGLÓN. No se encoge ni se recorta: en esta
+ * tabla van el nombre, el documento, el teléfono y la dirección, que son lo que
+ * identifica a la persona, y cortados no sirven para nada. Devuelve la `y` en
+ * que acaba, que puede ser dos o tres renglones más abajo.
+ */
+function filaExtracto(ctx, L, R, y, d, SANS, MONO, colorIcono) {
+  const [rotulo, valor, icono, clase] = d
+  const esTexto = clase === 'txt'
+  const sangria = 30
+  if (icono) ico(ctx, icono, L + 9, y - 5, 19, colorIcono, 1.6)
+
+  ctx.textAlign = 'left'
+  ctx.fillStyle = TINTA.ink3
+  ctx.font = `500 14px ${SANS}`
+  const anchoRotulo = ctx.measureText(String(rotulo)).width
+  ctx.fillText(String(rotulo), L + sangria, y)
+
+  ctx.font = `${esTexto ? '700' : '500'} 15px ${esTexto ? SANS : MONO}`
+  const hueco = (R - L) - sangria - anchoRotulo - 18
+  if (ctx.measureText(String(valor)).width <= hueco) {
+    ctx.textAlign = 'right'
+    ctx.fillStyle = TINTA.ink
+    ctx.fillText(String(valor), R, y)
+    ctx.textAlign = 'left'
+    return y
+  }
+  // No cabe al lado: va debajo, a la izquierda, partido en renglones enteros.
+  ctx.fillStyle = TINTA.ink
+  for (const linea of renglones(ctx, valor, (R - L) - sangria, 3)) {
+    y += 19
+    ctx.fillText(linea, L + sangria, y)
+  }
+  return y
+}
+
 export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) {
   /* ⚠ 540 DE ANCHO, NO 620, Y VERTICAL. A escala 2 salen 1080 px de ancho, que
-     es la medida de una foto de móvil, y el papel deja de ser casi cuadrado. Lo
-     pidió el dueño: «hacerlo más largo, más ordenado, el tamaño como el
-     estándar de móvil». La altura crece con el contenido pero nunca baja de
-     16:9, así que el pie siempre cae abajo del todo como en un recibo de
-     verdad. */
+     es la medida de una foto de móvil. Lo pidió el dueño: «hacerlo más largo,
+     más ordenado, el tamaño como el estándar de móvil». */
   const W = 540
+  const L = 44
+  const R = W - 44
   const { texto: SANS, cifra: MONO } = familias()
 
   const campos = (Array.isArray(camposRecibo) && camposRecibo.length > 0)
@@ -334,51 +325,252 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
     : getDefaultCampos()
   const tieneCedula = cliente?.cedula && !String(cliente.cedula).startsWith('SIN-')
 
-  /* Las filas de dato, ya resueltas. El cliente y su documento salen de aquí:
-     van arriba y en grande, que es lo primero que se mira al recibir el papel. */
+  /* Cada fila lleva su icono y si es texto o cifra, para que la tabla los pinte
+     sin volver a preguntar qué campo era. */
   const filas = campos
-    .map((c) => [c.nombre, c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo, pago)])
+    .map((c) => {
+      const v = c.tipo === 'texto' ? c.valor : resolverCampo(c.campo, cliente, prestamo, pago)
+      const icono = c.tipo === 'texto' ? 'recibo' : (ICONO_DE_CAMPO[c.campo] || 'recibo')
+      // Las cifras van en la familia de los números para que queden a plomo;
+      // lo demás, en la de texto.
+      const clase = /^[$\d]/.test(String(v ?? '').trim()) ? 'num' : 'txt'
+      return [c.nombre, v, icono, clase]
+    })
     .filter(([, v]) => v != null && String(v).trim() !== '' && String(v) !== '-' && String(v) !== '—')
 
   // El progreso se saca de las filas para pintarlo como barra, que dice más que
-  // un número suelto y llena el papel sin ruido.
+  // un número suelto.
   const iProg = filas.findIndex(([r]) => /progreso/i.test(String(r)))
   const progreso = iProg >= 0 ? filas.splice(iProg, 1)[0] : null
   const pct = progreso ? Math.max(0, Math.min(100, parseFloat(String(progreso[1])) || 0)) : null
 
+  // El cliente y su documento abren la tabla. La cédula solo se repite si el
+  // dueño no la puso ya como campo suyo.
+  const yaPideCedula = campos.some((c) => c.tipo === 'dato' && c.campo === 'clienteCedula')
+  const cabeceraTabla = [['Cliente', cliente?.nombre ?? '—', 'persona', 'txt']]
+  if (tieneCedula && !yaPideCedula) {
+    cabeceraTabla.push(['Documento', `${abreviaturaDocumento()} ${cliente.cedula}`, 'recibo', 'txt'])
+  }
+  const tabla = cabeceraTabla.concat(filas)
+
   const referencia = pago?.id ? String(pago.id).slice(-8).toUpperCase() : null
 
-  const MARGEN = 30          // el papel tapiz se ve por aquí
-  const PAD = 30
-  const L0 = MARGEN + PAD
-  const R0 = W - MARGEN - PAD
-  const ANCHO_TEXTO = R0 - L0
+  /* ── El estado ─────────────────────────────────────────────────────────
+     `diasMora` lo manda el API con la respuesta del pago. ⚠ Cuando NO viene
+     —una reimpresión desde la ficha— no se pinta etiqueta: decir «AL DÍA» sin
+     saberlo es poner por escrito algo que puede ser falso, en un papel que el
+     cliente guarda. */
+  /* ⚠ `Number(null)` ES 0, NO NaN. Con `diasMora: null` —que es lo que manda
+     una reimpresión desde la ficha— la comprobación de `isFinite` daba cierto,
+     la mora salía 0 y el papel estampaba «AL DÍA» sobre un préstamo del que no
+     se sabía nada. Medido en la captura del 14 sep 2026. El `== null` va
+     PRIMERO y caza también el `undefined`. */
+  const mora = prestamo?.diasMora == null || !Number.isFinite(Number(prestamo.diasMora))
+    ? null
+    : Math.max(0, Math.round(Number(prestamo.diasMora)))
+  const enMora = mora != null && mora > 0
+  const acento = enMora ? ROJO : TINTA.green
+  const tinte = enMora ? '#FDEBE3' : TINTA.greenTint
+  const veloBase = enMora ? 'rgba(253,235,227,.98)' : 'rgba(232,246,238,.98)'
+  const etiquetaEstado = mora == null ? '' : (enMora ? `EN MORA · ${mora} ${mora === 1 ? 'DÍA' : 'DÍAS'}` : 'AL DÍA')
 
-  /* La altura se MIDE antes de crear el lienzo: el nombre del negocio puede
-     ocupar uno, dos o tres renglones y el número de filas depende de lo que el
-     prestamista haya configurado. */
-  const medidor = document.createElement('canvas').getContext('2d')
-  medidor.font = `700 26px ${SANS}`
-  const lineasOrg = renglones(medidor, orgNombre || 'Mi negocio', ANCHO_TEXTO, 3)
+  const titulo = tituloDelTipoDePago(pago?.tipo)
+  const monto = formatMoney(pago?.montoPagado ?? 0)
+  const reparto = repartoDeEstePago(prestamo, pago)
+  const tramos = []
+  if (reparto) {
+    if (reparto.interes > 0) tramos.push({ rot: 'Interés del período', v: reparto.interes, color: TINTA.green, ico: 'grafico' })
+    if (reparto.capital > 0) tramos.push({ rot: 'Abono al capital', v: reparto.capital, color: AZUL, ico: 'hucha' })
+  }
+  const nota = reparto ? notaDelReparto(pago?.tipo, reparto.interes, reparto.capital) : null
 
-  const ALTO_CABECERA = 30 + 18 + lineasOrg.length * 32 + 26
-  const ALTO_BLOQUE = 168
-  const ALTO_CLIENTE = 84
-  const ALTO_FILA = 40
-  const ALTO_PROGRESO = pct == null ? 0 : 62
-  const ALTO_PIE = referencia ? 92 : 66
-  const contenido = ALTO_CABECERA + ALTO_BLOQUE + 26 + ALTO_CLIENTE + 18
-    + filas.length * ALTO_FILA + ALTO_PROGRESO + ALTO_PIE
-  const H = Math.max(Math.round(W * 16 / 9), contenido + MARGEN * 2 + PAD * 2)
+  /* ── La altura se MIDE, no se estima ───────────────────────────────────
+     El nombre del negocio ocupa uno, dos o tres renglones; el número de filas
+     lo decide el prestamista, y cualquiera de ellas puede bajar de renglón. La
+     única forma honesta de saber cuánto mide es dibujarlo en seco. */
+  const pintar = (ctx, H, aire) => {
+    const medidor = ctx
+    medidor.font = `700 18px ${SANS}`
+    const lineasOrg = renglones(medidor, orgNombre || 'Mi negocio', W - L * 2 - 70, 3)
+    const yOrg = 50
+    const ySub = yOrg + (lineasOrg.length - 1) * 22 + 16
+    const ALTO_CAB = ySub + 66
+
+    // ── Cabecera: el tinte, la trama de dos matices y el velo ───────────
+    ctx.save()
+    ctx.beginPath(); ctx.rect(0, 0, W, ALTO_CAB); ctx.clip()
+    ctx.fillStyle = tinte
+    ctx.fillRect(0, 0, W, ALTO_CAB)
+    rejilla(ctx, 0, 0, W, ALTO_CAB, {
+      color: acento, alfa: 0.12,
+      // ⚠ El dorado de la marca, y aquí sí: es dibujo al 34 %, no una cifra.
+      color2: TINTA.gold, alfa2: 0.34,
+      paso: 48, tam: 24, g: 1.6, lista: TRAMA_CABECERA,
+    })
+    ctx.restore()
+
+    monograma(ctx, L, 30, 42, (orgNombre || 'C')[0], '#FFFFFF', acento, 'rgba(0,0,0,.10)', SANS)
+
+    /* El velo se MIDE contra el nombre: tapa el dibujo justo hasta donde acaba
+       el texto y se deshace en 86 px. Uno de ancho fijo dejaba iconos asomando
+       por detrás de la última sílaba. Y va de arriba abajo: a media altura
+       partía los iconos y parecían recortados. */
+    ctx.font = `700 18px ${SANS}`
+    let anchoOrg = 0
+    for (const linea of lineasOrg) anchoOrg = Math.max(anchoOrg, ctx.measureText(linea).width)
+    const vx1 = L + 44
+    const vx2 = L + 56 + anchoOrg + 86
+    const velo = ctx.createLinearGradient(vx1, 0, vx2, 0)
+    velo.addColorStop(0, veloBase)
+    velo.addColorStop(Math.min(0.92, (56 + anchoOrg + 10 - 44) / (vx2 - vx1)), veloBase)
+    velo.addColorStop(1, veloBase.replace(/[\d.]+\)$/, '0)'))
+    ctx.fillStyle = velo
+    ctx.fillRect(vx1, 0, vx2 - vx1, ALTO_CAB)
+
+    ctx.textAlign = 'left'
+    ctx.fillStyle = TINTA.ink
+    ctx.font = `700 18px ${SANS}`
+    let yy = yOrg
+    for (const linea of lineasOrg) { ctx.fillText(linea, L + 56, yy); yy += 22 }
+    ctx.fillStyle = acento
+    ctx.font = `600 10px ${SANS}`
+    ctx.fillText('COMPROBANTE DE PAGO', L + 56, ySub)
+
+    // ── La franja del estado ────────────────────────────────────────────
+    const ALTO_FRANJA = 54
+    ctx.fillStyle = enMora ? ROJO : VERDE_HONDO
+    ctx.fillRect(0, ALTO_CAB, W, ALTO_FRANJA)
+    const cy = ALTO_CAB + ALTO_FRANJA / 2
+    ico(ctx, enMora ? 'reloj' : 'visto', L + 13, cy, 24, '#FFFFFF', 2)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.font = `800 14px ${SANS}`
+    ctx.fillText(enMora ? 'PAGO RECIBIDO · EN MORA' : 'PAGO RECIBIDO', L + 34, cy + 5)
+    if (etiquetaEstado) {
+      ctx.textAlign = 'right'
+      ctx.fillStyle = 'rgba(255,255,255,.82)'
+      ctx.font = `700 11px ${SANS}`
+      ctx.fillText(etiquetaEstado, R, cy + 5)
+      ctx.textAlign = 'left'
+    }
+
+    // ── Qué pagó, cuánto y cuándo ───────────────────────────────────────
+    let y = ALTO_CAB + ALTO_FRANJA + 62
+    ctx.fillStyle = TINTA.ink3
+    ctx.font = `500 13px ${SANS}`
+    for (const linea of renglones(ctx, `${titulo} · ${cliente?.nombre ?? '—'}`, R - L, 2)) {
+      ctx.fillText(linea, L, y)
+      y += 18
+    }
+    y += 34
+
+    /* La cifra que resuelve el papel. En TINTA, no en dorado: el dorado ya
+       está en el dibujo de la cabecera y dos dorados en la misma imagen dejan
+       al ojo sin saber dónde mirar. */
+    ctx.fillStyle = TINTA.ink
+    const tm = encoge(ctx, monto, R - L, 52, 28, '700', MONO)
+    ctx.font = `700 ${tm}px ${MONO}`
+    ctx.fillText(monto, L, y)
+    y += 24
+    ctx.fillStyle = TINTA.ink4
+    ctx.font = `13px ${SANS}`
+    ctx.fillText(fmtFechaHora(pago?.fechaPago), L, y)
+
+    // ── A qué se aplicó ─────────────────────────────────────────────────
+    if (tramos.length > 0) {
+      y += 44
+      ctx.fillStyle = TINTA.ink4
+      ctx.font = `700 10px ${SANS}`
+      ctx.fillText('A QUÉ SE APLICÓ ESTE PAGO', L, y)
+      y += 14
+      apilada(ctx, L, y, R - L, tramos, 9, TINTA.borderSoft)
+      y += 30
+      for (const t of tramos) {
+        ctx.beginPath(); ctx.arc(L + 5, y - 5, 5, 0, Math.PI * 2)
+        ctx.fillStyle = t.color; ctx.fill()
+        ctx.fillStyle = TINTA.ink2
+        ctx.font = `500 14px ${SANS}`
+        ctx.fillText(t.rot, L + 18, y)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = TINTA.ink
+        ctx.font = `700 14px ${MONO}`
+        ctx.fillText(formatMoney(t.v), R, y)
+        ctx.textAlign = 'left'
+        y += 26
+      }
+      if (nota) {
+        y += 2
+        ctx.fillStyle = TINTA.ink4
+        ctx.font = `12px ${SANS}`
+        for (const linea of renglones(ctx, nota, R - L, 3)) { ctx.fillText(linea, L, y); y += 16 }
+        y -= 10
+      }
+    }
+
+    // ── La tabla del extracto ───────────────────────────────────────────
+    y += 22
+    raya(ctx, L, y, R, TINTA.border)
+    for (const d of tabla) {
+      y += 38 + aire
+      y = filaExtracto(ctx, L, R, y, d, SANS, MONO, acento)
+      y += 16
+      raya(ctx, L, y, R, TINTA.borderSoft)
+    }
+
+    // ── El avance del préstamo ──────────────────────────────────────────
+    if (pct != null) {
+      y += 38
+      ctx.fillStyle = TINTA.ink3
+      ctx.font = `500 13px ${SANS}`
+      ctx.fillText(progreso[0], L, y)
+      ctx.textAlign = 'right'
+      ctx.fillStyle = acento
+      ctx.font = `700 13px ${MONO}`
+      ctx.fillText(`${Math.round(pct)}%`, R, y)
+      ctx.textAlign = 'left'
+      y += 14
+      caja(ctx, L, y, R - L, 6, 999)
+      ctx.fillStyle = TINTA.borderSoft
+      ctx.fill()
+      if (pct > 0) {
+        caja(ctx, L, y, Math.max(6, (R - L) * pct / 100), 6, 999)
+        ctx.fillStyle = acento
+        ctx.fill()
+      }
+      y += 6
+    }
+
+    // ── El pie, siempre abajo del todo ──────────────────────────────────
+    if (H != null) {
+      let p = H - 96
+      raya(ctx, L, p, R, TINTA.border)
+      if (referencia) {
+        p += 30
+        fila(ctx, L, R, p, 'Referencia', referencia, SANS, SANS, 13)
+      }
+      p = H - 36
+      ctx.textAlign = 'left'
+      ctx.fillStyle = TINTA.ink4
+      ctx.font = `11px ${SANS}`
+      // Dice el papel que cumple, no solo el nombre: esta imagen se le manda al
+      // deudor por WhatsApp y es de lo poco que se queda en su teléfono.
+      ctx.fillText('Software de gestión: Control Finanzas · no presta dinero ni realiza cobros', L, p)
+    }
+    return y
+  }
+
+  // Pasada en seco: mide. Nada de lo que pinta se ve.
+  const seco = document.createElement('canvas').getContext('2d')
+  const yFin = pintar(seco, null, 0)
+
+  const MINIMO = Math.round(W * 16 / 9)
+  const H = Math.max(MINIMO, Math.ceil(yFin) + 40 + 96)
 
   /* ⚠ EL AIRE QUE SOBRA SE REPARTE, no se amontona. Con pocas filas el papel
      llegaba al alto de móvil dejando un vacío blanco de un palmo justo encima
-     del pie, y parecía que faltaba algo. Repartido entre las filas, el
-     comprobante respira de arriba abajo y se lee más ordenado, que es lo que
-     pidió el dueño. El tope evita que con dos filas queden separadas media
-     página. */
-  const sobra = Math.max(0, H - contenido - MARGEN * 2 - PAD * 2)
-  const ALTO_FILA_REAL = ALTO_FILA + Math.min(20, sobra / Math.max(1, filas.length + 2))
+     del pie, y parecía que faltaba algo. El tope evita que con dos filas queden
+     separadas media página. */
+  const sobra = Math.max(0, H - (Math.ceil(yFin) + 40 + 96))
+  const aire = Math.min(14, sobra / Math.max(1, tabla.length + 2))
 
   const escala = 2
   const canvas = document.createElement('canvas')
@@ -387,168 +579,29 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   const ctx = canvas.getContext('2d')
   ctx.scale(escala, escala)
 
-  /* El fondo NO se deja transparente: un PNG con alfa sale sobre negro en
+  pintar(ctx, H, aire)
+
+  /* ── Y AHORA, POR DEBAJO ────────────────────────────────────────────────
+     La trama del cuerpo y el papel blanco entran con `destination-over`, así
+     que caen bajo el texto ya escrito. Ninguna cifra puede quedar tapada.
+     El fondo tampoco se deja transparente: un PNG con alfa sale sobre negro en
      varias vistas de WhatsApp y el recibo acaba ilegible. */
-  ctx.fillStyle = TINTA.surface
-  ctx.fillRect(0, 0, W, H)
-  garabatos(ctx, W, H)
-
-  const x0 = MARGEN, y0 = MARGEN
-  const w = W - MARGEN * 2, h = H - MARGEN * 2
-  const L = L0, R = R0
-
-  siluetaTicket(ctx, x0, y0, w, h, 18, 9)
   ctx.save()
-  ctx.shadowColor = 'rgba(20,20,28,.14)'
-  ctx.shadowBlur = 22
-  ctx.shadowOffsetY = 6
+  ctx.globalCompositeOperation = 'destination-over'
+  const cuerpo0 = 200
+  const cuerpo1 = H - 40
+  const nFilas = Math.max(1, Math.floor((cuerpo1 - cuerpo0) / 54))
+  for (let f = 0; f < nFilas; f++) {
+    rejilla(ctx, 0, cuerpo0 + f * 54, W, 54, {
+      color: TINTA.ink,
+      alfa: 0.055 - (0.042 * f / Math.max(1, nFilas - 1)),
+      paso: 54, tam: 26, g: 1.4, semilla: f, lista: TRAMA_PAPEL,
+    })
+  }
   ctx.fillStyle = TINTA.card
-  ctx.fill()
+  ctx.fillRect(0, 0, W, H)
   ctx.restore()
 
-  ctx.save()
-  siluetaTicket(ctx, x0, y0, w, h, 18, 9)
-  ctx.clip()
-  /* El MISMO papel tapiz por dentro, más flojo y en las mismas coordenadas: se
-     lee como una sola tela vista a través del papel, y de paso llena el hueco
-     que queda entre los datos y el pie cuando el comprobante tiene pocas filas.
-     Antes ahí había un vacío blanco enorme.
-
-     Sustituye a la marca de agua de las tres barras, que además caía justo
-     detrás de «Referencia» y se leían encima una de otra. */
-  garabatos(ctx, W, H, 0.028)
-
-  // ── Quién lo emite ──────────────────────────────────────────────────────
-  let y = y0 + 46
-  ctx.textAlign = 'left'
-  ctx.fillStyle = TINTA.ink4
-  ctx.font = `600 11px ${SANS}`
-  ctx.fillText('COMPROBANTE DE PAGO', L, y)
-
-  y += 34
-  ctx.fillStyle = TINTA.ink
-  ctx.font = `700 26px ${SANS}`
-  for (const linea of lineasOrg) {
-    ctx.fillText(linea, L, y)
-    y += 32
-  }
-
-  y += 8
-  hairline(ctx, L, y, R)
-
-  // ── El bloque oscuro: la cifra que resuelve el papel ────────────────────
-  y += 24
-  const bh = ALTO_BLOQUE - 26
-  caja(ctx, L, y, R - L, bh, 20)
-  ctx.fillStyle = BLOQUE.fondo
-  ctx.fill()
-
-  ctx.fillStyle = BLOQUE.rotulo
-  ctx.font = `13px ${SANS}`
-  ctx.fillText('Pagó', L + 24, y + 36)
-
-  /* La pastilla del estado, arriba a la derecha del bloque. El estado va en el
-     acento y nunca tiñendo la superficie. */
-  const rot = 'RECIBIDO'
-  ctx.font = `700 11px ${SANS}`
-  const anchoP = ctx.measureText(rot).width + 32
-  caja(ctx, R - 24 - anchoP, y + 22, anchoP, 26, 999)
-  ctx.fillStyle = 'rgba(18,161,80,.20)'
-  ctx.fill()
-  visto(ctx, R - 24 - anchoP + 12, y + 35, 5, '#5BD98A')
-  ctx.fillStyle = '#5BD98A'
-  ctx.fillText(rot, R - 24 - anchoP + 27, y + 39)
-
-  /* La cifra: dorado sobre carbón, encogiendo si hace falta. Es lo único
-     dorado del documento. */
-  const monto = formatMoney(pago?.montoPagado ?? 0)
-  let tc = 54
-  ctx.font = `700 ${tc}px ${MONO}`
-  while (tc > 24 && ctx.measureText(monto).width > R - L - 48) {
-    tc -= 2
-    ctx.font = `700 ${tc}px ${MONO}`
-  }
-  ctx.fillStyle = BLOQUE.oro
-  ctx.fillText(monto, L + 24, y + 100)
-
-  ctx.fillStyle = BLOQUE.apagado
-  ctx.font = `13px ${SANS}`
-  ctx.fillText(fmtFechaHora(pago?.fechaPago), L + 24, y + bh - 22)
-
-  // ── A quién ─────────────────────────────────────────────────────────────
-  y += ALTO_BLOQUE + 10
-  ctx.fillStyle = TINTA.ink4
-  ctx.font = `600 11px ${SANS}`
-  ctx.fillText('CLIENTE', L, y)
-
-  /* ⚠ El nombre NO se recorta: se encoge hasta que entra. Es lo que identifica
-     a la persona, y cortado no sirve para nada. */
-  y += 30
-  let tn = 24
-  ctx.font = `700 ${tn}px ${SANS}`
-  while (tn > 13 && ctx.measureText(cliente?.nombre ?? '—').width > ANCHO_TEXTO) {
-    tn -= 1
-    ctx.font = `700 ${tn}px ${SANS}`
-  }
-  ctx.fillStyle = TINTA.ink
-  ctx.fillText(cliente?.nombre ?? '—', L, y)
-
-  if (tieneCedula) {
-    y += 24
-    ctx.fillStyle = TINTA.ink3
-    ctx.font = `14px ${SANS}`
-    ctx.fillText(`${abreviaturaDocumento()} ${cliente.cedula}`, L, y)
-  }
-
-  y += 26
-  hairline(ctx, L, y, R)
-
-  // ── Los datos, en dos columnas ──────────────────────────────────────────
-  //
-  // Antes iban APILADOS —rótulo encima, valor debajo— y por eso el papel salía
-  // largo y desordenado, con la mitad derecha vacía. En dos columnas se lee de
-  // un vistazo y las cifras quedan a plomo.
-  y += 30
-  for (const [rotulo, valor] of filas) {
-    fila(ctx, L, R, y, rotulo, valor, SANS, MONO)
-    y += ALTO_FILA_REAL
-  }
-
-  // ── El progreso, como barra ─────────────────────────────────────────────
-  if (pct != null) {
-    y -= 6
-    fila(ctx, L, R, y, progreso[0], `${Math.round(pct)}%`, SANS, MONO)
-    y += 18
-    caja(ctx, L, y, R - L, 8, 999)
-    ctx.fillStyle = TINTA.borderSoft
-    ctx.fill()
-    if (pct > 0) {
-      caja(ctx, L, y, Math.max(8, (R - L) * pct / 100), 8, 999)
-      ctx.fillStyle = TINTA.green
-      ctx.fill()
-    }
-    y += 34
-  }
-
-  // ── El pie, siempre abajo del todo ──────────────────────────────────────
-  y = y0 + h - (referencia ? 86 : 56)
-  punteado(ctx, L, y, R)
-
-  if (referencia) {
-    y += 30
-    fila(ctx, L, R, y, 'Referencia', referencia, SANS, SANS)
-    y += 30
-  } else {
-    y += 28
-  }
-  ctx.textAlign = 'left'
-  ctx.fillStyle = TINTA.ink4
-  ctx.font = `11px ${SANS}`
-  // Dice el papel que cumple, no solo el nombre: esta imagen se le manda al
-  // deudor por WhatsApp y es de lo poco que se queda en su teléfono.
-  ctx.fillText('Software de gestión: Control Finanzas · no presta dinero ni realiza cobros', L, y)
-
-  ctx.restore()
   return canvas
 }
 

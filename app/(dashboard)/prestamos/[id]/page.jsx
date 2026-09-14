@@ -2222,7 +2222,7 @@ function PrestamoDetalleContenido({ params }) {
                       <BotonCompartirRecibo
                         cliente={cliente}
                         prestamo={prestamo}
-                        pago={{ id: pago.id, montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }}
+                        pago={{ id: pago.id, montoPagado: pago.montoPagado, fechaPago: pago.fechaPago, tipo: pago.tipo }}
                         orgNombre={orgNombre}
                         camposRecibo={camposRecibo}
                         label="Mandar el recibo como imagen"

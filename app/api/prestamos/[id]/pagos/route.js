@@ -41,6 +41,7 @@ import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
+import { repartoDeUnPago } from '@/lib/dinero/interes-cobrado'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -1145,12 +1146,28 @@ export async function POST(request, { params }) {
     }).catch(() => {})
   }
 
+  /* EL REPARTO DE ESTE PAGO, para el recibo. Lo mide el servidor porque el
+     navegador no puede: depende de por dónde iba la tabla, de los pagos
+     declarados y del techo de interés. Va atado al id del pago —igual que
+     `saldoAntesDelPago`— y los pagos se ordenan ASCENDENTE porque el acumulado
+     de `interesPagoAPago` avanza en el orden de la lista. */
+  const pagosAsc = [...(prestamoFinal.pagos ?? [])]
+    .sort((x, y) => (new Date(x.fechaPago) - new Date(y.fechaPago)) || String(x.id).localeCompare(String(y.id)))
+  const repartoDelPago = repartoDeUnPago({
+    prestamo: prestamoFinal,
+    cuotas: prestamoFinal.cuotasAmortizacion ?? null,
+    pagos: pagosAsc,
+    pagoId: saldoAntesDelPagoId,
+  })
+
   return Response.json({
     ...prestamoFinal,
     totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     saldoAntesDelPago,
     saldoAntesDelPagoId,
+    repartoDelPago,
+    repartoDelPagoId: repartoDelPago ? saldoAntesDelPagoId : null,
     capitalRestante:  calcularCapitalRestante(prestamoFinal),
     porcentajePagado: calcularPorcentajePagado(prestamoFinal),
     diasMora:         calcularDiasMora(prestamoFinal, diasExcluidosFinal, festivos),

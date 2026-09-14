@@ -405,7 +405,11 @@ export default function RegistrarPago({
          salir al revés; el comprobante ata su «Antes debía» a este id, así que
          equivocarlo borra la fila del recibo. */
       const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
-      const pagoParaWA = { id: pagoId, montoPagado: m, fechaPago: new Date().toISOString(), metodoPago, plataforma }
+      /* ⚠ EL TIPO VIAJA CON EL PAGO. Sin él, el recibo no sabe si titular
+         «Abono a capital» o «Pago de intereses», y la guarda de tres líneas más
+         abajo —que no manda WhatsApp por un recargo o un descuento— nunca
+         disparaba con red porque `pagoGuardado.tipo` llegaba `undefined`. */
+      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, plataforma }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)

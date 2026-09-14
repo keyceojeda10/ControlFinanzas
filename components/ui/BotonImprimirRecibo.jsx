@@ -5,7 +5,7 @@
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento, nombreDocumento } from '@/lib/documento'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
-import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe, saldoAntesDeEstePago } from '@/lib/recibo-derivados'
+import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe, saldoAntesDeEstePago, repartoDeEstePago, tituloDelTipoDePago, notaDelReparto } from '@/lib/recibo-derivados'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,6 +118,20 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
     return `<div class="row"><span>${c.nombre}:</span><span>${val}</span></div>`
   }).filter(Boolean).join('\n  ')
 
+  /* ⚠ EL MISMO BLOQUE QUE LA IMAGEN, Y POR ESO SALE DE LA MISMA FUNCIÓN.
+     El rollo térmico y el PNG de WhatsApp son el mismo papel para el cliente:
+     si uno dice cuánto fue interés y el otro no, la pregunta llega igual.
+     `repartoDeEstePago` ya exige que la cifra sea de ESTE pago; cuando no la
+     hay —una reimpresión desde la ficha, un cobro sin señal— no se pinta nada.
+     Inventarla restando saldos daría otro número. */
+  const reparto = repartoDeEstePago(prestamo, pago)
+  const bloqueReparto = !reparto ? '' : `
+  <div class="linea-fina">${lineaFina}</div>
+  <div class="center bold" style="font-size:10px; letter-spacing:.5px;">A QUÉ SE APLICÓ ESTE PAGO</div>
+  ${reparto.interes > 0 ? `<div class="row"><span>Interés:</span><span>${formatMoney(reparto.interes)}</span></div>` : ''}
+  ${reparto.capital > 0 ? `<div class="row"><span>Abono a capital:</span><span>${formatMoney(reparto.capital)}</span></div>` : ''}
+  <div style="font-size:9px; line-height:1.35; margin-top:3px;">${notaDelReparto(pago?.tipo, reparto.interes, reparto.capital)}</div>`
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recibo de Pago</title>
@@ -173,10 +187,15 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
   <div class="linea-fina">${lineaFina}</div>
 
   <div class="monto-grande">${formatMoney(pago?.montoPagado ?? 0)}</div>
+  <!-- QUE FUE ESTE PAGO, con sus palabras. Un abono a capital y una cuota se
+       ven idénticos en el papel si solo va la cifra, y el cliente vuelve a
+       preguntar por que el saldo no bajó lo que esperaba. -->
+  <div class="center" style="font-size:11px;">${tituloDelTipoDePago(pago?.tipo)}</div>
 
   <div class="linea-fina">${lineaFina}</div>
 
   ${filasCampos}
+  ${bloqueReparto}
 
   <div class="linea">${linea}</div>
 
