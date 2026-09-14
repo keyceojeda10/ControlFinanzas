@@ -55,7 +55,10 @@ export async function GET(req, { params }) {
       referidoPor: { select: { id: true, nombre: true } },
       referidos:   { select: { id: true, nombre: true, createdAt: true } },
       _count: {
-        select: { clientes: true, prestamos: true },
+        /* `rutas` es para el cupo de rutas extra: sin él la ficha no puede
+           decir cuántas tiene creadas y el superadmin concede a ciegas. Ver
+           [[feedback_verificar_prisma_select]]. */
+        select: { clientes: true, prestamos: true, rutas: true },
       },
       adminLogs: {
         orderBy: { createdAt: 'desc' },
@@ -261,6 +264,42 @@ export async function PATCH(req, { params }) {
       },
     })
     return NextResponse.json({ ok: true, mensaje: `Clientes extra actualizados a ${cantidad}` })
+  }
+
+  /* ══ RUTAS EXTRA ══════════════════════════════════════════════════════════
+   *
+   * «Lo de la ruta se lo aumenta a ese cliente y también déjalo en el superadmin
+   *  para no tener que pedírtelo a ti.» — el dueño, 14 sep 2026.
+   *
+   * Era el único de los tres cupos que no se podía dar desde aquí: cobradores y
+   * clientes sí, rutas no. `rutasExtra` solo subía por el webhook de Wompi al
+   * comprar una ruta, así que conceder una había que hacerlo tocando la base a
+   * mano — y sin rastro de quién ni por qué.
+   *
+   * ⚠ Y EN LOS PLANES BAJOS LA RUTA EXTRA NO ESTÁ A LA VENTA. Inicial y Básico
+   *   tienen `rutaExtra: 0` en `lib/planes.js`: nadie puede comprarla aunque
+   *   quiera. Por eso este cupo no es un atajo del checkout, es la ÚNICA forma
+   *   de que una cuenta de plan bajo tenga una segunda ruta.
+   *
+   * El tope de 20 no es capricho: por encima de eso lo que toca es cambiar de
+   * plan, no seguir sumando cupo suelto. La misma regla que en clientes.
+   */
+  if (accion === 'cambiarRutas') {
+    const cantidad = parseInt(body.rutasExtra)
+    if (isNaN(cantidad) || cantidad < 0 || cantidad > 20) {
+      return NextResponse.json({ error: 'Cantidad debe ser entre 0 y 20' }, { status: 400 })
+    }
+    const anterior = org.rutasExtra ?? 0
+    await prisma.organization.update({ where: { id }, data: { rutasExtra: cantidad } })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'cambiar_rutas',
+        detalle:        `Rutas extra: ${anterior} → ${cantidad} para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `Rutas extra actualizadas a ${cantidad}` })
   }
 
   if (accion === 'resetearPassword' && body.userId) {
