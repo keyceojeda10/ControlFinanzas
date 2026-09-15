@@ -40,6 +40,17 @@ function notaDeLaApertura(cr) {
   return `${base} · después ${movido > 0 ? 'entraron' : 'salieron'} ${formatMoney(Math.abs(movido))}`
 }
 
+/* La nota de los abonos que entraron el mismo día en que se renovó su
+   cartulina. `null` cuando no hubo ninguno: un renglón que dice «$0 de
+   renovaciones» en los días sin renovar es ruido, y el dato aquí es que HAYA
+   —no cuánto—. Cuando sí hubo renovaciones pero sin abono, tampoco se pinta:
+   no hay nada que mirar. */
+function notaDeRenovaciones(x) {
+  if (!x || !(x.enEfectivo > 0)) return null
+  const n = x.cartulinas || 0
+  return `De eso, ${formatMoney(x.enEfectivo)} entró el mismo día en que se renovó esa cartulina (${n} ${n === 1 ? 'cliente' : 'clientes'})`
+}
+
 /* Un renglón de la cuenta: rótulo a la izquierda, cifra a la derecha, y su
    explicación opcional debajo. Sin signo: el signo lo dice el grupo —«Entra» o
    «Sale»—, que es justo lo que el dueño pedía poder ver de un vistazo en vez de
@@ -206,6 +217,22 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           <Renglon
             rotulo="Cobró en efectivo"
             monto={cr.cobradoEfectivo ?? 0}
+            /* ── ⚠ LO QUE ENTRÓ EL DÍA EN QUE ESA CARTULINA SE RENOVÓ ──────
+               «cuando ellos van a renovar una cartulina, ellos sacan un abono
+                falso y lo colocan […] así suben el cobro, pero lo suben de
+                mentiras» — PRESTA MIL, 15 sep 2026.
+
+               NO RESTA NADA, Y ES A PROPÓSITO. Un abono puesto para cuadrar la
+               cartulina y una cuota que el cliente sí pagó son idénticos en la
+               base, y «Cobró en efectivo» ES la caja: restarle esto bajaría lo
+               que el cobrador tiene que entregar, y si el abono era real sería
+               regalarle esa plata. Mientras se decide, se ENSEÑA: así el dueño
+               ve el mes entero sin que se mueva una cifra que hoy está bien.
+
+               Solo en la caja del administrador: es una cifra de control suya y
+               no cambia ningún número de la del cobrador, así que las dos
+               siguen diciendo lo mismo. Ver [[dos_cajas_mismo_numero]]. */
+            detalle={notaDeRenovaciones(r.cobradoEnDiaDeRenovacion)}
             onExplicar={onExplicar ? () => onExplicar('recaudoEfectivo') : undefined}
           />
           {/* ⚠ DOS RENGLONES, NO UN TOTAL CON LETRA CHICA DEBAJO. El dueño lo

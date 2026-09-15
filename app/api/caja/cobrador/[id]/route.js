@@ -235,6 +235,11 @@ export async function GET(request, { params }) {
            `undefined` sin que nada reviente: toda transferencia caería fuera
            del fajo y la marca `esDelCobrador` no haría nada, en silencio. */
         metodoPagoId: true,
+        /* ⚠ DE QUÉ PRÉSTAMO ES. Hace falta para saber si ese cobro entró el
+           mismo día en que su cartulina se renovó; sin pedirlo llega
+           `undefined` y el cruce daría siempre cero, en silencio. Ver
+           [[feedback_verificar_prisma_select]]. */
+        prestamoId: true,
         prestamo: {
           select: {
             esClavo: true,
@@ -526,7 +531,8 @@ export async function GET(request, { params }) {
         renovadoDeId: { not: null },
         cliente: { rutaId: { in: rutaIds } },
       },
-      select: { id: true, montoPrestado: true },
+      // `renovadoDeId` para cruzar con los cobros: es la cartulina que se cerró.
+      select: { id: true, montoPrestado: true, renovadoDeId: true },
     })
     : []
   const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
@@ -570,6 +576,52 @@ export async function GET(request, { params }) {
       .reduce((a, p) => a + (p.montoPagado || 0), 0)
   )
   const cobradoEfectivo = cobradoDia - cobradoDigital
+
+  /* ── ⚠ LO QUE ENTRÓ EL MISMO DÍA EN QUE SE RENOVÓ ESA CARTULINA ───────────
+   *
+   * «cuando ellos van a renovar una cartulina, ellos sacan un abono falso y lo
+   *  colocan. Y ese abono no debería ser porque ellos así suben el cobro, pero
+   *  lo suben de mentiras.» — el dueño de la cartera más grande, 15 sep 2026.
+   *
+   * Medido en su cartera: de 529 renovaciones en 30 días, 346 llevan un abono
+   * al préstamo viejo ESE MISMO DÍA, y 194 de ellos se registran en los diez
+   * minutos anteriores a renovar. Suman $17.702.000 sobre $161.892.900
+   * cobrados.
+   *
+   * ⚠ ESTA CIFRA NO SUMA NI RESTA NADA. Va aparte, y a propósito:
+   *
+   *   · Un abono puesto para cuadrar la cartulina y una cuota que el cliente sí
+   *     pagó son IDÉNTICOS en la base —mismo tipo, mismo método, misma hora—.
+   *     Busqué una señal que los separara (que el abono deje el préstamo en
+   *     cero) y no vale: las 190 renovaciones con abono y las 182 sin él
+   *     acaban todas en cero, porque el cero lo pone la propia renovación al
+   *     absorber el saldo.
+   *   · Y «Cobró en efectivo» ES la caja: restarle esto bajaría «tiene que
+   *     entregar» en lo mismo. Si el abono era real, le estaríamos regalando
+   *     esa plata al cobrador. Ver [[dos_cajas_mismo_numero]] y el aviso del
+   *     esquema: «sumarlo de un solo lado infla la caja».
+   *
+   * Así que de momento se ENSEÑA, no se descuenta: el dueño puede ver el mes
+   * entero sin que ninguna cifra que hoy está bien se mueva un peso.
+   */
+  const renovadasHoy = new Set(renovacionesDia.map((r) => r.renovadoDeId).filter(Boolean))
+  const cobrosDeRenovadas = renovadasHoy.size > 0
+    ? cobros.filter((p) => renovadasHoy.has(p.prestamoId))
+    : []
+  const cobradoEnDiaDeRenovacion = {
+    // Cuántas renovaciones del día llevan abono, no cuántos abonos hay.
+    cartulinas: new Set(cobrosDeRenovadas.map((p) => p.prestamoId)).size,
+    abonos: cobrosDeRenovadas.length,
+    monto: Math.round(cobrosDeRenovadas.reduce((a, p) => a + (p.montoPagado || 0), 0)),
+    /* Y cuánto de eso fue efectivo, que es la línea debajo de la que se pinta.
+       Mismo criterio que el resto de la caja: lo decide `entraAlFajo`, nunca el
+       rótulo del método. */
+    enEfectivo: Math.round(
+      cobrosDeRenovadas
+        .filter((p) => entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador))
+        .reduce((a, p) => a + (p.montoPagado || 0), 0)
+    ),
+  }
 
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
   const capitalRutasTotal = Math.round(rutas.filter(r => r.capitalHabilitado).reduce((a, r) => a + (r.saldoCapital || 0), 0))
@@ -1386,6 +1438,8 @@ export async function GET(request, { params }) {
       gastosPendientesMonto: gastosPendientesDia,
       gastosPendientesCantidad: gastos.filter((g) => g.estado === 'pendiente').length,
       saldoApertura: saldoAperturaTotal,
+      /* Informativa: no entra en ninguna suma. Ver el bloque largo de arriba. */
+      cobradoEnDiaDeRenovacion,
     },
     prestadoDetalle,
     gestion: {
