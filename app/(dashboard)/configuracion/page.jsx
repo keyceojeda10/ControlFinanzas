@@ -898,8 +898,11 @@ function TabOrganizacion({ bloques, tema, onTema }) {
           </svg>
           <h3 className="font-medium text-white text-sm">Campos del recibo (plantilla)</h3>
         </div>
+        {/* ⚠ DECIR QUE VALE PARA LAS DOS. El dueño lo leyó como «esto es del
+            impreso» y pidió una opción aparte para la imagen: es la misma, y no
+            saberlo hace buscar un ajuste que no existe. */}
         <p className="text-xs text-[var(--cf-ink-3)] mb-4">
-          Plantilla por defecto para todos los clientes. Puedes personalizar los campos de cada cliente desde la página del préstamo.
+          Vale para el recibo en imagen y para el impreso. También puedes tocarlo al ver un recibo, o cambiarlo para un cliente concreto desde la página del préstamo.
         </p>
 
         <ChecklistCamposRecibo
