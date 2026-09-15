@@ -53,6 +53,11 @@ function getTipoPagoLabel(tipo) {
  * recibo ya se arregló una vez por un lado dejando el otro roto.
  */
 export function resolverCampo(campo, cliente, prestamo, pago) {
+  /* ⚠ ESTE NO ES UNA FILA: ES UN INTERRUPTOR. «A qué se aplicó el pago» enciende
+     el bloque de interés y capital, que se pinta aparte con su barra. Devolver
+     null lo saca de la tabla sin sacarlo del checklist. Mismo caso que
+     `progreso`, que es el interruptor de la barra de avance. */
+  if (campo === 'repartoDelPago') return null
   const saldo = prestamo.saldoPendiente ?? Math.max(0, (prestamo.totalAPagar ?? 0) - (prestamo.totalPagado ?? 0))
   if (campo === 'saldoAntes') {
     const antes = saldoAntesDeEstePago(prestamo, pago)
@@ -124,7 +129,10 @@ export function generarHTMLRecibo(cliente, prestamo, pago, orgNombre, camposReci
      `repartoDeEstePago` ya exige que la cifra sea de ESTE pago; cuando no la
      hay —una reimpresión desde la ficha, un cobro sin señal— no se pinta nada.
      Inventarla restando saldos daría otro número. */
-  const reparto = repartoDeEstePago(prestamo, pago)
+  /* Solo si el prestamista lo tiene encendido en su checklist: hay quien no
+     quiere que el deudor lea a cuánto le presta, y el recibo es su papel. */
+  const quiereReparto = camposAUsar.some((c) => c.campo === 'repartoDelPago')
+  const reparto = quiereReparto ? repartoDeEstePago(prestamo, pago) : null
   const bloqueReparto = !reparto ? '' : `
   <div class="linea-fina">${lineaFina}</div>
   <div class="center bold" style="font-size:10px; letter-spacing:.5px;">A QUÉ SE APLICÓ ESTE PAGO</div>

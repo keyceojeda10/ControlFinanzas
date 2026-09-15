@@ -378,7 +378,11 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
 
   const titulo = tituloDelTipoDePago(pago?.tipo)
   const monto = formatMoney(pago?.montoPagado ?? 0)
-  const reparto = repartoDeEstePago(prestamo, pago)
+  /* Solo si el prestamista lo tiene encendido en su checklist: hay quien no
+     quiere que el deudor lea a cuánto le presta, y el recibo es su papel. La
+     cifra la sigue midiendo el servidor; esto solo decide si se enseña. */
+  const quiereReparto = campos.some((c) => c.campo === 'repartoDelPago')
+  const reparto = quiereReparto ? repartoDeEstePago(prestamo, pago) : null
   const tramos = []
   if (reparto) {
     if (reparto.interes > 0) tramos.push({ rot: 'Interés del período', v: reparto.interes, color: TINTA.green, ico: 'grafico' })
