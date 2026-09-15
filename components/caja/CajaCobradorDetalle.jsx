@@ -40,15 +40,20 @@ function notaDeLaApertura(cr) {
   return `${base} · después ${movido > 0 ? 'entraron' : 'salieron'} ${formatMoney(Math.abs(movido))}`
 }
 
-/* La nota de los abonos que entraron el mismo día en que se renovó su
-   cartulina. `null` cuando no hubo ninguno: un renglón que dice «$0 de
-   renovaciones» en los días sin renovar es ruido, y el dato aquí es que HAYA
-   —no cuánto—. Cuando sí hubo renovaciones pero sin abono, tampoco se pinta:
-   no hay nada que mirar. */
-function notaDeRenovaciones(x) {
-  if (!x || !(x.enEfectivo > 0)) return null
-  const n = x.cartulinas || 0
-  return `De eso, ${formatMoney(x.enEfectivo)} entró el mismo día en que se renovó esa cartulina (${n} ${n === 1 ? 'cliente' : 'clientes'})`
+/* Cuánto pasó entre el abono y la renovación, dicho como lo diría una persona.
+   Es la única pista que el sistema puede dar: cuatro minutos huele distinto que
+   seis horas. Quien decide sigue siendo el prestamista, que conoce a su gente. */
+function cuantoDespues(min) {
+  if (min == null) return ''
+  if (min < 0) return `renovó ${textoMinutos(-min)} ANTES de ese abono`
+  if (min < 1) return 'renovó en el mismo minuto'
+  return `renovó ${textoMinutos(min)} después`
+}
+
+function textoMinutos(m) {
+  if (m < 60) return `${m} minuto${m === 1 ? '' : 's'}`
+  const h = Math.round(m / 60)
+  return `${h} hora${h === 1 ? '' : 's'}`
 }
 
 /* Un renglón de la cuenta: rótulo a la izquierda, cifra a la derecha, y su
@@ -217,22 +222,6 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           <Renglon
             rotulo="Cobró en efectivo"
             monto={cr.cobradoEfectivo ?? 0}
-            /* ── ⚠ LO QUE ENTRÓ EL DÍA EN QUE ESA CARTULINA SE RENOVÓ ──────
-               «cuando ellos van a renovar una cartulina, ellos sacan un abono
-                falso y lo colocan […] así suben el cobro, pero lo suben de
-                mentiras» — PRESTA MIL, 15 sep 2026.
-
-               NO RESTA NADA, Y ES A PROPÓSITO. Un abono puesto para cuadrar la
-               cartulina y una cuota que el cliente sí pagó son idénticos en la
-               base, y «Cobró en efectivo» ES la caja: restarle esto bajaría lo
-               que el cobrador tiene que entregar, y si el abono era real sería
-               regalarle esa plata. Mientras se decide, se ENSEÑA: así el dueño
-               ve el mes entero sin que se mueva una cifra que hoy está bien.
-
-               Solo en la caja del administrador: es una cifra de control suya y
-               no cambia ningún número de la del cobrador, así que las dos
-               siguen diciendo lo mismo. Ver [[dos_cajas_mismo_numero]]. */
-            detalle={notaDeRenovaciones(r.cobradoEnDiaDeRenovacion)}
             onExplicar={onExplicar ? () => onExplicar('recaudoEfectivo') : undefined}
           />
           {/* ⚠ DOS RENGLONES, NO UN TOTAL CON LETRA CHICA DEBAJO. El dueño lo
@@ -488,6 +477,72 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
           renovaciones con saldo absorbido: los prestamos nuevos no salian en ningun
           resumen y el dueño concluia que no se estaban contando. Ahora se listan las
           dos clases y el total cuadra con la tarjeta "Prestado". */}
+      {/* ── ⚠ ABONOS EL DÍA QUE RENOVARON ──────────────────────────────────
+          «cuando ellos van a renovar una cartulina, ellos sacan un abono falso
+           y lo colocan […] así suben el cobro, pero lo suben de mentiras.»
+
+          Primero fue una línea con el total y NO SE ENTENDIÓ. El prestamista:
+          «¿eso de 250 qué significa? ¿es lo que lleva coteado, o los abonos que
+          le dio el cliente, o los que él puso para después renovar?». El dueño
+          de la plataforma, igual: «no está desglosando por cliente ni por
+          valor».
+
+          Así que va la LISTA, no la cifra: quién, cuánto y cuánto después
+          renovó. Y se dice en voz alta lo que el sistema NO sabe, porque esa
+          era justo la pregunta: un abono puesto para cuadrar y una cuota que el
+          cliente pagó de verdad son idénticos por dentro.
+
+          ⚠ NO RESTA NADA. Estos abonos YA están sumados en «Cobró en efectivo»
+          de arriba y siguen estándolo: la caja no se toca hasta que él diga si
+          esa plata entra o no. */}
+      {(r.cobradoEnDiaDeRenovacion?.lista?.length ?? 0) > 0 && (
+        <div
+          className="rounded-[12px] p-3"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cf-ink-3)' }}>
+            Abonos el día que renovaron
+          </p>
+          <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+            Estos clientes abonaron y ese mismo día renovaron la cartulina. El sistema no puede
+            saber si le entregaron esa plata o si se puso para cuadrar antes de renovar: mírelos
+            usted. Ya están sumados arriba en lo que cobró.
+          </p>
+
+          <div className="space-y-2">
+            {r.cobradoEnDiaDeRenovacion.lista.map((a, i) => (
+              <div key={i} className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>
+                  {/* El nombre NO se recorta: es lo que identifica a la persona
+                      y es el dato con el que él va a ir a preguntar. */}
+                  <span style={{ color: 'var(--cf-ink)', fontWeight: 600 }}>{a.cliente}</span>
+                  <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                    {/* Si abonó varias veces se dice: el total de la derecha es
+                        la suma, y sin esto no se entiende de dónde sale. */}
+                    {a.abonos > 1 ? `${a.abonos} abonos · ` : ''}{cuantoDespues(a.minutos)}
+                  </span>
+                </span>
+                <span className="cf-fig text-[13px] shrink-0" style={{ color: 'var(--cf-ink)' }}>
+                  {formatMoney(a.monto)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className="flex items-baseline justify-between gap-3 mt-2.5 pt-2"
+            style={{ borderTop: '1px solid var(--cf-border)' }}
+          >
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>
+              Entre {r.cobradoEnDiaDeRenovacion.cartulinas === 1 ? 'ese cliente' : `esos ${r.cobradoEnDiaDeRenovacion.cartulinas} clientes`}
+            </span>
+            <span className="cf-fig text-[14px] font-bold" style={{ color: 'var(--cf-ink)' }}>
+              {formatMoney(r.cobradoEnDiaDeRenovacion.monto)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {pd && (pd.nuevos.cantidad > 0 || pd.renovaciones.cantidad > 0) && (
         <div
           className="rounded-[12px] p-3"

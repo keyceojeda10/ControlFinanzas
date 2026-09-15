@@ -531,8 +531,11 @@ export async function GET(request, { params }) {
         renovadoDeId: { not: null },
         cliente: { rutaId: { in: rutaIds } },
       },
-      // `renovadoDeId` para cruzar con los cobros: es la cartulina que se cerró.
-      select: { id: true, montoPrestado: true, renovadoDeId: true },
+      /* `renovadoDeId` para cruzar con los cobros —es la cartulina que se
+         cerró— y `createdAt` para decir cuánto después de abonar se renovó.
+         Sin la hora, los minutos salían `null` y la lista no decía la única
+         pista que puede dar. Ver [[feedback_verificar_prisma_select]]. */
+      select: { id: true, montoPrestado: true, renovadoDeId: true, createdAt: true },
     })
     : []
   const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
@@ -604,13 +607,63 @@ export async function GET(request, { params }) {
    * Así que de momento se ENSEÑA, no se descuenta: el dueño puede ver el mes
    * entero sin que ninguna cifra que hoy está bien se mueva un peso.
    */
-  const renovadasHoy = new Set(renovacionesDia.map((r) => r.renovadoDeId).filter(Boolean))
-  const cobrosDeRenovadas = renovadasHoy.size > 0
-    ? cobros.filter((p) => renovadasHoy.has(p.prestamoId))
+  /* ⚠ UN TOTAL SUELTO NO SE ENTIENDE, Y LO DIJERON LOS DOS.
+   *
+   * La primera versión era una línea: «De eso, $250.000 entró el mismo día en
+   * que se renovó esa cartulina (2 clientes)». El prestamista contestó: «¿eso
+   * de 250 qué significa? ¿es lo que lleva coteado, o los abonos que le dio el
+   * cliente, o los que él puso para después renovar la cartulina?». Y el dueño
+   * de la plataforma, igual: «no está desglosando por cliente ni por valor».
+   *
+   * Tenían razón los dos. La cifra contesta una pregunta que nadie se había
+   * hecho todavía. Lo que hace falta es la LISTA: quién abonó, cuánto, y
+   * cuánto después renovó — porque cuatro minutos huele distinto que seis
+   * horas, y esa es la única pista que el sistema puede dar. Quién decide
+   * sigue siendo el prestamista, que conoce a su gente.
+   */
+  const renovadaAHora = new Map(
+    renovacionesDia.filter((r) => r.renovadoDeId).map((r) => [r.renovadoDeId, r.createdAt])
+  )
+  const cobrosDeRenovadas = renovadaAHora.size > 0
+    ? cobros.filter((p) => renovadaAHora.has(p.prestamoId))
     : []
+  /* ⚠ UNA FILA POR CLIENTE, NO POR ABONO. En la primera prueba contra datos
+     reales el mismo cliente salía DOS VECES con $50.000 cada uno —tenía dos
+     cartulinas renovadas ese día— mientras el pie decía «entre esos 3
+     clientes»: cuatro filas y un total que hablaba de tres. Se agrupa por
+     persona, que es como él los va a ir a mirar. */
+  const porCliente = new Map()
+  for (const p of cobrosDeRenovadas) {
+    const cuandoRenovo = renovadaAHora.get(p.prestamoId)
+    const minutos = cuandoRenovo ? Math.round((new Date(cuandoRenovo) - new Date(p.fechaPago)) / 60000) : null
+    const clave = p.prestamo?.cliente?.id ?? p.prestamoId
+    const ya = porCliente.get(clave)
+    if (!ya) {
+      porCliente.set(clave, {
+        cliente: p.prestamo?.cliente?.nombre ?? 'Sin nombre',
+        monto: Math.round(p.montoPagado || 0),
+        abonos: 1,
+        /* Los minutos entre el abono y la renovación. Negativo si abonó DESPUÉS
+           de renovar, que también pasa y también hay que poder verlo. */
+        minutos,
+        enEfectivo: entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador),
+      })
+    } else {
+      ya.monto += Math.round(p.montoPagado || 0)
+      ya.abonos += 1
+      /* De varios abonos se enseña el MÁS PEGADO a la renovación: es el que
+         más dice. Un abono de hace seis horas no levanta sospecha; uno de hace
+         un minuto, sí. */
+      if (minutos != null && (ya.minutos == null || Math.abs(minutos) < Math.abs(ya.minutos))) ya.minutos = minutos
+      ya.enEfectivo = ya.enEfectivo || entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador)
+    }
+  }
+  const abonosAlRenovar = [...porCliente.values()].sort((x, y) => y.monto - x.monto)
+
   const cobradoEnDiaDeRenovacion = {
-    // Cuántas renovaciones del día llevan abono, no cuántos abonos hay.
-    cartulinas: new Set(cobrosDeRenovadas.map((p) => p.prestamoId)).size,
+    /* PERSONAS, no cartulinas ni abonos: es lo que dice el pie de la lista y
+       tiene que ser el mismo número de filas que se pintan encima. */
+    cartulinas: porCliente.size,
     abonos: cobrosDeRenovadas.length,
     monto: Math.round(cobrosDeRenovadas.reduce((a, p) => a + (p.montoPagado || 0), 0)),
     /* Y cuánto de eso fue efectivo, que es la línea debajo de la que se pinta.
@@ -621,6 +674,7 @@ export async function GET(request, { params }) {
         .filter((p) => entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador))
         .reduce((a, p) => a + (p.montoPagado || 0), 0)
     ),
+    lista: abonosAlRenovar,
   }
 
   let efectivoDia = cobradoDia - prestadoDia - gastosDia
