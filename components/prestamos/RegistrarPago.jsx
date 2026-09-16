@@ -66,8 +66,31 @@ export default function RegistrarPago({
     ? cliente.camposRecibo
     : (Array.isArray(camposReciboOrg) && camposReciboOrg.length > 0 ? camposReciboOrg : getDefaultCampos())
 
-  // Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago de saldos pequeños)
-  const montoInicial = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
+  /* ── EL MONTO QUE SE PROPONE ──────────────────────────────────────────────
+   *
+   * Pre-llena con la cuota, pero nunca más que el saldo pendiente (último pago
+   * de saldos pequeños).
+   *
+   * ⚠ Y NUNCA MÁS QUE LO QUE FALTA DE LA CUOTA QUE YA VA A MEDIAS.
+   *
+   * «si pagan los intereses, vuelve y debe repetirse en la cuota los mismos
+   *  300» — Gustavo Figueroa, 16 sep 2026. Y era cierto: a Marisol le cobró los
+   * $75.000 de interés de una cuota de $325.000, y al volver a abrir la hoja le
+   * seguía proponiendo los $325.000 enteros en vez de los $250.000 que de
+   * verdad faltaban. Quien confirma sin mirar le cobra de más al cliente.
+   *
+   * `montoAlDia` es `calcularMontoParaPonerseAlDia`: lo esperado hasta hoy
+   * menos lo pagado. Solo manda cuando es MENOR que una cuota —es decir, hay
+   * una cuota a medio pagar—: si debe tres cuotas atrasadas vale más que una, y
+   * proponer las tres de golpe sería empujar a cobrar lo que el cliente no
+   * lleva. Y si no llega el dato (0), todo se queda exactamente como estaba.
+   */
+  const cuotaPropuesta = Math.round(cuotaDiaria ?? 0)
+  const faltaDeLaCuota = Math.round(montoAlDia ?? 0)
+  const montoInicial = Math.min(
+    Math.round(saldoPendiente ?? 0),
+    faltaDeLaCuota > 0 && faltaDeLaCuota < cuotaPropuesta ? faltaDeLaCuota : cuotaPropuesta,
+  )
   const [monto,        setMonto]        = useState(String(montoInicial))
 
   // ── ⚠ EL CAMPO GUARDA LO QUE SE TECLEA, NO EL VALOR MULTIPLICADO ────────
@@ -229,7 +252,11 @@ export default function RegistrarPago({
       return
     }
 
-    const montoBase = Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))
+    /* ⚠ LA MISMA REGLA QUE `montoInicial`, NO UNA COPIA. Aquí había una segunda
+       fórmula escrita a mano —`min(cuota, saldo)`— y es la que MANDA al abrir la
+       hoja: arreglar solo la de arriba no cambiaba nada en pantalla. Cazado
+       midiendo, no leyendo. */
+    const montoBase = montoInicial
     const montoPreset = Number(presetPago?.monto)
     const montoFinal = montoPreset > 0
       ? Math.min(Math.round(montoPreset), Math.round(saldoPendiente ?? 0))
@@ -245,7 +272,7 @@ export default function RegistrarPago({
     setVistaComprobante(false)
     setEditandoCampos(false)
     setCamposLocal(camposRecibo)
-  }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial])
+  }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial, montoInicial])
 
   // Animacion del slider visual: cuando diasAbonados cambia (por boton de mora,
   // ponerse al dia o snap), interpola gradualmente desde el valor visual actual
@@ -469,7 +496,9 @@ export default function RegistrarPago({
     setPagoGuardado(null)
     setPrestamoAct(null)
     setFotoEvidencia(null)
-    setMonto(String(Math.min(Math.round(cuotaDiaria ?? 0), Math.round(saldoPendiente ?? 0))))
+    // La MISMA regla otra vez: era la tercera copia de `min(cuota, saldo)` en
+    // este fichero, y cada copia es una vía que se queda sin arreglar.
+    setMonto(String(montoInicial))
     setTipo('completo')
     setMetodoPago('efectivo')
     setPlataforma('')
@@ -911,9 +940,34 @@ export default function RegistrarPago({
           cifra: m > 0 ? { etiqueta: 'Tu ganancia sube', valor: formatMoney(m) } : null,
         }
       }
+      /* ── ⚠ AQUÍ DECÍA «NO GENERA MORA ADICIONAL», Y ERA FALSO ──────────────
+       *
+       * Texto viejo: «Cubre solo los intereses de las cuotas vencidas. El
+       * capital queda pendiente pero no genera mora adicional.»
+       *
+       * Sí la genera. En un préstamo CON TABLA la cuota es capital + interés:
+       * pagar el interés deja el capital de esa cuota vencido, y el préstamo
+       * sale en mora por esa parte en el mismo instante.
+       *
+       * Gustavo Figueroa (Inversiones Don Pacho) leyó esa frase y registró 36
+       * pagos así —12 en Dinámico y 24 en Decreciente— antes de reportar que
+       * «están quedando en mora y no deberían». Tenía razón: la app se lo dijo
+       * mal. Su caso al peso, Marisol, 14 sep 2026:
+       *
+       *   cuota #1 = $325.000 · interés $75.000 + capital $250.000
+       *   pagó los $75.000 → EN MORA · 1 día · $250.000
+       *
+       * 107 de sus 170 préstamos activos son Dinámicos, así que le iba a pasar
+       * con todos. Y lo que él quiere —que el interés le compre tiempo— existe,
+       * pero en los modos SIN tabla: por eso el texto lo manda ahí en vez de
+       * dejarlo adivinando. Ver [[feature_interes_compra_tiempo]].
+       */
       return {
         titulo: 'Pago a intereses',
-        texto: 'Cubre solo los intereses de las cuotas vencidas. El capital queda pendiente pero no genera mora adicional.',
+        texto: 'Cubre el interés que ya debía. El capital de la cuota sigue vencido, '
+          + 'así que el préstamo queda en mora por esa parte. Si lo que quieres es que el '
+          + 'interés le compre tiempo y le corra la cuota, ese es el modo «Solo interés, '
+          + 'capital al final».',
         cifra: null,
       }
     }
@@ -1629,11 +1683,22 @@ export default function RegistrarPago({
             </div>
           )}
 
+          {/* ⚠ LA MISMA FRASE ESTABA AQUÍ TAMBIÉN, Y SE ARREGLÓ UNA SOLA VEZ.
+              El aviso de la hoja nueva vive en `avisoDelTipo`; este es el del
+              formulario completo, la otra vía. Cazado por su prueba, no
+              leyendo. Ver [[feedback_arreglar_una_via_y_dejar_la_otra]].
+
+              Y aquí sí se distinguen los dos casos, como en la hoja: con tabla
+              el capital sigue vencido; sin ella, el interés compra tiempo. */}
           {tipo === 'intereses' && (
             <div className="bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
-              <p className="font-medium text-[var(--cf-gold-dark)] mb-1">Pago a intereses</p>
+              <p className="font-medium text-[var(--cf-gold-dark)] mb-1">
+                {subeLaDeuda ? 'Le compra tiempo' : 'Pago a intereses'}
+              </p>
               <p className="text-[var(--cf-ink-3)]">
-                Cubre solo los intereses de las cuotas vencidas. El capital queda pendiente pero no genera mora adicional.
+                {subeLaDeuda
+                  ? 'El capital NO baja: el cliente paga la ganancia y sigue debiendo lo mismo. El préstamo se alarga y ese interés es tuyo.'
+                  : 'Cubre el interés que ya debía. El capital de la cuota sigue vencido, así que el préstamo queda en mora por esa parte. Si lo que quieres es que el interés le compre tiempo y le corra la cuota, ese es el modo «Solo interés, capital al final».'}
               </p>
             </div>
           )}
