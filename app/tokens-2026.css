@@ -88,6 +88,11 @@ html[data-theme="light"] {
   --cf-cartulina-canto:  #E6DCC2;
   --cf-cartulina-linea:  rgba(120,90,30,.14);
 
+  /* ── El teléfono de «Llevas hoy» (cobro por transferencia) ── */
+  --cf-telefono-cuerpo:   #1B1C20;
+  --cf-telefono-pantalla: #2A2C33;
+  --cf-telefono-luz:      #E7F6EE;
+
   /* ── Velos ── */
   --cf-scrim:        rgba(20,20,28,.42);   /* detras de hoja inferior */
   --cf-scrim-modal:  rgba(20,20,28,.50);   /* detras de modal centrado */
@@ -178,6 +183,10 @@ html[data-theme="dark"] {
   --cf-cartulina:        #2A2822;
   --cf-cartulina-canto:  #3A362C;
   --cf-cartulina-linea:  rgba(255,230,180,.08);
+
+  --cf-telefono-cuerpo:   #3A3B41;
+  --cf-telefono-pantalla: #15161A;
+  --cf-telefono-luz:      #173A27;
 }
 
 /* ══════════════════════════════════════════════════════════════

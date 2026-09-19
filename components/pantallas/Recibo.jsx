@@ -163,17 +163,21 @@ export function Recibo({
             Estaba debajo del comprobante y en el teléfono quedaba fuera de la
             pantalla: los billetes caían en una billetera que nadie veía («sale
             al revés de lo que hicimos», el dueño, 19 sep). Arriba se ve entera,
-            y los billetes suben desde el monto recibido hasta ella.
+            y los billetes suben desde el monto recibido hasta ella. */}
+        {conNumeros && <LlevasHoy progreso={dia} origenRef={refMonto} />}
 
-            El sonido se apaga AQUÍ, donde suena: hay quien cobra en una tienda
-            o en misa, y un control en «Configuración» nadie lo va a buscar. */}
-        {conNumeros && (
-          <LlevasHoy progreso={dia} origenRef={refMonto} extra={
+        <div style={{ position: 'relative', flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          {/* EL SONIDO SE APAGA AQUÍ, donde suena: hay quien cobra en una tienda
+              o en misa, y un control en «Configuración» nadie lo va a buscar.
+              Arriba a la derecha, a la altura del visto y al filo del
+              comprobante: el sitio de un botón de barra, no en medio de «Llevas
+              hoy» (el dueño, 19 sep: «sale como en la mitad»). */}
+          {conNumeros && (
             <button type="button" aria-pressed={conSonido}
               aria-label={conSonido ? 'Silenciar el sonido de cobro' : 'Activar el sonido de cobro'}
               onClick={() => { const v = !conSonido; setConSonido(v); guardarSonido(v) }}
               style={{
-                width: 40, height: 40, margin: '-10px -8px -10px 0', borderRadius: 999,
+                position: 'absolute', top: 12, right: -8, width: 40, height: 40, borderRadius: 999,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-ink-3)',
               }}>
@@ -183,10 +187,7 @@ export function Recibo({
                 {conSonido ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 5M21 9l-5 5" />}
               </svg>
             </button>
-          } />
-        )}
-
-        <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          )}
           {/* Verde, no dorado. El dorado de esta pantalla es «siguiente cobro»:
               el visto es un hecho consumado, no la acción que sigue.
 

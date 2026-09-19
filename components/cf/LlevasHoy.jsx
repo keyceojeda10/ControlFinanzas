@@ -16,8 +16,10 @@
  *     y es un dato que la ruta ya tiene.
  *   · Si el cobro ENTRÓ AL FAJO, el monto se suelta en billetes que caen
  *     revoloteando y se meten en la billetera, cada uno con su sonido de papel.
- *     Si fue una transferencia a la cuenta del negocio NO: esa plata no está en
- *     el bolsillo del cobrador, y la animación no puede decir que sí. Lo decide
+ *     Si fue una transferencia a la cuenta del negocio, esa plata no está en el
+ *     bolsillo: en vez de la billetera sale UN TELÉFONO, y una notificación
+ *     viaja del monto a él, enciende la pantalla y lo hace vibrar («no quitar la
+ *     animación… que llegue el dinero al teléfono», el dueño, 19 sep). Lo decide
  *     `entraAlFajo()` en quien la monta, que es la única que puede decidirlo.
  *
  * Sin movimiento (preferencia del sistema) todo queda en su estado final.
@@ -26,9 +28,45 @@
 import { useEffect, useRef } from 'react'
 import {
   construirRodillos, CSS_RODILLOS, menosMovimiento, rodarContador,
-  sonidoBillete, sonidoCobrado, vibrar,
+  sonidoBillete, sonidoCobrado, sonidoNotificacion, vibrar,
 } from '@/lib/celebrar'
-import { BW, BH, cuerpo, lanzarBilletes, pintarBilletera } from '@/lib/billetes'
+import { BW, BH, cuerpo, lanzarBilletes, lanzarNotificacion, pintarBilletera } from '@/lib/billetes'
+
+const EXPO = 'cubic-bezier(.16,1,.3,1)'
+
+/* EL TELÉFONO, para el cobro por transferencia: la plata no llegó al bolsillo
+   sino al celular. Apagado mientras viaja la notificación; al llegar la pantalla
+   se enciende, baja el aviso con su visto y el teléfono vibra. */
+function Telefono({ refTel, refPantalla, refAviso }) {
+  return (
+    <span aria-hidden style={{ width: BW, height: BH, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span ref={refTel} style={{
+        position: 'relative', width: 42, height: 66, borderRadius: 10, background: 'var(--cf-telefono-cuerpo)',
+        display: 'block', willChange: 'transform', boxShadow: '0 2px 4px rgba(0,0,0,.18)',
+      }}>
+        <span ref={refPantalla} style={{
+          position: 'absolute', inset: 3, borderRadius: 7, overflow: 'hidden',
+          background: 'var(--cf-telefono-pantalla)', transition: 'background-color .25s',
+        }}>
+          <span style={{ position: 'absolute', top: 3, left: '50%', width: 12, height: 3, marginLeft: -6, borderRadius: 999, background: 'rgba(0,0,0,.55)' }} />
+          <span ref={refAviso} style={{
+            position: 'absolute', left: 3, right: 3, top: 9, height: 15, borderRadius: 5, background: 'var(--cf-card)',
+            display: 'flex', alignItems: 'center', gap: 3, padding: '0 3px', opacity: 0, transform: 'translateY(-24px)',
+            boxShadow: '0 1px 2px rgba(0,0,0,.2)',
+          }}>
+            <span style={{ width: 9, height: 9, borderRadius: 999, background: 'var(--cf-green)', flex: 'none', display: 'grid', placeItems: 'center' }}>
+              <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
+            </span>
+            <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <i style={{ display: 'block', height: 2, borderRadius: 1, background: 'var(--cf-ink-3)', width: '90%' }} />
+              <i style={{ display: 'block', height: 2, borderRadius: 1, background: 'var(--cf-border-strong)', width: '60%' }} />
+            </span>
+          </span>
+        </span>
+      </span>
+    </span>
+  )
+}
 
 /**
  * @param progreso `{ antes, ahora, meta, formatear, efectivo }` — números en la
@@ -41,17 +79,31 @@ export default function LlevasHoy({ progreso, origenRef, extra = null }) {
   const refBilletera = useRef(null)
   const refVuelo = useRef(null)
   const refDelta = useRef(null)
+  const refTel = useRef(null), refPantalla = useRef(null), refAviso = useRef(null)
   const monto = Math.max(0, ahora - antes)
 
   useEffect(() => {
     const billetera = refBilletera.current, odo = refOdo.current
-    if (!billetera || !odo) return
+    if (!odo || (efectivo && !billetera)) return
     // Sin nada que tocaba cobrar hoy, lo cobrado igual llena la billetera: vacía
     // diría que no entró nada.
     const fraccion = (v) => (meta > 0 ? Math.max(0, Math.min(1, v / meta)) : (v > 0 ? 0.6 : 0))
     let inflado = fraccion(antes)
     let rodillos = construirRodillos(odo, formatear(antes))
-    pintarBilletera(billetera, inflado)
+    if (billetera) pintarBilletera(billetera, inflado)
+    // El teléfono: la pantalla se enciende y baja el aviso.
+    const encender = (animar) => {
+      if (refPantalla.current) refPantalla.current.style.backgroundColor = 'var(--cf-telefono-luz)'
+      const aviso = refAviso.current
+      if (!aviso) return
+      if (!animar) { aviso.style.opacity = '1'; aviso.style.transform = 'none'; return }
+      aviso.animate?.([{ opacity: 0, transform: 'translateY(-24px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: EXPO, fill: 'forwards' })
+      // Vibra como un teléfono de verdad: corto y seco, sin rebote.
+      refTel.current?.animate?.([
+        { transform: 'translateX(0)' }, { transform: 'translateX(-1.5px)' }, { transform: 'translateX(1.5px)' },
+        { transform: 'translateX(-1.5px)' }, { transform: 'translateX(1.5px)' }, { transform: 'translateX(0)' },
+      ], { duration: 260, easing: 'linear' })
+    }
     const temporizadores = []
     let vivo = true
 
@@ -61,7 +113,7 @@ export default function LlevasHoy({ progreso, origenRef, extra = null }) {
         if (!vivo) return
         const t = Math.min(1, (t1 - t0) / 240)
         inflado = desde + (destino - desde) * (1 - Math.pow(1 - t, 4))
-        pintarBilletera(billetera, inflado)
+        if (billetera) pintarBilletera(billetera, inflado)
         if (t < 1) requestAnimationFrame(paso)
       }
       requestAnimationFrame(paso)
@@ -76,7 +128,8 @@ export default function LlevasHoy({ progreso, origenRef, extra = null }) {
 
     if (menosMovimiento() || monto <= 0) {
       rodillos = construirRodillos(odo, formatear(ahora))
-      pintarBilletera(billetera, fraccion(ahora))
+      if (billetera) pintarBilletera(billetera, fraccion(ahora))
+      if (!efectivo && monto > 0) encender(false)
       if (refDelta.current) refDelta.current.style.opacity = monto > 0 ? '1' : '0'
       return () => { vivo = false }
     }
@@ -105,12 +158,24 @@ export default function LlevasHoy({ progreso, origenRef, extra = null }) {
             () => { sonidoCobrado(); vibrar([10, 40, 22]) })
         })
       }, 420))
-    } else {
-      // Transferencia a la cuenta del negocio: el día sube, el bolsillo no se
-      // llena de billetes que no están en él.
+    } else if (efectivo) {
+      // Efectivo sin sitio de donde soltar billetes: el día sube igual.
       temporizadores.push(setTimeout(() => {
         if (!vivo) return
         llega(); inflar(fraccion(ahora)); sonidoCobrado(); vibrar([10, 40, 22])
+      }, 420))
+    } else {
+      /* TRANSFERENCIA: no son billetes al bolsillo sino plata que llega al
+         teléfono. La notificación viaja del monto recibido al celular y, al
+         llegar, se enciende la pantalla, baja el aviso y el total gira. */
+      temporizadores.push(setTimeout(() => {
+        if (!vivo) return
+        const tel = refTel.current?.getBoundingClientRect()
+        const alLlegar = () => { if (!vivo) return; llega(); encender(true); sonidoNotificacion(); vibrar([30, 40, 30]) }
+        if (!origen || !tel || !refVuelo.current) return alLlegar()
+        lanzarNotificacion(refVuelo.current,
+          { x: origen.left + origen.width / 2, y: origen.top + origen.height / 2 },
+          { x: tel.left + tel.width / 2, y: tel.top + 18 }, alLlegar)
       }, 420))
     }
     return () => { vivo = false; temporizadores.forEach(clearTimeout) }
@@ -141,7 +206,9 @@ export default function LlevasHoy({ progreso, origenRef, extra = null }) {
           <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>de {formatear(meta)}</span>
         )}
       </div>
-      <canvas ref={refBilletera} aria-hidden style={{ display: 'block', width: BW, height: BH }} />
+      {efectivo
+        ? <canvas ref={refBilletera} aria-hidden style={{ display: 'block', width: BW, height: BH }} />
+        : <Telefono refTel={refTel} refPantalla={refPantalla} refAviso={refAviso} />}
       {/* Siempre montado y vacío: sin ancho hasta que vuela algo. */}
       <canvas ref={refVuelo} width={0} height={0} aria-hidden style={{
         position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 10003,
