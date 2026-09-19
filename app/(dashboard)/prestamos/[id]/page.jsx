@@ -2817,6 +2817,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalRecargo(false); setAjusteMonto(''); setAjusteNota('') }}
             onAceptar={() => aplicarAjuste('recargo')}
             textoAceptar={ajusteNum > 0 ? `Aplicar ${formatMoney(ajusteNum)}` : 'Aplicar'}
+            cifra={ajusteNum > 0 ? formatMoney(ajusteNum) : null}
             deslizar
             deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
             aceptando={ajustando}
@@ -2855,6 +2856,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalDescuento(false); setAjusteMonto(''); setAjusteNota('') }}
             onAceptar={() => aplicarAjuste('descuento')}
             textoAceptar={ajusteNum > 0 ? `Perdonar ${formatMoney(ajusteNum)}` : 'Perdonar'}
+            cifra={ajusteNum > 0 ? formatMoney(ajusteNum) : null}
             deslizar
             deshabilitado={!(ajusteNum > 0) || !ajusteNota.trim() || ajustando}
             aceptando={ajustando}
@@ -2892,6 +2894,7 @@ function PrestamoDetalleContenido({ params }) {
             onCancelar={() => { setModalIntereses(false); setInteresError('') }}
             onAceptar={pagarIntereses}
             textoAceptar={interesMonto > 0 ? `Cobrar ${formatMoney(interesMonto)}` : 'Cobrar'}
+            cifra={interesMonto > 0 ? formatMoney(interesMonto) : null}
             deslizar
             deshabilitado={!(interesMonto > 0) || pagandoInteres}
             aceptando={pagandoInteres}
@@ -2969,6 +2972,7 @@ function PrestamoDetalleContenido({ params }) {
                 onCancelar={() => setModalLiquidacion(false)}
                 onAceptar={confirmarLiquidacion}
                 textoAceptar={liqMonto > 0 ? `Cerrar por ${formatMoney(Math.round(liqMonto))}` : 'Cerrar'}
+                cifra={liqMonto > 0 ? formatMoney(Math.round(liqMonto)) : null}
                 deslizar
                 aceptando={liqEnviando}
                 deshabilitado={liqMonto < 0 || !liqNota.trim()}
@@ -3210,6 +3214,7 @@ function PrestamoDetalleContenido({ params }) {
           {tactil ? (
             <DeslizarParaConfirmar
               texto={`Aplicar ${formatMoney(moratorioMonto)} como recargo`}
+              cifra={moratorioMonto > 0 ? formatMoney(moratorioMonto) : null}
               confirmando={moratorioEnviando}
               deshabilitado={moratorioMonto <= 0}
               onConfirmar={aplicarMoratorio}

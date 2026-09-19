@@ -72,6 +72,16 @@ html[data-theme="light"] {
   --cf-whatsapp-bubble:    #DCF8C6;
   --cf-whatsapp-highlight: #C3ECAB;
 
+  /* ── Deslizar para cobrar ──
+     Una pastilla sólida del color de la tinta: oscura en claro, clara en oscuro.
+     Aprobada por el dueño el 19 sep 2026 tras diez versiones («mucho más limpio»).
+     La cifra que se arma va en el dorado que se lee SOBRE la pastilla, y al llegar
+     al final en el verde que se lee sobre ella. */
+  --cf-pista-fondo:  #15161A;
+  --cf-pista-texto:  #FFFFFF;
+  --cf-pista-cifra:  #E7A400;
+  --cf-pista-listo:  #3DDC84;
+
   /* ── Velos ── */
   --cf-scrim:        rgba(20,20,28,.42);   /* detras de hoja inferior */
   --cf-scrim-modal:  rgba(20,20,28,.50);   /* detras de modal centrado */
@@ -151,6 +161,13 @@ html[data-theme="dark"] {
   --cf-gold-focus:     rgba(245,184,36,.16);
   --cf-gold-border:    rgba(245,184,36,.32);
   --cf-gold-bg:        rgba(245,184,36,.16);
+
+  /* La pastilla de deslizar se invierte: clara sobre el carbón, y su cifra en un
+     dorado y un verde OSCUROS, que son los que se leen sobre ella. */
+  --cf-pista-fondo:    #F3F3F6;
+  --cf-pista-texto:    #15161A;
+  --cf-pista-cifra:    #7A5800;
+  --cf-pista-listo:    #0D7A3C;
 }
 
 /* ══════════════════════════════════════════════════════════════

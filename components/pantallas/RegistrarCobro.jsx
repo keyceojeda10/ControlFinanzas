@@ -434,6 +434,8 @@ export default function RegistrarCobro({
 export function PieRegistrarCobro({
   textoConfirmar = 'Confirmar', onConfirmar, confirmando = false, deshabilitado = false, error,
   recibo = true, onRecibo, deslizar = false,
+  // El monto formateado: con él, el número se arma mientras se desliza.
+  cifra = null,
 }) {
   const muerto = confirmando || deshabilitado
   const tactil = useTactil()
@@ -451,6 +453,7 @@ export function PieRegistrarCobro({
       {deslizar && tactil ? (
         <DeslizarParaConfirmar
           texto={textoConfirmar}
+          cifra={cifra}
           onConfirmar={() => onConfirmar?.()}
           confirmando={confirmando}
           deshabilitado={deshabilitado}

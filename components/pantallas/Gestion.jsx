@@ -352,6 +352,8 @@ export function PieGestion({
    * Y solo en el teléfono, como en el resto: ver `lib/tactil.js`.
    */
   deslizar = false,
+  // El monto formateado: con él, el número se arma mientras se desliza.
+  cifra = null,
 }) {
   const muerto = aceptando || deshabilitado
   const tactil = useTactil()
@@ -365,6 +367,7 @@ export function PieGestion({
         )}
         <DeslizarParaConfirmar
           texto={textoAceptar}
+          cifra={cifra}
           onConfirmar={() => onAceptar?.()}
           confirmando={aceptando}
           deshabilitado={deshabilitado}

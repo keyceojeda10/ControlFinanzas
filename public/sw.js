@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1071'
+const CACHE_NAME   = 'cf-v1072'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -411,6 +411,9 @@ async function cacheFirst(request, nombreCache = STATIC_CACHE) {
  * compilación entera son ~390 archivos y nadie visita todas las pantallas), y
  * la poda corre en segundo plano: no se espera.
  */
+// Cuántas fichas NUEVAS baja `CACHE_PAGES` en una vuelta de 90 s. Ver el bucle.
+const TOPE_FICHAS_POR_VUELTA = 40
+
 const TOPE_ARCHIVOS_EN_CACHE = 500
 let podando = false
 async function podarCache(nombreCache) {
@@ -739,6 +742,7 @@ self.addEventListener('message', (e) => {
     e.waitUntil(
       caches.open(CACHE_NAME).then(async (cache) => {
         const chunksToCache = new Set()
+        let nuevas = 0
 
         for (const url of urls) {
           try {
@@ -768,12 +772,15 @@ self.addEventListener('message', (e) => {
              * a bajar el cascarón no traía nada nuevo. Se baja UNA vez; las
              * nuevas —el préstamo creado hoy— entran en la vuelta siguiente.
              *
-             * ⚠ NO SUBIR `CACHE_NAME` POR ESTE CAMBIO. `activate` borra las
-             *   cachés con otro nombre, así que subirlo vaciaría las fichas ya
-             *   guardadas y cada teléfono volvería a bajar su cartera entera de
-             *   golpe: la misma avalancha que esto apaga. Las fichas viejas se
-             *   renuevan solas en el siguiente release que suba el nombre. */
+             * ⚠ Y NUNCA MÁS DE `TOPE_FICHAS_POR_VUELTA` NUEVAS POR VUELTA.
+             *   `activate` borra las cachés con otro nombre, así que cada
+             *   release que sube `CACHE_NAME` deja las fichas vacías y el
+             *   teléfono tendría que volver a bajar su cartera entera de golpe:
+             *   la avalancha de arriba, una vez por teléfono y todos a la hora
+             *   de salir a cobrar. Con el tope, 600 fichas se rellenan en unas
+             *   quince vueltas (~20 min) y el servidor ni se entera. */
             if (await cache.match(url)) continue
+            if (++nuevas > TOPE_FICHAS_POR_VUELTA) break
             const res = await fetch(url, { credentials: 'same-origin' })
             if (res.ok && !res.redirected) {
               // Parse HTML to find JS chunks needed for this page

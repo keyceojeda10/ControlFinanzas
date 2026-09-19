@@ -23,6 +23,10 @@
 // El recibo COMO VISTA sí existe hoy y no necesita número: es la fila del pago
 // abierta. Lo que no existe es el código impreso.
 
+import { useRef, useState } from 'react'
+import LlevasHoy from '@/components/cf/LlevasHoy'
+import { guardarSonido, sonidoEncendido } from '@/lib/celebrar'
+
 const VERDE_WA = '#25D366'
 
 function Fila({ etiqueta, valor, mono, cifra }) {
@@ -114,8 +118,17 @@ export function Recibo({
   // VA EL DÍA — con la barra que el cobrador vigila». Los dos primeros ya
   // estaban (el monto y el saldo); éste faltaba, y es el que dice si se puede
   // ir a casa. `{ texto: '$76.500 de $145.000', porcentaje: 53 }`.
+  //
+  // Desde el 19 sep, con los NÚMEROS además del texto —`antes`, `ahora`, `meta`,
+  // `formatear` y `efectivo`— la barra se vuelve `LlevasHoy`: el total gira de
+  // lo que llevaba a lo que lleva y los billetes caen en la billetera. Sin los
+  // números sale la barra de siempre.
   progresoDia,
 }) {
+  const refMonto = useRef(null)
+  const [conSonido, setConSonido] = useState(() => (typeof window === 'undefined' ? true : sonidoEncendido()))
+  const conNumeros = progresoDia && Number.isFinite(progresoDia.antes) && Number.isFinite(progresoDia.ahora)
+    && typeof progresoDia.formatear === 'function'
   return (
     <div
       /* ⚠ `lg:w-[520px]` Y NO SOLO `max-w`: dentro de un contenedor flex el
@@ -129,9 +142,28 @@ export function Recibo({
         color: 'var(--cf-ink)',
       }}>
       <div style={{
+        position: 'relative',
         flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 24px 0',
         display: 'flex', flexDirection: 'column', gap: 20,
       }}>
+        {/* EL SONIDO SE APAGA AQUÍ, donde suena. Hay quien cobra en una tienda
+            o en misa: un control en «Configuración» nadie lo va a buscar. */}
+        {conNumeros && (
+          <button type="button" aria-pressed={conSonido}
+            aria-label={conSonido ? 'Silenciar el sonido de cobro' : 'Activar el sonido de cobro'}
+            onClick={() => { const v = !conSonido; setConSonido(v); guardarSonido(v) }}
+            style={{
+              position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: 999,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-ink-3)',
+            }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 5 6 9H3v6h3l5 4V5z" />
+              {conSonido ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 5M21 9l-5 5" />}
+            </svg>
+          </button>
+        )}
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
           {/* Verde, no dorado. El dorado de esta pantalla es «siguiente cobro»:
               el visto es un hecho consumado, no la acción que sigue.
@@ -144,13 +176,18 @@ export function Recibo({
               describe como «aviso ámbar», NO con `--cf-gold`: ese está reservado
               a seguir la ruta y es el único de la pantalla. Lo defiende una
               prueba, y tiene razón — dos dorados y ninguno destaca. */}
-          <span aria-hidden style={{
+          {/* El visto se DIBUJA y deja dos anillos finos que se abren: el pulso
+              del cobro (aprobado el 19 sep, «la animación de pulso»). Sin señal
+              no hay fiesta: el reloj ámbar sale quieto. */}
+          <span aria-hidden className={offline ? undefined : 'cf-recibo-sello'} style={{
+            position: 'relative',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 64, height: 64, minWidth: 64, minHeight: 64, flex: 'none',
             borderRadius: 999,
             background: offline ? 'var(--cf-gold-tint)' : 'var(--cf-green)',
             border: offline ? '1.5px solid var(--cf-gold-dark)' : 'none',
           }}>
+            {!offline && <><i className="cf-recibo-anillo" /><i className="cf-recibo-anillo" /></>}
             {offline ? (
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
                 strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -159,7 +196,7 @@ export function Recibo({
             ) : (
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFF"
                 strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 13l4 4L19 7" />
+                <path className="cf-recibo-visto" d="M5 13l4 4L19 7" />
               </svg>
             )}
           </span>
@@ -207,7 +244,7 @@ export function Recibo({
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
               textTransform: 'uppercase', color: 'var(--cf-ink-3)',
             }}>Recibió</span>
-            <span className="cf-fig" style={{ fontSize: 40, letterSpacing: '-.035em' }}>{monto}</span>
+            <span ref={refMonto} className="cf-fig" style={{ fontSize: 40, letterSpacing: '-.035em' }}>{monto}</span>
           </div>
 
           <Fila etiqueta="Cliente" valor={cliente} />
@@ -289,7 +326,8 @@ export function Recibo({
         {/* CÓMO VA EL DÍA. Fuera del troquelado a propósito: no es parte del
             comprobante del cliente —a él no le importa la meta de la ruta— sino
             del cobrador que acaba de cobrar. */}
-        {progresoDia && (
+        {conNumeros && <LlevasHoy progreso={progresoDia} origenRef={refMonto} />}
+        {progresoDia && !conNumeros && (
           <div style={{
             flex: 'none', display: 'flex', flexDirection: 'column', gap: 9,
             padding: '2px 2px 0',
@@ -315,6 +353,20 @@ export function Recibo({
           </div>
         )}
       </div>
+
+      <style>{`
+        .cf-recibo-sello { animation: cf-recibo-sello .28s cubic-bezier(.16,1,.3,1) both; }
+        .cf-recibo-visto { stroke-dasharray: 22; animation: cf-recibo-visto .32s cubic-bezier(.16,1,.3,1) .12s both; }
+        .cf-recibo-anillo { position: absolute; inset: 0; border-radius: 999px; border: 2px solid var(--cf-green);
+          opacity: 0; animation: cf-recibo-anillo .7s cubic-bezier(.16,1,.3,1) .2s; }
+        .cf-recibo-anillo + .cf-recibo-anillo { animation-delay: .34s; }
+        @keyframes cf-recibo-sello { from { opacity: 0; transform: scale(.86) } to { opacity: 1; transform: none } }
+        @keyframes cf-recibo-visto { from { stroke-dashoffset: 22 } to { stroke-dashoffset: 0 } }
+        @keyframes cf-recibo-anillo { from { opacity: .5; transform: scale(1) } to { opacity: 0; transform: scale(2.3) } }
+        @media (prefers-reduced-motion: reduce) {
+          .cf-recibo-sello, .cf-recibo-visto, .cf-recibo-anillo { animation: none; }
+        }
+      `}</style>
 
       <div style={{
         flex: 'none', padding: '14px 24px 24px',

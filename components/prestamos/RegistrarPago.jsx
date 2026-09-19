@@ -26,6 +26,7 @@ import { imprimirRecibo } from '@/lib/recibo-acciones'
 import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
+import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
@@ -440,7 +441,7 @@ export default function RegistrarPago({
          «Abono a capital» o «Pago de intereses», y la guarda de tres líneas más
          abajo —que no manda WhatsApp por un recargo o un descuento— nunca
          disparaba con red porque `pagoGuardado.tipo` llegaba `undefined`. */
-      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, plataforma }
+      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)
@@ -706,6 +707,17 @@ export default function RegistrarPago({
                   return {
                     texto: `${formatMoney(llevo)} de ${formatMoney(meta)}`,
                     porcentaje: Math.max(2, Math.min(100, Math.round((llevo / meta) * 100))),
+                    // Los números, para que el total gire y la billetera se llene.
+                    antes: Math.round(rutaNav.recaudadoHoy ?? 0),
+                    ahora: llevo,
+                    meta,
+                    formatear: (n) => formatMoney(n),
+                    /* Billetes solo si la plata va al bolsillo: lo decide
+                       `entraAlFajo`, con las cuentas que el negocio marcó como
+                       del cobrador. Una transferencia a la oficina no llena la
+                       billetera de billetes que no están en ella. */
+                    efectivo: entraAlFajo(pagoGuardado.metodoPago, pagoGuardado.metodoPagoId,
+                      new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))),
                   }
                 })()
               : null}
@@ -1013,6 +1025,7 @@ export default function RegistrarPago({
             textoAceptar={montoNum > 0
               ? `${esRecargo ? 'Aplicar' : 'Perdonar'} ${formatMoney(montoNum)}`
               : (esRecargo ? 'Aplicar' : 'Perdonar')}
+            cifra={montoNum > 0 ? formatMoney(montoNum) : null}
             aceptando={loading}
             deshabilitado={!(montoNum > 0) || sinMotivo || pasaDelTope}
             error={error || (pasaDelTope
@@ -1200,6 +1213,7 @@ export default function RegistrarPago({
               return montoNum > 0 ? `${verbo} ${formatMoney(montoNum)}` : verbo
             })()}
             onConfirmar={handleSubmit}
+            cifra={montoNum > 0 ? formatMoney(montoNum) : null}
             confirmando={loading}
             deshabilitado={!(montoNum > 0)}
             error={error}

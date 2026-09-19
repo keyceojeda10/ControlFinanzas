@@ -2,6 +2,7 @@
 // app/(dashboard)/rutas/[id]/page.jsx - Detalle de ruta
 
 import { formatMoney } from '@/lib/i18n'
+import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
 import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
@@ -1063,6 +1064,15 @@ export default function RutaDetallePage({ params }) {
              igual. Sale de la respuesta, no de lo que se tecleó: el servidor
              puede haber ajustado el pago. */
           tipo: data?.pagos?.[0]?.tipo ?? (esCuotaExacta ? 'completo' : 'parcial'),
+          /* CÓMO IBA EL DÍA JUSTO ANTES DE ESTE COBRO. El recibo sale antes del
+             `fetchRuta()` de abajo, así que aquí `ruta` todavía es la de antes:
+             es la foto que hace falta para que el total gire de lo que llevaba
+             a lo que lleva. */
+          llevabaHoy: Math.round(ruta?.recaudadoHoy ?? 0),
+          esperadoHoy: Math.round(ruta?.esperadoHoy ?? 0),
+          // Billetes a la billetera solo si la plata va al bolsillo del cobrador.
+          efectivo: entraAlFajo(metodoPago, metodoPagoId,
+            new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))),
         })
         await fetchRuta()
         // Mostrar undo por 10 segundos
@@ -2127,6 +2137,12 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         progresoDia={(ruta?.esperadoHoy ?? 0) > 0 ? {
           texto: `${formatMoney(ruta.recaudadoHoy ?? 0)} de ${formatMoney(ruta.esperadoHoy)}`,
           porcentaje: Math.round(((ruta.recaudadoHoy ?? 0) / ruta.esperadoHoy) * 100),
+          // Los números de la foto de antes del cobro, más lo que entró.
+          antes: reciboCobro.llevabaHoy,
+          ahora: reciboCobro.llevabaHoy + reciboCobro.monto,
+          meta: reciboCobro.esperadoHoy || Math.round(ruta.esperadoHoy),
+          formatear: (n) => formatMoney(n),
+          efectivo: reciboCobro.efectivo,
         } : null}
         negocio={orgNombre}
         cuando={new Date().toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}

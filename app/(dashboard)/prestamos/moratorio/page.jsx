@@ -304,6 +304,7 @@ export default function MoratorioPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 18 }}>
                 <DeslizarParaConfirmar
                   texto={`Cobrar ${formatMoney(totalMarcado)} de mora`}
+                  cifra={totalMarcado > 0 ? formatMoney(totalMarcado) : null}
                   onConfirmar={aplicar}
                 />
                 <button type="button" onClick={() => setConfirmando(false)}

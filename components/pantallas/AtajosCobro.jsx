@@ -230,6 +230,7 @@ export default function AtajosCobro({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                 <DeslizarParaConfirmar
                   texto={`Cobrar ${formatMoney(cuota, pais)}`}
+                  cifra={cuota > 0 ? formatMoney(cuota, pais) : null}
                   confirmando={ocupado}
                   deshabilitado={ocupado || !(cuota > 0)}
                   onConfirmar={() => { setDeslizarCuota(null); onCobrarCuota?.(p) }}
@@ -309,6 +310,7 @@ export default function AtajosCobro({
                   <>
                     <DeslizarParaConfirmar
                       texto={montoReal > 0 ? `Cobrar ${formatMoney(montoReal, pais)}` : 'Escribe el monto'}
+                      cifra={montoReal > 0 ? formatMoney(montoReal, pais) : null}
                       confirmando={ocupado}
                       deshabilitado={ocupado || !(montoReal > 0)}
                       onConfirmar={() => {
