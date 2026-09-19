@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
+import { Pastilla } from '@/components/cf/primitivos'
 
 /* Alto 38 y radio 14: los del sistema. Iban a 32 y 8 —por debajo del área que
    necesita un dedo— y con `text-[11px]`, que en una fila de tres botones deja
@@ -415,12 +416,13 @@ export default function FirmaDigital({ prestamo, onSave }) {
         className="w-full border overflow-hidden"
         style={{
           borderRadius: 'var(--cf-r-card)',
-          background: firmaUrl
-            ? 'color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card))'
-            : 'var(--cf-card)',
-          borderColor: firmaUrl
-            ? 'color-mix(in srgb, var(--cf-green-dark) 20%, var(--cf-border))'
-            : 'var(--cf-border)',
+          /* ⚠ FIRMADA IBA TEÑIDA DE VERDE, fondo y borde. El dueño, 19 sep
+             2026: «tiene un degradé y un reborde verde; ya nosotros no manejamos
+             eso». Y es la regla 4 de DESIGN.md: el estado va en el acento, nunca
+             en el fondo. Que está firmada lo dicen el icono verde y la pastilla
+             «Firmado»; la superficie es la de todas las tarjetas. */
+          background: 'var(--cf-card)',
+          borderColor: 'var(--cf-border)',
         }}
       >
         {/* Header */}
@@ -443,7 +445,10 @@ export default function FirmaDigital({ prestamo, onSave }) {
               Firmado, se queda como estaba: ahí sí es un dato. */}
           <div className="flex-1 min-w-0">
             {firmaUrl ? (
-              <p className="text-[10px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-[.06em]" style={{ color: 'var(--cf-ink-3)' }}>Firma del cliente</p>
+                <Pastilla tono="aldia">Firmado</Pastilla>
+              </div>
             ) : (
               <>
                 {/* 13.5 no está en la escala: los tamaños del sistema no llevan coma. */}

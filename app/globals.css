@@ -324,12 +324,17 @@ html[data-theme="light"] .progress-shimmer {
 .animate-sheetUp  { animation: sheetUp 0.38s cubic-bezier(.2,.7,.2,1) both; }
 .animate-fadeBg   { animation: fadeBg  0.25s ease-out both; }
 
-/* ─── Card shadow (handoff §1.3) ─────────────────────────── */
+/* ─── La sombra de la tarjeta vieja: APAGADA ────────────────
+   Era `0 10px 30px` bajo toda `Card` y 34 cajas sueltas. La tarjeta del
+   rediseño (`Tarjeta`, 03-COMPONENTES · 1) es fondo plano, borde de 1px y SIN
+   sombra, así que en una misma pantalla convivían las dos: «Gestionar los
+   pagos», el portal del cliente y el tope de préstamo flotaban con un halo que
+   el resto no tiene. El dueño, 19 sep 2026: «esa sombra muy pronunciada ya no
+   se usa… se ve muy feo». Se apaga AQUÍ, en el origen, y no caja por caja: la
+   clase se queda para no tocar 34 ficheros, pero ya no pinta nada. Ninguna de
+   las que la usan es flotante (menú, hoja): esas llevan su propia sombra. */
 .cf-card-shadow {
-  box-shadow: 0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.055);
-}
-html[data-theme="light"] .cf-card-shadow {
-  box-shadow: 0 1px 2px rgba(20,20,30,.04), 0 10px 30px rgba(20,20,30,.055);
+  box-shadow: none;
 }
 
 /* ─── El aterrizaje al volver a la lista ──────────────────────

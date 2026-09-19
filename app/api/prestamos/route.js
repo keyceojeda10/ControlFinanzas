@@ -469,6 +469,15 @@ export async function GET(request) {
     if (hayVentana) {
       filtrados = [...filtrados].sort((a, b) => new Date(a.proximoCobro) - new Date(b.proximoCobro))
     }
+    /* «EN MORA», EL MÁS ATRASADO PRIMERO. Salía por fecha de creación, como la
+       lista normal, y el dueño (19 sep 2026): «quiero ver rápidamente quién es
+       el que me debe, a quién le puedo cobrar… en orden». En una lista de mora
+       el orden que sirve es a quién ir a buscar primero: más días, y a igualdad
+       de días, más plata atrasada. */
+    if (soloMora || diasMoraMin != null) {
+      filtrados = [...filtrados].sort((a, b) =>
+        (b.diasMora - a.diasMora) || ((Number(b.montoEnMora) || 0) - (Number(a.montoEnMora) || 0)))
+    }
     if (page != null) {
       const desde = (page - 1) * limit
       return Response.json({

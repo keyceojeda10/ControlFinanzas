@@ -190,32 +190,8 @@ export function CreadoPor({ nombre }) {
   )
 }
 
-/**
- * «NUEVO» — creado en las últimas 24 horas.
- *
- * La misma pastilla que la tarjeta, para la tabla de escritorio. Aquí no cabe
- * un punto de 7px al lado del nombre y esperar que alguien lo vea: en una tabla
- * de quince filas, lo que distingue una fila es el color y la palabra.
- */
-export function EtiquetaNuevo({ nuevo }) {
-  if (!nuevo) return null
-  return (
-    <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
-      height: 18, padding: '0 7px 0 5px', borderRadius: 999,
-      background: 'color-mix(in srgb, var(--cf-green) 14%, transparent)',
-      border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
-    }}>
-      <span aria-hidden style={{
-        width: 5, height: 5, borderRadius: 999, flex: 'none',
-        background: 'var(--cf-green-dark)',
-      }} />
-      <span style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
-        color: 'var(--cf-green-dark)', textTransform: 'uppercase',
-      }}>Nuevo</span>
-    </span>
-  )
-}
+// «NUEVO» vive en `primitivos`, con las demás pastillas: aquí solo se reexporta
+// para las tablas de escritorio que ya lo importaban de este fichero.
+export { EtiquetaNuevo } from './primitivos'
 
 export { TRAZO }

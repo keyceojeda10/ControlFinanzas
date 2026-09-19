@@ -85,9 +85,16 @@ const CUANDO_COBRAS = [
 
 const ESTADOS = [
   { value: '',           label: 'Todos'     },
-  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   { value: 'activo',     label: 'Activos'   },
+  /* ⚠ «EN MORA» ES EL TERCERO, NO EL CUARTO. Iba detrás de «Pendientes» y en el
+     teléfono quedaba tapado por el botón de filtros: se veía una «E». El dueño,
+     19 sep 2026: «no hay una opción rápida donde yo pueda ver todos los que me
+     deben… quisiera un botón rápido». El botón existía; no se veía. «Todos ·
+     Activos · En mora» caben los tres a 393px, y «Pendientes» —que solo ve el
+     dueño y casi siempre está vacío— pasa detrás. La lista sale con el más
+     atrasado primero (lo ordena el API). */
   { value: 'mora',       label: 'En mora',  color: 'var(--cf-red-dark)' },
+  { value: 'pendiente_aprobacion', label: 'Pendientes', color: 'var(--cf-gold-dark)', ownerOnly: true },
   /* ── «NI UN PESO» ──
      Lleva más de un mes entregado y no ha recibido un solo abono. NO lo cubre
      «En mora»: un mensual de 20 días todavía no está atrasado y ya lleva 20

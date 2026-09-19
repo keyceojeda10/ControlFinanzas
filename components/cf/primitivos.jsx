@@ -289,6 +289,9 @@ const PASTILLAS = {
   aldia:     { bg: 'var(--cf-green-pill-bg)', bd: 'var(--cf-green-pill-border)', fg: 'var(--cf-green-dark)' },
   neutro:    { bg: 'var(--cf-fill)',          bd: 'var(--cf-border)',            fg: 'var(--cf-ink-3)' },
   destacado: { bg: 'var(--cf-gold)',          bd: 'transparent',                 fg: 'var(--cf-gold-ink)' },
+  // «Nuevo» NO es un estado: no lleva color. Contorno y tinta, para que se
+  // distinga de la de estado que tiene al lado sin competirle.
+  nuevo:     { bg: 'var(--cf-card)',          bd: 'var(--cf-border-strong)',     fg: 'var(--cf-ink)' },
 }
 
 export function Pastilla({ children, tono = 'neutro', numerica = false, style }) {
@@ -301,6 +304,23 @@ export function Pastilla({ children, tono = 'neutro', numerica = false, style })
       fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap', flex: 'none',
       ...style,
     }}>{children}</span>
+  )
+}
+
+/* ══ «NUEVO» — creado en las últimas 24 horas ═══════════════════════════════
+ *
+ * ⚠ ERA OTRA PASTILLA, escrita a mano DOS veces (tarjeta y tabla de PC): 19px de
+ * alto, en MAYÚSCULAS, con un punto delante; y a su lado «Al día» a 22px, en
+ * minúsculas y sin punto. El dueño, 19 sep 2026: «tienen diferentes tamaños…
+ * uno todo en mayúscula con un puntico y el otro no… molesta bastante a la
+ * vista». Ahora es `Pastilla`, como todas: la misma caja y la misma letra.
+ */
+export function EtiquetaNuevo({ nuevo = true, style }) {
+  if (!nuevo) return null
+  return (
+    <Pastilla tono="nuevo" style={style}>
+      <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas">Nuevo</span>
+    </Pastilla>
   )
 }
 

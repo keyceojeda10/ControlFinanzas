@@ -51,7 +51,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
-import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EstrellaCliente } from './primitivos'
+import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EtiquetaNuevo, EstrellaCliente } from './primitivos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 import DesglosePrestamos from './DesglosePrestamos'
@@ -353,23 +353,7 @@ export default function TarjetaCliente({
                   hace saltar el renglón al recorrer la lista. Aquí sí puede ir
                   delante: esta fila envuelve (`flexWrap`), así que si no cabe
                   baja de renglón en vez de estrujar a su vecina. */}
-              {nuevo && (
-                <span aria-label="Creado en las últimas 24 horas" title="Creado en las últimas 24 horas" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4, flex: 'none',
-                  height: 19, padding: '0 8px 0 6px', borderRadius: 999,
-                  background: 'var(--cf-green-tint, color-mix(in srgb, var(--cf-green) 14%, transparent))',
-                  border: '1px solid color-mix(in srgb, var(--cf-green) 32%, transparent)',
-                }}>
-                  <span aria-hidden style={{
-                    width: 5, height: 5, borderRadius: 999, flex: 'none',
-                    background: 'var(--cf-green-dark)',
-                  }} />
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: '.04em',
-                    color: 'var(--cf-green-dark)', textTransform: 'uppercase',
-                  }}>Nuevo</span>
-                </span>
-              )}
+              <EtiquetaNuevo nuevo={nuevo} />
               {etiquetaEstado && (
                 // El pagado lleva pastilla NEUTRA (gris), no una de su color: no
                 // hay «color de terminado», hay ausencia de alarma.
