@@ -1007,7 +1007,7 @@ export default function ClienteDetallePage({ params }) {
 
       {/* Portal del cliente — solo owner */}
       {esOwner && (
-        <PortalClienteCard clienteId={id} organizationId={cliente.organizationId} cedula={cliente.cedula} />
+        <PortalClienteCard clienteId={id} organizationId={cliente.organizationId} nombre={cliente.nombre} />
       )}
 
       {/* Tope de préstamo — owner edita, cobrador solo ve */}
@@ -1255,7 +1255,7 @@ export default function ClienteDetallePage({ params }) {
 }
 
 // ─── Portal del cliente ──────────────────────────────────────────
-function PortalClienteCard({ clienteId, organizationId, cedula }) {
+function PortalClienteCard({ clienteId, organizationId, nombre }) {
   const [portal, setPortal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [pinInput, setPinInput] = useState('')
@@ -1337,7 +1337,10 @@ function PortalClienteCard({ clienteId, organizationId, cedula }) {
       {!portal?.tienePin ? (
         <>
           <p className="text-[12px] text-[var(--cf-ink-3)] mb-3">
-            Permite que {cedula} vea sus préstamos y pagos desde su celular. Crea un PIN de acceso.
+            {/* Decía «Permite que {cedula} vea…»: una frase con un número donde
+                va una persona, y en quien no tiene cédula salía el marcador
+                interno («SIN-mu8reahrux61»). Visto el 19 sep 2026. */}
+            Permite que {(nombre || 'tu cliente').trim().split(/\s+/)[0]} vea sus préstamos y pagos desde su celular. Crea un PIN de acceso.
           </p>
           {!showSetPin ? (
             <button

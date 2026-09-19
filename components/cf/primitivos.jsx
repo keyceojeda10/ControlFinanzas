@@ -179,6 +179,7 @@ export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = fal
               color: c.tono === 'favor'  ? (sobreOscuro ? '#2FBE6A' : 'var(--cf-green-dark)')
                    : c.tono === 'contra' ? (sobreOscuro ? '#F0575C' : 'var(--cf-red-dark)')
                    : c.tono === 'oro'    ? (sobreOscuro ? '#F5B824' : 'var(--cf-gold-dark)')
+                   : c.tono === 'apagado' ? (sobreOscuro ? '#8A8E98' : 'var(--cf-ink-3)')
                    : (sobreOscuro ? '#F3F3F6' : 'var(--cf-ink)'),
               minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip',
             }}>{c.valor}</span>

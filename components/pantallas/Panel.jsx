@@ -601,7 +601,7 @@ export default function Panel({
   nombre = '',
   fecha = '',
   hero,
-  caja,
+  caja, cajaNegativa = false,
   mora,
   atencion = [],
   porRuta,
@@ -717,9 +717,14 @@ export default function Panel({
           style={{ display: 'flex', gap: 10, flex: 'none' }}
         >
           {caja && (
-            <TarjetaDato rotulo="En caja" pie="Para prestar ahora" destino="/caja" onIr={onIr}>
+            /* ⚠ «−$435.993.995 · PARA PRESTAR AHORA» NO DICE NADA. 107 de 253
+               negocios tienen la caja en negativo, y no es un fallo: prestaron
+               plata que nunca anotaron como capital (ver la memoria
+               `capital_negativo_no_es_bug`). Debajo de un negativo, el pie dice
+               qué significa y la tarjeta ya lleva a la caja, donde se ajusta. */
+            <TarjetaDato rotulo="En caja" pie={cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}>
               <span className="cf-fig" style={{
-                fontSize: 20, letterSpacing: '-.025em', color: 'var(--cf-ink)',
+                fontSize: 20, letterSpacing: '-.025em', color: cajaNegativa ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
               }}>{caja}</span>
             </TarjetaDato>
           )}
@@ -732,7 +737,9 @@ export default function Panel({
                peor respuesta que un número quieto. */
             <TarjetaDato
               rotulo="En mora"
-              pie={mora.expuesto ? `${mora.expuesto} expuestos` : null}
+              /* Decía «$208.498.400 expuestos», que es palabra de analista de
+                 riesgo. Es lo que DEBEN, en total, los que están en mora. */
+              pie={mora.expuesto ? `deben ${mora.expuesto}` : null}
               destino={mora.cuantos > 0 ? '/clientes?filtro=mora' : null}
               onIr={onIr}
             >
