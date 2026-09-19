@@ -405,10 +405,31 @@ export async function POST(request, { params }) {
     metadata: { montoNuevo: Number(montoPrestado), saldoLiquidado: saldoPendiente, diferencia },
   })
 
+  /* QUÉ RENOVACIÓN ES ESTA. La cadena ya existe en `renovadoDeId`: el nuevo
+     apunta al original, y el original, si fue renovación, a su anterior. La
+     pantalla lo enseña como «Renovación n.º 3 · cliente fiel». Solo lectura,
+     después de guardar y con tope: un fallo aquí no puede tumbar la renovación. */
+  let renovacionNumero = 1
+  try {
+    let cursor = original.renovadoDeId
+    for (let k = 0; cursor && k < 60; k++) {
+      renovacionNumero += 1
+      const anterior = await prisma.prestamo.findFirst({ where: { id: cursor, organizationId }, select: { renovadoDeId: true } })
+      cursor = anterior?.renovadoDeId ?? null
+    }
+  } catch { /* sin número: la pantalla no pinta el sello */ }
+
   return Response.json({
     id: nuevoPrestamo.id,
     saldoLiquidado: saldoPendiente,
     diferenciaEntregada: diferencia,
+    // La deuda que de verdad se liquidó (`minimoParaRenovar`), que no siempre es
+    // `saldoLiquidado`. Con ésta y lo entregado la pantalla dice cómo se formó el
+    // crédito; el efectivo va redondeado al centenar, así que la suma puede no
+    // ser exacta y la pantalla lo dice en vez de esconderlo.
+    deudaLiquidada: minimoRenovacion,
+    efectivoRedondeado: diferencia !== diferenciaExacta,
+    renovacionNumero,
   }, { status: 201 })
   } catch (err) {
     if (err?.message === 'CAPITAL_INSUFICIENTE') {

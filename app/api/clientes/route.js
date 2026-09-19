@@ -212,7 +212,12 @@ export async function GET(request) {
        * `_count` cuenta la relacion ENTERA, sin el `where` del include. */
       _count: { select: { prestamos: true } },
     },
-    orderBy: [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
+    /* `orden=recientes`: los últimos cargados primero. Lo pide la pantalla de
+       «Cliente creado» con `limit=4` para enseñar las caras de «Tus clientes»
+       sin bajar la cartera entera. */
+    orderBy: searchParams.get('orden') === 'recientes'
+      ? [{ createdAt: 'desc' }]
+      : [{ ordenRuta: 'asc' }, { nombre: 'asc' }],
     // Sin `take/skip` cuando hay filtro calculado: se corta despues, ya filtrado.
     ...(page != null && !filtraCalculado && { take: limit, skip: (page - 1) * limit }),
   })

@@ -12,6 +12,10 @@ import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/ad
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
 import ModoInteresSelector from '@/components/prestamos/ModoInteresSelector'
 import { useCountry } from '@/hooks/useCountry'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import PrestamoEntregado from '@/components/cf/PrestamoEntregado'
+import { useTactil } from '@/lib/tactil'
+import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -69,6 +73,11 @@ export default function RenovarPrestamo({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
+  const tactil = useTactil()
+  // La renovación hecha, con el préstamo nuevo tal como lo devuelve el servidor.
+  // El componente sigue montado cuando el modal se cierra, así que puede pintar
+  // «Préstamo renovado» encima de la ficha.
+  const [renovado, setRenovado] = useState(null)
 
   const saldoTotal = Math.max(0, Number(saldoPendiente) || 0)
   /* Con tabla de amortización el servidor liquida el capital (el interés futuro
@@ -201,7 +210,22 @@ export default function RenovarPrestamo({
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Error al renovar')
       }
-      const { id: nuevoId } = await res.json()
+      const r = await res.json()
+      const nuevoId = r.id
+      /* «PRÉSTAMO RENOVADO» (aprobado el 19 sep). Cambiar el modo de cobro no
+         mueve plata: ése sigue yendo directo a la ficha. Si no se puede leer el
+         préstamo nuevo, también: la renovación ya está hecha. */
+      if (!soloModo) {
+        try {
+          const g = await fetch(`/api/prestamos/${nuevoId}`, { cache: 'no-store' })
+          if (!g.ok) throw new Error('sin préstamo')
+          const p = await g.json()
+          // Billetes solo si la diferencia salió en efectivo (no por transferencia).
+          setRenovado({ p, r, efectivo: cuentaEntrega?.metodoPago !== 'transferencia' })
+          handleClose()
+          return
+        } catch { /* a la ficha, como siempre */ }
+      }
       handleClose()
       router.push(`/prestamos/${nuevoId}`)
     } catch (e) {
@@ -228,9 +252,10 @@ export default function RenovarPrestamo({
     : null
 
   return (
-    /* El título va en la CABECERA del modal, no dentro del cuerpo. Mientras
+    <>
+    {/* El título va en la CABECERA del modal, no dentro del cuerpo. Mientras
        estuvo dentro, el modal no tenía cabecera y se le pintaba una X
-       flotante que al deslizar caía encima del capital adeudado. */
+       flotante que al deslizar caía encima del capital adeudado. */}
     <Modal
       onVolver={onVolver}
       open={open}
@@ -248,7 +273,23 @@ export default function RenovarPrestamo({
          hojas de este componente —renovar y cambiar de modo— eran las dos que
          fallaban. El botón sigue repitiendo la cifra que se entrega. */
       footer={
-        <>
+        /* RENOVAR Y ENTREGAR ES PLATA QUE SALE: en el teléfono se desliza, como
+           cobrar y prestar. Si no sale efectivo (solo cubre el saldo) o es
+           cambiar el modo, no se mueve un peso y queda el botón. */
+        (tactil && !soloModo && enMano > 0) ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <DeslizarParaConfirmar
+              texto="Desliza para entregar"
+              cifra={formatMoney(enMano)}
+              confirmando={loading}
+              onConfirmar={handleSubmit}
+            />
+            <button type="button" onClick={handleClose} disabled={loading}
+              style={{ height: 40, border: 0, background: 'none', cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink-3)' }}>
+              Cancelar
+            </button>
+          </div>
+        ) : <>
           <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
           <Button onClick={handleSubmit} loading={loading}>
             {soloModo
@@ -611,5 +652,33 @@ export default function RenovarPrestamo({
 
       </div>
     </Modal>
+
+    {renovado && (
+      <PrestamoEntregado
+        cliente={{ nombre: renovado.p.cliente?.nombre ?? clienteNombre, fotoUrl: renovado.p.cliente?.fotoUrl }}
+        entregado={renovado.r.diferenciaEntregada > 0 ? renovado.r.diferenciaEntregada : renovado.p.montoPrestado}
+        renovacion={{
+          debia: Math.round(renovado.r.deudaLiquidada ?? renovado.r.saldoLiquidado ?? 0),
+          credito: renovado.p.montoPrestado,
+          enMano: Math.max(0, Math.round(renovado.r.diferenciaEntregada ?? 0)),
+          redondeado: Boolean(renovado.r.efectivoRedondeado),
+          numero: renovado.r.renovacionNumero,
+        }}
+        prestado={renovado.p.montoPrestado}
+        total={renovado.p.totalAPagar}
+        conGanancia={totalTraeGanancia(renovado.p.modoInteres)}
+        billetes={renovado.efectivo && (renovado.r.diferenciaEntregada ?? 0) > 0}
+        plan={planDelPrestamo(renovado.p, (n) => formatMoney(n))}
+        /* Lo que sube la cartera activa: el saldo del préstamo nuevo menos el del
+           viejo, que deja de estar activo. Las dos con `calcularSaldoPendiente`,
+           la misma cuenta que suma el inicio. */
+        subeCartera={Math.round((renovado.p.saldoPendiente ?? renovado.p.totalAPagar) - (renovado.r.saldoLiquidado ?? 0))}
+        cargarCartera={() => cargarCarteraActiva(new Date(renovado.p.createdAt).getTime())}
+        formatear={(n) => formatMoney(n)}
+        onWhatsApp={() => router.push(`/prestamos/${renovado.p.id}?nuevo=1`)}
+        onVer={() => router.push(`/prestamos/${renovado.p.id}`)}
+      />
+    )}
+    </>
   )
 }

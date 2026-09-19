@@ -12,6 +12,7 @@ import MoneyInput              from '@/components/ui/MoneyInput'
 import DiasSinCobroSelector    from '@/components/ui/DiasSinCobroSelector'
 import { guardarClientePendiente, encolarMutacion, invalidarCachePorPrefijo, obtenerRutasOffline, obtenerRutaOffline, leerDeCache } from '@/lib/offline'
 import { useCountry } from '@/hooks/useCountry'
+import ClienteCreado from '@/components/cf/ClienteCreado'
 
 const LocationPicker = dynamic(() => import('@/components/clientes/LocationPicker'), { ssr: false })
 
@@ -39,7 +40,7 @@ function Etiqueta({ texto, opcional = false }) {
 
 export default function ClienteForm({ clienteInicial = null, plan = 'basic', puedeSubirFoto = false, datosIniciales = null, esOwner = false }) {
   const router = useRouter()
-  const { validatePhone, validateDocument, documentConfig, phoneConfig } = useCountry()
+  const { validatePhone, validateDocument, documentConfig, phoneConfig, country } = useCountry()
   const esEdicion = !!clienteInicial
   const fotoInputRef = useRef(null)
   const fotoCameraRef = useRef(null)
@@ -348,7 +349,12 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         router.refresh()
         return
       }
-      setClienteCreado({ id: data.id, nombre: form.nombre || data.nombre })
+      // Lo que sale en la cartulina de «Cliente creado»: lo guardado, no lo tecleado.
+      setClienteCreado({
+        id: data.id, nombre: data.nombre || form.nombre,
+        cedula: data.cedula ?? form.cedula, telefono: data.telefono ?? form.telefono,
+        direccion: data.direccion ?? form.direccion, fotoUrl: data.fotoUrl ?? null,
+      })
     } catch {
       if (!esEdicion && !navigator.onLine) {
         try {
@@ -828,40 +834,18 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         </div>
       </div>
 
+      {/* ══ T07-03 · ENCADENAR OTRO, SIN VOLVER A LA LISTA ══
+          «Cargar otro cliente» deja el formulario limpio SIN salir de él —con la
+          ruta conservada—: quien carga su cartera quiere meter el siguiente, y
+          cargar clientes es justo lo que predice que la cuenta sobreviva.
+          La pantalla es la aprobada el 19 sep (`ClienteCreado`). */}
       {clienteCreado && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-          <div
-            className="w-[90%] max-w-sm rounded-2xl p-6 text-center"
-            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
-          >
-            <div className="mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,0.12)' }}>
-              <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--cf-ink)' }}>Cliente creado</h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--cf-ink-2)' }}>{clienteCreado.nombre}</p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => router.push(`/prestamos/nuevo?clienteId=${clienteCreado.id}`)}
-                className="w-full h-12 rounded-xl font-semibold text-sm text-black transition-all"
-                style={{ background: 'var(--cf-gold)' }}
-              >
-                Crear préstamo ahora
-              </button>
-              {/* ══ T07-03 · ENCADENAR OTRO, SIN VOLVER A LA LISTA ══
-                  Las dos salidas eran «crear préstamo» y «ver ficha», y las dos
-                  SACAN del formulario. Quien está cargando su cartera no quiere
-                  ninguna de las dos: quiere meter el siguiente. Tenía que ir a
-                  la lista y pulsar «nuevo» por cada cliente.
-                  Es la pantalla del negocio que arranca, y cargar clientes es
-                  justo lo que predice que la cuenta sobreviva: 311 de 411 están
-                  en cinco clientes o menos.
-                  LA RUTA SE CONSERVA: se cargan de una en una, y volver a
-                  elegirla veinte veces es la clase de fricción que hace
-                  abandonar a media carga. */}
-              <button
-                onClick={() => {
+        <ClienteCreado
+          cliente={clienteCreado}
+          pais={country}
+          onPrestar={() => router.push(`/prestamos/nuevo?clienteId=${clienteCreado.id}`)}
+          onVerFicha={() => router.push(`/clientes/${clienteCreado.id}`)}
+          onOtro={() => {
                   setForm((prev) => ({
                     ...prev,
                     nombre: '', cedula: '', telefono: '', direccion: '',
@@ -874,21 +858,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
                   setClienteCreado(null)
                   window.scrollTo({ top: 0 })
                 }}
-                className="w-full h-12 rounded-xl font-semibold text-sm transition-all"
-                style={{ color: 'var(--cf-ink)', background: 'var(--cf-fill)' }}
-              >
-                Cargar otro cliente
-              </button>
-              <button
-                onClick={() => router.push(`/clientes/${clienteCreado.id}`)}
-                className="w-full h-11 rounded-xl font-medium text-sm transition-all"
-                style={{ color: 'var(--cf-ink-2)' }}
-              >
-                Ver ficha del cliente
-              </button>
-            </div>
-          </div>
-        </div>
+        />
       )}
     </div>
   )

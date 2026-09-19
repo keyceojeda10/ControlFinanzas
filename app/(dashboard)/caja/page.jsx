@@ -33,6 +33,9 @@ import CajaPorRuta from '@/components/caja/CajaPorRuta'
 import { agruparCajaPorRuta, totalesCajaPorRuta } from '@/lib/adaptadores/caja-por-ruta'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
+import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import CajaEntregada from '@/components/cf/CajaEntregada'
+import { useTactil } from '@/lib/tactil'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -88,6 +91,10 @@ export default function CajaPage() {
   const [error, setError] = useState('')
   const [totalRecogido, setTotalRecogido] = useState('')
   const [guardando, setGuardando] = useState(false)
+  // El cierre recién entregado, con la foto de sus cifras: con él se pinta
+  // «Día cerrado» (aprobado el 19 sep) encima de la caja.
+  const [cajaEntregada, setCajaEntregada] = useState(null)
+  const tactil = useTactil()
   const [errorCaja, setErrorCaja] = useState('')
   const [exito, setExito] = useState(false)
   /* «Lo que prestaste» se puede abrir. Ver el comentario largo junto al
@@ -417,6 +424,14 @@ const MOVIMIENTOS_MANUALES = [
         return
       }
 
+      /* LA FOTO DEL DÍA, ANTES DE GUARDAR. «Día cerrado» compara lo entregado con
+         `enLaMano` —la cifra del botón «Usar»— tal como estaba al entregar; el
+         `fetchData()` de abajo recarga la caja y ya no sería la misma pantalla.
+         Al CORREGIR un cierre no hay pantalla: no es entregar. */
+      const foto = modoAjusteCierre ? null : {
+        entregado: totalRecogidoFinal, enLaMano, cobrado: cobradoEfectivoHoy, cobros: cantidadPagosDia,
+        inflado: Math.round(stats.esperado || 0) > 0 ? Math.min(1, cobradoHoy / Math.round(stats.esperado)) : 0.5,
+      }
       const res = await fetch('/api/caja', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -427,6 +442,7 @@ const MOVIMIENTOS_MANUALES = [
       })
       const data = await res.json()
       if (!res.ok) { setErrorCaja(data.error ?? 'Error al registrar'); return }
+      if (foto) setCajaEntregada(foto)
       setExito(true)
       setModoAjusteCierre(false)
       setTotalRecogido('')
@@ -1356,9 +1372,21 @@ const MOVIMIENTOS_MANUALES = [
                   </span>
                 </div>
               )}
+              {/* ENTREGAR LA CAJA ES PLATA QUE CAMBIA DE MANOS: en el teléfono se
+                  desliza, como cobrar y prestar. Corregir un monto ya entregado,
+                  o cerrar sin nada que entregar, sigue con el botón. */}
+              {tactil && !modoAjusteCierre && (totalRecogido === '' ? recaudadoRegistrado : Number(totalRecogido)) > 0 ? (
+                <DeslizarParaConfirmar
+                  texto="Desliza para entregar"
+                  cifra={formatMoney(totalRecogido === '' ? recaudadoRegistrado : Number(totalRecogido))}
+                  confirmando={guardando}
+                  onConfirmar={() => registrarCierre({ preventDefault() {} })}
+                />
+              ) : (
               <Button type="submit" loading={guardando} className="w-full">
                 {modoAjusteCierre ? 'Guardar correccion' : 'Confirmar y entregar caja'}
               </Button>
+              )}
             </form>
           </Card>
         ) : (
@@ -1404,6 +1432,19 @@ const MOVIMIENTOS_MANUALES = [
           onSuccess={fetchData}
           fecha={fechaSeleccionada}
         />
+
+        {cajaEntregada && (
+          <CajaEntregada
+            {...cajaEntregada}
+            formatear={(n) => formatMoney(n)}
+            onListo={() => setCajaEntregada(null)}
+            onCorregir={() => {
+              setCajaEntregada(null)
+              setModoAjusteCierre(true)
+              setTotalRecogido(String(Math.round(cajaEntregada.entregado)))
+            }}
+          />
+        )}
       </div>
     )
   }

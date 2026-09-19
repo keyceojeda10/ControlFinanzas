@@ -24,6 +24,10 @@ import DiasSinCobroSelector                        from '@/components/ui/DiasSin
 import { Toggle }                                  from '@/components/ui/Toggle'
 import MetodoPagoSelector                          from '@/components/pagos/MetodoPagoSelector'
 import { guardarPrestamoPendiente, obtenerClientesOffline } from '@/lib/offline'
+import DeslizarParaConfirmar                       from '@/components/cf/DeslizarParaConfirmar'
+import PrestamoEntregado                           from '@/components/cf/PrestamoEntregado'
+import { useTactil }                               from '@/lib/tactil'
+import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -200,6 +204,10 @@ function NuevoPrestamo() {
   const plazo = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
   const [fechaInicio,  setFechaInicio]  = useState(hoyISO())
   const [loading,      setLoading]      = useState(false)
+  // El préstamo recién creado, tal como lo devuelve el servidor: con él se pinta
+  // «Préstamo entregado» antes de ir a la ficha (ver `alCrear`).
+  const [entregado,    setEntregado]    = useState(null)
+  const tactil = useTactil()
   const [error,        setError]        = useState('')
   const [buscadorCliente, setBuscadorCliente] = useState('')
   const [modalInyeccion, setModalInyeccion] = useState(null) // { faltante, saldoActual, montoInyeccion, descripcion }
@@ -899,10 +907,7 @@ function NuevoPrestamo() {
       if (data.pendienteAprobacion) {
         try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el prestamo.') } catch {}
       }
-      // ?nuevo=1 hace que el detalle abra el WhatsApp de "Credito aprobado".
-      // Solo si el prestamo quedo activo: si esta pendiente de aprobacion, todavia
-      // no hay credito que anunciar.
-      router.push(`/prestamos/${data.id}${data.pendienteAprobacion ? '' : '?nuevo=1'}`)
+      await alCrear(data)
     } catch {
       if (!navigator.onLine) {
         try {
@@ -915,6 +920,28 @@ function NuevoPrestamo() {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  /* ══ PRÉSTAMO ENTREGADO ════════════════════════════════════════════════════
+   *
+   * Los DOS caminos que crean un préstamo —el normal y el que primero inyecta
+   * capital— terminan aquí. Antes cada uno hacía su `router.push` a la ficha con
+   * `?nuevo=1` (que abre el WhatsApp de «Crédito aprobado»); ahora pasan por la
+   * pantalla aprobada el 19 sep y ese mismo WhatsApp es su botón verde.
+   *
+   * Las cifras salen del préstamo que devuelve el SERVIDOR (fechas, cuotas y
+   * saldo ya calculados con su calendario), no del formulario. Si esa lectura
+   * falla, se va a la ficha como siempre: la pantalla es un extra, el préstamo
+   * ya está creado. Pendiente de aprobación no la ve: aún no se entregó nada. */
+  const alCrear = async (data) => {
+    if (data.pendienteAprobacion) { router.push(`/prestamos/${data.id}`); return }
+    try {
+      const r = await fetch(`/api/prestamos/${data.id}`, { cache: 'no-store' })
+      if (!r.ok) throw new Error('sin préstamo')
+      setEntregado(await r.json())
+    } catch {
+      router.push(`/prestamos/${data.id}?nuevo=1`)
     }
   }
 
@@ -937,7 +964,7 @@ function NuevoPrestamo() {
         return
       }
       setModalInyeccion(null)
-      router.push(`/prestamos/${data.id}${data.pendienteAprobacion ? '' : '?nuevo=1'}`)
+      await alCrear(data)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
@@ -2648,6 +2675,26 @@ function NuevoPrestamo() {
             columnas, y un `mx-auto` a secas dejaba «Revisar préstamo» flotando
             bajo el panel de la cuenta, que no es lo que se está rellenando. */}
         <div className="max-w-2xl xl:max-w-[1076px] mx-auto flex items-center gap-3 xl:pr-[404px]">
+          {/* ENTREGAR ES PLATA QUE SALE: en el teléfono se desliza, igual que
+              cobrar («deslizar en todo lo que es plata»). A lo ancho y con
+              «Atrás» debajo, porque al lado no cabe el monto armándose.
+              Un préstamo «en curso» traído del cuaderno no entrega nada hoy:
+              ese se sigue creando con el botón. */}
+          {paso === PASOS.length - 1 && tactil && !esEnCurso ? (
+            <div className="flex-1 flex flex-col gap-2">
+              <DeslizarParaConfirmar
+                texto="Desliza para entregar"
+                cifra={Number(monto) > 0 ? formatMoney(Number(monto)) : null}
+                confirmando={loading}
+                deshabilitado={!puedeAvanzarPaso()}
+                onConfirmar={() => handleSubmit({ preventDefault() {} })}
+              />
+              <button type="button" onClick={irAlPasoAnterior} disabled={loading}
+                style={{ height: 40, border: 0, background: 'none', cursor: 'pointer', font: 'inherit', fontSize: 14, fontWeight: 700, color: 'var(--cf-ink-3)' }}>
+                Atrás
+              </button>
+            </div>
+          ) : (<>
           {paso === 0 ? (
             <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading} className="flex-1">
               Cancelar
@@ -2678,8 +2725,35 @@ function NuevoPrestamo() {
               Crear préstamo
             </Button>
           )}
+          </>)}
         </div>
       </div>
+
+      {entregado && (
+        <PrestamoEntregado
+          titulo={esEnCurso ? 'Préstamo cargado' : undefined}
+          cliente={{ nombre: entregado.cliente?.nombre ?? clienteSeleccionado?.nombre, fotoUrl: entregado.cliente?.fotoUrl }}
+          entregado={entregado.montoPrestado}
+          prestado={entregado.montoPrestado}
+          total={entregado.totalAPagar}
+          conGanancia={totalTraeGanancia(entregado.modoInteres)}
+          /* Billetes solo si salieron billetes: efectivo, préstamo de plata (no
+             mercancía) y entregado hoy (no uno «en curso» traído del cuaderno). */
+          billetes={modo === 'prestamo' && !esEnCurso && cuentaDesembolso.metodoPago !== 'transferencia'}
+          plan={planDelPrestamo(entregado, (n) => formatMoney(n))}
+          // Lo que sube la cartera es el saldo de ESTE préstamo, con la misma
+          // cuenta que suma el inicio (`calcularSaldoPendiente`).
+          subeCartera={Math.round(entregado.saldoPendiente ?? entregado.totalAPagar)}
+          cargarCartera={() => cargarCarteraActiva(new Date(entregado.createdAt).getTime())}
+          formatear={(n) => formatMoney(n)}
+          onWhatsApp={() => router.push(`/prestamos/${entregado.id}?nuevo=1`)}
+          onVer={() => router.push(`/prestamos/${entregado.id}`)}
+          // Un formulario limpio de verdad: el estado de éste está lleno de lo
+          // que se acaba de prestar.
+          onOtro={() => window.location.assign('/prestamos/nuevo')}
+          textoOtro="Prestar a otro cliente"
+        />
+      )}
 
       {/* Modal de inyeccion de capital (sin cambios) */}
       {modalInyeccion && (

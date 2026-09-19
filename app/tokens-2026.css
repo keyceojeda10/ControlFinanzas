@@ -82,6 +82,12 @@ html[data-theme="light"] {
   --cf-pista-cifra:  #E7A400;
   --cf-pista-listo:  #3DDC84;
 
+  /* ── La cartulina del cliente (pantalla «Cliente creado») ──
+     El papel de la cartulina de cobro, con sus renglones de libreta. */
+  --cf-cartulina:        #FBF6E9;
+  --cf-cartulina-canto:  #E6DCC2;
+  --cf-cartulina-linea:  rgba(120,90,30,.14);
+
   /* ── Velos ── */
   --cf-scrim:        rgba(20,20,28,.42);   /* detras de hoja inferior */
   --cf-scrim-modal:  rgba(20,20,28,.50);   /* detras de modal centrado */
@@ -168,6 +174,10 @@ html[data-theme="dark"] {
   --cf-pista-texto:    #15161A;
   --cf-pista-cifra:    #7A5800;
   --cf-pista-listo:    #0D7A3C;
+
+  --cf-cartulina:        #2A2822;
+  --cf-cartulina-canto:  #3A362C;
+  --cf-cartulina-linea:  rgba(255,230,180,.08);
 }
 
 /* ══════════════════════════════════════════════════════════════
