@@ -34,49 +34,15 @@
 // Presentacional a propósito: todo entra por props, desde `adaptarPanelDinero`.
 
 import { Tarjeta } from '@/components/cf/primitivos'
+import LineaCifra from '@/components/cf/LineaCifra'
 
-/* Una columna de la tira. `titulo` es el rótulo del diccionario, así que puede
-   ser de cualquier largo: por eso el rótulo reserva dos líneas y las cifras
-   quedan alineadas entre sí pase lo que pase. */
-/* ⚠ FILAS, NO COLUMNAS.
+/* ⚠ UNA CIFRA POR RENGLÓN, NO COLUMNAS NI FILAS PARTIDAS.
    §14 dibuja una tira de hasta cuatro columnas y avisa: «con más, no se leen».
-   Con TRES tampoco, si las cifras son de nueve dígitos. Probado en el teléfono
-   contra el negocio real: salía «$201.582.321$245.497.198», pegadas, sin un
-   pixel de aire. La tira sirve para «12 cuotas · 62% · $48.000», no para
-   cientos de millones.
-
-   Fila con rótulo a la izquierda y cifra a la derecha, y la que es RESULTADO
-   abajo y más grande. Es el patrón de la cuenta del día de la caja por ruta,
-   donde el criterio era que se pudiera sumar a mano. */
-function Fila({ titulo, valor, tono = 'neutro', fuerte = false, onTocar, primera = false }) {
-  const color = tono === 'favor' ? 'var(--cf-green-dark)'
-    : tono === 'contra' ? 'var(--cf-red-dark)'
-    : 'var(--cf-ink)'
-
-  const caja = {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-    width: '100%', minHeight: 40, textAlign: 'left',
-    borderTop: primera ? 'none' : '1px solid var(--cf-hairline)',
-    paddingTop: primera ? 0 : 10,
-  }
-
-  const cuerpo = (
-    <>
-      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-2)', minWidth: 0 }}>{titulo}</span>
-      <span className="cf-fig" style={{
-        fontSize: fuerte ? 19 : 16, fontWeight: fuerte ? 700 : 600, color, flex: 'none',
-      }}>{valor}</span>
-    </>
-  )
-
-  if (!onTocar) return <div style={caja}>{cuerpo}</div>
-  return (
-    <button type="button" onClick={onTocar}
-      style={{ ...caja, background: 'none', borderLeft: 0, borderRight: 0, borderBottom: 0, cursor: 'pointer', paddingLeft: 0, paddingRight: 0 }}
-    >{cuerpo}</button>
-  )
-}
-
+   Con TRES tampoco, si las cifras son de nueve dígitos: en el teléfono, contra
+   el negocio real, salía «$201.582.321$245.497.198», pegadas. Luego fueron
+   filas «rótulo a la izquierda, cifra a la derecha», y el 19 sep pasaron a
+   `LineaCifra`: el rótulo arriba, la cifra grande debajo y, en el pie, de dónde
+   sale. El criterio es el mismo de la caja: que se pueda comprobar a mano. */
 export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
   if (!datos) return null
   const { puesto, ganando } = datos
@@ -95,19 +61,24 @@ export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
           color: 'var(--cf-ink-3)',
         }}>Tu plata puesta</span>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <Fila primera titulo={puesto.rotulos.miPlata} valor={fmt(puesto.miPlata)} onTocar={abrir(puesto.ids.miPlata)} />
-          <Fila titulo={puesto.rotulos.conIntereses} valor={fmt(puesto.conIntereses)} onTocar={abrir(puesto.ids.conIntereses)} />
-          <Fila titulo={puesto.rotulos.porGanar} valor={fmt(puesto.porGanar)} tono="favor" fuerte onTocar={abrir(puesto.ids.porGanar)} />
-        </div>
-
-        {/* La frase que une las tres. Sin ella son tres cifras; con ella es una
-            respuesta. */}
-        <p style={{ fontSize: 12, color: 'var(--cf-ink-2)', margin: 0 }}>
-          Tienes {fmt(puesto.miPlata)} tuyos en la calle. Si todos terminan de
-          pagar recibes {fmt(puesto.conIntereses)}, así que ganas{' '}
-          <strong style={{ color: 'var(--cf-green-dark)' }}>{fmt(puesto.porGanar)}</strong>.
-        </p>
+        {/* ⚠ ERAN TRES FILAS «rótulo a la izquierda, cifra a la derecha» y una
+            frase debajo que repetía las tres cifras. El dueño, 19 sep: «se
+            describen muchos valores, pero en algunos no se entiende muy bien».
+            Ahora es el patrón de «préstamo entregado», que sí se entendió: una
+            cifra por renglón, grande, con su nombre encima y debajo de dónde
+            sale. La tercera es la RESTA de las dos primeras y lo dice; por eso
+            sobra la frase. Las tres siguen abriendo su explicación. */}
+        <LineaCifra rotulo={puesto.rotulos.miPlata} cifra={fmt(puesto.miPlata)}
+          pie="Lo que prestaste y todavía no ha vuelto"
+          onTocar={abrir(puesto.ids.miPlata)} />
+        <LineaCifra rotulo={puesto.rotulos.conIntereses} cifra={fmt(puesto.conIntereses)}
+          pie="Lo que recibes si todos terminan de pagar"
+          onTocar={abrir(puesto.ids.conIntereses)}
+          style={{ paddingTop: 12, borderTop: '1px solid var(--cf-hairline)' }} />
+        <LineaCifra rotulo={puesto.rotulos.porGanar} cifra={fmt(puesto.porGanar)} tam={26} tono="favor"
+          pie={`${fmt(puesto.conIntereses)} − ${fmt(puesto.miPlata)}: tu ganancia cuando terminen`}
+          onTocar={abrir(puesto.ids.porGanar)}
+          style={{ paddingTop: 12, borderTop: '1px solid var(--cf-hairline)' }} />
       </Tarjeta>
 
       {/* ── ¿CUÁNTO ESTOY GANANDO? ──────────────────────────────────────
@@ -121,31 +92,22 @@ export default function PanelDinero({ datos, nota, fmt, onExplicar }) {
           color: 'var(--cf-ink-3)',
         }}>Este mes</span>
 
-        {/* El orden es el de la RESTA, no el de la importancia: primero lo que
-            entró, luego lo que salió, y la ganancia abajo como resultado. Así se
-            puede comprobar a mano, que es el mismo criterio de la cuenta del día
-            de la caja. */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <Fila primera titulo={ganando.rotulos.interes} valor={fmt(ganando.interes)} onTocar={abrir(ganando.ids.interes)} />
-          <Fila
-            titulo={ganando.rotulos.gastos}
-            valor={ganando.gastos > 0 ? `− ${fmt(ganando.gastos)}` : fmt(0)}
-            tono={ganando.gastos > 0 ? 'contra' : 'neutro'}
-            onTocar={abrir(ganando.ids.gastos)}
-          />
-          <Fila
-            titulo={ganando.rotulos.ganancia}
-            valor={fmt(ganando.ganancia)}
-            tono={ganando.ganancia < 0 ? 'contra' : 'favor'}
-            fuerte
-            onTocar={abrir(ganando.ids.ganancia)}
-          />
-        </div>
-
-        <p style={{ fontSize: 12, color: 'var(--cf-ink-2)', margin: 0 }}>
-          Por cada {fmt(1000000)} que tienes en la calle ganas{' '}
-          <strong style={{ color: 'var(--cf-ink)' }}>{fmt(Math.round(ganando.pct * 10000))}</strong> al mes.
-        </p>
+        {/* El orden sigue siendo el de la RESTA —lo que entró, lo que salió, y
+            la ganancia abajo como resultado—, para que se pueda comprobar a
+            mano. Los gastos van en el chip del interés, con su signo: son lo
+            que separa una cifra de la otra. */}
+        <LineaCifra rotulo={ganando.rotulos.interes} cifra={fmt(ganando.interes)}
+          onTocar={abrir(ganando.ids.interes)} />
+        <LineaCifra rotulo={ganando.rotulos.gastos}
+          cifra={ganando.gastos > 0 ? `− ${fmt(ganando.gastos)}` : fmt(0)}
+          tono={ganando.gastos > 0 ? 'contra' : 'neutro'}
+          onTocar={abrir(ganando.ids.gastos)}
+          style={{ paddingTop: 12, borderTop: '1px solid var(--cf-hairline)' }} />
+        <LineaCifra rotulo={ganando.rotulos.ganancia} cifra={fmt(ganando.ganancia)} tam={26}
+          tono={ganando.ganancia < 0 ? 'contra' : 'favor'}
+          pie={`Interés cobrado − gastos · por cada ${fmt(1000000)} en la calle ganas ${fmt(Math.round(ganando.pct * 10000))} al mes`}
+          onTocar={abrir(ganando.ids.ganancia)}
+          style={{ paddingTop: 12, borderTop: '1px solid var(--cf-hairline)' }} />
       </Tarjeta>
 
       {/* ── LO QUE ESTO SIGNIFICA ───────────────────────────────────────

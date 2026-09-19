@@ -1826,6 +1826,16 @@ function PrestamoDetalleContenido({ params }) {
         capitalPendiente={prestamo?.capitalRestante != null
           ? formatMoney(Math.round(prestamo.capitalRestante))
           : null}
+        // Lo que separa las dos de arriba, con su nombre, para que se vean
+        // sumar. Si el saldo lleva un recargo, lo dice: llamarlo «interés» a
+        // secas sería ponerle nombre falso a una parte de la cifra.
+        restoSobreCapital={(() => {
+          if (prestamo?.capitalRestante == null) return null
+          const resto = Math.round((saldoPendiente || 0) - prestamo.capitalRestante)
+          if (!(resto > 0)) return null
+          const conRecargo = pagos.some((p) => p.tipo === 'recargo')
+          return `${formatMoney(resto)} de interés${conRecargo ? ' y recargos' : ''}`
+        })()}
         pagado={formatMoney(totalPagadoReal)}
         totalAPagar={formatMoney(Math.round(totalAPagar || 0))}
         porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}

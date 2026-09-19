@@ -1146,9 +1146,13 @@ const MOVIMIENTOS_MANUALES = [
               {/* «Los seguros ya van dentro de lo cobrado»: pintarlos como una
                   línea más haría que el cobrador los reste o los sume otra vez
                   al cuadrar de cabeza. Por eso van en gris y sin signo. */}
-              <div className="flex items-center justify-between gap-3 pt-2.5 mt-1 border-t border-[var(--cf-border)]">
-                <span className="text-sm font-semibold text-[var(--cf-ink-2)]">Te queda en la mano</span>
-                <span className="font-mono-display font-bold text-[15px]" style={{ color: 'var(--cf-ink)' }}>
+              {/* EL RESULTADO, GRANDE. Iba a 15px, igual que los renglones que lo
+                  explican, y es LA cifra de esta tarjeta: lo que el cobrador
+                  lleva encima. La caja del administrador ya la enseña a 26px;
+                  aquí se leía como un renglón más de la suma (19 sep). */}
+              <div className="flex items-baseline justify-between gap-x-3 gap-y-1 flex-wrap pt-3 mt-1" style={{ borderTop: '2px solid var(--cf-border-strong)' }}>
+                <span className="text-[15px] font-bold text-[var(--cf-ink)]">Te queda en la mano</span>
+                <span className="cf-fig font-bold text-[26px] whitespace-nowrap shrink-0" style={{ color: enLaMano < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)', letterSpacing: '-.03em' }}>
                   {formatMoney(enLaMano)}
                 </span>
               </div>

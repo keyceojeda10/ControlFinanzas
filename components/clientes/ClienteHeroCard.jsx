@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Avatar from '@/components/ui/Avatar'
 import { MarcaComoPaga } from '@/components/cf/primitivos'
+import LineaCifra from '@/components/cf/LineaCifra'
 import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
 
 const COLOR_OK   = 'var(--cf-gold)'
@@ -461,8 +462,13 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
         {/* Saldo total */}
         {tienePrestamos && (
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#A3A8B2' }}>
-              Saldo total pendiente
+            {/* ⚠ DECÍA «SALDO TOTAL PENDIENTE», que es como habla un banco, y la
+                ficha del préstamo —a un toque de aquí— dice «LE FALTA PAGAR»
+                sobre la misma cifra. Dos nombres para lo mismo es de donde sale
+                el «no se entiende» (el dueño, 19 sep). La CIFRA no cambia: sigue
+                siendo el saldo del libro. */}
+            <p className="text-[10px] font-bold uppercase mb-1" style={{ color: '#A3A8B2', letterSpacing: '.1em' }}>
+              Le falta pagar{prestamosActivos.length > 1 ? ` · entre sus ${prestamosActivos.length} préstamos` : ''}
             </p>
             <p
               className="font-mono-display font-bold leading-none tracking-tight truncate"
@@ -470,49 +476,45 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
             >
               {formatMoney(Math.round(animSaldo))}
             </p>
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <p className="text-[11px]" style={{ color: '#8A8E98' }}>
-                {prestamosActivos.length} {prestamosActivos.length === 1 ? 'préstamo activo' : 'préstamos activos'}
-                {' · '}
-                {pctPagado}% pagado
-              </p>
-              {/* ⚠ AQUÍ DECÍA «de $1.800.000» A SECAS, Y CON LA CIFRA GRANDE
-                  ARRIBA SE LEÍA «$1.800.000 de $1.800.000» — que suena a
-                  saldado cuando es un préstamo recién entregado. El dueño lo
-                  reportó: «dentro de la ficha del cliente también pasa la
-                  confusión esta».
+            {/* La barra y, DEBAJO, lo que pinta: «pagó $60.000 de $600.000 · 10%»,
+                con las mismas palabras y en el mismo orden que la ficha del
+                préstamo. Antes el renglón iba ENCIMA de la barra y partido en dos
+                —«1 préstamo activo · 10% pagado» a un lado, «$60.000 de $600.000»
+                al otro— y el par de cifras no decía de qué era.
 
-                  La cifra grande NO cambia: su rótulo dice «saldo total
-                  pendiente», así que es correcta y es la que se necesita. Lo que
-                  estaba mal era el par: este renglón mide una cosa (lo que
-                  falta) y la barra de debajo la contraria (lo pagado). Ahora los
-                  dos dicen lo PAGADO, que es lo que la barra pinta. */}
-              {totalAPagar > 0 && (
-                <p className="text-[11px] font-mono-display" style={{ color: '#8A8E98' }}>
-                  {formatMoney(Math.max(0, totalAPagar - saldoTotal))} de {formatMoney(totalAPagar)}
-                </p>
-              )}
-            </div>
-            {/* Progress bar */}
-            <div className="h-1.5 rounded-full overflow-hidden mt-2" style={{ background: 'rgba(255,255,255,.12)' }}>
+                ⚠ Dice lo PAGADO, que es lo que la barra pinta. Con «de
+                $1.800.000» a secas bajo la cifra grande se leía «$1.800.000 de
+                $1.800.000», que suena a saldado en un préstamo recién entregado
+                (reportado por el dueño). */}
+            <div className="h-2 rounded-full overflow-hidden mt-3" style={{ background: 'rgba(255,255,255,.12)' }}>
               <div
                 className="h-full rounded-full transition-[width] duration-700"
                 style={{ width: `${pctPagado}%`, background: '#2FBE6A' }}
               />
             </div>
+            {totalAPagar > 0 && (
+              <div className="flex items-center justify-between gap-3 mt-2">
+                <p className="text-[13px] font-mono-display" style={{ color: '#A3A8B2' }}>
+                  pagó {formatMoney(Math.max(0, totalAPagar - saldoTotal))} de {formatMoney(totalAPagar)}
+                </p>
+                <p className="text-[13px] font-bold font-mono-display" style={{ color: '#F5B824', flex: 'none' }}>
+                  {pctPagado}%
+                </p>
+              </div>
+            )}
 
             {/* Solo cuando hay interés corriendo: en un préstamo con plazo las
                 dos cifras son la misma y repetirla se lee como un error. */}
             {corriendo > 0 && (
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,.10)' }}>
-                <p className="text-[11px]" style={{ color: '#8A8E98' }}>Si los cancela hoy</p>
-                <p className="font-mono-display font-bold leading-none mt-1" style={{ color: '#F3F3F6', fontSize: 20 }}>
-                  {formatMoney(cerrarHoyTotal)}
-                </p>
-                <p className="text-[11px] mt-1" style={{ color: '#8A8E98' }}>
-                  lleva {formatMoney(corriendo)} de interés corrido desde el último cobro
-                </p>
-              </div>
+              <LineaCifra
+                sobreOscuro
+                rotulo="Si los cancela hoy"
+                cifra={formatMoney(cerrarHoyTotal)}
+                chip={`+${formatMoney(corriendo)} de interés corrido`}
+                tonoChip="favor"
+                pie="Lo que va corriendo desde el último cobro"
+                style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.10)' }}
+              />
             )}
 
             {/* ══ E05 · LA TIRA DE CUATRO CIFRAS ═══════════════════════════
@@ -526,7 +528,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 la barra de encima: son la misma verdad, una en cifra y otra en
                 trazo. */}
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2,
+              display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12,
               marginTop: 16, paddingTop: 14,
               borderTop: '1px solid rgba(255,255,255,.09)',
             }}>
@@ -537,10 +539,15 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                    14 jul»— porque «cobra el vencido» ni se dice ni informa.
                    La regla vive en `cifraProximoCobro`, compartida con las
                    tarjetas y la tabla. */
-                { rotulo: 'Le debe', valor: formatMoney(saldoTotal) },
-                { rotulo: 'Cuota', valor: cuotaVigente != null ? formatMoney(cuotaVigente) : '—' },
+                /* ⚠ ERAN CUATRO Y DOS REPETÍAN LO DE ARRIBA: «LE DEBE $540.000»
+                   debajo de un «$540.000» de 40px, y «CÓMO PAGA 10%», que es el
+                   porcentaje pagado —ya está junto a la barra— con el nombre de
+                   OTRA cosa: la estrella y el histograma de más abajo también
+                   se llaman «cómo paga», y ahí «10%» se leía como una nota
+                   pésima. Quedan las dos que no están en ningún otro sitio, y
+                   con el sitio de cuatro se leen a 15px en vez de a 13. */
+                { rotulo: prestamosActivos.length > 1 ? 'Cuotas' : 'Cuota', valor: cuotaVigente != null ? formatMoney(cuotaVigente) : '—' },
                 { rotulo: cobro?.etiqueta ?? 'Cobra el', valor: cobro?.valor ?? '—', tono: cobro?.tono },
-                { rotulo: 'Cómo paga', valor: `${pctPagado}%` },
               ].map((c) => (
                 <div key={c.rotulo} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
                   <span style={{
@@ -552,7 +559,7 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                       papel: `--cf-red-dark` sobre carbón no se lee. Mismos
                       valores que usa `TiraCifras` con `sobreOscuro`. */}
                   <span className="font-mono-display" style={{
-                    fontSize: 13, fontWeight: 700,
+                    fontSize: 15, fontWeight: 700,
                     color: c.tono === 'contra' ? '#F0575C' : c.tono === 'oro' ? '#F5B824' : '#F3F3F6',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{c.valor}</span>

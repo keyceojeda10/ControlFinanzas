@@ -21,6 +21,7 @@
 //     va a cobrar 39 veces. Un plazo redondeado es un plazo mentiroso.
 
 import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda, Aviso } from '@/components/cf/primitivos'
+import LineaCifra from '@/components/cf/LineaCifra'
 
 /* Tira de tres cifras en tarjeta blanca (móvil). En escritorio son cinco. */
 /* ⚠ SE LLAMA «TiraTres» Y AHORA ADMITE CUATRO, a propósito de no renombrarla:
@@ -222,6 +223,11 @@ export default function FichaPrestamo({
   // bloque oscuro
   faltaPagar,
   capitalPendiente,   // lo mismo SIN intereses; null = no se sabe
+  /* Lo que separa las dos cifras de arriba: `faltaPagar − capitalPendiente`, con
+     su nombre («de interés», o «de interés y recargos» si el saldo lleva un
+     recargo). Lo resta la página, que es la que tiene los números; aquí solo se
+     pinta. null = no se enseña. */
+  restoSobreCapital,
   pagado, totalAPagar, porcentaje = 0,
   // unico
   fechaVencimiento, diasParaVencer, empezoEl,
@@ -340,60 +346,40 @@ export default function FichaPrestamo({
                 Sale de `calcularCapitalRestante`, que ya existía y es la que usa
                 la renovación para saber cuánto absorbe: una sola definición de
                 «capital que aún debe», no una segunda cuenta paralela. */}
+            {/* ⚠ DECÍA «De eso, sin intereses   $450.000» EN UN RENGLÓN A 12px, y
+                el dueño: «se supone que está descrito para entenderse y no se
+                entiende» (19 sep). Ahora es una línea de cifra: el nombre en las
+                palabras de él —«¿cuánto de eso es mi plata?»—, la cifra grande
+                y, en el chip, lo que le falta para llegar a la de arriba. Las
+                dos SUMAN la deuda, a la vista. */}
             {capitalPendiente != null && (
-              <div style={{
-                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-                gap: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.09)',
-              }}>
-                <span style={{ fontSize: 12.5, color: '#8A8E98' }}>
-                  De eso, sin intereses
-                </span>
-                <span className="cf-num" style={{ fontSize: 15, fontWeight: 700, color: '#F3F3F6', flex: 'none' }}>
-                  {capitalPendiente}
-                </span>
-              </div>
+              <LineaCifra
+                sobreOscuro
+                rotulo="De eso es tu plata"
+                cifra={capitalPendiente}
+                chip={restoSobreCapital ? `+${restoSobreCapital}` : null}
+                tonoChip="favor"
+                style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.09)' }}
+              />
             )}
 
             {/* La cifra va DENTRO del bloque oscuro, debajo de la deuda, porque
                 es la misma pregunta con otra respuesta: cuánto debe hoy. Fuera,
                 en su propia tarjeta, se leería como otro concepto. */}
+            {/* Cuánto interés se le perdona va en el CHIP y en gris: sin él,
+                «$180.000» al lado de «le falta pagar $204.000» parece un
+                descuadre; y en verde diría que al prestamista le conviene, cuando
+                es plata que deja de ganar. */}
             {cierreHoy && (
-              <>
-                <span style={{ height: 1, background: 'rgba(255,255,255,.09)' }} />
-                <button
-                  type="button"
-                  onClick={onCerrarHoy}
-                  disabled={!onCerrarHoy}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                    background: 'none', border: 0, padding: 0,
-                    cursor: onCerrarHoy ? 'pointer' : 'default',
-                    font: 'inherit', textAlign: 'left',
-                  }}
-                >
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 12, color: '#8A8E98' }}>
-                      Si lo cancela hoy
-                    </span>
-                    <span className="cf-num" style={{
-                      display: 'block', fontSize: 17, fontWeight: 700, color: '#F3F3F6', marginTop: 2,
-                    }}>{cierreHoy}</span>
-                    {/* Cuánto interés se le perdona. Sin esto, «$180.000» al
-                        lado de «le falta pagar $204.000» parece un descuadre. */}
-                    {cierrePerdona && (
-                      <span className="cf-num" style={{ display: 'block', fontSize: 12, color: '#8A8E98', marginTop: 2 }}>
-                        {cierrePerdona}
-                      </span>
-                    )}
-                  </span>
-                  {onCerrarHoy && (
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8E98"
-                      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none' }}>
-                      <path d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                </button>
-              </>
+              <LineaCifra
+                sobreOscuro
+                rotulo="Si lo cancela hoy"
+                cifra={cierreHoy}
+                chip={cierrePerdona}
+                tonoChip="neutro"
+                onTocar={onCerrarHoy || undefined}
+                style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.09)' }}
+              />
             )}
           </BloqueOscuro>
         )}
@@ -422,24 +408,10 @@ export default function FichaPrestamo({
 
           {esUnico ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)' }}>Le entregaste</span>
-                  <span className="cf-fig" style={{ fontSize: 19, color: 'var(--cf-ink)' }}>{prestado}</span>
-                </span>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', marginBottom: 4 }}>
-                  <path d="M5 12h14M14 7l5 5-5 5" />
-                </svg>
-                <span style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                  <span style={{ display: 'block', fontSize: 11.5, color: 'var(--cf-ink-3)' }}>te devuelve</span>
-                  <span className="cf-fig" style={{ fontSize: 19, color: 'var(--cf-ink)' }}>{totalAPagar}</span>
-                </span>
-              </div>
-              <span style={{ height: 1, background: 'var(--cf-hairline)' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <span style={{ fontSize: 13, color: 'var(--cf-ink-2)' }}>Tu ganancia</span>
-                <span className="cf-fig" style={{ fontSize: 15, color: 'var(--cf-green-dark)' }}>{ganancia}</span>
-              </div>
+              <LineaCifra rotulo="Le entregaste" cifra={prestado} style={{ marginTop: 8 }} />
+              <LineaCifra rotulo="Te devuelve" cifra={totalAPagar}
+                chip={ganancia ? `+${ganancia} de ganancia` : null} style={{ marginTop: 10 }} />
+              <span style={{ height: 1, background: 'var(--cf-hairline)', marginTop: 8 }} />
               {/* «Empezo el 7 de julio · hace 21 dias». En un prestamo a un solo
                   pago no hay cuotas que cuenten el tiempo, asi que sin esta linea
                   no hay forma de saber si el trato es de la semana pasada o de
@@ -458,17 +430,27 @@ export default function FichaPrestamo({
             </>
           ) : (
             <>
-              {/* Escrito como lo diría el prestamista. Nunca "capital" ni "tasa efectiva". */}
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.45 }}>
-                Le presté {prestado}, me paga {totalAPagar}
-              </span>
+              {/* Escrito como lo diría el prestamista. Nunca "capital" ni "tasa efectiva".
 
-              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
-                {/* ⚠ EN UN ABIERTO LA GANANCIA TOTAL NO SE PUEDE SABER —dura lo
-                    que el cliente tarde en abonar— y salía «tu ganancia $0», que
-                    es la única cifra que seguro es falsa. Lo que se gana es la
-                    cuota de cada cobro, y eso ya sale arriba. */}
-                {plazoTexto}{ganancia && !/sin plazo/.test(String(plazoTexto)) ? ` · tu ganancia ${ganancia}` : ''}
+                  ⚠ ERA UNA FRASE A 14px —«Le presté $500.000, me paga $600.000»—
+                  con la ganancia en gris a 12px al final del renglón de abajo.
+                  Las tres cifras del trato, y ninguna se veía. Ahora son las
+                  mismas palabras como RÓTULO, la cifra grande debajo, y la
+                  ganancia en el chip de la que la trae: lo que me paga menos lo
+                  que le presté, a la vista. */}
+              <LineaCifra rotulo="Le presté" cifra={prestado} style={{ marginTop: 8 }} />
+              {/* ⚠ EN UN ABIERTO LA GANANCIA TOTAL NO SE PUEDE SABER —dura lo
+                  que el cliente tarde en abonar— y salía «tu ganancia $0», que
+                  es la única cifra que seguro es falsa. Lo que se gana es la
+                  cuota de cada cobro, y eso ya sale arriba. */}
+              <LineaCifra rotulo="Me paga" cifra={totalAPagar}
+                chip={ganancia && !/sin plazo/.test(String(plazoTexto)) ? `+${ganancia} de ganancia` : null}
+                style={{ marginTop: 10 }} />
+
+              <span style={{ height: 0, borderTop: '1px dashed var(--cf-border)', margin: '10px 0 4px' }} />
+
+              <span className="cf-num" style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink)', lineHeight: 1.45 }}>
+                {plazoTexto}
               </span>
 
               {/* La tercera línea, y va en su propio renglón con el icono del
