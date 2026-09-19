@@ -35,7 +35,7 @@ import { BW, BH, cuerpo, lanzarBilletes, pintarBilletera } from '@/lib/billetes'
  *   moneda del negocio y la función que los formatea.
  * @param origenRef el elemento del monto cobrado: de ahí salen los billetes.
  */
-export default function LlevasHoy({ progreso, origenRef }) {
+export default function LlevasHoy({ progreso, origenRef, extra = null }) {
   const { antes, ahora, meta, formatear, efectivo } = progreso
   const refOdo = useRef(null)
   const refBilletera = useRef(null)
@@ -46,7 +46,9 @@ export default function LlevasHoy({ progreso, origenRef }) {
   useEffect(() => {
     const billetera = refBilletera.current, odo = refOdo.current
     if (!billetera || !odo) return
-    const fraccion = (v) => (meta > 0 ? Math.max(0, Math.min(1, v / meta)) : 0)
+    // Sin nada que tocaba cobrar hoy, lo cobrado igual llena la billetera: vacía
+    // diría que no entró nada.
+    const fraccion = (v) => (meta > 0 ? Math.max(0, Math.min(1, v / meta)) : (v > 0 ? 0.6 : 0))
     let inflado = fraccion(antes)
     let rodillos = construirRodillos(odo, formatear(antes))
     pintarBilletera(billetera, inflado)
@@ -130,6 +132,7 @@ export default function LlevasHoy({ progreso, origenRef }) {
               background: 'var(--cf-green-pill-bg)', borderRadius: 999, padding: '2px 8px',
             }}>+{formatear(monto)}</span>
           )}
+          {extra && <span style={{ marginLeft: 'auto' }}>{extra}</span>}
         </div>
         <span ref={refOdo} className="cf-rodillos" aria-live="polite" style={{
           fontFamily: 'var(--font-space-grotesk), system-ui', fontSize: 22, fontWeight: 700, letterSpacing: '-.01em',

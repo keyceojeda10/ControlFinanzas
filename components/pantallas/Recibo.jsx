@@ -23,7 +23,7 @@
 // El recibo COMO VISTA sí existe hoy y no necesita número: es la fila del pago
 // abierta. Lo que no existe es el código impreso.
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import LlevasHoy from '@/components/cf/LlevasHoy'
 import { guardarSonido, sonidoEncendido } from '@/lib/celebrar'
 
@@ -124,11 +124,25 @@ export function Recibo({
   // lo que llevaba a lo que lleva y los billetes caen en la billetera. Sin los
   // números sale la barra de siempre.
   progresoDia,
+  // Cuando el cobro NO viene de una ruta (ficha, listas, QR) no hay cifra del
+  // día a mano: se pide DESPUÉS de guardar (`lib/dia-cobrado.js`) y «Llevas hoy»
+  // sale en cuanto llega. `async () => ({ antes, ahora, meta, formatear, efectivo })`.
+  cargarProgresoDia,
 }) {
   const refMonto = useRef(null)
   const [conSonido, setConSonido] = useState(() => (typeof window === 'undefined' ? true : sonidoEncendido()))
-  const conNumeros = progresoDia && Number.isFinite(progresoDia.antes) && Number.isFinite(progresoDia.ahora)
-    && typeof progresoDia.formatear === 'function'
+  const tieneNumeros = (p) => p && Number.isFinite(p.antes) && Number.isFinite(p.ahora) && typeof p.formatear === 'function'
+  const [progresoCargado, setProgresoCargado] = useState(null)
+  useEffect(() => {
+    if (tieneNumeros(progresoDia) || !cargarProgresoDia) return
+    let vivo = true
+    Promise.resolve(cargarProgresoDia()).then((p) => { if (vivo && tieneNumeros(p)) setProgresoCargado(p) }).catch(() => {})
+    return () => { vivo = false }
+    // Una vez por comprobante.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const dia = tieneNumeros(progresoDia) ? progresoDia : progresoCargado
+  const conNumeros = Boolean(dia)
   return (
     <div
       /* ⚠ `lg:w-[520px]` Y NO SOLO `max-w`: dentro de un contenedor flex el
@@ -142,28 +156,36 @@ export function Recibo({
         color: 'var(--cf-ink)',
       }}>
       <div style={{
-        position: 'relative',
         flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 24px 0',
         display: 'flex', flexDirection: 'column', gap: 20,
       }}>
-        {/* EL SONIDO SE APAGA AQUÍ, donde suena. Hay quien cobra en una tienda
-            o en misa: un control en «Configuración» nadie lo va a buscar. */}
+        {/* ══ LLEVAS HOY VA PRIMERO ══
+            Estaba debajo del comprobante y en el teléfono quedaba fuera de la
+            pantalla: los billetes caían en una billetera que nadie veía («sale
+            al revés de lo que hicimos», el dueño, 19 sep). Arriba se ve entera,
+            y los billetes suben desde el monto recibido hasta ella.
+
+            El sonido se apaga AQUÍ, donde suena: hay quien cobra en una tienda
+            o en misa, y un control en «Configuración» nadie lo va a buscar. */}
         {conNumeros && (
-          <button type="button" aria-pressed={conSonido}
-            aria-label={conSonido ? 'Silenciar el sonido de cobro' : 'Activar el sonido de cobro'}
-            onClick={() => { const v = !conSonido; setConSonido(v); guardarSonido(v) }}
-            style={{
-              position: 'absolute', top: 16, right: 16, width: 40, height: 40, borderRadius: 999,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-ink-3)',
-            }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 5 6 9H3v6h3l5 4V5z" />
-              {conSonido ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 5M21 9l-5 5" />}
-            </svg>
-          </button>
+          <LlevasHoy progreso={dia} origenRef={refMonto} extra={
+            <button type="button" aria-pressed={conSonido}
+              aria-label={conSonido ? 'Silenciar el sonido de cobro' : 'Activar el sonido de cobro'}
+              onClick={() => { const v = !conSonido; setConSonido(v); guardarSonido(v) }}
+              style={{
+                width: 40, height: 40, margin: '-10px -8px -10px 0', borderRadius: 999,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                background: 'none', border: 0, cursor: 'pointer', color: 'var(--cf-ink-3)',
+              }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 5 6 9H3v6h3l5 4V5z" />
+                {conSonido ? <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /> : <path d="m16 9 5 5M21 9l-5 5" />}
+              </svg>
+            </button>
+          } />
         )}
+
         <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
           {/* Verde, no dorado. El dorado de esta pantalla es «siguiente cobro»:
               el visto es un hecho consumado, no la acción que sigue.
@@ -326,8 +348,7 @@ export function Recibo({
         {/* CÓMO VA EL DÍA. Fuera del troquelado a propósito: no es parte del
             comprobante del cliente —a él no le importa la meta de la ruta— sino
             del cobrador que acaba de cobrar. */}
-        {conNumeros && <LlevasHoy progreso={progresoDia} origenRef={refMonto} />}
-        {progresoDia && !conNumeros && (
+        {progresoDia && !conNumeros && !cargarProgresoDia && (
           <div style={{
             flex: 'none', display: 'flex', flexDirection: 'column', gap: 9,
             padding: '2px 2px 0',

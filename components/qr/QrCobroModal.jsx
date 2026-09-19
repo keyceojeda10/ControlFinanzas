@@ -60,9 +60,9 @@ export default function QrCobroModal({ open, onClose, clienteId }) {
     setPagoOpen(true)
   }
 
+  // ⚠ Sin cerrar la hoja: al guardar, la hoja enseña el recibo, y cerrarla aquí
+  // lo desmontaba. Se cierra con su `onClose`, al salir del recibo.
   const handlePagoSuccess = () => {
-    setPagoOpen(false)
-    setPrestamoSel(null)
     fetch(`/api/clientes/${clienteId}`)
       .then(r => r.json())
       .then(data => setCliente(data))

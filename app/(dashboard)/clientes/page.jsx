@@ -1315,10 +1315,12 @@ export default function ClientesPage() {
             ?? ((cobroRapido.prestamo.totalAPagar || 0) - (cobroRapido.prestamo.totalPagado || 0))}
           open
           onClose={() => setCobroRapido(null)}
-          onSuccess={() => {
-            setCobroRapido(null)
-            fetchClientes(buscar, page, rutaIdFiltro, { soft: true })
-          }}
+          /* ⚠ AL GUARDAR NO SE CIERRA. `onSuccess` llega en el MISMO instante en que
+             la hoja enseña el recibo, y cerrarla aquí lo desmontaba: el cobrador
+             cobraba y no veía comprobante ni podía mandarlo (reportado el 19 sep
+             en Clientes; la lista de préstamos y el QR tenían lo mismo). Aquí
+             solo se recarga; se cierra con `onClose`, al salir del recibo. */
+          onSuccess={() => fetchClientes(buscar, page, rutaIdFiltro, { soft: true })}
           cliente={cobroRapido.cliente}
           prestamo={cobroRapido.prestamo}
         />

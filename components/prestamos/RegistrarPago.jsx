@@ -27,6 +27,7 @@ import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
+import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
@@ -721,6 +722,22 @@ export default function RegistrarPago({
                   }
                 })()
               : null}
+            /* FUERA DE UN RECORRIDO (la ficha, las listas, el QR) no hay cifra del
+               día a mano: el recibo la pide después de guardar, del resumen del
+               inicio. «Llevas hoy» tiene que salir en TODO cobro, no solo en la
+               ruta (el dueño, 19 sep). Mismas dos excepciones que arriba: sin
+               señal no cuenta todavía, y un recargo o descuento no es plata. */
+            cargarProgresoDia={(!(rutaNav?.esperadoHoy > 0) && !off && !['recargo', 'descuento'].includes(tipo))
+              ? async () => {
+                  const d = await cargarDiaCobrado(pagoGuardado.montoPagado)
+                  return d && {
+                    ...d,
+                    formatear: (n) => formatMoney(n),
+                    efectivo: entraAlFajo(pagoGuardado.metodoPago, pagoGuardado.metodoPagoId,
+                      new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))),
+                  }
+                }
+              : undefined}
             /* Sin `id` en el servidor no hay dónde colgar la foto, así que el
                pago guardado sin señal no la ofrece. */
             evidencia={(pagoGuardado?.id && !off) ? {
