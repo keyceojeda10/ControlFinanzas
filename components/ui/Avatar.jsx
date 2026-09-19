@@ -1,7 +1,10 @@
+'use client'
+
 // components/ui/Avatar.jsx
 // Avatar reutilizable: muestra foto, avatar NFT seleccionado, o 2 iniciales con color
 // solido/gradiente unico por nombre. Colores se asignan deterministicamente por hash del nombre.
 
+import { useState } from 'react'
 import { getAvatarById } from '@/lib/avatars'
 
 const AVATAR_COLORS = [
@@ -47,7 +50,14 @@ export default function Avatar({ nombre, fotoUrl, avatarId, size = 40, fontSize,
   const radius = round ? '50%' : `${Math.max(8, Math.round(size * 0.3))}px`
   const shapeClass = round ? 'rounded-full' : ''
 
-  if (fotoUrl) {
+  /* ⚠ UNA FOTO QUE NO CARGA NO ES UNA FOTO. Con la URL caída —archivo borrado,
+     sin señal, disco lleno— el navegador pinta su icono de imagen rota y el
+     `alt` encima: «Carme» dentro de un cuadro, en la cabecera de la ficha. Se
+     guarda QUÉ url falló (y no un sí/no) para que una foto nueva se vuelva a
+     intentar sola. */
+  const [rota, setRota] = useState(null)
+
+  if (fotoUrl && rota !== fotoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -56,6 +66,7 @@ export default function Avatar({ nombre, fotoUrl, avatarId, size = 40, fontSize,
         onClick={onClick}
         loading="lazy"
         decoding="async"
+        onError={() => setRota(fotoUrl)}
         className={`object-cover shrink-0 ${shapeClass} ${onClick ? 'cursor-pointer' : ''} ${className}`}
         style={{ width: px, height: px, minWidth: px, borderRadius: round ? undefined : radius, ...extraStyle }}
       />

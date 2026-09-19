@@ -1029,7 +1029,7 @@ function TabOrganizacion({ bloques, tema, onTema }) {
         open={confirmReinicio}
         onClose={() => setConfirmReinicio(false)}
         title="Reiniciar toda la cuenta"
-        message="Se eliminaran TODOS los datos: clientes, prestamos, pagos, rutas, socios, cobradores, capital y configuraciones de cobro. Solo se conserva tu cuenta de usuario y la suscripcion. Esta accion NO se puede deshacer. Te recomendamos descargar un respaldo antes de continuar."
+        message="Se eliminarán TODOS los datos: clientes, préstamos, pagos, rutas, socios, cobradores, capital y configuraciones de cobro. Solo se conserva tu cuenta de usuario y la suscripción. Esta acción NO se puede deshacer. Te recomendamos descargar un respaldo antes de continuar."
         confirmLabel="Reiniciar todo"
         color="danger"
         loading={reiniciando}
@@ -1838,7 +1838,7 @@ function InstallSection() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-gold)' }}>Instalar en este dispositivo</p>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Te mostramos los pasos segun tu navegador</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Te mostramos los pasos según tu navegador</p>
             </div>
             <svg className="w-4 h-4 shrink-0" fill="none" stroke="var(--cf-ink-3)" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -9,6 +9,10 @@ import Link from 'next/link'
 import { rotulo } from '@/lib/dinero/definiciones'
 import PlanGate from '@/components/ui/PlanGate'
 
+/* Los porcentajes llegan como número (4.2) y se pintaban tal cual: «4.2%». Aquí
+   el decimal es coma, como en toda la app. */
+const coma = (n) => (n == null ? '' : String(n).replace('.', ','))
+
 function Skeleton({ className = '' }) {
   return <div className={`animate-pulse rounded-[10px] bg-[var(--cf-fill)] ${className}`} />
 }
@@ -174,7 +178,7 @@ function FilaRuta({ r, i, maxRoi, fmtShort, cabecera, huerfana }) {
             background: huerfana ? 'var(--cf-red)' : 'var(--cf-green)',
           }} />
         </span>
-        <span className="cf-fig text-[12px]" style={{ color: tinta || 'var(--cf-ink-2)' }}>{r.roi}%</span>
+        <span className="cf-fig text-[12px]" style={{ color: tinta || 'var(--cf-ink-2)' }}>{coma(r.roi)}%</span>
         <span className="sm:hidden text-[11px] text-[var(--cf-ink-3)] truncate">
           sobre {fmtShort(r.capitalDesplegado)}
         </span>
@@ -208,9 +212,16 @@ export default function AnaliticasPage() {
   const country = session?.user?.country || 'CO'
   const fmt = useCallback(v => formatMoney(v, country), [country])
   const fmtShort = useCallback(v => {
+    /* ⚠ ESCRIBÍA «2.8M» Y «672K»: punto decimal, sin signo de pesos y una «K»
+       que en el resto de la app no existe. Las rutas, el inicio y la caja dicen
+       «$2,8M» y, por debajo del millón, la cifra entera. Un mismo negocio leído
+       con dos notaciones parece dos negocios. */
     const abs = Math.abs(v)
-    if (abs >= 1_000_000) return (v < 0 ? '-' : '') + (abs / 1_000_000).toFixed(1).replace('.0', '') + 'M'
-    if (abs >= 10_000) return (v < 0 ? '-' : '') + Math.round(abs / 1000) + 'K'
+    if (abs >= 1_000_000) {
+      const m = abs / 1_000_000
+      const texto = m >= 100 ? String(Math.round(m)) : m.toFixed(1).replace(/\.0$/, '').replace('.', ',')
+      return `${v < 0 ? '−' : ''}$${texto}M`
+    }
     return formatMoney(v, country)
   }, [country])
 
@@ -336,7 +347,7 @@ export default function AnaliticasPage() {
               <span className="cf-fig text-[40px] lg:text-[52px]" style={{
                 letterSpacing: '-.04em', lineHeight: 1,
                 color: resumen.roiMensual >= 0 ? '#2FBE6A' : '#F0575C',
-              }}>{resumen.roiMensual}%</span>
+              }}>{coma(resumen.roiMensual)}%</span>
               <span className="text-[13px]" style={{ color: '#A3A8B2' }}>al mes</span>
             </div>
           </div>
@@ -664,7 +675,7 @@ export default function AnaliticasPage() {
               {rentabilidad?.rotacionCapital > 0 && (
                 <div className="mt-3 pt-3 border-t border-[var(--cf-border)] flex items-center justify-between">
                   <span className="text-[11px] text-[var(--cf-ink-3)]">Rotación de capital</span>
-                  <span className="text-[13px] font-mono font-bold text-[var(--cf-ink-2)]">{rentabilidad.rotacionCapital}% /mes</span>
+                  <span className="text-[13px] font-mono font-bold text-[var(--cf-ink-2)]">{coma(rentabilidad.rotacionCapital)}% /mes</span>
                 </div>
               )}
             </Card>
@@ -702,7 +713,7 @@ export default function AnaliticasPage() {
         <Card href="/prestamos" className="overflow-hidden">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Préstamos activos</p>
           <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1">{cartera.activos}</p>
-          {cartera.pctMora > 0 && <p className="text-[11px] text-[var(--cf-red-dark)] font-medium">{cartera.pctMora}% en mora</p>}
+          {cartera.pctMora > 0 && <p className="text-[11px] text-[var(--cf-red-dark)] font-medium">{coma(cartera.pctMora)}% en mora</p>}
         </Card>
         <Card className="overflow-hidden">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Por cobrar</p>
@@ -726,7 +737,7 @@ export default function AnaliticasPage() {
         </Card>
         <Card className="overflow-hidden">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--cf-ink-3)]">Clientes que repiten</p>
-          <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1 text-[var(--cf-ink-2)]">{cartera.clientesRepiten}%</p>
+          <p className="text-[22px] lg:text-[24px] font-mono font-bold mt-1 text-[var(--cf-ink-2)]">{coma(cartera.clientesRepiten)}%</p>
           <p className="text-[11px] text-[var(--cf-ink-3)]">2+ préstamos</p>
         </Card>
       </div>

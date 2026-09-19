@@ -347,7 +347,7 @@ export default function SocioDetallePage() {
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
-            Liquidacion {anioLiquidacion}
+            Liquidación {anioLiquidacion}
           </h2>
           <div className="flex gap-1">
             <button
@@ -429,13 +429,13 @@ export default function SocioDetallePage() {
         style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
       >
         <h2 className="text-[14px] font-semibold mb-3" style={{ color: 'var(--cf-ink)' }}>
-          Prestamos ({socio.prestamos.length})
+          Préstamos ({socio.prestamos.length})
         </h2>
         {socio.prestamos.length === 0 ? (
           <EmptyState
             pose="busca"
-            titulo="Sin prestamos asociados"
-            hint="Al crear un prestamo puedes asignar este socio como responsable."
+            titulo="Sin préstamos asociados"
+            hint="Al crear un préstamo puedes asignar este socio como responsable."
             size={64}
           />
         ) : (
@@ -640,7 +640,7 @@ export default function SocioDetallePage() {
         open={confirmEliminarSocio}
         onClose={() => setConfirmEliminarSocio(false)}
         title="Eliminar socio"
-        message={`Se eliminara a ${socio.nombre} y todos sus aportes. Los prestamos asociados quedaran sin socio. Esta accion no se puede deshacer.`}
+        message={`Se eliminará a ${socio.nombre} y todos sus aportes. Los préstamos asociados quedarán sin socio. Esta acción no se puede deshacer.`}
         confirmLabel="Eliminar"
         color="danger"
         loading={loadingEliminar}

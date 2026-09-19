@@ -22,7 +22,7 @@
 //      sin cobrador no es una fila más — es un agujero, y va con borde
 //      discontinuo y su «Asignar».
 
-import { BotonPrimario, EstadoVacio, Aviso } from '@/components/cf/primitivos'
+import { BotonPrimario, EstadoVacio, Aviso, CifraQueCabe } from '@/components/cf/primitivos'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 
 const COLOR_PASTILLA = {
@@ -107,7 +107,7 @@ function RutaActiva({ nombre, subtitulo, pastilla, recaudado, cobros, cartera, a
    sola. La última no la lleva. */
 function CifraRuta({ rotulo, valor, tono, sinLinea }) {
   return (
-    <div style={{
+    <div className="cf-cifra-col" style={{
       flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3,
       paddingLeft: sinLinea ? 10 : 10, paddingRight: 10,
       borderRight: sinLinea ? 'none' : '1px solid var(--cf-hairline)',
@@ -116,11 +116,12 @@ function CifraRuta({ rotulo, valor, tono, sinLinea }) {
         fontSize: 10, fontWeight: 700, letterSpacing: '.08em',
         textTransform: 'uppercase', color: 'var(--cf-ink-3)',
       }}>{rotulo}</span>
-      <span className="cf-fig" style={{
-        fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap',
-        overflow: 'hidden', textOverflow: 'ellipsis',
-        color: tono === 'contra' ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
-      }}>{valor ?? '—'}</span>
+      {/* Salía «$128.4…» y «$937.7…»: puntos suspensivos EN UNA CIFRA. Por
+          debajo del millón no se abrevia, así que «$128.400» tiene que caber
+          entera: se encoge, no se corta. */}
+      <CifraQueCabe valor={valor ?? '—'} base={14} style={{
+        fontWeight: 700, color: tono === 'contra' ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+      }} />
     </div>
   )
 }

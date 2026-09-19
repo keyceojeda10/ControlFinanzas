@@ -215,16 +215,11 @@ function CobradorDetalleInner({ params }) {
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, color-mix(in srgb, ${heroColor} 14%, var(--cf-card)) 0%, var(--cf-card) 50%, color-mix(in srgb, ${heroColor} 8%, var(--cf-card)) 100%)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, var(--cf-border))`,
-              boxShadow: `0 8px 32px color-mix(in srgb, ${heroColor} 18%, transparent)`,
-            }}
+            /* PLANA. Llevaba degradado, halo, trama de puntos y una sombra de 32px:
+               el lenguaje del diseño anterior, en una pantalla donde todo lo
+               demás ya es tarjeta blanca con borde de 1px (19 sep 2026). */
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
           >
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none hidden lg:block"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
-            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
 
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
               {/* Top: avatar + nombre + acciones circulares */}
@@ -246,14 +241,17 @@ function CobradorDetalleInner({ params }) {
                   <button
                     onClick={toggleActivo}
                     disabled={toggling}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1.5 disabled:opacity-50"
+                    /* La misma caja que `Pastilla` (22px, 10,5/700, sin punto), con
+                       sus tonos: verde activo, gris inactivo. Iba gris en los dos
+                       casos, con punto y a 10px. */
+                    className="cf-num inline-flex items-center rounded-full mt-1.5 disabled:opacity-50 whitespace-nowrap"
                     style={{
-                      background: `color-mix(in srgb, ${heroColor} 15%, transparent)`,
-                      color: heroColor,
-                      border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
+                      height: 22, padding: '0 9px', fontSize: 10.5, fontWeight: 700,
+                      background: data.activo ? 'var(--cf-green-pill-bg)' : 'var(--cf-fill)',
+                      color: data.activo ? 'var(--cf-green-dark)' : 'var(--cf-ink-3)',
+                      border: `1px solid ${data.activo ? 'var(--cf-green-pill-border)' : 'var(--cf-border)'}`,
                     }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor }} />
                     {data.activo ? 'Activo' : 'Inactivo'}
                   </button>
                 </div>

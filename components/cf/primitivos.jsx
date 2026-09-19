@@ -134,6 +134,27 @@ function pasoLargo(valor) {
   return 3
 }
 
+/* ══ LA CIFRA QUE CABE ═══════════════════════════════════════════════════
+   La pieza que pinta una cifra dentro de una columna estrecha SIN RECORTARLA.
+   La regla y el porqué están en `tokens-2026.css` (`.cf-cifra-cabe`). La
+   columna que la contiene tiene que llevar la clase `cf-cifra-col`.
+
+   Los puntos, comas y espacios ocupan la mitad que un dígito, así que cuentan
+   la mitad: con «$1.272.000» son 8 + 2×0,5 = 9, no 10. */
+export function CifraQueCabe({ valor, base = 14, style, className = '' }) {
+  const texto = String(valor ?? '')
+  const n = Math.max(1, [...texto].reduce((a, ch) => a + (/[.,\s·]/.test(ch) ? 0.5 : 1), 0))
+  return (
+    <span className={`cf-fig cf-cifra-cabe ${className}`} style={{
+      '--cf-cifra-tam': `${base}px`,
+      '--cf-cifra-paso': `${base - pasoLargo(texto)}px`,
+      '--cf-cifra-n': n,
+      minWidth: 0,
+      ...style,
+    }}>{valor}</span>
+  )
+}
+
 export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = false }) {
   if (!columnas?.length) return null
   const sep = enTarjeta ? 'var(--cf-border-soft)'
@@ -149,7 +170,7 @@ export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = fal
       {columnas.map((c, i) => (
         <div key={i} style={{ display: 'contents' }}>
           {i > 0 && <span style={{ width: 1, background: sep, flex: 'none' }} />}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: enTarjeta ? 2 : 4 }}>
+          <div className="cf-cifra-col" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: enTarjeta ? 2 : 4 }}>
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
               color: sobreOscuro ? '#8A8E98' : 'var(--cf-ink-3)',
@@ -174,15 +195,16 @@ export function TiraCifras({ columnas = [], sobreOscuro = false, enTarjeta = fal
                 justo la que el cobrador lee para pedir. Se baja el cuerpo por
                 tramos y el ancho queda garantizado por el `overflow`, que es
                 el que impide que vuelva a pisar a la vecina pase lo que pase. */}
-            <span className="cf-fig" style={{
-              fontSize: (enTarjeta ? 14 : sobreOscuro ? 16 : 15) - pasoLargo(c.valor),
+            {/* ⚠ Y EL `overflow` QUE «GARANTIZABA EL ANCHO» SE COMÍA EL ÚLTIMO
+                CERO: «$1.272.000» salía «$1.272.00» (19 sep 2026). Ahora la
+                cifra mide su columna y se encoge lo justo: `CifraQueCabe`. */}
+            <CifraQueCabe valor={c.valor} base={enTarjeta ? 14 : sobreOscuro ? 16 : 15} style={{
               color: c.tono === 'favor'  ? (sobreOscuro ? '#2FBE6A' : 'var(--cf-green-dark)')
                    : c.tono === 'contra' ? (sobreOscuro ? '#F0575C' : 'var(--cf-red-dark)')
                    : c.tono === 'oro'    ? (sobreOscuro ? '#F5B824' : 'var(--cf-gold-dark)')
                    : c.tono === 'apagado' ? (sobreOscuro ? '#8A8E98' : 'var(--cf-ink-3)')
                    : (sobreOscuro ? '#F3F3F6' : 'var(--cf-ink)'),
-              minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip',
-            }}>{c.valor}</span>
+            }} />
           </div>
         </div>
       ))}

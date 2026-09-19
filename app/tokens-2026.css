@@ -283,6 +283,35 @@ html[data-theme="dark"]  .cf-campo::placeholder {
   line-height: 1;
 }
 
+/* ══ LA CIFRA QUE CABE ═══════════════════════════════════════════════════════
+ *
+ * Una cifra de plata en una columna estrecha (las tiras de tres y cuatro
+ * columnas) NO SE RECORTA NUNCA. El 19 sep 2026, en «Cobros de hoy», una
+ * deuda de $1.272.000 se leía «$1.272.00»: la tira bajaba el cuerpo por
+ * tramos y, si aun así no entraba, `overflow: hidden` se comía el último
+ * cero. En Rutas era «$128.4…». Un número cortado no es un número feo: es
+ * OTRO número, y esa línea es la que el cobrador lee para pedir.
+ *
+ * La columna se declara contenedor y la cifra calcula su cuerpo con el ancho
+ * REAL: `100cqw / (caracteres × 0,62em)`. Se encoge lo que haga falta —una
+ * cifra pequeña y entera siempre gana a una grande y falsa— y nunca pasa del
+ * tamaño de la escala (`--cf-cifra-tam`). `--cf-cifra-n` lo pone `CifraQueCabe`
+ * (`components/cf/primitivos.jsx`) contando los signos de puntuación a medias.
+ *
+ * Sin `cqw` (WebView viejos) queda el cuerpo por tramos de antes
+ * (`--cf-cifra-paso`) y la cifra puede desbordar, pero sigue entera.
+ */
+.cf-cifra-cabe {
+  font-size: var(--cf-cifra-paso, 14px);
+  white-space: nowrap;
+}
+@supports (font-size: 1cqw) {
+  .cf-cifra-col { container-type: inline-size; }
+  .cf-cifra-cabe {
+    font-size: min(var(--cf-cifra-tam, 14px), calc(100cqw / (var(--cf-cifra-n, 8) * 0.62)));
+  }
+}
+
 /* ══ LA ALTURA DE LOS MODALES Y LAS HOJAS ═══════════════════════════════════
  *
  * ⚠ ESTO ESTABA ARREGLADO EN EL CÓDIGO Y NO LLEGABA A APLICARSE.

@@ -80,9 +80,8 @@ export default function SoportePage() {
       <div
         className="rounded-[20px] p-4 mb-5 flex flex-col sm:flex-row items-center gap-3 justify-between"
         style={{
-          background: 'linear-gradient(135deg, rgba(37, 211, 102, 0.10) 0%, var(--cf-card) 60%, var(--cf-card) 100%)',
-          border: '1px solid color-mix(in srgb, #25D366 22%, var(--cf-border))',
-          boxShadow: '0 4px 16px color-mix(in srgb, #25D366 12%, transparent)',
+          background: 'var(--cf-card)',
+          border: '1px solid var(--cf-border)',
         }}
       >
         <div className="flex items-start gap-3 text-center sm:text-left">
@@ -148,8 +147,8 @@ export default function SoportePage() {
                 <div
                   className="rounded-[12px] px-4 py-3 transition-all kpi-lift cursor-pointer"
                   style={{
-                    background: `linear-gradient(135deg, color-mix(in srgb, ${eColor} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-                    border: `1px solid color-mix(in srgb, ${eColor} 18%, var(--cf-border))`,
+                    background: 'var(--cf-card)',
+                    border: '1px solid var(--cf-border)',
                   }}
                 >
                   <div className="flex items-start justify-between gap-3">

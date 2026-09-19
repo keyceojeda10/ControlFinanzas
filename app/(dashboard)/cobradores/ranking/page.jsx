@@ -46,9 +46,11 @@ function PodiumCard({ cobrador, order }) {
       <div
         className="rounded-[20px] w-full flex flex-col items-center text-center px-3 py-4"
         style={{
-          background: `linear-gradient(180deg, color-mix(in srgb, ${medal.color} 14%, var(--cf-card)) 0%, var(--cf-card) 60%)`,
-          border: `1px solid color-mix(in srgb, ${medal.color} 30%, var(--cf-border))`,
-          boxShadow: isFirst ? `0 6px 24px color-mix(in srgb, ${medal.color} 25%, transparent)` : 'none',
+          /* Plana, como todas las tarjetas: iba con un degradado del color de la
+             medalla y, la primera, con sombra. Quién va primero lo dicen la
+             medalla, el tamaño y el orden; la superficie no (DESIGN.md · 4). */
+          background: 'var(--cf-card)',
+          border: `1px solid ${isFirst ? `color-mix(in srgb, ${medal.color} 45%, var(--cf-border))` : 'var(--cf-border)'}`,
           minHeight: isFirst ? '190px' : '160px',
         }}
       >
@@ -63,7 +65,9 @@ function PodiumCard({ cobrador, order }) {
           {medal.label}
         </div>
         <Avatar nombre={cobrador.nombre} avatarId={cobrador.avatarId} size={isFirst ? 56 : 48} />
-        <p className="text-sm font-semibold mt-2 truncate max-w-full" style={{ color: 'var(--cf-ink)' }}>
+        {/* El NOMBRE no se recorta: salía «Carlos Pér…», «Carmen Ca…» y «Carlos
+            pru…», tres personas que no se distinguen. Baja de renglón. */}
+        <p className="text-sm font-semibold mt-2 max-w-full" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere', lineHeight: 1.2 }}>
           {cobrador.nombre}
         </p>
         <p className="text-[11px] truncate max-w-full" style={{ color: 'var(--cf-ink-3)' }}>
@@ -76,7 +80,7 @@ function PodiumCard({ cobrador, order }) {
           {cobrador.score}
         </p>
         <p className="text-[10px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-          {cobrador.metrics?.eficiencia?.toFixed(1)}% eficiencia
+          {cobrador.metrics?.eficiencia?.toFixed(1).replace('.', ',')}% eficiencia
         </p>
       </div>
     </Link>
@@ -145,7 +149,7 @@ function RankingCard({ cobrador }) {
           <div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Eficiencia</span>
-              <span className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.eficiencia?.toFixed(1)}%</span>
+              <span className="text-[11px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.eficiencia?.toFixed(1).replace('.', ',')}%</span>
             </div>
             <ProgressBar value={m.eficiencia ?? 0} color={color} />
           </div>
@@ -158,7 +162,7 @@ function RankingCard({ cobrador }) {
             <MetricItem
               label={rotulo('clientesEnMora')}
               value={m.clientesMora ?? 0}
-              sub={m.tasaMora != null ? `${m.tasaMora.toFixed(1)}%` : undefined}
+              sub={m.tasaMora != null ? `${m.tasaMora.toFixed(1).replace('.', ',')}%` : undefined}
             />
             <MetricItem label="Puntualidad" value={m.puntualidad ?? '—'} />
             <MetricItem label="GPS" value={`${m.pagosConGps ?? 0}%`} />

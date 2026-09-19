@@ -391,15 +391,19 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
               )}
             </p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {/* La MISMA CAJA que `Pastilla` (22px, 10,5/700, sin punto). Los
+                  colores son los del bloque oscuro y no los tokens de tema: aquí
+                  el fondo es negro siempre. Iba a 10px, con punto y más baja que
+                  la marca de al lado. */}
               <span
-                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                className="cf-num inline-flex items-center rounded-full whitespace-nowrap"
                 style={{
-                  background: `color-mix(in srgb, ${color} 15%, transparent)`,
+                  height: 22, padding: '0 9px', fontSize: 10.5, fontWeight: 700,
+                  background: `color-mix(in srgb, ${color} 16%, transparent)`,
                   color,
-                  border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+                  border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
                 {label}
               </span>
               {/* CÓMO HA PAGADO, AL LADO DE CÓMO ESTÁ HOY. Son dos cosas

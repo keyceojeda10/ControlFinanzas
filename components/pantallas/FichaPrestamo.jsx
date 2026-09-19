@@ -21,6 +21,7 @@
 //     va a cobrar 39 veces. Un plazo redondeado es un plazo mentiroso.
 
 import { Tarjeta, BloqueOscuro, BarraProgreso, BotonPrimario, BotonSecundario, BarraAccion, Moneda, Aviso } from '@/components/cf/primitivos'
+import { CifraQueCabe } from '@/components/cf/primitivos'
 import LineaCifra from '@/components/cf/LineaCifra'
 
 /* Tira de tres cifras en tarjeta blanca (móvil). En escritorio son cinco. */
@@ -46,20 +47,19 @@ function TiraTres({ columnas }) {
       {cs.map((c, i) => (
         <div key={i} style={{ display: 'contents' }}>
           {i > 0 && <span style={{ width: 1, background: 'var(--cf-divider)', flex: 'none' }} />}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div className="cf-cifra-col" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--cf-ink-3)', whiteSpace: 'nowrap' }}>
               {c.etiqueta}
             </span>
-            <span className="cf-fig" style={{
-              // Con cuatro columnas el sitio baja de 100 a 74px: «$140.000» a
-              // cuerpo 16 se sale. Es la misma regla que ya aplica `TiraCifras`.
-              fontSize: cs.length > 3 ? 14 : 16,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'clip', minWidth: 0,
+            {/* Con cuatro columnas el sitio baja de 100 a 74px y «$1.140.000» no
+                entra: antes se RECORTABA (`overflow: hidden`), que en una cifra es
+                enseñar otro número. `CifraQueCabe` la encoge lo justo. */}
+            <CifraQueCabe valor={c.valor} base={cs.length > 3 ? 14 : 16} style={{
               color: c.tono === 'contra'  ? 'var(--cf-red-dark)'
                    : c.tono === 'favor'   ? 'var(--cf-green-dark)'
                    : c.tono === 'apagado' ? 'var(--cf-ink-3)'
                    : 'var(--cf-ink)',
-            }}>{c.valor}</span>
+            }} />
           </div>
         </div>
       ))}

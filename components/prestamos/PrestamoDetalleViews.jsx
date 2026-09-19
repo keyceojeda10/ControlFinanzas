@@ -328,21 +328,24 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
 
       <div className="mt-2 flex items-center gap-1.5">
         <OfflineBadge id={prestamo?.id} />
-        <span
-          className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-          style={{
-            background: `color-mix(in srgb, ${color} 15%, transparent)`,
-            color,
-            border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
-          }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+        {/* ⚠ ERA UNA PASTILLA ESCRITA A MANO: con punto, a 10px, y «Al día» en
+            DORADO —`moodColorFromPrestamo` devuelve dorado para quien va bien—
+            mientras la lista de la que se viene lo pinta en verde. El dueño, 19
+            sep 2026: las pastillas «tienen diferentes tamaños y letras… molesta
+            bastante a la vista». Ahora es `Pastilla`, con los mismos tonos que
+            las tarjetas: rojo mora, ámbar atraso, verde al día, gris terminado. */}
+        <Pastilla numerica tono={
+          prestamo?.estado === 'completado' || prestamo?.estado === 'cancelado' ? 'neutro'
+            : (prestamo?.diasMora ?? 0) > 7 ? 'mora'
+            : (prestamo?.diasMora ?? 0) > 0 ? 'atraso'
+            : 'aldia'
+        }>
           {prestamo?.estado === 'completado' ? 'Completado' :
            prestamo?.estado === 'cancelado' ? 'Cancelado' :
            (prestamo?.diasMora ?? 0) > 7 ? `${prestamo.diasMora}d en mora` :
            (prestamo?.diasMora ?? 0) > 0 ? `${prestamo.diasMora}d vencido` :
            'Al día'}
-        </span>
+        </Pastilla>
       </div>
     </div>
   )

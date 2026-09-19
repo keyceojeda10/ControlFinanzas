@@ -68,7 +68,8 @@ export default function ClavosPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Clavos', value: stats.total, color: 'var(--cf-red-dark)' },
+          // «Perdidos», como el menú y el título: «Clavos» era un tercer nombre.
+          { label: 'Perdidos', value: stats.total, color: 'var(--cf-red-dark)' },
           { label: 'Capital prestado', value: formatMoney(stats.capitalEnClavos), color: 'var(--cf-gold-dark)' },
           { label: 'Saldo pendiente', value: formatMoney(stats.saldoEnClavos), color: 'var(--cf-gold)' },
           { label: 'Recuperado', value: formatMoney(stats.recuperado), color: 'var(--cf-green-dark)' },
@@ -137,7 +138,7 @@ export default function ClavosPage() {
                     onClick={() => setTipoFiltro(opt.value)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                     style={tipoFiltro === opt.value
-                      ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                      ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)' }
                       : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
                     }
                   >{opt.label}</button>
@@ -156,7 +157,7 @@ export default function ClavosPage() {
                     onClick={() => setOrden(opt.value)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
                     style={orden === opt.value
-                      ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                      ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)' }
                       : { background: 'var(--cf-surface)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }
                     }
                   >{opt.label}</button>

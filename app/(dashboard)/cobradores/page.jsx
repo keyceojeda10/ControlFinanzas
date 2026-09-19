@@ -312,7 +312,7 @@ function CobradoresPageInner() {
                 onClick={() => setModoOrdenar(t.key)}
                 className="px-3 py-1.5 rounded-[8px] text-xs font-medium transition-all"
                 style={modoOrdenar === t.key
-                  ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
+                  ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)' }
                   : { color: 'var(--cf-ink-3)' }}
               >
                 {t.label}

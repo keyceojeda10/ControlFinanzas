@@ -431,16 +431,9 @@ export default function CapitalTab() {
         return (
           <div
             className="cf-hero-card relative rounded-[20px] overflow-hidden"
-            style={{
-              background: `var(--cf-card)`,
-              border: `1px solid color-mix(in srgb, ${heroColor} 25%, transparent)`,
-              boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
-            }}
+            /* PLANA: tenía sombra, halo y trama de puntos del diseño anterior. */
+            style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
           >
-            <div className="hero-glow absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-              style={{ background: `radial-gradient(circle, color-mix(in srgb, ${heroColor} 35%, transparent), transparent 70%)`, filter: 'blur(20px)' }} />
-            <div className="absolute inset-0 pointer-events-none opacity-[0.04]"
-              style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px', color: heroColor }} />
             <div className="relative px-5 py-5 sm:px-6 sm:py-6">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: heroColor, boxShadow: `0 0 5px ${heroColor}` }} />
@@ -469,10 +462,7 @@ export default function CapitalTab() {
 
       {resumen?.configurado && resumen.cartera && (
         <div className="rounded-[16px] px-4 py-4"
-          style={{
-            background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-ink-2) 8%, var(--cf-card)) 0%, var(--cf-card) 100%)',
-            border: '1px solid color-mix(in srgb, var(--cf-ink-2) 22%, var(--cf-border))',
-          }}
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
         >
           <div className="flex items-center gap-1.5 mb-3">
             <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--cf-ink-2) 18%, transparent)', color: 'var(--cf-ink-2)' }}>

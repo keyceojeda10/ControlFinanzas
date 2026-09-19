@@ -402,7 +402,7 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
           {/* Días sin cobro */}
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide mb-1 block"
-              style={{ color: 'var(--cf-ink-3)' }}>Dias sin cobro</label>
+              style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
             <p className="text-[10px] mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias de la semana en que NO se cobra a este cliente.</p>
             <DiasSinCobroSelector value={ficha.diasSinCobro} onChange={arr => set('diasSinCobro', arr)} compact />
           </div>
@@ -854,7 +854,7 @@ export default function MigradorPage() {
         })
         if (!prestamoRes.ok) {
           const d = await prestamoRes.json()
-          setError(d.error || 'Cliente actualizado pero error en el prestamo')
+          setError(d.error || 'Cliente actualizado, pero falló el préstamo')
           setSaving(false)
           return
         }
@@ -911,7 +911,7 @@ export default function MigradorPage() {
           body: JSON.stringify(prestamoPayload),
         })
         const dataPrestamo = await resPrestamo.json()
-        if (!resPrestamo.ok) { setError(dataPrestamo.error || 'Cliente creado pero error en el prestamo'); setSaving(false); return }
+        if (!resPrestamo.ok) { setError(dataPrestamo.error || 'Cliente creado, pero falló el préstamo'); setSaving(false); return }
 
         setCreados(prev => [...prev, {
           nombre: ficha.nombre.trim(),
@@ -1004,7 +1004,7 @@ export default function MigradorPage() {
   const headerSub = {
     lista: `${creados.length} cliente${creados.length !== 1 ? 's' : ''} agregado${creados.length !== 1 ? 's' : ''}`,
     selector: creados.length > 0 ? 'Como quieres registrar este cliente?' : 'Agrega tus clientes con foto o manual, uno a uno',
-    formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su prestamo',
+    formulario: editandoIdx !== null ? 'Modifica lo que necesites y guarda' : 'Completa los datos y su préstamo',
   }[vista]
 
 

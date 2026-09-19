@@ -248,8 +248,9 @@ export default function ActividadPage() {
             onClick={() => setFiltroTipo(filtroTipo === f.value ? '' : f.value)}
             className="shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-full transition-all"
             style={filtroTipo === f.value
-              ? { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }
-              : { background: 'var(--cf-fill)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }}
+              /* El chip activo es NEGRO: el dorado es para la plata (DESIGN.md · 1). */
+              ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)', border: '1px solid var(--cf-ink)' }
+              : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', border: '1px solid var(--cf-border)' }}
           >
             {f.label}
           </button>
@@ -364,7 +365,7 @@ export default function ActividadPage() {
           </div>
           <p className="text-sm font-medium" style={{ color: 'var(--cf-ink)' }}>No hay actividad</p>
           <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-3)' }}>
-            {filtroTipo || hayFiltrosAvanzados ? 'No hay resultados con estos filtros' : 'Las acciones apareceran aqui automaticamente'}
+            {filtroTipo || hayFiltrosAvanzados ? 'No hay resultados con estos filtros' : 'Las acciones aparecerán aquí automáticamente'}
           </p>
         </div>
       ) : (
@@ -448,16 +449,23 @@ export default function ActividadPage() {
                         {/* EL MONTO, que no estaba. La lamina le da su columna:
                             «+$71.000» de una tanda de cuatro pagos dice mas que
                             los cuatro renglones sueltos. */}
-                        {fila.monto !== 0 && (
-                          <span className="cf-fig text-[12px] shrink-0 pt-0.5" style={{
-                            color: fila.monto > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
-                          }}>
-                            {fila.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(fila.monto))}
+                        {/* ⚠ MONTO Y HORA, UNO ENCIMA DEL OTRO. Iban lado a lado, y con una
+                            tanda («4:01 p. m. – 4:02 p. m.») se comían media fila: a
+                            «Carlos registró 2 pagos en un minuto» le quedaban 80px y
+                            bajaba a CUATRO renglones. Apilados dejan la frase en uno o
+                            dos, que es lo que se viene a leer (19 sep 2026). */}
+                        <div className="shrink-0 flex flex-col items-end gap-0.5 pt-0.5">
+                          {fila.monto !== 0 && (
+                            <span className="cf-fig text-[13px]" style={{
+                              color: fila.monto > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                            }}>
+                              {fila.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(fila.monto))}
+                            </span>
+                          )}
+                          <span className="text-[10px] tabular-nums whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>
+                            {fila.horaTexto}
                           </span>
-                        )}
-                        <span className="text-[10px] shrink-0 pt-1 tabular-nums" style={{ color: 'var(--cf-ink-3)' }}>
-                          {fila.horaTexto}
-                        </span>
+                        </div>
                       </div>
                     )
                   })}

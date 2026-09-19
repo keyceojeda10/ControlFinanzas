@@ -244,7 +244,7 @@ export default function TutorialesList({ showCopyButton = false }) {
           onClick={() => { setActiveCategory(null); setSearch('') }}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
             !activeCategory && !search.trim()
-              ? 'bg-[var(--cf-gold)] text-[var(--cf-ink)]'
+              ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)]'
               : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:border-[#444]'
           }`}
         >
@@ -256,10 +256,9 @@ export default function TutorialesList({ showCopyButton = false }) {
             onClick={() => { setActiveCategory(cat.id === activeCategory ? null : cat.id); setSearch('') }}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activeCategory === cat.id
-                ? 'text-[var(--cf-ink)]'
+                ? 'bg-[var(--cf-ink)] text-[var(--cf-surface)]'
                 : 'bg-[var(--cf-surface)] text-[var(--cf-ink-3)] border border-[var(--cf-border)] hover:border-[#444]'
             }`}
-            style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
           >
             {cat.label}
           </button>

@@ -1048,14 +1048,18 @@ export async function POST(request) {
           organizationId,
           userId: o.id,
           tipo: 'solicitud_prestamo',
-          titulo: 'Solicitud de prestamo',
-          mensaje: `${session.user.nombre} solicita crear un prestamo de $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}.`,
-          datos: JSON.stringify({ prestamoId: prestamo.id, clienteId, monto: Number(montoPrestado), cobrador: session.user.nombre }),
+          titulo: 'Solicitud de préstamo',
+          mensaje: `${session.user.nombre} solicita crear un préstamo de $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}.`,
+          /* ⚠ CON `href`. Sin él la campana llevaba a la ficha del CLIENTE —que es
+             a donde cae toda fila que trae `clienteId`— y no al préstamo que hay
+             que aprobar: el dueño tocaba «Solicitud de préstamo» y aterrizaba en
+             una pantalla sin el botón de aprobar. El push sí llevaba bien. */
+          datos: JSON.stringify({ href: `/prestamos/${prestamo.id}`, prestamoId: prestamo.id, clienteId, monto: Number(montoPrestado), cobrador: session.user.nombre }),
         })),
       })
     }
     enviarPushOrg(organizationId, {
-      title: 'Solicitud de prestamo',
+      title: 'Solicitud de préstamo',
       body: `${session.user.nombre} solicita $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}`,
       url: `/prestamos/${prestamo.id}`,
     }).catch(() => {})
