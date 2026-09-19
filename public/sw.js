@@ -742,6 +742,38 @@ self.addEventListener('message', (e) => {
 
         for (const url of urls) {
           try {
+            /* ── ⚠ LO QUE YA ESTÁ NO SE VUELVE A BAJAR ────────────────────────
+             *
+             * «se queda pegado, se sale uno para un lado para volver a ingresar
+             *  y queda en blanco y se queda cargando» — la cartera más grande,
+             *  19 sep 2026.
+             *
+             * `sincronizarTodo` corre cada 90 s y manda aquí la ficha de CADA
+             * cliente y CADA préstamo. Este bucle las bajaba TODAS cada vez,
+             * aunque la vuelta anterior ya las hubiera guardado. Medido en el
+             * servidor, 95 s de tráfico real:
+             *
+             *   191.156.x   643 peticiones · 619 desde sw.js · 618 fichas distintas
+             *   179.19.x    407 peticiones · 399 desde sw.js · 392 fichas distintas
+             *   181.48.x    240 peticiones · 240 desde sw.js · 240 fichas distintas
+             *   (una persona navegando: 7 peticiones)
+             *
+             * El 97% de lo que procesaba el servidor era esto: tres teléfonos
+             * bajando su cartera entera, ficha por ficha, en bucle. Con el
+             * servidor al 80% de CPU renderizando páginas que nadie miraba, la
+             * navegación de verdad se quedaba en blanco.
+             *
+             * Y las fichas son `'use client'`: el HTML es solo el cascarón y los
+             * datos llegan aparte (de la API, o de IndexedDB sin señal). Volver
+             * a bajar el cascarón no traía nada nuevo. Se baja UNA vez; las
+             * nuevas —el préstamo creado hoy— entran en la vuelta siguiente.
+             *
+             * ⚠ NO SUBIR `CACHE_NAME` POR ESTE CAMBIO. `activate` borra las
+             *   cachés con otro nombre, así que subirlo vaciaría las fichas ya
+             *   guardadas y cada teléfono volvería a bajar su cartera entera de
+             *   golpe: la misma avalancha que esto apaga. Las fichas viejas se
+             *   renuevan solas en el siguiente release que suba el nombre. */
+            if (await cache.match(url)) continue
             const res = await fetch(url, { credentials: 'same-origin' })
             if (res.ok && !res.redirected) {
               // Parse HTML to find JS chunks needed for this page
