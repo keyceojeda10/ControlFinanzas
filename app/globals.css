@@ -930,6 +930,36 @@ html[data-theme="light"] .bg-black,
 html[data-theme="light"] [class*="bg-[#0"] { background-color: #ffffff !important; }
 html[data-theme="light"] [class*="bg-[#1"] { background-color: #ffffff !important; }
 html[data-theme="light"] [class*="bg-[#2"] { background-color: #f4f6fb !important; }
+
+/* ⚠ ESTE PARCHE CASA POR SUBCADENA, Y SE COMÍA EL VERDE DE WHATSAPP.
+   «bg-[#2…]» se escribió para los grises oscuros (#202020 y parientes), pero
+   `[class*=]` no sabe de colores: también casa `bg-[#25d366]`, que es el verde
+   de la MARCA WhatsApp. Resultado en tema claro: el botón «Enviar historial
+   completo» salía lavanda (#f4f6fb) con letra negra —porque `.text-white`
+   también se voltea— en vez de verde con letra blanca. Medido en el espejo con
+   `getComputedStyle`: en el JSX el botón dice `bg-[#25d366] text-white` y la
+   pantalla pintaba `rgb(244,246,251)` sobre `rgb(21,22,26)`.
+
+   Los colores de MARCA no son «un color oscuro que hay que aclarar»: dicen a
+   dónde lleva el botón. Van exentos, y con la misma especificidad + `!important`
+   para ganarle al parche de arriba (van después, así que mandan).
+
+   Lo correcto a la larga es que nadie escriba hexadecimales sueltos y este
+   bloque entero desaparezca. Mientras exista, la exención vive aquí. */
+html[data-theme="light"] .bg-\[\#25d366\] { background-color: #25d366 !important; }
+html[data-theme="light"] .bg-\[\#25D366\] { background-color: #25D366 !important; }
+html[data-theme="light"] .bg-\[\#1da855\] { background-color: #1da855 !important; }
+html[data-theme="light"] .bg-\[\#1ebe5b\] { background-color: #1ebe5b !important; }
+html[data-theme="light"] .bg-\[\#1eb855\] { background-color: #1eb855 !important; }
+html[data-theme="light"] .bg-\[\#16a34a\] { background-color: #16a34a !important; }
+html[data-theme="light"] .bg-\[\#22c55e\] { background-color: #22c55e !important; }
+html[data-theme="light"] .bg-\[\#25d366\].text-white,
+html[data-theme="light"] .bg-\[\#25D366\].text-white,
+html[data-theme="light"] .bg-\[\#1da855\].text-white,
+html[data-theme="light"] .bg-\[\#1ebe5b\].text-white,
+html[data-theme="light"] .bg-\[\#1eb855\].text-white,
+html[data-theme="light"] .bg-\[\#16a34a\].text-white,
+html[data-theme="light"] .bg-\[\#22c55e\].text-white { color: #ffffff !important; }
 html[data-theme="light"] .bg-neutral-900,
 html[data-theme="light"] .bg-neutral-950,
 html[data-theme="light"] .bg-zinc-900,
@@ -1502,6 +1532,10 @@ html[data-theme="light"] [class*="hover:border-[#4"]:hover { border-color: rgba(
   );
 }
 
+/* En PC el botón medía 1.068px: una franja dorada de lado a lado que tapaba la
+   lista. Se queda pegado abajo —eso lo pidió el dueño— pero con el ancho de un
+   botón, y el fondo llega hasta el borde para que no asome una fila por debajo. */
 @media (min-width: 1024px) {
-  .cf-crear-sticky { bottom: 16px; }
+  .cf-crear-sticky { bottom: 0; padding-bottom: 16px; align-items: center; }
+  .cf-crear-sticky > button { max-width: 420px; }
 }

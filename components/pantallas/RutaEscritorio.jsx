@@ -312,19 +312,23 @@ export default function RutaEscritorio({
                           background: 'var(--cf-fill)', fontSize: 12.5, fontWeight: 700, color: 'var(--cf-ink-2)',
                         }}>{f.iniciales}</span>
                         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {/* El nombre NO se recorta: baja de renglón. Salía
+                              «Carlos prue…» en una ruta con dos Carlos, que es
+                              justo cuando hace falta leerlo entero. `break-word`
+                              y no `anywhere`: parte por el espacio, no a media
+                              palabra, y deja que la columna se encoja. */}
                           <span style={{
-                            display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
+                            display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '3px 8px', minWidth: 0,
                             fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)',
                           }}>
-                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre}</span>
+                            <span style={{ overflowWrap: 'break-word', minWidth: 0 }}>{f.nombre}</span>
                             {f.diasMora > 0
                               ? <Pastilla tono="mora">{f.diasMora}d</Pastilla>
                               : <Pastilla>Al día</Pastilla>}
                           </span>
                           {f.donde && (
                             <span className="cf-num" style={{
-                              fontSize: 11.5, color: 'var(--cf-ink-3)',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              fontSize: 11.5, color: 'var(--cf-ink-3)', overflowWrap: 'break-word',
                             }}>{f.donde}</span>
                           )}
                         </div>
@@ -420,33 +424,36 @@ export default function RutaEscritorio({
 
         {/* ── EL CARRIL DEL DUEÑO ── */}
         <div style={{ width: 264, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Lo de hoy, en dorado: es la única cifra por la que se abre esta
-              pantalla estando sentado. Un solo dorado en toda la vista. */}
+          {/* Lo de hoy: la única cifra por la que se abre esta pantalla estando
+              sentado. Iba en una tarjeta de FONDO dorado, y `bloqueOscuro.js` lo
+              dice literal: «el fondo dorado no es un estilo, es un error de
+              sistema» —la cifra queda del color de su propia caja—. Bloque
+              carbón y la cifra en dorado, como el inicio y la caja. Los colores
+              van literales: el bloque es oscuro en los dos temas. */}
           <div style={{
-            flex: 'none', background: 'var(--cf-gold)', borderRadius: 'var(--cf-r-card)',
-            padding: '15px 17px', display: 'flex', flexDirection: 'column', gap: 9,
+            flex: 'none', background: '#15161A', border: '1px solid rgba(255,255,255,.09)',
+            borderRadius: 'var(--cf-r-hero)',
+            padding: '17px 18px', display: 'flex', flexDirection: 'column', gap: 10,
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
-              <span style={{
-                fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em',
-                textTransform: 'uppercase', color: 'var(--cf-gold-ink)', opacity: 0.72,
-              }}>Por cobrar hoy</span>
-            </div>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
+              textTransform: 'uppercase', color: '#A3A8B2',
+            }}>Por cobrar hoy</span>
             <span className="cf-fig" style={{
-              fontSize: 27, letterSpacing: '-.025em', lineHeight: 1, color: 'var(--cf-gold-ink)',
+              fontSize: 26, letterSpacing: '-.025em', lineHeight: 1, color: '#F5B824', whiteSpace: 'nowrap',
             }}>{porCobrarHoy}</span>
-            <div style={{ height: 5, borderRadius: 999, background: 'rgba(20,20,28,.14)', overflow: 'hidden', flex: 'none' }}>
+            <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,.12)', overflow: 'hidden', flex: 'none' }}>
               <span style={{
                 display: 'block', width: `${Math.max(0, Math.min(100, progreso))}%`, height: 5,
-                borderRadius: 999, background: 'var(--cf-gold-ink)',
+                borderRadius: 999, background: '#F5B824',
               }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-              <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-gold-ink)', opacity: 0.78 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '2px 10px' }}>
+              <span className="cf-num" style={{ fontSize: 12, color: '#C9CCD3' }}>
                 Recaudado {recaudadoHoy}
               </span>
               {conteoCobros && (
-                <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-gold-ink)', opacity: 0.78 }}>
+                <span className="cf-num" style={{ fontSize: 12, color: '#C9CCD3' }}>
                   {conteoCobros}
                 </span>
               )}

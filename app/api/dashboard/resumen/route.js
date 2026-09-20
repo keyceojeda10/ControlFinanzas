@@ -353,7 +353,8 @@ export async function GET() {
         tipo: { notIn: ['recargo', 'descuento'] },
         ...filtroRutaPagos,
       },
-      select: { montoPagado: true, fechaPago: true },
+      // `clienteId`: para saber QUIÉN pagó hoy (ver `clientesCobradosHoy`).
+      select: { montoPagado: true, fechaPago: true, prestamo: { select: { clienteId: true } } },
     }),
 
     /* Los PRÉSTAMOS que cobraron este mes, con su tabla y su historial de pagos.
@@ -556,6 +557,13 @@ export async function GET() {
   const patrimonio = esCobrador ? null : calcularPatrimonio({ saldoPorCobrar, cajaDisponible })
 
   // Mapear cobradorIds a nombres para el desglose de hoy
+  const pagaronHoy = new Set()
+  for (const pg of pagos7Dias || []) {
+    if (pg.prestamo?.clienteId && new Date(pg.fechaPago) >= inicioDiaUTC) pagaronHoy.add(pg.prestamo.clienteId)
+  }
+  let clientesCobradosHoy = 0
+  for (const id of clientesConCobroHoy) if (pagaronHoy.has(id)) clientesCobradosHoy += 1
+
   const cobradorIds = (pagosHoyPorCobrador || []).map(g => g.cobradorId).filter(Boolean)
   const cobradores = cobradorIds.length > 0
     ? await prisma.user.findMany({
@@ -653,6 +661,12 @@ export async function GET() {
       esperadoHoy: Math.round(esperadoHoy),
       // Cuantos clientes toca visitar hoy, con la MISMA regla que `esperadoHoy`.
       clientesConCobroHoy: clientesConCobroHoy.size,
+      // «2 de 15»: de los que tocaban hoy, cuántos YA pagaron. Antes el inicio
+      // ponía de numerador el número de PAGOS del día (`cantidadHoy`) sobre un
+      // denominador de CLIENTES: con tres pagos de tres clientes decía «3 de 15»
+      // mientras la suma de Rutas decía «2 de 15» (uno de los tres no tocaba
+      // hoy). Misma definición que `cobradosHoy` en /api/rutas.
+      clientesCobradosHoy,
     },
     finanzas: esCobrador ? null : {
       cajaDisponible,

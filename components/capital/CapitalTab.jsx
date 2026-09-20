@@ -324,7 +324,13 @@ export default function CapitalTab() {
     <div className="space-y-5">
       {/* ── TODA TU PLATA (T30-01) ── */}
       {todaLaPlata > 0 && (
-        <div className="rounded-[16px] p-4" style={{ background: 'var(--cf-ink)', color: 'var(--cf-surface)' }}>
+        /* ⚠ CARBÓN LITERAL, NO `--cf-ink`. Con el token, en tema OSCURO este bloque se
+           invertía y salía BLANCO —la tinta del tema oscuro es clara—: el único
+           bloque de cifra del sistema que cambiaba de color con el tema (cazado el
+           19 sep 2026 en el barrido en oscuro). Es la misma regla de `BloqueOscuro`:
+           dentro del bloque no manda el tema, manda que el fondo es negro. Por eso
+           el verde y el dorado de dentro son los del tema oscuro, también literales. */
+        <div className="p-4" style={{ background: '#15161A', color: '#F3F3F6', border: '1px solid rgba(255,255,255,.09)', borderRadius: 'var(--cf-r-hero)' }}>
           <span className="text-[10px] font-bold uppercase tracking-[.09em]" style={{ opacity: .65 }}>
             Toda tu plata
           </span>
@@ -334,23 +340,23 @@ export default function CapitalTab() {
           {/* La barra parte el total en sus dos mitades: sin ella, dos cifras
               sueltas no dicen cuál pesa más. */}
           <div className="h-[7px] rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,.14)' }}>
-            <span style={{ width: `${pctListo}%`, background: 'var(--cf-green)' }} />
-            <span style={{ flex: 1, background: 'var(--cf-gold)' }} />
+            <span style={{ width: `${pctListo}%`, background: '#2FBE6A' }} />
+            <span style={{ flex: 1, background: '#F5B824' }} />
           </div>
           <div className="mt-3 space-y-1.5">
             <div className="flex items-center justify-between gap-3">
               <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-green)' }} />
+                <span className="w-2 h-2 rounded-full" style={{ background: '#2FBE6A' }} />
                 Lista para prestar
               </span>
-              <span className="cf-fig text-[13.5px] font-bold">{formatMoney(saldoCapital)}</span>
+              <span className="cf-fig text-[14px] font-bold">{formatMoney(saldoCapital)}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-[13px] flex items-center gap-2" style={{ opacity: .8 }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cf-gold)' }} />
+                <span className="w-2 h-2 rounded-full" style={{ background: '#F5B824' }} />
                 En la calle, cobrándose
               </span>
-              <span className="cf-fig text-[13.5px] font-bold" style={{ color: 'var(--cf-gold)' }}>
+              <span className="cf-fig text-[14px] font-bold" style={{ color: '#F5B824' }}>
                 {formatMoney(enCalle)}
               </span>
             </div>

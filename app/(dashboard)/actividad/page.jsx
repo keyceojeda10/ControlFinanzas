@@ -455,11 +455,15 @@ export default function ActividadPage() {
                             bajaba a CUATRO renglones. Apilados dejan la frase en uno o
                             dos, que es lo que se viene a leer (19 sep 2026). */}
                         <div className="shrink-0 flex flex-col items-end gap-0.5 pt-0.5">
+                          {/* El signo lo decide `sentidoDe`, no el número: un gasto
+                              salía «+$31.220» en verde. Verde solo lo que ENTRA; lo
+                              que sale va con «−» y lo que ni entra ni sale (un cierre,
+                              un borrado) va sin signo. */}
                           {fila.monto !== 0 && (
                             <span className="cf-fig text-[13px]" style={{
-                              color: fila.monto > 0 ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
+                              color: fila.sentido === 'entra' ? 'var(--cf-green-dark)' : 'var(--cf-ink-2)',
                             }}>
-                              {fila.monto > 0 ? '+' : '−'}{formatMoney(Math.abs(fila.monto))}
+                              {fila.sentido === 'entra' ? '+' : fila.sentido === 'sale' ? '−' : ''}{formatMoney(Math.abs(fila.monto))}
                             </span>
                           )}
                           <span className="text-[10px] tabular-nums whitespace-nowrap" style={{ color: 'var(--cf-ink-3)' }}>

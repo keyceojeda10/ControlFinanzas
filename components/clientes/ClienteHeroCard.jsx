@@ -627,14 +627,15 @@ function FilaContacto({ icono, principal, secundario, acciones }) {
         color: 'var(--cf-ink-3)',
       }}>{icono}</span>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {/* La dirección y su referencia NO llevan puntos suspensivos: «al lado
+            de casa de rejas blancas por santa fe · Ruta …» se cortaba justo
+            donde el cobrador necesita leer. Bajan de renglón. */}
         <span style={{
-          fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontSize: 15, fontWeight: 600, color: 'var(--cf-ink)', overflowWrap: 'anywhere',
         }}>{principal}</span>
         {secundario && (
           <span style={{
-            fontSize: 12, color: 'var(--cf-ink-3)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.4, overflowWrap: 'anywhere',
           }}>{secundario}</span>
         )}
       </div>
