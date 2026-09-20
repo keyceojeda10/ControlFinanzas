@@ -1560,51 +1560,27 @@ function PrestamoDetalleContenido({ params }) {
         </div>
       )}
 
-      {/* ── ANIMACIÓN ÉXITO PAGO ────────────────────────────────── */}
-      {exito && !completado && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 bg-[rgba(16,185,129,0.12)] border border-[rgba(16,185,129,0.3)] rounded-[16px] px-4 py-3">
-            <svg className="w-5 h-5 text-[var(--cf-green-dark)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm text-[var(--cf-green-dark)] font-medium">Pago registrado exitosamente</p>
-          </div>
-          {ultimoPago && cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
-          )}
-          {ultimoPago && (
-            <div className="flex gap-2">
-              <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
-              <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
-            </div>
-          )}
-        </div>
-      )}
+      {/* ── LO QUE SE HACE CON EL COBRO QUE SE ACABA DE REGISTRAR ──
+          Eran TRES copias del mismo bloque —recién cobrado, después, y préstamo
+          saldado— y las tres apilaban barras de lado a lado: el aviso verde, el
+          botón de WhatsApp y una fila con Compartir e Imprimir. En el teléfono
+          pasa; en el computador eran tres franjas de 1.150px. El dueño, 20 sep
+          2026: «salen unas barras arriba del perfil como muy estirado, muy feo…
+          todas las opciones son necesarias, pero podríamos distribuirlas mejor».
 
-      {/* ── WA PAGO (persiste después de cerrar animación) ───────── */}
-      {!exito && ultimoPago && !completado && (
-        <>
+          Una sola tarjeta: a la izquierda QUÉ pasó y por cuánto; a la derecha los
+          tres botones, del ancho de un botón. En el teléfono baja a dos filas. */}
+      {ultimoPago && (
+        <AccionesDelCobro
+          titulo={completado ? 'Préstamo saldado' : 'Cobro registrado'}
+          detalle={[formatMoney(ultimoPago.montoPagado ?? 0), exito ? 'ahora mismo' : null].filter(Boolean).join(' · ')}
+        >
           {cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
+            <BotonAbrirHojaWA texto="WhatsApp" onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
           )}
-          <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
-            <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
-          </div>
-        </>
-      )}
-
-      {/* ── WA PRÉSTAMO COMPLETADO ───────────────────────────────── */}
-      {completado && ultimoPago && (
-        <>
-          {cliente?.telefono && (
-            <BotonAbrirHojaWA onClick={() => { setWaPago(ultimoPago); setModalWA(true) }} />
-          )}
-          <div className="flex gap-2">
-            <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
-            <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
-          </div>
-        </>
+          <BotonCompartir cliente={cliente} prestamo={prestamo} pago={ultimoPago} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
+          <BotonAbrirRecibo onClick={() => setModalRecibo({ tipo: 'pago', pago: ultimoPago })} />
+        </AccionesDelCobro>
       )}
 
       {/* ── SIGUIENTE EN RUTA (después de pago) ──────────────────── */}
@@ -3305,6 +3281,29 @@ function PrestamoDetalleContenido({ params }) {
         }}
         onCancel={() => setConfirmAnularPago(null)}
       />
+    </div>
+  )
+}
+
+/** La tarjeta de «qué hago con este cobro». Los botones que recibe son los de
+ *  siempre (traen `w-full`/`flex-1`): aquí solo se les da una caja del ancho de un
+ *  botón para que no se estiren de lado a lado en el computador. */
+function AccionesDelCobro({ titulo, detalle, children }) {
+  const botones = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean)
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[16px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-4 py-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1 basis-[220px]">
+        <span className="inline-flex items-center justify-center w-9 h-9 rounded-full shrink-0" style={{ background: 'color-mix(in srgb, var(--cf-green) 14%, transparent)', color: 'var(--cf-green-dark)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        </span>
+        <span className="min-w-0 flex flex-col">
+          <span className="text-[14px] font-bold text-[var(--cf-ink)] leading-tight">{titulo}</span>
+          {detalle && <span className="cf-num text-[13px] text-[var(--cf-ink-3)] leading-tight mt-0.5">{detalle}</span>}
+        </span>
+      </div>
+      <div className="flex gap-2 flex-1 basis-[280px] lg:flex-none lg:basis-auto lg:w-[430px]">
+        {botones.map((b, i) => <div key={i} className="flex-1 min-w-0 flex">{b}</div>)}
+      </div>
     </div>
   )
 }

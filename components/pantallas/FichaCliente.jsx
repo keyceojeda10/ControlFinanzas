@@ -15,6 +15,7 @@
 // frase dice el patrón: "Pagaba tarde pero cerraba el mes. Desde mayo viene
 // fallando." Eso es lo que el dueño quiere saber antes de prestarle otra vez.
 
+import { useState } from 'react'
 import { Tarjeta, BloqueOscuro, BarraAccion, BotonPrimario, BotonSecundario, Pastilla } from '@/components/cf/primitivos'
 
 const COLOR = {
@@ -24,44 +25,169 @@ const COLOR = {
   nada:  'var(--cf-fill-2)',
 }
 
-/* Doce meses, uno por barra. La altura es cuánto pagó; el color, cómo lo pagó.
+/* ── «CÓMO PAGA», REHECHO EL 20 SEP 2026 ──────────────────────────────────────
+   El dueño: «ese "cómo paga" no se entiende una mierda… sería súper útil si se
+   entendiera el gráfico y hubiese algo más textual».
+
+   Lo que no se entendía, mirándolo con sus ojos:
+     · los meses iban con UNA letra —«O N D E F M A M J J A S»—: hay dos M, dos J
+       y dos A, y nada decía que fueran meses;
+     · los meses SIN préstamo se pintaban como rayitas grises, iguales a un dato;
+     · ninguna escala, ninguna leyenda: una barra verde y dos rojas, ¿de qué?;
+     · y la conclusión era una frase suelta —«Viene fallando.»— sin una cifra.
+
+   Ahora va al revés: PRIMERO las palabras y la plata, después la gráfica que las
+   respalda.
+     1. El veredicto, grande, con su tono.
+     2. La cuenta que lo sostiene: «de $375.000 que le tocaban, pagó $75.000».
+     3. Solo los meses en que tuvo préstamo, con su nombre, su porcentaje encima
+        y el riel de «lo que le tocaba» detrás. Tocar una barra dice ese mes en
+        plata.
+     4. La leyenda de los tres colores.
+
    Altura EXPLÍCITA en px: una barra con `height:%` dentro de un contenedor
    flex:1 desaparece si el contenedor colapsa (04-CRITERIOS §G). */
 // Se EXPORTA para poder montarla sola. La ficha entera no se monta en
 // `clientes/[id]`: esa pantalla tiene cartulina, tip, score, contacto, portal,
 // tope y lineas de credito, y cambiarla por estas 156 lineas quitaria todo eso.
 // Lo que aqui hace falta es la pieza que la ficha AÑADE.
-export function ComoPaga({ meses = [], lectura }) {
+const TONO = {
+  bien:    { color: 'var(--cf-green-dark)', fondo: 'color-mix(in srgb, var(--cf-green) 13%, transparent)' },
+  regular: { color: 'var(--cf-gold-text, var(--cf-gold-dark))', fondo: 'var(--cf-gold-tint)' },
+  mal:     { color: 'var(--cf-red-dark)', fondo: 'color-mix(in srgb, var(--cf-red) 12%, transparent)' },
+  sin:     { color: 'var(--cf-ink-3)', fondo: 'var(--cf-fill)' },
+}
+const LEYENDA = [
+  { estado: 'bien', texto: 'Pagó completo' },
+  { estado: 'tarde', texto: 'Pagó una parte' },
+  { estado: 'mal', texto: 'Casi nada' },
+]
+const ALTO_BARRA = 96
+
+export function ComoPaga({ meses = [], lectura, resumen, formatear = (n) => `$${Math.round(n).toLocaleString('es-CO')}` }) {
+  const [abierto, setAbierto] = useState(null)
+  // Solo desde el primer mes en que tuvo préstamo: lo de antes no es «no pagó»,
+  // es que no había nada que pagar.
+  const primero = meses.findIndex((m) => m.cumplio !== null && m.cumplio !== undefined)
+  const visibles = primero === -1 ? [] : meses.slice(primero)
+  const tono = TONO[resumen?.veredicto] ?? TONO.sin
+  const elegido = abierto !== null ? visibles[abierto] : null
+
   return (
     <Tarjeta>
       <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
         Cómo paga
       </span>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 84, flex: 'none' }}>
-        {meses.map((m, i) => (
-          <span key={i} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <span style={{
-              width: '100%',
-              height: Math.max(4, Math.round((m.cumplio ?? 0) * 0.62)),
-              borderRadius: 3,
-              background: COLOR[m.estado] ?? COLOR.nada,
-              flex: 'none',
-            }} />
-            <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-4)', flex: 'none' }}>
-              {m.etiqueta}
-            </span>
+      {/* 1 y 2 · El veredicto y la cuenta que lo sostiene. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <span className="cf-fig" style={{ fontSize: 22, letterSpacing: '-.025em', lineHeight: 1.1, color: 'var(--cf-ink)' }}>
+            {resumen?.titulo ?? 'Todavía no hay historial'}
           </span>
-        ))}
+          {resumen?.pct != null && (
+            <span className="cf-num" style={{
+              height: 26, padding: '0 11px', borderRadius: 999, display: 'inline-flex', alignItems: 'center',
+              fontSize: 13, fontWeight: 700, color: tono.color, background: tono.fondo, flex: 'none',
+            }}>{resumen.pct}% de lo que le tocaba</span>
+          )}
+        </div>
+        {resumen?.esperado > 0 && (
+          <span style={{ fontSize: 14, color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>
+            {resumen.cuantos === 1
+              ? `En ${resumen.hasta} le tocaba pagar `
+              : `Entre ${resumen.desde} y ${resumen.hasta} le tocaba pagar `}
+            <strong className="cf-num" style={{ color: 'var(--cf-ink)' }}>{formatear(resumen.esperado)}</strong>
+            {' y pagó '}
+            <strong className="cf-num" style={{ color: tono.color }}>{formatear(resumen.pagado)}</strong>.
+            {resumen.tendencia ? ` ${resumen.tendencia}` : ''}
+          </span>
+        )}
+        {!resumen && lectura && (
+          <span style={{ fontSize: 14, color: 'var(--cf-ink-2)', lineHeight: 1.5 }}>{lectura}</span>
+        )}
       </div>
 
-      {/* La frase NO es un adorno: es la conclusión. Doce barras sin lectura
-          dejan que cada quien saque la suya, y el ojo se queda con el último
-          mes. */}
-      {lectura && (
+      {/* 3 · Mes a mes. */}
+      {visibles.length > 0 && (
         <>
           <span style={{ height: 1, background: 'var(--cf-hairline)' }} />
-          <span style={{ fontSize: 13, color: 'var(--cf-ink)', lineHeight: 1.5 }}>{lectura}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--cf-ink-3)' }}>
+            Mes a mes: cuánto pagó de lo que le tocaba
+          </span>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flex: 'none' }}>
+            {visibles.map((m, i) => {
+              const sinPrestamo = m.cumplio === null || m.cumplio === undefined
+              const pct = m.cumplio ?? 0
+              const activo = abierto === i
+              /* UN MES SIN PRÉSTAMO NO ES «0 %». Se pintaba igual que un mes en
+                 que no pagó nada, y un cliente que terminó en junio parecía
+                 llevar tres meses sin pagar. Va hueco, con raya, y no se toca. */
+              if (sinPrestamo) {
+                return (
+                  <span key={`${m.anio}-${m.corta}-${i}`} style={{ flex: 1, minWidth: 0, maxWidth: 46, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                    <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: 'var(--cf-ink-4)' }}>—</span>
+                    <span style={{ width: '100%', height: ALTO_BARRA, borderRadius: 6, border: '1.5px dashed var(--cf-border-strong)', flex: 'none' }} />
+                    <span className="cf-num" style={{ fontSize: 11, fontWeight: 500, color: 'var(--cf-ink-4)' }}>{m.corta ?? m.etiqueta}</span>
+                  </span>
+                )
+              }
+              return (
+                <button
+                  key={`${m.anio}-${m.corta}-${i}`} type="button"
+                  onClick={() => setAbierto(activo ? null : i)}
+                  aria-pressed={activo}
+                  aria-label={`${m.nombre}: pagó el ${pct} por ciento`}
+                  style={{
+                    flex: 1, minWidth: 0, maxWidth: 46, padding: 0, border: 0, background: 'none', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, font: 'inherit',
+                  }}
+                >
+                  <span className="cf-num" style={{ fontSize: 11, fontWeight: 700, color: activo ? 'var(--cf-ink)' : 'var(--cf-ink-3)' }}>
+                    {pct}%
+                  </span>
+                  {/* El riel es «lo que le tocaba»; el relleno, lo que pagó. */}
+                  <span style={{
+                    position: 'relative', width: '100%', height: ALTO_BARRA, borderRadius: 6, overflow: 'hidden', flex: 'none',
+                    background: 'var(--cf-fill)', outline: activo ? '2px solid var(--cf-ink)' : 'none', outlineOffset: 1,
+                  }}>
+                    <span style={{
+                      position: 'absolute', left: 0, right: 0, bottom: 0,
+                      height: Math.max(pct > 0 ? 3 : 0, Math.round((pct / 100) * ALTO_BARRA)),
+                      background: COLOR[m.estado] ?? COLOR.nada,
+                    }} />
+                  </span>
+                  <span className="cf-num" style={{ fontSize: 11, fontWeight: activo ? 700 : 500, color: activo ? 'var(--cf-ink)' : 'var(--cf-ink-3)' }}>
+                    {m.corta ?? m.etiqueta}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {elegido ? (
+            <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink)', lineHeight: 1.5 }}>
+              <strong style={{ textTransform: 'capitalize' }}>{elegido.nombre} {elegido.anio}</strong>: pagó {formatear(elegido.pagado ?? 0)} de {formatear(elegido.esperado ?? 0)} que le tocaban.
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--cf-ink-4)' }}>Toca un mes para verlo en plata.</span>
+          )}
+
+          {/* 4 · Qué significa cada color. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px' }}>
+            {LEYENDA.map((l) => (
+              <span key={l.estado} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, background: COLOR[l.estado], flex: 'none' }} />
+                {l.texto}
+              </span>
+            ))}
+            {visibles.some((m) => m.cumplio === null || m.cumplio === undefined) && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--cf-ink-3)' }}>
+                <span style={{ width: 9, height: 9, borderRadius: 3, border: '1.5px dashed var(--cf-border-strong)', flex: 'none' }} />
+                Sin préstamo ese mes
+              </span>
+            )}
+          </div>
         </>
       )}
     </Tarjeta>

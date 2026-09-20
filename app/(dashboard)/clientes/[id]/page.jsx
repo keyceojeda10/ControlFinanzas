@@ -1031,7 +1031,7 @@ export default function ClienteDetallePage({ params }) {
           ANTES de los prestamos porque es lo que se mira para decidir si
           prestarle otra vez. */}
       {comportamiento?.meses?.some((m) => m.cumplio !== null) && (
-        <ComoPaga meses={comportamiento.meses} lectura={comportamiento.lectura} />
+        <ComoPaga meses={comportamiento.meses} lectura={comportamiento.lectura} resumen={comportamiento.resumen} formatear={(n) => formatMoney(n)} />
       )}
 
 

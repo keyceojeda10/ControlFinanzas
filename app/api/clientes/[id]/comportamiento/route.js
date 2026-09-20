@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { comportamiento12Meses, lecturaDe } from '@/lib/comportamiento'
+import { comportamiento12Meses, lecturaDe, resumenDe } from '@/lib/comportamiento'
 
 // GET /api/clientes/[id]/comportamiento — los 12 meses del cliente.
 //
@@ -96,6 +96,7 @@ export async function GET(_req, { params }) {
   return Response.json({
     meses,
     lectura: lecturaDe(meses),
+    resumen: resumenDe(meses),
     // Se dice de donde sale la cifra. Es una aproximacion para leer la
     // TENDENCIA, y ninguna pantalla debe cobrar nada a partir de esto.
     comoSeCalcula: 'Lo pagado en el mes sobre lo que tocaba pagar (cuota × cobros del mes, sin los días sin cobro).',
