@@ -405,13 +405,20 @@ export function ResumenDelDia({ r, formatear, fecha, onCerrar, onIr }) {
                 <span className="cf-fig" style={{ fontSize: 30, lineHeight: 1, letterSpacing: '-.03em', color: iDia === r.dias.length - 1 ? BLOQUE.oro : BLOQUE.tinta, whiteSpace: 'nowrap' }}>
                   {formatear(dia.monto)}
                 </span>
+                {/* ⚠ «0 cobrosNo entró plata ese día.» — el dueño, 20 sep 2026.
+                    Eran tres trozos sueltos pegados sin separador, y encima el
+                    día vacío decía lo mismo dos veces. Un día sin plata se dice
+                    UNA vez; los demás, con « · » entre las partes. */}
                 <span style={{ fontSize: 14, color: BLOQUE.apagado }}>
-                  {dia.cobros != null ? `${dia.cobros} ${dia.cobros === 1 ? 'cobro' : 'cobros'}` : ''}
-                  {contraPromedio != null && dia.monto > 0 && (
-                    <>{dia.cobros != null ? ' · ' : ''}<strong style={{ color: contraPromedio >= 0 ? VERDE : BLOQUE.rojo, fontWeight: 700 }}>
-                      {contraPromedio >= 0 ? `${contraPromedio}% más` : `${Math.abs(contraPromedio)}% menos`}</strong> que tu promedio ({formatear(r.promedioSemana)})</>
+                  {dia.monto === 0 ? 'No entró plata ese día.' : (
+                    <>
+                      {dia.cobros != null ? `${dia.cobros} ${dia.cobros === 1 ? 'cobro' : 'cobros'}` : ''}
+                      {contraPromedio != null && (
+                        <>{dia.cobros != null ? ' · ' : ''}<strong style={{ color: contraPromedio >= 0 ? VERDE : BLOQUE.rojo, fontWeight: 700 }}>
+                          {contraPromedio >= 0 ? `${contraPromedio}% más` : `${Math.abs(contraPromedio)}% menos`}</strong> que tu promedio ({formatear(r.promedioSemana)})</>
+                      )}
+                    </>
                   )}
-                  {dia.monto === 0 ? 'No entró plata ese día.' : ''}
                 </span>
               </div>
             )}
