@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1093'
+const CACHE_NAME   = 'cf-v1094'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -82,6 +82,7 @@ const PRECACHE_URLS = [
   '/icon.svg',
   '/logo-icon.svg',
   '/icons/icon-192.png',
+  '/icons/badge-96.png',
   '/icons/icon-512.png',
   '/login',
 ]
@@ -473,8 +474,18 @@ self.addEventListener('push', (e) => {
     e.waitUntil(
       self.registration.showNotification(data.title || 'Control Finanzas', {
         body: data.body,
-        icon: data.icon || '/logo-icon.svg',
-        badge: '/icons/icon-192.png',
+        /* ⚠ PNG, NUNCA EL SVG. Chrome en Android no carga un SVG como icono de
+           notificación: no falla, deja el hueco —el círculo blanco vacío que se
+           veía a la izquierda del aviso—. Reportado el 20 sep 2026 con una foto
+           de la bandeja. */
+        icon: data.icon || '/icons/icon-192.png',
+        /* Y EL BADGE ES UNA SILUETA, NO EL LOGO. Android lo usa de MÁSCARA: se
+           queda con el canal alfa y lo pinta de blanco. `icon-192.png` es el
+           cuadrado dorado lleno (97 % de sus píxeles son opacos), así que esa
+           máscara daba un CUADRADO BLANCO SÓLIDO en la barra de estado —o un
+           círculo, según el teléfono—. `badge-96.png` lleva solo el símbolo en
+           blanco sobre transparente. */
+        badge: '/icons/badge-96.png',
         data: { url: data.url || '/dashboard' },
         vibrate: [200, 100, 200],
         // Con `tag`, diez «Pago registrado» seguidos ocupan UN sitio en la
@@ -570,8 +581,8 @@ async function notificarResultadoSync({ pagos, mutaciones, fallidos, conflictos 
     }
     await self.registration.showNotification(title, {
       body,
-      icon: '/logo-icon.svg',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/icon-192.png',   // PNG: el SVG no se pinta en Android
+      badge: '/icons/badge-96.png',  // silueta blanca; ver la nota del push
       tag: 'cf-sync-result',
       renotify: false,
       data: { url },

@@ -777,6 +777,11 @@ export async function GET(request) {
       interesGanadoHoy,
       capitalRecuperadoHoy,
       sparkline7d,
+      /* CUÁNTOS cobros hubo cada día, no solo cuánto. Sale del MISMO bucle que
+         `sparkline7d` —coste cero— y hasta hoy solo viajaba con `?detalle=1`,
+         dentro del resumen del día. Lo pide la barra tocada del Inicio: «$228.400»
+         a secas no dice si fue un pago grande o quince pequeños. */
+      cobros7d,
     },
     rutas: {
       activas: rutasActivas ?? 0,

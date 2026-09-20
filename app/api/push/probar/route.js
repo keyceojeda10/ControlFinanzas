@@ -34,7 +34,7 @@ export async function POST(request) {
   const carga = JSON.stringify({
     title: 'Notificación de prueba',
     body: 'Si estás leyendo esto en la pantalla de tu teléfono, las notificaciones funcionan.',
-    url: '/configuracion?seccion=avisos', icon: '/logo-icon.svg', tag: 'prueba',
+    url: '/configuracion?seccion=avisos', tag: 'prueba',  // el icono lo pone lib/push.js: PNG, no SVG
   })
 
   const dispositivos = await Promise.all(subs.map(async (sub) => {

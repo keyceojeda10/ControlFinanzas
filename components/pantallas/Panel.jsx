@@ -175,7 +175,7 @@ function RotuloBloque({ texto, apunte }) {
 }
 
 function Hero({
-  recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt,
+  recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, cobrosSemana, fmt,
   faltan, enMora = 0, promedio7d, esperadoCrudo, fecha, sinCobrosHoy = false,
 }) {
   /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
@@ -209,6 +209,16 @@ function Hero({
      misma comparación con la que se pintan, y no a ojo. */
   const cumplieron = esperadoCrudo
     ? barras.filter((n) => n >= esperadoCrudo).length
+    : null
+
+  /* Lo que dice la barra tocada, además de la cifra. El promedio se saca de los
+     días CON cobro: metiendo los domingos y festivos en la media, cualquier día
+     laborable sale «por encima del promedio» y la comparación no informa. */
+  const cobrosDelDia = diaAbierto != null ? (cobrosSemana?.[diaAbierto] ?? null) : null
+  const conCobro = barras.filter((n) => n > 0)
+  const mediaConCobro = conCobro.length > 0 ? conCobro.reduce((a, n) => a + n, 0) / conCobro.length : null
+  const difConPromedio = diaAbierto != null && mediaConCobro
+    ? barras[diaAbierto] - mediaConCobro
     : null
 
   /* La tira de cifras. Tres en móvil, cinco en escritorio, y NI UNA MÁS: es un
@@ -438,7 +448,14 @@ function Hero({
 
             Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
             misma comparación con la que se pintan. */}
-        {cumplieron != null && (
+        {/* ⚠ LA BARRA TOCADA NO DEPENDE DE QUE HOY TOQUE COBRAR.
+            Esta frase vivía DENTRO de `cumplieron != null`, y `cumplieron` es
+            `null` cuando no hay meta —un domingo, un festivo, un negocio sin
+            cuotas para hoy—. Resultado: el domingo se tocaba una barra, el
+            recuadro de selección aparecía y NO SALÍA NADA. Reportado el 20 sep
+            2026, en domingo, con la foto del Inicio. El cero otra vez: lo que se
+            cobró el jueves no deja de existir porque hoy no toque cobrar. */}
+        {(diaAbierto != null || cumplieron != null) && (
           <p suppressHydrationWarning style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo, marginTop: 'auto' }}>
             {diaAbierto != null ? (
               /* Con una barra tocada, la frase habla de ESE día. Es el sitio
@@ -448,9 +465,21 @@ function Hero({
                 <b style={{ color: BLOQUE.tinta }}>{dias[diaAbierto] ?? 'Ese día'}</b>
                 {': '}
                 <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(barras[diaAbierto]) : barras[diaAbierto]}</b>
+                {/* En cuántos cobros: «$228.400» a secas no dice si fue un pago
+                    grande o quince pequeños, y es la primera pregunta del dueño
+                    al ver un día flojo. El día sin un solo cobro lo dice con
+                    todas las letras: un hueco se lee como un fallo de la app. */}
+                {cobrosDelDia != null && (cobrosDelDia > 0
+                  ? <> en {cobrosDelDia} cobro{cobrosDelDia === 1 ? '' : 's'}</>
+                  : <> — no entró plata ese día</>)}
+                {/* Contra la meta si ese día tenía; si no, contra el promedio de
+                    la semana, que es la única referencia que queda. */}
                 {esperadoCrudo ? (barras[diaAbierto] >= esperadoCrudo
-                  ? <> — cobraste todo lo que tocaba.</>
-                  : <> — te faltaron {fmt ? fmt(esperadoCrudo - barras[diaAbierto]) : (esperadoCrudo - barras[diaAbierto])}.</>) : null}
+                  ? <>. Cobraste todo lo que tocaba.</>
+                  : <>. Te faltaron {fmt ? fmt(esperadoCrudo - barras[diaAbierto]) : (esperadoCrudo - barras[diaAbierto])}.</>)
+                  : (difConPromedio != null && cobrosDelDia > 0
+                    ? <>, {difConPromedio > 0 ? 'por encima' : 'por debajo'} del promedio.</>
+                    : <>.</>)}
               </>
             ) : (
               <>
