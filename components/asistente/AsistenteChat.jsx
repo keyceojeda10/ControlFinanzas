@@ -26,21 +26,24 @@ const SUGERENCIAS_DEFAULT = [
   '¿Tengo capital disponible para prestar más?',
 ]
 
-// Lo que Lucas PUEDE HACER, no lo que puede contestar. Fijas a proposito: son
-// las capacidades del asistente, no dependen de la cartera. La cifra real —«los
-// 13 en mora»— se le pega abajo cuando existe: sin ella es una promesa, con
-// ella es una tarea a medio hacer.
+/* LO QUE LUCAS PUEDE HACER DE VERDAD — una fila por herramienta que TIENE.
+ *
+ * Aquí se ofrecía «Mándale un recordatorio a los 13 en mora» (destacada, la
+ * primera) y «Ármame el reporte del mes». Lucas no tiene herramienta para
+ * ninguna de las dos: no manda mensajes y no arma reportes. El que tocaba la
+ * fila recibía una disculpa o, peor, un «listo» de un modelo que no había hecho
+ * nada. Una pantalla vacía que promete lo que no hay es peor que una vacía.
+ *
+ * La lista sale de `lib/asistente-tools.js`. Si se le da una herramienta nueva,
+ * se añade aquí; si no la tiene, no se ofrece. Lo vigila una prueba. */
 const ACCIONES_BASE = [
-  { texto: 'Mándale un recordatorio a los que deben', icono: 'whatsapp' },
-  { texto: 'Ármame el reporte del mes', icono: 'reporte' },
-  { texto: 'Búscame un cliente por nombre o cédula', icono: 'gente' },
+  { texto: 'Regístrame un pago', icono: 'plata' },
+  { texto: 'Créame un cliente nuevo y su préstamo', icono: 'gente' },
+  { texto: 'Anótame un gasto', icono: 'reporte' },
 ]
 
-function generarAcciones(alertas) {
-  const n = alertas?.clientesMora ?? 0
-  return ACCIONES_BASE.map((a, i) => (i === 0 && n > 0
-    ? { ...a, texto: `Mándale un recordatorio a los ${n} en mora` }
-    : a))
+function generarAcciones() {
+  return ACCIONES_BASE
 }
 
 function generarSugerencias(alertas) {

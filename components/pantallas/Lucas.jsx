@@ -171,7 +171,7 @@ function Grupo({ children }) {
 
 export function Vacio({
   titulo = 'Pregúntame lo que sea de tu negocio',
-  ayuda = 'O pídeme que haga algo: buscar un cliente, armar un reporte, mandar un recordatorio.',
+  ayuda = 'O pídeme que haga algo: registrar un pago, crear un cliente o un préstamo, anotar un gasto.',
   preguntas = [], acciones = [], onElegir,
 }) {
   return (
@@ -201,8 +201,7 @@ export function Vacio({
       <span style={{ height: 4, flex: 'none' }} />
       <Rotulo>Cosas que puedo hacer por ti</Rotulo>
       <Grupo>
-        {/* La cifra real ("los 13 en mora") es lo que enseña la capacidad. Sin
-            ella es una promesa; con ella es una tarea a medio hacer. */}
+        {/* Solo lo que Lucas tiene herramienta para hacer. Ver ACCIONES_BASE. */}
         {acciones.map((a, i) => (
           <FilaSugerencia key={a.texto} icono={ICO[a.icono] ?? ICO.reporte} texto={a.texto}
             whatsapp={a.icono === 'whatsapp'} destacada={i === 0} primera={i === 0}
