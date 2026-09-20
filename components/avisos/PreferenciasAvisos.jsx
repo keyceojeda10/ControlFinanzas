@@ -175,8 +175,9 @@ export default function PreferenciasAvisos() {
         <Tarjeta>
           <span style={rotulo}>El resumen del día</span>
           <span style={{ fontSize: 13, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
-            Un solo aviso con lo que entró, lo que prestaste, quién se atrasó y quién no ha cerrado caja.
-            Los días sin movimiento no se manda.
+            A la hora que elijas se abre tu resumen del día: cuánto entró, cuánto fue ganancia, cuánto
+            prestaste y cómo quedó tu negocio. Si tienes la app cerrada, te llega como notificación.
+            Los días sin movimiento no sale.
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
             {[...HORAS_RESUMEN, null].map((h) => {
@@ -192,6 +193,11 @@ export default function PreferenciasAvisos() {
               )
             })}
           </div>
+          <button type="button" onClick={() => window.dispatchEvent(new Event('cf:ver-resumen-del-dia'))} style={{
+            height: 44, borderRadius: 'var(--cf-r-control)', cursor: 'pointer', font: 'inherit',
+            background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+            fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)',
+          }}>Ver el resumen de hoy ahora</button>
         </Tarjeta>
       )}
 

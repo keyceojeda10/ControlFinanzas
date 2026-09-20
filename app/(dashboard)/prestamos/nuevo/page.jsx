@@ -102,10 +102,10 @@ const guardarModoPreferido = (m) => { try { localStorage.setItem(KEY_MODO_PREFER
 const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }) => (
   <div
     className="rounded-[20px] p-4"
-    style={{
-      background: `linear-gradient(135deg, color-mix(in srgb, ${color} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-      border: '1px solid var(--cf-border)',
-    }}
+    /* PLANA. Llevaba un degradado del color de la sección y el dueño (20 sep
+       2026): «sigo viendo ese degradé; no es que se vea mal, pero es que ya no se
+       usa». El color se queda donde informa: en el icono. */
+    style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
   >
     <div className="flex items-center justify-between gap-2 mb-3">
       <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }
         >
           <span className="w-3.5 h-3.5">{icon}</span>
         </div>
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color }}>
+        <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>
           {title}
         </p>
       </div>
@@ -124,27 +124,49 @@ const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }
   </div>
 )
 
-function EditableRow({ label, value, pencil, editor, valueColor }) {
+/* ── EL RENGLÓN QUE SE EDITA ──
+   El dueño, 20 sep 2026: «que sea evidente que se puede editar cada slot… números
+   más grandes, más detallados y mejor distribuidos». El lápiz era un icono de
+   12px al 40 % de opacidad: no se leía como un botón. Ahora es una pastilla con
+   su fondo, el renglón entero se toca (48px de alto), y la cifra va a 16px. */
+function EditableRow({ label, value, editor, valueColor }) {
   const [editing, setEditing] = useState(false)
   return (
-    <div className="py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--cf-border) 50%, transparent)' }}>
+    <div className="border-b" style={{ borderColor: 'var(--cf-hairline)' }}>
       {editing ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
-            <button type="button" onClick={() => setEditing(false)} className="text-[10px] font-semibold px-2 py-0.5 rounded-md" style={{ color: 'var(--cf-green-dark)', background: 'color-mix(in srgb, var(--cf-green-dark) 12%, transparent)' }}>OK</button>
+        <div className="space-y-2 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[14px] font-semibold" style={{ color: 'var(--cf-ink)' }}>{label}</span>
+            <button type="button" onClick={() => setEditing(false)}
+              className="h-8 px-3.5 rounded-full text-[13px] font-bold"
+              style={{ color: 'var(--cf-card)', background: 'var(--cf-ink)' }}>Listo</button>
           </div>
           {editor}
         </div>
       ) : (
-        <button type="button" onClick={() => setEditing(true)} className="flex justify-between items-center w-full text-left group">
-          <span className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
-          <span className="flex items-center gap-1.5">
-            <span className="font-semibold text-sm" style={{ color: valueColor || 'var(--cf-ink)' }}>{value}</span>
-            <span className="opacity-40 group-hover:opacity-100 transition-opacity">{pencil}</span>
+        <button type="button" onClick={() => setEditing(true)} aria-label={`Cambiar ${label}`}
+          className="flex justify-between items-center gap-3 w-full text-left min-h-[48px] py-2">
+          <span className="text-[14px]" style={{ color: 'var(--cf-ink-3)' }}>{label}</span>
+          <span className="flex items-center gap-2.5 min-w-0">
+            <span className="font-semibold text-[16px] text-right" style={{ color: valueColor || 'var(--cf-ink)' }}>{value}</span>
+            <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-full shrink-0"
+              style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink-2)' }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
+            </span>
           </span>
         </button>
       )}
+    </div>
+  )
+}
+
+/** Una cifra calculada del resumen: rótulo pequeño y cifra grande. No se edita. */
+function CifraResumen({ rotulo, valor, tam = 22, color = 'var(--cf-ink)', pie }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-[.08em]" style={{ color: 'var(--cf-ink-3)' }}>{rotulo}</p>
+      <p className="cf-fig mt-1" style={{ fontSize: tam, lineHeight: 1, letterSpacing: '-.025em', color, whiteSpace: 'nowrap' }}>{valor}</p>
+      {pie && <p className="text-[12px] mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>{pie}</p>}
     </div>
   )
 }
@@ -1701,7 +1723,15 @@ function NuevoPrestamo() {
                       className="cf-campo-grande bg-transparent border-0 outline-none w-[66px] text-[30px] font-semibold tracking-[-.02em]"
                       style={{ color: 'var(--cf-ink)' }}
                     />
-                    <span className="text-[13.5px] flex-1 min-w-0 truncate" style={{ color: 'var(--cf-ink-3)' }}>
+                    {/* ⚠ «12 DÍAS» EN UN PRÉSTAMO SEMANAL (el dueño, 20 sep 2026, iPhone).
+                        El dato está bien —debajo decía «por 12 semanas» y el DOM
+                        dice «semanas»: comprobado en Chromium por su mismo camino—.
+                        Es el fallo de WebKit de `bug_webkit_texto_encima_del_viejo`:
+                        al cambiar el texto de un nodo no repinta y se queda el
+                        rótulo anterior. El `key` obliga a React a tirar el nodo y
+                        crear otro: si el nodo es nuevo, no hay nada viejo que
+                        arrastrar. Sin `truncate`: recortaba y no hacía falta. */}
+                    <span key={`unidad-${frecuencia}`} className="text-[14px] flex-1 min-w-0" style={{ color: 'var(--cf-ink-3)' }}>
                       {UNIDAD_PLAZO[frecuencia]}
                     </span>
                     {/* Sumar y restar de uno en uno: el plazo se afina, no se
@@ -2061,23 +2091,19 @@ function NuevoPrestamo() {
                 const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
-                  <div className="rounded-2xl overflow-hidden"
-                    style={{ border: '1px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
-                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 8%, var(--cf-card)), var(--cf-card))' }}>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-green-dark)' }}>Resumen del préstamo</p>
-                      <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Toca para editar</span>
+                  /* SIN BORDE NI DEGRADADO VERDES: «eso ya no se usa en la
+                     aplicación». Tarjeta plana, las dos cifras que importan en
+                     grande, y cada renglón con su pastilla de editar. */
+                  <div className="rounded-[20px] overflow-hidden" style={{ border: '1px solid var(--cf-border)', background: 'var(--cf-card)' }}>
+                    <div className="px-4 pt-4 flex items-baseline justify-between gap-3">
+                      <p className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>Resumen del préstamo</p>
+                      <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>Toca un renglón para cambiarlo</span>
                     </div>
-                    <div className="px-4 py-2" style={{ background: 'var(--cf-card)' }}>
+                    <div className="px-4 pb-3 pt-4">
                       {/* Cuota + Total — calculados, no editables */}
-                      <div className="grid grid-cols-2 gap-3 pb-2 mb-1" style={{ borderBottom: '2px solid color-mix(in srgb, var(--cf-green-dark) 20%, var(--cf-border))' }}>
-                        <div>
-                          <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Cuota {labelFreq}</p>
-                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(calculo.cuotaDiaria)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</p>
-                          <p className="text-lg font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>{formatMoney(totalConSeguro)}</p>
-                        </div>
+                      <div className="grid grid-cols-2 gap-4 pb-4 mb-1" style={{ borderBottom: '1px solid var(--cf-border)' }}>
+                        <CifraResumen rotulo={`Cuota ${labelFreq}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
+                        <CifraResumen rotulo="Total a pagar" valor={formatMoney(totalConSeguro)} tam={26} />
                       </div>
 
                       {/* Editables */}
@@ -2086,7 +2112,7 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} valueColor="var(--cf-gold)" pencil={pencil}
+                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
@@ -2198,28 +2224,21 @@ function NuevoPrestamo() {
                       />
 
                       {/* Info calculada — read only */}
-                      <div className="space-y-0 mt-1 pt-1" style={{ borderTop: '1px dashed color-mix(in srgb, var(--cf-border) 70%, transparent)' }}>
+                      <div className="space-y-0 mt-2 pt-3" style={{ borderTop: '1px solid var(--cf-border)' }}>
                         {/* ⚠ EN UN ABIERTO NO HAY «COBROS TOTALES» NI GANANCIA
                             TOTAL: no se sabe cuántos meses va a durar. Decir «6
                             cobros» y «$0 (0%)» son dos cifras inventadas sobre
                             un préstamo que puede durar años. Lo que sí se sabe
                             —y es lo que gana— es el interés de cada cobro. */}
                         {esAbierto ? (
-                          <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganas cada cobro</span>
-                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
-                              {formatMoney(Math.round(calculo?.cuotaDiaria || 0))}
-                            </span>
+                          <div className="pb-2">
+                            <CifraResumen rotulo="Ganas cada cobro" valor={formatMoney(Math.round(calculo?.cuotaDiaria || 0))} color="var(--cf-green-dark)" />
                           </div>
                         ) : (
                           <>
-                            <div className="flex items-center justify-between py-1.5">
-                              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Cobros totales</span>
-                              <span className="text-xs font-semibold" style={{ color: 'var(--cf-ink)' }}>{cobrosTotales}</span>
-                            </div>
-                            <div className="flex items-center justify-between py-1.5">
-                              <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
-                              <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(ganancia)} ({pctGanancia}%)</span>
+                            <div className="grid grid-cols-2 gap-4 pb-2">
+                              <CifraResumen rotulo="Tu ganancia" valor={formatMoney(ganancia)} color="var(--cf-green-dark)" pie={`${pctGanancia}% sobre lo prestado`} />
+                              <CifraResumen rotulo="Cobros" valor={String(cobrosTotales)} pie={`${cobrosTotales === 1 ? 'un solo cobro' : `en ${cobrosTotales} cuotas`}`} />
                             </div>
                           </>
                         )}
@@ -2276,9 +2295,9 @@ function NuevoPrestamo() {
             >
               <div className="space-y-0 text-sm">
                 {/* Cliente — no editable */}
-                <div className="flex justify-between py-2 border-b" style={{ borderColor: 'color-mix(in srgb, var(--cf-border) 50%, transparent)' }}>
-                  <span style={{ color: 'var(--cf-ink-3)' }}>Cliente</span>
-                  <span className="font-semibold">{clienteSeleccionado?.nombre}</span>
+                <div className="flex justify-between items-center gap-3 min-h-[48px] py-2 border-b" style={{ borderColor: 'var(--cf-hairline)' }}>
+                  <span className="text-[14px]" style={{ color: 'var(--cf-ink-3)' }}>Cliente</span>
+                  <span className="font-semibold text-[16px] text-right [overflow-wrap:anywhere]" style={{ color: 'var(--cf-ink)' }}>{clienteSeleccionado?.nombre}</span>
                 </div>
 
                 {/* Monto — editable */}
@@ -2383,30 +2402,23 @@ function NuevoPrestamo() {
                   />
                 )}
 
-                {/* Calculados — read only */}
-                <div className="pt-2 mt-1 space-y-2" style={{ borderTop: '2px solid color-mix(in srgb, var(--cf-green-dark) 25%, var(--cf-border))' }}>
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--cf-ink-3)' }}>Cuota {frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}</span>
-                    <span className="font-bold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.cuotaDiaria)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</span>
-                    <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold)' }}>{formatMoney(calculo.totalAPagar)}</span>
+                {/* Calculados — no se editan. EN GRANDE: es lo último que se lee
+                    antes de entregar la plata. La cuota ya no va en verde —verde
+                    es «pagado»— ni el total en dorado: el dorado de esta pantalla
+                    es el botón de entregar. Verde solo la ganancia. */}
+                <div className="pt-4 mt-2 space-y-4" style={{ borderTop: '1px solid var(--cf-border)' }}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <CifraResumen rotulo={`Cuota ${frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
+                    <CifraResumen rotulo="Total a pagar" valor={formatMoney(calculo.totalAPagar)} tam={26} />
                   </div>
                   {calculo.totalInteres > 0 && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--cf-ink-3)' }}>Ganancia</span>
-                      <span className="font-semibold font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(calculo.totalInteres)}</span>
-                      {/* Lo último que se lee antes de confirmar. Si el modo
-                      multiplica el interés por el número de cobros, aquí es
-                      donde tiene que verse. */}
-                  <AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
-                    { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />
-                </div>
+                    <CifraResumen rotulo="Tu ganancia" valor={formatMoney(calculo.totalInteres)} color="var(--cf-green-dark)"
+                      pie={Number(monto) > 0 ? `${Math.round((calculo.totalInteres / Number(monto)) * 100)}% sobre lo prestado` : null} />
                   )}
                   {/* Lo último que se lee antes de confirmar. Si el modo
                       multiplica el interés por el número de cobros, aquí es
-                      donde tiene que verse. */}
+                      donde tiene que verse. UNA vez: salía dos, una de ellas
+                      metida dentro del renglón de la ganancia. */}
                   <AvisoPorCobro aviso={avisoDelPorcentaje(modoInteres, calculo,
                     { monto: Number(monto) || 0, tasa: Number(tasa) || 0 })} />
                 </div>

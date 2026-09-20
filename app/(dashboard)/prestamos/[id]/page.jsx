@@ -3301,8 +3301,17 @@ function AccionesDelCobro({ titulo, detalle, children }) {
           {detalle && <span className="cf-num text-[13px] text-[var(--cf-ink-3)] leading-tight mt-0.5">{detalle}</span>}
         </span>
       </div>
-      <div className="flex gap-2 flex-1 basis-[280px] lg:flex-none lg:basis-auto lg:w-[430px]">
-        {botones.map((b, i) => <div key={i} className="flex-1 min-w-0 flex">{b}</div>)}
+      {/* ⚠ EN EL TELÉFONO «IMPRIMIR» SE SALÍA DE LA CAJA Y EL ICONO DE WHATSAPP
+          SE QUEDABA DIMINUTO (el dueño, 20 sep 2026). Los tres botones traen su
+          relleno de botón suelto (`px-4`) y `min-width: auto`: en 340px no caben,
+          así que el último desbordaba y el SVG —que sí puede encogerse— pagaba
+          la diferencia. Aquí dentro: pueden encogerse, llevan menos relleno y el
+          icono NO se encoge. `w-full` para que la fila nunca pase del ancho de
+          la tarjeta. */}
+      <div className="flex gap-2 w-full min-w-0 lg:w-[430px] lg:flex-none">
+        {botones.map((b, i) => (
+          <div key={i} className="flex-1 min-w-0 flex [&>button]:min-w-0 [&>button]:w-full [&>button]:px-2 [&>button]:gap-1.5 [&>button]:text-[13px] [&_svg]:shrink-0 [&_svg]:w-[17px] [&_svg]:h-[17px]">{b}</div>
+        ))}
       </div>
     </div>
   )

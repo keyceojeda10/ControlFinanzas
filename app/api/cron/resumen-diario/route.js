@@ -133,7 +133,8 @@ export async function POST(req) {
 
       const { avisados } = await notificar({
         organizationId, para, tipo: 'resumen_dia', ...texto,
-        href: '/dashboard', datos: { fecha, cobrado, cobros },
+        // `?resumen=1`: al tocar la notificación se abre la pantalla del resumen.
+        href: '/dashboard?resumen=1', datos: { fecha, cobrado, cobros },
       })
       res.enviados += avisados
     } catch (e) {

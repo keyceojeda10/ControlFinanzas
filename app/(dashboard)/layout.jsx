@@ -24,6 +24,7 @@ import UbicacionProvider from '@/components/providers/UbicacionProvider'
 import SesionTracker from '@/components/providers/SesionTracker'
 import { AccionesProvider } from '@/components/acciones/AccionesProvider'
 import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
+import ResumenDelDiaAuto from '@/components/cf/ResumenDelDiaAuto'
 import { selectCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
@@ -155,6 +156,9 @@ export default async function DashboardLayout({ children }) {
           <PageWrapper>{children}</PageWrapper>
         </main>
       </div>
+
+      {/* «Tu resumen del día»: sale solo a la hora que el dueño eligió. */}
+      <ResumenDelDiaAuto />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
