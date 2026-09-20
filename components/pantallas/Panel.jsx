@@ -176,7 +176,7 @@ function RotuloBloque({ texto, apunte }) {
 
 function Hero({
   recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, fmt,
-  faltan, enMora = 0, promedio7d, esperadoCrudo, fecha,
+  faltan, enMora = 0, promedio7d, esperadoCrudo, fecha, sinCobrosHoy = false,
 }) {
   /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
      fila de debajo. En un EFECTO porque dependen del reloj del navegador; el
@@ -252,18 +252,27 @@ function Hero({
           <span className="cf-fig text-[34px] lg:text-[40px]" style={{
             letterSpacing: '-.035em', color: BLOQUE.tinta, lineHeight: 1,
           }}>{recaudado}</span>
-          {meta && (
+          {meta ? (
             <span className="cf-num text-[12px] lg:text-[14px]" style={{
               color: BLOQUE.apagado, paddingBottom: 2,
             }}>de {meta} que toca cobrar</span>
-          )}
+          ) : sinCobrosHoy ? (
+            /* ── UN DÍA SIN COBRO NO ES UN DÍA MALO ──
+               Desde que el día cerrado corre la cuota al siguiente día cobrable,
+               un domingo en un negocio que no cobra domingos tiene meta $0 — y
+               una barra al 0 % sin explicación se lee como «vas fatal». El cero
+               es un dato, así que se queda y se dice POR QUÉ. */
+            <span className="cf-num text-[12px] lg:text-[14px]" style={{
+              color: BLOQUE.apagado, paddingBottom: 2,
+            }}>hoy no toca cobrarle a nadie</span>
+          ) : null}
         </div>
 
         {/* ── LA BARRA, CON SU PORCENTAJE AL FINAL ──
             El % estaba DOS VECES: una pastilla arriba a la derecha y esta barra,
             diciendo lo mismo sin conexión visual entre las dos. Al final de la
             barra deja de ser un dato duplicado y pasa a ser su etiqueta. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, opacity: sinCobrosHoy ? 0.45 : 1 }}>
           <span style={{
             flex: 1, height: 11, borderRadius: 999, overflow: 'hidden',
             background: BLOQUE.pista,
