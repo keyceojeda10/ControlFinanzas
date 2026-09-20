@@ -297,6 +297,14 @@ model User {
 
   organization      Organization?      @relation(fields: [organizationId], references: [id])
   rutas             Ruta[]             @relation("CobradorRuta")
+  /* ══ QUÉ AVISOS QUIERE RECIBIR ═══════════════════════════════════════════════
+   * JSON, por usuario: `{ grupos: { mora: false, … }, resumenHora: 19 }`. `null`
+   * = todo encendido y resumen a las 19:00. Lo lee `lib/notificar.js`; la forma
+   * y los valores por defecto viven en `lib/avisos-preferencias.js`, no aquí.
+   * (19 sep 2026: la campana tenía un solo interruptor global, y estaba
+   * escondido bajo la pestaña «Avisos por WhatsApp».) */
+  prefsAvisos       Json?
+
   pagos             Pago[]
   cierresCaja       CierreCaja[]
   reaperturasCaja   CierreCaja[]       @relation("ReaperturaCierreCaja")

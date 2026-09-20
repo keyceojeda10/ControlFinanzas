@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
-import { enviarPush } from '@/lib/push'
+import { notificar, plata } from '@/lib/notificar'
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -43,11 +43,12 @@ export async function POST(request, { params }) {
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
-  enviarPush(prestamo.creadoPorId, {
-    title: 'Préstamo rechazado',
-    body: `Tu préstamo a ${prestamo.cliente.nombre} por $${Number(prestamo.montoPrestado).toLocaleString('es-CO')} fue rechazado.${motivo ? ` Motivo: ${motivo}` : ''}`,
-    url: '/prestamos',
-  }).catch(() => {})
+  notificar({
+    organizationId, para: prestamo.creadoPorId, tipo: 'prestamo_rechazado',
+    titulo: 'No te aprobaron el préstamo',
+    mensaje: `El de ${plata(prestamo.montoPrestado)} a ${prestamo.cliente.nombre}.${motivo ? ` Motivo: ${motivo}` : ''}`,
+    href: '/prestamos',
+  })
 
   return Response.json({ ok: true })
 }

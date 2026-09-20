@@ -31,6 +31,7 @@ import { getCountryList, COUNTRIES } from '@/lib/countries'
 import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 import { puedeRetroceder } from '@/lib/armazon'
+import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1285,114 +1286,6 @@ function TabReferidos() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// TAB: NOTIFICACIONES
-// ══════════════════════════════════════════════════════════════
-function TabNotificaciones() {
-  const [status, setStatus] = useState('loading') // loading, unsupported, denied, subscribed, unsubscribed
-  const [working, setWorking] = useState(false)
-
-  useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setStatus('unsupported')
-      return
-    }
-    if (Notification.permission === 'denied') { setStatus('denied'); return }
-
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const sub = await reg.pushManager.getSubscription()
-      setStatus(sub ? 'subscribed' : 'unsubscribed')
-    })
-  }, [])
-
-  const toggle = async () => {
-    setWorking(true)
-    try {
-      if (status === 'subscribed') {
-        const reg = await navigator.serviceWorker.ready
-        const sub = await reg.pushManager.getSubscription()
-        if (sub) {
-          await fetch('/api/push/unsubscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
-          })
-          await sub.unsubscribe()
-        }
-        setStatus('unsubscribed')
-      } else {
-        const permission = await Notification.requestPermission()
-        if (permission !== 'granted') { setStatus('denied'); setWorking(false); return }
-
-        const reg = await navigator.serviceWorker.ready
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-        if (!vapidKey) { setWorking(false); return }
-
-        const padding = '='.repeat((4 - (vapidKey.length % 4)) % 4)
-        const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/')
-        const raw = atob(base64)
-        const arr = new Uint8Array(raw.length)
-        for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
-
-        const subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: arr,
-        })
-        const { endpoint, keys } = subscription.toJSON()
-        await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint, keys }),
-        })
-        setStatus('subscribed')
-      }
-    } catch (err) {
-      console.error('[push] Error:', err)
-    }
-    setWorking(false)
-  }
-
-  return (
-    <Card>
-      <div className="p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-white">Notificaciones push</h2>
-        <p className="text-xs text-[var(--cf-ink-3)]">
-          Recibe alertas cuando un cobrador registra pagos, clientes entran en mora o tu suscripción está por vencer.
-        </p>
-
-        {status === 'unsupported' && (
-          <p className="text-xs text-[var(--cf-gold-dark)] bg-[rgba(245,158,11,0.1)] border border-[rgba(245,158,11,0.2)] rounded-lg px-3 py-2">
-            Tu navegador no soporta notificaciones push. Usa Chrome, Edge o Firefox.
-          </p>
-        )}
-
-        {status === 'denied' && (
-          <p className="text-xs text-[var(--cf-red-dark)] bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] rounded-lg px-3 py-2">
-            Las notificaciones fueron bloqueadas. Habilítalas desde la configuración de tu navegador.
-          </p>
-        )}
-
-        {(status === 'subscribed' || status === 'unsubscribed') && (
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-white">{status === 'subscribed' ? 'Activadas' : 'Desactivadas'}</p>
-              <p className="text-[10px] text-[var(--cf-ink-3)]">{status === 'subscribed' ? 'Recibirás notificaciones push' : 'No recibirás notificaciones'}</p>
-            </div>
-            <Toggle checked={status === 'subscribed'} onChange={toggle} disabled={working} />
-          </div>
-        )}
-
-        {status === 'loading' && (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-[var(--cf-border)] border-t-[var(--cf-gold)] rounded-full animate-spin" />
-            <span className="text-xs text-[var(--cf-ink-3)]">Verificando...</span>
-          </div>
-        )}
-      </div>
-    </Card>
-  )
-}
-
-// ══════════════════════════════════════════════════════════════
 // PÁGINA PRINCIPAL
 // ══════════════════════════════════════════════════════════════
 function ConfiguracionContent() {
@@ -1631,13 +1524,11 @@ function ConfiguracionContent() {
           ? <TabOrganizacion bloques={['portal']} />
           : <Remite nombre="Portal del cliente" nota="Lo que ve tu cliente cuando entra con su cédula." destino="/configuracion" accion="Solo el administrador" />
 
+      case 'avisos':
+        return <PreferenciasAvisos />
+
       case 'whatsapp':
-        return (
-          <>
-            <TabNotificaciones />
-            {esOwner && <TabOrganizacion bloques={['whatsapp']} />}
-          </>
-        )
+        return esOwner ? <TabOrganizacion bloques={['whatsapp']} /> : null
 
       // Tampoco es un remite: la zona de peligro estaba al final de «Tu negocio»,
       // debajo de todo lo demas, que es el peor sitio para poner lo irreversible.

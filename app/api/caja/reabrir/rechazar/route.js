@@ -7,7 +7,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { esId }             from '@/lib/ids'
 import { logActividad } from '@/lib/activity-log'
-import { enviarPush } from '@/lib/push'
+import { notificar } from '@/lib/notificar'
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
@@ -41,11 +41,12 @@ export async function POST(request) {
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
-  enviarPush(cierre.cobradorId, {
-    title: 'Reapertura de caja rechazada',
-    body: `${session.user.nombre} no aprobó la reapertura de tu caja de hoy.`,
-    url: '/caja',
-  }).catch(() => {})
+  notificar({
+    organizationId, para: cierre.cobradorId, tipo: 'reapertura_rechazada',
+    titulo: 'No se reabrió tu caja',
+    mensaje: `${session.user.nombre} no aprobó la reapertura de tu caja.`,
+    href: '/caja', datos: { cierreId: cierre.id },
+  })
 
   return Response.json(cierreActualizado, { status: 200 })
 }

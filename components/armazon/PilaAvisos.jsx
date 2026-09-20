@@ -103,19 +103,37 @@ export default function PilaAvisos({ children, onVerTodos }) {
      notificaciones». Manda el dueño, que quiere el atraso en la campana y
      guardado. Lo del panel no se quita: sigue estando, y ahora además se abre. */
   const [guardados, setGuardados] = useState([])
+  /* ══ LO QUE ESPERA UNA DECISIÓN ═══════════════════════════════════════════
+     Préstamos por aprobar, reaperturas de caja, gastos. No es «algo que pasó»:
+     es un cobrador parado esperando. Va arriba del todo, con sus botones, y
+     cuenta en la campana igual que un aviso sin leer. Ver `Pendientes.jsx`. */
+  const [pendientes, setPendientes] = useState([])
+  const traerRef = useRef(() => {})
   useEffect(() => {
     let vivo = true
     const traer = () => {
-      // Los mismos avisos los pide `NotificationsCenter`, que además está
-      // montado dos veces (cabecera y barra lateral). Compartido: una petición.
+      olvidarCompartido('/api/notificaciones')
       pedirCompartido('/api/notificaciones', { cache: 'no-store' })
         .then((d) => { if (vivo && Array.isArray(d)) setGuardados(d) })
+      fetch('/api/notificaciones/pendientes', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (vivo && Array.isArray(d?.pendientes)) setPendientes(d.pendientes) })
+        .catch(() => {})
     }
+    traerRef.current = traer
     traer()
-    // Al volver a la pestaña, no cada minuto: el cron corre una vez al día.
+    // Al volver a la pestaña, y cuando el service worker avisa de que acaba de
+    // llegar un push con la app abierta: sin esto la campana no se encendía
+    // hasta recargar.
     const alVolver = () => { if (document.visibilityState === 'visible') traer() }
+    const delSW = (e) => { if (e.data?.tipo === 'cf:aviso-nuevo') traer() }
     document.addEventListener('visibilitychange', alVolver)
-    return () => { vivo = false; document.removeEventListener('visibilitychange', alVolver) }
+    navigator.serviceWorker?.addEventListener?.('message', delSW)
+    return () => {
+      vivo = false
+      document.removeEventListener('visibilitychange', alVolver)
+      navigator.serviceWorker?.removeEventListener?.('message', delSW)
+    }
   }, [])
 
   const marcarLeida = (id) => {
@@ -177,7 +195,8 @@ export default function PilaAvisos({ children, onVerTodos }) {
   // sin montar un contexto por encima de todo. Es un canal global, con lo que
   // eso tiene de flojo; a cambio, no obliga a envolver el layout entero.
   useEffect(() => {
-    const abrir = () => setHoja(true)
+    // Al abrir se vuelve a preguntar: la campana puede llevar horas montada.
+    const abrir = () => { setHoja(true); traerRef.current() }
     window.addEventListener('cf:abrir-avisos', abrir)
     return () => window.removeEventListener('cf:abrir-avisos', abrir)
   }, [])
@@ -217,8 +236,21 @@ export default function PilaAvisos({ children, onVerTodos }) {
   // Reportado por el usuario: «la campanita notifica y al abrir no hay nada».
   // Y lo guardado sin leer cuenta igual: es justo lo que la app no te está
   // enseñando. Sin sumarlo, un atraso nuevo llegaría sin que nada se encienda.
-  const sinLeer = guardados.filter((n) => !n.leida).length
-  const cuantos = perdedores.length + sinLeer
+  /* UNA SOLICITUD NO SALE DOS VECES. Mientras espera respuesta está ARRIBA, con
+     sus botones; su fila guardada («Gasto por aprobar») diría lo mismo debajo y
+     contaría doble en la campana. Se esconde hasta que se resuelve, y entonces
+     queda como lo que es: el registro de que pasó. */
+  const clavesPendientes = new Set(pendientes.map((x) => x.clave))
+  const guardadosVisibles = guardados.filter((n) => {
+    try {
+      const d = JSON.parse(n.datos || '{}')
+      return !(clavesPendientes.has(`prestamo:${d.prestamoId}`) && n.tipo === 'solicitud_prestamo')
+        && !(clavesPendientes.has(`reapertura:${d.cierreId}`) && n.tipo === 'solicitud_reapertura')
+        && !(clavesPendientes.has(`gasto:${d.gastoId}`) && n.tipo === 'gasto_por_aprobar')
+    } catch { return true }
+  })
+  const sinLeer = guardadosVisibles.filter((n) => !n.leida).length
+  const cuantos = perdedores.length + sinLeer + pendientes.length
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('cf:avisos', { detail: cuantos }))
   }, [cuantos])
@@ -266,7 +298,23 @@ export default function PilaAvisos({ children, onVerTodos }) {
       <CosasPorResolver
         abierta={hoja}
         onCerrar={() => setHoja(false)}
-        guardados={guardados}
+        pendientes={pendientes}
+        onPendienteResuelto={(p) => {
+          setPendientes((prev) => prev.filter((x) => x.clave !== p.clave))
+          // La solicitud también dejó su fila: resuelta, ya está leída.
+          for (const n of guardados) {
+            if (n.leida) continue
+            try {
+              const d = JSON.parse(n.datos || '{}')
+              const suya = (p.clase === 'prestamo' && d.prestamoId === p.id)
+                || (p.clase === 'reapertura' && d.cierreId === p.id)
+                || (p.clase === 'gasto' && d.gastoId === p.id)
+              if (suya) marcarLeida(n.id)
+            } catch {}
+          }
+        }}
+        onAbrirPendiente={(p) => { window.location.href = p.href }}
+        guardados={guardadosVisibles}
         sinLeer={sinLeer}
         onLeer={marcarLeida}
         onLeerTodas={marcarTodas}

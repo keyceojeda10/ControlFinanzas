@@ -29,7 +29,7 @@ import { devengosPendientes } from '@/lib/calculos'
 import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
-import { enviarPushOrg } from '@/lib/push'
+import { notificar, plata } from '@/lib/notificar'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -1038,31 +1038,18 @@ export async function POST(request) {
   trackEvent({ organizationId, userId: session.user.id, evento: esPendiente ? 'solicitar_prestamo' : 'crear_prestamo', metadata: { monto: Number(montoPrestado) } })
 
   if (esPendiente) {
-    const owners = await prisma.user.findMany({
-      where: { organizationId, rol: 'owner' },
-      select: { id: true },
+    /* Campana Y teléfono, por la misma puerta. ⚠ CON `href`: sin él la campana
+       llevaba a la ficha del CLIENTE —que es a donde cae toda fila que trae
+       `clienteId`— y no al préstamo que hay que aprobar. Además ahora la
+       solicitud sale arriba del todo en la campana, con su botón de aprobar
+       (`/api/notificaciones/pendientes`). */
+    notificar({
+      organizationId, para: 'owners', tipo: 'solicitud_prestamo',
+      titulo: 'Préstamo por aprobar',
+      mensaje: `${session.user.nombre} quiere prestarle ${plata(montoPrestado)} a ${cliente.nombre}.`,
+      href: `/prestamos/${prestamo.id}`,
+      datos: { prestamoId: prestamo.id, clienteId, monto: Number(montoPrestado), cobrador: session.user.nombre },
     })
-    if (owners.length > 0) {
-      await prisma.notificacion.createMany({
-        data: owners.map(o => ({
-          organizationId,
-          userId: o.id,
-          tipo: 'solicitud_prestamo',
-          titulo: 'Solicitud de préstamo',
-          mensaje: `${session.user.nombre} solicita crear un préstamo de $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}.`,
-          /* ⚠ CON `href`. Sin él la campana llevaba a la ficha del CLIENTE —que es
-             a donde cae toda fila que trae `clienteId`— y no al préstamo que hay
-             que aprobar: el dueño tocaba «Solicitud de préstamo» y aterrizaba en
-             una pantalla sin el botón de aprobar. El push sí llevaba bien. */
-          datos: JSON.stringify({ href: `/prestamos/${prestamo.id}`, prestamoId: prestamo.id, clienteId, monto: Number(montoPrestado), cobrador: session.user.nombre }),
-        })),
-      })
-    }
-    enviarPushOrg(organizationId, {
-      title: 'Solicitud de préstamo',
-      body: `${session.user.nombre} solicita $${Number(montoPrestado).toLocaleString('es-CO')} para ${cliente.nombre}`,
-      url: `/prestamos/${prestamo.id}`,
-    }).catch(() => {})
   }
 
   return Response.json({ ...prestamo, pendienteAprobacion: esPendiente }, { status: 201 })

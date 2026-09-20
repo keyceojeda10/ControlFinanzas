@@ -21,6 +21,7 @@ import { getUtcOffset, validateDocument, getDocumentConfig, inicioDelDiaLocal } 
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { dispararTrasCrear } from '@/lib/capi-activacion'
+import { notificar } from '@/lib/notificar'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -791,22 +792,19 @@ export async function POST(request) {
   })
 
   if (session.user.rol === 'cobrador') {
-    const owners = await prisma.user.findMany({
-      where: { organizationId, rol: 'owner' },
-      select: { id: true },
+    /* Solo a la campana (`push: false`): un cobrador que pasa su cuaderno carga
+       cien clientes seguidos, y cien zumbidos en el teléfono del dueño es la
+       forma más rápida de que apague los avisos. Y sin la cédula de relleno:
+       a quien no tiene documento se le guarda un marcador interno («SIN-…») que
+       salía tal cual en el mensaje. */
+    const doc = cedula.trim()
+    await notificar({
+      organizationId, para: 'owners', tipo: 'cliente_creado_por_cobrador', push: false,
+      titulo: 'Cliente nuevo',
+      mensaje: `${session.user.nombre || session.user.name || 'Un cobrador'} cargó a ${nombre.trim()}${doc && !/^SIN-/i.test(doc) ? ` (${doc})` : ''}.`,
+      href: `/clientes/${cliente.id}`,
+      datos: { clienteId: cliente.id, cobradorId: session.user.id },
     })
-    for (const o of owners) {
-      await prisma.notificacion.create({
-        data: {
-          organizationId,
-          userId: o.id,
-          tipo: 'cliente_creado_por_cobrador',
-          titulo: 'Nuevo cliente registrado',
-          mensaje: `${session.user.name || 'Un cobrador'} registró al cliente ${nombre.trim()} (${cedula.trim()})`,
-          datos: JSON.stringify({ clienteId: cliente.id, cobradorId: session.user.id, cobradorNombre: session.user.name }),
-        },
-      })
-    }
   }
 
   logActividad({ session, accion: 'crear_cliente', entidadTipo: 'cliente', entidadId: cliente.id, detalle: `Cliente ${nombre.trim()} (${cedula.trim()})`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })

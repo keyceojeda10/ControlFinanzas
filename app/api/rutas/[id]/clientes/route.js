@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
+import { notificar } from '@/lib/notificar'
 
 async function verificarRuta(id, organizationId) {
   return prisma.ruta.findFirst({ where: { id, organizationId } })
@@ -110,6 +111,21 @@ export async function POST(request, { params }) {
       }
     }
   })
+
+  /* AL COBRADOR QUE RECIBE LOS CLIENTES. Se los pasaban a su ruta y se enteraba
+     al verlos aparecer en la lista —o no se enteraba, y el cliente se quedaba
+     sin visitar—. No se avisa a sí mismo si fue él quien los agregó. */
+  if (ruta.cobradorId) {
+    const n = clientes.length
+    notificar({
+      organizationId, para: ruta.cobradorId, tipo: 'prestamo_trasladado', excepto: session.user.id,
+      titulo: n === 1 ? `${clientes[0].nombre} pasa a tu ruta` : `${n} clientes pasan a tu ruta`,
+      mensaje: n === 1
+        ? `Desde hoy lo cobras tú, en ${ruta.nombre}.`
+        : `${clientes.slice(0, 3).map((c) => c.nombre).join(', ')}${n > 3 ? ` y ${n - 3} más` : ''}. Desde hoy los cobras tú, en ${ruta.nombre}.`,
+      href: `/rutas/${id}`, datos: { rutaId: id },
+    })
+  }
 
   return Response.json({ asignados: clienteIds.length })
 }

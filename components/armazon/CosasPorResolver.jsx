@@ -27,6 +27,78 @@
 // mora ahora—; esta hoja dice QUÉ PASÓ, y se queda guardado aunque se resuelva.
 
 import HojaInferior from '@/components/cf/HojaInferior'
+import { useEffect, useState } from 'react'
+import Pendientes from '@/components/armazon/Pendientes'
+import { estadoPush, activarPush } from '@/lib/push-cliente'
+import { grupoDe } from '@/lib/avisos-preferencias'
+
+/* ══ EL PERMISO SE PIDE DONDE SIRVE ═════════════════════════════════════════
+   El interruptor de los avisos del teléfono estaba en Configuración, dentro de
+   una pestaña llamada «Avisos por WhatsApp»: lo encontró el 14 % de los dueños
+   y 5 de 40 cobradores (19 sep 2026). Aquí se ofrece cuando la persona YA está
+   mirando sus avisos —que es cuando entiende para qué sirve—, y solo si su
+   teléfono puede y todavía no ha dicho que no. Se puede descartar, y no vuelve
+   a salir en ese teléfono. */
+function InvitacionPush() {
+  const [estado, setEstado] = useState(null)
+  const [trabajando, setTrabajando] = useState(false)
+  useEffect(() => {
+    let vivo = true
+    try { if (localStorage.getItem('cf-push-no-ofrecer') === '1') return } catch {}
+    estadoPush().then((e) => { if (vivo) setEstado(e) })
+    return () => { vivo = false }
+  }, [])
+  if (estado !== 'apagado') return null
+  return (
+    <div style={{
+      borderRadius: 'var(--cf-r-card)', background: 'var(--cf-fill)',
+      border: '1px solid var(--cf-border)', padding: '13px 14px',
+      display: 'flex', flexDirection: 'column', gap: 9,
+    }}>
+      <span style={{ fontSize: 14, color: 'var(--cf-ink-2)', lineHeight: 1.45 }}>
+        <b style={{ color: 'var(--cf-ink)' }}>Entérate con la app cerrada.</b> Te avisamos al teléfono cuando
+        algo espera tu respuesta.
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <button type="button" disabled={trabajando} onClick={async () => {
+          setTrabajando(true)
+          setEstado(await activarPush())
+          setTrabajando(false)
+        }} style={{
+          height: 36, padding: '0 14px', borderRadius: 'var(--cf-r-control)', border: 0, cursor: 'pointer',
+          background: 'var(--cf-ink)', color: 'var(--cf-surface)', fontSize: 13, fontWeight: 700,
+          opacity: trabajando ? .6 : 1,
+        }}>{trabajando ? 'Activando…' : 'Activar avisos'}</button>
+        <button type="button" onClick={() => {
+          try { localStorage.setItem('cf-push-no-ofrecer', '1') } catch {}
+          setEstado(null)
+        }} style={{
+          background: 'none', border: 0, padding: 0, cursor: 'pointer',
+          fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+        }}>Ahora no</button>
+      </div>
+    </div>
+  )
+}
+
+/* El icono y el color de cada aviso salen de su GRUPO, no de su tipo: así un
+   tipo nuevo cae en su sitio sin tocar esta pantalla. El rojo es solo para la
+   mora; el verde, para las buenas noticias; lo demás, neutro-dorado. */
+const ASPECTO = {
+  mora:         { tono: 'rojo',  d: <><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4M12 17h.01" /></> },
+  cartera:      { tono: 'verde', d: <><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.5 2.5 4.5-5" /></> },
+  logros:       { tono: 'verde', d: <path d="M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6L12 16.6 6.7 19.500l1.1-6L3.4 9.300l6-.700L12 3z" /> },
+  caja:         { tono: 'oro',   d: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 13h18" /></> },
+  aprobaciones: { tono: 'oro',   d: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /></> },
+  resumen:      { tono: 'oro',   d: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></> },
+  cuenta:       { tono: 'oro',   d: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></> },
+  equipo:       { tono: 'oro',   d: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></> },
+}
+const TONOS = {
+  rojo:  { fondo: 'color-mix(in srgb, var(--cf-red) 14%, transparent)', trazo: 'var(--cf-red-dark)', punto: 'var(--cf-red)' },
+  verde: { fondo: 'var(--cf-green-pill-bg)', trazo: 'var(--cf-green-dark)', punto: 'var(--cf-green)' },
+  oro:   { fondo: 'var(--cf-gold-tint)', trazo: 'var(--cf-gold-dark)', punto: 'var(--cf-gold)' },
+}
 
 function Tarjeta({ titulo, dato, nota, accion, onAccion, secundaria, onSecundaria }) {
   return (
@@ -73,7 +145,8 @@ function Tarjeta({ titulo, dato, nota, accion, onAccion, secundaria, onSecundari
    Leído se apaga, pero no desaparece: el dueño lo pidió expreso —«ahí en las
    notificaciones se va guardando»—. */
 function Guardado({ n, onAbrir, onBorrar }) {
-  const esMora = n.tipo === 'mora'
+  const aspecto = ASPECTO[grupoDe(n.tipo)] ?? ASPECTO.equipo
+  const tono = TONOS[aspecto.tono]
   const cuando = new Date(n.createdAt).toLocaleDateString('es', {
     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   })
@@ -100,25 +173,11 @@ function Guardado({ n, onAbrir, onBorrar }) {
         <span aria-hidden style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           width: 30, height: 30, minWidth: 30, borderRadius: 10, flex: 'none', marginTop: 1,
-          background: n.leida ? 'var(--cf-fill)'
-            : esMora ? 'color-mix(in srgb, var(--cf-red) 14%, transparent)'
-            : 'var(--cf-gold-tint)',
+          background: n.leida ? 'var(--cf-fill)' : tono.fondo,
         }}>
-          {esMora ? (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke={n.leida ? 'var(--cf-ink-3)' : 'var(--cf-red-dark)'}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-              <path d="M12 9v4M12 17h.01" />
-            </svg>
-          ) : (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke={n.leida ? 'var(--cf-ink-3)' : 'var(--cf-gold)'}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          )}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke={n.leida ? 'var(--cf-ink-3)' : tono.trazo}
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{aspecto.d}</svg>
         </span>
         <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cf-ink)' }}>{n.titulo}</span>
@@ -128,7 +187,7 @@ function Guardado({ n, onAbrir, onBorrar }) {
         {!n.leida && (
           <span aria-hidden style={{
             width: 8, height: 8, borderRadius: 999, flex: 'none', marginTop: 6,
-            background: esMora ? 'var(--cf-red)' : 'var(--cf-gold)',
+            background: tono.punto,
           }} />
         )}
       </button>
@@ -162,9 +221,10 @@ export default function CosasPorResolver({
   abierta, onCerrar, items = [], onIr,
   guardados = [], sinLeer = 0, onLeer, onLeerTodas, onAbrirGuardado,
   onBorrar, onBorrarLeidas,
+  pendientes = [], onPendienteResuelto, onAbrirPendiente,
 }) {
   const hayLeidas = guardados.some((n) => n.leida)
-  const vacio = items.length === 0 && guardados.length === 0
+  const vacio = items.length === 0 && guardados.length === 0 && pendientes.length === 0
   /* ⚠ SE LLAMABA «Cosas por resolver». El dueño: «ese título y lo que pasó, la
      verdad, no me cuenta nada». Y tenía razón: la campana abre esto, y lo que la
      gente espera detrás de una campana son sus notificaciones. El nombre de una
@@ -178,9 +238,14 @@ export default function CosasPorResolver({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
         {vacio && (
           <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', margin: 0, lineHeight: 1.5 }}>
-            No tienes avisos. Aquí te llegan los atrasos y lo que pasa en tu cuenta.
+            No tienes avisos. Aquí sale lo que espera tu respuesta y lo que va pasando en tu negocio.
           </p>
         )}
+
+        {/* PRIMERO lo que espera una decisión: hay alguien parado esperándola. */}
+        <Pendientes pendientes={pendientes} onResuelto={onPendienteResuelto} onAbrir={onAbrirPendiente} />
+
+        <InvitacionPush />
 
         {items.map((it) => (
           <Tarjeta key={it.id} {...it} />
@@ -201,7 +266,7 @@ export default function CosasPorResolver({
           <>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 10, marginTop: items.length > 0 ? 6 : 0,
+              gap: 10, marginTop: (items.length > 0 || pendientes.length > 0) ? 6 : 0,
             }}>
               {/* Antes aquí ponía «LO QUE PASÓ» en versalitas. No decía nada que
                   la lista de abajo no dijera sola, y el dueño lo señaló junto

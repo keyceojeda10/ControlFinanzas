@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailAvisoVencimiento, emailSuscripcionVencida } from '@/lib/email'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { enviarPushOrg } from '@/lib/push'
+import { notificar } from '@/lib/notificar'
 import { registrarAdminLog } from '@/lib/admin-log'
 import { whereCobroSinRechazo, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
 
@@ -104,11 +104,12 @@ export async function POST(req) {
       else resultados.errores++
 
       // Push notification al owner
-      enviarPushOrg(sub.organizationId, {
-        title: 'Tu plan vence pronto',
-        body: `Tu plan ${sub.plan} vence en ${dias} día(s). Renueva para no perder acceso.`,
-        url: '/configuracion/plan',
-      }).catch(() => {})
+      notificar({
+        organizationId: sub.organizationId, para: 'owners', tipo: 'suscripcion',
+        titulo: 'Tu plan vence pronto',
+        mensaje: `Vence en ${dias} ${dias === 1 ? 'día' : 'días'}. Renuévalo para no perder el acceso.`,
+        href: '/configuracion/plan',
+      })
     }
   }
 
@@ -176,11 +177,12 @@ export async function POST(req) {
     else resultados.errores++
 
     // Push notification de suscripción vencida
-    enviarPushOrg(sub.organizationId, {
-      title: 'Plan vencido',
-      body: `Tu plan ${sub.plan} ha expirado. Renueva ahora para seguir usando la app.`,
-      url: '/configuracion/plan',
-    }).catch(() => {})
+    notificar({
+      organizationId: sub.organizationId, para: 'owners', tipo: 'suscripcion',
+      titulo: 'Tu plan se venció',
+      mensaje: 'Renuévalo para seguir usando la app.',
+      href: '/configuracion/plan',
+    })
   }
 
   return NextResponse.json({

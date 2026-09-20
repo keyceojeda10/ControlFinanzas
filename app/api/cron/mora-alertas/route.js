@@ -46,7 +46,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { enviarPush, enviarPushOrg } from '@/lib/push'
+import { notificar } from '@/lib/notificar'
+import { quiere } from '@/lib/avisos-preferencias'
 import { calcularDiasMora, calcularProximoCobro, calcularMontoEnMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 
@@ -253,19 +254,31 @@ export async function POST(req) {
         }
       }
 
-      if (filas.length > 0) {
-        await prisma.notificacion.createMany({ data: filas })
-        res.filas += filas.length
+      /* QUIEN APAGÓ «CLIENTES QUE SE ATRASAN» NO RECIBE FILA NI PUSH. Medido el
+         19 sep 2026: 3.368 avisos de mora en 30 días, 174 leídos. Hasta ahora la
+         única forma de callarlos era apagar TODOS los avisos del teléfono. */
+      const idsAvisados = [...new Set(filas.map((x) => x.userId))]
+      const conPrefs = idsAvisados.length
+        ? await prisma.user.findMany({ where: { id: { in: idsAvisados } }, select: { id: true, prefsAvisos: true } })
+        : []
+      const prefsDe = new Map(conPrefs.map((u) => [u.id, u.prefsAvisos]))
+      const filasQueridas = filas.filter((x) => quiere(prefsDe.get(x.userId), 'mora'))
+
+      if (filasQueridas.length > 0) {
+        await prisma.notificacion.createMany({ data: filasQueridas })
+        res.filas += filasQueridas.length
       }
 
       // El empujón al teléfono va CONSOLIDADO: la campana guarda el detalle.
       const nombres = lista.slice(0, 3).map((x) => x.prestamo.cliente?.nombre).filter(Boolean)
       const extra = lista.length > 3 ? ` y ${lista.length - 3} más` : ''
-      await enviarPushOrg(orgId, {
-        title: lista.length === 1 ? 'Un cliente se atrasó' : `${lista.length} clientes se atrasaron`,
-        body: `${nombres.join(', ')}${extra}`,
-        url: '/clientes?filtro=mora',
-      }).catch(() => {})
+      // `guardar: false`: las filas ya se escribieron arriba, una por cliente.
+      await notificar({
+        organizationId: orgId, para: 'owners', tipo: 'mora', guardar: false,
+        titulo: lista.length === 1 ? 'Un cliente se atrasó' : `${lista.length} clientes se atrasaron`,
+        mensaje: `${nombres.join(', ')}${extra}`,
+        href: '/clientes?filtro=mora',
+      })
       res.push++
 
       const cobradores = new Set(
@@ -273,11 +286,12 @@ export async function POST(req) {
       )
       for (const cobradorId of cobradores) {
         const suyos = lista.filter((x) => x.prestamo.cliente?.ruta?.cobradorId === cobradorId)
-        await enviarPush(cobradorId, {
-          title: suyos.length === 1 ? 'Un cliente se atrasó' : `${suyos.length} clientes se atrasaron`,
-          body: suyos.slice(0, 3).map((x) => x.prestamo.cliente?.nombre).join(', '),
-          url: '/clientes?filtro=mora',
-        }).catch(() => {})
+        await notificar({
+          organizationId: orgId, para: cobradorId, tipo: 'mora', guardar: false,
+          titulo: suyos.length === 1 ? 'Un cliente se atrasó' : `${suyos.length} clientes se atrasaron`,
+          mensaje: suyos.slice(0, 3).map((x) => x.prestamo.cliente?.nombre).join(', '),
+          href: '/clientes?filtro=mora',
+        })
         res.push++
       }
     }

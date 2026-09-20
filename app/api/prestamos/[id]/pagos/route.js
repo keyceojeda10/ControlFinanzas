@@ -32,7 +32,8 @@ import {
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { logActividad } from '@/lib/activity-log'
-import { enviarPushOrg } from '@/lib/push'
+import { notificar, plata } from '@/lib/notificar'
+import { eventoDelPago, textoDelEvento } from '@/lib/avisos-cartera'
 import { trackEvent } from '@/lib/analytics'
 import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { marcadorOffline, resolverFechaDelPago } from '@/lib/pagos-sin-senal'
@@ -1137,13 +1138,37 @@ export async function POST(request, { params }) {
   logActividad({ session, accion: 'registrar_pago', entidadTipo: 'pago', entidadId: prestamoId, detalle: `Pago ${tipoLabel[tipo] || tipo} $${montoFinal.toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
   trackEvent({ organizationId, userId, evento: 'registrar_pago', metadata: { tipo, monto: montoFinal } })
 
-  // Push notification: notificar al owner cuando un cobrador registra pago
+  // Al dueño, cuando cobra un cobrador. SOLO AL TELÉFONO (`pago` es un grupo
+  // `soloPush`): 17.000 cobros al mes como filas ahogarían la campana, y ya
+  // están uno por uno en el Historial. Se apaga en Configuración.
   if (rol === 'cobrador') {
-    enviarPushOrg(organizationId, {
-      title: 'Pago registrado',
-      body: `${session.user.nombre} cobró $${montoFinal.toLocaleString('es-CO')} — ${prestamoFinal.cliente.nombre}`,
-      url: `/prestamos/${prestamoId}`,
-    }).catch(() => {})
+    notificar({
+      organizationId, para: 'owners', tipo: 'pago',
+      titulo: 'Pago registrado',
+      mensaje: `${session.user.nombre} cobró ${plata(montoFinal)} — ${prestamoFinal.cliente.nombre}`,
+      href: `/prestamos/${prestamoId}`,
+    })
+  }
+
+  /* LAS BUENAS NOTICIAS DE ESTE PAGO: terminó de pagar, se puso al día o ya se
+     puede renovar. Fuera de la transacción y sin `await`: un aviso no puede
+     retrasar ni tumbar un cobro. Los ajustes (recargo, descuento) no son plata
+     que entró y no avisan. Ver `lib/avisos-cartera.js`. */
+  if (!['recargo', 'descuento'].includes(tipo)) {
+    try {
+      const evento = eventoDelPago({ antes: prestamo, despues: prestamoFinal, diasExcluidos: diasExcluidosFinal, festivos })
+      if (evento) {
+        const t = textoDelEvento(evento, {
+          cliente: prestamoFinal.cliente?.nombre, montoPrestado: prestamoFinal.montoPrestado,
+          montoPagado: montoFinal, plata,
+        })
+        notificar({
+          organizationId, para: 'owners', tipo: evento.tipo, ...t,
+          href: evento.tipo === 'prestamo_saldado' ? `/clientes/${prestamoFinal.clienteId}` : `/prestamos/${prestamoId}`,
+          datos: { prestamoId, clienteId: prestamoFinal.clienteId },
+        })
+      }
+    } catch (e) { console.error('[avisos-cartera]', e?.message) }
   }
 
   /* EL REPARTO DE ESTE PAGO, para el recibo. Lo mide el servidor porque el

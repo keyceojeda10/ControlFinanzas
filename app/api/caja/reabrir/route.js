@@ -12,7 +12,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { enviarPushOrg } from '@/lib/push'
+import { notificar } from '@/lib/notificar'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
@@ -65,11 +65,14 @@ export async function POST(request) {
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
 
-    enviarPushOrg(organizationId, {
-      title: 'Solicitud de reapertura de caja',
-      body: `${session.user.nombre} solicita reabrir su caja del ${fechaLocal} para seguir registrando abonos`,
-      url: '/caja',
-    }).catch(() => {})
+    // Campana Y teléfono: con solo el push, el dueño con el teléfono apagado no
+    // se enteraba nunca y el cobrador se quedaba sin poder registrar abonos.
+    notificar({
+      organizationId, para: 'owners', tipo: 'solicitud_reapertura',
+      titulo: 'Piden reabrir una caja',
+      mensaje: `${session.user.nombre} pide reabrir su caja del ${fechaLocal} para seguir registrando abonos.`,
+      href: '/caja', datos: { cierreId: cierre.id },
+    })
 
     return Response.json(cierreActualizado, { status: 200 })
   }
@@ -96,11 +99,12 @@ export async function POST(request) {
 
   // Si fue el cobrador quien reabrio su propia caja (con permiso), avisar al/los owner(s).
   if (rol === 'cobrador') {
-    enviarPushOrg(organizationId, {
-      title: 'Caja reabierta',
-      body: `${session.user.nombre} reabrió su caja del ${fechaLocal} para seguir registrando abonos`,
-      url: '/caja',
-    }).catch(() => {})
+    notificar({
+      organizationId, para: 'owners', tipo: 'caja_reabierta',
+      titulo: 'Caja reabierta',
+      mensaje: `${session.user.nombre} reabrió su caja del ${fechaLocal} para seguir registrando abonos.`,
+      href: '/caja', datos: { cierreId: cierre.id },
+    })
   }
 
   return Response.json(cierreActualizado, { status: 200 })

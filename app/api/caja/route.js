@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
+import { notificar, plata } from '@/lib/notificar'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { tieneTablaAmortizacion, obtenerCuotaPeriodoActual, calcularCapitalRestante } from '@/lib/calculos'
 import { esperadoDeCartera, SELECT_PRESTAMO } from '@/lib/dinero/esperado'
@@ -1657,6 +1658,25 @@ export async function POST(request) {
   })
 
   logActividad({ session, accion: 'cierre_caja', entidadTipo: 'caja', entidadId: cierre.id, detalle: `Cierre de caja ${cobrador.nombre} - recogido $${Math.round(totalRecogido).toLocaleString('es-CO')}`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+
+  /* EL DUEÑO SE ENTERA DE QUE LE CERRARON LA CAJA. Hasta el 19 sep 2026 un
+     cobrador cerraba y no pasaba nada: había que entrar a Caja a mirar, ruta por
+     ruta, quién había entregado. Solo cuando cierra un COBRADOR (el dueño que
+     cierra la suya ya lo sabe).
+
+     ⚠ SOLO DICE LO QUE ENTREGA. `diferencia` es recogido − ESPERADO DEL DÍA —lo
+     que los clientes dejaron de pagar—, no un faltante del cobrador: avisar «le
+     faltaron $X» con esa cifra sería acusarlo de algo que no pasó. El descuadre
+     de verdad lo mide el dueño al contar los billetes (`/api/caja/cuadre`). */
+  if (session.user.rol === 'cobrador') {
+    notificar({
+      organizationId, para: 'owners', tipo: 'cierre_caja',
+      titulo: `${cobrador.nombre} cerró su caja`,
+      mensaje: `Entrega ${plata(totalRecogido)}${totalGastos > 0 ? `, con ${plata(totalGastos)} de gastos` : ''}.`,
+      href: `/caja?fecha=${fechaColombia}`,
+      datos: { cierreId: cierre.id, cobradorId },
+    })
+  }
   return Response.json({
     ...cierre,
     resumenFinanciero: {

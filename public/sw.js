@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1077'
+const CACHE_NAME   = 'cf-v1078'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -466,6 +466,10 @@ self.addEventListener('push', (e) => {
   if (!e.data) return
   try {
     const data = e.data.json()
+    // Si la app está abierta, que la campana se entere sin esperar a recargar.
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((cs) => cs.forEach((c) => c.postMessage({ tipo: 'cf:aviso-nuevo' })))
+      .catch(() => {})
     e.waitUntil(
       self.registration.showNotification(data.title || 'Control Finanzas', {
         body: data.body,
@@ -473,6 +477,10 @@ self.addEventListener('push', (e) => {
         badge: '/icons/icon-192.png',
         data: { url: data.url || '/dashboard' },
         vibrate: [200, 100, 200],
+        // Con `tag`, diez «Pago registrado» seguidos ocupan UN sitio en la
+        // bandeja del teléfono y no diez. `renotify` para que el nuevo vuelva a
+        // sonar aunque reemplace al anterior.
+        ...(data.tag ? { tag: data.tag, renotify: true } : {}),
       })
     )
   } catch {}

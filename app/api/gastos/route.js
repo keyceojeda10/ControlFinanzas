@@ -7,6 +7,7 @@ import { logActividad } from '@/lib/activity-log'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { getUtcOffset, getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { notificar, plata } from '@/lib/notificar'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -163,6 +164,19 @@ export async function POST(req) {
   })
 
   logActividad({ session, accion: 'registrar_gasto', entidadTipo: 'gasto', entidadId: gasto.id, detalle: `Gasto $${gasto.monto.toLocaleString('es-CO')} - ${gasto.description}`, ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })
+  /* UN GASTO DE UN COBRADOR NACE «PENDIENTE» Y NADIE SE ENTERABA. El dueño tenía
+     que acordarse de entrar a Gastos a aprobarlo, y mientras tanto la caja del
+     cobrador no lo descuenta. Ahora avisa, y además sale arriba en la campana
+     con su botón de aprobar (`/api/notificaciones/pendientes`). */
+  if (session.user.rol === 'cobrador') {
+    notificar({
+      organizationId: session.user.organizationId, para: 'owners', tipo: 'gasto_por_aprobar',
+      titulo: 'Gasto por aprobar',
+      mensaje: `${session.user.nombre || 'Un cobrador'} anotó ${plata(gasto.monto)}: ${gasto.description}.`,
+      href: '/gastos', datos: { gastoId: gasto.id },
+    })
+  }
+
   if (idemKey) setCachedMutation(idemKey, gasto)
   return NextResponse.json(gasto)
 }

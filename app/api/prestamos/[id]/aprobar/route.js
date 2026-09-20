@@ -9,7 +9,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { abonoPrevioDe } from '@/lib/dinero/abono-previo'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
-import { enviarPush } from '@/lib/push'
+import { notificar, plata } from '@/lib/notificar'
 
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions)
@@ -103,11 +103,12 @@ export async function POST(request, { params }) {
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 
-  enviarPush(prestamo.creadoPorId, {
-    title: 'Préstamo aprobado',
-    body: `Tu préstamo a ${prestamo.cliente.nombre} por $${Number(prestamo.montoPrestado).toLocaleString('es-CO')} fue aprobado.`,
-    url: `/prestamos/${prestamoId}`,
-  }).catch(() => {})
+  notificar({
+    organizationId, para: prestamo.creadoPorId, tipo: 'prestamo_aprobado',
+    titulo: 'Te aprobaron el préstamo',
+    mensaje: `Ya puedes entregarle ${plata(prestamo.montoPrestado)} a ${prestamo.cliente.nombre}.`,
+    href: `/prestamos/${prestamoId}`, datos: { prestamoId },
+  })
 
   return Response.json(updated)
 }

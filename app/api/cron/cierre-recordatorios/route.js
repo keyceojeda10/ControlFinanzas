@@ -7,6 +7,7 @@ import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { enviarPush } from '@/lib/push'
 
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
+import { notificar } from '@/lib/notificar'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -233,6 +234,25 @@ export async function POST(req) {
     }
 
     const payload = buildPushPayload({ pendingType, pendingDate, pendingAmount })
+
+    /* A LA CAMPANA TAMBIÉN, UNA VEZ POR DÍA. Este cron corre cada media hora de
+       8 a 12 de la noche y solo se apunta como «ya avisado» si el PUSH llegó;
+       a quien no tiene push (35 de 40 cobradores, 19 sep 2026) no le llegaba
+       nada nunca. La fila se crea una sola vez por recordatorio: se busca antes
+       por su `reminderId`. */
+    try {
+      const ya = await prisma.notificacion.findFirst({
+        where: { userId: cobrador.id, tipo: 'cierre_recordatorio', datos: { contains: reminderId } },
+        select: { id: true },
+      })
+      if (!ya) {
+        await notificar({
+          organizationId: cobrador.organizationId, para: cobrador.id, tipo: 'cierre_recordatorio', push: false,
+          titulo: payload.title, mensaje: payload.body, href: payload.url,
+          datos: { reminderId },
+        })
+      }
+    } catch {}
 
     try {
       const pushResults = await enviarPush(cobrador.id, payload)

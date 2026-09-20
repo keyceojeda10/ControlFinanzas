@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
-import { enviarPush } from '@/lib/push'
+import { notificar } from '@/lib/notificar'
 import { getUtcOffset, getLocalDayRange, formatMoney } from '@/lib/i18n'
 
 const CRON_SECRET = process.env.CRON_SECRET
@@ -181,13 +181,12 @@ export async function POST(req) {
     const aEnviar = pendientes.slice(0, remaining)
 
     for (const notif of aEnviar) {
-      for (const userId of notif.destinatarios) {
-        await enviarPush(userId, {
-          title: notif.title,
-          body: notif.body,
-          url: notif.url,
-        }).catch(() => {})
-      }
+      // Al teléfono Y a la campana: un «cierre perfecto» que solo zumba se
+      // pierde si el teléfono estaba apagado.
+      await notificar({
+        organizationId: org.id, para: notif.destinatarios, tipo: 'celebracion',
+        titulo: notif.title, mensaje: notif.body, href: notif.url,
+      })
       await prisma.pushLog.create({
         data: {
           organizationId: org.id,
