@@ -14,12 +14,18 @@
 
 import { useState, useEffect } from 'react'
 import AsistenteChat from '@/components/asistente/AsistenteChat'
+import { useRouter } from 'next/navigation'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { useAltoVisible } from '@/lib/alto-visible'
 
 export default function AsistentePage() {
   // Una llave que sube fuerza a rehacer la conversación desde cero sin que la
   // página tenga que conocer el estado interno del chat.
   const [reinicio, setReinicio] = useState(0)
+  const router = useRouter()
+  // Lo que de verdad se ve del teléfono (con o sin teclado). Ver `lib/alto-visible`.
+  const visible = useAltoVisible()
+  const volver = () => { if (typeof window !== 'undefined' && window.history.length > 1) router.back(); else router.push('/dashboard') }
 
   /* El scroll fantasma de 56px, apagado mientras se está aquí. Ver el porqué
      donde se monta el chat, abajo. Solo en móvil: en escritorio la pantalla
@@ -132,18 +138,26 @@ export default function AsistentePage() {
           y el `return` deshace el cambio al salir de la pantalla — que era la
           otra mitad del problema. */}
 
+      {/* ── UNA SOLA CAJA, DEL ALTO QUE SE VE ──
+          Antes: la cabecera del armazón arriba y el chat `fixed` abajo con
+          `100dvh − 56px`. Dos cajas, y en iPhone la de arriba se perdía al salir
+          el teclado. Ahora la caja cubre la pantalla ENTERA en el teléfono
+          (tapa la cabecera del armazón: la suya va dentro) y se mide con
+          `visualViewport`: alto visible y desplazamiento. Sin esa API, `100dvh`.
+          En escritorio fluye dentro de la página, como siempre. */}
       <div
-        className="fixed inset-x-0 bottom-0 lg:static lg:-mx-6 lg:-my-6"
+        className="fixed inset-x-0 z-[70] lg:static lg:z-auto lg:-mx-6 lg:-my-6 lg:!h-[calc(100dvh-24px)] lg:!transform-none"
         style={{
-          // `--cf-h-header`, el token de verdad. Mi primera versión inventó
-          // `--cf-h-cabecera`, que no existe: el CSS lo resuelve al valor de
-          // respaldo y parece funcionar, así que un nombre mal escrito aquí no
-          // falla en ningún sitio — solo deja de seguir al token si este cambia.
-          height: 'calc(100dvh - var(--cf-h-header, 56px) - env(safe-area-inset-bottom, 0px))',
+          top: 0,
+          height: visible.alto ? `${visible.alto}px` : '100dvh',
+          transform: visible.arriba ? `translateY(${visible.arriba}px)` : undefined,
+          background: 'var(--cf-surface)',
         }}
       >
-        <div className="mx-auto w-full max-w-3xl h-full flex flex-col">
-          <AsistenteChat key={reinicio} />
+        <div className="mx-auto w-full max-w-3xl h-full flex flex-col lg:py-4">
+          <div className="flex-1 min-h-0 lg:rounded-[20px] lg:overflow-hidden lg:border" style={{ borderColor: 'var(--cf-border)' }}>
+            <AsistenteChat key={reinicio} comoPagina onClose={volver} />
+          </div>
         </div>
       </div>
     </>

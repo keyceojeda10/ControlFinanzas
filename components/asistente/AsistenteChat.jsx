@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import AccionCard from './AccionCard'
 import VoiceInput from './VoiceInput'
+import { Icono as IconoDelSistema } from '@/components/armazon/iconos'
 
 import { Cabecera as CabeceraLucas, Vacio as VacioLucas } from '@/components/pantallas/Lucas'
 
@@ -83,7 +84,7 @@ function renderMarkdown(text) {
   })
 }
 
-export default function AsistenteChat({ onClose }) {
+export default function AsistenteChat({ onClose, comoPagina = false }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -289,22 +290,23 @@ export default function AsistenteChat({ onClose }) {
   ) : null
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ── LA CABECERA VA EN EL ARMAZON, NO AQUI ──
-          Se monto la de `Lucas` y quedaron DOS: la del armazon fija arriba con
-          la flecha de volver, y la de Lucas debajo con el mismo nombre. Es el
-          patron del titulo duplicado que ya tiene su propia prueba.
-          Manda el armazon —es quien sabe volver— y las dos cosas que la
-          cabecera de Lucas aportaba, el contador del plan y «empezar de nuevo»,
-          se le pasan por `acciones`. En panel flotante (`onClose`) no hay
-          armazon, y ahi si se pinta la de Lucas. */}
-      {onClose && (
-        <CabeceraLucas
-          onEditar={nuevaConversacion}
-          onCerrar={onClose}
-          extra={contadorPlan}
-        />
-      )}
+    <div className="flex flex-col h-full" style={{ background: 'var(--cf-surface)' }}>
+      {/* ── LA CABECERA ES DEL CHAT, SIEMPRE ──
+          En la pantalla dedicada la ponía el armazón y el chat iba `fixed` debajo:
+          dos cajas distintas. En iPhone, al salir el teclado, el navegador corre
+          la página para enseñar el campo y la cabecera —con su flecha de volver—
+          se quedaba FUERA de la pantalla, sin forma de traerla de vuelta (el
+          documento tiene el scroll apagado). El dueño, 20 sep 2026: «el icono de
+          cerrar Lucas no se ve, o sea no se puede cerrar… la gente va a pasar de
+          él porque está bugueado». Ahora cabecera, mensajes y campo son UNA sola
+          caja que mide lo que de verdad se ve (`useAltoVisible` en la página),
+          así que la salida no se puede perder. */}
+      <CabeceraLucas
+        onEditar={nuevaConversacion}
+        onCerrar={onClose}
+        comoPagina={comoPagina}
+        extra={contadorPlan}
+      />
 
       {/* Plan error */}
       {planError && (
@@ -360,21 +362,23 @@ export default function AsistenteChat({ onClose }) {
           if (msg.type === 'cancelled') return null
 
           return (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={i} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mr-2 mt-0.5"
-                  style={{ background: 'var(--cf-gold-tint)' }}>
-                  <svg style={{ width: '12px', height: '12px', display: 'block', color: 'var(--cf-gold)' }}
-                    viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2 L13.5 10.5 L22 12 L13.5 13.5 L12 22 L10.5 13.5 L2 12 L10.5 10.5 Z" />
-                  </svg>
-                </div>
+                <span className="inline-flex items-center justify-center shrink-0 mb-0.5"
+                  style={{ width: 28, height: 28, borderRadius: 999, background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)' }}>
+                  <IconoDelSistema ruta="/asistente" size={15} grosor={2} />
+                </span>
               )}
+              {/* LA BURBUJA DEL USUARIO YA NO ES DORADA. El dorado se reserva a la
+                  cifra principal, la acción primaria y el foco (DESIGN.md · 1): una
+                  conversación larga era una columna entera de dorado. Va en tinta,
+                  como el chip activo. La de Lucas es una tarjeta blanca con borde,
+                  que se despega del fondo; antes era del mismo gris que la pantalla. */}
               <div
-                className={`max-w-[80%] px-3.5 py-2.5 rounded-[12px] text-sm ${msg.role === 'user' ? 'rounded-br-[4px] whitespace-pre-wrap' : 'rounded-bl-[4px]'}`}
+                className={`max-w-[84%] px-4 py-3 text-[15px] leading-[1.5] ${msg.role === 'user' ? 'whitespace-pre-wrap' : ''}`}
                 style={msg.role === 'user'
-                  ? { background: 'var(--cf-gold)', color: 'var(--cf-ink)' }
-                  : { background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)' }
+                  ? { background: 'var(--cf-ink)', color: 'var(--cf-card)', borderRadius: '20px 20px 6px 20px' }
+                  : { background: 'var(--cf-card)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)', borderRadius: '20px 20px 20px 6px', overflowWrap: 'anywhere' }
                 }>
                 {msg.content
                   ? (msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content)
@@ -409,7 +413,11 @@ export default function AsistenteChat({ onClose }) {
 
       {/* Input */}
       {!planError && (
-        <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--cf-border)' }}>
+        <div className="px-3 pt-3 shrink-0" style={{
+          background: 'var(--cf-card)', borderTop: '1px solid var(--cf-border)',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+        }}>
+          <style>{`.cf-lucas-campo:focus { border-color: var(--cf-gold) !important; background: var(--cf-card) !important; }`}</style>
           {sinMensajes ? (
             /* Banner de upgrade cuando se agotan los mensajes */
             <div className="rounded-[12px] px-4 py-3 text-center"
@@ -431,7 +439,10 @@ export default function AsistenteChat({ onClose }) {
             </div>
           ) : (
             <>
-              {/* Contenedor flex: mic siempre primero, textarea+send ocultos al grabar */}
+              {/* EL CAMPO SE DESPEGA DEL FONDO. «El cuadro de texto de mensaje de
+                  Lucas es del mismo color del fondo» — el dueño. La barra entera es
+                  una tarjeta blanca y el campo una pastilla con borde fuerte que se
+                  pone dorada al enfocar (el dorado SÍ es para el foco). */}
               <div className="flex gap-2 items-end">
                 <VoiceInput
                   ref={voiceRef}
@@ -451,34 +462,33 @@ export default function AsistenteChat({ onClose }) {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Pregunta o pide algo..."
+                  placeholder="Pregúntale o pídele algo…"
                   rows={1}
                   disabled={loading}
-                  className="flex-1 resize-none rounded-[12px] px-3.5 py-2.5 text-sm outline-none transition-all"
+                  className="cf-lucas-campo flex-1 resize-none outline-none"
                   style={{
-                    background: 'var(--cf-fill)',
-                    border: '1px solid var(--cf-border-strong)',
-                    color: 'var(--cf-ink)',
-                    maxHeight: '100px',
-                    lineHeight: '1.5',
+                    minHeight: 46, maxHeight: 120, padding: '11px 16px', lineHeight: 1.45,
+                    borderRadius: 23, background: 'var(--cf-surface)', color: 'var(--cf-ink)',
+                    border: '1.5px solid var(--cf-border-strong)',
                     display: voiceRecording ? 'none' : undefined,
                   }}
                 />
                 <button onClick={() => sendMessage()} disabled={loading || !input.trim()}
-                  className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 transition-all disabled:opacity-40"
+                  className="shrink-0 inline-flex items-center justify-center transition-[background-color,color,opacity]"
                   style={{
-                    background: 'var(--cf-gold)',
-                    color: 'var(--cf-ink)',
+                    width: 46, height: 46, borderRadius: 999, border: 0, cursor: input.trim() ? 'pointer' : 'default',
+                    background: input.trim() ? 'var(--cf-gold)' : 'var(--cf-fill-2)',
+                    color: input.trim() ? 'var(--cf-gold-ink)' : 'var(--cf-ink-4)',
                     display: voiceRecording ? 'none' : undefined,
                   }}
                   aria-label="Enviar">
-                  <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.269 20.876L5.999 12zm0 0h7.5" />
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M12 19V5M5.5 11.5L12 5l6.5 6.5" />
                   </svg>
                 </button>
               </div>
-              <p className="text-[10px] text-center mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-                Lucas puede cometer errores — verifica datos importantes
+              <p className="text-[11px] text-center mt-2" style={{ color: 'var(--cf-ink-3)' }}>
+                Lucas se puede equivocar. Los números salen de tu app.
               </p>
             </>
           )}

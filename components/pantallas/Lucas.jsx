@@ -19,6 +19,7 @@
 // dueño quiere preguntar algo MIENTRAS mira sus números; taparle el panel para
 // contestarle le quita el contexto que le da sentido a la respuesta.
 
+import { Icono as IconoDelSistema } from '@/components/armazon/iconos'
 import { useState } from 'react'
 import { BloqueOscuro, TiraCifras } from '@/components/cf/primitivos'
 import TarjetaCliente from '@/components/cf/TarjetaCliente'
@@ -44,40 +45,65 @@ function BotonIcono({ etiqueta, children, onClick }) {
 // `extra` es para el contador de mensajes del plan. No estaba: la lámina lo
 // prohíbe en el vacío —«doscientos de qué»— pero la app sí lo enseña cuando
 // queda poco, y ese aviso tiene que caber sin romper la cabecera.
-export function Cabecera({ onEditar, onCerrar, extra }) {
+export function Cabecera({ onEditar, onCerrar, extra, comoPagina = false }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 11, flex: 'none',
-      padding: '12px 12px 12px 16px', borderBottom: '1px solid var(--cf-hairline)',
+      display: 'flex', alignItems: 'center', gap: 10, flex: 'none', minHeight: 60,
+      padding: 'max(8px, env(safe-area-inset-top)) 10px 8px 10px',
+      background: 'var(--cf-card)', borderBottom: '1px solid var(--cf-border)',
     }}>
+      {/* LA SALIDA, LO PRIMERO Y CON CAJA. Era una X gris de 36px sin fondo, al
+          final de la fila: en la pantalla dedicada ni siquiera se pintaba. En una
+          página se VUELVE (flecha, a la izquierda, donde está en todo el
+          sistema); en el panel de escritorio se CIERRA (X, a la derecha). */}
+      {comoPagina && onCerrar && (
+        <button type="button" onClick={onCerrar} aria-label="Volver" style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 44, minWidth: 44, height: 44, borderRadius: 14, flex: 'none', cursor: 'pointer',
+          background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+      )}
+
       <span style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 38, minWidth: 38, height: 38, borderRadius: 12, flex: 'none',
-        background: 'var(--cf-gold)', border: '2px solid var(--cf-gold-light)',
-      }}>{CHISPA}</span>
+        width: 40, minWidth: 40, height: 40, borderRadius: 999, flex: 'none',
+        background: 'var(--cf-gold-tint)', color: 'var(--cf-gold-dark)',
+      }}>
+        <IconoDelSistema ruta="/asistente" size={20} grosor={2} />
+      </span>
 
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{
           display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',
           fontSize: 18, fontWeight: 600, letterSpacing: '-.02em', color: 'var(--cf-ink)', lineHeight: 1.15,
         }}>Lucas</span>
-        <span style={{ display: 'block', fontSize: 11, color: 'var(--cf-ink-3)', marginTop: 1 }}>
+        <span style={{ display: 'block', fontSize: 12, color: 'var(--cf-ink-3)', marginTop: 1 }}>
           sabe todo de tu negocio
         </span>
       </span>
 
       {extra}
 
-      <BotonIcono etiqueta="Empezar de nuevo" onClick={onEditar}>
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <button type="button" aria-label="Empezar de nuevo" title="Empezar de nuevo" onClick={onEditar} style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 44, minWidth: 44, height: 44, borderRadius: 14, flex: 'none', cursor: 'pointer',
+        background: 'none', border: 0, color: 'var(--cf-ink-2)',
+      }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" />
         </svg>
-      </BotonIcono>
-      <BotonIcono etiqueta="Cerrar" onClick={onCerrar}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </BotonIcono>
+      </button>
+      {!comoPagina && onCerrar && (
+        <button type="button" aria-label="Cerrar" onClick={onCerrar} style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 44, minWidth: 44, height: 44, borderRadius: 14, flex: 'none', cursor: 'pointer',
+          background: 'var(--cf-fill)', border: '1px solid var(--cf-border)', color: 'var(--cf-ink)',
+        }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        </button>
+      )}
     </div>
   )
 }

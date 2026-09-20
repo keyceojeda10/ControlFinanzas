@@ -13,27 +13,21 @@
 //
 // ⚠️ EN ESCRITORIO NO EXISTE. La barra lateral ya lista todo con sus grupos.
 
+import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
 import { Tarjeta } from '@/components/cf/primitivos'
 
-/* Los iconos son de trazo, 20px, en gris. No compiten con las cifras. */
-const I = {
-  plata:      <><rect x="2.5" y="6" width="19" height="13" rx="2.5" /><path d="M2.5 10.5h19M17 15h1.5" /></>,
-  // Caja: el cajón con su ranura y las monedas. Mismo trazo que el resto.
-  caja:       <><rect x="2.5" y="7.5" width="19" height="12" rx="2.5" /><path d="M9 7.5V6a2 2 0 012-2h2a2 2 0 012 2v1.5M9.5 13h5" /></>,
-  negocio:    <><path d="M3 20h18M6.5 20v-7M12 20V6.5M17.5 20v-11" /></>,
-  simulador:  <><rect x="4" y="2.5" width="16" height="19" rx="2.5" /><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 15.5v3" /></>,
-  reportes:   <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></>,
-  gastos:     <><path d="M5.5 3h13v18l-2.2-1.6-2.1 1.6-2.2-1.6L9.8 21l-2.1-1.6L5.5 21z" /><path d="M9 8h6M9 12h6" /></>,
-  cobradores: <><circle cx="9" cy="8" r="3.4" /><path d="M2.8 20a6.2 6.2 0 0112.4 0M17 5.2a3.4 3.4 0 010 5.9M19.4 20a5.6 5.6 0 00-2.6-4.7" /></>,
-  perdidos:   <><circle cx="12" cy="12" r="9" /><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" /></>,
-  socios:     <><circle cx="8" cy="9" r="3" /><circle cx="16" cy="9" r="3" /><path d="M2.5 19.5a5.5 5.5 0 0111 0M10.5 19.5a5.5 5.5 0 0111 0" /></>,
-  quien:      <><circle cx="12" cy="12" r="9" /><path d="M12 7.5v5l3 2" /></>,
-  config:     <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5v.2a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.6 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H2.7a2 2 0 110-4h.1a1.7 1.7 0 001.6-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V2.7a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1h.2a2 2 0 110 4h-.1a1.7 1.7 0 00-1.6 1z" /></>,
-  soporte:    <><path d="M21 11.5a8.4 8.4 0 01-12.6 7.3L3 20.5l1.8-5.2A8.4 8.4 0 1121 11.5z" /></>,
-  tutoriales: <><circle cx="12" cy="12" r="9" /><path d="M10 8.5l6 3.5-6 3.5z" /></>,
-  cuaderno:   <><path d="M4 4.5A1.5 1.5 0 015.5 3H18a1 1 0 011 1v16a1 1 0 01-1 1H5.5A1.5 1.5 0 014 19.5z" /><path d="M4 17.5h15M8 3v18" /></>,
-  excel:      <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9.5 12l5 5M14.5 12l-5 5" /></>,
+/* Los iconos son de trazo, 20px, en gris. No compiten con las cifras.
+   NO SE DIBUJAN AQUÍ: son los del sistema, pedidos por el destino de cada fila.
+   Esta pantalla tenía su propio juego —Caja era un cajón aquí, una tarjeta en la
+   barra lateral y una caja 3D en el menú del +— y el dueño lo dijo: «el cliente
+   busca por el icono». Este mapa solo traduce el nombre corto a su ruta. */
+const RUTA_DE = {
+  plata: '/capital', caja: '/caja', negocio: '/dashboard/analiticas', simulador: '/prestamos/simulador',
+  reportes: '/reportes', gastos: '/gastos', cobradores: '/cobradores', perdidos: '/clavos',
+  socios: '/socios', quien: '/actividad', config: '/configuracion', soporte: '/soporte',
+  tutoriales: '/tutoriales', cuaderno: '/migrador', excel: '/carga-masiva',
 }
+const I = Object.fromEntries(Object.entries(RUTA_DE).map(([k, ruta]) => [k, ICONO_DE_RUTA[ruta]]))
 
 function Icono({ nombre, tam = 20 }) {
   return (

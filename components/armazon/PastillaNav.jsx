@@ -21,43 +21,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { DESTINOS, destinoActivo } from '@/lib/armazon'
+import { ICONO_DE_RUTA } from '@/components/armazon/iconos'
 
-const ICONOS = {
-  '/dashboard': (
-    <>
-      <path d="M4 11.5L12 4l8 7.5" />
-      <path d="M6 10.5V20h12v-9.5" />
-    </>
-  ),
-  '/clientes': (
-    <>
-      <circle cx="9" cy="8" r="3.2" />
-      <path d="M3.5 19.5c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8" />
-      <path d="M16 5.5a3 3 0 010 5.6M17.5 19.5c0-2.2-.8-3.6-2-4.5" />
-    </>
-  ),
-  '/prestamos': (
-    <>
-      <rect x="3" y="6" width="18" height="12" rx="2.5" />
-      <circle cx="12" cy="12" r="2.6" />
-      <path d="M6.5 12h.01M17.5 12h.01" />
-    </>
-  ),
-  '/rutas': (
-    <>
-      <path d="M9 4.5L3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8 9 4.5z" />
-      <path d="M9 4.5v12.7M15 6.8v12.7" />
-    </>
-  ),
-  '/mas': (
-    <>
-      <rect x="4" y="4" width="6.5" height="6.5" rx="1.8" />
-      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" />
-      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" />
-      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" />
-    </>
-  ),
-}
+// Los iconos NO viven aquí: son los del sistema (`armazon/iconos.jsx`). Esta
+// pastilla tenía su propia copia de los cinco, y por eso «Préstamos» se dibujaba
+// con dos puntos aquí y sin ellos en la barra lateral.
+const ICONOS = ICONO_DE_RUTA
 
 export default function PastillaNav({ onCrear }) {
   const pathname = usePathname()

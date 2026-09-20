@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment } from 'react'
+import { Icono as IconoDelSistema } from '@/components/armazon/iconos'
 
 // components/pantallas/MenuCrear.jsx — turno 43·01, adenda 07 §4.
 //
@@ -78,29 +79,20 @@ const CHIP_FG    = '#A3A8B2'
 const CHIP_ORO_BG = 'rgba(245,184,36,.14)'
 const CHIP_ORO_FG = '#F5B824'
 
-const I = {
-  pago:     <><path d="M12 3v18M17 7.5c0-2-2.2-3-5-3s-5 .9-5 2.8c0 4.4 10 2.2 10 6.6 0 2-2.2 3.1-5 3.1s-5-1.1-5-3" /></>,
-  qr:       <><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h.01" /></>,
-  prestar:  <><rect x="2.5" y="6.5" width="13" height="9" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M18 11h4M19.5 8.5L22 11l-2.5 2.5" /></>,
-  gasto:    <><path d="M5.5 3h13v18l-2.2-1.6-2.1 1.6-2.2-1.6L9.8 21l-2.1-1.6L5.5 21z" /><path d="M9 8h6M9 12h6" /></>,
-  cliente:  <><circle cx="10" cy="8" r="3.4" /><path d="M3.5 20a6.5 6.5 0 0113 0" /><path d="M18 8v6M15 11h6" /></>,
-  /* El MISMO trazo que usa «Más» para «Pasar mi cuaderno»: la misma cosa en dos
-     sitios tiene que verse igual, o parecen dos funciones distintas. */
-  cartera:  <><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5" /><path d="M7.5 7.5L12 3l4.5 4.5M12 3v13.5" /></>,
-  cobrar:   <><path d="M9 11l3 3 6-6" /><path d="M21 12a9 9 0 11-4.2-7.6" /></>,
-  caja:     <><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z" /><path d="M3 7.5L12 12l9-4.5M12 12v9" /></>,
-  miplata:  <><rect x="2.5" y="6" width="19" height="13" rx="2.5" /><path d="M2.5 10.5h19M17 15h1.5" /></>,
-  plan:     <><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
-  lucas:    <><path d="M21 11.5a8.4 8.4 0 01-12.6 7.3L3 20.5l1.8-5.2A8.4 8.4 0 1121 11.5z" /><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" /></>,
+/* LOS ICONOS SON LOS DEL SISTEMA (`armazon/iconos.jsx`), no unos propios.
+   Este menú dibujaba los suyos y por eso «La caja» era aquí una caja 3D, en «Más»
+   un cajón y en la barra lateral una tarjeta; «Cobrar hoy» era un visto aquí y un
+   reloj en el resto. El dueño, 20 sep 2026: «el cliente lo tiene en su memoria,
+   busca por el icono». Lo que se HACE va por `accion`; a donde se VA, por `ruta`. */
+const ICONOS = {
+  pago: { accion: 'pago' }, qr: { accion: 'qr' }, prestar: { accion: 'prestar' }, cliente: { accion: 'clienteNuevo' },
+  gasto: { ruta: '/gastos' }, cartera: { ruta: '/migrador' },
+  cobrar: { ruta: '/cobros-hoy' }, caja: { ruta: '/caja' }, miplata: { ruta: '/capital' }, plan: { ruta: '/configuracion/plan' },
+  lucas: { ruta: '/asistente' },
 }
 
 function Icono({ nombre, tam = 20 }) {
-  return (
-    <svg width={tam} height={tam} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {I[nombre]}
-    </svg>
-  )
+  return <IconoDelSistema {...ICONOS[nombre]} size={tam} grosor={1.8} />
 }
 
 function Rotulo({ children }) {
@@ -131,13 +123,10 @@ function Accion({ icono, nombre, cifra, destacada, alto = 56, primera, onClick }
 
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <span style={{
-          fontSize: 15, fontWeight: 600, color: TEXTO,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          fontSize: 15, fontWeight: 600, color: TEXTO, lineHeight: 1.25,
         }}>{nombre}</span>
         {cifra && (
-          <span className="cf-num" style={{
-            fontSize: 12, color: TEXTO_2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>{cifra}</span>
+          <span className="cf-num" style={{ fontSize: 12, color: TEXTO_2, lineHeight: 1.35 }}>{cifra}</span>
         )}
       </span>
 
@@ -166,13 +155,11 @@ function Destino({ icono, nombre, cifra, onClick }) {
       </span>
       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         <span style={{
-          fontSize: 13.5, fontWeight: 600, color: TEXTO, lineHeight: 1.2,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          fontSize: 14, fontWeight: 600, color: TEXTO, lineHeight: 1.2,
         }}>{nombre}</span>
         {cifra && (
           <span className="cf-num" style={{
             fontSize: 11, color: TEXTO_2, lineHeight: 1.3, marginTop: 1,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{cifra}</span>
         )}
       </span>
@@ -248,6 +235,15 @@ export default function MenuCrear({
       position: 'absolute', inset: 0, background: SUPERFICIE, color: TEXTO,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
+      {/* Cada bloque sube 10px al abrir, uno detrás de otro: el menú «llega» en
+          vez de aparecer de golpe. Solo `transform` y `opacity`, y nada si el
+          teléfono pide menos movimiento. El contenido es visible sin animación:
+          si no corre, no se queda nada escondido. */}
+      <style>{`
+        @keyframes cf-menu-sube { from { opacity: 0; transform: translate3d(0, 10px, 0) } to { opacity: 1; transform: none } }
+        .cf-menu-sube { animation: cf-menu-sube .38s cubic-bezier(.16,1,.3,1) backwards; }
+        @media (prefers-reduced-motion: reduce) { .cf-menu-sube { animation: none; } }
+      `}</style>
       <div style={{
         flex: 1, minHeight: 0, overflowY: 'auto',
         display: 'flex', flexDirection: 'column', gap: 9,
@@ -263,6 +259,40 @@ export default function MenuCrear({
           {[fecha, hora].filter(Boolean).join(' · ')}
         </span>
 
+        {/* ── LUCAS, ARRIBA Y CON FORMA DE «PREGÚNTAME» ──
+            Estaba al PIE, debajo de cuatro grupos: había que desplazar para
+            verlo. El dueño, 20 sep 2026: «la opción de Lucas solamente se
+            encuentra en el menú FAB y está hasta abajo… no creo que se vea tan
+            relevante como realmente puede llegar a ser… yo creo que la gente ni
+            siquiera lo está usando». Ahora es lo primero, y tiene forma de barra
+            de pregunta —no de una fila más— porque es OTRA manera de usar la
+            app: en vez de buscar el botón, se pide. Los grupos de debajo no se
+            mueven: salen en los tutoriales. */}
+        {/* `/lucas` era 404: la ruta se llama `/asistente`. */}
+        <button type="button" onClick={ir('/asistente')} className="cf-menu-sube" style={{
+          display: 'flex', alignItems: 'center', gap: 12, width: '100%', flex: 'none', marginTop: 8,
+          minHeight: 60, padding: '0 8px 0 12px', cursor: 'pointer', textAlign: 'left',
+          background: 'rgba(245,184,36,.09)', border: '1px solid rgba(245,184,36,.34)', borderRadius: 999,
+        }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 38, minWidth: 38, height: 38, borderRadius: 999, flex: 'none',
+            background: CHIP_ORO_FG, color: '#3A2900',
+          }}>
+            <Icono nombre="lucas" tam={19} />
+          </span>
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: TEXTO, lineHeight: 1.25 }}>Pregúntale a Lucas</span>
+            <span style={{ fontSize: 12.5, color: TEXTO_2, lineHeight: 1.3 }}>«{ejemploLucas}»</span>
+          </span>
+          <span aria-hidden="true" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 40, minWidth: 40, height: 40, borderRadius: 999, flex: 'none', color: CHIP_ORO_FG,
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+          </span>
+        </button>
+
         {/* ── LO QUE SE VIENE A HACER DESDE ESTA PANTALLA, ARRIBA ──
             El menu era siempre el mismo, en el mismo orden. Desde «Clientes» se
             pulsaba el + y lo primero era «Registrar un pago»: «Un cliente
@@ -273,11 +303,14 @@ export default function MenuCrear({
             Ahora el grupo que corresponde a la pantalla sube al principio. El
             resto no se mueve ni se quita: sigue estando todo, y quien ya sabia
             donde buscarlo lo encuentra igual, solo que un poco mas abajo. */}
-        {GRUPOS.map((g) => (
+        {GRUPOS.map((g, n) => (
           <Fragment key={g.id}>
             <span style={{ height: 5, flex: 'none' }} />
             <Rotulo>{g.rotulo}</Rotulo>
-            <div style={{ background: TARJETA, border: BORDE, borderRadius: 18, overflow: 'hidden', flex: 'none' }}>
+            <div className="cf-menu-sube" style={{
+              background: TARJETA, border: BORDE, borderRadius: 18, overflow: 'hidden', flex: 'none',
+              animationDelay: `${60 + n * 45}ms`,
+            }}>
               {g.filas}
             </div>
           </Fragment>
@@ -285,7 +318,7 @@ export default function MenuCrear({
 
         <span style={{ height: 5, flex: 'none' }} />
         <Rotulo>Ir a</Rotulo>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, flex: 'none' }}>
+        <div className="cf-menu-sube" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, flex: 'none', animationDelay: '200ms' }}>
           <Destino icono="cobrar"  nombre="Cobrar hoy" cifra={cobrosCorto} onClick={ir('/cobros-hoy')} />
           <Destino icono="caja"    nombre="La caja"    cifra={cajaEstado} onClick={ir('/caja')} />
           <Destino icono="miplata" nombre="Capital"    cifra={plataCorto} onClick={ir('/capital')} />
@@ -293,31 +326,6 @@ export default function MenuCrear({
           <Destino icono="plan"    nombre="Mi plan"    cifra={diasPlan} onClick={ir('/configuracion/plan')} />
         </div>
 
-        {/* Lucas va al pie y separado: no es una acción más, es otra forma de
-            usar la app. Tarjeta blanca como las demás — un círculo oscuro aquí
-            se leería como un parche sobre el dorado. */}
-        <span style={{ height: 9, flex: 'none' }} />
-        {/* `/lucas` era 404: la ruta se llama `/asistente`. */}
-        <button type="button" onClick={ir('/asistente')} style={{
-          display: 'flex', alignItems: 'center', gap: 13, width: '100%', flex: 'none',
-          minHeight: 66, padding: '0 15px', cursor: 'pointer', textAlign: 'left',
-          background: TARJETA, border: BORDE, borderRadius: 18,
-        }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 37, minWidth: 37, height: 37, borderRadius: 12, flex: 'none',
-            background: CHIP_ORO_BG, color: CHIP_ORO_FG,
-          }}>
-            <Icono nombre="lucas" />
-          </span>
-          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: TEXTO }}>Preguntarle a Lucas</span>
-            <span style={{
-              fontSize: 12, color: TEXTO_2, fontStyle: 'italic',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>«{ejemploLucas}»</span>
-          </span>
-        </button>
       </div>
 
       {/* El FAB se convierte en el botón de cerrar, EN EL MISMO SITIO. El pulgar
