@@ -440,6 +440,10 @@ export async function GET(request) {
       proximoCobro: proximoCobroMin,
       proximoCobroLabel: proximoCobroMin ? formatFechaCobroContextual(proximoCobroMin, diasMoraMax) : null,
       tieneClavo: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo'),
+      // Si TODO lo que tiene vivo está dado por perdido, «Al día» es falso: no va
+      // al día, es que ya no se le cuenta la mora. Lo usa la tarjeta de la lista.
+      soloClavos: c.prestamos.some(pr => pr.esClavo && pr.estado === 'activo')
+        && !c.prestamos.some(pr => !pr.esClavo && pr.estado === 'activo'),
       // Cómo ha pagado lo anterior. `null` en quien no ha terminado ninguno:
       // sin historial no hay estrella, y son 4.675 de 7.624 clientes.
       calificacion: calificacionDe({ ...porCliente.get(c.id), manual: c.calificacionManual }),

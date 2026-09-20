@@ -862,7 +862,6 @@ const MOVIMIENTOS_MANUALES = [
   // ── VISTA DEL COBRADOR ────────────────────────────────────────
   if (esCobrador) {
     const cierreHoy = cierres[0]
-    const diferencia = cierreHoy ? cierreHoy.totalRecogido - cierreHoy.totalEsperado : null
     const cierreDesembolsado = cierreHoy?.totalDesembolsado ?? desembolsadoDia
     const cierreSaldoReal = cierreHoy?.saldoRealCaja ?? saldoRealCaja
     const mostrarFormularioCierre = fechaEditableCobrador && (!cierreHoy || modoAjusteCierre)
@@ -1243,12 +1242,29 @@ const MOVIMIENTOS_MANUALES = [
                   <span className={`font-medium font-mono-display ${color}`}>{value}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-sm font-bold border-t border-[var(--cf-border)] pt-2 mt-2">
-                <span className="text-[var(--cf-ink-3)]">Diferencia</span>
-                <span className="font-mono-display" style={{ color: diferencia >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-                  {diferencia >= 0 ? '+' : ''}{formatMoney(diferencia)}
-                </span>
-              </div>
+              {/* ⚠ DECÍA «Diferencia −$470.000» EN ROJO, y era `entregado − lo que
+                  tocaba cobrar`. Dos mentiras en una línea: (1) en rojo y con ese
+                  nombre se lee «al cobrador le faltan $470.000», cuando es que no
+                  todos sus clientes pagaron —un día normal—; y (2) ni siquiera
+                  era lo que quedó por cobrar, porque `entregado` son solo BILLETES:
+                  los $78.400 que entraron por Nequi no contaban, y el inicio —con
+                  razón— decía que faltaban $391.600. Cazado el 19 sep 2026 viendo
+                  la caja con sesión de cobrador.
+                  Ahora dice lo que es, con lo que ya está en esta pantalla: lo que
+                  tocaba menos TODO lo cobrado (efectivo y transferencias). Sin
+                  rojo: no cobrarle a todos no es un descuadre. El descuadre de
+                  verdad lo mide el dueño al contar los billetes. */}
+              {(() => {
+                const porCobrar = Math.max(0, Math.round((cierreHoy.totalEsperado || 0) - cobradoHoy))
+                return (
+                  <div className="flex justify-between text-sm font-bold border-t border-[var(--cf-border)] pt-2 mt-2">
+                    <span className="text-[var(--cf-ink-3)]">{porCobrar > 0 ? 'Quedó por cobrar' : 'Cobraste todo lo que tocaba'}</span>
+                    <span className="font-mono-display" style={{ color: porCobrar > 0 ? 'var(--cf-ink)' : 'var(--cf-green-dark)' }}>
+                      {porCobrar > 0 ? formatMoney(porCobrar) : formatMoney(cobradoHoy)}
+                    </span>
+                  </div>
+                )
+              })()}
               <div className="flex justify-between text-sm font-bold">
                 <span className="text-[var(--cf-ink-3)]">Saldo del día</span>
                 <span className="font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
@@ -2182,12 +2198,14 @@ const MOVIMIENTOS_MANUALES = [
                       <span className="text-xs font-semibold text-[var(--cf-ink)] tabular-nums">
                         {fmtFecha(c.fecha)}
                       </span>
+                      {/* Salía «−$470.000» suelto y en ROJO junto a la fecha. Es lo
+                          entregado menos lo que TOCABA COBRAR ese día —clientes que
+                          no pagaron—, no plata que le falte al cobrador: en rojo y
+                          sin nombre se leía como un faltante. Con su nombre y sin
+                          color; el faltante de verdad es el del cuadre. */}
                       {c.diferencia !== 0 && (
-                        <span
-                          className="text-[10px] tabular-nums"
-                          style={{ color: c.diferencia >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}
-                        >
-                          {c.diferencia >= 0 ? '+' : ''}{formatMoney(c.diferencia)}
+                        <span className="text-[10px] tabular-nums" style={{ color: 'var(--cf-ink-3)' }}>
+                          {formatMoney(Math.abs(c.diferencia))} {c.diferencia < 0 ? 'menos de lo que tocaba' : 'más de lo que tocaba'}
                         </span>
                       )}
                     </div>

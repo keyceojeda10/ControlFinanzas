@@ -131,6 +131,8 @@ export default function PantallaMas({
   perdidos, socios, usuarios = 1, onIr,
   // Dentro del layout el margen lateral ya lo pone el <main>.
   sinMargen = false,
+  // El menú del cobrador: ver el aviso largo más abajo.
+  esCobrador = false, puedeReportarGastos = true, puedeCrearClientes = false,
 }) {
   const ir = (destino) => () => onIr?.(destino)
 
@@ -156,6 +158,51 @@ export default function PantallaMas({
   // solo usuario, la pantalla que abre está vacía por definición y no hay nada
   // que hacer para llenarla desde ahí.
   const hayEquipo = usuarios > 1
+
+  /* ══ EL «MÁS» DEL COBRADOR ═══════════════════════════════════════════════
+     Veía el mismo menú que el dueño: Capital con su saldo, «¿Cómo va el negocio?»,
+     Cobradores, Socios, Historial… y al tocarlos, una pantalla de «no tienes
+     permiso». Peor que el rebote era la cifra: el saldo del capital salía en la
+     fila. Ahora ve lo que puede usar: su caja, el simulador, sus gastos, la hoja
+     de cobros (Reportes) y los perdidos de su ruta. Cargar clientes, solo si el
+     dueño le dio ese permiso. */
+  if (esCobrador) {
+    const suyas = [
+      { icono: 'caja',      nombre: 'Caja',      cifra: null, destino: '/caja' },
+      { icono: 'simulador', nombre: 'Simulador', cifra: 'Cuánto quedaría de cuota', destino: '/prestamos/simulador' },
+      puedeReportarGastos && { icono: 'gastos', nombre: 'Gastos', cifra: null, destino: '/gastos' },
+      { icono: 'reportes',  nombre: 'Reportes',  cifra: 'La hoja de cobros del día', destino: '/reportes' },
+      { icono: 'perdidos',  nombre: 'Perdidos',  cifra: 'Los de tu ruta', destino: '/clavos' },
+    ].filter(Boolean)
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--cf-gap-cards)', padding: sinMargen ? '0' : '8px var(--cf-pad-screen) 0' }}>
+        <Rotulo>Más herramientas</Rotulo>
+        <Tarjeta plana>
+          {suyas.map((h, i) => (
+            <Fila key={h.nombre} {...h} primera={i === 0} onIr={ir(h.destino)} />
+          ))}
+        </Tarjeta>
+
+        {puedeCrearClientes && (
+          <>
+            <Rotulo>Cargar datos</Rotulo>
+            <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
+              <TarjetaCarga icono="cuaderno" titulo="Pasar mi cuaderno"
+                nota="Le tomas foto y se pasa solo" onIr={ir('/migrador')} />
+            </div>
+          </>
+        )}
+
+        <Rotulo>Cuenta</Rotulo>
+        <Tarjeta plana>
+          <Fila icono="config"     nombre="Configuración" alto={54} primera onIr={ir('/configuracion')} />
+          <Fila icono="soporte"    nombre="Soporte"       alto={54} onIr={ir('/soporte')} />
+          <Fila icono="tutoriales" nombre="Tutoriales"    alto={54} onIr={ir('/tutoriales')} />
+        </Tarjeta>
+        <span aria-hidden style={{ height: 96, flex: 'none' }} />
+      </div>
+    )
+  }
 
   /* ⚠ «CAPITAL» E «HISTORIAL», CON EL NOMBRE DE LA PANTALLA. Se llamaban
      «Mi plata» y «Quién hizo qué» —los nombres «del usuario» de la lámina— pero

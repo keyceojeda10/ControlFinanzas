@@ -4,7 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getUtcOffset } from '@/lib/i18n'
-import { calcularDiasMora } from '@/lib/calculos'
+import { calcularDiasMora, tienePeriodoEsperadoHoy } from '@/lib/calculos'
+import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export async function GET() {
   const hoy     = inicioHoyUTC(country)
   const hace7   = inicio7DiasUTC(country)
 
-  const [pagosSemana, pagosHoy, ruta, clientesRuta, festivos] = await Promise.all([
+  const [pagosSemana, pagosHoy, ruta, clientesRuta, festivos, org] = await Promise.all([
     prisma.pago.findMany({
       where: {
         organizationId: orgId,
@@ -74,19 +75,9 @@ export async function GET() {
       where: { organizationId: orgId, cobradorId: userId },
       select: {
         nombre: true,
-        _count: { select: { clientes: { where: { estado: 'activo' } } } },
-        clientes: {
-          where: { estado: 'activo' },
-          select: {
-            nombre: true,
-            diasSinCobro: true,
-            prestamos: {
-              where: { estado: 'activo' },
-              select: { cuotaDiaria: true },
-              take: 1,
-            },
-          },
-        },
+        _count: { select: { clientes: { where: { estado: { notIn: ['eliminado', 'inactivo'] } } } } },
+        // (Aquí se traían los clientes con su PRIMER préstamo para la «meta» vieja.
+        //  Ya no se usa: la cifra sale de `clientesRuta`, con la regla del inicio.)
       },
     }),
     // Clientes en mora: NO existe un campo `enMora` en Cliente; la mora se calcula
@@ -95,14 +86,40 @@ export async function GET() {
       where: {
         organizationId: orgId,
         ruta: { cobradorId: userId },
-        estado: 'activo',
+        /* ⚠ NO `estado: 'activo'`. Un cliente atrasado tiene `estado: 'mora'`, así que
+           con ese filtro LOS QUE ESTÁN EN MORA NO ENTRABAN EN LA LISTA DE MORA: la
+           ruta tenía cuatro atrasados y esta pantalla enseñaba uno. Y sus cuotas
+           tampoco contaban en lo que toca cobrar hoy ($470.000 donde eran
+           $520.000). Cazado el 19 sep 2026. Mismo criterio que el inicio. */
+        estado: { notIn: ['eliminado', 'inactivo'] },
       },
       select: {
         nombre: true,
         diasSinCobro: true,
+        ruta: { select: { diasSinCobro: true } },
         prestamos: {
           where: { estado: 'activo', esClavo: false },
           select: {
+            // Todo lo que lee `tienePeriodoEsperadoHoy`: un campo que falta no
+            // da error, decide mal en silencio. Lo vigila
+            // `toca-cobrar-hoy-una-sola-cifra.test.js`.
+            id: true,
+            modoInteres: true,
+            sinPlazo: true,
+            diasSinCobro: true,
+            // Lo mismo que pide la ficha de la ruta, o las dos pantallas miden la
+            // mora del mismo cliente con información distinta.
+            montoPrestado: true,
+            fechaFin: true,
+            capitalExtra: true,
+            interesAdelantado: true,
+            ultimoPagoAt: true,
+            pagos: { select: { montoPagado: true, tipo: true, fechaPago: true } },
+            devengos: { select: { periodo: true, interes: true } },
+            cuotasAmortizacion: {
+              orderBy: { numeroPeriodo: 'asc' },
+              select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+            },
             estado: true,
             cuotaDiaria: true,
             totalAPagar: true,
@@ -123,13 +140,17 @@ export async function GET() {
       where: { organizationId: orgId },
       select: { fecha: true },
     }),
+    prisma.organization.findUnique({ where: { id: orgId }, select: { diasSinCobro: true } }),
   ])
 
   // Calcular días de mora por cliente (máximo entre sus préstamos activos) y quedarnos
   // con los que tienen mora > 0, ordenados desc, top 10.
   const clientesMora = clientesRuta
     .map((c) => {
-      const diasMora = c.prestamos.reduce((max, p) => Math.max(max, calcularDiasMora(p, [], festivos)), 0)
+      // Con los días sin cobro de verdad (préstamo → cliente → ruta → negocio): con
+      // `[]` un domingo contaba como día de atraso y esta pantalla decía un día más
+      // que la ficha del mismo cliente.
+      const diasMora = c.prestamos.reduce((max, p) => Math.max(max, calcularDiasMora(p, obtenerDiasSinCobro(c, c.ruta, org, p), festivos)), 0)
       return { nombre: c.nombre, diasMora }
     })
     .filter((c) => c.diasMora > 0)
@@ -138,11 +159,20 @@ export async function GET() {
 
   const recaudadoHoy = pagosHoy.reduce((s, p) => s + Number(p.montoPagado), 0)
 
-  // Meta diaria = suma de cuotas diarias de clientes activos en la ruta
-  const metaHoy = ruta?.clientes.reduce((s, c) => {
-    const cuota = c.prestamos[0]?.cuotaDiaria ?? 0
-    return s + Number(cuota)
-  }, 0) ?? 0
+  /* ⚠ LA «META» ERA LA CUOTA DE TODOS LOS CLIENTES DE LA RUTA —toque hoy o no—,
+     contando solo el PRIMER préstamo de cada uno (`take: 1`), incluidos los
+     perdidos, y de UNA sola ruta aunque el cobrador lleve varias. El 19 sep 2026
+     esta pantalla le decía a un cobrador «Meta $815.067» mientras su inicio decía
+     «de $520.000 que toca cobrar». Ahora es la MISMA regla que el inicio, Rutas y
+     Cobros de hoy: lo que el calendario dice que toca cobrar hoy. */
+  const metaHoy = Math.round(clientesRuta.reduce((suma, c) => {
+    for (const p of c.prestamos) {
+      const dias = obtenerDiasSinCobro(c, c.ruta, org, p)
+      const sinCobro = esHoySinCobro(dias) || esHoyFestivo(festivos)
+      if (tienePeriodoEsperadoHoy(p, sinCobro, dias, festivos)) suma += Number(p.cuotaDiaria) || 0
+    }
+    return suma
+  }, 0))
 
   const pctMeta = metaHoy > 0 ? Math.round((recaudadoHoy / metaHoy) * 100) : 100
 

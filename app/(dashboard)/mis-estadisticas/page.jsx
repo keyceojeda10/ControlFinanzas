@@ -6,10 +6,12 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { useState, useEffect } from 'react'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
+import { BloqueOscuro, BarraProgreso } from '@/components/cf/primitivos'
 
 function fmtFechaCorta(yyyy_mm_dd) {
   const [, m, d] = yyyy_mm_dd.split('-')
-  const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  // En minúscula y «sept», como el resto de la app («19 sept»): salía «19 Sep».
+  const meses = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
   return `${parseInt(d)} ${meses[parseInt(m)]}`
 }
 
@@ -67,7 +69,6 @@ export default function MisEstadisticasPage() {
     )
   }
 
-  const pctColor = data.pctMeta >= 90 ? 'var(--cf-green-dark)' : data.pctMeta >= 60 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
   const maxSemana = Math.max(...(data.semana?.map((d) => d.total) ?? [1]), 1)
 
   return (
@@ -82,40 +83,24 @@ export default function MisEstadisticasPage() {
         )}
       </div>
 
-      {/* ── Hoy: recaudado vs meta ── */}
-      <div className="cf-card-shadow rounded-[20px] px-5 py-5"
-        style={{
-          background: `linear-gradient(135deg, color-mix(in srgb, ${pctColor} 12%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-          border: `1px solid color-mix(in srgb, ${pctColor} 22%, var(--cf-border))`,
-        }}
-      >
-        <p className="text-[11px] font-extrabold uppercase tracking-[.07em] mb-3" style={{ color: 'var(--cf-ink-3)' }}>Hoy</p>
-        <div className="flex items-end justify-between mb-3">
-          <div>
-            <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Recaudado</p>
-            <p className="text-[32px] font-bold font-mono-display leading-none" style={{ color: pctColor }}>
-              {formatMoney(data.recaudadoHoy)}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[13px]" style={{ color: 'var(--cf-ink-3)' }}>Meta</p>
-            <p className="text-[20px] font-bold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
-              {formatMoney(data.metaHoy)}
-            </p>
-          </div>
+      {/* ── Hoy ──
+          ⚠ ERA UNA TARJETA ROSADA CON DEGRADADO, la cifra en ROJO y «6% de la meta»:
+          a las ocho de la mañana todo cobrador sale en rojo, y eso no es una
+          alarma, es que el día acaba de empezar. Y decía «Meta $815.067» donde su
+          inicio dice «de $520.000 que toca cobrar» (19 sep 2026). Ahora es el
+          bloque del sistema, con las mismas palabras que el inicio y la misma
+          cifra. «Cobraste tú»: aquí solo cuentan los pagos que registró él. */}
+      <BloqueOscuro etiqueta="Cobraste tú hoy" cifra={formatMoney(data.recaudadoHoy)}>
+        <BarraProgreso porcentaje={Math.min(100, data.pctMeta)} tono="oro" alto={11} sobreOscuro />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: -4 }}>
+          <span className="cf-num" style={{ fontSize: 13, color: '#A3A8B2' }}>
+            de {formatMoney(data.metaHoy)} que toca cobrar
+          </span>
+          <span className="cf-num" style={{ fontSize: 13, fontWeight: 700, color: '#F5B824', flex: 'none' }}>
+            {Math.min(100, data.pctMeta)}%
+          </span>
         </div>
-        {/* Barra progreso */}
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--cf-fill)' }}>
-          <div
-            className="h-full rounded-full transition-[width] duration-700"
-            style={{
-              width: `${Math.min(100, data.pctMeta)}%`,
-              background: `linear-gradient(90deg, color-mix(in srgb, ${pctColor} 60%, transparent), ${pctColor})`,
-            }}
-          />
-        </div>
-        <p className="text-[11px] mt-1.5 font-semibold" style={{ color: pctColor }}>{data.pctMeta}% de la meta</p>
-      </div>
+      </BloqueOscuro>
 
       {/* ── Últimos 7 días ── */}
       <div className="cf-card-shadow rounded-[20px] px-4 py-4"

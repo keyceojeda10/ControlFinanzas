@@ -55,6 +55,25 @@ const VACIO = {
   },
 }
 
+/* LO MISMO, DICHO AL COBRADOR. Esta pantalla también la abre él —anota sus
+   gastos aquí— y le hablaba como al dueño: «aparece aquí para que lo apruebes o
+   lo rechaces». Él no aprueba nada: espera la respuesta. Cazado el 19 sep 2026
+   viendo la app con sesión de cobrador. */
+const VACIO_COBRADOR = {
+  pendiente: {
+    titulo: 'No tienes gastos esperando respuesta',
+    explicacion: 'Anota aquí lo que gastes en la ruta —gasolina, almuerzo— y el administrador lo aprueba o lo rechaza.',
+  },
+  aprobado: {
+    titulo: 'Todavía no te han aprobado ningún gasto',
+    explicacion: 'Los que te aprueben quedan aquí, y se descuentan de tu caja del día.',
+  },
+  rechazado: {
+    titulo: 'No te han rechazado ningún gasto',
+    explicacion: 'Si te rechazan uno, aparece aquí para que sepas cuál fue.',
+  },
+}
+
 const hoyBogota = () => new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 const cuando = (iso) => {
@@ -304,10 +323,10 @@ export default function GastosPage() {
 
           {cargando ? <PilaEsqueletos cuantos={3} alto={104} /> : gastos.length === 0 ? (
             <EstadoVacio
-              titulo={hayFiltro ? 'Nada con ese filtro' : VACIO[estado].titulo}
+              titulo={hayFiltro ? 'Nada con ese filtro' : (esOwner ? VACIO : VACIO_COBRADOR)[estado].titulo}
               explicacion={hayFiltro
                 ? 'Puede que el gasto esté en otra fecha o de otro cobrador.'
-                : VACIO[estado].explicacion}
+                : (esOwner ? VACIO : VACIO_COBRADOR)[estado].explicacion}
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -401,8 +420,9 @@ export default function GastosPage() {
           )}
         </>
 
-      {/* Para quien llegaba al capital por la pestaña que estaba aquí. */}
-      <button
+      {/* Para quien llegaba al capital por la pestaña que estaba aquí. Solo el
+          dueño: al cobrador lo mandaba a una pantalla de «no tienes permiso». */}
+      {esOwner && <button
         type="button"
         onClick={() => router.push('/capital')}
         className="w-full flex items-center gap-3 rounded-[16px] px-4 py-3.5 text-left"
@@ -425,7 +445,7 @@ export default function GastosPage() {
           strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <path d="M9 5l7 7-7 7" />
         </svg>
-      </button>
+      </button>}
 
       <ConfirmModal
         open={Boolean(aBorrar)}

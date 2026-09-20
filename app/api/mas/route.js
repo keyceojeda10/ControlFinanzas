@@ -40,6 +40,18 @@ export async function GET() {
   }
   const { organizationId } = session.user
 
+  /* ⚠ ESTO NO TENÍA BARRERA DE ROL, y un endpoint sin barrera no falla: contesta.
+     A un COBRADOR le devolvía el saldo del capital del negocio («$7.063.330 listos
+     para prestar»), los gastos del mes, los préstamos perdidos y cuántos socios
+     hay — y su pantalla «Más» lo pintaba. Cazado el 19 sep 2026 al revisar la app
+     con sesión de cobrador. Un cobrador en la calle no tiene por qué saber cuánta
+     plata tiene el dueño disponible. `/api/capital`, `/api/socios` y los demás ya
+     contestaban 403; éste, que los resume, se había quedado abierto.
+     Para él la pantalla es solo un menú: no necesita ninguna cifra. */
+  if (session.user.rol !== 'owner') {
+    return Response.json({ esCobrador: true })
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { country: true },

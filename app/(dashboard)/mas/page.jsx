@@ -10,9 +10,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import PantallaMas from '@/components/pantallas/PantallaMas'
 import { adaptarMas } from '@/lib/adaptadores/mas'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function Mas() {
   const router = useRouter()
+  const { esCobrador, puedeReportarGastos, puedeCrearClientes } = useAuth()
   const [datos, setDatos] = useState(null)
   const [fallo, setFallo] = useState(false)
   const [cargando, setCargando] = useState(true)
@@ -82,7 +84,11 @@ export default function Mas() {
         </div>
       )}
 
-      <PantallaMas sinMargen {...adaptarMas(datos)} onIr={(destino) => router.push(destino)} />
+      {/* El rol sale de la SESIÓN, no de lo que conteste el API: si la petición
+          falla, el cobrador sigue viendo su menú y no el del dueño. */}
+      <PantallaMas sinMargen {...adaptarMas(datos)}
+        esCobrador={esCobrador} puedeReportarGastos={puedeReportarGastos} puedeCrearClientes={puedeCrearClientes}
+        onIr={(destino) => router.push(destino)} />
     </div>
   )
 }
