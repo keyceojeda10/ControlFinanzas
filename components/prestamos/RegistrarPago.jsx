@@ -42,7 +42,8 @@ import {
 import { elInteresSubeLaDeuda }                            from '@/lib/dinero/modos'
 import { interesQueCompraUnPeriodo }                      from '@/lib/dinero/interes-periodo'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
-import { obtenerCoordsRapido }                              from '@/lib/geo'
+import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
+import { conPantalla } from '@/components/cf/Procesando'
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -177,6 +178,8 @@ export default function RegistrarPago({
   const [sliderVisual, setSliderVisual] = useState(1)
   const sliderAnimRef = useRef(null)
   const [loading,      setLoading]      = useState(false)
+  // El GPS arranca al abrir la hoja, no al confirmar (ver lib/geo.js).
+  useEffect(() => { if (open) calentarCoords() }, [open])
   const [error,        setError]        = useState('')
   const [exitoso,      setExitoso]      = useState(false)
   const [pagoGuardado, setPagoGuardado] = useState(null)
@@ -344,7 +347,10 @@ export default function RegistrarPago({
     // Solo se pide para pagos reales, no para ajustes (recargo/descuento) que
     // los hace el owner desde el detalle del prestamo, no en campo.
     const necesitaGeo = !['recargo', 'descuento'].includes(tipo)
-    const coords = necesitaGeo ? await obtenerCoordsRapido() : null
+    // Ya no tiene esperando al cobro: contesta al instante si el GPS se calentó
+    // al abrir la hoja, y como mucho 1,2 s si no (ver lib/geo.js). Va DENTRO de
+    // la pantalla de «estoy en eso» para que ni ese rato se quede sin nada.
+    let coords = null
 
     // Fix #6: helper para encolar offline — usado tanto en catch de red como en 503 del SW
     const encolarOffline = async () => {
@@ -408,10 +414,17 @@ export default function RegistrarPago({
 
     try {
       const qs = confirmarDuplicado ? '?confirmarDuplicado=1' : ''
-      const res  = await fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
+      // Un recargo o un descuento no es un cobro: no mueve plata ni lleva
+      // comprobante, así que dice «Guardando» y no «Registrando el cobro».
+      const guion = !necesitaGeo ? 'guardando'
+        : entraAlFajo(metodoPago, metodoPagoId, new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))) ? 'cobro' : 'cobroEnCuenta'
+      const res  = await conPantalla(guion, async () => {
+        coords = necesitaGeo ? await obtenerCoordsRapido() : null
+        return fetch(`/api/prestamos/${prestamoId}/pagos${qs}`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ montoPagado: m, tipo, nota, diasAbonados, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), plataforma, ...(coords ?? {}), ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}) }),
+        })
       })
       // Fix #6: el Service Worker puede responder 503 cuando no hay red en vez
       // de dejar fallar el fetch. Tratarlo igual que offline.
@@ -438,6 +451,7 @@ export default function RegistrarPago({
          salir al revés; el comprobante ata su «Antes debía» a este id, así que
          equivocarlo borra la fila del recibo. */
       const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
+      if (necesitaGeo && !coords) completarUbicacionDelPago(pagoId)
       /* ⚠ EL TIPO VIAJA CON EL PAGO. Sin él, el recibo no sabe si titular
          «Abono a capital» o «Pago de intereses», y la guarda de tres líneas más
          abajo —que no manda WhatsApp por un recargo o un descuento— nunca

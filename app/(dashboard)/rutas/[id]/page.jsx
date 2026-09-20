@@ -24,7 +24,8 @@ import { useAuth }                   from '@/hooks/useAuth'
 import { useOffline }                from '@/components/providers/OfflineProvider'
 import { obtenerRutaOffline, guardarOrdenPendiente, guardarPagoPendiente, guardarEnCache, leerDeCache } from '@/lib/offline'
 import { useCabecera } from '@/components/armazon/Armazon'
-import { obtenerCoordsRapido } from '@/lib/geo'
+import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
+import { useProcesando } from '@/components/cf/Procesando'
 // Las mismas que usa el servidor para el «3,4 km» de la cabecera.
 import { optimizeRoute, totalDistance } from '@/lib/routeOptimizer'
 import { Button }                    from '@/components/ui/Button'
@@ -361,6 +362,11 @@ export default function RutaDetallePage({ params }) {
   /* La vista previa del recibo: el papel se ve antes de salir hacia el chat. */
   const [previoAbierto, setPrevioAbierto] = useState(false)
   const [modalPagoRapido, setModalPagoRapido] = useState(null)
+  // La pantalla de «estoy en eso» mientras el cobro viaja (components/cf/Procesando).
+  const { procesando, conPantalla } = useProcesando()
+  // El GPS se pone a trabajar al ABRIR la hoja de cobro, no al confirmar: mientras
+  // la persona elige cómo le pagan y desliza, la lectura ya está en camino.
+  useEffect(() => { if (modalPagoRapido) calentarCoords() }, [modalPagoRapido])
   // Con QUE paga, elegido arriba y valido para todas las tarjetas de abajo.
   // Efectivo por defecto, que es como se cobra en la calle: si no se toca, el
   // cobro sale igual que antes.
@@ -997,21 +1003,32 @@ export default function RutaDetallePage({ params }) {
       ...prev,
       clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: true, cobroPendienteHoy: false } : c)
     } : prev)
-    const coords = await obtenerCoordsRapido().catch(() => null)
+    // La pantalla de «estoy en eso» sale EN EL ACTO tras el gesto y cubre todo
+    // lo que tarde: la lectura del GPS (ya casi nada, ver `lib/geo.js`) y el
+    // viaje al servidor. Antes aquí no se veía nada hasta que volvía la respuesta.
+    const enFajo = entraAlFajo(metodoPago, metodoPagoId,
+      new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id)))
+    let coords = null
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
-      const payload = esCuotaExacta
-        ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
-        : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const res = await conPantalla(enFajo ? 'cobro' : 'cobroEnCuenta', async () => {
+        coords = await obtenerCoordsRapido().catch(() => null)
+        const payload = esCuotaExacta
+          ? { montoPagado: cuota, tipo: 'completo', diasAbonados: 1, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+          : { montoPagado: cuota, tipo: 'parcial', metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
       })
       if (res.ok) {
         const data = await res.json()
         // El pago más reciente es pagos[0] (ordenados desc)
         const pagoId = data.pagos?.[0]?.id
+        // El cobro salió sin esperar al GPS: si no llevaba ubicación, se le pone
+        // cuando el GPS conteste.
+        if (!coords) completarUbicacionDelPago(data.saldoAntesDelPagoId ?? pagoId)
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
         // ── EL RECIBO, ANTES DE RECARGAR ──
@@ -2309,7 +2326,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           cerrando={guardandoCaja}
         />
         {hojaCobro}
-        {pantallaRecibo}
+        {pantallaRecibo}{procesando}
         </CapaRecorrido>
       )
     }
@@ -2365,7 +2382,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         }}
       />
       {hojaCobro}
-      {pantallaRecibo}
+      {pantallaRecibo}{procesando}
       </CapaRecorrido>
     )
   }
@@ -4148,7 +4165,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         Aqui abajo los ven las dos vistas y siguen siendo el MISMO cobro: el
         estado y los handlers son unicos, no hay dos arboles con vida propia. */}
     {hojaCobro}
-    {pantallaRecibo}
+    {pantallaRecibo}{procesando}
 
     {/* La hoja de plantillas estaba DENTRO del `lg:hidden`, igual que le pasó
         a la hoja de cobro: en PC se montaba en un `display:none` y el botón de

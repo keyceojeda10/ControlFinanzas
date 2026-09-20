@@ -1,4 +1,5 @@
 'use client'
+import { conPantalla } from '@/components/cf/Procesando'
 import { useState, useMemo, useEffect } from 'react'
 import { Renovar } from '@/components/pantallas/Renovar'
 import { useRouter } from 'next/navigation'
@@ -186,6 +187,9 @@ export default function RenovarPrestamo({
     setLoading(true)
     setError('')
     try {
+      // Renovar son dos viajes seguidos (renovar y leer el préstamo nuevo para la
+      // pantalla de «Préstamo renovado»): la pantalla de «estoy en eso» los cubre.
+      await conPantalla(soloModo ? 'guardando' : 'renovar', async () => {
       const res = await fetch(`/api/prestamos/${prestamoId}/renovar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -228,6 +232,7 @@ export default function RenovarPrestamo({
       }
       handleClose()
       router.push(`/prestamos/${nuevoId}`)
+      })
     } catch (e) {
       setError(e.message)
     } finally {

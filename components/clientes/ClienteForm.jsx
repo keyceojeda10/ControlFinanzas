@@ -3,6 +3,7 @@
 // Diseño "pantalla completa enfocada": cada paso tiene una pregunta grande,
 // subtitulo y campos amplios con mucho espacio. Stepper minimalista arriba.
 
+import { conPantalla } from '@/components/cf/Procesando'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter }           from 'next/navigation'
 import dynamic                 from 'next/dynamic'
@@ -297,10 +298,21 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
       const url    = esEdicion ? `/api/clientes/${clienteInicial.id}` : '/api/clientes'
       const method = esEdicion ? 'PATCH' : 'POST'
 
-      const res  = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
+      // Guardar y subir la foto son dos viajes seguidos: van los dos dentro de la
+      // pantalla de «estoy en eso». La foto se sube AQUÍ y no más abajo para que
+      // la pantalla no se quite y vuelva a salir.
+      let fotoSubida = false
+      const res  = await conPantalla(esEdicion ? 'guardando' : 'cliente', async () => {
+        const r = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+        })
+        if (r.ok && fotoFile) {
+          const creado = await r.clone().json().catch(() => null)
+          if (creado?.id) { await subirFoto(creado.id); fotoSubida = true }
+        }
+        return r
       })
 
       if (res.status === 503 && !esEdicion && !navigator.onLine) {
@@ -321,7 +333,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
 
       invalidarCachePorPrefijo('clientes:').catch(() => {})
 
-      if (fotoFile && data.id) await subirFoto(data.id)
+      if (fotoFile && data.id && !fotoSubida) await subirFoto(data.id)
 
       // Si vinieron datos de cartulina con información de préstamo, guardarlos
       // en sessionStorage para que /prestamos/nuevo los pre-llene automáticamente

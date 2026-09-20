@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { formatMoney } from '@/lib/i18n'
 import { Modal } from '@/components/ui/Modal'
-import { obtenerCoordsRapido } from '@/lib/geo'
+import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
+import { useProcesando } from '@/components/cf/Procesando'
+import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { StaggeredList } from '@/components/ui/StaggeredList'
 import MonedaCF from '@/components/ui/MonedaCF'
 import MetodoPagoSelector from '@/components/pagos/MetodoPagoSelector'
@@ -32,6 +34,9 @@ export default function CobrosHoyPage() {
   const [error, setError]         = useState('')
 
   const [modalPago, setModalPago]         = useState(null)
+  const { procesando, conPantalla } = useProcesando()
+  // El GPS arranca al abrir la hoja de cobro, no al confirmar (ver lib/geo.js).
+  useEffect(() => { if (modalPago) calentarCoords() }, [modalPago])
   const [pagando, setPagando]             = useState(null)
   const [pagoOk, setPagoOk]               = useState(null)
   const [undoPago, setUndoPago]           = useState(null)
@@ -221,7 +226,11 @@ export default function CobrosHoyPage() {
     setModoParcial(false)
     setMontoParcial('')
     setPagando(clienteId)
-    const coords = await obtenerCoordsRapido().catch(() => null)
+    // El cobro ya no espera al GPS aquí fuera: la lectura va DENTRO de la
+    // pantalla de «estoy en eso», que sale en el acto tras el gesto.
+    let coords = null
+    const enFajo = entraAlFajo(metodoPago, metodoPagoId,
+      new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id)))
 
     setData(prev => prev ? {
       ...prev,
@@ -238,15 +247,19 @@ export default function CobrosHoyPage() {
 
     try {
       const url = `/api/prestamos/${prestamoActivo}/pagos${confirmarDuplicado ? '?confirmarDuplicado=1' : ''}`
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
+      const res = await conPantalla(enFajo ? 'cobro' : 'cobroEnCuenta', async () => {
+        coords = await obtenerCoordsRapido().catch(() => null)
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ montoPagado: montoFinal, tipo: tipoPago, diasAbonados: tipoPago === 'completo' ? 1 : 0, metodoPago, ...(metodoPagoId ? { metodoPagoId } : {}), ...(coords ?? {}) }),
+        })
       })
 
       if (res.ok) {
         const d = await res.json()
         const pagoId = d.pagos?.[0]?.id
+        if (!coords) completarUbicacionDelPago(d.saldoAntesDelPagoId ?? pagoId)
         setPagoOk(clienteId)
         setTimeout(() => setPagoOk(null), 1200)
         fetchCobros()
@@ -386,6 +399,7 @@ export default function CobrosHoyPage() {
     // medía 302px desde x44 —20 del layout + 4 de acá + 20 de la pantalla— y los
     // nombres se truncaban a «Ana Milena G...». La lámina la pone a 350 desde x20.
     <div className="max-w-2xl lg:max-w-5xl mx-auto">
+      {procesando}
 
       {/* ── LA PANTALLA NUEVA, T02-02 «el arreglo del muro» ──
           Sustituye al hero dorado con degradado, a las listas agrupadas a mano y

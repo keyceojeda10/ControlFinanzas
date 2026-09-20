@@ -1,6 +1,7 @@
 'use client'
 // app/(dashboard)/prestamos/nuevo/page.jsx - Formulario de nuevo préstamo
 
+import { conPantalla } from '@/components/cf/Procesando'
 import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from 'react'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { useRouter, useSearchParams }              from 'next/navigation'
@@ -868,6 +869,11 @@ function NuevoPrestamo() {
     }
 
     try {
+      // Crear un préstamo son hasta CUATRO viajes seguidos —crear, subir la firma,
+      // guardar los días sin cobro y leer el préstamo para la pantalla de
+      // entrega—: unos dos segundos desde Colombia sin nada en pantalla. La
+      // pantalla de «estoy en eso» los cubre enteros.
+      await conPantalla('prestamo', async () => {
       const { ok, data } = await crearPrestamoRequest()
       if (!ok) {
         if (data?.capitalInsuficiente) {
@@ -908,6 +914,7 @@ function NuevoPrestamo() {
         try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el prestamo.') } catch {}
       }
       await alCrear(data)
+      })
     } catch {
       if (!navigator.onLine) {
         try {
@@ -955,16 +962,18 @@ function NuevoPrestamo() {
     setInyectando(true)
     setError('')
     try {
-      const { ok, data } = await crearPrestamoRequest({
-        monto,
-        descripcion: modalInyeccion.descripcion?.trim() || null,
+      await conPantalla('prestamo', async () => {
+        const { ok, data } = await crearPrestamoRequest({
+          monto,
+          descripcion: modalInyeccion.descripcion?.trim() || null,
+        })
+        if (!ok) {
+          setError(data?.error ?? 'Error al crear el préstamo con inyección')
+          return
+        }
+        setModalInyeccion(null)
+        await alCrear(data)
       })
-      if (!ok) {
-        setError(data?.error ?? 'Error al crear el préstamo con inyección')
-        return
-      }
-      setModalInyeccion(null)
-      await alCrear(data)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
