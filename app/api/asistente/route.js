@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildContexto, buildSystemPrompt, buildContextoCobrador, buildSystemPromptCobrador, detectQueryComplexity } from '@/lib/asistente'
+import { sinEmojis } from '@/lib/asistente-voz'
 import { getAsistenteLimiter } from '@/lib/rate-limit'
 import { planTieneIA } from '@/lib/planes'
 import { TOOLS_OWNER, TOOLS_COBRADOR } from '@/lib/asistente-tools'
@@ -387,8 +388,8 @@ export async function POST(req) {
 
   const [ctx, memorias] = await Promise.all([
     isOwner
-      ? buildContexto(orgId)
-      : buildContextoCobrador(orgId, rutaIds ?? [], session.user.id),
+      ? buildContexto(orgId, session.user.country ?? 'co')
+      : buildContextoCobrador(orgId, rutaIds ?? [], session.user.id, session.user.country ?? 'co'),
     isOwner ? obtenerMemorias(orgId, session.user.id) : Promise.resolve([]),
   ])
 
@@ -593,7 +594,7 @@ export async function POST(req) {
               const mensaje = sonaAConfirmacion
                 ? 'Para registrar esto necesito que confirmes los datos en la tarjeta. ¿Puedes repetirme el monto y a quién es el cobro?'
                 : textContent2
-              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: mensaje })}\n\n`))
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: sinEmojis(mensaje) })}\n\n`))
             } else {
               // El modelo no devolvio ni accion ni texto (respuesta vacia o
               // repitio lookup_client) — sin esto el bubble queda atascado en
@@ -614,7 +615,7 @@ export async function POST(req) {
         } else if (textContent.trim()) {
           // Sin tool_call: es una respuesta normal (pregunta, dato, aclaracion).
           // Se emite ahora porque runDeepSeekStream no la streameo en vivo.
-          safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: textContent })}\n\n`))
+          safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: sinEmojis(textContent) })}\n\n`))
         } else {
           // Respuesta totalmente vacia (sin tool_call ni texto) en el primer
           // turno — reintentar con tool_choice:'none' (fuerza texto), y si
@@ -624,7 +625,7 @@ export async function POST(req) {
           try {
             const retry = await runDeepSeekStream({ ...streamParams, tool_choice: 'none' }, controller, enc, false)
             if (retry.textContent.trim()) {
-              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: retry.textContent })}\n\n`))
+              safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: sinEmojis(retry.textContent) })}\n\n`))
               manejado = true
             }
           } catch (retryErr) {
@@ -643,7 +644,7 @@ export async function POST(req) {
                   manejado = true
                 }
               } else if (claudeResult?.textContent?.trim()) {
-                safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: claudeResult.textContent })}\n\n`))
+                safeEnqueue(enc.encode(`data: ${JSON.stringify({ token: sinEmojis(claudeResult.textContent) })}\n\n`))
                 manejado = true
               }
             } catch (claudeErr) {

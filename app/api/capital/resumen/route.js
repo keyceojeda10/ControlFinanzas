@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -228,13 +229,13 @@ export async function GET() {
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'activo', esClavo: false },
       select: {
-        montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, modoInteres: true,
+        montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, modoInteres: true, sinPlazo: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
         devengos: { select: { periodo: true, interes: true } },
         cuotasAmortizacion: { select: { numeroPeriodo: true, cuotaTotal: true, interes: true } },
-        pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
+        pagos: PAGOS_DEL_CALCULO,
       },
     }),
   ])

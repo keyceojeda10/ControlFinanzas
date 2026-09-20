@@ -8,6 +8,7 @@ import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 
 // La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
 // mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
@@ -187,7 +188,7 @@ export async function GET() {
         // `proximoCobroManual` tambien lo lee, para saber desde cuando cuenta.
         id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
-        diasPlazo: true, ultimoPagoAt: true, modoInteres: true, tasaInteres: true,
+        diasPlazo: true, ultimoPagoAt: true, modoInteres: true, sinPlazo: true, tasaInteres: true,
         proximoCobroManual: true,
         /* ⚠ LOS DIAS SIN COBRO SON DEL CLIENTE, NO SOLO DEL NEGOCIO.
            Aqui se usaban los de la organizacion para TODOS. En este negocio la
@@ -215,7 +216,7 @@ export async function GET() {
         cuotasAmortizacion: {
           select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, fechaEsperada: true },
         },
-        pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
+        pagos: PAGOS_DEL_CALCULO,
       },
     }),
     prisma.festivo.findMany({ where: { organizationId }, select: { fecha: true } }),
@@ -302,6 +303,10 @@ export async function GET() {
         OR: [
           { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
           { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
+          /* Y LOS ABIERTOS, que no tienen tabla y casi nunca un pago declarado: su
+             interés vive en los devengos. Sin esta línea no entraban a la corrección
+             y se quedaban con la proporción del SQL. Ver SELECT_PARA_INTERES. */
+          { sinPlazo: true, modoInteres: 'solo_interes' },
         ],
         /* ⚠ Los anulados TAMBIÉN fuera de la corrección, no solo de la consulta
            base. Ayer se filtró la de arriba y esta se quedó atrás: la cifra
@@ -316,6 +321,10 @@ export async function GET() {
         /* `interesPagoAPago` decide con él si usa la tabla o el reparto plano.
            Sin pedirlo llega `undefined` y se equivoca EN SILENCIO. */
         modoInteres: true,
+        /* La rama del abierto de `interesPagoAPago` lee estos dos. Van en el
+           SELECT —en el `where` Prisma revienta, ver la nota de arriba—. */
+        sinPlazo: true,
+        devengos: { select: { periodo: true, interes: true } },
         /* Lo que la consulta de rutas usa como base: `pr.totalPagado × fracción`.
            Sin él la corrección por ruta no puede restar lo que esa consulta puso. */
         totalPagado: true,

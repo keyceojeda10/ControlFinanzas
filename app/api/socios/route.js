@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { interesGanado, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 
 export async function GET(request) {
   try {
@@ -31,7 +32,7 @@ export async function GET(request) {
             totalPagado: true, abonadoCapital: true,
             estado: true,
             frecuencia: true,
-            modoInteres: true,
+            modoInteres: true, sinPlazo: true,
             fechaInicio: true,
             cliente: { select: { nombre: true } },
             // Los dos hacen falta para `interesGanado` y `capitalEnCalle`: sin
@@ -45,7 +46,7 @@ export async function GET(request) {
               orderBy: { numeroPeriodo: 'asc' },
               select: { numeroPeriodo: true, cuotaTotal: true, interes: true },
             },
-            pagos: { where: { tipo: 'capital' }, select: { tipo: true, montoPagado: true } },
+            pagos: PAGOS_DEL_CALCULO,
           },
         },
       },

@@ -27,8 +27,12 @@ export async function GET() {
   try {
     const ctx = getCachedContexto(orgId)
     if (ctx) {
-      const pctCobroHoy = ctx.kpis.cuotaDiariaEsperada > 0
-        ? Math.round((ctx.kpis.cobroHoy / ctx.kpis.cuotaDiariaEsperada) * 100)
+      /* Contra lo que TOCA cobrar hoy (la cifra del Inicio), no contra la suma de
+         todas las cuotas de la cartera: con aquello este porcentaje no pasaba del
+         5 % ningún día y la sugerencia «solo llevo X % de mi meta» salía siempre.
+         Un día sin cobro no tiene meta: 100, y la sugerencia no sale. */
+      const pctCobroHoy = ctx.kpis.esperadoHoy > 0
+        ? Math.round((ctx.kpis.cobroHoy / ctx.kpis.esperadoHoy) * 100)
         : 100
       alertas = {
         clientesMora: ctx.kpis.clientesMora,

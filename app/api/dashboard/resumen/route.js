@@ -9,6 +9,7 @@ import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin
 import { getUtcOffset } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
 import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -145,11 +146,12 @@ export async function GET(request) {
           // `capital` lo necesita calcularCapitalRestante en los modos con tabla.
           select: { numeroPeriodo: true, cuotaTotal: true, capital: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
         },
-        // SOLO los abonos a capital. calcularCapitalRestante los excluye de la
-        // cascada interes-primero, y son un puñado por prestamo. Traer todos los
-        // pagos aqui costaria caro en las carteras grandes y no se usan para nada
-        // mas en esta ruta. Medido: +5ms en la org mas pesada (970 activos).
-        pagos: { where: { tipo: 'capital' }, select: { montoPagado: true, tipo: true } },
+        /* Los pagos DECLARADOS (capital, intereses) y, en los abiertos, los
+           corrientes. Aquí decía «SOLO los abonos a capital», y con eso un abierto
+           que paga su interés puntual salía con 210 días de mora y el capital en
+           la calle bajaba sin que nadie lo devolviera. Traerlos TODOS costaría
+           caro en las carteras grandes. Ver lib/dinero/pagos-del-calculo.js. */
+        pagos: PAGOS_DEL_CALCULO,
         cliente: {
           select: {
             id: true,

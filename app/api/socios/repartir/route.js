@@ -138,19 +138,30 @@ export async function GET() {
           OR: [
             { modoInteres: { in: MODOS_CON_TABLA }, cuotasAmortizacion: { some: {} } },
             { pagos: { some: { tipo: { in: ['capital', 'intereses'] } } } },
+            /* Y LOS ABIERTOS, que no tienen tabla y casi nunca un pago declarado: su
+               interés vive en los devengos. Sin esta línea no entraban a la corrección
+               y se quedaban con la proporción del SQL. Ver SELECT_PARA_INTERES. */
+            { sinPlazo: true, modoInteres: 'solo_interes' },
           ],
           /* ⚠ AQUÍ NO VAN LOS DEVENGOS, Y ESTA CONSULTA LLEVABA ROTA DESDE EL 19
              DE AGOSTO POR PONERLOS. `devengos: { select: … }` dentro de un `where`
              es `Unknown argument 'select'`: Prisma revienta y el endpoint devuelve
              500. Nadie lo vio porque nadie había abierto esta pantalla — en los logs
              de PM2 del 31 jul al 27 ago no hay ni un acierto ni un error suyo.
-             Estos préstamos solo alimentan `correccionDelReparto`, que no mira los
-             devengos, así que no hacen falta en el `select` tampoco. */
+             ⚠ Y AQUÍ DECÍA «correccionDelReparto no mira los devengos, no hacen falta
+             en el select tampoco». Dejó de ser verdad el mismo 27 ago, cuando esa
+             función aprendió la rama del abierto: en el `where` revientan, en el
+             `select` SON NECESARIOS. Medido el 20 sep: $5.568.063 de interés de
+             abiertos que no salía en la ganancia. */
         },
         select: {
           montoPrestado: true,
           totalAPagar: true,
           modoInteres: true,
+          /* La rama del abierto de `interesPagoAPago` lee estos dos. Van en el
+             SELECT —en el `where` Prisma revienta, ver la nota de arriba—. */
+          sinPlazo: true,
+          devengos: { select: { periodo: true, interes: true } },
           totalPagado: true,
           cuotasAmortizacion: {
             orderBy: { numeroPeriodo: 'asc' },
