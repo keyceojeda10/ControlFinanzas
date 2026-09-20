@@ -595,6 +595,35 @@ const MOVIMIENTOS_MANUALES = [
     }
   }
 
+  /* ── DESHACER EL CIERRE DE UN COBRADOR ──
+     Lo mismo que «Deshacer el cierre» del dueño, para la caja de un cobrador: se
+     equivocó al entregar, o cerró sin querer. «Corregir cierre» cambia la cifra
+     de un cierre que se queda; esto lo quita, y al cobrador se le vuelve a abrir
+     la caja de hoy. A dos toques, y solo el día de hoy. */
+  const [deshacerCobArmado, setDeshacerCobArmado] = useState(false)
+  const [deshaciendoCob, setDeshaciendoCob] = useState(false)
+  useEffect(() => {
+    if (!deshacerCobArmado) return undefined
+    const t = setTimeout(() => setDeshacerCobArmado(false), 4000)
+    return () => clearTimeout(t)
+  }, [deshacerCobArmado])
+  useEffect(() => { if (!editCobrador) setDeshacerCobArmado(false) }, [editCobrador])
+  const deshacerCierreCobrador = async () => {
+    if (!editCobrador) return
+    if (!deshacerCobArmado) { setDeshacerCobArmado(true); return }
+    setDeshaciendoCob(true); setEditError('')
+    try {
+      const res = await conPantalla('guardando', () => fetch(`/api/caja?cobradorId=${encodeURIComponent(editCobrador.id)}`, { method: 'DELETE' }))
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setEditError(data.error ?? 'No se pudo deshacer el cierre'); return }
+      setEditCobrador(null)
+      setHistorial(null)
+      await fetchData()
+    } finally {
+      setDeshaciendoCob(false)
+    }
+  }
+
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
       <SkeletonCard /><SkeletonCard />
@@ -2679,6 +2708,27 @@ const MOVIMIENTOS_MANUALES = [
               Guardar corrección
             </Button>
           </div>
+
+          {/* La otra salida, aparte y debajo: no es corregir, es quitar el cierre.
+              Solo HOY — lo de ayer ya se contó, eso se corrige, no se borra. */}
+          {diasAtrasSeleccion === 0 && (
+            <div className="pt-3 mt-1 border-t border-[var(--cf-border)] space-y-2">
+              <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
+                ¿Cerró sin querer? Deshacerlo quita el cierre de hoy y le vuelve a abrir la caja a {editCobrador?.nombre?.split(' ')[0] ?? 'el cobrador'}. Queda anotado en el Historial.
+              </p>
+              <button
+                type="button"
+                onClick={deshacerCierreCobrador}
+                disabled={deshaciendoCob}
+                className="w-full h-11 rounded-[12px] text-[13px] font-semibold border transition-colors disabled:opacity-50"
+                style={deshacerCobArmado
+                  ? { borderColor: 'var(--cf-red-dark)', color: 'var(--cf-card)', background: 'var(--cf-red-dark)' }
+                  : { borderColor: 'var(--cf-border-strong)', color: 'var(--cf-red-dark)', background: 'var(--cf-card)' }}
+              >
+                {deshacerCobArmado ? 'Toca otra vez para deshacer' : 'Deshacer el cierre'}
+              </button>
+            </div>
+          )}
         </form>
       </Modal>
 

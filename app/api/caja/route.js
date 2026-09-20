@@ -1726,5 +1726,14 @@ export async function DELETE(request) {
     detalle: `Deshizo el cierre de caja de ${cierre.cobrador?.nombre ?? 'hoy'} - tenía recogido $${Math.round(cierre.totalRecogido || 0).toLocaleString('es-CO')}`,
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
+  // Si era la caja de un cobrador, se le dice: tenía el día cerrado y ya no.
+  if (cobradorId !== userId) {
+    notificar({
+      organizationId, para: cobradorId, tipo: 'caja_reabierta',
+      titulo: 'Tu caja de hoy volvió a abrirse',
+      mensaje: 'El administrador deshizo tu cierre de hoy. Puedes seguir cobrando y cerrar de nuevo al terminar.',
+      href: '/caja',
+    })
+  }
   return Response.json({ ok: true })
 }
