@@ -15,9 +15,9 @@
 // quita sola en cuanto el servidor contesta.
 //
 // ── LO QUE NO HACE ──────────────────────────────────────────────────────────
-//   · No inventa espera. Los estados avanzan con el reloj, pero en cuanto la
-//     operación termina la pantalla se va; solo se queda un mínimo (MINIMO_MS)
-//     para no ser un parpadeo, que es peor que no enseñar nada.
+//   · No alarga una espera larga. Se queda lo que tarda en CONTARSE (los estados
+//     apilándose, ~1,9 s; el dueño vio la primera versión de 0,7 s y dijo «es muy
+//     rápida, ni se ve») y, si el servidor tarda más, se va en cuanto contesta.
 //   · No dice «¡Listo!». El comprobante que viene detrás ya lo celebra —el visto,
 //     los rodillos, la billetera—; dos celebraciones seguidas son una demora.
 //   · No decide nada de plata. Solo pinta.
@@ -30,7 +30,7 @@ import { createRoot } from 'react-dom/client'
 import { BLOQUE } from '@/components/cf/bloqueOscuro'
 import { GUIONES, PASO_MS, crearConPantalla } from '@/lib/procesando'
 
-export { GUIONES, MINIMO_MS, PASO_MS } from '@/lib/procesando'
+export { GUIONES, MINIMO_MS, PASO_MS, minimoDe } from '@/lib/procesando'
 
 const TINTA_DIBUJO = '#0E0F12'
 

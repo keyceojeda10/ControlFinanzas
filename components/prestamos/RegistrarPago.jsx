@@ -50,6 +50,10 @@ export default function RegistrarPago({
   open, onClose, onSuccess,
   cliente, prestamo, rutaNav,
   presetPago,
+  // reciboDe: { pago, prestamo } — un pago que YA registró otra hoja de la ficha
+  // («Pagar los intereses», «Cerrar anticipado»). Se abre directo en el
+  // comprobante: esas hojas cobraban y solo se cerraban, sin decir nada.
+  reciboDe = null,
   // tabInicial: 'pago' (default) | 'capital' | 'recargo' | 'descuento'
   // Cuando se abre desde botones "Recargo" / "Descuento" / "Abono a capital".
   tabInicial = 'pago',
@@ -179,7 +183,7 @@ export default function RegistrarPago({
   const sliderAnimRef = useRef(null)
   const [loading,      setLoading]      = useState(false)
   // El GPS arranca al abrir la hoja, no al confirmar (ver lib/geo.js).
-  useEffect(() => { if (open) calentarCoords() }, [open])
+  useEffect(() => { if (open && !reciboDe) calentarCoords() }, [open, reciboDe])
   const [error,        setError]        = useState('')
   const [exitoso,      setExitoso]      = useState(false)
   const [pagoGuardado, setPagoGuardado] = useState(null)
@@ -278,6 +282,22 @@ export default function RegistrarPago({
     setEditandoCampos(false)
     setCamposLocal(camposRecibo)
   }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial, montoInicial])
+
+  /* ── EL COMPROBANTE DE UN PAGO QUE REGISTRÓ OTRA HOJA ────────────────────────
+     El dueño, 20 sep 2026: «le hice un abono a interés y ni siquiera salió nada».
+     «Pagar los intereses» y «Cerrar anticipado» tienen su propia hoja, cobraban
+     bien… y al terminar solo se cerraban: ni comprobante, ni WhatsApp, ni nada
+     que dijera que la plata entró. El comprobante vive aquí, así que en vez de
+     copiarlo se le pasa el pago ya hecho. Va DESPUÉS del efecto que reinicia al
+     abrir: los dos corren en el mismo cuadro y este tiene que ganar. */
+  useEffect(() => {
+    if (!open || !reciboDe?.pago) return
+    setTipo(reciboDe.pago.tipo ?? 'completo')
+    setPagoGuardado(reciboDe.pago)
+    setPrestamoAct(reciboDe.prestamo ?? null)
+    setVistaComprobante(false)
+    setExitoso(true)
+  }, [open, reciboDe])
 
   // Animacion del slider visual: cuando diasAbonados cambia (por boton de mora,
   // ponerse al dia o snap), interpola gradualmente desde el valor visual actual
@@ -697,6 +717,7 @@ export default function RegistrarPago({
               tipo === 'descuento' ? 'Descuento aplicado' :
               tipo === 'capital' ? 'Abono a capital' :
               tipo === 'intereses' ? 'Pago de interés' :
+              tipo === 'liquidacion' ? 'Préstamo cerrado' :
               'Pago registrado'
             }
             offline={off}

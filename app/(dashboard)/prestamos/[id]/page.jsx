@@ -1,6 +1,9 @@
 'use client'
 // app/(dashboard)/prestamos/[id]/page.jsx - Detalle del préstamo (página central del sistema)
 
+import { conPantalla } from '@/components/cf/Procesando'
+import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
+import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { useState, useEffect, useMemo, useRef, useCallback, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link                           from 'next/link'
@@ -177,6 +180,12 @@ function PrestamoDetalleContenido({ params }) {
     setter(false); setVinoDeGestion(false); setModalGestionPrestamo(true)
   }
   const [presetPago,   setPresetPago]   = useState(null)
+  // El comprobante de un pago que registró otra hoja (intereses, cierre anticipado).
+  const [reciboDe, setReciboDe] = useState(null)
+  const abrirReciboDe = (pago, prestamoActualizado) => {
+    setReciboDe({ pago, prestamo: prestamoActualizado })
+    setModalPago(true)
+  }
   const [exito,        setExito]        = useState(false)   // animación de éxito
   const [completado,   setCompletado]   = useState(false)   // celebración
   const [ultimoPago,   setUltimoPago]   = useState(null)    // para botón WA pago
@@ -230,6 +239,7 @@ function PrestamoDetalleContenido({ params }) {
   const [modalRecargo,  setModalRecargo]  = useState(false)
   const [modalDescuento, setModalDescuento] = useState(false)
   const [modalIntereses, setModalIntereses] = useState(false)
+  useEffect(() => { if (modalIntereses) calentarCoords() }, [modalIntereses])
   // El selector es CONTROLADO con un objeto: `metodoPago` dice efectivo o
   // transferencia y `metodoPagoId` dice a que cuenta entro. Confundirlos
   // descuadra la caja por cuenta.
@@ -492,15 +502,24 @@ function PrestamoDetalleContenido({ params }) {
     if (!liqNota.trim()) { setLiqError('Indica el motivo (ej: pago anticipado pactado)'); return }
     setLiqEnviando(true); setLiqError('')
     try {
-      const res = await fetch(`/api/prestamos/${id}/pagos`, {
+      const cobrado = Math.round(liqMonto || 0)
+      const res = await conPantalla('cobro', () => fetch(`/api/prestamos/${id}/pagos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ montoPagado: Math.round(liqMonto || 0), tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
-      })
+        body: JSON.stringify({ montoPagado: cobrado, tipo: 'liquidacion', nota: liqNota.trim(), modalidad: liqModalidad }),
+      }))
       const data = await res.json()
       if (!res.ok) { setLiqError(data.error || 'No se pudo cerrar el préstamo'); return }
       setModalLiquidacion(false)
       await fetchPrestamo()
+      // Cerrar un préstamo cobrando también acaba en el comprobante. Con $0 —solo
+      // se perdonó interés— no entró plata: no hay nada que comprobar.
+      if (cobrado > 0) {
+        abrirReciboDe({
+          id: data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null,
+          montoPagado: cobrado, tipo: 'liquidacion', fechaPago: new Date().toISOString(), metodoPago: 'efectivo',
+        }, data)
+      }
     } catch {
       setLiqError('Error de red')
     } finally {
@@ -1035,24 +1054,42 @@ function PrestamoDetalleContenido({ params }) {
     if (!(interesMonto > 0)) return
     setPagandoInteres(true)
     setInteresError('')
+    let coords = null
     try {
-      const res = await fetch(`/api/prestamos/${id}/pagos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          montoPagado: interesMonto,
-          tipo: 'intereses',
-          metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
-          ...(interesMetodo?.metodoPagoId ? { metodoPagoId: interesMetodo.metodoPagoId } : {}),
-        }),
+      const enFajo = entraAlFajo(interesMetodo?.metodoPago ?? 'efectivo', interesMetodo?.metodoPagoId,
+        new Set(metodosPagoOrg.filter((x) => x.esDelCobrador).map((x) => x.id)))
+      const res = await conPantalla(enFajo ? 'cobro' : 'cobroEnCuenta', async () => {
+        coords = await obtenerCoordsRapido().catch(() => null)
+        return fetch(`/api/prestamos/${id}/pagos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            montoPagado: interesMonto,
+            tipo: 'intereses',
+            metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
+            ...(interesMetodo?.metodoPagoId ? { metodoPagoId: interesMetodo.metodoPagoId } : {}),
+            ...(coords ?? {}),
+          }),
+        })
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         setInteresError(d.error || 'No se pudo registrar el pago')
         return
       }
-      setPrestamo(await res.json())
+      const data = await res.json()
+      const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
+      if (!coords) completarUbicacionDelPago(pagoId)
+      setPrestamo(data)
       setModalIntereses(false)
+      // ANTES SOLO SE CERRABA LA HOJA. Ahora acaba donde acaba cualquier cobro:
+      // en el comprobante, con su WhatsApp y su «Llevas hoy».
+      abrirReciboDe({
+        id: pagoId, montoPagado: interesMonto, tipo: 'intereses', fechaPago: new Date().toISOString(),
+        metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
+        metodoPagoId: interesMetodo?.metodoPagoId ?? null,
+        plataforma: interesMetodo?.plataforma ?? '',
+      }, data)
     } catch {
       setInteresError('No se pudo registrar el pago')
     } finally {
@@ -2789,7 +2826,9 @@ function PrestamoDetalleContenido({ params }) {
         onClose={() => {
           setModalPago(false)
           setPresetPago(null)
+          setReciboDe(null)
         }}
+        reciboDe={reciboDe}
         onSuccess={handlePagoExito}
         cliente={cliente}
         prestamo={prestamo}
