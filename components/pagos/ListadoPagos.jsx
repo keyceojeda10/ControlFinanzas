@@ -108,35 +108,46 @@ export default function ListadoPagos({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 {mostrarCli && cliente && (
-                  <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{cliente}</p>
+                  /* El nombre NO se recorta: baja de renglón. */
+                  <p className="text-sm font-semibold text-[var(--cf-ink)] [overflow-wrap:anywhere]">{cliente}</p>
                 )}
                 <p className="text-[11px] text-[var(--cf-ink-3)] mt-0.5">
                   {fmtFecha(pago.fechaPago)}
                   {fmtHora(pago.fechaPago) ? ` · ${fmtHora(pago.fechaPago)}` : ''}
                   {mostrarCob && cobrador ? ` · ${cobrador}` : ''}
                 </p>
-                {metodo && !esAjuste && (
-                  <span
-                    className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-[6px] text-[10px] font-semibold"
-                    style={{ background: metodo.bg, color: metodo.color }}
-                  >
-                    {metodo.plataforma
-                      ? <PlataformaIcon plataforma={metodo.plataforma} size={12} />
-                      : <span className="w-1.5 h-1.5 rounded-full" style={{ background: metodo.color }} />
-                    }
-                    {metodo.label}
-                  </span>
-                )}
+                {/* ── EL MEDIO Y EL ENLACE, EN UNA FILA CON AIRE ──
+                    Eran dos `inline` seguidos: «Efectivo» y «Ver préstamo» salían
+                    PEGADOS, sin un píxel entre los dos, y el enlace se leía como
+                    parte del chip. El dueño: «está pegado al texto… está mal
+                    hecho». La nota va entre medias, en su propio renglón. */}
                 {pago.nota && (
-                  <p className="text-[11px] mt-0.5 text-[#aaaaaa]">{pago.nota}</p>
+                  <p className="text-[11px] mt-1 text-[var(--cf-ink-3)] [overflow-wrap:anywhere]">{pago.nota}</p>
                 )}
-                {mostrarLinkPrestamo && prestamoId && (
-                  <Link
-                    href={`/prestamos/${prestamoId}`}
-                    className="inline-block mt-1 text-[11px] text-[var(--cf-ink-2)] hover:underline"
-                  >
-                    Ver préstamo
-                  </Link>
+                {((metodo && !esAjuste) || (mostrarLinkPrestamo && prestamoId)) && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
+                    {metodo && !esAjuste && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 h-[22px] rounded-full text-[11px] font-semibold"
+                        style={{ background: metodo.bg, color: metodo.color }}
+                      >
+                        {metodo.plataforma
+                          ? <PlataformaIcon plataforma={metodo.plataforma} size={12} />
+                          : <span className="w-1.5 h-1.5 rounded-full" style={{ background: metodo.color }} />
+                        }
+                        {metodo.label}
+                      </span>
+                    )}
+                    {mostrarLinkPrestamo && prestamoId && (
+                      <Link
+                        href={`/prestamos/${prestamoId}`}
+                        className="inline-flex items-center gap-0.5 h-[22px] text-[12px] font-semibold text-[var(--cf-ink-2)] hover:underline"
+                      >
+                        Ver préstamo
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">

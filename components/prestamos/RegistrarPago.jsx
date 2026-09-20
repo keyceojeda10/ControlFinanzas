@@ -471,12 +471,14 @@ export default function RegistrarPago({
          salir al revés; el comprobante ata su «Antes debía» a este id, así que
          equivocarlo borra la fila del recibo. */
       const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
-      if (necesitaGeo && !coords) completarUbicacionDelPago(pagoId)
+      if (necesitaGeo && !coords) {
+        completarUbicacionDelPago(pagoId).then((ok) => { if (ok) setPagoGuardado((g) => (g ? { ...g, conUbicacion: true } : g)) })
+      }
       /* ⚠ EL TIPO VIAJA CON EL PAGO. Sin él, el recibo no sabe si titular
          «Abono a capital» o «Pago de intereses», y la guarda de tres líneas más
          abajo —que no manda WhatsApp por un recargo o un descuento— nunca
          disparaba con red porque `pagoGuardado.tipo` llegaba `undefined`. */
-      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma }
+      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma, conUbicacion: Boolean(coords) }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)
@@ -721,6 +723,7 @@ export default function RegistrarPago({
               'Pago registrado'
             }
             offline={off}
+            ubicacion={Boolean(pagoGuardado.conUbicacion)}
             monto={formatMoney(pagoGuardado.montoPagado)}
             cliente={cliente?.nombre ?? '—'}
             medioPago={medioPago}

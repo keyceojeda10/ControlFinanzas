@@ -85,6 +85,9 @@ export function Recibo({
   // el momento del cobro, y en un comprobante reimpreso no hay de dónde sacarla.
   saldoAntes,
   cuando,
+  // `ubicacion` — true si este cobro quedó con su ubicación. Va FUERA del papel:
+  // es respaldo de quien cobra y del dueño, no algo que el cliente se lleve.
+  ubicacion = false,
   onWhatsApp, onGuardarImagen, onImprimir, onSiguiente,
   telefono,
   // ── LO QUE SOLO TENÍA EL COMPROBANTE VIEJO ──
@@ -300,6 +303,22 @@ export function Recibo({
             {recibidoPor ? `Recibido por ${recibidoPor} · ${negocio}` : negocio}
           </span>
         </div>
+
+        {/* ── «UBICACIÓN REGISTRADA» ──
+            Desde que el cobro no espera al GPS (20 sep 2026) ya no se nota que la
+            ubicación se toma, y el dueño preguntó si seguía. Una línea discreta
+            que lo confirma; aparece también cuando llega tarde. */}
+        {ubicacion && (
+          <span data-recibo-ubicacion style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            fontSize: 11.5, fontWeight: 600, color: 'var(--cf-ink-3)',
+          }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 10.5c0 6.5-8 11-8 11s-8-4.5-8-11a8 8 0 1116 0z" /><circle cx="12" cy="10.5" r="2.6" />
+            </svg>
+            Ubicación registrada
+          </span>
+        )}
 
         {/* LA FOTO DE EVIDENCIA. También fuera del troquelado: es respaldo del
             cobrador para cuando alguien discute un cobro, no algo que el cliente

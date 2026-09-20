@@ -1028,7 +1028,10 @@ export default function RutaDetallePage({ params }) {
         const pagoId = data.pagos?.[0]?.id
         // El cobro salió sin esperar al GPS: si no llevaba ubicación, se le pone
         // cuando el GPS conteste.
-        if (!coords) completarUbicacionDelPago(data.saldoAntesDelPagoId ?? pagoId)
+        if (!coords) {
+          completarUbicacionDelPago(data.saldoAntesDelPagoId ?? pagoId)
+            .then((ok) => { if (ok) setReciboCobro((r) => (r ? { ...r, conUbicacion: true } : r)) })
+        }
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
         // ── EL RECIBO, ANTES DE RECARGAR ──
@@ -1042,6 +1045,7 @@ export default function RutaDetallePage({ params }) {
         setReciboCobro({
           clienteId,
           nombre,
+          conUbicacion: Boolean(coords),
           // LA RESPUESTA ES EL PRESTAMO, PLANO. No `data.pago` ni
           // `data.prestamo`: la API devuelve `{...prestamo, saldoPendiente,
           // proximoCobro, …}`. Buscarlo anidado daba `undefined` en silencio y
@@ -2144,6 +2148,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       <Recibo
         monto={formatMoney(reciboCobro.monto)}
         cliente={reciboCobro.nombre}
+        ubicacion={Boolean(reciboCobro.conUbicacion)}
         saldoAntes={reciboCobro.saldoAntes != null ? formatMoney(Math.round(reciboCobro.saldoAntes)) : null}
         saldo={reciboCobro.saldo != null ? formatMoney(Math.round(reciboCobro.saldo)) : null}
         proximoCobro={reciboCobro.proximoCobro
@@ -2254,10 +2259,17 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
             diasMora: pr.diasMora,
             frecuencia: frecuenciaPrestamoLabel(pr.frecuencia),
             pagadoHoy: pr.pagadoHoy,
+            // Lo que el servidor ya sabe y la hoja enseñaba a medias: cuánto le
+            // falta para ponerse al día, y lo que lleva pagado de lo pactado.
+            alDia: pr.montoParaPonerseAlDia,
+            totalAPagar: pr.totalAPagar,
+            totalPagado: pr.totalPagado,
+            montoPagadoHoy: pr.montoPagadoHoy,
           }))}
           selectorMetodo={
             <MetodoPagoSelector
               metodosPago={metodosPago}
+              compact
               /* Aquí SOLO elige; antes cobraba al pulsarlo. Con un préstamo
                  era equivalente, pero con tres tarjetas debajo el método tiene
                  que quedar puesto y esperar a que se diga QUÉ se cobra. */

@@ -1,6 +1,7 @@
 'use client'
 // app/(dashboard)/caja/page.jsx - Caja del día
 
+import { conPantalla } from '@/components/cf/Procesando'
 import { lineasDeLaBanda } from '@/lib/dinero/conciliacion'
 import DeDondeSale from '@/components/dinero/DeDondeSale'
 import { formatMoney } from '@/lib/i18n'
@@ -432,14 +433,15 @@ const MOVIMIENTOS_MANUALES = [
         entregado: totalRecogidoFinal, enLaMano, cobrado: cobradoEfectivoHoy, cobros: cantidadPagosDia,
         inflado: Math.round(stats.esperado || 0) > 0 ? Math.min(1, cobradoHoy / Math.round(stats.esperado)) : 0.5,
       }
-      const res = await fetch('/api/caja', {
+      // Corregir la cifra de un cierre no es cerrar: dice «Guardando».
+      const res = await conPantalla(modoAjusteCierre ? 'guardando' : 'cierre', () => fetch('/api/caja', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           totalRecogido: totalRecogidoFinal,
           fecha: fechaSeleccionada,
         }),
-      })
+      }))
       const data = await res.json()
       if (!res.ok) { setErrorCaja(data.error ?? 'Error al registrar'); return }
       if (foto) setCajaEntregada(foto)
@@ -519,6 +521,33 @@ const MOVIMIENTOS_MANUALES = [
       } finally {
         setHistorialCargando(false)
       }
+    }
+  }
+
+  /* ── DESHACER EL CIERRE DE HOY ──
+     «No hay ninguna opción de revocar ese cierre de caja, que es muy fácil
+     equivocarse» — el dueño, 20 sep 2026. «Reabrir y ajustar» CORRIGE la cifra
+     de un cierre que se queda; esto lo quita, como si no se hubiera pulsado.
+     A dos toques: el primero lo arma cuatro segundos, el segundo lo hace. */
+  const [deshacerArmado, setDeshacerArmado] = useState(false)
+  const [deshaciendo, setDeshaciendo] = useState(false)
+  useEffect(() => {
+    if (!deshacerArmado) return undefined
+    const t = setTimeout(() => setDeshacerArmado(false), 4000)
+    return () => clearTimeout(t)
+  }, [deshacerArmado])
+  const deshacerCierreDeHoy = async () => {
+    if (!deshacerArmado) { setDeshacerArmado(true); return }
+    setDeshaciendo(true); setErrorCaja('')
+    try {
+      const res = await conPantalla('guardando', () => fetch('/api/caja', { method: 'DELETE' }))
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setErrorCaja(data.error ?? 'No se pudo deshacer el cierre'); return }
+      setDeshacerArmado(false); setExito(false); setModoAjusteCierre(false); setTotalRecogido('')
+      setHistorial(null)
+      await fetchData()
+    } finally {
+      setDeshaciendo(false)
     }
   }
 
@@ -2085,17 +2114,42 @@ const MOVIMIENTOS_MANUALES = [
                 <p className="text-[10px] text-[var(--cf-ink-3)] text-center">
                   Cerrado {fmtHora(cierreOwner.createdAt)}
                 </p>
-                <button
-                  type="button"
-                  onClick={reabrirCierreOwner}
-                  className="w-full py-2 rounded-[12px] text-xs font-semibold border transition-colors"
-                  style={{ borderColor: 'var(--cf-border)', color: 'var(--cf-ink-3)' }}
-                >
-                  Reabrir y ajustar
-                </button>
+                {/* DOS SALIDAS DISTINTAS, DICHAS CON SU NOMBRE. «Reabrir y ajustar»
+                    corrige la cifra de un cierre que se queda; «Deshacer el cierre»
+                    lo quita entero. La segunda solo existe HOY: lo de ayer ya se
+                    contó, eso se corrige, no se borra. */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={reabrirCierreOwner}
+                    className="flex-1 h-11 rounded-[12px] text-[13px] font-semibold border transition-colors"
+                    style={{ borderColor: 'var(--cf-border-strong)', color: 'var(--cf-ink-2)', background: 'var(--cf-card)' }}
+                  >
+                    Reabrir y ajustar
+                  </button>
+                  {diasAtrasSeleccion === 0 && (
+                    <button
+                      type="button"
+                      onClick={deshacerCierreDeHoy}
+                      disabled={deshaciendo}
+                      className="flex-1 h-11 rounded-[12px] text-[13px] font-semibold border transition-colors disabled:opacity-50"
+                      style={deshacerArmado
+                        ? { borderColor: 'var(--cf-red-dark)', color: 'var(--cf-card)', background: 'var(--cf-red-dark)' }
+                        : { borderColor: 'var(--cf-border-strong)', color: 'var(--cf-red-dark)', background: 'var(--cf-card)' }}
+                    >
+                      {deshacerArmado ? 'Toca otra vez para deshacer' : 'Deshacer el cierre'}
+                    </button>
+                  )}
+                </div>
+                {errorCaja && <p className="text-xs text-[var(--cf-red-dark)] text-center">{errorCaja}</p>}
               </div>
             ) : (
-              <form onSubmit={registrarCierre} className="space-y-3">
+              <form
+                /* En el teléfono el día se cierra DESLIZANDO: el «Ir» del teclado
+                   no puede cerrarlo por su cuenta. */
+                onSubmit={(e) => { if (tactil && !cierreOwner) { e.preventDefault(); return } registrarCierre(e) }}
+                className="space-y-3"
+              >
                 {!cierreOwner && (
                   <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-3">
                     <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Recaudo del día</p>
@@ -2120,12 +2174,25 @@ const MOVIMIENTOS_MANUALES = [
                 {errorCaja && (
                   <p className="text-xs text-[var(--cf-red-dark)]">{errorCaja}</p>
                 )}
-                <div className="flex gap-2">
+                {/* ── CERRAR EL DÍA SE DESLIZA, TAMBIÉN AQUÍ ──
+                    El cobrador ya entregaba su caja deslizando; la del dueño era
+                    un botón de un toque: «no hay ningún tipo de confirmación y se
+                    va derecho». Mismo gesto en los dos sitios. Corregir la cifra
+                    de un cierre ya hecho sigue con botón: no cierra nada. */}
+                {tactil && !cierreOwner && (
+                  <DeslizarParaConfirmar
+                    texto="Desliza para cerrar el día"
+                    cifra={formatMoney(totalRecogido === '' ? Math.round(recaudadoOwner) : Number(totalRecogido))}
+                    confirmando={guardando}
+                    onConfirmar={() => registrarCierre({ preventDefault() {} })}
+                  />
+                )}
+                <div className="flex gap-2" style={tactil && !cierreOwner ? { display: 'none' } : undefined}>
                   <button
                     type="submit"
                     disabled={guardando}
                     className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-colors disabled:opacity-50"
-                    style={{ background: 'var(--cf-gold)', color: 'var(--cf-surface)' }}
+                    style={{ background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
                   >
                     {guardando ? 'Cerrando...' : (cierreOwner ? 'Guardar ajuste' : 'Cerrar día')}
                   </button>

@@ -1686,3 +1686,45 @@ export async function POST(request) {
     },
   }, { status: 201 })
 }
+
+/* ══ DESHACER EL CIERRE DE HOY ═══════════════════════════════════════════════
+ *
+ * El dueño, 20 sep 2026: «no hay ninguna opción de revocar ese cierre de caja,
+ * que es muy fácil equivocarse porque es muy fácil de presionar el botón».
+ *
+ * Lo que había era «Reabrir y ajustar», que CORRIGE la cifra de un cierre que se
+ * queda. Esto es otra cosa: el cierre no debió existir. Un cierre es solo una
+ * foto (`CierreCaja`): no mueve capital ni escribe en el libro, así que quitarlo
+ * deja el día exactamente como estaba antes del toque.
+ *
+ * Estrecho a propósito:
+ *   · solo el DUEÑO (al cobrador el cierre lo bloquea, y desbloquearlo ya tiene
+ *     su camino con aprobación: `caja/reabrir`);
+ *   · solo el día de HOY — ver `reverso_solo_del_dia_abierto`: lo de ayer ya se
+ *     entregó y se contó, eso se corrige, no se borra;
+ *   · y deja rastro en el Historial con la cifra que tenía.
+ */
+export async function DELETE(request) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.organizationId) return Response.json({ error: 'No autorizado' }, { status: 401 })
+  const { organizationId, rol, id: userId } = session.user
+  if (rol !== 'owner') return Response.json({ error: 'Solo el administrador puede deshacer un cierre' }, { status: 403 })
+
+  const { searchParams } = new URL(request.url)
+  const cobradorId = searchParams.get('cobradorId') || userId
+  const { inicio, fin } = getDayRange(getHoyLocal())
+
+  const cierre = await prisma.cierreCaja.findFirst({
+    where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } },
+    select: { id: true, totalRecogido: true, cobrador: { select: { nombre: true } } },
+  })
+  if (!cierre) return Response.json({ error: 'Hoy no hay un cierre que deshacer' }, { status: 404 })
+
+  await prisma.cierreCaja.deleteMany({ where: { id: cierre.id, organizationId } })
+  logActividad({
+    session, accion: 'deshacer_cierre_caja', entidadTipo: 'caja', entidadId: cierre.id,
+    detalle: `Deshizo el cierre de caja de ${cierre.cobrador?.nombre ?? 'hoy'} - tenía recogido $${Math.round(cierre.totalRecogido || 0).toLocaleString('es-CO')}`,
+    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+  })
+  return Response.json({ ok: true })
+}

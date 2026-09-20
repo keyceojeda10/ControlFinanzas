@@ -1079,13 +1079,16 @@ function PrestamoDetalleContenido({ params }) {
       }
       const data = await res.json()
       const pagoId = data.saldoAntesDelPagoId ?? data.pagos?.[0]?.id ?? null
-      if (!coords) completarUbicacionDelPago(pagoId)
+      if (!coords) {
+        completarUbicacionDelPago(pagoId)
+          .then((ok) => { if (ok) setReciboDe((r) => (r ? { ...r, pago: { ...r.pago, conUbicacion: true } } : r)) })
+      }
       setPrestamo(data)
       setModalIntereses(false)
       // ANTES SOLO SE CERRABA LA HOJA. Ahora acaba donde acaba cualquier cobro:
       // en el comprobante, con su WhatsApp y su «Llevas hoy».
       abrirReciboDe({
-        id: pagoId, montoPagado: interesMonto, tipo: 'intereses', fechaPago: new Date().toISOString(),
+        id: pagoId, montoPagado: interesMonto, tipo: 'intereses', fechaPago: new Date().toISOString(), conUbicacion: Boolean(coords),
         metodoPago: interesMetodo?.metodoPago ?? 'efectivo',
         metodoPagoId: interesMetodo?.metodoPagoId ?? null,
         plataforma: interesMetodo?.plataforma ?? '',
