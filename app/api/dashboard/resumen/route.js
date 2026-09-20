@@ -115,6 +115,21 @@ export async function GET() {
         ultimoPagoAt: true,
         modoInteres: true,
         proximoCobroManual: true,
+        /* ⚠ LOS CAMPOS DEL DÍA DE COBRO. FALTABAN LOS CINCO, y `tienePeriodoEsperadoHoy`
+           los lee: sin `diaCobroSemana`/`diaCobroMes` un semanal que cobra los
+           martes o un quincenal de «los 5 y 20» se medía contra su fecha de inicio,
+           y sin `primerCobro` se ignoraba el primer cobro pactado. No da error:
+           decide mal en silencio. Medido el 19 sep 2026 en doce negocios: en
+           cuatro, la lista de Rutas decía que tocaba cobrar MÁS que este inicio
+           —imposible, porque el inicio cuenta también a quien no tiene ruta—. La
+           pantalla lo enseñaba en la misma página: «de $613.167 que toca cobrar»
+           arriba y «Por ruta hoy … de $1.063.167» abajo. */
+        diaCobroSemana: true,
+        diaCobroMes: true,
+        diaCobroMes2: true,
+        primerCobro: true,
+        diasSinCobro: true,
+        sinPlazo: true,
         /* ⚠ SIN ESTO UN PRÉSTAMO ABIERTO SALE «AL DÍA» SIEMPRE: su mora es el
            interés devengado sin pagar, y un campo que no se pide vale `undefined`
            —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
@@ -459,7 +474,12 @@ export async function GET() {
 
     // Misma regla que usa /api/rutas para su esperadoHoy, para que el hero y el
     // bloque "Por ruta hoy" no se contradigan.
-    const _diasExcl = getDiasExcluidos(p.cliente)
+    // Si el PRÉSTAMO trae sus propios días sin cobro, mandan sobre los del cliente
+    // (misma herencia que Cobros de hoy y la ficha de la ruta): si no, las tres
+    // pantallas deciden «hoy toca» con calendarios distintos.
+    const _diasExcl = p.diasSinCobro != null
+      ? obtenerDiasSinCobro(p.cliente, p.cliente?.ruta, org, p)
+      : getDiasExcluidos(p.cliente)
     const _sinCobroHoy = esHoySinCobro(_diasExcl) || esHoyFestivo(festivos)
     if (tienePeriodoEsperadoHoy(p, _sinCobroHoy, _diasExcl, festivos)) {
       esperadoHoy += p.cuotaDiaria ?? 0

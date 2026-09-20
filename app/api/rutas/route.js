@@ -69,6 +69,24 @@ export async function GET(request) {
               diaCobroMes: true,
               primerCobro: true,
               diaCobroMes2: true,
+              /* ⚠ LO QUE LE FALTABA A ESTA PARA DECIR LO MISMO QUE EL INICIO. Las dos
+                 usan `tienePeriodoEsperadoHoy`, pero cada una con su `select`, y
+                 a cada una le faltaban los campos que sí pedía la otra: aquí, la
+                 fecha reagendada (`proximoCobroManual`), el modo y los devengos de
+                 un préstamo abierto. Sin ellos una visita movida a la semana que
+                 viene seguía contando para hoy. Ver el aviso gemelo en
+                 `api/dashboard/resumen`. */
+              id: true,
+              proximoCobroManual: true,
+              modoInteres: true,
+              sinPlazo: true,
+              diasSinCobro: true,
+              devengos: { select: { periodo: true, interes: true } },
+              // Con tabla (6 % de la cartera) las fechas de cobro salen de sus filas.
+              cuotasAmortizacion: {
+                orderBy: { numeroPeriodo: 'asc' },
+                select: { numeroPeriodo: true, cuotaTotal: true, interes: true, pagado: true, interesPagado: true, fechaEsperada: true },
+              },
               pagos: {
                 where:  { fechaPago: { gte: hoy(), lt: manana() } },
                 select: { montoPagado: true, tipo: true },
@@ -127,7 +145,11 @@ export async function GET(request) {
       for (const prestamo of cliente.prestamos) {
         // Meta: solo cuotas que TOCABA cobrar hoy (segun ciclo de frecuencia
         // y dia ancla). Antes sumaba todas las cuotas activas y inflaba la cifra.
-        if (prestamo.estado === 'activo' && !prestamo.esClavo && tienePeriodoEsperadoHoy(prestamo, hoySinCobro, diasExcluidos, festivos)) {
+        // Los días sin cobro del PRÉSTAMO mandan sobre los del cliente, igual que en
+        // el inicio y en Cobros de hoy.
+        const diasDelPrestamo = prestamo.diasSinCobro != null ? obtenerDiasSinCobro(cliente, r, org, prestamo) : diasExcluidos
+        const sinCobroDelPrestamo = prestamo.diasSinCobro != null ? (esHoySinCobro(diasDelPrestamo) || esHoyFestivo(festivos)) : hoySinCobro
+        if (prestamo.estado === 'activo' && !prestamo.esClavo && tienePeriodoEsperadoHoy(prestamo, sinCobroDelPrestamo, diasDelPrestamo, festivos)) {
           esperadoHoy += prestamo.cuotaDiaria
           tocaHoy = true
         }

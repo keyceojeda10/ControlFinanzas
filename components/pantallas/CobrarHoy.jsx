@@ -44,7 +44,10 @@ function Avance({ recaudado, meta, cobrados = 0, deCuantos = 0, porcentaje = 0 }
           {recaudado}
         </span>
         <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.35 }}>
-          {meta ? `de ${meta} · ` : ''}{cobrados} de {deCuantos} cobrados
+          {/* Las mismas palabras que el inicio —«que toca cobrar»— porque ahora es
+              la misma cifra. Antes decía «de $3.442.901» a secas, que era la cuota
+              de todos los préstamos del negocio, no lo de hoy. */}
+          {meta ? `de ${meta} que toca cobrar · ` : ''}{cobrados} de {deCuantos} cobrados
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, width: 120, flex: 'none' }}>

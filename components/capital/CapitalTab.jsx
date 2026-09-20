@@ -662,24 +662,33 @@ export default function CapitalTab() {
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>{s.sub}</p>
             </div>
           ))}
+          {/* ⚠ SE LLAMABA «BALANCE NETO» Y SALÍA EN ROJO AL PRESTAR MÁS DE LO COBRADO.
+              La cuenta es legítima —cobrado − prestado − gastos es lo que se movió
+              la caja en el mes—, pero con ese nombre y ese color un mes de muchos
+              préstamos, que es un mes BUENO, se leía como una pérdida. DESIGN.md,
+              números · 5: «si una fórmula puede dar rojo en un caso bueno, está
+              mal… prestar no es gastar». La FÓRMULA no se toca (19 sep 2026): cambia
+              el nombre, se va el color y el pie dice qué significa. La ganancia del
+              mes vive en el inicio, y es interés cobrado − gastos. */}
           {(() => {
             const flujo = resumen.mes.flujoNeto ?? 0
-            const balanceColor = flujo >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)'
             return (
               <div className="rounded-[16px] px-4 py-3 kpi-lift"
-                style={{ background: `var(--cf-card)`, border: `1px solid color-mix(in srgb, ${balanceColor} 22%, transparent)` }}>
+                style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: `color-mix(in srgb, ${balanceColor} 18%, transparent)`, color: balanceColor }}>
+                  <div className="w-5 h-5 rounded-[6px] flex items-center justify-center" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-2)' }}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                     </svg>
                   </div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: balanceColor }}>Balance neto</p>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-ink-2)' }}>La caja este mes</p>
                 </div>
-                <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: balanceColor }}>
-                  {flujo >= 0 ? '+' : ''}{formatMoney(flujo)}
+                <p className="text-[16px] font-bold font-mono-display leading-tight" style={{ color: 'var(--cf-ink)' }}>
+                  {flujo >= 0 ? '+' : '−'}{formatMoney(Math.abs(flujo))}
                 </p>
-                <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>Cobrado − Prestado − Gastos</p>
+                <p className="text-[10px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
+                  {flujo >= 0 ? 'Entró más de lo que salió.' : 'Salió más de lo que entró: prestaste más de lo que cobraste.'} No es tu ganancia.
+                </p>
               </div>
             )
           })()}

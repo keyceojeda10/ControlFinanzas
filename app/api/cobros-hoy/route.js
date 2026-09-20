@@ -12,6 +12,7 @@ import {
   calcularSaldoPendiente,
   calcularMontoParaPonerseAlDia,
   tieneCobroPendienteHoy,
+  tienePeriodoEsperadoHoy,
   obtenerCuotaPeriodoActual,
   obtenerProximaCuotaTabla,
   tieneTablaAmortizacion,
@@ -308,7 +309,23 @@ export async function GET() {
         // `varias` cuando no coinciden: rotular con la de uno solo es mentir.
         const suya = p.frecuencia || 'diario'
         frecuencia = frecuencia === null ? suya : (frecuencia === suya ? suya : 'varias')
-        esperadoHoyTotal += cuotaReal
+        /* ⚠ «DE $3.442.901» ERA LA CUOTA DE TODOS LOS PRÉSTAMOS DEL NEGOCIO. Aquí se
+           sumaba `cuotaReal` de CADA préstamo activo de CADA cliente, antes del
+           filtro de más abajo que decide quién entra en la lista: el avance del día
+           se medía contra un techo —«7 %» con un tercio del día cobrado— y no
+           coincidía con el inicio ($613.167) ni con Rutas. Es el mismo defecto que
+           ya se había corregido en `/api/rutas` («antes sumaba todas las cuotas
+           activas e inflaba la cifra») y aquí se quedó.
+
+           Ahora es LA MISMA pregunta con la MISMA regla que el inicio y Rutas: lo
+           que el calendario dice que toca cobrar HOY (`tienePeriodoEsperadoHoy` ×
+           `cuotaDiaria`). Lo atrasado no entra: son dos números y no se suman
+           (`lib/dinero/esperado.js`). Los atrasados siguen en la lista, que es
+           donde importan; lo que cambia es contra qué se mide el día. */
+        const _diasSinCobroDelPrestamo = esHoySinCobro(diasExcluidosPrestamo) || esHoyFestivo(festivos)
+        if (tienePeriodoEsperadoHoy(p, _diasSinCobroDelPrestamo, diasExcluidosPrestamo, festivos)) {
+          esperadoHoyTotal += p.cuotaDiaria ?? 0
+        }
 
         const saldo = calcularSaldoPendiente(p)
         // Lo que el cliente debe EN TOTAL, sumando sus prestamos activos. Es el
