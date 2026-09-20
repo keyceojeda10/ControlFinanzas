@@ -409,8 +409,10 @@ export default function AnaliticasPage() {
         <div className="space-y-4 lg:space-y-5 min-w-0">
 
           {/* === Alertas de mora === */}
+          {/* Sin el borde rojo entero: el estado va en el acento —el rótulo y las
+              pastillas ya son rojos—, y la superficie es la de todas (DESIGN.md · 4). */}
           {alertasResumen.total > 0 && (
-            <Card className={alertasResumen.graves > 0 ? '!border-[var(--cf-red-dark)]' : ''}>
+            <Card>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--cf-red-dark)]">

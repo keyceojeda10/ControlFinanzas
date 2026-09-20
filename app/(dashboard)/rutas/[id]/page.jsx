@@ -5,7 +5,7 @@ import { formatMoney } from '@/lib/i18n'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { abreviaturaDocumento } from '@/lib/documento'
 import { LoPuestoAqui, LoDeHoy } from '@/components/pantallas/DetalleRuta'
-import { loPuestoAqui, loDeHoy, formatearKm, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
+import { loPuestoAqui, loDeHoy, kmDeLaRuta, partirRecorrido, adaptarParadaActual, cierreDelDia, resumenDeCierre, tramosDelRecorrido, moverParada, moverParadaEnRuta, propuestaPorCercania, paradasDeRuta, gruposDeRuta } from '@/lib/adaptadores/ruta'
 // La tarjeta de parada es la MISMA que pinta /cobros-hoy. Ver la nota de
 // components/cf/ParadaDeCobro: aqui habia una segunda tarjeta para lo mismo.
 import { Carril, FilaCobro } from '@/components/cf/ParadaDeCobro'
@@ -2028,7 +2028,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
       `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
       // Solo si se pudo medir: con menos de dos clientes con coordenadas la API
       // devuelve null, y «0 km» se leería como que están todos en el mismo portal.
-      ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+      kmDeLaRuta(ruta.distanciaMetros),
     ].filter(Boolean).join(' · ') : null,
     acciones: accionesCabecera,
   })
@@ -2417,7 +2417,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         <OrdenRecorrido
           detalle={[
             `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? 'parada' : 'paradas'}`,
-            ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+            kmDeLaRuta(ruta.distanciaMetros),
           ].filter(Boolean).join(' · ')}
           paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
             /* ⚠ EL `id` NO ESTABA, y sin él «quitar de la ruta» no podía
@@ -2460,7 +2460,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           ruta.cobrador?.nombre ? `Cobra ${ruta.cobrador.nombre}` : 'Sin cobrador',
           `${ruta.clientes?.length ?? 0} ${(ruta.clientes?.length ?? 0) === 1 ? 'cliente' : 'clientes'}`,
           `${paradasPorHacer} ${paradasPorHacer === 1 ? 'cobro programado hoy' : 'cobros programados hoy'}`,
-          ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+          kmDeLaRuta(ruta.distanciaMetros),
         ].filter(Boolean).join(' · ')}
         /* ⚠ SIN `migaVolver`: EN PC SALÍAN DOS BOTONES DE VOLVER, uno encima
            del otro. La misma queja del dueño —«no se puede volver atrás con un
@@ -2918,7 +2918,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
               <OrdenRecorrido
                 detalle={[
                   `${clientesFiltrados.length} ${clientesFiltrados.length === 1 ? 'parada' : 'paradas'}`,
-                  ruta.distanciaMetros != null ? formatearKm(ruta.distanciaMetros) : null,
+                  kmDeLaRuta(ruta.distanciaMetros),
                 ].filter(Boolean).join(' · ')}
                 paradas={tramosDelRecorrido(clientesFiltrados.map((c, i) => ({
                   // El `id`: sin él «quitar de la ruta» manda `undefined` y el

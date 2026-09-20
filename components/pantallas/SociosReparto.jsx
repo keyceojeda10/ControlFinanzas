@@ -291,13 +291,20 @@ export function ListaSocios({
           </button>
         )}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <span style={{
-            fontFamily: 'var(--font-space-grotesk), system-ui',
-            fontSize: 19, fontWeight: 600, letterSpacing: '-.02em',
-          }}>{cabecera?.titulo}</span>
+          {/* ⚠ EL TÍTULO SOLO SI HAY «ATRÁS», es decir, si esta pantalla va sola.
+              Montada bajo el armazón salía «Socios · 1 socio» en la cabecera del
+              sistema y, justo debajo, otra vez «Socios · 1 activo»: dos títulos
+              iguales uno encima del otro (19 sep 2026). Es el mismo defecto que
+              ya se quitó en cobradores, tutoriales y la ficha del préstamo. */}
+          {onAtras && (
+            <span style={{
+              fontFamily: 'var(--font-space-grotesk), system-ui',
+              fontSize: 19, fontWeight: 600, letterSpacing: '-.02em',
+            }}>{cabecera?.titulo}</span>
+          )}
           {/* «Reparten por lo que pusieron»: el modelo en cinco palabras, y el
               único que quedó tras la decisión de julio. */}
-          <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
+          <span className="cf-num" style={{ fontSize: onAtras ? 11 : 13, color: onAtras ? 'var(--cf-ink-3)' : 'var(--cf-ink-2)' }}>
             {cabecera?.detalle}
           </span>
         </div>

@@ -129,10 +129,8 @@ export default function HistorialPage() {
 
       {/* Resumen */}
       <div className="grid grid-cols-2 gap-3">
-        <Card style={{
-          background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 4%, var(--cf-card)) 0%, var(--cf-card) 40%, var(--cf-card) 70%, color-mix(in srgb, var(--cf-green-dark) 2%, var(--cf-card)) 100%)`,
-          boxShadow: `0 0 30px color-mix(in srgb, var(--cf-green-dark) 3%, transparent), 0 1px 2px rgba(0,0,0,0.3)`,
-        }}>
+        {/* Plana, como su vecina: llevaba degradado verde y un halo de 30px. */}
+        <Card>
           <p className="text-[10px] text-[var(--cf-ink-3)]">Total pagado</p>
           <p className="text-xl font-bold text-[var(--cf-ink)] mt-1 font-mono-display">{formatMoney(totalPagado)}</p>
         </Card>

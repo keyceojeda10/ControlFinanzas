@@ -329,7 +329,7 @@ export default function DetalleLineaPage({ params }) {
           <p className="text-[10px] text-[var(--cf-ink-3)] mb-2 leading-relaxed">Resumen de cada mes: lo que debia + lo que pidio + intereses - lo que pago = saldo nuevo.</p>
           <div className="space-y-2">
             {linea.cortesLinea.map((corte, idx) => (
-              <Card key={corte.id} className="p-3" style={{ background: `linear-gradient(135deg, color-mix(in srgb, var(--cf-green-dark) 5%, var(--cf-card)) 0%, var(--cf-card) 100%)`, border: `1px solid color-mix(in srgb, var(--cf-green-dark) 14%, var(--cf-border))` }}>
+              <Card key={corte.id} className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-[var(--cf-ink)]">
                     {corte.periodo}
@@ -381,8 +381,10 @@ export default function DetalleLineaPage({ params }) {
                 key={mov.id}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                 style={{
-                  background: `linear-gradient(135deg, color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)'} 6%, var(--cf-card)) 0%, var(--cf-card) 100%)`,
-                  border: `1px solid color-mix(in srgb, ${mov.tipo === 'desembolso' ? 'var(--cf-gold-dark)' : 'var(--cf-green-dark)'} 16%, var(--cf-border))`,
+                  /* El estado va en el acento (el círculo y la cifra), no en el
+                     fondo: cada movimiento iba teñido de verde o de dorado. */
+                  background: 'var(--cf-card)',
+                  border: '1px solid var(--cf-border)',
                 }}
               >
                 <div
@@ -411,7 +413,7 @@ export default function DetalleLineaPage({ params }) {
                   </p>
                   {mov.tipo === 'pago' && mov.montoAInteres > 0 && (
                     <p className="text-[10px] text-[var(--cf-ink-3)]">
-                      {formatMoney(mov.montoAInteres)} a interes · {formatMoney(mov.montoACapital)} a capital
+                      {formatMoney(mov.montoAInteres)} a interés · {formatMoney(mov.montoACapital)} a capital
                     </p>
                   )}
                 </div>

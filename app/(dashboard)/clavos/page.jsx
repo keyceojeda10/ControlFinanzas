@@ -14,7 +14,7 @@ const ORDEN_OPTS = [
 ]
 
 export default function ClavosPage() {
-  useCabecera({ titulo: 'Préstamos perdidos', subtitulo: 'Préstamos que separaste de tu cartera. Si el cliente paga algo, se registra aquí.' })
+  useCabecera({ titulo: 'Préstamos perdidos', subtitulo: 'Los que sacaste de tu cartera' })
 
   const { formatMoney } = useCountry()
   const [data, setData] = useState(null)
@@ -74,9 +74,12 @@ export default function ClavosPage() {
           { label: 'Saldo pendiente', value: formatMoney(stats.saldoEnClavos), color: 'var(--cf-gold)' },
           { label: 'Recuperado', value: formatMoney(stats.recuperado), color: 'var(--cf-green-dark)' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="border border-[var(--cf-border)] rounded-[12px] px-3 py-3 text-center bg-[var(--cf-card)]">
-            <p className="text-[10px] text-[var(--cf-ink-3)]">{label}</p>
-            <p className="font-mono-display text-base font-bold mt-0.5" style={{ color }}>{value}</p>
+          /* La tarjeta de cifra del sistema: rótulo en versalitas a la izquierda y
+             la cifra debajo, en la fuente de cifras. Iban centradas, con el rótulo
+             a 10px sin peso y radio 12: el lenguaje de antes del rediseño. */
+          <div key={label} className="border border-[var(--cf-border)] px-4 py-3 bg-[var(--cf-card)]" style={{ borderRadius: 'var(--cf-r-card-sm)' }}>
+            <p className="text-[10px] font-bold uppercase text-[var(--cf-ink-3)]" style={{ letterSpacing: '.07em' }}>{label}</p>
+            <p className="cf-fig mt-1.5" style={{ color, fontSize: 19, fontWeight: 700, letterSpacing: '-.02em', whiteSpace: 'nowrap' }}>{value}</p>
           </div>
         ))}
       </div>
