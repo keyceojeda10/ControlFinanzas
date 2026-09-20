@@ -1,4 +1,5 @@
 // app/api/dashboard/resumen/route.js
+import { tocaCobrarEn } from '@/lib/dinero/esperado'
 import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
@@ -16,7 +17,12 @@ function getLocalDate(country = 'co') {
   return new Date(Date.now() - Math.abs(getUtcOffset(country)) * 60 * 60 * 1000)
 }
 
-export async function GET() {
+export async function GET(request) {
+  // `?detalle=1` — lo pide «Tu resumen del día». Añade las LISTAS que respaldan
+  // las cifras (quién pagó, a quién le tocaba y no pagó, qué toca mañana). Salen
+  // del MISMO bucle y la MISMA regla que las cifras: una lista que contradiga al
+  // número de arriba sería peor que no tenerla. El Inicio no lo pide ni lo paga.
+  const detalle = (() => { try { return new URL(request.url).searchParams.get('detalle') === '1' } catch { return false } })()
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
@@ -448,6 +454,11 @@ export async function GET() {
   let renovarMonto = 0
   // A cuantos clientes toca cobrarles hoy. Ver la nota del `.add()` de abajo.
   const clientesConCobroHoy = new Set()
+  // Solo con `?detalle=1`: a quién le tocaba hoy y cuánto, y lo mismo para mañana.
+  const tocabaHoy = new Map()      // clienteId → { nombre, cuota, diasMora }
+  const tocaManana = new Map()     // clienteId → { nombre, cuota }
+  const manana = detalle ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null
+  let esperadoManana = 0
   const proximosACompletar = []
 
   // Cachear diasExcluidos por cliente: los prestamos del mismo cliente
@@ -495,10 +506,27 @@ export async function GET() {
       // Es un Set de clienteId, no un contador: un cliente con tres prestamos
       // que vencen hoy es UNA visita, no tres.
       clientesConCobroHoy.add(p.clienteId)
+      if (detalle) {
+        const v = tocabaHoy.get(p.clienteId) ?? { nombre: p.cliente?.nombre ?? 'Cliente', cuota: 0, diasMora: 0 }
+        v.cuota += p.cuotaDiaria ?? 0
+        tocabaHoy.set(p.clienteId, v)
+      }
+    }
+    // MAÑANA, con la función que sabe preguntar por otra fecha (`tocaCobrarEn`),
+    // que es la gemela de la de hoy: `esperado-vs-calculos.test.js` las compara.
+    if (detalle && !p.esClavo && tocaCobrarEn(p, manana, _diasExcl, festivos)) {
+      esperadoManana += p.cuotaDiaria ?? 0
+      const v = tocaManana.get(p.clienteId) ?? { nombre: p.cliente?.nombre ?? 'Cliente', cuota: 0 }
+      v.cuota += p.cuotaDiaria ?? 0
+      tocaManana.set(p.clienteId, v)
     }
 
     const diasExcluidos = getDiasExcluidos(p.cliente)
     const diasMora = calcularDiasMora(p, diasExcluidos, festivos)
+    if (detalle && tocabaHoy.has(p.clienteId)) {
+      const v = tocabaHoy.get(p.clienteId)
+      v.diasMora = Math.max(v.diasMora, diasMora)
+    }
     const estaEnMora = diasMora > 0
     if (estaEnMora) {
       clientesMora.add(p.clienteId)
@@ -624,6 +652,7 @@ export async function GET() {
 
   // Sparkline 7d (de mas viejo a mas reciente, hoy es el ultimo): sparkline7d[6] = hoy
   const sparkline7d = Array(7).fill(0)
+  const cobros7d = Array(7).fill(0)
   for (const p of pagos7Dias) {
     const fecha = new Date(p.fechaPago)
     const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
@@ -633,11 +662,68 @@ export async function GET() {
     const diasAtras = Math.floor((hoyCO - diaCO) / (24 * 60 * 60 * 1000))
     if (diasAtras >= 0 && diasAtras < 7) {
       sparkline7d[6 - diasAtras] += p.montoPagado
+      cobros7d[6 - diasAtras] += 1
+    }
+  }
+
+  /* ── EL DETALLE DEL DÍA (solo con `?detalle=1`) ──────────────────────────
+     Las listas que respaldan las cifras de «Tu resumen del día». Dos lecturas
+     más —los pagos y los gastos de hoy, con nombre— y nada de plata recalculada:
+     «sin cobrar» son los de `clientesConCobroHoy` que no están en `pagaronHoy`,
+     los mismos dos conjuntos de los que sale «N de M cobrados». */
+  let detalleDia = null
+  if (detalle) {
+    const [pagosLista, gastosLista] = await Promise.all([
+      prisma.pago.findMany({
+        where: { organizationId: orgId, fechaPago: { gte: inicioDiaUTC, lte: finDiaUTC }, tipo: { notIn: ['recargo', 'descuento'] }, ...filtroRutaPagos },
+        orderBy: { fechaPago: 'desc' }, take: 300,
+        select: {
+          id: true, montoPagado: true, fechaPago: true, tipo: true, metodoPago: true, prestamoId: true,
+          metodoPagoRef: { select: { nombre: true } },
+          cobrador: { select: { nombre: true } },
+          prestamo: { select: { clienteId: true, cliente: { select: { nombre: true } } } },
+        },
+      }),
+      esCobrador ? Promise.resolve([]) : prisma.gastoMenor.findMany({
+        where: { organizationId: orgId, estado: { in: ['pendiente', 'aprobado'] }, fecha: { gte: inicioDiaUTC, lte: finDiaUTC } },
+        orderBy: { monto: 'desc' }, take: 50,
+        select: { id: true, description: true, monto: true, estado: true, cobrador: { select: { nombre: true } } },
+      }),
+    ])
+    const enEfectivo = pagosLista.filter((x) => x.metodoPago !== 'transferencia').reduce((n, x) => n + x.montoPagado, 0)
+    const hoyCO = Date.UTC(y, m, d)
+    detalleDia = {
+      pagos: pagosLista.map((x) => ({
+        id: x.id, prestamoId: x.prestamoId, clienteId: x.prestamo?.clienteId ?? null,
+        cliente: x.prestamo?.cliente?.nombre ?? 'Cliente', monto: Math.round(x.montoPagado),
+        hora: x.fechaPago, tipo: x.tipo,
+        medio: x.metodoPago === 'transferencia' ? (x.metodoPagoRef?.nombre ?? 'Transferencia') : 'Efectivo',
+        cobrador: x.cobrador?.nombre ?? null,
+      })),
+      // Por dónde entró. «Efectivo» es lo que NO es transferencia: lo que no dice
+      // nada es efectivo (ver `entraAlFajo`). Aquí solo se separa por medio; no
+      // decide quién lleva la plata encima.
+      medios: { efectivo: Math.round(enEfectivo), transferencia: Math.round(pagosLista.reduce((n, x) => n + x.montoPagado, 0) - enEfectivo) },
+      sinCobrar: [...tocabaHoy.entries()]
+        .filter(([id]) => !pagaronHoy.has(id))
+        .map(([clienteId, v]) => ({ clienteId, nombre: v.nombre, cuota: Math.round(v.cuota), diasMora: v.diasMora }))
+        .sort((a, b) => b.diasMora - a.diasMora || b.cuota - a.cuota),
+      manana: {
+        monto: Math.round(esperadoManana), clientes: tocaManana.size,
+        lista: [...tocaManana.entries()].map(([clienteId, v]) => ({ clienteId, nombre: v.nombre, cuota: Math.round(v.cuota) }))
+          .sort((a, b) => b.cuota - a.cuota).slice(0, 40),
+      },
+      semana: sparkline7d.map((monto, i) => ({
+        fecha: new Date(hoyCO - (6 - i) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        monto: Math.round(monto), cobros: cobros7d[i],
+      })),
+      gastos: gastosLista.map((g) => ({ id: g.id, que: g.description, monto: Math.round(g.monto), pendiente: g.estado === 'pendiente', quien: g.cobrador?.nombre ?? null })),
     }
   }
 
   return NextResponse.json({
     generatedAt: new Date().toISOString(),
+    ...(detalleDia ? { detalleDia } : {}),
     clientes: {
       total:  clientesActivos.size,
       enMora: clientesMora.size,

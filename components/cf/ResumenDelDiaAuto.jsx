@@ -15,6 +15,7 @@
 // que se puede elegir es las 5 p. m.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountry } from '@/hooks/useCountry'
 import { ResumenDelDia, AvisoResumen } from '@/components/cf/ResumenDelDia'
@@ -28,13 +29,15 @@ const guardar = (k, v) => { try { localStorage.setItem(k, v) } catch {} }
 export default function ResumenDelDiaAuto() {
   const { rol, session } = useAuth()
   const { formatMoney } = useCountry()
+  const router = useRouter()
   const [resumen, setResumen] = useState(null)
   const [fase, setFase] = useState(null)          // null | 'aviso' | 'pantalla'
   const horaRef = useRef(undefined)               // undefined = aún no se ha leído
   const ocupado = useRef(false)
 
   const traer = useCallback(async () => {
-    const d = await fetch('/api/dashboard/resumen', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    // `?detalle=1`: las listas detrás de cada cifra (quién pagó, quién no, mañana).
+    const d = await fetch('/api/dashboard/resumen?detalle=1', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
     return d ? armarResumen(d, { nombre: session?.user?.name ?? '' }) : null
   }, [session?.user?.name])
 
@@ -97,6 +100,8 @@ export default function ResumenDelDiaAuto() {
     <ResumenDelDia
       r={resumen} formatear={formatear} fecha={fecha}
       onCerrar={() => { guardar(CLAVE_VISTO, fechaLocal()); setFase(null); setResumen(null) }}
+      // Tocar a un cliente o un préstamo de una lista: se cierra y se va allí.
+      onIr={(href) => { guardar(CLAVE_VISTO, fechaLocal()); setFase(null); setResumen(null); router.push(href) }}
     />
   )
 }
