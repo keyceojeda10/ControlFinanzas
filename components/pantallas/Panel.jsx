@@ -144,7 +144,7 @@ function RotuloBloque({ texto, apunte }) {
 }
 
 function Hero({
-  recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, cobrosSemana, fmt,
+  recaudado, meta, porcentaje = 0, cobrados = 0, pendientes = 0, ayer, semana, cobrosSemana, fechasSemana, fmt,
   faltan, enMora = 0, promedio7d, esperadoCrudo, fecha, sinCobrosHoy = false,
 }) {
   /* Cómo se llama cada día: largo para el `title` de la barra y corto para la
@@ -184,6 +184,40 @@ function Hero({
   ].filter(Boolean)
 
   const hayGrafica = semana && tope > 0
+
+  /* ⚠ LA GRÁFICA ES UN ELEMENTO, NO UN COMPONENTE DECLARADO AQUÍ DENTRO.
+     Estaba declarada como una función en el cuerpo de `Hero`, y eso la rompía:
+     en cada render de Hero la función es OTRA, React la ve como un tipo de
+     componente distinto y DESMONTA el subárbol para montarlo de nuevo. Mientras
+     el día elegido vivía en `Hero` no se notaba; desde que vive dentro de
+     `SemanaDeCobros`, cada render lo borraba.
+
+     Y el Inicio renderiza varias veces seguidas a propósito —pinta la caché y
+     repinta cuando contesta la red—, así que el dueño veía las dos cosas: «uno
+     selecciona un día y se quita» y «al principio parpadea».
+
+     Como elemento, el tipo es `SemanaDeCobros` y React conserva su estado. Sale
+     en dos sitios (dentro de la caja en móvil, en la suya en escritorio): son
+     dos posiciones del árbol, o sea dos instancias con su propio día elegido,
+     y el CSS solo enseña una. */
+  const grafica = hayGrafica ? (
+      <SemanaDeCobros
+        dias={barras.map((monto, i) => ({ monto, cobros: cobrosSemana?.[i] ?? null, fecha: fechasSemana?.[i] ?? null }))}
+        formatear={fmt ?? ((n) => n)}
+        meta={esperadoCrudo || null}
+        pie={({ total }) => (
+          <>
+            En {barras.length} días llevas <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(total) : total}</b> cobrados.{' '}
+            {cumplieron != null
+              ? (cumplieron === 0
+                  ? <>Ningún día llegó a lo que tocaba cobrar; la línea es lo que toca cada día.</>
+                  : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de esos días</b>; la línea es lo que toca cada día.</>)
+              : <>Toca una barra para ver ese día.</>}
+          </>
+        )}
+      />
+  ) : null
+
 
   return (
     /* ── DOS BLOQUES, COMO LA LÁMINA ──
@@ -284,7 +318,7 @@ function Hero({
         {/* En móvil la gráfica va DENTRO de esta caja: a 393px no hay dos
             columnas, y una segunda tarjeta solo añadiría un borde y otro
             título para lo mismo. */}
-        {hayGrafica && <div className="lg:hidden"><Grafica /></div>}
+        {hayGrafica && <div className="lg:hidden">{grafica}</div>}
       </CajaOscura>
 
       {/* La misma gráfica, en su propia caja, solo desde `lg`. */}
@@ -296,42 +330,12 @@ function Hero({
               ? (cumplieron === 0 ? 'ningún día completo' : `cobraste todo ${cumplieron} ${cumplieron === 1 ? 'vez' : 'veces'}`)
               : null}
           />
-          <Grafica />
+          {grafica}
         </CajaOscura>
       )}
     </div>
   )
 
-  /* La gráfica se declara aquí dentro a propósito: usa ocho valores del cuerpo
-     —barras, tope, la línea, los nombres— y pasarlos por props a un componente
-     de fuera sería ocho props para un trozo que solo existe aquí. Y se pinta en
-     DOS sitios (dentro de la caja en móvil, en la suya en escritorio), así que
-     duplicar el JSX era la otra salida, peor. */
-  /* LA GRÁFICA ES LA MISMA QUE LA DEL RESUMEN DEL DÍA.
-     El dueño, 20 sep 2026: «el cuadro del dashboard no se ve tan bien como el
-     del resumen diario; es el mismo dato. Que quede igual, con toda su lógica».
-     Aquí solo quedan los datos y el pie; el dibujo vive en
-     `components/cf/SemanaDeCobros.jsx`, que además conserva la línea de lo que
-     toca cobrar —eso es de esta pantalla, el resumen no la tiene—. */
-  function Grafica() {
-    return (
-      <SemanaDeCobros
-        dias={barras.map((monto, i) => ({ monto, cobros: cobrosSemana?.[i] ?? null }))}
-        formatear={fmt ?? ((n) => n)}
-        meta={esperadoCrudo || null}
-        pie={({ total }) => (
-          <>
-            En {barras.length} días llevas <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(total) : total}</b> cobrados.{' '}
-            {cumplieron != null
-              ? (cumplieron === 0
-                  ? <>Ningún día llegó a lo que tocaba cobrar; la línea es lo que toca cada día.</>
-                  : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de esos días</b>; la línea es lo que toca cada día.</>)
-              : <>Toca una barra para ver ese día.</>}
-          </>
-        )}
-      />
-    )
-  }
 }
 
 /* ══ Las dos tarjetas blancas ══

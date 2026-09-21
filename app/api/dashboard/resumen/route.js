@@ -655,6 +655,11 @@ export async function GET(request) {
   // Sparkline 7d (de mas viejo a mas reciente, hoy es el ultimo): sparkline7d[6] = hoy
   const sparkline7d = Array(7).fill(0)
   const cobros7d = Array(7).fill(0)
+  // Las fechas de esos mismos siete días, en LOCAL (y/m/d ya vienen del país).
+  const dias7d = Array.from({ length: 7 }, (_, i) => {
+    const f = new Date(Date.UTC(y, m, d - (6 - i)))
+    return f.toISOString().slice(0, 10)
+  })
   for (const p of pagos7Dias) {
     const fecha = new Date(p.fechaPago)
     const offsetMs = Math.abs(getUtcOffset(country)) * 60 * 60 * 1000
@@ -777,6 +782,11 @@ export async function GET(request) {
       interesGanadoHoy,
       capitalRecuperadoHoy,
       sparkline7d,
+      /* LA FECHA DE CADA BARRA, para que el nombre del día lo sepa el SERVIDOR.
+         Sin ella el navegador tenía que derivarlo de su reloj en un efecto, y
+         el primer pintado salía con los días en blanco: el «parpadeo» que
+         reportó el dueño el 20 sep 2026. Son siete cadenas. */
+      dias7d,
       /* CUÁNTOS cobros hubo cada día, no solo cuánto. Sale del MISMO bucle que
          `sparkline7d` —coste cero— y hasta hoy solo viajaba con `?detalle=1`,
          dentro del resumen del día. Lo pide la barra tocada del Inicio: «$228.400»

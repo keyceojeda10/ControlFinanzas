@@ -70,13 +70,25 @@ export default function SemanaDeCobros({
   dias = [], formatear, meta = null, alto = 140, eligeHoy = false, pie = null, anima = false,
 }) {
   const [elegido, setElegido] = useState(null)
-  const [nombres, setNombres] = useState(() => comoSeLlama(dias))
 
+  /* ⚠ EL NOMBRE DEL DÍA, DEL SERVIDOR SIEMPRE QUE SE PUEDA.
+     Cuando cada día trae su `fecha` los nombres salen en el PRIMER pintado,
+     iguales en el servidor y en el navegador. Solo si faltan hay que derivarlos
+     del reloj del navegador, y eso obliga a esperar al efecto: el servidor no
+     puede saber qué hora es ahí, y pintarlo directamente haría que React tirara
+     el árbol al hidratar. Ese hueco era el «parpadeo» del Inicio. */
+  const delServidor = comoSeLlama(dias)
+  const hayFechas = delServidor.every(Boolean)
+  const [nombresReloj, setNombresReloj] = useState(null)
   useEffect(() => {
-    const delServidor = comoSeLlama(dias)
-    setNombres(delServidor.every(Boolean) ? delServidor : nombresDelReloj(dias.length))
-    setElegido(null)
-  }, [dias.length]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!hayFechas) setNombresReloj(nombresDelReloj(dias.length))
+  }, [hayFechas, dias.length])
+  const nombres = hayFechas ? delServidor : nombresReloj
+
+  /* Si cambia la semana que se enseña, el día elegido ya no significa nada.
+     NO depende de la identidad del array: el Inicio lo reconstruye en cada
+     render —pinta la caché y repinta con la red— y el día se borraría solo. */
+  useEffect(() => { setElegido(null) }, [dias.length])
 
   if (dias.length === 0) return null
 

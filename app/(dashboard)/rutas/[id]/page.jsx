@@ -290,6 +290,43 @@ function HistorialCobros({ rutaId }) {
   )
 }
 
+/* El rótulo de cada grupo es AHORA EL PLEGADOR, y no un botón al lado: es la
+   única pieza fija de la sección, la que se sigue viendo con cien tarjetas
+   debajo, y es donde se toca por instinto.
+
+   La cuenta se queda puesta con la sección cerrada —«Por cobrar hoy · 100»—
+   porque plegada es lo único que dice cuánto hay ahí dentro.
+
+   ⚠ VIVE AQUÍ FUERA, no dentro del render de la página. Un componente declarado
+   dentro de otro se vuelve a crear en cada render: React ve un tipo nuevo y
+   destruye el nodo para montarlo otra vez, así que el botón pierde el foco del
+   teclado a mitad de uso. Lo mismo que rompió la gráfica del Inicio el 20 sep
+   2026. Ahora lo caza el lint. */
+function RotuloGrupo({ titulo, cuantos, color, cerrado, onPlegar }) {
+  return (
+    <button
+      type="button"
+      onClick={onPlegar}
+      aria-expanded={!cerrado}
+      className="w-full flex items-center gap-2 mb-2 mt-1 px-1 text-left"
+      style={{ background: 'none', border: 0, cursor: 'pointer', font: 'inherit', minHeight: 34 }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color || 'var(--cf-ink-3)'}
+        strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        style={{ flex: 'none', transform: cerrado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+      <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: color || 'var(--cf-ink-3)' }}>
+        {titulo}
+      </span>
+      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
+        {cuantos}
+      </span>
+      <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
+    </button>
+  )
+}
+
 export default function RutaDetallePage({ params }) {
   const { id }    = use(params)
   const router    = useRouter()
@@ -3416,34 +3453,6 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
              yendo al día. Antes las tres secciones numeraban sobre la ruta
              entera, así que el que hoy no tocaba también gastaba número. */
 
-          /* El rótulo es AHORA EL PLEGADOR, y no un botón al lado: es la única
-             pieza fija de la sección, la que se sigue viendo con cien tarjetas
-             debajo, y es donde se toca por instinto.
-
-             La cuenta se queda puesta con la sección cerrada —«Por cobrar hoy ·
-             100»— porque plegada es lo único que dice cuánto hay ahí dentro. */
-          const Rotulo = ({ titulo, cuantos, color, clave, cerrado }) => (
-            <button
-              type="button"
-              onClick={() => plegarGrupo(clave)}
-              aria-expanded={!cerrado}
-              className="w-full flex items-center gap-2 mb-2 mt-1 px-1 text-left"
-              style={{ background: 'none', border: 0, cursor: 'pointer', font: 'inherit', minHeight: 34 }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color || 'var(--cf-ink-3)'}
-                strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden
-                style={{ flex: 'none', transform: cerrado ? 'rotate(-90deg)' : 'none', transition: 'transform .15s' }}>
-                <path d="M6 9l6 6 6-6" />
-              </svg>
-              <span className="text-[11px] font-extrabold uppercase tracking-[.07em]" style={{ color: color || 'var(--cf-ink-3)' }}>
-                {titulo}
-              </span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--cf-fill)', color: 'var(--cf-ink-3)' }}>
-                {cuantos}
-              </span>
-              <div className="flex-1 h-px" style={{ background: 'var(--cf-border)' }} />
-            </button>
-          )
 
           return (
             /* El hueco es para la barra flotante de «Empezar recorrido», que va
@@ -3481,8 +3490,8 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                     const cerrado = gruposCerrados.has(g.clave)
                     return (
                     <div key={g.clave}>
-                      <Rotulo titulo={g.titulo} cuantos={g.filas.length} color={g.color}
-                        clave={g.clave} cerrado={cerrado} />
+                      <RotuloGrupo titulo={g.titulo} cuantos={g.filas.length} color={g.color}
+                        cerrado={cerrado} onPlegar={() => plegarGrupo(g.clave)} />
                       {/* Cerrada NO SE PINTA, no se esconde con CSS: con 206
                           clientes en la ruta más grande, dejar las tarjetas
                           montadas y taparlas cuesta el mismo trabajo de pintado
