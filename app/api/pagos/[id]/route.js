@@ -2,7 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularEstadoCliente, calcularSaldoPendiente } from '@/lib/calculos'
+import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
@@ -104,6 +104,12 @@ export async function DELETE(request, { params }) {
         include: {
           pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
           cliente: { select: { rutaId: true } },
+          // Para deshacer lo que un pago de interés apuntó en la tabla.
+          cuotasAmortizacion: { select: { numeroPeriodo: true, fechaEsperada: true, interesPagado: true } },
+          /* Y los devengos con ella: quien trae la tabla de un préstamo tiene que
+             traer también sus devengos, o un abierto sale «al día» estando en mora
+             (lo vigila `abierto-devengos-en-todos-los-select.test.js`). */
+          devengos: { select: { periodo: true, interes: true } },
         },
       },
     },
@@ -169,6 +175,21 @@ export async function DELETE(request, { params }) {
         where: { id: prestamo.id },
         data: { totalAPagar: prestamo.totalAPagar + pago.montoPagado },
       })
+    }
+
+    /* 1d'. REVERSAR UN PAGO DE INTERÉS: quitarlo de la tabla.
+       Registrarlo lo apunta en `interesPagado`; borrarlo no lo quitaba, y
+       `sincronizarTabla` de abajo solo reparte `pagado`. La cuota se quedaba
+       con el interés dado por pagado y sin la plata detrás: la app dejaba de
+       pedirlo. Visto en producción el 21 sep 2026 en un préstamo cancelado. */
+    if (pago.tipo === 'intereses' && Array.isArray(prestamo.cuotasAmortizacion)) {
+      const filaDe = new Map(prestamo.cuotasAmortizacion.map((f) => [f.numeroPeriodo, f]))
+      for (const { numeroPeriodo, quitar } of deshacerPagoDeInteres(prestamo, pago.montoPagado)) {
+        await tx.cuotaAmortizacion.update({
+          where: { prestamoId_numeroPeriodo: { prestamoId: prestamo.id, numeroPeriodo } },
+          data: { interesPagado: Math.max(0, (filaDe.get(numeroPeriodo)?.interesPagado || 0) - quitar) },
+        })
+      }
     }
 
     // ── 1e. LA TABLA, AL DIA CON LOS PAGOS QUE QUEDAN ──────────────────────
@@ -254,6 +275,11 @@ export async function DELETE(request, { params }) {
         noMueveCapital: true,
       })
     }
+    }, {
+      /* El mismo límite que el cobro (ver prestamos/[id]/pagos). En producción
+         no se define y se queda en los 5 s de Prisma; en el espejo, con la base
+         al otro lado de un túnel SSH, 5 s no llegan y el borrado daba 500. */
+      timeout: Number(process.env.PRISMA_TX_TIMEOUT_MS) || 5000,
     })
   } catch (err) {
     // La transaccion hace rollback automatico, pero el cliente recibia un 500

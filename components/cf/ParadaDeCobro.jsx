@@ -634,8 +634,8 @@ export function FilaCobro({
           El adaptador no la manda en el cobrado: ya está tachado y con su hora,
           y enseñarle el atraso a alguien que acaba de pagar es ruido. */}
       {/* ── EL AVISO DE MORA, EN UNA FRASE (E07) ──
-          «Lleva 28 días sin pagar. Debe $960.000 en total.» Dice de una vez
-          cuánto lleva sin pagar y cuánto debe EN TOTAL, que es lo que se dice
+          «Lleva 28 días de atraso. Debe $960.000 en total.» Dice de una vez
+          cuánto lleva atrasado y cuánto debe EN TOTAL, que es lo que se dice
           en voz alta en la puerta. Y con la palabra «en total» pegada a la
           cifra: el fallo que la adenda denuncia es justo un saldo leído como si
           fuera la mora, y ahí el cobrador le pide al cliente diez veces de más.
@@ -663,7 +663,13 @@ export function FilaCobro({
             <path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
           </svg>
           <span style={{ fontSize: 12, lineHeight: 1.4, color: 'var(--cf-red-dark)', minWidth: 0 }}>
-            Lleva <b>{avisoMora.dias} días sin pagar</b>. Debe {avisoMora.total} en total.
+            {/* «DE ATRASO», NO «SIN PAGAR». Los días cuentan desde la cuota más
+                vieja que no está cubierta, no desde el último pago. Quien abona
+                solo el interés sigue atrasado en el capital, y la frase vieja le
+                decía «lleva 32 días sin pagar» con «Últ. pago 20 sep» —ayer—
+                dos renglones más abajo. Reportado el 21 sep 2026 por el cliente
+                de Inversiones Don Pacho: «ayer pagó los intereses atrasados». */}
+            Lleva <b>{avisoMora.dias} días de atraso</b>. Debe {avisoMora.total} en total.
           </span>
         </div>
       )}

@@ -2230,7 +2230,7 @@ export default function Estilo() {
           <PieGestion onCancelar={() => {}} onAceptar={() => {}} textoAceptar="Perdonar $48.000" />
         </HojaDemo>
 
-        <HojaDemo id="ges-perdidos" titulo="Mover a perdidos" subtitulo="Julián Vélez · 35 días sin pagar · cumple 18%">
+        <HojaDemo id="ges-perdidos" titulo="Mover a perdidos" subtitulo="Julián Vélez · 35 días de atraso · cumple 18%">
           <MoverAPerdidos
             montoEnJuego="$184.733"
             contactoLinea={<>Le escribiste hace <strong>22 días</strong> · lo visitaron hace <strong>12</strong></>}
