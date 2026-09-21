@@ -10,6 +10,7 @@ import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -52,7 +53,7 @@ export async function GET(request) {
             select:  {
               estado: true,
               esClavo: true,
-              montoPrestado: true,
+              montoPrestado: true, ...CAMPOS_DEL_REPARTO,
               totalAPagar: true,
               // ── PARA LA CARTERA DE LA TARJETA (T04-01) ──
               // La lámina pone cuatro cifras por ruta: hoy, cobros, CARTERA y

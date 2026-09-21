@@ -7,6 +7,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 import { COLOR } from '@/lib/papel/tokens'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -81,7 +82,7 @@ export async function GET(req) {
         cliente: { estado: { notIn: ['eliminado', 'inactivo'] } },
       },
       select: {
-        clienteId: true, montoPrestado: true, totalAPagar: true,
+        clienteId: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true,
         fechaInicio: true, diasPlazo: true, cuotaDiaria: true, frecuencia: true, estado: true,
         pagos: { select: { montoPagado: true, tipo: true } },
         cliente: {
@@ -107,7 +108,7 @@ export async function GET(req) {
       },
       select: {
         montoPagado: true,
-        prestamo: { select: { montoPrestado: true, totalAPagar: true } },
+        prestamo: { select: { montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true } },
       },
     }),
     prisma.user.findMany({

@@ -11,6 +11,7 @@ import { validarDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
 import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { calificacionDe } from '@/lib/calificacion'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -265,7 +266,7 @@ export async function PATCH(request, { params }) {
     if (nuevoEstado === 'inactivo') {
       const prestamosActivos = await prisma.prestamo.findMany({
         where: { clienteId: cid, estado: 'activo' },
-        select: { id: true, montoPrestado: true, totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
+        select: { id: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, pagos: { select: { montoPagado: true, tipo: true } } },
       })
       if (prestamosActivos.length > 0) {
         const prestamosInfo = prestamosActivos.map((p) => {
@@ -437,7 +438,7 @@ export async function DELETE(request, { params }) {
       prestamos: {
         // Solo los ACTIVOS bloquean el borrado (los completados/cancelados no descuadran).
         where: { estado: 'activo' },
-        select: { id: true, montoPrestado: true, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true, tipo: true } } },
+        select: { id: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, estado: true, pagos: { select: { montoPagado: true, tipo: true } } },
       },
     },
   })

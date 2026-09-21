@@ -15,6 +15,7 @@ import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { tasaDeFinanciar, MODO_FINANCIAR } from '@/lib/financiar'
+import { capitalEnCalle } from '@/lib/dinero/reparto'
 import { getLocalDateStr } from '@/lib/i18n'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
@@ -161,6 +162,10 @@ export async function POST(request, { params }) {
    * luego no se registraba. Si hay que cambiar la regla, se cambia allí. */
   const minimoRenovacion = minimoParaRenovar(original)
 
+  /* El capital que de verdad seguía en la calle, medido con el reparto ANTES de
+     cerrar el viejo (con su total pactado intacto). Ver `interesArrastrado` abajo. */
+  const capitalQueSigueAfuera = capitalEnCalle(original)
+
   if (financiar && !(minimoRenovacion > 0)) {
     return Response.json({ error: 'Este préstamo no debe nada: no hay saldo que financiar.' }, { status: 400 })
   }
@@ -275,6 +280,20 @@ export async function POST(request, { params }) {
     ? Math.ceil(diferenciaExacta / 100) * 100
     : diferenciaExacta
 
+  /* ══ CUÁNTO DE LO QUE PASA AL NUEVO ES INTERÉS ════════════════════════════
+     La deuda vieja entra ENTERA al préstamo nuevo —es lo que el cliente debe y
+     sobre eso se le cobra—, pero una parte de ella es interés que no se cobró.
+     Si no se apunta, el nuevo lo trata como capital y esa ganancia no aparece
+     nunca: en PRESTA MIL, $12.035.416 en 635 renovaciones (21 sep 2026).
+
+     Es lo que el nuevo presta SIN contar el efectivo que sale hoy, menos el
+     capital que de verdad seguía afuera. Con el efectivo REDONDEADO, no con la
+     resta exacta: los pesos de más que se entregan son capital que salió, y si
+     no se descuentan de aquí la cadena reconoce una ganancia que no entró.
+     Solo sirve para REPARTIR la ganancia: la deuda del nuevo no cambia. Ver
+     `capitalDelPrestamo` en lib/dinero/capital-base.js. */
+  const interesArrastrado = Math.max(0, Math.round(montoFinal - Math.max(0, diferencia) - capitalQueSigueAfuera))
+
   const orgConfig = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { capitalEstricto: true },
@@ -366,6 +385,7 @@ export async function POST(request, { params }) {
         fechaFin,
         seguro:        conSeguro,
         renovadoDeId:  prestamoId,
+        ...(interesArrastrado > 0 ? { interesArrastrado } : {}),
         ...(conSeguro && montoSeguroNum > 0 && { montoSeguro: montoSeguroNum }),
       },
     })

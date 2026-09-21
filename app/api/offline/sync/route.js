@@ -276,7 +276,7 @@ export async function GET() {
       // Tambien excluye clavos, igual que el dashboard y la caja.
       capitalEnCalle: Math.round(clientesRaw.reduce((s, c) => s + c.prestamos
         .filter(p => p.estado === 'activo' && !p.esClavo)
-        .reduce((a, p) => a + (calcularCapitalRestante(p) ?? p.montoPrestado ?? 0), 0), 0)),
+        .reduce((a, p) => a + (calcularCapitalRestante(p, { paraReparto: true }) ?? p.montoPrestado ?? 0), 0), 0)),
       cuotaDiariaTotal: prestamosActivos.reduce((s, p) => s + (p.cuotaDiaria || 0), 0),
     },
   }

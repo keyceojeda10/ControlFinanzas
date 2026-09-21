@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { getUtcOffset } from '@/lib/i18n'
 import { calcularDiasMora, tienePeriodoEsperadoHoy } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export const dynamic = 'force-dynamic'
 
@@ -109,7 +110,7 @@ export async function GET() {
             diasSinCobro: true,
             // Lo mismo que pide la ficha de la ruta, o las dos pantallas miden la
             // mora del mismo cliente con información distinta.
-            montoPrestado: true,
+            montoPrestado: true, ...CAMPOS_DEL_REPARTO,
             fechaFin: true,
             capitalExtra: true,
             interesAdelantado: true,

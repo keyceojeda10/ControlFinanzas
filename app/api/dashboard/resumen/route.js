@@ -10,6 +10,7 @@ import { getUtcOffset } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
 import { interesCobradoDeLosPrestamos, SELECT_PARA_INTERES } from '@/lib/dinero/interes-cobrado'
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -111,7 +112,7 @@ export async function GET(request) {
       select: {
         id: true,
         clienteId: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         cuotaDiaria: true,
         fechaInicio: true,
@@ -292,7 +293,7 @@ export async function GET(request) {
       },
       select: {
         id: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         cliente: { select: { nombre: true } },
       },
@@ -483,7 +484,7 @@ export async function GET(request) {
     saldoPorCobrar += calcularSaldoPendiente(p)
     // calcularCapitalRestante devuelve null si el prestamo no tiene monto util;
     // ahi el capital vivo es lo mejor que tenemos: el monto prestado.
-    capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
+    capitalEnCalle += calcularCapitalRestante(p, { paraReparto: true }) ?? p.montoPrestado ?? 0
     cuotaDiariaTotal += p.cuotaDiaria ?? 0
 
     // Misma regla que usa /api/rutas para su esperadoHoy, para que el hero y el

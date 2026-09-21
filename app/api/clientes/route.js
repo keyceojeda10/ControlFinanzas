@@ -22,6 +22,7 @@ import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { dispararTrasCrear } from '@/lib/capi-activacion'
 import { notificar } from '@/lib/notificar'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -170,7 +171,7 @@ export async function GET(request) {
           diasPlazo: true,
           frecuencia: true,
           totalAPagar: true,
-          montoPrestado: true,
+          montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           modoInteres: true,
           // Para el desglose: sin la tasa, la ficha de cada prestamo no puede
           // decir en que se pacto, y el mismo «20%» significa cosas distintas

@@ -5,6 +5,7 @@ import { interesGanado, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET(request) {
   try {
@@ -26,7 +27,7 @@ export async function GET(request) {
           where: { estado: { not: 'cancelado' }, organizationId: orgId },
           select: {
             id: true,
-            montoPrestado: true,
+            montoPrestado: true, ...CAMPOS_DEL_REPARTO,
             tasaInteres: true,
             totalAPagar: true,
             totalPagado: true, abonadoCapital: true,

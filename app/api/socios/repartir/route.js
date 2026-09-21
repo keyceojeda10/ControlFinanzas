@@ -32,6 +32,7 @@ import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { porcentajeParticipacion, repartirExacto } from '@/lib/socios'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 // Modos con tabla de amortizacion: su interes se lee de la tabla, no se reparte
 // plano. Misma regla que /api/dashboard/analiticas.
@@ -155,7 +156,7 @@ export async function GET() {
              abiertos que no salía en la ganancia. */
         },
         select: {
-          montoPrestado: true,
+          montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           totalAPagar: true,
           modoInteres: true,
           /* La rama del abierto de `interesPagoAPago` lee estos dos. Van en el

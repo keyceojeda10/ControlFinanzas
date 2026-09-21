@@ -50,6 +50,7 @@ import { notificar } from '@/lib/notificar'
 import { quiere } from '@/lib/avisos-preferencias'
 import { calcularDiasMora, calcularProximoCobro, calcularMontoEnMora } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -89,7 +90,7 @@ export async function POST(req) {
         // `estado` se pide ADEMÁS de filtrarlo: `calcularDiasMora` lo lee, y un
         // campo que no entra en el `select` vale `undefined`, no 'activo'.
         estado: true,
-        cuotaDiaria: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, montoPrestado: true,
+        cuotaDiaria: true, totalAPagar: true, totalPagado: true, abonadoCapital: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         frecuencia: true, fechaInicio: true, diasPlazo: true, modoInteres: true,
         diaCobroSemana: true, diaCobroMes: true, diaCobroMes2: true,
         primerCobro: true,

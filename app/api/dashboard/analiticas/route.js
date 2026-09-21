@@ -3,12 +3,13 @@ import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { calcularDiasMora, calcularGananciaNeta } from '@/lib/calculos'
-import { repartoSql, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { repartoSql, capitalEnCalle as capitalEnCalleDe, capitalDelPrestamo, totalDelRepartoSql, capitalDelPrestamoSql } from '@/lib/dinero/reparto'
 import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 // La formula del reparto interes/capital sale de UN solo sitio. Estaba escrita a
 // mano aqui, en el PDF y en el reparto a socios, con tres variantes distintas de
@@ -19,6 +20,8 @@ const REPARTO_PAGO = repartoSql({ pago: 'p', prestamo: 'pr' })
 // una fila de `Pago`, así que no hay `tipo` que preguntar. Sin esto el SQL pedía
 // `pr.tipo` y la pantalla entera moría con «Unknown column».
 const REPARTO_VIDA = repartoSql({ pago: 'pr', prestamo: 'pr', monto: 'totalPagado', porFila: false })
+const TOTAL_REPARTO = totalDelRepartoSql('pr')
+const CAPITAL_REAL = capitalDelPrestamoSql('pr')
 
 // Modos que llevan tabla de amortizacion. En ellos el interes del periodo se
 // calcula sobre el saldo, asi que NO se puede repartir plano sobre cada peso
@@ -186,7 +189,7 @@ export async function GET() {
         // pantalla decia «0 en mora» de 984 mientras el otro reporte, mismo
         // negocio y mismo dia, decia 851. Ver la nota en lib/calculos.js.
         // `proximoCobroManual` tambien lo lee, para saber desde cuando cuenta.
-        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true,
+        id: true, estado: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, sinPlazo: true, tasaInteres: true,
         proximoCobroManual: true,
@@ -235,11 +238,17 @@ export async function GET() {
     // meses en los que no habia pasado nada malo. Se saco de ahi (ver
     // lib/dinero/reparto.js) y tiene que poder verse por su nombre, o se
     // habria cambiado ocultar una perdida por ocultar otra.
+    //
+    // ⚠ CON LAS DOS PIEZAS DEL REPARTO, que es lo que hace `capitalPerdido`. Con
+    // `totalAPagar` a secas contaba como perdida TODA renovación: el viejo se
+    // cierra con el total igual a lo pagado, por debajo de lo prestado, y lo que
+    // faltaba no se perdió —pasó al préstamo nuevo—. Medido el 21 sep 2026:
+    // $96M de los $98,5M de PRESTA MIL eran eso; $142,6M en 26 negocios.
     prisma.$queryRaw`
-      SELECT COUNT(*) as prestamos, SUM(montoPrestado - totalAPagar) as monto
-      FROM Prestamo
-      WHERE organizationId = ${organizationId}
-        AND totalAPagar > 0 AND totalAPagar < montoPrestado
+      SELECT COUNT(*) as prestamos, SUM(${Prisma.raw(CAPITAL_REAL)} - ${Prisma.raw(TOTAL_REPARTO)}) as monto
+      FROM Prestamo pr
+      WHERE pr.organizationId = ${organizationId}
+        AND ${Prisma.raw(TOTAL_REPARTO)} > 0 AND ${Prisma.raw(TOTAL_REPARTO)} < ${Prisma.raw(CAPITAL_REAL)}
     `,
     prisma.$queryRaw`
       SELECT clienteId, COUNT(*) as total
@@ -268,9 +277,9 @@ export async function GET() {
     // Rentabilidad por ruta — misma correccion que arriba.
     prisma.$queryRaw`
       SELECT c.rutaId, r.nombre as rutaNombre,
-        SUM(pr.montoPrestado) as capitalDesplegado,
+        SUM(${Prisma.raw(CAPITAL_REAL)}) as capitalDesplegado,
         SUM(pr.totalAPagar - pr.totalPagado) as saldoPendiente,
-        SUM(pr.totalAPagar - pr.montoPrestado) as interesTotal,
+        SUM(pr.totalAPagar - ${Prisma.raw(CAPITAL_REAL)}) as interesTotal,
         SUM(${Prisma.raw(REPARTO_VIDA.interes)}) as interesGanado,
         COUNT(*) as prestamos
       FROM Prestamo pr
@@ -316,7 +325,7 @@ export async function GET() {
       },
       select: {
         id: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         /* `interesPagoAPago` decide con él si usa la tabla o el reparto plano.
            Sin pedirlo llega `undefined` y se equivoca EN SILENCIO. */
@@ -538,7 +547,8 @@ export async function GET() {
     capitalPorRuta.set(rutaId, (capitalPorRuta.get(rutaId) || 0) + capitalEnCalleDe(p))
   }
   const porCobrarTotal = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
-  const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
+  // Contra el capital de verdad: el interés arrastrado de una renovación se gana en esta cartulina.
+  const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - capitalDelPrestamo(p)), 0)
 
   // GANANCIA = INTERES cobrado - gastos. NUNCA recaudado - gastos.
   //

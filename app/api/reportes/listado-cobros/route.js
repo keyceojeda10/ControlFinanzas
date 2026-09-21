@@ -7,6 +7,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
 import { COLOR } from '@/lib/papel/tokens'
 import { rotulo } from '@/lib/dinero/definiciones'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET(req) {
   const session = await getServerSession(authOptions)
@@ -67,7 +68,7 @@ export async function GET(req) {
               where: { estado: 'activo', esClavo: false },
               select: {
                 estado: true,
-                montoPrestado: true,
+                montoPrestado: true, ...CAMPOS_DEL_REPARTO,
                 totalAPagar: true,
                 cuotaDiaria: true,
                 frecuencia: true,
@@ -126,7 +127,7 @@ export async function GET(req) {
           where: { estado: 'activo', esClavo: false },
           select: {
             estado: true,
-            montoPrestado: true,
+            montoPrestado: true, ...CAMPOS_DEL_REPARTO,
             totalAPagar: true,
             cuotaDiaria: true,
             frecuencia: true,

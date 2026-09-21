@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPortalSession } from '@/lib/portal-auth'
 import { prisma } from '@/lib/prisma'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET(request, { params }) {
   const session = await getPortalSession(request)
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
       },
       select: {
         id: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         tasaInteres: true,
         totalAPagar: true,
         totalPagado: true, abonadoCapital: true,

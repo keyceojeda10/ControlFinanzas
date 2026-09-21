@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buscarLimiter, getClientIp } from '@/lib/rate-limit'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET(request) {
   const rl = buscarLimiter(getClientIp(request))
@@ -73,7 +74,7 @@ export async function GET(request) {
       },
       select: {
         id: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         estado: true,
         cliente: { select: { id: true, nombre: true } },

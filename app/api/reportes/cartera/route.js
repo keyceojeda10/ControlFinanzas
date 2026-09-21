@@ -5,6 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { capitalEnCalle }  from '@/lib/dinero/reparto'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -61,7 +62,7 @@ export async function GET() {
           prestamos: {
             where: { estado: 'activo', esClavo: false },
             select: {
-              montoPrestado: true,
+              montoPrestado: true, ...CAMPOS_DEL_REPARTO,
               totalAPagar: true,
               totalPagado: true, abonadoCapital: true,
               cuotaDiaria: true,
@@ -100,7 +101,7 @@ export async function GET() {
       prestamos: {
         where: { estado: 'activo', esClavo: false },
         select: {
-          montoPrestado: true,
+          montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           totalAPagar: true,
           totalPagado: true, abonadoCapital: true,
           cuotaDiaria: true,

@@ -3,8 +3,9 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logActividad } from '@/lib/activity-log'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
-import { interesGanado, fraccionInteres, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
-import { tieneTablaAmortizacion, interesDelPagoSegunTabla, calcularDiasMora } from '@/lib/calculos'
+import { interesGanado, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { interesPagoAPago } from '@/lib/dinero/interes-cobrado'
+import { calcularDiasMora } from '@/lib/calculos'
 
 export async function GET(request, { params }) {
   try {
@@ -62,27 +63,22 @@ export async function GET(request, { params }) {
     const prestamosConInteres = socio.prestamos.map((p) => {
       const interesesCobrados = interesGanado(p)
 
-      // El desglose por anio se recorre pago a pago. Con tabla, cada pago vale
-      // lo que la tabla le reconozca —el primer periodo pesa mucho mas que el
-      // ultimo—; sin tabla, su parte proporcional.
-      const conTabla = tieneTablaAmortizacion(p)
-      const fraccion = fraccionInteres(p)
+      /* El desglose por año sale pago a pago de `interesPagoAPago`, la misma
+         cuenta que el informe del contador y el reparto a socios. Aquí había una
+         cuarta, a mano, que no sabía de los pagos declarados, del techo del
+         préstamo ni de las renovaciones: el año no sumaba lo que decía el total. */
       const enOrden = (p.pagos ?? [])
-        .filter(pg => !['recargo', 'descuento', 'capital'].includes(pg.tipo))
+        .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
         .slice()
         .sort((a, b) => new Date(a.fechaPago) - new Date(b.fechaPago))
 
       const interesesPorAnio = {}
-      let acumulado = 0
-      for (const pg of enOrden) {
-        const monto = pg.montoPagado ?? 0
-        const intPago = conTabla
-          ? interesDelPagoSegunTabla(p.cuotasAmortizacion, acumulado, monto)
-          : Math.round(monto * fraccion)
-        acumulado += monto
-        const anio = new Date(pg.fechaPago).getFullYear()
-        interesesPorAnio[anio] = (interesesPorAnio[anio] || 0) + intPago
+      for (const fila of interesPagoAPago({ prestamo: p, cuotas: p.cuotasAmortizacion ?? null, pagos: enOrden })) {
+        if (!fila.fecha) continue
+        const anio = fila.fecha.getFullYear()
+        interesesPorAnio[anio] = (interesesPorAnio[anio] || 0) + fila.interes
       }
+      for (const anio of Object.keys(interesesPorAnio)) interesesPorAnio[anio] = Math.round(interesesPorAnio[anio])
 
       return {
         id: p.id,

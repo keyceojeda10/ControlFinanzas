@@ -23,6 +23,7 @@ import {
 } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 function detectarCuotaExtra(prestamo, proximaCuota) {
   if (!proximaCuota || !Array.isArray(prestamo.capitalExtra) || !prestamo.capitalExtra.length) {
@@ -131,7 +132,7 @@ export async function GET() {
           estado: true,
           esClavo: true,
           cuotaDiaria: true,
-          montoPrestado: true,
+          montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           totalAPagar: true,
           totalPagado: true, abonadoCapital: true,
           frecuencia: true,

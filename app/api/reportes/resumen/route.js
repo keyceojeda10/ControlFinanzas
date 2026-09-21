@@ -8,6 +8,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset, getLocalDayRange } from '@/lib/i18n'
 import { fraccionInteres } from '@/lib/dinero/reparto'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const getDayRange = (fechaLocal, country = 'co') => getLocalDayRange(fechaLocal, country)
 
@@ -70,7 +71,7 @@ export async function GET(req) {
       },
       select: {
         clienteId: true,
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         fechaInicio: true,
         diasPlazo: true,
@@ -126,7 +127,7 @@ export async function GET(req) {
       },
       select: {
         montoPagado: true,
-        prestamo: { select: { montoPrestado: true, totalAPagar: true } },
+        prestamo: { select: { montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true } },
       },
     }),
   ])
@@ -158,7 +159,7 @@ export async function GET(req) {
   for (const p of prestamosActivosDetalle) {
     clientesActivos.add(p.clienteId)
     carteraActiva += p.totalAPagar ?? 0
-    capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
+    capitalEnCalle += calcularCapitalRestante(p, { paraReparto: true }) ?? p.montoPrestado ?? 0
     const pagado = (p.pagos || [])
       .filter(pg => !['recargo', 'descuento'].includes(pg.tipo))
       .reduce((a, pg) => a + (pg.montoPagado || 0), 0)

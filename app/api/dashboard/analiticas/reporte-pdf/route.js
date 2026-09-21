@@ -3,7 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma, Prisma } from '@/lib/prisma'
 import { formatMoney } from '@/lib/i18n'
 import { calcularDiasMora, calcularGananciaNeta, interesDelPagoSegunTabla } from '@/lib/calculos'
-import { repartoSql, capitalEnCalle as capitalEnCalleDe } from '@/lib/dinero/reparto'
+import { repartoSql, capitalEnCalle as capitalEnCalleDe, capitalDelPrestamo } from '@/lib/dinero/reparto'
 import { correccionDelReparto } from '@/lib/dinero/interes-cobrado'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO } from '@/lib/papel/tokens'
@@ -12,6 +12,7 @@ import { rotulo } from '@/lib/dinero/definiciones'
 import { parsearDiasSinCobro, obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { cuotaDelPeriodo, tocaCobrarEn } from '@/lib/dinero/esperado'
 import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 // La misma formula que la pantalla, desde el mismo sitio. Estaba copiada a mano
 // y por eso el PDF y la pantalla podian dar ganancias distintas del mismo mes.
@@ -141,7 +142,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         estado: { not: 'cancelado' },
       },
       select: {
-        montoPrestado: true,
+        montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         modoInteres: true,
         /* La rama del abierto de `interesPagoAPago` lee estos dos. Van en el
            SELECT —en el `where` Prisma revienta, ver la nota de arriba—. */
@@ -205,7 +206,7 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
         // `estado` se filtra arriba y ADEMAS se pide: `calcularDiasMora` lo lee,
         // y sin el campo veia `undefined` y devolvia 0 en todos. Ver la nota en
         // lib/calculos.js.
-        id: true, estado: true, montoPrestado: true, totalAPagar: true, totalPagado: true, abonadoCapital: true,
+        id: true, estado: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, totalPagado: true, abonadoCapital: true,
         cuotaDiaria: true, frecuencia: true, fechaInicio: true, fechaFin: true,
         diasPlazo: true, ultimoPagoAt: true, modoInteres: true, sinPlazo: true, tasaInteres: true,
         proximoCobroManual: true,
@@ -315,7 +316,8 @@ prisma.organization.findUnique({ where: { id: organizationId }, select: { nombre
   // version inflada, y aqui hace ademas de denominador del ROI.
   const capitalEnCalle = prestamosActivosDetalle.reduce((s, p) => s + capitalEnCalleDe(p), 0)
   const porCobrar = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.totalPagado || 0)), 0)
-  const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - Number(p.montoPrestado)), 0)
+  // Contra el capital de verdad, igual que analíticas: ver `capitalDelPrestamo`.
+  const interesEnCartera = prestamosActivosDetalle.reduce((s, p) => s + (Number(p.totalAPagar) - capitalDelPrestamo(p)), 0)
 
   // Correccion de los prestamos CON tabla: la DIFERENCIA entre lo que dice su
   // tabla y lo que ya conto el reparto proporcional. Misma regla que la pantalla

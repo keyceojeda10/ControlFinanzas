@@ -11,6 +11,7 @@ import { TOOLS_OWNER, TOOLS_COBRADOR } from '@/lib/asistente-tools'
 import { calcularPrestamo } from '@/lib/calculos'
 import { prisma } from '@/lib/prisma'
 import { obtenerMemorias, extraerYGuardarMemoria } from '@/lib/asistente-memoria'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export const dynamic = 'force-dynamic'
 
@@ -468,7 +469,7 @@ export async function POST(req) {
                 id: true, nombre: true, cedula: true, telefono: true,
                 prestamos: {
                   where: { estado: 'activo' },
-                  select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true, fechaInicio: true },
+                  select: { id: true, totalAPagar: true, cuotaDiaria: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, fechaInicio: true },
                   orderBy: { fechaInicio: 'asc' },
                 },
               },

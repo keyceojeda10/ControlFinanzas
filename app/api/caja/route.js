@@ -15,6 +15,7 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } fro
 // estaba duplicada con los argumentos en orden distinto y el tercer sitio se
 // quedó sin ninguna, escribiendo 0.
 import { calcularDesembolsadoDia, detalleDesembolsadoDia } from '@/lib/dinero/desembolsado'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -1366,7 +1367,7 @@ export async function GET(request) {
         where: { organizationId, estado: 'activo', esClavo: false },
         select: {
           totalAPagar: true,
-          montoPrestado: true,
+          montoPrestado: true, ...CAMPOS_DEL_REPARTO,
           // Necesarios para calcularCapitalRestante (ver dashboard/resumen).
           modoInteres: true,
           totalPagado: true, abonadoCapital: true,
@@ -1394,7 +1395,7 @@ export async function GET(request) {
         .filter((pg) => !['recargo', 'descuento'].includes(pg.tipo))
         .reduce((a, pg) => a + pg.montoPagado, 0)
       carteraActiva  += Math.max(0, (p.totalAPagar || 0) - pagado)
-      capitalEnCalle += calcularCapitalRestante(p) ?? p.montoPrestado ?? 0
+      capitalEnCalle += calcularCapitalRestante(p, { paraReparto: true }) ?? p.montoPrestado ?? 0
     }
     payload.stats.capitalOrganizacion = {
       saldoCaja,

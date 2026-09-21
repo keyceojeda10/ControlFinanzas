@@ -513,6 +513,12 @@ model Prestamo {
   // reconstruirlo. Aqui se conserva para poder devolverlo. Null = nunca lo
   // renovaron, o ya se le devolvio.
   totalAPagarPrevio Float?
+  // De `montoPrestado`, cuánto es INTERÉS que se arrastró de la cartulina anterior
+  // al renovar o financiar (la deuda vieja entra entera al préstamo nuevo, y una
+  // parte de ella era interés sin cobrar). Solo para REPARTIR la ganancia: la
+  // deuda del cliente sigue siendo montoPrestado. Null = no viene de renovación.
+  // Ver lib/dinero/capital-base.js (`capitalDelPrestamo`).
+  interesArrastrado Float?
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
   proximoCobroManual DateTime? // override manual de la fecha de proximo cobro (null = automatico)

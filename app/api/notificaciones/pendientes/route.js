@@ -16,6 +16,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -28,7 +29,7 @@ export async function GET() {
     prisma.prestamo.findMany({
       where: { organizationId, estado: 'pendiente_aprobacion' },
       select: {
-        id: true, montoPrestado: true, totalAPagar: true, createdAt: true, creadoPorId: true,
+        id: true, montoPrestado: true, ...CAMPOS_DEL_REPARTO, totalAPagar: true, createdAt: true, creadoPorId: true,
         cliente: { select: { nombre: true } },
       },
       orderBy: { createdAt: 'asc' },

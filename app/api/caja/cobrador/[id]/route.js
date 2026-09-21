@@ -10,6 +10,7 @@ import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia } from '@/lib/dinero/conciliacion'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -827,7 +828,7 @@ export async function GET(request, { params }) {
       cliente: { rutaId: { in: rutas.map((r) => r.id) } },
     },
     select: {
-      montoPrestado: true,
+      montoPrestado: true, ...CAMPOS_DEL_REPARTO,
       totalAPagar: true,
       cliente: { select: { ruta: { select: { id: true } } } },
     },

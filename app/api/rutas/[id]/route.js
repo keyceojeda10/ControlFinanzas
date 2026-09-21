@@ -28,6 +28,7 @@ import { distanciaMetros } from '@/lib/geo'
 // Suma los tramos consecutivos de una lista de clientes con coordenadas. Ya la
 // usa el optimizador de orden; aquí da el «3,4 km» de la cabecera (T27-02).
 import { totalDistance } from '@/lib/routeOptimizer'
+import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -98,7 +99,7 @@ export async function GET(request, { params }) {
               estado: true,
               esClavo: true,
               cuotaDiaria: true,
-              montoPrestado: true,
+              montoPrestado: true, ...CAMPOS_DEL_REPARTO,
               totalAPagar: true,
               totalPagado: true, abonadoCapital: true,
               frecuencia: true,
@@ -534,7 +535,7 @@ export async function GET(request, { params }) {
       totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
       // Nunca por encima del saldo: si un préstamo tiene recargos, el capital
       // restante no puede pasarse de lo que queda por cobrar.
-      capitalPendiente += Math.min(calcularCapitalRestante(p), saldoPendientePrestamo)
+      capitalPendiente += Math.min(calcularCapitalRestante(p, { paraReparto: true }), saldoPendientePrestamo)
       const moraPrestamo = calcularDiasMora(p, diasExcluidosPrestamo, festivos)
       const cuotasMoraPrestamo = calcularCuotasEnMora(p, diasExcluidosPrestamo, festivos)
       const montoMoraPrestamo = calcularMontoEnMora(p, diasExcluidosPrestamo, festivos)
