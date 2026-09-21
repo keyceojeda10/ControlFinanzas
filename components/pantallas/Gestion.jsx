@@ -512,6 +512,87 @@ export function Recargo({
   )
 }
 
+/* ══ Financiar el saldo ══════════════════════════════════════════════════
+   «Fináncieme la cartulina 30 días más»: lo que debe, más el interés que se
+   pacta en la puerta, repartido de nuevo desde HOY. La mora vuelve a cero
+   porque el acuerdo es nuevo. Ver `lib/financiar.js`, con la cita de PRESTA MIL.
+
+   El prestamista lo hacía con un RECARGO, que sube la deuda pero deja la fecha
+   vieja y los días de mora corriendo: por eso esta hoja se parece a la del
+   recargo (el interés, en cifra o en % de lo que debe) y añade lo que al
+   recargo le faltaba: el plazo nuevo.
+
+   Abajo va lo que QUEDA, no una suma a ojo: la cuota se redondea a la centena
+   y el total es el que de verdad se guarda. */
+export function Financiar({
+  modo = 'porcentaje', onModo,
+  porcentaje, onPorcentaje, atajosPorcentaje = [], porcentajeActivo, onAtajoPorcentaje,
+  monto, onMonto, enMiles = false,
+  equivale,
+  cuotas, unidad, onMenos, onMas,
+  debeAntes, debeDespues, cuota, rotuloCuota = 'La cuota', desde, hasta,
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+        <Rotulo>¿Cuánto le cobras por financiar?</Rotulo>
+        <Opciones
+          opciones={[{ id: 'porcentaje', etiqueta: '% de lo que debe' }, { id: 'cifra', etiqueta: 'Una cifra' }]}
+          activo={modo}
+          onElegir={(o) => onModo?.(o.id)}
+        />
+      </div>
+
+      {modo === 'porcentaje' ? (
+        <>
+          <CampoMonto
+            rotulo="Qué porcentaje de lo que debe"
+            moneda="%"
+            monto={porcentaje} onMonto={onPorcentaje}
+            atajos={atajosPorcentaje} atajoActivo={porcentajeActivo} onAtajo={onAtajoPorcentaje}
+          />
+          {equivale && (
+            <span className="cf-num" style={{ fontSize: 13, color: 'var(--cf-ink-2)', flex: 'none' }}>
+              {equivale}
+            </span>
+          )}
+        </>
+      ) : (
+        <CampoMonto rotulo={enMiles ? 'Interés por financiar (en miles)' : 'Interés por financiar'} monto={monto} onMonto={onMonto} />
+      )}
+
+      <Contador
+        rotulo="Por cuánto tiempo"
+        valor={cuotas}
+        unidad={unidad}
+        onMenos={onMenos}
+        onMas={onMas}
+        minimo={1}
+      />
+
+      {/* NEUTRO, como el recargo: la deuda sube y eso es lo que se pactó. */}
+      {debeAntes && debeDespues && (
+        <AntesDespues
+          concepto="Le queda debiendo"
+          antes={debeAntes}
+          despues={debeDespues}
+          tono="neutro"
+          resumen={[
+            cuota ? { etiqueta: rotuloCuota, valor: cuota } : null,
+            (desde && hasta) ? { etiqueta: 'Desde hoy hasta', valor: hasta, texto: true } : null,
+            { etiqueta: 'Días de atraso', valor: 'vuelven a cero', texto: true },
+          ].filter(Boolean)}
+        />
+      )}
+
+      <Aviso>
+        Se cierra esta cartulina por lo que debe y se abre una nueva desde hoy con
+        el interés sumado. No sale plata de la caja, y queda enlazada a la anterior.
+      </Aviso>
+    </>
+  )
+}
+
 /* ══ T13-02 · Modificar el plazo ═══════════════════════════════════════════
    El modal actual YA empieza por la intención —extender, corregir fin, corregir
    inicio— y ya enseña el nuevo plazo, la nueva cuota y el total. Está bien

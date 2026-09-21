@@ -61,6 +61,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import TablaAmortizacion from '@/components/pantallas/TablaAmortizacion'
 import { adaptarTabla } from '@/lib/adaptadores/tabla'
 import HojaInferior from '@/components/cf/HojaInferior'
+import FinanciarSaldo from '@/components/prestamos/FinanciarSaldo'
 import { MoverAPerdidos, CerrarAnticipado, PieGestion, Recargo, Descuento } from '@/components/pantallas/Gestion'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useTactil } from '@/lib/tactil'
@@ -248,6 +249,8 @@ function PrestamoDetalleContenido({ params }) {
   const [interesError,   setInteresError]   = useState('')
   const [pagandoInteres, setPagandoInteres] = useState(false)
   const [modalRenovar,  setModalRenovar]  = useState(false)
+  // «Financiar el saldo»: renovar sin entregar plata, con el interés en pesos. Ver lib/financiar.js.
+  const [modalFinanciar, setModalFinanciar] = useState(false)
   /* La MISMA hoja de renovar, abierta con otra pregunta. Ver el comentario largo
      de `soloModo` en RenovarPrestamo. */
   const [modalCambiarModo, setModalCambiarModo] = useState(false)
@@ -1191,6 +1194,18 @@ function PrestamoDetalleContenido({ params }) {
     const g = []
 
     const cobra = []
+    /* ⚠ ARRIBA DEL RECARGO, Y NO ES CAPRICHO. PRESTA MIL financiaba sus
+       cartulinas con un recargo —«como no tengo dónde colocarlos, los coloco donde
+       dice recargo»— y la mora seguía corriendo con la fecha vieja: 161 de sus
+       préstamos estaban así el 21 sep 2026. Van a buscarlo al recargo, y ahí, una
+       fila más arriba, tienen que encontrar lo que de verdad querían. */
+    if (puedeGestionarPrestamos && estaActivo && !completado && minimoRenovacion > 0) {
+      cobra.push({
+        id: 'financiar', nombre: 'Financiar el saldo',
+        valor: `debe ${formatMoney(Math.round(minimoRenovacion))}`,
+        hacer: () => setModalFinanciar(true),
+      })
+    }
     if (puedeGestionarPrestamos) {
       cobra.push({ id: 'recargo', nombre: 'Recargo por mora', hacer: () => setModalRecargo(true) })
     }
@@ -2834,6 +2849,18 @@ function PrestamoDetalleContenido({ params }) {
           Las hojas ya estaban construidas y cotejadas en Gestion.jsx, sin
           montar. Lo unico que hacia falta era enchufarlas — el contrato con la
           API es el mismo POST /pagos con `tipo` y `nota`. */}
+      <FinanciarSaldo
+        abierta={modalFinanciar}
+        onCerrar={() => { setModalFinanciar(false); setVinoDeGestion(false) }}
+        onVolver={vinoDeGestion ? () => { setModalFinanciar(false); setVinoDeGestion(false); setModalGestionPrestamo(true) } : undefined}
+        prestamoId={id}
+        clienteNombre={cliente?.nombre}
+        deuda={Math.round(minimoRenovacion || 0)}
+        frecuencia={frecuencia}
+        diasPlazoAntes={diasPlazo}
+        formatMoney={formatMoney}
+      />
+
       <HojaInferior
         abierta={modalRecargo}
         onCerrar={() => { setModalRecargo(false); setVinoDeGestion(false); setAjusteMonto(''); setAjusteNota('') }}

@@ -14,6 +14,8 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
+import { tasaDeFinanciar, MODO_FINANCIAR } from '@/lib/financiar'
+import { getLocalDateStr } from '@/lib/i18n'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -35,14 +37,30 @@ export async function POST(request, { params }) {
     ? true
     : (session.user.rol === 'cobrador' && await cobradorPuedeGestionarPrestamos(session.user.id))
 
-  if (!puedeGestionar) {
-    return Response.json({ error: 'No tienes permiso para renovar préstamos' }, { status: 403 })
-  }
-
   const { organizationId, id: userId } = session.user
   const { id: prestamoId } = await params
 
   const body = await request.json()
+  /* ══ FINANCIAR EL SALDO ═══════════════════════════════════════════════════
+     Es esta misma renovación sin entregar plata: se cierra el préstamo por lo
+     que debe y se abre uno nuevo desde HOY con esa deuda más el interés que se
+     pactó. Ver `lib/financiar.js`, con la cita de PRESTA MIL.
+
+     ⚠ LAS TRES CIFRAS LAS DECIDE EL SERVIDOR, NO LA PANTALLA:
+       · la deuda, en el momento de guardar. Si entra un pago entre que se abre
+         la hoja y se confirma, con la cifra de la pantalla «sobraría» algo y
+         esta ruta lo mandaría a entregar en efectivo: plata que no existe
+         saliendo del fajo del cobrador;
+       · la tasa, desde el interés en pesos —que es como se pacta en la puerta—;
+       · la fecha de inicio: hoy, en el país del negocio. */
+  const financiar = body.financiar === true
+
+  if (!puedeGestionar) {
+    return Response.json({
+      error: financiar ? 'No tienes permiso para financiar préstamos' : 'No tienes permiso para renovar préstamos',
+    }, { status: 403 })
+  }
+
   const { montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia, modoInteres, seguro, montoSeguro, cuotaManual,
     metodoPago: metodoPagoDesembolso, metodoPagoId: metodoPagoIdDesembolso } = body
 
@@ -65,16 +83,23 @@ export async function POST(request, { params }) {
   if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(freq)) {
     return Response.json({ error: 'Frecuencia no válida' }, { status: 400 })
   }
-  if (!montoPrestado || Number(montoPrestado) <= 0) {
-    return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
-  }
-  if (tasaInteres == null || tasaInteres === '' || Number(tasaInteres) < 0) {
-    return Response.json({ error: 'La tasa de interés no es válida' }, { status: 400 })
+  const interesFinanciado = financiar ? Math.round(Number(body.interes)) : null
+  if (financiar) {
+    if (!Number.isFinite(interesFinanciado) || interesFinanciado < 0) {
+      return Response.json({ error: 'Di cuánto le cobras por financiar (puede ser $0).' }, { status: 400 })
+    }
+  } else {
+    if (!montoPrestado || Number(montoPrestado) <= 0) {
+      return Response.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 })
+    }
+    if (tasaInteres == null || tasaInteres === '' || Number(tasaInteres) < 0) {
+      return Response.json({ error: 'La tasa de interés no es válida' }, { status: 400 })
+    }
   }
   if (!diasPlazo || Number(diasPlazo) <= 0) {
     return Response.json({ error: 'El plazo debe ser mayor a 0' }, { status: 400 })
   }
-  if (!fechaInicio) {
+  if (!fechaInicio && !financiar) {
     return Response.json({ error: 'La fecha de inicio es requerida' }, { status: 400 })
   }
 
@@ -136,14 +161,25 @@ export async function POST(request, { params }) {
    * luego no se registraba. Si hay que cambiar la regla, se cambia allí. */
   const minimoRenovacion = minimoParaRenovar(original)
 
-  if (original.cliente.montoMaximoPrestamo && Number(montoPrestado) > original.cliente.montoMaximoPrestamo) {
+  if (financiar && !(minimoRenovacion > 0)) {
+    return Response.json({ error: 'Este préstamo no debe nada: no hay saldo que financiar.' }, { status: 400 })
+  }
+  /* Las cifras con las que se guarda. Al financiar: la deuda de AHORA, la tasa
+     que reproduce el interés en pesos, cuota fija y desde hoy. */
+  const montoFinal = financiar ? minimoRenovacion : Number(montoPrestado)
+  const tasaFinal = financiar ? tasaDeFinanciar(minimoRenovacion, interesFinanciado) : Number(tasaInteres)
+  const modoFinal = financiar ? MODO_FINANCIAR : modoRenovacion
+  const fechaInicioFinal = financiar ? getLocalDateStr(session.user.country ?? 'co') : fechaInicio
+
+  // Al financiar no sale plata nueva: el tope del cliente mide lo que se le presta, no lo que ya debe.
+  if (!financiar && original.cliente.montoMaximoPrestamo && montoFinal > original.cliente.montoMaximoPrestamo) {
     return Response.json({
       error: `El monto supera el tope de este cliente (${Math.round(original.cliente.montoMaximoPrestamo).toLocaleString('es-CO')})`,
     }, { status: 400 })
   }
 
   // El nuevo monto debe cubrir al menos el capital adeudado
-  if (Number(montoPrestado) < minimoRenovacion) {
+  if (montoFinal < minimoRenovacion) {
     return Response.json({
       error: `El nuevo monto debe ser al menos $${Math.round(minimoRenovacion).toLocaleString('es-CO')} (capital adeudado)`,
     }, { status: 400 })
@@ -182,9 +218,9 @@ export async function POST(request, { params }) {
 
   const cuotaManualNum = cuotaManual ? Number(cuotaManual) : undefined
   const calc = calcularPrestamo({
-    montoPrestado, tasaInteres, diasPlazo, fechaInicio, frecuencia: freq, modoInteres: modoRenovacion,
+    montoPrestado: montoFinal, tasaInteres: tasaFinal, diasPlazo, fechaInicio: fechaInicioFinal, frecuencia: freq, modoInteres: modoFinal,
     ...(cuotaManualNum > 0 && { cuotaManual: cuotaManualNum }),
-    ...(modoRenovacion === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
+    ...(modoFinal === 'solo_interes' && { interesAdelantado: !!body.interesAdelantado }),
     ...(Number.isInteger(diaCobroMesDb) && { diaCobroMes: diaCobroMesDb }),
     ...(Number.isInteger(diaCobroMes2Db) && { diaCobroMes2: diaCobroMes2Db }),
   })
@@ -197,15 +233,15 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
 
-  if (prestamoDevuelveMenosDeLoPrestado({ totalAPagar: calc.totalAPagar, montoPrestado })) {
+  if (prestamoDevuelveMenosDeLoPrestado({ totalAPagar: calc.totalAPagar, montoPrestado: montoFinal })) {
     return Response.json({
       error: mensajePrestamoConPerdida({
-        totalAPagar: calc.totalAPagar, montoPrestado,
+        totalAPagar: calc.totalAPagar, montoPrestado: montoFinal,
         numPeriodos: calc.numPeriodos, frecuencia,
       }),
       prestamoConPerdida: true,
       totalAPagar: calc.totalAPagar,
-      montoPrestado,
+      montoPrestado: montoFinal,
       numPeriodos: calc.numPeriodos,
     }, { status: 400 })
   }
@@ -234,7 +270,7 @@ export async function POST(request, { params }) {
    * caja, y esa diferencia queda registrada en el capital de la ruta como
    * cualquier otro desembolso.
    */
-  const diferenciaExacta = Number(montoPrestado) - minimoRenovacion
+  const diferenciaExacta = montoFinal - minimoRenovacion
   const diferencia = diferenciaExacta > 0
     ? Math.ceil(diferenciaExacta / 100) * 100
     : diferenciaExacta
@@ -304,8 +340,8 @@ export async function POST(request, { params }) {
         clienteId:     original.clienteId,
         organizationId,
         creadoPorId:   session.user.id,
-        montoPrestado: Number(montoPrestado),
-        tasaInteres:   Number(tasaInteres),
+        montoPrestado: montoFinal,
+        tasaInteres:   tasaFinal,
         totalAPagar,
         cuotaDiaria,
         frecuencia:    freq,
@@ -326,7 +362,7 @@ export async function POST(request, { params }) {
         // Fijar mediodia Colombia (T05:00Z) igual que la creacion normal. Con
         // new Date('YYYY-MM-DD') (medianoche UTC) inicioDiaColombia lo corria al
         // dia anterior -> el calendario/mora quedaba 1 dia adelantado.
-        fechaInicio:   new Date(`${String(fechaInicio).slice(0, 10)}T05:00:00.000Z`),
+        fechaInicio:   new Date(`${String(fechaInicioFinal).slice(0, 10)}T05:00:00.000Z`),
         fechaFin,
         seguro:        conSeguro,
         renovadoDeId:  prestamoId,
@@ -370,7 +406,9 @@ export async function POST(request, { params }) {
       monto: diferencia,
       descripcion: diferencia > 0
         ? `Desembolso por renovación - ${original.cliente.nombre}`
-        : `Renovación sin efectivo entregado - ${original.cliente.nombre}`,
+        : financiar
+          ? `Financiación del saldo, sin efectivo entregado - ${original.cliente.nombre}`
+          : `Renovación sin efectivo entregado - ${original.cliente.nombre}`,
       referenciaId: nuevo.id,
       referenciaTipo: 'prestamo',
       rutaId: original.cliente?.rutaId || null,
@@ -390,19 +428,22 @@ export async function POST(request, { params }) {
     return nuevo
   })
 
+  const pesos = (n) => `$${Math.round(n).toLocaleString('es-CO')}`
   logActividad({
     session,
-    accion: 'renovar_prestamo',
+    accion: financiar ? 'financiar_prestamo' : 'renovar_prestamo',
     entidadTipo: 'prestamo',
     entidadId: nuevoPrestamo.id,
-    detalle: `Renovación: liquidó $${Math.round(saldoPendiente).toLocaleString('es-CO')}, nuevo préstamo $${Number(montoPrestado).toLocaleString('es-CO')}, entregó $${Math.round(diferencia).toLocaleString('es-CO')} - ${original.cliente.nombre}`,
+    detalle: financiar
+      ? `Financió el saldo: debía ${pesos(minimoRenovacion)}, interés ${pesos(interesFinanciado)}, nuevo total ${pesos(totalAPagar)} en ${calc.numPeriodos} cuotas desde hoy - ${original.cliente.nombre}`
+      : `Renovación: liquidó ${pesos(saldoPendiente)}, nuevo préstamo ${pesos(montoFinal)}, entregó ${pesos(diferencia)} - ${original.cliente.nombre}`,
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
   trackEvent({
     organizationId,
     userId,
-    evento: 'renovar_prestamo',
-    metadata: { montoNuevo: Number(montoPrestado), saldoLiquidado: saldoPendiente, diferencia },
+    evento: financiar ? 'financiar_prestamo' : 'renovar_prestamo',
+    metadata: { montoNuevo: montoFinal, saldoLiquidado: saldoPendiente, diferencia, ...(financiar ? { interes: interesFinanciado } : {}) },
   })
 
   /* QUÉ RENOVACIÓN ES ESTA. La cadena ya existe en `renovadoDeId`: el nuevo
@@ -430,6 +471,7 @@ export async function POST(request, { params }) {
     deudaLiquidada: minimoRenovacion,
     efectivoRedondeado: diferencia !== diferenciaExacta,
     renovacionNumero,
+    ...(financiar ? { financiado: { deuda: minimoRenovacion, interes: interesFinanciado, total: totalAPagar, cuota: cuotaDiaria, cuotas: calc.numPeriodos, fechaFin } } : {}),
   }, { status: 201 })
   } catch (err) {
     if (err?.message === 'CAPITAL_INSUFICIENTE') {
