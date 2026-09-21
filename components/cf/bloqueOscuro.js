@@ -26,6 +26,7 @@ export const BLOQUE = {
   apagado: '#8A8E98',   // contexto y valores secundarios
   oro:     '#F5B824',
   rojo:    '#F0575C',
+  verde:   '#2FBE6A',   // el mismo verde que el resto del bloque oscuro, no otro
   linea:   'rgba(255,255,255,.09)',
   pista:   'rgba(255,255,255,.12)',
   barra:   'rgba(255,255,255,.34)',   // días que cobraron todo

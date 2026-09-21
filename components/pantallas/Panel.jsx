@@ -44,9 +44,10 @@
 // Presentacional a propósito: recibe todo por props. Así se puede ver y ajustar
 // contra la lámina sin depender de la base de datos.
 
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
+import SemanaDeCobros from '@/components/cf/SemanaDeCobros'
 
 /* Los nombres de los siete días de la barra dorada.
    La API manda siete números pelados, sin fecha, pero el ÚLTIMO es hoy: con eso
@@ -56,39 +57,7 @@ import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
    navegador y el servidor pinta con el suyo —en Bogotá se equivocan las cinco
    primeras horas del día—, así que saldría un desajuste de hidratación. Se llama
    desde un efecto, ya montado. */
-function nombresDeDias(largo) {
-  const hoy = new Date()
-  return Array.from({ length: largo }, (_, i) => {
-    const atras = largo - 1 - i
-    if (atras === 0) return 'Hoy'
-    if (atras === 1) return 'Ayer'
-    const d = new Date(hoy)
-    d.setDate(d.getDate() - atras)
-    const nombre = d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric' })
-    return nombre.charAt(0).toUpperCase() + nombre.slice(1)
-  })
-}
 
-/* Los mismos días, en tres letras: «jue vie sáb dom lun mar hoy».
- *
- * `nombresDeDias` da «Viernes 31», que es lo que necesitaba el pie de la
- * versión anterior. Debajo de siete barras de 96px no cabe: se pisan unos con
- * otros y dejan de leerse. La adenda los escribe abreviados por eso.
- *
- * ⚠ DEPENDE DEL RELOJ DEL NAVEGADOR, así que el servidor y el cliente pintan
- * cosas distintas y React tira el árbol (el error de hidratación). Por eso se
- * calcula en un efecto y los `<span>` llevan `suppressHydrationWarning`.
- */
-function diasCortos(largo) {
-  const hoy = new Date()
-  return Array.from({ length: largo }, (_, i) => {
-    const atras = largo - 1 - i
-    if (atras === 0) return 'hoy'
-    const d = new Date(hoy)
-    d.setDate(d.getDate() - atras)
-    return d.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '').slice(0, 4)
-  })
-}
 
 /* Cuántas rutas se ven sin desplegar.
    Cinco no es un número redondo cualquiera: es lo que hace que esta tarjeta
@@ -182,14 +151,6 @@ function Hero({
      fila de debajo. En un EFECTO porque dependen del reloj del navegador; el
      servidor no puede saberlos. */
   // Qué barra está tocada. Se reinicia sola al cambiar la semana.
-  const [diaAbierto, setDiaAbierto] = useState(null)
-  const [dias, setDias] = useState([])
-  const [cortos, setCortos] = useState([])
-  useEffect(() => {
-    setDias(nombresDeDias(semana?.length ?? 0))
-    setCortos(diasCortos(semana?.length ?? 0))
-    setDiaAbierto(null)
-  }, [semana?.length])
 
   /* ── LA ESCALA DE LA GRÁFICA ──
      La línea punteada tiene que caber: si un día cobró más que lo esperado, el
@@ -201,7 +162,6 @@ function Hero({
      caja, no como una referencia. */
   const barras = semana ?? []
   const tope = Math.max(...barras, (esperadoCrudo ?? 0) * 1.12, 0)
-  const alturaLinea = tope > 0 && esperadoCrudo ? (esperadoCrudo / tope) * 100 : null
 
   /* Cuántos días cobraron TODO lo que tocaba. La adenda insiste en que el texto
      y el gráfico cuenten la misma historia: «si dice 3 de 7, tiene que haber
@@ -211,15 +171,6 @@ function Hero({
     ? barras.filter((n) => n >= esperadoCrudo).length
     : null
 
-  /* Lo que dice la barra tocada, además de la cifra. El promedio se saca de los
-     días CON cobro: metiendo los domingos y festivos en la media, cualquier día
-     laborable sale «por encima del promedio» y la comparación no informa. */
-  const cobrosDelDia = diaAbierto != null ? (cobrosSemana?.[diaAbierto] ?? null) : null
-  const conCobro = barras.filter((n) => n > 0)
-  const mediaConCobro = conCobro.length > 0 ? conCobro.reduce((a, n) => a + n, 0) / conCobro.length : null
-  const difConPromedio = diaAbierto != null && mediaConCobro
-    ? barras[diaAbierto] - mediaConCobro
-    : null
 
   /* La tira de cifras. Tres en móvil, cinco en escritorio, y NI UNA MÁS: es un
      tope de la adenda, no una casualidad de los datos que hay hoy. Las que no
@@ -356,142 +307,29 @@ function Hero({
      de fuera sería ocho props para un trozo que solo existe aquí. Y se pinta en
      DOS sitios (dentro de la caja en móvil, en la suya en escritorio), así que
      duplicar el JSX era la otra salida, peor. */
+  /* LA GRÁFICA ES LA MISMA QUE LA DEL RESUMEN DEL DÍA.
+     El dueño, 20 sep 2026: «el cuadro del dashboard no se ve tan bien como el
+     del resumen diario; es el mismo dato. Que quede igual, con toda su lógica».
+     Aquí solo quedan los datos y el pie; el dibujo vive en
+     `components/cf/SemanaDeCobros.jsx`, que además conserva la línea de lo que
+     toca cobrar —eso es de esta pantalla, el resumen no la tiene—. */
   function Grafica() {
     return (
-      <>
-        {/* ⚠ LA ALTURA DEL CONTENEDOR VA EN PX, NUNCA `flex:1`. Las barras
-            miden su alto en porcentaje: si el contenedor colapsa, el gráfico
-            desaparece entero sin que falle nada. */}
-        <div className="relative h-[52px] lg:h-[96px]"
-          style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flex: 'none' }}>
-          {alturaLinea != null && (
-            <>
-              <span aria-hidden="true" style={{
-                position: 'absolute', left: 0, right: 0, bottom: `${Math.min(100, alturaLinea)}%`,
-                borderTop: '1px dashed rgba(255,255,255,.26)', pointerEvents: 'none',
-              }} />
-              {/* ── LA CIFRA DE LA LÍNEA ──
-                  Sin ella la línea no se entiende: a tamaño real se lee como un
-                  separador de sección, no como una referencia. */}
-              <span className="hidden lg:block" style={{
-                position: 'absolute', right: 0, bottom: `calc(${Math.min(100, alturaLinea)}% + 3px)`,
-                fontSize: 10, fontWeight: 700, color: BLOQUE.apagado,
-                pointerEvents: 'none', background: BLOQUE.fondo, paddingLeft: 6,
-              }}>{meta}</span>
-            </>
-          )}
-          {/* ── SE PUEDEN TOCAR, Y ESO NO SE PODÍA PERDER ──
-              Al rehacer la tarjeta las pasé de `<button>` a `<span>` con
-              `title`, y el `title` es un globo de ESCRITORIO: en el teléfono no
-              hay puntero, así que la función desapareció sin dejar rastro. El
-              dueño lo pidió por su nombre en su día —«no es interactiva, no se
-              le puede picar y ver los saldos»— y volvió a reportarlo ahora.
-
-              La adenda quita el PIE «Martes 4 · $565.000» porque flotaba abajo
-              sin conexión con ninguna barra, no la posibilidad de tocarlas. Así
-              que vuelven a ser botones y la respuesta va a la frase de abajo,
-              que ya está ahí y ya habla de la gráfica: el dato deja de flotar. */}
-          {barras.map((n, i) => {
-            const esHoy = i === barras.length - 1
-            const llego = esperadoCrudo ? n >= esperadoCrudo : false
-            const elegido = diaAbierto === i
-            return (
-              <button
-                key={i}
-                type="button"
-                suppressHydrationWarning
-                onClick={() => setDiaAbierto(elegido ? null : i)}
-                aria-label={`${dias[i] ?? `día ${i + 1}`}: ${fmt ? fmt(n) : n}`}
-                style={{
-                  flex: 1, minWidth: 0, padding: 0, border: 0, cursor: 'pointer',
-                  alignSelf: 'flex-end',
-                  // Mínimo de 6px: una barra de altura cero desaparece y el día
-                  // parece que no existe, cuando lo que pasa es que no se cobró
-                  // nada — que es justo lo que hay que ver.
-                  height: `${Math.max(6, Math.round((n / tope) * 100))}%`,
-                  borderRadius: '4px 4px 0 0',
-                  background: esHoy ? BLOQUE.oro : (llego ? BLOQUE.barra : BLOQUE.barraNo),
-                  // La elegida se marca con un aro, no cambiando de color: el
-                  // color ya significa «hoy» y «llegó», y no puede significar
-                  // una tercera cosa.
-                  outline: elegido ? `2px solid ${BLOQUE.tinta}` : 'none',
-                  outlineOffset: 2,
-                }}
-              />
-            )
-          })}
-        </div>
-
-        {/* Debajo, solo los extremos en móvil; en escritorio caben los nombres. */}
-        <div className="flex lg:hidden" style={{ justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 11, color: BLOQUE.apagado }}>hace una semana</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: BLOQUE.oro }}>hoy</span>
-        </div>
-        <div className="hidden lg:flex" style={{ gap: 9 }}>
-          {barras.map((_, i) => {
-            const esHoy = i === barras.length - 1
-            return (
-              // `suppressHydrationWarning`: el nombre sale del reloj del
-              // navegador, así que el servidor pinta vacío y el cliente el día.
-              // Sin esto React tira el árbol entero al hidratar.
-              <span key={i} suppressHydrationWarning style={{
-                flex: 1, textAlign: 'center', fontSize: 10, fontWeight: 700,
-                color: esHoy ? BLOQUE.oro : BLOQUE.apagado,
-              }}>{esHoy ? 'hoy' : (cortos[i] ?? '')}</span>
-            )
-          })}
-        </div>
-
-        {/* ── LA LECTURA ESCRITA ──
-            SIN ESTA FRASE LA GRÁFICA SIGUE SIN DECIR NADA. Un gráfico que
-            necesita interpretación no informa; uno que trae su lectura sí.
-
-            Y cuenta la MISMA historia que las barras: `cumplieron` sale de la
-            misma comparación con la que se pintan. */}
-        {/* ⚠ LA BARRA TOCADA NO DEPENDE DE QUE HOY TOQUE COBRAR.
-            Esta frase vivía DENTRO de `cumplieron != null`, y `cumplieron` es
-            `null` cuando no hay meta —un domingo, un festivo, un negocio sin
-            cuotas para hoy—. Resultado: el domingo se tocaba una barra, el
-            recuadro de selección aparecía y NO SALÍA NADA. Reportado el 20 sep
-            2026, en domingo, con la foto del Inicio. El cero otra vez: lo que se
-            cobró el jueves no deja de existir porque hoy no toque cobrar. */}
-        {(diaAbierto != null || cumplieron != null) && (
-          <p suppressHydrationWarning style={{ fontSize: 12, lineHeight: 1.45, color: BLOQUE.rotulo, marginTop: 'auto' }}>
-            {diaAbierto != null ? (
-              /* Con una barra tocada, la frase habla de ESE día. Es el sitio
-                 donde el dato tiene contexto: la alternativa era el pie suelto
-                 que la adenda quitó por flotar sin dueño. */
-              <>
-                <b style={{ color: BLOQUE.tinta }}>{dias[diaAbierto] ?? 'Ese día'}</b>
-                {': '}
-                <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(barras[diaAbierto]) : barras[diaAbierto]}</b>
-                {/* En cuántos cobros: «$228.400» a secas no dice si fue un pago
-                    grande o quince pequeños, y es la primera pregunta del dueño
-                    al ver un día flojo. El día sin un solo cobro lo dice con
-                    todas las letras: un hueco se lee como un fallo de la app. */}
-                {cobrosDelDia != null && (cobrosDelDia > 0
-                  ? <> en {cobrosDelDia} cobro{cobrosDelDia === 1 ? '' : 's'}</>
-                  : <> — no entró plata ese día</>)}
-                {/* Contra la meta si ese día tenía; si no, contra el promedio de
-                    la semana, que es la única referencia que queda. */}
-                {esperadoCrudo ? (barras[diaAbierto] >= esperadoCrudo
-                  ? <>. Cobraste todo lo que tocaba.</>
-                  : <>. Te faltaron {fmt ? fmt(esperadoCrudo - barras[diaAbierto]) : (esperadoCrudo - barras[diaAbierto])}.</>)
-                  : (difConPromedio != null && cobrosDelDia > 0
-                    ? <>, {difConPromedio > 0 ? 'por encima' : 'por debajo'} del promedio.</>
-                    : <>.</>)}
-              </>
-            ) : (
-              <>
-                {cumplieron === 0
-                  ? <>Ningún día de los últimos {barras.length} llegó a lo que tocaba cobrar. </>
-                  : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de los últimos {barras.length} días</b>. </>}
-                La línea es lo que toca cada día.
-              </>
-            )}
-          </p>
+      <SemanaDeCobros
+        dias={barras.map((monto, i) => ({ monto, cobros: cobrosSemana?.[i] ?? null }))}
+        formatear={fmt ?? ((n) => n)}
+        meta={esperadoCrudo || null}
+        pie={({ total }) => (
+          <>
+            En {barras.length} días llevas <b style={{ color: BLOQUE.tinta }}>{fmt ? fmt(total) : total}</b> cobrados.{' '}
+            {cumplieron != null
+              ? (cumplieron === 0
+                  ? <>Ningún día llegó a lo que tocaba cobrar; la línea es lo que toca cada día.</>
+                  : <>Cobraste todo <b style={{ color: BLOQUE.tinta }}>{cumplieron} de esos días</b>; la línea es lo que toca cada día.</>)
+              : <>Toca una barra para ver ese día.</>}
+          </>
         )}
-      </>
+      />
     )
   }
 }

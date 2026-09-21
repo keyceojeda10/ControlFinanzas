@@ -22,7 +22,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
-import { nombreDelDia, textoParaCompartir } from '@/lib/resumen-del-dia'
+import { textoParaCompartir } from '@/lib/resumen-del-dia'
+import SemanaDeCobros from '@/components/cf/SemanaDeCobros'
 
 const VERDE = '#2FBE6A'
 const menosMovimiento = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -207,7 +208,6 @@ const hora = (iso) => { try { return new Date(iso).toLocaleTimeString('es-CO', {
 export function ResumenDelDia({ r, formatear, fecha, onCerrar, onIr }) {
   const [montado, setMontado] = useState(false)
   const [gente, setGente] = useState(null)               // 'pagaron' | 'faltan' | null
-  const [diaElegido, setDiaElegido] = useState(null)      // índice en r.dias; null = hoy
   const [compartido, setCompartido] = useState(false)
   useEffect(() => { setMontado(true) }, [])
   useEffect(() => {
@@ -219,16 +219,10 @@ export function ResumenDelDia({ r, formatear, fecha, onCerrar, onIr }) {
   }, [onCerrar])
   if (!montado || !r) return null
 
-  const hoy = new Date().getDay()
-  const tope = Math.max(...r.semana, 1)
   const hayReparto = r.interes != null && r.capitalDeVuelta != null && r.cobrado > 0
   const hayEquipo = r.cobradores.length > 1
   const topeEquipo = Math.max(...r.cobradores.map((c) => c.monto), 1)
   const salio = r.prestado + r.gastos
-  const iDia = diaElegido ?? (r.dias.length - 1)
-  const dia = r.dias[iDia] ?? null
-  const nombreDia = dia?.fecha ? nombreDelDia(dia.fecha) : null
-  const contraPromedio = dia && r.promedioSemana > 0 ? Math.round(((dia.monto - r.promedioSemana) / r.promedioSemana) * 100) : null
   const mesNombre = new Date().toLocaleDateString('es-CO', { month: 'long' })
 
   const compartir = async () => {
@@ -393,63 +387,20 @@ export function ResumenDelDia({ r, formatear, fecha, onCerrar, onIr }) {
           )}
         </Seccion>
 
-        {/* ── 5 · La semana: cada barra se toca ── */}
+        {/* ── 5 · La semana: cada barra se toca ──
+            La MISMA gráfica que el Inicio, desde que el dueño pidió que allá se
+            viera como aquí. Vive en `components/cf/SemanaDeCobros.jsx`. */}
         {r.dias.length > 0 && (
           <Seccion rotulo="Tus últimos 7 días" orden={3}>
-            {/* Lo que dice la barra elegida, EN GRANDE, encima de la gráfica. */}
-            {dia && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: BLOQUE.rotulo }}>
-                  {iDia === r.dias.length - 1 ? 'Hoy' : nombreDia ? `${nombreDia.dia.charAt(0).toUpperCase()}${nombreDia.dia.slice(1)} ${nombreDia.numero}` : 'Ese día'}
-                </span>
-                <span className="cf-fig" style={{ fontSize: 30, lineHeight: 1, letterSpacing: '-.03em', color: iDia === r.dias.length - 1 ? BLOQUE.oro : BLOQUE.tinta, whiteSpace: 'nowrap' }}>
-                  {formatear(dia.monto)}
-                </span>
-                {/* ⚠ «0 cobrosNo entró plata ese día.» — el dueño, 20 sep 2026.
-                    Eran tres trozos sueltos pegados sin separador, y encima el
-                    día vacío decía lo mismo dos veces. Un día sin plata se dice
-                    UNA vez; los demás, con « · » entre las partes. */}
-                <span style={{ fontSize: 14, color: BLOQUE.apagado }}>
-                  {dia.monto === 0 ? 'No entró plata ese día.' : (
-                    <>
-                      {dia.cobros != null ? `${dia.cobros} ${dia.cobros === 1 ? 'cobro' : 'cobros'}` : ''}
-                      {contraPromedio != null && (
-                        <>{dia.cobros != null ? ' · ' : ''}<strong style={{ color: contraPromedio >= 0 ? VERDE : BLOQUE.rojo, fontWeight: 700 }}>
-                          {contraPromedio >= 0 ? `${contraPromedio}% más` : `${Math.abs(contraPromedio)}% menos`}</strong> que tu promedio ({formatear(r.promedioSemana)})</>
-                      )}
-                    </>
-                  )}
-                </span>
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, height: 140 }}>
-              {r.dias.map((x, i) => {
-                const esHoy = i === r.dias.length - 1
-                const elegido = i === iDia
-                const corto = x.fecha ? nombreDelDia(x.fecha)?.corto : DIAS[(hoy - (r.dias.length - 1 - i) + 14) % 7]
-                return (
-                  <button key={i} type="button" onClick={() => setDiaElegido(i)} aria-pressed={elegido}
-                    aria-label={`${esHoy ? 'hoy' : corto}: ${formatear(x.monto)}`}
-                    style={{
-                      flex: 1, minWidth: 0, height: '100%', padding: 0, border: 0, background: 'none', cursor: 'pointer', font: 'inherit',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', gap: 6,
-                    }}>
-                    <span className="cf-res-col" style={{
-                      width: '100%', height: Math.max(x.monto > 0 ? 6 : 3, Math.round((x.monto / tope) * 104)), borderRadius: 7, flex: 'none',
-                      background: esHoy ? BLOQUE.oro : elegido ? 'rgba(255,255,255,.62)' : BLOQUE.barra,
-                      outline: elegido ? `2px solid ${BLOQUE.tinta}` : 'none', outlineOffset: 2,
-                      animationDelay: `${500 + i * 70}ms`,
-                    }} />
-                    <span className="cf-num" style={{ fontSize: 12, fontWeight: elegido ? 700 : 500, color: esHoy ? BLOQUE.oro : elegido ? BLOQUE.tinta : BLOQUE.apagado }}>
-                      {esHoy ? 'hoy' : corto}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-            <span style={{ fontSize: 14, color: BLOQUE.tinta, lineHeight: 1.5 }}>
-              {r.mejorDeLaSemana ? 'Hoy fue tu mejor día de la semana. ' : ''}En 7 días llevas <strong>{formatear(r.semana.reduce((a, b) => a + b, 0))}</strong> cobrados. Toca una barra para ver ese día.
-            </span>
+            <SemanaDeCobros
+              dias={r.dias}
+              formatear={formatear}
+              eligeHoy
+              anima
+              pie={({ total }) => (
+                <>{r.mejorDeLaSemana ? 'Hoy fue tu mejor día de la semana. ' : ''}En 7 días llevas <strong>{formatear(total)}</strong> cobrados. Toca una barra para ver ese día.</>
+              )}
+            />
           </Seccion>
         )}
 
