@@ -419,8 +419,9 @@ export async function PATCH(req, { params }) {
     if (!planNuevo || !PLANES_VALIDOS.includes(planNuevo)) {
       return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
     }
-    const periodoValido = ['mensual', 'trimestral', 'anual'].includes(periodo) ? periodo : 'mensual'
-    const diasExtension = periodoValido === 'anual' ? 365 : periodoValido === 'trimestral' ? 90 : 30
+    const periodoValido = ['mensual', 'trimestral', 'semestral', 'anual'].includes(periodo) ? periodo : 'mensual'
+    // Días fijos, 30 por mes, como ya hacían el mensual y el trimestral (90).
+    const diasExtension = { mensual: 30, trimestral: 90, semestral: 180, anual: 365 }[periodoValido]
     const montoCOP = parseInt(monto) || 0
 
     const ahora = new Date()
@@ -565,7 +566,7 @@ export async function PATCH(req, { params }) {
        falle aquí (el preferencial con nota pasa de 191 caracteres) respondía
        500, y un 500 invita a asignar otra vez: el mismo pago dos veces en el
        libro. `registrarAdminLog` recorta y no tira. */
-    const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }[periodoValido]
+    const periodoLabel = { mensual: 'Mensual', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }[periodoValido]
     await registrarAdminLog({
       adminId:        session.user.id,
       organizacionId: id,

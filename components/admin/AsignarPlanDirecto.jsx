@@ -18,8 +18,8 @@ import { MESES_PERIODO, ofertaPublica, pagoCuadra } from '@/lib/precio-plan'
 import { CamposDuracion, VistaPreviaCobros, describirDuracion, fechaLarga, hastaDeDuracion, nombrePlan } from './PrecioPreferencial'
 
 const PLANES_VENTA = ['starter', 'basic', 'growth', 'standard', 'professional']
-const DIAS_PERIODO = { mensual: 30, trimestral: 90, anual: 365 }
-const NOMBRE_PERIODO = { mensual: 'Mensual', trimestral: 'Trimestral', anual: 'Anual' }
+const DIAS_PERIODO = { mensual: 30, trimestral: 90, semestral: 180, anual: 365 }
+const NOMBRE_PERIODO = { mensual: 'Mensual', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' }
 const CAMPO = 'h-12 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-[15px] text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)]'
 const ETIQUETA = 'text-[12px] font-semibold text-[var(--cf-ink-3)]'
 
@@ -124,6 +124,7 @@ export default function AsignarPlanDirecto({ org, sub, diasRestantes, accionando
           <select value={f.periodo} onChange={(e) => set({ periodo: e.target.value })} className={CAMPO}>
             <option value="mensual">Mensual (30 días)</option>
             <option value="trimestral">Trimestral (90 días)</option>
+            <option value="semestral">Semestral (180 días)</option>
             <option value="anual">Anual (365 días)</option>
           </select>
         </label>
