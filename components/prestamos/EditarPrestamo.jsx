@@ -15,6 +15,7 @@ import { calcularPrestamo } from '@/lib/calculos'
 import { formatMoney, soloDecimal, formatFechaCalendario } from '@/lib/i18n'
 import { CorregirPrestamo } from '@/components/pantallas/Gestion'
 import { adaptarCorregir } from '@/lib/adaptadores/gestion'
+import { conPantalla } from '@/components/cf/Procesando'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -119,11 +120,11 @@ export default function EditarPrestamo({
         capitalExtra: capitalExtraState.length > 0 ? capitalExtraState : undefined,
       }
 
-      const res = await fetch(`/api/prestamos/${p.id}`, {
+      const res = await conPantalla('corregir', () => fetch(`/api/prestamos/${p.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      })
+      }))
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Error al guardar'); return }
       onSuccess?.(data)

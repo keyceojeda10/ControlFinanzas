@@ -17,6 +17,7 @@ import { encolarMutacion } from '@/lib/offline'
 // `next build` y los tests, y solo falla al renderizar. Es el mismo patrón que
 // tumbó producción con la TDZ hace dos días.
 import { formatFechaCalendario } from '@/lib/i18n'
+import { conPantalla } from '@/components/cf/Procesando'
 
 const toISODate = (d) => {
   const date = d instanceof Date ? d : new Date(d)
@@ -162,11 +163,11 @@ export default function ModificarPlazo({
     }
 
     try {
-      const res = await fetch(`/api/prestamos/${prestamoId}`, {
+      const res = await conPantalla('corregir', () => fetch(`/api/prestamos/${prestamoId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      })
+      }))
       if (res.status === 503 && !navigator.onLine) {
         await encolarMutacion({ tipo: 'prestamo.update', entityId: prestamoId, payload, baseUpdatedAt: prestamo?.updatedAt })
         try { sessionStorage.setItem('cf-toast', 'Plazo modificado. Se sincronizará al volver online.') } catch {}

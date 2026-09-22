@@ -1054,9 +1054,16 @@ html[data-theme="light"] [style*="linear-gradient"] {
   /* heuristica: los gradientes oscuros inline pierden presencia en claro */
 }
 
+/* ⚠ `^=` Y `*=" …"`, NO `*=` A SECAS (22 sep 2026). Con `*=` estas reglas casaban
+   por SUBCADENA, y `hover:bg-[rgba(59,130,246,0.08)]` CONTIENE `bg-[rgba(59,130,246`:
+   el `!important` pintaba el fondo de hover SIEMPRE, con o sin puntero encima.
+   Eran 50 fondos y 4 bordes (`hover:`, `focus:`) encendidos para siempre en el
+   tema claro —el recuadro azul fijo en las tarjetas de pago, 31 ago—. Casar la
+   clase al principio o tras un espacio deja fuera las variantes, que van tras
+   «:». Es la misma cura que `rounded-[1` más arriba. */
 /* rgba(255,255,255,xx) usados como fondos → pastel claro */
-html[data-theme="light"] [class*="bg-[rgba(255,255,255"] { background-color: var(--color-bg-hover) !important; }
-html[data-theme="light"] [class*="border-[rgba(255,255,255"] { border-color: var(--color-border) !important; }
+html[data-theme="light"] [class^="bg-[rgba(255,255,255"], html[data-theme="light"] [class*=" bg-[rgba(255,255,255"] { background-color: var(--color-bg-hover) !important; }
+html[data-theme="light"] [class^="border-[rgba(255,255,255"], html[data-theme="light"] [class*=" border-[rgba(255,255,255"] { border-color: var(--color-border) !important; }
 
 /* Hover states */
 html[data-theme="light"] [class*="hover:bg-[#"]:hover { background-color: var(--color-bg-hover) !important; }
@@ -1097,27 +1104,27 @@ html[data-theme="light"] .text-\[\#d2a9ff\] { color: #8a6df0 !important; }
 html[data-theme="light"] .text-\[\#f5c518\] { color: #d9a90a !important; }
 
 /* Fondos dim de status en dark (rgba con alpha bajo) → pastel soft en light */
-html[data-theme="light"] [class*="bg-[rgba(34,197,94"],
-html[data-theme="light"] [class*="bg-[rgba(52,211,153"],
-html[data-theme="light"] [class*="bg-[rgba(16,185,129"] { background-color: rgba(34, 201, 160, 0.14) !important; }
-html[data-theme="light"] [class*="bg-[rgba(239,68,68"],
-html[data-theme="light"] [class*="bg-[rgba(248,113,113"] { background-color: rgba(255, 107, 138, 0.14) !important; }
-html[data-theme="light"] [class*="bg-[rgba(245,158,11"],
-html[data-theme="light"] [class*="bg-[rgba(251,191,36"] { background-color: rgba(255, 179, 71, 0.16) !important; }
-html[data-theme="light"] [class*="bg-[rgba(96,165,250"],
-html[data-theme="light"] [class*="bg-[rgba(59,130,246"] { background-color: rgba(79, 184, 229, 0.14) !important; }
-html[data-theme="light"] [class*="bg-[rgba(168,85,247"],
-html[data-theme="light"] [class*="bg-[rgba(192,132,252"] { background-color: rgba(167, 139, 250, 0.14) !important; }
-html[data-theme="light"] [class*="bg-[rgba(245,197,24"] { background-color: rgba(245, 197, 24, 0.18) !important; }
+html[data-theme="light"] [class^="bg-[rgba(34,197,94"], html[data-theme="light"] [class*=" bg-[rgba(34,197,94"],
+html[data-theme="light"] [class^="bg-[rgba(52,211,153"], html[data-theme="light"] [class*=" bg-[rgba(52,211,153"],
+html[data-theme="light"] [class^="bg-[rgba(16,185,129"], html[data-theme="light"] [class*=" bg-[rgba(16,185,129"] { background-color: rgba(34, 201, 160, 0.14) !important; }
+html[data-theme="light"] [class^="bg-[rgba(239,68,68"], html[data-theme="light"] [class*=" bg-[rgba(239,68,68"],
+html[data-theme="light"] [class^="bg-[rgba(248,113,113"], html[data-theme="light"] [class*=" bg-[rgba(248,113,113"] { background-color: rgba(255, 107, 138, 0.14) !important; }
+html[data-theme="light"] [class^="bg-[rgba(245,158,11"], html[data-theme="light"] [class*=" bg-[rgba(245,158,11"],
+html[data-theme="light"] [class^="bg-[rgba(251,191,36"], html[data-theme="light"] [class*=" bg-[rgba(251,191,36"] { background-color: rgba(255, 179, 71, 0.16) !important; }
+html[data-theme="light"] [class^="bg-[rgba(96,165,250"], html[data-theme="light"] [class*=" bg-[rgba(96,165,250"],
+html[data-theme="light"] [class^="bg-[rgba(59,130,246"], html[data-theme="light"] [class*=" bg-[rgba(59,130,246"] { background-color: rgba(79, 184, 229, 0.14) !important; }
+html[data-theme="light"] [class^="bg-[rgba(168,85,247"], html[data-theme="light"] [class*=" bg-[rgba(168,85,247"],
+html[data-theme="light"] [class^="bg-[rgba(192,132,252"], html[data-theme="light"] [class*=" bg-[rgba(192,132,252"] { background-color: rgba(167, 139, 250, 0.14) !important; }
+html[data-theme="light"] [class^="bg-[rgba(245,197,24"], html[data-theme="light"] [class*=" bg-[rgba(245,197,24"] { background-color: rgba(245, 197, 24, 0.18) !important; }
 
 /* Border de status */
-html[data-theme="light"] [class*="border-[rgba(34,197,94"],
-html[data-theme="light"] [class*="border-[rgba(52,211,153"] { border-color: rgba(34, 201, 160, 0.4) !important; }
-html[data-theme="light"] [class*="border-[rgba(239,68,68"],
-html[data-theme="light"] [class*="border-[rgba(248,113,113"] { border-color: rgba(255, 107, 138, 0.4) !important; }
-html[data-theme="light"] [class*="border-[rgba(245,158,11"] { border-color: rgba(255, 179, 71, 0.45) !important; }
-html[data-theme="light"] [class*="border-[rgba(245,197,24"] { border-color: rgba(245, 197, 24, 0.5) !important; }
-html[data-theme="light"] [class*="border-[rgba(168,85,247"] { border-color: rgba(167, 139, 250, 0.4) !important; }
+html[data-theme="light"] [class^="border-[rgba(34,197,94"], html[data-theme="light"] [class*=" border-[rgba(34,197,94"],
+html[data-theme="light"] [class^="border-[rgba(52,211,153"], html[data-theme="light"] [class*=" border-[rgba(52,211,153"] { border-color: rgba(34, 201, 160, 0.4) !important; }
+html[data-theme="light"] [class^="border-[rgba(239,68,68"], html[data-theme="light"] [class*=" border-[rgba(239,68,68"],
+html[data-theme="light"] [class^="border-[rgba(248,113,113"], html[data-theme="light"] [class*=" border-[rgba(248,113,113"] { border-color: rgba(255, 107, 138, 0.4) !important; }
+html[data-theme="light"] [class^="border-[rgba(245,158,11"], html[data-theme="light"] [class*=" border-[rgba(245,158,11"] { border-color: rgba(255, 179, 71, 0.45) !important; }
+html[data-theme="light"] [class^="border-[rgba(245,197,24"], html[data-theme="light"] [class*=" border-[rgba(245,197,24"] { border-color: rgba(245, 197, 24, 0.5) !important; }
+html[data-theme="light"] [class^="border-[rgba(168,85,247"], html[data-theme="light"] [class*=" border-[rgba(168,85,247"] { border-color: rgba(167, 139, 250, 0.4) !important; }
 
 /* Focus ring offsets color-agnostic en light */
 html[data-theme="light"] [class*="focus-visible:ring-offset-[#0"] { --tw-ring-offset-color: #ffffff !important; }
