@@ -14,7 +14,7 @@ import { logActividad } from '@/lib/activity-log'
 import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
-import { tasaDeFinanciar, MODO_FINANCIAR } from '@/lib/financiar'
+import { tasaDeFinanciar, MODO_FINANCIAR, DIAS_POR_PERIODO } from '@/lib/financiar'
 import { capitalEnCalle } from '@/lib/dinero/reparto'
 import { getLocalDateStr } from '@/lib/i18n'
 
@@ -172,7 +172,14 @@ export async function POST(request, { params }) {
   /* Las cifras con las que se guarda. Al financiar: la deuda de AHORA, la tasa
      que reproduce el interés en pesos, cuota fija y desde hoy. */
   const montoFinal = financiar ? minimoRenovacion : Number(montoPrestado)
-  const tasaFinal = financiar ? tasaDeFinanciar(minimoRenovacion, interesFinanciado) : Number(tasaInteres)
+  /* La tasa MENSUAL que cobra ese interés en ese plazo: en `fijo` la tasa es por
+     mes, y sin repartirla un plazo de 8 semanas cobraba el interés dos veces.
+     Las cuotas se cuentan como `calcularPrestamo`. Ver `tasaDeFinanciar`. */
+  const tasaFinal = financiar
+    ? tasaDeFinanciar(minimoRenovacion, interesFinanciado, {
+      periodos: Math.ceil(Number(diasPlazo) / (DIAS_POR_PERIODO[freq] ?? 1)), frecuencia: freq,
+    })
+    : Number(tasaInteres)
   const modoFinal = financiar ? MODO_FINANCIAR : modoRenovacion
   const fechaInicioFinal = financiar ? getLocalDateStr(session.user.country ?? 'co') : fechaInicio
 
@@ -213,7 +220,11 @@ export async function POST(request, { params }) {
    * préstamo diario. La pantalla no ofrece cambiarlo, igual que no ofrece cambiar
    * la ruta: se hereda y ya.
    */
-  const mismaFrecuencia = freq === original.frecuencia
+  /* ⚠ AL FINANCIAR NO SE HEREDA: «la fecha desde el día que financio y la final
+     cuando se cumplan los 30 días» (PRESTA MIL). Heredado, el total no cambia
+     pero la fecha final sí —a 30 días con corte el 5, el 5 del mes siguiente—, y
+     la hoja ya le había prometido otra. */
+  const mismaFrecuencia = freq === original.frecuencia && !financiar
   const diaCobroMesDb = mismaFrecuencia && (freq === 'mensual' || freq === 'quincenal')
     ? original.diaCobroMes : null
   const diaCobroMes2Db = mismaFrecuencia && freq === 'quincenal'
@@ -386,6 +397,13 @@ export async function POST(request, { params }) {
         seguro:        conSeguro,
         renovadoDeId:  prestamoId,
         ...(interesArrastrado > 0 ? { interesArrastrado } : {}),
+        /* La marca de que esto es FINANCIAR y no renovar: la caja no lo cuenta
+           como préstamo del día y lo enseña aparte con su interés. PRESTA MIL,
+           22 sep 2026: financió un saldo de $1.181.000 y su «Total prestado»
+           subió eso, cuando ese día no prestó un peso más. */
+        // Lo que de verdad subió la deuda: el interés pactado más el redondeo de
+        // la cuota a la centena, que también lo paga el cliente.
+        ...(financiar ? { interesFinanciado: Math.max(0, Math.round(totalAPagar - montoFinal)) } : {}),
         ...(conSeguro && montoSeguroNum > 0 && { montoSeguro: montoSeguroNum }),
       },
     })

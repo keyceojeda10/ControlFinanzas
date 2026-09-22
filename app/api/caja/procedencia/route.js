@@ -20,6 +20,7 @@ import { prisma } from '@/lib/prisma'
 import { explicar } from '@/lib/dinero/definiciones'
 import { afectaCaja, esIngreso } from '@/lib/dinero/conciliacion'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
+import { esFinanciacion } from '@/lib/financiar'
 
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
 const TOPE = 300
@@ -101,18 +102,22 @@ export async function GET(request) {
       const soloRenovaciones = cifra === 'renovaciones'
       const soloNuevos = cifra === 'prestamosNuevos'
       const soloSeguro = cifra === 'seguros'
+      /* Financiar el saldo no es prestar: ni nuevo ni renovación, su propia
+         línea. La marca es `interesFinanciado` (ver `esFinanciacion`). */
+      const soloFinanciados = cifra === 'financiados'
       const prestamos = await prisma.prestamo.findMany({
         where: {
           organizationId,
           createdAt: { gte: inicio, lt: fin },
           estado: { not: 'cancelado' },
-          ...(soloRenovaciones ? { NOT: { renovadoDeId: null } } : {}),
-          ...(soloNuevos ? { renovadoDeId: null } : {}),
+          ...(soloRenovaciones ? { NOT: { renovadoDeId: null }, interesFinanciado: null } : {}),
+          ...(soloNuevos ? { renovadoDeId: null, interesFinanciado: null } : {}),
+          ...(soloFinanciados ? { NOT: { interesFinanciado: null } } : {}),
           ...(soloSeguro ? { seguro: true } : {}),
           ...(rutaIds.length ? { cliente: { rutaId: { in: rutaIds } } } : {}),
         },
         select: {
-          id: true, montoPrestado: true, montoSeguro: true, renovadoDeId: true,
+          id: true, montoPrestado: true, montoSeguro: true, renovadoDeId: true, interesFinanciado: true,
           createdAt: true, cliente: { select: { nombre: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -139,10 +144,13 @@ export async function GET(request) {
           titulo: p.cliente?.nombre || 'Cliente',
           detalle: soloSeguro
             ? 'seguro del préstamo'
-            : p.renovadoDeId
-              ? `renovación · valor ${plata(p.montoPrestado).toLocaleString('es-CO')}`
-              : 'préstamo nuevo',
-          monto: soloSeguro ? plata(p.montoSeguro) : efectivo,
+            : esFinanciacion(p)
+              ? `saldo de $${plata(p.montoPrestado).toLocaleString('es-CO')} · lo de la derecha es el interés`
+              : p.renovadoDeId
+                ? `renovación · valor ${plata(p.montoPrestado).toLocaleString('es-CO')}`
+                : 'préstamo nuevo',
+          // En los financiados la cifra es el interés, igual que la línea de la caja.
+          monto: soloSeguro ? plata(p.montoSeguro) : soloFinanciados ? plata(p.interesFinanciado) : efectivo,
           cuando: p.createdAt,
           ir: `/prestamos/${p.id}`,
         }

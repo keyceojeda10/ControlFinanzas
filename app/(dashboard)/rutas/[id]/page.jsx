@@ -3315,12 +3315,14 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                                   style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, transparent)' }}
                                 >
                                   <p className="text-[10px] font-extrabold uppercase tracking-[.07em]" style={{ color: 'var(--cf-gold)' }}>
-                                    {c.eventosHoy.some(e => e.tipo === 'renovacion') ? 'Renovación / préstamo nuevo hoy' : 'Préstamo nuevo hoy'}
+                                    {c.eventosHoy.every(e => e.tipo === 'financiacion')
+                                      ? 'Saldo financiado hoy'
+                                      : c.eventosHoy.some(e => e.tipo !== 'prestamo_nuevo') ? 'Renovación / préstamo nuevo hoy' : 'Préstamo nuevo hoy'}
                                   </p>
                                   {c.eventosHoy.map((ev, i) => (
                                     <div key={i} className="flex items-center justify-between text-[12px]">
                                       <span style={{ color: 'var(--cf-ink-3)' }}>
-                                        {ev.tipo === 'renovacion' ? 'Renovación' : 'Préstamo nuevo'}
+                                        {ev.tipo === 'financiacion' ? 'Saldo financiado' : ev.tipo === 'renovacion' ? 'Renovación' : 'Préstamo nuevo'}
                                         {ev.seguro && (
                                           <span style={{ color: 'var(--cf-gold)' }}>
                                             {' · seguro'}{ev.montoSeguro ? ` ${formatMoney(ev.montoSeguro)}` : ''}

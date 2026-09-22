@@ -11,6 +11,7 @@ import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia } from '@/lib/dinero/conciliacion'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { esFinanciacion } from '@/lib/financiar'
 
 const TIPOS_AJUSTE_PAGO = ['recargo', 'descuento']
 
@@ -56,6 +57,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
         id: true,
         montoPrestado: true,
         renovadoDeId: true,
+        interesFinanciado: true,
         createdAt: true,
         cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
       },
@@ -87,6 +89,7 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
         id: true,
         montoPrestado: true,
         renovadoDeId: true,
+        interesFinanciado: true,
         createdAt: true,
         cliente: { select: { nombre: true, cedula: true, ruta: { select: { id: true, nombre: true } } } },
       },
@@ -114,6 +117,9 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // poder resumir el dia sin que falte nada (ver prestadoDetalle en el GET).
       valor: p.montoPrestado || 0,
       esRenovacion: !!p.renovadoDeId,
+      // Financiar el saldo no es prestar: se enseña aparte. Ver `esFinanciacion`.
+      esFinanciacion: esFinanciacion(p),
+      interesFinanciado: Math.round(Number(p.interesFinanciado) || 0),
       cliente: p.cliente?.nombre || null,
       clienteCedula: p.cliente?.cedula || null,
       rutaId: p.cliente?.ruta?.id || mov?.rutaId || null,
@@ -536,13 +542,20 @@ export async function GET(request, { params }) {
          cerró— y `createdAt` para decir cuánto después de abonar se renovó.
          Sin la hora, los minutos salían `null` y la lista no decía la única
          pista que puede dar. Ver [[feedback_verificar_prisma_select]]. */
-      select: { id: true, montoPrestado: true, renovadoDeId: true, createdAt: true },
+      select: { id: true, montoPrestado: true, renovadoDeId: true, createdAt: true, interesFinanciado: true },
     })
     : []
   const entregadoPorPrestamo = new Map(desembolsos.map(d => [d.id, d.monto || 0]))
+  /* ⚠ LO FINANCIADO NO ES UNA RENOVACIÓN, Y SU SALDO NO SE «ABSORBE» EN UN
+     PRÉSTAMO NUEVO: es la misma deuda con más tiempo. Contado aquí, su saldo
+     entero entraba al absorbido —y en la vista bruta a lo cobrado Y a lo
+     prestado—: PRESTA MIL financió $1.181.000 el 22 sep 2026 y su «Total
+     prestado» subió eso, un día en que prestó unos $2.000.000. El efectivo no
+     cambia (financiar no mueve un billete); cambia lo que se dice prestado. */
+  const renovacionesPrestadas = renovacionesDia.filter((r) => !esFinanciacion(r))
   let renovadoValorTotal = 0
   let renovadoEntregado = 0
-  for (const r of renovacionesDia) {
+  for (const r of renovacionesPrestadas) {
     renovadoValorTotal += r.montoPrestado || 0
     renovadoEntregado += entregadoPorPrestamo.get(r.id) ?? 0
   }
@@ -625,6 +638,9 @@ export async function GET(request, { params }) {
   const renovadaAHora = new Map(
     renovacionesDia.filter((r) => r.renovadoDeId).map((r) => [r.renovadoDeId, r.createdAt])
   )
+  // Las que se FINANCIARON salen en la misma lista —la duda es la misma—, pero
+  // la fila tiene que decir «financió», no «renovó».
+  const financiadas = new Set(renovacionesDia.filter(esFinanciacion).map((r) => r.renovadoDeId))
   const cobrosDeRenovadas = renovadaAHora.size > 0
     ? cobros.filter((p) => renovadaAHora.has(p.prestamoId))
     : []
@@ -647,6 +663,7 @@ export async function GET(request, { params }) {
         /* Los minutos entre el abono y la renovación. Negativo si abonó DESPUÉS
            de renovar, que también pasa y también hay que poder verlo. */
         minutos,
+        financio: financiadas.has(p.prestamoId),
         enEfectivo: entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador),
       })
     } else {
@@ -785,9 +802,9 @@ export async function GET(request, { params }) {
   // Vista bruta: el saldo absorbido de cada renovacion suma a AMBOS lados en la
   // ruta del cliente, igual que en los totales (si no, la suma por ruta no cuadra
   // con el total de arriba).
-  if (brutoRenovaciones && renovacionesDia.length > 0) {
+  if (brutoRenovaciones && renovacionesPrestadas.length > 0) {
     const rutaPorPrestamo = new Map(desembolsos.map(d => [d.id, d.rutaId]))
-    for (const r of renovacionesDia) {
+    for (const r of renovacionesPrestadas) {
       const absorbido = Math.max(0, (r.montoPrestado || 0) - (entregadoPorPrestamo.get(r.id) ?? 0))
       if (absorbido <= 0) continue
       const b = bucket(rutaPorPrestamo.get(r.id) ?? null)
@@ -902,7 +919,7 @@ export async function GET(request, { params }) {
           estado: { not: 'cancelado' },
           cliente: { rutaId: { in: rutaIds } },
         },
-        select: { renovadoDeId: true, cliente: { select: { rutaId: true } } },
+        select: { renovadoDeId: true, interesFinanciado: true, cliente: { select: { rutaId: true } } },
       }),
       prisma.cliente.groupBy({
         by: ['rutaId'],
@@ -917,14 +934,14 @@ export async function GET(request, { params }) {
     : [[], [], []]
 
   const gestionPorRuta = new Map(rutaIds.map((id) => [id, {
-    clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+    clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0, financiados: 0,
     clientesActivos: 0, clientesCobrados: 0,
   }]))
   const gBucket = (id) => {
     if (!id) return null
     if (!gestionPorRuta.has(id)) {
       gestionPorRuta.set(id, {
-        clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0,
+        clientesNuevos: 0, prestamosNuevos: 0, renovaciones: 0, financiados: 0,
         clientesActivos: 0, clientesCobrados: 0,
       })
     }
@@ -935,7 +952,9 @@ export async function GET(request, { params }) {
   for (const p of prestamosPorRuta) {
     const b = gBucket(p.cliente?.rutaId)
     if (!b) continue
-    if (p.renovadoDeId) b.renovaciones += 1
+    // Financiar no es renovar: ni préstamo nuevo ni renovación. Ver `esFinanciacion`.
+    if (esFinanciacion(p)) b.financiados += 1
+    else if (p.renovadoDeId) b.renovaciones += 1
     else b.prestamosNuevos += 1
   }
   // Clientes DISTINTOS a los que se les cobró hoy, por ruta. No es lo mismo que
@@ -1158,8 +1177,10 @@ export async function GET(request, { params }) {
      La línea de la cuenta YA descontaba lo digital (`prestadoDigital`, más
      abajo); lo que faltaba era que la tarjeta usara el mismo criterio. */
   const enEfectivo = (d) => d.metodoPago !== 'transferencia'
-  const itemsNuevos = desembolsos.filter((d) => !d.esRenovacion)
-  const itemsRenov  = desembolsos.filter((d) => d.esRenovacion)
+  // Lo financiado va aparte (ver `renovacionesPrestadas`): no es préstamo del día.
+  const itemsFinanciados = desembolsos.filter((d) => d.esFinanciacion)
+  const itemsNuevos = desembolsos.filter((d) => !d.esRenovacion && !d.esFinanciacion)
+  const itemsRenov  = desembolsos.filter((d) => d.esRenovacion && !d.esFinanciacion)
   const valorNuevos = sum(itemsNuevos, 'valor')
   const valorRenovaciones = sum(itemsRenov, 'valor')
   const efectivoTotal = sum(desembolsos.filter(enEfectivo), 'monto')
@@ -1405,6 +1426,12 @@ export async function GET(request, { params }) {
     { id: 'clientesNuevos', rotulo: 'Clientes nuevos', uno: 'Cliente nuevo', cantidad: clientesNuevos, monto: null },
     { id: 'seguros', rotulo: 'Seguros', uno: 'Seguro', cantidad: segurosHoy.length, monto: Math.round(segurosDiaTotal) },
     { id: 'recargos', rotulo: 'Recargos', uno: 'Recargo', cantidad: recargosCantidad, monto: recargosMontoTotal },
+    /* Lo que se financió hoy y el INTERÉS que se cobró por financiar: la misma
+       pareja que los recargos, que es donde el dueño lo buscó. «Al final de la
+       tarde yo ya me dé cuenta cuánto fue lo que financiamos de tarjetas» (PRESTA
+       MIL, 22 sep 2026). No es plata que haya entrado: sube la deuda, igual que
+       un recargo, y por eso tampoco toca el efectivo. */
+    { id: 'financiados', rotulo: 'Saldos financiados', uno: 'Saldo financiado', cantidad: itemsFinanciados.length, monto: sum(itemsFinanciados, 'interesFinanciado'), nota: 'de interés por financiar' },
     { id: 'gastos', rotulo: 'Gastos', uno: 'Gasto', cantidad: gastos.length, monto: gastosDia },
   ]
 

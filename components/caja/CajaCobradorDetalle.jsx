@@ -43,11 +43,11 @@ function notaDeLaApertura(cr) {
 /* Cuánto pasó entre el abono y la renovación, dicho como lo diría una persona.
    Es la única pista que el sistema puede dar: cuatro minutos huele distinto que
    seis horas. Quien decide sigue siendo el prestamista, que conoce a su gente. */
-function cuantoDespues(min) {
+function cuantoDespues(min, verbo = 'renovó') {
   if (min == null) return ''
-  if (min < 0) return `renovó ${textoMinutos(-min)} ANTES de ese abono`
-  if (min < 1) return 'renovó en el mismo minuto'
-  return `renovó ${textoMinutos(min)} después`
+  if (min < 0) return `${verbo} ${textoMinutos(-min)} ANTES de ese abono`
+  if (min < 1) return `${verbo} en el mismo minuto`
+  return `${verbo} ${textoMinutos(min)} después`
 }
 
 function textoMinutos(m) {
@@ -504,9 +504,9 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             Abonos el día que renovaron
           </p>
           <p className="text-[11px] mb-2.5" style={{ color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
-            Estos clientes abonaron y ese mismo día renovaron la cartulina. El sistema no puede
-            saber si le entregaron esa plata o si se puso para cuadrar antes de renovar: mírelos
-            usted. Ya están sumados arriba en lo que cobró.
+            Estos clientes abonaron y ese mismo día {r.cobradoEnDiaDeRenovacion.lista.some((a) => a.financio) ? 'renovaron o financiaron' : 'renovaron'} la
+            cartulina. El sistema no puede saber si le entregaron esa plata o si se puso para cuadrar
+            antes: mírelos usted. Ya están sumados arriba en lo que cobró.
           </p>
 
           <div className="space-y-2">
@@ -519,7 +519,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                   <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
                     {/* Si abonó varias veces se dice: el total de la derecha es
                         la suma, y sin esto no se entiende de dónde sale. */}
-                    {a.abonos > 1 ? `${a.abonos} abonos · ` : ''}{cuantoDespues(a.minutos)}
+                    {a.abonos > 1 ? `${a.abonos} abonos · ` : ''}{cuantoDespues(a.minutos, a.financio ? 'financió' : 'renovó')}
                   </span>
                 </span>
                 <span className="cf-fig text-[13px] shrink-0" style={{ color: 'var(--cf-ink)' }}>
@@ -722,6 +722,13 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                   {h.absorbido > 0 && (
                     <span className="block text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                       {formatMoney(h.absorbido)} eran saldo que ya le debían
+                    </span>
+                  )}
+                  {/* Qué es la cifra de la derecha cuando no es lo obvio: en los
+                      saldos financiados es el INTERÉS, no el saldo. */}
+                  {h.nota && !enCero(h) && (
+                    <span className="block text-[12px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
+                      {h.nota}
                     </span>
                   )}
                 </span>

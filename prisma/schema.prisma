@@ -519,6 +519,12 @@ model Prestamo {
   // deuda del cliente sigue siendo montoPrestado. Null = no viene de renovación.
   // Ver lib/dinero/capital-base.js (`capitalDelPrestamo`).
   interesArrastrado Float?
+  // Si este préstamo nació de FINANCIAR EL SALDO del anterior (no de una
+  // renovación): el interés que se le cobró por financiar, en pesos (0 si se
+  // financió sin interés). Null = no es una financiación. Financiar no presta
+  // plata nueva: la caja no lo cuenta en «Lo que prestó hoy» y lo enseña aparte,
+  // como los recargos. Ver lib/financiar.js.
+  interesFinanciado Float?
   // Tarjeta clavo: prestamo malo/incobrable. Se excluye de saldos/cartera/capital
   // normales y se lleva en contabilidad aparte. Sigue cobrable (pagos van aparte).
   proximoCobroManual DateTime? // override manual de la fecha de proximo cobro (null = automatico)

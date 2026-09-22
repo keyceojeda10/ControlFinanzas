@@ -29,6 +29,7 @@ import { distanciaMetros } from '@/lib/geo'
 // usa el optimizador de orden; aquí da el «3,4 km» de la cabecera (T27-02).
 import { totalDistance } from '@/lib/routeOptimizer'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { esFinanciacion } from '@/lib/financiar'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -120,6 +121,7 @@ export async function GET(request, { params }) {
               diasSinCobro: true,
               createdAt: true,
               renovadoDeId: true,
+              interesFinanciado: true,
               seguro: true,
               montoSeguro: true,
               modoInteres: true,
@@ -351,7 +353,8 @@ export async function GET(request, { params }) {
       if (p.createdAt && new Date(p.createdAt) >= _hoy && new Date(p.createdAt) < _manana) {
         eventosHoy.push({
           prestamoId: p.id,
-          tipo: p.renovadoDeId ? 'renovacion' : 'prestamo_nuevo',
+          // Financiar el saldo no es renovar: la misma deuda con más tiempo. Ver `esFinanciacion`.
+          tipo: esFinanciacion(p) ? 'financiacion' : p.renovadoDeId ? 'renovacion' : 'prestamo_nuevo',
           montoPrestado: p.montoPrestado,
           totalAPagar: p.totalAPagar ?? p.montoPrestado,
           seguro: !!p.seguro,

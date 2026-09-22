@@ -1186,7 +1186,11 @@ const MOVIMIENTOS_MANUALES = [
                                   puede hacer de cabeza. */}
                               {d.esRenovacion && (
                                 <p className="text-[11px] text-[var(--cf-ink-3)]">
-                                  renovación · cartulina de {formatMoney(d.montoPrestado)}
+                                  {/* Financiar no es renovar: la misma deuda con
+                                      más tiempo, sin entregar plata. */}
+                                  {d.esFinanciacion
+                                    ? `financió el saldo · ${formatMoney(d.montoPrestado)}`
+                                    : `renovación · cartulina de ${formatMoney(d.montoPrestado)}`}
                                 </p>
                               )}
                             </div>
