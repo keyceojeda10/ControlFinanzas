@@ -223,6 +223,10 @@ export default function RegistrarCobro({
   // La nota solo se pinta si le dan `onNota`: en un pago normal no va.
   nota = '', onNota,
   onLoRaro, textoLoRaro = 'Recargo, descuento y abono por días',
+  /* Un aviso que NO es del pago sino del teléfono (hoy: «se guardará sin
+     ubicación»). Va abajo, donde no compite con el monto. Lo compone quien monta
+     la hoja; aquí no se sabe qué puede fallarle al aparato. */
+  aviso = null,
 }) {
   return (
     <>
@@ -310,6 +314,8 @@ export default function RegistrarCobro({
           {extraExplicacion}
         </div>
       )}
+
+      {aviso}
 
       {/* ── 3 · ¿CÓMO TE PAGÓ? (T08-01, campo nuevo) ─────────────────────── */}
       {medios.length > 1 && (

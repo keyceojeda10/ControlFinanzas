@@ -43,6 +43,7 @@ import { elInteresSubeLaDeuda }                            from '@/lib/dinero/mo
 import { interesQueCompraUnPeriodo }                      from '@/lib/dinero/interes-periodo'
 import { guardarPagoPendiente, actualizarPrestamoOffline }  from '@/lib/offline'
 import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '@/lib/geo'
+import AvisoUbicacion from '@/components/cf/AvisoUbicacion'
 import { conPantalla } from '@/components/cf/Procesando'
 
 export default function RegistrarPago({
@@ -1279,6 +1280,9 @@ export default function RegistrarPago({
         }
       >
         <RegistrarCobro
+          // Si el teléfono no va a dar la ubicación, se dice ANTES de cobrar.
+          // Un recargo o un descuento no llevan ubicación: tampoco su aviso.
+          aviso={<AvisoUbicacion activo={open && !['recargo', 'descuento'].includes(tipo)} />}
           // Se VE agrupado y se GUARDA crudo: el estado va al servidor con
           // `Number(monto)`, y con puntos dentro eso daría NaN. El campo enseñaba
           // «20000», y con seis cifras seguidas —«1250000»— nadie distingue un

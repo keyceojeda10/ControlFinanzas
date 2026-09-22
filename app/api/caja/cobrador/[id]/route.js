@@ -230,6 +230,10 @@ export async function GET(request, { params }) {
         fechaPago: true,
         metodoPago: true,
         plataforma: true,
+        /* Para decir cuántos cobros del día entraron SIN ubicación. Medido el 22
+           sep 2026: llega en el 70 % de los cobros, pero no repartido — seis
+           cobradores no mandan ninguna, ningún día, y nadie se enteraba. */
+        latitud: true,
         // ⚠ LA CUENTA DE VERDAD. `plataforma` es TEXTO LIBRE y a veces viene
         // vacío: un pago a Nequi con ese campo en blanco se pintaba como una
         // cuenta aparte llamada «Transferencia». En la ruta #9 salía «Nequi
@@ -701,6 +705,10 @@ export async function GET(request, { params }) {
   const recargosMontoTotal = Math.round(
     recargos.reduce((a, r) => a + (r.montoPagado || 0), 0))
   const recargosCantidad = recargos.length
+
+  /* Cobros del día que entraron sin ubicación. No es un fallo del sistema: es el
+     permiso del teléfono del cobrador, y el dueño es quien puede decírselo. */
+  const cobrosSinUbicacion = cobros.filter((p) => p.latitud == null).length
 
   // Desglose por ruta: prestado / cobrado / seguros + saldoCapital de la ruta.
   // Los seguros se generan al crear el préstamo, así que se cuentan junto al desembolso.
@@ -1523,6 +1531,7 @@ export async function GET(request, { params }) {
       /* Informativa: no entra en ninguna suma. Ver el bloque largo de arriba. */
       cobradoEnDiaDeRenovacion,
     },
+    cobrosSinUbicacion,
     prestadoDetalle,
     gestion: {
       clientesNuevos,

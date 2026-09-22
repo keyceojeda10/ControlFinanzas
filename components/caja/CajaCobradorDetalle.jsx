@@ -693,6 +693,18 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
             ))}
           </div>
 
+          {/* ── CUÁNTOS COBROS ENTRARON SIN UBICACIÓN ──────────────────
+              No es un fallo del sistema: es el permiso del teléfono del cobrador.
+              El dueño es el único que puede decírselo, y hasta hoy no lo veía en
+              ningún sitio. Se pinta SOLO si hay alguno: un cero aquí no es una
+              respuesta que nadie esté buscando. */}
+          {(data?.cobrosSinUbicacion ?? 0) > 0 && (
+            <p className="text-[12px] mb-3" style={{ color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+              {data.cobrosSinUbicacion} {data.cobrosSinUbicacion === 1 ? 'cobro entró' : 'cobros entraron'} sin ubicación ·
+              {' '}su teléfono tiene que dar el permiso
+            </p>
+          )}
+
           <div className="flex flex-col">
             {hizoTodo.map((h) => (
               <button
