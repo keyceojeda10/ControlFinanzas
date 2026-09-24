@@ -4,31 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { headers } from 'next/headers'
-
-function parseDispositivo(ua) {
-  if (!ua) return 'Desconocido'
-  const lower = ua.toLowerCase()
-  if (lower.includes('iphone')) return 'iPhone'
-  if (lower.includes('ipad')) return 'iPad'
-  if (lower.includes('android')) {
-    if (lower.includes('mobile')) return 'Android'
-    return 'Tablet Android'
-  }
-  if (lower.includes('macintosh') || lower.includes('mac os')) return 'Mac'
-  if (lower.includes('windows')) return 'Windows'
-  if (lower.includes('linux')) return 'Linux'
-  return 'Otro'
-}
-
-function parseBrowser(ua) {
-  if (!ua) return ''
-  if (ua.includes('Edg/')) return 'Edge'
-  if (ua.includes('OPR/') || ua.includes('Opera')) return 'Opera'
-  if (ua.includes('Chrome/') && !ua.includes('Edg/')) return 'Chrome'
-  if (ua.includes('Safari/') && !ua.includes('Chrome/')) return 'Safari'
-  if (ua.includes('Firefox/')) return 'Firefox'
-  return ''
-}
+import { etiquetaDispositivo } from '@/lib/dispositivo'
 
 export async function POST() {
   const session = await getServerSession(authOptions)
@@ -41,9 +17,7 @@ export async function POST() {
     || hdrs.get('x-real-ip')
     || 'desconocida'
   const userAgent = hdrs.get('user-agent') || ''
-  const dispositivo = parseDispositivo(userAgent)
-  const browser = parseBrowser(userAgent)
-  const label = browser ? `${dispositivo} · ${browser}` : dispositivo
+  const label = etiquetaDispositivo(userAgent)
 
   const userId = session.user.id
   const organizationId = session.user.organizationId || null
