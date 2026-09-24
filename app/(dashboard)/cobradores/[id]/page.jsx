@@ -10,6 +10,7 @@ import { Card }                     from '@/components/ui/Card'
 import { SkeletonCard }             from '@/components/ui/Skeleton'
 import { useCabecera }              from '@/components/armazon/Armazon'
 import CompartirCredenciales        from '@/components/cobradores/CompartirCredenciales'
+import BotonVerComo                 from '@/components/cobradores/BotonVerComo'
 import Link                         from 'next/link'
 import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -313,6 +314,12 @@ function CobradorDetalleInner({ params }) {
           </div>
         )
       })()}
+
+      {session?.user?.rol === 'owner' && data?.activo && (
+        <Card>
+          <BotonVerComo cobradorId={id} nombre={data.nombre} />
+        </Card>
+      )}
 
       {/* Reenviar credenciales */}
       <Card>

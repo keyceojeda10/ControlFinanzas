@@ -14,6 +14,7 @@ import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
 import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
 import AvisoSinSenal from '@/components/armazon/AvisoSinSenal'
+import FranjaVerComo from '@/components/armazon/FranjaVerComo'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
 import LimitesPlanBanner     from '@/components/layout/LimitesPlanBanner'
 import GlobalSearch        from '@/components/layout/GlobalSearch'
@@ -133,6 +134,7 @@ export default async function DashboardLayout({ children }) {
             Va ANTES de la pila de avisos y no dentro: la pila enseña UNO solo y
             ordena por urgencia, y quedarse sin red no compite con «te caduca la
             suscripción» — es la condición bajo la que se lee todo lo demás. */}
+        <FranjaVerComo />
         <AvisoSinSenal />
 
         <PilaAvisos>
