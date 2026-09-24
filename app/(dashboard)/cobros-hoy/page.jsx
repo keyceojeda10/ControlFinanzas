@@ -302,8 +302,8 @@ export default function CobrosHoyPage() {
         window.dispatchEvent(new Event('paymentQueued'))
         setPagoOk(clienteId)
         setTimeout(() => setPagoOk(null), 1200)
-      } catch {
-        alert('No se pudo guardar el pago. Intenta de nuevo.')
+      } catch (e) {
+        alert(e?.message || 'No se pudo guardar el pago. Intenta de nuevo.')
         fetchCobros()
       }
     } finally {

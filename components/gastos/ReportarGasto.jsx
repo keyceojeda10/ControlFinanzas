@@ -66,7 +66,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
         onSuccess?.()
         handleClose()
       } catch (e) {
-        setError('No se pudo guardar offline.')
+        setError(e?.message || 'No se pudo guardar offline.')
       } finally {
         setLoading(false)
       }
@@ -98,7 +98,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
           onSuccess?.()
           handleClose()
           return
-        } catch {}
+        } catch (err) { setError(err?.message || e.message); return }
       }
       setError(e.message)
     } finally {

@@ -427,8 +427,8 @@ export default function RegistrarPago({
         setError('')
         onSuccess?.(prestamoActualizado, pagoOffline)
         return true
-      } catch {
-        setError('No se pudo guardar el pago offline.')
+      } catch (err) {
+        setError(err?.message || 'No se pudo guardar el pago offline.')
         return false
       }
     }

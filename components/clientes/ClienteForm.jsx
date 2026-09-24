@@ -274,8 +274,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
         router.push('/clientes')
         return
-      } catch {
-        setError('No se pudo guardar offline.')
+      } catch (err) {
+        setError(err?.message || 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -287,8 +287,8 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
         router.push(`/clientes/${clienteInicial.id}`)
         return
-      } catch {
-        setError('No se pudo guardar offline.')
+      } catch (err) {
+        setError(err?.message || 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -368,13 +368,17 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         direccion: data.direccion ?? form.direccion, fotoUrl: data.fotoUrl ?? null,
       })
     } catch {
+      // Los dos branches de abajo también cubren el 503 del try (SW sin red)
+      // que llegó aquí porque guardarClientePendiente/encolarMutacion
+      // rechazó (en vista, por ejemplo): su mensaje es más útil que el
+      // genérico de «sin conexión» de la última línea.
       if (!esEdicion && !navigator.onLine) {
         try {
           await guardarClientePendiente(payload)
           try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
           router.push('/clientes')
           return
-        } catch {}
+        } catch (err) { setError(err?.message || 'Error de conexión. Intenta de nuevo.'); return }
       }
       if (esEdicion && !navigator.onLine) {
         try {
@@ -382,7 +386,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
           router.push(`/clientes/${clienteInicial.id}`)
           return
-        } catch {}
+        } catch (err) { setError(err?.message || 'Error de conexión. Intenta de nuevo.'); return }
       }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {

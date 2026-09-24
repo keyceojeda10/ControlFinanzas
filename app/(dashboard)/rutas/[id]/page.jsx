@@ -1173,8 +1173,8 @@ export default function RutaDetallePage({ params }) {
         })
         setPagoRapidoOk(clienteId)
         setTimeout(() => setPagoRapidoOk(null), 1200)
-      } catch {
-        alert('No se pudo guardar el pago. Intenta de nuevo.')
+      } catch (e) {
+        alert(e?.message || 'No se pudo guardar el pago. Intenta de nuevo.')
         setRuta(prev => prev ? {
           ...prev,
           clientes: prev.clientes.map(c => c.id === clienteId ? { ...c, pagoHoy: false, cobroPendienteHoy: true } : c)
@@ -1535,7 +1535,7 @@ export default function RutaDetallePage({ params }) {
           await guardarOrdenPendiente(id, clienteIds)
           setOrdenOffline(true)
           setTimeout(() => setOrdenOffline(false), 2000)
-        } catch { setOrdenError('No se pudo guardar offline') }
+        } catch (err) { setOrdenError(err?.message || 'No se pudo guardar offline') }
         return
       }
 
@@ -1563,7 +1563,7 @@ export default function RutaDetallePage({ params }) {
           await guardarOrdenPendiente(id, clienteIds)
           setOrdenOffline(true)
           setTimeout(() => setOrdenOffline(false), 2000)
-        } catch { setOrdenError('Error de conexión') }
+        } catch (err) { setOrdenError(err?.message || 'Error de conexión') }
       } finally {
         setGuardandoOrden(false)
       }

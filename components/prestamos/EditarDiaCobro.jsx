@@ -102,8 +102,8 @@ export default function EditarDiaCobro({
         try { sessionStorage.setItem('cf-toast', 'Día de cobro actualizado. Se sincronizará al volver online.') } catch {}
         onSuccess?.()
         handleClose()
-      } catch {
-        setError('No se pudo guardar offline.')
+      } catch (err) {
+        setError(err?.message || 'No se pudo guardar offline.')
       } finally {
         setLoading(false)
       }
@@ -130,7 +130,7 @@ export default function EditarDiaCobro({
           onSuccess?.()
           handleClose()
           return
-        } catch {}
+        } catch (err) { setError(err?.message || e.message); return }
       }
       setError(e.message)
     } finally {

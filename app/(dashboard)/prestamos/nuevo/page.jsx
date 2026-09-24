@@ -883,8 +883,8 @@ function NuevoPrestamo() {
         try { sessionStorage.setItem('cf-toast', 'Préstamo guardado. Se sincronizará al volver online.') } catch {}
         router.push('/prestamos')
         return
-      } catch {
-        setError('No se pudo guardar offline.')
+      } catch (err) {
+        setError(err?.message || 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -944,7 +944,10 @@ function NuevoPrestamo() {
           try { sessionStorage.setItem('cf-toast', 'Préstamo guardado. Se sincronizará al volver online.') } catch {}
           router.push('/prestamos')
           return
-        } catch {}
+        } catch (err) {
+          setError(err?.message || 'Error de conexión. Intenta de nuevo.')
+          return
+        }
       }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
