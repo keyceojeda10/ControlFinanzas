@@ -2,6 +2,7 @@
 
 import { getToken } from 'next-auth/jwt'
 import { NextResponse } from 'next/server'
+import { bloqueaSoloLectura, mensajeSoloLectura } from '@/lib/solo-lectura'
 
 const PORTAL_COOKIE = 'portal-token'
 
@@ -60,6 +61,11 @@ export async function middleware(request) {
   // (se refresca cada 15 min). Exentas: lo necesario para pagar/desbloquear,
   // auth, crons (corren con secret, sin sesion) y superadmin.
   if (pathname.startsWith('/api/')) {
+    // «Ver como este cobrador» es de SOLO LECTURA: nada que escriba pasa. Ver lib/solo-lectura.js.
+    if (bloqueaSoloLectura({ soloLectura: token?.soloLectura, pathname, method: request.method })) {
+      return NextResponse.json({ error: mensajeSoloLectura(token?.nombre ?? 'el cobrador'), soloLectura: true }, { status: 403 })
+    }
+
     const EXENTAS = ['/api/auth/', '/api/pagos/', '/api/plan/', '/api/webhook/',
       '/api/cron/', '/api/admin/', '/api/health', '/api/ping', '/api/analytics/',
       '/api/unsubscribe', '/api/logo', '/api/telegram/', '/api/uploads/', '/api/portal/']
