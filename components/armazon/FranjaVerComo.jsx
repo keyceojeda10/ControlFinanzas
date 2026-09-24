@@ -18,11 +18,49 @@
    la pide nunca por su cuenta (arranca con la sesión guardada). Aquí se pide
    al cumplirse la hora, y SOLO se sale si la sesión nueva ya no está en vista.
    Si el servidor no pudo volver (sin red, dueño desactivado) no se hace nada:
-   la franja se queda, y sin bucle de recargas. */
+   la franja se queda, y sin bucle de recargas.
+
+   REINTENTA. El primer pedido es a vistaHasta+5s (le da margen al reloj del
+   teléfono, que puede ir adelantado del reloj del servidor). Si en ese momento
+   no hay red, o el reloj del teléfono va MUY adelantado y el servidor todavía
+   no cerró la vista, un solo intento deja al dueño en solo lectura hasta que
+   toque «Volver» a mano — y desde ahí no puede encolar sus propios cobros
+   offline. Por eso reintenta cada 45s (sin tope: para cuando entra la sesión
+   nueva o se desmonta) y también al volver la señal (evento `online`).
+
+   `montado` evita el error #418 de React: el servidor siempre pinta null, pero
+   el cliente ya tiene la sesión de vista en caché (SessionProvider arranca con
+   ella) y en el primer render pintaría la franja — un árbol distinto al que
+   mandó el servidor. Se retrasa un tick con useEffect para que el primer
+   render del cliente coincida con el del servidor. */
 import { useEffect, useState } from 'react'
 import { useSession, signIn } from 'next-auth/react'
 import { marcarSoloLectura } from '@/lib/modo-vista'
 import { olvidarLecturasDeOtraCuenta } from '@/lib/cambio-de-cuenta'
+
+const REINTENTO_MS = 45_000
+const MARGEN_RELOJ_MS = 5_000
+
+// Los mismos códigos internos de NextAuth que descarta esCodigoInterno en
+// app/login/page.jsx (duplicado a propósito: ese vive en una page.jsx, no en
+// una lib, y este archivo no depende de esa pantalla).
+const CODIGOS_NEXTAUTH_INTERNOS = new Set([
+  'CredentialsSignin', 'Signin', 'Callback', 'Default', 'Configuration',
+  'AccessDenied', 'Verification', 'SessionRequired', 'EmailSignin',
+  'OAuthSignin', 'OAuthCallback', 'OAuthCreateAccount', 'OAuthAccountNotLinked',
+  'EmailCreateAccount',
+])
+const MENSAJE_NO_VOLVIO = 'No se pudo volver. Revisa la conexión e intenta otra vez.'
+
+// El error real del proveedor `pase` (p. ej. «Ese cobrador no está en tu
+// negocio.», o el negocio del dueño se desactivó mientras veía la vista) vale
+// más que el genérico. VERIFY_EMAIL es el único código nuestro sin espacios:
+// se lee de sesionDeUsuario, compartida con las otras tres puertas de entrada.
+function textoDelError(msg) {
+  if (msg === 'VERIFY_EMAIL') return 'Tu correo no está verificado. Entra con tu correo y contraseña para verificarlo.'
+  if (!msg || CODIGOS_NEXTAUTH_INTERNOS.has(msg) || !msg.includes(' ')) return MENSAJE_NO_VOLVIO
+  return msg
+}
 
 async function salir(cobradorId) {
   marcarSoloLectura(false)
@@ -41,19 +79,44 @@ async function volverSiYaVencio(cobradorId) {
 
 export default function FranjaVerComo() {
   const { data: session } = useSession()
+  const [montado, setMontado] = useState(false)
   const [volviendo, setVolviendo] = useState(false)
   const [error, setError] = useState('')
   const enVista = !!session?.user?.soloLectura
   const cobradorId = session?.user?.id
   const vistaHasta = session?.user?.vistaHasta
 
+  useEffect(() => { setMontado(true) }, [])
+
   useEffect(() => {
     if (!enVista || !vistaHasta) return
-    const t = setTimeout(() => { volverSiYaVencio(cobradorId) }, Math.max(0, vistaHasta - Date.now()) + 1000)
-    return () => clearTimeout(t)
+    let vivo = true
+    let intervalId = null
+
+    async function intentar() {
+      if (!vivo) return
+      if (await volverSiYaVencio(cobradorId) !== false) {
+        vivo = false
+        if (intervalId) clearInterval(intervalId)
+      }
+    }
+
+    const primerIntento = setTimeout(() => {
+      intentar()
+      intervalId = setInterval(intentar, REINTENTO_MS)
+    }, Math.max(0, vistaHasta + MARGEN_RELOJ_MS - Date.now()))
+
+    window.addEventListener('online', intentar)
+
+    return () => {
+      vivo = false
+      clearTimeout(primerIntento)
+      if (intervalId) clearInterval(intervalId)
+      window.removeEventListener('online', intentar)
+    }
   }, [enVista, vistaHasta, cobradorId])
 
-  if (!enVista) return null
+  if (!montado || !enVista) return null
 
   async function volver() {
     setVolviendo(true); setError('')
@@ -63,12 +126,15 @@ export default function FranjaVerComo() {
       if (res.ok) {
         const r = await signIn('pase', { pase: d.pase, redirect: false })
         if (!r?.error) return salir(d.cobradorId)
+        setVolviendo(false)
+        setError(textoDelError(r.error))
+        return
       } else if (await volverSiYaVencio(cobradorId) !== false) {
         return // la hora ya había pasado: el servidor volvió solo
       }
     } catch {}
     setVolviendo(false)
-    setError('No se pudo volver. Revisa la conexión e intenta otra vez.')
+    setError(MENSAJE_NO_VOLVIO)
   }
 
   return (

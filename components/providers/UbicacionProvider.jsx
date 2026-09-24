@@ -25,7 +25,8 @@ function distancia(a, b) {
 }
 
 export default function UbicacionProvider({ children }) {
-  const { esCobrador, loading } = useAuth()
+  const { esCobrador, loading, session } = useAuth()
+  const soloLectura = !!session?.user?.soloLectura
   const posRef = useRef(null)
   const watchRef = useRef(null)
   const intervalRef = useRef(null)
@@ -33,7 +34,11 @@ export default function UbicacionProvider({ children }) {
   const ultimoEnvioMsRef = useRef(0)
 
   useEffect(() => {
-    if (loading || !esCobrador) return
+    // En «ver como» esCobrador también es true (es la sesión del cobrador):
+    // sin esta guarda, el teléfono del DUEÑO pide permiso de ubicación y
+    // /api/ubicacion le contesta 403 — y si lo niega, el «no» de sitio entero
+    // le rompe el GPS de sus propios cobros cuando vuelva a su cuenta.
+    if (loading || !esCobrador || soloLectura) return
     if (!navigator.geolocation) return
 
     function iniciar() {
@@ -95,7 +100,7 @@ export default function UbicacionProvider({ children }) {
       detener()
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [loading, esCobrador])
+  }, [loading, esCobrador, soloLectura])
 
   return children
 }

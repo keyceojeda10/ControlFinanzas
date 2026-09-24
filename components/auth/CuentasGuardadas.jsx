@@ -22,7 +22,7 @@ export default function CuentasGuardadas({ cuentas, onEntrar, onQuitar, onOtra, 
               <span className="block text-[15px] font-semibold break-words" style={{ color: 'var(--cf-ink)' }}>
                 {cargandoId === c.id ? 'Entrando…' : c.nombre}
               </span>
-              <span className="block text-[12.5px]" style={{ color: 'var(--cf-ink-3)' }}>
+              <span className="block text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
                 {[ROL[c.rol] ?? c.rol, c.orgNombre].filter(Boolean).join(' · ')}
               </span>
             </span>

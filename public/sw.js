@@ -666,9 +666,17 @@ async function syncMutacionesFromSW() {
         await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, conflict: true, servidorSnapshot: snap, error: 'Conflicto: registro modificado en servidor' })
         conflictos++
       } else if (res.status >= 400 && res.status < 500) {
-        let errorMsg = `HTTP ${res.status}`
-        try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
-        await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, error: errorMsg })
+        let cuerpo = null
+        try { cuerpo = await res.json() } catch {}
+        if (res.status === 403 && cuerpo?.soloLectura) {
+          // El dueño sigue viendo a su cobrador: la cookie de vista bloqueó la
+          // escritura. Se deja pendiente, SIN marcar fallo ni sumar intento,
+          // para que la próxima vuelta (o el evento online) la reintente
+          // cuando la vista termine — puede que el ítem sea de ANTES de entrar
+          // a la vista, y el dueño no puede volver a mandarlo a mano.
+          continue
+        }
+        await idbUpdate(db, STORE_MUTACIONES, m.id, { failedPermanent: true, error: cuerpo?.error || `HTTP ${res.status}` })
         failed++
       } else {
         await idbUpdate(db, STORE_MUTACIONES, m.id, { intentos: (m.intentos || 0) + 1 })
@@ -713,7 +721,13 @@ async function syncPagosFromSW() {
         synced++
       } else if (res.status >= 400 && res.status < 500) {
         let errorMsg = `HTTP ${res.status}`
-        try { const d = await res.json(); errorMsg = d.error || errorMsg } catch {}
+        let cuerpo = null
+        try { cuerpo = await res.json(); errorMsg = cuerpo.error || errorMsg } catch {}
+        if (res.status === 403 && cuerpo?.soloLectura) {
+          // Igual que en syncMutacionesFromSW: la vista sigue activa, se deja
+          // pendiente para reintentar cuando termine, sin marcar fallo.
+          continue
+        }
         // Misma clasificación que lib/pagos-sin-senal.js: estos se reintentan.
         const reintentable = [401, 403, 408, 409, 429].includes(res.status)
         await idbUpdate(db, STORE_PAGOS, p.id, { failedPermanent: true, errorMsg, reintentable, status: res.status, ultimoIntentoAt: Date.now() })

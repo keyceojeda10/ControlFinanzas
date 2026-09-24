@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { DIAS_VIGENCIA } from '@/lib/cuentas-guardadas'
 
 async function cobradorDelDueno(params) {
   const session = await getServerSession(authOptions)
@@ -19,7 +20,7 @@ export async function GET(request, { params }) {
   const { error, cobrador } = await cobradorDelDueno(params)
   if (error) return error
   const aparatos = await prisma.cuentaGuardada.findMany({
-    where: { userId: cobrador.id },
+    where: { userId: cobrador.id, lastUsedAt: { gte: new Date(Date.now() - DIAS_VIGENCIA * 24 * 60 * 60 * 1000) } },
     select: { id: true, dispositivo: true, createdAt: true, lastUsedAt: true },
     orderBy: { lastUsedAt: 'desc' },
   })

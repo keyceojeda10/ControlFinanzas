@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { headers } from 'next/headers'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { crearCuentaGuardada, llevaPin, pinValido } from '@/lib/cuentas-guardadas'
+import { crearCuentaGuardada, llevaPin, pinValido, DIAS_VIGENCIA } from '@/lib/cuentas-guardadas'
 import { etiquetaDispositivo } from '@/lib/dispositivo'
 
 export async function POST(request) {
@@ -26,7 +26,10 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return Response.json({ error: 'No autorizado' }, { status: 401 })
   const aparatos = await prisma.cuentaGuardada.findMany({
-    where: { userId: session.user.id },
+    // Sin este corte, un aparato que nunca se borró (revocarlo es manual)
+    // se queda en la lista para siempre aunque ya venció: `abrirCuentaGuardada`
+    // lo rechazaría igual, pero aquí seguiría contando como un teléfono vivo.
+    where: { userId: session.user.id, lastUsedAt: { gte: new Date(Date.now() - DIAS_VIGENCIA * 24 * 60 * 60 * 1000) } },
     select: { id: true, dispositivo: true, createdAt: true, lastUsedAt: true },
     orderBy: { lastUsedAt: 'desc' },
   })

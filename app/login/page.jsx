@@ -175,8 +175,12 @@ export default function LoginPage() {
   const [verClave, setVerClave] = useState(false)
   const [recordar, setRecordar] = useState(true)
   const [cuentas, setCuentas] = useState([])
-  // 'cuentas' (tarjetas) · 'formulario' · 'pin' (entrar con PIN) · 'crear-pin' (tras entrar con clave)
-  const [modo, setModo] = useState('formulario')
+  // null (decidiendo) · 'cuentas' (tarjetas) · 'formulario' · 'pin' (entrar con PIN) · 'crear-pin' (tras entrar con clave)
+  // Arranca en null: leer localStorage es síncrono pero el efecto corre un
+  // tick después del primer render, así que arrancar en 'formulario' pintaba
+  // el formulario un instante antes de cambiar a las tarjetas — el flash que
+  // se ve en la app instalada, sin red de por medio, cada vez que abre.
+  const [modo, setModo] = useState(null)
   const [cuentaPin, setCuentaPin] = useState(null)
   const [cargandoId, setCargandoId] = useState(null)
   const [destino, setDestino] = useState('/dashboard')
@@ -186,7 +190,10 @@ export default function LoginPage() {
   useEffect(() => {
     const lista = leerCuentasGuardadas()
     setCuentas(lista)
-    if (lista.length) setModo('cuentas')
+    // Siempre decide, incluso con la lista vacía (localStorage bloqueado en
+    // modo privado, por ejemplo): si no, `modo` se queda en null y no pinta
+    // ni el formulario ni las tarjetas.
+    setModo(lista.length ? 'cuentas' : 'formulario')
   }, [])
 
   const irAlPanel = (url) => { window.location.href = url }
@@ -203,8 +210,20 @@ export default function LoginPage() {
           const lista = leerCuentasGuardadas()
           setCuentas(lista)
           setModo(lista.length ? 'cuentas' : 'formulario')
+          setError(msg)
+          return
         }
-        setError(msg)
+        // Igual que el formulario: VERIFY_EMAIL manda a verificar, y ningún
+        // código interno crudo de NextAuth se enseña tal cual.
+        if (msg === 'VERIFY_EMAIL') {
+          if (cuenta.email) {
+            router.push(`/verificar-email?email=${encodeURIComponent(cuenta.email)}`)
+          } else {
+            setError('Tu correo no está verificado. Entra con tu correo y contraseña para verificarlo.')
+          }
+          return
+        }
+        setError(esCodigoInterno(msg) ? 'Correo o contraseña incorrectos' : msg)
         return
       }
       irAlPanel(cuenta.rol === 'superadmin' ? '/admin/inicio' : '/dashboard')
@@ -235,7 +254,19 @@ export default function LoginPage() {
       const res = await fetch('/api/cuentas-guardadas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pin ? { pin } : {}),
       })
-      if (res.ok) guardarCuentaEnTelefono(await res.json())
+      if (!res.ok) return
+      const nueva = await res.json()
+      // Esta persona ya tenía una fila en el servidor para este teléfono (cada
+      // entrada con la casilla marcada crea una): sin borrarla queda huérfana
+      // ahí para siempre, aunque la tarjeta local ya la reemplazó, y llena
+      // «Teléfonos con su cuenta guardada» de aparatos fantasma.
+      const vieja = leerCuentasGuardadas().find((c) => c.userId === nueva.userId)
+      if (vieja) {
+        fetch(`/api/cuentas-guardadas/${vieja.id}`, {
+          method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ llave: vieja.llave }),
+        }).catch(() => {})
+      }
+      guardarCuentaEnTelefono(nueva)
     } catch { /* guardar es un extra: si falla, igual entra */ }
   }
 
