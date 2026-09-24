@@ -884,7 +884,9 @@ function NuevoPrestamo() {
         router.push('/prestamos')
         return
       } catch (err) {
-        setError(err?.message || 'No se pudo guardar offline.')
+        // Solo el error de «estás en vista» se enseña tal cual; cualquier
+        // otro (IndexedDB real fallando) sigue con el genérico de siempre.
+        setError(err?.soloLectura ? err.message : 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -945,7 +947,7 @@ function NuevoPrestamo() {
           router.push('/prestamos')
           return
         } catch (err) {
-          setError(err?.message || 'Error de conexión. Intenta de nuevo.')
+          setError(err?.soloLectura ? err.message : 'Error de conexión. Intenta de nuevo.')
           return
         }
       }

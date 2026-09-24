@@ -155,7 +155,7 @@ export default function ModificarPlazo({
         onSuccess?.()
         handleClose()
       } catch (e) {
-        setError(e?.message || 'No se pudo guardar offline.')
+        setError(e?.soloLectura ? e.message : 'No se pudo guardar offline.')
       } finally {
         setLoading(false)
       }
@@ -190,7 +190,9 @@ export default function ModificarPlazo({
           onSuccess?.()
           handleClose()
           return
-        } catch (err) { setError(err?.message || e.message); return }
+        } catch (err) {
+          if (err?.soloLectura) { setError(err.message); return }
+        }
       }
       setError(e.message)
     } finally {

@@ -103,7 +103,7 @@ export default function EditarDiaCobro({
         onSuccess?.()
         handleClose()
       } catch (err) {
-        setError(err?.message || 'No se pudo guardar offline.')
+        setError(err?.soloLectura ? err.message : 'No se pudo guardar offline.')
       } finally {
         setLoading(false)
       }
@@ -130,7 +130,9 @@ export default function EditarDiaCobro({
           onSuccess?.()
           handleClose()
           return
-        } catch (err) { setError(err?.message || e.message); return }
+        } catch (err) {
+          if (err?.soloLectura) { setError(err.message); return }
+        }
       }
       setError(e.message)
     } finally {

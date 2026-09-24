@@ -303,7 +303,10 @@ export default function CobrosHoyPage() {
         setPagoOk(clienteId)
         setTimeout(() => setPagoOk(null), 1200)
       } catch (e) {
-        alert(e?.message || 'No se pudo guardar el pago. Intenta de nuevo.')
+        // El texto del error solo se ve tal cual si es el de «estás en vista»
+        // (soloLectura): cualquier otro fallo real de IndexedDB (por ejemplo
+        // un QuotaExceededError en un Android barato) sigue con este genérico.
+        alert(e?.soloLectura ? e.message : 'No se pudo guardar el pago. Intenta de nuevo.')
         fetchCobros()
       }
     } finally {

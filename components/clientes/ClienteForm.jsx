@@ -275,7 +275,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         router.push('/clientes')
         return
       } catch (err) {
-        setError(err?.message || 'No se pudo guardar offline.')
+        setError(err?.soloLectura ? err.message : 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -288,7 +288,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
         router.push(`/clientes/${clienteInicial.id}`)
         return
       } catch (err) {
-        setError(err?.message || 'No se pudo guardar offline.')
+        setError(err?.soloLectura ? err.message : 'No se pudo guardar offline.')
         setLoading(false)
         return
       }
@@ -378,7 +378,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           try { sessionStorage.setItem('cf-toast', 'Cliente guardado. Se sincronizará al volver online.') } catch {}
           router.push('/clientes')
           return
-        } catch (err) { setError(err?.message || 'Error de conexión. Intenta de nuevo.'); return }
+        } catch (err) { setError(err?.soloLectura ? err.message : 'Error de conexión. Intenta de nuevo.'); return }
       }
       if (esEdicion && !navigator.onLine) {
         try {
@@ -386,7 +386,7 @@ export default function ClienteForm({ clienteInicial = null, plan = 'basic', pue
           try { sessionStorage.setItem('cf-toast', 'Cambios guardados. Se sincronizaran al volver online.') } catch {}
           router.push(`/clientes/${clienteInicial.id}`)
           return
-        } catch (err) { setError(err?.message || 'Error de conexión. Intenta de nuevo.'); return }
+        } catch (err) { setError(err?.soloLectura ? err.message : 'Error de conexión. Intenta de nuevo.'); return }
       }
       setError('Error de conexión. Intenta de nuevo.')
     } finally {

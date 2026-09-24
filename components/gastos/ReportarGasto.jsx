@@ -66,7 +66,7 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
         onSuccess?.()
         handleClose()
       } catch (e) {
-        setError(e?.message || 'No se pudo guardar offline.')
+        setError(e?.soloLectura ? e.message : 'No se pudo guardar offline.')
       } finally {
         setLoading(false)
       }
@@ -98,7 +98,11 @@ export default function ReportarGasto({ open, onClose, onSuccess, fecha, cobrado
           onSuccess?.()
           handleClose()
           return
-        } catch (err) { setError(err?.message || e.message); return }
+        } catch (err) {
+          // Solo el error de «estás en vista» se enseña tal cual; cualquier
+          // otro fallo del encolado cae, como antes, al de la petición de red.
+          if (err?.soloLectura) { setError(err.message); return }
+        }
       }
       setError(e.message)
     } finally {
