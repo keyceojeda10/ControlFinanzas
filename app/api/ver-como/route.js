@@ -10,7 +10,11 @@ export async function POST(request) {
   if (!session?.user?.id || session.user.rol !== 'owner' || session.user.soloLectura) {
     return Response.json({ error: 'Solo el dueño puede ver como un cobrador.' }, { status: 403 })
   }
-  const { cobradorId } = await request.json().catch(() => ({}))
+  const body = await request.json().catch(() => null)
+  const cobradorId = body?.cobradorId
+  if (typeof cobradorId !== 'string' || !cobradorId) {
+    return Response.json({ error: 'Falta el cobrador.' }, { status: 400 })
+  }
   const cobrador = await prisma.user.findFirst({
     where: { id: cobradorId, organizationId: session.user.organizationId, rol: 'cobrador', activo: true },
     select: { id: true, nombre: true },
