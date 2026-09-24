@@ -1536,7 +1536,7 @@ function ConfiguracionContent() {
       case 'seguridad':
         return (
           <>
-            <TelefonosGuardados />
+            <Card><TelefonosGuardados /></Card>
             {esOwner
               ? <TabOrganizacion bloques={['peligro']} />
               : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />}
