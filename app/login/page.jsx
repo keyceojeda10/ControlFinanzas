@@ -1,10 +1,14 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import AuthInput  from '@/components/auth/AuthInput'
 import AuthButton from '@/components/auth/AuthButton'
+import CuentasGuardadas from '@/components/auth/CuentasGuardadas'
+import PinDeCuatro from '@/components/auth/PinDeCuatro'
+import { leerCuentasGuardadas, guardarCuentaEnTelefono, quitarCuentaDelTelefono } from '@/lib/cuentas-guardadas-cliente'
+import { esMensajeDeCuentaMuerta } from '@/lib/cuentas-guardadas-textos'
 
 // ── Showcase cards (decorative, hardcoded data) ─────────────────
 function ShowcasePanel() {
@@ -170,7 +174,83 @@ export default function LoginPage() {
   const [loading,  setLoading]  = useState(false)
   const [verClave, setVerClave] = useState(false)
   const [recordar, setRecordar] = useState(true)
+  const [cuentas, setCuentas] = useState([])
+  // 'cuentas' (tarjetas) · 'formulario' · 'pin' (entrar con PIN) · 'crear-pin' (tras entrar con clave)
+  const [modo, setModo] = useState('formulario')
+  const [cuentaPin, setCuentaPin] = useState(null)
+  const [cargandoId, setCargandoId] = useState(null)
+  const [destino, setDestino] = useState('/dashboard')
+  const [pinNuevo, setPinNuevo] = useState('')   // crear-pin: el primero, esperando la confirmación
   const router = useRouter()
+
+  useEffect(() => {
+    const lista = leerCuentasGuardadas()
+    setCuentas(lista)
+    if (lista.length) setModo('cuentas')
+  }, [])
+
+  const irAlPanel = (url) => { window.location.href = url }
+
+  async function entrarConCuenta(cuenta, pin) {
+    setError('')
+    setCargandoId(cuenta.id)
+    try {
+      const r = await signIn('cuenta-guardada', { id: cuenta.id, llave: cuenta.llave, pin, redirect: false })
+      if (r?.error) {
+        const msg = r.error
+        if (esMensajeDeCuentaMuerta(msg)) {
+          quitarCuentaDelTelefono(cuenta.id)
+          const lista = leerCuentasGuardadas()
+          setCuentas(lista)
+          setModo(lista.length ? 'cuentas' : 'formulario')
+        }
+        setError(msg)
+        return
+      }
+      irAlPanel(cuenta.rol === 'superadmin' ? '/admin/inicio' : '/dashboard')
+    } catch {
+      setError('Sin conexión. Intenta de nuevo.')
+    } finally {
+      setCargandoId(null)
+    }
+  }
+
+  function tocarCuenta(cuenta) {
+    if (cuenta.conPin) { setCuentaPin(cuenta); setError(''); setModo('pin'); return }
+    entrarConCuenta(cuenta)
+  }
+
+  function quitarCuenta(cuenta) {
+    fetch(`/api/cuentas-guardadas/${cuenta.id}`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ llave: cuenta.llave }),
+    }).catch(() => {})
+    quitarCuentaDelTelefono(cuenta.id)
+    const lista = leerCuentasGuardadas()
+    setCuentas(lista)
+    if (!lista.length) setModo('formulario')
+  }
+
+  async function guardarEsteTelefono(pin) {
+    try {
+      const res = await fetch('/api/cuentas-guardadas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pin ? { pin } : {}),
+      })
+      if (res.ok) guardarCuentaEnTelefono(await res.json())
+    } catch { /* guardar es un extra: si falla, igual entra */ }
+  }
+
+  // Crear el PIN: se escribe dos veces. Si no coinciden, se vuelve a empezar.
+  async function alEscribirPinNuevo(pin) {
+    if (!pinNuevo) { setPinNuevo(pin); setError(''); return }
+    if (pin !== pinNuevo) {
+      setPinNuevo('')
+      setError('Los dos PIN no coinciden. Escríbelo otra vez.')
+      return
+    }
+    setLoading(true)
+    await guardarEsteTelefono(pin)
+    irAlPanel(destino)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -200,15 +280,28 @@ export default function LoginPage() {
       // que no pudo entrar. Se va al panel normal, que es el caso de casi
       // todos, y el propio dashboard resuelve el rol.
       let esSuperadmin = false
+      let rolDeSesion = null
       try {
         const sessionRes = await fetch('/api/auth/session')
         const session    = await sessionRes.json()
         esSuperadmin = session?.user?.rol === 'superadmin'
+        rolDeSesion = session?.user?.rol ?? null
       } catch {
         esSuperadmin = false
       }
 
-      window.location.href = esSuperadmin ? '/admin/inicio' : '/dashboard'
+      const url = esSuperadmin ? '/admin/inicio' : '/dashboard'
+      // «Guardar esta cuenta en este teléfono». Al dueño y al superadmin se les
+      // pide antes un PIN; al cobrador no.
+      if (recordar) {
+        if (rolDeSesion === 'owner' || rolDeSesion === 'superadmin') {
+          setDestino(url)
+          setModo('crear-pin')
+          return
+        }
+        await guardarEsteTelefono()
+      }
+      irAlPanel(url)
     } catch {
       setError('Error al iniciar sesión. Intenta de nuevo.')
     } finally {
@@ -244,6 +337,39 @@ export default function LoginPage() {
             Tus clientes, tus rutas y tu caja, donde los dejaste.
           </p>
 
+          {modo === 'cuentas' && (
+            <>
+              {error && <p className="text-[13px] mb-3" style={{ color: 'var(--cf-red-darker)' }}>{error}</p>}
+              <CuentasGuardadas cuentas={cuentas} cargandoId={cargandoId}
+                onEntrar={tocarCuenta} onQuitar={quitarCuenta} onOtra={() => { setError(''); setModo('formulario') }} />
+            </>
+          )}
+
+          {modo === 'pin' && cuentaPin && (
+            <div className="flex flex-col gap-4">
+              <PinDeCuatro titulo={`PIN de ${cuentaPin.nombre}`} error={error} cargando={cargandoId === cuentaPin.id}
+                onCompleto={(pin) => entrarConCuenta(cuentaPin, pin)} />
+              <button type="button" onClick={() => { setError(''); setModo('cuentas') }} className="text-[14px] font-semibold"
+                style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
+                Volver
+              </button>
+            </div>
+          )}
+
+          {modo === 'crear-pin' && (
+            <div className="flex flex-col gap-4">
+              {/* `key` remonta el campo entre el primer PIN y la confirmación: vacío y con el foco. */}
+              <PinDeCuatro key={pinNuevo ? 'confirmar' : 'crear'} error={error} cargando={loading}
+                titulo={pinNuevo ? 'Escríbelo otra vez para confirmarlo' : 'Crea un PIN de 4 números para entrar con un toque'}
+                onCompleto={alEscribirPinNuevo} />
+              <button type="button" onClick={() => irAlPanel(destino)} className="text-[14px] font-semibold"
+                style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
+                Ahora no
+              </button>
+            </div>
+          )}
+
+          {modo === 'formulario' && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {error && (
               <div className="flex items-start gap-2.5 text-[13px] rounded-[12px] px-4 py-3"
@@ -335,7 +461,7 @@ export default function LoginPage() {
                 style={{ width: 18, height: 18, accentColor: 'var(--cf-gold)' }}
               />
               <span className="text-[13px]" style={{ color: 'var(--cf-ink-2)' }}>
-                Mantener la sesión en este teléfono
+                Guardar esta cuenta en este teléfono
               </span>
             </label>
 
@@ -352,6 +478,7 @@ export default function LoginPage() {
               {loading ? 'Entrando…' : 'Entrar'}
             </button>
           </form>
+          )}
 
           <div className="flex items-center gap-3 my-6">
             <span className="flex-1 h-px" style={{ background: 'var(--cf-divider)' }} />
