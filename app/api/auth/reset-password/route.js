@@ -4,6 +4,7 @@ import crypto           from 'crypto'
 import bcrypt           from 'bcryptjs'
 import { prisma }       from '@/lib/prisma'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 
 const resetLimiter = rateLimit('reset-password', 5, 15 * 60 * 1000)
 
@@ -64,6 +65,9 @@ export async function POST(req) {
     where: { id: data.userId },
     data: { password: hash },
   })
+
+  // Una clave nueva no deja entrar a ningún teléfono con la llave de la vieja.
+  await cortarCuentasGuardadas(data.userId)
 
   return NextResponse.json({ ok: true })
 }

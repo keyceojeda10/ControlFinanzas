@@ -8,6 +8,7 @@ import { calcularEstadoCliente } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
+import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -197,6 +198,8 @@ export async function PATCH(request, { params }) {
     select: { id: true, nombre: true, email: true, telefono: true, activo: true,
       puedeCrearPrestamos: true, puedeGestionarPrestamos: true, puedeCrearClientes: true, puedeEditarClientes: true, puedeReportarGastos: true, puedeVerCapital: true, puedeVerCapitalRuta: true, puedeVerSaldoCaja: true, puedeGestionarRutas: true },
   })
+
+  if (data.password) await cortarCuentasGuardadas(id)
 
   return Response.json(actualizado)
 }

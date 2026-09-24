@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
+import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -78,6 +79,8 @@ export async function PATCH(req) {
   }
 
   await prisma.user.update({ where: { id: session.user.id }, data: updates })
+
+  if (updates.password) await cortarCuentasGuardadas(session.user.id)
 
   return NextResponse.json({ ok: true })
 }

@@ -9,6 +9,7 @@ import { PLANES_VALIDOS, PLANES_CONFIG } from '@/lib/planes'
 import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 import { ultimoPago, ultimaSuscripcion } from '@/lib/cobro-intento'
 import { registrarAdminLog }  from '@/lib/admin-log'
+import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 import {
   MESES_PERIODO, ofertaPublica, pagoCuadra, inicioDelPeriodo, resumenPrecio,
   leerPreferencial, describirPreferencial,
@@ -318,6 +319,8 @@ export async function PATCH(req, { params }) {
       where: { id: body.userId },
       data: { password: hash },
     })
+
+    await cortarCuentasGuardadas(body.userId)
 
     await prisma.adminLog.create({
       data: {
