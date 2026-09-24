@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { Badge } from '@/components/ui/Badge'
+import { Checkbox } from '@/components/ui/Checkbox'
+import { formatFechaCalendario } from '@/lib/i18n'
 
 const ESTADO_COLORS = {
   valido: 'green',
@@ -21,11 +23,22 @@ const ESTADO_LABELS = {
 const GRAVEDAD = { error: 3, advertencia: 2, valido: 1, repetido: 0 }
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
-export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver, onCorregir, corrigiendo = false }) {
+/* `inicial`: las elecciones de una vuelta anterior desde «Importar» (paso 4).
+   Volver a «Revisar» REMONTA este componente —vive en el `paso === 3` de la
+   pantalla—, así que sus `useState` arrancarían de nuevo en los valores por
+   defecto de la planilla. Sin esto, destildar «no cobro los domingos» (una
+   casilla de CUENTA ENTERA, no de esta importación) o cambiar la ruta se
+   deshacía en silencio con solo ir y volver. Cuando `inicial` existe, manda
+   sobre los valores que trae la planilla. */
+export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver, onCorregir, corrigiendo = false, planilla = null, inicial = null }) {
   const { formatMoney } = useCountry()
-  const [rutaId, setRutaId] = useState('')
-  const [nuevaRuta, setNuevaRuta] = useState('')
-  const [crearNueva, setCrearNueva] = useState(false)
+  // Si vino de la planilla, «RUTA 1»: la existente con ese nombre, o crearla.
+  const rutaDePlanilla = planilla?.ruta ? rutas.find((r) => r.nombre.trim().toLowerCase() === planilla.ruta.trim().toLowerCase()) : null
+  const [rutaId, setRutaId] = useState(() => (inicial ? (inicial.rutaId ?? '') : (rutaDePlanilla?.id || '')))
+  const [nuevaRuta, setNuevaRuta] = useState(() => (inicial ? (inicial.crearRuta ?? '') : (planilla?.ruta && !rutaDePlanilla ? planilla.ruta : '')))
+  const [crearNueva, setCrearNueva] = useState(() => (inicial ? !!inicial.crearRuta : (!!planilla?.ruta && !rutaDePlanilla)))
+  const mostrarDomingos = resumen.sinDomingosSugerido === true && !resumen.domingosConfigurados
+  const [noCobrarDomingos, setNoCobrarDomingos] = useState(() => (inicial ? !!inicial.noCobrarDomingos : true))
   const [expandido, setExpandido] = useState(null)
   const [soloErrores, setSoloErrores] = useState(false)
 
@@ -94,6 +107,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       filas: validas,
       rutaId: crearNueva ? null : (rutaId || null),
       crearRuta: crearNueva ? nuevaRuta.trim() : null,
+      noCobrarDomingos: mostrarDomingos && noCobrarDomingos,
     })
   }
 
@@ -141,6 +155,23 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           Excedes el limite de tu plan ({resumen.limiteClientes} clientes).
           Tienes {resumen.clientesActuales}, necesitas {resumen.clientesNuevos} nuevos.
           Espacio disponible: {resumen.espacioDisponible}.
+        </div>
+      )}
+
+      {planilla && (
+        <div className="bg-[var(--cf-card)] border border-[var(--cf-border)] rounded-[12px] p-4 space-y-3">
+          <p className="text-sm text-[var(--cf-ink)]">
+            Leímos tu planilla de Crossbox: <strong>{planilla.ruta || 'sin ruta'}</strong>, corte al {formatFechaCalendario(planilla.fechaCorte)}, {planilla.filas} créditos.
+            {' '}La tasa y las cuotas son deducidas: revisa los avisos de cada cliente.
+          </p>
+          {mostrarDomingos && (
+            <Checkbox
+              checked={noCobrarDomingos}
+              onChange={setNoCobrarDomingos}
+              label="Tu planilla cuenta sin domingos: no cobro los domingos"
+              description="Se guarda en tu configuración al importar. Así la mora se cuenta como en tu app anterior."
+            />
+          )}
         </div>
       )}
 
@@ -213,7 +244,9 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                     <p className="text-sm font-medium text-[var(--cf-ink)] break-words min-w-0">
                       {cliente.nombre || '—'}
                     </p>
-                    {cliente.cedula && (
+                    {/* «SIN-<NOMBRE>» es un identificador generado, no una cédula: a
+                        412 px exprimía el nombre a una sílaba por renglón. */}
+                    {cliente.cedula && !cliente.cedula.startsWith('SIN-') && (
                       <span className="text-[10px] text-[var(--cf-ink-3)] shrink-0">{cliente.cedula}</span>
                     )}
                   </div>

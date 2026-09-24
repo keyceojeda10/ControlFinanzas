@@ -47,6 +47,7 @@ export default function CargaMasivaPage() {
   // Es la misma forma que el «Cannot access 'O'» de produccion: una referencia
   // que sube mas arriba que su declaracion. Y no la caza ninguna prueba.
   const handleVolver = () => {
+    if (paso === 3 && planilla) { setPlanilla(null); setPaso(1); return }
     if (paso === 1) {
       router.back()
     } else {
@@ -63,6 +64,7 @@ export default function CargaMasivaPage() {
 
   const [headersCrudos, setHeadersCrudos] = useState([])
   const [filasCrudas, setFilasCrudas] = useState([])
+  const [planilla, setPlanilla] = useState(null)   // { ruta, fechaCorte, filas } cuando vino de un PDF
 
   const [filasValidadas, setFilasValidadas] = useState([])
   const [resumen, setResumen] = useState(null)
@@ -87,9 +89,35 @@ export default function CargaMasivaPage() {
     setPaso(2)
   }
 
+  /* La planilla de Crossbox (PDF) ya viene con sus campos: se salta «Columnas» y
+     va directo a validar. */
+  const handlePlanilla = async (pl) => {
+    setValidando(true)
+    setError('')
+    // Un archivo nuevo no puede heredar la ruta ni el «no cobro los domingos»
+    // de una importación anterior: ver el comentario de `inicial` en PasoRevisar.
+    setDatosImportar(null)
+    try {
+      const data = await validar(pl.filas)
+      if (data.error) { setError(data.error); return }
+      setPlanilla({ ruta: pl.ruta, fechaCorte: pl.fechaCorte, filas: pl.filas.length })
+      setFilasMapeadas(pl.filas)
+      setFilasValidadas(data.filas)
+      setResumen(data.resumen)
+      setRutas(data.rutas)
+      setPaso(3)
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setValidando(false)
+    }
+  }
+
   const handleMapeoConfirmado = async (mapeo, multiplicador = 1) => {
     setValidando(true)
     setError('')
+    // Mismo motivo que en handlePlanilla: datos nuevos, elecciones nuevas.
+    setDatosImportar(null)
     try {
       const filasNormalizadas = aplicarMapeo(filasCrudas, mapeo)
 
@@ -155,6 +183,7 @@ export default function CargaMasivaPage() {
     setPaso(1)
     setHeadersCrudos([])
     setFilasCrudas([])
+    setPlanilla(null)
     setFilasValidadas([])
     setResumen(null)
     setRutas([])
@@ -229,7 +258,7 @@ export default function CargaMasivaPage() {
       )}
 
       {!validando && paso === 1 && (
-        <PasoSubir onDatos={handleDatosCrudos} />
+        <PasoSubir onDatos={handleDatosCrudos} onPlanilla={handlePlanilla} />
       )}
 
       {!validando && paso === 2 && headersCrudos.length > 0 && (
@@ -250,6 +279,12 @@ export default function CargaMasivaPage() {
           onVolver={handleVolver}
           onCorregir={handleCorregir}
           corrigiendo={corrigiendo}
+          planilla={planilla}
+          /* Volver desde «Importar» (paso 4) remonta PasoRevisar: sin esto sus
+             useState arrancan de nuevo y deshacen en silencio lo que el dueño
+             ya había elegido (una casilla de cuenta entera, no solo de esta
+             importación). Ver el comentario de `inicial` en PasoRevisar. */
+          inicial={datosImportar}
         />
       )}
 

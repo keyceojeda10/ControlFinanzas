@@ -20,7 +20,7 @@ export async function POST(request) {
     }
 
     const { organizationId, plan } = session.user
-    const { filas, rutaId, crearRuta } = await request.json()
+    const { filas, rutaId, crearRuta, noCobrarDomingos } = await request.json()
 
     if (!Array.isArray(filas) || filas.length === 0) {
       return Response.json({ error: 'No hay datos para importar' }, { status: 400 })
@@ -29,9 +29,20 @@ export async function POST(request) {
       return Response.json({ error: 'Máximo 500 filas por importación' }, { status: 400 })
     }
 
-    const r = await importarCartera({ organizationId, plan, usuarioId: session.user.id, filas, rutaId, crearRuta })
+    const r = await importarCartera({ organizationId, plan, usuarioId: session.user.id, filas, rutaId, crearRuta, noCobrarDomingos: noCobrarDomingos === true })
     if (r.error) return Response.json({ error: r.error }, { status: r.status })
-    const { clientesCreados, prestamosCreados, rutaAsignada } = r.resultado
+    const { clientesCreados, prestamosCreados, rutaAsignada, domingosGuardados } = r.resultado
+
+    if (domingosGuardados) {
+      logActividad({
+        session,
+        accion: 'editar_configuracion',
+        entidadTipo: 'organizacion',
+        entidadId: organizationId,
+        detalle: 'Días sin cobro: ninguno → domingo (al importar su planilla)',
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      })
+    }
 
     logActividad({
       session,

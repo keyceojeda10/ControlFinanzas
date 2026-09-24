@@ -2,9 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
-import { ACCEPT_TABLA, AVISO_HOJA_DE_GOOGLE } from '@/lib/archivos-tabla'
+import { ACCEPT_CARTERA, AVISO_HOJA_DE_GOOGLE, esPdf } from '@/lib/archivos-tabla'
 
-export default function PasoSubir({ onDatos }) {
+export default function PasoSubir({ onDatos, onPlanilla }) {
   const [modo, setModo] = useState('archivo')
   const [texto, setTexto] = useState('')
   const [error, setError] = useState('')
@@ -16,6 +16,24 @@ export default function PasoSubir({ onDatos }) {
     if (!file) return
     setError('')
     setCargando(true)
+
+    // La «Planilla Recaudador» de Crossbox en PDF: la lee el servidor.
+    if (esPdf(file)) {
+      try {
+        const form = new FormData()
+        form.append('archivo', file)
+        const res = await fetch('/api/carga-masiva/leer-pdf', { method: 'POST', body: form })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) { setError(data.error || 'No pudimos leer el PDF.'); return }
+        onPlanilla(data.planilla)
+      } catch {
+        setError('Error de conexión. Intenta de nuevo.')
+      } finally {
+        setCargando(false)
+        if (fileRef.current) fileRef.current.value = ''
+      }
+      return
+    }
 
     try {
       const xlsxMod = await import('xlsx')
@@ -158,7 +176,7 @@ export default function PasoSubir({ onDatos }) {
           <input
             ref={fileRef}
             type="file"
-            accept={ACCEPT_TABLA}
+            accept={ACCEPT_CARTERA}
             onChange={handleArchivo}
             className="hidden"
           />
@@ -170,7 +188,7 @@ export default function PasoSubir({ onDatos }) {
           ) : (
             <>
               <p className="text-sm text-[var(--cf-ink)] font-medium">Toca para seleccionar archivo</p>
-              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">Excel (.xlsx, .xls) o CSV</p>
+              <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">Excel (.xlsx, .xls), CSV o la planilla PDF de Crossbox</p>
               {/* ⚠ Ver `lib/archivos-tabla.js`: una hoja NATIVA de Google no se
                   puede elegir desde el móvil por mucho que se ample el
                   `accept`. Quien no lo sabe cree que la app está rota. */}

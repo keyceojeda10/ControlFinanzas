@@ -12,7 +12,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState('')
 
-  const { filas, rutaId, crearRuta } = datosImportar
+  const { filas, rutaId, crearRuta, noCobrarDomingos } = datosImportar
 
   const handleImportar = async () => {
     setImportando(true)
@@ -21,7 +21,7 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
       const res = await fetch('/api/carga-masiva/importar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filas, rutaId, crearRuta }),
+        body: JSON.stringify({ filas, rutaId, crearRuta, noCobrarDomingos }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -143,6 +143,10 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
           <p className="text-[10px] text-[var(--cf-ink-3)]">Se creará la ruta</p>
           <p className="text-sm font-semibold text-[var(--cf-ink)]">{crearRuta}</p>
         </div>
+      )}
+
+      {noCobrarDomingos && (
+        <p className="text-sm text-[var(--cf-ink-2)]">No cobras los domingos: se guarda en tu configuración.</p>
       )}
 
       {error && (
