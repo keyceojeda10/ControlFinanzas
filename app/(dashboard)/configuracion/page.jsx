@@ -32,6 +32,7 @@ import { InstallGuideModal } from '@/components/layout/InstallButton'
 import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 import { puedeRetroceder } from '@/lib/armazon'
 import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
+import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -1533,9 +1534,14 @@ function ConfiguracionContent() {
       // Tampoco es un remite: la zona de peligro estaba al final de «Tu negocio»,
       // debajo de todo lo demas, que es el peor sitio para poner lo irreversible.
       case 'seguridad':
-        return esOwner
-          ? <TabOrganizacion bloques={['peligro']} />
-          : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />
+        return (
+          <>
+            <TelefonosGuardados />
+            {esOwner
+              ? <TabOrganizacion bloques={['peligro']} />
+              : <Remite nombre="Seguridad" nota="Tu contraseña se cambia desde «Tus datos»." destino="/configuracion?s=datos" accion="Ir a Tus datos" />}
+          </>
+        )
 
       case 'datos':
         return (

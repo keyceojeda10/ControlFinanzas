@@ -14,6 +14,7 @@ import Link                         from 'next/link'
 import { ConfirmModal }             from '@/components/ui/ConfirmModal'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
+import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
 
 export default function CobradorDetallePage({ params }) {
   return <CobradorDetalleInner params={params} />
@@ -511,6 +512,10 @@ function CobradorDetalleInner({ params }) {
         confirmColor="red"
         loading={asignando}
       />
+
+      <Card>
+        <TelefonosGuardados cobradorId={id} />
+      </Card>
 
       {/* Clientes de la ruta */}
       {clientes.length > 0 && (
