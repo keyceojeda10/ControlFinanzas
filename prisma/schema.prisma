@@ -323,6 +323,7 @@ model User {
   notificaciones    Notificacion[]     @relation("NotificacionesUsuario")
   ubicacionLogs     UbicacionLog[]
   sesionesActivas   SesionActiva[]
+  cuentasGuardadas  CuentaGuardada[]
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
@@ -1491,4 +1492,22 @@ model EnvioWhatsapp {
   @@index([telefono, createdAt])
   @@index([plantilla, createdAt])
   @@index([createdAt])
+}
+
+// Una cuenta guardada en UN teléfono: la llave aleatoria vive en el aparato
+// (localStorage) y aquí solo su huella SHA-256. El PIN (dueño y superadmin)
+// va con bcrypt. Revocar = borrar la fila. Ver lib/cuentas-guardadas.js.
+model CuentaGuardada {
+  id          String   @id @default(cuid())
+  userId      String
+  tokenHash   String   @unique
+  pinHash     String?
+  intentosPin Int      @default(0)
+  dispositivo String?
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
