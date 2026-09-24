@@ -17,6 +17,18 @@ const PASOS = [
   { num: 4, label: 'Importar' },
 ]
 
+/** Valida las filas en el servidor. Devuelve `{ filas, resumen, rutas }` o `{ error }`. */
+async function validar(filas) {
+  const res = await fetch('/api/carga-masiva/validar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filas }),
+  })
+  const data = await res.json()
+  if (!res.ok) return { error: data.error || 'Error al validar' }
+  return data
+}
+
 export default function CargaMasivaPage() {
   const router = useRouter()
   const { esOwner, loading: authLoading } = useAuth()
@@ -57,6 +69,12 @@ export default function CargaMasivaPage() {
   const [rutas, setRutas] = useState([])
 
   const [datosImportar, setDatosImportar] = useState(null)
+  /* Las filas YA MAPEADAS que se mandaron a validar. Se guardan para poder
+     corregir una desde la revisión («Usar 40 cuotas de $12.000») y volver a
+     validar, sin que el prestamista tenga que editar el Excel y subirlo otra vez
+     —que es justo cuando se arriesgaba a importar dos veces lo mismo—. */
+  const [filasMapeadas, setFilasMapeadas] = useState([])
+  const [corrigiendo, setCorrigiendo] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/dashboard')
@@ -90,17 +108,13 @@ export default function CargaMasivaPage() {
         return
       }
 
-      const res = await fetch('/api/carga-masiva/validar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filas: filasNormalizadas }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || 'Error al validar')
+      const data = await validar(filasNormalizadas)
+      if (data.error) {
+        setError(data.error)
         setValidando(false)
         return
       }
+      setFilasMapeadas(filasNormalizadas)
       setFilasValidadas(data.filas)
       setResumen(data.resumen)
       setRutas(data.rutas)
@@ -109,6 +123,26 @@ export default function CargaMasivaPage() {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
       setValidando(false)
+    }
+  }
+
+  /* Corregir UNA fila desde la revisión y volver a validar TODO con el mismo
+     servidor: así el resumen, los totales y el abono previo salen de la misma
+     cuenta que si el archivo hubiera venido bien. */
+  const handleCorregir = async (indice, cambios) => {
+    setCorrigiendo(true)
+    setError('')
+    try {
+      const nuevas = filasMapeadas.map((f, i) => (i === indice ? { ...f, ...cambios } : f))
+      const data = await validar(nuevas)
+      if (data.error) { setError(data.error); return }
+      setFilasMapeadas(nuevas)
+      setFilasValidadas(data.filas)
+      setResumen(data.resumen)
+    } catch {
+      setError('Error de conexión. Intenta de nuevo.')
+    } finally {
+      setCorrigiendo(false)
     }
   }
 
@@ -125,6 +159,7 @@ export default function CargaMasivaPage() {
     setResumen(null)
     setRutas([])
     setDatosImportar(null)
+    setFilasMapeadas([])
     setError('')
   }
 
@@ -213,6 +248,8 @@ export default function CargaMasivaPage() {
           rutas={rutas}
           onConfirmar={handleConfirmar}
           onVolver={handleVolver}
+          onCorregir={handleCorregir}
+          corrigiendo={corrigiendo}
         />
       )}
 

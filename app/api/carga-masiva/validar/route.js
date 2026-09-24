@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { validarFila, agruparPorCliente } from '@/lib/carga-masiva'
+import { validarFila, agruparPorCliente, huellaPrestamo } from '@/lib/carga-masiva'
 import { LIMITES_PLAN }     from '@/lib/planes'
 
 export async function POST(request) {
@@ -43,6 +43,23 @@ export async function POST(request) {
     })
     const cedulasExistentes = new Map(clientesExistentes.map(c => [c.cedula, c]))
 
+    /* Los préstamos que ESOS clientes ya tienen, para reconocer el mismo archivo
+       subido dos veces: la fila con la misma huella sale «ya está» y no se crea.
+       Ver `huellaPrestamo`. */
+    const prestamosExistentes = clientesExistentes.length > 0
+      ? await prisma.prestamo.findMany({
+        where: { organizationId, clienteId: { in: clientesExistentes.map(c => c.id) }, estado: { not: 'cancelado' } },
+        select: { clienteId: true, montoPrestado: true, fechaInicio: true, frecuencia: true },
+      })
+      : []
+    const cedulaDe = new Map(clientesExistentes.map(c => [c.id, c.cedula]))
+    const huellasExistentes = new Map()
+    for (const p of prestamosExistentes) {
+      const ced = cedulaDe.get(p.clienteId)
+      if (!huellasExistentes.has(ced)) huellasExistentes.set(ced, new Set())
+      huellasExistentes.get(ced).add(huellaPrestamo(p))
+    }
+
     // Obtener rutas de la org
     const rutas = await prisma.ruta.findMany({
       where: { organizationId, activo: true },
@@ -51,11 +68,13 @@ export async function POST(request) {
 
     // Validar cada fila (una cédula puede repetirse — múltiples préstamos)
     const filasValidadas = filas.map((fila, i) =>
-      validarFila(fila, i, cedulasExistentes)
+      validarFila(fila, i, cedulasExistentes, huellasExistentes)
     )
 
-    const validos = filasValidadas.filter(f => f.estado !== 'error')
+    // Lo que se va a CREAR: ni las filas con error ni las que ya están.
+    const validos = filasValidadas.filter(f => f.estado !== 'error' && f.estado !== 'repetido')
     const conError = filasValidadas.filter(f => f.estado === 'error')
+    const repetidas = filasValidadas.filter(f => f.estado === 'repetido')
     const conAdvertencia = filasValidadas.filter(f => f.estado === 'advertencia')
     const conPrestamo = validos.filter(f => f.datos.tienePrestamo)
 
@@ -77,6 +96,7 @@ export async function POST(request) {
         totalFilas: filas.length,
         filasValidas: validos.length,
         filasConError: conError.length,
+        filasRepetidas: repetidas.length,
         filasConAdvertencia: conAdvertencia.length,
         clientesUnicos: grupos.size,
         clientesNuevos,

@@ -82,6 +82,15 @@ export default function PasoConfirmar({ datosImportar, onVolver, onReiniciar }) 
           </div>
         </div>
 
+        {/* Lo que NO se creó porque ya estaba: se dice, para que nadie crea
+            que faltan préstamos ni vuelva a subir el archivo por eso. */}
+        {resultado.prestamosRepetidos > 0 && (
+          <p className="text-xs text-[var(--cf-ink-3)] text-center">
+            {resultado.prestamosRepetidos} {resultado.prestamosRepetidos === 1 ? 'préstamo ya estaba' : 'préstamos ya estaban'} en
+            el sistema y no se {resultado.prestamosRepetidos === 1 ? 'volvió' : 'volvieron'} a crear.
+          </p>
+        )}
+
         {resultado.fallidos > 0 && (
           <div className="bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.2)] rounded-[12px] p-4">
             <p className="text-sm font-semibold text-[var(--cf-red-dark)] mb-2">

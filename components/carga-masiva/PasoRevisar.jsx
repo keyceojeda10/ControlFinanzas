@@ -8,14 +8,20 @@ const ESTADO_COLORS = {
   valido: 'green',
   advertencia: 'yellow',
   error: 'red',
+  // Ya está en el sistema: no es un problema, es algo que NO se va a crear.
+  repetido: 'gray',
 }
 const ESTADO_LABELS = {
   valido: 'OK',
   advertencia: 'Aviso',
   error: 'Error',
+  repetido: 'Ya está',
 }
+// Del peor al mejor, para el estado que resume a un cliente con varias filas.
+const GRAVEDAD = { error: 3, advertencia: 2, valido: 1, repetido: 0 }
+const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
-export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver }) {
+export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolver, onCorregir, corrigiendo = false }) {
   const { formatMoney } = useCountry()
   const [rutaId, setRutaId] = useState('')
   const [nuevaRuta, setNuevaRuta] = useState('')
@@ -36,7 +42,8 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           prestamos: [],
           errores: [],
           advertencias: [],
-          peorEstado: 'valido',
+          correcciones: [],
+          peorEstado: null,
         })
       }
       const grupo = mapa.get(key)
@@ -48,7 +55,10 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
         grupo.prestamos.push({
           monto: fila.datos.montoPrestado,
           tasa: fila.datos.tasaInteres,
-          cuotas: fila.datos.diasPlazo,
+          /* CUOTAS, no días. Aquí iba `diasPlazo` bajo el título «Cuotas», y un
+             préstamo de 4 cuotas semanales salía con «28». */
+          cuotas: fila.calculado?.numPeriodos
+            ?? Math.ceil((fila.datos.diasPlazo || 0) / (DIAS_POR_PERIODO[fila.datos.frecuencia] || 1)),
           frecuencia: fila.datos.frecuencia,
           fecha: fila.datos.fechaInicio,
           abonado: fila.datos.abonadoHasta,
@@ -58,8 +68,8 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
       }
       grupo.errores.push(...fila.errores)
       grupo.advertencias.push(...fila.advertencias)
-      if (fila.estado === 'error') grupo.peorEstado = 'error'
-      else if (fila.estado === 'advertencia' && grupo.peorEstado !== 'error') grupo.peorEstado = 'advertencia'
+      if (fila.correccion) grupo.correcciones.push({ indice: fila.indice, ...fila.correccion })
+      if (grupo.peorEstado === null || GRAVEDAD[fila.estado] > GRAVEDAD[grupo.peorEstado]) grupo.peorEstado = fila.estado
     }
     return [...mapa.entries()].map(([key, g]) => ({ key, ...g }))
   }, [filas])
@@ -71,8 +81,14 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
   const conPrestamos = clientesAgrupados.filter(c => c.prestamos.length > 0).length
   const sinPrestamos = clientesAgrupados.filter(c => c.prestamos.length === 0).length
 
+  /* Lo que de verdad se va a CREAR. Ni las filas con error ni las que ya están:
+     el botón decía «Importar 83 clientes» con los 83 ya importados, y los habría
+     creado otra vez. */
+  const aCrear = filas.filter(f => f.estado !== 'error' && f.estado !== 'repetido')
+  const clientesACrear = new Set(aCrear.map(f => f.datos.cedula || f.datos.nombre || `fila-${f.indice}`)).size
+
   const handleConfirmar = () => {
-    const validas = filas.filter(f => f.estado !== 'error')
+    const validas = aCrear
     if (validas.length === 0) return
     onConfirmar({
       filas: validas,
@@ -88,12 +104,12 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
         <div className="flex items-center justify-center gap-6 mb-4">
           <div className="text-center">
             <p className="text-[32px] font-bold text-[var(--cf-ink)] leading-none">{resumen.clientesUnicos}</p>
-            <p className="text-xs text-[var(--cf-ink-3)] mt-1">clientes</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-1">{resumen.clientesUnicos === 1 ? 'cliente' : 'clientes'}</p>
           </div>
           <div className="w-px h-10 bg-[var(--cf-border)]" />
           <div className="text-center">
             <p className="text-[32px] font-bold text-[var(--cf-gold)] leading-none">{resumen.totalPrestamos}</p>
-            <p className="text-xs text-[var(--cf-ink-3)] mt-1">prestamos</p>
+            <p className="text-xs text-[var(--cf-ink-3)] mt-1">{resumen.totalPrestamos === 1 ? 'préstamo' : 'préstamos'}</p>
           </div>
           <div className="w-px h-10 bg-[var(--cf-border)]" />
           <div className="text-center">
@@ -110,6 +126,9 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
           )}
           {resumen.clientesExistentes > 0 && (
             <span>{resumen.clientesExistentes} ya existen</span>
+          )}
+          {resumen.filasRepetidas > 0 && (
+            <span>{resumen.filasRepetidas} ya importados</span>
           )}
           {resumen.filasConError > 0 && (
             <span className="text-[var(--cf-red-dark)]">{resumen.filasConError} con errores</span>
@@ -190,7 +209,8 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-[var(--cf-ink)] truncate">
+                    {/* El nombre NO se recorta: es lo que identifica al cliente. */}
+                    <p className="text-sm font-medium text-[var(--cf-ink)] break-words min-w-0">
                       {cliente.nombre || '—'}
                     </p>
                     {cliente.cedula && (
@@ -209,7 +229,7 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                     )}
                   </div>
                 </div>
-                <Badge variant={ESTADO_COLORS[cliente.peorEstado]}>{ESTADO_LABELS[cliente.peorEstado]}</Badge>
+                <Badge variant={ESTADO_COLORS[cliente.peorEstado ?? 'valido']}>{ESTADO_LABELS[cliente.peorEstado ?? 'valido']}</Badge>
                 <svg
                   className={['w-4 h-4 text-[var(--cf-ink-3)] transition-transform shrink-0', isExpanded ? 'rotate-180' : ''].join(' ')}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -240,6 +260,28 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
                       ))}
                     </div>
                   )}
+                  {/* ── EL ARREGLO DE UN TOQUE ─────────────────────────────
+                      Una fila que «cobraría menos de lo prestado» casi siempre
+                      trae la respuesta en su propia tasa: con el 20 %, $400.000
+                      son $480.000 = 40 cuotas de $12.000. Se ofrece con las
+                      cifras a la vista para que el prestamista las compare con
+                      su cartulina; no se aplica solo. */}
+                  {onCorregir && cliente.correcciones.map((c) => (
+                    <button
+                      key={c.indice}
+                      type="button"
+                      disabled={corrigiendo}
+                      onClick={() => onCorregir(c.indice, { numeroCuotas: c.numeroCuotas, diasPlazo: '' })}
+                      className="w-full text-left rounded-[10px] px-3 py-2.5 border border-[var(--cf-gold)] bg-[var(--cf-gold-tint)] disabled:opacity-50"
+                    >
+                      <span className="block text-[12px] font-semibold text-[var(--cf-ink)]">
+                        {corrigiendo ? 'Revisando…' : `Usar ${c.numeroCuotas} cuotas de ${formatMoney(c.valorCuota)}`}
+                      </span>
+                      <span className="block text-[11px] text-[var(--cf-ink-2)] mt-0.5">
+                        Total {formatMoney(c.total)}: es el {c.tasa} % que trae el archivo. Si tu cartulina dice otra cosa, corrige la fila en el Excel.
+                      </span>
+                    </button>
+                  ))}
                   {cliente.advertencias.length > 0 && (
                     <div className="space-y-1">
                       {cliente.advertencias.map((a, i) => (
@@ -299,6 +341,16 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
         })}
       </div>
 
+      {/* Lo que se queda fuera, dicho antes de tocar el botón. */}
+      {(resumen.filasConError > 0 || resumen.filasRepetidas > 0) && (
+        <p className="text-[11px] text-[var(--cf-ink-3)] text-center">
+          {[
+            resumen.filasConError > 0 && `${resumen.filasConError} con error no se importan hasta corregirlas`,
+            resumen.filasRepetidas > 0 && `${resumen.filasRepetidas} ya estaban y no se vuelven a crear`,
+          ].filter(Boolean).join(' · ')}
+        </p>
+      )}
+
       {/* Acciones */}
       <div className="flex gap-3 pt-2">
         <button
@@ -309,10 +361,12 @@ export default function PasoRevisar({ filas, resumen, rutas, onConfirmar, onVolv
         </button>
         <button
           onClick={handleConfirmar}
-          disabled={resumen.filasValidas === 0 || resumen.excedePlan}
+          disabled={aCrear.length === 0 || resumen.excedePlan || corrigiendo}
           className="flex-1 h-11 rounded-[12px] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] text-[var(--cf-ink)] text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Importar {resumen.clientesUnicos} clientes
+          {aCrear.length === 0
+            ? 'Nada nuevo que importar'
+            : `Importar ${clientesACrear} ${clientesACrear === 1 ? 'cliente' : 'clientes'}`}
         </button>
       </div>
     </div>

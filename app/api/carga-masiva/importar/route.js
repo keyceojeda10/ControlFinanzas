@@ -5,7 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { esId }             from '@/lib/ids'
 import { calcularEstadoCliente } from '@/lib/calculos'
-import { agruparPorCliente, calcularPrestamoImportado } from '@/lib/carga-masiva'
+import { agruparPorCliente, calcularPrestamoImportado, huellaPrestamo } from '@/lib/carga-masiva'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
 /* La cuenta por la que se da por movida la plata de una importación. El mismo
@@ -71,6 +71,26 @@ export async function POST(request) {
     })
     const cedulaToId = new Map(cedulasExistentesDB.map(c => [c.cedula, c.id]))
 
+    /* ⚠ LA MISMA GUARDA QUE LA REVISIÓN, AQUÍ TAMBIÉN: el servidor no se fía de lo
+       que le manden. Los préstamos que cada cliente YA tenía ANTES de esta
+       importación —la foto se toma una vez, al empezar—: un préstamo con la misma
+       huella no se vuelve a crear. Con la foto previa, dos préstamos iguales que
+       vengan en el MISMO archivo se crean los dos, como antes. Ver `huellaPrestamo`. */
+    const idsExistentes = [...cedulaToId.values()]
+    const huellasPrevias = new Map()
+    if (idsExistentes.length > 0) {
+      const previos = await prisma.prestamo.findMany({
+        where: { organizationId, clienteId: { in: idsExistentes }, estado: { not: 'cancelado' } },
+        select: { clienteId: true, montoPrestado: true, fechaInicio: true, frecuencia: true },
+      })
+      for (const p of previos) {
+        if (!huellasPrevias.has(p.clienteId)) huellasPrevias.set(p.clienteId, new Set())
+        huellasPrevias.get(p.clienteId).add(huellaPrestamo(p))
+      }
+    }
+    const yaLoTiene = (clienteId, p) => !!clienteId && !!huellasPrevias.get(clienteId)?.has(huellaPrestamo(p))
+    let prestamosRepetidos = 0
+
     const clientesNuevos = [...grupos.keys()].filter(c => !cedulaToId.has(c)).length
     /* El cupo extra por cuenta cuenta también aquí: si no, quien lo tiene puede
        crear clientes de uno en uno pero la importación se lo niega, y ese es el
@@ -120,6 +140,13 @@ export async function POST(request) {
     const errores = []
 
     for (const [cedula, grupo] of grupos) {
+      /* Un cliente que ya existe y cuyos préstamos YA estaban todos: no se toca
+         nada, ni sus datos. Es el mismo archivo subido otra vez. */
+      const idPrevio = cedulaToId.get(cedula)
+      if (idPrevio && grupo.prestamos.length > 0 && grupo.prestamos.every((p) => yaLoTiene(idPrevio, p))) {
+        prestamosRepetidos += grupo.prestamos.length
+        continue
+      }
       try {
         await prisma.$transaction(async (tx) => {
           let clienteId = cedulaToId.get(cedula)
@@ -156,6 +183,7 @@ export async function POST(request) {
 
           // Crear cada préstamo del cliente
           for (const p of grupo.prestamos) {
+            if (yaLoTiene(cedulaToId.get(cedula), p)) { prestamosRepetidos++; continue }
             if (!p.montoPrestado || p.montoPrestado <= 0 || !p.diasPlazo || p.diasPlazo <= 0) {
               errores.push(`${grupo.cliente.nombre}: monto o plazo inválido`)
               continue
@@ -304,6 +332,8 @@ export async function POST(request) {
       resultado: {
         clientesCreados,
         prestamosCreados,
+        // Los que ya estaban (mismo cliente, monto, fecha y frecuencia) y no se crearon.
+        prestamosRepetidos,
         pagosRegistrados,
         montoDesembolsado,
         errores,
