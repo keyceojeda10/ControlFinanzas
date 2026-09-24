@@ -30,7 +30,7 @@ export default function PinDeCuatro({ titulo, onCompleto, error, cargando = fals
         }}
         style={{
           height: 56, borderRadius: 'var(--cf-r-control)', border: '1px solid var(--cf-border-strong)',
-          background: 'var(--cf-card)', color: 'var(--cf-ink)', fontSize: 27, letterSpacing: '.6em',
+          background: 'var(--cf-card)', color: 'var(--cf-ink)', fontSize: 26, letterSpacing: '.6em',
           textAlign: 'center', fontFamily: 'var(--font-space-grotesk)',
         }}
       />
