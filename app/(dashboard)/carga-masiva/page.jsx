@@ -80,6 +80,7 @@ export default function CargaMasivaPage() {
           if (fila.montoPrestado) fila.montoPrestado = parsearNumero(fila.montoPrestado) * multiplicador
           if (fila.saldoActual) fila.saldoActual = parsearNumero(fila.saldoActual) * multiplicador
           if (fila.abonadoHasta) fila.abonadoHasta = parsearNumero(fila.abonadoHasta) * multiplicador
+          if (fila.valorCuota) fila.valorCuota = parsearNumero(fila.valorCuota) * multiplicador
         }
       }
 

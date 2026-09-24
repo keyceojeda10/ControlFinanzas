@@ -4,8 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { esId }             from '@/lib/ids'
-import { calcularPrestamo, calcularEstadoCliente } from '@/lib/calculos'
-import { agruparPorCliente } from '@/lib/carga-masiva'
+import { calcularEstadoCliente } from '@/lib/calculos'
+import { agruparPorCliente, calcularPrestamoImportado } from '@/lib/carga-masiva'
 import { registrarMovimientoCapital } from '@/lib/capital'
 
 /* La cuenta por la que se da por movida la plata de una importación. El mismo
@@ -160,12 +160,16 @@ export async function POST(request) {
               errores.push(`${grupo.cliente.nombre}: monto o plazo inválido`)
               continue
             }
-            const { totalAPagar, cuotaDiaria, fechaFin, numPeriodos, diasPeriodo } = calcularPrestamo({
+            // El MISMO calculo que enseño la validacion (si el archivo trae el
+            // valor de la cuota, manda la cuota). Antes se recalculaba aqui en
+            // 'fijo' por su cuenta.
+            const { totalAPagar, cuotaDiaria, fechaFin, numPeriodos, diasPeriodo, modoInteres } = calcularPrestamoImportado({
               montoPrestado: p.montoPrestado,
               tasaInteres: p.tasaInteres ?? 0,
               diasPlazo: p.diasPlazo,
               fechaInicio: p.fechaInicio,
               frecuencia: p.frecuencia || 'diario',
+              valorCuota: p.valorCuota,
             })
 
             const prestamo = await tx.prestamo.create({
@@ -177,7 +181,7 @@ export async function POST(request) {
                 totalAPagar,
                 cuotaDiaria,
                 frecuencia: p.frecuencia || 'diario',
-                modoInteres: 'fijo',
+                modoInteres,   // 'manual' si manda la cuota del archivo; si no, 'fijo'
                 // Plazo REAL del calculo (ver renovar/route.js): numPeriodos
                 // redondea hacia arriba, asi que 180 dias semanales son 26 cobros
                 // = 182 dias. Guardar 180 dejaba el plazo mas corto que el dinero.
