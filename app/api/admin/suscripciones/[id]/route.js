@@ -77,6 +77,9 @@ export async function PATCH(req, { params }) {
           fechaInicio:      ahora,
           fechaVencimiento: nuevaFecha,
           montoCOP:         sub.montoCOP,
+          /* Lo mismo que el pago que se copia: si no, «por revisar» toma sus
+             adicionales por plan (lib/precio-plan.js#precioPorRevisar). */
+          montoAdicionales: sub.montoAdicionales ?? 0,
         },
       }),
       prisma.organization.update({

@@ -265,8 +265,10 @@ export default function PrecioPreferencial({ org, accionando, ejecutarAccion }) 
             </p>
             <div className="flex gap-2 flex-wrap">
               {cobro && (
-                <Button size="sm" variant="secondary" onClick={() => abrir({ plan: resumen.ultimoPago.plan, precio: cobro.monto })}>
-                  Dejar {formatMoney(cobro.monto, country)}/mes como preferencial
+                /* ⚠ El preferencial es del PLAN: con `monto` (plan + adicionales)
+                   los adicionales se cobraban dos veces. */
+                <Button size="sm" variant="secondary" onClick={() => abrir({ plan: resumen.ultimoPago.plan, precio: cobro.montoPlan ?? cobro.monto })}>
+                  Dejar {formatMoney(cobro.montoPlan ?? cobro.monto, country)}/mes como preferencial
                 </Button>
               )}
               <Button size="sm" variant="secondary" loading={accionando === 'quitarPrecioPreferencial'} onClick={quitar}>

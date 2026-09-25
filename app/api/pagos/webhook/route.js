@@ -183,6 +183,9 @@ export async function POST(req) {
             ultimoCobroAt:    ahora,
             proximoCobroAt:   nuevaFecha,
             montoCOP:         invoice.transaction_amount ?? sub.montoCOP,
+            /* La preaprobación de MercadoPago cobra el plan solo: nada de
+               adicionales (si no, quedaba el de un pago anterior). */
+            montoAdicionales: 0,
             mercadopagoId:    String(data.id),
           },
         })

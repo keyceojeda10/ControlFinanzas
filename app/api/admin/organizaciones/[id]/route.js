@@ -12,7 +12,7 @@ import { registrarAdminLog }  from '@/lib/admin-log'
 import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
 import {
   MESES_PERIODO, ofertaPublica, pagoCuadra, inicioDelPeriodo, resumenPrecio,
-  leerPreferencial, describirPreferencial,
+  leerPreferencial, describirPreferencial, adicionalesDelMonto,
 } from '@/lib/precio-plan'
 
 /* Los cuatro campos del preferencial, vacíos. */
@@ -428,6 +428,7 @@ export async function PATCH(req, { params }) {
       where: { id },
       data: {
         plan: org.planOriginal,
+        ...adicionalesAlCambiarA(org.planOriginal),
         planOriginal: null,
         planDemoHasta: null,
       },
@@ -535,6 +536,8 @@ export async function PATCH(req, { params }) {
             fechaVencimiento,
             mercadopagoId:    'pago_directo',
             montoCOP,
+            /* Cuánto fue de adicionales: «por revisar» mira solo el resto. */
+            montoAdicionales: adicionalesDelMonto(org, planNuevo, periodoValido, montoCOP),
           },
         })
       } else {
@@ -547,6 +550,8 @@ export async function PATCH(req, { params }) {
             fechaVencimiento,
             mercadopagoId:    'pago_directo',
             montoCOP,
+            /* Cuánto fue de adicionales: «por revisar» mira solo el resto. */
+            montoAdicionales: adicionalesDelMonto(org, planNuevo, periodoValido, montoCOP),
           },
         })
       }
