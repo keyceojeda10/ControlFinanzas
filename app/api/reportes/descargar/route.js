@@ -29,7 +29,7 @@ import { buscarInforme } from '@/lib/reportes/catalogo'
 import { exigeNivelReportes } from '@/lib/plan-servidor'
 import { vistaDe } from '@/lib/reportes/vistas'
 import { soloDePantalla } from '@/lib/reportes/columnas-crudas'
-import { abrirDocumento, respuestaPdf } from '@/lib/papel/documento'
+import { abrirDocumento, respuestaPdf, disposicionAdjunto } from '@/lib/papel/documento'
 import { formatMoney, formatFechaCorta } from '@/lib/i18n'
 import * as XLSX from 'xlsx'
 
@@ -240,7 +240,9 @@ function aExcel({ informe, vista, negocio, rotuloPeriodo }) {
   return new Response(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${informe.id}-${rotuloPeriodo || 'informe'}.xlsx"`,
+      /* El periodo viene de la URL: cualquier carácter fuera de Latin-1 tumbaba
+         la descarga. Ver `disposicionAdjunto`. */
+      'Content-Disposition': disposicionAdjunto(`${informe.id}-${rotuloPeriodo || 'informe'}.xlsx`),
       'Content-Length': String(buffer.length),
       'Cache-Control': 'no-store',
     },

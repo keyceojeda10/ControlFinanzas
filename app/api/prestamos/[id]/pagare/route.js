@@ -244,6 +244,8 @@ export async function GET(req, { params }) {
   rayaFirma(xDer, 'Firma del acreedor', org?.nombre || '', '')
 
   const buffer = await hoja.cerrar()
-  const nombreArchivo = `pagare-${(cliente.nombre || 'cliente').replace(/\s+/g, '-').slice(0, 30)}.pdf`
+  /* Por letras, no por unidades de UTF-16: `slice(0, 30)` partía un emoji por la
+     mitad. El resto (tildes, emojis, comillas) lo resuelve `respuestaPdf`. */
+  const nombreArchivo = `pagare-${Array.from((cliente.nombre || 'cliente').trim().replace(/\s+/g, '-')).slice(0, 30).join('')}.pdf`
   return respuestaPdf(buffer, nombreArchivo)
 }
