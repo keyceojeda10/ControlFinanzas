@@ -5,7 +5,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { preferenceApi, PLANES, buildBackUrls, webhookUrl } from '@/lib/mercadopago'
 import { getCurrency, hasOnlinePayment } from '@/lib/i18n'
-import { precioPeriodo, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
+import { precioCheckout, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
 import { ultimaSuscripcion } from '@/lib/cobro-intento'
 
 export async function POST(req) {
@@ -37,7 +37,9 @@ export async function POST(req) {
   const ultima           = await ultimaSuscripcion(orgId)
   const esAnual          = periodo === 'anual'
   const esTrimestral     = periodo === 'trimestral'
-  const precioFinal      = precioPeriodo(org, plan, periodo, inicioDelPeriodo(ultima)).total
+  /* Con los adicionales que el panel le haya cargado: en los países de
+     MercadoPago se piden por WhatsApp, pero se pagan con el plan igual. */
+  const precioFinal      = precioCheckout(org, plan, periodo, inicioDelPeriodo(ultima)).total
 
   const tituloItem = esAnual
     ? `Control Finanzas - Plan ${planInfo.nombre} (12 meses — 2 gratis)`

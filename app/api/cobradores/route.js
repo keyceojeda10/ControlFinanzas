@@ -6,7 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import bcrypt               from 'bcryptjs'
 import { logActividad } from '@/lib/activity-log'
 
-import { LIMITES_USUARIOS, PLAN_NAMES, PLANES_CONFIG } from '@/lib/planes'
+import { PLAN_NAMES, PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { tienePeriodoEsperadoHoy } from '@/lib/calculos'
@@ -177,7 +177,7 @@ export async function POST(request) {
   // se cambio durante onboarding y la sesion aun no se refresco).
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { plan: true, cobradoresExtra: true },
+    select: selectCupos,
   })
   const plan = org?.plan ?? session.user.plan
 
@@ -190,18 +190,16 @@ export async function POST(request) {
     )
   }
 
-  // Verificar límite de usuarios (base del plan + cobradores extra comprados)
-  const limiteBase = LIMITES_USUARIOS[plan] ?? 1
-  const limite = limiteBase + (org?.cobradoresExtra ?? 0)
+  // Verificar límite de usuarios: plan + regalados + adicionales (`cuposDe`)
+  const limite = cuposDe(org, plan).usuarios
   const totalUsuarios = await prisma.user.count({ where: { organizationId } })
   if (totalUsuarios >= limite) {
-    const precioExtra = PLANES_CONFIG[plan]?.cobradorExtra
-    const opciones = []
-    if (precioExtra > 0) opciones.push(`comprar un cobrador adicional por $${precioExtra.toLocaleString('es-CO')}/mes`)
-    opciones.push('actualizar tu plan para tener más usuarios')
-    const msgOpciones = ` Puedes ${opciones.join(' o ')}.`
+    const puedeAgregar = admiteAdicionales(plan)
+    const msgOpciones = puedeAgregar
+      ? ' Agrega un cobrador adicional en Mi plan, o sube de plan.'
+      : ' Sube de plan para tener más usuarios.'
     return Response.json(
-      { error: `Has alcanzado el límite de ${limite} usuarios.${msgOpciones}`, limitReached: true, plan },
+      { error: `Has alcanzado el límite de ${limite} usuarios.${msgOpciones}`, limitReached: true, puedeAgregar, plan },
       { status: 403 }
     )
   }

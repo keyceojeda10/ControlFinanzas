@@ -3,7 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { LIMITES_USUARIOS }  from '@/lib/planes'
+import { cuposDe, selectCupos } from '@/lib/planes'
 import { selectResumenCobro, resumenCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 import { selectPrecio, montoDelCobro, estadoPreferencial } from '@/lib/precio-plan'
 import { ultimoPago } from '@/lib/cobro-intento'
@@ -26,7 +26,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: orgId },
-      select: { cobradoresExtra: true, plan: true, planOriginal: true, planDemoHasta: true, ...selectResumenCobro, ...selectPrecio },
+      select: { ...selectCupos, planOriginal: true, planDemoHasta: true, ...selectResumenCobro, ...selectPrecio },
     }),
     prisma.suscripcion.findFirst({
       where: {
@@ -52,10 +52,13 @@ export async function GET() {
     ? { plan: org.precioPreferencialPlan, monto: org.precioPreferencial, hasta: org.precioPreferencialHasta }
     : null
   const proximoCobro = precio
-    ? { plan: planDelCobro, monto: precio.monto, lista: precio.lista, preferencial: precio.preferencial, hasta: precio.hasta }
+    ? { plan: planDelCobro, monto: precio.monto, montoPlan: precio.montoPlan, adicionales: precio.adicionales, lista: precio.lista, preferencial: precio.preferencial, hasta: precio.hasta }
     : null
   const inicioPeriodo = precio?.inicio ?? null
   const cobradoresExtra = org?.cobradoresExtra ?? 0
+  /* Los que paga con el plan: la pantalla del plan los suma al precio de cada
+     pago (`precioCheckout`), igual que el servidor. */
+  const adicionales = { cobradores: org?.cobradoresAdicionales ?? 0, rutas: org?.rutasAdicionales ?? 0 }
   const enTrial = !!(org?.planOriginal && org?.planDemoHasta && new Date(org.planDemoHasta) > new Date())
   const diasTrial = enTrial ? Math.ceil((new Date(org.planDemoHasta) - new Date()) / (1000 * 60 * 60 * 24)) : 0
   /* El Nequi o la tarjeta guardados en Wompi. Sin esto los avisos de «tu plan
@@ -88,7 +91,8 @@ export async function GET() {
       canceladaAt:      null,
       tieneRecurrenteActiva: false,
       cobradoresExtra,
-      limiteUsuarios: (LIMITES_USUARIOS[enTrial ? org.plan : plan] ?? 1) + cobradoresExtra,
+      adicionales,
+      limiteUsuarios: cuposDe(org, enTrial ? org.plan : plan).usuarios,
       enTrial,
       diasTrial,
       planAlTerminar: enTrial ? org.planOriginal : null,
@@ -122,7 +126,8 @@ export async function GET() {
     canceladaAt:      subPrincipal.canceladaAt,
     tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
     cobradoresExtra,
-    limiteUsuarios: (LIMITES_USUARIOS[enTrial ? org.plan : subPrincipal.plan] ?? 1) + cobradoresExtra,
+    adicionales,
+    limiteUsuarios: cuposDe(org, enTrial ? org.plan : subPrincipal.plan).usuarios,
     enTrial,
     diasTrial,
     planAlTerminar: enTrial ? org.planOriginal : null,

@@ -87,6 +87,12 @@ model Organization {
   // que los dos de arriba. Sirve cuando a alguien se le prometió más de lo que
   // su plan da y no se le quiere forzar a subir de plan.
   clientesExtra     Int            @default(0)
+  // ⚠ LOS DE ARRIBA LOS REGALA EL PANEL; ESTOS LOS PAGA EL NEGOCIO. Se compran
+  // en Configuración → Plan y van en cada cobro del plan: el automático, el
+  // checkout y el prorrateo al agregarlos a mitad de mes (lib/precio-plan.js).
+  // Separados para que ningún regalo empiece a cobrarse.
+  cobradoresAdicionales Int      @default(0)
+  rutasAdicionales      Int      @default(0)
   estadoContacto    EstadoContacto @default(nuevo)
   fuenteRegistro    String?
   planOriginal      Plan?

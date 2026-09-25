@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { PLANES_CONFIG } from '@/lib/planes'
-import { precioPeriodo, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
+import { precioCheckout, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
 import { ultimaSuscripcion } from '@/lib/cobro-intento'
 import { hasOnlinePayment } from '@/lib/i18n'
 import { firmaIntegridad, wompiPublicKey, wompiConfigurado, WOMPI_CHECKOUT_URL, referenciaDeCobro } from '@/lib/wompi'
@@ -42,7 +42,9 @@ export async function POST(req) {
      periodo empieza donde lo extendería el pago: si el preferencial termina a
      mitad de un trimestre, cada mes paga lo suyo. */
   const ultima           = await ultimaSuscripcion(orgId)
-  const precioFinal      = precioPeriodo(org, plan, periodo, inicioDelPeriodo(ultima)).total
+  /* Con los cobradores y rutas adicionales del negocio: van con el plan en
+     cada pago (ver `precioCheckout`). */
+  const precioFinal      = precioCheckout(org, plan, periodo, inicioDelPeriodo(ultima)).total
 
   if (!precioFinal || precioFinal <= 0) {
     return NextResponse.json({ error: 'Monto invalido' }, { status: 400 })

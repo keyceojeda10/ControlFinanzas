@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server'
    Tenerla aquí copiada es como se separan: ver el comentario largo de allí. */
 import { validarFirmaEvento, consultarTransaccion, leerReferencia } from '@/lib/wompi'
 import { activarPlanPagado } from '@/lib/activar-suscripcion'
+import { aplicarCompraAdicionales } from '@/lib/adicionales'
 import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { alertarPagoSinActivar, alertarPagoRevertido } from '@/lib/alertas-pago'
 import { prisma } from '@/lib/prisma'
@@ -99,6 +100,27 @@ export async function POST(req) {
             organization: { select: { nombre: true } },
           },
         })
+        /* Una compra de adicionales revertida no deja suscripción: su rastro
+           es el libro de pagos. El cupo no se quita solo, igual que el plan. */
+        if (!sub) {
+          const compra = await prisma.pagoSuscripcion.findUnique({
+            where: { gatewayId: String(txEvento.id) },
+            select: { periodo: true, plan: true, montoCOP: true, organizationId: true },
+          })
+          if (compra?.periodo === 'adicionales') {
+            const org = await prisma.organization.findUnique({ where: { id: compra.organizationId }, select: { nombre: true } })
+            console.error(`[wompi-webhook] PAGO REVERTIDO: tx ${txEvento.id} paso a ${estado} pero YA habia sumado adicionales a "${org?.nombre}"`)
+            await alertarPagoRevertido({
+              gateway: 'wompi',
+              transaccionId: txEvento.id,
+              estadoNuevo: estado,
+              organizacion: `${org?.nombre ?? compra.organizationId} (compra de cobradores/rutas adicionales)`,
+              plan: compra.plan,
+              fechaVencimiento: null,
+              montoCOP: compra.montoCOP,
+            })
+          }
+        }
         if (sub) {
           console.error(`[wompi-webhook] PAGO REVERTIDO: tx ${txEvento.id} paso a ${estado} pero YA habia activado el plan ${sub.plan} de "${sub.organization?.nombre}" (vence ${sub.fechaVencimiento?.toISOString?.()})`)
           await alertarPagoRevertido({
@@ -131,6 +153,44 @@ export async function POST(req) {
       montoCOP,
       motivo: 'La referencia no tiene el formato esperado, no se puede saber a que organizacion activarle el plan.',
     })
+    return NextResponse.json({ ok: true })
+  }
+
+  /* ⚠ LA COMPRA DE ADICIONALES NO ES UN PAGO DEL PLAN. Pasada a
+     `activarPlanPagado` le alargaría el plan 30 días por el precio de un
+     cobrador. Suma el cupo y nada más (lib/adicionales.js). */
+  if (parsed.periodo === 'adicionales') {
+    try {
+      const r = await aplicarCompraAdicionales({
+        organizationId: parsed.orgId,
+        plan:           parsed.plan,
+        adicionales:    parsed.adicionales,
+        montoCOP,
+        gatewayId:      txEvento.id,
+        referencia,
+      })
+      if (!r.ok) {
+        /* Plata que entró y no alcanza para lo que dice la referencia: no se
+           abre el cupo y se avisa. 200 para que Wompi no lo reintente: no va
+           a alcanzar la próxima vez tampoco. */
+        console.error(`[wompi-webhook] ADICIONALES SIN APLICAR tx ${txEvento.id} org ${parsed.orgId}: ${r.motivo}`)
+        await alertarPagoSinActivar({ gateway: 'wompi', transaccionId: txEvento.id, referencia, montoCOP, motivo: r.motivo })
+        return NextResponse.json({ ok: true })
+      }
+      console.log(r.yaProcesado
+        ? `[wompi-webhook] tx ${txEvento.id} (adicionales) ya procesada, ignorando (org ${parsed.orgId})`
+        : `[wompi-webhook] ADICIONALES +${parsed.adicionales.cobradores} cobradores +${parsed.adicionales.rutas} rutas para org ${parsed.orgId} por $${montoCOP} — tx ${txEvento.id}`)
+    } catch (err) {
+      console.error('[wompi-webhook] PAGO APROBADO de adicionales pero fallo al sumarlos:', err?.message || err, '| tx:', txEvento.id, '| org:', parsed.orgId)
+      await alertarPagoSinActivar({
+        gateway: 'wompi',
+        transaccionId: txEvento.id,
+        referencia,
+        montoCOP,
+        motivo: `Fallo al sumar ${parsed.adicionales.cobradores} cobradores y ${parsed.adicionales.rutas} rutas adicionales a la organizacion ${parsed.orgId}: ${err?.message || 'error desconocido'}`,
+      })
+      return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    }
     return NextResponse.json({ ok: true })
   }
 

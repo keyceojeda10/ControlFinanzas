@@ -9,7 +9,7 @@ import { SkeletonCard }         from '@/components/ui/Skeleton'
 import { formatMoney }          from '@/lib/i18n'
 import PrecioPreferencial        from '@/components/admin/PrecioPreferencial'
 import AsignarPlanDirecto        from '@/components/admin/AsignarPlanDirecto'
-import { PLANES_CONFIG }         from '@/lib/planes'
+import { PLANES_CONFIG, cuposDe, admiteAdicionales } from '@/lib/planes'
 
 /* ⚠ ESTA TABLA ESTABA COPIADA AQUÍ, Y YA SE HABÍA DESFASADO: decía 150 clientes
    para Inicial cuando `lib/planes.js` dice 100, así que la ficha del superadmin
@@ -35,6 +35,8 @@ export default function OrgDetallePage() {
   const [cobradoresInput, setCobradoresInput] = useState('')
   const [clientesInput, setClientesInput] = useState('')
   const [rutasInput, setRutasInput] = useState('')
+  const [adicCobradoresInput, setAdicCobradoresInput] = useState('')
+  const [adicRutasInput, setAdicRutasInput] = useState('')
   const [extensionDias, setExtensionDias] = useState('')
   const [diaFijoPago, setDiaFijoPago] = useState('')
 
@@ -463,7 +465,7 @@ export default function OrgDetallePage() {
 
       {/* Cobradores extra */}
       <Card>
-        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Cobradores extra</p>
+        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Cobradores extra y adicionales</p>
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <div>
@@ -471,12 +473,16 @@ export default function OrgDetallePage() {
               <p className="text-sm font-bold text-[var(--cf-ink)]">{limite.usuarios === 999 ? '∞' : limite.usuarios} usuario{limite.usuarios !== 1 ? 's' : ''}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--cf-ink-3)]">Cobradores extra</p>
+              <p className="text-xs text-[var(--cf-ink-3)]">Regalados</p>
               <p className="text-sm font-bold text-[var(--cf-gold)]">{org.cobradoresExtra ?? 0}</p>
             </div>
             <div>
+              <p className="text-xs text-[var(--cf-ink-3)]">Pagados</p>
+              <p className="text-sm font-bold text-[var(--cf-gold)]">{org.cobradoresAdicionales ?? 0}</p>
+            </div>
+            <div>
               <p className="text-xs text-[var(--cf-ink-3)]">Total permitido</p>
-              <p className="text-sm font-bold text-[var(--cf-green-dark)]">{(limite.usuarios === 999 ? '∞' : limite.usuarios + (org.cobradoresExtra ?? 0))}</p>
+              <p className="text-sm font-bold text-[var(--cf-green-dark)]">{cuposDe(org).usuarios}</p>
             </div>
             <div>
               <p className="text-xs text-[var(--cf-ink-3)]">Usuarios actuales</p>
@@ -484,7 +490,7 @@ export default function OrgDetallePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[var(--cf-ink-3)]">Asignar cobradores extra:</label>
+            <label className="text-xs text-[var(--cf-ink-3)]">Regalar cobradores extra:</label>
             <input
               type="number"
               min="0"
@@ -507,6 +513,37 @@ export default function OrgDetallePage() {
             >
               Aplicar
             </Button>
+          </div>
+          {/* Los PAGADOS: van en cada cobro del plan. Aquí se cargan los que
+              se piden por WhatsApp (países sin Wompi); en Colombia los compra
+              el negocio solo desde «Mi plan». */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[var(--cf-ink-3)]">Cobradores adicionales pagados:</label>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              value={adicCobradoresInput}
+              onChange={(e) => setAdicCobradoresInput(e.target.value)}
+              placeholder={String(org.cobradoresAdicionales ?? 0)}
+              disabled={!admiteAdicionales(org.plan)}
+              className="w-20 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] disabled:opacity-50"
+            />
+            <Button
+              size="sm"
+              disabled={!admiteAdicionales(org.plan)}
+              loading={accionando === 'cambiarAdicionales'}
+              onClick={() => {
+                const val = adicCobradoresInput === '' ? org.cobradoresAdicionales ?? 0 : parseInt(adicCobradoresInput)
+                if (confirm(`¿Cambiar cobradores adicionales PAGADOS de ${org.cobradoresAdicionales ?? 0} a ${val} para "${org.nombre}"? Van en su próximo cobro.`)) {
+                  ejecutarAccion('cambiarAdicionales', { tipo: 'cobradores', cantidad: val })
+                  setAdicCobradoresInput('')
+                }
+              }}
+            >
+              Aplicar
+            </Button>
+            {!admiteAdicionales(org.plan) && <span className="text-xs text-[var(--cf-ink-3)]">Su plan no admite adicionales</span>}
           </div>
         </div>
       </Card>
@@ -570,7 +607,7 @@ export default function OrgDetallePage() {
           Inicial y Básico la ruta extra NO está a la venta (`rutaExtra: 0`):
           esto es la única forma de que esas cuentas tengan una segunda. */}
       <Card>
-        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Rutas extra</p>
+        <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide mb-4">Rutas extra y adicionales</p>
         <div className="space-y-3">
           <div className="flex items-center gap-4">
             <div>
@@ -578,12 +615,16 @@ export default function OrgDetallePage() {
               <p className="text-sm font-bold text-[var(--cf-ink)]">{limite.rutas} ruta{limite.rutas !== 1 ? 's' : ''}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--cf-ink-3)]">Rutas extra</p>
+              <p className="text-xs text-[var(--cf-ink-3)]">Regaladas</p>
               <p className="text-sm font-bold text-[var(--cf-gold)]">{org.rutasExtra ?? 0}</p>
             </div>
             <div>
+              <p className="text-xs text-[var(--cf-ink-3)]">Pagadas</p>
+              <p className="text-sm font-bold text-[var(--cf-gold)]">{org.rutasAdicionales ?? 0}</p>
+            </div>
+            <div>
               <p className="text-xs text-[var(--cf-ink-3)]">Total permitido</p>
-              <p className="text-sm font-bold text-[var(--cf-green-dark)]">{limite.rutas + (org.rutasExtra ?? 0)}</p>
+              <p className="text-sm font-bold text-[var(--cf-green-dark)]">{cuposDe(org).rutas}</p>
             </div>
             <div>
               <p className="text-xs text-[var(--cf-ink-3)]">Rutas creadas</p>
@@ -593,13 +634,13 @@ export default function OrgDetallePage() {
           {/* Lo que pasa cuando el cupo queda por debajo de lo que ya tiene: las
               rutas NO se borran, se congelan. La regla vive en
               `lib/limites-plan.js` y aquí solo se avisa. */}
-          {(org._count?.rutas ?? 0) > limite.rutas + (org.rutasExtra ?? 0) && (
+          {(org._count?.rutas ?? 0) > cuposDe(org).rutas && (
             <p className="text-xs text-[var(--cf-red-dark)]">
-              Tiene {org._count.rutas} rutas creadas y solo {limite.rutas + (org.rutasExtra ?? 0)} permitidas: las de más están congeladas, no borradas.
+              Tiene {org._count.rutas} rutas creadas y solo {cuposDe(org).rutas} permitidas: las de más están congeladas, no borradas.
             </p>
           )}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-[var(--cf-ink-3)]">Asignar rutas extra:</label>
+            <label className="text-xs text-[var(--cf-ink-3)]">Regalar rutas extra:</label>
             <input
               type="number"
               min="0"
@@ -622,6 +663,37 @@ export default function OrgDetallePage() {
             >
               Aplicar
             </Button>
+          </div>
+          {/* Los PAGADOS: van en cada cobro del plan. Aquí se cargan los que
+              se piden por WhatsApp (países sin Wompi); en Colombia los compra
+              el negocio solo desde «Mi plan». */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[var(--cf-ink-3)]">Rutas adicionales pagadas:</label>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              value={adicRutasInput}
+              onChange={(e) => setAdicRutasInput(e.target.value)}
+              placeholder={String(org.rutasAdicionales ?? 0)}
+              disabled={!admiteAdicionales(org.plan)}
+              className="w-20 h-9 px-3 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-gold)] disabled:opacity-50"
+            />
+            <Button
+              size="sm"
+              disabled={!admiteAdicionales(org.plan)}
+              loading={accionando === 'cambiarAdicionales'}
+              onClick={() => {
+                const val = adicRutasInput === '' ? org.rutasAdicionales ?? 0 : parseInt(adicRutasInput)
+                if (confirm(`¿Cambiar rutas adicionales PAGADAS de ${org.rutasAdicionales ?? 0} a ${val} para "${org.nombre}"? Van en su próximo cobro.`)) {
+                  ejecutarAccion('cambiarAdicionales', { tipo: 'rutas', cantidad: val })
+                  setAdicRutasInput('')
+                }
+              }}
+            >
+              Aplicar
+            </Button>
+            {!admiteAdicionales(org.plan) && <span className="text-xs text-[var(--cf-ink-3)]">Su plan no admite adicionales</span>}
           </div>
         </div>
       </Card>

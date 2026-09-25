@@ -239,6 +239,33 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true, mensaje: `Cobradores extra actualizados a ${cantidad}` })
   }
 
+  /* ══ ADICIONALES PAGADOS ══════════════════════════════════════════════════
+   *
+   * Los que el negocio PAGA con su plan (los de arriba se regalan). En
+   * Colombia se compran solos en «Mi plan»; en los países de MercadoPago y en
+   * los de cobro a mano se piden por WhatsApp y se cargan aquí. Desde el
+   * próximo cobro van en el precio (lib/precio-plan.js). */
+  if (accion === 'cambiarAdicionales') {
+    const tipo = body.tipo === 'rutas' ? 'rutas' : body.tipo === 'cobradores' ? 'cobradores' : null
+    const cantidad = parseInt(body.cantidad)
+    if (!tipo) return NextResponse.json({ error: 'Tipo no válido' }, { status: 400 })
+    if (isNaN(cantidad) || cantidad < 0 || cantidad > 50) {
+      return NextResponse.json({ error: 'Cantidad debe ser entre 0 y 50' }, { status: 400 })
+    }
+    const campo = tipo === 'rutas' ? 'rutasAdicionales' : 'cobradoresAdicionales'
+    const anterior = org[campo] ?? 0
+    await prisma.organization.update({ where: { id }, data: { [campo]: cantidad } })
+    await prisma.adminLog.create({
+      data: {
+        adminId:        session.user.id,
+        organizacionId: id,
+        accion:         'cambiar_adicionales',
+        detalle:        `${tipo === 'rutas' ? 'Rutas' : 'Cobradores'} adicionales (pagados): ${anterior} → ${cantidad} para "${org.nombre}"`,
+      },
+    })
+    return NextResponse.json({ ok: true, mensaje: `${tipo === 'rutas' ? 'Rutas' : 'Cobradores'} adicionales: ${cantidad}. Van en el próximo cobro.` })
+  }
+
   /* Cupo de clientes por encima del plan.
    *
    * El caso que lo pidió: dos cuentas del plan Inicial estaban en 113 y 109

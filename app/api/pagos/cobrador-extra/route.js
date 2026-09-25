@@ -1,57 +1,14 @@
-// app/api/pagos/cobrador-extra/route.js — Crear preferencia para cobrador extra
-import { NextResponse }     from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions }      from '@/lib/auth'
-import { prisma }           from '@/lib/prisma'
-import { preferenceApi, PLANES, buildBackUrls, webhookUrl } from '@/lib/mercadopago'
-import { getCurrency, hasOnlinePayment } from '@/lib/i18n'
-import { getPrecioCobradorExtra } from '@/lib/planes'
+// ⚠ RETIRADO el 24 sep 2026. Cobraba UNA vez por MercadoPago —también en
+// Colombia, que paga por Wompi— y daba el cupo para siempre: nadie lo volvía a
+// cobrar. Los cobradores y rutas adicionales ahora van con el plan y se
+// compran en «Mi plan» (lib/adicionales.js). Se queda contestando en vez de
+// borrarse: una pantalla vieja en caché que lo llame recibe a dónde ir, no un
+// 404 mudo.
+import { NextResponse } from 'next/server'
 
-export async function POST(req) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-
-  const orgId = session.user.organizationId
-  if (!orgId) return NextResponse.json({ error: 'Sin organización asociada' }, { status: 400 })
-
-  const plan = session.user.plan
-  const planInfo = PLANES[plan]
-  if (!planInfo || planInfo.cobradorExtra <= 0) {
-    return NextResponse.json({ error: 'Tu plan no permite agregar cobradores extra' }, { status: 403 })
-  }
-
-  const org = await prisma.organization.findUnique({ where: { id: orgId }, select: { country: true } })
-  const country = org?.country ?? 'co'
-  if (!hasOnlinePayment(country)) {
-    return NextResponse.json({ error: 'Pago en línea no disponible para tu país. Contacta soporte.' }, { status: 400 })
-  }
-  const precio = getPrecioCobradorExtra(country)
-
-  const preference = await preferenceApi.create({
-    body: {
-      items: [
-        {
-          id:          `cobrador-extra-${orgId}`,
-          title:       'Control Finanzas - Cobrador adicional (1 mes)',
-          unit_price:  precio,
-          quantity:    1,
-          currency_id: getCurrency(country),
-        },
-      ],
-      back_urls:   buildBackUrls(),
-      auto_return: 'approved',
-      metadata: {
-        organizationId: orgId,
-        tipo:           'cobrador_extra',
-        userId:         session.user.id,
-      },
-      notification_url: webhookUrl(),
-      statement_descriptor: 'Control Finanzas',
-    },
-  })
-
-  return NextResponse.json({
-    preferenceId: preference.id,
-    initPoint:    preference.init_point,
-  })
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Los cobradores y rutas adicionales ahora se agregan en Mi plan.', irA: '/configuracion/plan#adicionales' },
+    { status: 410 }
+  )
 }

@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useCabecera } from '@/components/armazon/Armazon'
 import MedioDePagoGuardado from '@/components/pagos/MedioDePagoGuardado'
 import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
 import HojaSuscripcion     from '@/components/pagos/HojaSuscripcion'
+import AdicionalesPlan     from '@/components/pagos/AdicionalesPlan'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth }             from '@/hooks/useAuth'
 import { SkeletonCard }        from '@/components/ui/Skeleton'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { formatMoney, getPaymentGateway } from '@/lib/i18n'
-import { precioPeriodo, precioMensual } from '@/lib/precio-plan'
+import { precioCheckout, precioMensual, adicionalesMensual } from '@/lib/precio-plan'
 
 /* ══ LO QUE OFRECE CADA PLAN SE DERIVA, NO SE ESCRIBE ════════════════════════
  *
@@ -180,6 +181,18 @@ export default function PlanPage() {
     }).catch(() => {}).finally(() => setLoadEstado(false))
   }, [authLoading, session?.user?.suscripcionVencimiento, updateSession])
 
+  /* Cambiar los adicionales cambia el precio de cada botón de pagar y el uso:
+     se vuelven a pedir los dos. */
+  const recargar = useCallback(() => {
+    Promise.all([
+      fetch('/api/pagos/estado').then(r => r.ok ? r.json() : null),
+      fetch('/api/plan/uso').then(r => r.ok ? r.json() : null),
+    ]).then(([est, u]) => {
+      if (est) setEstado(est)
+      if (u) setUso(u)
+    }).catch(() => {})
+  }, [])
+
   const planActual = uso?.plan ?? estado?.plan ?? session?.user?.plan ?? 'starter'
   const tieneRecurrente = estado?.tieneRecurrenteActiva
   const subCancelada = !!estado?.canceladaAt && estado?.tipo === 'recurrente'
@@ -230,27 +243,41 @@ export default function PlanPage() {
     precioPreferencial:      estado?.preferencial?.monto ?? null,
     precioPreferencialPlan:  estado?.preferencial?.plan ?? null,
     precioPreferencialHasta: estado?.preferencial?.hasta ?? null,
+    /* Los cobradores y rutas que paga con el plan: cada botón de pagar los
+       suma, igual que el checkout (`precioCheckout`). */
+    cobradoresAdicionales:   estado?.adicionales?.cobradores ?? 0,
+    rutasAdicionales:        estado?.adicionales?.rutas ?? 0,
   }
   const inicioPeriodo = estado?.inicioPeriodo ? new Date(estado.inicioPeriodo) : new Date()
   const calcularPrecio = (planKey) => {
-    const p = precioPeriodo(orgPrecio, planKey, periodoEfectivo, inicioPeriodo)
+    const p = precioCheckout(orgPrecio, planKey, periodoEfectivo, inicioPeriodo)
     /* ⚠ SUSCRIBIRSE AL PLAN DEL COBRO COBRA `proximoCobro`, NO LA CUENTA DE
        AQUÍ: el servidor también mira el último pago (un precio puesto a mano
        que nadie revisó no sube solo). Enseñar otra cifra sería prometer un
        número y cobrar otro. */
     const cobro = esSuscripcion && estado?.proximoCobro?.plan === planKey ? estado.proximoCobro : null
     const total = cobro ? cobro.monto : p.total
-    return { conDescuento: total, meses: p.meses, lista: p.lista, ahorro: p.lista * p.meses - total }
+    /* El descuento es solo del plan: los adicionales van a precio de lista.
+       Lo tachado es el plan sin descuento MÁS los adicionales. */
+    return {
+      conDescuento: total,
+      meses: p.meses,
+      lista: p.lista,
+      adicionales: p.adicionales,
+      sinDescuento: p.lista * p.meses + p.adicionales,
+      ahorro: p.lista * p.meses + p.adicionales - total,
+    }
   }
 
   // ── Activar/renovar plan via WhatsApp (MercadoPago desactivado temporalmente) ──
   const activarPlanWA = (planKey) => {
     const info = [...planes, planTest].find(p => p.key === planKey)
     if (!info) return
-    const { conDescuento, meses } = calcularPrecio(info.key)
+    const { conDescuento, meses, adicionales } = calcularPrecio(info.key)
     const periodoLabel = periodoEfectivo === 'anual' ? 'anual' : periodoEfectivo === 'trimestral' ? 'trimestral' : 'mensual'
     const orgRef = orgNombre ? ` para mi cuenta "${orgNombre}"` : ''
-    const msg = `Hola, quiero activar el plan ${info.nombre} (${periodoLabel})${orgRef}. Valor: ${formatMoney(conDescuento)}${meses > 1 ? ` por ${meses} meses` : '/mes'}.`
+    const conAdicionales = adicionales > 0 ? ' (con mis cobradores y rutas adicionales)' : ''
+    const msg = `Hola, quiero activar el plan ${info.nombre} (${periodoLabel})${orgRef}. Valor: ${formatMoney(conDescuento)}${meses > 1 ? ` por ${meses} meses` : '/mes'}${conAdicionales}.`
     window.open(whatsappLink(msg), '_blank', 'noopener,noreferrer')
   }
 
@@ -504,6 +531,13 @@ export default function PlanPage() {
                   </span>
                 )}
               </div>
+              {/* Una cifra que cambia el total tiene que salir con su nombre:
+                  el cobro trae el plan MÁS esto. */}
+              {adicionalesMensual(orgPrecio, planActual) > 0 && (
+                <p className="text-[12px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
+                  + {formatMoney(adicionalesMensual(orgPrecio, planActual))}/mes de cobradores y rutas adicionales
+                </p>
+              )}
               {pref && (
                 <p className="text-[12px] mt-2" style={{ color: 'var(--cf-ink-2)' }}>
                   {terminaAntes
@@ -714,6 +748,16 @@ export default function PlanPage() {
         <MedioDePagoGuardado onCambiar={gateway === 'wompi' ? () => setSuscribiendo(planActual) : undefined} />
       </div>
 
+      {/* ── COBRADORES Y RUTAS ADICIONALES ─────────────────────────────────
+          Debajo de pagar y no dentro: se paga con el plan, pero es otra
+          pregunta («¿cuántos necesito?»). Se esconde sola en los planes que no
+          los admiten. */}
+      <AdicionalesPlan
+        cobroMensual={estado?.proximoCobro?.monto ?? null}
+        orgNombre={orgNombre}
+        onCambio={recargar}
+      />
+
       {/* ── LOS PLANES, SIEMPRE A LA VISTA ────────────────────────────────
           Estaban detrás de un «Cambiar de plan» que había que pulsar. Quien
           quiere subir de plan es justo quien más quiere pagar: esconderle la
@@ -741,7 +785,7 @@ export default function PlanPage() {
               const esActual = p.key === planActual
               const esTest = p.key === 'test'
               const esRecurrActiva = tieneRecurrente && esActual && !subCancelada
-              const { conDescuento, meses, lista, ahorro } = calcularPrecio(p.key)
+              const { conDescuento, meses, sinDescuento, adicionales, ahorro } = calcularPrecio(p.key)
               const tieneDesc = ahorro > 0
 
               return (
@@ -777,7 +821,7 @@ export default function PlanPage() {
                       {tieneDesc ? (
                         <div>
                           <span className="text-[10px] line-through font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
-                            {formatMoney(lista * meses)}
+                            {formatMoney(sinDescuento)}
                           </span>
                           <span className="text-[14px] font-bold font-mono-display ml-1" style={{ color: 'var(--cf-ink)' }}>
                             {formatMoney(conDescuento)}
@@ -794,6 +838,11 @@ export default function PlanPage() {
                       {ahorro > 0 && (
                         <p className="text-[11px] font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>
                           Ahorras {formatMoney(ahorro)}
+                        </p>
+                      )}
+                      {adicionales > 0 && (
+                        <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                          con {formatMoney(adicionales)} de adicionales
                         </p>
                       )}
                     </div>
@@ -939,7 +988,7 @@ export default function PlanPage() {
                cobrar otro, que es de donde salen las llamadas a soporte. */
             precioMensual={estado?.proximoCobro?.plan === info.key
               ? estado.proximoCobro.monto
-              : precioPeriodo(orgPrecio, info.key, 'mensual', inicioPeriodo).total}
+              : precioCheckout(orgPrecio, info.key, 'mensual', inicioPeriodo).total}
             onCerrar={() => setSuscribiendo(null)}
             onPagoUnico={() => { setModoPago('unico'); setSuscribiendo(null) }}
           />

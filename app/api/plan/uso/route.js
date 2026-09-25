@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { PLANES_CONFIG }    from '@/lib/planes'
+import { PLANES_CONFIG, cuposDe, selectCupos } from '@/lib/planes'
 import { getAsistenteUsage } from '@/lib/rate-limit'
 import { obtenerRutasPermitidas, obtenerUsuariosPermitidos } from '@/lib/limites-plan'
 
@@ -35,7 +35,7 @@ export async function GET() {
     }),
     prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { plan: true, cobradoresExtra: true, rutasExtra: true, clientesExtra: true },
+      select: selectCupos,
     }),
   ])
 
@@ -43,10 +43,11 @@ export async function GET() {
   const planReal = sub?.plan || org?.plan || session.user.plan || 'starter'
   const config = PLANES_CONFIG[planReal] || PLANES_CONFIG.starter
 
-  const limiteRutas    = config.maxRutas    + (org?.rutasExtra ?? 0)
-  const limiteUsuarios = config.maxUsuarios + (org?.cobradoresExtra ?? 0)
-  // Mismo patrón que los otros dos: el cupo extra se suma al del plan.
-  const limiteClientes = config.maxClientes + (org?.clientesExtra ?? 0)
+  // Plan + regalados por el panel + adicionales pagados: ver `cuposDe`.
+  const cupo = cuposDe(org, planReal)
+  const limiteRutas    = cupo.rutas
+  const limiteUsuarios = cupo.usuarios
+  const limiteClientes = cupo.clientes
 
   const [clientes, usuarios, rutas, rutasPermitidasSet, usuariosPermitidosSet] = await Promise.all([
     prisma.cliente.count({ where: { organizationId, estado: { notIn: ['eliminado'] } } }),

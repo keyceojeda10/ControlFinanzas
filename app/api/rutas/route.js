@@ -6,7 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { esId }             from '@/lib/ids'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { LIMITES_RUTAS, PLANES_CONFIG } from '@/lib/planes'
+import { PLANES_CONFIG, cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 import { getUtcOffset } from '@/lib/i18n'
 import { tienePeriodoEsperadoHoy, calcularDiasMora, calcularProximoCobro, calcularMontoParaPonerseAlDia } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
@@ -241,17 +241,19 @@ export async function POST(request) {
   const mueveDelExistente = origenCapital === 'existente'
 
   // Verificar límite de rutas del plan
+  /* El plan de la BASE: el del JWT no se refresca hasta volver a entrar, y
+     quien acaba de pagar una ruta adicional la tiene que poder crear ya. */
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: { rutasExtra: true },
+    select: selectCupos,
   })
-  const limiteBase = LIMITES_RUTAS[plan] ?? 1
-  const limite = limiteBase + (org?.rutasExtra ?? 0)
+  const planCupo = org?.plan ?? plan
+  const limite = cuposDe(org, planCupo).rutas
   const totalRutas = await prisma.ruta.count({ where: { organizationId, activo: true } })
   if (totalRutas >= limite) {
-    const puedeComprar = PLANES_CONFIG[plan]?.rutaExtra > 0
+    const puedeAgregar = admiteAdicionales(planCupo)
     return Response.json(
-      { error: `Has alcanzado el límite de ${limite} ruta${limite > 1 ? 's' : ''} de tu plan ${PLANES_CONFIG[plan]?.nombre || plan}. ${puedeComprar ? 'Puedes comprar una ruta adicional.' : 'Actualiza tu plan para más rutas.'}`, limitReached: true, plan },
+      { error: `Has alcanzado el límite de ${limite} ruta${limite > 1 ? 's' : ''} de tu plan ${PLANES_CONFIG[planCupo]?.nombre || planCupo}. ${puedeAgregar ? 'Agrega una ruta adicional en Mi plan.' : 'Sube de plan para tener más rutas.'}`, limitReached: true, puedeAgregar, plan: planCupo },
       { status: 403 }
     )
   }

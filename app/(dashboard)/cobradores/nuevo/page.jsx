@@ -8,8 +8,9 @@ import { useAuth }             from '@/hooks/useAuth'
 import { Input }               from '@/components/ui/Input'
 import { Button }              from '@/components/ui/Button'
 import CompartirCredenciales   from '@/components/cobradores/CompartirCredenciales'
+import { LIMITES_USUARIOS, admiteAdicionales, getPrecioCobradorExtra } from '@/lib/planes'
+import { formatMoney }         from '@/lib/i18n'
 
-const LIMITES = { starter: 1, basic: 1, growth: 2, standard: 5, professional: 10 }
 
 // Card de seccion premium (definida fuera para evitar perdida de focus)
 const SectionCard = ({ icon, title, color = 'var(--cf-gold)', children, accent }) => (
@@ -53,7 +54,9 @@ export default function NuevoCobrador() {
   const [totalUsers, setTotalUsers] = useState(null)
   const [limiteUsuarios, setLimiteUsuarios] = useState(null)
   const [limitReached, setLimitReached] = useState(false)
-  const [comprando, setComprando] = useState(false)
+  /* Lo dice el servidor al rechazar (`puedeAgregar`): el plan del JWT puede
+     no ser el de la base. Mientras no contesta, el de la sesión. */
+  const [puedeAgregar, setPuedeAgregar] = useState(null)
   const [permisos,  setPermisos]  = useState({
     crearPrestamos: false,
     gestionarPrestamos: false,
@@ -70,9 +73,13 @@ export default function NuevoCobrador() {
   })
 
   const plan     = session?.user?.plan ?? 'starter'
-  const limite   = limiteUsuarios ?? (LIMITES[plan] ?? 1)
+  const limite   = limiteUsuarios ?? (LIMITES_USUARIOS[plan] ?? 1)
   const restantes = isFinite(limite) && totalUsers !== null ? Math.max(0, limite - totalUsers) : null
-  const puedeComprarExtra = plan === 'growth' || plan === 'standard' || plan === 'professional'
+  const puedeComprarExtra = puedeAgregar ?? admiteAdicionales(plan)
+  /* Si ya se sabe que no queda cupo, el aviso sale de entrada: antes había que
+     llenar el formulario entero y enviarlo para enterarse. */
+  const sinCupo = limitReached || restantes === 0
+  const precioCobrador = getPrecioCobradorExtra(session?.user?.country ?? 'co')
 
   useEffect(() => {
     if (!authLoading && !esOwner) router.replace('/cobradores')
@@ -103,7 +110,10 @@ export default function NuevoCobrador() {
       })
       const data = await res.json()
       if (!res.ok) {
-        if (data.limitReached) { setLimitReached(true) }
+        if (data.limitReached) {
+          setLimitReached(true)
+          if (typeof data.puedeAgregar === 'boolean') setPuedeAgregar(data.puedeAgregar)
+        }
         setError(data.error ?? 'Error al crear el cobrador')
         return
       }
@@ -115,19 +125,11 @@ export default function NuevoCobrador() {
     }
   }
 
-  const comprarCobradorExtra = async () => {
-    setComprando(true)
-    try {
-      const res = await fetch('/api/pagos/cobrador-extra', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al crear el pago'); return }
-      window.location.href = data.initPoint
-    } catch {
-      setError('Error de conexión')
-    } finally {
-      setComprando(false)
-    }
-  }
+  /* ⚠ YA NO SE COMPRA AQUÍ. Esto abría un pago ÚNICO de MercadoPago (también
+     en Colombia, que paga por Wompi) y el cupo quedaba para siempre sin que
+     nadie lo volviera a cobrar. Los adicionales van con el plan: se agregan en
+     Mi plan, que sabe si el plan está pagado y cuántos días faltan. */
+  const agregarCobrador = () => router.push('/configuracion/plan#adicionales')
 
   if (authLoading) return null
 
@@ -223,7 +225,7 @@ export default function NuevoCobrador() {
           </div>
         )}
 
-        {limitReached && puedeComprarExtra && (
+        {sinCupo && puedeComprarExtra && (
           <div className="bg-[color-mix(in_srgb,var(--cf-gold-dark)_8%,transparent)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_25%,transparent)] rounded-[12px] p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-[color-mix(in_srgb,var(--cf-gold-dark)_15%,transparent)] flex items-center justify-center shrink-0">
@@ -235,35 +237,28 @@ export default function NuevoCobrador() {
               <div>
                 <p className="text-sm font-semibold text-[var(--cf-ink)]">Límite alcanzado</p>
                 <p className="text-xs text-[var(--cf-ink-3)] mt-0.5">
-                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--cf-gold)] font-bold">$19.000/mes</span>.
+                  Has usado todos los espacios de tu plan. Agrega un cobrador adicional por <span className="text-[var(--cf-ink)] font-bold">{formatMoney(precioCobrador)}/mes</span>: va con el pago de tu plan.
                 </p>
               </div>
             </div>
             <button
-              onClick={comprarCobradorExtra}
-              disabled={comprando}
-              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] text-[var(--cf-ink)] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              type="button"
+              onClick={agregarCobrador}
+              className="w-full h-10 rounded-[12px] text-sm font-semibold bg-[var(--cf-gold)] text-[var(--cf-gold-ink)] transition-opacity duration-150 active:opacity-90 flex items-center justify-center gap-2"
             >
-              {comprando ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Procesando...
-                </>
-              ) : 'Agregar cobrador extra — $19.000/mes'}
+              Agregar un cobrador adicional
             </button>
           </div>
         )}
 
-        {limitReached && !puedeComprarExtra && (
+        {sinCupo && !puedeComprarExtra && (
           <div className="bg-[color-mix(in_srgb,var(--cf-red-dark)_8%,transparent)] border border-[color-mix(in_srgb,var(--cf-red-dark)_20%,transparent)] rounded-[12px] p-4 text-center">
             <p className="text-sm text-[var(--cf-red-dark)] font-medium">Límite alcanzado</p>
             <p className="text-xs text-[var(--cf-ink-3)] mt-1">
               Tu plan no permite cobradores extra. Actualiza al plan Crecimiento, Profesional o Empresarial.
             </p>
             <button
+              type="button"
               onClick={() => router.push('/configuracion/plan')}
               className="mt-3 text-sm text-[var(--cf-gold)] hover:underline"
             >

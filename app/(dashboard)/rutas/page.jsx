@@ -83,6 +83,9 @@ export default function RutasPage() {
   }, [showForm, cobradoresLista.length])
   const [saving,   setSaving]   = useState(false)
   const [formError, setFormError] = useState('')
+  /* El servidor dice si el plan admite rutas adicionales al rechazar por
+     cupo: entonces el aviso lleva a Mi plan, donde se agregan. */
+  const [cupoLleno, setCupoLleno] = useState(null)
   const [isOffline, setIsOffline] = useState(false)
   useEffect(() => {
     const goOnline = () => { setIsOffline(false) }
@@ -331,6 +334,7 @@ export default function RutasPage() {
     if (!nombre.trim()) { setFormError('El nombre es requerido'); return }
     setSaving(true)
     setFormError('')
+    setCupoLleno(null)
     try {
       const res  = await fetch('/api/rutas', {
         method:  'POST',
@@ -338,7 +342,11 @@ export default function RutasPage() {
         body:    JSON.stringify({ nombre, ...(cobradorNuevo && { cobradorId: cobradorNuevo }), ...(Number(capitalRuta) > 0 && { capitalInicial: Number(capitalRuta), origenCapital }) }),
       })
       const data = await res.json()
-      if (!res.ok) { setFormError(data.error ?? 'Error al crear la ruta'); return }
+      if (!res.ok) {
+        setFormError(data.error ?? 'Error al crear la ruta')
+        if (data.limitReached) setCupoLleno(data.puedeAgregar ? 'agregar' : 'subir')
+        return
+      }
       setRutas((prev) => [...prev, { ...data, cantidadClientes: 0, esperadoHoy: 0, recaudadoHoy: 0 }])
       setNombre('')
       setCapitalRuta('')
@@ -451,7 +459,7 @@ export default function RutasPage() {
           que estabas mirando. */}
       <HojaInferior
         abierta={showForm}
-        onCerrar={() => { setShowForm(false); setCapitalRuta(''); setCobradorNuevo('') }}
+        onCerrar={() => { setShowForm(false); setCapitalRuta(''); setCobradorNuevo(''); setCupoLleno(null) }}
         titulo="Nueva ruta"
         subtitulo="Un grupo de clientes que cobra la misma persona"
       >
@@ -466,6 +474,18 @@ export default function RutasPage() {
           <p className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>
             Ponle el nombre del barrio; es como la va a buscar el cobrador.
           </p>
+          {/* ⚠ `salirDeHojaHacia`, no `router.push`: desde una hoja abierta el
+              push se aborta (ver la nota de «Crear ruta» más abajo). */}
+          {cupoLleno && (
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); salirDeHojaHacia(router, cupoLleno === 'agregar' ? '/configuracion/plan#adicionales' : '/configuracion/plan') }}
+              className="w-full h-10 rounded-[12px] text-[13px] font-semibold transition-opacity duration-150 active:opacity-90"
+              style={{ background: 'var(--cf-surface)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)' }}
+            >
+              {cupoLleno === 'agregar' ? 'Agregar una ruta adicional' : 'Ver planes'}
+            </button>
+          )}
 
           {/* ── QUIÉN LA RECORRE (T24-01) ──
               El endpoint acepta `cobradorId` desde siempre; lo que faltaba era
