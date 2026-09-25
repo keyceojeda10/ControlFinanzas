@@ -8,6 +8,7 @@ import { webhookLimiter, getClientIp } from '@/lib/rate-limit'
 import { registrarAdminLog } from '@/lib/admin-log'
 import { sanitizarPlan, activarPlanPagado } from '@/lib/activar-suscripcion'
 import { alertarPagoSinActivar } from '@/lib/alertas-pago'
+import { adicionalesAlCambiarA } from '@/lib/planes'
 
 function verificarFirma(req, body) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -114,7 +115,7 @@ export async function POST(req) {
         })
         await prisma.organization.update({
           where: { id: sub.organizationId },
-          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false },
+          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false, ...adicionalesAlCambiarA(plan) },
         })
         console.log('[webhook] suscripción autorizada para org=' + sub.organizationId + ' plan=' + plan)
 
@@ -187,7 +188,7 @@ export async function POST(req) {
         })
         await prisma.organization.update({
           where: { id: sub.organizationId },
-          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false },
+          data: { plan, activo: true, waChurnSent: false, waPreVencSent: false, ...adicionalesAlCambiarA(plan) },
         })
 
         await registrarAdminLog({
@@ -299,6 +300,10 @@ export async function POST(req) {
     if (status === 'approved') {
       const montoPagado = payment.transaction_amount ?? 0
       try {
+        /* Con cuántos adicionales se armó el precio (preferencias nuevas). */
+        const conAdicionales = metadata.cobradores_adicionales != null
+          ? { cobradores: Number(metadata.cobradores_adicionales) || 0, rutas: Number(metadata.rutas_adicionales) || 0 }
+          : null
         const r = await activarPlanPagado({
           organizationId: orgId,
           plan:           planRaw,
@@ -306,6 +311,8 @@ export async function POST(req) {
           montoCOP:       montoPagado,
           gateway:        'mercadopago',
           gatewayId:      data.id,
+          conAdicionales,
+          country:        metadata.country ?? 'co',
         })
         if (r.yaProcesado) {
           console.log('[webhook] payment ' + data.id + ' ya procesado, ignorando')

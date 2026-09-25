@@ -177,7 +177,7 @@ export async function POST(request) {
   // se cambio durante onboarding y la sesion aun no se refresco).
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: selectCupos,
+    select: { ...selectCupos, planOriginal: true },
   })
   const plan = org?.plan ?? session.user.plan
 
@@ -191,10 +191,15 @@ export async function POST(request) {
   }
 
   // Verificar límite de usuarios: plan + regalados + adicionales (`cuposDe`)
+  /* Solo los ACTIVOS, como el congelamiento, «Mi plan» y quitar un adicional.
+     Contando los desactivados, a quien tenía uno desactivado se le pedía
+     comprar un cupo que ya tenía (revisión del 24 sep 2026). */
   const limite = cuposDe(org, plan).usuarios
-  const totalUsuarios = await prisma.user.count({ where: { organizationId } })
+  const totalUsuarios = await prisma.user.count({ where: { organizationId, activo: true } })
   if (totalUsuarios >= limite) {
-    const puedeAgregar = admiteAdicionales(plan)
+    /* El plan que se paga, no el de la prueba: es el que decide si «Mi plan»
+       enseña la tarjeta de adicionales. */
+    const puedeAgregar = admiteAdicionales(org?.planOriginal || plan)
     const msgOpciones = puedeAgregar
       ? ' Agrega un cobrador adicional en Mi plan, o sube de plan.'
       : ' Sube de plan para tener más usuarios.'

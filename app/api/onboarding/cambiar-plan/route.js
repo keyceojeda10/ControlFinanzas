@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { PLANES_CONFIG, PLANES_VALIDOS } from '@/lib/planes'
+import { PLANES_CONFIG, PLANES_VALIDOS, adicionalesAlCambiarA } from '@/lib/planes'
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
@@ -35,7 +35,7 @@ export async function POST(request) {
   await prisma.$transaction([
     prisma.organization.update({
       where: { id: session.user.organizationId },
-      data: { plan },
+      data: { plan, ...adicionalesAlCambiarA(plan) },
     }),
     prisma.suscripcion.updateMany({
       where: { organizationId: session.user.organizationId, estado: 'activa' },

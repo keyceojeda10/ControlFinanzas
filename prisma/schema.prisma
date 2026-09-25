@@ -728,6 +728,11 @@ model Suscripcion {
   fechaInicio      DateTime
   fechaVencimiento DateTime
   montoCOP         Int
+  /// Cuánto de `montoCOP` fueron cobradores y rutas adicionales (lo dice la
+  /// referencia del pago). Sin esto, «por revisar» comparaba el pago con los
+  /// adicionales de HOY y, al comprar uno más, el cobro automático se quedaba
+  /// en lo pagado antes (revisión del 24 sep 2026).
+  montoAdicionales Int               @default(0)
   mercadopagoId    String?
 
   // Suscripción recurrente (MercadoPago PreApproval)

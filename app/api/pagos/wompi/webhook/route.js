@@ -199,6 +199,7 @@ export async function POST(req) {
       organizationId: parsed.orgId,
       plan:           parsed.plan,
       periodo:        parsed.periodo,
+      conAdicionales: parsed.conAdicionales ?? null,
       montoCOP,
       gateway:        'wompi',
       gatewayId:      txEvento.id,

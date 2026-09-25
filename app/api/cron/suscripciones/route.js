@@ -8,6 +8,7 @@ import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { notificar } from '@/lib/notificar'
 import { registrarAdminLog } from '@/lib/admin-log'
 import { whereCobroSinRechazo, HORAS_DE_GRACIA } from '@/lib/cobro-automatico'
+import { adicionalesAlCambiarA } from '@/lib/planes'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -34,6 +35,7 @@ export async function POST(req) {
       where: { id: org.id },
       data: {
         plan: org.planOriginal,
+        ...adicionalesAlCambiarA(org.planOriginal),
         planOriginal: null,
         planDemoHasta: null,
       },

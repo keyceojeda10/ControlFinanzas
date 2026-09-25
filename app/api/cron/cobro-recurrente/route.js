@@ -38,7 +38,7 @@ import { wompiConfigurado } from '@/lib/wompi'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { MAX_FALLOS, HORAS_DE_ANTICIPO, HORAS_DE_REINTENTO, rechazoVigente } from '@/lib/cobro-automatico'
 import { lanzarCobro, reconciliar } from '@/lib/cobro-intento'
-import { montoDelCobro, selectPrecio } from '@/lib/precio-plan'
+import { montoDelCobro, selectPrecio, selectPago } from '@/lib/precio-plan'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -119,7 +119,7 @@ export async function POST(req) {
           where: { estado: { in: ['activa', 'vencida'] }, montoCOP: { gt: 0 } },
           orderBy: { fechaVencimiento: 'desc' },
           take: 1,
-          select: { plan: true, estado: true, montoCOP: true, fechaVencimiento: true },
+          select: selectPago,
         },
       },
     })

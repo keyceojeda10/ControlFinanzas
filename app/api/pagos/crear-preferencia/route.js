@@ -6,7 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { preferenceApi, PLANES, buildBackUrls, webhookUrl } from '@/lib/mercadopago'
 import { getCurrency, hasOnlinePayment } from '@/lib/i18n'
 import { precioCheckout, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
-import { ultimaSuscripcion } from '@/lib/cobro-intento'
+import { ultimaSuscripcion, adicionalesDe } from '@/lib/cobro-intento'
 
 export async function POST(req) {
   const session = await getServerSession(authOptions)
@@ -65,6 +65,11 @@ export async function POST(req) {
         plan,
         periodo,
         userId: session.user.id,
+        /* Con cuántos adicionales va el precio: al aprobarse quedan en eso
+           (lib/activar-suscripcion.js). MP los devuelve en snake_case. */
+        cobradoresAdicionales: adicionalesDe(org, plan).cobradores,
+        rutasAdicionales: adicionalesDe(org, plan).rutas,
+        country,
       },
       notification_url: webhookUrl(),
       statement_descriptor: 'Control Finanzas',

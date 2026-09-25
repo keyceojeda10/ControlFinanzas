@@ -47,6 +47,12 @@ export async function POST(req) {
     return NextResponse.json({ error: 'Todavía no tienes un plan pagado: los adicionales se pagan junto con el plan.', sinPlanPagado: true }, { status: 409 })
   }
 
+  if (e.cobrandoPlan) {
+    /* El cobro del plan va con los adicionales de ahora; uno comprado mientras
+       tanto quedaría fuera de la renovación. */
+    return NextResponse.json({ error: 'Estamos cobrando tu plan en este momento. Intenta de nuevo en unos minutos.' }, { status: 409 })
+  }
+
   const p = prorrateoAdicionales({ cobradores, rutas }, e.plan, e.country, e.vence)
   if (!(p.monto > 0)) {
     return NextResponse.json({ error: 'Tu plan vence hoy: agrégalos al renovar.', sinPlanPagado: true }, { status: 409 })
@@ -62,7 +68,9 @@ export async function POST(req) {
     moneda,
     firma:       firmaIntegridad(referencia, montoCentavos, moneda),
     checkoutUrl: WOMPI_CHECKOUT_URL,
-    redirectUrl: `${BASE}/configuracion/plan?wompi=adicionales`,
+    /* `antes`: cuántos tenía al pagar. La pantalla dice «listo» cuando la base
+       pasa de ahí; guardado en el navegador se perdía si Wompi volvía a otro. */
+    redirectUrl: `${BASE}/configuracion/plan?wompi=adicionales&antes=${e.adicionales.cobradores + e.adicionales.rutas}`,
     dias:        p.dias,
     monto:       p.monto,
     mensual:     p.mensual,

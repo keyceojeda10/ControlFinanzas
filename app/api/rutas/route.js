@@ -245,13 +245,14 @@ export async function POST(request) {
      quien acaba de pagar una ruta adicional la tiene que poder crear ya. */
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
-    select: selectCupos,
+    select: { ...selectCupos, planOriginal: true },
   })
   const planCupo = org?.plan ?? plan
   const limite = cuposDe(org, planCupo).rutas
   const totalRutas = await prisma.ruta.count({ where: { organizationId, activo: true } })
   if (totalRutas >= limite) {
-    const puedeAgregar = admiteAdicionales(planCupo)
+    /* El plan que se paga, no el de la prueba (es el que enseña la tarjeta). */
+    const puedeAgregar = admiteAdicionales(org?.planOriginal || planCupo)
     return Response.json(
       { error: `Has alcanzado el límite de ${limite} ruta${limite > 1 ? 's' : ''} de tu plan ${PLANES_CONFIG[planCupo]?.nombre || planCupo}. ${puedeAgregar ? 'Agrega una ruta adicional en Mi plan.' : 'Sube de plan para tener más rutas.'}`, limitReached: true, puedeAgregar, plan: planCupo },
       { status: 403 }

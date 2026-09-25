@@ -4,7 +4,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { precioCheckout, inicioDelPeriodo, selectPrecio } from '@/lib/precio-plan'
-import { ultimaSuscripcion } from '@/lib/cobro-intento'
+import { ultimaSuscripcion, adicionalesDe } from '@/lib/cobro-intento'
 import { hasOnlinePayment } from '@/lib/i18n'
 import { firmaIntegridad, wompiPublicKey, wompiConfigurado, WOMPI_CHECKOUT_URL, referenciaDeCobro } from '@/lib/wompi'
 
@@ -53,7 +53,9 @@ export async function POST(req) {
   /* ⚠ La referencia la escribe `referenciaDeCobro` y la lee `leerReferencia`,
      las dos en `lib/wompi.js`. Escrita a mano aquí, cualquier cambio de formato
      dejaba pagos APROBADOS que el webhook no sabía a quién activarle. */
-  const referencia = referenciaDeCobro(orgId, plan, periodo)
+  /* Con los adicionales que este pago cobra: al aprobarse quedan en eso y no
+     más, aunque se hayan subido después de abrir el checkout. */
+  const referencia = referenciaDeCobro(orgId, plan, periodo, adicionalesDe(org, plan))
   const montoCentavos = Math.round(precioFinal * 100)
   const moneda = 'COP'
   const firma = firmaIntegridad(referencia, montoCentavos, moneda)

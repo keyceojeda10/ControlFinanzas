@@ -5,7 +5,7 @@ import bcrypt               from 'bcryptjs'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { enviarEmail, emailPagoAprobado } from '@/lib/email'
-import { PLANES_VALIDOS, PLANES_CONFIG } from '@/lib/planes'
+import { PLANES_VALIDOS, PLANES_CONFIG, adicionalesAlCambiarA } from '@/lib/planes'
 import { registrarPagoSuscripcion } from '@/lib/libro-pagos'
 import { ultimoPago, ultimaSuscripcion } from '@/lib/cobro-intento'
 import { registrarAdminLog }  from '@/lib/admin-log'
@@ -137,7 +137,7 @@ export async function PATCH(req, { params }) {
     const planAnterior = org.plan
 
     // Cambiar plan en la organización
-    await prisma.organization.update({ where: { id }, data: { plan } })
+    await prisma.organization.update({ where: { id }, data: { plan, ...adicionalesAlCambiarA(plan) } })
 
     // También actualizar el plan en la suscripción activa (mantiene mismas fechas)
     const subActiva = await prisma.suscripcion.findFirst({
@@ -561,7 +561,7 @@ export async function PATCH(req, { params }) {
       // Actualizar plan de la organización y activarla, con su precio
       await tx.organization.update({
         where: { id },
-        data: { plan: planNuevo, activo: true, ...datosPrecio },
+        data: { plan: planNuevo, activo: true, ...datosPrecio, ...adicionalesAlCambiarA(planNuevo) },
       })
     })
 

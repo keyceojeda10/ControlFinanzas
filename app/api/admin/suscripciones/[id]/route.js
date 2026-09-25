@@ -3,6 +3,7 @@ import { NextResponse }     from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
+import { adicionalesAlCambiarA } from '@/lib/planes'
 
 /* Los mismos del enum `Plan` de Prisma. Se escriben aquí porque el enum no se
    puede importar en tiempo de ejecución, y una lista suelta que no se comprueba
@@ -206,7 +207,7 @@ export async function PATCH(req, { params }) {
       /* La organización lleva su propia copia del plan y es la que mandan las
          barreras: cambiar solo la suscripción dejaría al negocio con el plan
          viejo en la app y el nuevo en el panel. */
-      prisma.organization.update({ where: { id: sub.organization.id }, data: { plan } }),
+      prisma.organization.update({ where: { id: sub.organization.id }, data: { plan, ...adicionalesAlCambiarA(plan) } }),
       prisma.adminLog.create({
         data: {
           adminId:        session.user.id,

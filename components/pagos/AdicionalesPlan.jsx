@@ -19,20 +19,9 @@ import { formatMoney } from '@/lib/i18n'
 import { prorrateoAdicionales, precioAdicionales } from '@/lib/precio-plan'
 
 const WHATSAPP_SOPORTE = '573011993001'
-const CLAVE_ANTES = 'cf-adicionales-antes'
 
 const cuantos = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
 const fechaLarga = (f) => new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })
-
-function leerAntes() {
-  try { return Number(sessionStorage.getItem(CLAVE_ANTES)) || 0 } catch { return 0 }
-}
-function guardarAntes(n) {
-  try { sessionStorage.setItem(CLAVE_ANTES, String(n)) } catch {}
-}
-function borrarAntes() {
-  try { sessionStorage.removeItem(CLAVE_ANTES) } catch {}
-}
 
 const TIPOS = [
   {
@@ -78,7 +67,11 @@ function BotonPaso({ etiqueta, onClick, disabled, children }) {
  */
 export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', onCambio }) {
   const searchParams = useSearchParams()
-  const vieneDePagar = searchParams.get('wompi') === 'adicionales'
+  /* De vuelta de Wompi: `antes` es cuántos tenía al pagar (lo pone el servidor
+     en la URL de vuelta). Sin él no se puede decir «listo» con verdad. */
+  const antesParam = searchParams.get('antes')
+  const vieneDePagar = searchParams.get('wompi') === 'adicionales' && antesParam != null && antesParam !== ''
+  const antes = Number(antesParam) || 0
 
   const [datos, setDatos] = useState(null)
   const [agregar, setAgregar] = useState({ cobradores: 0, rutas: 0 })
@@ -102,7 +95,6 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
      pregunta un rato para decir «listo» sin obligar a recargar. */
   useEffect(() => {
     if (!vieneDePagar) return
-    const antes = leerAntes()
     let vueltas = 0
     let vivo = true
     const id = setInterval(async () => {
@@ -112,7 +104,6 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
       const ahora = d ? d.adicionales.cobradores + d.adicionales.rutas : 0
       if (d && ahora > antes) {
         clearInterval(id)
-        borrarAntes()
         setConfirmacion('listo')
         onCambio?.()
       } else if (vueltas >= 20) {
@@ -121,13 +112,18 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
       }
     }, 3000)
     return () => { vivo = false; clearInterval(id) }
-  }, [vieneDePagar, cargar, onCambio])
+  }, [vieneDePagar, antes, cargar, onCambio])
 
   /* «Agregar un cobrador» desde Cobradores o Rutas llega con #adicionales:
-     la tarjeta aparece después de cargar, así que el salto se hace a mano. */
+     la tarjeta aparece después de cargar, así que el salto se hace a mano.
+     ⚠ Con `scrollIntoView` quedaba en top 0, DEBAJO de la cabecera fija del
+     armazón, que le tapaba el título (medido en el espejo a 412 px): se baja
+     a mano dejando el alto de la cabecera libre. */
   useEffect(() => {
     if (!datos?.admite || typeof window === 'undefined') return
-    if (window.location.hash === '#adicionales') tarjeta.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (window.location.hash !== '#adicionales' || !tarjeta.current) return
+    const y = tarjeta.current.getBoundingClientRect().top + window.scrollY - 96
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
   }, [datos?.admite])
 
   if (!datos?.admite) return null
@@ -143,15 +139,16 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
     ? cobroMensual + precioAdicionales(agregar, datos.plan, datos.country)
     : null
 
-  /* Sin plan pagado: se cambian ya y van con el pago del plan. */
-  const cambiarLibre = async (tipo, valor) => {
+  /* Uno más o uno menos, sobre lo que hay en la base (no la cifra que se ve:
+     puede venir de antes de que el webhook sumara uno pagado). */
+  const cambiar = async (tipo, delta) => {
     setOcupado(true)
     setError('')
     try {
       const r = await fetch('/api/plan/adicionales', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [tipo]: valor }),
+        body: JSON.stringify({ tipo, delta }),
       })
       const d = await r.json()
       if (!r.ok) { setError(d.error ?? 'No se pudo cambiar'); return false }
@@ -171,7 +168,7 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
     if (datos.pagado) {
       setAgregar(a => ({ ...a, [tipo]: a[tipo] + 1 }))
     } else {
-      cambiarLibre(tipo, datos.adicionales[tipo] + 1)
+      cambiar(tipo, 1)
     }
   }
 
@@ -179,14 +176,13 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
     setError('')
     if (agregar[tipo] > 0) { setAgregar(a => ({ ...a, [tipo]: a[tipo] - 1 })); return }
     if (datos.pagado) setQuitar(tipo)
-    else cambiarLibre(tipo, datos.adicionales[tipo] - 1)
+    else cambiar(tipo, -1)
   }
 
   /* Si no se pudo (queda por debajo de lo que está en uso), el motivo sale
      debajo de la tarjeta: el diálogo se cierra igual. */
   const confirmarQuitar = async () => {
-    const tipo = quitar
-    await cambiarLibre(tipo, datos.adicionales[tipo] - 1)
+    await cambiar(quitar, -1)
     setQuitar(null)
   }
 
@@ -200,8 +196,7 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
         body: JSON.stringify(agregar),
       })
       const d = await r.json()
-      if (!r.ok) { setError(d.error ?? 'No se pudo crear el pago'); return }
-      guardarAntes(datos.adicionales.cobradores + datos.adicionales.rutas)
+      if (!r.ok) { setError(d.error ?? 'No se pudo crear el pago'); setOcupado(false); return }
       const form = document.createElement('form')
       form.method = 'GET'
       form.action = d.checkoutUrl
@@ -244,7 +239,7 @@ export default function AdicionalesPlan({ cobroMensual = null, orgNombre = '', o
     <div
       id="adicionales"
       ref={tarjeta}
-      className="rounded-[20px] cf-card-shadow p-4 space-y-3 scroll-mt-20"
+      className="rounded-[20px] cf-card-shadow p-4 space-y-3"
       style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.1em] font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>

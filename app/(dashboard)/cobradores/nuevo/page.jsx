@@ -88,7 +88,9 @@ export default function NuevoCobrador() {
   useEffect(() => {
     fetch('/api/cobradores')
       .then((r) => r.json())
-      .then((d) => setTotalUsers((Array.isArray(d) ? d.length : 0) + 1)) // +1 por el owner
+      /* Solo los activos (+1 por el dueño), como cuenta el servidor: con los
+         desactivados, el aviso de «sin cupo» salía a quien sí tenía. */
+      .then((d) => setTotalUsers((Array.isArray(d) ? d.filter((c) => c.activo !== false).length : 0) + 1))
       .catch(() => {})
     // Limite real (incluye cobradores extra comprados), no solo el base del plan.
     fetch('/api/pagos/estado')

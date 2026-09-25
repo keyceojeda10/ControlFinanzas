@@ -9,6 +9,7 @@ import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { cortarCuentasGuardadas } from '@/lib/cuentas-guardadas'
+import { cuposDe, selectCupos, admiteAdicionales } from '@/lib/planes'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -159,6 +160,25 @@ export async function PATCH(request, { params }) {
   // Activo
   if (body.activo !== undefined) {
     data.activo = Boolean(body.activo)
+    /* ⚠ REACTIVAR TAMBIÉN MIRA EL CUPO. Si no, desactivar, quitar el adicional
+       (que ya no cobra) y reactivar dejaba un cobrador de más sin pagar, y el
+       congelamiento se llevaba por delante a otro (revisión del 24 sep 2026). */
+    if (data.activo && !cobrador.activo) {
+      const org = await prisma.organization.findUnique({
+        where: { id: session.user.organizationId },
+        select: { ...selectCupos, planOriginal: true },
+      })
+      const limite = cuposDe(org).usuarios
+      const activos = await prisma.user.count({ where: { organizationId: session.user.organizationId, activo: true } })
+      if (activos >= limite) {
+        const puedeAgregar = admiteAdicionales(org?.planOriginal || org?.plan)
+        return Response.json({
+          error: `Tu plan tiene cupo para ${limite} usuarios y ya hay ${activos} activos.${puedeAgregar ? ' Agrega un cobrador adicional en Mi plan, o desactiva otro.' : ' Sube de plan o desactiva otro.'}`,
+          limitReached: true,
+          puedeAgregar,
+        }, { status: 403 })
+      }
+    }
   }
 
   // Telefono
