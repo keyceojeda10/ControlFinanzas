@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation'
 import HojaInferior, { salirDeHojaHacia } from '@/components/cf/HojaInferior'
 import { conPantalla } from '@/components/cf/Procesando'
 import { Financiar, PieGestion } from '@/components/pantallas/Gestion'
-import { interesPorPorcentaje, vistaFinanciar, DIAS_POR_PERIODO } from '@/lib/financiar'
+import { interesPorPorcentajeMensual, mesesDelPlazo, vistaFinanciar, DIAS_POR_PERIODO } from '@/lib/financiar'
 import { montoCrudoConModo } from '@/lib/adaptadores/pago'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -38,6 +38,8 @@ function fechaCorta(f) {
 }
 // El porcentaje admite «15,5» y «15.5»: aquí el punto es decimal, no de miles.
 const porcentajeDe = (v) => Math.max(0, Number(String(v ?? '').trim().replace(',', '.')) || 0)
+// «1,5», «2»: con coma decimal y sin ceros de más.
+const decimal = (n) => String(Math.round(n * 100) / 100).replace('.', ',')
 
 export default function FinanciarSaldo({
   abierta, onCerrar, onVolver,
@@ -66,8 +68,10 @@ export default function FinanciarSaldo({
     setModo('porcentaje'); setPct(''); setCifra(''); setCuotas(cuotasIniciales); setError('')
   }, [abierta, cuotasIniciales])
 
+  /* ⚠ EL % ES AL MES, como al crear un préstamo: 15 % a 8 semanas es 30 %. Una
+     cifra en pesos es por todo el plazo. Ver `interesPorPorcentajeMensual`. */
   const interes = modo === 'porcentaje'
-    ? (String(pct).trim() === '' ? null : interesPorPorcentaje(deuda, porcentajeDe(pct)))
+    ? (String(pct).trim() === '' ? null : interesPorPorcentajeMensual(deuda, porcentajeDe(pct), { periodos: cuotas, frecuencia }))
     : (String(cifra).trim() === '' ? null : Math.round(Number(montoCrudoConModo(cifra, modoAbreviado)) || 0))
 
   const vista = useMemo(
@@ -76,8 +80,13 @@ export default function FinanciarSaldo({
   )
 
   const pctNum = porcentajeDe(pct)
+  const meses = mesesDelPlazo({ periodos: cuotas, frecuencia })
+  /* Con más o menos de un mes, la cuenta entera a la vista: «15 % al mes × 2
+     meses = 30 % de $660.400 = $198.120». Así nadie lee el 15 % como del total. */
   const equivale = modo === 'porcentaje' && pctNum > 0 && interes > 0
-    ? `${String(pct).replace('.', ',')} % de ${formatMoney(deuda)} = ${formatMoney(interes)}`
+    ? (meses === 1
+      ? `${decimal(pctNum)} % al mes de ${formatMoney(deuda)} = ${formatMoney(interes)}`
+      : `${decimal(pctNum)} % al mes × ${decimal(meses)} ${meses === 1 ? 'mes' : 'meses'} = ${decimal(pctNum * meses)} % de ${formatMoney(deuda)} = ${formatMoney(interes)}`)
     : null
 
   async function financiar() {

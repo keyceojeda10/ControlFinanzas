@@ -537,7 +537,7 @@ export function Financiar({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
         <Rotulo>¿Cuánto le cobras por financiar?</Rotulo>
         <Opciones
-          opciones={[{ id: 'porcentaje', etiqueta: '% de lo que debe' }, { id: 'cifra', etiqueta: 'Una cifra' }]}
+          opciones={[{ id: 'porcentaje', etiqueta: '% al mes' }, { id: 'cifra', etiqueta: 'Una cifra' }]}
           activo={modo}
           onElegir={(o) => onModo?.(o.id)}
         />
@@ -546,7 +546,7 @@ export function Financiar({
       {modo === 'porcentaje' ? (
         <>
           <CampoMonto
-            rotulo="Qué porcentaje de lo que debe"
+            rotulo="Qué porcentaje al mes"
             moneda="%"
             monto={porcentaje} onMonto={onPorcentaje}
             atajos={atajosPorcentaje} atajoActivo={porcentajeActivo} onAtajo={onAtajoPorcentaje}
@@ -558,7 +558,7 @@ export function Financiar({
           )}
         </>
       ) : (
-        <CampoMonto rotulo={enMiles ? 'Interés por financiar (en miles)' : 'Interés por financiar'} monto={monto} onMonto={onMonto} />
+        <CampoMonto rotulo={enMiles ? 'Interés por todo el plazo (en miles)' : 'Interés por todo el plazo'} monto={monto} onMonto={onMonto} />
       )}
 
       <Contador
