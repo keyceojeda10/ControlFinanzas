@@ -749,6 +749,9 @@ export async function GET(request, { params }) {
   return Response.json({
     id:          ruta.id,
     nombre:      ruta.nombre,
+    /* Archivada = unida con otra (lib/rutas/fusionar.js): la pantalla no la
+       enseña como si se pudiera trabajar en ella. */
+    archivada:   !ruta.activo,
     diasSinCobro: ruta.diasSinCobro,
     ...(puedeVerCapital ? {
       saldoCapital: Math.round(ruta.saldoCapital || 0),
@@ -834,6 +837,7 @@ export async function PATCH(request, { params }) {
     where: { id, organizationId: session.user.organizationId },
   })
   if (!ruta) return Response.json({ error: 'Ruta no encontrada' }, { status: 404 })
+  if (!ruta.activo) return Response.json({ error: 'Esta ruta está archivada: se unió con otra.' }, { status: 409 })
 
   const { nombre, cobradorId, diasSinCobro, capitalHabilitado } = await request.json()
 

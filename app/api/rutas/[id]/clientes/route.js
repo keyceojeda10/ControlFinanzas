@@ -7,8 +7,10 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
 import { notificar } from '@/lib/notificar'
 
+/* Solo rutas activas: meter clientes en una ruta archivada (unida con otra)
+   los escondería en una ruta que ninguna lista enseña. */
 async function verificarRuta(id, organizationId) {
-  return prisma.ruta.findFirst({ where: { id, organizationId } })
+  return prisma.ruta.findFirst({ where: { id, organizationId, activo: true } })
 }
 
 // ─── POST /api/rutas/[id]/clientes ──────────────────────────────

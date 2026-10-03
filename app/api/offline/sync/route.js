@@ -131,6 +131,7 @@ export async function GET() {
   const rutasRaw = await prisma.ruta.findMany({
     where: {
       organizationId: orgId,
+      activo: true,
       ...(rol === 'cobrador' ? { id: { in: rutaIds } } : {}),
     },
     include: {

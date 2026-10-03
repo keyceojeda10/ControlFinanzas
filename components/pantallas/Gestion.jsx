@@ -1268,6 +1268,7 @@ export function UnirRuta({
   cargando = false,
   vista,
   cobradores = [], cobradorId, onCobrador,
+  bloqueo, entrega,
   formatMoney,
 }) {
   return (
@@ -1327,7 +1328,9 @@ export function UnirRuta({
             resumen={[
               { etiqueta: 'Clientes que pasan', valor: String(vista.clientes) },
               { etiqueta: 'Préstamos activos', valor: String(vista.prestamos) },
-              { etiqueta: `Capital de ${origen}`, valor: formatMoney(vista.origen.capital) },
+              vista.origen.llevabaCapital
+                ? { etiqueta: `Capital de ${origen}`, valor: formatMoney(vista.origen.capital) }
+                : { etiqueta: origen, valor: 'no llevaba capital propio', texto: true },
               { etiqueta: 'Capital del negocio', valor: 'no cambia', texto: true },
               { etiqueta: origen, valor: 'queda archivada', texto: true },
             ]}
@@ -1335,7 +1338,9 @@ export function UnirRuta({
 
           {/* Lo que impide unir va primero y en rojo: el botón está apagado y
               hay que decir por qué y qué hacer. */}
-          {vista.bloqueo && <Aviso tono="rojo">{vista.bloqueo}</Aviso>}
+          {bloqueo && <Aviso tono="rojo">{bloqueo}</Aviso>}
+
+          {entrega && <Aviso tono="ambar">{entrega}</Aviso>}
 
           {vista.avisoDias && <Aviso tono="ambar">{vista.avisoDias}</Aviso>}
 

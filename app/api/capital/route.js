@@ -100,8 +100,10 @@ export async function POST(request) {
   // Si viene rutaId, validar que la ruta pertenezca a la organizacion
   let rutaIdValida = null
   if (rutaId) {
+    /* Solo rutas activas: una archivada (unida con otra) no la enseña ninguna
+       caja, y la plata que entrara ahí no la vería nadie. */
     const ruta = await prisma.ruta.findFirst({
-      where: { id: rutaId, organizationId },
+      where: { id: rutaId, organizationId, activo: true },
       select: { id: true },
     })
     if (!ruta) return Response.json({ error: 'Ruta no válida' }, { status: 400 })
@@ -118,8 +120,19 @@ export async function POST(request) {
     // Guard de idempotencia: solo se puede absorber UNA vez por ruta. Si ya
     // existe un ajuste de arranque para esta ruta, no volver a descontar
     // (evita descontar los prestamos previos multiples veces).
+    /* ⚠ TAMBIÉN SI LO ABSORBIÓ UNA RUTA QUE SE UNIÓ CON ESTA. Su bolsa llegó
+       con esos préstamos ya descontados, y absorberlos otra vez los restaría
+       dos veces (lib/rutas/fusionar.js). */
+    const unidas = await prisma.movimientoCapital.findMany({
+      where: { organizationId, tipo: 'ajuste', referenciaTipo: 'ruta', referenciaId: rutaIdValida },
+      select: { rutaId: true },
+    })
     const yaAbsorbido = await prisma.movimientoCapital.findFirst({
-      where: { organizationId, rutaId: rutaIdValida, ajusteArranqueRuta: true },
+      where: {
+        organizationId,
+        rutaId: { in: [rutaIdValida, ...unidas.map((u) => u.rutaId).filter(Boolean)] },
+        ajusteArranqueRuta: true,
+      },
       select: { id: true },
     })
     if (!yaAbsorbido) {

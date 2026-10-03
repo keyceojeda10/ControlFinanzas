@@ -696,6 +696,9 @@ export default function RutaDetallePage({ params }) {
       if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.offline) throw new Error('offline')
+      /* Una ruta archivada se unió con otra: se vuelve a la lista. Pasa con el
+         «atrás» del navegador justo después de unir. */
+      if (data.archivada) { router.replace('/rutas'); return null }
       setRuta(data)
       yaPintadaRef.current = true
       guardarEnCache(`ruta:${id}`, data).catch(() => {})
@@ -710,7 +713,7 @@ export default function RutaDetallePage({ params }) {
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, router])
 
   // Inyectar/retirar capital de esta ruta (reusa POST /api/capital con rutaId)
   const guardarCapitalRuta = async (e) => {

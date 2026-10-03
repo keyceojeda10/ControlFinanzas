@@ -62,8 +62,10 @@ export async function POST(request) {
 
     // Verificar que las rutas del backup existen en esta org
     const rutaIds = backup.rutas.map((r) => r.id)
+    /* Solo las activas: una ruta archivada (unida con otra) no recibe clientes
+       de un respaldo viejo; esos quedan sin ruta, a la vista. */
     const rutasExistentes = await prisma.ruta.findMany({
-      where: { id: { in: rutaIds }, organizationId },
+      where: { id: { in: rutaIds }, organizationId, activo: true },
       select: { id: true },
     })
     const rutasValidas = new Set(rutasExistentes.map((r) => r.id))
@@ -95,7 +97,10 @@ export async function POST(request) {
           })
         }
       }
-    })
+    /* Margen de tiempo: un cliente por actualización con cientos de clientes
+       pasaba los 5 s por defecto, y una transacción que expira a medias puede
+       dejar escrita la que iba en vuelo (ver lib/rutas/fusionar.js). */
+    }, { timeout: 60000 })
 
     return Response.json({ ok: true, restaurados: clienteIds.filter((id) => clientesValidos.has(id)).length })
   } catch (err) {

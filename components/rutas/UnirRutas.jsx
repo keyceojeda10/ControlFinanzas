@@ -71,6 +71,25 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
     return lista
   }, [vista])
 
+  /* El bloqueo de cambiar de cobrador depende de a quién se elija: lo decide
+     la pantalla con lo que dijo el servidor, y el servidor lo vuelve a mirar. */
+  const cambiaCobrador = vista && (cobradorId ?? null) !== (vista.destino.cobrador?.id ?? null)
+  const bloqueo = vista ? (vista.bloqueo || (cambiaCobrador ? vista.bloqueoSiCambia : null)) : null
+
+  /* En los negocios donde el cobrador carga el capital de la ruta en efectivo,
+     unir es también pasar esos billetes de mano: se dice quién a quién. */
+  const entrega = useMemo(() => {
+    if (!vista?.capitalEsEfectivo || !vista.origen.capital) return null
+    const de = vista.origen.cobrador
+    const para = cobradores.find((c) => (c.id ?? null) === (cobradorId ?? null))
+    if (de && para?.id === de.id) return null
+    const monto = formatMoney(Math.abs(vista.origen.capital))
+    const recibe = para?.id ? para.nombre : 'ti'
+    return de
+      ? `${de.nombre} lleva en efectivo el capital de ${vista.origen.nombre}: tiene que entregarle ${monto} a ${recibe}.`
+      : `El capital de ${vista.origen.nombre} (${monto}) pasa a ${vista.destino.nombre}: quien la cobre lo lleva desde hoy.`
+  }, [vista, cobradores, cobradorId, formatMoney])
+
   async function unir() {
     if (!vista) return
     setEnviando(true)
@@ -109,7 +128,7 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
           onAceptar={unir}
           textoAceptar={vista ? `Unir con ${vista.destino.nombre}` : 'Unir'}
           deslizar
-          deshabilitado={!vista || Boolean(vista.bloqueo) || enviando}
+          deshabilitado={!vista || Boolean(bloqueo) || enviando}
           aceptando={enviando}
           error={error}
         />
@@ -125,6 +144,8 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
         cobradores={cobradores}
         cobradorId={cobradorId}
         onCobrador={setCobradorId}
+        bloqueo={bloqueo}
+        entrega={entrega}
         formatMoney={formatMoney}
       />
     </HojaInferior>

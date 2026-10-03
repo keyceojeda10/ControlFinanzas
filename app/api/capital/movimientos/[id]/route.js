@@ -61,6 +61,14 @@ export async function DELETE(request, { params }) {
       error: 'Esa corrección la puso el sistema al borrar un gasto, y no se puede quitar: si la quitas, el gasto borrado seguiría restando de tu caja para siempre.',
     }, { status: 400 })
   }
+  /* Las dos mitades de unir dos rutas (lib/rutas/fusionar.js) van juntas:
+     quitar una inventa plata en el negocio y resucita la bolsa de la ruta
+     archivada. */
+  if (movimiento.tipo === 'ajuste' && movimiento.referenciaTipo === 'ruta') {
+    return Response.json({
+      error: 'Ese movimiento lo puso el sistema al unir dos rutas, y no se puede quitar: si lo quitas, el capital del negocio dejaría de cuadrar.',
+    }, { status: 400 })
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -121,6 +129,13 @@ export async function PATCH(request, { params }) {
   if (!TIPOS_MANUALES.includes(movimiento.tipo)) {
     return Response.json({
       error: `No se puede editar un movimiento de tipo "${movimiento.tipo}". Gestiona la entidad original (préstamo, pago o gasto).`,
+    }, { status: 400 })
+  }
+  /* Ni se edita: cambiarle el monto descuadra el par, y quitarle el
+     «Unión de rutas» de la descripción lo haría contar como billetes. */
+  if (movimiento.tipo === 'ajuste' && movimiento.referenciaTipo === 'ruta') {
+    return Response.json({
+      error: 'Ese movimiento lo puso el sistema al unir dos rutas, y no se puede cambiar.',
     }, { status: 400 })
   }
 

@@ -89,6 +89,7 @@ export async function GET(request) {
       ? prisma.ruta.findMany({
           where: {
             organizationId,
+            activo: true,
             nombre: { contains: q },
           },
           select: {

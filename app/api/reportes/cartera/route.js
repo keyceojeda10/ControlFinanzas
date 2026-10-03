@@ -54,7 +54,7 @@ export async function GET() {
   // El universo correcto es «clientes de la ruta CON prestamo activo», sin
   // mirarles el estado. Ver `clientesEnMora` en lib/dinero/definiciones.js.
   const rutas = await prisma.ruta.findMany({
-    where: { organizationId: orgId },
+    where: { organizationId: orgId, activo: true },
     include: {
       cobrador: { select: { nombre: true } },
       clientes: {
