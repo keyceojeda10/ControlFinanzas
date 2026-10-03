@@ -56,6 +56,7 @@ import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
 import HojaInferior                  from '@/components/cf/HojaInferior'
+import UnirRutas                     from '@/components/rutas/UnirRutas'
 import { anotarReciente } from '@/lib/recientes'
 import { rotulo } from '@/lib/dinero/definiciones'
 
@@ -433,6 +434,8 @@ export default function RutaDetallePage({ params }) {
   // T24-03: la ficha de capital de la ruta. Se abre tocando el bloque negro,
   // que es justo la cifra sobre la que responde («¿me rinde meter plata aqui?»).
   const [fichaCapital, setFichaCapital] = useState(false)
+  /* «Unir con otra ruta» (PRESTA MIL, 2 oct 2026). Solo el dueño. */
+  const [unirAbierta, setUnirAbierta] = useState(false)
   // «Solo hoy»: esconder a quien no toca cobrar hoy. Apagado por defecto —
   // quitar clientes de la vista sin que nadie lo haya pedido es peor que
   // mostrarlos de más—, pero se recuerda para quien lo enciende.
@@ -1310,6 +1313,29 @@ export default function RutaDetallePage({ params }) {
     if (seleccionados.includes(cid)) setPosicionesNuevos(prev => { const n = { ...prev }; delete n[cid]; return n })
   }
 
+  /* ══ SELECCIONAR TODOS LOS SIN RUTA ══
+     «Si tenemos 90 clientes sin ruta tenemos que meterlos uno a uno» — el
+     dueño, 2 oct 2026. El modal ya dejaba marcar varios; faltaba marcarlos de
+     un toque. Marca los que se VEN (con la búsqueda puesta, solo esos) y solo
+     los que no tienen ruta: los de otra ruta se siguen eligiendo de uno en uno,
+     porque moverlos se los quita a otro cobrador. */
+  const coincideBusqueda = (c) => {
+    if (!buscarCliente.trim()) return true
+    const q = buscarCliente.toLowerCase()
+    return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
+  }
+  const sinRutaVisibles = clientesSinRuta.filter(coincideBusqueda)
+  const todosSinRutaMarcados = sinRutaVisibles.length > 0 && sinRutaVisibles.every((c) => seleccionados.includes(c.id))
+  const marcarTodosSinRuta = () => {
+    const ids = sinRutaVisibles.map((c) => c.id)
+    if (todosSinRutaMarcados) {
+      setSeleccionados((prev) => prev.filter((x) => !ids.includes(x)))
+      setPosicionesNuevos((prev) => { const n = { ...prev }; ids.forEach((x) => delete n[x]); return n })
+    } else {
+      setSeleccionados((prev) => [...prev, ...ids.filter((x) => !prev.includes(x))])
+    }
+  }
+
   const asignarClientes = async () => {
     if (!seleccionados.length) return
     setErrorAsignar('')
@@ -1450,6 +1476,11 @@ export default function RutaDetallePage({ params }) {
         'poner otro cobrador', 'quitar el cobrador', 'dejarla sin cobrador'],
       disponible: esOwner,
       ejecutar: () => abrirEditarRuta() },
+    { id: 'ruta-unir', label: 'Unir esta ruta con otra', pista: 'Pasa sus clientes y su capital',
+      sinonimos: ['unir rutas', 'fusionar rutas', 'juntar rutas', 'migrar ruta', 'pasar la ruta a otra',
+        'mover todos los clientes', 'unir listas', 'juntar listas'],
+      disponible: esOwner,
+      ejecutar: () => setUnirAbierta(true) },
     { id: 'ruta-eliminar', label: 'Eliminar esta ruta', pista: 'No borra los clientes',
       sinonimos: ['eliminar ruta', 'borrar ruta', 'quitar la ruta'],
       disponible: esOwner,
@@ -2551,6 +2582,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           // tienen ruta). Con `setModalClientes` el modal abria VACIO y decia
           // «Todos los clientes ya tienen ruta asignada», que era mentira.
           { id: 'agregar', texto: 'Agregar cliente', onClick: () => abrirModalClientes() },
+          ...(esOwner ? [{ id: 'unir', texto: 'Unir con otra ruta', onClick: () => setUnirAbierta(true) }] : []),
           /* ⚠ CUENTA PUERTAS POR TOCAR, no deudas abiertas.
              `ruta.pendientesHoy` viene del servidor e incluye al que el
              cobrador ya cerró a mano —y eso está bien ahí: ese cliente sigue
@@ -3592,12 +3624,20 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 {errorAsignar}
               </div>
             )}
-            {clientesSinRuta.filter(c => {
-              if (!buscarCliente.trim()) return true
-              const q = buscarCliente.toLowerCase()
-              return c.nombre.toLowerCase().includes(q) || c.cedula?.includes(q)
-            }).length > 0 && (
-              <p className="text-[10px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide px-1 pt-1">Sin ruta asignada ({clientesSinRuta.length})</p>
+            {sinRutaVisibles.length > 0 && (
+              <div className="flex items-center justify-between gap-2 px-1 pt-1">
+                <p className="text-[10px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide">Sin ruta asignada ({clientesSinRuta.length})</p>
+                <button
+                  type="button"
+                  onClick={marcarTodosSinRuta}
+                  className="text-[12px] font-semibold py-1 transition-opacity active:opacity-70"
+                  style={{ color: 'var(--cf-gold-dark)' }}
+                >
+                  {todosSinRutaMarcados
+                    ? 'Quitar todos'
+                    : `Seleccionar ${buscarCliente.trim() ? 'estos' : 'todos'} (${sinRutaVisibles.length})`}
+                </button>
+              </div>
             )}
             {clientesSinRuta.filter(c => {
               if (!buscarCliente.trim()) return true
@@ -3933,6 +3973,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
               })}
             </div>
           </div>
+          {/* Unir: está aquí porque es donde el dueño busca «qué hago con esta
+              ruta». Cierra el lápiz y abre su propia hoja. */}
+          <button
+            type="button"
+            onClick={() => { cerrarEditarRuta(); setUnirAbierta(true) }}
+            className="w-full text-left text-sm font-semibold py-2 transition-opacity active:opacity-70"
+            style={{ color: 'var(--cf-gold-dark)' }}
+          >
+            Unir con otra ruta
+          </button>
         </div>
       </Modal>
 
@@ -4230,6 +4280,16 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           </button>
         </div>
       </div>
+    )}
+    {/* Fuera del bloque del móvil (`lg:hidden`): la hoja no se pinta en un
+        portal, y dentro de ese bloque en el PC quedaba montada pero invisible. */}
+    {esOwner && ruta && (
+      <UnirRutas
+        abierta={unirAbierta}
+        onCerrar={() => setUnirAbierta(false)}
+        ruta={ruta}
+        formatMoney={formatMoney}
+      />
     )}
     </>
   )

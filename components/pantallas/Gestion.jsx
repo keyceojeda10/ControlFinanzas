@@ -1256,3 +1256,97 @@ export function RegistrarGasto({
     </>
   )
 }
+
+/* ══ Unir una ruta con otra ═══════════════════════════════════════════════
+   PRESTA MIL, 2 oct 2026: «unir la lista 9 con la 10». Dos pasos en la misma
+   hoja: con cuál se une, y —ya elegida— quién la cobra y qué va a pasar con
+   sus cifras. Lo que no sale aquí es lo que sorprende al confirmar: los
+   clientes, el capital de las dos y los días sin cobro que cambian. */
+export function UnirRuta({
+  origen,
+  rutas = [], destinoId, onDestino,
+  cargando = false,
+  vista,
+  cobradores = [], cobradorId, onCobrador,
+  formatMoney,
+}) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+        <Rotulo>¿Con cuál la unes?</Rotulo>
+        {rutas.length === 0 && (
+          <span style={{ fontSize: 13, color: 'var(--cf-ink-3)' }}>No hay otra ruta activa con la que unirla.</span>
+        )}
+        {/* Elegida, se queda sola: la lista entera empujaba fuera de la
+            pantalla justo lo que hay que leer antes de deslizar. */}
+        {(destinoId ? rutas.filter((r) => r.id === destinoId) : rutas).map((r) => (
+          <FilaOpcion
+            key={r.id}
+            titulo={r.nombre}
+            nota={[r.cobrador ? `La cobra ${r.cobrador}` : 'Sin cobrador', `${r.clientes} ${r.clientes === 1 ? 'cliente' : 'clientes'}`].join(' · ')}
+            activo={destinoId === r.id}
+            onClick={() => onDestino?.(r.id)}
+          />
+        ))}
+        {destinoId && rutas.length > 1 && (
+          <button
+            type="button"
+            onClick={() => onDestino?.(null)}
+            style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)' }}
+          >
+            Elegir otra ruta
+          </button>
+        )}
+      </div>
+
+      {destinoId && cargando && !vista && (
+        <span style={{ fontSize: 13, color: 'var(--cf-ink-3)', flex: 'none' }}>Calculando…</span>
+      )}
+
+      {vista && (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+            <Rotulo>¿Quién la cobra?</Rotulo>
+            {cobradores.map((c) => (
+              <FilaOpcion
+                key={c.id ?? 'nadie'}
+                titulo={c.nombre}
+                nota={c.nota}
+                activo={(cobradorId ?? null) === (c.id ?? null)}
+                onClick={() => onCobrador?.(c.id ?? null)}
+              />
+            ))}
+          </div>
+
+          <AntesDespues
+            etiqueta={`Lo que pasa a ${vista.destino.nombre}`}
+            concepto={`Capital de ${vista.destino.nombre}`}
+            antes={formatMoney(vista.destino.capital)}
+            despues={formatMoney(vista.capitalDespues)}
+            tono="neutro"
+            resumen={[
+              { etiqueta: 'Clientes que pasan', valor: String(vista.clientes) },
+              { etiqueta: 'Préstamos activos', valor: String(vista.prestamos) },
+              { etiqueta: `Capital de ${origen}`, valor: formatMoney(vista.origen.capital) },
+              { etiqueta: 'Capital del negocio', valor: 'no cambia', texto: true },
+              { etiqueta: origen, valor: 'queda archivada', texto: true },
+            ]}
+          />
+
+          {/* Lo que impide unir va primero y en rojo: el botón está apagado y
+              hay que decir por qué y qué hacer. */}
+          {vista.bloqueo && <Aviso tono="rojo">{vista.bloqueo}</Aviso>}
+
+          {vista.avisoDias && <Aviso tono="ambar">{vista.avisoDias}</Aviso>}
+
+          <Aviso>
+            Los clientes van al final del recorrido de {vista.destino.nombre}, en el
+            orden que traían. El historial de {origen} se conserva, pero la unión no
+            se puede deshacer con un botón. Mejor hacerlo después de cerrar la caja
+            del día.
+          </Aviso>
+        </>
+      )}
+    </>
+  )
+}

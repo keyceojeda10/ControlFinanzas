@@ -83,12 +83,19 @@ export async function POST(request, { params }) {
     })
     const nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
 
-    for (let i = 0; i < clienteIds.length; i++) {
-      await tx.cliente.update({
-        where: { id: clienteIds[i] },
-        data: { rutaId: id, ordenRuta: nextOrden + i },
-      })
-    }
+    /* ⚠ TODOS EN UNA SENTENCIA, cada uno con su puesto (`nextOrden + i`, en el
+       orden en que se eligieron). Eran una actualización por cliente dentro de
+       una transacción de 5 s: con «Seleccionar todos» 61 clientes la pasaron en
+       el espejo (2 oct 2026) y no entró ninguno, y en la unión de rutas la que
+       iba en vuelo al expirar SE ESCRIBIÓ FUERA de la transacción. Los ids ya
+       están validados arriba y van como parámetros, no pegados al texto. */
+    const casos = clienteIds.map(() => 'WHEN ? THEN ?').join(' ')
+    const valores = clienteIds.flatMap((cid, i) => [cid, nextOrden + i])
+    await tx.$executeRawUnsafe(
+      `UPDATE Cliente SET rutaId = ?, ordenRuta = CASE id ${casos} END
+       WHERE organizationId = ? AND id IN (${clienteIds.map(() => '?').join(', ')})`,
+      id, ...valores, organizationId, ...clienteIds,
+    )
 
     // Reservar el saldo pendiente de los préstamos activos en el capital de la ruta.
     // ajusteArranqueRuta: no altera el saldo global de la org, solo la sub-bolsa de la ruta.
@@ -110,7 +117,7 @@ export async function POST(request, { params }) {
         })
       }
     }
-  })
+  }, { timeout: 60000 })
 
   /* AL COBRADOR QUE RECIBE LOS CLIENTES. Se los pasaban a su ruta y se enteraba
      al verlos aparecer en la lista —o no se enteraba, y el cliente se quedaba
