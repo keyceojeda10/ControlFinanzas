@@ -36,7 +36,7 @@
 // de meterse dentro».
 
 import { useId, useState } from 'react'
-import { EtiquetaClavo, Pastilla, TiraCifras } from './primitivos'
+import { EtiquetaClavo, EtiquetaFinanciado, Pastilla, TiraCifras } from './primitivos'
 
 const COLOR_ESTADO = {
   mora:    'var(--cf-red)',
@@ -147,6 +147,7 @@ export function FichaPrestamo({ ficha, onAbrir, onWhatsApp, onCobrar }) {
             {/* CUÁL de los dos es el perdido. Con dos préstamos del mismo
                 cliente, sin esto las dos fichas se leen igual. */}
             {ficha.clavo && <EtiquetaClavo />}
+            {ficha.financiado && <EtiquetaFinanciado />}
             {ficha.desde && (
               <span className="cf-num" style={{ fontSize: 11, color: 'var(--cf-ink-3)' }}>
                 desde {ficha.desde}

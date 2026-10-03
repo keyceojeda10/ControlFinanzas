@@ -244,8 +244,13 @@ export async function GET(request) {
     ...((soloMora || listosRenovar || hayVentana || niUnPeso) && { estado: 'activo' }),
     ...(frecuencia && { frecuencia }),
     ...(creadoPorId && { creadoPorId }),
-    ...(renovacion === 'si' && { renovadoDeId: { not: null } }),
+    /* ⚠ FINANCIAR TAMBIÉN DEJA `renovadoDeId`, y no es renovar: renovar entrega
+       plata nueva; financiar le da más tiempo a la misma deuda. «Sí, le presté
+       de nuevo» ya no trae las financiadas, que tienen su propia opción
+       (PRESTA MIL, 28 sep 2026). Ver `esFinanciacion` en lib/financiar.js. */
+    ...(renovacion === 'si' && { renovadoDeId: { not: null }, interesFinanciado: null }),
     ...(renovacion === 'no' && { renovadoDeId: null }),
+    ...(renovacion === 'financiado' && { interesFinanciado: { not: null } }),
     ...(modoInteres && { modoInteres }),
     ...(soloClavos && { esClavo: true }),
     ...(soloNuevos && { createdAt: { gte: inicioDelDiaLocal(session.user.country ?? 'co') } }),
@@ -337,6 +342,9 @@ export async function GET(request) {
     creadoPorId:      p.creadoPorId,
     creadoPorNombre:  creadoresMap.get(p.creadoPorId) || null,
     renovadoDeId:     p.renovadoDeId,
+    // La marca de «saldo financiado» (lib/financiar.js `esFinanciacion`). Esta
+    // respuesta es una lista blanca: sin la línea, la tarjeta no la ve.
+    interesFinanciado: p.interesFinanciado,
     montoPrestado:    p.montoPrestado,
     totalAPagar:      p.totalAPagar,
     cuotaDiaria:      p.cuotaDiaria,
@@ -492,8 +500,15 @@ export async function GET(request) {
 
   // If paginated, return object with total; otherwise array for backward compat
   if (page != null) {
-    const total = await prisma.prestamo.count({ where })
-    return Response.json({ prestamos: resultado, total, page, totalPages: Math.ceil(total / limit) })
+    /* «De hoy» trae además CUÁNTAS de las de hoy fueron saldo financiado, con
+       el mismo filtro (ruta incluida) y contadas en la base, no en la página:
+       «cuando el cobrador llega yo reviso la ruta 1, cuántas cartulinas
+       prestó» (PRESTA MIL, 28 sep 2026). */
+    const [total, financiados] = await Promise.all([
+      prisma.prestamo.count({ where }),
+      soloNuevos ? prisma.prestamo.count({ where: { ...where, interesFinanciado: { not: null } } }) : null,
+    ])
+    return Response.json({ prestamos: resultado, total, page, totalPages: Math.ceil(total / limit), ...(financiados != null && { financiados }) })
   }
   return Response.json(resultado)
   } catch (err) {

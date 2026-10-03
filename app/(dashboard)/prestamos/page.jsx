@@ -29,6 +29,8 @@ import HojaWhatsApp                 from '@/components/whatsapp/HojaWhatsApp'
 import RegistrarPago               from '@/components/prestamos/RegistrarPago'
 import Avatar                                 from '@/components/ui/Avatar'
 import { Card }                               from '@/components/ui/Card'
+import { EtiquetaFinanciado }                 from '@/components/cf/primitivos'
+import { esFinanciacion }                     from '@/lib/financiar'
 import MonedaCF                               from '@/components/ui/MonedaCF'
 import BadgeNuevo, { NuevoChip }               from '@/components/ui/BadgeNuevo'
 import { useCountry }                         from '@/hooks/useCountry'
@@ -250,7 +252,9 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo, ancla, alSalir }) {
           fontSize={10}
           style={p.cliente?.fotoUrl ? { border: `1.5px solid ${color}` } : undefined}
         />
-        <p className="text-[12px] font-semibold text-[var(--cf-ink)] leading-tight flex-1 min-w-0 truncate">
+        {/* El nombre NO se recorta: baja de renglón (regla del proyecto). Salía
+            «01 ROSWYN SÁNCH…» en la cuadrícula de 412px. */}
+        <p className="text-[12px] font-semibold text-[var(--cf-ink)] leading-tight flex-1 min-w-0" style={{ overflowWrap: 'anywhere' }}>
           {p.cliente?.nombre}
         </p>
       </div>
@@ -273,7 +277,9 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo, ancla, alSalir }) {
 
           Y ninguna pastilla se pierde: el modo sigue ahí, solo que ahora puede
           encogerse él, que es una etiqueta y no una cifra. */}
-      <div className="flex items-center gap-1 mb-1 min-w-0">
+      {/* `flex-wrap`: con «Financiado» la fila no cabe en 180px y «Cuota fija»
+          se recortaba a «C…». Mejor un renglón más que una pastilla que no dice nada. */}
+      <div className="flex flex-wrap items-center gap-1 mb-1 min-w-0">
         <span
           className="inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-px rounded-full shrink-0"
           style={{ background: `color-mix(in srgb, ${color} 13%, transparent)`, color, border: `1px solid color-mix(in srgb, ${color} 21%, transparent)` }}
@@ -289,6 +295,8 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo, ancla, alSalir }) {
             {MODO_TAG[p.modoInteres]}
           </span>
         )}
+        {/* Saldo financiado: no salió plata (PRESTA MIL, 28 sep 2026). */}
+        {esFinanciacion(p) && <EtiquetaFinanciado style={{ height: 18, padding: '0 6px', fontSize: 11 }} />}
       </div>
 
       <p className="text-[15px] font-mono-display font-bold mb-1.5 leading-none whitespace-nowrap"
@@ -399,6 +407,8 @@ export default function PrestamosPage() {
   const [page,      setPage]      = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total,     setTotal]     = useState(0)
+  // Con «De hoy»: cuántas de las de hoy fueron saldo financiado (lo cuenta el API).
+  const [financiadosHoy, setFinanciadosHoy] = useState(null)
   const [rutas,     setRutas]     = useState([])
   // La tercera cifra de T02-06. No se puede derivar de la lista: es del resumen
   // del dia. Si no llega, la tarjeta NO se pinta — un «$0 cobrado este mes» se
@@ -577,7 +587,9 @@ export default function PrestamosPage() {
     { id: 'renovacion', titulo: '¿Es una renovación?', valor: renovacion,
       onCambiar: (v) => { setRenovacion(v); setPage(1) },
       opciones: [{ valor: '', nombre: 'Da igual' }, { valor: 'si', nombre: 'Sí, le presté de nuevo' },
-        { valor: 'no', nombre: 'No, es su primer préstamo' }] },
+        { valor: 'no', nombre: 'No, es su primer préstamo' },
+        // Financiar no es renovar: no salió plata (PRESTA MIL, 28 sep 2026).
+        { valor: 'financiado', nombre: 'Saldo financiado: no salió plata' }] },
     // «Cómo verlo» y «Cómo se ven» eran dos rótulos que sonaban igual y hacían
     // cosas distintas. Ahora cada uno dice lo suyo.
     { id: 'agrupar', titulo: 'Juntar los de un mismo cliente', valor: agrupar ? 'cliente' : '',
@@ -637,6 +649,7 @@ export default function PrestamosPage() {
           setPrestamos(cached.prestamos)
           setTotal(cached.total)
           setTotalPages(cached.totalPages)
+          setFinanciadosHoy(cached.financiados ?? null)
           setLoading(false)
         } else {
           setLoading(true)
@@ -662,11 +675,14 @@ export default function PrestamosPage() {
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
             }
             const start = (p - 1) * LIMIT
-            cached = { prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+            cached = {
+              prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT),
+              financiados: est === 'nuevos' ? filtered.filter(esFinanciacion).length : null,
+            }
           }
         }
         if (cached) {
-          setPrestamos(cached.prestamos); setTotal(cached.total); setTotalPages(cached.totalPages)
+          setPrestamos(cached.prestamos); setTotal(cached.total); setTotalPages(cached.totalPages); setFinanciadosHoy(cached.financiados ?? null)
           if (!navigator.onLine) setIsOffline(true)
           setLoading(false); hasLoadedOnceRef.current = true; return
         }
@@ -735,7 +751,8 @@ export default function PrestamosPage() {
       setPrestamos(items)
       setTotal(data.total)
       setTotalPages(data.totalPages)
-      guardarEnCache(cacheKey, { prestamos: items, total: data.total, totalPages: data.totalPages }).catch(() => {})
+      setFinanciadosHoy(data.financiados ?? null)
+      guardarEnCache(cacheKey, { prestamos: items, total: data.total, totalPages: data.totalPages, financiados: data.financiados ?? null }).catch(() => {})
     } catch {
       try {
         let cached = await leerDeCache(cacheKey)
@@ -753,13 +770,17 @@ export default function PrestamosPage() {
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
             }
             const start = (p - 1) * LIMIT
-            cached = { prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT) }
+            cached = {
+              prestamos: filtered.slice(start, start + LIMIT), total: filtered.length, totalPages: Math.ceil(filtered.length / LIMIT),
+              financiados: est === 'nuevos' ? filtered.filter(esFinanciacion).length : null,
+            }
           }
         }
         if (cached) {
           setPrestamos(cached.prestamos)
           setTotal(cached.total)
           setTotalPages(cached.totalPages)
+          setFinanciadosHoy(cached.financiados ?? null)
           if (!navigator.onLine) setIsOffline(true)
           setLoading(false)
           hasLoadedOnceRef.current = true
@@ -930,6 +951,20 @@ export default function PrestamosPage() {
         grupos={gruposFiltro}
       />
 
+      {/* ── «DE HOY»: CUÁNTAS SE PRESTARON Y CUÁNTAS SE FINANCIARON ──
+          «Cuando el cobrador llega yo reviso la ruta 1, cuántas cartulinas
+           prestó […] la idea es que se puedan ver las financiadas y las que
+           fueron de préstamos, para no estarle preguntando al cobrador cada
+           ratito.» — PRESTA MIL, 28 sep 2026. Las dos cifras salen de la base
+          con el mismo filtro que la lista (ruta incluida), no de la página. */}
+      {!loading && estado === 'nuevos' && financiadosHoy != null && total > 0 && (
+        <p className="text-[13px] mb-3 flex flex-wrap items-center gap-x-2 gap-y-1" style={{ color: 'var(--cf-ink-2)' }}>
+          <span><span className="cf-num font-bold" style={{ color: 'var(--cf-ink)' }}>{total - financiadosHoy}</span> {total - financiadosHoy === 1 ? 'prestada' : 'prestadas'}</span>
+          <span aria-hidden style={{ color: 'var(--cf-ink-4)' }}>·</span>
+          <span><span className="cf-num font-bold" style={{ color: 'var(--cf-blue)' }}>{financiadosHoy}</span> {financiadosHoy === 1 ? 'financiada' : 'financiadas'}</span>
+        </p>
+      )}
+
       {/* Offline indicator */}
       {isOffline && (
         <div className="bg-[var(--cf-gold-tint)] border border-[color-mix(in_srgb,var(--cf-gold-dark)_30%,transparent)] text-[var(--cf-gold-dark)] text-xs rounded-[12px] px-4 py-2.5 mb-4 flex items-center gap-2">
@@ -1051,8 +1086,12 @@ export default function PrestamosPage() {
                               propia columna: los dos aquí dejaban el nombre en
                               «FERNANDO MEN…» y al cobrador en «J…», o sea que no
                               servía ninguno de los tres. */}
-                          <span className="flex items-center min-w-0">
+                          {/* «Financiado» va AQUÍ, no junto al nombre: con «Nuevo»
+                              y ella en la misma fila, el nombre se partía letra
+                              por letra (visto en el espejo, 1440px). */}
+                          <span className="flex items-center flex-wrap gap-x-2 gap-y-1 min-w-0">
                             <Dato trazo={TRAZO.ruta} apagado={a?.piezas?.ruta === 'Sin ruta'}>{a?.piezas?.ruta}</Dato>
+                            {a?.financiado && <EtiquetaFinanciado />}
                           </span>
                         </span>
                         {/* La MISMA pastilla de modo que la tarjeta de móvil, con

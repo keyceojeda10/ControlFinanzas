@@ -51,7 +51,7 @@
 //  · El fondo es SIEMPRE blanco. El estado va en el riel de 4px, nunca tiñendo
 //    la tarjeta: eso era el muro chillón que este rediseño corrige.
 
-import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EtiquetaNuevo, EstrellaCliente } from './primitivos'
+import { BarraProgreso, Pastilla, TiraCifras, EtiquetaClavo, EtiquetaFinanciado, EtiquetaNuevo, EstrellaCliente } from './primitivos'
 import OfflineBadge from '@/components/offline/OfflineBadge'
 import { Metadatos, Dato, ModoInteres, CreadoPor, TRAZO } from './Metadatos'
 import DesglosePrestamos from './DesglosePrestamos'
@@ -134,6 +134,12 @@ export default function TarjetaCliente({
      del cliente — que son dos de las cinco pantallas donde el dueño no podía
      saber cuál de los dos préstamos era el perdido. */
   clavo = false,
+  /* ── SALDO FINANCIADO ──
+     Esta cartulina no entregó plata: le dio más tiempo a la misma deuda. Va al
+     lado del estado, como el clavo, para que el dueño no tenga que preguntarle
+     al cobrador cuál fue préstamo y cuál financiación (PRESTA MIL, 28 sep 2026).
+     La componen `adaptarPrestamos` y `adaptarClientes`. */
+  financiado = false,
   /* ── CÓMO HA PAGADO LO ANTERIOR ──
      `{ nivel, numero }` de `lib/calificacion.js`. La compone el adaptador desde
      el historial, así que sale igual en la lista, en la ficha del cliente y en
@@ -362,6 +368,7 @@ export default function TarjetaCliente({
                 </Pastilla>
               )}
               {clavo && <EtiquetaClavo />}
+              {financiado && <EtiquetaFinanciado />}
               {/* ⚠ UN COBRO DE ESTE CLIENTE ESTÁ EN EL TELÉFONO, NO EN EL SISTEMA.
                   La lista lo mostraba en mora sin decir por qué: el cobro sin
                   señal solo se veía en una pastilla sobre la barra. Va junto al

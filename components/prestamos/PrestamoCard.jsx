@@ -15,6 +15,8 @@ import CardActionMenu from '@/components/ui/CardActionMenu'
 import { NuevoChip } from '@/components/ui/BadgeNuevo'
 import CardWaves from '@/components/ui/CardWaves'
 import { useCardPalettes, moodKeyPrestamo } from '@/components/ui/tarjetaCredito'
+import { EtiquetaFinanciado } from '@/components/cf/primitivos'
+import { esFinanciacion } from '@/lib/financiar'
 
 function moodLabel(p, esNuevo) {
   if (p.estado === 'completado') return 'Completado'
@@ -136,6 +138,8 @@ export default function PrestamoCard({ prestamo: p, actions, esNuevo, ancla, alS
                   {MODO_TAG[p.modoInteres]}
                 </span>
               )}
+              {/* Saldo financiado: no salió plata (PRESTA MIL, 28 sep 2026). */}
+              {esFinanciacion(p) && <EtiquetaFinanciado style={{ height: 20, padding: '0 8px', fontSize: 10 }} />}
               {esNuevo && label !== 'Nuevo' && <NuevoChip />}
             </div>
             {actions?.length > 0 && <CardActionMenu actions={actions} />}

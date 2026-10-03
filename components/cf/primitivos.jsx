@@ -314,6 +314,9 @@ const PASTILLAS = {
   // «Nuevo» NO es un estado: no lleva color. Contorno y tinta, para que se
   // distinga de la de estado que tiene al lado sin competirle.
   nuevo:     { bg: 'var(--cf-card)',          bd: 'var(--cf-border-strong)',     fg: 'var(--cf-ink)' },
+  // «Financiado» tampoco es un estado: dice de dónde salió la cartulina. Azul,
+  // para no confundirse con ninguno de los tres colores de mora.
+  financiado: { bg: 'color-mix(in srgb, var(--cf-blue) 10%, transparent)', bd: 'color-mix(in srgb, var(--cf-blue) 30%, transparent)', fg: 'var(--cf-blue)' },
 }
 
 export function Pastilla({ children, tono = 'neutro', numerica = false, style }) {
@@ -372,6 +375,27 @@ export function EtiquetaClavo({ style }) {
         <path d="M18 6L6 18M6 6l12 12" />
       </svg>
       Clavo
+    </Pastilla>
+  )
+}
+
+/* ══ EL SALDO FINANCIADO ═══════════════════════════════════════════════════
+ *
+ * «Necesito acá poder identificar una cartulina que se financia el saldo y las
+ *  cartulinas de préstamos […] a mí me toca preguntarle al cobrador: ¿esta fue
+ *  préstamo o esta fue financiada?» — PRESTA MIL, 28 sep 2026.
+ *
+ * Una cartulina financiada no entregó plata: le dio más tiempo a la misma deuda
+ * (`esFinanciacion` en lib/financiar.js). Va al lado de la pastilla de estado,
+ * como el clavo: dice qué ES el préstamo, no cómo va. */
+export function EtiquetaFinanciado({ style }) {
+  return (
+    <Pastilla tono="financiado" style={{ gap: 4, flex: 'none', ...style }}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flex: 'none' }}>
+        <path d="M4 4v5h5M20 20v-5h-5M5.6 15a7 7 0 0 0 12.3 1.7M18.4 9A7 7 0 0 0 6.1 7.3" />
+      </svg>
+      Financiado
     </Pastilla>
   )
 }

@@ -73,6 +73,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 import { MenuGestion } from '@/components/pantallas/MenuGestion'
 import { anotarReciente } from '@/lib/recientes'
 import CazadorDeErrores from '@/components/armazon/CazadorDeErrores'
+import { esFinanciacion } from '@/lib/financiar'
 
 // ─── Helpers de formato ──────────────────────────────────────────
 const fmtFecha = (d) => d
@@ -1507,7 +1508,30 @@ function PrestamoDetalleContenido({ params }) {
       )}
 
       {/* ── RENOVADO DE (continuidad) ────────────────────────────── */}
-      {renovadoDeId && (
+      {/* ⚠ FINANCIAR TAMBIÉN DEJA `renovadoDeId`, y no es renovar: aquí no salió
+          plata, se le dio más tiempo a la misma deuda. La franja lo dice con
+          su nombre y en azul, el mismo de la pastilla «Financiado» de las
+          listas: «a mí me toca preguntarle al cobrador: ¿esta fue préstamo o
+          esta fue financiada?» (PRESTA MIL, 28 sep 2026). */}
+      {renovadoDeId && esFinanciacion(prestamo) && (
+        <Link
+          href={`/prestamos/${renovadoDeId}`}
+          className="flex items-center gap-2 rounded-[12px] px-3 py-2 text-xs"
+          style={{
+            color: 'var(--cf-ink-2)',
+            background: 'color-mix(in srgb, var(--cf-blue) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--cf-blue) 28%, transparent)',
+          }}
+        >
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: 'var(--cf-blue)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>
+            <strong style={{ color: 'var(--cf-blue)' }}>Saldo financiado: no salió plata nueva.</strong> Es la deuda del préstamo anterior con más tiempo — ver el anterior
+          </span>
+        </Link>
+      )}
+      {renovadoDeId && !esFinanciacion(prestamo) && (
         <Link
           href={`/prestamos/${renovadoDeId}`}
           className="flex items-center gap-2 bg-[rgba(139,92,246,0.10)] border border-[rgba(139,92,246,0.25)] rounded-[12px] px-3 py-2 text-xs"

@@ -182,6 +182,8 @@ export async function GET(request) {
           diaCobroMes2: true,
           diaCobroSemana: true,
           esClavo: true,
+          // Saldo financiado: la tarjeta lo marca (lib/financiar.js `esFinanciacion`).
+          interesFinanciado: true,
           createdAt: true,
           proximoCobroManual: true,
           // Denormalizados: evitan iterar todos los pagos.
@@ -375,6 +377,7 @@ export async function GET(request) {
         totalPagado:      p.totalPagado ?? 0,
         ultimoPagoAt:     p.ultimoPagoAt,
         esClavo:          p.esClavo,
+        interesFinanciado: p.interesFinanciado,
         saldoPendiente:   saldoP,
         porcentajePagado: (() => {
           try { return calcularPorcentajePagado(p) } catch { return 0 }
