@@ -260,7 +260,7 @@ function CampoTexto({ rotulo, valor, onCambio, sugerencia, alto = 52, fuente = 1
 /* Una opción en fila con radio, sub-línea y cifra a la derecha (T19-04). Se usa
    cuando las opciones NO son comparables de un vistazo: ahí un botón cuadrado
    esconde justo la cifra que hay que comparar. */
-function FilaOpcion({ titulo, nota, valor, valorTono, activo, onClick }) {
+export function FilaOpcion({ titulo, nota, valor, valorTono, activo, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-pressed={activo} style={{
       display: 'flex', alignItems: 'center', gap: 12, flex: 'none', width: '100%',

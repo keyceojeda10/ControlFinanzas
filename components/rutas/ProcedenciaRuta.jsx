@@ -46,7 +46,7 @@ export default function ProcedenciaRuta({ grupos, nombreRuta, filtro, onFiltro, 
                 onClick={() => onFiltro?.(activo ? null : g.clave)}
                 style={{
                   background: 'none', border: 0, padding: '4px 0', cursor: 'pointer', font: 'inherit',
-                  fontSize: 12.5, fontWeight: 600, color: activo ? 'var(--cf-ink)' : 'var(--cf-ink-2)',
+                  fontSize: 13, fontWeight: 600, color: activo ? 'var(--cf-ink)' : 'var(--cf-ink-2)',
                   textDecoration: 'underline', textUnderlineOffset: 3,
                 }}
               >{activo ? 'Quitar filtro' : 'Ver solo estos'}</button>

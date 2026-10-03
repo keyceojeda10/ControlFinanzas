@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { Pastilla } from '@/components/cf/primitivos'
+import { FilaOpcion } from '@/components/pantallas/Gestion'
 
 /* Alto 38 y radio 14: los del sistema. Iban a 32 y 8 —por debajo del área que
    necesita un dedo— y con `text-[11px]`, que en una fila de tres botones deja
@@ -267,6 +268,14 @@ export default function FirmaDigital({ prestamo, onSave }) {
   const [hasStrokes, setHasStrokes] = useState(false)
   const [descargando, setDescargando] = useState(false)
   const [descargandoPagare, setDescargandoPagare] = useState(false)
+  /* QUÉ PAGARÉ (3 oct 2026): `capital` (por defecto) o `condiciones`. Ver el
+     porqué en app/api/prestamos/[id]/pagare/route.js. Se recuerda la última
+     elección en este teléfono; si no se puede leer, el de capital. */
+  const [modalPagare, setModalPagare] = useState(false)
+  const [tipoPagare, setTipoPagare] = useState('capital')
+  useEffect(() => {
+    try { if (localStorage.getItem('cf-pagare-tipo') === 'condiciones') setTipoPagare('condiciones') } catch {}
+  }, [])
   const canvasRef = useRef(null)
   const isDrawing = useRef(false)
   const lastPoint = useRef(null)
@@ -366,7 +375,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mensaje: `Pagaré no generado: ${detalle}`,
-          ruta: `/api/prestamos/${prestamoId}/pagare`,
+          ruta: `/api/prestamos/${prestamoId}/pagare?tipo=${tipoPagare}`,
           navegador: typeof navigator !== 'undefined' ? navigator.userAgent : '',
           origen: 'pagare',
         }),
@@ -377,10 +386,13 @@ export default function FirmaDigital({ prestamo, onSave }) {
 
   const descargarPagare = async () => {
     if (!prestamoId) return
+    const tipo = tipoPagare === 'condiciones' ? 'condiciones' : 'capital'
+    try { localStorage.setItem('cf-pagare-tipo', tipo) } catch {}
+    setModalPagare(false)
     setDescargandoPagare(true)
     let res
     try {
-      res = await fetch(`/api/prestamos/${prestamoId}/pagare`)
+      res = await fetch(`/api/prestamos/${prestamoId}/pagare?tipo=${tipo}`)
     } catch {
       avisarFalloPagare(`sin conexión (en línea: ${typeof navigator !== 'undefined' ? navigator.onLine : '?'})`)
       alert('No hay conexión. El pagaré se arma en el servidor: inténtalo de nuevo cuando tengas señal.')
@@ -545,7 +557,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           </button>
           <button
             type="button"
-            onClick={descargarPagare}
+            onClick={() => setModalPagare(true)}
             disabled={descargandoPagare}
             className="flex items-center justify-center gap-1 transition-colors"
             style={{
@@ -578,6 +590,39 @@ export default function FirmaDigital({ prestamo, onSave }) {
       </div>
 
       {/* Modal ver firma ampliada */}
+      {/* ── QUÉ PAGARÉ ──
+          «Con los porcentajes tan altos que aparecen en el pagaré, si lo quiero
+           usar legalmente quizás no serviría» (un prestamista, 3 oct 2026). */}
+      <Modal
+        open={modalPagare}
+        onClose={() => setModalPagare(false)}
+        title="¿Qué pagaré generas?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalPagare(false)}>Cancelar</Button>
+            <Button onClick={descargarPagare} loading={descargandoPagare}>Descargar pagaré</Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <FilaOpcion
+            titulo="Por el capital"
+            nota={`${formatMoney(Math.round(prestamo?.montoPrestado ?? 0), paisSesion)}: lo que prestaste, sin tasa ni cuotas. Si se atrasa, la mora va a la tasa máxima legal.`}
+            activo={tipoPagare !== 'condiciones'}
+            onClick={() => setTipoPagare('capital')}
+          />
+          <FilaOpcion
+            titulo="Con las condiciones del préstamo"
+            nota={`${formatMoney(Math.round(prestamo?.totalAPagar ?? 0), paisSesion)}: con la tasa del ${prestamo?.tasaInteres ?? 0}%, las cuotas y el total.`}
+            activo={tipoPagare === 'condiciones'}
+            onClick={() => setTipoPagare('condiciones')}
+          />
+          <p style={{ fontSize: 13, color: 'var(--cf-ink-3)', lineHeight: 1.45, margin: 0 }}>
+            El de capital no deja por escrito la tasa del préstamo. Antes de usar cualquiera de los dos en un cobro jurídico, revísalo con un abogado.
+          </p>
+        </div>
+      </Modal>
+
       <Modal open={modalVer} onClose={() => setModalVer(false)} title="Firma del cliente">
         {firmaUrl && (
           <div className="overflow-hidden border" style={{ borderRadius: 'var(--cf-r-control)', background: '#ffffff', borderColor: 'var(--cf-border)' }}>

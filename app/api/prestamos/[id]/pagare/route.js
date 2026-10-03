@@ -65,7 +65,7 @@ function numeroALetras(n) {
       if (restoMillones > 0) resultado += ' ' + tresDigitos(restoMillones)
       resultado += ' millones '
     } else {
-      resultado += (millones === 1 ? 'un millon' : tresDigitos(millones) + ' millones') + ' '
+      resultado += (millones === 1 ? 'un millón' : tresDigitos(millones) + ' millones') + ' '
     }
   }
   if (miles > 0) {
@@ -76,6 +76,15 @@ function numeroALetras(n) {
   }
 
   return resultado.trim().toUpperCase()
+}
+
+/** El valor en letras para el documento: «UN MILLÓN DE PESOS», «DOS MILLONES
+ *  DE PESOS», «UN MILLÓN QUINIENTOS MIL PESOS». Salía «UN MILLON PESOS»: sin
+ *  tilde y sin el «de» que pide un millón redondo. En un título valor el monto
+ *  en letras no es adorno. */
+function enPesos(n) {
+  const letras = numeroALetras(n)
+  return `${letras}${/MILL(Ó|O)N(ES)?$/.test(letras) ? ' DE' : ''} PESOS`
 }
 
 export async function GET(req, { params }) {
@@ -108,12 +117,33 @@ export async function GET(req, { params }) {
   const montoInt = Math.round(prestamo.montoPrestado)
   const totalInt = Math.round(prestamo.totalAPagar)
 
+  /* DOS PAGARÉS (3 oct 2026). Un prestamista: «con los porcentajes tan altos
+     que aparecen en el pagaré, si lo quiero usar legalmente quizás no serviría
+     y sería contraproducente». El de siempre dice la tasa por escrito, y en
+     Colombia el interés por encima del límite de usura es delito (art. 305 del
+     Código Penal) y hace perder los intereses (Ley 45 de 1990, art. 72): el
+     documento con el que se iba a cobrar era la prueba en contra.
+
+     · `capital` (POR DEFECTO): el valor es LO PRESTADO, sin tasa, sin total con
+       interés ni cuota; la mora, «a la tasa máxima legal permitida», que nunca
+       pasa del límite porque es el límite. Se cobra lo que la ley reconoce.
+     · `condiciones`: el de siempre, con su texto intacto.
+
+     ⚠ NO hay un tercero «por el total sin decir la tasa»: esconde el interés
+     dentro del valor y, si el deudor prueba lo que recibió, la usura aparece
+     igual y con un documento armado para taparla.
+     ⚠ La redacción del de capital tiene que pasar por un abogado colombiano. */
+  const tipo = new URL(req.url).searchParams.get('tipo') === 'condiciones' ? 'condiciones' : 'capital'
+  const porCapital = tipo === 'capital'
+  const valorInt = porCapital ? montoInt : totalInt
+
   /* La firma se lee por `leerSubido`, que mira el almacén nuevo Y el viejo: los
      archivos salieron de `public/` porque ahí Next los servía sin sesión, y un
      pagaré sin la firma estampada no se ve roto — se ve normal y no sirve. */
   const firmaBuffer = await leerSubido(prestamo.firmaUrl)
 
-  /* EL TEXTO LEGAL NO SE TOCA. Lo unico que cambia respecto de la version
+  /* EL TEXTO LEGAL DEL PAGARÉ «CON CONDICIONES» NO SE TOCA (el de capital es de
+   * 3 oct 2026: ver arriba). Lo unico que cambia respecto de la version
    * anterior es COMO SE VE: las mismas frases, las mismas clausulas, el mismo
    * orden. Este documento presta merito ejecutivo y su redaccion no es cosa de
    * un rediseno.
@@ -151,31 +181,47 @@ export async function GET(req, { params }) {
   doc.font(F.texto).fontSize(TIPO.rotulo).fillColor(COLOR.goldInk)
   hoja.escribir('VALOR', L + 14, y + 9, { characterSpacing: 0.6 })
   doc.font(F.cifraFuerte).fontSize(TIPO.cifraGrande).fillColor(COLOR.ink)
-  hoja.escribir(fmt(totalInt), L + 14, y + 20, { width: W - 28, ellipsis: true })
+  hoja.escribir(fmt(valorInt), L + 14, y + 20, { width: W - 28, ellipsis: true })
   y += ALTO_VALOR + 8
 
   doc.font(F.texto).fontSize(TIPO.tabla).fillColor(COLOR.ink3)
-  doc.text(`${numeroALetras(totalInt).toUpperCase()} PESOS`, L, y, { width: W })
+  doc.text(enPesos(valorInt), L, y, { width: W })
   y = doc.y + 16
 
-  const cuerpo = `Yo, ${cliente.nombre || '________________'}` +
-    (cliente.cedula && !cliente.cedula.startsWith('SIN-') ? `, identificado(a) con cedula de ciudadania No. ${cliente.cedula}` : '') +
-    `, me comprometo a pagar incondicionalmente a la orden de ${org?.nombre || 'EL ACREEDOR'} la suma de ${fmt(totalInt)} (${numeroALetras(totalInt)} PESOS), correspondiente a un prestamo por valor de ${fmt(montoInt)} con una tasa de interes del ${prestamo.tasaInteres}% y un plazo de ${prestamo.diasPlazo} dias.`
+  const identificacion = `Yo, ${cliente.nombre || '________________'}` +
+    (cliente.cedula && !cliente.cedula.startsWith('SIN-')
+      ? (porCapital ? `, identificado(a) con cédula de ciudadanía No. ${cliente.cedula}` : `, identificado(a) con cedula de ciudadania No. ${cliente.cedula}`)
+      : '')
+  const acreedor = org?.nombre || 'EL ACREEDOR'
+
+  const cuerpo = porCapital
+    ? `${identificacion}, me obligo a pagar incondicionalmente a la orden de ${acreedor}, o de quien represente sus derechos, la suma de ${fmt(montoInt)} (${enPesos(montoInt)}), que recibí en préstamo de dinero el ${fmtFecha(prestamo.fechaInicio)}.`
+    : `${identificacion}, me comprometo a pagar incondicionalmente a la orden de ${acreedor} la suma de ${fmt(totalInt)} (${enPesos(totalInt)}), correspondiente a un prestamo por valor de ${fmt(montoInt)} con una tasa de interes del ${prestamo.tasaInteres}% y un plazo de ${prestamo.diasPlazo} dias.`
 
   doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
   doc.text(cuerpo, L, y, { width: W, align: 'justify', lineGap: 3 })
   y = doc.y + 10
 
-  const condiciones = `El pago se realizara en cuotas de ${fmt(Math.round(prestamo.cuotaDiaria))} con frecuencia ${FREQ_LABEL[prestamo.frecuencia] || prestamo.frecuencia}, desde el ${fmtFecha(prestamo.fechaInicio)} hasta el ${fmtFecha(prestamo.fechaFin)}.`
+  const condiciones = porCapital
+    ? `Pagaré esta suma a más tardar el ${fmtFecha(prestamo.fechaFin)}${org?.ciudad ? `, en ${org.ciudad}` : ''}. Podré hacerlo mediante abonos parciales, que se descontarán del saldo de esta obligación.`
+    : `El pago se realizara en cuotas de ${fmt(Math.round(prestamo.cuotaDiaria))} con frecuencia ${FREQ_LABEL[prestamo.frecuencia] || prestamo.frecuencia}, desde el ${fmtFecha(prestamo.fechaInicio)} hasta el ${fmtFecha(prestamo.fechaFin)}.`
   doc.text(condiciones, L, y, { width: W, align: 'justify', lineGap: 3 })
   y = hoja.sitio(doc.y + 16, 90)
 
-  const clausulas = [
-    'En caso de mora, el deudor acepta pagar los intereses moratorios pactados y los gastos de cobranza que se generen.',
-    'El deudor renuncia a los requerimientos de ley para ser constituido en mora y autoriza al acreedor a reportar el incumplimiento ante las centrales de riesgo o bases de datos que apliquen.',
-    'Este pagare presta merito ejecutivo sin necesidad de requerimiento previo.',
-    'Para todos los efectos legales, el deudor senala como domicilio la ciudad donde se suscribe este documento.',
-  ]
+  const clausulas = porCapital
+    ? [
+      `Si el deudor no paga en la fecha indicada, reconocerá intereses moratorios a la tasa máxima legal permitida${country === 'co' ? ', certificada por la Superintendencia Financiera de Colombia,' : ''} desde el día siguiente al vencimiento y hasta el pago total, además de los gastos de cobranza.`,
+      'El acreedor podrá declarar vencido el plazo y exigir de inmediato el pago total del saldo si el deudor incumple cualquiera de los abonos acordados.',
+      'El deudor renuncia a la presentación para el pago, al aviso de rechazo y a los requerimientos de ley para ser constituido en mora, y autoriza al acreedor a reportar el incumplimiento ante las centrales de riesgo o bases de datos que apliquen.',
+      'Este pagaré presta mérito ejecutivo sin necesidad de requerimiento previo.',
+      'Para todos los efectos legales, el deudor señala como domicilio la ciudad donde se suscribe este documento.',
+    ]
+    : [
+      'En caso de mora, el deudor acepta pagar los intereses moratorios pactados y los gastos de cobranza que se generen.',
+      'El deudor renuncia a los requerimientos de ley para ser constituido en mora y autoriza al acreedor a reportar el incumplimiento ante las centrales de riesgo o bases de datos que apliquen.',
+      'Este pagare presta merito ejecutivo sin necesidad de requerimiento previo.',
+      'Para todos los efectos legales, el deudor senala como domicilio la ciudad donde se suscribe este documento.',
+    ]
 
   y = hoja.seccion('Cláusulas', y)
   clausulas.forEach((c, i) => {
@@ -186,11 +232,17 @@ export async function GET(req, { params }) {
     y = doc.y + 7
   })
 
-  y = hoja.seccion('Resumen del crédito', hoja.sitio(y + 8, 130))
+  y = hoja.seccion(porCapital ? 'Resumen' : 'Resumen del crédito', hoja.sitio(y + 8, 130))
 
   /* Dos columnas de pares rotulo/valor: ocho renglones seguidos ocupaban media
-     hoja y empujaban las firmas a la siguiente. */
-  const resumen = [
+     hoja y empujaban las firmas a la siguiente. El de capital no lleva tasa,
+     total, cuota ni frecuencia: es justo lo que no tiene que quedar escrito. */
+  const resumen = porCapital ? [
+    ['Valor prestado', fmt(montoInt)],
+    ['Fecha de entrega', fmtFecha(prestamo.fechaInicio)],
+    ['Vencimiento', fmtFecha(prestamo.fechaFin)],
+    ['Intereses de mora', 'Tasa máxima legal'],
+  ] : [
     ['Monto prestado', fmt(montoInt)],
     ['Tasa de interés', `${prestamo.tasaInteres}%`],
     ['Total a pagar', fmt(totalInt)],
