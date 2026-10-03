@@ -9,7 +9,7 @@ import CuentasGuardadas from '@/components/auth/CuentasGuardadas'
 import PinDeCuatro from '@/components/auth/PinDeCuatro'
 import { leerCuentasGuardadas, guardarCuentaEnTelefono, quitarCuentaDelTelefono } from '@/lib/cuentas-guardadas-cliente'
 import { esMensajeDeCuentaMuerta } from '@/lib/cuentas-guardadas-textos'
-import { hayHuella, paseConHuella, activarHuella, huellaDeEsteTelefono, tocaOfrecerHuella, noOfrecerHuellaPorAhora } from '@/lib/huella-cliente'
+import { hayHuella, paseConHuella, activarHuella, huellaDeEsteTelefono, huellaEsDe, tocaOfrecerHuella, noOfrecerHuellaPorAhora } from '@/lib/huella-cliente'
 
 // ── Showcase cards (decorative, hardcoded data) ─────────────────
 function ShowcasePanel() {
@@ -223,12 +223,14 @@ export default function LoginPage() {
     if (r.error) setErrorHuella(r.error)
   }
 
-  async function entrarConHuella() {
+  /* `alFallar`: desde una tarjeta guardada, si la huella se cancela o falla se
+     sigue con el PIN de esa cuenta, como antes. */
+  async function entrarConHuella({ alFallar } = {}) {
     setErrorHuella(''); setError(''); setCargandoHuella(true)
     try {
       const r = await paseConHuella()
-      if (r.cancelado) return
-      if (r.error) { setErrorHuella(r.error); return }
+      if (r.cancelado) { alFallar?.(null); return }
+      if (r.error) { if (alFallar) alFallar(r.error); else setErrorHuella(r.error); return }
       const s = await signIn('huella', { pase: r.pase, redirect: false })
       if (s?.error) {
         setErrorHuella(s.error === 'VERIFY_EMAIL'
@@ -282,6 +284,18 @@ export default function LoginPage() {
   }
 
   function tocarCuenta(cuenta) {
+    /* Si la huella de este teléfono es de ESTA cuenta, la tarjeta pide la huella
+       y no el PIN. El dueño, 3 oct 2026: «cerré sesión, volví a entrar y no me
+       pidió ni huella ni cara, me pidió el PIN». El PIN queda de respaldo. */
+    if (huellaEsDe(cuenta.userId)) {
+      entrarConHuella({
+        alFallar: (msg) => {
+          if (cuenta.conPin) { setCuentaPin(cuenta); setModo('pin'); setError(msg ? `${msg} Usa tu PIN.` : '') }
+          else entrarConCuenta(cuenta)
+        },
+      })
+      return
+    }
     if (cuenta.conPin) { setCuentaPin(cuenta); setError(''); setModo('pin'); return }
     entrarConCuenta(cuenta)
   }
@@ -585,7 +599,7 @@ export default function LoginPage() {
 
           {puedeHuella && (modo === 'cuentas' || modo === 'formulario') && (
             <div className="mt-4 flex flex-col gap-2">
-              <button type="button" onClick={entrarConHuella} disabled={cargandoHuella}
+              <button type="button" onClick={() => entrarConHuella()} disabled={cargandoHuella}
                 className="flex items-center justify-center gap-2"
                 style={{
                   height: 'var(--cf-h-btn-2)', borderRadius: 'var(--cf-r-control)',

@@ -1,6 +1,6 @@
 // app/api/huella/activar/route.js — activar «entrar con huella o cara» en ESTE teléfono.
 // POST { paso: 'opciones' }                                  → { opciones, sello }
-// POST { paso: 'guardar', sello, respuesta, dispositivo? }   → { ok }
+// POST { paso: 'guardar', sello, respuesta, dispositivo? }   → { ok, userId }
 // La cuenta, en lib/huella.js.
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -21,7 +21,8 @@ export async function POST(request) {
   }
   if (body?.paso === 'guardar') {
     const r = await guardarActivacion({ userId: session.user.id, sello: body.sello, respuesta: body.respuesta, dispositivo: body.dispositivo })
-    return r.error ? Response.json({ error: r.error }, { status: 400 }) : Response.json({ ok: true })
+    // De quién es, para que el teléfono recuerde de qué cuenta es la huella.
+    return r.error ? Response.json({ error: r.error }, { status: 400 }) : Response.json({ ok: true, userId: session.user.id })
   }
   return Response.json({ error: 'Paso no válido' }, { status: 400 })
 }
