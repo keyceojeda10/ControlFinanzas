@@ -30,6 +30,7 @@ import { distanciaMetros } from '@/lib/geo'
 import { totalDistance } from '@/lib/routeOptimizer'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
+import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -300,6 +301,17 @@ export async function GET(request, { params }) {
   // El dia por el que se pregunta, una sola vez para todo el recorrido.
   const hoyLocal = inicioDia()
 
+  /* DE DÓNDE LLEGÓ CADA CLIENTE (3 oct 2026): el último cambio hacia esta ruta.
+     Sirve para comparar a los que llegaron —p. ej. al unir la ruta 10— con los
+     que ya estaban. Ver lib/rutas/procedencia.js. */
+  const vieneDe = vieneDePorCliente(await prisma.cambioRuta.findMany({
+    where: { organizationId, aRutaId: id, clienteId: { in: ruta.clientes.map((c) => c.id) } },
+    select: { clienteId: true, deRutaId: true, deRutaNombre: true, createdAt: true },
+  }))
+  // Las cifras de cada cliente para la comparación, las MISMAS que ya se le
+  // calculan abajo (cumplimiento, atraso, cartera): no se vuelven a sacar.
+  const cifrasProcedencia = []
+
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
     // ya que la vista de ruta no tiene acceso al campo diasSinCobro del prestamo)
@@ -321,6 +333,7 @@ export async function GET(request, { params }) {
     // alli, se cambia aqui. Es la columna «Cumple» de la tabla de T04-09.
     let cuotasVencidasCliente = 0
     let cuotasPagadasCliente = 0
+    let carteraCliente = 0
     const prestamosActivos = []
     let ultimaFechaPago = null
     // ── LOS QUE NO SON VISITA DE HOY (Adenda 5 · E09) ──
@@ -534,6 +547,7 @@ export async function GET(request, { params }) {
       esperadoHoy   += tocaCobrarEn(p, hoyLocal, diasExcluidosPrestamo, festivos) ? cuota : 0
       const saldoPendientePrestamo = calcularSaldoPendiente(p)
       carteraTotal    += saldoPendientePrestamo
+      carteraCliente  += saldoPendientePrestamo
       capitalTotal    += p.montoPrestado
       totalAPagarRuta += p.totalAPagar ?? p.montoPrestado
       // Nunca por encima del saldo: si un préstamo tiene recargos, el capital
@@ -627,6 +641,16 @@ export async function GET(request, { params }) {
       diasParaCobro = 1
     }
 
+    cifrasProcedencia.push({
+      id: c.id,
+      conDeuda: c.prestamos.some((pr) => pr.estado === 'activo' && !pr.esClavo),
+      diasMora: mora,
+      atraso: montoParaAlDiaCliente,
+      cartera: carteraCliente,
+      cuotasPagadas: cuotasPagadasCliente,
+      cuotasVencidas: cuotasVencidasCliente,
+    })
+
     return {
       id:        c.id,
       nombre:    c.nombre,
@@ -643,6 +667,8 @@ export async function GET(request, { params }) {
          ignoraba el checklist del prestamista: el mismo pago daba un papel en
          la ficha del préstamo y otro distinto en la calle. */
       camposRecibo: c.camposRecibo ?? null,
+      // De qué ruta llegó a esta, si llegó de otra: { rutaId, nombre, desde } o null.
+      vieneDe: vieneDe.get(c.id) ?? null,
       // El estado del cliente se basa en sus préstamos NO clavo (los clavos no
       // cuentan en la cartera/estado de la ruta; solo aportan su cobro al recaudado).
       estado:    c.prestamos.filter((pr) => !pr.esClavo).length === 0 ? 'completado' : (mora > 0 ? 'mora' : 'activo'),
@@ -753,6 +779,9 @@ export async function GET(request, { params }) {
        enseña como si se pudiera trabajar en ella. */
     archivada:   !ruta.activo,
     diasSinCobro: ruta.diasSinCobro,
+    /* LOS QUE LLEGARON CONTRA LOS PROPIOS (3 oct 2026). `null` si nadie llegó de
+       otra ruta. Lleva cartera, así que solo para quien puede ver capital. */
+    procedencias: puedeVerCapital ? compararProcedencias(cifrasProcedencia, vieneDe) : null,
     ...(puedeVerCapital ? {
       saldoCapital: Math.round(ruta.saldoCapital || 0),
       capitalHabilitado: !!ruta.capitalHabilitado,

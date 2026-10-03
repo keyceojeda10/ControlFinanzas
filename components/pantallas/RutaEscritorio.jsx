@@ -139,6 +139,8 @@ export default function RutaEscritorio({
   // El carril derecho
   porCobrarHoy, recaudadoHoy, progreso = 0, conteoCobros,
   cartera = [],             // [{ texto, valor, tono }]
+  // «De dónde vienen sus clientes» (components/rutas/ProcedenciaRuta.jsx), ya armado.
+  procedencia = null,
   cierreTexto, onCierre, cierreListo,
 }) {
   return (
@@ -474,6 +476,10 @@ export default function RutaEscritorio({
             <Bloque rotulo="Cartera de la ruta">
               {cartera.map((l) => <Linea key={l.texto} {...l} />)}
             </Bloque>
+          )}
+
+          {procedencia && (
+            <Bloque rotulo="De dónde vienen sus clientes">{procedencia}</Bloque>
           )}
 
           <Bloque rotulo="Cierre de caja">

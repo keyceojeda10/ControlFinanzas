@@ -1,8 +1,9 @@
 // app/api/rutas/[id]/unir/route.js — unir esta ruta con otra.
 //
 // GET  ?destino=<id>                          → lo que va a pasar (solo lee)
-// POST { destinoId, cobradorId? }             → la une; `cobradorId` null = sin cobrador,
-//                                               ausente = el de la ruta destino
+// POST { destinoId, cobradorId?, posicion? }  → la une; `cobradorId` null = sin cobrador,
+//                                               ausente = el de la ruta destino;
+//                                               `posicion` 'inicio' (arriba) o 'final' (debajo, por omisión)
 //
 // La cuenta y las reglas viven en lib/rutas/fusionar.js. Solo el dueño.
 
@@ -52,6 +53,8 @@ export async function POST(request, { params }) {
     destinoId,
     cobradorId,
     usuarioId: session.user.id,
+    // Arriba o debajo de los que ya tiene la ruta. Sin decir nada, debajo.
+    posicion: body?.posicion ?? 'final',
   })
   if (r.error) return Response.json({ error: r.error }, { status: r.status })
 
@@ -61,7 +64,7 @@ export async function POST(request, { params }) {
     accion: 'unir_rutas',
     entidadTipo: 'ruta',
     entidadId: r.destino.id,
-    detalle: `Unió ${r.origen.nombre} con ${r.destino.nombre}: ${r.clientes} clientes${r.capital ? ` y ${r.capital < 0 ? '−' : ''}${pesos(r.capital)} de capital` : ''}`,
+    detalle: `Unió ${r.origen.nombre} con ${r.destino.nombre}: ${r.clientes} clientes${body?.posicion === 'inicio' ? ' (arriba)' : ''}${r.capital ? ` y ${r.capital < 0 ? '−' : ''}${pesos(r.capital)} de capital` : ''}`,
     ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
   })
 

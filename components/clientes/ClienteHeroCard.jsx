@@ -13,6 +13,7 @@ import Avatar from '@/components/ui/Avatar'
 import { MarcaComoPaga } from '@/components/cf/primitivos'
 import LineaCifra from '@/components/cf/LineaCifra'
 import { TEXTO as TEXTO_CALIFICACION } from '@/lib/calificacion'
+import { fechaCorta } from '@/lib/adaptadores/prestamos'
 
 const COLOR_OK   = 'var(--cf-gold)'
 const COLOR_HOT  = 'var(--cf-gold-dark)'
@@ -390,6 +391,22 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
                 <> · <span style={{ color: '#A3A8B2' }}>{cliente.ruta.nombre}</span></>
               )}
             </p>
+            {/* DE QUÉ RUTA LLEGÓ, si llegó de otra (al unir rutas, al agregarlo en
+                lote o al cambiarlo de ruta). «Saber que este cliente era de la
+                ruta 10» — el dueño, 3 oct 2026. Ver lib/rutas/procedencia.js. */}
+            {cliente?.vieneDe && (
+              /* La flecha VA DENTRO del texto: como pieza aparte de un flex,
+                 en 412px quedaba sola en su renglón y el texto debajo. */
+              <p className="text-[11px] mt-0.5" style={{ color: '#8A8E98' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden
+                  style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: 4 }}>
+                  <path d="M4 12h13M12 6l6 6-6 6" />
+                </svg>
+                Viene de <span style={{ color: '#A3A8B2' }}>{cliente.vieneDe.nombre}</span>
+                {fechaCorta(cliente.vieneDe.desde) ? ` · desde el ${fechaCorta(cliente.vieneDe.desde)}` : ''}
+              </p>
+            )}
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               {/* La MISMA CAJA que `Pastilla` (22px, 10,5/700, sin punto). Los
                   colores son los del bloque oscuro y no los tokens de tema: aquí

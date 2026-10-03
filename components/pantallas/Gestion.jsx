@@ -1268,6 +1268,7 @@ export function UnirRuta({
   cargando = false,
   vista,
   cobradores = [], cobradorId, onCobrador,
+  posicion = 'final', onPosicion,
   bloqueo, entrega,
   formatMoney,
 }) {
@@ -1319,6 +1320,30 @@ export function UnirRuta({
             ))}
           </div>
 
+          {/* «Que le pueda elegir si quiere meter todos esos clientes nuevos
+              arriba de la ruta o debajo de los clientes que ya están en la
+              ruta» (PRESTA MIL, 3 oct 2026). En los dos casos, en el orden que
+              traían. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9, flex: 'none' }}>
+            <Rotulo>¿Dónde van sus clientes?</Rotulo>
+            <FilaOpcion
+              titulo={`Debajo de los de ${vista.destino.nombre}`}
+              nota={vista.destino.clientes > 0
+                ? `Después de sus ${vista.destino.clientes} ${vista.destino.clientes === 1 ? 'cliente' : 'clientes'}`
+                : 'La ruta todavía no tiene clientes'}
+              activo={posicion !== 'inicio'}
+              onClick={() => onPosicion?.('final')}
+            />
+            <FilaOpcion
+              titulo={`Arriba de los de ${vista.destino.nombre}`}
+              nota={vista.destino.clientes > 0
+                ? `Antes de sus ${vista.destino.clientes} ${vista.destino.clientes === 1 ? 'cliente' : 'clientes'}`
+                : 'La ruta todavía no tiene clientes'}
+              activo={posicion === 'inicio'}
+              onClick={() => onPosicion?.('inicio')}
+            />
+          </div>
+
           <AntesDespues
             etiqueta={`Lo que pasa a ${vista.destino.nombre}`}
             concepto={`Capital de ${vista.destino.nombre}`}
@@ -1345,7 +1370,7 @@ export function UnirRuta({
           {vista.avisoDias && <Aviso tono="ambar">{vista.avisoDias}</Aviso>}
 
           <Aviso>
-            Los clientes van al final del recorrido de {vista.destino.nombre}, en el
+            Los clientes van {posicion === 'inicio' ? 'al principio' : 'al final'} del recorrido de {vista.destino.nombre}, en el
             orden que traían. El historial de {origen} se conserva, pero la unión no
             se puede deshacer con un botón. Mejor hacerlo después de cerrar la caja
             del día.

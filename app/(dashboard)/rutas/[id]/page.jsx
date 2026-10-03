@@ -48,6 +48,7 @@ import { OrdenRecorrido }            from '@/components/pantallas/RutaEditar'
 import { PieGestion }                from '@/components/pantallas/Gestion'
 import FichaRuta                     from '@/components/pantallas/FichaRuta'
 import RutaEscritorio                from '@/components/pantallas/RutaEscritorio'
+import ProcedenciaRuta               from '@/components/rutas/ProcedenciaRuta'
 import { Recibo, CAPA_RECIBO }        from '@/components/pantallas/Recibo'
 import { imprimirRecibo } from '@/lib/recibo-acciones'
 import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
@@ -356,6 +357,9 @@ export default function RutaDetallePage({ params }) {
   const [errorAsignar, setErrorAsignar] = useState('')
   const [asignando,     setAsignando]     = useState(false)
   const [posicionesNuevos, setPosicionesNuevos] = useState({})
+  // «Agregar clientes»: arriba o debajo de los que ya tiene la ruta (PRESTA MIL,
+  // 3 oct 2026). Un puesto escrito a mano para un cliente sigue mandando.
+  const [posicionAgregar, setPosicionAgregar] = useState('final')
   const [quitando,      setQuitando]      = useState(null)
   const [modalCaja,     setModalCaja]     = useState(false)
   const [totalRecogido, setTotalRecogido] = useState('')
@@ -421,6 +425,9 @@ export default function RutaDetallePage({ params }) {
   const [guardandoFestivo, setGuardandoFestivo] = useState(false)
   const [estadoFiltro,   setEstadoFiltro]   = useState(null) // 'pendientes' | 'mora' | 'pagados' | null
   const [busquedaRuta,   setBusquedaRuta]   = useState('')
+  // «Ver solo estos» del bloque «De dónde vienen sus clientes»: una ruta de
+  // origen, 'propios' o null. Ver components/rutas/ProcedenciaRuta.jsx.
+  const [procedenciaFiltro, setProcedenciaFiltro] = useState(null)
   // Vista de la lista: 'trabajo' = 3 secciones (por cobrar/pagados/proximos) sin drag.
   // 'ordenar' = lista plana con drag-and-drop para reordenar la ruta.
   const [modoVista, setModoVista] = useState('trabajo')
@@ -1308,6 +1315,7 @@ export default function RutaDetallePage({ params }) {
     setSeleccionados([])
     setErrorAsignar('')
     setPosicionesNuevos({})
+    setPosicionAgregar('final')
     setModalClientes(true)
   }
 
@@ -1369,7 +1377,7 @@ export default function RutaDetallePage({ params }) {
       const res = await fetch(`/api/rutas/${id}/clientes`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ clienteIds: seleccionados, forzar: deOtraRuta.length > 0, descontarCapitalRuta }),
+        body:    JSON.stringify({ clienteIds: seleccionados, forzar: deOtraRuta.length > 0, descontarCapitalRuta, posicion: posicionAgregar }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -1751,8 +1759,14 @@ export default function RutaDetallePage({ params }) {
     window.open(`https://www.google.com/maps/dir/${waypoints}`, '_blank')
   }
 
+  /* De qué ruta llegó (lib/rutas/procedencia.js). Va ANTES de `clientesFiltrados`
+     y de las filas del PC, que lo usan los dos: un `const` leído antes de
+     declararse tumba la pantalla (ver el aviso de más abajo). */
+  const enProcedencia = (c) => !procedenciaFiltro
+    || (procedenciaFiltro === 'propios' ? !c.vieneDe : c.vieneDe?.rutaId === procedenciaFiltro)
+
   const clientesFiltrados = (() => {
-    let list = ruta?.clientes ?? []
+    let list = (ruta?.clientes ?? []).filter(enProcedencia)
     if (estadoFiltro === 'pendientes') list = list.filter(c => c.cobroPendienteHoy)
     else if (estadoFiltro === 'mora') list = list.filter(c => c.diasMora > 0)
     else if (estadoFiltro === 'pagados') list = list.filter(c => c.pagoHoy)
@@ -2631,7 +2645,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         filas={(modoVista === 'auditoria'
           ? (ruta.clientes ?? [])
           : (ruta.clientes ?? []).filter((c) => c.cobroPendienteHoy || c.pagoHoy)
-        ).map((c, i) => ({
+        ).filter(enProcedencia).map((c, i) => ({
           id: c.id,
           orden: i + 1,
           iniciales: inicialesDe(c.nombre),
@@ -2681,6 +2695,10 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         recaudadoHoy={formatMoney(ruta.recaudadoHoy ?? 0)}
         progreso={ruta.esperadoHoy > 0 ? Math.min(100, Math.round((ruta.recaudadoHoy / ruta.esperadoHoy) * 100)) : 0}
         conteoCobros={`${visitadasHoy} de ${ruta.clientesConCobroHoy ?? 0} visitados`}
+        procedencia={ruta.procedencias?.length > 0 ? (
+          <ProcedenciaRuta grupos={ruta.procedencias} nombreRuta={ruta.nombre} compacto
+            filtro={procedenciaFiltro} onFiltro={setProcedenciaFiltro} formatMoney={formatMoney} />
+        ) : null}
         cartera={[
           { texto: 'Pendiente por cobrar', valor: formatMoney(ruta.carteraTotal ?? 0) },
           { texto: 'Prestado (capital)', valor: formatMoney(ruta.capitalPendiente ?? 0) },
@@ -2857,11 +2875,29 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         </div>
       )}
 
+      {/* ── DE DÓNDE VIENEN SUS CLIENTES (3 oct 2026) ──
+          Solo si alguien llegó de otra ruta, y solo para quien ve el capital
+          (el servidor no lo manda a los demás). */}
+      {ruta.procedencias?.length > 0 && (
+        <section>
+          <p className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide mb-1">De dónde vienen sus clientes</p>
+          <p className="text-[12px] text-[var(--cf-ink-3)] mb-2">Los que llegaron de otra ruta, al lado de los que ya eran de esta.</p>
+          <ProcedenciaRuta grupos={ruta.procedencias} nombreRuta={ruta.nombre}
+            filtro={procedenciaFiltro} onFiltro={setProcedenciaFiltro} formatMoney={formatMoney} />
+        </section>
+      )}
+
       {/* Lista de clientes */}
       <div>
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[var(--cf-surface)] py-2 -mx-1 px-1">
           <span className="text-[11px] font-medium text-[var(--cf-ink-3)] uppercase tracking-wide">
             Clientes ({clientesFiltrados.length})
+            {procedenciaFiltro && (
+              <button type="button" onClick={() => setProcedenciaFiltro(null)}
+                className="ml-2 normal-case tracking-normal underline underline-offset-2 text-[var(--cf-ink-2)]">
+                {procedenciaFiltro === 'propios' ? 'solo los propios' : `solo los de ${ruta.procedencias?.find((g) => g.clave === procedenciaFiltro)?.nombre ?? 'otra ruta'}`} · quitar
+              </button>
+            )}
           </span>
           <span className="text-[10px] text-[#777]">
             {guardandoOrden && <span className="text-[var(--cf-ink-3)] flex items-center gap-1 inline-flex"><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Guardando</span>}
@@ -3626,6 +3662,25 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
                 autoFocus
               />
             </div>
+            {/* ARRIBA O DEBAJO de los que ya tiene la ruta. «Que le pueda elegir
+                si quiere meter todos esos clientes nuevos arriba de la ruta o
+                debajo» (PRESTA MIL, 3 oct 2026). Solo si la ruta ya tiene a
+                alguien: en una vacía no hay arriba ni abajo. */}
+            {(ruta?.clientes?.length ?? 0) > 0 && (
+              <div className="flex items-center gap-2 flex-wrap px-1 pb-2">
+                <span className="text-[12px] text-[var(--cf-ink-3)]">Van</span>
+                {[['final', 'Debajo de los que ya están'], ['inicio', 'Arriba de todos']].map(([valor, texto]) => (
+                  <button key={valor} type="button" aria-pressed={posicionAgregar === valor}
+                    onClick={() => setPosicionAgregar(valor)}
+                    className="h-8 px-3 rounded-full text-[12px] font-semibold border"
+                    style={posicionAgregar === valor
+                      ? { background: 'var(--cf-ink)', color: 'var(--cf-card)', borderColor: 'var(--cf-ink)' }
+                      : { background: 'var(--cf-card)', color: 'var(--cf-ink-2)', borderColor: 'var(--cf-border)' }}>
+                    {texto}
+                  </button>
+                ))}
+              </div>
+            )}
             {errorAsignar && (
               <div className="flex items-center gap-2 bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-xs rounded-[12px] px-3 py-2 mb-2">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>

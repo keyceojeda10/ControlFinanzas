@@ -18,6 +18,9 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
   const [vista, setVista] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [cobradorId, setCobradorId] = useState(null)
+  // Arriba o debajo de los clientes que ya tiene la ruta destino (PRESTA MIL,
+  // 3 oct 2026). Debajo, como hasta ahora, salvo que se elija.
+  const [posicion, setPosicion] = useState('final')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState('')
 
@@ -25,7 +28,7 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
      algo que deba venir puesto. */
   useEffect(() => {
     if (!abierta || !ruta?.id) return
-    setDestinoId(null); setVista(null); setError(''); setCobradorId(null)
+    setDestinoId(null); setVista(null); setError(''); setCobradorId(null); setPosicion('final')
     let vivo = true
     fetch('/api/rutas')
       .then((r) => (r.ok ? r.json() : []))
@@ -100,7 +103,7 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
       const res = await fetch(`/api/rutas/${ruta.id}/unir`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinoId, cobradorId }),
+        body: JSON.stringify({ destinoId, cobradorId, posicion }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || 'No se pudo unir. Intenta de nuevo.'); return }
@@ -146,6 +149,8 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
         cobradores={cobradores}
         cobradorId={cobradorId}
         onCobrador={setCobradorId}
+        posicion={posicion}
+        onPosicion={setPosicion}
         bloqueo={bloqueo}
         entrega={entrega}
         formatMoney={formatMoney}

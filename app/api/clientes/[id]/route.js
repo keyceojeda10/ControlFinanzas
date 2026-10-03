@@ -12,6 +12,7 @@ import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mu
 import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { calificacionDe } from '@/lib/calificacion'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { anotarLlegadas, vieneDePorCliente } from '@/lib/rutas/procedencia'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -187,8 +188,19 @@ export async function GET(request, { params }) {
       manual: cliente.calificacionManual,
     })
 
+    /* De qué ruta llegó a la que está, si llegó de otra: «Viene de Ruta 10 ·
+       desde el 5 oct». El último cambio HACIA su ruta actual. */
+    const llegadas = cliente.rutaId
+      ? await prisma.cambioRuta.findMany({
+        where: { clienteId: id, aRutaId: cliente.rutaId, deRutaId: { not: null } },
+        orderBy: { createdAt: 'desc' }, take: 1,
+        select: { clienteId: true, deRutaId: true, deRutaNombre: true, createdAt: true },
+      })
+      : []
+
     return Response.json({
       ...cliente,
+      vieneDe: vieneDePorCliente(llegadas).get(id) ?? null,
       estado: estadoCalculado,
       prestamos: prestamosEnriquecidos,
       lineasCredito: lineasEnriquecidas,
@@ -391,27 +403,44 @@ export async function PATCH(request, { params }) {
       viejo hasta que refresque: esta es la mitad que lo corta hoy.) */
   const conservaMarcador = esSinCedula && clienteBase.cedula?.startsWith('SIN-')
 
-  const actualizado = await prisma.cliente.update({
-    where: { id },
-    data: {
-      ...(nombre     && { nombre:     nombre.trim()     }),
-      ...(cedula && !conservaMarcador && { cedula: cedula.trim() }),
-      ...(telefono   && { telefono:   telefono.trim()   }),
-      ...(direccion  !== undefined && { direccion:  direccion?.trim()  || null }),
-      ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
-      ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
-      ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
-      ...(rutaId        !== undefined && { rutaId:        rutaId        || null }),
-      ...(lat          !== undefined && { latitud:    lat }),
-      ...(lng          !== undefined && { longitud:   lng }),
-      ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
-      ...(montoMaximoPrestamo !== undefined && session.user.rol === 'owner' && {
-        montoMaximoPrestamo: (!montoMaximoPrestamo && montoMaximoPrestamo !== 0) ? null : Number(montoMaximoPrestamo) || null,
-      }),
-      ...(camposRecibo !== undefined && {
-        camposRecibo: Array.isArray(camposRecibo) ? camposRecibo.slice(0, 10) : null,
-      }),
-    },
+  /* Si pasa DE una ruta A otra, queda anotado de cuál venía: la ruta que lo
+     recibe lo compara con los suyos (lib/rutas/procedencia.js). En la misma
+     transacción que el cambio: un cambio de ruta sin su anotación no se ve. */
+  const cambiaDeRuta = rutaId !== undefined && !!rutaId && !!clienteBase.rutaId && rutaId !== clienteBase.rutaId
+  const rutaVieja = cambiaDeRuta
+    ? await prisma.ruta.findUnique({ where: { id: clienteBase.rutaId }, select: { nombre: true } })
+    : null
+
+  const actualizado = await prisma.$transaction(async (tx) => {
+    const fila = await tx.cliente.update({
+      where: { id },
+      data: {
+        ...(nombre     && { nombre:     nombre.trim()     }),
+        ...(cedula && !conservaMarcador && { cedula: cedula.trim() }),
+        ...(telefono   && { telefono:   telefono.trim()   }),
+        ...(direccion  !== undefined && { direccion:  direccion?.trim()  || null }),
+        ...(referencia !== undefined && { referencia: referencia?.trim() || null }),
+        ...(notas      !== undefined && { notas:      notas?.trim()      || null }),
+        ...(fotoUrl    !== undefined && { fotoUrl:    fotoUrl?.trim() && /^https?:\/\/.+/i.test(fotoUrl.trim()) ? fotoUrl.trim() : null }),
+        ...(rutaId        !== undefined && { rutaId:        rutaId        || null }),
+        ...(lat          !== undefined && { latitud:    lat }),
+        ...(lng          !== undefined && { longitud:   lng }),
+        ...(diasSinCobroVal !== undefined && { diasSinCobro: diasSinCobroVal }),
+        ...(montoMaximoPrestamo !== undefined && session.user.rol === 'owner' && {
+          montoMaximoPrestamo: (!montoMaximoPrestamo && montoMaximoPrestamo !== 0) ? null : Number(montoMaximoPrestamo) || null,
+        }),
+        ...(camposRecibo !== undefined && {
+          camposRecibo: Array.isArray(camposRecibo) ? camposRecibo.slice(0, 10) : null,
+        }),
+      },
+    })
+    if (cambiaDeRuta) {
+      await anotarLlegadas(tx, {
+        organizationId: session.user.organizationId, aRutaId: rutaId, motivo: 'manual', usuarioId: session.user.id,
+        clientes: [{ id, rutaId: clienteBase.rutaId, rutaNombre: rutaVieja?.nombre ?? null }],
+      })
+    }
+    return fila
   })
 
   logActividad({ session, accion: 'editar_cliente', entidadTipo: 'cliente', entidadId: id, detalle: `Cliente ${actualizado.nombre} editado`, ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })

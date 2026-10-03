@@ -250,6 +250,7 @@ model Organization {
   gruposCobro        GrupoCobro[]
   festivos           Festivo[]
   visitasReagendadas VisitaReagendada[]
+  cambiosRuta        CambioRuta[]
   lineasCredito      LineaCredito[]
   desembolsosLinea   DesembolsoLinea[]
   pagosLinea         PagoLinea[]
@@ -439,6 +440,7 @@ model Cliente {
   calificacionPor    User?              @relation("ClientesCalificadosPor", fields: [calificacionPorId], references: [id])
   prestamos          Prestamo[]
   visitasReagendadas VisitaReagendada[]
+  cambiosRuta        CambioRuta[]
   lineasCredito      LineaCredito[]
 
   @@unique([organizationId, cedula])
@@ -1190,6 +1192,30 @@ model BotLeccion {
   telegramMsgId Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+/// DE QUÉ RUTA LLEGÓ CADA CLIENTE (3 oct 2026). Lo escriben la unión de rutas,
+/// «Agregar clientes» y el cambio de ruta en la ficha, solo cuando el cliente
+/// viene DE otra ruta. El dueño de PRESTA MIL: «saber que este cliente era de la
+/// ruta 10, y si la 9 no rinde desde que se la unieron, no era la ruta ni el
+/// cobrador sino las personas». Las rutas van sin llave foránea y con el nombre
+/// copiado: una ruta archivada o borrada no se lleva la referencia.
+model CambioRuta {
+  id             String   @id @default(cuid())
+  organizationId String
+  clienteId      String
+  deRutaId       String?
+  deRutaNombre   String?
+  aRutaId        String?
+  motivo         String // union | lote | manual
+  usuarioId      String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cliente      Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, aRutaId])
+  @@index([clienteId, createdAt])
 }
 
 model VisitaReagendada {

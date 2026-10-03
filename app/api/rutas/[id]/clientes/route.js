@@ -6,6 +6,7 @@ import { prisma }           from '@/lib/prisma'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { calcularSaldoPendiente } from '@/lib/calculos'
 import { notificar } from '@/lib/notificar'
+import { anotarLlegadas } from '@/lib/rutas/procedencia'
 
 /* Solo rutas activas: meter clientes en una ruta archivada (unida con otra)
    los escondería en una ruta que ninguna lista enseña. */
@@ -40,7 +41,11 @@ export async function POST(request, { params }) {
   // clientes asignados se reserva del capital de ESTA ruta (reasignación: no cambia el
   // total del negocio, solo la sub-bolsa). Resuelve el descuadre de que un cliente que
   // entra a la ruta con un préstamo no descontaba nada del capital de la ruta.
-  const { clienteIds, forzar, descontarCapitalRuta = false } = await request.json()
+  const { clienteIds, forzar, descontarCapitalRuta = false, posicion = 'final' } = await request.json()
+  // Arriba o debajo de los que ya tiene la ruta (PRESTA MIL, 3 oct 2026).
+  if (posicion !== 'final' && posicion !== 'inicio') {
+    return Response.json({ error: 'Posición no válida' }, { status: 400 })
+  }
   if (!Array.isArray(clienteIds) || !clienteIds.length) {
     return Response.json({ error: 'clienteIds debe ser un array no vacío' }, { status: 400 })
   }
@@ -53,7 +58,8 @@ export async function POST(request, { params }) {
   // Verificar que todos los clientes pertenecen a la organización
   const clientes = await prisma.cliente.findMany({
     where: { id: { in: clienteIds }, organizationId, estado: { notIn: ['eliminado'] } },
-    select: { id: true, nombre: true, rutaId: true },
+    // El nombre de su ruta actual: si vienen de otra, queda anotado de cuál.
+    select: { id: true, nombre: true, rutaId: true, ruta: { select: { nombre: true } } },
   })
   if (clientes.length !== clienteIds.length) {
     return Response.json({ error: 'Uno o más clientes no son válidos' }, { status: 400 })
@@ -79,11 +85,29 @@ export async function POST(request, { params }) {
 
   // Asignar clientes en transaccion atomica (max orden + updates juntos)
   await prisma.$transaction(async (tx) => {
-    const maxOrden = await tx.cliente.aggregate({
-      where: { rutaId: id, organizationId },
-      _max: { ordenRuta: true },
-    })
-    const nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
+    let nextOrden
+    if (posicion === 'inicio') {
+      /* ARRIBA: los que ya están se corren detrás de los que entran, en el orden
+         en que se ven (los sin puesto primero, como los pinta la ruta). Sumarles
+         N a los que tienen puesto dejaba a los sin puesto encima de los nuevos.
+         Una sola sentencia, como la de abajo (ver lib/rutas/fusionar.js). */
+      await tx.$executeRawUnsafe(
+        `UPDATE Cliente c
+         JOIN (
+           SELECT id, ROW_NUMBER() OVER (ORDER BY (ordenRuta IS NOT NULL), ordenRuta, nombre, id) AS rn
+           FROM Cliente WHERE organizationId = ? AND rutaId = ? AND id NOT IN (${clienteIds.map(() => '?').join(', ')})
+         ) x ON x.id = c.id
+         SET c.ordenRuta = ? + x.rn - 1`,
+        organizationId, id, ...clienteIds, clienteIds.length,
+      )
+      nextOrden = 0
+    } else {
+      const maxOrden = await tx.cliente.aggregate({
+        where: { rutaId: id, organizationId },
+        _max: { ordenRuta: true },
+      })
+      nextOrden = (maxOrden._max.ordenRuta ?? -1) + 1
+    }
 
     /* ⚠ TODOS EN UNA SENTENCIA, cada uno con su puesto (`nextOrden + i`, en el
        orden en que se eligieron). Eran una actualización por cliente dentro de
@@ -98,6 +122,13 @@ export async function POST(request, { params }) {
        WHERE organizationId = ? AND id IN (${clienteIds.map(() => '?').join(', ')})`,
       id, ...valores, organizationId, ...clienteIds,
     )
+
+    /* Los que venían DE otra ruta («Usa la opción de mover»), anotados: la
+       ruta que los recibe los compara con los suyos (lib/rutas/procedencia.js). */
+    await anotarLlegadas(tx, {
+      organizationId, aRutaId: id, motivo: 'lote', usuarioId: session.user.id,
+      clientes: clientes.map((c) => ({ id: c.id, rutaId: c.rutaId, rutaNombre: c.ruta?.nombre ?? null })),
+    })
 
     // Reservar el saldo pendiente de los préstamos activos en el capital de la ruta.
     // ajusteArranqueRuta: no altera el saldo global de la org, solo la sub-bolsa de la ruta.
