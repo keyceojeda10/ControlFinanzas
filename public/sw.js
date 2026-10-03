@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1110'
+const CACHE_NAME   = 'cf-v1111'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -184,6 +184,12 @@ self.addEventListener('fetch', (e) => {
 
   // Skip offline sync requests (never cache)
   if (url.pathname.startsWith('/api/offline')) return
+
+  /* Los PDF que se arman en el servidor (el pagaré) no se guardan: casaban con
+     el prefijo `/api/prestamos` y con la red caída la app contestaba «Sin
+     conexión» con un 503, que la pantalla leía como «Error al generar el
+     pagaré» (reportado el 3 oct 2026). Van directo a la red. */
+  if (/^\/api\/prestamos\/[^/]+\/pagare$/.test(url.pathname)) return
 
   // _next/data (RSC payloads for client-side navigation): network-first with fallback
   // Without this, offline client-side navigation crashes Next.js Router

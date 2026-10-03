@@ -352,21 +352,64 @@ export default function FirmaDigital({ prestamo, onSave }) {
     }
   }
 
+  /* ══ EL PAGARÉ DICE POR QUÉ NO SALIÓ ═══════════════════════════════════
+     Reportado el 3 oct 2026 con una captura: «Error al generar el pagare»,
+     sin más. El servidor lo generaba bien (probado con la copia del día) y no
+     había ni un error en sus registros: lo que falló fue la conexión, y la
+     pantalla decía lo mismo para todo. Ahora dice qué pasó, y el fallo queda
+     en el registro del servidor con su código (`[ERROR-CLIENTE]`, origen
+     `pagare`) para no volver a adivinar. */
+  const avisarFalloPagare = (detalle) => {
+    try {
+      fetch('/api/errores-cliente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mensaje: `Pagaré no generado: ${detalle}`,
+          ruta: `/api/prestamos/${prestamoId}/pagare`,
+          navegador: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+          origen: 'pagare',
+        }),
+        keepalive: true,
+      }).catch(() => {})
+    } catch {}
+  }
+
   const descargarPagare = async () => {
     if (!prestamoId) return
     setDescargandoPagare(true)
+    let res
     try {
-      const res = await fetch(`/api/prestamos/${prestamoId}/pagare`)
-      if (!res.ok) throw new Error()
+      res = await fetch(`/api/prestamos/${prestamoId}/pagare`)
+    } catch {
+      avisarFalloPagare(`sin conexión (en línea: ${typeof navigator !== 'undefined' ? navigator.onLine : '?'})`)
+      alert('No hay conexión. El pagaré se arma en el servidor: inténtalo de nuevo cuando tengas señal.')
+      setDescargandoPagare(false)
+      return
+    }
+    try {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        avisarFalloPagare(`HTTP ${res.status} ${data?.error ?? ''}`.trim())
+        alert(res.status === 401
+          ? 'Tu sesión se cerró. Vuelve a entrar y genera el pagaré otra vez.'
+          : data?.error && res.status !== 500
+            ? `No se pudo generar el pagaré: ${data.error}`
+            : `No se pudo generar el pagaré (error ${res.status}). Inténtalo de nuevo; si sigue, escríbenos.`)
+        return
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.download = `pagare-${prestamo.cliente?.nombre?.replace(/\s+/g, '-') || prestamoId}.pdf`
       link.href = url
       link.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      alert('Error al generar el pagare')
+      /* Se suelta un momento después: en algunos Android soltarlo en el acto
+         cancelaba la descarga antes de que empezara. */
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+    } catch (e) {
+      avisarFalloPagare(`al guardar el archivo: ${e?.message ?? e}`)
+      alert('El pagaré se generó pero no se pudo guardar en el teléfono. Inténtalo de nuevo.')
     } finally {
       setDescargandoPagare(false)
     }
