@@ -73,17 +73,19 @@ export default function UnirRutas({ abierta, onCerrar, onVolver, ruta, formatMon
 
   /* El bloqueo de cambiar de cobrador depende de a quién se elija: lo decide
      la pantalla con lo que dijo el servidor, y el servidor lo vuelve a mirar. */
-  const cambiaCobrador = vista && (cobradorId ?? null) !== (vista.destino.cobrador?.id ?? null)
+  const cambiaCobrador = vista && (cobradorId ?? null) !== (vista.destino.cobradorId ?? null)
   const bloqueo = vista ? (vista.bloqueo || (cambiaCobrador ? vista.bloqueoSiCambia : null)) : null
 
   /* En los negocios donde el cobrador carga el capital de la ruta en efectivo,
      unir es también pasar esos billetes de mano: se dice quién a quién. */
   const entrega = useMemo(() => {
-    if (!vista?.capitalEsEfectivo || !vista.origen.capital) return null
+    /* Solo con plata de verdad: una bolsa en negativo no tiene billetes que
+       entregar, y con `Math.abs` el aviso salía con el signo al revés. */
+    if (!vista?.capitalEsEfectivo || !(vista.origen.capital > 0)) return null
     const de = vista.origen.cobrador
     const para = cobradores.find((c) => (c.id ?? null) === (cobradorId ?? null))
     if (de && para?.id === de.id) return null
-    const monto = formatMoney(Math.abs(vista.origen.capital))
+    const monto = formatMoney(vista.origen.capital)
     const recibe = para?.id ? para.nombre : 'ti'
     return de
       ? `${de.nombre} lleva en efectivo el capital de ${vista.origen.nombre}: tiene que entregarle ${monto} a ${recibe}.`

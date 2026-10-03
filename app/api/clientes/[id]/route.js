@@ -366,8 +366,9 @@ export async function PATCH(request, { params }) {
     }
 
     if (session.user.rol === 'owner' && rutaId) {
+      /* Solo activas: una archivada (unida con otra) escondería al cliente. */
       const rutaValida = await prisma.ruta.findFirst({
-        where: { id: rutaId, organizationId: session.user.organizationId },
+        where: { id: rutaId, organizationId: session.user.organizationId, activo: true },
         select: { id: true },
       })
       if (!rutaValida) {

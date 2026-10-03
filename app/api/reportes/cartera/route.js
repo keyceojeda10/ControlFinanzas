@@ -94,7 +94,9 @@ export async function GET() {
   const sueltos = await prisma.cliente.findMany({
     where: {
       organizationId: orgId,
-      OR: [{ rutaId: null }, { ruta: { is: null } }],
+      /* Y los de una ruta archivada (unida con otra), que el reporte ya no
+         lista como ruta: si no, desaparecerían de la cartera. */
+      OR: [{ rutaId: null }, { ruta: { is: null } }, { ruta: { activo: false } }],
       prestamos: { some: { estado: 'activo', esClavo: false } },
     },
     include: {

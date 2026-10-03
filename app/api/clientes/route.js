@@ -722,6 +722,13 @@ export async function POST(request) {
     if (geo) { lat = geo.lat; lng = geo.lng }
   }
 
+  /* La ruta automática sale de la sesión del cobrador, que puede ir hasta 15
+     minutos por detrás: si esa ruta se archivó (se unió con otra), el cliente
+     no se mete ahí, donde ninguna lista lo enseñaría. */
+  if (autoRutaId && !rutaId) {
+    const viva = await prisma.ruta.findFirst({ where: { id: autoRutaId, organizationId, activo: true }, select: { id: true } })
+    if (!viva) autoRutaId = null
+  }
   const rutaFinal = rutaId || autoRutaId || null
   let ordenRutaFinal = null
 
