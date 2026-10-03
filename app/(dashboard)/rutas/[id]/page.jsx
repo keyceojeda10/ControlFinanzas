@@ -2650,6 +2650,11 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
           // clase de error que hace desconfiar de toda la pantalla.
           debe: formatMoney((c.prestamosActivos ?? []).reduce((n, pr) => n + (pr.saldoPendiente ?? 0), 0)),
           cobrada: !c.cobroPendienteHoy && !!c.pagoHoy,
+          /* Lo que pagó HOY, con su monto: la tarjeta del teléfono lo dice
+             («Ya abonó $5.000 hoy») y la tabla del PC lo había perdido — el
+             dueño veía «Cobrar» igual que si no hubiera entrado nada (2 oct
+             2026). Recargos y descuentos no cuentan: ya vienen fuera. */
+          pagadoHoy: c.pagoHoy && (c.montoPagadoHoy ?? 0) > 0 ? formatMoney(c.montoPagadoHoy) : null,
         }))}
         onCobrar={(f) => {
           const c = ruta.clientes?.find((x) => x.id === f.id)

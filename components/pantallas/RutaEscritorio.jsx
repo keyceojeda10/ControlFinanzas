@@ -334,7 +334,17 @@ export default function RutaEscritorio({
                         </div>
                       </div>
                     </td>
-                    <Celda peso={700}>{f.cuotaHoy}</Celda>
+                    {/* La cuota, y debajo lo que ya pagó hoy: «Pagó» si quedó al
+                        día, «Abonó» si todavía le toca. Verde: es plata que ya
+                        entró, como en la tarjeta del teléfono. */}
+                    <td style={{ ...COL, textAlign: 'right' }}>
+                      <span className="cf-num" style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--cf-ink)', whiteSpace: 'nowrap' }}>{f.cuotaHoy}</span>
+                      {f.pagadoHoy && (
+                        <span className="cf-num" style={{ display: 'block', marginTop: 2, fontSize: 11, fontWeight: 700, color: 'var(--cf-green-dark)', whiteSpace: 'nowrap' }}>
+                          {f.cobrada ? 'Pagó' : 'Abonó'} {f.pagadoHoy}
+                        </span>
+                      )}
+                    </td>
                     <Celda tono={f.atrasoNumero > 0 ? 'mora' : undefined}>{f.atraso}</Celda>
                     <Celda tono={f.cumpleNumero != null && f.cumpleNumero >= 100 ? 'bien'
                       : f.cumpleNumero != null && f.cumpleNumero < 50 ? 'mora' : undefined}>{f.cumple}</Celda>
