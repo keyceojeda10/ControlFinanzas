@@ -9,6 +9,7 @@ import CuentasGuardadas from '@/components/auth/CuentasGuardadas'
 import PinDeCuatro from '@/components/auth/PinDeCuatro'
 import { leerCuentasGuardadas, guardarCuentaEnTelefono, quitarCuentaDelTelefono } from '@/lib/cuentas-guardadas-cliente'
 import { esMensajeDeCuentaMuerta } from '@/lib/cuentas-guardadas-textos'
+import { hayHuella, paseConHuella } from '@/lib/huella-cliente'
 
 // ── Showcase cards (decorative, hardcoded data) ─────────────────
 function ShowcasePanel() {
@@ -197,6 +198,35 @@ export default function LoginPage() {
   }, [])
 
   const irAlPanel = (url) => { window.location.href = url }
+
+  /* ENTRAR CON HUELLA O CARA (3 oct 2026): solo si el teléfono puede. Se activa
+     en Configuración → Tus datos; ver lib/huella.js. */
+  const [puedeHuella, setPuedeHuella] = useState(false)
+  const [cargandoHuella, setCargandoHuella] = useState(false)
+  const [errorHuella, setErrorHuella] = useState('')
+  useEffect(() => { hayHuella().then(setPuedeHuella) }, [])
+
+  async function entrarConHuella() {
+    setErrorHuella(''); setError(''); setCargandoHuella(true)
+    try {
+      const r = await paseConHuella()
+      if (r.cancelado) return
+      if (r.error) { setErrorHuella(r.error); return }
+      const s = await signIn('huella', { pase: r.pase, redirect: false })
+      if (s?.error) {
+        setErrorHuella(s.error === 'VERIFY_EMAIL'
+          ? 'Tu correo no está verificado. Entra con tu correo y contraseña para verificarlo.'
+          : (esCodigoInterno(s.error) ? 'No se pudo entrar con la huella. Vuelve a intentarlo.' : s.error))
+        return
+      }
+      // Igual que con la contraseña: la sesión ya está; esto solo elige el panel.
+      let url = '/dashboard'
+      try { const ses = await (await fetch('/api/auth/session')).json(); if (ses?.user?.rol === 'superadmin') url = '/admin/inicio' } catch {}
+      irAlPanel(url)
+    } finally {
+      setCargandoHuella(false)
+    }
+  }
 
   async function entrarConCuenta(cuenta, pin) {
     setError('')
@@ -509,6 +539,25 @@ export default function LoginPage() {
               {loading ? 'Entrando…' : 'Entrar'}
             </button>
           </form>
+          )}
+
+          {puedeHuella && (modo === 'cuentas' || modo === 'formulario') && (
+            <div className="mt-4 flex flex-col gap-2">
+              <button type="button" onClick={entrarConHuella} disabled={cargandoHuella}
+                className="flex items-center justify-center gap-2"
+                style={{
+                  height: 'var(--cf-h-btn-2)', borderRadius: 'var(--cf-r-control)',
+                  background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
+                  fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)', cursor: cargandoHuella ? 'default' : 'pointer',
+                  opacity: cargandoHuella ? 0.6 : 1,
+                }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M7.86 4.42A9 9 0 0 1 21 12c0 1.37-.1 2.7-.3 4M3.3 8.6A9 9 0 0 0 3 11c0 2.5.5 4.9 1.4 7M12 7a5 5 0 0 1 5 5c0 2.6-.3 5.1-.9 7.5M7 12a5 5 0 0 1 2-4M7.4 16.5A13 13 0 0 0 9 21M12 11v1c0 3.3-.5 6.5-1.6 9.4" />
+                </svg>
+                {cargandoHuella ? 'Esperando al teléfono…' : 'Entrar con huella o cara'}
+              </button>
+              {errorHuella && <p className="text-[13px]" style={{ color: 'var(--cf-red-darker)' }}>{errorHuella}</p>}
+            </div>
           )}
 
           <div className="flex items-center gap-3 my-6">

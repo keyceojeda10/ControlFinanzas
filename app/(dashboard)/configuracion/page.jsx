@@ -33,6 +33,7 @@ import { ChecklistCamposRecibo } from '@/components/recibos/CamposReciboEditor'
 import { puedeRetroceder } from '@/lib/armazon'
 import PreferenciasAvisos from '@/components/avisos/PreferenciasAvisos'
 import TelefonosGuardados from '@/components/cuentas/TelefonosGuardados'
+import EntrarConHuella from '@/components/configuracion/EntrarConHuella'
 
 const PAISES_LIST = getCountryList()
 const WHATSAPP_SOPORTE = '573011993001'
@@ -344,6 +345,10 @@ function TabPerfil() {
           <Button onClick={cambiarPassword} loading={guardandoPw} size="sm">Cambiar contraseña</Button>
         </div>
       </Card>
+
+      {/* Entrar con huella o cara (3 oct 2026). Al cambiar la contraseña de
+          arriba, se quitan de todos los teléfonos. */}
+      <EntrarConHuella />
     </div>
   )
 }

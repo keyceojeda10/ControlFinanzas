@@ -331,6 +331,7 @@ model User {
   ubicacionLogs     UbicacionLog[]
   sesionesActivas   SesionActiva[]
   cuentasGuardadas  CuentaGuardada[]
+  llavesAcceso      LlaveAcceso[]
 
   @@index([organizationId])
   @@index([organizationId, rol, activo])
@@ -1534,6 +1535,26 @@ model EnvioWhatsapp {
 // Una cuenta guardada en UN teléfono: la llave aleatoria vive en el aparato
 // (localStorage) y aquí solo su huella SHA-256. El PIN (dueño y superadmin)
 // va con bcrypt. Revocar = borrar la fila. Ver lib/cuentas-guardadas.js.
+/// ENTRAR CON HUELLA O CARA (3 oct 2026): la llave PÚBLICA que guarda cada
+/// teléfono (WebAuthn). La huella y la cara nunca salen del teléfono: él las
+/// revisa y firma un reto. Se borran al cambiar la clave (`cortarCuentasGuardadas`).
+model LlaveAcceso {
+  id           String    @id @default(cuid())
+  userId       String
+  credencialId String    @unique @db.VarChar(512) // base64url, la pone el teléfono
+  llavePublica String    @db.Text                 // base64url
+  contador     Int       @default(0)
+  transportes  String?
+  dispositivo  String?
+  ultimoReto   String?   @db.VarChar(255)         // un reto sirve UNA vez
+  createdAt    DateTime  @default(now())
+  usadaEn      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model CuentaGuardada {
   id          String   @id @default(cuid())
   userId      String
