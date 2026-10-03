@@ -9,7 +9,7 @@ import CuentasGuardadas from '@/components/auth/CuentasGuardadas'
 import PinDeCuatro from '@/components/auth/PinDeCuatro'
 import { leerCuentasGuardadas, guardarCuentaEnTelefono, quitarCuentaDelTelefono } from '@/lib/cuentas-guardadas-cliente'
 import { esMensajeDeCuentaMuerta } from '@/lib/cuentas-guardadas-textos'
-import { hayHuella, paseConHuella } from '@/lib/huella-cliente'
+import { hayHuella, paseConHuella, activarHuella, huellaDeEsteTelefono, tocaOfrecerHuella, noOfrecerHuellaPorAhora } from '@/lib/huella-cliente'
 
 // ── Showcase cards (decorative, hardcoded data) ─────────────────
 function ShowcasePanel() {
@@ -199,12 +199,29 @@ export default function LoginPage() {
 
   const irAlPanel = (url) => { window.location.href = url }
 
-  /* ENTRAR CON HUELLA O CARA (3 oct 2026): solo si el teléfono puede. Se activa
-     en Configuración → Tus datos; ver lib/huella.js. */
+  /* ENTRAR CON HUELLA O CARA (3 oct 2026). El botón sale SOLO en el teléfono
+     donde se activó: saliendo en todos, Android contestaba «No hay llaves de
+     acceso disponibles» (el dueño: «realmente no sirve»). La activación se
+     ofrece al entrar con la contraseña (`alEntrar`). Ver lib/huella.js. */
   const [puedeHuella, setPuedeHuella] = useState(false)
   const [cargandoHuella, setCargandoHuella] = useState(false)
   const [errorHuella, setErrorHuella] = useState('')
-  useEffect(() => { hayHuella().then(setPuedeHuella) }, [])
+  useEffect(() => { if (huellaDeEsteTelefono()) hayHuella().then(setPuedeHuella) }, [])
+
+  /* Toda entrada con éxito pasa por aquí: si el teléfono puede y no la tiene
+     (ni dijo «Ahora no» hace poco), se le pregunta una vez antes del panel. */
+  async function alEntrar(url) {
+    if (tocaOfrecerHuella() && await hayHuella()) { setDestino(url); setErrorHuella(''); setModo('ofrecer-huella'); return }
+    irAlPanel(url)
+  }
+
+  async function activarHuellaAqui() {
+    setErrorHuella(''); setCargandoHuella(true)
+    const r = await activarHuella()
+    setCargandoHuella(false)
+    if (r.ok) { irAlPanel(destino); return }
+    if (r.error) setErrorHuella(r.error)
+  }
 
   async function entrarConHuella() {
     setErrorHuella(''); setError(''); setCargandoHuella(true)
@@ -256,7 +273,7 @@ export default function LoginPage() {
         setError(esCodigoInterno(msg) ? 'Correo o contraseña incorrectos' : msg)
         return
       }
-      irAlPanel(cuenta.rol === 'superadmin' ? '/admin/inicio' : '/dashboard')
+      await alEntrar(cuenta.rol === 'superadmin' ? '/admin/inicio' : '/dashboard')
     } catch {
       setError('Sin conexión. Intenta de nuevo.')
     } finally {
@@ -310,7 +327,7 @@ export default function LoginPage() {
     }
     setLoading(true)
     await guardarEsteTelefono(pin)
-    irAlPanel(destino)
+    await alEntrar(destino)
   }
 
   const handleSubmit = async (e) => {
@@ -362,7 +379,7 @@ export default function LoginPage() {
         }
         await guardarEsteTelefono()
       }
-      irAlPanel(url)
+      await alEntrar(url)
     } catch {
       setError('Error al iniciar sesión. Intenta de nuevo.')
     } finally {
@@ -423,7 +440,32 @@ export default function LoginPage() {
               <PinDeCuatro key={pinNuevo ? 'confirmar' : 'crear'} error={error} cargando={loading}
                 titulo={pinNuevo ? 'Escríbelo otra vez para confirmarlo' : 'Crea un PIN de 4 números para entrar con un toque'}
                 onCompleto={alEscribirPinNuevo} />
-              <button type="button" onClick={() => irAlPanel(destino)} className="text-[14px] font-semibold"
+              <button type="button" onClick={() => alEntrar(destino)} className="text-[14px] font-semibold"
+                style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
+                Ahora no
+              </button>
+            </div>
+          )}
+
+          {modo === 'ofrecer-huella' && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-[18px] font-bold" style={{ color: 'var(--cf-ink)' }}>¿Entrar con tu huella o tu cara la próxima vez?</p>
+                <p className="text-[14px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
+                  Sin escribir la contraseña. Tu huella no sale del teléfono: él la revisa y nos avisa que eres tú.
+                </p>
+              </div>
+              {errorHuella && <p className="text-[13px]" style={{ color: 'var(--cf-red-darker)' }}>{errorHuella}</p>}
+              <button type="button" onClick={activarHuellaAqui} disabled={cargandoHuella}
+                style={{
+                  height: 'var(--cf-h-btn)', borderRadius: 'var(--cf-r-control)',
+                  background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
+                  border: 0, cursor: cargandoHuella ? 'default' : 'pointer',
+                  fontSize: 15, fontWeight: 700, opacity: cargandoHuella ? 0.6 : 1,
+                }}>
+                {cargandoHuella ? 'Esperando al teléfono…' : 'Activar huella o cara'}
+              </button>
+              <button type="button" onClick={() => { noOfrecerHuellaPorAhora(); irAlPanel(destino) }} className="text-[14px] font-semibold"
                 style={{ background: 'none', border: 0, color: 'var(--cf-ink-2)', cursor: 'pointer' }}>
                 Ahora no
               </button>
@@ -560,6 +602,9 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Con la sesión ya abierta (ofrecer la huella, crear el PIN) no tiene sentido
+              «Crear cuenta» ni el portal del deudor. */}
+          {(modo === 'cuentas' || modo === 'formulario' || modo === 'pin') && (<>
           <div className="flex items-center gap-3 my-6">
             <span className="flex-1 h-px" style={{ background: 'var(--cf-divider)' }} />
             <span className="text-[12px]" style={{ color: 'var(--cf-ink-3)' }}>o</span>
@@ -588,6 +633,7 @@ export default function LoginPage() {
               Entra con tu cédula
             </Link>
           </p>
+          </>)}
 
           {/* Compliance footer */}
           <div className="flex items-center justify-center gap-4 mt-10 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>

@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { hayHuella, activarHuella } from '@/lib/huella-cliente'
+import { hayHuella, activarHuella, huellaDeEsteTelefono, olvidarHuellaDeEsteTelefono } from '@/lib/huella-cliente'
 
 const fecha = (d) => (d ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '').replace(' de ', ' ') : null)
 
@@ -29,10 +29,16 @@ export default function EntrarConHuella() {
     else if (r.error) setAviso({ tono: 'mal', texto: r.error })
   }
 
-  async function quitar(id) {
-    await fetch('/api/huella', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }).catch(() => {})
+  async function quitar(l) {
+    await fetch('/api/huella', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: l.id }) }).catch(() => {})
+    // Si era la de ESTE teléfono, la pantalla de entrada deja de ofrecer el botón.
+    if (l.credencialId === huellaDeEsteTelefono()) olvidarHuellaDeEsteTelefono()
     cargar()
   }
+
+  // ¿Este teléfono ya la tiene? (lo recuerda al activarla; ver lib/huella-cliente.js)
+  const aqui = huellaDeEsteTelefono()
+  const activaAqui = Boolean(aqui && llaves.some((l) => l.credencialId === aqui))
 
   return (
     <Card>
@@ -45,7 +51,10 @@ export default function EntrarConHuella() {
           Este teléfono no tiene huella, cara ni bloqueo de pantalla configurados para esto.
         </p>
       )}
-      {puede && (
+      {puede && activaAqui && (
+        <p className="text-[13px] font-semibold" style={{ color: 'var(--cf-green-dark)' }}>Activada en este teléfono.</p>
+      )}
+      {puede && !activaAqui && (
         <Button onClick={activar} loading={activando} size="sm">Activar en este teléfono</Button>
       )}
       {aviso && (
@@ -57,10 +66,10 @@ export default function EntrarConHuella() {
           {llaves.map((l) => (
             <div key={l.id} className="flex items-center justify-between gap-3 py-2" style={{ borderTop: '1px solid var(--cf-hairline)' }}>
               <span className="text-[13px]" style={{ color: 'var(--cf-ink)' }}>
-                {l.dispositivo || 'Dispositivo'}
+                {l.dispositivo || 'Dispositivo'}{l.credencialId === aqui ? ' (este)' : ''}
                 <span style={{ color: 'var(--cf-ink-3)' }}> · desde el {fecha(l.createdAt)}{l.usadaEn ? ` · usado el ${fecha(l.usadaEn)}` : ''}</span>
               </span>
-              <button type="button" onClick={() => quitar(l.id)} className="text-[13px] font-semibold"
+              <button type="button" onClick={() => quitar(l)} className="text-[13px] font-semibold"
                 style={{ background: 'none', border: 0, color: 'var(--cf-red-dark)', cursor: 'pointer' }}>
                 Quitar
               </button>

@@ -1,5 +1,5 @@
 // app/api/huella/route.js — los teléfonos con los que esta cuenta entra con huella.
-// GET                 → [{ id, dispositivo, createdAt, usadaEn }]
+// GET                 → [{ id, credencialId, dispositivo, createdAt, usadaEn }]
 // DELETE { id }       → quita ese teléfono
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -10,7 +10,9 @@ export async function GET() {
   if (!session?.user?.id) return Response.json({ error: 'No autorizado' }, { status: 401 })
   const llaves = await prisma.llaveAcceso.findMany({
     where: { userId: session.user.id },
-    select: { id: true, dispositivo: true, createdAt: true, usadaEn: true },
+    // `credencialId` no es secreto (lo manda el teléfono en cada firma): con él la
+    // pantalla sabe cuál de la lista es ESTE teléfono.
+    select: { id: true, credencialId: true, dispositivo: true, createdAt: true, usadaEn: true },
     orderBy: { createdAt: 'desc' },
   })
   return Response.json(llaves)
