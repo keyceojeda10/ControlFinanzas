@@ -12,6 +12,7 @@
 import { useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
 import { abreviaturaDocumento } from '@/lib/documento'
+import { referenciaDelCredito } from '@/lib/prestamos/referencia'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { resolverCampo } from '@/components/ui/BotonImprimirRecibo'
 // El reparto interés/capital lo MIDE el servidor; aquí solo se comprueba que la
@@ -353,6 +354,10 @@ export function dibujarRecibo(cliente, prestamo, pago, orgNombre, camposRecibo) 
   if (tieneCedula && !yaPideCedula) {
     cabeceraTabla.push(['Documento', `${abreviaturaDocumento()} ${cliente.cedula}`, 'recibo', 'txt'])
   }
+  /* DE QUÉ CRÉDITO ES ESTE PAGO (6 oct 2026): «si un cliente tiene varios
+     créditos y paga uno, no sabe cuál está pagando». Ver lib/prestamos/referencia.js. */
+  const credito = referenciaDelCredito(prestamo)
+  if (credito) cabeceraTabla.push(['Crédito', credito.replace(/^Crédito (de )?/, ''), 'bolsa', 'txt'])
   const tabla = cabeceraTabla.concat(filas)
 
   const referencia = pago?.id ? String(pago.id).slice(-8).toUpperCase() : null

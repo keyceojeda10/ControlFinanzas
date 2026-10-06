@@ -9,6 +9,7 @@ import {
   cargarConfigPlantillas,
   guardarConfigPlantillas,
   sincronizarPlantillasDesdeDB,
+  conLineaDelCredito,
 } from '@/lib/whatsapp-plantillas'
 // El panel vive ahora en su propio archivo: lo usan ESTE modal y la hoja nueva.
 // Estaba definido aqui dentro, y por eso la hoja no podia ofrecerlo.
@@ -76,11 +77,12 @@ export default function ModalWhatsAppTemplates({
             texto += '\n' + extraText
           }
         }
-        return texto
+        // De qué crédito habla, como en todas las plantillas (lib/whatsapp-plantillas.js).
+        return conLineaDelCredito(texto, template.id, ctx?.prestamo)
       } catch { return '' }
     }
     if (template.generar) {
-      try { return template.generar(ctx) } catch { return '' }
+      try { return conLineaDelCredito(template.generar(ctx), template.id, ctx?.prestamo) } catch { return '' }
     }
     return ''
   }, [ctx, orgNombre])

@@ -44,6 +44,7 @@ import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 import { repartoDeUnPago } from '@/lib/dinero/interes-cobrado'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -1185,8 +1186,12 @@ export async function POST(request, { params }) {
     pagoId: saldoAntesDelPagoId,
   })
 
+  // De qué crédito es este pago, para el comprobante y el mensaje (lib/prestamos/numero.js).
+  const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: [prestamoFinal.clienteId] }).catch(() => new Map())
+
   return Response.json({
     ...prestamoFinal,
+    ...camposDeNumero(numeros, prestamoFinal.id),
     totalPagado:      prestamoFinal.pagos.filter(p => !['recargo', 'descuento'].includes(p.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     saldoAntesDelPago,

@@ -24,6 +24,7 @@ import {
 import { obtenerDiasSinCobro, esHoySinCobro, esHoyFestivo } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 function detectarCuotaExtra(prestamo, proximaCuota) {
   if (!proximaCuota || !Array.isArray(prestamo.capitalExtra) || !prestamo.capitalExtra.length) {
@@ -196,6 +197,9 @@ export async function GET() {
   const cierreDeHoy = new Map()
   for (const v of cerradasHoy) if (!cierreDeHoy.has(v.clienteId)) cierreDeHoy.set(v.clienteId, v.motivo)
 
+  // El número de cada crédito dentro de su cliente, el que dicen las plantillas
+  // y el comprobante (lib/prestamos/numero.js). Una consulta para todos.
+  const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: clientes.map((c) => c.id) })
   const clientesAgregados = []
 
   {
@@ -290,6 +294,7 @@ export async function GET() {
           saldoCliente += saldoClavo
           prestamosActivos.push({
             id: p.id,
+            ...camposDeNumero(numeros, p.id), montoPrestado: p.montoPrestado, fechaInicio: p.fechaInicio,
             cuotaDiaria: Math.round(cuotaClavo),
             saldoPendiente: Math.round(saldoClavo),
             diasMora: 0,
@@ -366,6 +371,7 @@ export async function GET() {
         const extraInfo = detectarCuotaExtra(p, proximaCuota)
         prestamosActivos.push({
           id: p.id,
+          ...camposDeNumero(numeros, p.id), montoPrestado: p.montoPrestado, fechaInicio: p.fechaInicio,
           cuotaDiaria: Math.round(cuotaReal),
           saldoPendiente: Math.round(saldo),
           diasMora: moraPrestamo,

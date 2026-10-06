@@ -33,7 +33,7 @@ import { abrirWhatsApp } from '@/lib/whatsapp'
 import PanelSecciones from '@/components/whatsapp/PanelSecciones'
 import {
   PLANTILLAS as MOTOR, cargarConfigPlantillas, guardarConfigPlantillas,
-  sincronizarPlantillasDesdeDB, generarTextoPlantilla,
+  sincronizarPlantillasDesdeDB, generarTextoPlantilla, conLineaDelCredito,
 } from '@/lib/whatsapp-plantillas'
 import { formatMoney } from '@/lib/i18n'
 import ModalWhatsAppTemplates from '@/components/ui/ModalWhatsAppTemplates'
@@ -214,7 +214,8 @@ export default function HojaWhatsApp({
         // el mensaje y lo que va después parece añadido por error.
         t = i > 0 ? `${t.slice(0, i)}${bloque}\n\n${t.slice(i)}` : `${t}\n${bloque}`
       }
-      return t
+      // De qué crédito habla, como en todas las plantillas (lib/whatsapp-plantillas.js).
+      return conLineaDelCredito(t, plantillaMotor.id, ctx?.prestamo)
     } catch { return null }
   }, [plantillaMotor, ctx, seccionesActivas, extras, orgNombre])
 

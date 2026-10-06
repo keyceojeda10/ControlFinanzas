@@ -13,6 +13,7 @@ import { validateDocument, getDocumentConfig } from '@/lib/i18n'
 import { calificacionDe } from '@/lib/calificacion'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { anotarLlegadas, vieneDePorCliente } from '@/lib/rutas/procedencia'
+import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
 
 // Helper: verificar que el cliente pertenece a la organización (y a la ruta del cobrador)
 async function obtenerCliente(id, session) {
@@ -198,11 +199,14 @@ export async function GET(request, { params }) {
       })
       : []
 
+    // El número de cada crédito del cliente, el mismo que dicen las plantillas.
+    const numeros = numerarPorCliente(cliente.prestamos.map((p) => ({ id: p.id, clienteId: id, createdAt: p.createdAt })))
+
     return Response.json({
       ...cliente,
       vieneDe: vieneDePorCliente(llegadas).get(id) ?? null,
       estado: estadoCalculado,
-      prestamos: prestamosEnriquecidos,
+      prestamos: prestamosEnriquecidos.map((p) => ({ ...p, ...camposDeNumero(numeros, p.id) })),
       lineasCredito: lineasEnriquecidas,
       calificacion,
       calificacionPor: cliente.calificacionPor?.nombre ?? null,

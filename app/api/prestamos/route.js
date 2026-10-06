@@ -30,6 +30,7 @@ import { getLocalDateStr, inicioDelDiaLocal, getLocalDayRange } from '@/lib/i18n
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { notificar, plata } from '@/lib/notificar'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -333,6 +334,8 @@ export async function GET(request) {
     return diasExcluidosCache.get(key)
   }
 
+  // El número de cada crédito dentro de su cliente (plantillas y comprobante).
+  const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: prestamos.map((p) => p.clienteId) })
   const resultado = prestamos.map((p) => {
     const diasExcluidos = getDiasExcluidos(p.cliente)
     return {
@@ -345,6 +348,7 @@ export async function GET(request) {
     // La marca de «saldo financiado» (lib/financiar.js `esFinanciacion`). Esta
     // respuesta es una lista blanca: sin la línea, la tarjeta no la ve.
     interesFinanciado: p.interesFinanciado,
+    ...camposDeNumero(numeros, p.id),
     montoPrestado:    p.montoPrestado,
     totalAPagar:      p.totalAPagar,
     cuotaDiaria:      p.cuotaDiaria,

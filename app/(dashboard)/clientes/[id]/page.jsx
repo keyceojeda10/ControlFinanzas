@@ -748,8 +748,18 @@ export default function ClienteDetallePage({ params }) {
               aqui que en la lista, que es de donde se viene. */}
           <div className="space-y-3">
             {(() => {
-              const adaptados = adaptarPrestamos(prestamosActivos, country)
-              return prestamosActivos.map((p, i) => (
+              /* DEL MÁS ANTIGUO AL MÁS NUEVO: el #1 arriba. «Debería salir
+                 préstamo 1, préstamo 2… el primero tiene más prioridad porque
+                 es el más antiguo y el que más tiempo de deuda tiene» (6 oct
+                 2026). El API los manda al revés; se ordena SOLO aquí, para no
+                 mover lo que lee el primero de la lista (la tarjeta de arriba). */
+              const enOrden = [...prestamosActivos].sort((a, b) => numeroDelPrestamo(a.id) - numeroDelPrestamo(b.id))
+              const adaptados = adaptarPrestamos(enOrden, country)
+              // El número sale con la MISMA regla que las plantillas de WhatsApp y el
+              // comprobante (lib/prestamos/referencia.js): si tiene más de un crédito
+              // en total, aunque solo uno siga vivo.
+              const conNumero = (cliente.prestamos?.length ?? 0) > 1
+              return enOrden.map((p, i) => (
                 <TarjetaCliente
                   key={p.id}
                   {...adaptados[i]}
@@ -757,7 +767,7 @@ export default function ClienteDetallePage({ params }) {
                   // ficha; repetirlo gasta la linea mas visible. Y ademas salia
                   // «Sin cliente», porque en esta pagina los prestamos llegan
                   // sin el cliente anidado — no hace falta, ya esta arriba.
-                  nombre={`${prestamosActivos.length > 1 ? `Préstamo #${numeroDelPrestamo(p.id)} · ` : ''}Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
+                  nombre={`${conNumero ? `Préstamo #${numeroDelPrestamo(p.id)} · ` : ''}Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
                   onClick={() => router.push(`/prestamos/${p.id}`)}
                 />
               ))

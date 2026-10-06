@@ -23,6 +23,7 @@ import { rutaPermitida } from '@/lib/limites-plan'
 import { dispararTrasCrear } from '@/lib/capi-activacion'
 import { notificar } from '@/lib/notificar'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 // ─── GET /api/clientes ──────────────────────────────────────────
 export async function GET(request) {
@@ -258,6 +259,8 @@ export async function GET(request) {
   }
 
   // Recalcular estado real del cliente y enriquecer con datos para la card.
+  // El número de cada crédito dentro de su cliente (plantillas y comprobante).
+  const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: clientes.map((c) => c.id) })
   const resultado = clientes.map((c) => {
     const diasExcluidos = getDiasExcluidos(c)
     let saldoTotal = 0
@@ -378,6 +381,7 @@ export async function GET(request) {
         ultimoPagoAt:     p.ultimoPagoAt,
         esClavo:          p.esClavo,
         interesFinanciado: p.interesFinanciado,
+        ...camposDeNumero(numeros, p.id),
         saldoPendiente:   saldoP,
         porcentajePagado: (() => {
           try { return calcularPorcentajePagado(p) } catch { return 0 }

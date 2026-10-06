@@ -28,6 +28,7 @@ import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto } from '@/
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 const REF_REVERSO_CANCELACION_DESEMBOLSO = 'prestamo_cancelado_reverso_desembolso'
 const REF_REVERSO_CANCELACION_RECAUDO = 'prestamo_cancelado_reverso_recaudo'
@@ -108,8 +109,13 @@ export async function GET(request, { params }) {
 
   const moratorio = calcularInteresMoratorio(p, diasExcluidos, festivos, org?.tasaMoratorio ?? 0, org?.diasGraciaMoratorio ?? 5)
 
+  // El número de este crédito entre los del cliente (lib/prestamos/numero.js):
+  // lo dicen las plantillas de WhatsApp y el comprobante.
+  const numeros = await numerosDeClientes(prisma, { organizationId: session.user.organizationId, clienteIds: [p.clienteId] })
+
   return Response.json({
     ...p,
+    ...camposDeNumero(numeros, p.id),
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
     saldoPendiente:   calcularSaldoPendiente(p),
     capitalRestante:  calcularCapitalRestante(p),

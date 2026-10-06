@@ -31,6 +31,7 @@ import { totalDistance } from '@/lib/routeOptimizer'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
 import { vieneDePorCliente, compararProcedencias } from '@/lib/rutas/procedencia'
+import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 
 const hoy = (country = 'co') => {
   const now = new Date()
@@ -311,6 +312,8 @@ export async function GET(request, { params }) {
   // Las cifras de cada cliente para la comparación, las MISMAS que ya se le
   // calculan abajo (cumplimiento, atraso, cartera): no se vuelven a sacar.
   const cifrasProcedencia = []
+  // El número de cada crédito dentro de su cliente (plantillas y comprobante).
+  const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: ruta.clientes.map((c) => c.id) })
 
   const clientesEnriquecidos = ruta.clientes.map((c) => {
     // diasSinCobro se resuelve a nivel cliente (sin prestamo individual aquí,
@@ -504,6 +507,7 @@ export async function GET(request, { params }) {
         const extraClavo = detectarCuotaExtra(p, proximaCuotaClavo)
         prestamosActivos.push({
           id: p.id,
+          ...camposDeNumero(numeros, p.id), montoPrestado: p.montoPrestado, fechaInicio: p.fechaInicio,
           // Que se sepa desde fuera. Sin esto, un cliente cuyo único préstamo
           // es un clavo se lee como cliente con préstamo activo, y la zona de
           // abajo le ponía «Al día» con anillo verde a un préstamo PERDIDO.
@@ -574,6 +578,7 @@ export async function GET(request, { params }) {
       const extraInfo = detectarCuotaExtra(p, proximaCuota)
       prestamosActivos.push({
         id: p.id,
+        ...camposDeNumero(numeros, p.id), montoPrestado: p.montoPrestado, fechaInicio: p.fechaInicio,
         cuotaDiaria: Math.round(cuotaReal),
         cuotaDiariaOriginal: p.cuotaDiaria,
         saldoPendiente: Math.round(saldoPendientePrestamo),

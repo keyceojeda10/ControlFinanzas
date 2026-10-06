@@ -5,6 +5,7 @@ import { prisma }           from '@/lib/prisma'
 import { calcularDiasMora, calcularSaldoPendiente, calcularPorcentajePagado, calcularProximoCobro, formatFechaCobro, pagoHoy, tieneCobroPendienteHoy, tienePeriodoEsperadoHoy, calcularCapitalRestante } from '@/lib/calculos'
 import { obtenerDiasSinCobro, esHoySinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
+import { numerarPorCliente, camposDeNumero } from '@/lib/prestamos/numero'
 
 // Rate limit: 1 sync completo cada 2 minutos por usuario
 const syncTimestamps = new Map()
@@ -106,6 +107,10 @@ export async function GET() {
     orderBy: { nombre: 'asc' },
   })
 
+  // El número de cada crédito dentro de su cliente (plantillas y comprobante,
+  // también sin señal). Los préstamos de cada cliente ya vienen todos.
+  const numeros = numerarPorCliente(clientesRaw.flatMap((c) => c.prestamos.map((p) => ({ id: p.id, clienteId: c.id, createdAt: p.createdAt }))))
+
   // Enriquecer préstamos con cálculos
   const clientes = clientesRaw.map((c) => ({
     ...c,
@@ -116,6 +121,7 @@ export async function GET() {
         hoySinCobro,
         prestamos: c.prestamos.map((p) => ({
           ...p,
+          ...camposDeNumero(numeros, p.id),
           totalPagado: p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
           diasMora: calcularDiasMora(p, diasExcluidos, festivos),
           saldoPendiente: calcularSaldoPendiente(p),
