@@ -543,6 +543,32 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
         </div>
       )}
 
+      {/* ── EL COTEO ─────────────────────────────────────────────────────────
+          «que en la parte de abajo me diga coteo y ahí aparezca el saldo […]
+           yo lo estoy haciendo manualmente, pongo 912.000 y le resto los
+           abonos de abajo» (PRESTA MIL, 9 oct 2026). Lo cobrado menos los abonos
+          de quien renovó ese día. NO cambia ninguna cifra de arriba: es su
+          control sobre el cobrador. Sale también sin abonos, porque el cero es
+          un dato: entonces el coteo es lo cobrado. Ver `lib/dinero/coteo.js`. */}
+      {data?.coteo && (
+        <div
+          className="rounded-[12px] p-3 flex items-baseline justify-between gap-3"
+          style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}
+        >
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold" style={{ color: 'var(--cf-ink)' }}>Coteo</span>
+            <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
+              {data.coteo.abonosAlRenovar > 0
+                ? `Cobró ${formatMoney(data.coteo.cobrado)} − abonos al renovar ${formatMoney(data.coteo.abonosAlRenovar)}`
+                : 'Sin abonos el día que renovaron: es lo que cobró'}
+            </span>
+          </span>
+          <span className="cf-fig text-[16px] font-bold shrink-0" style={{ color: 'var(--cf-ink)' }}>
+            {formatMoney(data.coteo.monto)}
+          </span>
+        </div>
+      )}
+
       {pd && (pd.nuevos.cantidad > 0 || pd.renovaciones.cantidad > 0) && (
         <div
           className="rounded-[12px] p-3"

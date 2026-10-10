@@ -2380,6 +2380,26 @@ const MOVIMIENTOS_MANUALES = [
                 ? (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0) - cierreDesembolsado))
                 : 0
 
+              /* EL COTEO, sin entrar a cada ruta: «entre 10 rutas, 9 rutas […] se
+                 quema tiempo uno» (PRESTA MIL, 9 oct 2026). Lo cobrado menos los
+                 abonos de quien renovó hoy; no toca ninguna otra cifra. Ver
+                 `lib/dinero/coteo.js`. */
+              const filaCoteo = c.coteo ? (
+                <div className="flex items-baseline justify-between gap-3 mt-2 px-1">
+                  <span className="min-w-0">
+                    <span className="block text-[12px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}>Coteo</span>
+                    <span className="block text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
+                      {c.coteo.abonosAlRenovar > 0
+                        ? `Cobró ${formatMoney(c.coteo.cobrado)} − abonos al renovar ${formatMoney(c.coteo.abonosAlRenovar)}`
+                        : 'Sin abonos el día que renovaron'}
+                    </span>
+                  </span>
+                  <span className="text-[15px] font-bold font-mono-display shrink-0" style={{ color: 'var(--cf-ink)' }}>
+                    {formatMoney(c.coteo.monto)}
+                  </span>
+                </div>
+              ) : null
+
               const expandido = !!cobradorExpandido[c.id]
               const toggleExpand = () => setCobradorExpandido((prev) => ({ ...prev, [c.id]: !prev[c.id] }))
 
@@ -2462,6 +2482,7 @@ const MOVIMIENTOS_MANUALES = [
                           </p>
                         </div>
                       </div>
+                      {filaCoteo}
 
                       {expandido && (
                         <div className="space-y-3 mt-3">
@@ -2531,6 +2552,7 @@ const MOVIMIENTOS_MANUALES = [
                               <p className="text-lg font-bold font-mono-display text-[var(--cf-gold)] mt-0.5">{formatMoney(sugeridoCierre)}</p>
                             </div>
                           </div>
+                          {filaCoteo}
 
                           {expandido && (
                             <>

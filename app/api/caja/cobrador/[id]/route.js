@@ -8,7 +8,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
-import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia } from '@/lib/dinero/conciliacion'
+import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
+import { cuentaDelDia, afectaElFajo, desembolsosOriginalesDelDia, cobrosRevertidosElMismoDia, corregidosDeOtroDia, reversosYaEnLoPrestado, esDesembolsoActualizado } from '@/lib/dinero/conciliacion'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { esFinanciacion } from '@/lib/financiar'
@@ -42,7 +43,9 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
       // efectivo» y la cuenta le pedía un fajo que nunca tuvo — el mismo error
       // que ya corregimos del lado del cobro, pero al revés. En este negocio hay
       // 6 casos históricos; el 99% van sin método, que se lee como efectivo.
-      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true, metodoPagoId: true },
+      // `descripcion`: sin ella `corregidosDeOtroDia` no distingue el préstamo
+      // que salió hoy del que solo se corrigió hoy.
+      select: { referenciaId: true, monto: true, rutaId: true, createdAt: true, metodoPago: true, metodoPagoId: true, descripcion: true },
     }),
     // Préstamos de la ruta del cobrador en el día (para detectar los que no tienen
     // MovimientoCapital — orgs sin capital configurado — y también para obtener nombres).
@@ -136,7 +139,11 @@ async function getDesembolsosCobradorDia(organizationId, inicio, fin, cobradorId
   }
 
   for (const p of prestamosRutaDia) agregar(p)
-  for (const p of prestamosExtra) agregar(p)
+  /* Un préstamo de OTRO día cuyo único desembolso de hoy es el «actualizado»
+     de una edición no se prestó hoy: se corrigió. El billete salió en su día,
+     y la pareja va a la bolsa como corrección (ver `corregidosDeOtroDia`). */
+  const soloCorregidos = corregidosDeOtroDia(movimientos)
+  for (const p of prestamosExtra) if (!soloCorregidos.has(p.id)) agregar(p)
 
   return items
 }
@@ -442,6 +449,17 @@ export async function GET(request, { params }) {
      escribe un reverso, y `ajustesDia` se lo lleva: el mismo pago restado dos
      veces. Ver `cobrosRevertidosElMismoDia`. */
   const reversosYaDescontados = cobrosRevertidosElMismoDia(primerMovPorRuta)
+  /* ⚠ LA PAREJA DE EDICIÓN YA ESTÁ EN «PRESTÓ». «Prestó» toma el monto VIGENTE
+     de cada préstamo, así que el reverso de una edición cuyo préstamo salió hoy
+     ya está descontado ahí: sumarlo devolvía el monto viejo otra vez (PRESTA
+     MIL, RUTA #6, 9 oct: $415.000 donde eran $315.000). Ver `corregidosDeOtroDia`. */
+  for (const id of reversosYaEnLoPrestado(primerMovPorRuta, originalesDeHoy)) reversosYaDescontados.add(id)
+  /* Y la de un préstamo de OTRO día queda fuera de «Prestó», así que su
+     «actualizado» baja la bolsa aquí, con su nombre, junto al reverso. */
+  const corregidosHoy = corregidosDeOtroDia(primerMovPorRuta)
+  const actualizadosDeOtroDia = primerMovPorRuta.filter((m) => m.rutaId && m.tipo === 'desembolso'
+    && esDesembolsoActualizado(m) && corregidosHoy.has(m.referenciaId) && !noMovioNada(m))
+  for (const m of actualizadosDeOtroDia) ajustesDia -= m.monto
   for (const m of primerMovPorRuta) {
     if (!m.rutaId) continue
     if (noMovioNada(m)) continue
@@ -479,6 +497,7 @@ export async function GET(request, { params }) {
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',
     }))
+    .concat(actualizadosDeOtroDia.map((m) => ({ monto: -Math.round(m.monto), descripcion: m.descripcion || 'Corrección' })))
     .filter((m) => m.monto !== 0)
 
   inyeccionesDia = Math.round(inyeccionesDia); inyeccionesEfectivo = Math.round(inyeccionesEfectivo)
@@ -645,16 +664,15 @@ export async function GET(request, { params }) {
   // Las que se FINANCIARON salen en la misma lista —la duda es la misma—, pero
   // la fila tiene que decir «financió», no «renovó».
   const financiadas = new Set(renovacionesDia.filter(esFinanciacion).map((r) => r.renovadoDeId))
-  const cobrosDeRenovadas = renovadaAHora.size > 0
-    ? cobros.filter((p) => renovadaAHora.has(p.prestamoId))
-    : []
+  // La misma regla que la lista de cobradores: ver `lib/dinero/coteo.js`.
+  const abonosDeRenovadas = cobrosDeRenovadas(cobros, renovacionesDia)
   /* ⚠ UNA FILA POR CLIENTE, NO POR ABONO. En la primera prueba contra datos
      reales el mismo cliente salía DOS VECES con $50.000 cada uno —tenía dos
      cartulinas renovadas ese día— mientras el pie decía «entre esos 3
      clientes»: cuatro filas y un total que hablaba de tres. Se agrupa por
      persona, que es como él los va a ir a mirar. */
   const porCliente = new Map()
-  for (const p of cobrosDeRenovadas) {
+  for (const p of abonosDeRenovadas) {
     const cuandoRenovo = renovadaAHora.get(p.prestamoId)
     const minutos = cuandoRenovo ? Math.round((new Date(cuandoRenovo) - new Date(p.fechaPago)) / 60000) : null
     const clave = p.prestamo?.cliente?.id ?? p.prestamoId
@@ -686,13 +704,13 @@ export async function GET(request, { params }) {
     /* PERSONAS, no cartulinas ni abonos: es lo que dice el pie de la lista y
        tiene que ser el mismo número de filas que se pintan encima. */
     cartulinas: porCliente.size,
-    abonos: cobrosDeRenovadas.length,
-    monto: Math.round(cobrosDeRenovadas.reduce((a, p) => a + (p.montoPagado || 0), 0)),
+    abonos: abonosDeRenovadas.length,
+    monto: Math.round(abonosDeRenovadas.reduce((a, p) => a + (p.montoPagado || 0), 0)),
     /* Y cuánto de eso fue efectivo, que es la línea debajo de la que se pinta.
        Mismo criterio que el resto de la caja: lo decide `entraAlFajo`, nunca el
        rótulo del método. */
     enEfectivo: Math.round(
-      cobrosDeRenovadas
+      abonosDeRenovadas
         .filter((p) => entraAlFajo(p.metodoPago, p.metodoPagoId, cuentasCobrador))
         .reduce((a, p) => a + (p.montoPagado || 0), 0)
     ),
@@ -1479,6 +1497,9 @@ export async function GET(request, { params }) {
     efectivo: cobradoEfectivoNeto,
     digital: cobradoDigital,
   }
+  /* El coteo: lo cobrado menos los abonos de quien renovó ese día. No entra en
+     ninguna resta de la caja; es el control del dueño sobre el cobrador. */
+  const coteoDia = coteo(cobradoTotalHoy.total, cobradoEnDiaDeRenovacion.monto)
 
   return Response.json({
     cobrador: { id: cobrador.id, nombre: cobrador.nombre },
@@ -1490,6 +1511,7 @@ export async function GET(request, { params }) {
     cuentaSalio,
     cuentaRuta,
     cobradoTotalHoy,
+    coteo: coteoDia,
     hizo,
     fecha: esRango ? null : fechaBase,
     esRango,

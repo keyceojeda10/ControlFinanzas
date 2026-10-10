@@ -16,6 +16,7 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } fro
 // quedó sin ninguna, escribiendo 0.
 import { calcularDesembolsadoDia, detalleDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
+import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -1145,7 +1146,7 @@ export async function GET(request) {
       ...idsCierreDia.map(c => c.cobradorId),
     ].filter(Boolean))]
 
-    const [todosCobradores, recaudosDiaRaw, rutasActivas] = await Promise.all([
+    const [todosCobradores, recaudosDiaRaw, rutasActivas, renovacionesDiaOrg] = await Promise.all([
       prisma.user.findMany({
         where: {
           organizationId,
@@ -1184,6 +1185,8 @@ export async function GET(request) {
         select: {
           montoPagado: true,
           cobradorId: true,
+          // Para el coteo: cruzar el pago con la cartulina que se renovó hoy.
+          prestamoId: true,
           prestamo: { select: { cliente: { select: { ruta: { select: { cobradorId: true } } } } } },
         },
       }),
@@ -1203,6 +1206,17 @@ export async function GET(request) {
             },
           },
         },
+      }),
+      /* Las cartulinas que se renovaron o financiaron hoy, para el coteo. Mismo
+         filtro que la ficha del cobrador (`caja/cobrador/[id]`, `renovacionesDia`). */
+      prisma.prestamo.findMany({
+        where: {
+          organizationId,
+          createdAt: { gte: inicio, lt: fin },
+          estado: { not: 'cancelado' },
+          renovadoDeId: { not: null },
+        },
+        select: { renovadoDeId: true },
       }),
     ])
     // Los festivos se cargan junto con la config: sin ellos, el esperado por
@@ -1233,6 +1247,15 @@ export async function GET(request) {
     }, {})
     for (const id of Object.keys(recaudoPorCobrador)) {
       recaudoPorCobrador[id] = Math.round(recaudoPorCobrador[id])
+    }
+    /* Los abonos de quien renovó hoy, para el COTEO (ver `lib/dinero/coteo.js`).
+       Van al cobrador de la RUTA del cliente, como en su ficha: allí solo
+       cuentan las renovaciones de clientes de sus rutas. */
+    const abonosAlRenovarPorCobrador = {}
+    for (const p of cobrosDeRenovadas(recaudosDiaRaw, renovacionesDiaOrg)) {
+      const id = p.prestamo?.cliente?.ruta?.cobradorId
+      if (!id) continue
+      abonosAlRenovarPorCobrador[id] = (abonosAlRenovarPorCobrador[id] || 0) + Number(p.montoPagado || 0)
     }
 
     // La tarjeta de cada cobrador pregunta lo mismo que la banda de arriba, y
@@ -1297,6 +1320,7 @@ export async function GET(request) {
         cierre,
         recaudadoDia,
         esperadoDia,
+        coteo: coteo(recaudadoDia, abonosAlRenovarPorCobrador[c.id] || 0),
         sugeridoCierre: recaudadoDia,
         prestadoDia: prestadoDiaR,
         segurosDia: { monto: Math.round(segurosDia?.monto || 0), cantidad: segurosDia?.cantidad || 0 },
