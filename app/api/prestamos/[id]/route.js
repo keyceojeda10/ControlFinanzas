@@ -1,5 +1,6 @@
 // app/api/prestamos/[id]/route.js
 
+import { parejaDeLaEdicion } from '@/lib/dinero/editar-monto'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
@@ -1068,16 +1069,42 @@ export async function PATCH(request, { params }) {
     // Si el monto cambió, reversar el desembolso anterior y registrar el nuevo.
     const orgId = session.user.organizationId
     const rutaId = p.cliente?.rutaId || null
+    /* En una renovación, la pareja habla de BILLETES, no del monto: ver
+       `lib/dinero/editar-monto.js`. Lo que salió es el último desembolso del
+       libro (el original o el de la edición anterior); la reserva de ruta no
+       es plata entregada y no cuenta. */
+    const ultimoDesembolso = montoCambia && p.renovadoDeId
+      ? await prisma.movimientoCapital.findFirst({
+          where: { organizationId: orgId, referenciaId: id, referenciaTipo: 'prestamo', tipo: 'desembolso', ajusteArranqueRuta: false },
+          orderBy: { createdAt: 'desc' },
+          select: { monto: true },
+        })
+      : null
+    // Sin efectivo en mano, lo absorbido sale del préstamo viejo: ver editar-monto.js.
+    const viejo = ultimoDesembolso && Number(ultimoDesembolso.monto) <= 0
+      ? await prisma.prestamo.findFirst({
+          where: { id: p.renovadoDeId, organizationId: orgId },
+          select: { totalAPagar: true, totalAPagarPrevio: true },
+        })
+      : null
+    const pareja = parejaDeLaEdicion({
+      montoAnterior, montoNuevo,
+      efectivoAnterior: ultimoDesembolso?.monto ?? null,
+      esRenovacion: Boolean(p.renovadoDeId),
+      absorbidoDelViejo: viejo?.totalAPagarPrevio != null ? viejo.totalAPagarPrevio - viejo.totalAPagar : null,
+    })
+    // Si los billetes no cambian (bajar una renovación sin efectivo), no hay asiento.
+    const parejaMueve = montoCambia && Math.round(pareja.devuelve) !== Math.round(pareja.sale)
 
     const actualizado = await prisma.$transaction(async (tx) => {
-      if (montoCambia) {
+      if (parejaMueve) {
         // Reversar desembolso original.
         await registrarMovimientoCapital(tx, {
           organizationId: orgId,
           tipo: 'ajuste',
           direccion: 'ingreso',
-          monto: montoAnterior,
-          descripcion: `Reverso desembolso - edición préstamo (anterior $${Math.round(montoAnterior).toLocaleString('es-CO')})`,
+          monto: pareja.devuelve,
+          descripcion: `Reverso desembolso - edición préstamo (anterior $${Math.round(pareja.devuelve).toLocaleString('es-CO')})`,
           referenciaId: id,
           referenciaTipo: 'prestamo',
           rutaId,
@@ -1087,8 +1114,8 @@ export async function PATCH(request, { params }) {
         await registrarMovimientoCapital(tx, {
           organizationId: orgId,
           tipo: 'desembolso',
-          monto: montoNuevo,
-          descripcion: `Desembolso actualizado - edición préstamo ($${Math.round(montoNuevo).toLocaleString('es-CO')})`,
+          monto: pareja.sale,
+          descripcion: `Desembolso actualizado - edición préstamo ($${Math.round(pareja.sale).toLocaleString('es-CO')})`,
           referenciaId: id,
           referenciaTipo: 'prestamo',
           rutaId,
