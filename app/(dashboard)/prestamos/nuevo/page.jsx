@@ -15,7 +15,7 @@ import { fechaDePeriodo } from '@/lib/dinero/calendario'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
-import { tasaParaInteres, interesDelPeriodo } from '@/lib/dinero/interes-en-pesos'
+import { tasaParaInteres, tasaParaCuota, interesDelPeriodo } from '@/lib/dinero/interes-en-pesos'
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
@@ -284,28 +284,7 @@ function NuevoPrestamo() {
      interés de cada período es monto × tasa y no hay otra lectura posible. */
   const [interesEnPesos, setInteresEnPesos] = useState(false)
   const [interesPesos, setInteresPesos] = useState('')
-  useEffect(() => {
-    if (!interesEnPesos || !esAbierto) return
-    const t = tasaParaInteres(monto, interesPesos)
-    if (t != null) setTasa(String(t))
-  }, [interesEnPesos, esAbierto, monto, interesPesos])
-  /* Si deja de ser abierto, vuelve al porcentaje y sin la cola de decimales:
-     el campo de % no puede quedarse enseñando 11.333333333333334. */
-  useEffect(() => {
-    if (esAbierto || !interesEnPesos) return
-    setInteresEnPesos(false)
-    setTasa((t) => String(Math.round(Number(t) * 100) / 100))
-  }, [esAbierto, interesEnPesos])
-  const elegirInteresEn = (enPesos) => {
-    if (enPesos === interesEnPesos) return
-    if (enPesos) {
-      const actual = interesDelPeriodo(monto, tasa)
-      if (actual > 0) setInteresPesos(String(actual))
-    } else {
-      setTasa((t) => String(Math.round(Number(t) * 100) / 100))
-    }
-    setInteresEnPesos(enPesos)
-  }
+  // Los efectos van después de `calculo`: buscan la tasa con el mismo cálculo.
 
   /* ⚠ SI DEJA DE SER ABIERTO, LA RESPUESTA SE OLVIDA. El API rechaza cualquier
      tipo que no sea 'completo' fuera del abierto, así que dejarla puesta al
@@ -697,11 +676,12 @@ function NuevoPrestamo() {
   // Cálculo en tiempo real — usa el ultimo resultado valido como fallback
   // para que el panel de resumen no desaparezca al editar campos (ej: borrar
   // temporalmente el monto o plazo antes de escribir el nuevo valor).
-  const calculo = useMemo(() => {
+  /* El cálculo como función de la TASA, con todo lo demás de la pantalla. Lo
+     usan la previsualización y el buscador de la cuota en pesos: si cada uno
+     armara sus propios datos, la tasa encontrada daría otra cuota al guardar. */
+  const calcularConTasa = useCallback((t) => {
     const m = Number(monto)
-    const t = Number(tasa)
     const p = Number(plazo)
-    if (!m || (tasa === '' || tasa == null) || !p || !fechaInicio) return lastValidCalculo.current
     // En mercancia el cobrador pone el PRECIO DE VENTA total; la cuota sale de
     // repartirlo en numCuotas y la ganancia = precioVenta - valor del articulo.
     // Internamente se trata como manual (cuota fija) para no tocar el resto del
@@ -716,7 +696,7 @@ function NuevoPrestamo() {
     } else if (modoInteres === 'saldo' && Number(cuotaManual) > 0) {
       cm = Number(cuotaManual)
     }
-    const resultado = calcularPrestamo({
+    return calcularPrestamo({
       montoPrestado: m,
       tasaInteres: t,
       diasPlazo: p,
@@ -736,9 +716,58 @@ function NuevoPrestamo() {
       ...((frecuencia === 'mensual' || (frecuencia === 'quincenal' && modoDiaCobro === 'mes')) && diaCobroMes !== '' && { diaCobroMes: Number(diaCobroMes) }),
       ...(frecuencia === 'quincenal' && modoDiaCobro === 'mes' && diaCobroMes2 !== '' && { diaCobroMes2: Number(diaCobroMes2) }),
     })
+  }, [monto, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+
+  const calculo = useMemo(() => {
+    if (!Number(monto) || (tasa === '' || tasa == null) || !Number(plazo) || !fechaInicio) return lastValidCalculo.current
+    const resultado = calcularConTasa(Number(tasa))
     lastValidCalculo.current = resultado
     return resultado
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, modo, modoInteres, cuotaManualActiva, cuotaManual, saldoCuotaPersonalizada, precioVenta, numCuotas, interesAdelantado, esAbierto, capitalExtra, modoDiaCobro, diaCobroMes, diaCobroMes2])
+  }, [monto, tasa, plazo, fechaInicio, calcularConTasa])
+
+  /* ── LA CUOTA EN PESOS ──────────────────────────────────────────────────
+     «que la persona pudiera escoger el monto que le paga la cuota y que el
+      sistema automáticamente calcule el porcentaje» (el dueño, 10 oct 2026).
+     En $ se escribe la CUOTA y la tasa se busca con el mismo cálculo de la
+     pantalla (`tasaParaCuota`). Si cambian el modo, el plazo o la frecuencia,
+     la cuota escrita se queda y la tasa se vuelve a buscar: así no importa
+     que cada modo lea el porcentaje distinto. En el abierto, la cuota ES el
+     interés de cada período y la tasa sale de dividir (`tasaParaInteres`).
+     Fuera de los modos de cuota pareja no hay una cuota que fijar: lineal
+     cambia en cada cobro, y en «cuota que pones tú» ya la escribe él. */
+  const puedeEnPesos = modo !== 'mercancia' && (esAbierto
+    || (['fijo', 'unico', 'saldo', 'solo_interes'].includes(modoInteres) && !saldoCuotaPersonalizada))
+  const [cuotaBuscada, setCuotaBuscada] = useState(null)
+  useEffect(() => {
+    if (!interesEnPesos || !puedeEnPesos) return
+    if (esAbierto) {
+      const t = tasaParaInteres(monto, interesPesos)
+      if (t != null) setTasa(String(t))
+      setCuotaBuscada(null)
+      return
+    }
+    if (!(Number(monto) > 0) || !(Number(plazo) > 0) || !fechaInicio || !(Number(interesPesos) > 0)) return
+    const r = tasaParaCuota(calcularConTasa, interesPesos, { monto, modo: modoInteres })
+    setCuotaBuscada(r ?? { imposible: true })
+    if (r) setTasa(String(r.tasa))
+  }, [interesEnPesos, puedeEnPesos, esAbierto, monto, plazo, fechaInicio, interesPesos, calcularConTasa, modoInteres])
+  /* Si deja de poderse (modo lineal, cuota que pone él), vuelve al porcentaje y
+     sin la cola de decimales: el campo de % no puede enseñar 11.333333333333334. */
+  useEffect(() => {
+    if (puedeEnPesos || !interesEnPesos) return
+    setInteresEnPesos(false)
+    setTasa((t) => String(Math.round(Number(t) * 100) / 100))
+  }, [puedeEnPesos, interesEnPesos])
+  const elegirInteresEn = (enPesos) => {
+    if (enPesos === interesEnPesos) return
+    if (enPesos) {
+      const actual = esAbierto ? interesDelPeriodo(monto, tasa) : Math.round(calculo?.cuotaDiaria || 0)
+      if (actual > 0) setInteresPesos(String(actual))
+    } else {
+      setTasa((t) => String(Math.round(Number(t) * 100) / 100))
+    }
+    setInteresEnPesos(enPesos)
+  }
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -848,6 +877,8 @@ function NuevoPrestamo() {
 
   const puedeAvanzarPaso = () => {
     if (cuotaInsuficiente) return false
+    // Una cuota en pesos que no devuelve el capital: la de abajo es la anterior.
+    if (interesEnPesos && puedeEnPesos && cuotaBuscada?.imposible) return false
     /* ⚠ EN PC EL PASO 0 LLEVA LAS DOS COSAS. Con el `return !!clienteId` de
        antes, «Revisar préstamo» se habilitaba con solo elegir cliente y saltaba
        a la firma con el monto vacío. Se comprueban las dos, no una. */
@@ -1703,11 +1734,12 @@ function NuevoPrestamo() {
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
-                      {esAbierto && interesEnPesos
-                        ? `Interés ${{ diario: 'al día', semanal: 'por semana', quincenal: 'por quincena', mensual: 'al mes' }[frecuencia] || 'al mes'}`
-                        : 'Interés mensual'}
+                      {!(puedeEnPesos && interesEnPesos) ? 'Interés mensual'
+                        : esAbierto
+                          ? `Interés ${{ diario: 'al día', semanal: 'por semana', quincenal: 'por quincena', mensual: 'al mes' }[frecuencia] || 'al mes'}`
+                          : `Cuota ${{ diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia] || ''}`}
                     </label>
-                    {esAbierto && (
+                    {puedeEnPesos && (
                       <div role="radiogroup" aria-label="Escribir el interés en" className="flex gap-1">
                         {[{ id: false, nombre: '%' }, { id: true, nombre: '$' }].map((o) => (
                           <button key={o.nombre} type="button" role="radio" aria-checked={interesEnPesos === o.id}
@@ -1722,15 +1754,21 @@ function NuevoPrestamo() {
                       </div>
                     )}
                   </div>
-                  {esAbierto && interesEnPesos ? (
+                  {puedeEnPesos && interesEnPesos ? (
                     <>
                       <div className="mt-1.5">
-                        <MoneyInput value={interesPesos} onChange={(e) => setInteresPesos(e.target.value)} tamano="grande" placeholder="170.000" />
+                        <MoneyInput value={interesPesos} onChange={(e) => setInteresPesos(e.target.value)} tamano="grande" placeholder={esAbierto ? '170.000' : '10.000'} />
                       </div>
-                      <p className="text-[11px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-                        {Number(monto) > 0 && Number(interesPesos) > 0
-                          ? `Es el ${formatearTasa(tasa)} % de ${formatMoney(Number(monto))}. Si abona a capital, baja en la misma proporción.`
-                          : 'Escribe cuánto paga de interés y el sistema saca el porcentaje.'}
+                      <p className="text-[11px] mt-2" style={{ color: cuotaBuscada?.imposible || (cuotaBuscada && !cuotaBuscada.exacta) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                        {!(Number(monto) > 0 && Number(interesPesos) > 0)
+                          ? (esAbierto ? 'Escribe cuánto paga de interés y el sistema saca el porcentaje.' : 'Escribe cuánto paga en cada cuota y el sistema saca el porcentaje.')
+                          : esAbierto
+                            ? `Es el ${formatearTasa(tasa)} % de ${formatMoney(Number(monto))}. Si abona a capital, baja en la misma proporción.`
+                            : cuotaBuscada?.imposible
+                              ? `Con ${formatMoney(Number(interesPesos))} no alcanza a devolver los ${formatMoney(Number(monto))} en ${calculo?.numPeriodos ?? plazoUnidades} cuotas. Sube la cuota o el número de cuotas.`
+                              : cuotaBuscada && !cuotaBuscada.exacta
+                                ? `En este modo las cuotas van a la centena: queda en ${formatMoney(cuotaBuscada.cuota)}.`
+                                : `Equivale al ${formatearTasa(tasa)} % ${{ fijo: 'al mes', unico: 'del préstamo', saldo: 'al mes sobre el saldo', solo_interes: 'por cada cobro' }[modoInteres] || ''}. Ganas ${formatMoney(Math.max(0, Math.round((calculo?.totalAPagar ?? 0) - Number(monto))))} en total.`}
                       </p>
                     </>
                   ) : (<>
