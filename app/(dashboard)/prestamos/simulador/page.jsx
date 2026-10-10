@@ -24,7 +24,7 @@
 //    Ahora la acción dorada es CREAR ESTE PRÉSTAMO, con todo prellenado. Nadie
 //    simula por deporte: simula porque tiene un cliente enfrente.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Simulador from '@/components/pantallas/Simulador'
 import HojaInferior from '@/components/cf/HojaInferior'
@@ -37,6 +37,9 @@ import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { montoCrudo, montoCrudoConModo, montoParaMostrarConModo } from '@/lib/adaptadores/pago'
 import { compartirSimulacionImagen } from '@/lib/simulacion-imagen'
+import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
+import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
+import { SelectorPorcentajePesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -91,10 +94,11 @@ export default function SimuladorPage() {
   const cuotaManualActiva = modoInteres === 'manual'
   const saldoCuotaPersonalizada = modoInteres === 'saldo' && cuotaManual !== '' && Number(cuotaManual) > 0
 
-  const calculo = useMemo(() => {
+  /* El cálculo como función de la tasa: lo usan la cuota de la pantalla y el
+     buscador de la cuota en pesos (hooks/useCuotaEnPesos.js). */
+  const calcularConTasa = useCallback((t) => {
     const m = Number(monto)
-    const t = Number(tasa)
-    if (!m || tasa === '' || tasa == null || !diasPlazo) return null
+    if (!m || !diasPlazo) return null
     const cm = cuotaManualActiva || saldoCuotaPersonalizada ? Number(cuotaManual) : 0
     try {
       return calcularPrestamo({
@@ -110,8 +114,16 @@ export default function SimuladorPage() {
     } catch {
       return null
     }
-  }, [monto, tasa, diasPlazo, frecuencia, modoInteres, cuotaManualActiva,
+  }, [monto, diasPlazo, frecuencia, modoInteres, cuotaManualActiva,
     saldoCuotaPersonalizada, cuotaManual, interesAdelantado])
+  const calculo = useMemo(() => (tasa === '' || tasa == null ? null : calcularConTasa(Number(tasa))), [tasa, calcularConTasa])
+
+  // La cuota en pesos: «le presto 200 y me paga 10 diarios», y sale el %.
+  const puedeEnPesos = MODOS_CUOTA_PAREJA.includes(modoInteres) && !saldoCuotaPersonalizada
+  const pesos = useCuotaEnPesos({
+    calcular: calcularConTasa, monto, modo: modoInteres, tasa, setTasa,
+    habilitado: puedeEnPesos, listo: diasPlazo > 0, cuotaActual: calculo?.cuotaDiaria,
+  })
 
   const numCuotas = calculo?.numPeriodos || 0
   const cuotaDistinta = calculo?.ultimaCuota && calculo?.cuotaDiaria
@@ -238,8 +250,15 @@ export default function SimuladorPage() {
           setMontoTecleado(crudo)
           setMonto(montoCrudoConModo(crudo, modoAbreviado))
         }}
-        interes={tasa}
-        onInteres={(v) => setTasa(soloDecimal(v))}
+        interes={pesos.enPesos ? montoParaMostrarConModo(pesos.cuota, modoAbreviado) : tasa}
+        onInteres={pesos.enPesos
+          ? (v) => pesos.setCuota(montoCrudoConModo(v, modoAbreviado))
+          : (v) => setTasa(soloDecimal(v))}
+        interesEnPesos={pesos.enPesos}
+        etiquetaInteres={pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Interés'}
+        selectorInteres={puedeEnPesos ? <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} /> : null}
+        notaInteres={pesos.enPesos ? <NotaCuotaEnPesos monto={monto} cuota={pesos.cuota} tasa={tasa} buscada={pesos.buscada}
+          modo={modoInteres} total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} /> : null}
         cobros={plazoUnidades}
         onCobros={(v) => setPlazoUnidades(soloDecimal(v))}
         unidadCobros={freqInfo.unidad}

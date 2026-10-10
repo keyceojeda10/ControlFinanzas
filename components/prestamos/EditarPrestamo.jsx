@@ -3,7 +3,7 @@
 // Solo disponible si el préstamo es de hoy y el usuario tiene permiso de gestión.
 // Permite corregir todos los campos configurables. Si hay pagos, el monto queda bloqueado.
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Modal }   from '@/components/ui/Modal'
 import { Button }  from '@/components/ui/Button'
 import { Input }   from '@/components/ui/Input'
@@ -16,6 +16,9 @@ import { formatMoney, soloDecimal, formatFechaCalendario } from '@/lib/i18n'
 import { CorregirPrestamo } from '@/components/pantallas/Gestion'
 import { adaptarCorregir } from '@/lib/adaptadores/gestion'
 import { conPantalla } from '@/components/cf/Procesando'
+import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
+import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
+import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -72,25 +75,50 @@ export default function EditarPrestamo({
 
   const diasPlazo = periodosADias(Number(periodos) || 1, frecuencia)
 
-  // Preview en vivo del nuevo cálculo
-  const resumen = useMemo(() => {
+  /* El cálculo como función de la tasa: lo usan la vista previa y el buscador
+     de la cuota en pesos.
+
+     ⚠ CON `sinPlazo` E `interesAdelantado`, COMO EL SERVIDOR. La vista previa
+     no los pasaba: un préstamo sin vencimiento se previsualizaba como un globo
+     con plazo (cuotas y última cuota con el capital) mientras el PATCH lo
+     guardaba bien, abierto. Lo que se enseña antes de guardar tiene que ser lo
+     que se guarda. */
+  const sinPlazo = Boolean(p.sinPlazo)
+  const interesAdelantadoPrevio = Boolean(p.interesAdelantado)
+  const calcularConTasa = useCallback((t) => {
     const m = Number(monto)
-    const t = Number(tasa)
-    const p = Number(periodos)
-    if (!m || !t || !p || !fechaInicio) return null
+    const per = Number(periodos)
+    if (!m || !per || !fechaInicio) return null
     try {
       return calcularPrestamo({
         montoPrestado: m,
         tasaInteres: t,
-        diasPlazo: periodosADias(p, frecuencia),
+        diasPlazo: periodosADias(per, frecuencia),
         fechaInicio: new Date(fechaInicio),
         frecuencia,
         modoInteres,
         cuotaManual: (modoInteres === 'manual' || modoInteres === 'saldo') && Number(cuotaManual) > 0 ? Number(cuotaManual) : undefined,
         ...(capitalExtraState.length > 0 && { capitalExtra: capitalExtraState }),
+        sinPlazo,
+        interesAdelantado: interesAdelantadoPrevio,
       })
     } catch { return null }
-  }, [monto, tasa, periodos, fechaInicio, frecuencia, modoInteres, cuotaManual, capitalExtraState])
+  }, [monto, periodos, fechaInicio, frecuencia, modoInteres, cuotaManual, capitalExtraState, sinPlazo, interesAdelantadoPrevio])
+
+  // Preview en vivo del nuevo cálculo
+  const resumen = useMemo(() => (Number(tasa) ? calcularConTasa(Number(tasa)) : null), [tasa, calcularConTasa])
+
+  /* La cuota en pesos (ver hooks/useCuotaEnPesos.js). Con pagos encima los
+     campos de cálculo están bloqueados, y con su propia cuota (manual, o la
+     personalizada del francés) no hay porcentaje que buscar. */
+  const esAbierto = sinPlazo && modoInteres === 'solo_interes'
+  const puedeEnPesos = !hayPagos && (esAbierto
+      || (MODOS_CUOTA_PAREJA.includes(modoInteres) && !(modoInteres === 'saldo' && Number(cuotaManual) > 0)))
+  const pesos = useCuotaEnPesos({
+    calcular: calcularConTasa, monto, modo: modoInteres, abierto: esAbierto, tasa, setTasa,
+    habilitado: puedeEnPesos,
+    cuotaActual: resumen?.cuotaDiaria,
+  })
 
   const handleGuardar = async () => {
     setError('')
@@ -98,6 +126,7 @@ export default function EditarPrestamo({
     if (!m || m <= 0) { setError('El monto debe ser mayor a 0'); return }
     if (!Number(tasa) && Number(tasa) !== 0) { setError('La tasa de interés es requerida'); return }
     if (!Number(periodos) || Number(periodos) < 1) { setError('El plazo debe ser al menos 1 período'); return }
+    if (pesos.imposible) { setError('Esa cuota no alcanza a devolver el monto: súbela o sube el número de cuotas'); return }
 
     setGuardando(true)
     try {
@@ -186,7 +215,18 @@ export default function EditarPrestamo({
         {/* Tasa e interés */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Tasa de interés (%)</label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">
+                {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Tasa de interés (%)'}
+              </label>
+              {puedeEnPesos && (
+                <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />
+              )}
+            </div>
+            {pesos.enPesos ? (
+              <CampoCuotaEnPesos conNota={false} pesos={pesos} abierto={esAbierto} monto={monto} tasa={tasa} modo={modoInteres}
+                total={resumen?.totalAPagar} cuotas={resumen?.numPeriodos ?? periodos} />
+            ) : (
             <Input
               type="text"
               inputMode="decimal"
@@ -194,6 +234,7 @@ export default function EditarPrestamo({
               onChange={(e) => setTasa(soloDecimal(e.target.value))}
               placeholder="Ej: 20"
             />
+            )}
           </div>
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Fecha de inicio</label>
@@ -206,6 +247,10 @@ export default function EditarPrestamo({
             />
           </div>
         </div>
+        {pesos.enPesos && (
+          <NotaCuotaEnPesos abierto={esAbierto} monto={monto} cuota={pesos.cuota} tasa={tasa} buscada={pesos.buscada}
+            modo={modoInteres} total={resumen?.totalAPagar} cuotas={resumen?.numPeriodos ?? periodos} />
+        )}
 
         {/* Modo de interés */}
         <ModoInteresSelector

@@ -15,7 +15,9 @@ import { fechaDePeriodo } from '@/lib/dinero/calendario'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
-import { tasaParaInteres, tasaParaCuota, interesDelPeriodo } from '@/lib/dinero/interes-en-pesos'
+import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
+import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
+import { SelectorPorcentajePesos, CampoCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
@@ -282,8 +284,6 @@ function NuevoPrestamo() {
      y la tasa sale de dividir, con todos sus decimales, para que la cuota dé
      al peso. Ver `lib/dinero/interes-en-pesos.js`. Solo en el abierto: ahí el
      interés de cada período es monto × tasa y no hay otra lectura posible. */
-  const [interesEnPesos, setInteresEnPesos] = useState(false)
-  const [interesPesos, setInteresPesos] = useState('')
   // Los efectos van después de `calculo`: buscan la tasa con el mismo cálculo.
 
   /* ⚠ SI DEJA DE SER ABIERTO, LA RESPUESTA SE OLVIDA. El API rechaza cualquier
@@ -736,38 +736,11 @@ function NuevoPrestamo() {
      Fuera de los modos de cuota pareja no hay una cuota que fijar: lineal
      cambia en cada cobro, y en «cuota que pones tú» ya la escribe él. */
   const puedeEnPesos = modo !== 'mercancia' && (esAbierto
-    || (['fijo', 'unico', 'saldo', 'solo_interes'].includes(modoInteres) && !saldoCuotaPersonalizada))
-  const [cuotaBuscada, setCuotaBuscada] = useState(null)
-  useEffect(() => {
-    if (!interesEnPesos || !puedeEnPesos) return
-    if (esAbierto) {
-      const t = tasaParaInteres(monto, interesPesos)
-      if (t != null) setTasa(String(t))
-      setCuotaBuscada(null)
-      return
-    }
-    if (!(Number(monto) > 0) || !(Number(plazo) > 0) || !fechaInicio || !(Number(interesPesos) > 0)) return
-    const r = tasaParaCuota(calcularConTasa, interesPesos, { monto, modo: modoInteres })
-    setCuotaBuscada(r ?? { imposible: true })
-    if (r) setTasa(String(r.tasa))
-  }, [interesEnPesos, puedeEnPesos, esAbierto, monto, plazo, fechaInicio, interesPesos, calcularConTasa, modoInteres])
-  /* Si deja de poderse (modo lineal, cuota que pone él), vuelve al porcentaje y
-     sin la cola de decimales: el campo de % no puede enseñar 11.333333333333334. */
-  useEffect(() => {
-    if (puedeEnPesos || !interesEnPesos) return
-    setInteresEnPesos(false)
-    setTasa((t) => String(Math.round(Number(t) * 100) / 100))
-  }, [puedeEnPesos, interesEnPesos])
-  const elegirInteresEn = (enPesos) => {
-    if (enPesos === interesEnPesos) return
-    if (enPesos) {
-      const actual = esAbierto ? interesDelPeriodo(monto, tasa) : Math.round(calculo?.cuotaDiaria || 0)
-      if (actual > 0) setInteresPesos(String(actual))
-    } else {
-      setTasa((t) => String(Math.round(Number(t) * 100) / 100))
-    }
-    setInteresEnPesos(enPesos)
-  }
+    || (MODOS_CUOTA_PAREJA.includes(modoInteres) && !saldoCuotaPersonalizada))
+  const pesos = useCuotaEnPesos({
+    calcular: calcularConTasa, monto, modo: modoInteres, abierto: esAbierto, tasa, setTasa,
+    habilitado: puedeEnPesos, listo: Number(plazo) > 0 && !!fechaInicio, cuotaActual: calculo?.cuotaDiaria,
+  })
 
   const clientesFiltrados = clientes.filter((c) =>
     c.nombre.toLowerCase().includes(buscadorCliente.toLowerCase()) ||
@@ -878,7 +851,7 @@ function NuevoPrestamo() {
   const puedeAvanzarPaso = () => {
     if (cuotaInsuficiente) return false
     // Una cuota en pesos que no devuelve el capital: la de abajo es la anterior.
-    if (interesEnPesos && puedeEnPesos && cuotaBuscada?.imposible) return false
+    if (pesos.imposible) return false
     /* ⚠ EN PC EL PASO 0 LLEVA LAS DOS COSAS. Con el `return !!clienteId` de
        antes, «Revisar préstamo» se habilitaba con solo elegir cliente y saltaba
        a la firma con el monto vacío. Se comprueban las dos, no una. */
@@ -1734,43 +1707,15 @@ function NuevoPrestamo() {
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
-                      {!(puedeEnPesos && interesEnPesos) ? 'Interés mensual'
-                        : esAbierto
-                          ? `Interés ${{ diario: 'al día', semanal: 'por semana', quincenal: 'por quincena', mensual: 'al mes' }[frecuencia] || 'al mes'}`
-                          : `Cuota ${{ diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia] || ''}`}
+                      {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Interés mensual'}
                     </label>
-                    {puedeEnPesos && (
-                      <div role="radiogroup" aria-label="Escribir el interés en" className="flex gap-1">
-                        {[{ id: false, nombre: '%' }, { id: true, nombre: '$' }].map((o) => (
-                          <button key={o.nombre} type="button" role="radio" aria-checked={interesEnPesos === o.id}
-                            onClick={() => elegirInteresEn(o.id)}
-                            className="h-7 min-w-[36px] px-2 rounded-[8px] text-[12px] font-bold"
-                            style={interesEnPesos === o.id
-                              ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)' }
-                              : { background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }}>
-                            {o.nombre}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
                   </div>
-                  {puedeEnPesos && interesEnPesos ? (
-                    <>
-                      <div className="mt-1.5">
-                        <MoneyInput value={interesPesos} onChange={(e) => setInteresPesos(e.target.value)} tamano="grande" placeholder={esAbierto ? '170.000' : '10.000'} />
-                      </div>
-                      <p className="text-[11px] mt-2" style={{ color: cuotaBuscada?.imposible || (cuotaBuscada && !cuotaBuscada.exacta) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
-                        {!(Number(monto) > 0 && Number(interesPesos) > 0)
-                          ? (esAbierto ? 'Escribe cuánto paga de interés y el sistema saca el porcentaje.' : 'Escribe cuánto paga en cada cuota y el sistema saca el porcentaje.')
-                          : esAbierto
-                            ? `Es el ${formatearTasa(tasa)} % de ${formatMoney(Number(monto))}. Si abona a capital, baja en la misma proporción.`
-                            : cuotaBuscada?.imposible
-                              ? `Con ${formatMoney(Number(interesPesos))} no alcanza a devolver los ${formatMoney(Number(monto))} en ${calculo?.numPeriodos ?? plazoUnidades} cuotas. Sube la cuota o el número de cuotas.`
-                              : cuotaBuscada && !cuotaBuscada.exacta
-                                ? `En este modo las cuotas van a la centena: queda en ${formatMoney(cuotaBuscada.cuota)}.`
-                                : `Equivale al ${formatearTasa(tasa)} % ${{ fijo: 'al mes', unico: 'del préstamo', saldo: 'al mes sobre el saldo', solo_interes: 'por cada cobro' }[modoInteres] || ''}. Ganas ${formatMoney(Math.max(0, Math.round((calculo?.totalAPagar ?? 0) - Number(monto))))} en total.`}
-                      </p>
-                    </>
+                  {pesos.enPesos ? (
+                    <div className="mt-1.5">
+                      <CampoCuotaEnPesos pesos={pesos} abierto={esAbierto} monto={monto} tasa={tasa} modo={modoInteres}
+                        total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} tamano="grande" />
+                    </div>
                   ) : (<>
                   <div className="mt-1.5 relative flex items-center h-[68px] rounded-[14px] px-4"
                     style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
@@ -2225,7 +2170,7 @@ function NuevoPrestamo() {
                           <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% mensual`} pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
-                                <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
+                                <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                                   style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                                 <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
@@ -2422,7 +2367,7 @@ function NuevoPrestamo() {
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">
-                        <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
+                        <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                           style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
                         <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>

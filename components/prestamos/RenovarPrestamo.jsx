@@ -1,6 +1,6 @@
 'use client'
 import { conPantalla } from '@/components/cf/Procesando'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Renovar } from '@/components/pantallas/Renovar'
 import { useRouter } from 'next/navigation'
 import { Modal }    from '@/components/ui/Modal'
@@ -18,6 +18,9 @@ import PrestamoEntregado from '@/components/cf/PrestamoEntregado'
 import { useTactil } from '@/lib/tactil'
 import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
+import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
+import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
+import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -151,13 +154,15 @@ export default function RenovarPrestamo({
     if (soloModo && saldo > 0) { setMontoTecleado(null); setMonto(String(Math.round(saldo))) }
   }, [open, soloModo, saldo, modoHeredado])
 
-  const calculo = useMemo(() => {
-    if (!montoNum || !tasa || !diasPlazo) return null
+  /* El cálculo como función de la tasa: lo usan la vista previa y el buscador
+     de la cuota en pesos (hooks/useCuotaEnPesos.js), con los mismos datos. */
+  const calcularConTasa = useCallback((t) => {
+    if (!montoNum || !diasPlazo) return null
     try {
       const usarManual = cuotaManualActiva && !modoUsaTabla && modo !== 'saldo'
       return calcularPrestamo({
         montoPrestado: montoNum,
-        tasaInteres:   Number(tasa),
+        tasaInteres:   t,
         diasPlazo,
         fechaInicio,
         frecuencia,
@@ -167,7 +172,16 @@ export default function RenovarPrestamo({
         ...(modo === 'solo_interes' && { interesAdelantado: !!prestamoAnterior?.interesAdelantado }),
       })
     } catch { return null }
-  }, [montoNum, tasa, diasPlazo, fechaInicio, frecuencia, modo, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
+  }, [montoNum, diasPlazo, fechaInicio, frecuencia, modo, modoUsaTabla, cuotaManual, cuotaManualActiva, prestamoAnterior?.interesAdelantado])
+  const calculo = useMemo(() => (tasa ? calcularConTasa(Number(tasa)) : null), [tasa, calcularConTasa])
+
+  /* La cuota en pesos. Renovar nunca deja un préstamo sin vencimiento, así que
+     aquí siempre es la cuota pareja; con su propia cuota escrita no hay % que buscar. */
+  const puedeEnPesos = MODOS_CUOTA_PAREJA.includes(modo) && !cuotaManualActiva
+  const pesos = useCuotaEnPesos({
+    calcular: calcularConTasa, monto: montoNum, modo, tasa, setTasa,
+    habilitado: puedeEnPesos, listo: diasPlazo > 0, cuotaActual: calculo?.cuotaDiaria,
+  })
 
   const handleSubmit = async () => {
     if (montoNum <= 0) { setError('Ingresa el total del nuevo préstamo'); return }
@@ -176,6 +190,7 @@ export default function RenovarPrestamo({
       return
     }
     if (!tasa || Number(tasa) < 0) { setError('Tasa inválida'); return }
+    if (pesos.imposible) { setError('Esa cuota no alcanza a devolver el total: súbela o sube el número de cuotas'); return }
     if (!plazoUnidades || diasPlazo <= 0) { setError('Plazo inválido'); return }
     // EL TOPE DEL CLIENTE. Estaba solo como `disabled` en el boton viejo, y ese
     // boton ya no existe: `Renovar` pinta el suyo. Sin esto se podia renovar por
@@ -438,13 +453,25 @@ export default function RenovarPrestamo({
 
         {/* Tasa + Plazo */}
         <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Tasa (%)"
-            type="text"
-            inputMode="decimal"
-            value={tasa}
-            onChange={(e) => setTasa(soloDecimal(e.target.value))}
-          />
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
+                {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Tasa (%)'}
+              </label>
+              {puedeEnPesos && <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
+            </div>
+            {pesos.enPesos ? (
+              <CampoCuotaEnPesos conNota={false} pesos={pesos} monto={montoNum} tasa={tasa} modo={modo}
+                total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
+            ) : (
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={tasa}
+                onChange={(e) => setTasa(soloDecimal(e.target.value))}
+              />
+            )}
+          </div>
           <div>
             <Input
               label={LABEL_PLAZO[frecuencia]}
@@ -458,6 +485,10 @@ export default function RenovarPrestamo({
             )}
           </div>
         </div>
+        {pesos.enPesos && (
+          <NotaCuotaEnPesos abierto={false} monto={montoNum} cuota={pesos.cuota} tasa={tasa} buscada={pesos.buscada}
+            modo={modo} total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
+        )}
 
         {/* Frecuencia */}
         <div>

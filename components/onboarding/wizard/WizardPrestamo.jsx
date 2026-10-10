@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import MoneyInput from '@/components/ui/MoneyInput'
 import { Input } from '@/components/ui/Input'
 import { calcularPrestamo } from '@/lib/calculos'
@@ -8,6 +8,9 @@ import { soloDecimal } from '@/lib/i18n'
 import ResumenCalculo from '@/components/prestamos/ResumenCalculo'
 import Avatar from '@/components/ui/Avatar'
 import { useCountry } from '@/hooks/useCountry'
+import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
+import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
+import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const getLocalDate = () => {
   const now = new Date()
@@ -104,11 +107,12 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
     setPlazoUnidades(DEFAULT_PLAZO[freq] || '30')
   }
 
-  const calculo = useMemo(() => {
+  /* El cálculo como función de la tasa: lo usan la vista previa y el buscador
+     de la cuota en pesos (hooks/useCuotaEnPesos.js). */
+  const calcularConTasa = useCallback((t) => {
     const m = Number(monto)
-    const t = Number(tasa)
     const p = Number(plazo)
-    if (!m || tasa === '' || !p) return null
+    if (!m || !p) return null
     if (metodo === 'manual' && !Number(cuotaManual)) return null
     try {
       return calcularPrestamo({
@@ -121,13 +125,22 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
         cuotaManual: metodo === 'manual' ? Number(cuotaManual) : undefined,
       })
     } catch { return null }
-  }, [monto, tasa, plazo, fechaInicio, frecuencia, metodo, cuotaManual])
+  }, [monto, plazo, fechaInicio, frecuencia, metodo, cuotaManual])
+  const calculo = useMemo(() => (tasa === '' ? null : calcularConTasa(Number(tasa))), [tasa, calcularConTasa])
+
+  // La cuota en pesos, como en el formulario de préstamo.
+  const puedeEnPesos = MODOS_CUOTA_PAREJA.includes(metodo)
+  const pesos = useCuotaEnPesos({
+    calcular: calcularConTasa, monto, modo: metodo, tasa, setTasa,
+    habilitado: puedeEnPesos, listo: Number(plazo) > 0, cuotaActual: calculo?.cuotaDiaria,
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!monto || Number(monto) <= 0) { setError('Ingresa el monto del préstamo'); return }
     if (metodo === 'manual' && (!cuotaManual || Number(cuotaManual) <= 0)) { setError('Ingresa el valor de la cuota'); return }
     if (!calculo) { setError('Verifica los datos del préstamo'); return }
+    if (pesos.imposible) { setError('Esa cuota no alcanza a devolver el monto: súbela o sube el plazo'); return }
 
     setLoading(true)
     setError('')
@@ -199,11 +212,20 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
             onChange={(e) => { setMonto(e.target.value); setError('') }}
           />
 
-          {metodo !== 'manual' && (
+          {metodo !== 'manual' && (<>
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
+                    {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Tasa de interés (%)'}
+                  </label>
+                  {puedeEnPesos && <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
+                </div>
+                {pesos.enPesos ? (
+                  <CampoCuotaEnPesos conNota={false} pesos={pesos} monto={monto} tasa={tasa} modo={metodo}
+                    total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
+                ) : (<>
                 <Input
-                  label="Tasa de interés (%)"
                   type="text"
                   inputMode="decimal"
                   placeholder="20"
@@ -212,6 +234,7 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                   suffix="%"
                 />
                 <p className="text-[10px] mt-1 px-0.5" style={{ color: 'var(--cf-ink-3)' }}>20% mensual es lo más común</p>
+                </>)}
               </div>
               <div>
                 <Input
@@ -237,7 +260,11 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                 )}
               </div>
             </div>
-          )}
+            {pesos.enPesos && (
+              <NotaCuotaEnPesos abierto={false} monto={monto} cuota={pesos.cuota} tasa={tasa} buscada={pesos.buscada}
+                modo={metodo} total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
+            )}
+          </>)}
 
           {metodo === 'manual' && (
             <>

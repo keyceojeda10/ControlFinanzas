@@ -25,7 +25,7 @@
 
 import { BarraAccion, BotonPrimario, BotonSecundario, Tarjeta, EtiquetaCampo, Chip, Pastilla } from '@/components/cf/primitivos'
 
-function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, enFila = false }) {
+function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, enFila = false, accion = null }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0,
@@ -33,7 +33,9 @@ function CampoConSufijo({ etiqueta, prefijo, sufijo, valor, onCambio, marcador, 
       // de maquetacion #2 del handoff). Solo se reparte ancho cuando va en fila.
       flex: enFila ? 1 : 'none',
     }}>
-      <EtiquetaCampo>{etiqueta}</EtiquetaCampo>
+      {accion
+        ? <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}><EtiquetaCampo>{etiqueta}</EtiquetaCampo>{accion}</div>
+        : <EtiquetaCampo>{etiqueta}</EtiquetaCampo>}
       <label style={{
         display: 'flex', alignItems: 'center', gap: 6, flex: 'none',
         height: 'var(--cf-h-field)', padding: '0 14px', borderRadius: 'var(--cf-r-control)',
@@ -79,6 +81,10 @@ export default function Simulador({
      «el % se cobra en cada cobro»; puesto al final de la pantalla quedaba
      debajo del botón de crear, o sea después de la decisión. */
   notaModo = null,
+  /* La cuota en pesos (hooks/useCuotaEnPesos.js): con `interesEnPesos` el campo
+     de interés pasa a ser la cuota, con «$» delante; `selectorInteres` es el
+     % / $ y `notaInteres` la frase de a qué porcentaje equivale. */
+  interesEnPesos = false, etiquetaInteres = 'Interés', selectorInteres = null, notaInteres = null,
   onFrecuencia, onCambiarModo, onCrear, onMandar, onTabla,
   sinDatos,
   // El relleno lateral lo pone el armazon. Sin esto eran 40px por lado en la
@@ -157,9 +163,14 @@ export default function Simulador({
         <CampoConSufijo etiqueta="Cuánto le vas a prestar" prefijo="$" valor={monto}
           onCambio={onMonto} marcador={montoMarcador} />
 
-        <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
-          <CampoConSufijo enFila etiqueta="Interés" sufijo="%" valor={interes} onCambio={onInteres} />
-          <CampoConSufijo enFila etiqueta="Cuántos cobros" sufijo={unidadCobros} valor={cobros} onCambio={onCobros} />
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 'none' }}>
+          <div style={{ display: 'flex', gap: 10, flex: 'none', alignItems: 'flex-end' }}>
+            <CampoConSufijo enFila etiqueta={etiquetaInteres} accion={selectorInteres}
+              prefijo={interesEnPesos ? '$' : undefined} sufijo={interesEnPesos ? null : '%'}
+              valor={interes} onCambio={onInteres} />
+            <CampoConSufijo enFila etiqueta="Cuántos cobros" sufijo={unidadCobros} valor={cobros} onCambio={onCobros} />
+          </div>
+          {notaInteres}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 'none' }}>
