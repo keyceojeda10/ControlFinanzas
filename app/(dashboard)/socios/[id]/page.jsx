@@ -17,6 +17,7 @@ import { formatMoney, telefonoParaWhatsApp } from '@/lib/i18n'
 import { useCountry } from '@/hooks/useCountry'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
+import { formatearTasa } from '@/lib/adaptadores/prestamos'
 
 export default function SocioDetallePage() {
   const { id } = useParams()
@@ -378,7 +379,7 @@ export default function SocioDetallePage() {
                     {p.clienteNombre}
                   </p>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
-                    {fmt(p.montoPrestado)} al {p.tasaInteres}%
+                    {fmt(p.montoPrestado)} al {formatearTasa(p.tasaInteres)}%
                   </p>
                 </div>
                 <div className="text-right shrink-0">

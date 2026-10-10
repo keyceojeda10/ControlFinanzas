@@ -17,6 +17,7 @@ import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import PrestamoEntregado from '@/components/cf/PrestamoEntregado'
 import { useTactil } from '@/lib/tactil'
 import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
+import { formatearTasa } from '@/lib/adaptadores/prestamos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -631,7 +632,7 @@ export default function RenovarPrestamo({
                   El plazo se alarga para cubrir el interés
                 </p>
                 <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
-                  Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {tasa}%, se necesitan{' '}
+                  Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {formatearTasa(tasa)}%, se necesitan{' '}
                   <span className="font-semibold">{calculo.periodosReales} cobros</span> ({calculo.diasReales} días)
                   en vez de los {calculo.periodosPedidos} que pediste. Por eso el total es{' '}
                   {formatMoney(calculo.totalAPagar)} y no {formatMoney(calculo.totalSinExtender)}.

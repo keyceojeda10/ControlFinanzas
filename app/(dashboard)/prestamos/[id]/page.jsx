@@ -1187,7 +1187,7 @@ function PrestamoDetalleContenido({ params }) {
 
   const detalleGestion = [
     cliente?.nombre,
-    frecuencia && tasaInteres != null ? `${frecuenciaLabel} ${tasaInteres}%` : null,
+    frecuencia && tasaInteres != null ? `${frecuenciaLabel} ${formatearTasa(tasaInteres)}%` : null,
     cuotasAmortizacion.length > 0 ? `cuota ${cuotasPagadas} de ${cuotasAmortizacion.length}` : null,
   ].filter(Boolean).join(' · ')
 

@@ -9,6 +9,7 @@ import { formatMoney, getLocale, formatFechaCorta } from '@/lib/i18n'
 import { useAuth } from '@/hooks/useAuth'
 import { Pastilla } from '@/components/cf/primitivos'
 import { FilaOpcion } from '@/components/pantallas/Gestion'
+import { formatearTasa } from '@/lib/adaptadores/prestamos'
 
 /* Alto 38 y radio 14: los del sistema. Iban a 32 y 8 —por debajo del área que
    necesita un dedo— y con `text-[11px]`, que en una fila de tres botones deja
@@ -613,7 +614,7 @@ export default function FirmaDigital({ prestamo, onSave }) {
           />
           <FilaOpcion
             titulo="Con las condiciones del préstamo"
-            nota={`${formatMoney(Math.round(prestamo?.totalAPagar ?? 0), paisSesion)}: con la tasa del ${prestamo?.tasaInteres ?? 0}%, las cuotas y el total.`}
+            nota={`${formatMoney(Math.round(prestamo?.totalAPagar ?? 0), paisSesion)}: con la tasa del ${formatearTasa(prestamo?.tasaInteres ?? 0)}%, las cuotas y el total.`}
             activo={tipoPagare === 'condiciones'}
             onClick={() => setTipoPagare('condiciones')}
           />

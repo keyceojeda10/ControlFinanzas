@@ -15,6 +15,8 @@ import { fechaDePeriodo } from '@/lib/dinero/calendario'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { usePantallaAncha } from '@/hooks/usePantallaAncha'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
+import { tasaParaInteres, interesDelPeriodo } from '@/lib/dinero/interes-en-pesos'
+import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
@@ -273,6 +275,37 @@ function NuevoPrestamo() {
      cambiar de modo no deje un préstamo «abierto» de otro tipo por olvido. */
   const esAbierto = modoInteres === 'solo_interes' && sinPlazo
   const [capitalExtra, setCapitalExtra] = useState([])
+
+  /* ── EL INTERÉS EN PESOS (préstamo sin vencimiento) ─────────────────────
+     «paga 170.000 de interés mensual […] yo no quiero ponerme a buscar el
+      número, 11,333 %» — Hector Cano, 9 oct 2026. Escribe el interés en pesos
+     y la tasa sale de dividir, con todos sus decimales, para que la cuota dé
+     al peso. Ver `lib/dinero/interes-en-pesos.js`. Solo en el abierto: ahí el
+     interés de cada período es monto × tasa y no hay otra lectura posible. */
+  const [interesEnPesos, setInteresEnPesos] = useState(false)
+  const [interesPesos, setInteresPesos] = useState('')
+  useEffect(() => {
+    if (!interesEnPesos || !esAbierto) return
+    const t = tasaParaInteres(monto, interesPesos)
+    if (t != null) setTasa(String(t))
+  }, [interesEnPesos, esAbierto, monto, interesPesos])
+  /* Si deja de ser abierto, vuelve al porcentaje y sin la cola de decimales:
+     el campo de % no puede quedarse enseñando 11.333333333333334. */
+  useEffect(() => {
+    if (esAbierto || !interesEnPesos) return
+    setInteresEnPesos(false)
+    setTasa((t) => String(Math.round(Number(t) * 100) / 100))
+  }, [esAbierto, interesEnPesos])
+  const elegirInteresEn = (enPesos) => {
+    if (enPesos === interesEnPesos) return
+    if (enPesos) {
+      const actual = interesDelPeriodo(monto, tasa)
+      if (actual > 0) setInteresPesos(String(actual))
+    } else {
+      setTasa((t) => String(Math.round(Number(t) * 100) / 100))
+    }
+    setInteresEnPesos(enPesos)
+  }
 
   /* ⚠ SI DEJA DE SER ABIERTO, LA RESPUESTA SE OLVIDA. El API rechaza cualquier
      tipo que no sea 'completo' fuera del abierto, así que dejarla puesta al
@@ -1668,7 +1701,39 @@ function NuevoPrestamo() {
                   dibujo. */}
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Interés mensual</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>
+                      {esAbierto && interesEnPesos
+                        ? `Interés ${{ diario: 'al día', semanal: 'por semana', quincenal: 'por quincena', mensual: 'al mes' }[frecuencia] || 'al mes'}`
+                        : 'Interés mensual'}
+                    </label>
+                    {esAbierto && (
+                      <div role="radiogroup" aria-label="Escribir el interés en" className="flex gap-1">
+                        {[{ id: false, nombre: '%' }, { id: true, nombre: '$' }].map((o) => (
+                          <button key={o.nombre} type="button" role="radio" aria-checked={interesEnPesos === o.id}
+                            onClick={() => elegirInteresEn(o.id)}
+                            className="h-7 min-w-[36px] px-2 rounded-[8px] text-[12px] font-bold"
+                            style={interesEnPesos === o.id
+                              ? { background: 'var(--cf-ink)', color: 'var(--cf-surface)' }
+                              : { background: 'var(--cf-card)', color: 'var(--cf-ink-3)', border: '1px solid var(--cf-border)' }}>
+                            {o.nombre}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {esAbierto && interesEnPesos ? (
+                    <>
+                      <div className="mt-1.5">
+                        <MoneyInput value={interesPesos} onChange={(e) => setInteresPesos(e.target.value)} tamano="grande" placeholder="170.000" />
+                      </div>
+                      <p className="text-[11px] mt-2" style={{ color: 'var(--cf-ink-3)' }}>
+                        {Number(monto) > 0 && Number(interesPesos) > 0
+                          ? `Es el ${formatearTasa(tasa)} % de ${formatMoney(Number(monto))}. Si abona a capital, baja en la misma proporción.`
+                          : 'Escribe cuánto paga de interés y el sistema saca el porcentaje.'}
+                      </p>
+                    </>
+                  ) : (<>
                   <div className="mt-1.5 relative flex items-center h-[68px] rounded-[14px] px-4"
                     style={{ background: 'var(--cf-card)', border: '1px solid var(--cf-border)' }}>
                     <input
@@ -1701,6 +1766,7 @@ function NuevoPrestamo() {
                       >{v}%</button>
                     ))}
                   </div>
+                  </>)}
                 </div>
 
                 {/* ⚠ EN UN ABIERTO NO HAY CUOTAS QUE CONTAR. Pedirle un número
@@ -1796,17 +1862,18 @@ function NuevoPrestamo() {
 
               {Number(monto) > 0 && Number(tasa) > 0 && (
                 <p className="text-[12px] -mt-2" style={{ color: 'var(--cf-ink-3)' }}>
-                  Al {tasa}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
+                  Al {formatearTasa(tasa)}% sobre {formatMoney(Number(monto))} = {formatMoney(Math.round(Number(monto) * Number(tasa) / 100))} de interés por mes
                   {esAbierto ? ' · sin fecha de vencimiento'
                     : (frecuencia !== 'diario' && plazoUnidades ? ` · ${plazo} días en total` : '')}
                 </p>
               )}
 
               {/* Preview del interes mensual (sin cuota/total — eso depende del modo de interes que se elige en el paso siguiente) */}
-              {Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
+              {/* En un abierto no hay «por 30 meses»: la línea de arriba ya lo dice. */}
+              {!esAbierto && Number(monto) > 0 && Number(tasa) > 0 && Number(plazoUnidades) > 0 && (
                 <div className="rounded-xl px-3 py-2.5" style={{ background: 'color-mix(in srgb, var(--cf-gold) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--cf-gold) 15%, transparent)' }}>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>
-                    {formatMoney(Number(monto))} al {tasa}% por {plazoUnidades} {frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
+                    {formatMoney(Number(monto))} al {formatearTasa(tasa)}% por {plazoUnidades} {frecuencia === 'diario' ? 'días' : frecuencia === 'semanal' ? 'semanas' : frecuencia === 'quincenal' ? 'quincenas' : 'meses'}
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
                     La cuota exacta depende del modo de interés que elijas en el siguiente paso.
@@ -2117,7 +2184,7 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interés" value={`${tasa || 0}% mensual`} pencil={pencil}
+                          <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% mensual`} pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => setTasa(soloDecimal(e.target.value))}
@@ -2207,7 +2274,7 @@ function NuevoPrestamo() {
                             El plazo se alarga para cubrir el interés
                           </p>
                           <p className="text-[11px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>
-                            Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {tasa}%, se necesitan{' '}
+                            Con una cuota de {formatMoney(calculo.cuotaDiaria)} y una tasa del {formatearTasa(tasa)}%, se necesitan{' '}
                             <span className="font-semibold">{calculo.periodosReales} cobros</span> ({calculo.diasReales} días)
                             en vez de los {calculo.periodosPedidos} que pediste. Por eso el total es{' '}
                             {formatMoney(calculo.totalAPagar)} y no {formatMoney(calculo.totalSinExtender)}.
@@ -2313,7 +2380,7 @@ function NuevoPrestamo() {
 
                 {/* Tasa — editable (solo prestamo, no mercancia) */}
                 {modo === 'prestamo' && (
-                  <EditableRow label="Interés" value={`${tasa}% mensual`}
+                  <EditableRow label="Interés" value={`${formatearTasa(tasa)}% mensual`}
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">

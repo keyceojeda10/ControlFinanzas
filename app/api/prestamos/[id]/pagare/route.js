@@ -7,6 +7,7 @@ import path                 from 'path'
 import { abrirDocumento, respuestaPdf, F } from '@/lib/papel/documento'
 import { COLOR, TIPO, HOJA, RADIO } from '@/lib/papel/tokens'
 import { leerSubido } from '@/lib/almacen'
+import { formatearTasa } from '@/lib/adaptadores/prestamos'
 
 const FREQ_LABEL = { diario: 'diario', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }
 
@@ -196,7 +197,7 @@ export async function GET(req, { params }) {
 
   const cuerpo = porCapital
     ? `${identificacion}, me obligo a pagar incondicionalmente a la orden de ${acreedor}, o de quien represente sus derechos, la suma de ${fmt(montoInt)} (${enPesos(montoInt)}), que recibí en préstamo de dinero el ${fmtFecha(prestamo.fechaInicio)}.`
-    : `${identificacion}, me comprometo a pagar incondicionalmente a la orden de ${acreedor} la suma de ${fmt(totalInt)} (${enPesos(totalInt)}), correspondiente a un prestamo por valor de ${fmt(montoInt)} con una tasa de interes del ${prestamo.tasaInteres}% y un plazo de ${prestamo.diasPlazo} dias.`
+    : `${identificacion}, me comprometo a pagar incondicionalmente a la orden de ${acreedor} la suma de ${fmt(totalInt)} (${enPesos(totalInt)}), correspondiente a un prestamo por valor de ${fmt(montoInt)} con una tasa de interes del ${formatearTasa(prestamo.tasaInteres)}% y un plazo de ${prestamo.diasPlazo} dias.`
 
   doc.font(F.texto).fontSize(TIPO.texto).fillColor(COLOR.ink2)
   doc.text(cuerpo, L, y, { width: W, align: 'justify', lineGap: 3 })
@@ -244,7 +245,7 @@ export async function GET(req, { params }) {
     ['Intereses de mora', 'Tasa máxima legal'],
   ] : [
     ['Monto prestado', fmt(montoInt)],
-    ['Tasa de interés', `${prestamo.tasaInteres}%`],
+    ['Tasa de interés', `${formatearTasa(prestamo.tasaInteres)}%`],
     ['Total a pagar', fmt(totalInt)],
     ['Cuota', fmt(Math.round(prestamo.cuotaDiaria))],
     ['Frecuencia', FREQ_LABEL[prestamo.frecuencia] || prestamo.frecuencia],
