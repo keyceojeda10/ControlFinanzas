@@ -5,7 +5,8 @@ import { prisma }       from '@/lib/prisma'
 import { enviarEmail, emailBienvenida, emailVerificacion } from '@/lib/email'
 import { sendConversionEvent } from '@/lib/facebook-capi'
 import { registroLimiter, registroIntentos, getClientIp } from '@/lib/rate-limit'
-import { DIAS_PRUEBA } from '@/lib/planes'
+import { DIAS_PRUEBA_BASE } from '@/lib/planes'
+import { marcarPruebaSiete } from '@/lib/seguimiento/prueba'
 import { COUNTRY_CODES, getCountryConfig, validatePhone } from '@/lib/i18n'
 import { normalizarEmail } from '@/lib/normalizar-email'
 import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
@@ -142,8 +143,11 @@ export async function POST(req) {
       // 24 * 3600 * 1000` y más abajo un `setDate(+14)`. Sumar milisegundos no es
       // sumar días de calendario en los países con horario de verano (México,
       // Chile, Paraguay), y encima el 14 estaba escrito a mano en los dos sitios.
+      //
+      // ⚠ 7 + 7 (12 oct 2026): se arranca con `DIAS_PRUEBA_BASE` (7) y los otros
+      // 7 se ganan registrando cobros en 3 días distintos. Ver lib/seguimiento/prueba.js.
       const vencimiento = new Date()
-      vencimiento.setDate(vencimiento.getDate() + DIAS_PRUEBA)
+      vencimiento.setDate(vencimiento.getDate() + DIAS_PRUEBA_BASE)
 
       const org = await tx.organization.create({
         data: {
@@ -191,6 +195,9 @@ export async function POST(req) {
           montoCOP:         0,
         },
       })
+
+      // La marca de 7 + 7: la lleva el motor de seguimiento, no los crons viejos.
+      await marcarPruebaSiete(tx, org.id)
 
       return { org, user, vencimiento }
     })

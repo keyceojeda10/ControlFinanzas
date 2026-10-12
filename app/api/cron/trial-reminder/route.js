@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { enviarEmail, emailOnboardingDia12, emailOnboardingDia14 } from '@/lib/email'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { whereSinPruebaSiete } from '@/lib/seguimiento/prueba'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -20,6 +21,7 @@ export async function POST(req) {
     // Find orgs that haven't received trial reminder yet
     const orgs = await prisma.organization.findMany({
       where: {
+        ...whereSinPruebaSiete, // los de 7 + 7: el motor de seguimiento
         trialReminderSent: false,
         users: { some: { rol: 'owner' } },
       },

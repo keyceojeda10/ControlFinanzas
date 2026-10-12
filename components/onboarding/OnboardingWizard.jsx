@@ -11,7 +11,7 @@ import { formatMoney } from '@/lib/i18n'
 import WizardMetodoCarga from './wizard/WizardMetodoCarga'
 import WizardExcel from './wizard/WizardExcel'
 import WizardPlan from './wizard/WizardPlan'
-import { DIAS_PRUEBA } from '@/lib/planes'
+import { DIAS_PRUEBA_BASE } from '@/lib/planes'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -31,7 +31,7 @@ import { useCabecera } from '@/components/armazon/Armazon'
 /** «hasta el 27 de agosto»: la fecha concreta, no «en N días». */
 function finDePrueba() {
   const d = new Date()
-  d.setDate(d.getDate() + DIAS_PRUEBA)
+  d.setDate(d.getDate() + DIAS_PRUEBA_BASE)
   return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
 }
 

@@ -26,7 +26,7 @@
 // cuaderno, un «hasta 20» le dice que no le van a caber.
 
 import { tramosDePlan } from '@/lib/adaptadores/planes'
-import { DIAS_PRUEBA } from '@/lib/planes'
+import { DIAS_PRUEBA, DIAS_PRUEBA_BASE, DIAS_COBRO_PARA_REGALO } from '@/lib/planes'
 import { useCountry } from '@/hooks/useCountry'
 import { useState } from 'react'
 
@@ -104,8 +104,9 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
               al meterle el tope real del plan, la frase cambió de significado.
               Sustituir un número dentro de una frase puede cambiar lo que la
               frase promete. */}
-          Usa la app completa {DIAS_PRUEBA} días, con todo abierto. Al terminar
-          eliges plan según el tamaño de tu cartera.
+          Usa la app completa {DIAS_PRUEBA_BASE} días, con todo abierto. Si registras
+          cobros {DIAS_COBRO_PARA_REGALO} días distintos te regalamos {DIAS_PRUEBA - DIAS_PRUEBA_BASE} más.
+          Al terminar eliges plan según el tamaño de tu cartera.
         </p>
       </div>
 
@@ -119,7 +120,7 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
           padding: '3px 8px', borderRadius: 999,
           background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)',
         }}>
-          GRATIS {DIAS_PRUEBA} DÍAS
+          HASTA {DIAS_PRUEBA} DÍAS GRATIS
         </span>
         <span className="cf-fig" style={{
           display: 'block', fontFamily: 'var(--font-space-grotesk), system-ui',

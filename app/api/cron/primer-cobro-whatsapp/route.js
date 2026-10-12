@@ -41,6 +41,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { whereSinPruebaSiete } from '@/lib/seguimiento/prueba'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE = process.env.WHATSAPP_TEMPLATE_PRIMER_COBRO || ''
@@ -84,6 +85,7 @@ export async function POST(req) {
     const orgs = await prisma.organization.findMany({
       where: {
         activo: true,
+        ...whereSinPruebaSiete, // los de 7 + 7: el motor de seguimiento
         waPrimerCobroSent: false,
         /* ⚠ PRESTÓ HACE ENTRE 2 Y 6 DÍAS.
            Menos de 2 no da tiempo ni a un cobro diario; más de 6 y el mensaje

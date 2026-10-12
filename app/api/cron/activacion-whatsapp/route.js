@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { whereSinPruebaSiete } from '@/lib/seguimiento/prueba'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const TEMPLATE_SIN_NADA = 'activacion_sin_actividad'
@@ -40,6 +41,7 @@ export async function POST(req) {
     const orgs = await prisma.organization.findMany({
       where: {
         activo: true,
+        ...whereSinPruebaSiete, // los de 7 + 7: el motor de seguimiento
         waActivacionSent: false,
         waOnboardingStep: { lt: 1 },
         createdAt: { gte: hace72h, lte: hace24h },

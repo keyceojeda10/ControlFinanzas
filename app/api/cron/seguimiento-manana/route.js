@@ -38,7 +38,7 @@ function mensajePara(tipo, nombre) {
     return `Buenos días ${saludo}retomando lo de ayer. Quedo en probar el sistema, le ayudo a registrarse y dejarlo funcionando?\n\nSe registra aquí: https://app.control-finanzas.com/registro?r=2\n\nMe avisa cuando entre y lo acompano.`
   }
   // media_conversacion
-  return `Buenos días ${saludo}ayer quedamos a mitad de la conversacion. Sigue interesado en organizar sus préstamos y cobros desde el celular?\n\nLo puede probar gratis 14 días: https://app.control-finanzas.com/registro?r=2`
+  return `Buenos días ${saludo}ayer quedamos a mitad de la conversacion. Sigue interesado en organizar sus préstamos y cobros desde el celular?\n\nLo puede probar gratis hasta 14 días: https://app.control-finanzas.com/registro?r=2`
 }
 
 export async function POST(req) {

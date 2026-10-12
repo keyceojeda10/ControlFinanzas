@@ -211,6 +211,21 @@ export default function CobrosHoyPage() {
     setModalPago({ id: cliente.id, nombre: cliente.nombre, cuota, prestamoActivo: p.id, prestamosActivos: activos, abonoConPendiente: cliente.pagoHoy && cliente.cobroPendienteHoy, esBalloon: p.esBalloon || false, cuotaNumero: p.cuotaNumero ?? null, modoInteres: p.modoInteres, cuotaExtraHoy: p.cuotaExtraHoy || false, montoCuotaExtra: p.montoCuotaExtra || 0 })
   }
 
+  /* `?empezar=1`: llega del aviso «Hoy le toca cobrar» (components/cf/AvisoCobrarHoy.jsx)
+     y abre el primer cobro pendiente, lo mismo que «Empezar ruta». Una vez:
+     al cerrar la hoja no vuelve a abrirse sola.
+     ⚠ Va ANTES de cualquier `return` de la pantalla: un hook después de un
+     return la tumba (ya pasó con el recibo). */
+  const empezarAlCargar = useRef(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('empezar') === '1')
+  useEffect(() => {
+    const lista = data?.clientes ?? []
+    if (!empezarAlCargar.current || lista.length === 0) return
+    const primero = lista.find((x) => x.cobroPendienteHoy)
+    empezarAlCargar.current = false
+    if (primero) abrirPago(primero)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data])
+
   const elegirPrestamo = (prestamoId, cuota, extra = {}) => {
     if (!modalPago) return
     setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres, cuotaExtraHoy: extra.cuotaExtraHoy || false, montoCuotaExtra: extra.montoCuotaExtra || 0 } : prev)

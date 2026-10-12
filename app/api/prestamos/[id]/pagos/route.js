@@ -45,6 +45,7 @@ import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-cap
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
 import { repartoDeUnPago } from '@/lib/dinero/interes-cobrado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { evaluarPremioPrueba } from '@/lib/seguimiento/prueba'
 
 async function cobradorPuedeGestionarPrestamos(userId) {
   const cobrador = await prisma.user.findUnique({
@@ -1188,6 +1189,11 @@ export async function POST(request, { params }) {
 
   // De qué crédito es este pago, para el comprobante y el mensaje (lib/prestamos/numero.js).
   const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: [prestamoFinal.clienteId] }).catch(() => new Map())
+
+  /* La prueba de 7 + 7: el tercer día con cobros gana 7 días de regalo, AHORA y
+     no en la vuelta del cron. Sin `await`: el cobro no espera por esto, y si
+     falla no lo tumba (lib/seguimiento/prueba.js). */
+  void evaluarPremioPrueba(organizationId)
 
   return Response.json({
     ...prestamoFinal,

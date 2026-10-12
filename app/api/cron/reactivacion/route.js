@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { ventanaAbierta } from '@/lib/bot/telefono'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
+import { whereSinPruebaSiete } from '@/lib/seguimiento/prueba'
 
 const CRON_SECRET = process.env.CRON_SECRET
 const SOPORTE = '301 199 3001'
@@ -57,6 +58,7 @@ export async function POST(req) {
   const orgs = await prisma.organization.findMany({
     where: {
       activo: true,
+      ...whereSinPruebaSiete, // los de 7 + 7: el motor de seguimiento
       planDemoHasta: { lt: ahora },
       waRecoverySent: false,
     },

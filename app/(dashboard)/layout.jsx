@@ -26,6 +26,7 @@ import SesionTracker from '@/components/providers/SesionTracker'
 import { AccionesProvider } from '@/components/acciones/AccionesProvider'
 import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
 import ResumenDelDiaAuto from '@/components/cf/ResumenDelDiaAuto'
+import AvisoCobrarHoy from '@/components/cf/AvisoCobrarHoy'
 import { selectCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
@@ -161,6 +162,10 @@ export default async function DashboardLayout({ children }) {
 
       {/* «Tu resumen del día»: sale solo a la hora que el dueño eligió. */}
       <ResumenDelDiaAuto />
+
+      {/* «Hoy te toca cobrar»: solo en prueba, si hoy hay cobros y no ha
+          registrado ninguno (lib/seguimiento, bloque 3). */}
+      <AvisoCobrarHoy />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
