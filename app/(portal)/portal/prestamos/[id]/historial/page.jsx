@@ -71,6 +71,7 @@ export default function PortalHistorialPage() {
             fecha: p.fechaPago,
             monto: p.montoPagado,
             tipo: p.tipo,
+            cuotaEsperada: p.cuotaEsperada ?? null,
             // El nombre de la cuenta cuando fue transferencia («Nequi»), y si no
             // el medio a secas. Los pagos viejos no lo tienen y quedan sin linea
             // en vez de con una inventada.

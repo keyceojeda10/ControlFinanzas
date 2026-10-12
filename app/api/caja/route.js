@@ -1073,6 +1073,8 @@ export async function GET(request) {
       montoPagado: true,
       fechaPago: true,
       tipo: true,
+      // Para decir «parcial» o «de más» en la lista (cuota-de-referencia.js).
+      cuotaEsperada: true,
       metodoPago: true,
       plataforma: true,
       cobrador: {
@@ -1103,6 +1105,7 @@ export async function GET(request) {
     montoPagado: Math.round(pago.montoPagado || 0),
     fechaPago: pago.fechaPago,
     tipo: pago.tipo,
+    cuotaEsperada: pago.cuotaEsperada ?? null,
     metodoPago: pago.metodoPago || null,
     plataforma: pago.plataforma || null,
     cobradorId: pago.cobrador?.id || null,

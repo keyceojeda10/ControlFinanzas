@@ -6,6 +6,7 @@
 import { formatMoney } from '@/lib/i18n'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
+import { comoFueElPago } from '@/lib/dinero/cuota-de-referencia'
 import { metodoInfo as getMetodoInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 
 const TIPO_BADGE = {
@@ -14,6 +15,8 @@ const TIPO_BADGE = {
   capital:   { label: 'Capital',   variant: 'info'    },
   recargo:   { label: 'Recargo',   variant: 'danger'  },
   descuento: { label: 'Descuento', variant: 'success' },
+  // Un pago de cuota que pasó de lo que tocaba (lib/dinero/cuota-de-referencia.js).
+  extra:     { label: 'Con extra', variant: 'success' },
 }
 
 const fmtFecha = (d) => {
@@ -88,7 +91,10 @@ export default function ListadoPagos({
     >
       {lista.map((pago) => {
         const tipo = pago.tipo || 'parcial'
-        const badge = TIPO_BADGE[tipo] || TIPO_BADGE.parcial
+        /* Parcial o de más lo dice la cuota que tocaba, no `tipo` (soporte del
+           12 oct 2026: $200.000 de una cuota de $450.000 salía «Completo»). */
+        const como = comoFueElPago(pago)
+        const badge = TIPO_BADGE[como ? como.clase : tipo] || TIPO_BADGE.parcial
         const esAjuste = ['recargo', 'descuento'].includes(tipo)
         const prefijoMonto = tipo === 'recargo' ? '+' : tipo === 'descuento' ? '−' : ''
         const colorMonto =

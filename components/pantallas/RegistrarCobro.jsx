@@ -57,6 +57,7 @@
 
 import { PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
+import { useRef } from 'react'
 /* ⚠ «¿DEDO O RATÓN?» VIVE EN `lib/tactil.js`, no aquí. Estaba escrito en este
    fichero y privado, así que las otras pantallas de cobro no podían alcanzarlo
    y confirmaban el dinero de otra forma. */
@@ -208,6 +209,11 @@ function Medio({ nombre, inicial, color, plataforma, efectivo, activo, onClick }
  */
 export default function RegistrarCobro({
   monto = '', moneda = '$', onMonto,
+  /* `notaCuota` = { texto, tono: 'parcial' | 'extra' } cuando el monto NO es la
+     cuota justa. La compone quien monta la hoja con la misma regla que guarda
+     el servidor (lib/dinero/cuota-de-referencia.js). Soporte del 12 oct 2026:
+     $200.000 de una cuota de $450.000 se confirmaba sin que nada lo dijera. */
+  notaCuota = null,
   atajos = [], atajoActivo, onAtajo,
   aplicaciones = [], aplicacion, onAplicacion,
   // `explicacion` = { titulo, texto, cifra: { etiqueta, valor } | null }. La
@@ -228,6 +234,15 @@ export default function RegistrarCobro({
      la hoja; aquí no se sabe qué puede fallarle al aparato. */
   aviso = null,
 }) {
+  const campoMonto = useRef(null)
+  /* El lápiz pone el cursor en el número y lo deja seleccionado: «a la gente no
+     se le hace fácil saber que picando el número puede cambiar la cuota». */
+  const editarMonto = () => {
+    const el = campoMonto.current
+    if (!el) return
+    el.focus()
+    try { el.select() } catch {}
+  }
   return (
     <>
       {/* ── 1 · EL MONTO ───────────────────────────────────────────────────
@@ -250,6 +265,7 @@ export default function RegistrarCobro({
               Y es CONTROLADO. La versión vieja usaba `defaultValue`, así que los
               atajos no podían escribir en él: tocar «Todo» no cambiaba nada. */}
           <input
+            ref={campoMonto}
             value={monto}
             onChange={(e) => onMonto?.(e.target.value)}
             type="text"
@@ -269,7 +285,24 @@ export default function RegistrarCobro({
               color: 'var(--cf-ink)',
             }}
           />
+          <button type="button" onClick={editarMonto} aria-label="Cambiar el monto" style={{
+            width: 40, height: 40, borderRadius: 12, flex: 'none', alignSelf: 'center', cursor: 'pointer',
+            border: '1px solid var(--cf-border)', background: 'var(--cf-fill)', color: 'var(--cf-ink-2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M16.9 3.6a2 2 0 012.8 2.8L8.5 17.6 4 19l1.4-4.5L16.9 3.6z" /><path d="M14.5 6l3.5 3.5" />
+            </svg>
+          </button>
         </div>
+        {notaCuota ? (
+          <span role="status" style={{
+            fontSize: 13, fontWeight: 600, lineHeight: 1.4,
+            color: notaCuota.tono === 'parcial' ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
+          }}>{notaCuota.texto}</span>
+        ) : (
+          <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>¿Te pagó otro valor? Toca el número y escríbelo.</span>
+        )}
         {atajos.length > 0 && (
           <Opciones opciones={atajos} activo={atajoActivo} onElegir={onAtajo} alto={40} marca="oro" />
         )}

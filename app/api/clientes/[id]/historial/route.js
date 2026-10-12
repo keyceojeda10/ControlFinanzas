@@ -44,6 +44,7 @@ export async function GET(request, { params }) {
           montoPagado: true,
           fechaPago: true,
           tipo: true,
+          cuotaEsperada: true,
           cobrador: { select: { nombre: true } },
         },
         orderBy: { fechaPago: 'desc' },
@@ -63,6 +64,7 @@ export async function GET(request, { params }) {
       montoPagado: pg.montoPagado,
       fechaPago: pg.fechaPago,
       tipo: pg.tipo,
+      cuotaEsperada: pg.cuotaEsperada ?? null,
       cobrador: pg.cobrador?.nombre,
     }))
   )

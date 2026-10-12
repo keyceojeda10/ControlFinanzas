@@ -60,6 +60,7 @@ import HojaInferior                  from '@/components/cf/HojaInferior'
 import UnirRutas                     from '@/components/rutas/UnirRutas'
 import { anotarReciente } from '@/lib/recientes'
 import { rotulo } from '@/lib/dinero/definiciones'
+import { frenteACuotaDe } from '@/lib/dinero/cuota-de-referencia'
 
 // Cargar mapa dinámicamente (evitar SSR con Leaflet)
 const RouteMap = dynamic(() => import('@/components/rutas/RouteMap'), { ssr: false })
@@ -1103,6 +1104,9 @@ export default function RutaDetallePage({ params }) {
           // `pagos[0]`, que es el recien hecho: vienen en orden descendente
           // (lo dice la linea del `pagoId` de arriba).
           monto: Math.round(data?.pagos?.[0]?.montoPagado ?? cuota),
+          // Para decir si se quedó corto o pagó de más (cuota-de-referencia.js).
+          tipoPago: esCuotaExacta ? 'completo' : 'parcial',
+          cuotaEsperada: data?.cuotaEsperadaDelPago ?? null,
           saldo: data?.saldoPendiente ?? null,
           // Lo que debía ANTES de este cobro, medido por el servidor dentro de
           // la transacción. Con él el papel enseña la resta entera.
@@ -2234,6 +2238,7 @@ Sigue siendo tu cliente y su préstamo no se toca: solo deja de salir en este re
         monto={formatMoney(reciboCobro.monto)}
         cliente={reciboCobro.nombre}
         ubicacion={Boolean(reciboCobro.conUbicacion)}
+        frenteACuota={frenteACuotaDe({ tipo: reciboCobro.tipoPago, montoPagado: reciboCobro.monto, cuotaEsperada: reciboCobro.cuotaEsperada }, formatMoney)}
         saldoAntes={reciboCobro.saldoAntes != null ? formatMoney(Math.round(reciboCobro.saldoAntes)) : null}
         saldo={reciboCobro.saldo != null ? formatMoney(Math.round(reciboCobro.saldo)) : null}
         proximoCobro={reciboCobro.proximoCobro

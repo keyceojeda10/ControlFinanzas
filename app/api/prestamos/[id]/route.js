@@ -13,6 +13,7 @@ import {
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
+  calcularCuotaQueToca,
   calcularInteresMoratorio,
   calcularPrestamo,
   calcularCapitalRestante,
@@ -130,6 +131,9 @@ export async function GET(request, { params }) {
     cuotasEnMora:     calcularCuotasEnMora(p, diasExcluidos, festivos),
     montoEnMora:      calcularMontoEnMora(p, diasExcluidos, festivos),
     montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(p, diasExcluidos, festivos),
+    // La cuota que toca ahora, contando lo adelantado (lib/calculos.js): la usan
+    // la hoja de pago y el aviso de «faltan» de la ficha.
+    cuotaQueToca: calcularCuotaQueToca(p, diasExcluidos, festivos),
     pagoHoy:          pagoHoy(p),
     proximoCobro:     calcularProximoCobro(p, diasExcluidos, festivos),
     /* Los días resueltos, para que la pantalla pueda DECIR qué días se cobra.

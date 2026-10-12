@@ -15,6 +15,7 @@ import {
   calcularCuotasEnMora,
   calcularMontoEnMora,
   calcularMontoParaPonerseAlDia,
+  calcularCuotaQueToca,
   pagoHoy,
   tieneTablaAmortizacion,
   regenerarTablaAmortizacion,
@@ -142,6 +143,17 @@ export async function POST(request, { params }) {
       select: { fecha: true },
     }),
   ])
+
+  /* LA CUOTA QUE TOCABA, ANTES DEL PAGO (12 oct 2026). Se guarda en el pago
+     para que el historial diga «parcial» o «con extra» comparando contra ella,
+     sin tocar `tipo`: ver lib/dinero/cuota-de-referencia.js. Es la misma que
+     propone la hoja al abrir; si falla el cálculo, el pago entra igual. */
+  let cuotaEsperada = null
+  try {
+    cuotaEsperada = calcularCuotaQueToca(prestamo, obtenerDiasSinCobro(prestamo.cliente, prestamo.cliente?.ruta, org, prestamo), festivos)
+  } catch (e) {
+    console.error('[pagos] cuota de referencia:', e?.message)
+  }
 
   const body = await request.json()
   const { montoPagado, tipo, nota, diasAbonados, metodoPago, plataforma, metodoPagoId, latitud, longitud, aplazarUnPeriodo, fechaPago: fechaPagoCuerpo, offlineId } = body
@@ -543,6 +555,7 @@ export async function POST(request, { params }) {
           metodoPagoId: metodoValido === 'transferencia' && metodoPagoId ? metodoPagoId : null,
           nota: notaFinal?.trim() || null,
           cuotaNumero,
+          cuotaEsperada: ['completo', 'parcial'].includes(tipo) ? cuotaEsperada : null,
           fechaPago: fechaDelPago,
           latitud: coordsPago.latitud,
           longitud: coordsPago.longitud,
@@ -1092,7 +1105,10 @@ export async function POST(request, { params }) {
     },
   })
 
-  const diasExcluidosFinal = obtenerDiasSinCobro(prestamoFinal?.cliente, prestamoFinal?.cliente?.ruta, org)
+  /* Con los días sin cobro PROPIOS del préstamo, como la ficha (`GET`): sin el
+     cuarto argumento, la mora y la cuota que se devolvían tras cobrar no eran
+     las que la ficha pinta al recargar. */
+  const diasExcluidosFinal = obtenerDiasSinCobro(prestamoFinal?.cliente, prestamoFinal?.cliente?.ruta, org, prestamoFinal)
 
   /* ══ COBRAR EL INTERÉS Y APLAZAR, EN EL MISMO GESTO ══════════════════════
    *
@@ -1202,6 +1218,9 @@ export async function POST(request, { params }) {
     saldoPendiente:   calcularSaldoPendiente(prestamoFinal),
     saldoAntesDelPago,
     saldoAntesDelPagoId,
+    // La cuota que tocaba (lib/dinero/cuota-de-referencia.js): el recibo dice
+    // con ella si el pago se quedó corto o pagó de más.
+    cuotaEsperadaDelPago: ['completo', 'parcial'].includes(tipo) ? cuotaEsperada : null,
     repartoDelPago,
     repartoDelPagoId: repartoDelPago ? saldoAntesDelPagoId : null,
     capitalRestante:  calcularCapitalRestante(prestamoFinal),
@@ -1211,6 +1230,7 @@ export async function POST(request, { params }) {
     cuotasEnMora:     calcularCuotasEnMora(prestamoFinal, diasExcluidosFinal, festivos),
     montoEnMora:      calcularMontoEnMora(prestamoFinal, diasExcluidosFinal, festivos),
     montoParaPonerseAlDia: calcularMontoParaPonerseAlDia(prestamoFinal, diasExcluidosFinal, festivos),
+    cuotaQueToca:     calcularCuotaQueToca(prestamoFinal, diasExcluidosFinal, festivos),
     proximoCobro:     proximoCobroFinal,
     aplazadoA,
     pagoHoy:          pagoHoy(prestamoFinal),

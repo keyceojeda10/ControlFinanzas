@@ -52,6 +52,7 @@ export async function GET(request, { params }) {
             montoPagado: true,
             fechaPago: true,
             tipo: true,
+            cuotaEsperada: true,
             cuotaNumero: true,
             // ── EL MEDIO DE PAGO, QUE FALTABA ──
             // La pantalla del cobrador lo enseña y la del cliente no, asi que

@@ -7,6 +7,7 @@ import { abreviaturaDocumento, nombreDocumento } from '@/lib/documento'
 import { referenciaDelCredito } from '@/lib/prestamos/referencia'
 import { getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
 import { numeroCuotaDe, porcentajeDe, cuotasRestantesDe, saldoAntesDeEstePago, repartoDeEstePago, tituloDelTipoDePago, notaDelReparto } from '@/lib/recibo-derivados'
+import { etiquetaDelPago } from '@/lib/dinero/cuota-de-referencia'
 
 const PRINT_ICON = (
   <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -26,14 +27,6 @@ function fmtFechaHora(d) {
     + ' ' + f.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
 }
 
-function getTipoPagoLabel(tipo) {
-  if (tipo === 'completo') return 'Pago completo'
-  if (tipo === 'parcial') return 'Pago parcial'
-  if (tipo === 'capital') return 'Abono a capital'
-  if (tipo === 'recargo') return 'Recargo'
-  if (tipo === 'descuento') return 'Descuento'
-  return 'Pago'
-}
 
 /* ⚠ EL ÚNICO CAMPO QUE PUEDE NO SALIR.
  *
@@ -254,7 +247,7 @@ function generarHTMLHistorialCompleto(cliente, prestamo, orgNombre, camposRecibo
       return `
         <tr>
           <td>${fmtFechaHora(pago.fechaPago)}</td>
-          <td>${getTipoPagoLabel(pago.tipo)}</td>
+          <td>${etiquetaDelPago(pago, formatMoney)}</td>
           <td>${metodo}</td>
           <td style="text-align:right; font-weight:bold;">${prefijoMonto}${formatMoney(pago.montoPagado || 0)}</td>
         </tr>

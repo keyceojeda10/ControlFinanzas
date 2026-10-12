@@ -84,6 +84,10 @@ export function Recibo({
   // al cliente que se fíe del resultado. Sin cifra no se pinta: solo existe en
   // el momento del cobro, y en un comprobante reimpreso no hay de dónde sacarla.
   saldoAntes,
+  // `frenteACuota` — { cuota, faltaron } o { cuota, deMas }, ya formateados. Solo
+  // cuando el pago NO fue la cuota justa: «$200.000 de una cuota de $450.000»
+  // salía igual que una cuota completa (soporte del 12 oct 2026).
+  frenteACuota = null,
   cuando,
   // `ubicacion` — true si este cobro quedó con su ubicación. Va FUERA del papel:
   // es respaldo de quien cobra y del dueño, no algo que el cliente se lleve.
@@ -280,6 +284,9 @@ export function Recibo({
               medio de pago (Nequi, Bancolombia, efectivo…) esta línea es la que
               ata el recibo con el cuadre. */}
           {medioPago && <Fila etiqueta="Pagó con" valor={medioPago} />}
+          {frenteACuota?.cuota && <Fila etiqueta="Le tocaba" valor={frenteACuota.cuota} cifra />}
+          {frenteACuota?.faltaron && <Fila etiqueta="Quedó faltando" valor={frenteACuota.faltaron} cifra />}
+          {frenteACuota?.deMas && <Fila etiqueta="Pagó de más" valor={frenteACuota.deMas} cifra />}
           {/* LA RESTA SE LEE DE ARRIBA ABAJO: antes debía, pagó, queda. Va
               pegada al saldo y con el mismo peso de cifra; separarlas o darle
               menos importancia devuelve el problema de origen, que es que el

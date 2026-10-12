@@ -67,6 +67,7 @@ import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
+import { comoFueElPago } from '@/lib/dinero/cuota-de-referencia'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -682,6 +683,7 @@ function PrestamoDetalleContenido({ params }) {
     cuotasEnMora = 0,
     montoEnMora = 0,
     montoParaPonerseAlDia = 0,
+    cuotaQueToca = null,
     pagoHoy: yaPagoHoy, pagos = [], proximoCobro,
     seguro = false, montoSeguro,
     modoInteres, interesAdelantado = false, renovadoDeId, esClavo = false,
@@ -723,6 +725,11 @@ function PrestamoDetalleContenido({ params }) {
   const salioOtroDia = !!entregadoEl && !esDelDiaAbierto(entregadoEl, country)
   const hayMontoMora = estaActivo && !completado && montoEnMora > 0
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
+  // Lo que falta de una cuota a medio pagar (ver `calcularCuotaQueToca`): 0 si no hay ninguna a medias.
+  // Si la que la recorta es el SALDO (el final del préstamo), no hay cuota a medias: es lo último que queda.
+  const restaDeLaCuota = cuotaQueToca > 0 && cuotaDiaria > 0 && Math.round(cuotaQueToca) < Math.round(cuotaDiaria)
+    && Math.round(saldoPendiente ?? 0) > Math.round(cuotaQueToca)
+    ? Math.round(cuotaQueToca) : 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
 
   // ── Lo que pide la ficha de T41-01 ──
@@ -887,13 +894,23 @@ function PrestamoDetalleContenido({ params }) {
       .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
     let saldo = Math.round(saldoPendiente || 0)
     const filas = []
+    /* Parcial o con extra lo dice la cuota que tocaba, no `tipo` (soporte del
+       12 oct 2026): aquí un «completo» no llevaba marca, y $200.000 de una
+       cuota de $450.000 salía igual que una cuota pagada. */
+    const marcaDelPago = (p) => {
+      const c = comoFueElPago(p)
+      if (c?.clase === 'parcial') return c.cuota ? `parcial, faltaron ${formatMoney(-c.diferencia)}` : 'parcial'
+      if (c?.clase === 'extra') return `${formatMoney(c.diferencia)} de más`
+      if (c) return null
+      return p.tipo && p.tipo !== 'completo' ? p.tipo : null
+    }
     for (const p of orden.slice(0, 3)) {
       const monto = Math.round(p.montoPagado || 0)
       filas.push({
         fecha: new Date(p.fechaPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
         detalle: [
           p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
-          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+          marcaDelPago(p),
           `quedó en ${formatMoney(saldo)}`,
         ].filter(Boolean).join(' · '),
         // Suelto ademas del texto: en 1440 tiene columna propia.
@@ -906,7 +923,7 @@ function PrestamoDetalleContenido({ params }) {
         // es lo mismo: dice POR DÓNDE entró la plata.
         comoPago: [
           p.metodoPago === 'transferencia' ? (p.plataforma || 'transferencia') : 'efectivo',
-          p.tipo && p.tipo !== 'completo' ? p.tipo : null,
+          marcaDelPago(p),
         ].filter(Boolean).join(' · '),
         // ── QUIÉN LO COBRÓ (T11-03) ──
         // El comentario de `FichaPrestamo` decía que este dato «no llega hasta
@@ -1707,8 +1724,33 @@ function PrestamoDetalleContenido({ params }) {
         />
       )}
 
+      {/* ── PAGÓ HOY, PERO NO COMPLETÓ LA CUOTA (12 oct 2026) ──
+          «Cobrado hoy $200.000» en verde, sin más, sobre una cuota de $450.000:
+          se leía como cobro completo y el botón de pagar desaparecía. Si lo que
+          toca ahora es MENOS que la cuota, hay una a medio pagar: se dice cuánto
+          falta y se ofrece cobrarlo. */}
+      {estaActivo && yaPagoHoy && !completado && restaDeLaCuota > 0 && (
+        <button
+          type="button"
+          onClick={() => abrirPagoConMonto(restaDeLaCuota)}
+          className="w-full min-h-16 rounded-[16px] flex items-center px-4 py-3 gap-3 text-left cursor-pointer"
+          style={{ background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)' }}
+        >
+          <span className="flex-1 flex flex-col items-start min-w-0 leading-tight">
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--cf-gold-dark)' }}>
+              Cobrado hoy · parcial
+            </span>
+            <span className="text-[16px] font-bold mt-0.5" style={{ color: 'var(--cf-ink)' }}>
+              <span className="cf-fig">{formatMoney(cobradoHoyPrestamo)}</span>
+              <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}> · faltan <span className="cf-fig">{formatMoney(restaDeLaCuota)}</span> de la cuota</span>
+            </span>
+          </span>
+          <span className="shrink-0 text-[14px] font-bold" style={{ color: 'var(--cf-gold-dark)' }}>Cobrar el resto ›</span>
+        </button>
+      )}
+
       {/* ── PAGÓ HOY (banner verde con misma estructura que el boton de pago) ── */}
-      {estaActivo && yaPagoHoy && !completado && (
+      {estaActivo && yaPagoHoy && !completado && !(restaDeLaCuota > 0) && (
         <div
           className="w-full h-16 rounded-[16px] flex items-center px-4"
           style={{
@@ -2860,6 +2902,7 @@ function PrestamoDetalleContenido({ params }) {
         //
         // Los dos datos ya vivían en esta página; solo no llegaban al modal.
         montoAlDia={montoParaPonerseAlDia}
+        cuotaQueToca={prestamo?.cuotaQueToca ?? null}
         cancelarHoy={hayCierre ? Math.round(cierre.restanteHoy ?? 0) : 0}
       />
 

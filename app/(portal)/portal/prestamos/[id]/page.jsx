@@ -119,7 +119,7 @@ export default function PortalPrestamoDetalle() {
           } : undefined}
           pagosCuenta={pagos.length > 0 ? `${pagos.length} ${pagos.length === 1 ? 'pago' : 'pagos'}` : null}
           pagos={misPagos(
-            visibles.map((p) => ({ id: p.id, fecha: p.fechaPago, monto: p.montoPagado, tipo: p.tipo })),
+            visibles.map((p) => ({ id: p.id, fecha: p.fechaPago, monto: p.montoPagado, tipo: p.tipo, cuotaEsperada: p.cuotaEsperada ?? null })),
             fmt,
             (f) => new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
           )}

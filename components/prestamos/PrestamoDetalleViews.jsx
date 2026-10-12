@@ -12,6 +12,7 @@ import OfflineBadge from '@/components/offline/OfflineBadge'
 import Avatar from '@/components/ui/Avatar'
 import { getPlataformaInfo, PlataformaIcon } from '@/components/ui/LogoPlataforma'
 import { Pastilla } from '@/components/cf/primitivos'
+import { comoFueElPago, textoDelPago } from '@/lib/dinero/cuota-de-referencia'
 
 // ─── Helpers de fecha ────────────────────────────────────────────
 //
@@ -861,7 +862,16 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
     intereses:   { color: 'var(--cf-gold-dark)',  pastilla: 'atraso',    label: 'Intereses' },
     liquidacion: { color: '#6366f1',              pastilla: 'neutro',    label: 'Liquidación' },
   }
-  const t = TONOS[pago.tipo] || TONOS.parcial
+  /* ⚠ PARCIAL O CON EXTRA LO DICE LA CUOTA QUE TOCABA, NO `tipo` (12 oct 2026).
+     $200.000 sobre una cuota de $450.000 salía «Completo». Ver
+     lib/dinero/cuota-de-referencia.js: `tipo` no se toca porque lo leen los
+     cálculos; el pago guarda aparte la cuota con la que se comparó. */
+  const como = comoFueElPago(pago)
+  const texto = textoDelPago(como, (n) => formatMoney(n))
+  const t = como?.clase === 'parcial' ? TONOS.parcial
+    : como?.clase === 'extra' ? { ...TONOS.completo, label: 'Con extra' }
+      : como ? TONOS.completo
+        : (TONOS[pago.tipo] || TONOS.parcial)
   const signo = pago.tipo === 'descuento' ? '-' : pago.tipo === 'recargo' ? '+' : ''
 
   return (
@@ -938,6 +948,9 @@ export function PagoMiniCard({ pago, onAnular, anulando, isOffline, children }) 
               )
             })()}
           </div>
+          {texto?.detalle && (
+            <p className="text-[12px] mt-1" style={{ color: 'var(--cf-ink-2)' }}>{texto.detalle}</p>
+          )}
           {pago.nota && (
             <p className="text-[10px] mt-1 italic truncate" style={{ color: 'var(--cf-ink-2)' }} title={pago.nota}>
               {pago.nota}

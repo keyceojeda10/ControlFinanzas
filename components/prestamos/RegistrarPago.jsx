@@ -46,6 +46,8 @@ import { obtenerCoordsRapido, calentarCoords, completarUbicacionDelPago } from '
 import AvisoUbicacion from '@/components/cf/AvisoUbicacion'
 import { conPantalla } from '@/components/cf/Procesando'
 
+import { frenteACuotaDe, cuotaDeReferencia, comoFueElPago } from '@/lib/dinero/cuota-de-referencia'
+
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
   open, onClose, onSuccess,
@@ -60,6 +62,10 @@ export default function RegistrarPago({
   tabInicial = 'pago',
   montoAlDia = 0,
   cancelarHoy = 0,
+  /* La cuota que toca ahora, del servidor (`calcularCuotaQueToca`): cuenta lo
+     que ya se adelantó de ella. La ficha la trae; si no llega, la hoja la pide
+     al abrirse (ver abajo). Soporte del 12 oct 2026. */
+  cuotaQueToca,
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
@@ -95,10 +101,15 @@ export default function RegistrarPago({
    */
   const cuotaPropuesta = Math.round(cuotaDiaria ?? 0)
   const faltaDeLaCuota = Math.round(montoAlDia ?? 0)
-  const montoInicial = Math.min(
-    Math.round(saldoPendiente ?? 0),
-    faltaDeLaCuota > 0 && faltaDeLaCuota < cuotaPropuesta ? faltaDeLaCuota : cuotaPropuesta,
-  )
+  /* Con la cuota que toca del servidor, manda ella: también sabe lo ADELANTADO
+     (la regla de abajo solo veía lo atrasado y volvía a proponer la cuota entera
+     a quien ya había abonado una parte antes del vencimiento). */
+  const montoInicial = Math.round(Number(cuotaQueToca) || 0) > 0
+    ? Math.min(Math.round(saldoPendiente ?? 0), Math.round(cuotaQueToca))
+    : Math.min(
+      Math.round(saldoPendiente ?? 0),
+      faltaDeLaCuota > 0 && faltaDeLaCuota < cuotaPropuesta ? faltaDeLaCuota : cuotaPropuesta,
+    )
   const [monto,        setMonto]        = useState(String(montoInicial))
 
   // ── ⚠ EL CAMPO GUARDA LO QUE SE TECLEA, NO EL VALOR MULTIPLICADO ────────
@@ -283,6 +294,28 @@ export default function RegistrarPago({
     setEditandoCampos(false)
     setCamposLocal(camposRecibo)
   }, [open, presetPago, cuotaDiaria, saldoPendiente, tabInicial, montoInicial])
+
+  /* ── LA CUOTA QUE TOCA, CUANDO LA PANTALLA NO LA TRAE ──
+     Clientes, Préstamos y el QR abren esta hoja sin ella. Se pide al servidor
+     para que la nota «pago parcial» y lo que se propone sean lo mismo que el
+     servidor guarda al cobrar. Solo cambia el monto si nadie lo ha tocado: lo
+     que se tecleó no se pisa. Sin red, se queda con la regla de siempre. */
+  const [cuotaSrv, setCuotaSrv] = useState(null)
+  useEffect(() => {
+    if (!open || cuotaQueToca !== undefined || !prestamoId || tabInicial !== 'pago') return
+    let vivo = true
+    setCuotaSrv(null)
+    fetch(`/api/prestamos/${prestamoId}/cuota-que-toca`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const c = Math.round(Number(j?.cuotaQueToca) || 0)
+        if (!vivo || !(c > 0)) return
+        setCuotaSrv(c)
+        if (!presetPago) setMonto((m) => (m === String(montoInicial) ? String(Math.min(Math.round(saldoPendiente ?? c), c)) : m))
+      })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [open, cuotaQueToca, prestamoId, tabInicial]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── EL COMPROBANTE DE UN PAGO QUE REGISTRÓ OTRA HOJA ────────────────────────
      El dueño, 20 sep 2026: «le hice un abono a interés y ni siquiera salió nada».
@@ -479,7 +512,7 @@ export default function RegistrarPago({
          «Abono a capital» o «Pago de intereses», y la guarda de tres líneas más
          abajo —que no manda WhatsApp por un recargo o un descuento— nunca
          disparaba con red porque `pagoGuardado.tipo` llegaba `undefined`. */
-      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma, conUbicacion: Boolean(coords) }
+      const pagoParaWA = { id: pagoId, montoPagado: m, tipo, fechaPago: new Date().toISOString(), metodoPago, metodoPagoId, plataforma, conUbicacion: Boolean(coords), cuotaEsperada: data.cuotaEsperadaDelPago ?? null }
       setPagoGuardado(pagoParaWA)
       setPrestamoAct(data)
       setExitoso(true)
@@ -728,6 +761,7 @@ export default function RegistrarPago({
             monto={formatMoney(pagoGuardado.montoPagado)}
             cliente={cliente?.nombre ?? '—'}
             medioPago={medioPago}
+            frenteACuota={frenteACuotaDe(pagoGuardado, formatMoney)}
             saldoAntes={saldoAntesDeEstePago(prestamoWA, pagoGuardado) != null
               ? formatMoney(saldoAntesDeEstePago(prestamoWA, pagoGuardado)) : null}
             saldo={prestamoWA?.saldoPendiente != null
@@ -1177,6 +1211,20 @@ export default function RegistrarPago({
         : []
     const atajoActivo = atajos.find((a) => a.monto === montoNum)?.id ?? null
 
+    /* ¿Se queda corto o paga de más frente a la cuota? Con la MISMA regla que
+       guarda el servidor (`cuotaDeReferencia`), para que lo que se ve aquí sea
+       lo que después dice el historial. Solo en un cobro de cuota. */
+    const refServidor = Math.round(Number(cuotaQueToca ?? cuotaSrv) || 0)
+    const refCuota = !conAtajos ? null
+      : refServidor > 0 ? Math.min(refServidor, Math.round(saldoPendiente ?? refServidor))
+        : cuotaDeReferencia({ cuota: cuotaDiaria, saldo: saldoPendiente, alDia: montoAlDia })
+    const comoVa = refCuota && montoNum > 0 ? comoFueElPago({ tipo: 'completo', montoPagado: montoNum, cuotaEsperada: refCuota }) : null
+    const notaDeCuota = comoVa?.clase === 'parcial'
+      ? { tono: 'parcial', texto: `Pago parcial: le tocaba ${formatMoney(refCuota)} y quedan faltando ${formatMoney(-comoVa.diferencia)}.` }
+      : comoVa?.clase === 'extra'
+        ? { tono: 'extra', texto: `Le tocaba ${formatMoney(refCuota)}: paga ${formatMoney(comoVa.diferencia)} de más.` }
+        : null
+
     const { filas } = adaptarDespuesDelPago(
       { ...(prestamo ?? {}), saldoPendiente, cuotaDiaria },
       {
@@ -1289,6 +1337,7 @@ export default function RegistrarPago({
           // millón doscientos cincuenta mil de ciento veinticinco mil.
           monto={verMonto(monto)}
           onMonto={(v) => setMonto(leerMonto(v))}
+          notaCuota={notaDeCuota}
           atajos={atajos}
           atajoActivo={atajoActivo}
           onAtajo={(a) => fijarMonto(String(a.monto))}
