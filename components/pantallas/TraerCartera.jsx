@@ -277,7 +277,10 @@ export default function TraerCartera({
                 ¿Te ayudamos a subirla?
               </p>
               <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-ink-2)', margin: '5px 0 0' }}>
-                {ayudaTexto ?? 'Mándanos las fotos por WhatsApp y te la dejamos lista.'}
+                {/* Desde el 12 oct 2026 hay un flujo detrás (lib/carga-asesor/):
+                    antes el botón mandaba a soporte y esta frase era una promesa
+                    que nadie atendía por un camino propio. */}
+                {ayudaTexto ?? 'Sube las fotos del cuaderno o el Excel tal cual y un asesor te la deja cargada en máximo 24 horas.'}
               </p>
               <button type="button" onClick={onEscribirnos} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
@@ -285,11 +288,11 @@ export default function TraerCartera({
                 background: 'var(--cf-card)', border: '1px solid var(--cf-border-strong)',
                 font: 'inherit', fontSize: 14, fontWeight: 600, color: 'var(--cf-ink)',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25D366"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 12a8 8 0 01-11.6 7.1L4 20l.9-4.3A8 8 0 1120 12z" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cf-gold-dark)"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v2.5A1.5 1.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V16" />
                 </svg>
-                Escribirnos
+                Que me la carguen
               </button>
             </Tarjeta>
           )}

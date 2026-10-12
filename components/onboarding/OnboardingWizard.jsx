@@ -296,6 +296,13 @@ export default function OnboardingWizard({
             persistStep(50, flujo)
             window.location.href = '/clientes/nuevo'
           }}
+          /* La carga con asesor (bloque 4): quien la pide tampoco se quedó
+             atascado, se fue por otra puerta. Mismo paso 50 que «de cero». */
+          onEscribirnos={() => {
+            marcar('onb_metodo', { metodo: 'asesor', flujo })
+            persistStep(50, flujo)
+            window.location.href = '/cargar-cartera'
+          }}
           pasos={[
             { texto: 'Crear tu cuenta', hecho: true },
             // Ciertos: para estar en el paso 2 hay que haber pasado por los dos.

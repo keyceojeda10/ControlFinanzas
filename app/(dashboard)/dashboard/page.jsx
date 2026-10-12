@@ -1578,7 +1578,8 @@ export default function DashboardPage() {
           onFoto={() => { window.location.href = '/migrador' }}
           onExcel={() => { window.location.href = '/carga-masiva' }}
           onCero={() => { window.location.href = '/prestamos/nuevo' }}
-          onEscribirnos={() => { window.location.href = '/soporte/nuevo' }}
+          // La carga con asesor (bloque 4): antes iba a soporte.
+          onEscribirnos={() => { window.location.href = '/cargar-cartera' }}
           // SOLO LO QUE SE PUEDE COMPROBAR. La lamina dibuja tambien «como
           // prestas» en verde, pero aqui no hay forma de saber si de verdad lo
           // configuro, y marcarle como hecho algo que no hizo es peor que no

@@ -12,7 +12,7 @@ import { normalizarEmail } from '@/lib/normalizar-email'
 import { sendTemplate, sendButtons, wamidDe } from '@/lib/bot/whatsapp-cloud'
 import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { buscarLeads, ventanaAbierta } from '@/lib/bot/telefono'
-import { mensajeBienvenida, BOTONES_CARTERA } from '@/lib/bot/cartera-post-registro'
+import { mensajeBienvenida, botonesCartera, esCarteraGrande } from '@/lib/bot/cartera-post-registro'
 
 function generarCodigoReferido() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -284,8 +284,10 @@ export async function POST(req) {
         try {
           if (await ventanaAbierta(telefonoLimpio)) {
             const lead = botLeads[0]
-            const texto = mensajeBienvenida(String(nombre || '').trim().split(/\s+/)[0] || '')
-            const envio = await sendButtons(lead.telefono, texto, BOTONES_CARTERA)
+            // A quien declaró 50 clientes o más se le ofrece el asesor (bloque 4).
+            const grande = botLeads.some((b) => esCarteraGrande(b.cantClientes))
+            const texto = mensajeBienvenida(String(nombre || '').trim().split(/\s+/)[0] || '', { grande })
+            const envio = await sendButtons(lead.telefono, texto, botonesCartera({ grande }))
             await prisma.botConversacion.create({
               data: { botLeadId: lead.id, rol: 'bot', texto, tipoMensaje: 'chat', wamid: wamidDe(envio), proveedor: 'fijo', promptId: 'bienvenida-cartera' },
             }).catch(() => {})

@@ -1,6 +1,8 @@
 import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import OfflineProvider from "@/components/providers/OfflineProvider";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import Script from "next/script";
@@ -90,7 +92,16 @@ export const viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }) {
+/* ⚠ LA SESIÓN BAJA DEL SERVIDOR (12 oct 2026, el #418 del Inicio).
+   El proveedor arrancaba en el cliente con la sesión guardada en localStorage
+   y en el servidor sin ninguna: desde la SEGUNDA carga de cualquier pantalla,
+   lo que dependiera de la sesión en el primer render (el banner de fotos del
+   Inicio, `{esOwner && …}`) pintaba un árbol distinto al del HTML y React
+   tiraba la página entera para volverla a pintar en el cliente. Se había
+   parchado pantalla por pantalla con `montado` (FranjaVerComo); con la misma
+   sesión a los dos lados deja de pasar en todas. */
+export default async function RootLayout({ children }) {
+  const session = await getServerSession(authOptions).catch(() => null);
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
@@ -100,7 +111,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
-          <SessionProvider>
+          <SessionProvider session={session}>
             <OfflineProvider>
               {children}
             </OfflineProvider>

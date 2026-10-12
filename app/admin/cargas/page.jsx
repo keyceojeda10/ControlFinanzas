@@ -9,6 +9,7 @@ import { formatMoney } from '@/lib/i18n'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 
 const ESTADO = {
+  esperando: { texto: 'Esperando archivos', color: 'var(--cf-ink-3)' },
   recibida: { texto: 'Recibida', color: 'var(--cf-ink-2)' },
   leyendo: { texto: 'Leyendo', color: 'var(--cf-ink-2)' },
   en_revision: { texto: 'Por revisar', color: 'var(--cf-gold-dark)' },

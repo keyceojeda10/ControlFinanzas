@@ -26,6 +26,7 @@ import { accionTrasThrottle, MAX_REBOTES_THROTTLE, necesitaRescateUtility } from
 import { textoAperturaUtility } from '@/lib/bot-v2/respuestas-fijas'
 import { atenderRespuestaSeguimiento } from '@/lib/seguimiento/respuestas'
 import { adjuntarDesdeWhatsApp } from '@/lib/carga-asesor/whatsapp'
+import { abrirSolicitud } from '@/lib/carga-asesor/solicitud'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -789,6 +790,15 @@ async function _responderAlLead(msg, lead, tipo, messageId, botApagado) {
       }).catch(() => {})
     } catch (e) {
       console.error('[WA Cloud] no pude contestar el botón:', e.message)
+    }
+    if (r.abrirCarga) {
+      /* «Que me la carguen»: se abre la carga con asesor YA, para que las fotos
+         o el Excel que mande a continuación se peguen a ella y no le conteste
+         el bot de ventas. Ver lib/carga-asesor/whatsapp.js. */
+      const orgId = lead.organizationId
+        ?? (await prisma.user.findFirst({ where: { rol: 'owner', telefono: { endsWith: String(lead.telefono || '').replace(/\D/g, '').slice(-10) } }, select: { organizationId: true } }))?.organizationId
+      if (orgId) await abrirSolicitud(orgId, { origen: 'whatsapp' }).catch((e) => console.error('[WA Cloud] no pude abrir la carga:', e.message))
+      else console.error('[WA Cloud] «Que me la carguen» sin negocio enlazado:', lead.id)
     }
     if (r.avisar) {
       /* «Necesito ayuda» es de los que más pagan: quien escribe «no pude» se

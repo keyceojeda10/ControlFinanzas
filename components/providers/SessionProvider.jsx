@@ -36,7 +36,19 @@ function SessionUpdater() {
 }
 
 export default function SessionProvider({ children, session }) {
-  const [cachedSession] = useState(() => session || leerSessionCache())
+  /* El primer render del cliente TIENE que arrancar con lo mismo que el del
+     servidor, o React tira el HTML (#418). Por eso, con red, manda la sesión
+     que bajó del servidor (app/layout.js). La guardada solo entra:
+     · si el servidor no mandó ninguna (como era antes), y
+     · SIN SEÑAL: el HTML viene entonces de la caché del SW y puede traer la
+       sesión de otra cuenta (cuentas guardadas); la última de este teléfono es
+       la buena, aunque cueste un repintado. */
+  const [cachedSession] = useState(() => {
+    if (typeof window === 'undefined') return session || undefined
+    if (!session) return leerSessionCache()
+    if (navigator.onLine === false) return leerSessionCache() ?? session
+    return session
+  })
 
   useEffect(() => {
     if (session?.user?.email) guardarSessionCache(session)
