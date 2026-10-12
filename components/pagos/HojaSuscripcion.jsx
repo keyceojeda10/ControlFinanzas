@@ -27,7 +27,11 @@ import { useReintentarCobro } from '@/components/pagos/useReintentarCobro'
 
 const WIDGET = 'https://checkout.wompi.co/widget.js'
 
-export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar, onPagoUnico }) {
+/* `ofertaPct`: el 35 % por dejar el Nequi guardado, si lo tiene esperando
+   (lib/seguimiento/oferta-nequi.js). Quien llega desde «35 % más barato» veía
+   aquí «$39.000 cada mes» y nada más (12 oct 2026). Mismo redondeo que el
+   servidor (`precioConDescuento`). */
+export default function HojaSuscripcion({ plan, nombre, precioMensual, ofertaPct = null, onCerrar, onPagoUnico }) {
   const formRef = useRef(null)
   const [publicKey, setPublicKey] = useState(null)
   const [error, setError] = useState(null)
@@ -190,10 +194,20 @@ export default function HojaSuscripcion({ plan, nombre, precioMensual, onCerrar,
             <h2 className="text-[17px] font-semibold" style={{ color: 'var(--cf-ink)' }}>
               Suscribirte a {nombre}
             </h2>
-            <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--cf-ink)' }}>
-              {formatMoney(precioMensual)}
-              <span className="text-[11px] font-normal" style={{ color: 'var(--cf-ink-3)' }}> cada mes</span>
-            </p>
+            {ofertaPct > 0 && precioMensual > 0 ? (
+              <p className="text-[13px] mt-0.5" style={{ color: 'var(--cf-ink-2)' }}>
+                <span className="font-mono-display font-bold" style={{ color: 'var(--cf-green-dark)' }}>
+                  {formatMoney(Math.round((precioMensual * (1 - ofertaPct / 100)) / 100) * 100)}
+                </span>
+                {' '}el primer cobro ({ofertaPct} % menos), después{' '}
+                <span className="font-mono-display font-bold" style={{ color: 'var(--cf-ink)' }}>{formatMoney(precioMensual)}</span> cada mes
+              </p>
+            ) : (
+              <p className="text-[13px] font-mono-display font-bold mt-0.5" style={{ color: 'var(--cf-ink)' }}>
+                {formatMoney(precioMensual)}
+                <span className="text-[11px] font-normal" style={{ color: 'var(--cf-ink-3)' }}> cada mes</span>
+              </p>
+            )}
           </div>
           <button
             type="button"

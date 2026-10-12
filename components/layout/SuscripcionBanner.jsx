@@ -181,7 +181,9 @@ export default function SuscripcionBanner() {
               {estado.planPagado === false ? 'Tu prueba gratis vence el' : 'Tu plan vence el'} {fecha}
             </p>
             <p className="text-[12px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
-              {oferta
+              {oferta && estado.planPagado === false
+                ? `Si dejas tu Nequi guardado para el pago automático, tu primer mes te sale ${estado.ofertaNequi} % más barato (solo ese mes).`
+                : oferta
                 ? `Si dejas tu Nequi guardado, se renueva solo y ese mes te sale ${estado.ofertaNequi} % más barato (solo ese mes).`
                 : estado.planPagado === false ? 'Elige tu plan para seguir usándolo.' : 'Renuévalo antes para no perder el acceso.'}
             </p>

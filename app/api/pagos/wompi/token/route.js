@@ -146,7 +146,7 @@ export async function POST(req) {
 
     /* El 35 % por dejar el medio guardado, si tiene la oferta: va ANTES del
        cobro para que el primero ya salga con descuento. Ver lib/seguimiento/oferta-nequi.js. */
-    await aplicarOfertaNequi(session.user.organizationId)
+    await aplicarOfertaNequi(session.user.organizationId, { planElegido: typeof campos.plan === 'string' ? campos.plan : null })
 
     /* Si el primer cobro falla, el medio YA está guardado: no se deshace nada,
        se le dice y punto. Deshacerlo dejaría al cliente sin suscripción por un

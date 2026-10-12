@@ -129,7 +129,7 @@ export async function GET(req) {
 
   /* El 35 % por dejar el medio guardado, si tiene la oferta: va ANTES del
      cobro para que el primero ya salga con descuento. Ver lib/seguimiento/oferta-nequi.js. */
-  await aplicarOfertaNequi(session.user.organizationId)
+  await aplicarOfertaNequi(session.user.organizationId, { planElegido: params.get('plan') })
 
   /* ⚠ Y SE COBRA AQUÍ SI TOCA. Antes este camino solo guardaba: quien estaba en
      prueba, o venía de un rechazo, se «suscribía» y no se le cobraba nunca.

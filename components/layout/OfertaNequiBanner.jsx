@@ -77,7 +77,7 @@ export default function OfertaNequiBanner() {
         </div>
         <div className="flex-1 min-w-[12rem]">
           <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-green-dark)' }}>
-            Tu próximo mes {pct} % más barato
+            {estado.planPagado === false ? 'Tu primer mes' : 'Tu próximo mes'} {pct} % más barato
           </p>
           <p className="text-[12px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
             {vencePronto

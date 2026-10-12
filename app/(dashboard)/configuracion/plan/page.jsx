@@ -594,7 +594,7 @@ export default function PlanPage() {
                 ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
                 : fechaVenc
                 // «Se renueva» solo con cobro automático: pagando a mano, vence.
-                ? `Tu plan ${esTrial || !tieneRecurrente ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`
+                ? (esTrial ? `Tu prueba vence el ${formatFecha(fechaVenc)}` : `Tu plan ${!tieneRecurrente ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`)
                 : 'Sin fecha de vencimiento'}
             </p>
 
@@ -1005,6 +1005,7 @@ export default function PlanPage() {
             precioMensual={estado?.proximoCobro?.plan === info.key
               ? estado.proximoCobro.monto
               : precioCheckout(orgPrecio, info.key, 'mensual', inicioPeriodo).total}
+            ofertaPct={estado?.ofertaNequi ?? null}
             onCerrar={() => setSuscribiendo(null)}
             onPagoUnico={() => { setModoPago('unico'); setSuscribiendo(null) }}
           />
