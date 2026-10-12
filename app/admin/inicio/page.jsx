@@ -24,6 +24,28 @@ import { Tarjeta, FilaTarjeta, BloqueOscuro, TiraCifras, Pastilla, EstadoVacio }
 import { BarrasVerticales, PilaEsqueletos } from '@/components/cf/primitivos2'
 import { SEGMENTOS } from '@/lib/admin/segmentos'
 
+/* Las cargas de cartera con asesor por revisar (bloque 4): se le prometió al
+   cliente en 24 h, así que el número va a la vista, no escondido en un menú. */
+function EnlaceCargas() {
+  const [n, setN] = useState(null)
+  useEffect(() => {
+    fetch('/api/admin/cargas').then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setN(j.cargas.filter((c) => ['recibida', 'leyendo', 'en_revision', 'importando'].includes(c.estado)).length))
+      .catch(() => {})
+  }, [])
+  return (
+    <Link href="/admin/cargas" style={{
+      gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '12px 16px', borderRadius: 12, background: 'var(--cf-card)',
+      border: `1px solid ${n ? 'var(--cf-gold-border)' : 'var(--cf-border)'}`,
+      color: 'var(--cf-ink)', textDecoration: 'none', fontSize: 13, fontWeight: 600,
+    }}>
+      <span>Cargas de cartera <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· {n == null ? 'con asesor' : `${n} por revisar`}</span></span>
+      <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
+    </Link>
+  )
+}
+
 const TITULO = { fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }
 const AYUDA  = { fontSize: 12, color: 'var(--cf-ink-3)' }
 
@@ -206,6 +228,7 @@ export default function AdminInicio() {
         <span>Seguimiento <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· bajas, en riesgo y oferta del 35 %</span></span>
         <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
       </Link>
+      <EnlaceCargas />
 
       {/* ── 1 · CUÁNTO ENTRÓ ─────────────────────────────────────────────── */}
       <Seccion

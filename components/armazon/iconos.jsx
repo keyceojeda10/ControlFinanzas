@@ -77,6 +77,8 @@ export const ICONO_DE_RUTA = {
   '/soporte':       <><path d="M21 11.5a8.4 8.4 0 01-12.6 7.3L3 20.5l1.8-5.2A8.4 8.4 0 1121 11.5z" /></>,
   '/tutoriales':    <><circle cx="12" cy="12" r="8.5" /><path d="M10 8.5l6 3.5-6 3.5z" /></>,
   '/migrador':      <><path d="M4 4.5A1.5 1.5 0 015.5 3H18a1 1 0 011 1v16a1 1 0 01-1 1H5.5A1.5 1.5 0 014 19.5z" /><path d="M4 17.5h15M8 3v18" /></>,
+  // Una persona y una marca: «te la carga alguien».
+  '/cargar-cartera':  <><circle cx="9" cy="8" r="3.4" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><path d="M17 4.5l1.6 1.6L22 2.7" /></>,
   '/carga-masiva':      <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5M9.5 12l5 5M14.5 12l-5 5" /></>,
   // Lucas es un DESTELLO, no un globo de chat: el globo es Soporte (una persona).
   '/asistente':     <><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" /></>,

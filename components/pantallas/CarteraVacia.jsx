@@ -76,6 +76,17 @@ const VIAS = [
     // como «borrar», que es lo contrario de lo que hace este botón.
     icono: <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" /><path d="M14 3v5h5" /><path d="M8.5 12.5h7M8.5 16h7M12 12.5V16" /></>,
   },
+  /* ── QUE SE LA CARGUE UNA PERSONA (12 oct 2026, bloque 4) ──
+     De los que declaran más de 100 clientes, solo el 9 % llega a cargarlos. Para
+     ellos el muro no es la pantalla: es la tarde entera pasando el cuaderno. Sube
+     las fotos o el Excel tal cual y un asesor se lo deja cargado. */
+  {
+    id: 'asesor',
+    titulo: 'Que te la carguemos',
+    nota: 'Manda fotos o el Excel y en 24 horas queda lista',
+    destino: '/cargar-cartera',
+    icono: <><circle cx="9" cy="8" r="3.4" /><path d="M2.5 20a6.5 6.5 0 0113 0" /><path d="M17 4.5l1.6 1.6L22 2.7" /><path d="M16.5 11h4.5M16.5 14.5h4.5" /></>,
+  },
 ]
 
 /* `arrancada`: ya tiene uno o dos clientes, pero sigue lejos de una cartera.

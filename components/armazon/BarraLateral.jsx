@@ -66,6 +66,7 @@ const HERRAMIENTAS = [
   { href: '/socios',               nombre: 'Socios' },
   { href: '/migrador',             nombre: 'Pasar mi cuaderno' },
   { href: '/carga-masiva',         nombre: 'Importar Excel' },
+  { href: '/cargar-cartera',       nombre: 'Que me la carguen' },
   { href: '/clavos',               nombre: 'Perdidos' },
   { href: '/actividad',            nombre: 'Historial' },
   // Venía del grupo «Cuenta», que se fue: ver la nota de abajo. Configuración y

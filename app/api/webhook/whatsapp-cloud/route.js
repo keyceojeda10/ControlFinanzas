@@ -25,6 +25,7 @@ import { esMensajeAutomatico } from '@/lib/bot/filtros'
 import { accionTrasThrottle, MAX_REBOTES_THROTTLE, necesitaRescateUtility } from '@/lib/bot-v2/cadencia'
 import { textoAperturaUtility } from '@/lib/bot-v2/respuestas-fijas'
 import { atenderRespuestaSeguimiento } from '@/lib/seguimiento/respuestas'
+import { adjuntarDesdeWhatsApp } from '@/lib/carga-asesor/whatsapp'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -443,6 +444,15 @@ async function procesarMensaje(msg) {
      Si responde a un mensaje del seguimiento (quien se fue, quien dejó de usar
      la app, la oferta del 35 %), lo atiende lib/seguimiento/respuestas.js y no
      llega al bot de ventas: ya es cliente. Si falla, sigue el camino de siempre. */
+  /* ── LA CARGA CON ASESOR (bloque 4) ──
+     Una foto o un documento del DUEÑO de un negocio con una carga abierta va a
+     esa carga, no al bot. Sin carga abierta sigue el camino de siempre. */
+  if (tipo === 'image' || tipo === 'document') {
+    const adjuntado = await adjuntarDesdeWhatsApp(msg)
+      .catch((e) => { console.error('[WA Cloud] carga:', e.message); return false })
+    if (adjuntado) return
+  }
+
   const atendido = await atenderRespuestaSeguimiento(msg)
     .catch((e) => { console.error('[WA Cloud] seguimiento:', e.message); return false })
   if (atendido) return

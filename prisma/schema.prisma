@@ -253,6 +253,7 @@ model Organization {
   cambiosRuta        CambioRuta[]
   seguimiento        SeguimientoOrg?
   enviosSeguimiento  EnvioSeguimiento[]
+  solicitudesCarga   SolicitudCarga[]
   lineasCredito      LineaCredito[]
   desembolsosLinea   DesembolsoLinea[]
   pagosLinea         PagoLinea[]
@@ -1620,4 +1621,36 @@ model EnvioSeguimiento {
   @@unique([claveCaso, paso])
   @@index([organizationId, createdAt])
   @@index([wamid])
+}
+
+/// CARGA DE CARTERA CON ASESOR (12 oct 2026, bloque 4 del plan de seguimiento).
+/// El cliente sube fotos del cuaderno o de las cartulinas, Excel o PDF; el
+/// sistema los lee a un ÁREA DE ESPERA (`filas`), nada entra a la cartera real;
+/// el superadmin revisa y aprueba, y ahí se importa con lib/importar-cartera.js.
+/// «De los que declaran más de 100 clientes, solo el 9 % carga la cartera.»
+model SolicitudCarga {
+  id             String    @id @default(cuid())
+  organizationId String
+  /// recibida | leyendo | en_revision | aprobada | rechazada
+  estado         String    @default("recibida") @db.VarChar(16)
+  /// web | whatsapp
+  origen         String    @default("web") @db.VarChar(12)
+  /// JSON: [{ ruta, nombre, mime, bytes, origen, at }]
+  archivos       String    @db.Text
+  /// JSON: las filas planas para el importador, con `_archivo`, `_confianza` y `_dudas`.
+  filas          String?   @db.LongText
+  /// JSON: { clientes, prestado, enLaCalle, dudosas, errores, fallos }
+  resumen        String?   @db.Text
+  nota           String?   @db.Text
+  errorLectura   String?   @db.Text
+  revisadaPorId  String?
+  aprobadaAt     DateTime?
+  recordatorioAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([estado, createdAt])
+  @@index([organizationId])
 }

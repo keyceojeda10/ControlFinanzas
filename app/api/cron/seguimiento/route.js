@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { correrSeguimiento } from '@/lib/seguimiento/motor'
+import { vueltaDeCargas } from '@/lib/carga-asesor/solicitud'
 
 const CRON_SECRET = process.env.CRON_SECRET
 
@@ -23,6 +24,9 @@ export async function POST(req) {
 
   try {
     const r = await correrSeguimiento()
+    /* La carga con asesor (bloque 4), a cualquier hora: lee lo que se quedó sin
+       leer y recuerda a Carlos lo que lleva 20 h sin aprobar. */
+    r.cargas = await vueltaDeCargas().catch((e) => ({ error: e?.message }))
     console.log('[CRON seguimiento]', JSON.stringify(r))
     return NextResponse.json({ ok: true, ...r })
   } catch (e) {
