@@ -28,6 +28,7 @@ import { AccionesProvider } from '@/components/acciones/AccionesProvider'
 import PuertaInstalacion from '@/components/layout/PuertaInstalacion'
 import ResumenDelDiaAuto from '@/components/cf/ResumenDelDiaAuto'
 import AvisoCobrarHoy from '@/components/cf/AvisoCobrarHoy'
+import AvisoOfertaNequi from '@/components/cf/AvisoOfertaNequi'
 import { selectCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 
 // Bloqueo definitivo de suscripcion vencida: lee DB en cada request.
@@ -168,6 +169,8 @@ export default async function DashboardLayout({ children }) {
       {/* «Hoy te toca cobrar»: solo en prueba, si hoy hay cobros y no ha
           registrado ninguno (lib/seguimiento, bloque 3). */}
       <AvisoCobrarHoy />
+      {/* El 35 % por Nequi, una vez al día cerca del vencimiento (opción B del dueño). */}
+      <AvisoOfertaNequi />
 
       {/* Búsqueda global (Ctrl+K) */}
       <GlobalSearch />
