@@ -654,6 +654,15 @@ export default function PlanPage() {
                 ? 'Cada mes se cobra solo a tu tarjeta o a tu Nequi, sin que hagas nada. Lo quitas cuando quieras.'
                 : 'El plan se sigue venciendo cada mes. Cada vez que se venza tienes que entrar aquí y pagarlo a mano.'}
             </p>
+            {/* LA OFERTA DEL 35 % (lib/seguimiento/oferta-nequi.js): se aplica al
+                primer cobro automático, una vez. Se dice aquí, junto a la opción
+                que la gana, y no en un aviso aparte. */}
+            {estado?.ofertaNequi > 0 && (
+              <p className="text-[12px] font-semibold rounded-[10px] px-3 py-2"
+                style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)', color: 'var(--cf-green-dark)' }}>
+                Con «Se cobra solo», tu próximo mes sale {estado.ofertaNequi} % más barato. Una sola vez.
+              </p>
+            )}
           </>
         )}
 

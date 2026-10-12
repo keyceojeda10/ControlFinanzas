@@ -9,6 +9,18 @@ import { prisma } from '@/lib/prisma'
 import * as wa from '@/lib/bot/whatsapp-cloud'
 import { cronLimiter, getClientIp } from '@/lib/rate-limit'
 import { whereCobroSinRechazo } from '@/lib/cobro-automatico'
+import { plantillaAprobada } from '@/lib/seguimiento/meta'
+import { fechaLarga } from '@/lib/seguimiento/motor'
+import { PLANES_CONFIG } from '@/lib/planes'
+import { precioMensual } from '@/lib/precio-plan'
+
+/* ── LAS PLANTILLAS DE UTILIDAD (12 oct 2026) ──
+   `plan_por_vencer_v4` y `plan_vencido_v3` dicen la fecha, el plan y lo que
+   vale, sin empujar: son avisos de su cuenta, y desde el 1 oct 2026 utility
+   cuesta del orden de una décima parte que marketing. Se usan en cuanto Meta
+   las aprueba; mientras tanto, las de siempre. Ver lib/seguimiento/plantillas.js. */
+const PREVENC_UTILITY = 'plan_por_vencer_v4'
+const VENCIDO_UTILITY = 'plan_vencido_v3'
 
 /* ⚠ UNA VEZ POR CICLO, NO UNA VEZ EN LA VIDA.
  *
@@ -100,8 +112,10 @@ export async function POST(req) {
           take: 1,
           select: { fechaVencimiento: true, plan: true },
         },
+        // `plan` y los campos de `selectPrecio` ya vienen: `include` trae todos los escalares.
       },
     })
+    const usarPrevencUtility = await plantillaAprobada(PREVENC_UTILITY)
 
     for (const org of orgsPre) {
       const owner = org.users[0]
@@ -114,8 +128,17 @@ export async function POST(req) {
 
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
-        const dias = Math.ceil((new Date(org.suscripciones[0].fechaVencimiento) - ahora) / 86400000)
-        await wa.sendTemplate(tel, TEMPLATE_PREVENC, [nombre, String(dias)], TEMPLATE_LANG)
+        const vence = new Date(org.suscripciones[0].fechaVencimiento)
+        const dias = Math.ceil((vence - ahora) / 86400000)
+        const plan = org.suscripciones[0].plan ?? org.plan
+        if (usarPrevencUtility) {
+          await wa.sendTemplate(tel, PREVENC_UTILITY, [
+            nombre, PLANES_CONFIG[plan]?.nombre ?? plan, fechaLarga(vence),
+            `$${precioMensual(org, plan, vence).monto.toLocaleString('es-CO')}`,
+          ], TEMPLATE_LANG)
+        } else {
+          await wa.sendTemplate(tel, TEMPLATE_PREVENC, [nombre, String(dias)], TEMPLATE_LANG)
+        }
 
         await prisma.organization.update({
           where: { id: org.id },
@@ -123,7 +146,7 @@ export async function POST(req) {
         })
         res.preVenc.enviados++
         // Con la plantilla: es la prueba de que el proceso leyó `WA_TEMPLATE_PREVENC`.
-        console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d · ${TEMPLATE_PREVENC}`)
+        console.log(`[Churn WA] Pre-venc enviado a ${owner.nombre} (${org.nombre}) — ${dias}d · ${usarPrevencUtility ? PREVENC_UTILITY : TEMPLATE_PREVENC}`)
       } catch (e) {
         res.preVenc.errores++
         console.error(`[Churn WA] Pre-venc error ${org.nombre}: ${e.message}`)
@@ -157,8 +180,10 @@ export async function POST(req) {
           take: 1,
         },
         _count: { select: { prestamos: true, clientes: true } },
+        suscripciones: { orderBy: { fechaVencimiento: 'desc' }, take: 1, select: { fechaVencimiento: true } },
       },
     })
+    const usarVencidoUtility = await plantillaAprobada(VENCIDO_UTILITY)
 
     for (const org of orgsVenc) {
       const owner = org.users[0]
@@ -171,7 +196,11 @@ export async function POST(req) {
 
       try {
         const nombre = (owner.nombre || 'amigo').split(' ')[0]
-        await wa.sendTemplate(tel, TEMPLATE_VENCIDO, [nombre], TEMPLATE_LANG)
+        if (usarVencidoUtility) {
+          await wa.sendTemplate(tel, VENCIDO_UTILITY, [nombre, fechaLarga(org.suscripciones[0].fechaVencimiento), String(org._count.clientes)], TEMPLATE_LANG)
+        } else {
+          await wa.sendTemplate(tel, TEMPLATE_VENCIDO, [nombre], TEMPLATE_LANG)
+        }
 
         await prisma.organization.update({
           where: { id: org.id },

@@ -251,6 +251,8 @@ model Organization {
   festivos           Festivo[]
   visitasReagendadas VisitaReagendada[]
   cambiosRuta        CambioRuta[]
+  seguimiento        SeguimientoOrg?
+  enviosSeguimiento  EnvioSeguimiento[]
   lineasCredito      LineaCredito[]
   desembolsosLinea   DesembolsoLinea[]
   pagosLinea         PagoLinea[]
@@ -1568,4 +1570,54 @@ model CuentaGuardada {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// SEGUIMIENTO, ACTIVACIÓN Y RETENCIÓN (12 oct 2026). El estado de cada negocio
+/// en el motor de seguimiento (`lib/seguimiento/`): si pidió no recibir más
+/// mensajes, por qué no renovó, si tiene la oferta del 35 % por Nequi guardado
+/// y cuándo se le escribió por última vez (un mensaje al día como máximo).
+/// Ver docs/superpowers/specs/2026-10-12-seguimiento-activacion-retencion-design.md.
+model SeguimientoOrg {
+  id             String    @id @default(cuid())
+  organizationId String    @unique
+  noMolestar     Boolean   @default(false)
+  noMolestarAt   DateTime?
+  /// La respuesta al «¿nos dice el motivo?»: precio | no_uso | falta_algo | otro_sistema | cerro | otro.
+  motivoBaja     String?   @db.VarChar(32)
+  motivoAt       DateTime?
+  /// La oferta del 35 % por dejar el Nequi guardado: disponible | aplicada | sin_aplicar.
+  ofertaNequi    String?   @db.VarChar(16)
+  ofertaNequiAt  DateTime?
+  ultimoEnvioAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+/// Cada mensaje del motor de seguimiento y lo que la persona respondió. De aquí
+/// salen las métricas (bajas recuperadas, respuestas por motivo). `claveCaso`
+/// separa los episodios: el vencimiento de octubre y el de diciembre son dos
+/// casos, y cada paso se manda UNA vez por caso (`@@unique`).
+model EnvioSeguimiento {
+  id             String    @id @default(cuid())
+  organizationId String
+  caso           String    @db.VarChar(24) // vencido | en_riesgo | campana_nequi | prueba | asesor
+  claveCaso      String    @db.VarChar(96)
+  paso           String    @db.VarChar(32)
+  canal          String    @db.VarChar(12) // whatsapp | push | texto
+  plantilla      String?   @db.VarChar(64)
+  wamid          String?   @db.VarChar(128)
+  ok             Boolean   @default(true)
+  error          String?   @db.Text
+  respuesta      String?   @db.Text
+  respondidoAt   DateTime?
+  escaladoAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([claveCaso, paso])
+  @@index([organizationId, createdAt])
+  @@index([wamid])
 }

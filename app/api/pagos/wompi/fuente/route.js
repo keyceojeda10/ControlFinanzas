@@ -25,6 +25,7 @@ import { prisma }           from '@/lib/prisma'
 import { crearFuenteDePago, wompiConfigurado, wompiPublicKey } from '@/lib/wompi'
 import { cobrarAhoraSiToca, ultimaSuscripcion } from '@/lib/cobro-intento'
 import { selectResumenCobro, resumenCobro, motivoLegible } from '@/lib/cobro-automatico'
+import { aplicarOfertaNequi } from '@/lib/seguimiento/oferta-nequi'
 
 /** «VISA ····4242» / «Nequi ···3001»: lo justo para que reconozca cuál es. */
 function rotuloDe(tipo, publico = {}) {
@@ -123,6 +124,10 @@ export async function POST(req) {
   })
 
   console.log(`[wompi-fuente] guardada ${tipo} (${rotulo}) para org ${session.user.organizationId} — fuente ${fuente.id}`)
+
+  /* El 35 % por dejar el medio guardado, si tiene la oferta: va ANTES del
+     cobro para que el primero ya salga con descuento. Ver lib/seguimiento/oferta-nequi.js. */
+  await aplicarOfertaNequi(session.user.organizationId)
 
   /* Se cobra en el acto si toca; las reglas, en `cobrarAhoraSiToca`. */
   let cobro

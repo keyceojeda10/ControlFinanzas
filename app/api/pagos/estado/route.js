@@ -7,6 +7,7 @@ import { cuposDe, selectCupos } from '@/lib/planes'
 import { selectResumenCobro, resumenCobro, vencimientoEfectivo } from '@/lib/cobro-automatico'
 import { selectPrecio, montoDelCobro, estadoPreferencial } from '@/lib/precio-plan'
 import { ultimoPago } from '@/lib/cobro-intento'
+import { DESCUENTO_NEQUI } from '@/lib/seguimiento/reglas'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -15,7 +16,7 @@ export async function GET() {
   const orgId = session.user.organizationId
   if (!orgId) return NextResponse.json({ error: 'Sin organización' }, { status: 400 })
 
-  const [sub, org, subRecurrente, pagada] = await Promise.all([
+  const [sub, org, subRecurrente, pagada, seguimiento] = await Promise.all([
     // Suscripcion mas reciente, ignorando las pending (pago iniciado pero no completado)
     prisma.suscripcion.findFirst({
       where: {
@@ -38,6 +39,8 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     }),
     ultimoPago(orgId),
+    /* La oferta del 35 % por dejar el medio guardado (lib/seguimiento). */
+    prisma.seguimientoOrg.findUnique({ where: { organizationId: orgId }, select: { ofertaNequi: true } }),
   ])
 
   /* ══ LO QUE PAGA, DICHO COMO LO COBRA EL SISTEMA ══════════════════════════
@@ -125,6 +128,8 @@ export async function GET() {
     preapprovalId:    subPrincipal.preapprovalId,
     canceladaAt:      subPrincipal.canceladaAt,
     tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
+    // El % de descuento que tiene esperando si deja el Nequi guardado, o null.
+    ofertaNequi: seguimiento?.ofertaNequi === 'disponible' ? DESCUENTO_NEQUI * 100 : null,
     cobradoresExtra,
     adicionales,
     limiteUsuarios: cuposDe(org, enTrial ? org.plan : subPrincipal.plan).usuarios,

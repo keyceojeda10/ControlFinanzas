@@ -29,6 +29,7 @@ import { prisma }           from '@/lib/prisma'
 import { crearFuenteDePago, wompiConfigurado } from '@/lib/wompi'
 import { cobrarAhoraSiToca } from '@/lib/cobro-intento'
 import { motivoLegible } from '@/lib/cobro-automatico'
+import { aplicarOfertaNequi } from '@/lib/seguimiento/oferta-nequi'
 
 const DESTINO = '/configuracion/plan'
 
@@ -142,6 +143,10 @@ export async function POST(req) {
       },
     })
     console.log(`[wompi-token] guardado ${tipo} (${rotulo}) para org ${session.user.organizationId} — fuente ${fuente.id}`)
+
+    /* El 35 % por dejar el medio guardado, si tiene la oferta: va ANTES del
+       cobro para que el primero ya salga con descuento. Ver lib/seguimiento/oferta-nequi.js. */
+    await aplicarOfertaNequi(session.user.organizationId)
 
     /* Si el primer cobro falla, el medio YA está guardado: no se deshace nada,
        se le dice y punto. Deshacerlo dejaría al cliente sin suscripción por un

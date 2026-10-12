@@ -24,6 +24,7 @@ import { notificarEstadoLead } from '@/lib/bot/notificar-meta'
 import { esMensajeAutomatico } from '@/lib/bot/filtros'
 import { accionTrasThrottle, MAX_REBOTES_THROTTLE, necesitaRescateUtility } from '@/lib/bot-v2/cadencia'
 import { textoAperturaUtility } from '@/lib/bot-v2/respuestas-fijas'
+import { atenderRespuestaSeguimiento } from '@/lib/seguimiento/respuestas'
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET
@@ -436,7 +437,24 @@ async function verificarTasaFallos(errorEntrega) {
 async function procesarMensaje(msg) {
   const messageId = msg.id || null
   const fromRaw = msg.from || '' // E.164 plano en Cloud API
-  const tipo = (msg.type || 'text').toLowerCase()
+  let tipo = (msg.type || 'text').toLowerCase()
+
+  /* ── EL SEGUIMIENTO PRIMERO (12 oct 2026) ──
+     Si responde a un mensaje del seguimiento (quien se fue, quien dejó de usar
+     la app, la oferta del 35 %), lo atiende lib/seguimiento/respuestas.js y no
+     llega al bot de ventas: ya es cliente. Si falla, sigue el camino de siempre. */
+  const atendido = await atenderRespuestaSeguimiento(msg)
+    .catch((e) => { console.error('[WA Cloud] seguimiento:', e.message); return false })
+  if (atendido) return
+
+  /* ⚠ LA RESPUESTA CON BOTÓN DE UNA PLANTILLA LLEGA COMO `type: 'button'`, y
+     aquí se descartaba en silencio: la persona tocaba «Sí» y nadie se
+     enteraba. La que no es del seguimiento sigue como texto, que es lo que la
+     persona dijo. */
+  if (tipo === 'button') {
+    msg = { ...msg, type: 'text', text: { body: msg.button?.text || msg.button?.payload || '' } }
+    tipo = 'text'
+  }
 
   if (!TIPOS_SOPORTADOS.has(tipo)) return
 

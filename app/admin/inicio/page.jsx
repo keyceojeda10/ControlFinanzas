@@ -196,6 +196,17 @@ export default function AdminInicio() {
       margin: '0 auto',
     }}>
 
+      {/* El seguimiento (reenganche, en riesgo, oferta del 35 %) vive en su
+          propia pantalla: el menú tiene nueve entradas a propósito. */}
+      <Link href="/admin/seguimiento" style={{
+        gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '12px 16px', borderRadius: 12, background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
+        color: 'var(--cf-ink)', textDecoration: 'none', fontSize: 13, fontWeight: 600,
+      }}>
+        <span>Seguimiento <span style={{ fontWeight: 400, color: 'var(--cf-ink-3)' }}>· bajas, en riesgo y oferta del 35 %</span></span>
+        <span aria-hidden style={{ color: 'var(--cf-gold-dark)' }}>→</span>
+      </Link>
+
       {/* ── 1 · CUÁNTO ENTRÓ ─────────────────────────────────────────────── */}
       <Seccion
         titulo="Lo que entró este mes"
