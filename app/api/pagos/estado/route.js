@@ -128,6 +128,10 @@ export async function GET() {
     preapprovalId:    subPrincipal.preapprovalId,
     canceladaAt:      subPrincipal.canceladaAt,
     tieneRecurrenteActiva: !!subRecurrente && !subRecurrente.canceladaAt,
+    /* ¿La suscripción vigente es PAGADA? La pantalla del plan llamaba «Prueba
+       gratuita» a todo el que no tenía cobro automático ni MercadoPago, o sea
+       a todo el que paga a mano (12 oct 2026). */
+    planPagado: Number(subPrincipal.montoCOP) > 0,
     // El % de descuento que tiene esperando si deja el Nequi guardado, o null.
     ofertaNequi: seguimiento?.ofertaNequi === 'disponible' ? DESCUENTO_NEQUI * 100 : null,
     cobradoresExtra,

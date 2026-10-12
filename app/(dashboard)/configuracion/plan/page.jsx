@@ -352,7 +352,13 @@ export default function PlanPage() {
     )
   }
 
-  const esTrial = estado?.estado !== 'activa' || (!tieneRecurrente && !estado?.mercadopagoId)
+  /* ⚠ «PRUEBA» ES QUE NO HA PAGADO, NO QUE PAGUE A MANO. Esta regla decía
+     prueba a todo el que no tenía cobro automático ni MercadoPago: un cliente
+     que pagó su mes por transferencia veía «Prueba gratuita · 2 días» (12 oct
+     2026). `planPagado` lo dice el servidor con el monto de la suscripción. */
+  const esTrial = estado?.planPagado != null
+    ? !estado.planPagado && !tieneRecurrente
+    : estado?.estado !== 'activa' || (!tieneRecurrente && !estado?.mercadopagoId)
 
   return (
     <div className="max-w-lg mx-auto pb-12 space-y-5">
@@ -587,7 +593,8 @@ export default function PlanPage() {
               {subCancelada
                 ? `Cancelada · acceso hasta el ${formatFecha(fechaVenc)}`
                 : fechaVenc
-                ? `Tu plan ${esTrial ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`
+                // «Se renueva» solo con cobro automático: pagando a mano, vence.
+                ? `Tu plan ${esTrial || !tieneRecurrente ? 'vence' : 'se renueva'} el ${formatFecha(fechaVenc)}`
                 : 'Sin fecha de vencimiento'}
             </p>
 

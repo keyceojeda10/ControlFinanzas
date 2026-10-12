@@ -13,6 +13,7 @@ import PaisActivo     from '@/components/layout/PaisActivo'
 import SinRutaBanner         from '@/components/layout/SinRutaBanner'
 import AvisoVerificarCorreo from '@/components/armazon/AvisoVerificarCorreo'
 import PilaAvisos, { Ranura } from '@/components/armazon/PilaAvisos'
+import OfertaNequiBanner from '@/components/layout/OfertaNequiBanner'
 import AvisoSinSenal from '@/components/armazon/AvisoSinSenal'
 import FranjaVerComo from '@/components/armazon/FranjaVerComo'
 import SuscripcionBanner     from '@/components/layout/SuscripcionBanner'
@@ -141,6 +142,7 @@ export default async function DashboardLayout({ children }) {
         <PilaAvisos>
           <Ranura id="sinRuta"><SinRutaBanner /></Ranura>
           <Ranura id="suscripcion"><SuscripcionBanner /></Ranura>
+          <Ranura id="ofertaNequi"><OfertaNequiBanner /></Ranura>
           <Ranura id="limitePlan"><LimitesPlanBanner /></Ranura>
           <Ranura id="verificarCorreo"><AvisoVerificarCorreo /></Ranura>
         </PilaAvisos>
