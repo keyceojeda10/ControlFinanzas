@@ -3,10 +3,12 @@
  *
  * Opción B del dueño (12 oct 2026). La oferta del 35 % por dejar el Nequi
  * guardado salía solo por WhatsApp; un cliente preguntó si aplicaba y cómo
- * hacía. Ahora se abre aquí, en el centro, UNA vez al día, cuando se acerca el
- * vencimiento (lo decide `debeAbrirseVentanaNequi`, lib/oferta-nequi-aviso.js):
- *   · en prueba, a quien usa el sistema (6 clientes o más) en sus 3 últimos días;
- *   · pagando a mano, en los 5 días antes de que venza el plan.
+ * hacía. Ahora se abre aquí, en el centro, y es lo ÚNICO que hay en la app de
+ * la oferta: «no quiero que quede estático ni que se vea como spam». Sale una
+ * vez; con «Ahora no» vuelve a la semana, o antes al entrar en los 3 últimos
+ * días del plan o de la prueba (`debeAbrirseVentanaNequi`, lib/oferta-nequi-
+ * aviso.js). Se cuenta por negocio, en el servidor: vista en el teléfono, no
+ * vuelve a salir en el PC (/api/seguimiento/oferta-vista).
  * El botón abre la hoja de pago ya con el Nequi primero (`?suscribir=1`). Un
  * solo mes con descuento, y así lo dice.
  *
@@ -16,7 +18,7 @@
  * ⚠ Espera a que la página termine de cargar (el #418 de AvisoCobrarHoy).
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -25,19 +27,21 @@ import { pedirCompartido } from '@/lib/pedir-compartido'
 import { PLANES_CONFIG } from '@/lib/planes'
 import { debeAbrirseVentanaNequi, precioConOferta } from '@/lib/oferta-nequi-aviso'
 
-const diaBogota = () => new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10)
-const clave = (dia) => `cf-ventana-nequi-${dia}`
-const leer = (k) => { try { return localStorage.getItem(k) } catch { return null } }
-const guardar = (k) => { try { localStorage.setItem(k, '1') } catch {} }
+/* Se apunta al ABRIRSE (verla ya cuenta), no al cerrarla: si cierra la app
+   sin tocar nada, tampoco tiene que volver a salirle en la siguiente pantalla. */
+const apuntarVista = () => fetch('/api/seguimiento/oferta-vista', { method: 'POST', keepalive: true }).catch(() => {})
 const fechaLarga = (d) => new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })
 
 export default function AvisoOfertaNequi() {
   const { rol } = useAuth()
   const pathname = usePathname()
   const [d, setD] = useState(null)
+  // Una vez por sesión de la app: al cerrarla, el estado en caché aún no trae
+  // la vista y el efecto la volvía a abrir al segundo.
+  const yaSalio = useRef(false)
 
   useEffect(() => {
-    if (rol !== 'owner' || d) return
+    if (rol !== 'owner' || d || yaSalio.current) return
     if (pathname?.startsWith('/configuracion/plan')) return // ahí ya está la oferta, junto al botón
     let vivo = true
     const listo = () => new Promise((ok) => {
@@ -47,8 +51,10 @@ export default function AvisoOfertaNequi() {
     })
     Promise.all([pedirCompartido('/api/pagos/estado', { ventanaMs: 60_000 }), listo()])
       .then(([estado]) => {
-        if (!vivo || !debeAbrirseVentanaNequi(estado, { rol, vistoHoy: Boolean(leer(clave(diaBogota()))) })) return
+        if (!vivo || yaSalio.current || !debeAbrirseVentanaNequi(estado, { rol })) return
         if (document.querySelector('[role="dialog"]')) return // otra ventana abierta: en la siguiente pantalla
+        yaSalio.current = true
+        apuntarVista()
         setD(estado)
       })
       .catch(() => {})
@@ -61,8 +67,8 @@ export default function AvisoOfertaNequi() {
   const enPrueba = d.planPagado === false
   const precio = Number(d.proximoCobro?.monto) || 0
   const nombrePlan = PLANES_CONFIG[d.proximoCobro?.plan]?.nombre ?? null
-  const cerrar = () => { guardar(clave(diaBogota())); setD(null) }
-  const guardarNequi = () => { guardar(clave(diaBogota())); window.location.assign('/configuracion/plan?suscribir=1') }
+  const cerrar = () => setD(null)
+  const guardarNequi = () => window.location.assign('/configuracion/plan?suscribir=1')
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={`${enPrueba ? 'Tu primer mes' : 'Tu próximo mes'} ${pct} % más barato`} onClick={cerrar} style={{

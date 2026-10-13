@@ -161,45 +161,6 @@ export default function SuscripcionBanner() {
       </div>
     )
   }
-  /* ── POR VENCER (3 días o menos) — 12 oct 2026 ──
-     El WhatsApp avisa a los 3 días («le quedan 3 días de su plan») y aquí no se
-     decía nada hasta el último día: el cliente leía una cosa en el teléfono y no
-     la veía en la app. Ahora la app dice lo mismo, con la fecha. Si tiene la
-     oferta del 35 %, va dentro: la pila enseña un solo aviso y este le gana. */
-  const porVencer = !vencida && !critico && estado.diasRestantes <= 3
-  if (porVencer && rol === 'owner') {
-    const oferta = estado.ofertaNequi > 0
-    const fecha = new Date(estado.fechaVencimiento).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })
-    return (
-      <div className="border-b" style={{
-        background: 'color-mix(in srgb, var(--cf-gold-dark) 7%, var(--cf-card))',
-        borderColor: 'color-mix(in srgb, var(--cf-gold-dark) 22%, var(--cf-border))',
-      }}>
-        <div className="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="flex-1 min-w-[12rem]">
-            <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-gold-dark)' }}>
-              {estado.planPagado === false ? 'Tu prueba gratis vence el' : 'Tu plan vence el'} {fecha}
-            </p>
-            <p className="text-[12px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
-              {oferta && estado.planPagado === false
-                ? `Si dejas tu Nequi guardado para el pago automático, tu primer mes te sale ${estado.ofertaNequi} % más barato (solo ese mes).`
-                : oferta
-                ? `Si dejas tu Nequi guardado, se renueva solo y ese mes te sale ${estado.ofertaNequi} % más barato (solo ese mes).`
-                : estado.planPagado === false ? 'Elige tu plan para seguir usándolo.' : 'Renuévalo antes para no perder el acceso.'}
-            </p>
-          </div>
-          <Link
-            href={oferta ? '/configuracion/plan?suscribir=1' : '/configuracion/plan'}
-            className="shrink-0 h-9 px-3.5 rounded-[10px] text-[13px] font-semibold inline-flex items-center"
-            style={oferta ? { background: 'var(--cf-green-dark)', color: '#fff' } : { background: 'var(--cf-gold)', color: 'var(--cf-gold-ink)' }}
-          >
-            {oferta ? 'Guardar mi Nequi' : estado.planPagado === false ? 'Ver planes' : 'Renovar'}
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   if (!vencida && !critico) return null
 
   // ── VENCIDA: banner fijo arriba ──
@@ -223,11 +184,7 @@ export default function SuscripcionBanner() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--cf-red-dark)' }}>Tu plan vencio</p>
-            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
-              {estado.ofertaNequi > 0 && rol === 'owner'
-                ? `Renueva para no perder acceso. Con tu Nequi guardado, ese mes sale ${estado.ofertaNequi} % más barato.`
-                : 'Renueva para no perder acceso'}
-            </p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>Renueva para no perder acceso</p>
           </div>
           <Link
             href="/configuracion/plan"
@@ -276,7 +233,7 @@ export default function SuscripcionBanner() {
             El acceso al sistema se suspendera cuando el tiempo llegue a cero. Renueva ahora para no perder el acceso.
           </p>
           {/* La oferta del 35 % también aquí: este aviso tapa la pila, y es
-              justo el momento en que más sirve (OfertaNequiBanner.jsx). */}
+              justo el momento en que más sirve (AvisoOfertaNequi.jsx). */}
           {estado.ofertaNequi > 0 && rol === 'owner' && (
             <p className="text-[13px] font-semibold mt-3 rounded-[10px] px-3 py-2"
               style={{ background: 'color-mix(in srgb, var(--cf-green-dark) 10%, transparent)', color: 'var(--cf-green-dark)' }}>

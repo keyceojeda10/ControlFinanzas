@@ -132,6 +132,11 @@ export async function GET() {
        gratuita» a todo el que no tenía cobro automático ni MercadoPago, o sea
        a todo el que paga a mano (12 oct 2026). */
     planPagado: Number(subPrincipal.montoCOP) > 0,
+    /* Cuándo vio por última vez la ventana del 35 % (cualquier aparato): la
+       ventana vuelve a la semana o al entrar en los 3 últimos días del plan. */
+    ofertaVistaAt: seguimiento?.ofertaNequi === 'disponible'
+      ? (await prisma.envioSeguimiento.findFirst({ where: { organizationId: orgId, caso: 'oferta_app' }, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }))?.createdAt ?? null
+      : null,
     // El % de descuento que tiene esperando si deja el Nequi guardado, o null.
     ofertaNequi: seguimiento?.ofertaNequi === 'disponible' ? DESCUENTO_NEQUI * 100 : null,
     cobradoresExtra,
