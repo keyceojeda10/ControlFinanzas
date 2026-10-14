@@ -211,6 +211,10 @@ export function BusquedaGlobal({
   onAbrir, onAtajo,
   resultados, vacio,
   accion, pie,
+  /* Buscar diciendo el nombre (14 oct 2026): `voz` es el micrófono dentro del
+     campo y `vozGrande` la pastilla «Decir el nombre del cliente» de arriba,
+     para quien no escribe. Los pone quien monta la lupa. */
+  voz = null, vozGrande = null,
 }) {
   const buscando = String(texto ?? '').trim().length > 0
 
@@ -252,6 +256,7 @@ export function BusquedaGlobal({
               color: 'var(--cf-ink)',
             }}
           />
+          {voz}
         </div>
         {onCerrar && (
           <button type="button" onClick={onCerrar} style={{
@@ -283,6 +288,7 @@ export function BusquedaGlobal({
           </>
         ) : (
           <>
+            {vozGrande && <div style={{ flex: 'none' }}>{vozGrande}</div>}
             {recientes.length > 0 && (
               <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
                 <Rotulo>{recientesTitulo}</Rotulo>

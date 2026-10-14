@@ -39,6 +39,7 @@ import { useAcciones } from '@/components/acciones/AccionesProvider'
 import { buscarGuias } from '@/lib/tutoriales/guias'
 import ModalGuia from '@/components/tutoriales/ModalGuia'
 import { IconoDeRuta } from '@/components/armazon/iconos'
+import BuscarPorVoz from '@/components/cf/BuscarPorVoz'
 
 /* Los cinco saltos de la lamina. No son «todos los destinos» —para eso esta el
    menu—: son los que se repiten a diario. `soloDueno` marca los que un cobrador
@@ -351,6 +352,8 @@ export default function GlobalSearch() {
             onIr: () => ir('/clientes/nuevo'),
           }}
           pie={recientes.length === 0 ? 'Escribe un nombre, una cédula o un teléfono' : null}
+          voz={<BuscarPorVoz variante="icono" onAbrir={(c) => ir(`/clientes/${c.id}`)} />}
+          vozGrande={<BuscarPorVoz variante="boton" onAbrir={(c) => ir(`/clientes/${c.id}`)} />}
         />
       </div>
     </div>
