@@ -1020,8 +1020,11 @@ const MOVIMIENTOS_MANUALES = [
                     : ''}.
                 </p>
                 <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-                  Regístralo en <strong>Capital → Inyectar capital</strong> y la cifra queda al día.
+                  {/* Decía «Capital → Inyectar capital», y ese botón no existe: el
+                      camino real es este, y es el que dice el video. */}
+                  Regístralo en <strong>Capital → Registrar movimiento → Meto plata</strong> y la cifra queda al día.
                 </p>
+
               </div>
             )}
           </Card>

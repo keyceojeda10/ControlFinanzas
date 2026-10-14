@@ -15,6 +15,8 @@ import { DIAS_PRUEBA_BASE } from '@/lib/planes'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 import { useCabecera } from '@/components/armazon/Armazon'
+import { VideoBienvenida } from '@/components/cf/VideoBienvenida'
+import { debeAbrirseSola } from '@/lib/video-bienvenida'
 
 /*
   Onboarding v4
@@ -79,6 +81,19 @@ export default function OnboardingWizard({
   const [capitalDone,   setCapitalDone]   = useState(false)
   const [capitalMonto,  setCapitalMonto]  = useState(0)
   const [showBounce,    setShowBounce]    = useState(false)
+  /* La clase de 2 minutos, ANTES del primer paso y una sola vez por persona
+     (lo sabe el servidor, así vale en cualquier teléfono). El asistente ya es
+     solo del dueño. Si la consulta falla, no sale: nunca bloquea. */
+  const [clase, setClase] = useState(false)
+  useEffect(() => {
+    if (initialStep !== 0) return
+    let vivo = true
+    fetch('/api/video-bienvenida')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (vivo && d && debeAbrirseSola({ rol: 'owner', paso: 0, visto: d.visto })) setClase(true) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [initialStep])
 
   /* ⚠ ESTO ES UNA TAREA, NO UNA PANTALLA DE NAVEGACIÓN — y sin decirlo, la
    * pastilla se sentaba ENCIMA del botón «Continuar» del primer paso a 360x640,
@@ -223,6 +238,8 @@ export default function OnboardingWizard({
       )}
 
       {BackButton}
+
+      {clase && <VideoBienvenida origen="primera_entrada" solo onCerrar={() => setClase(false)} />}
 
       {step === 0 && (
         <WizardWelcome

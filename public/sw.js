@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1131'
+const CACHE_NAME   = 'cf-v1132'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -184,6 +184,12 @@ self.addEventListener('fetch', (e) => {
 
   // Skip offline sync requests (never cache)
   if (url.pathname.startsWith('/api/offline')) return
+
+  /* Los videos (la clase de 2 minutos) van directo a la red. El navegador los
+     pide por trozos (`Range`) y el iPhone NO reproduce si la respuesta no es un
+     206; pasarlos por la caché devolvía el archivo entero o lo guardaba —4,8 MB
+     en cada teléfono—. */
+  if (url.pathname.startsWith('/videos/') || request.headers.has('range')) return
 
   /* Los PDF que se arman en el servidor (el pagaré) no se guardan: casaban con
      el prefijo `/api/prestamos` y con la red caída la app contestaba «Sin

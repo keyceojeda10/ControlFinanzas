@@ -16,6 +16,7 @@
 // los límites antes de que exista la pantalla nueva, hay que adelantarla.
 
 import { useState } from 'react'
+import { EnlaceVideoBienvenida } from '@/components/cf/VideoBienvenida'
 
 const PERFILES = [
   { id: 'solo',   titulo: 'Yo cobro',         nota: 'Manejo mi cartera directamente.' },
@@ -41,6 +42,9 @@ export default function WizardWelcome({ nombre, onSelect, onMinimize }) {
         <p style={{ fontSize: 13.5, color: 'var(--cf-ink-2)', marginTop: 6, lineHeight: 1.45 }}>
           Tres minutos. Todo lo que crees aquí lo puedes editar o borrar después.
         </p>
+        <EnlaceVideoBienvenida origen="bienvenida" style={{ fontSize: 14, marginTop: 10 }}>
+          Ver la clase de 2 minutos
+        </EnlaceVideoBienvenida>
       </div>
 
       <div>

@@ -1802,6 +1802,8 @@ export default function DashboardPage() {
               return <PanelDinero datos={pd} nota={notaDelPanel(pd, dinero)} fmt={dinero} />
             })() : null}
             sinMargen
+            // La clase de 2 minutos bajo «En caja» en negativo: solo al dueño.
+            videoCaja={esOwner}
             onIr={(destino) => { window.location.href = destino }}
             // ── T02-07 · LAS DOS ACCIONES DE 1440 ──
             // En el telefono estas dos viven en el FAB y en la pastilla, y ahi

@@ -5,6 +5,9 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { TUTORIALES, CATEGORIAS } from '@/lib/tutorialesData'
 import { TextoGuia } from '@/components/tutoriales/ModalGuia'
+import { useAuth } from '@/hooks/useAuth'
+import { VideoBienvenida } from '@/components/cf/VideoBienvenida'
+import { VIDEO_BIENVENIDA } from '@/lib/video-bienvenida'
 
 /* ⚠ EL TRADUCTOR DE `*negrita*` VIVE EN `ModalGuia`, y esta lista lo importa
    de alli. Estaba escrito aqui dentro, y ahora la misma guia se lee por DOS
@@ -184,8 +187,39 @@ function CategorySection({ categoria, tutoriales, showCopyButton, onImageClick }
   )
 }
 
+// ─── La clase de 2 minutos ───────────────────────────────────
+/* La misma del primer día, para quien la cerró o quiere repasar el capital. Va
+   arriba de «Primeros pasos» y solo al dueño: habla del capital y del plan,
+   que el cobrador no maneja. */
+function ClaseDeDosMinutos() {
+  const [abierta, setAbierta] = useState(false)
+  return (
+    <>
+      <button type="button" onClick={() => setAbierta(true)} style={{
+        width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: 12, cursor: 'pointer', textAlign: 'left',
+        background: 'var(--cf-card)', border: '1px solid var(--cf-border)', borderRadius: 16, font: 'inherit',
+      }}>
+        <span style={{ position: 'relative', width: 54, height: 96, flex: 'none', borderRadius: 10, overflow: 'hidden', background: '#000' }}>
+          <Image src={VIDEO_BIENVENIDA.poster} alt="" width={54} height={96} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.25)', color: '#fff' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+          </span>
+        </span>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--cf-ink)' }}>La clase de 2 minutos</span>
+          <span style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>
+            Quién cobra, el capital, el plan y cómo traer tu cartera.
+          </span>
+        </span>
+      </button>
+      {abierta && <VideoBienvenida origen="tutoriales" onCerrar={() => setAbierta(false)} />}
+    </>
+  )
+}
+
 // ─── Main component ──────────────────────────────────────────
 export default function TutorialesList({ showCopyButton = false }) {
+  const { esOwner } = useAuth()
   /* ⚠ `?t=<id>` ABRE ESA GUÍA. Sin esto no se podía ENLAZAR a un tutorial: el
      enlace abría la página y la tarjeta seguía plegada, porque `defaultOpen`
      dependía del filtro y no del enlace. Y sin enlace, el buscador solo podía
@@ -270,6 +304,10 @@ export default function TutorialesList({ showCopyButton = false }) {
         <p className="text-sm text-[var(--cf-ink-3)] text-center py-8">
           No se encontraron tutoriales para &quot;{search}&quot;
         </p>
+      )}
+
+      {esOwner && !search.trim() && (!activeCategory || activeCategory === 'inicio') && (
+        <div className="mb-6"><ClaseDeDosMinutos /></div>
       )}
 
       {/* Tutorials grouped by category */}

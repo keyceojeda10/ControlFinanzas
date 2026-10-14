@@ -48,6 +48,8 @@ import { Fragment, useState } from 'react'
 import { Tarjeta } from '@/components/cf/primitivos'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 import SemanaDeCobros from '@/components/cf/SemanaDeCobros'
+import { EnlaceVideoBienvenida } from '@/components/cf/VideoBienvenida'
+import { VIDEO_BIENVENIDA } from '@/lib/video-bienvenida'
 
 /* Los nombres de los siete días de la barra dorada.
    La API manda siete números pelados, sin fecha, pero el ÚLTIMO es hoy: con eso
@@ -357,23 +359,20 @@ function Hero({
    callejón: obliga a acordarse de que existe un chip «En mora» en otra pantalla.
    `destino` es opcional a propósito — la tarjeta sin sitio a donde ir se sigue
    pintando igual, como un `<div>`, y no finge ser pulsable. */
-function TarjetaDato({ rotulo, children, pie, destino, onIr }) {
+function TarjetaDato({ rotulo, children, pie, destino, onIr, accion = null }) {
   const abre = destino && onIr ? () => onIr(destino) : null
   const Caja = abre ? 'button' : 'div'
-  return (
-    <Caja
-      {...(abre ? { type: 'button', onClick: abre } : {})}
-      style={{
-        flex: 1, minWidth: 0,
-        background: 'var(--cf-card)',
-        border: '1px solid var(--cf-border)',
-        borderRadius: 'var(--cf-r-card)',
-        padding: 15,
-        display: 'flex', flexDirection: 'column', gap: 7,
-        textAlign: 'left', font: 'inherit',
-        cursor: abre ? 'pointer' : 'default',
-      }}
-    >
+  const tarjeta = {
+    flex: 1, minWidth: 0,
+    background: 'var(--cf-card)',
+    border: '1px solid var(--cf-border)',
+    borderRadius: 'var(--cf-r-card)',
+    padding: 15,
+    display: 'flex', flexDirection: 'column', gap: 7,
+    textAlign: 'left', font: 'inherit',
+  }
+  const contenido = (
+    <>
       <span style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
         fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
@@ -391,6 +390,34 @@ function TarjetaDato({ rotulo, children, pie, destino, onIr }) {
       </span>
       {children}
       {pie && <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>{pie}</span>}
+    </>
+  )
+  /* Con una acción propia (el video de la caja en negativo) la tarjeta ya no
+     puede ser un botón entero: un botón dentro de otro no es HTML válido y el
+     toque se lo queda el de fuera. La caja pasa a ser un div con el mismo
+     aspecto, y lo que lleva a la caja sigue siendo un botón por dentro. */
+  if (accion) {
+    return (
+      <div style={tarjeta}>
+        <Caja
+          {...(abre ? { type: 'button', onClick: abre } : {})}
+          style={{
+            display: 'flex', flexDirection: 'column', gap: 7, padding: 0, border: 0, background: 'none',
+            textAlign: 'left', font: 'inherit', width: '100%', cursor: abre ? 'pointer' : 'default',
+          }}
+        >
+          {contenido}
+        </Caja>
+        {accion}
+      </div>
+    )
+  }
+  return (
+    <Caja
+      {...(abre ? { type: 'button', onClick: abre } : {})}
+      style={{ ...tarjeta, cursor: abre ? 'pointer' : 'default' }}
+    >
+      {contenido}
     </Caja>
   )
 }
@@ -481,7 +508,7 @@ export default function Panel({
   nombre = '',
   fecha = '',
   hero,
-  caja, cajaNegativa = false,
+  caja, cajaNegativa = false, videoCaja = false,
   mora,
   atencion = [],
   porRuta,
@@ -602,7 +629,12 @@ export default function Panel({
                plata que nunca anotaron como capital (ver la memoria
                `capital_negativo_no_es_bug`). Debajo de un negativo, el pie dice
                qué significa y la tarjeta ya lleva a la caja, donde se ajusta. */
-            <TarjetaDato rotulo="En caja" pie={cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}>
+            <TarjetaDato rotulo="En caja" pie={cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}
+              accion={cajaNegativa && videoCaja ? (
+                <EnlaceVideoBienvenida desde={VIDEO_BIENVENIDA.segundoCapital} origen="panel_caja" style={{ fontSize: 13 }}>
+                  Ver cómo se arregla
+                </EnlaceVideoBienvenida>
+              ) : null}>
               <span className="cf-fig" style={{
                 fontSize: 20, letterSpacing: '-.025em', color: cajaNegativa ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
               }}>{caja}</span>
