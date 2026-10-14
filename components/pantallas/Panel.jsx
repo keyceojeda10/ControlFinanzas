@@ -49,7 +49,7 @@ import { Tarjeta } from '@/components/cf/primitivos'
 import { BLOQUE, BORDE_BLOQUE } from '@/components/cf/bloqueOscuro'
 import SemanaDeCobros from '@/components/cf/SemanaDeCobros'
 import { EnlaceVideoBienvenida } from '@/components/cf/VideoBienvenida'
-import { VIDEO_BIENVENIDA } from '@/lib/video-bienvenida'
+import { leccion } from '@/lib/video-bienvenida'
 
 /* Los nombres de los siete días de la barra dorada.
    La API manda siete números pelados, sin fecha, pero el ÚLTIMO es hoy: con eso
@@ -631,7 +631,7 @@ export default function Panel({
                qué significa y la tarjeta ya lleva a la caja, donde se ajusta. */
             <TarjetaDato rotulo="En caja" pie={cajaNegativa ? 'Hay más prestado que capital anotado' : 'Para prestar ahora'} destino="/caja" onIr={onIr}
               accion={cajaNegativa && videoCaja ? (
-                <EnlaceVideoBienvenida desde={VIDEO_BIENVENIDA.segundoCapital} origen="panel_caja" style={{ fontSize: 13 }}>
+                <EnlaceVideoBienvenida leccion={leccion(2)} origen="panel_caja" style={{ fontSize: 13 }}>
                   Ver cómo se arregla
                 </EnlaceVideoBienvenida>
               ) : null}>

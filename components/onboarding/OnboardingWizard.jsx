@@ -15,8 +15,8 @@ import { DIAS_PRUEBA_BASE } from '@/lib/planes'
 import WizardExito      from './wizard/WizardExito'
 import WizardAyuda      from './wizard/WizardAyuda'
 import { useCabecera } from '@/components/armazon/Armazon'
-import { VideoBienvenida } from '@/components/cf/VideoBienvenida'
-import { debeAbrirseSola } from '@/lib/video-bienvenida'
+import { VideoBienvenida, AvisoLeccion } from '@/components/cf/VideoBienvenida'
+import { debeAbrirseSola, leccionDelPaso } from '@/lib/video-bienvenida'
 
 /*
   Onboarding v4
@@ -188,6 +188,7 @@ export default function OnboardingWizard({
   }, [step, flujo, vioPlan, metodo])
 
   const progressInfo = step <= 2 ? { current: step + 1, total: 4 } : null
+  const leccionActual = leccionDelPaso({ step, vioPlan })
 
   if (showBounce) {
     return (
@@ -222,7 +223,7 @@ export default function OnboardingWizard({
   const BackButton = (step === 1 || step === 2) ? (
     <button
       onClick={volver}
-      className="flex items-center gap-1 text-[12px] mb-4 transition-colors cursor-pointer"
+      className="flex items-center gap-1 text-[12px] transition-colors cursor-pointer"
       style={{ color: 'var(--cf-ink-3)' }}>
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -237,7 +238,17 @@ export default function OnboardingWizard({
         <WizardProgress step={progressInfo.current} totalSteps={progressInfo.total} />
       )}
 
-      {BackButton}
+      {/* «Volver» y, a la derecha, la lección del video que toca a ESTA
+          pantalla: quien se traba en el capital no tiene que acordarse de lo
+          que dijo la clase del principio, ve sus 26 segundos y sigue. */}
+      {(BackButton || leccionActual) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+          {BackButton}
+          <div style={{ marginLeft: 'auto' }}>
+            <AvisoLeccion leccion={leccionActual} origen={`asistente_paso_${step}`} completa={step === 0} />
+          </div>
+        </div>
+      )}
 
       {clase && <VideoBienvenida origen="primera_entrada" solo onCerrar={() => setClase(false)} />}
 

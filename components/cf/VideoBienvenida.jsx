@@ -17,7 +17,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { VIDEO_BIENVENIDA, EVENTOS_VIDEO, hitosNuevos } from '@/lib/video-bienvenida'
+import { VIDEO_BIENVENIDA, EVENTOS_VIDEO, EVENTOS_LECCION, hitosNuevos } from '@/lib/video-bienvenida'
 
 const marcar = (evento, metadata) => {
   fetch('/api/analytics/track', {
@@ -32,7 +32,15 @@ const ESPERA_MAX_MS = 12000
 
 const icono = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
 
-export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
+/* `leccion` (de LECCIONES) pone uno de los cinco pedazos en vez de la clase
+ * entera: mismo reproductor, sus propios eventos, y al terminar se cierra y
+ * deja a la persona en el paso donde estaba. */
+export function VideoBienvenida({ desde = 0, leccion = null, origen, solo = false, onCerrar }) {
+  const EV = leccion ? EVENTOS_LECCION : EVENTOS_VIDEO
+  const extra = leccion ? { leccion: leccion.n } : {}
+  const fuente = leccion ? leccion.src : `${VIDEO_BIENVENIDA.src}${desde ? `#t=${desde}` : ''}`
+  const portada = leccion ? leccion.poster : VIDEO_BIENVENIDA.poster
+  const nombre = leccion ? `Lección ${leccion.n}: ${leccion.titulo}` : 'La clase de 2 minutos'
   const ref = useRef(null)
   const vistos = useRef(new Set())
   const arranco = useRef(false)
@@ -49,13 +57,13 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
     if (cerrado.current) return
     cerrado.current = true
     const v = ref.current
-    marcar(EVENTOS_VIDEO.cerrado, { origen, segundo: Math.round(v?.currentTime ?? 0), termino })
+    marcar(EV.cerrado, { origen, ...extra, segundo: Math.round(v?.currentTime ?? 0), termino })
     v?.pause()
     onCerrar?.()
   }
 
   useEffect(() => {
-    marcar(EVENTOS_VIDEO.abierto, { origen, desde })
+    marcar(EV.abierto, { origen, ...extra, desde })
     const id = requestAnimationFrame(() => setVisible(true))
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -66,7 +74,7 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
     if (v) {
       v.muted = false
       v.play()
-        .then(() => marcar(EVENTOS_VIDEO.sonido, { origen, como: 'solo' }))
+        .then(() => marcar(EV.sonido, { origen, ...extra, como: 'solo' }))
         .catch(() => {
           v.muted = true
           setSilencio(true)
@@ -89,11 +97,11 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
     const v = ref.current
     if (!v) return
     v.muted = false
-    v.currentTime = desde
+    v.currentTime = leccion ? 0 : desde
     setSilencio(false)
     setParado(false)
     v.play().catch(() => {})
-    marcar(EVENTOS_VIDEO.sonido, { origen, como: 'toque' })
+    marcar(EV.sonido, { origen, ...extra, como: 'toque' })
   }
 
   const alternar = () => {
@@ -114,7 +122,7 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
     if (!v) return
     for (const h of hitosNuevos(v.currentTime, v.duration, vistos.current, { termino })) {
       vistos.current.add(h)
-      marcar(EVENTOS_VIDEO.hito(h), { origen })
+      marcar(EV.hito(h), { origen, ...extra })
     }
   }
 
@@ -123,7 +131,7 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
   return createPortal(
     /* El foco va a la capa y no a «Cerrar»: en el teléfono el foco puesto por
        código pinta un aro alrededor del botón, como si ya lo hubieran tocado. */
-    <div role="dialog" aria-modal="true" aria-label="La clase de 2 minutos" tabIndex={-1}
+    <div role="dialog" aria-modal="true" aria-label={nombre} tabIndex={-1}
       ref={(el) => { if (el && !el.dataset.enfocada) { el.dataset.enfocada = '1'; el.focus({ preventScroll: true }) } }} style={{
       outline: 'none',
       position: 'fixed', inset: 0, zIndex: 10004, background: 'rgba(8,9,12,.94)',
@@ -133,8 +141,8 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
       <div style={{ position: 'relative', height: '100%', maxHeight: '100dvh', aspectRatio: '9 / 16', maxWidth: '100%' }}>
         <video
           ref={ref}
-          src={`${VIDEO_BIENVENIDA.src}${desde ? `#t=${desde}` : ''}`}
-          poster={VIDEO_BIENVENIDA.poster}
+          src={fuente}
+          poster={portada}
           playsInline
           preload="auto"
           onClick={alternar}
@@ -214,7 +222,7 @@ export function VideoBienvenida({ desde = 0, origen, solo = false, onCerrar }) {
 
 /** Un enlace que abre la clase. `desde` en segundos (los avisos de caja la abren
  *  en la lección del capital). */
-export function EnlaceVideoBienvenida({ desde = 0, origen, children, style, className }) {
+export function EnlaceVideoBienvenida({ desde = 0, leccion = null, origen, children, style, className }) {
   const [abierto, setAbierto] = useState(false)
   return (
     <>
@@ -225,8 +233,37 @@ export function EnlaceVideoBienvenida({ desde = 0, origen, children, style, clas
         <svg {...icono} width={16} height={16}><circle cx="12" cy="12" r="9" /><path d="M10 8.5v7l6-3.5z" fill="currentColor" /></svg>
         {children}
       </button>
-      {abierto && <VideoBienvenida desde={desde} origen={origen} onCerrar={() => setAbierto(false)} />}
+      {abierto && <VideoBienvenida desde={desde} leccion={leccion} origen={origen} onCerrar={() => setAbierto(false)} />}
     </>
+  )
+}
+
+
+/** El aviso de cada paso del asistente: «¿Cómo era? Lección 2 · 26 s». Discreto
+ *  —una pastilla, no una ventana— y nunca se abre solo: lo toca quien lo
+ *  necesita. Con `completa`, al lado va también la clase entera. */
+export function AvisoLeccion({ leccion, origen, completa = false }) {
+  const [abierta, setAbierta] = useState(null) // 'leccion' | 'completa'
+  if (!leccion) return null
+  const pastilla = {
+    display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px 0 8px',
+    borderRadius: 999, border: '1px solid var(--cf-border)', background: 'var(--cf-card)',
+    cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--cf-green-dark)', whiteSpace: 'nowrap',
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <button type="button" onClick={() => setAbierta('leccion')} style={pastilla}>
+        <svg {...icono} width={18} height={18}><circle cx="12" cy="12" r="9" /><path d="M10 8.5v7l6-3.5z" fill="currentColor" /></svg>
+        ¿Cómo era? Lección {leccion.n} · {leccion.segundos} s
+      </button>
+      {completa && (
+        <button type="button" onClick={() => setAbierta('completa')} style={{
+          border: 0, background: 'none', padding: 0, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)',
+        }}>Clase completa (2 min)</button>
+      )}
+      {abierta === 'leccion' && <VideoBienvenida leccion={leccion} origen={origen} onCerrar={() => setAbierta(null)} />}
+      {abierta === 'completa' && <VideoBienvenida origen={origen} onCerrar={() => setAbierta(null)} />}
+    </div>
   )
 }
 
