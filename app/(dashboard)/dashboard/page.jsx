@@ -1580,6 +1580,25 @@ export default function DashboardPage() {
           onCero={() => { window.location.href = '/prestamos/nuevo' }}
           // La carga con asesor (bloque 4): antes iba a soporte.
           onEscribirnos={() => { window.location.href = '/cargar-cartera' }}
+          /* LA VUELTA AL ASISTENTE. «Explorar la app primero» y «Ya conozco el
+             sistema, saltar» lo apagan, y sin clientes este Inicio no enseña el
+             banner de «Continuar configuración» (sale antes de él). Quien salió
+             por error no tenía por dónde volver (pregunta del dueño, 14 oct).
+             Si solo lo minimizó, se despliega; si lo cerró (paso 50), vuelve
+             al primer paso y conserva lo ya contestado. */
+          onAsistente={async () => {
+            fetch('/api/analytics/track', {
+              method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ evento: 'onb_volver_asistente', pagina: '/dashboard' }),
+            }).catch(() => {})
+            if (onboarding.showWizard) { onboarding.unminimize(); return }
+            await fetch('/api/onboarding/progreso', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'progress', step: 0 }),
+            }).catch(() => {})
+            try { sessionStorage.removeItem('cf-wizard-minimized') } catch {}
+            window.location.reload()
+          }}
           // SOLO LO QUE SE PUEDE COMPROBAR. La lamina dibuja tambien «como
           // prestas» en verde, pero aqui no hay forma de saber si de verdad lo
           // configuro, y marcarle como hecho algo que no hizo es peor que no

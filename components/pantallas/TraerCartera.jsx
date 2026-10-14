@@ -73,6 +73,9 @@ function Paso({ hecho, actual, texto }) {
 export default function TraerCartera({
   nombre,
   onFoto, onWhatsApp, onExcel, onCero, onEscribirnos,
+  // Volver al asistente del principio: solo en el Inicio, para quien salió de
+  // él (por error o para mirar) sin cargar a nadie.
+  onAsistente,
   // Lo que ya está hecho. Se pinta con lo que la app sabe, no con una lista fija:
   // quien llegó aquí ya creó la cuenta, y decirle que le falta es mentir.
   pasos = [],
@@ -220,6 +223,20 @@ export default function TraerCartera({
               Puedes cerrar esto y volver cuando quieras: lo que subas se guarda a medida que avanzas.
             </span>
           </div>
+
+          {onAsistente && (
+            <button type="button" onClick={onAsistente} style={{
+              alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'none', border: 0, padding: '6px 0', cursor: 'pointer', font: 'inherit',
+              fontSize: 14, fontWeight: 600, color: 'var(--cf-ink-2)',
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8" /><path d="M3 3v5h5" />
+              </svg>
+              Volver a la guía de inicio
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 lg:col-start-2">

@@ -42,7 +42,7 @@ import { useState } from 'react'
    límites, y el plan elegido es la señal de compra de quien va a pagar.
    ⚠ Y no regala nada al vencer: el `middleware` corta el API entero cuando la
    suscripción vence, tenga el plan que tenga. */
-export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
+export default function WizardPlan({ onCargar, onPagar, hasta, perfil, actual = null }) {
   const { country, formatMoney } = useCountry()
   // Quien contestó «tengo cobradores» ve la escalera desde el primer plan que
   // se los permite. Ofrecerle Inicial sería ofrecerle un plan donde lo que
@@ -52,7 +52,11 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
   /* Preseleccionado el que le corresponde por lo que ya dijo, para que quien no
      quiera pensar no tenga que hacerlo. `equipo` arranca en el primero de SU
      escalera, que ya es el primero con cobradores. */
-  const [elegido, setElegido] = useState(perfil === 'equipo' ? (tramos[0]?.id ?? 'growth') : 'starter')
+  // Si la cuenta YA tiene uno de estos planes, ése es el marcado: marcar otro
+  // sin haberlo guardado es enseñar un plan que la cuenta no tiene.
+  const [elegido, setElegido] = useState(tramos.some((t) => t.id === actual)
+    ? actual
+    : (perfil === 'equipo' ? (tramos[0]?.id ?? 'growth') : 'starter'))
   const [guardando, setGuardando] = useState(null)
   const [fallo, setFallo] = useState(false)
 

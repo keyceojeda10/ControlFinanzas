@@ -22,11 +22,12 @@ const PERFILES = [
   { id: 'equipo', titulo: 'Tengo cobradores', nota: 'Creo sus cuentas y asigno rutas.' },
 ]
 
-export default function WizardWelcome({ nombre, onSelect, onMinimize }) {
+export default function WizardWelcome({ nombre, onSelect, onMinimize, inicial = null }) {
   const primerNombre = nombre ? String(nombre).trim().split(/\s+/)[0] : null
   // «19 de cada 20 cobran solos»: si la mayoría abrumadora elige una, esa va
   // marcada de entrada y el paso se contesta con un solo toque.
-  const [perfil, setPerfil] = useState('solo')
+  // Quien vuelve a la guía ve lo que ya contestó, no la respuesta de serie.
+  const [perfil, setPerfil] = useState(inicial === 'equipo' ? 'equipo' : 'solo')
 
   return (
     <div className="max-w-lg mx-auto flex flex-col" style={{ gap: 20 }}>

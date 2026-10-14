@@ -17,6 +17,8 @@ import WizardAyuda      from './wizard/WizardAyuda'
 import { useCabecera } from '@/components/armazon/Armazon'
 import { VideoBienvenida, AvisoLeccion } from '@/components/cf/VideoBienvenida'
 import { debeAbrirseSola, leccionDelPaso } from '@/lib/video-bienvenida'
+import { PLANES_CONFIG } from '@/lib/planes'
+import { escaleraPara } from '@/lib/adaptadores/planes'
 
 /*
   Onboarding v4
@@ -123,9 +125,27 @@ export default function OnboardingWizard({
   const handleWelcomeDone = useCallback((tipo, nuevoPlan) => {
     setFlujo(tipo)
     if (nuevoPlan) setCurrentPlan(nuevoPlan)
+    /* ⚠ «TENGO COBRADORES» TIENE QUE DAR UN PLAN CON COBRADORES. La cuenta nace
+     * en Inicial (cero cobradores) y el plan solo cambiaba si se TOCABA una
+     * tarjeta en la pantalla del plan: Crecimiento salía marcada, pero marcada
+     * en pantalla, no guardada. Medido el 14 oct 2026 (60 días): de 54 que
+     * contestaron «tengo cobradores», 45 seguían en Inicial y NINGUNO de esos
+     * 45 tenía un cobrador. Y con «Explorar la app primero» se puede salir
+     * antes de ver los planes. Se guarda aquí, al contestar; solo sube, nunca
+     * baja a quien ya eligió uno con cobradores. */
+    const sinCobradores = (PLANES_CONFIG[currentPlan]?.maxUsuarios ?? 1) <= 1
+    if (tipo === 'equipo' && sinCobradores) {
+      const plan = escaleraPara('equipo')[0]
+      setCurrentPlan(plan)
+      fetch('/api/onboarding/cambiar-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      }).catch(() => {})
+    }
     persistStep(1, tipo)
     setStep(1)
-  }, [])
+  }, [currentPlan])
 
   // Step 1: Capital
   const handleCapitalDone = useCallback(({ monto, skipped }) => {
@@ -277,6 +297,7 @@ export default function OnboardingWizard({
       {step === 0 && (
         <WizardWelcome
           nombre={nombre}
+          inicial={flujo}
           plan={currentPlan}
           onSelect={handleWelcomeDone}
           onMinimize={onMinimize}
@@ -296,6 +317,7 @@ export default function OnboardingWizard({
       {step === 2 && flujo && !vioPlan && (
         <WizardPlan
           perfil={flujo}
+          actual={currentPlan}
           hasta={finDePrueba()}
           onCargar={() => { marcar('onb_plan_seguir', { flujo }); setVioPlan(true) }}
           onPagar={() => {
