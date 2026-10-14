@@ -1,5 +1,6 @@
 // app/api/clientes/route.js
 
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
@@ -198,6 +199,11 @@ export async function GET(request) {
             select: { numeroPeriodo: true, cuotaTotal: true, interes: true, capital: true, pagado: true, interesPagado: true, fechaEsperada: true },
             orderBy: { numeroPeriodo: 'asc' },
           },
+          /* Los pagos que lee el cálculo. No venía NINGUNO: el capital
+             restante repartía como devuelto el interés pagado aparte, y la mora
+             del abierto no veía lo que se pagó contra lo devengado. Misma regla
+             que todas las pantallas. 14 oct 2026. */
+          pagos: PAGOS_DEL_CALCULO,
         },
       },
       lineasCredito: {

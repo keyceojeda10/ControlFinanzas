@@ -1,4 +1,5 @@
 // app/api/offline/sync/route.js — Descarga datos para modo offline
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
@@ -89,7 +90,10 @@ export async function GET() {
             // no repartirlos por la cascada interes-primero. Son pocos, asi que
             // no engordan el sync. Sin esto, el capital offline se separaba del
             // que muestra el dashboard en los prestamos con abonos antiguos.
-            where: { OR: [{ fechaPago: { gte: hace90Dias } }, { tipo: 'capital' }] },
+            /* Y los de SOLO INTERÉS (y el «completo» del abierto): el cálculo
+               también los lee, y uno de hace más de 90 días se repartía como
+               capital devuelto. La misma regla que `PAGOS_DEL_CALCULO`. */
+            where: { OR: [{ fechaPago: { gte: hace90Dias } }, ...PAGOS_DEL_CALCULO.where.OR] },
             orderBy: { fechaPago: 'desc' },
             include: { cobrador: { select: { id: true, nombre: true } } },
           },

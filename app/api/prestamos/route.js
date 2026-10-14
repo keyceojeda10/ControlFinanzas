@@ -1,5 +1,6 @@
 // app/api/prestamos/route.js
 
+import { PAGOS_DEL_CALCULO } from '@/lib/dinero/pagos-del-calculo'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
@@ -336,6 +337,22 @@ export async function GET(request) {
 
   // El número de cada crédito dentro de su cliente (plantillas y comprobante).
   const numeros = await numerosDeClientes(prisma, { organizationId, clienteIds: prestamos.map((p) => p.clienteId) })
+  /* ⚠ «CAPITAL AFUERA» NO SALE DE LOS 10 ÚLTIMOS PAGOS. La relación `pagos` de
+     arriba trae solo los 10 más recientes (para `pagoHoy`), y un pago de SOLO
+     INTERÉS más viejo que esos se quedaba fuera: `calcularCapitalRestante` lo
+     repartía como capital devuelto. Se piden aparte los que lee el cálculo
+     (`PAGOS_DEL_CALCULO`), que son pocos por préstamo. 14 oct 2026. */
+  const pagosCalculoDe = new Map()
+  if (prestamos.length) {
+    const pc = await prisma.pago.findMany({
+      where: { prestamoId: { in: prestamos.map((p) => p.id) }, ...PAGOS_DEL_CALCULO.where },
+      select: { prestamoId: true, tipo: true, montoPagado: true },
+    })
+    for (const x of pc) {
+      if (!pagosCalculoDe.has(x.prestamoId)) pagosCalculoDe.set(x.prestamoId, [])
+      pagosCalculoDe.get(x.prestamoId).push(x)
+    }
+  }
   const resultado = prestamos.map((p) => {
     const diasExcluidos = getDiasExcluidos(p.cliente)
     return {
@@ -385,7 +402,7 @@ export async function GET(request) {
     totalPagado:      p.totalPagado ?? 0,
     saldoPendiente:   calcularSaldoPendiente(p),
     porcentajePagado: calcularPorcentajePagado(p),
-    capitalRestante:  calcularCapitalRestante(p),
+    capitalRestante:  calcularCapitalRestante({ ...p, pagos: pagosCalculoDe.get(p.id) ?? [] }),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     // ── LA TIRA DE CIFRAS DE T03-04 ──
     // «ATRASO» en PLATA, no en dias. La tarjeta ya dice «36d» en la pastilla; lo

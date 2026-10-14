@@ -1,4 +1,5 @@
 // app/api/capital/resumen/route.js
+import { esEspejoDeRegistro } from '@/lib/dinero/sugerido'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -111,6 +112,7 @@ export async function GET() {
         monto: true,
         saldoAnterior: true,
         saldoNuevo: true,
+        descripcion: true,
       },
     }),
     prisma.movimientoCapital.findMany({
@@ -159,6 +161,8 @@ export async function GET() {
     if (mov.tipo === 'inyeccion') acc.inyecciones += mov.monto
     if (mov.tipo === 'retiro') acc.retiros += mov.monto
     if (mov.tipo === 'ajuste') {
+      // El espejo de un préstamo o pago que ya no se cuenta: ver lib/dinero/sugerido.js.
+      if (esEspejoDeRegistro(mov.descripcion)) return acc
       /* ⚠ El que dejó el saldo donde estaba no movió capital, y con los dos
          saldos iguales `>=` lo leería como ingreso. Es el interés perdonado,
          que se apunta pero no baja la caja. */
