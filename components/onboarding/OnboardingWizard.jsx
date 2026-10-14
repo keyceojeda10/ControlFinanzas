@@ -159,6 +159,28 @@ export default function OnboardingWizard({
     onComplete?.()
   }, [flujo, onComplete])
 
+  /* ── «EXPLORAR LA APP PRIMERO» ──
+   * El asistente es una tarea y no lleva menú, y desde el paso 2 solo dejaba ir
+   * adelante (cargar clientes) o atrás. Al recargar volvía a caer en él. Medido
+   * el 14 oct 2026 sobre los negocios de los últimos 30 días: 53 seguían dentro
+   * del asistente, 35 sin un solo cliente, y de los 53 volvió otro día UNO. El
+   * dueño: «queda como bugueado, entre ir hacia adelante o atrás».
+   *
+   * Esta salida no deja suelto a nadie: el paso 50 apaga el asistente pero el
+   * Inicio, sin clientes, ES «Trae tu cartera» (con el menú), hasta el primero.
+   * Se apunta desde qué pantalla se usa, para ver dónde se cansa la gente. */
+  const [saliendo, setSaliendo] = useState(false)
+  const explorar = useCallback(async () => {
+    setSaliendo(true)
+    marcar('onb_explorar', { step, pantalla: step === 2 ? (!vioPlan ? 'plan' : metodo || 'traer_cartera') : 'capital', flujo })
+    await fetch('/api/onboarding/progreso', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'progress', step: 50, flujo }),
+    }).catch(() => {})
+    onComplete?.()
+  }, [step, vioPlan, metodo, flujo, onComplete])
+
   // Back
   const handleBack = useCallback(() => {
     if (step === 1) {
@@ -450,6 +472,17 @@ export default function OnboardingWizard({
           />
         )
       })()}
+
+      {(step === 1 || step === 2) && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+          <button type="button" onClick={explorar} disabled={saliendo} style={{
+            background: 'none', border: 0, padding: '8px 4px', cursor: saliendo ? 'progress' : 'pointer', font: 'inherit',
+            fontSize: 13, color: 'var(--cf-ink-3)', textDecoration: 'underline', textUnderlineOffset: 3,
+          }}>
+            {saliendo ? 'Abriendo la app…' : 'Explorar la app primero'}
+          </button>
+        </div>
+      )}
 
       {step < 3 && <WizardAyuda />}
     </div>

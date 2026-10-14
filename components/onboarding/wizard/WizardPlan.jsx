@@ -284,13 +284,18 @@ export default function WizardPlan({ onCargar, onPagar, hasta, perfil }) {
         *
         * `sticky` sí se ancla al recorrido, así que se pega abajo mientras haya
         * pantalla por debajo y descansa en su sitio al final. */}
+      {/* ⚠ PEGADA AL PISO. Dejaba 72 px + `--cf-nav-inset` libres para la
+          pastilla, pero el asistente es una tarea y NO la lleva: la barra
+          quedaba flotando a media pantalla con los planes asomando por debajo
+          (captura del dueño en iPhone, 14 oct 2026). `--cf-hueco-pie` lo pone el
+          armazón: 112 px con pastilla, 0 sin ella. */}
       <div style={{
         position: 'sticky',
-        bottom: 'calc(var(--cf-nav-inset) + 72px + env(safe-area-inset-bottom, 0px))',
+        bottom: 'var(--cf-hueco-pie, 0px)',
         marginLeft: 'calc(-1 * var(--cf-pad-screen))',
         marginRight: 'calc(-1 * var(--cf-pad-screen))',
         display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center',
-        padding: '26px var(--cf-pad-screen) 4px',
+        padding: '26px var(--cf-pad-screen) max(12px, env(safe-area-inset-bottom, 0px))',
         /* Opaco DEBAJO del botón y desvanecido arriba. Sin la parte opaca, el
            botón se leía encima de la tarjeta amarilla y la cortaba por la
            mitad; sin el desvanecido, la barra parece el final de la pantalla y
