@@ -265,7 +265,11 @@ export default function CapitalTab() {
   const noConfigurado = resumen && !resumen.configurado
   const sugerido = resumen?.sugerido
   const saldoCapital = Math.round(Number(resumen?.saldo || 0))
-  const mostrarSugerido = Boolean(sugerido) && saldoCapital === 0
+  /* Solo con una cifra que se pueda aplicar. Con la caja en $0 enseñaba
+     «Capital sugerido −$2.100.000 · Calidad alta» con el botón apagado: un
+     número negativo con sello de calidad que no se puede usar (soporte de
+     Oscar Oyola, 14 oct 2026, justo después de cuadrarle la caja). */
+  const mostrarSugerido = Boolean(sugerido) && saldoCapital === 0 && Number(sugerido?.saldo) > 0
   const calidadSugerida = sugerido?.calidad || 'baja'
   const colorCalidad = calidadSugerida === 'alta' ? 'var(--cf-green-dark)' : calidadSugerida === 'media' ? 'var(--cf-gold)' : 'var(--cf-red-dark)'
 
