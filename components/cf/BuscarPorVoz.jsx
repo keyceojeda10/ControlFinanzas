@@ -211,6 +211,7 @@ export default function BuscarPorVoz({ variante = 'icono', onAbrir }) {
       try {
         const fd = new FormData()
         fd.append('audio', blob, `voz.${mime.includes('mp4') ? 'm4a' : 'webm'}`)
+        fd.append('para', 'buscar_cliente')
         const r = await fetch('/api/voz/transcribir', { method: 'POST', body: fd })
         const d = r.ok ? await r.json() : null
         const texto = String(d?.texto ?? '').trim()
