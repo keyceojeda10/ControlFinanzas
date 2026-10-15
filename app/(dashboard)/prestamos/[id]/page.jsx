@@ -45,7 +45,7 @@ import {
   PagoMiniCard,
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
-import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy } from '@/lib/calculos'
+import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy, pagosDelDia } from '@/lib/calculos'
 import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
@@ -67,7 +67,7 @@ import DeslizarParaConfirmar from '@/components/cf/DeslizarParaConfirmar'
 import { useTactil } from '@/lib/tactil'
 import { adaptarPerdidos, adaptarCerrar, resumenCerrar , adaptarRecargo, adaptarDescuento, montoDesdePorcentaje } from '@/lib/adaptadores/gestion'
 import { ChecklistCamposRecibo, getDefaultCampos } from '@/components/recibos/CamposReciboEditor'
-import { comoFueElPago } from '@/lib/dinero/cuota-de-referencia'
+import { comoFueElPago, faltaDeLaCuotaDeHoy } from '@/lib/dinero/cuota-de-referencia'
 import FichaPrestamo from '@/components/pantallas/FichaPrestamo'
 import { formatearTasa, moraEsGrave } from '@/lib/adaptadores/prestamos'
 import { useCabecera } from '@/components/armazon/Armazon'
@@ -727,9 +727,15 @@ function PrestamoDetalleContenido({ params }) {
   const hayMontoAlDia = estaActivo && !completado && montoParaPonerseAlDia > 0
   // Lo que falta de una cuota a medio pagar (ver `calcularCuotaQueToca`): 0 si no hay ninguna a medias.
   // Si la que la recorta es el SALDO (el final del préstamo), no hay cuota a medias: es lo último que queda.
-  const restaDeLaCuota = cuotaQueToca > 0 && cuotaDiaria > 0 && Math.round(cuotaQueToca) < Math.round(cuotaDiaria)
-    && Math.round(saldoPendiente ?? 0) > Math.round(cuotaQueToca)
-    ? Math.round(cuotaQueToca) : 0
+  // ⚠ Primero lo que dicen los pagos de HOY contra la cuota que tocaba (la
+  // misma cuenta que la lista: «Con extra» no puede salir aquí como «parcial»).
+  // La deducción por `cuotaQueToca` queda solo para pagos sin `cuotaEsperada`.
+  const faltaHoy = faltaDeLaCuotaDeHoy(pagosDelDia({ pagos }))
+  const restaDeLaCuota = faltaHoy !== null
+    ? Math.min(faltaHoy, Math.round(saldoPendiente ?? 0))
+    : cuotaQueToca > 0 && cuotaDiaria > 0 && Math.round(cuotaQueToca) < Math.round(cuotaDiaria)
+      && Math.round(saldoPendiente ?? 0) > Math.round(cuotaQueToca)
+      ? Math.round(cuotaQueToca) : 0
   const mostrarAtajosCobro = estaActivo && !completado && saldoPendiente > 0
 
   // ── Lo que pide la ficha de T41-01 ──
