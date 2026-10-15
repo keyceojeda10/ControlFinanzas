@@ -21,6 +21,7 @@ import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
 import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
+import FechaALaVista from '@/components/cf/FechaALaVista'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -299,6 +300,7 @@ export default function RenovarPrestamo({
            cambiar el modo, no se mueve un peso y queda el botón. */
         (tactil && !soloModo && enMano > 0) ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+            <FechaALaVista rotulo="Fecha del renove" valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />
             <DeslizarParaConfirmar
               texto="Desliza para entregar"
               cifra={formatMoney(enMano)}
@@ -310,14 +312,23 @@ export default function RenovarPrestamo({
               Cancelar
             </button>
           </div>
-        ) : <>
-          <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
-          <Button onClick={handleSubmit} loading={loading}>
-            {soloModo
-              ? 'Cambiar el modo de cobro'
-              : (montoNum > 0 && enMano > 0 ? `Renovar y entregar ${formatMoney(enMano)}` : 'Renovar')}
-          </Button>
-        </>
+        ) : (
+          // La fecha en su renglón y los botones debajo: en la ventana de PC, en
+          // una sola fila, se partían en dos líneas cada uno.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+            {!soloModo && (
+              <FechaALaVista rotulo="Fecha del renove" valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
+              <Button onClick={handleSubmit} loading={loading}>
+                {soloModo
+                  ? 'Cambiar el modo de cobro'
+                  : (montoNum > 0 && enMano > 0 ? `Renovar y entregar ${formatMoney(enMano)}` : 'Renovar')}
+              </Button>
+            </div>
+          </div>
+        )
       }
     >
       <div className="space-y-4">
@@ -539,12 +550,8 @@ export default function RenovarPrestamo({
                 diasPlazo={diasPlazo}
               />
             )}
-            <Input
-              label="Fecha de inicio"
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-            />
+            {/* La fecha ya no va aquí: está a la vista encima del botón de entregar
+                (`FechaALaVista`). Escondida aquí, no la encontraban. */}
             <div className="rounded-xl p-3" style={{ border: '1px solid var(--cf-border)' }}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
