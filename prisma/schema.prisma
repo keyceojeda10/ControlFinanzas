@@ -638,6 +638,10 @@ model Pago {
   /// La cuota que tocaba cuando se cobró (lib/dinero/cuota-de-referencia.js), para
   /// decir «parcial» o «con extra» sin tocar `tipo`, que lo leen los cálculos.
   cuotaEsperada  Float?
+  /// Solo en un abono a capital de un préstamo con tabla: cómo estaban las
+  /// cuotas que el abono rehizo y la deuda total ANTES del abono. Anularlo
+  /// restaura esto al peso (15 oct 2026: anular devolvía $1.199 de $101.390).
+  tablaAntes     Json?
   latitud        Float?
   longitud       Float?
   fotoUrl        String?

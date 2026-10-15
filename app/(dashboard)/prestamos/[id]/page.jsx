@@ -3365,10 +3365,17 @@ function PrestamoDetalleContenido({ params }) {
           setAnulando(pagoId)
           try {
             const res = await fetch(`/api/pagos/${pagoId}`, { method: 'DELETE' })
-            if (!res.ok) throw new Error()
+            // El servidor dice POR QUÉ no se anula (un abono a capital más
+            // reciente, uno viejo sin foto…): taparlo con un «no se pudo» deja
+            // a la persona sin saber qué hacer.
+            if (!res.ok) {
+              const d = await res.json().catch(() => ({}))
+              setError(d.error || 'No se pudo anular el pago.')
+              return
+            }
             await fetchPrestamo()
           } catch {
-            setError('No se pudo anular el pago.')
+            setError('No se pudo anular el pago. Revisa la conexión.')
           } finally {
             setAnulando(null)
           }

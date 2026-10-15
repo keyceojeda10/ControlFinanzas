@@ -592,6 +592,26 @@ export async function POST(request, { params }) {
       const { pagadas: filasPagadas, vencidas: filasVencidas, futuras: filasFuturas } =
         partirFilasParaAbono(filas, Date.now())
 
+      /* ⚠ LA FOTO PARA PODER DESHACERLO. Anular este abono tiene que dejar la
+         tabla y la deuda como estaban, y eso no se puede recalcular hacia
+         atrás: se rehízo desde el saldo con otro número de cuotas y otras
+         fechas. Anular usaba la fórmula de los préstamos SIN tabla y devolvía
+         $1.199 de los $101.390 que el abono había bajado (Crediya, Jhon
+         Arteaga, 15 oct 2026): el cliente quedó debiendo $100.191 menos.
+         Sin cuotas futuras el abono no rehace nada: la foto va con `filas: []`. */
+      await tx.pago.update({
+        where: { id: saldoAntesDelPagoId },
+        data: {
+          tablaAntes: {
+            totalAPagar: prestamoActualizado.totalAPagar,
+            filas: filasFuturas.map((f) => ({
+              numeroPeriodo: f.numeroPeriodo, capital: f.capital, interes: f.interes,
+              cuotaTotal: f.cuotaTotal, saldoRestante: f.saldoRestante, fechaEsperada: f.fechaEsperada,
+            })),
+          },
+        },
+      })
+
       if (filasFuturas.length > 0) {
         // El abono a capital baja el capital DIRECTO por el monto abonado.
         // `capitalVivoSegunTabla` da el capital vivo ANTES de este abono (los

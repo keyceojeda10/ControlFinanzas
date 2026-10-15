@@ -2,13 +2,14 @@
 import { getServerSession } from 'next-auth'
 import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
-import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres } from '@/lib/calculos'
+import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres, tieneTablaAmortizacion } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
 import { getUtcOffset } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { sincronizarTabla } from '@/lib/dinero/tabla-sync'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
+import { motivoParaNoDeshacerAbono } from '@/lib/dinero/deshacer-abono'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -102,7 +103,7 @@ export async function DELETE(request, { params }) {
     include: {
       prestamo: {
         include: {
-          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true } },
+          pagos: { select: { id: true, montoPagado: true, fechaPago: true, tipo: true, createdAt: true } },
           cliente: { select: { rutaId: true } },
           // Para deshacer lo que un pago de interés apuntó en la tabla.
           cuotasAmortizacion: { select: { numeroPeriodo: true, fechaEsperada: true, interesPagado: true } },
@@ -128,6 +129,14 @@ export async function DELETE(request, { params }) {
     }
   }
 
+  /* UN ABONO A CAPITAL EN UN PRÉSTAMO CON TABLA SE DESHACE CON SU FOTO, o no se
+     deshace. Ver `lib/dinero/deshacer-abono.js`. */
+  const abonoConTabla = pago.tipo === 'capital' && tieneTablaAmortizacion(pago.prestamo)
+  if (abonoConTabla) {
+    const motivo = motivoParaNoDeshacerAbono(pago, pago.prestamo)
+    if (motivo) return Response.json({ error: motivo }, { status: 409 })
+  }
+
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { diasSinCobro: true },
@@ -148,7 +157,20 @@ export async function DELETE(request, { params }) {
     // el totalAPagar regrese al valor exacto antes del abono.
     // POST usa: ahora = new Date(Date.now() - 5h); inicio = new Date(fechaInicio).
     // Aqui usamos pago.fechaPago con la misma resta de 5h — asi `diasTrans` coincide.
-    if (pago.tipo === 'capital') {
+    if (abonoConTabla) {
+      // Cuotas y deuda, como estaban antes del abono. `sincronizarTabla` de
+      // abajo vuelve a repartir lo pagado sobre ellas.
+      for (const f of pago.tablaAntes.filas) {
+        await tx.cuotaAmortizacion.update({
+          where: { prestamoId_numeroPeriodo: { prestamoId: prestamo.id, numeroPeriodo: f.numeroPeriodo } },
+          data: {
+            capital: f.capital, interes: f.interes, cuotaTotal: f.cuotaTotal,
+            saldoRestante: f.saldoRestante, fechaEsperada: new Date(f.fechaEsperada),
+          },
+        })
+      }
+      await tx.prestamo.update({ where: { id: prestamo.id }, data: { totalAPagar: pago.tablaAntes.totalAPagar } })
+    } else if (pago.tipo === 'capital') {
       const fechaPagoColombia = new Date(new Date(pago.fechaPago).getTime() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
       const inicio = new Date(prestamo.fechaInicio)
       const diasTrans = Math.max(0, Math.floor((fechaPagoColombia - inicio) / (1000 * 60 * 60 * 24)))
