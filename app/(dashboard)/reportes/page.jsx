@@ -591,9 +591,11 @@ export default function ReportesPage() {
               ))}
             </div>
             {cobsData.map((c, i) => {
-              const totalGastos = c.totalGastos || 0
-              const totalDesembolsado = c.totalDesembolsado || 0
-              const saldoRealCaja = c.saldoRealCaja ?? ((c.totalRecogido || 0) - totalGastos - totalDesembolsado)
+              /* «Recogió» es lo COBRADO (de los pagos) y «Le entregó» lo que
+                 entregó en sus cierres. Antes la primera era lo entregado y la
+                 segunda un saldo que restaba dos veces (DETALLES-CAJA N1). */
+              const cobrado = c.cobrado ?? c.totalRecogido ?? 0
+              const entrego = c.totalRecogido || 0
               const eficColor = c.eficiencia >= 95 ? 'var(--cf-green-dark)' : c.eficiencia >= 80 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
               // SIN RUTA se dice EN ROJO, como en la lamina: un cobrador sin
               // ruta no puede cobrar, y eso no es un detalle del renglon.
@@ -617,14 +619,12 @@ export default function ReportesPage() {
                   {/* EN ROJO EL CERO. «Recogio $0» sobre «esperado $16,5M» es la
                       unica cifra de esta tabla que hay que ver desde lejos. */}
                   <span className="cf-fig text-[14px] text-right" style={{
-                    color: (c.totalRecogido || 0) === 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
+                    color: cobrado === 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
                   }}>
-                    {formatMoney(c.totalRecogido || 0)}
+                    {formatMoney(cobrado)}
                   </span>
-                  <span className="cf-fig text-[14px] text-right" style={{
-                    color: saldoRealCaja < 0 ? 'var(--cf-red-dark)' : 'var(--cf-ink)',
-                  }}>
-                    {saldoRealCaja < 0 ? '−' : ''}{formatMoney(Math.abs(saldoRealCaja))}
+                  <span className="cf-fig text-[14px] text-right" style={{ color: 'var(--cf-ink)' }}>
+                    {formatMoney(entrego)}
                   </span>
                   <span className="cf-fig text-[12px] font-bold text-right" style={{ color: eficColor }}>
                     {c.eficiencia}%
@@ -639,7 +639,6 @@ export default function ReportesPage() {
             {cobsData.map((c) => {
               const totalGastos = c.totalGastos || 0
               const totalDesembolsado = c.totalDesembolsado || 0
-              const saldoRealCaja = c.saldoRealCaja ?? ((c.totalRecogido || 0) - totalGastos - totalDesembolsado)
               const eficColor = c.eficiencia >= 95 ? 'var(--cf-green-dark)' : c.eficiencia >= 80 ? 'var(--cf-gold-dark)' : 'var(--cf-red-dark)'
               return (
                 <div
@@ -670,10 +669,10 @@ export default function ReportesPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-[10px]" style={{ color: 'var(--cf-ink-3)' }}>
                     <span>Esperado: <span className="font-mono-display">{formatMoney(c.totalEsperado)}</span></span>
-                    <span>Recogido: <span className="font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.totalRecogido)}</span></span>
+                    <span>Recogido: <span className="font-mono-display" style={{ color: 'var(--cf-green-dark)' }}>{formatMoney(c.cobrado ?? c.totalRecogido)}</span></span>
                     <span>Gastos: <span className="font-mono-display" style={{ color: 'var(--cf-red-dark)' }}>{formatMoney(totalGastos)}</span></span>
                     <span>Desembolsado: <span className="font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(totalDesembolsado)}</span></span>
-                    <span>Saldo real: <span className="font-mono-display" style={{ color: saldoRealCaja >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>{formatMoney(saldoRealCaja)}</span></span>
+                    <span>Le entregó: <span className="font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(c.totalRecogido || 0)}</span></span>
                   </div>
                 </div>
               )

@@ -55,6 +55,22 @@ export async function GET(req) {
     },
   })
 
+  /* ⚠ «RECOGIÓ» ES LO COBRADO, Y SALE DE LOS PAGOS (DETALLES-CAJA N1).
+     Se sumaba `totalRecogido` de los cierres, que es lo que ENTREGÓ —billetes,
+     ya neto de lo prestado y los gastos—, y «Le entregó» sumaba un saldo que les
+     volvía a restar los dos. Ahora cada columna es lo que dice. */
+  const cobradoPorCobrador = await prisma.pago.groupBy({
+    by: ['cobradorId'],
+    where: {
+      organizationId: orgId,
+      fechaPago: { gte: fechaDesde, lte: fechaHasta },
+      tipo: { notIn: ['recargo', 'descuento'] },
+      prestamo: { estado: { not: 'cancelado' } },
+    },
+    _sum: { montoPagado: true },
+  })
+  const cobradoDe = new Map(cobradoPorCobrador.map((g) => [g.cobradorId, Math.round(g._sum?.montoPagado || 0)]))
+
   const resultado = cobradores.map((c) => {
     const ruta = c.rutas?.[0]
     const totalEsperado  = c.cierresCaja.reduce((a, ci) => a + ci.totalEsperado, 0)
@@ -64,7 +80,8 @@ export async function GET(req) {
     const saldoOperativo = c.cierresCaja.reduce((a, ci) => a + (ci.saldoOperativo ?? (ci.totalRecogido - (ci.totalGastos || 0))), 0)
     const saldoRealCaja = c.cierresCaja.reduce((a, ci) => a + (ci.saldoRealCaja ?? ((ci.totalRecogido - (ci.totalGastos || 0)) - (ci.totalDesembolsado || 0))), 0)
     const diasTrabajados = c.cierresCaja.length
-    const eficiencia     = totalEsperado > 0 ? Math.round((totalRecogido / totalEsperado) * 100) : 0
+    const cobrado        = cobradoDe.get(c.id) || 0
+    const eficiencia     = totalEsperado > 0 ? Math.round((cobrado / totalEsperado) * 100) : 0
     const clientesCount  = ruta?.clientes?.length ?? 0
 
     return {
@@ -74,11 +91,12 @@ export async function GET(req) {
       clientes:     clientesCount,
       totalEsperado,
       totalRecogido,
+      cobrado,
       totalGastos,
       totalDesembolsado,
       saldoOperativo,
       saldoRealCaja,
-      diferencia:   totalRecogido - totalEsperado,
+      diferencia:   cobrado - totalEsperado,
       diasTrabajados,
       eficiencia,
     }

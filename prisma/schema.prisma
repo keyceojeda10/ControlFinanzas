@@ -713,6 +713,10 @@ model CierreCaja {
   editadoEn          DateTime? // se setea al editar/ajustar un cierre ya creado
   editadoPorId       String? // quien hizo la ultima edicion (owner o cobrador)
   // Cuadre del dia: el admin confirma el efectivo fisico que recibio de este cobrador.
+  // Lo que el SISTEMA decía que tenía en la mano al cerrar (lib/dinero/en-la-mano.js),
+  // la cifra del botón «Usar». El cuadre la coteja contra lo contado. Null en los
+  // cierres de antes del 17 oct 2026 (DETALLES-CAJA N1/N3).
+  enLaManoSistema    Float?
   efectivoRecibido   Float? // lo que el admin conto/recibio en mano
   diferenciaRecibido Float? // efectivoRecibido - totalRecogido(sistema): faltante/sobrante
   confirmadoEn       DateTime? // cuando el admin confirmo la recepcion

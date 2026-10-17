@@ -26,6 +26,8 @@ import FiltroPeriodo          from '@/components/caja/FiltroPeriodo'
 import DesgloseMetodoPago     from '@/components/caja/DesgloseMetodoPago'
 import DesglosePorCuenta      from '@/components/caja/DesglosePorCuenta'
 import CuadreDia              from '@/components/caja/CuadreDia'
+import { enLaManoDelDia }     from '@/lib/dinero/en-la-mano'
+import { entraAlFajo }        from '@/lib/dinero/cuentas'
 import ReporteDia             from '@/components/reportes/ReporteDia'
 import { nivelReportes }      from '@/lib/planes'
 import { CajaDia, PestanasCaja } from '@/components/pantallas/Caja'
@@ -434,8 +436,12 @@ const MOVIMIENTOS_MANUALES = [
     setGuardando(true)
     setErrorCaja('')
     try {
+      /* ⚠ VACÍO = LA CIFRA QUE SE VE, no lo cobrado bruto (DETALLES-CAJA #4).
+         Con el campo vacío se guardaba `recogida` —todo lo cobrado, Nequi
+         incluido— mientras el botón y el deslizador enseñaban lo que tiene en la
+         mano. Ahora: el cobrador, `enLaMano`; el dueño, lo suyo en billetes. */
       const totalRecogidoFinal = totalRecogido === ''
-        ? Number(cajaData?.stats?.dia?.recogida || 0)
+        ? (esOwner ? Math.round(efectivoOwnerDia) : recaudadoRegistrado)
         : Number(totalRecogido)
 
       if (!Number.isFinite(totalRecogidoFinal) || totalRecogidoFinal < 0) {
@@ -716,7 +722,9 @@ const MOVIMIENTOS_MANUALES = [
      El administrador ya lo contaba; esta pantalla no. Si al cobrador le meten
      $109.000 a media mañana, tiene $109.000 más que entregar y aquí no salía. */
   const movidoPorElDueno = Math.round(stats.movidoPorElDuenoEfectivo ?? 0)
-  const enLaMano = cobradoEfectivoHoy - prestadoEfectivoHoy - gastosHoy + movidoPorElDueno
+  // La MISMA cuenta que guarda el cierre y coteja el cuadre (lib/dinero/en-la-mano.js):
+  // cobradoEfectivoHoy − prestadoEfectivoHoy − gastosHoy + movidoPorElDueno.
+  const enLaMano = enLaManoDelDia(stats)
   const baseInicialDia = Math.round(stats.baseInicialDia || 0)
   const disponibleHoy = Math.round(stats.disponibleHoy ?? saldoRealCaja)
   const diferenciaRecaudo = cobradoHoy - Math.round(stats.esperado || 0)
@@ -769,6 +777,11 @@ const MOVIMIENTOS_MANUALES = [
      con transferencias contradecía su propio rótulo dos renglones más arriba. */
   const recaudadoRegistrado = enLaMano
   const pagosDelDia = cajaData?.pagosDia || []
+  /* Lo que el dueño cobró en BILLETES hoy: lo que cabe en «efectivo en caja» de
+     su cierre. Las transferencias no están en la caja (DETALLES-CAJA #4). */
+  const efectivoOwnerDia = pagosDelDia
+    .filter(p => p.cobradorId === ownerId && entraAlFajo(p.metodoPago, p.metodoPagoId ?? null, new Set()))
+    .reduce((acc, p) => acc + (p.montoPagado || 0), 0)
   const resumenPagosDia = cajaData?.resumenPagosDia || {}
   const cantidadPagosDia = resumenPagosDia.cantidad ?? pagosDelDia.length
   const totalPagosDia = Math.round(resumenPagosDia.total ?? pagosDelDia.reduce((acc, pago) => acc + Number(pago.montoPagado || 0), 0))
@@ -951,7 +964,9 @@ const MOVIMIENTOS_MANUALES = [
   if (esCobrador) {
     const cierreHoy = cierres[0]
     const cierreDesembolsado = cierreHoy?.totalDesembolsado ?? desembolsadoDia
-    const cierreSaldoReal = cierreHoy?.saldoRealCaja ?? saldoRealCaja
+    // Lo que el sistema decía que tenía en la mano al cerrar (N1). Los cierres
+    // de antes no lo guardaban: ahí no se enseña (su «saldo» restaba dos veces).
+    const cierreEnLaMano = cierreHoy?.enLaManoSistema ?? null
     const mostrarFormularioCierre = fechaEditableCobrador && (!cierreHoy || modoAjusteCierre)
 
     return (
@@ -1364,12 +1379,14 @@ const MOVIMIENTOS_MANUALES = [
                   </div>
                 )
               })()}
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-[var(--cf-ink-3)]">Saldo del día</span>
-                <span className="font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
-                  {formatMoney(cierreSaldoReal)}
-                </span>
-              </div>
+              {cierreEnLaMano != null && (
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-[var(--cf-ink-3)]">Tenías en la mano</span>
+                  <span className="font-mono-display" style={{ color: cierreEnLaMano >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
+                    {formatMoney(cierreEnLaMano)}
+                  </span>
+                </div>
+              )}
             </div>
 
             {!esAyer && !cierreHoy.reabiertoEn && !cierreHoy.solicitudReaperturaEn && (
@@ -2146,6 +2163,8 @@ const MOVIMIENTOS_MANUALES = [
         const recaudadoOwner = pagosDelDia
           .filter(p => p.cobradorId === ownerId)
           .reduce((acc, p) => acc + (p.montoPagado || 0), 0)
+        // «Efectivo en caja» se propone solo con lo cobrado en billetes (#4).
+        const efectivoOwner = efectivoOwnerDia
         const mostrarFormulario = !cierreOwner || modoAjusteCierre
 
         return (
@@ -2165,15 +2184,20 @@ const MOVIMIENTOS_MANUALES = [
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-3">
-                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Recaudado</p>
+                    {/* ⚠ «RECAUDADO» Y «SALDO FINAL» NO ERAN ESO (DETALLES-CAJA #3).
+                        La primera es lo que CONTASTE al cerrar, y la segunda le
+                        restaba otra vez gastos y préstamos: «Saldo final −$672.000»
+                        un día con la caja en $3.313.000. Ahora: lo contado, y lo
+                        cobrado ese día para compararlo. */}
+                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Contaste</p>
                     <p className="text-lg font-bold font-mono-display text-[var(--cf-ink)] mt-0.5">
                       {formatMoney(cierreOwner.totalRecogido)}
                     </p>
                   </div>
                   <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-3">
-                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Saldo final</p>
+                    <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Cobraste ese día</p>
                     <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: 'var(--cf-green-dark)' }}>
-                      {formatMoney(cierreOwner.saldoRealCaja)}
+                      {formatMoney(Math.round(recaudadoOwner))}
                     </p>
                   </div>
                 </div>
@@ -2237,7 +2261,9 @@ const MOVIMIENTOS_MANUALES = [
                       {formatMoney(Math.round(recaudadoOwner))}
                     </p>
                     <p className="text-[10px] text-[var(--cf-ink-3)] mt-1">
-                      Total de cobros registrados hoy. Ajusta si el efectivo entregado es distinto.
+                      {Math.round(efectivoOwner) !== Math.round(recaudadoOwner)
+                        ? `Total de cobros registrados hoy. De eso, ${formatMoney(Math.round(efectivoOwner))} en efectivo; lo demás entró a la cuenta.`
+                        : 'Total de cobros registrados hoy. Ajusta si el efectivo entregado es distinto.'}
                     </p>
                   </div>
                 )}
@@ -2248,7 +2274,7 @@ const MOVIMIENTOS_MANUALES = [
                   <MoneyInput
                     value={totalRecogido}
                     onChange={(e) => setTotalRecogido(e.target.value)}
-                    placeholder={String(Math.round(recaudadoOwner))}
+                    placeholder={String(Math.round(efectivoOwner))}
                   />
                 </div>
                 {errorCaja && (
@@ -2262,7 +2288,7 @@ const MOVIMIENTOS_MANUALES = [
                 {tactil && !cierreOwner && (
                   <DeslizarParaConfirmar
                     texto="Desliza para cerrar el día"
-                    cifra={formatMoney(totalRecogido === '' ? Math.round(recaudadoOwner) : Number(totalRecogido))}
+                    cifra={formatMoney(totalRecogido === '' ? Math.round(efectivoOwner) : Number(totalRecogido))}
                     confirmando={guardando}
                     onConfirmar={() => registrarCierre({ preventDefault() {} })}
                   />
@@ -2358,8 +2384,10 @@ const MOVIMIENTOS_MANUALES = [
                         </span>
                       )}
                     </div>
+                    {/* Lo ENTREGADO. Era `saldoRealCaja`, que restaba otra vez lo
+                        prestado y los gastos a algo que ya venía neto (N1/N2). */}
                     <span className="text-xs font-bold font-mono-display tabular-nums" style={{ color: 'var(--cf-green-dark)' }}>
-                      {formatMoney(c.saldoRealCaja)}
+                      {formatMoney(c.totalRecogido)}
                     </span>
                   </button>
                 )
@@ -2425,9 +2453,8 @@ const MOVIMIENTOS_MANUALES = [
               const sugeridoCierre = Math.round(c.sugeridoCierre || 0)
               const deltaSistemaVsCierre = cierre ? recaudadoDiaCobrador - Math.round(cierre.totalRecogido || 0) : null
               const cierreDesembolsado = Math.round(cierre?.totalDesembolsado || 0)
-              const cierreSaldoReal = cierre
-                ? (cierre.saldoRealCaja ?? (cierre.totalRecogido - (cierre.totalGastos || 0) - cierreDesembolsado))
-                : 0
+              // Lo que el sistema decía que tenía en la mano al cerrar (N1); null en los viejos.
+              const cierreEnLaMano = cierre?.enLaManoSistema ?? null
 
               /* EL COTEO, sin entrar a cada ruta: «entre 10 rutas, 9 rutas […] se
                  quema tiempo uno» (PRESTA MIL, 9 oct 2026). Lo cobrado menos los
@@ -2553,12 +2580,14 @@ const MOVIMIENTOS_MANUALES = [
                               <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Prestado hoy</p>
                               <p className="text-sm font-semibold font-mono-display text-[var(--cf-gold-dark)]">{cierreDesembolsado > 0 ? '-' : ''}{formatMoney(cierreDesembolsado)}</p>
                             </div>
-                            <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">
-                              <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Saldo real</p>
-                              <p className="text-sm font-semibold font-mono-display" style={{ color: cierreSaldoReal >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
-                                {formatMoney(cierreSaldoReal)}
-                              </p>
-                            </div>
+                            {cierreEnLaMano != null && (
+                              <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2">
+                                <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Tenía en la mano</p>
+                                <p className="text-sm font-semibold font-mono-display" style={{ color: cierreEnLaMano >= 0 ? 'var(--cf-ink-2)' : 'var(--cf-red-dark)' }}>
+                                  {formatMoney(cierreEnLaMano)}
+                                </p>
+                              </div>
+                            )}
                           </div>
 
                           <div className="text-xs text-[var(--cf-ink-3)] border-t border-[var(--cf-border)] pt-2">

@@ -17,6 +17,7 @@ import { getUtcOffset, getLocalDateStr, getLocalDayRange, formatFechaCorta } fro
 import { calcularDesembolsadoDia, detalleDesembolsadoDia } from '@/lib/dinero/desembolsado'
 import { CAMPOS_DEL_REPARTO } from '@/lib/dinero/capital-base'
 import { cobrosDeRenovadas, coteo } from '@/lib/dinero/coteo'
+import { enLaManoDelDia } from '@/lib/dinero/en-la-mano'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -1615,10 +1616,25 @@ export async function POST(request) {
     _sum: { monto: true },
   })
 
-  const totalGastos = gastosDia._sum?.monto || 0
   const totalDesembolsadoDia = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
-  const saldoOperativoDia = totalRecogido - totalGastos
-  const saldoRealCajaDia = saldoOperativoDia - totalDesembolsadoDia
+
+  /* ══ LO QUE GUARDA EL CIERRE, CON UN SOLO SENTIDO (DETALLES-CAJA N1/N2/#3) ══
+     `totalRecogido` es lo que ENTREGÓ: ya viene neto de lo prestado y de los
+     gastos. Aquí se le volvían a restar los dos —«Saldo final −$672.000»— y los
+     gastos solo contaban los APROBADOS, cuando la caja cuenta también los
+     pendientes (el billete ya salió): «Gastos $0» en el cierre y «−$15.000»
+     arriba, el mismo día.
+
+     Del cobrador se guarda además lo que el sistema decía que tenía en la mano
+     al cerrar —la cifra del botón «Usar», con la misma función que su caja— y el
+     cuadre la coteja contra lo que cuenta el dueño. Del dueño no: su cierre es
+     lo que él cuenta de lo suyo. */
+  const esDeCobrador = cobrador.rol === 'cobrador'
+  const statsCierre = esDeCobrador ? await getStatsDia(organizationId, fechaColombia, cobradorId) : null
+  const enLaManoSistema = statsCierre ? Math.round(enLaManoDelDia(statsCierre)) : null
+  const totalGastos = statsCierre ? Math.round(statsCierre.gastos || 0) : (gastosDia._sum?.monto || 0)
+  const saldoOperativoDia = enLaManoSistema ?? totalRecogido
+  const saldoRealCajaDia = enLaManoSistema ?? totalRecogido
   const diferencia = totalRecogido - totalEsperado
 
   if (existeCierre) {
@@ -1640,6 +1656,7 @@ export async function POST(request) {
         totalDesembolsado: Math.round(totalDesembolsadoDia),
         saldoOperativo: Math.round(saldoOperativoDia),
         saldoRealCaja: Math.round(saldoRealCajaDia),
+        enLaManoSistema,
         diferencia: Math.round(diferencia),
         editadoEn: new Date(),
         editadoPorId: userId,
@@ -1684,6 +1701,7 @@ export async function POST(request) {
       totalDesembolsado: Math.round(totalDesembolsadoDia),
       saldoOperativo: Math.round(saldoOperativoDia),
       saldoRealCaja: Math.round(saldoRealCajaDia),
+      enLaManoSistema,
       diferencia: Math.round(diferencia),
     },
     include: { cobrador: { select: { id: true, nombre: true } } },

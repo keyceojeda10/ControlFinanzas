@@ -213,12 +213,16 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               El «anoche contó» se enseña SIEMPRE que haya cuadre, aunque
               coincida: un renglón que solo aparece cuando algo va mal se lee
               como una alarma, y aquí casi siempre es normal. */}
-          <Renglon
-            rotulo="Con lo que salió"
-            monto={cr.apertura ?? 0}
-            detalle={notaDeLaApertura(cr)}
-            onExplicar={onExplicar ? () => onExplicar('apertura') : undefined}
-          />
+          {/* Solo si la base ENTRA en la cuenta (negocios con la base en el
+              fajo). Si no, se queda en la ruta y se dice abajo (#13). */}
+          {(cr.apertura ?? 0) !== 0 && (
+            <Renglon
+              rotulo="Con lo que salió"
+              monto={cr.apertura ?? 0}
+              detalle={notaDeLaApertura(cr)}
+              onExplicar={onExplicar ? () => onExplicar('apertura') : undefined}
+            />
+          )}
           <Renglon
             rotulo="Cobró en efectivo"
             monto={cr.cobradoEfectivo ?? 0}
@@ -386,6 +390,14 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
               {formatMoney(Math.abs(cr.quedaEnEfectivo ?? 0))}
             </span>
           </div>
+          {/* ⚠ LA BASE SE QUEDA EN LA RUTA (decisión del dueño, #13): lo que
+              entrega es lo del día, la misma cifra de su caja. La base se dice
+              con su nombre para que nadie la busque en el fajo. */}
+          {(cr.baseQueSeQueda ?? 0) !== 0 && (
+            <p className="text-[12px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>
+              La base de la ruta, {formatMoney(cr.baseQueSeQueda)}, se queda con él: no se entrega.
+            </p>
+          )}
           <p className="text-[11.5px] mt-1 leading-snug" style={{ color: 'var(--cf-ink-3)' }}>
             {(cr.quedaEnEfectivo ?? 0) < 0
               ? 'Prestó más efectivo del que llevaba: puso plata suya y hay que devolvérsela.'

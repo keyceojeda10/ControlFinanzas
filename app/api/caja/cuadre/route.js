@@ -117,7 +117,7 @@ export async function GET(request) {
     recaudadoPorCobradorDia(organizationId, inicio, fin),
     esperadoPorCobradorDia(organizationId, fecha),
     prisma.cierreCaja.findMany({ where: { organizationId, fecha: { gte: inicio, lt: fin } } }),
-    prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true } }),
+    prisma.ruta.findMany({ where: { organizationId, activo: true }, select: { cobradorId: true, nombre: true, saldoCapital: true, capitalHabilitado: true } }),
     // Solo gastos PENDIENTES: los aprobados ya descontaron del saldoCapital de
     // la ruta (ver fix en gastos/[id]), así que restarlos otra vez del capital
     // sería doble conteo.
@@ -136,7 +136,8 @@ export async function GET(request) {
   for (const r of rutas) {
     if (!r.cobradorId) continue
     if (!rutaPorCobrador[r.cobradorId]) rutaPorCobrador[r.cobradorId] = r.nombre
-    capitalPorCobrador[r.cobradorId] = Math.round((capitalPorCobrador[r.cobradorId] || 0) + (r.saldoCapital || 0))
+    // Solo con capital propio (#13): lo mismo que el POST.
+    if (r.capitalHabilitado) capitalPorCobrador[r.cobradorId] = Math.round((capitalPorCobrador[r.cobradorId] || 0) + (r.saldoCapital || 0))
   }
   const gastosPorCobradorMap = {}
   for (const g of gastosPorCobrador) if (g.cobradorId) gastosPorCobradorMap[g.cobradorId] = Math.round(g._sum?.monto || 0)
@@ -145,9 +146,10 @@ export async function GET(request) {
     const cierre = cierrePorCobrador[c.id] || null
     const capital = capitalPorCobrador[c.id] || 0
     const gastosDelDia = gastosPorCobradorMap[c.id] || 0
+    // La misma vara que el POST (N3): lo que tenía en la mano al cerrar.
     const recaudadoSistema = orgConfig?.capitalEsEfectivo && capital > 0
       ? capital - gastosDelDia
-      : recaudadoMap[c.id] || 0
+      : Math.round(cierre?.enLaManoSistema ?? (recaudadoMap[c.id] || 0))
     const estado = estadoDe(cierre, recaudadoSistema)
     return {
       cobradorId: c.id,
@@ -214,10 +216,12 @@ export async function POST(request) {
     // Rutas del cobrador: capital + ruta para ajuste contable.
     const rutasCobrador = await prisma.ruta.findMany({
       where: { organizationId, cobradorId, activo: true },
-      select: { id: true, saldoCapital: true },
+      select: { id: true, saldoCapital: true, capitalHabilitado: true },
     })
     const ruta = rutasCobrador[0] || null
-    const capitalCobrador = Math.round(rutasCobrador.reduce((a, r) => a + (r.saldoCapital || 0), 0))
+    // Solo las rutas con capital propio: una ruta sin él que conserva un
+    // `saldoCapital` viejo no es plata que el cobrador cargue (DETALLES-CAJA #13).
+    const capitalCobrador = Math.round(rutasCobrador.filter((r) => r.capitalHabilitado).reduce((a, r) => a + (r.saldoCapital || 0), 0))
 
     // Gastos PENDIENTES del cobrador en el día (los aprobados ya bajaron el
     // saldoCapital de la ruta; restarlos de nuevo sería doble conteo).
@@ -255,12 +259,17 @@ export async function POST(request) {
     // del dia sino la bolsa de la ruta: el cobrador entrega todo lo que lleva
     // encima, no solo lo de hoy. Es una pregunta legitima y distinta, y por eso
     // vive en su propia variable.
+    const cierreExistente = await prisma.cierreCaja.findFirst({ where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } } })
+    /* ⚠ SIN LA BASE EN EL FAJO SE COTEJA LO QUE TENÍA EN LA MANO (DETALLES-CAJA N3).
+       Se cotejaba lo cobrado BRUTO —transferencias incluidas, sin restar lo
+       prestado ni los gastos— y el cuadre asentaba en el capital faltantes que
+       no existían. Ahora es lo que el sistema decía al cerrar (`enLaManoSistema`,
+       la cifra del botón «Usar»). Los cierres de antes no la tienen: ahí queda
+       lo de siempre. */
     const recaudadoSistema = orgConfig?.capitalEsEfectivo && capitalCobrador > 0
       ? capitalCobrador - gastosCobrador
-      : recaudadoDia
+      : Math.round(cierreExistente?.enLaManoSistema ?? recaudadoDia)
     const diferenciaRecibido = efectivoRecibido - recaudadoSistema
-
-    const cierreExistente = await prisma.cierreCaja.findFirst({ where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } } })
 
     /* ⚠ NO SE CUADRA A QUIEN NO HA ENTREGADO (decisión del dueño, 17 oct 2026).
        Cuadrar sin cierre le CREABA uno al cobrador: desde ese momento cada cobro
@@ -315,8 +324,10 @@ export async function POST(request) {
         data: {
           ...dataConfirmacion,
           ...(ponDesembolso ? { totalDesembolsado: desembolsoReal } : {}),
-          ...(ponGastos ? { totalGastos: gastosAprobados, saldoOperativo: operativoFinal } : {}),
-          ...(ponDesembolso || ponGastos
+          /* El saldo con la cuenta vieja solo en los cierres viejos: los nuevos
+             guardan lo que tenía en la mano y no se les recalcula (N1/N2). */
+          ...(ponGastos ? { totalGastos: gastosAprobados, ...(cierreExistente.enLaManoSistema == null ? { saldoOperativo: operativoFinal } : {}) } : {}),
+          ...((ponDesembolso || ponGastos) && cierreExistente.enLaManoSistema == null
             ? { saldoRealCaja: Math.round(operativoFinal - desembolsoFinal) }
             : {}),
         },

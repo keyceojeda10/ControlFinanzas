@@ -353,6 +353,8 @@ export async function GET(request, { params }) {
             id: true, referenciaId: true,
             rutaId: true, tipo: true, monto: true, saldoAnterior: true, saldoNuevo: true,
             ajusteArranqueRuta: true, descripcion: true, metodoPago: true,
+            // Para distinguir el ajuste que asienta el CUADRE (ver `delFajo`).
+            referenciaTipo: true,
           },
         })
       : [],
@@ -443,6 +445,13 @@ export async function GET(request, { params }) {
      resolver la pareja de una edición: mirando un asiento suelto no hay forma
      de saber si el billete que corrige salió hoy o hace tres semanas. */
   const originalesDeHoy = desembolsosOriginalesDelDia(primerMovPorRuta)
+  /* ⚠ EL AJUSTE DEL CUADRE NO ES PLATA DEL DÍA (17 oct 2026). Lo asienta el
+     dueño al CONTAR el fajo: es la diferencia entre lo que tenía que entregar y
+     lo que entregó. Restarlo de «Tiene que entregar» dejaba esa cifra igual a
+     lo entregado —el faltante desaparecía de la caja— y la del cobrador, que es
+     la referencia, no lo resta. Medido en el espejo: $87.000 contra $92.000 el
+     día de un faltante de $5.000. Sigue moviendo la bolsa, con su nombre. */
+  const delFajo = (m) => m.referenciaTipo !== 'cierre_cuadre' && afectaElFajo(m, originalesDeHoy)
   /* ── ⚠ EL COBRO ANULADO HOY NO SE RESTA DOS VECES ─────────────────────────
      Al anular un pago su fila de `Pago` se BORRA, así que ya no está en «lo
      cobrado». Pero su asiento de recaudo se queda en el libro y encima se
@@ -483,7 +492,7 @@ export async function GET(request, { params }) {
          capital de la ruta sí vuelve a su sitio— y el efectivo no. Ver
          `afectaElFajo`: sale del préstamo eliminado de PRESTA MIL, que le pedía
          al cobrador $40.000 que llevaban seis días fuera de su bolsillo. */
-      if (!yaDescontado && afectaElFajo(m, originalesDeHoy)) ajustesEfectivo += d
+      if (!yaDescontado && delFajo(m)) ajustesEfectivo += d
     }
   }
   /* Qué asientos fueron los que movieron la bolsa y no el fajo, para poder
@@ -492,7 +501,7 @@ export async function GET(request, { params }) {
     // Los ya descontados por «lo cobrado» tampoco se nombran aquí: si no,
     // «Salió del capital de la ruta» seguiría confesando los $3.393.000.
     .filter((m) => m.rutaId && m.tipo === 'ajuste' && !noMovioNada(m)
-      && !reversosYaDescontados.has(m.id) && !afectaElFajo(m, originalesDeHoy))
+      && !reversosYaDescontados.has(m.id) && !delFajo(m))
     .map((m) => ({
       monto: Math.round(m.ajusteArranqueRuta ? m.monto : ((m.saldoNuevo >= m.saldoAnterior) ? m.monto : -m.monto)),
       descripcion: m.descripcion || 'Corrección',
@@ -545,6 +554,29 @@ export async function GET(request, { params }) {
    * distintas y el error fue llamarlas igual.
    */
   const saldoAperturaTotal = saldoAperturaDerivado
+  /* ══ LA BASE NO SE ENTREGA (decisión del dueño, 17 oct 2026, DETALLES-CAJA #13) ══
+     «En una ruta con capital propio, ¿el cobrador entrega también la base?»
+     → «Solo lo del día»: la base se queda en la ruta y esta caja se ajusta a la
+     del cobrador, que nunca la sumó («Sin contar lo que traías al empezar»).
+     Aquí «Tiene que entregar» era base + lo del día: «Con lo que salió
+     $8.350.000 · Tiene que entregar $8.415.200» con $65.200 del día.
+
+     Y la base solo de las rutas CON capital propio: una ruta sin él que conserva
+     un `saldoCapital` viejo inflaba «Con lo que salió» (47 rutas así medidas en
+     producción).
+
+     ⚠ LOS NEGOCIOS CON LA BASE EN EL FAJO (`capitalEsEfectivo`) SIGUEN IGUAL:
+     ahí el cobrador carga y entrega toda la bolsa cada noche —PRESTA MIL lo
+     dictó así, «352.000 + 428.000 − 40.000 − 485.215», y cuadra con eso unas
+     240 veces al mes—. Pendiente de que el dueño lo decida para ellos.
+
+     `quedaEnLaRuta` sigue con TODAS las rutas: su invariante es el saldoCapital. */
+  const aperturaConCapital = rutas
+    .filter((r) => r.capitalHabilitado)
+    .reduce((acc, r) => acc + Math.round((r.saldoCapital || 0) - (deltaPorRuta.get(r.id) || 0)), 0)
+  const baseEnElFajo = !!org?.capitalEsEfectivo
+  const aperturaDeLaCuenta = baseEnElFajo ? aperturaConCapital : 0
+  const baseQueSeQueda = baseEnElFajo ? 0 : aperturaConCapital
   const efectivoContadoAnoche = cuadreAnterior?.efectivoRecibido != null
     ? Math.round(cuadreAnterior.efectivoRecibido)
     : null
@@ -910,7 +942,7 @@ export async function GET(request, { params }) {
   // agosto: esta cifra y la de `cuentaDelDia` tienen que ser LA MISMA, y si una
   // cuenta los retiros y la otra no, la pantalla se contradice sola. Ver la
   // nota larga donde se calculan.
-  const efectivoEnMano = saldoAperturaTotal + (cobradoEfectivo - ajusteBruto) - (prestadoDia - ajusteBruto) - gastosDia
+  const efectivoEnMano = aperturaDeLaCuenta + (cobradoEfectivo - ajusteBruto) - (prestadoDia - ajusteBruto) - gastosDia
     + inyeccionesEfectivo - retirosEfectivo + ajustesEfectivo
 
   // Con `capitalEsEfectivo` el negocio entiende que el cobrador carga TODA la
@@ -1317,7 +1349,7 @@ export async function GET(request, { params }) {
   const cobradoDigitalNeto = Math.round(cobradoDigital)
 
   const { lineas: cuenta, suma: cuentaSuma, entro: cuentaEntro, salio: cuentaSalio } = cuentaDelDia({
-    apertura: saldoAperturaTotal,
+    apertura: aperturaDeLaCuenta,
     entradas: [
       { id: 'recaudoEfectivo', rotulo: 'Cobró en efectivo', monto: cobradoEfectivoNeto },
       { id: 'recaudoDigital', rotulo: 'Cobró por transferencia', monto: cobradoDigitalNeto },
@@ -1356,7 +1388,9 @@ export async function GET(request, { params }) {
   // la otra suelta en otra tarjeta —que es de donde venía el enredo: «como
   // quedó en tres cuadros diferentes, ahí fue donde estamos enredados»—.
   const cuentaRuta = {
-    apertura: saldoAperturaTotal,
+    apertura: aperturaDeLaCuenta,
+    // La base que NO entra en «Tiene que entregar»: se dice aparte (#13).
+    baseQueSeQueda,
     /* ── LO QUE SE CONTÓ ANOCHE, Y LO QUE SE MOVIÓ DESPUÉS ──────────────
        Las dos cifras juntas, porque una sola no explica nada. Medido en
        producción el 7 ago, las dos rutas que el dueño reportó:
@@ -1376,7 +1410,7 @@ export async function GET(request, { params }) {
     efectivoContadoAnoche,
     contadoAnocheEl: cuadreAnterior?.fecha ?? null,
     movidoDespuesDelCuadre: efectivoContadoAnoche != null
-      ? Math.round(saldoAperturaTotal - efectivoContadoAnoche)
+      ? Math.round(aperturaConCapital - efectivoContadoAnoche)
       : null,
     cobradoTotal: cobradoEfectivoNeto + cobradoDigital,
     cobradoEfectivo: cobradoEfectivoNeto,
