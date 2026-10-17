@@ -17,6 +17,7 @@ import { Financiar, PieGestion } from '@/components/pantallas/Gestion'
 import { interesPorPorcentajeMensual, mesesDelPlazo, vistaFinanciar, DIAS_POR_PERIODO } from '@/lib/financiar'
 import { montoCrudoConModo } from '@/lib/adaptadores/pago'
 import { useAuth } from '@/hooks/useAuth'
+import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 
 const UNIDAD = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }
 const CUOTA = { diario: 'La cuota diaria', semanal: 'La cuota semanal', quincenal: 'La cuota quincenal', mensual: 'La cuota mensual' }
@@ -94,11 +95,11 @@ export default function FinanciarSaldo({
     setEnviando(true)
     setError('')
     try {
-      const res = await conPantalla('financiar', () => fetch(`/api/prestamos/${prestamoId}/renovar`, {
+      const res = await conPantalla('financiar', () => enviarConfirmandoPerdidos((confirmado) => fetch(`/api/prestamos/${prestamoId}/renovar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ financiar: true, interes, diasPlazo: vista.diasPlazo, frecuencia }),
-      }))
+        body: JSON.stringify({ ...(confirmado ? { confirmarClienteEnPerdidos: true } : {}), financiar: true, interes, diasPlazo: vista.diasPlazo, frecuencia }),
+      })))
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || 'No se pudo financiar. Intenta de nuevo.'); return }
       /* A la cartulina nueva: es la que se va a cobrar desde hoy.

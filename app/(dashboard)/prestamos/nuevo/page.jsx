@@ -7,6 +7,8 @@ import { abreviaturaDocumento } from '@/lib/documento'
 import { useRouter, useSearchParams }              from 'next/navigation'
 import Link                                        from 'next/link'
 import { useAuth }                                 from '@/hooks/useAuth'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 import { Button }                                  from '@/components/ui/Button'
 import { Input }                                   from '@/components/ui/Input'
 import MoneyInput                                  from '@/components/ui/MoneyInput'
@@ -20,6 +22,7 @@ import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
 import { SelectorPorcentajePesos, CampoCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { GrupoSegmentado } from '@/components/cf/primitivos2'
+import { EtiquetaClavo } from '@/components/cf/primitivos'
 import AvisoUltimaCuota                            from '@/components/prestamos/AvisoUltimaCuota'
 import ModoInteresSelector, { AvisoPorCobro, avisoDelPorcentaje } from '@/components/prestamos/ModoInteresSelector'
 import TablaAmortizacion                           from '@/components/prestamos/TablaAmortizacion'
@@ -33,6 +36,7 @@ import DeslizarParaConfirmar                       from '@/components/cf/Desliza
 import PrestamoEntregado                           from '@/components/cf/PrestamoEntregado'
 import { useTactil }                               from '@/lib/tactil'
 import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/prestamo-entregado'
+import { MODOS_EN_ORDEN, etiquetaModo, sufijoTasa } from '@/lib/dinero/modos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -221,6 +225,23 @@ function NuevoPrestamo() {
     return v != null && v !== '' ? v : porDefecto
   }
   const [monto,        setMonto]        = useState(() => deLaUrl('monto', ''))
+  const [confirmarSalir, setConfirmarSalir] = useState(false)
+  /* ⚠ EL CLIENTE TIENE UN PRÉSTAMO EN PERDIDOS (decisión del dueño, 17 oct
+     2026). Lo que debe en perdidos, de la lista que ya está cargada: sale en
+     rojo al elegirlo, al cobrador no le deja seguir y al dueño se le pide
+     confirmar al guardar (DETALLES-PRESTAMOS #17). */
+  function perdidosDe(c) {
+    if (!c?.tieneClavo) return null
+    const vivos = (c.prestamos || []).filter((x) => x.esClavo && (x.estado ?? 'activo') === 'activo')
+    return { saldo: Math.round(vivos.reduce((a, x) => a + Math.max(0, Number(x.saldoPendiente) || 0), 0)), cantidad: vivos.length || 1 }
+  }
+  const perdidosDelElegido = perdidosDe(clientes.find((c) => c.id === clienteId))
+  // Declaración de función (se eleva): la usa `useCabecera`, más arriba en el
+  // orden de lectura que cualquier `const` de aquí abajo.
+  function salirDeCrear() {
+    if (clienteId || Number(monto) > 0) { setConfirmarSalir(true); return }
+    router.back()
+  }
   const [tasa,         setTasa]         = useState(() => deLaUrl('tasa', '20'))
   // plazo se ingresa en la unidad de la frecuencia (dias, semanas, quincenas o meses)
   const [plazoUnidades, setPlazoUnidades] = useState(() => deLaUrl('plazo', '30'))
@@ -262,6 +283,8 @@ function NuevoPrestamo() {
   // Cobro de seguro (opcional)
   const [seguro, setSeguro] = useState(false)
   const [montoSeguro, setMontoSeguro] = useState('')
+  // Lo que se descuenta de los billetes al entregar (#51).
+  const seguroAlEntregar = seguro && Number(montoSeguro) > 0 ? Math.round(Number(montoSeguro)) : 0
   const [socioId, setSocioId] = useState('')
   const [listaSocios, setListaSocios] = useState([])
   // Cuenta de la que sale el desembolso (efectivo por defecto). Alimenta el
@@ -458,6 +481,10 @@ function NuevoPrestamo() {
     titulo: (unaPantalla ? (paso === 0 ? PASOS_PC[0] : PASOS_PC[1]) : PASOS[paso])?.label ?? 'Nuevo préstamo',
     paso: unaPantalla ? (paso === 0 ? 1 : 2) : paso + 1,
     total: unaPantalla ? PASOS_PC.length : PASOS.length,
+    /* ⚠ LA ✕ PREGUNTA SI YA HAY ALGO ESCRITO. Salía sin más y se perdía todo,
+       firma incluida: la ruta es de tarea y su propia cabecera lo advierte
+       (DETALLES-PRESTAMOS #56). */
+    onCerrar: salirDeCrear,
   })
 
   // Pre-llenar desde cartulina si venimos de importar
@@ -546,7 +573,8 @@ function NuevoPrestamo() {
     setTasa(String(u.tasaInteres))
     const freq = u.frecuencia || 'diario'
     setFrecuencia(freq)
-    setModoDiaCobro(freq === 'mensual' ? 'mes' : 'semana')
+    // Quincenal por días del mes también se repite (perdía el «segundo cobro»).
+    setModoDiaCobro(freq === 'mensual' || (freq === 'quincenal' && (u.diaCobroMes != null || u.diaCobroMes2 != null)) ? 'mes' : 'semana')
     setDiaCobroSemana('')
     setDiaCobroMes('')
     setDiaCobroMes2('')
@@ -554,6 +582,12 @@ function NuevoPrestamo() {
     setPlazoUnidades(String(Math.max(1, Math.round((u.diasPlazo || 0) / diasPorPer))))
     if (u.diaCobroSemana != null) setDiaCobroSemana(String(u.diaCobroSemana))
     if (u.diaCobroMes != null) setDiaCobroMes(String(u.diaCobroMes))
+    if (u.diaCobroMes2 != null) setDiaCobroMes2(String(u.diaCobroMes2))
+    /* El MODO también: la tasa del anterior en otro modo da otro total —un Globo
+       al 10 % por cobro repetido como Clásico— (DETALLES-PRESTAMOS #52). */
+    if (u.modoInteres) setModoInteres(u.modoInteres)
+    setSinPlazo(Boolean(u.sinPlazo && u.modoInteres === 'solo_interes'))
+    setInteresAdelantado(Boolean(u.interesAdelantado))
   }
 
   // Guard de permiso
@@ -639,6 +673,17 @@ function NuevoPrestamo() {
       setPlazoUnidades(numCuotas)
     }
   }, [numCuotas, modo])
+  /* ⚠ Y AL REVÉS. Solo se sincronizaba en un sentido, y en mercancía quedan a la
+     vista otros tres sitios que cambian el plazo («Cuántas cuotas» y los dos
+     «Plazo» del resumen). La cuota salía de `numCuotas` y el número de cuotas
+     guardado del plazo: 10 cuotas de $12.000 pasaban a 12 y el total a $144.000
+     sobre un precio de $120.000 (DETALLES-PRESTAMOS #54). Comparar como texto
+     evita el ida y vuelta: el segundo efecto no cambia nada. */
+  useEffect(() => {
+    if (modo === 'mercancia' && plazoUnidades !== '' && String(plazoUnidades) !== String(numCuotas)) {
+      setNumCuotas(String(plazoUnidades))
+    }
+  }, [plazoUnidades, modo]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* LOS DOS PRIMEROS COBROS DEL QUINCENAL, EN CRISTIANO.
    *
@@ -753,10 +798,12 @@ function NuevoPrestamo() {
   )
 
   const crearPrestamoRequest = async (inyeccionPrevia = null) => {
-    const res = await fetch('/api/prestamos', {
+    // Cliente en perdidos: el dueño confirma; al cobrador el servidor no lo deja (#17).
+    const res = await enviarConfirmandoPerdidos((confirmado) => fetch('/api/prestamos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        ...(confirmado ? { confirmarClienteEnPerdidos: true } : {}),
         clienteId,
         montoPrestado: Number(monto),
         tasaInteres: Number(tasa),
@@ -781,7 +828,7 @@ function NuevoPrestamo() {
         metodoPago: cuentaDesembolso.metodoPago,
         ...(cuentaDesembolso.metodoPago === 'transferencia' && cuentaDesembolso.metodoPagoId && { metodoPagoId: cuentaDesembolso.metodoPagoId }),
       }),
-    })
+    }))
     const data = await res.json()
     return { ok: res.ok, data }
   }
@@ -854,6 +901,8 @@ function NuevoPrestamo() {
   }
 
   const puedeAvanzarPaso = () => {
+    // Al cobrador no le deja seguir con un cliente en perdidos (#17).
+    if (!esOwner && perdidosDelElegido) return false
     if (cuotaInsuficiente) return false
     // Una cuota en pesos que no devuelve el capital: la de abajo es la anterior.
     if (pesos.imposible) return false
@@ -977,7 +1026,7 @@ function NuevoPrestamo() {
         } catch {}
       }
       if (data.pendienteAprobacion) {
-        try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el prestamo.') } catch {}
+        try { sessionStorage.setItem('cf-toast', 'Solicitud enviada. El administrador debe aprobar el préstamo.') } catch {}
       }
       await alCrear(data)
       })
@@ -1139,9 +1188,12 @@ function NuevoPrestamo() {
       {/* PASO 1 — Cliente */}
       {paso === 0 && (() => {
         const buscando = buscadorCliente.trim().length > 0
-        // Recientes: los 3 ultimos creados (asumimos que `clientes` viene en
-        // orden segun el API; tomamos los primeros 3 como aproximacion de "recientes").
-        const recientes = clientes.slice(0, 3)
+        // Recientes: los 3 últimos creados. Se tomaban los 3 primeros de la
+        // lista, que viene por ruta y por nombre: no eran recientes
+        // (DETALLES-PRESTAMOS #53). Sin fecha (copia sin señal vieja), al final.
+        const recientes = [...clientes]
+          .sort((a, b) => (new Date(b.createdAt || 0).getTime() || 0) - (new Date(a.createdAt || 0).getTime() || 0))
+          .slice(0, 3)
 
         const renderClienteRow = (c, mostrarCheck = true) => (
           <button
@@ -1172,9 +1224,10 @@ function NuevoPrestamo() {
               {c.nombre?.charAt(0)?.toUpperCase() ?? '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate" style={{ color: 'var(--cf-ink)' }}>{c.nombre}</p>
-              <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>{abreviaturaDocumento()} {c.cedula}</p>
+              <p className="font-semibold text-sm" style={{ color: 'var(--cf-ink)', overflowWrap: 'anywhere' }}>{c.nombre}</p>
+              <p className="text-xs" style={{ color: 'var(--cf-ink-3)', overflowWrap: 'anywhere' }}>{abreviaturaDocumento()} {c.cedula}</p>
             </div>
+            {c.tieneClavo && <EtiquetaClavo style={{ flex: 'none' }} />}
             {mostrarCheck && c.id === clienteId && (
               <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--cf-gold)' }}>
                 <path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.415l-7.997 8a1 1 0 01-1.414 0L3.296 10.71a1 1 0 011.415-1.415l3.29 3.29 7.288-7.295a1 1 0 011.415 0z" clipRule="evenodd" />
@@ -1193,6 +1246,20 @@ function NuevoPrestamo() {
                 ? 'Si necesitas cambiarlo, usa el buscador.'
                 : 'Busca por nombre o cédula, o elige uno de los recientes.'}
             </p>
+
+            {/* Cliente en perdidos (#17): se dice antes de llenar nada. */}
+            {perdidosDelElegido && (
+              <div role="alert" className="mt-4 rounded-[14px] px-4 py-3 flex items-start gap-2.5"
+                style={{ background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+                  <path d="M12 9v4M12 17h.01" /><path d="M10.3 3.8L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" />
+                </svg>
+                <span className="text-sm" style={{ color: 'var(--cf-red-dark)' }}>
+                  <strong>Cliente en perdidos:</strong> {perdidosDelElegido.cantidad === 1 ? 'tiene un préstamo' : `tiene ${perdidosDelElegido.cantidad} préstamos`} dado por perdido y debe {formatMoney(perdidosDelElegido.saldo)}.{' '}
+                  {esOwner ? 'Prestarle es alto riesgo: al guardar te pediremos confirmarlo.' : 'No puedes prestarle: pídeselo al dueño.'}
+                </span>
+              </div>
+            )}
 
             {/* Cliente ya seleccionado: card grande en lugar de fila pequena */}
             {clienteSeleccionado && !buscando && (
@@ -1213,10 +1280,10 @@ function NuevoPrestamo() {
                   {clienteSeleccionado.nombre?.charAt(0)?.toUpperCase() ?? '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-base truncate" style={{ color: 'var(--cf-ink)' }}>
+                  <p className="font-bold text-base break-words" style={{ color: 'var(--cf-ink)' }}>
                     {clienteSeleccionado.nombre}
                   </p>
-                  <p className="text-xs truncate" style={{ color: 'var(--cf-ink-3)' }}>
+                  <p className="text-xs break-words" style={{ color: 'var(--cf-ink-3)' }}>
                     {abreviaturaDocumento()} {clienteSeleccionado.cedula}
                   </p>
                 </div>
@@ -1240,7 +1307,7 @@ function NuevoPrestamo() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Tope de prestamo</p>
+                  <p className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Tope de préstamo</p>
                   <p className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>
                     {formatMoney(clienteSeleccionado.montoMaximoPrestamo)}
                   </p>
@@ -1514,7 +1581,7 @@ function NuevoPrestamo() {
           {(
             <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>Cada cuanto cobra?</h2>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cada cuánto cobra?</h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Elige la frecuencia con que el cliente paga las cuotas.</p>
               </div>
 
@@ -1550,7 +1617,7 @@ function NuevoPrestamo() {
                 {{
                   diario: 'Cobra todos los días hábiles.',
                   semanal: 'Cobra una vez por semana.',
-                  quincenal: 'Cobra cada dos semanas.',
+                  quincenal: 'Cobra dos veces al mes (cada 15 días).',
                   mensual: 'Cobra una vez al mes.',
                 }[frecuencia]}
               </p>
@@ -1558,8 +1625,8 @@ function NuevoPrestamo() {
               {/* Dia ancla para semanal */}
               {frecuencia === 'semanal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia cobras?</label>
-                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Fija el dia de la semana. "Auto" usa el dia de inicio.</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día cobras?</label>
+                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Fija el día de la semana. «Auto» usa el día de inicio.</p>
                   {/* El día se queda en oro y no en tinta: es una elección DE
                       DENTRO de «semanal», no de las de arriba. Si todo se marca
                       igual de fuerte, deja de leerse qué depende de qué. */}
@@ -1579,7 +1646,7 @@ function NuevoPrestamo() {
               {/* Dia ancla para quincenal */}
               {frecuencia === 'quincenal' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia cobras?</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día cobras?</label>
                   <div className="flex gap-1 p-1 rounded-[12px] mb-2 mt-1.5" style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}>
                     <button type="button" onClick={() => { setModoDiaCobro('semana'); setDiaCobroMes(''); setDiaCobroMes2('') }}
                       className="flex-1 py-1.5 text-[10px] font-semibold rounded-[8px] transition-all"
@@ -1643,7 +1710,7 @@ function NuevoPrestamo() {
                             {dosPrimerosCobros[1] ? ` y el ${dosPrimerosCobros[1]}` : ''}
                           </p>
                           <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                            Cuenta desde el dia que entregas. Si el mes no tiene ese dia, se cobra el ultimo.
+                            Cuenta desde el día que entregas. Si el mes no tiene ese día, se cobra el último.
                           </p>
                         </div>
                       )}
@@ -1655,8 +1722,8 @@ function NuevoPrestamo() {
               {/* Dia ancla para mensual — solo dia del mes (diaCobroSemana no aplica) */}
               {frecuencia === 'mensual' && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Que dia del mes cobras?</label>
-                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Si el mes no tiene ese dia, se cobra el ultimo dia disponible.</p>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>¿Qué día del mes cobras?</label>
+                  <p className="text-[10px] mt-0.5 mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>Si el mes no tiene ese día, se cobra el último día disponible.</p>
                   <Input type="number" inputMode="numeric" value={diaCobroMes}
                     onChange={(e) => { const v = e.target.value; if (v === '' || (Number(v) >= 1 && Number(v) <= 31)) setDiaCobroMes(v) }}
                     placeholder="Auto (segun fecha de inicio)" min={1} max={31} />
@@ -1695,7 +1762,7 @@ function NuevoPrestamo() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cuánto de interés?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Define la tasa y en cuanto tiempo paga.</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>Define la tasa y en cuánto tiempo paga.</p>
               </div>
 
               {/* ── EL INTERÉS Y EL PLAZO, UNO AL LADO DEL OTRO (T16-00) ──
@@ -1715,7 +1782,7 @@ function NuevoPrestamo() {
                       {/* En un abierto el % se cobra CADA período de la frecuencia (decisión
                           del dueño, 17 oct 2026): «Interés mensual» sobre un diario hacía
                           leer 20 % al mes donde se cobra 20 % al día. (DETALLES-PRESTAMOS #5.) */}
-                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Interés mensual'}
+                      {pesos.enPesos || esAbierto ? rotuloCuotaEnPesos(frecuencia, esAbierto) : (sufijoTasa(modoInteres) ? `Interés ${sufijoTasa(modoInteres)}` : 'Interés')}
                     </label>
                     {puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
                   </div>
@@ -1891,7 +1958,7 @@ function NuevoPrestamo() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold" style={{ color: 'var(--cf-ink)' }}>¿Cómo cobra el interés?</h2>
-                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>La mayoria usa el clásico. Si no estas seguro, dejalo asi.</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--cf-ink-3)' }}>La mayoría usa el Clásico. Si no estás seguro, déjalo así.</p>
               </div>
 
               <ModoInteresSelector
@@ -2036,7 +2103,7 @@ function NuevoPrestamo() {
 
               {clienteId && (
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Dias sin cobro</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Días sin cobro</label>
                   <p className="text-[10px] mt-0.5 mb-2" style={{ color: 'var(--cf-ink-3)' }}>Dias en que NO se cobra. Se guarda en la ficha del cliente.</p>
                   <DiasSinCobroSelector value={diasSinCobroCliente} onChange={(arr) => { setDiasSinCobroCliente(arr); setDiasSinCobroEditado(true) }} compact />
                 </div>
@@ -2051,7 +2118,7 @@ function NuevoPrestamo() {
                 style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Cobrar seguro</p>
-                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Suma un cargo fijo al préstamo</p>
+                  <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Se descuenta de lo que le entregas; no sube la deuda</p>
                 </div>
                 <input type="checkbox" checked={seguro} onChange={(e) => setSeguro(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
               </label>
@@ -2059,6 +2126,13 @@ function NuevoPrestamo() {
                 <div>
                   <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--cf-ink-3)' }}>Monto del seguro</label>
                   <div className="mt-1.5"><MoneyInput value={montoSeguro} onChange={(e) => setMontoSeguro(e.target.value)} placeholder="0" /></div>
+                  {seguroAlEntregar > 0 && Number(monto) > 0 && (
+                    <p className="text-[11px] mt-1.5" style={{ color: seguroAlEntregar >= Number(monto) ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                      {seguroAlEntregar >= Number(monto)
+                        ? 'El seguro no puede ser igual o mayor que lo que prestas.'
+                        : `Le entregas ${formatMoney(Number(monto) - seguroAlEntregar)} y te debe ${formatMoney(Number(monto))} más el interés.`}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -2092,7 +2166,7 @@ function NuevoPrestamo() {
               <label className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border cursor-pointer"
                 style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Ya habia pagado algo antes</p>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>Ya había pagado algo antes</p>
                   <p className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Migrar un préstamo con abonos previos</p>
                 </div>
                 <input type="checkbox" checked={esEnCurso} onChange={(e) => setEsEnCurso(e.target.checked)} className="w-5 h-5 accent-[var(--cf-gold)]" />
@@ -2157,12 +2231,16 @@ function NuevoPrestamo() {
                   const diasReales = periodos * diasPorPeriodo
                   cobrosTotales = Math.max(1, Math.round((cobrosPorSemana * diasReales) / 7))
                 }
-                const totalConSeguro = calculo.totalAPagar + (seguro && Number(montoSeguro) > 0 ? Number(montoSeguro) : 0)
+                /* ⚠ EL SEGURO NO SE SUMA AL TOTAL: se descuenta de lo que se entrega
+                   (decisión del dueño, 17 oct 2026). Aquí se sumaba, el servidor no
+                   lo cobraba y la caja decía que ya había entrado
+                   (DETALLES-PRESTAMOS #51). */
+                const totalConSeguro = calculo.totalAPagar
                 const ganancia = calculo.totalAPagar - Number(monto || 0)
                 const pctGanancia = Number(monto) > 0 ? Math.round((ganancia / Number(monto)) * 100) : 0
                 const labelFreq = { diario: 'diaria', semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' }[frecuencia]
                 const unidadPlazoL = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-                const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
+                const modoLabel = etiquetaModo(modoInteres)
                 const pencil = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
 
                 return (
@@ -2187,13 +2265,13 @@ function NuevoPrestamo() {
                           editor={<MoneyInput value={monto} onChange={e => setMonto(e.target.value)} autoFocus />} />
 
                         {modo === 'prestamo' && (
-                          <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% mensual`} pencil={pencil}
+                          <EditableRow label="Interés" value={`${formatearTasa(tasa || 0)}% ${sufijoTasa(modoInteres) ?? ''}`.trim()} pencil={pencil}
                             editor={
                               <div className="flex items-center gap-1.5">
                                 <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                                   className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                                   style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
-                                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
+                                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoTasa(modoInteres) ?? ''}</span>
                               </div>
                             } />
                         )}
@@ -2232,7 +2310,7 @@ function NuevoPrestamo() {
                               <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                                 className="h-8 rounded-lg border px-2 text-sm"
                                 style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
-                                <option value="fijo">Clásico</option><option value="unico">De una vez</option><option value="solo_interes">Globo</option><option value="saldo">Sobre saldo</option><option value="manual">Manual</option><option value="lineal">Decreciente</option><option value="lineal_dinamico">Decr. dinámico</option>
+                                {MODOS_EN_ORDEN.map((m) => <option key={m} value={m}>{etiquetaModo(m)}</option>)}
                               </select>
                             } />
                         )}
@@ -2325,8 +2403,8 @@ function NuevoPrestamo() {
                         )}
                         {seguro && Number(montoSeguro) > 0 && (
                           <div className="flex items-center justify-between py-1.5">
-                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Seguro</span>
-                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>{formatMoney(Number(montoSeguro))}</span>
+                            <span className="text-[11px]" style={{ color: 'var(--cf-ink-3)' }}>Seguro (se descuenta al entregar)</span>
+                            <span className="text-xs font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>−{formatMoney(Number(montoSeguro))}</span>
                           </div>
                         )}
                         {esEnCurso && Number(yaAbonado) > 0 && (
@@ -2358,7 +2436,7 @@ function NuevoPrestamo() {
       {paso === 2 && calculo && (() => {
         const labelFrecuencia = { diario: 'Diario', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[frecuencia]
         const unidadPlazoLabel = { diario: 'días', semanal: 'semanas', quincenal: 'quincenas', mensual: 'meses' }[frecuencia]
-        const modoLabel = { fijo: 'Clásico', unico: 'De una vez', solo_interes: 'Globo', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Dinámico' }[modoInteres] || 'Clásico'
+        const modoLabel = etiquetaModo(modoInteres)
         const pencilIcon = <svg className="w-3 h-3 shrink-0" style={{ color: 'var(--cf-ink-3)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>
         return (
           <section className="space-y-4 pb-28">
@@ -2383,14 +2461,14 @@ function NuevoPrestamo() {
 
                 {/* Tasa — editable (solo prestamo, no mercancia) */}
                 {modo === 'prestamo' && (
-                  <EditableRow label="Interés" value={`${formatearTasa(tasa)}% mensual`}
+                  <EditableRow label="Interés" value={`${formatearTasa(tasa)}% ${sufijoTasa(modoInteres) ?? ''}`.trim()}
                     pencil={pencilIcon}
                     editor={
                       <div className="flex items-center gap-1.5">
                         <input type="text" inputMode="decimal" value={tasa} onChange={e => { pesos.apagar(); setTasa(soloDecimal(e.target.value)) }}
                           className="w-20 h-8 rounded-lg border px-2 text-sm text-right"
                           style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus />
-                        <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% mensual</span>
+                        <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>% {sufijoTasa(modoInteres) ?? ''}</span>
                       </div>
                     }
                   />
@@ -2439,13 +2517,7 @@ function NuevoPrestamo() {
                       <select value={modoInteres} onChange={e => setModoInteres(e.target.value)}
                         className="h-8 rounded-lg border px-2 text-sm"
                         style={{ background: 'var(--cf-fill)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
-                        <option value="fijo">Clásico</option>
-                        <option value="unico">De una vez</option>
-                        <option value="solo_interes">Globo</option>
-                        <option value="saldo">Sobre saldo</option>
-                        <option value="manual">Manual</option>
-                        <option value="lineal">Decreciente</option>
-                        <option value="lineal_dinamico">Decr. dinámico</option>
+                        {MODOS_EN_ORDEN.map((m) => <option key={m} value={m}>{etiquetaModo(m)}</option>)}
                       </select>
                     }
                   />
@@ -2486,6 +2558,10 @@ function NuevoPrestamo() {
                     <CifraResumen rotulo={`Cuota ${frecuencia === 'diario' ? 'diaria' : labelFrecuencia.toLowerCase()}`} valor={formatMoney(calculo.cuotaDiaria)} tam={26} />
                     <CifraResumen rotulo="Total a pagar" valor={formatMoney(calculo.totalAPagar)} tam={26} />
                   </div>
+                  {seguroAlEntregar > 0 && (
+                    <CifraResumen rotulo="Le entregas" valor={formatMoney(Number(monto) - seguroAlEntregar)}
+                      pie={`${formatMoney(Number(monto))} menos el seguro de ${formatMoney(seguroAlEntregar)}`} />
+                  )}
                   {calculo.totalInteres > 0 && (
                     <CifraResumen rotulo="Tu ganancia" valor={formatMoney(calculo.totalInteres)} color="var(--cf-green-dark)"
                       pie={Number(monto) > 0 ? `${Math.round((calculo.totalInteres / Number(monto)) * 100)}% sobre lo prestado` : null} />
@@ -2541,7 +2617,7 @@ function NuevoPrestamo() {
                 />
                 {!firmaStrokes && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-sm text-[#aaa]">Firmar aqui</p>
+                    <p className="text-sm text-[#aaa]">Firmar aquí</p>
                   </div>
                 )}
               </div>
@@ -2771,6 +2847,16 @@ function NuevoPrestamo() {
             columnas, y un `mx-auto` a secas dejaba «Revisar préstamo» flotando
             bajo el panel de la cuenta, que no es lo que se está rellenando. */}
         <div className="max-w-2xl xl:max-w-[1076px] mx-auto flex items-center gap-3 xl:pr-[404px]">
+          <ConfirmModal
+            open={confirmarSalir}
+            title="¿Salir sin crear el préstamo?"
+            message="Se pierde lo que llevas escrito."
+            confirmLabel="Salir"
+            cancelLabel="Seguir aquí"
+            confirmColor="red"
+            onConfirm={() => { setConfirmarSalir(false); router.back() }}
+            onCancel={() => setConfirmarSalir(false)}
+          />
           {/* ENTREGAR ES PLATA QUE SALE: en el teléfono se desliza, igual que
               cobrar («deslizar en todo lo que es plata»). A lo ancho y con
               «Atrás» debajo, porque al lado no cabe el monto armándose.
@@ -2780,7 +2866,8 @@ function NuevoPrestamo() {
             <div className="flex-1 flex flex-col gap-2">
               <DeslizarParaConfirmar
                 texto="Desliza para entregar"
-                cifra={Number(monto) > 0 ? formatMoney(Number(monto)) : null}
+                // Lo que sale de la mano: el monto menos el seguro (#51).
+                cifra={Number(monto) > 0 ? formatMoney(Number(monto) - seguroAlEntregar) : null}
                 confirmando={loading}
                 deshabilitado={!puedeAvanzarPaso()}
                 onConfirmar={() => handleSubmit({ preventDefault() {} })}
@@ -2792,7 +2879,7 @@ function NuevoPrestamo() {
             </div>
           ) : (<>
           {paso === 0 ? (
-            <Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading} className="flex-1">
+            <Button type="button" variant="secondary" onClick={salirDeCrear} disabled={loading} className="flex-1">
               Cancelar
             </Button>
           ) : (

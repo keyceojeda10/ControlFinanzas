@@ -15,6 +15,7 @@ import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 // de los negocios se queda en cinco clientes tecleando de uno en uno.
 import LoteFotos from '@/components/migrador/LoteFotos'
 import { montoConTasa } from '@/lib/cartulina-datos'
+import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -494,16 +495,11 @@ function FormularioFicha({ ficha, set, calculo, diasPlazo, rutas, defaultRutaId,
             </EditableResumenRow>
 
             {/* Editable: Modo interés */}
-            <EditableResumenRow label="Modo" value={{ fijo: 'Clásico', unico: 'De una vez', saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente', lineal_dinamico: 'Decr. dinámico' }[ficha.modoInteres] || 'Clásico'}>
+            <EditableResumenRow label="Modo" value={etiquetaModo(ficha.modoInteres)}>
               <select value={ficha.modoInteres} onChange={e => { set('modoInteres', e.target.value); setModoInteresTocado(true); if (e.target.value !== 'manual' && e.target.value !== 'saldo') set('cuotaManual', '') }}
                 className="w-full h-8 rounded-lg border px-2 text-sm"
                 style={{ background: 'var(--cf-surface)', borderColor: 'var(--cf-border)', color: 'var(--cf-ink)' }} autoFocus>
-                <option value="fijo">Clásico</option>
-                <option value="unico">De una vez</option>
-                <option value="saldo">Sobre saldo</option>
-                <option value="manual">Manual</option>
-                <option value="lineal">Decreciente</option>
-                <option value="lineal_dinamico">Decr. dinámico</option>
+                {MODOS_EN_ORDEN.filter((m) => m !== 'solo_interes').map((m) => <option key={m} value={m}>{etiquetaModo(m)}</option>)}
               </select>
             </EditableResumenRow>
 

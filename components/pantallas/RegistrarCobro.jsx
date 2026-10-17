@@ -107,7 +107,10 @@ function Opciones({ opciones = [], activo, onElegir, alto = 40, marca = 'oro' })
               flex: 1, minWidth: 0, height: alto, borderRadius: 14, cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               font: 'inherit', fontSize: 13, fontWeight: on ? 700 : 600,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              /* A dos renglones si no cabe: a 412 px «Todo lo que debe» salía
+                 cortado por los dos lados (el `ellipsis` no funciona en un
+                 `inline-flex`). Cabe en los 40 px de alto. */
+              whiteSpace: 'normal', lineHeight: 1.15, textAlign: 'center', padding: '0 6px',
               // `--cf-surface` es el `#F4F4F1` de la lámina. Mi primera versión puso
               // `--cf-bg`, que NO EXISTE: el CSS lo resuelve a nada y queda el color
               // heredado sobre negro. Una variable inventada no falla en ningún sitio.
@@ -296,10 +299,21 @@ export default function RegistrarCobro({
           </button>
         </div>
         {notaCuota ? (
-          <span role="status" style={{
-            fontSize: 13, fontWeight: 600, lineHeight: 1.4,
-            color: notaCuota.tono === 'parcial' ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
-          }}>{notaCuota.texto}</span>
+          <span role="status" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{
+              fontSize: 13, fontWeight: 600, lineHeight: 1.4,
+              color: notaCuota.tono === 'parcial' ? 'var(--cf-gold-dark)' : 'var(--cf-ink-2)',
+            }}>{notaCuota.texto}</span>
+            {/* Lo que se puede hacer con eso, cuando hay algo: «Cambiar a abono a
+                capital» si paga de más (DETALLES-PRESTAMOS #34). */}
+            {notaCuota.accion && (
+              <button type="button" onClick={notaCuota.accion.onPulsar} style={{
+                minHeight: 36, padding: '0 12px', borderRadius: 10, font: 'inherit',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                background: 'var(--cf-fill)', color: 'var(--cf-ink)', border: '1px solid var(--cf-border)',
+              }}>{notaCuota.accion.texto}</button>
+            )}
+          </span>
         ) : (
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>¿Te pagó otro valor? Toca el número y escríbelo.</span>
         )}

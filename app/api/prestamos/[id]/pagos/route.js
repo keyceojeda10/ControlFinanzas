@@ -45,6 +45,7 @@ import { sanitizarCoords } from '@/lib/geo'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { partirFilasParaAbono, capitalParaFuturas } from '@/lib/dinero/abono-capital'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
+import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { repartoDeUnPago } from '@/lib/dinero/interes-cobrado'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
 import { evaluarPremioPrueba } from '@/lib/seguimiento/prueba'
@@ -739,12 +740,11 @@ export async function POST(request, { params }) {
         },
       })
     } else if (tipo === 'capital') {
-      const ahora = new Date(Date.now() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
-      const inicio = new Date(prestamo.fechaInicio)
-      const diasTranscurridos = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
-      const diasRestantes = Math.max(0, prestamo.diasPlazo - diasTranscurridos)
-      const mesesRestantes = diasRestantes / 30
-      const ahorroInteres = Math.round(montoFinal * (prestamo.tasaInteres / 100) * mesesRestantes)
+      // La cuenta de siempre, en un solo sitio (ver `interesQueAhorraUnAbono`).
+      const ahorroInteres = interesQueAhorraUnAbono({
+        monto: montoFinal, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo,
+        fechaInicio: prestamo.fechaInicio, offsetHoras: getUtcOffset(session.user.country ?? 'co'),
+      })
       const totalPagadoActual = prestamoActualizado.pagos
         .filter(p => !['recargo', 'descuento'].includes(p.tipo))
         .reduce((a, p) => a + p.montoPagado, 0)

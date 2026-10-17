@@ -15,6 +15,8 @@ import { trackEvent }   from '@/lib/analytics'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { tasaDeFinanciar, MODO_FINANCIAR, DIAS_POR_PERIODO } from '@/lib/financiar'
+import { efectivoDeLaRenovacion } from '@/lib/dinero/efectivo-renovacion'
+import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente-en-perdidos'
 import { capitalEnCalle } from '@/lib/dinero/reparto'
 import { getLocalDateStr } from '@/lib/i18n'
 
@@ -124,6 +126,19 @@ export async function POST(request, { params }) {
   }
   if (original.estado !== 'activo') {
     return Response.json({ error: 'Solo se pueden renovar préstamos activos' }, { status: 400 })
+  }
+
+  /* Cliente con un préstamo en perdidos —incluido el que se renueva—: el
+     cobrador no le renueva, el dueño confirma (DETALLES-PRESTAMOS #17). */
+  const enPerdidos = await perdidosDelCliente(prisma, { organizationId: session.user.organizationId, clienteId: original.clienteId })
+  if (enPerdidos) {
+    const aviso = textoClienteEnPerdidos(enPerdidos)
+    if (session.user.rol !== 'owner') {
+      return Response.json({ error: `${aviso} Solo el dueño puede renovarle.`, clienteEnPerdidos: enPerdidos }, { status: 403 })
+    }
+    if (body.confirmarClienteEnPerdidos !== true) {
+      return Response.json({ error: `${aviso} Confirma que quieres renovarle igual.`, clienteEnPerdidos: enPerdidos, requiereConfirmar: true }, { status: 409 })
+    }
   }
 
   const saldoPendiente = calcularSaldoPendiente(original)
@@ -292,10 +307,22 @@ export async function POST(request, { params }) {
    * caja, y esa diferencia queda registrada en el capital de la ruta como
    * cualquier otro desembolso.
    */
-  const diferenciaExacta = montoFinal - minimoRenovacion
-  const diferencia = diferenciaExacta > 0
-    ? Math.ceil(diferenciaExacta / 100) * 100
-    : diferenciaExacta
+  // La misma cuenta que la pantalla (ver `efectivoDeLaRenovacion`).
+  const efectivo = efectivoDeLaRenovacion({ monto: montoFinal, deuda: minimoRenovacion, seguro: montoSeguroNum })
+  const diferenciaExacta = efectivo.exacta
+  const diferenciaBruta = efectivo.bruto
+  /* ⚠ EL SEGURO SE DESCUENTA DE LO QUE SE ENTREGA (decisión del dueño, 17 oct
+     2026). La pantalla lo sumaba al total, el servidor lo guardaba aparte y no
+     entraba a ningún lado (DETALLES-PRESTAMOS #18 y #51). Ahora sale de los
+     billetes: `diferencia` es lo que de verdad se entrega. Sin billetes que
+     entregar no hay de dónde descontarlo. */
+  const seguroRenovacion = efectivo.seguro
+  if (efectivo.seguroExcede) {
+    return Response.json({
+      error: `El seguro (${Math.round(seguroRenovacion).toLocaleString('es-CO')}) se descuenta de lo que le entregas, y le entregas ${Math.max(0, diferenciaBruta).toLocaleString('es-CO')}. Bájalo o súbele el monto.`,
+    }, { status: 400 })
+  }
+  const diferencia = diferenciaBruta > 0 ? efectivo.entrega : diferenciaBruta
 
   /* ══ CUÁNTO DE LO QUE PASA AL NUEVO ES INTERÉS ════════════════════════════
      La deuda vieja entra ENTERA al préstamo nuevo —es lo que el cliente debe y
@@ -309,6 +336,8 @@ export async function POST(request, { params }) {
      no se descuentan de aquí la cadena reconoce una ganancia que no entró.
      Solo sirve para REPARTIR la ganancia: la deuda del nuevo no cambia. Ver
      `capitalDelPrestamo` en lib/dinero/capital-base.js. */
+  // Con el efectivo NETO: el seguro que se descuenta no salió de la caja, se
+  // queda como ganancia del negocio (#51).
   const interesArrastrado = Math.max(0, Math.round(montoFinal - Math.max(0, diferencia) - capitalQueSigueAfuera))
 
   const orgConfig = await prisma.organization.findUnique({
@@ -449,7 +478,7 @@ export async function POST(request, { params }) {
       tipo: 'desembolso',
       monto: diferencia,
       descripcion: diferencia > 0
-        ? `Desembolso por renovación - ${original.cliente.nombre}`
+        ? `Desembolso por renovación - ${original.cliente.nombre}${seguroRenovacion > 0 ? ` (descontado seguro $${seguroRenovacion.toLocaleString('es-CO')})` : ''}`
         : financiar
           ? `Financiación del saldo, sin efectivo entregado - ${original.cliente.nombre}`
           : `Renovación sin efectivo entregado - ${original.cliente.nombre}`,
@@ -513,7 +542,9 @@ export async function POST(request, { params }) {
     // crédito; el efectivo va redondeado al centenar, así que la suma puede no
     // ser exacta y la pantalla lo dice en vez de esconderlo.
     deudaLiquidada: minimoRenovacion,
-    efectivoRedondeado: diferencia !== diferenciaExacta,
+    efectivoRedondeado: diferenciaBruta !== diferenciaExacta,
+    // Lo que se descontó de los billetes por el seguro (#51).
+    seguroDescontado: seguroRenovacion,
     renovacionNumero,
     ...(financiar ? { financiado: { deuda: minimoRenovacion, interes: interesFinanciado, total: totalAPagar, cuota: cuotaDiaria, cuotas: calc.numPeriodos, fechaFin } } : {}),
   }, { status: 201 })

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { formatMoney } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
+import { etiquetaModo } from '@/lib/dinero/modos'
 
 // `base` dice QUÉ SIGNIFICA el porcentaje que escribió el prestamista. No es
 // cosmético: el mismo "20%" vale tres cosas distintas según el modo.
@@ -14,39 +15,43 @@ const BASES = {
   periodo: { texto: 'El % es por cada cobro',      color: 'var(--cf-gold-dark)' },
 }
 
+/* El NOMBRE de cada modo sale del diccionario único (`etiquetaModo`): aquí el
+   clásico se llamaba «Cuota fija» y en el resto del sistema «Clásico», y el
+   profe de los tutoriales los dice en voz alta (DETALLES-PRESTAMOS #49). La
+   frase que explica qué hace queda debajo del nombre. */
 const MODOS = [
   {
-    key: 'fijo', label: 'Cuota fija', tag: 'Recomendado', base: 'mes', avanzado: false,
+    key: 'fijo', label: etiquetaModo('fijo'), frase: 'Cuota fija', tag: 'Recomendado', base: 'mes', avanzado: false,
     desc: 'La cuota es igual todas las veces. Capital e interés repartidos parejo. Es el más usado.',
     formula: 'Interés = Monto × % × meses.  Cuota = (Monto + Interés) ÷ número de cobros.',
   },
   {
-    key: 'unico', label: 'Interés de una sola vez', tag: 'De una vez', base: 'total', avanzado: false,
+    key: 'unico', label: etiquetaModo('unico'), frase: 'Interés de una sola vez', tag: null, base: 'total', avanzado: false,
     desc: 'Cobras el interés una sola vez, dure lo que dure. Si prestas $250.000 al 20%, son $50.000 así sean 6 semanas o 6 meses.',
     formula: 'Interés = Monto × % (una sola vez).  Cuota = (Monto + Interés) ÷ cobros.',
   },
   {
-    key: 'solo_interes', label: 'Solo interés, capital al final', tag: 'Globo', base: 'periodo', avanzado: false,
+    key: 'solo_interes', label: etiquetaModo('solo_interes'), frase: 'Solo interés, capital al final', tag: null, base: 'periodo', avanzado: false,
     desc: 'Cada cobro es solo interés. El capital completo vuelve al final, en una cuota grande.',
     formula: 'Cada cobro = Capital × %.  El último cobro incluye el capital completo.',
   },
   {
-    key: 'saldo', label: 'Interés sobre lo que falta', tag: 'Como los bancos', base: 'mes', avanzado: false,
+    key: 'saldo', label: etiquetaModo('saldo'), frase: 'Interés sobre lo que falta', tag: 'Como los bancos', base: 'mes', avanzado: false,
     desc: 'El interés se calcula sobre lo que aún debe: a medida que abona capital, el interés baja.',
     formula: 'Cuota fija (sistema francés). El interés de cada cuota = saldo pendiente × %; el resto abona capital.',
   },
   {
-    key: 'manual', label: 'Yo decido la cuota', tag: 'Manual', base: null, avanzado: false,
+    key: 'manual', label: etiquetaModo('manual'), frase: 'Yo decido la cuota', tag: null, base: null, avanzado: false,
     desc: 'Tú pones la cuota exacta. El sistema calcula cuántos cobros hacen falta. Aquí el % no se usa.',
     formula: 'Tú fijas la cuota. Número de cobros = Total a pagar ÷ cuota.',
   },
   {
-    key: 'lineal', label: 'Cuota que va bajando', tag: 'Decreciente', base: 'periodo', avanzado: true,
+    key: 'lineal', label: etiquetaModo('lineal'), frase: 'Cuota que va bajando', tag: null, base: 'periodo', avanzado: true,
     desc: 'El capital se divide parejo y el interés baja cada cobro, porque va sobre lo que falta.',
     formula: 'Capital ÷ cobros (parejo) + interés del período (saldo × %). La cuota baja cada vez.',
   },
   {
-    key: 'lineal_dinamico', label: 'Cuota que se ajusta al pago real', tag: 'Dinámico', base: 'periodo', avanzado: true,
+    key: 'lineal_dinamico', label: etiquetaModo('lineal_dinamico'), frase: 'Cuota que se ajusta al pago real', tag: null, base: 'periodo', avanzado: true,
     desc: 'Igual que la que va bajando, pero recalcula los cobros que faltan según lo que de verdad pagó.',
     formula: 'Como decreciente, pero recalcula los cobros restantes según lo ya pagado.',
   },
@@ -224,7 +229,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
     return (
       <div className="rounded-[16px] p-4" style={{ background: 'color-mix(in srgb, var(--cf-gold) 8%, var(--cf-surface))', border: '1.5px solid var(--cf-gold)' }}>
         <p className="text-[11px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--cf-ink-3)' }}>Tu modo ideal es</p>
-        <p className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>{md?.label}</p>
+        <p className="text-lg font-bold" style={{ color: 'var(--cf-ink)' }}>{md?.label}{md?.frase ? <span className="text-[13px] font-semibold" style={{ color: 'var(--cf-ink-2)' }}> · {md.frase}</span> : null}</p>
         {md?.base && <p className="text-[11px] font-semibold mt-0.5" style={{ color: BASES[md.base].color }}>{BASES[md.base].texto}</p>}
         <p className="text-[12px] mt-1.5 leading-snug" style={{ color: 'var(--cf-ink-2)' }}>{md?.desc}</p>
         {ej && sugerido !== 'manual' && (
@@ -283,6 +288,7 @@ export default function ModoInteresSelector({ modoInteres, onChange, calculo, mo
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <span className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>{m.label}</span>
+              <span className="text-[12px]" style={{ color: 'var(--cf-ink-2)' }}>· {m.frase}</span>
               {esPreferido && (
                 <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md" style={{ background: 'color-mix(in srgb, var(--cf-gold) 18%, transparent)', color: 'var(--cf-gold)' }}>Tu modo habitual</span>
               )}

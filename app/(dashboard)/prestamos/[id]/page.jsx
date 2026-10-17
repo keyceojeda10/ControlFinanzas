@@ -1807,7 +1807,11 @@ function PrestamoDetalleContenido({ params }) {
         <BotonPagoPersonalidad
           enMora={enMora}
           frecuenciaLabel={frecuenciaLabel}
-          monto={cuotaDiaria}
+          // La MISMA cifra con que abre la hoja (`cuotaQueToca`, del servidor).
+          // El botón decía la cuota completa y la hoja abría con otra: con un
+          // adelanto, un atraso menor que una cuota o en un abierto, dos cifras
+          // para la misma pregunta (DETALLES-PRESTAMOS #30).
+          monto={cuotaQueToca > 0 ? Math.min(cuotaQueToca, Math.round(saldoPendiente || cuotaQueToca)) : cuotaDiaria}
           onClick={abrirPagoNormal}
         />
       )}
@@ -2070,11 +2074,11 @@ function PrestamoDetalleContenido({ params }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
               <p className="text-sm font-semibold" style={{ color: 'var(--cf-ink)' }}>
-                Pendiente de tu aprobacion
+                Pendiente de tu aprobación
               </p>
             </div>
             <p className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>
-              {creadoPor?.nombre ?? 'Un cobrador'} solicita crear este prestamo de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. El dinero no se ha desembolsado todavia.
+              {creadoPor?.nombre ?? 'Un cobrador'} solicita crear este préstamo de {formatMoney(montoPrestado)} para {cliente?.nombre ?? 'el cliente'}. El dinero no se ha desembolsado todavía.
             </p>
             <div className="flex gap-2">
               <Button
@@ -2121,7 +2125,7 @@ function PrestamoDetalleContenido({ params }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
-              Este prestamo esta pendiente de aprobacion por el administrador.
+              Este préstamo está pendiente de aprobación por el administrador.
             </p>
           </div>
         </Card>
@@ -3115,7 +3119,10 @@ function PrestamoDetalleContenido({ params }) {
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
               textTransform: 'uppercase', color: '#A3A8B2',
-            }}>Interés vencido y sin pagar</span>
+            }}>{/* La cifra es `interesCobrableAhora`, que suma también la próxima
+                 cuota aunque no haya vencido (y en un abierto, el período en
+                 curso): «vencido» no era verdad (DETALLES-PRESTAMOS #26). */}
+              Interés que puede pagar hoy</span>
             <span className="cf-fig" style={{
               fontFamily: 'var(--font-space-grotesk), system-ui',
               fontSize: 30, fontWeight: 600, letterSpacing: '-.03em', color: '#F5B824',

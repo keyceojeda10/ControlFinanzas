@@ -454,6 +454,8 @@ export default function ClienteDetallePage({ params }) {
   }
 
   const prestamosActivos = cliente.prestamos?.filter((p) => p.estado === 'activo') ?? []
+  const enPerdidos = prestamosActivos.filter((p) => p.esClavo)
+  const saldoEnPerdidos = Math.round(enPerdidos.reduce((a, p) => a + Math.max(0, Number(p.saldoPendiente) || 0), 0))
 
   /* EL NÚMERO DE CADA PRÉSTAMO CON ESTE CLIENTE.
    *
@@ -686,6 +688,23 @@ export default function ClienteDetallePage({ params }) {
         calificacion={cliente.calificacion}
         onAbrirCalificacion={() => setModalCalificar(true)}
       />
+
+      {/* ⚠ EN PERDIDOS, EN ROJO Y CON LA CIFRA (decisión del dueño, 17 oct 2026).
+          «Las personas que están en clavo no se reflejan en ningún lado»: otro
+          cobrador de la misma oficina le volvía a prestar. Ahora la ficha lo dice
+          arriba, el cobrador no puede prestarle y el dueño tiene que confirmarlo. */}
+      {enPerdidos.length > 0 && (
+        <div role="alert" className="rounded-[14px] px-4 py-3 flex items-start gap-2.5"
+          style={{ background: 'var(--cf-red-pill-bg)', border: '1px solid color-mix(in srgb, var(--cf-red-dark) 30%, transparent)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cf-red-dark)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5" aria-hidden="true">
+            <path d="M12 9v4M12 17h.01" /><path d="M10.3 3.8L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.8a2 2 0 00-3.4 0z" />
+          </svg>
+          <span className="text-sm" style={{ color: 'var(--cf-red-dark)' }}>
+            <strong>En perdidos · debe {formatMoney(saldoEnPerdidos)}</strong>
+            {' '}{esOwner ? 'Si le vuelves a prestar, te pediremos confirmarlo.' : 'No puedes prestarle: pídeselo al dueño.'}
+          </span>
+        </div>
+      )}
 
       {/* ⚠ ESTABA DEBAJO DE TODOS LOS PRÉSTAMOS.
           Iba pegada a los chips de acciones, y los chips están al final: para

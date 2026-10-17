@@ -83,6 +83,7 @@ export async function GET(request) {
         montoPrestado: true, ...CAMPOS_DEL_REPARTO,
         totalAPagar: true,
         estado: true,
+        esClavo: true,
         cliente: { select: { id: true, nombre: true } },
         pagos: { select: { montoPagado: true, tipo: true } },
       },
@@ -124,6 +125,8 @@ export async function GET(request) {
       montoPrestado: p.montoPrestado,
       saldoPendiente: p.totalAPagar - totalPagado,
       estado: p.estado,
+      // En perdidos se dice en el buscador: otro cobrador le volvía a prestar (#17).
+      enPerdidos: p.esClavo && p.estado === 'activo',
     }
   })
 

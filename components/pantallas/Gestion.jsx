@@ -739,8 +739,8 @@ export function MoverAPerdidos({
         </svg>
         <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-red-darker)' }}>
           Darlo por perdido saca <strong>{montoEnJuego}</strong> de tu cartera y lo
-          registra como pérdida del mes. El cliente queda marcado y no podrás
-          prestarle otra vez sin quitarle la marca.
+          registra como pérdida del mes. El cliente queda marcado en rojo en todo
+          el sistema: tus cobradores no podrán prestarle y tú tendrás que confirmarlo.
         </span>
       </div>
 

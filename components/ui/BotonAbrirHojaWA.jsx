@@ -19,7 +19,7 @@ const WA_ICON = (
   </svg>
 )
 
-export default function BotonAbrirHojaWA({ onClick, texto = 'Enviar confirmacion por WhatsApp' }) {
+export default function BotonAbrirHojaWA({ onClick, texto = 'Enviar confirmación por WhatsApp' }) {
   return (
     <button
       type="button"

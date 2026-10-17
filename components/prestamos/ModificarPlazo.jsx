@@ -19,6 +19,7 @@ import { encolarMutacion } from '@/lib/offline'
 // tumbó producción con la TDZ hace dos días.
 import { formatFechaCalendario } from '@/lib/i18n'
 import { conPantalla } from '@/components/cf/Procesando'
+import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 
 const toISODate = (d) => {
   const date = d instanceof Date ? d : new Date(d)
@@ -139,11 +140,11 @@ export default function ModificarPlazo({
     setLoading(true)
     setError('')
     try {
-      const res = await conPantalla('financiar', () => fetch(`/api/prestamos/${prestamoId}/renovar`, {
+      const res = await conPantalla('financiar', () => enviarConfirmandoPerdidos((confirmado) => fetch(`/api/prestamos/${prestamoId}/renovar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ financiar: true, interes: 0, diasPlazo: diasPlazoNuevo, frecuencia }),
-      }))
+        body: JSON.stringify({ ...(confirmado ? { confirmarClienteEnPerdidos: true } : {}), financiar: true, interes: 0, diasPlazo: diasPlazoNuevo, frecuencia }),
+      })))
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || 'No se pudo extender el plazo.'); return }
       // A la cartulina nueva, que es la que se cobra desde hoy. Ver la nota de

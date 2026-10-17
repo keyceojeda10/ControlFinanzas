@@ -35,6 +35,7 @@ import MonedaCF                               from '@/components/ui/MonedaCF'
 import BadgeNuevo, { NuevoChip }               from '@/components/ui/BadgeNuevo'
 import { useCountry }                         from '@/hooks/useCountry'
 import { formatMoney, isHoy }                 from '@/lib/i18n'
+import { ETIQUETA_MODO, MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const IconWA = (
   <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
@@ -182,15 +183,10 @@ const FRECUENCIAS = [
   { value: 'mensual',   label: 'Mensuales'  },
 ]
 
+// Los nombres salen del diccionario único (DETALLES-PRESTAMOS #49).
 const MODOS_INTERES = [
-  { value: '',                label: 'Todo modo' },
-  { value: 'fijo',            label: 'Cuota fija' },
-  { value: 'unico',           label: 'De una vez' },
-  { value: 'solo_interes',    label: 'Globo' },
-  { value: 'saldo',           label: 'Sobre saldo' },
-  { value: 'manual',          label: 'Manual' },
-  { value: 'lineal',          label: 'Decreciente' },
-  { value: 'lineal_dinamico', label: 'Dinamico' },
+  { value: '', label: 'Todo modo' },
+  ...MODOS_EN_ORDEN.map((m) => ({ value: m, label: etiquetaModo(m) })),
 ]
 
 const LIMIT = 50
@@ -203,11 +199,7 @@ const P_COLOR_CRIT = 'var(--cf-red-dark)'
 const P_COLOR_DONE = 'var(--cf-green-dark)'
 const P_COLOR_OFF  = 'var(--cf-ink-3)'
 
-const MODO_TAG = {
-  fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
-  saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente',
-  lineal_dinamico: 'Dinamico', proporcional: 'Proporcional',
-}
+const MODO_TAG = ETIQUETA_MODO
 
 function pMoodColor(p) {
   if (p.estado === 'completado') return P_COLOR_DONE
@@ -220,6 +212,8 @@ function pMoodColor(p) {
 function pMoodLabel(p) {
   if (p.estado === 'completado') return 'OK'
   if (p.estado === 'cancelado')  return 'Can'
+  // Un préstamo por aprobar no está «OK»: todavía no existe (#47).
+  if (p.estado === 'pendiente_aprobacion') return 'Apr'
   if (p.diasMora > 7)            return `${p.diasMora}d`
   if (p.diasMora > 0)            return `${p.diasMora}d`
   if (p.pagoHoy)                 return 'Pagó'
@@ -299,9 +293,15 @@ function PrestamoCardCompacto({ prestamo: p, esNuevo, ancla, alSalir }) {
         {esFinanciacion(p) && <EtiquetaFinanciado style={{ height: 18, padding: '0 6px', fontSize: 11 }} />}
       </div>
 
+      {/* LO PAGADO, como la ficha y con su «de», no lo que debe. La cuadrícula
+          decía el saldo y las fichas lo pagado: el mismo número grande con dos
+          significados según la vista (DETALLES-PRESTAMOS #46). La ficha lleva lo
+          pagado por pedido del dueño: «debería salir cero de un millón
+          ochocientos». */}
       <p className="text-[15px] font-mono-display font-bold mb-1.5 leading-none whitespace-nowrap"
         style={{ color: p.diasMora > 0 ? color : 'var(--cf-ink)' }}>
-        {formatMoney(p.saldoPendiente)}
+        {formatMoney(Math.max(0, (Number(p.totalAPagar) || 0) - (Number(p.saldoPendiente) || 0)))}
+        <span className="text-[11px] font-normal" style={{ color: 'var(--cf-ink-3)' }}> de {formatMoney(Number(p.totalAPagar) || 0)}</span>
       </p>
 
       {/* Row 3: progress */}
@@ -343,6 +343,19 @@ const IconGridP = (
 // Aquí la fila es un préstamo, no una persona: el mismo cliente puede tener
 // tres, y volver «al cliente» dejaría al cobrador en la de arriba de las tres.
 const ANCLA_PRESTAMO = (id) => `prestamo-${id}`
+
+/* «68 activos» salía en TODAS las pestañas (DETALLES-PRESTAMOS #44): cada una
+   dice lo que cuenta, con el nombre de su chip. */
+function rotuloDelConteo(estado) {
+  if (!estado) return 'préstamos'
+  if (estado.startsWith('vence')) {
+    const e = ESTADOS.find((x) => x.value === estado)
+    return `que vencen ${String(e?.label ?? '').toLowerCase()}`
+  }
+  const especiales = { activo: 'activos', pendiente_aprobacion: 'por aprobar', niUnPeso: 'sin un peso', renovar: 'para renovar', nuevos: 'de hoy' }
+  if (especiales[estado]) return especiales[estado]
+  return String(ESTADOS.find((x) => x.value === estado)?.label ?? 'préstamos').toLowerCase()
+}
 
 export default function PrestamosPage() {
   const { esOwner, puedeCrearPrestamos, orgNombre, ocultarSaldoWA, organizationId, loading: authLoading } = useAuth()
@@ -414,11 +427,20 @@ export default function PrestamosPage() {
   // del dia. Si no llega, la tarjeta NO se pinta — un «$0 cobrado este mes» se
   // lee como «no cobre nada», que es otra cosa.
   const [cobradoMes, setCobradoMes] = useState(null)
+  const [totalesNegocio, setTotalesNegocio] = useState(null)
   useEffect(() => {
     let vivo = true
     fetch(`/api/dashboard/resumen?t=${Date.now()}`, { cache: 'no-store' })
       .then((r) => r.json())
-      .then((d) => { if (vivo && d?.cobros?.mes != null) setCobradoMes(d.cobros.mes) })
+      .then((d) => {
+        if (!vivo) return
+        if (d?.cobros?.mes != null) setCobradoMes(d.cobros.mes)
+        // Los totales del NEGOCIO para «En la calle» y «En mora»: sumados sobre
+        // la página que se ve, salían cortos con más de 50 (#45).
+        if (d?.prestamos?.saldoPorCobrar != null) {
+          setTotalesNegocio({ saldoPorCobrar: d.prestamos.saldoPorCobrar, saldoEnMora: d?.clientes?.saldoEnMora ?? null })
+        }
+      })
       .catch(() => {})
     return () => { vivo = false }
   }, [])
@@ -632,13 +654,13 @@ export default function PrestamosPage() {
     })
   }, [])
 
-  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '', sinPagos = '', desde = '', hasta = '' } = {}) => {
+  const fetchPrestamos = useCallback(async (q, est, p, { soft = false, frec = '', ruta = '', creador = '', renov = '', modo = '', sinPagos = '', moraMin = '', desde = '', hasta = '' } = {}) => {
     const shouldUseSoftRefresh = soft && hasLoadedOnceRef.current
     setError('')
     setIsOffline(false)
     // ⚠ El rango entra en la clave. Sin él, lo guardado de un rango se pinta
     // como si fuera el resultado del siguiente.
-    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${sinPagos || ''}:${desde || ''}:${hasta || ''}:${p}`
+    const cacheKey = `prestamos:${q || ''}:${est || ''}:${frec || ''}:${ruta || ''}:${creador || ''}:${renov || ''}:${modo || ''}:${sinPagos || ''}:${moraMin || ''}:${desde || ''}:${hasta || ''}:${p}`
 
     // Cache-first: pintar al instante desde IndexedDB si hay datos de este
     // filtro, y revalidar en segundo plano. Sin cache → skeleton.
@@ -670,6 +692,7 @@ export default function PrestamosPage() {
                estado que no existe y la lista salía vacía sin avisar. */
             let filtered = filtrarPrestamosGuardados(allPrestamos, { est, desde, hasta })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
+            if (moraMin) filtered = filtered.filter(pr => Number(pr.diasMora || 0) > Number(moraMin) && !pr.esClavo)
             if (q) {
               const ql = q.toLowerCase()
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
@@ -738,7 +761,10 @@ export default function PrestamosPage() {
       // Antes se leia de window.location porque el filtro no era estado. Ahora
       // llega por filtrosExtra como los demas.
       if (sinPagos) params.set('sinPagosDias', sinPagos)
-      if (diasMoraMin) params.set('diasMoraMin', diasMoraMin)
+      /* ⚠ POR PARÁMETRO, NO DEL ESTADO. `fetchPrestamos` es un `useCallback`
+         con `[]`: leía el `diasMoraMin` del PRIMER render y elegir «Lleva
+         atrasado» no hacía nada (DETALLES-PRESTAMOS #42). */
+      if (moraMin) params.set('diasMoraMin', moraMin)
       params.set('page', String(p))
       params.set('limit', String(LIMIT))
       const res = await fetch(`/api/prestamos?${params}`)
@@ -765,6 +791,7 @@ export default function PrestamosPage() {
                estado que no existe y la lista salía vacía sin avisar. */
             let filtered = filtrarPrestamosGuardados(allPrestamos, { est, desde, hasta })
             if (frec) filtered = filtered.filter(pr => (pr.frecuencia || 'diario') === frec)
+            if (moraMin) filtered = filtered.filter(pr => Number(pr.diasMora || 0) > Number(moraMin) && !pr.esClavo)
             if (q) {
               const ql = q.toLowerCase()
               filtered = filtered.filter(pr => pr.cliente?.nombre?.toLowerCase().includes(ql) || pr.cliente?.cedula?.includes(ql))
@@ -800,9 +827,15 @@ export default function PrestamosPage() {
   // escondia todos los prestamos que habia cargado el dueño. En una cartera
   // chica, donde carga el dueño, el filtro devolvia la lista VACIA — por eso
   // parecia que filtrar por ruta "no se podia".
-  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres, sinPagos: sinPagosDias, desde: cobraDesde, hasta: cobraHasta }
+  const filtrosExtra = { frec: frecuencia, ruta: rutaId, renov: renovacion, modo: modoInteres, sinPagos: sinPagosDias, moraMin: diasMoraMin, desde: cobraDesde, hasta: cobraHasta }
 
-  useEffect(() => { setPage(1); fetchPrestamos('', estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
+  /* ⚠ UN FILTRO NUEVO SE PIDE CON LO ESCRITO EN EL BUSCADOR. Pedía con `q=''`
+     y otro efecto reponía la búsqueda 300 ms después —parpadeo de la lista sin
+     filtrar—, y ese otro efecto no tenía «Sin recibir un peso»: al cambiarlo la
+     lista quedaba SIN la búsqueda mientras la caja la seguía mostrando
+     (DETALLES-PRESTAMOS #43). Ahora: filtros, al instante y con la búsqueda;
+     el texto, con espera, en su propio efecto. */
+  useEffect(() => { setPage(1); fetchPrestamos(buscar, estado, 1, filtrosExtra) }, [fetchPrestamos, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, diasMoraMin, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Estado -> URL. Sin esto el filtro no se puede compartir ni conservar al
   // volver atras. La comparacion contra la URL actual evita el bucle
@@ -815,19 +848,23 @@ export default function PrestamosPage() {
     if (renovacion)   q.set('renovacion', renovacion)
     if (modoInteres)  q.set('modoInteres', modoInteres)
     if (sinPagosDias) q.set('sinPagosDias', sinPagosDias)
+    if (diasMoraMin)  q.set('diasMoraMin', diasMoraMin)
     if (cobraDesde)   q.set('cobraDesde', cobraDesde)
     if (cobraHasta)   q.set('cobraHasta', cobraHasta)
     const nueva = q.toString()
     if (nueva !== (searchParams?.toString() || '')) {
       router.replace(nueva ? `/prestamos?${nueva}` : '/prestamos', { scroll: false })
     }
-  }, [estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, diasMoraMin, cobraDesde, cobraHasta]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // El texto del buscador, con espera. La primera vez no: ya pidió el de arriba.
+  const buscarMontadoRef = useRef(false)
   useEffect(() => {
+    if (!buscarMontadoRef.current) { buscarMontadoRef.current = true; return }
     setPage(1)
     const t = setTimeout(() => fetchPrestamos(buscar, estado, 1, filtrosExtra), 300)
     return () => clearTimeout(t)
-  }, [buscar, estado, frecuencia, rutaId, renovacion, modoInteres, cobraDesde, cobraHasta, fetchPrestamos]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buscar]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cambio de página
   useEffect(() => {
@@ -838,7 +875,7 @@ export default function PrestamosPage() {
   useEffect(() => {
     if (!lastSyncedAt) return
     fetchPrestamos(buscar, estado, page, { soft: true, ...filtrosExtra })
-  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, renovacion, modoInteres, page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lastSyncedAt, fetchPrestamos, buscar, estado, frecuencia, rutaId, renovacion, modoInteres, sinPagosDias, diasMoraMin, cobraDesde, cobraHasta, page]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Contar la mora sobre `prestamos` solo es exacto si tenemos toda la cartera
   // en memoria: con paginacion eso es UNA pagina y el numero sale corto (con 97
@@ -888,7 +925,7 @@ export default function PrestamosPage() {
             clientes: la cabecera del armazon es la de navegacion y no lleva
             titulo, asi que la pantalla no decia ni como se llama. */}
         <EncabezadoLista
-          titulo="Préstamos" total={total != null ? `${total} activos` : null}
+          titulo="Préstamos" total={total != null ? `${total} ${rotuloDelConteo(estado)}` : null}
           crearTexto="Nuevo préstamo"
           onCrear={puedeCrearPrestamos ? () => router.push('/prestamos/nuevo') : null}
         />
@@ -897,7 +934,13 @@ export default function PrestamosPage() {
             tarjetas no se sabe cuanto hay en total en la calle ni cuanto esta
             atascado. Se suman sobre la pagina visible cuando no hay totales del
             servidor — `parcial` lo marca para no dar por total lo que no lo es. */}
-        <TresCifras {...tresCifras(prestamosVisibles, country, { cobradoMes })} />
+        {/* Sin filtros, las cifras del negocio entero; con filtros, de lo que se
+            ve, y se dice (DETALLES-PRESTAMOS #45). */}
+        <TresCifras {...tresCifras(prestamosVisibles, country, {
+          cobradoMes,
+          totales: !buscar && ['', 'activo'].includes(estado) && nFiltros === 0 && !cobraDesde && !cobraHasta && totalesNegocio?.saldoEnMora != null
+            ? totalesNegocio : null,
+        })} />
 
         <div className="flex items-center gap-2">
           {/* El buscador de la lamina: radio 14, alto 46. Lo tenia como pildora,

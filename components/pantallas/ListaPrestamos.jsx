@@ -25,7 +25,7 @@ import { EstadoVacio, BotonPrimario } from '@/components/cf/primitivos'
 
    Van acá arriba porque responden lo que la lista NO puede: recorriendo 68
    tarjetas no se sabe cuánto hay en total en la calle. */
-export function TresCifras({ enLaCalle, enMora, cobradoMes }) {
+export function TresCifras({ enLaCalle, enMora, cobradoMes, parcial = false }) {
   const celdas = [
     { rotulo: 'En la calle',  valor: enLaCalle,  color: 'var(--cf-ink)' },
     { rotulo: 'En mora',      valor: enMora,     color: 'var(--cf-red)' },
@@ -34,6 +34,7 @@ export function TresCifras({ enLaCalle, enMora, cobradoMes }) {
   if (!celdas.length) return null
 
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 'none' }}>
     <div style={{ display: 'flex', gap: 10, flex: 'none' }}>
       {celdas.map((c) => (
         <div key={c.rotulo} style={{
@@ -54,6 +55,12 @@ export function TresCifras({ enLaCalle, enMora, cobradoMes }) {
           }}>{c.valor}</span>
         </div>
       ))}
+    </div>
+    {/* Con un filtro o una búsqueda, las dos primeras son de lo que se ve, no
+        del negocio: se dice (DETALLES-PRESTAMOS #45). */}
+    {parcial && (
+      <span style={{ fontSize: 12, color: 'var(--cf-ink-3)' }}>«En la calle» y «En mora» de los préstamos que ves aquí.</span>
+    )}
     </div>
   )
 }

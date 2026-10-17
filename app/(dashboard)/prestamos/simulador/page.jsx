@@ -40,6 +40,7 @@ import { compartirSimulacionImagen } from '@/lib/simulacion-imagen'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
 import { SelectorPorcentajePesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
+import { ETIQUETA_MODO } from '@/lib/dinero/modos'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -52,15 +53,9 @@ const FRECUENCIAS = [
 
 const PLAZO_DEFAULT = { diario: '30', semanal: '8', quincenal: '4', mensual: '3' }
 
-const MODOS = {
-  fijo: 'Cuota fija',
-  unico: 'Interés de una sola vez',
-  solo_interes: 'Solo interés, capital al final',
-  saldo: 'Interés sobre lo que falta',
-  manual: 'Yo decido la cuota',
-  lineal: 'Interés que baja',
-  lineal_dinamico: 'Proporcional',
-}
+// El diccionario único: aquí el dinámico se llamaba «Proporcional», que es
+// OTRO modo (DETALLES-PRESTAMOS #49).
+const MODOS = ETIQUETA_MODO
 
 const fmtFecha = (d) =>
   d ? new Date(d).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }) : '—'

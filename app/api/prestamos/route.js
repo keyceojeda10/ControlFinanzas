@@ -32,6 +32,7 @@ import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { rutaPermitida } from '@/lib/limites-plan'
 import { notificar, plata } from '@/lib/notificar'
 import { numerosDeClientes, camposDeNumero } from '@/lib/prestamos/numero'
+import { perdidosDelCliente, textoClienteEnPerdidos } from '@/lib/dinero/cliente-en-perdidos'
 
 // ─── GET /api/prestamos ─────────────────────────────────────────
 export async function GET(request) {
@@ -572,6 +573,12 @@ export async function POST(request) {
   const cuentaDesembolso = metodoPagoDesembolso || 'efectivo'
   const cuentaDesembolsoId = metodoPagoDesembolso === 'transferencia' ? (metodoPagoIdDesembolso || null) : null
 
+  // El seguro se descuenta de lo que se entrega (#51): no puede comerse el préstamo.
+  const seguroDescontado = seguro && Number(montoSeguro) > 0 ? Math.round(Number(montoSeguro)) : 0
+  if (seguroDescontado > 0 && seguroDescontado >= Number(montoPrestado)) {
+    return Response.json({ error: 'El seguro no puede ser igual o mayor que lo que prestas: se descuenta de lo que le entregas.' }, { status: 400 })
+  }
+
   const freq = frecuencia || 'diario'
   const frecuenciasValidas = ['diario', 'semanal', 'quincenal', 'mensual']
   if (!frecuenciasValidas.includes(freq)) {
@@ -658,6 +665,21 @@ export async function POST(request) {
 
   if (cliente.rutaId && !await rutaPermitida(organizationId, cliente.rutaId)) {
     return Response.json({ error: 'La ruta de este cliente excede el limite de tu plan. Mejora tu plan o desactiva rutas que no uses.' }, { status: 403 })
+  }
+
+  /* ⚠ CLIENTE CON UN PRÉSTAMO EN PERDIDOS (decisión del dueño, 17 oct 2026).
+     Otros cobradores del mismo negocio le volvían a prestar porque nada lo
+     marcaba. Al cobrador se le bloquea; el dueño presta solo si lo confirma
+     (`confirmarClienteEnPerdidos`). (DETALLES-PRESTAMOS #17.) */
+  const enPerdidos = await perdidosDelCliente(prisma, { organizationId, clienteId })
+  if (enPerdidos) {
+    const aviso = textoClienteEnPerdidos(enPerdidos)
+    if (rol !== 'owner') {
+      return Response.json({ error: `${aviso} Solo el dueño puede prestarle.`, clienteEnPerdidos: enPerdidos }, { status: 403 })
+    }
+    if (body.confirmarClienteEnPerdidos !== true) {
+      return Response.json({ error: `${aviso} Confirma que quieres prestarle igual.`, clienteEnPerdidos: enPerdidos, requiereConfirmar: true }, { status: 409 })
+    }
   }
 
   if (cliente.montoMaximoPrestamo && Number(montoPrestado) > cliente.montoMaximoPrestamo) {
@@ -973,11 +995,20 @@ export async function POST(request) {
         data:  { estado: 'activo' },
       })
 
+      /* ⚠ EL SEGURO SE DESCUENTA AL PRESTAR (decisión del dueño, 17 oct 2026).
+         Se guardaba aparte y no entraba a ningún lado: ni a la deuda ni a la caja,
+         mientras la pantalla lo sumaba al total y la caja decía que ya había
+         entrado (DETALLES-PRESTAMOS #51). Ahora la cartulina es por el monto
+         completo y de la caja sale el monto MENOS el seguro, como en una
+         renovación sale la diferencia: las dos cajas toman el efectivo entregado
+         de este asiento. */
       await registrarMovimientoCapital(tx, {
         organizationId,
         tipo: 'desembolso',
-        monto: Number(montoPrestado),
-        descripcion: `Desembolso préstamo a ${cliente.nombre}`,
+        monto: Number(montoPrestado) - seguroDescontado,
+        descripcion: seguroDescontado > 0
+          ? `Desembolso préstamo a ${cliente.nombre} (descontado seguro $${seguroDescontado.toLocaleString('es-CO')})`
+          : `Desembolso préstamo a ${cliente.nombre}`,
         referenciaId: nuevo.id,
         referenciaTipo: 'prestamo',
         rutaId: rutaIdCapital,

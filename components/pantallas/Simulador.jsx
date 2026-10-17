@@ -76,7 +76,7 @@ export default function Simulador({
   onMonto, onInteres, onCobros,
   montoMarcador = 'Ej: 500.000',
   frecuencia = 'Diario', frecuencias = ['Diario', 'Semanal', 'Quincenal', 'Mensual'],
-  modo = 'Cuota fija', recomendado = true,
+  modo = 'Clásico', recomendado = true,
   /* Lo que haya que decir SOBRE EL MODO va pegado al modo. Hoy es el aviso de
      «el % se cobra en cada cobro»; puesto al final de la pantalla quedaba
      debajo del botón de crear, o sea después de la decisión. */

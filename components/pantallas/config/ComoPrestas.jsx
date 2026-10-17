@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatMoney, soloDecimal } from '@/lib/i18n'
 import { calcularPrestamo } from '@/lib/calculos'
+import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const FRECUENCIAS = [
   { valor: '', nombre: 'Sin preferencia' },
@@ -34,13 +35,7 @@ const FRECUENCIAS = [
 // mismo préstamo tendría dos nombres según dónde se mire.
 const MODOS = [
   { valor: '', nombre: 'Sin preferencia' },
-  { valor: 'fijo', nombre: 'Cuota fija' },
-  { valor: 'unico', nombre: 'De una vez' },
-  { valor: 'solo_interes', nombre: 'Globo' },
-  { valor: 'saldo', nombre: 'Sobre saldo' },
-  { valor: 'lineal', nombre: 'Decreciente' },
-  { valor: 'lineal_dinamico', nombre: 'Dinámico' },
-  { valor: 'manual', nombre: 'Manual' },
+  ...MODOS_EN_ORDEN.map((m) => ({ valor: m, nombre: etiquetaModo(m) })),
 ]
 
 // Un solo día, como en el diseño («Domingos»). El domingo es el que usa

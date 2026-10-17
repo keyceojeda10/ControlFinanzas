@@ -45,6 +45,7 @@ import { BotonPrimario, Chip, EtiquetaCampo, Pastilla } from '@/components/cf/pr
 import MoneyInput from '@/components/ui/MoneyInput'
 import { formatMoney } from '@/lib/i18n'
 import { montoConTasa } from '@/lib/cartulina-datos'
+import { MODOS_EN_ORDEN, etiquetaModo } from '@/lib/dinero/modos'
 
 const FRECUENCIAS = [
   { key: 'diario', label: 'Diario' },
@@ -82,14 +83,7 @@ const ROTULO = { verde: 'Lista', ambar: 'Revisar', rojo: 'Falta lo básico' }
  */
 /* Los modos, con los MISMOS nombres que la lista de préstamos: si aquí se
    llamaran distinto, el mismo préstamo tendría dos nombres según dónde se mire. */
-const MODOS = [
-  { valor: 'fijo', nombre: 'Cuota fija' },
-  { valor: 'unico', nombre: 'De una vez' },
-  { valor: 'solo_interes', nombre: 'Globo (solo interés)' },
-  { valor: 'saldo', nombre: 'Sobre saldo' },
-  { valor: 'lineal', nombre: 'Decreciente' },
-  { valor: 'lineal_dinamico', nombre: 'Dinámico' },
-]
+const MODOS = MODOS_EN_ORDEN.filter((m) => m !== 'manual').map((m) => ({ valor: m, nombre: etiquetaModo(m) }))
 
 function efectivo(f, base) {
   const num = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null }

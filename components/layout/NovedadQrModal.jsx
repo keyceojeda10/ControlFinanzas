@@ -9,7 +9,7 @@ const STEPS = [
   {
     tag: 'Nueva funcionalidad',
     titulo: 'Cobro con QR',
-    texto: 'Ahora puedes cobrar escaneando un codigo QR. Sin buscar al cliente, sin navegar. Escaneas, y el sistema abre el cobro al instante.',
+    texto: 'Ahora puedes cobrar escaneando un código QR. Sin buscar al cliente, sin navegar. Escaneas, y el sistema abre el cobro al instante.',
     icon: 'qr',
   },
   {
@@ -27,7 +27,7 @@ const STEPS = [
   {
     tag: 'Paso 3',
     titulo: 'Escanea y cobra',
-    texto: 'En la barra inferior, toca "Mas opciones" y luego "Escanear QR". Apunta la camara al codigo y el sistema abre el cobro del cliente automaticamente. Funciona en iPhone y Android.',
+    texto: 'En la barra inferior, toca «Más opciones» y luego «Escanear QR». Apunta la cámara al código y el sistema abre el cobro del cliente automáticamente. Funciona en iPhone y Android.',
     icon: 'scan',
   },
   {

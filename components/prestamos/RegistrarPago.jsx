@@ -27,9 +27,10 @@ import HojaReciboPrevio from '@/components/recibos/HojaReciboPrevio'
 import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
+import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
@@ -51,6 +52,25 @@ import { frenteACuotaDe, cuotaDeReferencia, comoFueElPago } from '@/lib/dinero/c
 // En un abierto el interés es de cada período de su frecuencia, no siempre del
 // mes (DETALLES-PRESTAMOS #5 y #26).
 const PERIODO_DEL = { diario: 'día', semanal: 'la semana', quincenal: 'la quincena', mensual: 'mes' }
+
+/* ── PAGA DE MÁS: QUÉ PASA CON LO DE MÁS ─────────────────────────────────────
+   El aviso del excedente solo vivía en el formulario viejo; la hoja nueva —el
+   camino de casi todos los cobros— decía «paga $Y de más» y nada más. En Globo
+   eso adelanta INTERESES y el capital no baja, y nadie lo podía saber
+   (DETALLES-PRESTAMOS #34). Aquí se dice por modo, y si lo que quería era bajar
+   el capital, a un toque. En el dinámico lo de más ya baja el capital. */
+function notaDePagoDeMas(modo, cuota, deMas, onACapital, formatMoney) {
+  const que = modo === 'solo_interes'
+    ? 'Eso adelanta los intereses de las próximas cuotas: el capital no baja.'
+    : modo === 'lineal_dinamico'
+      ? 'Eso baja el capital.'
+      : 'Eso adelanta las próximas cuotas: no perdona interés.'
+  return {
+    tono: 'extra',
+    texto: `Le tocaba ${formatMoney(cuota)}: paga ${formatMoney(deMas)} de más. ${que}`,
+    accion: onACapital && modo !== 'lineal_dinamico' ? { texto: 'Cambiar a abono a capital', onPulsar: onACapital } : null,
+  }
+}
 
 export default function RegistrarPago({
   prestamoId, cuotaDiaria, saldoPendiente,
@@ -79,7 +99,7 @@ export default function RegistrarPago({
 }) {
   const router = useRouter()
   const { formatMoney } = useCountry()
-  const { puedeAplicarDescuentos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
+  const { puedeAplicarDescuentos, puedeGestionarPrestamos, orgNombre, ocultarSaldoWA, organizationId, camposRecibo: camposReciboOrg, modoAbreviado } = useAuth()
 
   // ── EL MODO ABREVIADO, EN LA HOJA NUEVA ──
   // Se escribe en miles: «40» son $40.000. `MoneyInput` lo hace desde siempre,
@@ -397,10 +417,14 @@ export default function RegistrarPago({
         return
       }
     }
-    // Limitar al saldo en lugar de bloquear (permite cobrar saldos pequeños)
-    // Excepcion: recargo NO se limita (suma al saldo) y descuento ya valido arriba.
-    if (tipo !== 'recargo' && tipo !== 'descuento' && m > saldoPendiente) {
-      m = Math.round(saldoPendiente)
+    /* ⚠ MÁS QUE EL SALDO SE BLOQUEA, NO SE RECORTA (decisión del dueño, 17 oct
+       2026). Se recortaba callado: el cliente entregaba más plata de la que
+       quedaba registrada y el botón seguía diciendo la cifra mayor. La Ruta ya
+       lo bloqueaba con aviso; ahora las dos igual (DETALLES-PRESTAMOS #29).
+       Recargo suma al saldo y descuento se valida arriba. */
+    if (tipo !== 'recargo' && tipo !== 'descuento' && m > Math.round(saldoPendiente)) {
+      setError(`Es más de lo que debe (${formatMoney(Math.round(saldoPendiente))}). Corrige el monto.`)
+      return
     }
 
     setLoading(true)
@@ -904,6 +928,8 @@ export default function RegistrarPago({
   // La hoja siempre recibe el préstamo con `cuotasAmortizacion` cargadas (la
   // ficha las incluye), así que el guardia de `elInteresSubeLaDeuda` no salta.
   const subeLaDeuda = elInteresSubeLaDeuda(prestamo ?? {})
+  // Con tabla, el abono a capital rehace las cuotas: otro texto y sin «ahorro» (#32).
+  const conTablaAbono = tieneTablaAmortizacion(prestamo ?? {})
   /* ── EL PRÉSTAMO ABIERTO: EL INTERÉS NO BAJA EL CAPITAL ──
      Cobrar el interés por encima de lo ya debido asienta el mes que corre (lo
      hace el servidor, `periodoEnCursoAbierto`). La hoja tiene que contarlo o
@@ -990,10 +1016,16 @@ export default function RegistrarPago({
   //   · CON tabla → paga el interés que ya debía. La deuda no sube.
   //   · SIN tabla → compra tiempo. El capital no baja y el total SUBE.
   // Lo decide `elInteresSubeLaDeuda`, y la hoja lo explica antes de confirmar.
+  /* ⚠ SIN TABLA, «SOLO INTERÉS» SUBE LA DEUDA, y eso pide el permiso de
+     gestionar préstamos (el servidor lo exige). Se ofrecía a todos y el
+     cobrador sin permiso se enteraba DESPUÉS de deslizar —y sin señal el cobro
+     quedaba en la cola rebotando— (decisión del dueño, DETALLES-PRESTAMOS #38).
+     Con tabla el interés ya se debía: ese sí lo cobra cualquiera. */
+  const puedeCobrarSoloInteres = !subeLaDeuda || puedeGestionarPrestamos
   const aplicacionesDePago = [
     { id: 'completo', etiqueta: 'Cuota' },
     { id: 'capital', etiqueta: 'Capital' },
-    { id: 'intereses', etiqueta: 'Interés' },
+    ...(puedeCobrarSoloInteres ? [{ id: 'intereses', etiqueta: 'Interés' }] : []),
   ]
 
   // ── Vista formulario ──────────────────────────────────────────
@@ -1035,14 +1067,20 @@ export default function RegistrarPago({
   // cuenta propia); no se inventa nada nuevo.
   const explicacionAplicacion = (() => {
     if (tipo === 'capital') {
-      const m = Math.round(Number(monto) || 0)
-      let ahorro = null
-      if (m > 0 && prestamo?.tasaInteres > 0 && prestamo?.fechaInicio) {
-        const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000)
-        const diasTrans = Math.max(0, Math.floor((ahora - new Date(prestamo.fechaInicio)) / 86400000))
-        const diasRest = Math.max(0, (prestamo.diasPlazo || 0) - diasTrans)
-        ahorro = Math.round(m * (prestamo.tasaInteres / 100) * (diasRest / 30))
+      /* ⚠ CON TABLA NO «TERMINA ANTES»: el servidor rehace las cuotas que faltan
+         desde el saldo, con el mismo número y las mismas fechas. Bajan las
+         cuotas y el final se queda. Y el ahorro de la fórmula de los préstamos
+         sin tabla ahí no vale (DETALLES-PRESTAMOS #32): se calla antes que mentir. */
+      if (conTablaAbono) {
+        return {
+          titulo: 'Abono a capital',
+          texto: 'Baja el capital y con él las próximas cuotas. El préstamo termina en la misma fecha.',
+          cifra: null,
+        }
       }
+      const ahorro = interesQueAhorraUnAbono({
+        monto, tasaInteres: prestamo?.tasaInteres, diasPlazo: prestamo?.diasPlazo, fechaInicio: prestamo?.fechaInicio,
+      })
       return {
         titulo: 'Abono a capital',
         texto: 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.',
@@ -1222,6 +1260,8 @@ export default function RegistrarPago({
     const elegido = medioAGuardar(medios, medioElegido)
 
     const montoNum = Math.round(Number(monto) || 0)
+    // Lo mismo que la Ruta: más que el saldo no se confirma (#29).
+    const pasaDelSaldo = !['recargo', 'descuento'].includes(tipo) && montoNum > Math.round(saldoPendiente ?? 0)
     // `montoAlDia` y `cancelarHoy` los manda la pagina: el primero lo calcula
     // el servidor con los festivos de la organizacion, el segundo viene del
     // endpoint de liquidacion. Si no llegan, esos dos atajos no salen.
@@ -1258,7 +1298,9 @@ export default function RegistrarPago({
     const notaDeCuota = comoVa?.clase === 'parcial'
       ? { tono: 'parcial', texto: `Pago parcial: le tocaba ${formatMoney(refCuota)} y quedan faltando ${formatMoney(-comoVa.diferencia)}.` }
       : comoVa?.clase === 'extra'
-        ? { tono: 'extra', texto: `Le tocaba ${formatMoney(refCuota)}: paga ${formatMoney(comoVa.diferencia)} de más.` }
+        ? notaDePagoDeMas(prestamo?.modoInteres, refCuota, comoVa.diferencia, montoNum < Math.round(saldoPendiente ?? 0)
+          ? () => { setTipo('capital'); setDiasAbonados(null) }
+          : null, formatMoney)
         : null
 
     const { filas } = adaptarDespuesDelPago(
@@ -1272,15 +1314,16 @@ export default function RegistrarPago({
         deudaQueNace: interesQueNace,
         metodoPago,
         nombreCuenta: elegido.nombreCuenta,
-        // El próximo cobro se pinta TAL CUAL lo dio la API. No se recalcula aquí:
-        // ya hay tres funciones que responden a esa pregunta y se contradicen.
-        proximoCobroTexto: prestamo?.proximoCobro ? formatFechaCobroRelativa(prestamo.proximoCobro) : null,
-        // Si la fecha ya pasó, la fila se calla. Con 58 días de mora `proximoCobro`
-        // apunta al primer cobro impagado y salía «Próximo cobro: lun, 1 de jun» en
-        // pleno julio, dentro del bloque que proyecta el futuro.
-        proximoCobroFuturo: prestamo?.proximoCobro
-          ? new Date(prestamo.proximoCobro).getTime() >= Date.now() - 86400000
-          : false,
+        enFajo: entraAlFajo(metodoPago, metodoPagoId, new Set(metodosPago.filter((x) => x.esDelCobrador).map((x) => x.id))),
+        /* ⚠ EL PRÓXIMO COBRO DESPUÉS DEL PAGO SOLO SE SABE SI SE APLAZA.
+           Se pintaba `prestamo.proximoCobro`, que es la fecha de ANTES de pagar:
+           «Próximo cobro: hoy» justo encima del botón que paga hoy, y con el
+           aplazo encendido una fecha distinta a la del interruptor
+           (DETALLES-PRESTAMOS #33). No se recalcula aquí —ya hay tres funciones
+           que responden a eso—: sin aplazo la fila se calla; con aplazo dice la
+           fecha que el propio interruptor promete. */
+        proximoCobroTexto: puedeAplazar && aplazar && fechaAplazada ? formatFechaCobroRelativa(fechaAplazada) : null,
+        proximoCobroFuturo: Boolean(puedeAplazar && aplazar && fechaAplazada),
       },
     )
 
@@ -1356,8 +1399,8 @@ export default function RegistrarPago({
             onConfirmar={handleSubmit}
             cifra={montoNum > 0 ? formatMoney(montoNum) : null}
             confirmando={loading}
-            deshabilitado={!(montoNum > 0)}
-            error={error}
+            deshabilitado={!(montoNum > 0) || pasaDelSaldo}
+            error={error || (pasaDelSaldo ? `Es más de lo que debe (${formatMoney(Math.round(saldoPendiente ?? 0))}).` : null)}
             recibo={enviarRecibo}
             onRecibo={cambiarRecibo}
             deslizar
@@ -1731,7 +1774,7 @@ export default function RegistrarPago({
                 // Sale en TODOS los modos, igual que en la hoja nueva. Esta lista
                 // decía tres modos y la de la hoja cuatro: en `saldo` la pastilla
                 // aparecía en un sitio y en el otro no.
-                { key: 'intereses', label: 'Intereses', color: 'var(--cf-gold-dark)' },
+                ...(puedeCobrarSoloInteres ? [{ key: 'intereses', label: 'Intereses', color: 'var(--cf-gold-dark)' }] : []),
                 // Descuento solo visible si el usuario tiene el permiso (riesgo: reduce saldo).
                 ...(puedeAplicarDescuentos ? [{ key: 'descuento', label: 'Descuento', color: 'var(--cf-green-dark)' }] : []),
               ].map(({ key, label, color }) => (
@@ -1828,13 +1871,11 @@ export default function RegistrarPago({
             <div className="bg-[rgba(168,85,247,0.08)] border border-[rgba(168,85,247,0.2)] rounded-[10px] px-3 py-2.5 text-xs">
               <p className="font-medium text-[var(--cf-ink-2)] mb-1">Abono a capital</p>
               <p className="text-[var(--cf-ink-3)]">
-                Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.
-                {monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
-                  const ahora = new Date(Date.now() - 5 * 60 * 60 * 1000)
-                  const inicio = new Date(prestamo.fechaInicio)
-                  const diasTrans = Math.max(0, Math.floor((ahora - inicio) / (1000 * 60 * 60 * 24)))
-                  const diasRest = Math.max(0, (prestamo.diasPlazo || 0) - diasTrans)
-                  const ahorro = Math.round(Number(monto) * (prestamo.tasaInteres / 100) * (diasRest / 30))
+                {conTablaAbono
+                  ? 'Baja el capital y con él las próximas cuotas. El préstamo termina en la misma fecha.'
+                  : 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.'}
+                {!conTablaAbono && monto && Number(monto) > 0 && prestamo?.tasaInteres > 0 && (() => {
+                  const ahorro = interesQueAhorraUnAbono({ monto, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo, fechaInicio: prestamo.fechaInicio })
                   return (
                     <> Ahorro en intereses: <span className="text-[var(--cf-ink-2)] font-medium font-mono-display">
                       {formatMoney(ahorro)}

@@ -17,6 +17,7 @@ import CardWaves from '@/components/ui/CardWaves'
 import { useCardPalettes, moodKeyPrestamo } from '@/components/ui/tarjetaCredito'
 import { EtiquetaFinanciado } from '@/components/cf/primitivos'
 import { esFinanciacion } from '@/lib/financiar'
+import { ETIQUETA_MODO } from '@/lib/dinero/modos'
 
 function moodLabel(p, esNuevo) {
   if (p.estado === 'completado') return 'Completado'
@@ -28,11 +29,8 @@ function moodLabel(p, esNuevo) {
   return 'Al día'
 }
 
-const MODO_TAG = {
-  fijo: 'Cuota fija', unico: 'De una vez', solo_interes: 'Globo',
-  saldo: 'Sobre saldo', manual: 'Manual', lineal: 'Decreciente',
-  lineal_dinamico: 'Dinamico', proporcional: 'Proporcional',
-}
+// El diccionario único de nombres de modo (DETALLES-PRESTAMOS #49).
+const MODO_TAG = ETIQUETA_MODO
 
 export default function PrestamoCard({ prestamo: p, actions, esNuevo, ancla, alSalir }) {
   const { palettes, pagado: pagadoColor } = useCardPalettes()

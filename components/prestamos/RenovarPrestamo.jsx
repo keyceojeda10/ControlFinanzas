@@ -22,6 +22,8 @@ import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
 import { SelectorPorcentajePesos, FilaRotulo, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 import FechaALaVista from '@/components/cf/FechaALaVista'
+import { efectivoDeLaRenovacion } from '@/lib/dinero/efectivo-renovacion'
+import { enviarConfirmandoPerdidos } from '@/lib/confirmar-perdidos'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
 const hoyISO = () => getColombiaDate().toISOString().slice(0, 10)
@@ -132,7 +134,12 @@ export default function RenovarPrestamo({
 
   const montoNum = Number(monto) || 0
   const montoSeguroNum = seguro ? (Number(montoSeguro) || 0) : 0
-  const enMano = Math.max(0, montoNum - saldo)
+  /* Lo que se entrega en billetes, con la MISMA cuenta que el servidor: al
+     centenar hacia arriba y menos el seguro, que se descuenta al prestar
+     (DETALLES-PRESTAMOS #18 y #51). La resta exacta decía «$119.355» y la caja
+     registraba $119.400. */
+  const efectivoRen = efectivoDeLaRenovacion({ monto: montoNum, deuda: saldo, seguro: montoSeguroNum })
+  const enMano = efectivoRen.entrega
   const diasPlazo = (Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1)
 
   const modoHeredado = ['fijo', 'unico', 'saldo', 'manual', 'solo_interes', 'lineal', 'lineal_dinamico'].includes(prestamoAnterior?.modoInteres)
@@ -207,10 +214,10 @@ export default function RenovarPrestamo({
       // Renovar son dos viajes seguidos (renovar y leer el préstamo nuevo para la
       // pantalla de «Préstamo renovado»): la pantalla de «estoy en eso» los cubre.
       await conPantalla(soloModo ? 'guardando' : 'renovar', async () => {
-      const res = await fetch(`/api/prestamos/${prestamoId}/renovar`, {
+      const res = await enviarConfirmandoPerdidos((confirmado) => fetch(`/api/prestamos/${prestamoId}/renovar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ ...(confirmado ? { confirmarClienteEnPerdidos: true } : {}),
           montoPrestado: montoNum,
           tasaInteres:   Number(tasa),
           diasPlazo,
@@ -226,7 +233,7 @@ export default function RenovarPrestamo({
             metodoPago: 'transferencia', metodoPagoId: cuentaEntrega.metodoPagoId,
           }),
         }),
-      })
+      }))
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Error al renovar')
@@ -547,7 +554,7 @@ export default function RenovarPrestamo({
           <svg className={`w-3.5 h-3.5 transition-transform ${masOpciones ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          {masOpciones ? 'Menos opciones' : 'Mas opciones'}
+          {masOpciones ? 'Menos opciones' : 'Más opciones'}
         </button>
 
         {masOpciones && (
@@ -646,7 +653,7 @@ export default function RenovarPrestamo({
             )}
             {calculo.ultimaCuota && calculo.ultimaCuota !== calculo.cuotaDiaria && calculo.numPeriodos > 1 && (
               <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Ultima cuota (ajuste)</span>
+                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Última cuota (ajuste)</span>
                 <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--cf-ink-3)' }}>
                   {formatMoney(calculo.ultimaCuota)}
                 </span>
@@ -654,16 +661,18 @@ export default function RenovarPrestamo({
             )}
             {montoSeguroNum > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'var(--cf-ink-3)' }}>Seguro</span>
-                <span className="text-sm font-semibold font-mono-display" style={{ color: '#6366f1' }}>
-                  {formatMoney(montoSeguroNum)}
+                <span className="text-xs" style={{ color: efectivoRen.seguroExcede ? 'var(--cf-red-dark)' : 'var(--cf-ink-3)' }}>
+                  {efectivoRen.seguroExcede ? 'El seguro es más de lo que le entregas' : 'Seguro (se descuenta al entregar)'}
+                </span>
+                <span className="text-sm font-semibold font-mono-display" style={{ color: 'var(--cf-ink-2)' }}>
+                  −{formatMoney(montoSeguroNum)}
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px solid rgba(34,197,94,0.15)' }}>
               <span className="text-xs font-medium" style={{ color: 'var(--cf-ink-3)' }}>Total a pagar</span>
               <span className="text-sm font-bold font-mono-display" style={{ color: 'var(--cf-ink)' }}>
-                {formatMoney(calculo.totalAPagar + montoSeguroNum)}
+                {formatMoney(calculo.totalAPagar)}
               </span>
             </div>
 

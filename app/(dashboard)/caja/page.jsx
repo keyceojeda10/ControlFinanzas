@@ -1134,10 +1134,14 @@ const MOVIMIENTOS_MANUALES = [
                 ...(cobradoDigitalHoy > 0
                   ? [{ id: 'digital', label: 'De eso, por transferencia', valor: cobradoDigitalHoy, signo: 0 }]
                   : []),
-                ...(segurosDia.monto > 0
-                  ? [{ id: 'seguros', label: `De eso, seguros${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
-                  : []),
                 { id: 'desembolsos', label: 'Lo que prestaste', valor: prestadoHoy, signo: -1 },
+                /* El seguro se descuenta AL PRESTAR (decisión del dueño, 17 oct
+                   2026): no entra con los cobros, se queda en la mano porque sale
+                   menos plata. «Lo que prestaste» ya va sin él; esta línea, en
+                   gris y sin signo, dice cuánto (DETALLES-PRESTAMOS #51). */
+                ...(segurosDia.monto > 0
+                  ? [{ id: 'seguros', label: `De eso, seguros descontados${segurosDia.cantidad ? ` · ${segurosDia.cantidad}` : ''}`, valor: segurosDia.monto, signo: 0 }]
+                  : []),
                 { id: 'gastos', label: 'Gastos', valor: gastosHoy, signo: -1 },
                 /* Con su nombre y su signo: una cifra que cambia el total sin
                    aparecer en la lista es de donde salen las preguntas. */
@@ -1315,7 +1319,7 @@ const MOVIMIENTOS_MANUALES = [
                     Solicitud de reapertura enviada
                   </p>
                   <p className="text-[10px] mt-0.5" style={{ color: 'var(--cf-ink-3)' }}>
-                    Esperando aprobacion del administrador
+                    Esperando aprobación del administrador
                   </p>
                 </div>
               </div>
@@ -1887,7 +1891,7 @@ const MOVIMIENTOS_MANUALES = [
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Seguros</p>
                       <p className="text-[12px] text-[var(--cf-ink-3)] mt-0.5">
-                        {rangoData.seguros.cantidad} {rangoData.seguros.cantidad === 1 ? 'cobro' : 'cobros'} · ya contados en lo que entró
+                        {rangoData.seguros.cantidad} {rangoData.seguros.cantidad === 1 ? 'préstamo' : 'préstamos'} · descontados de lo que se entregó
                       </p>
                     </div>
                     <span className="cf-fig text-[17px] shrink-0" style={{ color: 'var(--cf-ink-2)' }}>

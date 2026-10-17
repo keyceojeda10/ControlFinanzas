@@ -262,7 +262,7 @@ export default function EditarPrestamo({
         />
         {modoInteres === 'manual' && (
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuota fija</label>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Cuota de cada cobro</label>
             <MoneyInput value={cuotaManual} onChange={(e) => setCuotaManual(e.target.value)} placeholder="Cuota por período" />
           </div>
         )}

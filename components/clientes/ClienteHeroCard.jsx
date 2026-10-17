@@ -370,12 +370,10 @@ export default function ClienteHeroCard({ cliente, prestamosActivos = [], stats,
           <div className="flex-1 min-w-0">
             {/* EL NOMBRE NO SE CORTA. Es la identidad de la pantalla, y
                 «Ana Milena Guz...» obliga a entrar a editar para saber a quien
-                se le va a prestar. Cabe en dos lineas; con tres, se corta. */}
-            <h1 className="text-lg font-bold leading-tight" style={{
-              color: '#F3F3F6',
-              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}>
+                se le va a prestar. Tampoco a dos líneas: «Rosalba … de los...»
+                seguía cortado (17 oct 2026). Baja de renglón las veces que haga
+                falta. */}
+            <h1 className="text-lg font-bold leading-tight break-words" style={{ color: '#F3F3F6' }}>
               {cliente?.nombre}
             </h1>
             {/* ⚠ EL TELÉFONO VA AQUÍ (E05). Estaban la cédula y la ruta, pero

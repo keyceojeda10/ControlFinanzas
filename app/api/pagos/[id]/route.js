@@ -12,6 +12,7 @@ import { logActividad } from '@/lib/activity-log'
 import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
 import { motivoParaNoDeshacerAbono, motivoParaNoDeshacerLiquidacion } from '@/lib/dinero/deshacer-abono'
 import { elInteresSubeLaDeuda } from '@/lib/dinero/modos'
+import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
 export async function PATCH(request, { params }) {
@@ -202,12 +203,11 @@ export async function DELETE(request, { params }) {
       }
       await tx.prestamo.update({ where: { id: prestamo.id }, data: { totalAPagar: pago.tablaAntes.totalAPagar } })
     } else if (pago.tipo === 'capital') {
-      const fechaPagoColombia = new Date(new Date(pago.fechaPago).getTime() - Math.abs(getUtcOffset(session.user.country ?? 'co')) * 60 * 60 * 1000)
-      const inicio = new Date(prestamo.fechaInicio)
-      const diasTrans = Math.max(0, Math.floor((fechaPagoColombia - inicio) / (1000 * 60 * 60 * 24)))
-      const diasRest = Math.max(0, prestamo.diasPlazo - diasTrans)
-      const mesesRest = diasRest / 30
-      const ahorroInteres = Math.round(pago.montoPagado * (prestamo.tasaInteres / 100) * mesesRest)
+      // La MISMA cuenta que el cobro, con la fecha del pago (ver `interesQueAhorraUnAbono`).
+      const ahorroInteres = interesQueAhorraUnAbono({
+        monto: pago.montoPagado, tasaInteres: prestamo.tasaInteres, diasPlazo: prestamo.diasPlazo,
+        fechaInicio: prestamo.fechaInicio, ahora: pago.fechaPago, offsetHoras: getUtcOffset(session.user.country ?? 'co'),
+      })
       await tx.prestamo.update({
         where: { id: prestamo.id },
         data: { totalAPagar: prestamo.totalAPagar + ahorroInteres },

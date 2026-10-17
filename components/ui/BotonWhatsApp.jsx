@@ -25,7 +25,7 @@ function moraTemplate(prestamo) {
 
 const TEXTOS = {
   prestamo: 'Enviar resumen por WhatsApp',
-  pago:     'Enviar confirmacion por WhatsApp',
+  pago:     'Enviar confirmación por WhatsApp',
   mora:     'Enviar alerta de mora',
   historial:'Enviar historial completo',
 }

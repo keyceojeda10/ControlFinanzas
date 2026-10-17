@@ -374,7 +374,9 @@ export function EtiquetaClavo({ style }) {
         strokeWidth="2.6" strokeLinecap="round" aria-hidden style={{ flex: 'none' }}>
         <path d="M18 6L6 18M6 6l12 12" />
       </svg>
-      Clavo
+      {/* «Perdido», como el chip, el menú y la ficha: la pastilla decía «Clavo»
+          y era el tercer nombre para lo mismo (DETALLES-PRESTAMOS #48). */}
+      Perdido
     </Pastilla>
   )
 }

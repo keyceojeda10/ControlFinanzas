@@ -66,8 +66,11 @@ export async function POST(request, { params }) {
     await registrarMovimientoCapital(tx, {
       organizationId,
       tipo: 'desembolso',
-      monto: Number(prestamo.montoPrestado),
-      descripcion: `Desembolso préstamo a ${prestamo.cliente.nombre}`,
+      // El seguro se descuenta al prestar, igual que al crear (#51).
+      monto: Number(prestamo.montoPrestado) - (prestamo.seguro && Number(prestamo.montoSeguro) > 0 ? Math.round(Number(prestamo.montoSeguro)) : 0),
+      descripcion: prestamo.seguro && Number(prestamo.montoSeguro) > 0
+        ? `Desembolso préstamo a ${prestamo.cliente.nombre} (descontado seguro $${Math.round(Number(prestamo.montoSeguro)).toLocaleString('es-CO')})`
+        : `Desembolso préstamo a ${prestamo.cliente.nombre}`,
       referenciaId: prestamoId,
       referenciaTipo: 'prestamo',
       rutaId: rutaIdCapital,

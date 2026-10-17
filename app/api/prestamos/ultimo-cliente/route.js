@@ -49,6 +49,11 @@ export async function GET(request) {
       diaCobroMes: true,
       primerCobro: true,
       diaCobroMes2: true,
+      // El modo y lo que lo acompaña: sin él se repetía la tasa del anterior en
+      // OTRO modo, y la tasa significa otra cosa en cada uno (DETALLES-PRESTAMOS #52).
+      modoInteres: true,
+      sinPlazo: true,
+      interesAdelantado: true,
       createdAt: true,
     },
   })
