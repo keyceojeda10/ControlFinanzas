@@ -829,7 +829,7 @@ export default function CajaCobradorDetalle({ data, onExplicar }) {
                 está en la calle.
               </p>
               <p className="text-[11px] leading-snug mt-1.5" style={{ color: 'var(--cf-ink-3)' }}>
-                Regístrela en <strong>Capital → Inyectar a la ruta</strong> y el saldo queda al día.
+                Regístrela en <strong>Capital → Registrar movimiento → Meto plata</strong>, eligiendo la ruta, y el saldo queda al día.
               </p>
             </div>
           )}

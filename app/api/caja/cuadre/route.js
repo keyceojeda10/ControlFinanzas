@@ -262,6 +262,15 @@ export async function POST(request) {
 
     const cierreExistente = await prisma.cierreCaja.findFirst({ where: { organizationId, cobradorId, fecha: { gte: inicio, lt: fin } } })
 
+    /* ⚠ NO SE CUADRA A QUIEN NO HA ENTREGADO (decisión del dueño, 17 oct 2026).
+       Cuadrar sin cierre le CREABA uno al cobrador: desde ese momento cada cobro
+       le daba «Ya cerraste tu caja de hoy» y tampoco podía cerrar él
+       (DETALLES-CAJA-Y-CAPITAL #16). Ahora espera a que cierre. */
+    if (!cierreExistente) {
+      resultados.push({ cobradorId, error: `${cobrador.nombre} todavía no ha cerrado su caja: cuádralo cuando la entregue.` })
+      continue
+    }
+
     const dataConfirmacion = {
       efectivoRecibido,
       diferenciaRecibido,
@@ -270,8 +279,9 @@ export async function POST(request) {
       notaCuadre: item.nota || null,
     }
 
+    // Siempre hay cierre: sin él se salió arriba (#16).
     let cierre
-    if (cierreExistente) {
+    {
       // ⚠ SI EL CIERRE VIENE CON EL DESEMBOLSO EN CERO, se rellena aquí.
       //
       // El cuadre solo escribía la confirmación, así que un cierre creado antes
@@ -311,86 +321,38 @@ export async function POST(request) {
             : {}),
         },
       })
-    } else {
-      // El admin cuadra aunque el cobrador no haya cerrado: se crea el cierre
-      // con los datos del sistema.
-      //
-      // ── AQUI ESTABAN LOS CEROS ──────────────────────────────────────────
-      //
-      // Esto escribia `totalEsperado: 0` y `diferencia: 0` LITERALES. No era
-      // un calculo que diera cero: era un cero escrito a mano. De los 2.728
-      // cierres de la plataforma, 1.130 (41%) tienen el esperado en cero, y
-      // 320 salieron de aqui. Los «cierres exactos» de esos negocios no eran
-      // exactos: es que nunca compararon nada.
-      //
-      // Y `totalRecogido` guardaba `recaudadoSistema`, que con
-      // `capitalEsEfectivo` es la BOLSA DE LA RUTA —un saldo acumulado— y no
-      // el cobro del dia. El dueño leia un stock creyendo que era un flujo.
-      // ── Y AQUÍ QUEDABAN OTROS DOS ───────────────────────────────────────
-      //
-      // `totalDesembolsado` y `totalGastos` NO se escribían. No es que dieran
-      // cero: es que Prisma les ponía su `@default(0)` por no venir en el
-      // `data`. El cierre quedaba diciendo que el cobrador no prestó ni gastó
-      // NADA ese día.
-      //
-      // Medido en producción: 2.485 de 2.852 cierres (87%) con el desembolso
-      // en cero, y $425.397.087 prestados en 60 días que ningún cierre
-      // registró. Es lo que hacía que un cobrador entregara menos efectivo del
-      // que la caja esperaba sin que nada lo explicara: había prestado esa
-      // plata, pero el cierre no lo sabía.
-      //
-      // Salió de un reporte de la ruta #5 —«entregó $322.000» y la pantalla no
-      // decía esa cifra por ningún lado—, y el propio cliente había intuido
-      // que el descuadre aparecía «cuando se usan transferencias»: era la
-      // pista correcta por el motivo equivocado. En esa ruta faltaba un
-      // préstamo de $150.000, y luego resultó que faltaban en todas.
-      const totalEsperado = esperadoMap[cobradorId] || 0
-      const totalDesembolsado = await calcularDesembolsadoDia(organizationId, inicio, fin, cobradorId)
-      cierre = await prisma.cierreCaja.create({
-        data: {
-          organizationId,
-          cobradorId,
-          fecha: new Date(fecha + 'T00:00:00-05:00'),
-          totalEsperado: Math.round(totalEsperado),
-          totalRecogido: recaudadoDia,
-          totalDesembolsado: Math.round(totalDesembolsado),
-          // ⚠ LOS APROBADOS, NO LOS PENDIENTES.
-          //
-          // Mi primera versión de esta línea reutilizó `gastosCobrador`, que se
-          // calcula arriba para `recaudadoSistema` y son los PENDIENTES. Pero
-          // este campo guarda los aprobados —así lo hace el cierre normal en
-          // `caja/route.js`—, que es lo que de verdad salió ese día.
-          //
-          // Los tipos encajan y las dos variables son «gastos del cobrador en
-          // el día», así que habría pasado el build, los tests y el despliegue
-          // guardando la cifra equivocada en la pantalla del dinero.
-          totalGastos: gastosAprobados,
-          // El saldo que queda en la caja del cobrador tras prestar y gastar,
-          // con la misma fórmula que usa el cierre normal (`caja/route.js`).
-          saldoOperativo: Math.round(recaudadoDia - gastosAprobados),
-          saldoRealCaja: Math.round(recaudadoDia - gastosAprobados - totalDesembolsado),
-          diferencia: Math.round(recaudadoDia - totalEsperado),
-          ...dataConfirmacion,
-        },
-      })
     }
 
-    // Asentar faltante/sobrante como ajuste de capital para no descuadrar la caja.
-    if (diferenciaRecibido !== 0) {
-      await prisma.$transaction(async (tx) => {
-        await registrarMovimientoCapital(tx, {
-          organizationId,
-          tipo: 'ajuste',
-          direccion: diferenciaRecibido < 0 ? 'egreso' : 'ingreso',
-          monto: Math.abs(diferenciaRecibido),
-          descripcion: `Cuadre de caja ${cobrador.nombre} (${fecha}): ${diferenciaRecibido < 0 ? 'faltante' : 'sobrante'}${item.nota ? ' - ' + item.nota : ''}`,
-          referenciaId: cierre.id,
-          referenciaTipo: 'cierre_cuadre',
-          rutaId: ruta?.id || null,
-          creadoPorId: adminId,
-        })
+    /* Asentar faltante/sobrante como ajuste de capital para no descuadrar la caja.
+
+       ⚠ SOLO LO QUE CAMBIÓ. «Editar» un cuadre ya confirmado asentaba OTRO ajuste
+       por la diferencia entera, sin mirar el anterior: corregir un faltante de
+       $5.000 a $0 dejaba los $5.000 restados y, si se confirmaba otra vez, los
+       restaba dos veces (DETALLES-CAJA-Y-CAPITAL #15). Se suma lo ya asentado
+       para este cierre y se asienta la diferencia, en la misma transacción. */
+    await prisma.$transaction(async (tx) => {
+      const previos = await tx.movimientoCapital.findMany({
+        where: { organizationId, referenciaTipo: 'cierre_cuadre', referenciaId: cierre.id },
+        select: { monto: true, saldoAnterior: true, saldoNuevo: true },
       })
-    }
+      const yaAsentado = Math.round(previos.reduce(
+        (a, m) => a + (m.saldoNuevo >= m.saldoAnterior ? m.monto : -m.monto), 0,
+      ))
+      const falta = diferenciaRecibido - yaAsentado
+      if (falta === 0) return
+      await registrarMovimientoCapital(tx, {
+        organizationId,
+        tipo: 'ajuste',
+        direccion: falta < 0 ? 'egreso' : 'ingreso',
+        monto: Math.abs(falta),
+        descripcion: `Cuadre de caja ${cobrador.nombre} (${fecha}): ${yaAsentado !== 0 ? 'corrección del cuadre' : (falta < 0 ? 'faltante' : 'sobrante')}${item.nota ? ' - ' + item.nota : ''}`,
+        referenciaId: cierre.id,
+        referenciaTipo: 'cierre_cuadre',
+        rutaId: ruta?.id || null,
+        creadoPorId: adminId,
+        permitirNegativo: true,
+      })
+    })
 
     logActividad({
       session,
@@ -404,5 +366,10 @@ export async function POST(request) {
     resultados.push({ cobradorId, efectivoRecibido, recaudadoSistema, diferenciaRecibido, confirmadoEn: cierre.confirmadoEn })
   }
 
-  return Response.json({ confirmados: resultados.length, resultados })
+  const errores = resultados.filter((r) => r.error)
+  // Un solo cobrador que todavía no cerró: se dice por qué, con 409.
+  if (errores.length && errores.length === resultados.length) {
+    return Response.json({ error: errores[0].error, resultados }, { status: 409 })
+  }
+  return Response.json({ confirmados: resultados.length - errores.length, resultados })
 }

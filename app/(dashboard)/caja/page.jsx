@@ -78,6 +78,8 @@ const diasDesdeFechaColombia = (fechaBase, fechaObjetivo) => {
   return Math.round((base - objetivo) / DAY_MS)
 }
 
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
 export default function CajaPage() {
   const searchParams = useSearchParams()
   const fechaParam = searchParams.get('fecha')
@@ -254,12 +256,17 @@ const MOVIMIENTOS_MANUALES = [
         guardarEnCache(cacheKey, data).catch(() => {})
       }
     } catch {
+      /* ⚠ CON RED PERO SIN RESPUESTA, SOLO LA CAJA DE ESE DÍA. Caía a `sync:caja`,
+         que es siempre la de HOY y sin apertura ni préstamos: la pantalla pintaba
+         «Base inicial $0 · Prestado hoy $0» como si fueran datos, y sin el aviso
+         de datos guardados porque había red (DETALLES-CAJA-Y-CAPITAL #5). Ahora
+         se usa la copia guardada de ese mismo día, avisando; si no hay, se dice
+         que no cargó y se ofrece reintentar. `sync:caja` queda para sin red. */
       try {
-        let cached = await leerDeCache(cacheKey)
-        if (!cached) cached = await leerDeCache('sync:caja')
-        if (cached) { setCajaData(cached); if (!navigator.onLine) setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
+        const cached = await leerDeCache(cacheKey)
+        if (cached) { setCajaData(cached); setIsOffline(true); setLoading(false); hasLoadedOnceRef.current = true; return }
       } catch {}
-      setError('No se pudo cargar la información.')
+      setError('No se pudo cargar la caja. Revisa la conexión y vuelve a intentar.')
     } finally {
       setLoading(false)
       hasLoadedOnceRef.current = true
@@ -409,6 +416,17 @@ const MOVIMIENTOS_MANUALES = [
     } finally {
       setGuardandoAjuste(false)
     }
+  }
+
+  /* ⚠ «CERRAR EL DÍA» DEL DUEÑO NO HACÍA NADA. Las dos vistas llevaban al
+     formulario del COBRADOR (`cf-cierre-del-dia`), que en la del dueño no
+     existe: tocar y no moverse (DETALLES-CAJA-Y-CAPITAL #1). Va a la tarjeta que
+     haya: la del cobrador, «Mi cierre del día» del dueño o, si el dueño no tiene
+     cierre propio porque sus cobradores cierran, a «Cuadre». */
+  const irACerrarElDia = () => {
+    const destino = document.getElementById('cf-cierre-del-dia') || document.getElementById('cf-cierre-owner')
+    if (destino) { destino.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
+    setCajaTab('cuadre')
   }
 
   const registrarCierre = async (e) => {
@@ -627,6 +645,18 @@ const MOVIMIENTOS_MANUALES = [
   if (loading) return (
     <div className="max-w-2xl mx-auto space-y-4">
       <SkeletonCard /><SkeletonCard />
+    </div>
+  )
+
+  /* Sin datos de la caja NO se pinta la caja: debajo del aviso salían ceros
+     —«Base inicial $0», «Prestado hoy $0»— que se leen como cifras de verdad
+     (DETALLES-CAJA-Y-CAPITAL #5). Se dice que no cargó y se ofrece reintentar. */
+  if (!cajaData && error) return (
+    <div className="max-w-2xl mx-auto space-y-3">
+      <div role="alert" className="bg-[var(--cf-red-pill-bg)] border border-[color-mix(in_srgb,var(--cf-red-dark)_30%,transparent)] text-[var(--cf-red-dark)] text-sm rounded-[12px] px-4 py-3">
+        {error}
+      </div>
+      <Button onClick={() => fetchData()}>Reintentar</Button>
     </div>
   )
 
@@ -1357,7 +1387,10 @@ const MOVIMIENTOS_MANUALES = [
               </div>
             )}
 
-            {fechaEditableCobrador && !modoAjusteCierre && (
+            {/* Hoy, solo con la caja reabierta: sin reabrir, el servidor no deja
+                corregir y el botón llevaba a un 409 (DETALLES-CAJA-Y-CAPITAL #17).
+                Para eso está «Solicitar reapertura», justo encima. */}
+            {fechaEditableCobrador && !modoAjusteCierre && (esAyer || !!cierreHoy?.reabiertoEn) && (
               <div className="mt-3 pt-3 border-t border-[var(--cf-border)] space-y-2">
                 <p className="text-[11px] text-[var(--cf-gold)] leading-snug">
                   {esAyer
@@ -1449,14 +1482,11 @@ const MOVIMIENTOS_MANUALES = [
                   No coincide con lo cobrado en sistema ({formatMoney(recaudadoRegistrado)}). Si la diferencia es correcta, continua.
                 </p>
               )}
-              {totalRecogido && (
-                <div className="text-sm">
-                  <span className="text-[var(--cf-ink-3)]">Diferencia: </span>
-                  <span className="font-mono-display" style={{ color: Number(totalRecogido) >= (stats.esperado || 0) ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)', fontWeight: 700 }}>
-                    {Number(totalRecogido) >= (stats.esperado || 0) ? '+' : ''}{formatMoney(Number(totalRecogido) - (stats.esperado || 0))}
-                  </span>
-                </div>
-              )}
+              {/* Aquí iba «Diferencia» en rojo contra lo que TOCABA COBRAR, la misma
+                  resta que ya se quitó del resumen de arriba el 19 sep: no cobrarle
+                  a todos no es un faltante (DETALLES-CAJA-Y-CAPITAL #12). Lo que se
+                  compara es lo que lleva en la mano, y eso lo dice la línea de
+                  encima («No coincide con lo cobrado en sistema»). */}
               {/* ENTREGAR LA CAJA ES PLATA QUE CAMBIA DE MANOS: en el teléfono se
                   desliza, como cobrar y prestar. Corregir un monto ya entregado,
                   o cerrar sin nada que entregar, sigue con el botón. */}
@@ -1612,7 +1642,10 @@ const MOVIMIENTOS_MANUALES = [
             <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
           </svg>
           <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--cf-ink-2)' }}>
-            Aquí ves el efectivo que entró y salió hoy. Cada cobrador cierra su caja al terminar la ruta — tú ves el consolidado y puedes corregir cualquier diferencia.
+            {/* Hablaba de cobradores aunque el dueño cobre solo (DETALLES-CAJA-Y-CAPITAL #6). */}
+            {cobradores.length > 0
+              ? 'Aquí ves el efectivo que entró y salió hoy. Cada cobrador cierra su caja al terminar la ruta — tú ves el consolidado y puedes corregir cualquier diferencia.'
+              : 'Aquí ves el efectivo que entró y salió hoy. Al terminar el día, ciérralo en «Mi cierre del día».'}
           </p>
           <button onClick={cerrarBannerCaja} className="shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition-colors hover:bg-[rgba(255,255,255,0.1)]" style={{ color: 'var(--cf-ink-3)' }} title="Cerrar">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1722,6 +1755,10 @@ const MOVIMIENTOS_MANUALES = [
           <CajaPorRuta
             filas={filasPorRuta}
             totales={totalesPorRuta}
+            cuando={fechaSeleccionada === getColombiaDateStr() ? 'hoy' : `el ${Number(fechaSeleccionada.slice(8, 10))} ${MESES_CORTOS[Number(fechaSeleccionada.slice(5, 7)) - 1]}`}
+            aviso={periodo.modo !== 'hoy'
+              ? `Por ruta enseña un solo día: el ${Number(fechaSeleccionada.slice(8, 10))} ${MESES_CORTOS[Number(fechaSeleccionada.slice(5, 7)) - 1]}. Para el período entero mira «Caja del día».`
+              : null}
             onAbrirRuta={(f) => { window.location.href = `/rutas/${f.id}` }}
             selector={(
               <div className="space-y-4">
@@ -1833,6 +1870,9 @@ const MOVIMIENTOS_MANUALES = [
                 ]}
                 onExplicar={setCifraExplicada}
                 saldo={formatMoney(rangoData.efectivoNeto)}
+                rotuloSaldo="Neto del período"
+                notaSaldo="lo que entró menos lo que salió"
+                rotuloMovimientos="Pagos del período"
                 movimientos={[]}
                 totalMovimientos={rangoData.cantidadPagos}
               />
@@ -1923,9 +1963,7 @@ const MOVIMIENTOS_MANUALES = [
             totalMovimientos={cantidadPagosDia}
             onVerMovimientos={() => { window.location.href = '/actividad' }}
             onGasto={puedeReportarGastos ? () => setShowGasto(true) : undefined}
-            onCerrarDia={() => {
-              document.getElementById('cf-cierre-del-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }}
+            onCerrarDia={irACerrarElDia}
             onReporte={() => setShowReporte(true)}
           />
         </div>
@@ -1973,6 +2011,7 @@ const MOVIMIENTOS_MANUALES = [
         alto="auto"
         sinMargen
         fecha={periodo.modo === 'hoy' ? null : fechaLarga}
+        rotuloMovimientos={fechaSeleccionada === getColombiaDateStr() ? undefined : 'Movimientos del día'}
         baseInicial={formatMoney(baseInicialDia)}
         cobrado={formatMoney(cobradoHoy)}
         cobradoDigital={stats.recogidaDigital ? formatMoney(Math.round(stats.recogidaDigital)) : null}
@@ -1997,9 +2036,7 @@ const MOVIMIENTOS_MANUALES = [
         totalMovimientos={cantidadPagosDia}
         onVerMovimientos={() => { window.location.href = '/actividad' }}
         onGasto={puedeReportarGastos ? () => setShowGasto(true) : undefined}
-        onCerrarDia={() => {
-          document.getElementById('cf-cierre-del-dia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }}
+        onCerrarDia={irACerrarElDia}
         onReporte={() => setShowReporte(true)}
       />
       </div>
@@ -2033,8 +2070,11 @@ const MOVIMIENTOS_MANUALES = [
             fontSize: 24, color: saldoGeneralActual >= 0 ? 'var(--cf-ink)' : 'var(--cf-red-dark)',
           }}>{formatMoney(saldoGeneralActual)}</span>
           <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', lineHeight: 1.45 }}>
-            Lo que has metido y sacado del negocio a mano. Tu patrimonio completo
-            —esto más lo que está en la calle— está en el panel.
+            {/* Decía «lo que has metido y sacado a mano», y es TODO el fondo: con
+                cobros, préstamos y gastos (DETALLES-CAJA-Y-CAPITAL #6). */}
+            Todo lo que el negocio tiene hoy fuera de la calle: lo que metiste y
+            sacaste, más lo cobrado, menos lo prestado y los gastos. Tu patrimonio
+            completo —esto más lo que está en la calle— está en el panel.
           </span>
         </div>
 
@@ -2083,7 +2123,7 @@ const MOVIMIENTOS_MANUALES = [
               font: 'inherit', fontSize: 13.5, fontWeight: 700, color: 'var(--cf-ink)',
             }}
           >Ajustar saldo</button>
-          <Link href="/capital?view=manual-movements" style={{
+          <Link href="/capital#movimientos" style={{
             font: 'inherit', fontSize: 13, fontWeight: 700, color: 'var(--cf-gold-dark)',
             textDecoration: 'none', flex: 'none',
           }}>Ver movimientos</Link>
@@ -2290,7 +2330,9 @@ const MOVIMIENTOS_MANUALES = [
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setFechaSeleccionada(c.fecha.slice(0, 10))}
+                    // Por la misma puerta que las flechas: cambiaba el día cargado y
+                    // no la fecha de arriba, ni la de Cuadre (DETALLES-CAJA-Y-CAPITAL #18).
+                    onClick={() => handlePeriodoChange({ modo: 'hoy', fecha: c.fecha.slice(0, 10) })}
                     className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-[12px] border text-left transition-colors"
                     style={{
                       background: esActual ? 'color-mix(in srgb, var(--cf-gold) 10%, transparent)' : 'transparent',
@@ -2373,8 +2415,8 @@ const MOVIMIENTOS_MANUALES = [
           <div className="space-y-2">
             {cobradores.map((c) => {
               const cierre = c.cierre
-              const diff = cierre ? cierre.totalRecogido - cierre.totalEsperado : null
               const recaudadoDiaCobrador = Math.round(c.recaudadoDia || 0)
+              const porCobrarCobrador = Math.max(0, Math.round((cierre?.totalEsperado || 0) - recaudadoDiaCobrador))
               const esperadoDiaCobrador = Math.round(c.esperadoDia || 0)
               const sugeridoCierre = Math.round(c.sugeridoCierre || 0)
               const deltaSistemaVsCierre = cierre ? recaudadoDiaCobrador - Math.round(cierre.totalRecogido || 0) : null
@@ -2479,9 +2521,14 @@ const MOVIMIENTOS_MANUALES = [
                           <p className="text-lg font-bold font-mono-display text-[var(--cf-ink)] mt-0.5">{formatMoney(cierre.totalRecogido)}</p>
                         </div>
                         <div className="rounded-[12px] bg-[var(--cf-card)] border border-[var(--cf-border)] p-2.5">
-                          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">Diferencia</p>
-                          <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: diff >= 0 ? 'var(--cf-green-dark)' : 'var(--cf-red-dark)' }}>
-                            {diff >= 0 ? '+' : ''}{formatMoney(diff)}
+                          {/* Lo mismo que dice la caja del COBRADOR, que es la que manda:
+                              lo que tocaba menos TODO lo cobrado, sin rojo. Era
+                              «Diferencia −$112.300» en rojo (entregado − lo que tocaba)
+                              con un faltante real de $5.000 (DETALLES-CAJA-Y-CAPITAL #12).
+                              El faltante de verdad se ve en «Cuadre». */}
+                          <p className="text-[10px] text-[var(--cf-ink-3)] uppercase tracking-wide">{porCobrarCobrador > 0 ? 'Quedó por cobrar' : 'Cobró todo'}</p>
+                          <p className="text-lg font-bold font-mono-display mt-0.5" style={{ color: porCobrarCobrador > 0 ? 'var(--cf-ink)' : 'var(--cf-green-dark)' }}>
+                            {formatMoney(porCobrarCobrador > 0 ? porCobrarCobrador : recaudadoDiaCobrador)}
                           </p>
                         </div>
                       </div>
@@ -2743,7 +2790,7 @@ const MOVIMIENTOS_MANUALES = [
           {diasAtrasSeleccion === 0 && (
             <div className="pt-3 mt-1 border-t border-[var(--cf-border)] space-y-2">
               <p className="text-xs text-[var(--cf-ink-3)] leading-snug">
-                ¿Cerró sin querer? Deshacerlo quita el cierre de hoy y le vuelve a abrir la caja a {editCobrador?.nombre?.split(' ')[0] ?? 'el cobrador'}. Queda anotado en el Historial.
+                ¿Cerró sin querer? Deshacerlo quita el cierre de hoy y le vuelve a abrir la caja a {editCobrador?.nombre?.split(' ')[0] ?? 'el cobrador'}. Queda anotado en Más → Historial.
               </p>
               <button
                 type="button"

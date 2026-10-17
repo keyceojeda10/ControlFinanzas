@@ -8,6 +8,8 @@ import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mu
 import { getUtcOffset, getLocalDateStr } from '@/lib/i18n'
 import { bloquearSiSuscripcionVencida } from '@/lib/suscripcion'
 import { notificar, plata } from '@/lib/notificar'
+import { registrarMovimientoCapital } from '@/lib/capital'
+import { rutaDelGasto } from '@/lib/dinero/gasto-ruta'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/
@@ -153,14 +155,44 @@ export async function POST(req) {
     if (cobExiste) cobradorIdFinal = cobExiste.id
   }
 
-  const gasto = await prisma.gastoMenor.create({
-    data: {
-      description: description.trim(),
-      monto: Number(monto),
-      fecha: new Date(fechaSolicitada + 'T12:00:00-05:00'),
-      cobradorId: cobradorIdFinal,
-      organizationId: session.user.organizationId,
-    },
+  /* ⚠ EL GASTO QUE ANOTA EL DUEÑO NACE APROBADO (decisión del dueño, 17 oct
+     2026). Quedaba «Pendiente» y él mismo tenía que aprobarlo en Gastos; mientras
+     tanto la caja lo contaba y el libro no, y salía «Hoy la cuenta no cierra» por
+     un gasto que acababa de anotar (DETALLES-CAJA-Y-CAPITAL #2). Se asienta en el
+     capital como al aprobar (`/api/gastos/[id]`), en la misma transacción. Los
+     de los cobradores siguen pidiendo aprobación. */
+  const loAnotaElDueno = session.user.rol === 'owner'
+  const fechaGasto = new Date(fechaSolicitada + 'T12:00:00-05:00')
+  const gasto = await prisma.$transaction(async (tx) => {
+    const creado = await tx.gastoMenor.create({
+      data: {
+        description: description.trim(),
+        monto: Number(monto),
+        fecha: fechaGasto,
+        cobradorId: cobradorIdFinal,
+        organizationId: session.user.organizationId,
+        ...(loAnotaElDueno ? { estado: 'aprobado' } : {}),
+      },
+    })
+    if (loAnotaElDueno) {
+      await registrarMovimientoCapital(tx, {
+        organizationId: session.user.organizationId,
+        tipo: 'gasto',
+        monto: creado.monto,
+        descripcion: `Gasto: ${creado.description}`,
+        referenciaId: creado.id,
+        referenciaTipo: 'gasto',
+        rutaId: await rutaDelGasto(tx, session.user.organizationId, cobradorIdFinal),
+        creadoPorId: session.user.id,
+        metodoPago: 'efectivo',
+        fecha: fechaGasto,
+        // La plata ya salió: un gasto no se «saca de la caja» con permiso, se
+        // anota. Con la caja en rojo —un tercio de los negocios— la guarda le
+        // impediría al dueño anotar sus propios gastos.
+        permitirNegativo: true,
+      })
+    }
+    return creado
   })
 
   logActividad({ session, accion: 'registrar_gasto', entidadTipo: 'gasto', entidadId: gasto.id, detalle: `Gasto $${gasto.monto.toLocaleString('es-CO')} - ${gasto.description}`, ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() })

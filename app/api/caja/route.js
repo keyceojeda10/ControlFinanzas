@@ -1622,8 +1622,12 @@ export async function POST(request) {
   const diferencia = totalRecogido - totalEsperado
 
   if (existeCierre) {
-    if (diasAtras === 0 && rol !== 'owner') {
-      return Response.json({ error: 'Ya existe un cierre de caja para hoy' }, { status: 409 })
+    // Con la caja REABIERTA por el dueño, el cobrador vuelve a cerrar: la rama
+    // de abajo ya estaba hecha para eso («re-confirmar vuelve a bloquear»), pero
+    // este 409 no la dejaba llegar (DETALLES-CAJA-Y-CAPITAL #17). Corregir lo de
+    // hoy SIN reabrir sigue siendo del dueño.
+    if (diasAtras === 0 && rol !== 'owner' && !existeCierre.reabiertoEn) {
+      return Response.json({ error: 'Ya cerraste tu caja de hoy. Para corregir lo que entregaste, pídele al dueño que la reabra.' }, { status: 409 })
     }
 
     const recogidoAntes = Math.round(existeCierre.totalRecogido || 0)

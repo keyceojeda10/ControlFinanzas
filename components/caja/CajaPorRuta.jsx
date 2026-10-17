@@ -70,11 +70,15 @@ function Punto({ color, children }) {
  * Es un hueco porque quien sabe qué poner ahí es la página (el `<select>` y el
  * detalle del cobrador elegido). Aquí solo se decide DÓNDE.
  */
-export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector = null }) {
+/* `cuando`: «hoy» o «el 10 oct». Decía «hoy» mirando un día pasado
+   (DETALLES-CAJA-Y-CAPITAL #19). `aviso`: una línea encima, para cuando la
+   pantalla está en un rango y aquí se enseña un solo día. */
+export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector = null, cuando = 'hoy', aviso = null }) {
   if (!filas.length) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {selector}
+      {aviso && <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>{aviso}</p>}
       <div style={{
         background: 'var(--cf-card)', border: '1px solid var(--cf-border)',
         borderRadius: 'var(--cf-r-card)', padding: '26px 20px', textAlign: 'center',
@@ -86,7 +90,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector
             Y una ruta con capital propio sale SIEMPRE, así que llegar aquí
             significa que tampoco hay capital repartido por rutas. */}
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--cf-ink-3)' }}>
-          Todavía no hay cobros ni préstamos hoy en ninguna ruta.
+          {cuando === 'hoy' ? 'Todavía no hay cobros ni préstamos hoy en ninguna ruta.' : `No hubo cobros ni préstamos ${cuando} en ninguna ruta.`}
         </p>
       </div>
       </div>
@@ -109,7 +113,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector
             <span style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '.1em',
               textTransform: 'uppercase', color: '#A3A8B2',
-            }}>Recaudado hoy</span>
+            }}>Recaudado {cuando}</span>
             <span className="cf-fig" style={{
               fontSize: 30, fontWeight: 600, letterSpacing: '-.035em', lineHeight: 1, color: '#F3F3F6',
             }}>{totales.total}</span>
@@ -141,7 +145,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector
               display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
               paddingTop: 12, borderTop: '1px solid rgba(255,255,255,.10)',
             }}>
-              <span style={{ fontSize: 12, color: '#A3A8B2' }}>Prestado hoy</span>
+              <span style={{ fontSize: 12, color: '#A3A8B2' }}>Prestado {cuando}</span>
               <span className="cf-fig" style={{ fontSize: 15, fontWeight: 600, color: '#F3F3F6' }}>
                 {totales.prestado}
               </span>
@@ -226,6 +230,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector
       )}
 
       {selector}
+      {aviso && <p style={{ margin: 0, fontSize: 13, lineHeight: 1.45, color: 'var(--cf-ink-3)' }}>{aviso}</p>}
 
       {/* ── ⚠ ESTE AVISO YO LO ESCRIBÍ MAL, Y ASUSTABA SIN MOTIVO ──────────
           Decía «salió plata que no se registró como entrada», que se lee como
@@ -262,7 +267,7 @@ export default function CajaPorRuta({ filas = [], totales, onAbrirRuta, selector
           cuánto capital contaba {totales.rutasEnNegativo === 1 ? 'esa ruta' : 'cada ruta'}:
           la bolsa arranca en cero y cada préstamo la baja. La plata no se perdió,
           está en la calle. Se arregla en{' '}
-          <strong style={{ color: 'var(--cf-ink)' }}>Capital → Inyectar a la ruta</strong>.
+          <strong style={{ color: 'var(--cf-ink)' }}>Capital → Registrar movimiento → Meto plata</strong>, eligiendo la ruta.
         </div>
       )}
 

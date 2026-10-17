@@ -125,6 +125,10 @@ export function CajaDia({
   ajustesManuales = null, onDeshacerAjuste,
   movimientos = [], totalMovimientos = 0,
   onDetalle, onVerMovimientos, onGasto, onCerrarDia, onReporte,
+  /* Los rótulos de la cifra grande y de la lista. En un RANGO la cifra es el
+     neto del período, no el saldo, y la lista no es «de hoy»: los decía igual
+     (DETALLES-CAJA-Y-CAPITAL #14). */
+  rotuloSaldo = 'Saldo en caja', notaSaldo = 'disponible para prestar', rotuloMovimientos = 'Movimientos de hoy',
   // `height: 100%` es para cuando la pantalla ES esta —el area de dentro
   // scrollea sola—. Montada dentro de una pagina que ya scrollea, ese 100%
   // reserva la altura entera y deja un HUECO BLANCO de media pantalla debajo de
@@ -412,12 +416,12 @@ export function CajaDia({
               <span style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
                 color: 'var(--cf-ink-3)',
-              }}>Saldo en caja</span>
+              }}>{rotuloSaldo}</span>
               {/* «disponible para prestar» no es decoracion: es la diferencia
                   entre el saldo contable y la plata con la que de verdad se puede
                   salir a la calle hoy. */}
               <span style={{ fontSize: 12, color: 'var(--cf-ink-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                disponible para prestar
+                {notaSaldo}
                 {onExplicar && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     strokeWidth="2.2" aria-hidden style={{ flex: 'none', opacity: .6 }}>
@@ -448,7 +452,7 @@ export function CajaDia({
         <Tarjeta plana>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '17px 20px 13px', flex: 'none' }}>
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--cf-ink-3)' }}>
-              Movimientos de hoy
+              {rotuloMovimientos}
             </span>
             <span className="cf-num" style={{ fontSize: 12, color: 'var(--cf-ink-3)', flex: 'none' }}>
               {totalMovimientos}

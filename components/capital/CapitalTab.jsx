@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCountry } from '@/hooks/useCountry'
 import { AntesDespues } from '@/components/cf/primitivos'
 import MoneyInput from '@/components/ui/MoneyInput'
@@ -9,7 +9,9 @@ import QueNecesitas from '@/components/acciones/QueNecesitas'
 
 const TIPO_LABELS = {
   capital_inicial: 'Capital inicial',
-  inyeccion: 'Inyeccion',
+  // Un solo nombre para lo mismo: era «Inyeccion» en la lista y «Dinero agregado»
+  // en el filtro (DETALLES-CAJA-Y-CAPITAL #7). El botón que lo hace dice «Meto plata».
+  inyeccion: 'Metiste plata',
   retiro: 'Retiro',
   desembolso: 'Prestado',
   recaudo: 'Cobrado',
@@ -114,6 +116,16 @@ export default function CapitalTab() {
 
   useEffect(() => { fetchResumen() }, [fetchResumen])
   useEffect(() => { fetchMovimientos() }, [fetchMovimientos])
+  /* «Ver movimientos» de la Caja llega con `#movimientos`: la lista se pinta
+     después de cargar, así que el navegador no encuentra dónde bajar al abrir.
+     Se baja cuando ya está (DETALLES-CAJA-Y-CAPITAL #9). */
+  const bajoAMovimientosRef = useRef(false)
+  useEffect(() => {
+    if (bajoAMovimientosRef.current || typeof window === 'undefined' || window.location.hash !== '#movimientos') return
+    if (!movimientos.length) return
+    bajoAMovimientosRef.current = true
+    document.getElementById('movimientos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [movimientos])
   useEffect(() => { fetchConfig() }, [fetchConfig])
 
   const aplicarToggleEstricto = async (nuevoValor) => {
@@ -779,14 +791,14 @@ export default function CapitalTab() {
         </div>
       )}
 
-      <div className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-4 py-4">
+      <div id="movimientos" className="bg-[var(--cf-surface)] border border-[var(--cf-border)] rounded-[16px] px-4 py-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-semibold text-[var(--cf-ink-3)] uppercase tracking-wide">Movimientos</p>
           <select value={filtroTipo} onChange={(e) => { setFiltroTipo(e.target.value); setPage(1) }}
             className="text-xs bg-[var(--cf-surface)] border border-[var(--cf-border)] text-[var(--cf-ink-3)] rounded-lg px-2 py-1">
             <option value="">Todos</option>
             <option value="capital_inicial">Capital inicial</option>
-            <option value="inyeccion">Dinero agregado</option>
+            <option value="inyeccion">Metiste plata</option>
             <option value="retiro">Retiros</option>
             <option value="desembolso">Prestados</option>
             <option value="recaudo">Cobrados</option>
@@ -987,7 +999,10 @@ export default function CapitalTab() {
               {(() => {
                 const m = Math.round(Number(String(modalMonto).replace(/[^0-9]/g, '')) || 0)
                 if (!(m > 0)) return null
-                const sube = modalTipo === 'inyeccion' || (modalTipo === 'ajuste' && modalDireccion === 'ingreso')
+                // `esIngreso` incluye el capital inicial, que el servidor SUMA: la
+                // lista a mano lo dejaba fuera y el «antes → después» lo pintaba
+                // bajando (DETALLES-CAJA-Y-CAPITAL #8).
+                const sube = esIngreso(modalTipo) || (modalTipo === 'ajuste' && modalDireccion === 'ingreso')
                 const despues = sube ? saldoCapital + m : saldoCapital - m
                 return (
                   <AntesDespues

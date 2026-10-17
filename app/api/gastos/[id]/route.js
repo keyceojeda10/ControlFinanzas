@@ -4,22 +4,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { registrarMovimientoCapital, gastoAsentadoSinRevertir } from '@/lib/capital'
+import { rutaDelGasto } from '@/lib/dinero/gasto-ruta'
 import { logActividad } from '@/lib/activity-log'
 
 // Ruta a la que se imputa el gasto (sub-bolsa de capital): la primera ruta
 // activa del cobrador. Sin esto, el gasto baja el capital global pero NO el
 // saldoCapital de la ruta, y la caja del cobrador (modo capital=efectivo)
 // queda sin descontar el gasto.
-async function rutaDelGasto(client, organizationId, cobradorId) {
-  if (!cobradorId) return null
-  const ruta = await client.ruta.findFirst({
-    where: { organizationId, cobradorId, activo: true },
-    orderBy: { orden: 'asc' },
-    select: { id: true },
-  })
-  return ruta?.id || null
-}
-
 export async function PATCH(req, { params }) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })

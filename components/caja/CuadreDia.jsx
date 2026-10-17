@@ -26,6 +26,12 @@ const ESTADO = {
 
 const fmtHora = (d) => d ? new Date(d).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'America/Bogota' }) : ''
 
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function hoyLocal() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function CuadreDia({ fecha }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,6 +53,10 @@ export default function CuadreDia({ fecha }) {
   const [tecleado, setTecleado] = useState(null)
   const [nota, setNota] = useState('')
   const [guardando, setGuardando] = useState(false)
+  // Lo que dijo el servidor cuando no guardó. Se tragaba en silencio: el modal
+  // se quedaba abierto sin decir nada y el lote no hacía nada visible
+  // (DETALLES-CAJA-Y-CAPITAL #20).
+  const [errorGuardar, setErrorGuardar] = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -70,11 +80,15 @@ export default function CuadreDia({ fecha }) {
   const g = data?.resumenGlobal
 
   const abrirConfirmar = (fila) => {
+    setErrorGuardar('')
     setModal(fila)
     // La cifra del sistema es EXACTA, no un número de miles: se olvida lo
     // tecleado para que el campo la pinte ya convertida a lo que se ve.
     setTecleado(null)
-    setMontoRecibido(String(fila.recaudadoSistema || 0))
+    // Al EDITAR un cuadre ya hecho se parte de lo que se CONTÓ, no de la cifra
+    // del sistema: abrir y confirmar sin tocar convertía cualquier faltante en
+    // «Cuadró» (DETALLES-CAJA-Y-CAPITAL #15).
+    setMontoRecibido(String(fila.efectivoRecibido != null ? fila.efectivoRecibido : (fila.recaudadoSistema || 0)))
     setNota(fila.notaCuadre || '')
   }
 
@@ -87,10 +101,16 @@ export default function CuadreDia({ fecha }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, cobradorId: modal.cobradorId, efectivoRecibido: Number(montoRecibido), nota }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setErrorGuardar(d.error || 'No se pudo guardar el cuadre.')
+        return
+      }
       setModal(null)
       await fetchData()
-    } catch { /* noop */ } finally { setGuardando(false) }
+    } catch {
+      setErrorGuardar('No se pudo guardar el cuadre. Revisa la conexión.')
+    } finally { setGuardando(false) }
   }
 
   // Solo entran al lote los cobradores que YA DECLARARON, al cerrar su caja, el
@@ -119,9 +139,16 @@ export default function CuadreDia({ fecha }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fecha, confirmaciones }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setErrorGuardar(d.error || 'No se pudieron confirmar.')
+        return
+      }
+      setErrorGuardar('')
       await fetchData()
-    } catch { /* noop */ } finally { setGuardando(false) }
+    } catch {
+      setErrorGuardar('No se pudieron confirmar. Revisa la conexión.')
+    } finally { setGuardando(false) }
   }
 
   if (loading) return <Card><p className="text-sm text-[var(--cf-ink-3)]">Cargando cuadre…</p></Card>
@@ -139,7 +166,10 @@ export default function CuadreDia({ fecha }) {
             <span className="font-bold" style={{ color: g.cuadraron === g.total ? 'var(--cf-green-dark)' : 'var(--cf-gold)' }}>{g.cuadraron}/{g.total}</span> cuadraron
           </span>
         </div>
-        <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">Total recibido hoy</p>
+        {/* El día que se está cuadrando, no siempre «hoy» (DETALLES-CAJA-Y-CAPITAL #20). */}
+        <p className="text-[10px] uppercase tracking-wider text-[var(--cf-ink-3)]">
+          Total recibido {!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha ?? '')) || fecha === hoyLocal() ? 'hoy' : `el ${Number(fecha.slice(8, 10))} ${MESES[Number(fecha.slice(5, 7)) - 1]}`}
+        </p>
         <p className="text-2xl font-bold font-mono-display text-[var(--cf-green-dark)]">
           {formatMoney(g.totalRecibido)}
           <span className="text-xs font-normal text-[var(--cf-ink-3)]"> / {formatMoney(g.totalRecaudadoSistema)} sistema</span>
@@ -161,6 +191,9 @@ export default function CuadreDia({ fecha }) {
           >
             Confirmar {exactos.length} que entregó{exactos.length === 1 ? '' : 'aron'} lo mismo que dice el sistema
           </button>
+        )}
+        {errorGuardar && !modal && (
+          <p role="alert" className="mt-2 text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorGuardar}</p>
         )}
         {g.pendientes > exactos.length && (
           <p className="mt-2 text-[11px] text-[var(--cf-ink-3)]">
@@ -185,6 +218,8 @@ export default function CuadreDia({ fecha }) {
         {filas.map((f) => {
           const est = ESTADO[f.estado] || ESTADO.pendiente
           const confirmado = f.estado !== 'pendiente'
+          // Sin cierre del cobrador no hay nada que cuadrar todavía (#16).
+          const sinEntregar = !confirmado && f.entregadoReportado == null
           return (
             /* ── EN PC, UNA SOLA FILA ──
                La tarjeta apila el nombre arriba y las tres cifras debajo, que es
@@ -200,14 +235,16 @@ export default function CuadreDia({ fecha }) {
                 <div className="min-w-0 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: est.color, boxShadow: `0 0 8px ${est.color}` }} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--cf-ink)] truncate">{f.nombre}</p>
+                    <p className="text-sm font-semibold text-[var(--cf-ink)]" style={{ overflowWrap: 'anywhere' }}>{f.nombre}</p>
                     <p className="text-[11px] text-[var(--cf-ink-3)] truncate">{f.rutaNombre} · {est.label}{confirmado && f.confirmadoEn ? ` ${fmtHora(f.confirmadoEn)}` : ''}</p>
                   </div>
                 </div>
                 {/* El botón se va al final de la FILA en PC: aquí dentro
                     quedaría pegado al nombre, con las cifras a su derecha. */}
                 <span className="lg:hidden">
-                  {!confirmado ? (
+                  {sinEntregar ? (
+                    <span className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink-3)] px-2 py-1">Aún no entrega</span>
+                  ) : !confirmado ? (
                     <button type="button" onClick={() => abrirConfirmar(f)}
                       className="shrink-0 text-[11px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[8px] px-3 py-1.5 transition-colors">
                       Confirmar
@@ -239,7 +276,9 @@ export default function CuadreDia({ fecha }) {
               {/* El botón, al final de la fila en PC. Es el mismo `abrirConfirmar`
                   que el de móvil: una sola acción, dos sitios según el ancho. */}
               <span className="hidden lg:flex lg:flex-none lg:justify-end lg:w-[110px]">
-                {!confirmado ? (
+                {sinEntregar ? (
+                  <span className="text-[12px] font-semibold text-[var(--cf-ink-3)] px-2 py-1">Aún no entrega</span>
+                ) : !confirmado ? (
                   <button type="button" onClick={() => abrirConfirmar(f)}
                     className="text-[12px] font-semibold text-[var(--cf-ink)] bg-[var(--cf-gold)] hover:bg-[var(--cf-gold-dark)] rounded-[9px] px-3.5 py-2 transition-colors">
                     Confirmar
@@ -265,6 +304,9 @@ export default function CuadreDia({ fecha }) {
         title={modal ? `Confirmar recibo — ${modal.nombre}` : ''}
         footer={
           <>
+            {errorGuardar && (
+              <p role="alert" className="w-full text-xs font-semibold" style={{ color: 'var(--cf-red-dark)' }}>{errorGuardar}</p>
+            )}
             <Button variant="secondary" onClick={() => setModal(null)} disabled={guardando}>Cancelar</Button>
             <Button onClick={confirmar} loading={guardando}>Confirmar</Button>
           </>
@@ -308,7 +350,7 @@ export default function CuadreDia({ fecha }) {
                 formatMoney,
               )}
               causas={difModal !== 0 ? causasDeDescuadre(difModal > 0 ? 'sobra' : 'falta') : []}
-              onCausa={(c) => setNota(c.texto)}
+              onCausa={(c) => setNota(c.titulo)}
             />
 
             {/* La causa elegida se ve y se puede matizar a mano: «un gasto que no
