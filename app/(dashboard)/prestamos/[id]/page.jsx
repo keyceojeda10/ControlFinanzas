@@ -2717,16 +2717,21 @@ function PrestamoDetalleContenido({ params }) {
                 >
                   <p className="text-xs font-semibold text-[var(--cf-ink)]">
                     {prestamo.alAnular.anterior.saldo != null
-                      ? `El préstamo anterior vuelve con su saldo de ${formatMoney(prestamo.alAnular.anterior.saldo)}`
+                      ? `El préstamo anterior vuelve con ${formatMoney(prestamo.alAnular.anterior.saldo - (prestamo.alAnular.pasaAlAnterior || 0))} por cobrar`
                       : 'El saldo del préstamo anterior no vuelve solo'}
                   </p>
                   <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
                     {prestamo.alAnular.anterior.saldo != null
                       ? 'Esta es una renovación: al anularla, el préstamo de antes queda activo otra vez y se le sigue cobrando.'
                       : 'Es una renovación hecha antes de la última actualización. Escríbenos si necesitas recuperarlo.'}
-                    {prestamo.alAnular.cobradoDeMas > 0 && (
-                      <> Ya cobraste {formatMoney(prestamo.alAnular.cobradoDeMas)} más de lo que entregaste en esta renovación,
-                      y eso no se le descuenta: si eran abonos a esa deuda, aplícale un descuento por esa cifra.</>
+                    {/* Lo cobrado de más sobre lo entregado es abono a esa deuda
+                        (#16): pasa como pago, con su día y su cobrador. */}
+                    {(prestamo.alAnular.pasaAlAnterior || 0) > 0 && (
+                      <> Debía {formatMoney(prestamo.alAnular.anterior.saldo)}; los {formatMoney(prestamo.alAnular.pasaAlAnterior)} que pagó
+                      de más en esta renovación (más de lo que se le entregó) pasan como abono a esa deuda.</>
+                    )}
+                    {(prestamo.alAnular.cobradoDeMas || 0) > (prestamo.alAnular.pasaAlAnterior || 0) && prestamo.alAnular.anterior.saldo != null && (
+                      <> Y le sobran {formatMoney(prestamo.alAnular.cobradoDeMas - (prestamo.alAnular.pasaAlAnterior || 0))} a su favor: pagó más de lo que debía en total.</>
                     )}
                   </p>
                 </div>

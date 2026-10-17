@@ -27,7 +27,7 @@ import {
 import { obtenerDiasSinCobro, validarDiasSinCobro, nombresDias } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto, vuelveACajaAlAnular, queHaceAnular } from '@/lib/dinero/revertir-renovacion'
+import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto, vuelveACajaAlAnular, queHaceAnular, pasarLoCobradoDeMasAlAnterior } from '@/lib/dinero/revertir-renovacion'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
@@ -338,6 +338,8 @@ export async function PATCH(request, { params }) {
        guarda para DECIRLO: el prestamista tiene que saber por qué su capital no
        subió al anular, igual que al borrar. */
     let capitalNoDevuelto = 0
+    // Lo cobrado de más en la renovación que pasa al anterior como abono (#16).
+    let pasadoAlAnterior = 0
 
     const referenciaTipoCancelacion = modoReversionSolicitado === 'devolver_todo'
       ? REF_CANCELACION_DEVOLVER_TODO
@@ -372,6 +374,20 @@ export async function PATCH(request, { params }) {
          capital por el saldo que la renovación absorbió y que nunca salió. */
       const salio = await efectivoQueSalio(tx, p)
       saldoNoRecuperado = vuelveACajaAlAnular({ salio, cobrado: totalPagosReales, saldoPendiente: saldoPendienteRestante })
+
+      /* ⚠ LO COBRADO DE MÁS ES ABONO AL ANTERIOR (DETALLES-PRESTAMOS #16).
+         Lo cobrado devuelve primero el efectivo que se entregó; si el cliente
+         pagó más, el excedente abona la deuda que la renovación absorbió. Sin
+         esto el anterior revivía con la deuda entera y se le cobraba dos veces.
+         Ver `pasarLoCobradoDeMasAlAnterior`: mueve pagos, no toca el libro. */
+      if (revivido?.devuelto > 0) {
+        const exceso = Math.round(totalPagosReales - salio)
+        if (exceso > 0) {
+          pasadoAlAnterior = await pasarLoCobradoDeMasAlAnterior(tx, {
+            nuevo: p, anteriorId: revivido.id, monto: Math.min(exceso, revivido.devuelto),
+          })
+        }
+      }
 
       /* ⚠ Y SOLO SI LA PLATA SALIÓ HOY — la misma regla que el borrado de abajo.
          Anular es la OTRA vía de quitar el préstamo, y devolvía al capital de hoy
@@ -446,6 +462,16 @@ export async function PATCH(request, { params }) {
           : `Estado cambiado a ${estado} (reverso de capital ya existente)`,
       ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
     })
+    if (pasadoAlAnterior > 0) {
+      logActividad({
+        session,
+        accion: 'editar_prestamo',
+        entidadTipo: 'prestamo',
+        entidadId: revivido.id,
+        detalle: `Renovación anulada: $${pasadoAlAnterior.toLocaleString('es-CO')} cobrados de más en ella pasan como abono a este préstamo`,
+        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+      })
+    }
 
     const respuesta = {
       ...actualizado,
@@ -457,7 +483,7 @@ export async function PATCH(request, { params }) {
       saldoNoRecuperado: Math.round(saldoNoRecuperado),
       // Para que la pantalla pueda decir «volvió el préstamo anterior con $X».
       prestamoAnteriorRevivido: revivido
-        ? { id: revivido.id, saldoDevuelto: revivido.devuelto }
+        ? { id: revivido.id, saldoDevuelto: revivido.devuelto, abonado: pasadoAlAnterior, saldo: revivido.devuelto - pasadoAlAnterior }
         : null,
     }
     if (idempKey) setCachedMutation(idempKey, respuesta)

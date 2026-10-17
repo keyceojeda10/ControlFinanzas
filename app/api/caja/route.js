@@ -1279,6 +1279,14 @@ export async function GET(request) {
       const cierre = cierres.find(ci => ci.cobradorId === c.id) || null
       const recaudadoDia = recaudoPorCobrador[c.id] || 0
       const esperadoDia = esperadoPorCobrador[c.id] || 0
+      /* ⚠ «SUGERIDO CIERRE» ES LO QUE SU CAJA LE PROPONE ENTREGAR, no lo cobrado.
+         Decía `recaudadoDia` —transferencias incluidas, sin restar lo prestado
+         ni los gastos—, igual que el «Cobrado» de al lado. Ahora es la cifra del
+         botón «Usar» de su caja, con la misma función. Solo hace falta mientras
+         no ha cerrado, que es cuando se enseña. */
+      const sugeridoCierre = cierre
+        ? Math.round(cierre.totalRecogido || 0)
+        : Math.round(enLaManoDelDia(await getStatsDia(organizationId, fechaBase, c.id)))
 
       // Caja detallada por cobrador: lo que prestó, los seguros que generó, sus gastos,
       // el efectivo que maneja hoy y el capital que le queda a sus rutas (sub-bolsa).
@@ -1325,7 +1333,7 @@ export async function GET(request) {
         recaudadoDia,
         esperadoDia,
         coteo: coteo(recaudadoDia, abonosAlRenovarPorCobrador[c.id] || 0),
-        sugeridoCierre: recaudadoDia,
+        sugeridoCierre,
         prestadoDia: prestadoDiaR,
         segurosDia: { monto: Math.round(segurosDia?.monto || 0), cantidad: segurosDia?.cantidad || 0 },
         gastosDia: gastosDiaCobrador,
