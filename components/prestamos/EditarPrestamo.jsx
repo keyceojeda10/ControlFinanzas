@@ -18,7 +18,7 @@ import { adaptarCorregir } from '@/lib/adaptadores/gestion'
 import { conPantalla } from '@/components/cf/Procesando'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
-import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
+import { SelectorPorcentajePesos, FilaRotulo, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const DIAS_POR_PERIODO = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 }
 
@@ -215,14 +215,11 @@ export default function EditarPrestamo({
         {/* Tasa e interés */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="flex items-center justify-between gap-2">
+            <FilaRotulo accion={puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}>
               <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">
-                {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Tasa de interés (%)'}
+                {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, esAbierto) : 'Tasa (%)'}
               </label>
-              {puedeEnPesos && (
-                <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />
-              )}
-            </div>
+            </FilaRotulo>
             {pesos.enPesos ? (
               <CampoCuotaEnPesos conNota={false} pesos={pesos} abierto={esAbierto} monto={monto} tasa={tasa} modo={modoInteres}
                 total={resumen?.totalAPagar} cuotas={resumen?.numPeriodos ?? periodos} />
@@ -237,13 +234,15 @@ export default function EditarPrestamo({
             )}
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Fecha de inicio</label>
+            <FilaRotulo>
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-[var(--cf-ink-3)]">Fecha de inicio</label>
+            </FilaRotulo>
             <input
               type="date"
               value={fechaInicio}
               onChange={(e) => setFechaInicio(e.target.value)}
               max={hoyISO()}
-              className="w-full h-10 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
+              className="w-full h-14 rounded-[10px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)]"
             />
           </div>
         </div>

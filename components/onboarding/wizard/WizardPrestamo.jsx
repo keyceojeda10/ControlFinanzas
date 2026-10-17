@@ -10,7 +10,7 @@ import Avatar from '@/components/ui/Avatar'
 import { useCountry } from '@/hooks/useCountry'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
-import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
+import { SelectorPorcentajePesos, FilaRotulo, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 
 const getLocalDate = () => {
   const now = new Date()
@@ -100,6 +100,9 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
   const [showMetodos,  setShowMetodos]  = useState(false)
 
   const plazo      = String((Number(plazoUnidades) || 0) * (DIAS_POR_PERIODO[frecuencia] || 1))
+  const rotuloPlazo = frecuencia === 'diario' ? 'Plazo (días)'
+    : frecuencia === 'semanal' ? 'Plazo (semanas)'
+    : frecuencia === 'quincenal' ? 'Plazo (quincenas)' : 'Plazo (meses)'
   const fechaInicio = getLocalDate()
 
   const handleFrecuenciaChange = (freq) => {
@@ -215,12 +218,11 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
           {metodo !== 'manual' && (<>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="flex items-center justify-between gap-2 mb-1">
+                <FilaRotulo accion={puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}>
                   <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
-                    {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Tasa de interés (%)'}
+                    {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Tasa (%)'}
                   </label>
-                  {puedeEnPesos && <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
-                </div>
+                </FilaRotulo>
                 {pesos.enPesos ? (
                   <CampoCuotaEnPesos conNota={false} pesos={pesos} monto={monto} tasa={tasa} modo={metodo}
                     total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
@@ -237,13 +239,13 @@ export default function WizardPrestamo({ cliente, onComplete, onSkip }) {
                 </>)}
               </div>
               <div>
+                <FilaRotulo>
+                  <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
+                    {rotuloPlazo}
+                  </label>
+                </FilaRotulo>
                 <Input
-                  label={
-                    frecuencia === 'diario'    ? 'Plazo (días)' :
-                    frecuencia === 'semanal'   ? 'Plazo (semanas)' :
-                    frecuencia === 'quincenal' ? 'Plazo (quincenas)' :
-                    'Plazo (meses)'
-                  }
+                  aria-label={rotuloPlazo}
                   type="number"
                   inputMode="numeric"
                   placeholder={DEFAULT_PLAZO[frecuencia]}

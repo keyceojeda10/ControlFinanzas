@@ -20,7 +20,7 @@ import { planDelPrestamo, totalTraeGanancia, cargarCarteraActiva } from '@/lib/p
 import { formatearTasa } from '@/lib/adaptadores/prestamos'
 import { MODOS_CUOTA_PAREJA } from '@/lib/dinero/interes-en-pesos'
 import { useCuotaEnPesos } from '@/hooks/useCuotaEnPesos'
-import { SelectorPorcentajePesos, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
+import { SelectorPorcentajePesos, FilaRotulo, CampoCuotaEnPesos, NotaCuotaEnPesos, rotuloCuotaEnPesos } from '@/components/prestamos/InteresEnPesos'
 import FechaALaVista from '@/components/cf/FechaALaVista'
 
 const getColombiaDate = () => new Date(Date.now() - 5 * 60 * 60 * 1000)
@@ -300,7 +300,6 @@ export default function RenovarPrestamo({
            cambiar el modo, no se mueve un peso y queda el botón. */
         (tactil && !soloModo && enMano > 0) ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-            <FechaALaVista rotulo="Fecha del renove" valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />
             <DeslizarParaConfirmar
               texto="Desliza para entregar"
               cifra={formatMoney(enMano)}
@@ -313,12 +312,7 @@ export default function RenovarPrestamo({
             </button>
           </div>
         ) : (
-          // La fecha en su renglón y los botones debajo: en la ventana de PC, en
-          // una sola fila, se partían en dos líneas cada uno.
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
-            {!soloModo && (
-              <FechaALaVista rotulo="Fecha del renove" valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />
-            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
               <Button variant="secondary" onClick={handleClose}>Cancelar</Button>
               <Button onClick={handleSubmit} loading={loading}>
@@ -465,12 +459,11 @@ export default function RenovarPrestamo({
         {/* Tasa + Plazo */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="flex items-center justify-between gap-2 mb-1">
+            <FilaRotulo accion={puedeEnPesos && <SelectorPorcentajePesos enPesos={pesos.enPesos} onElegir={pesos.elegir} />}>
               <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
                 {pesos.enPesos ? rotuloCuotaEnPesos(frecuencia, false) : 'Tasa (%)'}
               </label>
-              {puedeEnPesos && <SelectorPorcentajePesos compacto enPesos={pesos.enPesos} onElegir={pesos.elegir} />}
-            </div>
+            </FilaRotulo>
             {pesos.enPesos ? (
               <CampoCuotaEnPesos conNota={false} pesos={pesos} monto={montoNum} tasa={tasa} modo={modo}
                 total={calculo?.totalAPagar} cuotas={calculo?.numPeriodos ?? plazoUnidades} />
@@ -484,8 +477,13 @@ export default function RenovarPrestamo({
             )}
           </div>
           <div>
+            <FilaRotulo>
+              <label className="text-[12px] font-bold tracking-[0.01em]" style={{ color: 'var(--cf-ink-2)' }}>
+                {LABEL_PLAZO[frecuencia]}
+              </label>
+            </FilaRotulo>
             <Input
-              label={LABEL_PLAZO[frecuencia]}
+              aria-label={LABEL_PLAZO[frecuencia]}
               type="number"
               inputMode="numeric"
               value={plazoUnidades}
@@ -524,6 +522,21 @@ export default function RenovarPrestamo({
           </div>
         </div>
 
+        {/* ── LA FECHA DEL RENOVE, COMO UNA SECCIÓN MÁS (17 oct 2026) ──
+            Estuvo en «Más opciones» (no la encontraban: «el renove lo dejé
+            ayer») y después en el pie, pegada a los botones fijos. El dueño:
+            «no creo que esa sea la posición correcta». Va aquí, en el orden en
+            que se piensa —cuánto, a qué tasa, cada cuánto, cuándo— y se sigue
+            viendo sin bajar. El pie queda solo para Cancelar y Renovar. */}
+        {!soloModo && (
+          <div>
+            <label className="block text-[11px] font-medium uppercase tracking-[0.05em] mb-1.5" style={{ color: 'var(--cf-ink-3)' }}>
+              Fecha del renove
+            </label>
+            <FechaALaVista rotulo="Fecha del renove" mostrarRotulo={false} valor={fechaInicio} hoy={hoyISO()} onCambiar={setFechaInicio} />
+          </div>
+        )}
+
         {/* Mas opciones colapsable */}
         <button
           type="button"
@@ -550,8 +563,8 @@ export default function RenovarPrestamo({
                 diasPlazo={diasPlazo}
               />
             )}
-            {/* La fecha ya no va aquí: está a la vista encima del botón de entregar
-                (`FechaALaVista`). Escondida aquí, no la encontraban. */}
+            {/* La fecha ya no va aquí: es una sección a la vista, justo encima
+                de «Más opciones» (`FechaALaVista`). Escondida aquí, no la encontraban. */}
             <div className="rounded-xl p-3" style={{ border: '1px solid var(--cf-border)' }}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

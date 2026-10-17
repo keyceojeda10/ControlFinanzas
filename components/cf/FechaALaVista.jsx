@@ -21,7 +21,9 @@ const corta = (iso) => new Date(`${iso}T12:00:00Z`)
   .toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' })
   .replace(/\.$/, '').replace(' de ', ' ')
 
-export default function FechaALaVista({ rotulo = 'Fecha', valor, hoy, onCambiar }) {
+/* `mostrarRotulo={false}`: cuando el formulario ya pone el rótulo encima, como
+   sus demás secciones; `rotulo` sigue nombrando el calendario para lectores. */
+export default function FechaALaVista({ rotulo = 'Fecha', mostrarRotulo = true, valor, hoy, onCambiar }) {
   const campo = useRef(null)
   const ayer = sumarDias(hoy, -1)
   const otra = valor && valor !== hoy && valor !== ayer
@@ -39,7 +41,7 @@ export default function FechaALaVista({ rotulo = 'Fecha', valor, hoy, onCambiar 
   }
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)', marginRight: 2 }}>{rotulo}</span>
+      {mostrarRotulo && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cf-ink-3)', marginRight: 2 }}>{rotulo}</span>}
       <button type="button" style={chip(valor === hoy)} onClick={() => onCambiar(hoy)}>Hoy</button>
       <button type="button" style={chip(valor === ayer)} onClick={() => onCambiar(ayer)}>Ayer</button>
       <button type="button" style={chip(otra)} onClick={abrirCalendario}>
