@@ -116,7 +116,11 @@ export async function POST(request, { params }) {
          interés devengado sin pagar, y un campo que no se pide vale `undefined`
          —no da error, decide en silencio—. Ver lib/dinero/devengar.js. */
       devengos: { select: { periodo: true, interes: true } },
-      cuotasAmortizacion: { select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, pagado: true, interesPagado: true }, orderBy: { numeroPeriodo: 'asc' } },
+      /* ⚠ `fechaEsperada` HACE FALTA: `minimoParaRenovar` suma el interés de
+         las cuotas VENCIDAS (#18). Sin la fecha, el servidor no veía ninguna
+         vencida y liquidaba menos que la ficha: la diferencia salía en billetes
+         (medido en el espejo, $70.000 de un préstamo de $400.000). */
+      cuotasAmortizacion: { select: { numeroPeriodo: true, capital: true, interes: true, cuotaTotal: true, pagado: true, interesPagado: true, fechaEsperada: true }, orderBy: { numeroPeriodo: 'asc' } },
     },
   })
 
@@ -323,6 +327,15 @@ export async function POST(request, { params }) {
     }, { status: 400 })
   }
   const diferencia = diferenciaBruta > 0 ? efectivo.entrega : diferenciaBruta
+  /* ⚠ CAMBIAR EL MODO NO ENTREGA PLATA (DETALLES-PRESTAMOS #19). La hoja dice
+     «No sale ni entra dinero», y con el total editable salían billetes con un
+     botón simple, sin deslizar y sin pantalla de éxito. Para prestar más está
+     «Renovar». */
+  if (body.soloCambioDeModo === true && diferenciaBruta > 0) {
+    return Response.json({
+      error: `Al cambiar el modo de cobro el capital no sube: pasa lo que debe (${Math.round(minimoRenovacion).toLocaleString('es-CO')}). Para prestarle más, usa «Renovar».`,
+    }, { status: 400 })
+  }
 
   /* ══ CUÁNTO DE LO QUE PASA AL NUEVO ES INTERÉS ════════════════════════════
      La deuda vieja entra ENTERA al préstamo nuevo —es lo que el cliente debe y

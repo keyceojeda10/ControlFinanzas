@@ -22,7 +22,7 @@ import RegistrarPago                  from '@/components/prestamos/RegistrarPago
 import MetodoPagoSelector             from '@/components/pagos/MetodoPagoSelector'
 // AjusteSaldo absorbido por RegistrarPago via prop tabInicial.
 import RenovarPrestamo                from '@/components/prestamos/RenovarPrestamo'
-import { etiquetaModo }              from '@/lib/dinero/modos'
+import { etiquetaModo, sePagaDeUnaVez } from '@/lib/dinero/modos'
 import ModificarPlazo                 from '@/components/prestamos/ModificarPlazo'
 import EditarDiaCobro                 from '@/components/prestamos/EditarDiaCobro'
 import EditarProximoCobro             from '@/components/prestamos/EditarProximoCobro'
@@ -46,7 +46,7 @@ import {
   moodColorFromPrestamo,
 } from '@/components/prestamos/PrestamoDetalleViews'
 import { formatFechaCobroRelativa, tieneTablaAmortizacion, interesCobrableAhora, cobradoHoy, cuantosPagosHoy, pagosDelDia } from '@/lib/calculos'
-import { cifraProximoCobro } from '@/lib/adaptadores/clientes'
+import { cifraProximoCobro, DIAS_MORA } from '@/lib/adaptadores/clientes'
 import { calendarioDeCobro } from '@/lib/dias-sin-cobro'
 import { RegistrarAcciones } from '@/components/acciones/AccionesProvider'
 import QueNecesitas from '@/components/acciones/QueNecesitas'
@@ -54,7 +54,8 @@ import { SINONIMOS_GESTION, EXTRAS_PRESTAMO } from '@/lib/acciones/prestamo'
 // Para el total de cuotas de «Cómo va»: la MISMA fuente que usa
 // `calcularPrestamo`, no una división que se parezca.
 import { obtenerDiasPorPeriodo } from '@/lib/dinero/calendario'
-import { formatMoney } from '@/lib/i18n'
+import { formatMoney, getUtcOffset } from '@/lib/i18n'
+import { saldoTrasCadaPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import DiasSinCobroSelector from '@/components/ui/DiasSinCobroSelector'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -85,7 +86,7 @@ const estadoBadge = {
   pendiente_aprobacion: { variant: 'yellow', label: 'Pendiente aprobación' },
   activo:     { variant: 'blue',  label: 'Activo'     },
   completado: { variant: 'green', label: 'Completado' },
-  cancelado:  { variant: 'gray',  label: 'Cancelado'  },
+  cancelado:  { variant: 'gray',  label: 'Anulado'  },
 }
 
 const tipoPagoBadge = {
@@ -344,6 +345,10 @@ function PrestamoDetalleContenido({ params }) {
   // Leer contexto de ruta activa
   useEffect(() => {
     try {
+      /* Solo si se viene DE LA RUTA. El recorrido queda guardado en la sesión
+         después de salir de ella, y el «Siguiente → X» salía al abrir cualquier
+         préstamo de un cliente de esa ruta (DETALLES-PRESTAMOS #25). */
+      if (new URLSearchParams(window.location.search).get('fromRuta') !== '1') return
       const saved = sessionStorage.getItem('cf-ruta-nav')
       if (saved) setRutaNav(JSON.parse(saved))
     } catch {}
@@ -602,8 +607,11 @@ function PrestamoDetalleContenido({ params }) {
       window.history.replaceState({}, '', `${window.location.pathname}${s ? `?${s}` : ''}`)
       return
     }
-    setWaSugerida('credito_aprobado')
-    setModalWA(true)
+    // Un préstamo que aún espera aprobación no está «aprobado» (#22).
+    if (prestamo?.estado !== 'pendiente_aprobacion') {
+      setWaSugerida('credito_aprobado')
+      setModalWA(true)
+    }
     params.delete('nuevo')
     const search = params.toString()
     window.history.replaceState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`)
@@ -686,7 +694,8 @@ function PrestamoDetalleContenido({ params }) {
       // quedaba VACIO: la cabecera solo decia el nombre. T41-02 pone «un solo
       // pago · faltan 9 dias», que es lo que distingue esta ficha de las otras de
       // un vistazo — y los dias que faltan son la unica cuenta que corre aca.
-      prestamo.modoInteres === 'unico'
+      // Solo si la cuota es el total (#23): «Cuota única» casi siempre va en cuotas.
+      sePagaDeUnaVez(prestamo)
         ? ['un solo pago', (() => {
             if (!prestamo.fechaFin) return null
             const d = Math.ceil((new Date(prestamo.fechaFin) - Date.now()) / 86400000)
@@ -760,7 +769,12 @@ function PrestamoDetalleContenido({ params }) {
   const pagosDeHoy = cuantosPagosHoy({ pagos })
 
   const estaActivo = estado === 'activo'
-  const enMora     = diasMora > 3
+  /* UN SOLO UMBRAL (decisión del dueño, DETALLES-PRESTAMOS #21): de 1 a 7
+     días, vencido; más de 7, en mora. La franja y el botón usaban más de 3 y la
+     pastilla más de 7: el mismo préstamo decía las dos cosas. */
+  const enMora     = diasMora > DIAS_MORA
+  const atrasado   = diasMora > 0
+  const textoAtraso = `${diasMora} día${diasMora === 1 ? '' : 's'} ${enMora ? 'en mora' : (diasMora === 1 ? 'vencido' : 'vencidos')}`
   const totalPagadoReal = Math.round(totalPagado || 0)
   const montoPrestadoRedondeado = Math.round(montoPrestado || 0)
   const saldoFinancieroPendiente = Math.max(0, montoPrestadoRedondeado - totalPagadoReal)
@@ -858,7 +872,8 @@ function PrestamoDetalleContenido({ params }) {
   // de plata pagada. Y hace falta «empezo el», porque sin cuotas que marquen el
   // tiempo no hay forma de saber si el trato es de la semana pasada o de hace
   // tres meses — y eso cambia cuanto se puede insistir.
-  const esUnicoModo = modoInteres === 'unico'
+  // Solo si de verdad es UN pago: la mayoría de «Cuota única» va en cuotas (#23).
+  const esUnicoModo = sePagaDeUnaVez(prestamo)
   // ⚠ EN UTC: `fechaFin` es una fecha de CALENDARIO, no un instante (se calcula
   // con `setUTCDate`/`Date.UTC`). Sin fijarlo aquí, un `2026-03-02T00:00:00Z`
   // se leía desde Bogotá —UTC−5— como el 1 de marzo a las 19:00, y la ficha
@@ -944,10 +959,10 @@ function PrestamoDetalleContenido({ params }) {
   })()
 
   const pagosParaFicha = (() => {
-    const orden = [...pagos]
-      .filter((p) => !['recargo', 'descuento'].includes(p.tipo))
-      .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago))
-    let saldo = Math.round(saldoPendiente || 0)
+    /* «Quedó en» deshace cada movimiento como lo hizo el servidor: recargos,
+       descuentos, abonos a capital e interés que sube la deuda mueven el TOTAL
+       y salía mal (DETALLES-PRESTAMOS #24). Donde no se puede rehacer, sin cifra. */
+    const conSaldo = saldoTrasCadaPago(prestamo, saldoPendiente, { limite: 3, offsetHoras: getUtcOffset(country) })
     const filas = []
     /* Parcial o con extra lo dice la cuota que tocaba, no `tipo` (soporte del
        12 oct 2026): aquí un «completo» no llevaba marca, y $200.000 de una
@@ -959,17 +974,17 @@ function PrestamoDetalleContenido({ params }) {
       if (c) return null
       return p.tipo && p.tipo !== 'completo' ? p.tipo : null
     }
-    for (const p of orden.slice(0, 3)) {
+    for (const { pago: p, saldoDespues: saldo } of conSaldo) {
       const monto = Math.round(p.montoPagado || 0)
       filas.push({
         fecha: new Date(p.fechaPago).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' }),
         detalle: [
           p.metodoPago === 'transferencia' ? 'transferencia' : 'efectivo',
           marcaDelPago(p),
-          `quedó en ${formatMoney(saldo)}`,
+          saldo != null ? `quedó en ${formatMoney(saldo)}` : null,
         ].filter(Boolean).join(' · '),
         // Suelto ademas del texto: en 1440 tiene columna propia.
-        saldo: formatMoney(saldo),
+        saldo: saldo != null ? formatMoney(saldo) : '—',
         // Y sin el saldo dentro, para no decirlo dos veces cuando hay columna.
         // ── EL MEDIO DE VERDAD, NO «transferencia» a secas ──
         // Se degradaba a mano a «efectivo»/«transferencia» cuando el nombre de
@@ -988,7 +1003,6 @@ function PrestamoDetalleContenido({ params }) {
         cobrador: p.cobrador?.nombre ?? null,
         monto: formatMoney(monto),
       })
-      saldo += monto
     }
     return filas
   })()
@@ -1049,8 +1063,8 @@ function PrestamoDetalleContenido({ params }) {
     if (estado === 'completado') return { icon: ICON_TROFEO, text: '¡Préstamo completado!' }
     if (estado === 'cancelado') return 'Préstamo cancelado'
     if (porcentajePagado >= 90) return { icon: ICON_SPARKLE, text: '¡Casi listo! Falta poco' }
-    if (diasMora > 7) return { icon: ICON_ALERT, text: `${diasMora} días en mora — atención urgente` }
-    if (diasMora > 0) return { icon: ICON_ALERT, text: `${diasMora} día${diasMora === 1 ? '' : 's'} vencido` }
+    if (enMora) return { icon: ICON_ALERT, text: `${textoAtraso} — atención urgente` }
+    if (atrasado) return { icon: ICON_ALERT, text: textoAtraso }
     if (yaPagoHoy) return { icon: ICON_CHECK, text: 'Pagó hoy' }
     if (porcentajePagado >= 50) return { icon: ICON_TREND, text: 'Va por buen camino' }
     return null
@@ -1309,7 +1323,7 @@ function PrestamoDetalleContenido({ params }) {
         hacer: () => setModalProximoCobro(true),
       })
       cuando.push({
-        id: 'sincobro', nombre: 'Días sin cobro',
+        id: 'sincobro', nombre: 'Días sin cobro', sinVolver: true,
         hacer: () => {
           try { setDscDias(prestamo?.diasSinCobro ? JSON.parse(prestamo.diasSinCobro) : []) } catch { setDscDias([]) }
           // ⚠ `setModalDscPrestamo`, que es el estado que de verdad abre la
@@ -1365,7 +1379,7 @@ function PrestamoDetalleContenido({ params }) {
     // (DETALLES-PRESTAMOS #13).
     if (esOwner) {
       cierra.push(esClavo
-        ? { id: 'recuperar', nombre: 'Sacar de perdidos', hacer: () => quitarClavo() }
+        ? { id: 'recuperar', nombre: 'Sacar de perdidos', sinVolver: true, hacer: () => quitarClavo() }
         : { id: 'perdidos', nombre: 'Mover a perdidos', peligro: true, hacer: () => setModalClavo(true) })
     }
     /* ── ⚠ CANCELAR ENTRA AQUÍ, Y BAJA DEL PIE DE LA PANTALLA ──
@@ -1381,7 +1395,10 @@ function PrestamoDetalleContenido({ params }) {
        `peligro: true` la pinta en rojo, igual que «Mover a perdidos». */
     if (estaActivo && esOwner && !completado) {
       cierra.push({
-        id: 'cancelar', nombre: 'Cancelar el préstamo', peligro: true,
+        /* «Anular», no «cancelar» (decisión del dueño, DETALLES-PRESTAMOS #15):
+           en la calle «cancelar» es PAGAR TODO, y la ficha decía «Si lo cancela
+           hoy» para eso mismo. */
+        id: 'cancelar', nombre: 'Anular el préstamo', peligro: true, sinVolver: true,
         hacer: () => setConfirmCancel(true),
       })
     }
@@ -1403,7 +1420,7 @@ function PrestamoDetalleContenido({ params }) {
          cancelado: el suyo lo estaba, y por eso ni la fila de cancelar salía. */
     if (esOwner && puedeGestionarPrestamos) {
       cierra.push({
-        id: 'eliminar', nombre: 'Eliminar el préstamo', peligro: true,
+        id: 'eliminar', nombre: 'Eliminar el préstamo', peligro: true, sinVolver: true,
         hacer: () => setConfirmEliminar(true),
       })
     }
@@ -1470,6 +1487,13 @@ function PrestamoDetalleContenido({ params }) {
       // 1.500px más abajo. El ancla ya existía para «Ver los N pagos».
       llevarA: 'cf-historial-pagos',
       ejecutar: () => setHistorialOpen(true) },
+    /* «Pagaré y comprobante» tenía sus sinónimos y nadie lo registraba: el
+       buscador decía «no encontré eso aquí» (DETALLES-PRESTAMOS #27). Vive en
+       la tarjeta de la firma, más abajo: se va hasta ella. */
+    { id: 'prestamo-pagare', label: EXTRAS_PRESTAMO[3].label, pista: 'En este préstamo',
+      sinonimos: EXTRAS_PRESTAMO[3].sinonimos,
+      llevarA: 'cf-firma-pagare',
+      ejecutar: () => {} },
     { id: 'prestamo-whatsapp', label: 'Escribirle por WhatsApp', pista: 'En este préstamo',
       sinonimos: EXTRAS_PRESTAMO[4].sinonimos,
       disponible: Boolean(cliente?.telefono),
@@ -1499,7 +1523,7 @@ function PrestamoDetalleContenido({ params }) {
     if (prestamosIds.length === 1) {
       return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
     }
-    return `/clientes/${clienteRuta.id}`
+    return `/clientes/${clienteRuta.id}?fromRuta=1`
   }
   /* ── ⚠ AQUÍ VIVÍA UN CONTROL MUERTO ──
      `cobroInfo` se calculaba con su rótulo y su color… y NO SE PINTABA EN
@@ -1601,9 +1625,9 @@ function PrestamoDetalleContenido({ params }) {
             <p className="text-sm font-semibold text-[var(--cf-red-dark)]">
               Préstamo perdido — apartado de tus números normales
             </p>
-            {enMora && (
+            {atrasado && (
               <p className="text-xs mt-0.5" style={{ color: 'var(--cf-red-dark)', opacity: .85 }}>
-                {diasMora} días en mora
+                {textoAtraso}
                 {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
                 {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
               </p>
@@ -1663,11 +1687,14 @@ function PrestamoDetalleContenido({ params }) {
       )}
 
       {/* La franja de mora NO se pinta si ya está dentro de la del clavo. */}
-      {enMora && estaActivo && !completado && !esClavo && (
-        <div className="flex items-center gap-3 bg-[rgba(239,68,68,0.12)] border border-[rgba(239,68,68,0.3)] rounded-[16px] px-4 py-3">
-          <div className="w-2 h-2 rounded-full bg-[var(--cf-red-dark)] animate-pulse shrink-0" />
-          <p className="text-sm text-[var(--cf-red-dark)] font-semibold">
-            {diasMora} días en mora
+      {atrasado && estaActivo && !completado && !esClavo && (
+        /* Ámbar de 1 a 7 días (vencido), rojo de 8 en adelante (en mora). */
+        <div className="flex items-center gap-3 rounded-[16px] px-4 py-3" style={enMora
+          ? { background: 'var(--cf-red-pill-bg)', border: '1px solid var(--cf-red-pill-border)' }
+          : { background: 'var(--cf-gold-tint)', border: '1px solid var(--cf-gold-border)' }}>
+          <div className={`w-2 h-2 rounded-full shrink-0 ${enMora ? 'animate-pulse' : ''}`} style={{ background: enMora ? 'var(--cf-red-dark)' : 'var(--cf-gold-dark)' }} />
+          <p className="text-sm font-semibold" style={{ color: enMora ? 'var(--cf-red-dark)' : 'var(--cf-gold-text)' }}>
+            {textoAtraso}
             {cuotasEnMora > 0 ? ` · ${cuotasEnMora} cuota${cuotasEnMora === 1 ? '' : 's'} vencida${cuotasEnMora === 1 ? '' : 's'}` : ''}
             {montoEnMora > 0 ? ` · ${formatMoney(montoEnMora)}` : ''}
           </p>
@@ -1903,7 +1930,7 @@ function PrestamoDetalleContenido({ params }) {
               // en «Enviar por Wh…». El icono verde ya dice de qué se trata, y
               // el sublabel dice qué se manda.
               label: 'WhatsApp',
-              sublabel: 'Enviar crédito o recibo',
+              sublabel: estado === 'pendiente_aprobacion' ? 'Escribirle' : 'Enviar crédito o recibo',
               color: '#25D366',
               icon: (
                 <svg fill="currentColor" viewBox="0 0 24 24">
@@ -1911,7 +1938,8 @@ function PrestamoDetalleContenido({ params }) {
                   <path d="M20.52 3.449C12.831-3.984.106 1.407.101 11.893c0 2.096.549 4.14 1.595 5.945L0 24l6.335-1.652a11.882 11.882 0 0 0 5.68 1.448h.005c9.6 0 15.24-10.4 10.5-18.35a11.83 11.83 0 0 0-2-2.997zM12.02 21.785h-.004a9.87 9.87 0 0 1-5.03-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.263c.001-8.708 10.59-13.067 16.752-6.909 6.16 6.158 1.812 16.805-6.87 16.805z" />
                 </svg>
               ),
-              onClick: () => { setWaSugerida('credito_aprobado'); setModalWA(true) },
+              // Sin aprobar no se le propone «Crédito aprobado» (#22): se abre sin plantilla.
+              onClick: () => { setWaSugerida(estado === 'pendiente_aprobacion' ? null : 'credito_aprobado'); setModalWA(true) },
             }] : []),
             ...(mostrarAtajosCobro ? [{
               // «Abonos», una palabra: «Cobros» y «Abonos y atajos» decían lo
@@ -1975,7 +2003,7 @@ function PrestamoDetalleContenido({ params }) {
             renovar este préstamo» y se abre la hoja de renovar, sin pasar por
             el chip ni por el menú. */}
         <RegistrarAcciones clave="prestamo" acciones={accionesBuscables} />
-        <QueNecesitas ejemplos={['renovar', 'cancelar', 'cambiar el plazo']} />
+        <QueNecesitas ejemplos={['renovar', 'pagar todo hoy', 'cambiar el plazo']} />
 
       {/* ── LA FICHA DE T41-01 ──
           Sustituye al hero con donut y sparkline, y a la grilla de datos en tres
@@ -2006,7 +2034,7 @@ function PrestamoDetalleContenido({ params }) {
         cierreHoy={cierreTexto}
         cierrePerdona={cierrePerdonaTexto}
         onCerrarHoy={puedeAplicarDescuentos ? () => abrirLiquidacion() : null}
-        modo={modoInteres === 'unico' ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
+        modo={esUnicoModo ? 'unico' : modoInteres === 'manual' ? 'manual' : modoInteres === 'proporcional' ? 'proporcional' : 'fijo'}
         faltaPagar={formatMoney(Math.round(saldoPendiente || 0))}
         // Lo mismo SIN intereses: «¿cuánto de eso es mi plata?». El API ya lo
         // calcula con `calcularCapitalRestante` —la misma que usa la renovación
@@ -2030,6 +2058,7 @@ function PrestamoDetalleContenido({ params }) {
         porcentaje={Math.min(100, Math.max(0, Math.round(porcentajePagado || 0)))}
         cuota={formatMoney(Math.round(cuotaDiaria || 0))}
         enMora={hayMontoMora ? formatMoney(Math.round(montoEnMora)) : '$0'}
+        rotuloMora={atrasado && !enMora ? 'Vencido' : 'En mora'}
         cuotasFaltantes={cuotasFaltantesTexto}
         cobro={cobro}
         diasDeCobro={diasDeCobroTexto}
@@ -2212,7 +2241,8 @@ function PrestamoDetalleContenido({ params }) {
         <div className="space-y-4 min-w-0">
 
       {/* ── BOTONES WHATSAPP ─────────────────────────────────────── */}
-      {cliente?.telefono && estaActivo && enMora && !completado && (
+      {/* Desde el primer día: la plantilla ya cambia de tono sola (suave, firme, crítica). */}
+      {cliente?.telefono && estaActivo && atrasado && !completado && (
         <BotonWhatsApp tipo="mora" cliente={cliente} prestamo={prestamo} orgNombre={orgNombre} ocultarSaldo={ocultarSaldoWA} camposRecibo={camposRecibo} organizationId={session?.user?.organizationId} />
       )}
       {/* ⚠ AQUÍ HABÍA UN SEGUNDO «ENVIAR RESUMEN POR WHATSAPP» (E02).
@@ -2224,10 +2254,12 @@ function PrestamoDetalleContenido({ params }) {
           cuando hay atraso. */}
 
       {/* ── FIRMA DIGITAL ──────────────────────────────────────── */}
-      <FirmaDigital
-        prestamo={prestamo}
-        onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
-      />
+      <div id="cf-firma-pagare" className="scroll-mt-20">
+        <FirmaDigital
+          prestamo={prestamo}
+          onSave={(url) => setPrestamo(prev => ({ ...prev, firmaUrl: url }))}
+        />
+      </div>
 
       {/* ── MODAL CAMPOS RECIBO (se abre al generar comprobante) ── */}
       {modalRecibo && (
@@ -2474,6 +2506,8 @@ function PrestamoDetalleContenido({ params }) {
                         <input
                           type="date"
                           defaultValue={new Date(new Date(pago.fechaPago).getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                          // Nunca después de hoy (#37); el servidor también lo frena.
+                          max={new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)}
                           className="h-9 rounded-[12px] border border-[var(--cf-border)] bg-[var(--cf-card)] px-3 text-sm text-[var(--cf-ink)] focus:outline-none focus:border-[var(--cf-ink-2)] transition-colors"
                           id={`fecha-pago-${pago.id}`}
                         />
@@ -2638,11 +2672,11 @@ function PrestamoDetalleContenido({ params }) {
       <Modal
         open={!!confirmCancel && estaActivo && session?.user?.rol === 'owner' && !completado}
         onClose={() => setConfirmCancel(false)}
-        title="¿Cancelar este préstamo?"
+        title="¿Anular este préstamo?"
       >
             <div className="space-y-3">
               <p className="text-xs text-[var(--cf-ink-3)]">
-                Se marcará como cancelado. El saldo pendiente de {formatMoney(saldoPendiente)} quedará sin cobrar.
+                Queda anulado: el saldo pendiente de {formatMoney(saldoPendiente)} no se cobra. Si lo que quieres es que pague todo hoy, usa «Cerrar anticipado».
               </p>
 
               {salioOtroDia && (
@@ -2674,23 +2708,54 @@ function PrestamoDetalleContenido({ params }) {
                   pregunta y se dice qué va a pasar. Y se señala la salida buena
                   para el caso que de verdad tenía: ELIMINAR el préstamo, que sí
                   revierte los cobros. */}
-              {hayCobrosRegistrados && !salioOtroDia && (
+              {/* ⚠ LA RENOVACIÓN ANULADA REVIVE LA ANTERIOR, y aquí no se decía
+                  (solo «Eliminar» lo avisaba). DETALLES-PRESTAMOS #16. */}
+              {prestamo?.alAnular?.anterior && (
+                <div
+                  className="rounded-[14px] px-3 py-2.5 space-y-1.5"
+                  style={{ background: 'var(--cf-gold-bg)', border: '1px solid var(--cf-gold-border)' }}
+                >
+                  <p className="text-xs font-semibold text-[var(--cf-ink)]">
+                    {prestamo.alAnular.anterior.saldo != null
+                      ? `El préstamo anterior vuelve con su saldo de ${formatMoney(prestamo.alAnular.anterior.saldo)}`
+                      : 'El saldo del préstamo anterior no vuelve solo'}
+                  </p>
+                  <p className="text-[11px] text-[var(--cf-ink-2)] leading-snug">
+                    {prestamo.alAnular.anterior.saldo != null
+                      ? 'Esta es una renovación: al anularla, el préstamo de antes queda activo otra vez y se le sigue cobrando.'
+                      : 'Es una renovación hecha antes de la última actualización. Escríbenos si necesitas recuperarlo.'}
+                    {prestamo.alAnular.cobradoDeMas > 0 && (
+                      <> Ya cobraste {formatMoney(prestamo.alAnular.cobradoDeMas)} más de lo que entregaste en esta renovación,
+                      y eso no se le descuenta: si eran abonos a esa deuda, aplícale un descuento por esa cifra.</>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {/* «Vuelven a caja» es la cifra del SERVIDOR (`alAnular`): lo que salió
+                  de verdad menos lo cobrado. Decía «prestado − cobrado», que no es
+                  lo que se devuelve en una renovación ni con seguro. */}
+              {(hayCobrosRegistrados || (prestamo?.alAnular?.vuelveACaja ?? 0) !== Math.round(montoPrestado || 0)) && !salioOtroDia && prestamo?.alAnular && (
                 <div
                   className="rounded-[14px] px-3 py-2.5 space-y-1.5"
                   style={{ background: 'var(--cf-fill)', border: '1px solid var(--cf-border)' }}
                 >
                   <p className="text-xs font-semibold text-[var(--cf-ink)]">
-                    Vuelven a caja {formatMoney(saldoFinancieroPendiente)}
+                    Vuelven a caja {formatMoney(prestamo.alAnular.vuelveACaja)}
                   </p>
                   <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
-                    Es lo prestado menos los {formatMoney(totalPagadoReal)} que ya cobraste. Esos cobros
-                    se quedan registrados, porque esa plata sí entró.
+                    {hayCobrosRegistrados
+                      ? <>Es lo que salió de la caja ({formatMoney(prestamo.alAnular.salio)}) menos los {formatMoney(prestamo.alAnular.cobrado)} que ya cobraste. Esos cobros
+                        se quedan registrados, porque esa plata sí entró.</>
+                      : <>Es lo que de verdad salió de la caja al entregarlo.</>}
                   </p>
-                  <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
-                    ¿Te equivocaste al registrar un cobro? Entonces no lo canceles:
-                    <span className="font-semibold text-[var(--cf-ink-2)]"> elimina el préstamo</span>, que
-                    también borra sus cobros y deja la caja como estaba.
-                  </p>
+                  {hayCobrosRegistrados && (
+                    <p className="text-[11px] text-[var(--cf-ink-3)] leading-snug">
+                      ¿Te equivocaste al registrar un cobro? Entonces no lo anules:
+                      <span className="font-semibold text-[var(--cf-ink-2)]"> elimina el préstamo</span>, que
+                      también borra sus cobros y deja la caja como estaba.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -2716,7 +2781,7 @@ function PrestamoDetalleContenido({ params }) {
                         }),
                       })
                       if (!res.ok) {
-                        let mensaje = 'No se pudo cancelar el préstamo.'
+                        let mensaje = 'No se pudo anular el préstamo.'
                         try {
                           const payload = await res.json()
                           if (payload?.error) mensaje = payload.error
@@ -2726,7 +2791,7 @@ function PrestamoDetalleContenido({ params }) {
                       await fetchPrestamo()
                       setConfirmCancel(false)
                     } catch (err) {
-                      setErrorAccion(err.message || 'No se pudo cancelar el préstamo.')
+                      setErrorAccion(err.message || 'No se pudo anular el préstamo.')
                     } finally {
                       setCancelando(false)
                     }
@@ -2734,7 +2799,7 @@ function PrestamoDetalleContenido({ params }) {
                   disabled={cancelando}
                   className="flex-1 h-[46px] rounded-[14px] text-sm font-bold text-white bg-[var(--cf-red-dark)] hover:bg-[color-mix(in_srgb,var(--cf-red-dark)_85%,black)] disabled:opacity-50 transition-colors"
                 >
-                  {cancelando ? 'Cancelando…' : 'Sí, cancelar'}
+                  {cancelando ? 'Anulando…' : 'Sí, anular'}
                 </button>
               </div>
             </div>
@@ -2837,7 +2902,11 @@ function PrestamoDetalleContenido({ params }) {
           consejo={diasMora >= 15 && cuotaDiaria > 0
             ? `Con ${diasMora} días de atraso, lo que suele funcionar es bajar la cuota antes que el recargo. Un cliente que no puede pagar ${formatMoney(Math.round(cuotaDiaria))} tampoco va a pagar ${formatMoney(Math.round(cuotaDiaria * 2))}.`
             : null}
-          onAccion={(a) => { setModalGestionPrestamo(false); setVinoDeGestion(true); a.hacer?.() }}
+          /* ⚠ SOLO SI LA ACCIÓN ABRE UNA HOJA CON FLECHA (DETALLES-PRESTAMOS #28).
+             Días sin cobro, Sacar de perdidos, Anular y Eliminar no tienen
+             flecha y la marca se quedaba puesta: la siguiente hoja abierta por
+             otro camino —el buscador, un chip— salía con «←» al menú. */
+          onAccion={(a) => { setModalGestionPrestamo(false); setVinoDeGestion(!a.sinVolver); a.hacer?.() }}
         />
       </HojaInferior>
 
@@ -3301,6 +3370,7 @@ function PrestamoDetalleContenido({ params }) {
         prestamoId={id}
         saldoPendiente={saldoPendiente}
         minimoRenovacion={minimoRenovacion}
+        interesVencidoRenovacion={prestamo?.interesVencidoRenovacion ?? 0}
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}
@@ -3320,6 +3390,7 @@ function PrestamoDetalleContenido({ params }) {
         prestamoId={id}
         saldoPendiente={saldoPendiente}
         minimoRenovacion={minimoRenovacion}
+        interesVencidoRenovacion={prestamo?.interesVencidoRenovacion ?? 0}
         prestamoAnterior={{ tasaInteres, diasPlazo, frecuencia, modoInteres, cuotaDiaria, montoPrestado, interesAdelantado }}
         clienteNombre={cliente?.nombre}
         montoMaximoPrestamo={cliente?.montoMaximoPrestamo}

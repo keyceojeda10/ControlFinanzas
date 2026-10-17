@@ -1,5 +1,5 @@
 // Service Worker — Control Finanzas PWA
-const CACHE_NAME   = 'cf-v1152'
+const CACHE_NAME   = 'cf-v1153'
 // API_CACHE solo sube cuando cambian las CIFRAS que devuelve el servidor.
 //
 // Este release SÍ las cambia, en `/api/cobros-hoy` (Adenda 5):
@@ -358,6 +358,11 @@ async function networkFirstPage(request) {
   } catch {
     const cached = await caches.match(request)
     if (cached) return cached
+    /* La MISMA pantalla con otra consulta (`?openPago=1&fromRuta=1`,
+       `?fromRuta=1`): el HTML es el mismo, la consulta solo la lee la página.
+       Sin esto, sin señal se caía a la LISTA en vez de la ficha. */
+    const mismaPagina = await caches.match(request, { ignoreSearch: true })
+    if (mismaPagina) return mismaPagina
 
     // Fallback cascada: padre de ruta dinamica -> dashboard -> cualquier pagina cacheada
     try {

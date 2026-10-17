@@ -166,15 +166,30 @@ export async function POST(req) {
           if (!exists) prestamoId = null
         }
         if (!prestamoId && input.clienteNombre) {
-          const palabraClave = input.clienteNombre.split(' ')[0]
-          const cliente = await prisma.cliente.findFirst({
-            where: {
-              organizationId: orgId,
-              nombre: { contains: palabraClave },
-              prestamos: { some: { estado: 'activo' } },
-            },
-            select: { prestamos: { where: { estado: 'activo' }, select: { id: true, cuotaDiaria: true, totalAPagar: true } } },
-          })
+          /* ⚠ POR EL NOMBRE ENTERO, NO POR LA PRIMERA PALABRA (DETALLES-PRESTAMOS
+             #41). Con «Carlos Pérez» buscaba «Carlos» y se quedaba con el
+             primer Carlos que tuviera un préstamo: el pago caía en otro
+             cliente. Primero el nombre tal cual; si no aparece, todas las
+             palabras a la vez. Si hay más de uno, se pregunta. */
+          const conPrestamo = { organizationId: orgId, prestamos: { some: { estado: 'activo' } } }
+          const sel = { nombre: true, prestamos: { where: { estado: 'activo' }, select: { id: true, cuotaDiaria: true, totalAPagar: true } } }
+          const nombre = String(input.clienteNombre).trim()
+          let candidatos = await prisma.cliente.findMany({ where: { ...conPrestamo, nombre: { contains: nombre } }, select: sel, take: 5 })
+          if (candidatos.length === 0) {
+            const palabras = nombre.split(/\s+/).filter((w) => w.length > 1)
+            if (palabras.length) {
+              candidatos = await prisma.cliente.findMany({
+                where: { ...conPrestamo, AND: palabras.map((w) => ({ nombre: { contains: w } })) },
+                select: sel, take: 5,
+              })
+            }
+          }
+          if (candidatos.length > 1) {
+            return NextResponse.json({
+              error: `Hay ${candidatos.length} clientes que se llaman así (${candidatos.map((c) => c.nombre).join(', ')}). Dile a Lucas el nombre completo.`,
+            }, { status: 400 })
+          }
+          const cliente = candidatos[0]
           const prestamosActivos = cliente?.prestamos ?? []
           if (prestamosActivos.length === 1) {
             prestamoId = prestamosActivos[0].id
@@ -187,18 +202,31 @@ export async function POST(req) {
         if (!prestamoId) {
           return NextResponse.json({ error: 'No se encontro un préstamo activo para este cliente' }, { status: 404 })
         }
+        /* La CUENTA de la transferencia, no solo su nombre (#41): sin
+           `metodoPagoId` el cobro caía como transferencia sin dueño y la caja
+           no sabía si entraba al fajo. Se busca por el nombre que dijo. */
+        const esTransferencia = (input.metodoPago || 'efectivo') === 'transferencia'
+        const cuenta = esTransferencia && input.plataforma
+          ? await prisma.metodoPago.findFirst({
+              where: { organizationId: orgId, activo: true, nombre: { contains: String(input.plataforma).trim() } },
+              select: { id: true, nombre: true },
+            })
+          : null
         const res = await fetch(`${origin}/api/prestamos/${prestamoId}/pagos`, {
           method: 'POST', headers,
           body: JSON.stringify({
             montoPagado: input.monto,
             tipo: input.tipo,
             metodoPago: input.metodoPago || 'efectivo',
-            plataforma: input.plataforma || null,
+            plataforma: cuenta?.nombre || input.plataforma || null,
+            ...(cuenta ? { metodoPagoId: cuenta.id } : {}),
           }),
         })
         const data = await res.json()
         if (!res.ok) return NextResponse.json({ error: data.error || 'Error al registrar el pago' }, { status: res.status })
         clearCachedContexto(orgId)
+        // Lo GUARDADO, no lo escrito (#41): el mensaje y el comprobante dicen la cifra del servidor.
+        const montoGuardado = Number((data.pagos ?? []).find((x) => x.id === data.saldoAntesDelPagoId)?.montoPagado ?? input.monto)
 
         // Generar link de comprobante WhatsApp si el cliente tiene teléfono
         let waUrl = null
@@ -224,7 +252,7 @@ export async function POST(req) {
               const texto = generarTextoComprobante(
                 { nombre: cliente.nombre, cedula: cliente.cedula },
                 { totalPagado, saldoPendiente, porcentajePagado, diasMora: prestamo.diasMora ?? 0 },
-                { montoPagado: input.monto, fechaPago: ultimoPago?.fechaPago ?? new Date().toISOString() },
+                { montoPagado: montoGuardado, fechaPago: ultimoPago?.fechaPago ?? new Date().toISOString() },
                 { orgNombre: session.user.orgNombre },
               )
               waUrl = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`
@@ -234,7 +262,7 @@ export async function POST(req) {
 
         return NextResponse.json({
           ok: true,
-          message: `Pago de $${Math.round(input.monto).toLocaleString('es-CO')} registrado para ${input.clienteNombre}.`,
+          message: `Pago de $${Math.round(montoGuardado).toLocaleString('es-CO')} registrado para ${input.clienteNombre}.`,
           waUrl,
         })
       }
@@ -249,7 +277,8 @@ export async function POST(req) {
         clearCachedContexto(orgId)
         return NextResponse.json({
           ok: true,
-          message: `Gasto de $${Math.round(input.monto).toLocaleString('es-CO')} (${input.description}) registrado. Pendiente de aprobación.`,
+          // El del dueño nace aprobado (caja #2): no se dice «pendiente» si no lo está.
+          message: `Gasto de $${Math.round(input.monto).toLocaleString('es-CO')} (${input.description}) registrado.${data.estado === 'aprobado' ? '' : ' Pendiente de aprobación.'}`,
         })
       }
 

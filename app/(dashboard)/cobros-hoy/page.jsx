@@ -231,10 +231,12 @@ export default function CobrosHoyPage() {
     setModalPago(prev => prev ? { ...prev, prestamoActivo: prestamoId, cuota, esBalloon: extra.esBalloon || false, cuotaNumero: extra.cuotaNumero ?? null, modoInteres: extra.modoInteres, cuotaExtraHoy: extra.cuotaExtraHoy || false, montoCuotaExtra: extra.montoCuotaExtra || 0 } : prev)
   }
 
-  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null } = {}) => {
+  const ejecutarPago = async (metodoPago, { confirmarDuplicado = false, montoCustom = null, metodoPagoId = null, plataforma = null, destino = null } = {}) => {
     try { sessionStorage.setItem('cf-ultimo-metodo-pago', metodoPago) } catch {}
-    if (!modalPago || pagando) return
-    const { id: clienteId, nombre, cuota, prestamoActivo } = modalPago
+    // `destino` para el reintento del duplicado: el modal ya está cerrado (#35).
+    const objetivo = destino ?? modalPago
+    if (!objetivo || pagando) return
+    const { id: clienteId, nombre, cuota, prestamoActivo } = objetivo
     const montoFinal = montoCustom ?? cuota
     const tipoPago = montoCustom && montoCustom < cuota ? 'parcial' : 'completo'
     setModalPago(null)
@@ -288,7 +290,7 @@ export default function CobrosHoyPage() {
         const d = await res.json().catch(() => ({}))
         if (d?.duplicado && !confirmarDuplicado) {
           fetchCobros()
-          setConfirmDuplicado({ clienteId, nombre, cuota, prestamoActivo, metodoPago, metodoPagoId })
+          setConfirmDuplicado({ clienteId, nombre, cuota, prestamoActivo, metodoPago, metodoPagoId, montoCustom })
         } else {
           alert(d?.error || 'No se pudo registrar el pago')
           fetchCobros()
@@ -346,10 +348,19 @@ export default function CobrosHoyPage() {
     if (!undoPago) return
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
     setUndoPago(null)
+    /* Se mira la respuesta: si el servidor no lo deja (otro día, caja cerrada,
+       sin permiso), el cobro SIGUE registrado y hay que decirlo. Callado, el
+       cobrador creía haberlo deshecho (DETALLES-PRESTAMOS #36). */
     try {
-      await fetch(`/api/pagos/${undoPago.pagoId}`, { method: 'DELETE' })
-      fetchCobros()
-    } catch {}
+      const res = await fetch(`/api/pagos/${undoPago.pagoId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(`No se deshizo: el cobro sigue registrado. ${d.error || ''}`.trim())
+      }
+    } catch {
+      alert('No se deshizo: el cobro sigue registrado. Revisa la conexión.')
+    }
+    fetchCobros()
   }
 
   /* ── VOLVER AL CLIENTE DONDE IBA COBRANDO ──────────────────────────────
@@ -704,13 +715,17 @@ export default function CobrosHoyPage() {
         {confirmDuplicado && (
           <div className="space-y-4">
             <p className="text-sm" style={{ color: 'var(--cf-ink-2)' }}>
-              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{confirmDuplicado.nombre}</span> ya recibio un pago por{' '}
-              <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(confirmDuplicado.cuota)}</span> hace menos de 1 minuto.
+              <span className="font-medium" style={{ color: 'var(--cf-ink)' }}>{confirmDuplicado.nombre}</span> ya recibió un pago por{' '}
+              <span className="font-bold font-mono-display" style={{ color: 'var(--cf-gold-dark)' }}>{formatMoney(confirmDuplicado.montoCustom ?? confirmDuplicado.cuota)}</span> hace menos de 1 minuto.
             </p>
-            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>Registrar este pago de todos modos?</p>
+            <p className="text-sm" style={{ color: 'var(--cf-ink-3)' }}>¿Registrar este pago de todos modos?</p>
             <div className="flex gap-3">
               <button
-                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); setModalPago({ id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo, prestamosActivos: [], abonoConPendiente: false }); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId }) }}
+                /* Registra el MISMO cobro, con su monto. Antes abría el modal y
+                   llamaba a `ejecutarPago` en el mismo toque, que leía el modal
+                   del render anterior (cerrado) y salía sin pagar: «Sí,
+                   registrar igual» solo reabría el modal (DETALLES-PRESTAMOS #35). */
+                onClick={() => { const d = confirmDuplicado; setConfirmDuplicado(null); ejecutarPago(d.metodoPago, { confirmarDuplicado: true, metodoPagoId: d.metodoPagoId, montoCustom: d.montoCustom, destino: { id: d.clienteId, nombre: d.nombre, cuota: d.cuota, prestamoActivo: d.prestamoActivo } }) }}
                 className="flex-1 py-2.5 rounded-[12px] text-sm font-semibold transition-all"
                 style={{ background: 'var(--cf-gold-dark)', color: 'var(--cf-gold-ink)' }}
               >

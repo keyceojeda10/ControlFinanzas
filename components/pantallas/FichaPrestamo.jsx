@@ -233,6 +233,8 @@ export default function FichaPrestamo({
   fechaVencimiento, diasParaVencer, empezoEl,
   // tira
   cuota, enMora, cuotasFaltantes,
+  // «Vencido» de 1 a 7 días, «En mora» de 8 en adelante (#21): lo pone la página.
+  rotuloMora = 'En mora',
   /* ── CUÁNDO SE COBRA ──
      `{ etiqueta, valor, tono }` de `cifraProximoCobro`: «COBRA / hoy»,
      «VENCIÓ EL / 14 jul» o «COBRA EL / 19 ago». Es el dato que faltaba dentro
@@ -373,7 +375,7 @@ export default function FichaPrestamo({
             {cierreHoy && (
               <LineaCifra
                 sobreOscuro
-                rotulo="Si lo cancela hoy"
+                rotulo="Si paga todo hoy"
                 cifra={cierreHoy}
                 chip={cierrePerdona}
                 tonoChip="neutro"
@@ -390,7 +392,7 @@ export default function FichaPrestamo({
             { etiqueta: 'Cuota', valor: cuota },
             // Un "$0" en la columna de mora ocupa el sitio de una cifra sin ser
             // una. La palabra dice lo mismo y no se lee como plata.
-            { etiqueta: 'En mora', valor: hayMora ? enMora : 'Nada', tono: hayMora ? 'contra' : 'apagado' },
+            { etiqueta: rotuloMora, valor: hayMora ? enMora : 'Nada', tono: hayMora ? 'contra' : 'apagado' },
             { etiqueta: 'Le faltan', valor: cuotasFaltantes },
             cobro && { etiqueta: cobro.etiqueta, valor: cobro.valor, tono: cobro.tono },
           ]} />

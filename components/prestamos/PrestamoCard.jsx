@@ -21,7 +21,7 @@ import { ETIQUETA_MODO } from '@/lib/dinero/modos'
 
 function moodLabel(p, esNuevo) {
   if (p.estado === 'completado') return 'Completado'
-  if (p.estado === 'cancelado')  return 'Cancelado'
+  if (p.estado === 'cancelado')  return 'Anulado'
   if (p.diasMora > 7)            return `${p.diasMora}d en mora`
   if (p.diasMora > 0)            return `${p.diasMora}d vencido`
   if (p.pagoHoy)                 return 'Pagó hoy'

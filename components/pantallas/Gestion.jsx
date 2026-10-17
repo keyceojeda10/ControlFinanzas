@@ -738,9 +738,14 @@ export function MoverAPerdidos({
           <path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17h.01" />
         </svg>
         <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--cf-red-darker)' }}>
-          Darlo por perdido saca <strong>{montoEnJuego}</strong> de tu cartera y lo
-          registra como pérdida del mes. El cliente queda marcado en rojo en todo
-          el sistema: tus cobradores no podrán prestarle y tú tendrás que confirmarlo.
+          {/* La pérdida solo si se marca la casilla: sin marcar, decía que la
+              registraba igual (DETALLES-PRESTAMOS #17). */}
+          Darlo por perdido saca <strong>{montoEnJuego}</strong> de tu cartera
+          {perdidaValor
+            ? <> y registra <strong>{perdidaValor}</strong> como pérdida del mes.</>
+            : <>. Tu capital no baja: para eso marca la casilla de abajo.</>}
+          {' '}El cliente queda marcado en rojo en todo el sistema: tus cobradores
+          no podrán prestarle y tú tendrás que confirmarlo.
         </span>
       </div>
 

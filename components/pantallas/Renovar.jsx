@@ -124,6 +124,8 @@ export function Renovar({
           <input
             value={total ?? ''}
             onChange={(e) => onTotal?.(e.target.value)}
+            // Sin `onTotal` la cifra es la respuesta, no se escribe (cambiar el modo).
+            readOnly={!onTotal}
             type="text" inputMode="decimal"
             aria-label={totalEtiqueta}
             className="cf-fig"

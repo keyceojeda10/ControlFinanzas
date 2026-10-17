@@ -171,7 +171,7 @@ const ESTADOS = [
      nombre; con nombres distintos, son dos preguntas distintas. */
   { value: 'nuevos',     label: 'De hoy' },
   { value: 'completado', label: 'Completados' },
-  { value: 'cancelado',  label: 'Cancelados' },
+  { value: 'cancelado',  label: 'Anulados' },
 ]
 
 // Filtro por frecuencia de cobro (se aplica del lado cliente sobre lo cargado).

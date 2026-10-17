@@ -623,7 +623,7 @@ export default function RutaDetallePage({ params }) {
 
     const url = prestamoObjetivo
       ? `/prestamos/${prestamoObjetivo}?openPago=1&fromRuta=1`
-      : `/clientes/${clienteRuta.id}`
+      : `/clientes/${clienteRuta.id}?fromRuta=1`
 
     if (navigator.onLine) router.push(url)
     else window.location.href = url
@@ -1162,8 +1162,10 @@ export default function RutaDetallePage({ params }) {
         if (data?.duplicado && !confirmarDuplicado) {
           await fetchRuta()
           if (confirm(`${nombre} ya recibió un pago por ${formatMoney(cuota)} hace menos de 1 minuto.\n\n¿Registrar este pago de todos modos?`)) {
-            setModalPagoRapido({ id: clienteId, nombre, cuota, prestamoActivo, abonoConPendiente: false })
-            return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true, metodoPagoId })
+            /* El MISMO cobro, con su monto: sin `destino` leía el modal del
+               render anterior y registraba la cuota completa en vez del «Otro
+               monto» (DETALLES-PRESTAMOS #35). */
+            return ejecutarPagoRapido(metodoPago, { confirmarDuplicado: true, metodoPagoId, destino: objetivo })
           }
         } else {
           alert(data?.error || 'No se pudo registrar el pago')
@@ -1205,10 +1207,17 @@ export default function RutaDetallePage({ params }) {
     const { pagoId } = undoPago
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
     setUndoPago(null)
+    // Si el servidor no lo deja, el cobro sigue: se dice (#36).
     try {
-      await fetch(`/api/pagos/${pagoId}`, { method: 'DELETE' })
-      fetchRuta()
-    } catch {}
+      const res = await fetch(`/api/pagos/${pagoId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        alert(`No se deshizo: el cobro sigue registrado. ${d.error || ''}`.trim())
+      }
+    } catch {
+      alert('No se deshizo: el cobro sigue registrado. Revisa la conexión.')
+    }
+    fetchRuta()
   }
 
   const deshacerCobroDeParada = async () => {

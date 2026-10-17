@@ -18,6 +18,7 @@ import {
   calcularPrestamo,
   calcularCapitalRestante,
   minimoParaRenovar,
+  interesVencidoSinPagarTabla,
   pagoHoy,
   prestamoDevuelveMenosDeLoPrestado,
   mensajePrestamoConPerdida,
@@ -26,7 +27,7 @@ import {
 import { obtenerDiasSinCobro, validarDiasSinCobro, nombresDias } from '@/lib/dias-sin-cobro'
 import { logActividad } from '@/lib/activity-log'
 import { registrarMovimientoCapital } from '@/lib/capital'
-import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto } from '@/lib/dinero/revertir-renovacion'
+import { revivirPrestamoRenovado, efectivoQueSalio, capitalYaDevuelto, vuelveACajaAlAnular, queHaceAnular } from '@/lib/dinero/revertir-renovacion'
 import { esDelDiaAbierto } from '@/lib/dinero/reverso-del-dia'
 import { getLocalDayRange, getLocalDateStr } from '@/lib/i18n'
 import { getCachedMutation, setCachedMutation, buildMutationKey } from '@/lib/mutation-idempotency'
@@ -114,17 +115,25 @@ export async function GET(request, { params }) {
   // El número de este crédito entre los del cliente (lib/prestamos/numero.js):
   // lo dicen las plantillas de WhatsApp y el comprobante.
   const numeros = await numerosDeClientes(prisma, { organizationId: session.user.organizationId, clienteIds: [p.clienteId] })
+  const saldoPendiente = calcularSaldoPendiente(p)
+  // Lo que haría «Anular», con la misma cuenta del PATCH (DETALLES-PRESTAMOS #16).
+  const alAnular = p.estado === 'activo' && session.user.rol === 'owner'
+    ? await queHaceAnular(prisma, p, saldoPendiente)
+    : null
 
   return Response.json({
     ...p,
     ...camposDeNumero(numeros, p.id),
     totalPagado:      p.pagos.filter(x => !['recargo', 'descuento'].includes(x.tipo)).reduce((a, x) => a + x.montoPagado, 0),
-    saldoPendiente:   calcularSaldoPendiente(p),
+    saldoPendiente,
     capitalRestante:  calcularCapitalRestante(p),
+    alAnular,
     /* ⚠ Lo que se liquida AL RENOVAR no es el capital: en los modos sin tabla
        —el 94 % de la cartera— es la deuda. La pantalla de renovar decidía por
        su cuenta y se separó del servidor; ahora recibe la cifra ya hecha. */
     minimoRenovacion: minimoParaRenovar(p),
+    // La parte de ese mínimo que es interés vencido de la tabla (#18): se dice.
+    interesVencidoRenovacion: interesVencidoSinPagarTabla(p),
     porcentajePagado: calcularPorcentajePagado(p),
     diasMora:         calcularDiasMora(p, diasExcluidos, festivos),
     cuotasPendientes: calcularCuotasPendientes(p),
@@ -362,7 +371,7 @@ export async function PATCH(request, { params }) {
          diferencia entregada, no el monto. Devolver el monto entero inflaba el
          capital por el saldo que la renovación absorbió y que nunca salió. */
       const salio = await efectivoQueSalio(tx, p)
-      saldoNoRecuperado = Math.max(0, Math.min(salio - totalPagosReales, saldoPendienteRestante))
+      saldoNoRecuperado = vuelveACajaAlAnular({ salio, cobrado: totalPagosReales, saldoPendiente: saldoPendienteRestante })
 
       /* ⚠ Y SOLO SI LA PLATA SALIÓ HOY — la misma regla que el borrado de abajo.
          Anular es la OTRA vía de quitar el préstamo, y devolvía al capital de hoy

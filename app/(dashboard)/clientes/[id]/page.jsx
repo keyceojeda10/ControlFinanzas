@@ -46,7 +46,7 @@ const estadoPrestamoBadge = {
   // Sin esta clave caían en «Activo» dentro del historial (17 oct 2026).
   pendiente_aprobacion: { variant: 'gold', label: 'Por aprobar' },
   completado: { variant: 'green',  label: 'Completado' },
-  cancelado:  { variant: 'gray',   label: 'Cancelado'  },
+  cancelado:  { variant: 'gray',   label: 'Anulado'  },
 }
 
 export default function ClienteDetallePage({ params }) {
@@ -129,6 +129,8 @@ export default function ClienteDetallePage({ params }) {
   // Leer contexto de ruta activa
   useEffect(() => {
     try {
+      // Solo si se viene de la ruta (#25): el recorrido sigue en la sesión al salir.
+      if (new URLSearchParams(window.location.search).get('fromRuta') !== '1') return
       const saved = sessionStorage.getItem('cf-ruta-nav')
       if (!saved) return
       const nav = JSON.parse(saved)
@@ -494,7 +496,7 @@ export default function ClienteDetallePage({ params }) {
     if (prestamosIds.length === 1) {
       return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
     }
-    return `/clientes/${clienteRuta.id}`
+    return `/clientes/${clienteRuta.id}?fromRuta=1`
   }
 
   const navegarEnRuta = (direction) => {
@@ -806,7 +808,8 @@ export default function ClienteDetallePage({ params }) {
                   // «Sin cliente», porque en esta pagina los prestamos llegan
                   // sin el cliente anidado — no hace falta, ya esta arriba.
                   nombre={`${conNumero ? `Préstamo #${numeroDelPrestamo(p.id)} · ` : ''}Prestado el ${new Date(p.fechaInicio).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`}
-                  onClick={() => router.push(`/prestamos/${p.id}`)}
+                  // En el recorrido de la ruta el préstamo sigue en él (#25).
+                  onClick={() => router.push(`/prestamos/${p.id}${rutaNav ? '?fromRuta=1' : ''}`)}
                 />
               ))
             })()}

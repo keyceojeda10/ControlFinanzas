@@ -306,7 +306,10 @@ export default function Armazon({ children, nombre: nombreServidor, rol: rolServ
           onClose={() => setEscaner(false)}
           onClientDetected={(clienteId) => {
             setEscaner(false)
-            if (clienteId) router.push(`/clientes/${clienteId}`)
+            /* Por `/qr/`, igual que la cámara del teléfono: con un préstamo
+               abre el cobro, con varios la ficha. Desde aquí iba siempre a la
+               ficha (DETALLES-PRESTAMOS #40). */
+            if (clienteId) router.push(`/qr/${clienteId}`)
           }}
         />
       )}

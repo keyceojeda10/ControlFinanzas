@@ -4,7 +4,7 @@ import { authOptions }      from '@/lib/auth'
 import { prisma }           from '@/lib/prisma'
 import { calcularEstadoCliente, calcularSaldoPendiente, deshacerPagoDeInteres, tieneTablaAmortizacion } from '@/lib/calculos'
 import { obtenerDiasSinCobro } from '@/lib/dias-sin-cobro'
-import { getUtcOffset } from '@/lib/i18n'
+import { getUtcOffset, getLocalDateStr, getLocalDayRange } from '@/lib/i18n'
 import { registrarMovimientoCapital } from '@/lib/capital'
 import { sincronizarTabla } from '@/lib/dinero/tabla-sync'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
@@ -42,6 +42,33 @@ export async function PATCH(request, { params }) {
     include: { prestamo: { select: { clienteId: true } } },
   })
   if (!pago) return Response.json({ error: 'Pago no encontrado' }, { status: 404 })
+
+  /* ⚠ NI AL FUTURO NI A UNA CAJA CERRADA (DETALLES-PRESTAMOS #37). Aceptaba
+     cualquier fecha: un pago puesto mañana cuenta en una caja que no ha
+     abierto, y moverlo a un día ya cerrado —o sacarlo de él— cambia lo que se
+     entregó esa noche sin que nadie lo cuadre. Para eso se reabre esa caja. */
+  const pais = session.user.country || 'co'
+  const desfase = Math.abs(getUtcOffset(pais))
+  const diaDe = (d) => new Date(new Date(d).getTime() - desfase * 3600e3).toISOString().slice(0, 10)
+  const diaNuevo = diaDe(nuevaFecha)
+  if (diaNuevo > getLocalDateStr(pais)) {
+    return Response.json({ error: 'Un pago no puede quedar en un día que todavía no llega.' }, { status: 400 })
+  }
+  const diaViejo = diaDe(pago.fechaPago)
+  if (diaNuevo !== diaViejo && pago.cobradorId) {
+    for (const dia of [diaViejo, diaNuevo]) {
+      const { inicio, fin } = getLocalDayRange(dia, pais)
+      const cierre = await prisma.cierreCaja.findFirst({
+        where: { organizationId, cobradorId: pago.cobradorId, fecha: { gte: inicio, lte: fin } },
+        select: { reabiertoEn: true, cobrador: { select: { nombre: true } } },
+      })
+      if (cierre && !cierre.reabiertoEn) {
+        return Response.json({
+          error: `La caja de ${cierre.cobrador?.nombre ?? 'ese cobrador'} del ${dia} ya está cerrada. Reábrela en Caja antes de mover este pago.`,
+        }, { status: 409 })
+      }
+    }
+  }
 
   const org = await prisma.organization.findUnique({
     where: { id: organizationId },

@@ -50,6 +50,8 @@ export default function RenovarPrestamo({
      `minimoRenovacion` sale de `minimoParaRenovar`, la misma función que usa
      el endpoint que guarda. */
   minimoRenovacion,
+  // Lo que de ese mínimo es interés vencido de la tabla (#18). Del servidor.
+  interesVencidoRenovacion = 0,
   prestamoAnterior,
   clienteNombre,
   montoMaximoPrestamo,
@@ -228,6 +230,7 @@ export default function RenovarPrestamo({
           ...(modo === 'saldo' && cuotaManualActiva && { cuotaManual: Number(cuotaManual) }),
           ...(seguro && montoSeguroNum > 0 && { seguro: true, montoSeguro: montoSeguroNum }),
           ...(modo === 'solo_interes' && prestamoAnterior?.interesAdelantado && { interesAdelantado: true }),
+          ...(soloModo && { soloCambioDeModo: true }),
           // Por dónde sale la diferencia. Sin elegir nada = efectivo.
           ...(cuentaEntrega?.metodoPago === 'transferencia' && {
             metodoPago: 'transferencia', metodoPagoId: cuentaEntrega.metodoPagoId,
@@ -272,7 +275,13 @@ export default function RenovarPrestamo({
     setCuotaManual('')
     setError('')
     setMasOpciones(false)
-    setPlazoUnidades(DEFAULT_PLAZO[frecuencia] ?? '30')
+    /* Al cerrar vuelve a las condiciones DEL PRÉSTAMO, no a las de por defecto:
+       se abría la segunda vez con otro plazo (DETALLES-PRESTAMOS #18). */
+    setFrecuencia(freqInicial)
+    setTasa(String(prestamoAnterior?.tasaInteres ?? '20'))
+    setPlazoUnidades(prestamoAnterior?.diasPlazo
+      ? diasAUnidades(prestamoAnterior.diasPlazo, freqInicial)
+      : DEFAULT_PLAZO[freqInicial] ?? '30')
     onClose?.()
   }
 
@@ -349,11 +358,15 @@ export default function RenovarPrestamo({
         <Renovar
           titulo={null}
           ayuda={null}
-          saldoEtiqueta={modoUsaTabla ? 'Capital adeudado' : 'Saldo pendiente'}
+          saldoEtiqueta={modoUsaTabla
+            ? (interesVencidoRenovacion > 0 ? 'Capital e interés vencido' : 'Capital adeudado')
+            : 'Saldo pendiente'}
           saldo={formatMoney(saldo)}
-          saldoNota={`Se absorbe en el nuevo y el anterior queda como completado. Prestó ${formatMoney(montoAnterior)} · cuota ${formatMoney(cuotaAnterior)}.`}
+          saldoNota={`Se absorbe en el nuevo y el anterior queda como completado.${interesVencidoRenovacion > 0 ? ` Incluye ${formatMoney(interesVencidoRenovacion)} de interés de cuotas vencidas sin pagar.` : ''} Prestó ${formatMoney(montoAnterior)} · cuota ${formatMoney(cuotaAnterior)}.`}
           total={montoTecleado != null ? montoTecleado : montoParaMostrarConModo(monto, modoAbreviado, undefined)}
-          onTotal={(v) => {
+          /* Al cambiar el modo el capital no se escribe: es el que pasa (#19). */
+          totalEtiqueta={soloModo ? 'Capital que pasa al nuevo' : undefined}
+          onTotal={soloModo ? undefined : (v) => {
             const crudo = montoCrudo(v)
             setMontoTecleado(crudo)
             setMonto(montoCrudoConModo(crudo, modoAbreviado))
@@ -366,7 +379,7 @@ export default function RenovarPrestamo({
           ] : []}
           onAtajo={(v) => fijarMonto(v)}
           incluye={soloModo
-            ? `Es el capital que pasa al préstamo nuevo. Si además le prestas más, sube el total.`
+            ? `Es lo que debe y pasa entero al préstamo nuevo. Para prestarle más, usa «Renovar».`
             : `El total INCLUYE lo que ya debe (${formatMoney(saldo)}). Escribe el total, no lo nuevo.`}
           antesDespues={calculo && cuotaAnterior > 0 ? {
             etiqueta: 'La cuota, antes y después',

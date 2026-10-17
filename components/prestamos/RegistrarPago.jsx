@@ -28,6 +28,7 @@ import { dibujarRecibo } from '@/components/ui/BotonCompartirRecibo'
 import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { interesQueAhorraUnAbono } from '@/lib/dinero/abono-capital'
+import { efectoDelPago } from '@/lib/dinero/saldo-tras-cada-pago'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
 import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante, tieneTablaAmortizacion } from '@/lib/calculos'
@@ -451,6 +452,8 @@ export default function RegistrarPago({
           diasAbonados,
           metodoPago,
           plataforma,
+          // El aplazo también va en la cola (#39): sin señal se perdía.
+          ...(puedeAplazar && aplazar ? { aplazarUnPeriodo: true } : {}),
           // La cuenta y el cliente: sin la cuenta el cobro subía como
           // transferencia sin dueño; sin el cliente, su tarjeta no podía decir
           // que hay un cobro suyo esperando en este teléfono.
@@ -462,15 +465,20 @@ export default function RegistrarPago({
         })
         await actualizarPrestamoOffline(prestamoId, { montoPagado: m, tipo, nota })
         window.dispatchEvent(new Event('paymentQueued'))
-        const saldoNuevo = Math.max(0, (prestamo?.saldoPendiente || 0) - m)
-        const totalPagadoNuevo = (prestamo?.totalPagado || 0) + m
-        const porcentajeNuevo = prestamo?.totalAPagar > 0
-          ? Math.round((totalPagadoNuevo / prestamo.totalAPagar) * 100)
+        /* Las reglas del servidor para cada tipo (#39): un «Solo interés» que
+           sube la deuda no baja el saldo; un abono a capital baja también el
+           interés que ahorra. Restar `m` a secas valía solo para la cuota. */
+        const efecto = efectoDelPago({ ...prestamo, totalPagado: prestamo?.totalPagado ?? 0, totalAPagar: (prestamo?.totalPagado ?? 0) + (prestamo?.saldoPendiente ?? 0) }, { tipo, monto: m })
+        const saldoNuevo = efecto.saldo
+        const totalPagadoNuevo = efecto.totalPagado
+        const porcentajeNuevo = efecto.totalAPagar > 0
+          ? Math.round((totalPagadoNuevo / efecto.totalAPagar) * 100)
           : 0
         const pagoOffline = { montoPagado: m, tipo, fechaPago: new Date().toISOString(), offline: true }
         const prestamoActualizado = prestamo ? {
           ...prestamo,
           saldoPendiente: saldoNuevo,
+          totalAPagar: efecto.totalAPagar,
           /* SIN SEÑAL, EL «antes debía» SALE DE AQUÍ. Es el MISMO número del que
              se restó `saldoNuevo` dos líneas arriba, así que el comprobante y la
              pantalla cuentan la misma resta. Con red lo manda el servidor, medido
@@ -643,7 +651,7 @@ export default function RegistrarPago({
       if (prestamosIds.length === 1) {
         return `/prestamos/${prestamosIds[0]}?openPago=1&fromRuta=1`
       }
-      return `/clientes/${clienteRuta.id}`
+      return `/clientes/${clienteRuta.id}?fromRuta=1`
     }
 
     if (info.isLast) {

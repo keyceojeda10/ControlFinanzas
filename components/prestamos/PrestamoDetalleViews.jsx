@@ -335,14 +335,18 @@ export function HeaderClienteContexto({ cliente, prestamo, statsCliente, onWhats
             sep 2026: las pastillas «tienen diferentes tamaños y letras… molesta
             bastante a la vista». Ahora es `Pastilla`, con los mismos tonos que
             las tarjetas: rojo mora, ámbar atraso, verde al día, gris terminado. */}
+        {/* «Por aprobar» antes que la mora: un préstamo sin aprobar decía «Al día»
+            (DETALLES-PRESTAMOS #22). El mismo tono que en la lista. */}
         <Pastilla numerica tono={
           prestamo?.estado === 'completado' || prestamo?.estado === 'cancelado' ? 'neutro'
+            : prestamo?.estado === 'pendiente_aprobacion' ? 'atraso'
             : (prestamo?.diasMora ?? 0) > 7 ? 'mora'
             : (prestamo?.diasMora ?? 0) > 0 ? 'atraso'
             : 'aldia'
         }>
           {prestamo?.estado === 'completado' ? 'Completado' :
-           prestamo?.estado === 'cancelado' ? 'Cancelado' :
+           prestamo?.estado === 'cancelado' ? 'Anulado' :
+           prestamo?.estado === 'pendiente_aprobacion' ? 'Por aprobar' :
            (prestamo?.diasMora ?? 0) > 7 ? `${prestamo.diasMora}d en mora` :
            (prestamo?.diasMora ?? 0) > 0 ? `${prestamo.diasMora}d vencido` :
            'Al día'}
