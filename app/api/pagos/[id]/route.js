@@ -9,6 +9,7 @@ import { registrarMovimientoCapital } from '@/lib/capital'
 import { sincronizarTabla } from '@/lib/dinero/tabla-sync'
 import { refrescarTotalesPrestamo } from '@/lib/prisma-pago-helpers'
 import { logActividad } from '@/lib/activity-log'
+import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
 import { motivoParaNoDeshacerAbono } from '@/lib/dinero/deshacer-abono'
 
 // ─── PATCH /api/pagos/[id] — Editar fecha del pago (solo owner) ──
@@ -55,6 +56,14 @@ export async function PATCH(request, { params }) {
 
     // Refrescar ultimoPagoAt (la fecha cambio).
     await refrescarTotalesPrestamo(tx, pago.prestamoId)
+
+    /* En un préstamo abierto, mover un pago a una fecha anterior cambia el
+       capital con que empezaron los meses de después, y su interés ya estaba
+       asentado. Inversiones Jk carga así los pagos viejos: Frank Martínez quedó
+       con septiembre cobrado sobre $1.200.000 en vez de $1.000.000. */
+    await reajustarDevengosTrasCambio(tx, pago.prestamoId, (p) => ({
+      ...p, pagos: p.pagos.map((x) => (x.id === pagoId ? { ...x, fechaPago: fechaAnterior } : x)),
+    }))
 
     // Y la tabla: cambiar la FECHA de un pago cambia el orden de la cascada
     // —la cuota mas antigua se cubre primero— asi que el reparto sobre las
@@ -148,6 +157,12 @@ export async function DELETE(request, { params }) {
 
     // 1. Eliminar el pago
     await tx.pago.delete({ where: { id: pagoId } })
+
+    // Anular un pago de un abierto devuelve el capital con que empezaron los
+    // meses de después: su interés ya asentado se corrige (ver el PATCH).
+    await reajustarDevengosTrasCambio(tx, pago.prestamoId, (p) => ({
+      ...p, pagos: [...p.pagos, { id: pago.id, tipo: pago.tipo, montoPagado: pago.montoPagado, fechaPago: pago.fechaPago }],
+    }))
 
     // 1b. Refrescar totalPagado/ultimoPagoAt despues de borrar.
     await refrescarTotalesPrestamo(tx, pago.prestamoId)

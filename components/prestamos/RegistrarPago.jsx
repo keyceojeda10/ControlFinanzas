@@ -29,7 +29,7 @@ import { saldoAntesDeEstePago } from '@/lib/recibo-derivados'
 import { entraAlFajo } from '@/lib/dinero/cuentas'
 import { cargarDiaCobrado } from '@/lib/dia-cobrado'
 import { getPlataformaInfo } from '@/components/ui/LogoPlataforma'
-import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora } from '@/lib/calculos'
+import { formatFechaCobroRelativa, siguientePeriodo, interesCobrableAhora, esAbiertoConDevengo, periodoEnCursoAbierto, calcularCapitalRestante } from '@/lib/calculos'
 import { FilaInterruptor } from '@/components/cf/primitivos2'
 import {
   adaptarDespuesDelPago, atajosDeMonto, mediosParaHoja, medioAGuardar,
@@ -894,6 +894,21 @@ export default function RegistrarPago({
   // La hoja siempre recibe el préstamo con `cuotasAmortizacion` cargadas (la
   // ficha las incluye), así que el guardia de `elInteresSubeLaDeuda` no salta.
   const subeLaDeuda = elInteresSubeLaDeuda(prestamo ?? {})
+  /* ── EL PRÉSTAMO ABIERTO: EL INTERÉS NO BAJA EL CAPITAL ──
+     Cobrar el interés por encima de lo ya debido asienta el mes que corre (lo
+     hace el servidor, `periodoEnCursoAbierto`). La hoja tiene que contarlo o
+     enseña el capital bajando. */
+  const esAbierto = esAbiertoConDevengo(prestamo ?? {})
+  const capitalAbierto = esAbierto
+    ? Math.round(Number(prestamo?.capitalRestante ?? calcularCapitalRestante(prestamo ?? {})) || 0) : 0
+  const interesQueNace = (() => {
+    if (!esAbierto || tipo !== 'intereses') return 0
+    const debido = Math.max(0, Math.round(Number(saldoPendiente ?? 0) - capitalAbierto))
+    if (!(Math.round(Number(monto) || 0) > debido)) return 0
+    const enCurso = periodoEnCursoAbierto(prestamo)
+    if (!enCurso || (prestamo?.devengos ?? []).some((d) => d.periodo === enCurso.periodo)) return 0
+    return enCurso.interesPeriodo
+  })()
 
   /* ── LO QUE CUESTA COMPRAR UN PERÍODO ─────────────────────────────────────
    *
@@ -1022,6 +1037,17 @@ export default function RegistrarPago({
         titulo: 'Abono a capital',
         texto: 'Reduce el capital y los intereses sobre ese monto. El préstamo termina antes.',
         cifra: ahorro > 0 ? { etiqueta: 'Ahorro en intereses', valor: formatMoney(ahorro) } : null,
+      }
+    }
+    if (tipo === 'intereses' && esAbierto) {
+      // Un préstamo abierto no tiene cuotas de capital que se venzan: el texto
+      // de la tabla («el capital de la cuota sigue vencido… queda en mora») le
+      // decía a Inversiones Jk algo que no pasa.
+      return {
+        titulo: 'Pago a intereses',
+        texto: `Paga el interés del mes. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. `
+          + 'Si además abona capital, regístralo aparte en «Capital».',
+        cifra: null,
       }
     }
     if (tipo === 'intereses') {
@@ -1233,6 +1259,7 @@ export default function RegistrarPago({
         // Si el interés SUBE la deuda, el saldo no se mueve: entra la plata y a
         // la vez crece el total. El adaptador no puede saberlo solo.
         interesSubeLaDeuda: subeLaDeuda,
+        deudaQueNace: interesQueNace,
         metodoPago,
         nombreCuenta: elegido.nombreCuenta,
         // El próximo cobro se pinta TAL CUAL lo dio la API. No se recalcula aquí:
@@ -1818,7 +1845,9 @@ export default function RegistrarPago({
                 {subeLaDeuda ? 'Le compra tiempo' : 'Pago a intereses'}
               </p>
               <p className="text-[var(--cf-ink-3)]">
-                {subeLaDeuda
+                {esAbierto
+                  ? `Paga el interés del mes. El capital no baja: sigue en ${formatMoney(capitalAbierto)}. Si además abona capital, regístralo aparte en «Capital».`
+                  : subeLaDeuda
                   ? 'El capital NO baja: el cliente paga la ganancia y sigue debiendo lo mismo. El préstamo se alarga y ese interés es tuyo.'
                   : 'Cubre el interés que ya debía. El capital de la cuota sigue vencido, así que el préstamo queda en mora por esa parte. Si lo que quieres es que el interés le compre tiempo y le corra la cuota, ese es el modo «Solo interés, capital al final».'}
               </p>

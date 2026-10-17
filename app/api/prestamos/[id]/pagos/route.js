@@ -1,5 +1,6 @@
 // app/api/prestamos/[id]/pagos/route.js
 
+import { reajustarDevengosTrasCambio } from '@/lib/dinero/devengar'
 import { getServerSession }    from 'next-auth'
 import { authOptions }         from '@/lib/auth'
 import { prisma }              from '@/lib/prisma'
@@ -566,6 +567,15 @@ export async function POST(request, { params }) {
 
     // 1b. Refrescar totalPagado/ultimoPagoAt denormalizados del prestamo.
     await refrescarTotalesPrestamo(tx, prestamoId)
+
+    /* 1c. Un pago con fecha atrás en un préstamo abierto cambia el capital con
+       que empezaron los meses ya asentados (ver `reajusteDeDevengos`). Con la
+       fecha de hoy no mueve nada: ningún mes asentado empezó después. */
+    if (saldoAntesDelPagoId) {
+      await reajustarDevengosTrasCambio(tx, prestamoId, (p) => ({
+        ...p, pagos: p.pagos.filter((x) => x.id !== saldoAntesDelPagoId),
+      }))
+    }
 
     // 2. Leer el préstamo actualizado con todos los pagos
     let prestamoActualizado = await tx.prestamo.findUnique({
